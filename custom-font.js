@@ -64,7 +64,7 @@
       return;
     }
     document.documentElement?.setAttribute("data-lhn-dark-reader", "true");
-    const page = `body,body :not(#lhn-panel):not(#lhn-panel *):not(#lhn-note-pop):not(#lhn-note-pop *):not(#lhn-sidebar):not(#lhn-sidebar *):not(#lhn-direct-translation):not(#lhn-direct-translation *):not(#lhn-full-english-dictionary):not(#lhn-full-english-dictionary *):not(#lhn-translate-icon):not(#lhn-highlight-actions):not(#lhn-bilingual-reading-bar):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
+    const page = `body,body :not([id^="lhn-"]):not([id^="lhn-"] *):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
     darkStyle.textContent = `
       html[data-lhn-dark-reader="true"],html[data-lhn-dark-reader="true"] body{background:#181a1b!important;background-image:none!important;color:#e8e6e3!important;color-scheme:dark!important}
       html[data-lhn-dark-reader="true"] ${page}{background-color:transparent!important;color:#e8e6e3!important;border-color:#45494c!important}
