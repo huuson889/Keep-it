@@ -447,7 +447,7 @@ const FLAG_SVGS = {
     const selector = `${MC_BLOCK_SEL},div[role='paragraph'],div`;
     const candidates = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
     return candidates.filter(el => {
-      if (mcIsOwn(el) || !visibleReaderText(el)) return false;
+      if (mcIsOwn(el) || !mcText(el)) return false;
       if (el.matches("div")) return !mcHasBlockChild(el) && !el.querySelector("div");
       return !mcHasBlockChild(el);
     });
@@ -499,19 +499,29 @@ const FLAG_SVGS = {
         const ancestor = matched[0].closest(selector);
         if (ancestor && matched.every(block => ancestor.contains(block))) return ancestor;
       }
+      let common = matched[0];
+      while (common && common !== document.body && !matched.every(block => common.contains(block))) common = common.parentElement;
+      if (common && common !== document.body) return common;
     }
     return readerRoot();
   }
   function mcUpdateDebug(root, reports) {
     const enabled = (() => { try { return localStorage.getItem(MC_DEBUG_KEY) === "1"; } catch { return false; } })();
     const styleId = "lhn-bilingual-reader-debug-style";
-    document.getElementById(styleId)?.remove();
-    document.querySelectorAll("[data-lhn-reader-debug]").forEach(el => { delete el.dataset.lhnReaderDebug; delete el.dataset.lhnReaderDebugReason; });
-    if (!enabled) return;
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = '[data-lhn-reader-debug="read"]{outline:2px solid #16a34a!important;outline-offset:2px!important}[data-lhn-reader-debug="skip"]{outline:2px solid #ef4444!important;outline-offset:2px!important}';
-    (document.head || document.documentElement).appendChild(style);
+    const existingStyle = document.getElementById(styleId);
+    if (!enabled) {
+      if (existingStyle || document.querySelector("[data-lhn-reader-debug]")) {
+        existingStyle?.remove();
+        document.querySelectorAll("[data-lhn-reader-debug]").forEach(el => { delete el.dataset.lhnReaderDebug; delete el.dataset.lhnReaderDebugReason; });
+      }
+      return;
+    }
+    if (!existingStyle) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = '[data-lhn-reader-debug="read"]{outline:2px solid #16a34a!important;outline-offset:2px!important}[data-lhn-reader-debug="skip"]{outline:2px solid #ef4444!important;outline-offset:2px!important}';
+      (document.head || document.documentElement).appendChild(style);
+    }
     const rows = reports.map(({el, text, reason}) => {
       el.dataset.lhnReaderDebug = reason ? "skip" : "read";
       if (reason) el.dataset.lhnReaderDebugReason = reason;
@@ -796,7 +806,7 @@ const FLAG_SVGS = {
   window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", syncToolbar);
   let pageMutationTimer = 0;
   const pageObserver = new MutationObserver(records => {
-    const isOwn = node => node?.nodeType === 1 && (node.matches?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar") || node.closest?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar"));
+    const isOwn = node => node?.nodeType === 1 && (node.matches?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style") || node.closest?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style"));
     const hasPageChange = records.some(record => !isOwn(record.target) && [...record.addedNodes, ...record.removedNodes].some(node => !isOwn(node)));
     if (!hasPageChange) return;
     clearTimeout(pageMutationTimer);
