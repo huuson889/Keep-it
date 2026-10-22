@@ -505,8 +505,9 @@ const FLAG_SVGS = {
     }
     return readerRoot();
   }
-  function mcUpdateDebug(root, reports) {
-    const enabled = (() => { try { return localStorage.getItem(MC_DEBUG_KEY) === "1"; } catch { return false; } })();
+  const mcDebugEnabled = () => { try { return localStorage.getItem(MC_DEBUG_KEY) === "1"; } catch { return false; } };
+  function mcUpdateDebug(reports) {
+    const enabled = mcDebugEnabled();
     const styleId = "lhn-bilingual-reader-debug-style";
     const existingStyle = document.getElementById(styleId);
     if (!enabled) {
@@ -540,7 +541,10 @@ const FLAG_SVGS = {
     }) : [];
     const root = mcChooseRoot(info, matched);
     const analyzed = mcTextBlocks(root).map(el => ({el, text:visibleReaderText(el), reason:mcSkipReason(el, visibleReaderText(el), custom)}));
-    mcUpdateDebug(root, analyzed);
+    if (mcDebugEnabled() && root !== document.body) {
+      mcTextBlocks(document.body).filter(el => !root.contains(el)).forEach(el => analyzed.push({el, text:visibleReaderText(el), reason:"outside selected main-content region"}));
+    }
+    mcUpdateDebug(analyzed);
     const result = analyzed.filter(item => !item.reason).map(item => item.el);
     const title = info?.title ? mcFindTitle(info.title) : null;
     if (title && root.contains(title) && !mcIsOwn(title) && mcText(title).length > 3 && !result.includes(title)) result.push(title);
