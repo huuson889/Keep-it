@@ -326,11 +326,11 @@ async function saveDashboardSettings(nextValues) {
   try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: dashboardSettings }); return true; }
   catch (error) { dashboardSettings = previous; dashboardSettingsChangedWhileOpen = previousToastState; syncDashboardTheme(); refreshDashboardSettings(); console.warn("Could not save dashboard settings", error); return false; }
 }
-function openDashboardSettings() {
+function openDashboardSettings(panel = "account") {
   closeMenus();
   dashboardSettingsChangedWhileOpen = false;
   refreshDashboardSettings();
-  showDashboardSettingsPanel("account");
+  showDashboardSettingsPanel(panel);
   $("dashboardSettingsDialog").classList.remove("is-maximized");
   $("dashboardSettingsDialog").showModal();
 }
@@ -2556,6 +2556,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 browser.runtime.onMessage.addListener(message => {
   if (message?.type === "OPEN_DASHBOARD_SETTINGS") { openDashboardSettings(); return; }
   if (message?.type === "OPEN_DASHBOARD_ACCOUNT") { openDashboardSettings(); if (!demoProfile) openProfileAuth(); return; }
+  if (message?.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") { openDashboardSettings("bilingualReader"); return; }
   if (message?.type !== "ANNOTATIONS_CHANGED") return;
   if (message.change?.origin === DASHBOARD_INSTANCE_ID) return;
   if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
@@ -2564,6 +2565,6 @@ browser.runtime.onMessage.addListener(message => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
-  if (new URLSearchParams(location.search).get("openSettings") === "1") { openDashboardSettings(); if (new URLSearchParams(location.search).get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
+  if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

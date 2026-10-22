@@ -228,9 +228,9 @@ async function syncPageOrder(url, ids) {
     tx.onabort = tx.onerror = () => reject(tx.error || new Error("Could not save page order"));
   });
 }
-async function openDashboard(openSettings = false, openAccount = false) {
+async function openDashboard(openSettings = false, openAccount = false, settingsTab = "account") {
   const dashboardUrl = browser.runtime.getURL("dashboard.html");
-  const settingsUrl = `${dashboardUrl}?openSettings=1${openAccount ? "&openAccount=1" : ""}`;
+  const settingsUrl = `${dashboardUrl}?openSettings=1${openAccount ? "&openAccount=1" : ""}${settingsTab !== "account" ? `&openSettingsTab=${encodeURIComponent(settingsTab)}` : ""}`;
   const [tabs, activeTabs] = await Promise.all([
     browser.tabs.query({}),
     browser.tabs.query({ active: true, currentWindow: true })
@@ -245,7 +245,7 @@ async function openDashboard(openSettings = false, openAccount = false) {
     await browser.windows.update(existing.windowId, { focused: true });
   }
   if (openSettings) {
-    try { await browser.tabs.sendMessage(existing.id, { type: openAccount ? "OPEN_DASHBOARD_ACCOUNT" : "OPEN_DASHBOARD_SETTINGS" }); }
+    try { await browser.tabs.sendMessage(existing.id, { type: settingsTab === "bilingualReader" ? "OPEN_DASHBOARD_BILINGUAL_SETTINGS" : openAccount ? "OPEN_DASHBOARD_ACCOUNT" : "OPEN_DASHBOARD_SETTINGS" }); }
     catch { return browser.tabs.update(existing.id, { url: settingsUrl, active: true }); }
   }
   return existing;
@@ -304,6 +304,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
+ if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
   if (message.type === "GET_ALL") return getAll();
   if (message.type === "GET_BATCH") return getBatch(message);

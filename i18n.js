@@ -108,7 +108,12 @@
   Object.assign(MESSAGES.ko, {
     readerPopupSettings:"설정", readerPopupSelectVoice:"음성 선택", readerPopupSpeed:"읽기 속도", readerPopupSpeedStep:"사용자 지정 속도 간격", readerPopupSearch:"국가 / 음성 검색", readerPopupAutoScroll:"자동 스크롤", readerPopupShortcuts:"키보드 단축키", readerPopupAutoDetect:"언어 자동 감지", readerPopupDarkMode:"다크 모드 전환", readerPopupSignIn:"계정에 로그인", readerPopupDashboard:"대시보드", readerPopupPlay:"재생", readerPopupPause:"일시 정지", readerPopupPrevious:"이전 문단", readerPopupNext:"다음 문단", readerPopupPdf:"PDF 문서 보기", readerPopupStop:"읽기 중지", readerPopupDrag:"컨트롤 드래그", readerPopupHideHint:"단축키 안내 숨기기", readerPopupClose:"닫기", readerPopupAutoDescription:"읽고 있는 언어 사용", readerPopupNoVoices:"사용 가능한 음성이 없습니다", readerPopupMinute:"분", readerPopupTime:"예상 남은 읽기 시간", readerPopupShortcutBanner:"<b>Space</b> 일시 정지 · <b>↑/↓</b> 속도 ±{step} · <b>←/→</b> 이전/다음 문단 · <b>Alt+R</b> 닫기", readerPopupShortcutFooter:"<b>Space</b> 일시 정지 · <b>↑ / ↓</b> 속도 · <b>← / →</b> 이전/다음 문단 · <b>Alt+R</b> 닫기"
   });
-  function detectLanguage() {
+  MESSAGES.en.readerPopupBilingualSettings = "Bilingual Reader settings";
+  MESSAGES.vi.readerPopupBilingualSettings = "Cài đặt Bilingual Reader";
+  MESSAGES.ko.readerPopupBilingualSettings = "이중 언어 리더 설정";
+  MESSAGES.en.readerPopupCustomWebsiteFont = "Custom website font (Inter)";
+  MESSAGES.vi.readerPopupCustomWebsiteFont = "Font tùy chỉnh cho website (Inter)";
+  MESSAGES.ko.readerPopupCustomWebsiteFont = "웹사이트 사용자 지정 글꼴 (Inter)";  function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
