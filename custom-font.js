@@ -24,7 +24,6 @@
   let darkLayerObserver = null, darkLayerFrame = 0;
   let websiteDisabled = false;
   const fontStylesheet = document.querySelector('link[data-lhn-bilingual-fonts]') || document.createElement("link");
-  let darkExtObserverSet = false;
   function attachFontStylesheet() {
     if (fontStylesheet.isConnected) return;
     fontStylesheet.rel = "stylesheet";
@@ -78,26 +77,18 @@
     const googleSearchFix = /(^|\.)google\./i.test(location.hostname)
       ? `html[data-lhn-dark-reader="true"] body ${pageElement}{background-image:none!important}`
       : "";
-    // Khi extension Dark Reader đang bật, chỉ giữ biến màu của Keepit để không xung đột với Dark Reader.
-    // Khi không có Dark Reader, dùng dark mode của Keepit như trước.
-    const extensionDarkActive = document.documentElement?.hasAttribute("data-darkreader-mode");
-    if (extensionDarkActive) {
-      darkStyle.textContent = `
-      html[data-lhn-dark-reader="true"]{--lhn-dr-bg:#181a1b;--lhn-dr-surface:#202124;--lhn-dr-text:#e8e6e3;--lhn-dr-border:#45494c;--lhn-dr-link:#9ecbff;--lhn-dr-control:#282b2e}
+    darkStyle.textContent = `
+      html[data-lhn-dark-reader="true"]{--lhn-dr-bg:#181a1b;--lhn-dr-surface:#202124;--lhn-dr-text:#e8e6e3;--lhn-dr-border:#45494c;--lhn-dr-link:#9ecbff;--lhn-dr-control:#282b2e;color-scheme:dark!important}
       html[data-lhn-dark-reader-theme="dracula"]{--lhn-dr-bg:#282a36;--lhn-dr-surface:#44475a;--lhn-dr-text:#f8f8f2;--lhn-dr-border:#6272a4;--lhn-dr-link:#8be9fd;--lhn-dr-control:#44475a}
+      html[data-lhn-dark-reader="true"],html[data-lhn-dark-reader="true"] body{background:var(--lhn-dr-bg)!important;background-image:none!important;color:var(--lhn-dr-text)!important}
+      html[data-lhn-dark-reader="true"] ${page}{background-color:transparent!important;color:var(--lhn-dr-text)!important;border-color:var(--lhn-dr-border)!important}
+      html[data-lhn-dark-reader="true"] body a${pageElement}{color:var(--lhn-dr-link)!important}
+      html[data-lhn-dark-reader="true"] body button${pageElement},html[data-lhn-dark-reader="true"] body input${pageElement},html[data-lhn-dark-reader="true"] body select${pageElement},html[data-lhn-dark-reader="true"] body textarea${pageElement}{background:var(--lhn-dr-control)!important;color:var(--lhn-dr-text)!important}
+      html[data-lhn-dark-reader="true"] ${floatingLayers}{background-color:var(--lhn-dr-surface)!important;background-image:none!important;box-shadow:none!important}
+      html[data-lhn-dark-reader="true"] ${page}::before,html[data-lhn-dark-reader="true"] ${page}::after{background-image:none!important;background-color:transparent!important;box-shadow:none!important}
+      ${googleSearchFix}
     `;
-    } else {
-      // Không đổi màu nền/chữ của trang web: để Dark Reader (hoặc trang gốc) quyết định.
-      // Chỉ giữ biến màu cho UI của Keepit.
-      darkStyle.textContent = `
-        html[data-lhn-dark-reader="true"]{--lhn-dr-bg:#181a1b;--lhn-dr-surface:#202124;--lhn-dr-text:#e8e6e3;--lhn-dr-border:#45494c;--lhn-dr-link:#9ecbff;--lhn-dr-control:#282b2e;color-scheme:dark}
-        html[data-lhn-dark-reader-theme="dracula"]{--lhn-dr-bg:#282a36;--lhn-dr-surface:#44475a;--lhn-dr-text:#f8f8f2;--lhn-dr-border:#6272a4;--lhn-dr-link:#8be9fd;--lhn-dr-control:#44475a}
-      `;
-    }
-    if (!darkExtObserverSet) {
-      darkExtObserverSet = true;
-      new MutationObserver(() => applyDarkReader({ enabled: lastDarkReaderEnabled, theme: lastDarkReaderTheme })).observe(document.documentElement, { attributes: true, attributeFilter: ["data-darkreader-mode"] });
-    }
+    watchDarkReaderLayers();
   }
   function isAddonElement(element) { return Boolean(element.closest?.('[id^="lhn-"],.lhn-bilingual-card,.lhn-bilingual-speaker')); }
   function inspectDarkReaderLayer(element) {
