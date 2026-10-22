@@ -588,6 +588,11 @@ const FLAG_SVGS = {
       while (ancestor && ancestor !== document.body && ancestor !== document.documentElement && !ancestor.contains(root)) ancestor = ancestor.parentElement;
       if (root.contains(el) || (ancestor && ancestor !== document.body && ancestor !== document.documentElement && ancestor.contains(root))) result.push(el);
     }
+    // Readability can omit VnExpress's italic interview questions from its parsed article text.
+    for (const el of document.querySelectorAll(".main_fck_detail .fck_detail p.Normal")) {
+      const text = visibleReaderText(el);
+      if (el.querySelector("em,i") && /\?\s*$/.test(text) && el.getClientRects().length && !mcHardExclusion(el, custom) && !result.includes(el)) result.push(el);
+    }
     return result.sort((a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
   }
   // Alt+R and Alt+A both read from this list. Alt+D uses blocks() (whole page).
