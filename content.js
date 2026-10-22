@@ -843,117 +843,15 @@
       return;
     }
     const googleLanguage = String(lang || "en-US").trim().replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    // Đoạn dài: chia nhỏ (mỗi đoạn <= 180 ký tự) và phát nối tiếp, lỗi đoạn nào đọc đoạn đó bằng giọng trình duyệt
-    const speechChunks = splitSpeechChunks(sample, 180);
-    if (speechChunks.length > 1) { playGoogleChunks(speechChunks, lang, googleLanguage, requestId, finish); return; }
-    // Google Translate TTS selects its built-in voice by language; the voice id keeps that choice in the cache key.
-    const voice = `google-translate-default:${googleLanguage}`;
-    try {
-      const result = await browser.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: sample, language: googleLanguage, voice });
-      if (requestId !== speakRequestId) return;
-      if (!(result?.audio instanceof ArrayBuffer) || result.audio.byteLength === 0) throw new Error("Google TTS returned empty audio");
-      const objectUrl = URL.createObjectURL(new Blob([result.audio], { type: "audio/mpeg" }));
-      const audio = new Audio(objectUrl);
-      audio.playbackRate = getSpeechRate(lang);
-      currentSpeakAudio = audio; currentSpeakObjectUrl = objectUrl;
-      const clearAudio = () => {
-        if (currentSpeakAudio !== audio) return;
-        currentSpeakAudio = null; currentSpeakObjectUrl = null;
-        URL.revokeObjectURL(objectUrl);
-      };
-      audio.onended = () => { clearAudio(); finish(); };
-      audio.onerror = () => {
-        clearAudio();
-        if (requestId === speakRequestId) speakWithSystemSpeech(sample, lang, finish);
-      };
-      await audio.play();
-    } catch (error) {
-      if (requestId !== speakRequestId) return;
-      const audio = currentSpeakAudio, objectUrl = currentSpeakObjectUrl;
-      currentSpeakAudio = null; currentSpeakObjectUrl = null;
-      if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.removeAttribute("src"); audio.load(); }
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      // Match the demo's CORS-safe HTMLAudio fallback before using browser speech.
-      try {
-        const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(sample)}&tl=${encodeURIComponent(googleLanguage)}&client=tw-ob`;
-        const directAudio = new Audio(directUrl);
-        directAudio.playbackRate = getSpeechRate(lang);
-        currentSpeakAudio = directAudio;
-        let directFailed = false;
-        const clearDirectAudio = () => {
-          if (currentSpeakAudio !== directAudio) return;
-          currentSpeakAudio = null;
-          directAudio.onended = null; directAudio.onerror = null;
-        };
-        const fallbackToSystem = directError => {
-          if (directFailed) return;
-          directFailed = true;
-          clearDirectAudio();
-          if (requestId !== speakRequestId) return;
-          console.warn("Google TTS audio fallback failed; using system speech", directError || error);
-          speakWithSystemSpeech(sample, lang, finish);
-        };
-        directAudio.onended = () => { clearDirectAudio(); finish(); };
-        directAudio.onerror = () => fallbackToSystem(new Error("Direct Google TTS audio could not be played"));
-        await directAudio.play();
-      } catch (directError) {
-        if (requestId !== speakRequestId) return;
-        if (currentSpeakAudio) { currentSpeakAudio.onended = null; currentSpeakAudio.onerror = null; currentSpeakAudio.pause(); currentSpeakAudio.removeAttribute("src"); currentSpeakAudio.load(); currentSpeakAudio = null; }
-        console.warn("Google TTS playback failed; using system speech fallback", directError || error);
-        speakWithSystemSpeech(sample, lang, finish);
-      }
-    }
+    LHN_TTS.play({
+      text: sample, lang, googleLanguage, voice: `google-translate-default:${googleLanguage}`, rate: getSpeechRate(lang),
+      isActive: () => requestId === speakRequestId,
+      setCurrent: (audio, url) => { currentSpeakAudio = audio; currentSpeakObjectUrl = url; },
+      clearCurrent: () => { currentSpeakAudio = null; currentSpeakObjectUrl = null; },
+      systemSpeak: (t, l, done) => speakWithSystemSpeech(t, l, done),
+      onEnd: finish
+    });
   }
-  // Chia văn bản thành các đoạn <= max ký tự, ưu tiên ngắt sau dấu câu rồi đến khoảng trắng
-  function splitSpeechChunks(text, max) {
-    const out = [];
-    let rest = String(text || "").trim();
-    while (rest.length > max) {
-      const w = rest.slice(0, max);
-      const punct = Math.max(w.lastIndexOf(". "), w.lastIndexOf("? "), w.lastIndexOf("! "), w.lastIndexOf("; "), w.lastIndexOf(", "));
-      const space = w.lastIndexOf(" ");
-      const cut = punct > max * 0.4 ? punct + 1 : (space > max * 0.4 ? space : max);
-      out.push(rest.slice(0, cut).trim());
-      rest = rest.slice(cut).trim();
-    }
-    if (rest) out.push(rest);
-    return out.filter(Boolean);
-  }
-
-  async function playGoogleChunks(chunks, lang, googleLanguage, requestId, finish) {
-    const voice = `google-translate-default:${googleLanguage}`;
-    for (const chunk of chunks) {
-      if (requestId !== speakRequestId) return;
-      let played = false;
-      try {
-        const result = await browser.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: googleLanguage, voice });
-        if (requestId !== speakRequestId) return;
-        if (!(result?.audio instanceof ArrayBuffer) || result.audio.byteLength === 0) throw new Error("Google TTS returned empty audio");
-        const objectUrl = URL.createObjectURL(new Blob([result.audio], { type: "audio/mpeg" }));
-        const audio = new Audio(objectUrl);
-        audio.playbackRate = getSpeechRate(lang);
-        currentSpeakAudio = audio; currentSpeakObjectUrl = objectUrl;
-        await new Promise((resolve, reject) => {
-          audio.onended = resolve;
-          audio.onerror = () => reject(new Error("Audio chunk could not be played"));
-          audio.play().catch(reject);
-        });
-        played = true;
-      } catch (error) {
-        if (requestId !== speakRequestId) return;
-        console.warn("Google TTS chunk failed; using system speech for this chunk", error);
-      } finally {
-        if (currentSpeakObjectUrl) URL.revokeObjectURL(currentSpeakObjectUrl);
-        currentSpeakAudio = null; currentSpeakObjectUrl = null;
-      }
-      if (!played) {
-        await new Promise(resolve => speakWithSystemSpeech(chunk, lang, resolve));
-        if (requestId !== speakRequestId) return;
-      }
-    }
-    if (requestId === speakRequestId) finish();
-  }
-
   function showNote(anchor, item) {
     if (!websiteSettingsReady || websiteDisabled) return;
     removeTranslationUI();

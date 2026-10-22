@@ -1380,27 +1380,14 @@ async function speakText(text, lang, onEnd, shouldSpeak = () => true, cacheVoice
   const speechRate = getSpeechRate(speechSettings, lang);
   if (speechSettings.speechVoice === "browser") { speakSystemText(sample, lang, onEnd, shouldSpeak, requestId, speechRate); return; }
   const language = String(lang || "en-US").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-  const voice = `${cacheVoice}:${language}`;
-  const finishWithSystem = () => {
-    if (requestId !== speechRequestId || !shouldSpeak()) return;
-    stopStudyAudio(); speakSystemText(sample, lang, onEnd, shouldSpeak, requestId, speechRate);
-  };
-  try {
-    const result = await browser.runtime.sendMessage({ type:"FETCH_TTS_AUDIO", text:sample, language, voice });
-    if (requestId !== speechRequestId || !shouldSpeak()) return;
-    if (!(result?.audio instanceof ArrayBuffer) || !result.audio.byteLength) throw new Error("Google TTS returned empty audio");
-    const objectUrl = URL.createObjectURL(new Blob([result.audio], { type:"audio/mpeg" }));
-    const audio = new Audio(objectUrl);
-    audio.playbackRate = speechRate; studySpeakAudio = audio; studySpeakObjectUrl = objectUrl;
-    const clear = () => { if (studySpeakAudio !== audio) return; studySpeakAudio = null; studySpeakObjectUrl = null; URL.revokeObjectURL(objectUrl); };
-    audio.onended = () => { clear(); onEnd?.(); };
-    audio.onerror = () => { clear(); finishWithSystem(); };
-    await audio.play();
-  } catch (error) {
-    if (requestId !== speechRequestId) return;
-    console.warn("Google TTS failed in dashboard; using browser speech", error);
-    finishWithSystem();
-  }
+  LHN_TTS.play({
+    text: sample, lang, googleLanguage: language, voice: `${cacheVoice}:${language}`, rate: speechRate,
+    isActive: () => requestId === speechRequestId && shouldSpeak(),
+    setCurrent: (audio, url) => { studySpeakAudio = audio; studySpeakObjectUrl = url; },
+    clearCurrent: () => { studySpeakAudio = null; studySpeakObjectUrl = null; },
+    systemSpeak: (t, l, done) => speakSystemText(t, l, done, shouldSpeak, requestId, speechRate),
+    onEnd
+  });
 }
 
 let editTagsEditor = null;

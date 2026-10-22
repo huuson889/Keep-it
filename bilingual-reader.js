@@ -226,12 +226,12 @@ const FLAG_SVGS = {
   function restartCurrentSpeech() {
     if (!reading || readingPaused || !currentReadText) return;
     const remainder=currentReadText.slice(Math.max(0,Math.min(currentReadCharIndex,currentReadText.length)));
-    utterance=null; synth?.cancel(); speakAfterCancel(remainder);
+    utterance=null; cancelGoogle(); speakAfterCancel(remainder);
   }
   function setSpeechSpeed(value) {
     const rate=Math.max(.5,Math.min(3,Math.round(value*100)/100));
     saveSpeechSetting({speechSpeed:rate}); bar.querySelector(".lhn-br-range").value=rate; bar.querySelector("[data-speed-value]").textContent=formatSpeed(rate); syncToolbar();
-    if(reading&&!readingPaused) restartCurrentSpeech();
+    if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
   }
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
   synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.speechVoiceURI)||selectedVoice; syncToolbar(); if(popover("voices").classList.contains("lhn-open")) renderVoiceChoices();});
@@ -438,7 +438,7 @@ const FLAG_SVGS = {
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
   function stopReading() {
-    reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; synth?.cancel(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
+    reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
   }
   function detectReadLanguage(text, fallback) {
     if (/[\uAC00-\uD7AF]/.test(text)) return "ko-KR";
@@ -458,6 +458,34 @@ const FLAG_SVGS = {
     if (base === "ko") return declared.includes("-") ? declared : "ko-KR";
     return declared || navigator.language || "en-GB";
   }
+  let googleAudio = null, googleToken = null, googleResumeWaiters = [];
+  function cancelGoogle() {
+    googleToken = null; googleResumeWaiters.splice(0).forEach(resolve => resolve());
+    if (googleAudio) { googleAudio.pause(); googleAudio.removeAttribute("src"); googleAudio.load(); googleAudio = null; }
+    synth?.cancel();
+  }
+  function resumeGoogle() {
+    googleResumeWaiters.splice(0).forEach(resolve => resolve());
+    synth?.resume(); googleAudio?.play().catch(() => {});
+  }
+  function speakGoogleNext(text, lang) {
+    const token = {}; googleToken = token; utterance = token;
+    const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (reading) { queueIndex++; speakNext(); } };
+    LHN_TTS.play({
+      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => Number(settings.speechSpeed) || 1,
+      isActive: () => googleToken === token && reading,
+      waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
+      setCurrent: audio => { googleAudio = audio; },
+      clearCurrent: () => { googleAudio = null; },
+      systemSpeak: (t, l, done) => {
+        if (!synth || !window.SpeechSynthesisUtterance) { done(); return; }
+        const u = new SpeechSynthesisUtterance(t); u.lang = l; u.rate = Number(settings.speechSpeed) || 1; if (activeVoice) u.voice = activeVoice;
+        u.onend = done; u.onerror = done; synth.speak(u);
+      },
+      onEnd: finish
+    });
+  }
   function speakNext(textOverride = null) {
     if (!reading || queueIndex >= queue.length || !queue[queueIndex]) { stopReading(); return; }
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
@@ -473,6 +501,7 @@ const FLAG_SVGS = {
     const defaultLanguageVoice = systemVoices.find(voice => voice.default && voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang);
     activeVoice = selectedVoice || defaultLanguageVoice || systemVoices.find(voice => voice.lang?.toLowerCase().replace(/_/g,"-") === activeSpeechLang.toLowerCase()) || systemVoices.find(voice => voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
+    if (!settings.speechVoiceURI && globalThis.LHN_TTS) { speakGoogleNext(currentReadText, activeSpeechLang); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
@@ -486,7 +515,7 @@ const FLAG_SVGS = {
     if (!nextQueue.length) return;
     const cancelPendingSpeech = Boolean(interruptCurrent && (reading || synth?.speaking || synth?.pending || synth?.paused));
     if (interruptCurrent && reading) stopReading();
-    else if (cancelPendingSpeech) { utterance = null; synth?.cancel(); }
+    else if (cancelPendingSpeech) { utterance = null; cancelGoogle(); }
     queue = nextQueue;
     readingPaused = false; resumeText = ""; queueIndex = fromBlock ? queue.indexOf(fromBlock) : 0;
     reading = true; readingPaused = false; syncPauseShortcutState(); bar.querySelector("[data-shortcut-banner]").hidden = false; bar.classList.add("lhn-show"); syncToolbar();
@@ -538,13 +567,14 @@ const FLAG_SVGS = {
     if (event.detail) {
       if (!readingPaused) {
         resumeText = currentReadText.slice(Math.max(0, Math.min(currentReadCharIndex, currentReadText.length)));
-        readingPaused = true; utterance = null; synth?.cancel();
+        readingPaused = true; utterance = null; if (googleToken) { googleAudio?.pause(); synth?.pause(); } else synth?.cancel();
       }
       syncPauseShortcutState(); syncToolbar(); event.preventDefault();
     } else if (readingPaused) {
       readingPaused = false;
-      const remaining = resumeText; resumeText = "";
-      syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining); event.preventDefault();
+      if (googleToken) { syncPauseShortcutState(); syncToolbar(); resumeGoogle(); }
+      else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining); }
+      event.preventDefault();
     } else {
       syncPauseShortcutState(); event.preventDefault();
     }
