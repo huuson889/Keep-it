@@ -444,12 +444,12 @@ const FLAG_SVGS = {
   const mcHasBlockChild = el => el.querySelector(MC_BLOCK_SEL);
   function mcTextBlocks(root) {
     if (!root) return [];
-    const selector = `${MC_BLOCK_SEL},div[role='paragraph'],div`;
+    const selector = `${MC_BLOCK_SEL},[role='paragraph'],div,section,article,main,[role='main']`;
     const candidates = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
     return candidates.filter(el => {
-      if (mcIsOwn(el) || !mcText(el)) return false;
-      if (el.matches("div")) return !mcHasBlockChild(el) && !el.querySelector("div");
-      return !mcHasBlockChild(el);
+      if (mcIsOwn(el) || !(el.textContent || "").trim()) return false;
+      if (el.matches(MC_BLOCK_SEL)) return !mcHasBlockChild(el);
+      return !el.querySelector(`${MC_BLOCK_SEL},div,section,article,main,[role='paragraph'],[role='main']`);
     });
   }
   function mcCustomSelector() {
@@ -540,9 +540,15 @@ const FLAG_SVGS = {
       return t && mcMatches(t, info.texts, info.arr) && !mcSkipReason(el, raw, custom);
     }) : [];
     const root = mcChooseRoot(info, matched);
-    const analyzed = mcTextBlocks(root).map(el => ({el, text:visibleReaderText(el), reason:mcSkipReason(el, visibleReaderText(el), custom)}));
+    const analyzed = mcTextBlocks(root).map(el => {
+      const text = visibleReaderText(el);
+      return {el, text, reason:mcSkipReason(el, text, custom)};
+    });
     if (mcDebugEnabled() && root !== document.body) {
-      mcTextBlocks(document.body).filter(el => !root.contains(el)).forEach(el => analyzed.push({el, text:visibleReaderText(el), reason:"outside selected main-content region"}));
+      mcTextBlocks(document.body).filter(el => !root.contains(el)).forEach(el => {
+        const text = visibleReaderText(el);
+        analyzed.push({el, text, reason:"outside selected main-content region"});
+      });
     }
     mcUpdateDebug(analyzed);
     const result = analyzed.filter(item => !item.reason).map(item => item.el);
