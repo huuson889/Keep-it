@@ -172,7 +172,7 @@
   }
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
   const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-  async function getDictionaryCache(key) {
+  async function getDictionaryCache(key, legacyKey) {
     try {
       const entry = (await browser.storage.local.get(key))[key];
       if (entry && Date.now() - entry.timestamp < DICTIONARY_CACHE_TTL) return entry.data;
@@ -180,7 +180,7 @@
     } catch (error) { console.warn("Could not read full dictionary cache", error); }
     // Migrate a still-valid entry from the previous website-scoped cache.
     try {
-      const oldKey = `__lhn_full_english_dictionary_v1__${key.replace(/^lhnFullDictionary:v2:/, "")}`;
+      const oldKey = `__lhn_full_english_dictionary_v1__${legacyKey}`;
       const oldEntry = JSON.parse(localStorage.getItem(oldKey) || "null");
       if (oldEntry && Date.now() - oldEntry.timestamp < DICTIONARY_CACHE_TTL) {
         await browser.storage.local.set({ [key]:oldEntry });
@@ -326,7 +326,7 @@
     popup._lhnHideForNote = true;
     popup._lhnRelatedController?.abort();
     fillNoteFromDictionary(popup);
-    const hasTranslation = !!popup.querySelector(".lhn-dict-translation")?.textContent?.trim();
+    const hasTranslation = !!popup.querySelector(".lhn-dict-translation")?.textContent?.trim() || !!popup._lhnMainTranslation?.translatedText;
     popup.remove();
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
