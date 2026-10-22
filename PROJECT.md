@@ -1,7 +1,10 @@
 # Keepit - Hồ sơ dự án
+## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; kiểm tra cú pháp PowerShell đạt, chưa xác nhận sự kiện save thực tế. Tiếp theo: xác minh watcher chạy nền và commit tự động.
+
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.516. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.517. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
