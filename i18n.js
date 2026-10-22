@@ -113,7 +113,8 @@
   MESSAGES.ko.readerPopupBilingualSettings = "이중 언어 리더 설정";
   MESSAGES.en.readerPopupCustomWebsiteFont = "Custom website font (Inter)";
   MESSAGES.vi.readerPopupCustomWebsiteFont = "Font tùy chỉnh cho website (Inter)";
-  MESSAGES.ko.readerPopupCustomWebsiteFont = "웹사이트 사용자 지정 글꼴 (Inter)";  function detectLanguage() {
+  MESSAGES.ko.readerPopupCustomWebsiteFont = "웹사이트 사용자 지정 글꼴 (Inter)";
+  function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
