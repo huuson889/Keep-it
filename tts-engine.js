@@ -30,11 +30,16 @@
   async function playWithBrowserVoice(opts) {
     for (const chunk of splitChunks(opts.text)) {
       if (!opts.isActive()) return;
-      await new Promise(resolve => {
+      const result = await new Promise(resolve => {
         let finished = false;
-        const done = () => { if (finished) return; finished = true; resolve(); };
+        const done = status => { if (finished) return; finished = true; resolve(status); };
         try { opts.systemSpeak(chunk, opts.lang, done); } catch { done(); }
       });
+      if (result?.unsupported) {
+        opts.onBrowserVoiceUnavailable?.(opts.lang);
+        if (opts.isActive()) opts.onEnd?.();
+        return;
+      }
     }
     if (opts.isActive()) opts.onEnd?.();
   }
@@ -76,7 +81,12 @@
       }
       if (!played) {
         if (!opts.isActive()) return;
-        await new Promise(resolve => opts.systemSpeak(chunk, opts.lang, resolve));
+        const result = await new Promise(resolve => opts.systemSpeak(chunk, opts.lang, resolve));
+        if (result?.unsupported) {
+          opts.onBrowserVoiceUnavailable?.(opts.lang);
+          if (opts.isActive()) opts.onEnd?.();
+          return;
+        }
       }
     }
     if (opts.isActive()) opts.onEnd?.();
