@@ -114,7 +114,12 @@
   MESSAGES.en.readerPopupCustomWebsiteFont = "Custom web font";
   MESSAGES.vi.readerPopupCustomWebsiteFont = "Font web tùy chỉnh";
   MESSAGES.ko.readerPopupCustomWebsiteFont = "사용자 지정 웹 글꼴";
-  function detectLanguage() {
+  MESSAGES.en.autoHighlight = "Auto highlight";
+  MESSAGES.vi.autoHighlight = "Tự động tô sáng";
+  MESSAGES.ko.autoHighlight = "자동 하이라이트";
+  MESSAGES.en.settingsAutoHighlightHelp = "Save the highlight when you click outside the popup.";
+  MESSAGES.vi.settingsAutoHighlightHelp = "Tự lưu phần tô sáng khi bạn bấm ra ngoài popup.";
+  MESSAGES.ko.settingsAutoHighlightHelp = "팝업 바깥을 클릭하면 하이라이트를 자동 저장합니다.";  function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
