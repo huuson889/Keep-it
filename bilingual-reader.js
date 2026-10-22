@@ -572,6 +572,16 @@ const FLAG_SVGS = {
     const result = analyzed.filter(item => !item.reason).map(item => item.el);
     const title = info?.title ? mcFindTitle(info.title) : null;
     if (title && root.contains(title) && !mcIsOwn(title) && mcText(title).length > 3 && !result.includes(title)) result.push(title);
+    // VnExpress keeps its visible headline and lead outside the article-body root.
+    const articleLeads = document.querySelectorAll("h1.title_post,h1[data-role='title'],h1[itemprop='headline'],.lead_post_detail,[data-role='sapo'],.sapo,[itemprop='description'],.article-summary,.post-summary");
+    for (const el of articleLeads) {
+      if (result.includes(el) || mcIsOwn(el)) continue;
+      const text = visibleReaderText(el);
+      if (!text || mcSkipReason(el, text, custom)) continue;
+      let ancestor = el.parentElement;
+      while (ancestor && ancestor !== document.body && ancestor !== document.documentElement && !ancestor.contains(root)) ancestor = ancestor.parentElement;
+      if (root.contains(el) || (ancestor && ancestor !== document.body && ancestor !== document.documentElement && ancestor.contains(root))) result.push(el);
+    }
     return result.sort((a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
   }
   // Alt+R and Alt+A both read from this list. Alt+D uses blocks() (whole page).
