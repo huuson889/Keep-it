@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.525: Khôi phục nền từ ZIP v3.4.525 và hủy Dark reader/Dracula theo yêu cầu; giữ các tính năng khác của bản này. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp/manifest/diff; chưa kiểm tra trực quan trên trình duyệt. Tiếp theo: cài/reload v3.4.525 và xác nhận.
 - 2026-10-23 | v3.4.525: Sửa nền xuyên lớp phủ: đánh dấu fixed/sticky, absolute có z-index và popup semantic, áp nền surface theo theme. File: custom-font.js, PROJECT.md. Đã chạy node --check và diff-check; chưa xác nhận trực quan trên Google Search.
 - 2026-10-23 | v3.4.525: Dark reader giữ nền đục cho phần tử fixed/sticky bằng quan sát DOM; thêm theme Dracula. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check, parse manifest và diff-check; chưa kiểm tra trực quan trên website.
 - 2026-10-23 | v3.4.525: Dark reader preload ở `document_start` qua bản sao storage giống Website font; xử lý gradient/nền pseudo và riêng background-image Google Search. File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp và diff; chưa xác nhận trực quan trên Google.
@@ -28,7 +29,7 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Cài/reload v3.4.525; xác nhận autocomplete Google không xuyên nội dung, hai theme, layer nổi và Alt+Z; kiểm tra thiếu browser voice, Alt+R/hover icon trên VnExpress.
+0. [Kiểm tra] Cài/reload v3.4.525; xác nhận giao diện/luồng đọc sau rollback, kiểm tra thiếu browser voice, Alt+R/hover icon trên VnExpress.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
