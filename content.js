@@ -379,7 +379,7 @@
       }
       const result = { word, ipa, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
       popup._lhnMainTranslation = result.translation;
-      await setDictionaryCache(cacheKey, result);
+      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await setDictionaryCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, result, false);
     } catch (error) {
