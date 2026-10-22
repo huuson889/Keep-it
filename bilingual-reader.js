@@ -710,9 +710,15 @@ const FLAG_SVGS = {
       clearCurrent: () => { googleAudio = null; },
       systemSpeak: (t, l, done) => {
         if (!synth || !window.SpeechSynthesisUtterance) { done(); return; }
-        const u = new SpeechSynthesisUtterance(t); u.lang = l; u.rate = Number(settings.speechSpeed) || 1; if (activeVoice) u.voice = activeVoice;
+        const normalize = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
+        const target = normalize(l), base = target.split("-")[0];
+        const voices = synth.getVoices();
+        const voice = voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
+        if (!voice) { done({ unsupported:true }); return; }
+        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = Number(settings.speechSpeed) || 1; u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
       },
+      onBrowserVoiceUnavailable: () => { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); },
       onEnd: finish
     });
   }
@@ -729,7 +735,10 @@ const FLAG_SVGS = {
     systemVoices = synth?.getVoices?.() || systemVoices;
     const baseLang = activeSpeechLang.toLowerCase().split(/[-_]/)[0];
     const defaultLanguageVoice = systemVoices.find(voice => voice.default && voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang);
-    activeVoice = selectedVoice || defaultLanguageVoice || systemVoices.find(voice => voice.lang?.toLowerCase().replace(/_/g,"-") === activeSpeechLang.toLowerCase()) || systemVoices.find(voice => voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang) || null;
+    const normalizeVoiceLang = voice => String(voice?.lang || "").toLowerCase().replace(/_/g,"-");
+    const selectedVoiceMatches = selectedVoice && normalizeVoiceLang(selectedVoice).split("-")[0] === baseLang;
+    activeVoice = (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
+    if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!settings.speechVoiceURI && globalThis.LHN_TTS) { speakGoogleNext(currentReadText, activeSpeechLang); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
