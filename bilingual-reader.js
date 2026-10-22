@@ -160,6 +160,7 @@ const FLAG_SVGS = {
     bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
     bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
     bar.querySelector("[data-speed]").textContent = formatSpeed(settings.speechSpeed || 1);
+    bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
     bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
     bar.querySelector("[data-shortcuts]").checked = settings.readerShortcutsEnabled !== false;
