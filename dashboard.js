@@ -1354,7 +1354,7 @@ function speakSystemText(text, lang, onEnd, shouldSpeak, requestId, speechRate =
   const playWithVoices = voices => {
     if (requestId !== speechRequestId || !shouldSpeak()) return;
     const voice = findVoice(voices);
-    if (!voice) { onEnd?.(); return; }
+    if (!voice) { toast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"); onEnd?.({ unsupported:true }); return; }
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voice; utterance.lang = voice.lang || lang; utterance.rate = speechRate;
     if (typeof onEnd === "function") { utterance.onend = onEnd; utterance.onerror = onEnd; }

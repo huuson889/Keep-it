@@ -746,14 +746,14 @@
     const playWithVoices = voices => {
       const utterance = new SpeechSynthesisUtterance(text);
       const voice = findMatchingVoice(voices);
-      if (voices.length && !voice) {
+      if (!voice) {
         console.warn(`No system speech voice matches ${lang}; skipping speech rather than reading in the wrong language.`);
-        onEnd?.();
+        showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này");
+        onEnd?.({ unsupported:true });
         return;
       }
-      if (voice) utterance.voice = voice;
-      // If Firefox has not exposed any voices yet, keep the requested language for its own fallback.
-      utterance.lang = voice?.lang || lang || window.navigator?.language || "en-US";
+      utterance.voice = voice;
+      utterance.lang = voice.lang || lang;
       utterance.rate = getSpeechRate(lang);
       if (typeof onEnd === "function") { utterance.onend = onEnd; utterance.onerror = onEnd; }
       synth.speak(utterance);
