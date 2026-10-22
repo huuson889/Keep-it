@@ -843,6 +843,9 @@
       return;
     }
     const googleLanguage = String(lang || "en-US").trim().replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
+    // Đoạn dài: chia nhỏ (mỗi đoạn <= 180 ký tự) và phát nối tiếp, lỗi đoạn nào đọc đoạn đó bằng giọng trình duyệt
+    const speechChunks = splitSpeechChunks(sample, 180);
+    if (speechChunks.length > 1) { playGoogleChunks(speechChunks, lang, googleLanguage, requestId, finish); return; }
     // Google Translate TTS selects its built-in voice by language; the voice id keeps that choice in the cache key.
     const voice = `google-translate-default:${googleLanguage}`;
     try {
@@ -901,6 +904,56 @@
       }
     }
   }
+  // Chia văn bản thành các đoạn <= max ký tự, ưu tiên ngắt sau dấu câu rồi đến khoảng trắng
+  function splitSpeechChunks(text, max) {
+    const out = [];
+    let rest = String(text || "").trim();
+    while (rest.length > max) {
+      const w = rest.slice(0, max);
+      const punct = Math.max(w.lastIndexOf(". "), w.lastIndexOf("? "), w.lastIndexOf("! "), w.lastIndexOf("; "), w.lastIndexOf(", "));
+      const space = w.lastIndexOf(" ");
+      const cut = punct > max * 0.4 ? punct + 1 : (space > max * 0.4 ? space : max);
+      out.push(rest.slice(0, cut).trim());
+      rest = rest.slice(cut).trim();
+    }
+    if (rest) out.push(rest);
+    return out.filter(Boolean);
+  }
+
+  async function playGoogleChunks(chunks, lang, googleLanguage, requestId, finish) {
+    const voice = `google-translate-default:${googleLanguage}`;
+    for (const chunk of chunks) {
+      if (requestId !== speakRequestId) return;
+      let played = false;
+      try {
+        const result = await browser.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: googleLanguage, voice });
+        if (requestId !== speakRequestId) return;
+        if (!(result?.audio instanceof ArrayBuffer) || result.audio.byteLength === 0) throw new Error("Google TTS returned empty audio");
+        const objectUrl = URL.createObjectURL(new Blob([result.audio], { type: "audio/mpeg" }));
+        const audio = new Audio(objectUrl);
+        audio.playbackRate = getSpeechRate(lang);
+        currentSpeakAudio = audio; currentSpeakObjectUrl = objectUrl;
+        await new Promise((resolve, reject) => {
+          audio.onended = resolve;
+          audio.onerror = () => reject(new Error("Audio chunk could not be played"));
+          audio.play().catch(reject);
+        });
+        played = true;
+      } catch (error) {
+        if (requestId !== speakRequestId) return;
+        console.warn("Google TTS chunk failed; using system speech for this chunk", error);
+      } finally {
+        if (currentSpeakObjectUrl) URL.revokeObjectURL(currentSpeakObjectUrl);
+        currentSpeakAudio = null; currentSpeakObjectUrl = null;
+      }
+      if (!played) {
+        await new Promise(resolve => speakWithSystemSpeech(chunk, lang, resolve));
+        if (requestId !== speakRequestId) return;
+      }
+    }
+    if (requestId === speakRequestId) finish();
+  }
+
   function showNote(anchor, item) {
     if (!websiteSettingsReady || websiteDisabled) return;
     removeTranslationUI();

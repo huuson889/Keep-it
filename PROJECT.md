@@ -26,7 +26,16 @@
 - Thay đổi lớn nêu rõ trong commit message.
 
 ## Việc đang mở
-1. [Kiểm tra] Google TTS trên Chrome (v3.4.504): xác nhận translate_tts trả 200 trong flashcard và popup chọn text. Nếu vẫn 404, lấy mã trạng thái từ log service worker và báo lại.
+1. 1. [Kiểm tra] Google TTS trên Chrome (v3.4.504): translate_tts trả Request URL
+https://translate.google.com/translate_tts?ie=UTF-8&q=Modern+systems+deployed+to+stop+UAVs+from+entering+Vietnam%E2%80%99s+Da+Nang+airport+airspace&tl=en&client=tw-ob
+Request method
+GET
+Status code
+200 OK
+Remote address
+[2404:6800:4005:804::200e]:443
+Referrer policy
+strict-origin-when-cross-origin
 2. [Chưa làm] Đọc đoạn dài bằng Google TTS: chia văn bản thành đoạn khoảng 180–200 ký tự, phát nối tiếp. Hiện background giới hạn 500 ký tự.
 3. [Chưa làm] Chuỗi dự phòng TTS: Google → phát trực tiếp → giọng trình duyệt, có báo lỗi rõ ràng.
 4. [Quyết định] Bilingual reader có dùng Google TTS không? Hiện chỉ dùng giọng trình duyệt.
