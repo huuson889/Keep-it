@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("browser-polyfill.js", "config.js", "usage-limits.js");
+  importScripts("browser-polyfill.js", "error-logger.js", "config.js", "usage-limits.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -295,6 +295,7 @@ async function translateBilingual(text, targetLang) {
 }
 browser.runtime.onMessage.addListener(async (message, sender) => {
   if (!message || !message.type) return;
+  if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") { await browser.storage.local.remove(BILINGUAL_CACHE_KEY); return { cleared:true }; }
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();

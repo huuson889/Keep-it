@@ -17,6 +17,7 @@
     "service_worker": "background.js",
     "scripts": [
       "browser-polyfill.js",
+        "error-logger.js",
       "config.js",
       "usage-limits.js",
       "background.js"
@@ -30,6 +31,7 @@
       ],
       "js": [
         "browser-polyfill.js",
+        "error-logger.js",
         "custom-font.js"
       ],
       "run_at": "document_start",
