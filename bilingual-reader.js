@@ -469,6 +469,7 @@ const FLAG_SVGS = {
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
   function speakGoogleNext(text, lang) {
+    cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (reading) { queueIndex++; speakNext(); } };
