@@ -171,16 +171,33 @@
     dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
   }
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
-  const dictionaryCachePrefix = "__lhn_full_english_dictionary_v1__";
-  function getDictionaryCache(key) {
+  const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  async function getDictionaryCache(key) {
     try {
-      const entry = JSON.parse(localStorage.getItem(dictionaryCachePrefix + key) || "null");
-      if (entry && Date.now() - entry.timestamp < 7 * 24 * 60 * 60 * 1000) return entry.data;
-      localStorage.removeItem(dictionaryCachePrefix + key);
+      const entry = (await browser.storage.local.get(key))[key];
+      if (entry && Date.now() - entry.timestamp < DICTIONARY_CACHE_TTL) return entry.data;
+      if (entry) await browser.storage.local.remove(key);
+    } catch (error) { console.warn("Could not read full dictionary cache", error); }
+    // Migrate a still-valid entry from the previous website-scoped cache.
+    try {
+      const oldKey = `__lhn_full_english_dictionary_v1__${key.replace(/^lhnFullDictionary:v2:/, "")}`;
+      const oldEntry = JSON.parse(localStorage.getItem(oldKey) || "null");
+      if (oldEntry && Date.now() - oldEntry.timestamp < DICTIONARY_CACHE_TTL) {
+        await browser.storage.local.set({ [key]:oldEntry });
+        localStorage.removeItem(oldKey);
+        return oldEntry.data;
+      }
+      if (oldEntry) localStorage.removeItem(oldKey);
     } catch {}
     return null;
   }
-  function setDictionaryCache(key, data) { try { localStorage.setItem(dictionaryCachePrefix + key, JSON.stringify({ timestamp:Date.now(), data })); } catch {} }
+  async function setDictionaryCache(key, data) {
+    try { await browser.storage.local.set({ [key]:{ timestamp:Date.now(), data } }); }
+    catch (error) { console.warn("Could not save full dictionary cache", error); }
+  }
+  function dictionaryTranslationCacheKey(text, targetLanguage) {
+    return `${dictionaryTranslationCachePrefix}${targetLanguage}:${cleanText(text).toLocaleLowerCase()}`;
+  }
   function dictionaryPopupAt(popup, range) {
     positionPopupAtAnchor(popup, range);
   }
@@ -209,40 +226,51 @@
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-dict-visible"));
     return popup;
   }
-  async function dictionaryTranslate(text, targetLanguage) {
+  async function dictionaryTranslate(text, targetLanguage, signal) {
+    const cacheKey = dictionaryTranslationCacheKey(text, targetLanguage);
     try {
-      const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`);
+      const cached = (await browser.storage.local.get(cacheKey))[cacheKey];
+      if (cached && Date.now() - cached.timestamp < DICTIONARY_CACHE_TTL && cached.data?.translatedText) return cached.data;
+      if (cached) await browser.storage.local.remove(cacheKey);
+    } catch (error) { console.warn("Could not read related-word translation cache", error); }
+    let result;
+    try {
+      const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
       if (!response.ok) throw new Error("Google Translate unavailable");
       const data = await response.json();
-      return { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
-    } catch {
-      const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`);
+      result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
       if (!response.ok) throw new Error("Dictionary translation unavailable");
       const data = await response.json();
       if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
-      return { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
+      result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
     }
+    try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
+    catch (error) { console.warn("Could not save related-word translation cache", error); }
+    return result;
   }
-  async function dictionaryRelatedWords(word, targetLanguage) {
+  async function dictionaryRelatedWords(word, targetLanguage, signal) {
     const escaped = encodeURIComponent(word.toLowerCase());
     const [synonyms, antonyms] = await Promise.all([
-      fetch(`https://api.datamuse.com/words?rel_syn=${escaped}&max=3`).then(response => response.ok ? response.json() : []),
-      fetch(`https://api.datamuse.com/words?rel_ant=${escaped}&max=3`).then(response => response.ok ? response.json() : [])
+      fetch(`https://api.datamuse.com/words?rel_syn=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : []),
+      fetch(`https://api.datamuse.com/words?rel_ant=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : [])
     ]);
     const all = [...synonyms.map(item => ({ ...item, kind:"Syn" })), ...antonyms.map(item => ({ ...item, kind:"Ant" }))];
     const translated = await Promise.all(all.map(async item => {
-      try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage)).translatedText }; }
+      try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage, signal)).translatedText }; }
       catch { return { ...item, meaning:item.word }; }
     }));
     return translated;
   }
-  async function dictionaryWordForms(word, targetLanguage) {
+  async function dictionaryWordForms(word, targetLanguage, signal) {
     let root = word.toLowerCase();
     if (root.endsWith("ments")) root = root.slice(0, -5); else if (root.endsWith("ment")) root = root.slice(0, -4);
     else if (["ers", "ing", "ies"].some(suffix => root.endsWith(suffix))) root = root.slice(0, -3);
     else if (["ed", "er", "ly"].some(suffix => root.endsWith(suffix))) root = root.slice(0, -2); else if (root.endsWith("s")) root = root.slice(0, -1);
     try {
-      const response = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(root)}*&md=p&max=15`);
+      const response = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(root)}*&md=p&max=15`, { signal });
       if (!response.ok) return [];
       const items = await response.json(), seen = new Set([word.toLowerCase()]), results = [];
       for (const item of items) {
@@ -250,18 +278,18 @@
         seen.add(form); const tag = item.tags?.includes("v") ? "(V)" : item.tags?.includes("adv") ? "(Adv)" : item.tags?.includes("adj") ? "(Adj)" : "(N)";
         results.push({ word:form, tag }); if (results.length >= 4) break;
       }
-      return Promise.all(results.map(async item => { try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage)).translatedText }; } catch { return { ...item, meaning:item.word }; } }));
+      return Promise.all(results.map(async item => { try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage, signal)).translatedText }; } catch { return { ...item, meaning:item.word }; } }));
     } catch { return []; }
   }
-  async function dictionaryCollocations(word, targetLanguage) {
+  async function dictionaryCollocations(word, targetLanguage, signal) {
     try {
       const escaped = encodeURIComponent(word.toLowerCase());
       const [before, after] = await Promise.all([
-        fetch(`https://api.datamuse.com/words?rel_jja=${escaped}&max=2`).then(response => response.ok ? response.json() : []),
-        fetch(`https://api.datamuse.com/words?rel_jjb=${escaped}&max=2`).then(response => response.ok ? response.json() : [])
+        fetch(`https://api.datamuse.com/words?rel_jja=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : []),
+        fetch(`https://api.datamuse.com/words?rel_jjb=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : [])
       ]);
       const phrases = [...before.map(item => `${item.word} ${word}`), ...after.map(item => `${word} ${item.word}`)].slice(0, 3);
-      return Promise.all(phrases.map(async phrase => { try { return { word:phrase, meaning:(await dictionaryTranslate(phrase, targetLanguage)).translatedText }; } catch { return { word:phrase, meaning:phrase }; } }));
+      return Promise.all(phrases.map(async phrase => { try { return { word:phrase, meaning:(await dictionaryTranslate(phrase, targetLanguage, signal)).translatedText }; } catch { return { word:phrase, meaning:phrase }; } }));
     } catch { return []; }
   }
   function renderEnglishDictionary(popup, data, fromCache) {
@@ -287,7 +315,7 @@
     const popupWord = popup?.dataset.word?.toLowerCase();
     const selectedWord = panel?.dataset.lhnDictionaryWord;
     if (popupWord && selectedWord && popupWord !== selectedWord) return;
-    const dictionaryTranslation = popup?.querySelector(".lhn-dict-translation")?.textContent?.trim().normalize("NFC");
+    const dictionaryTranslation = popup?.querySelector(".lhn-dict-translation")?.textContent?.trim().normalize("NFC") || popup?._lhnMainTranslation?.translatedText?.trim().normalize("NFC");
     const noteTextarea = panel && !panel._lhnNoteEdited ? panel.querySelector("textarea") : null;
     if (!noteTextarea || !dictionaryTranslation || noteTextarea.value.trim()) return;
     noteTextarea.value = dictionaryTranslation;
@@ -296,6 +324,7 @@
   function hideDictionaryPopupForNote(popup = dictionaryPopup) {
     if (!popup || popup.dataset.word !== panel?.dataset.lhnDictionaryWord) return;
     popup._lhnHideForNote = true;
+    popup._lhnRelatedController?.abort();
     fillNoteFromDictionary(popup);
     const hasTranslation = !!popup.querySelector(".lhn-dict-translation")?.textContent?.trim();
     popup.remove();
