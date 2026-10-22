@@ -19,9 +19,33 @@
     return out.filter(Boolean);
   }
 
+  async function preferBrowserVoice() {
+    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
+    try {
+      const data = await api.storage.local.get(settingsKey);
+      return data[settingsKey]?.speechVoice === "browser";
+    } catch { return false; }
+  }
+
+  async function playWithBrowserVoice(opts) {
+    for (const chunk of splitChunks(opts.text)) {
+      if (!opts.isActive()) return;
+      await new Promise(resolve => {
+        let finished = false;
+        const done = () => { if (finished) return; finished = true; resolve(); };
+        try { opts.systemSpeak(chunk, opts.lang, done); } catch { done(); }
+      });
+    }
+    if (opts.isActive()) opts.onEnd?.();
+  }
+
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
   //       clearCurrent(), systemSpeak(text, lang, done), onEnd()
   async function play(opts) {
+    if (await preferBrowserVoice()) {
+      await playWithBrowserVoice(opts);
+      return;
+    }
     for (const chunk of splitChunks(opts.text)) {
       if (!opts.isActive()) return;
       let played = false;
