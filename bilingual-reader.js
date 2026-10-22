@@ -388,7 +388,6 @@ const FLAG_SVGS = {
   }
   // ---------- Main-content detection (Readability), shared by Alt+R and Alt+A ----------
   const MC_BLOCK_SEL = "p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt";
-  const MC_CONTAINER_SEL = `${MC_BLOCK_SEL},div,section,article,ul,ol,table,figure,header,footer,aside,nav,form`;
   const MC_SKIP_TAGS = new Set(["NAV","FOOTER","ASIDE","FORM","BUTTON","SCRIPT","STYLE","NOSCRIPT","SVG","LABEL","SELECT","TEXTAREA","IFRAME"]);
   const MC_HARD_BAD_ROLES = /banner|navigation|complementary|contentinfo|search|dialog|alertdialog/;
   const MC_HARD_SKIP = "[role='dialog'],[role='alertdialog'],[aria-modal='true'],dialog,[class*='popup' i],[id*='popup' i],[class*='modal' i],[id*='modal' i]";
@@ -513,10 +512,7 @@ const FLAG_SVGS = {
     style.id = styleId;
     style.textContent = '[data-lhn-reader-debug="read"]{outline:2px solid #16a34a!important;outline-offset:2px!important}[data-lhn-reader-debug="skip"]{outline:2px solid #ef4444!important;outline-offset:2px!important}';
     (document.head || document.documentElement).appendChild(style);
-    const all = mcTextBlocks(root);
-    const rows = all.map(el => {
-      const text = visibleReaderText(el);
-      const reason = mcSkipReason(el, text, mcCustomSelector());
+    const rows = reports.map(({el, text, reason}) => {
       el.dataset.lhnReaderDebug = reason ? "skip" : "read";
       if (reason) el.dataset.lhnReaderDebugReason = reason;
       return {status: reason ? "skip" : "read", reason: reason || "kept", text: text.slice(0, 120), element: el};
@@ -529,8 +525,8 @@ const FLAG_SVGS = {
     const info = mcDetect();
     const custom = mcCustomSelector();
     const matched = info ? mcTextBlocks(document.body).filter(el => {
-      const raw = mcText(el), t = mcNorm(raw);
-      return t && mcMatches(t, info.texts, info.arr) && !mcExcludedBlock(el, raw, custom);
+      const raw = visibleReaderText(el), t = mcNorm(raw);
+      return t && mcMatches(t, info.texts, info.arr) && !mcSkipReason(el, raw, custom);
     }) : [];
     const root = mcChooseRoot(info, matched);
     const analyzed = mcTextBlocks(root).map(el => ({el, text:visibleReaderText(el), reason:mcSkipReason(el, visibleReaderText(el), custom)}));
