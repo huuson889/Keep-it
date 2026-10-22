@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.511. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.512. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống).
@@ -34,6 +34,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.512 - 2026-10-22
+- Watcher refresh Explorer khi có file mới/đổi tên ở D:\Keepit và sau khi xử lý ZIP.
+- File: D:\Keepit\sync-watch.ps1, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy PowerShell parser và gọi SHChangeNotify; chưa kiểm tra Explorer tự sắp xếp.
+- Tiếp theo: xác nhận refresh/sắp xếp trong Explorer khi ZIP mới xuất hiện.
+
 ### v3.4.511 - 2026-10-22
 - Thiết lập phiên bản mới theo quy tắc AGENTS.md và PROJECT.md; không đổi chức năng addon.
 - File: manifest.json, AGENTS.md, PROJECT.md.
