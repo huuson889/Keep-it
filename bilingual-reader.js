@@ -428,6 +428,7 @@ const FLAG_SVGS = {
     if (!el.getClientRects().length) return "not visible";
     const rect = el.getBoundingClientRect();
     if (rect.width >= (window.innerWidth || 0) * 0.92 && rect.height >= (window.innerHeight || 0) * 0.82) return "page-sized reading block";
+    if (el.matches("p") && el.querySelector("em,i") && /\?\s*$/.test(text)) return "";
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     // Keep prose even when its class, links, or date-like text fooled the old filters.
     if (wordCount >= 20) return "";
@@ -617,7 +618,7 @@ const FLAG_SVGS = {
         const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.before(speaker) : block.appendChild(speaker);
       }
       speaker.dataset.readerScope = String(readableBlocks.has(block));
-      speaker.dataset.visibility = settings.speakerIconVisibility;
+      speaker.dataset.visibility = readableBlocks.has(block) ? settings.speakerIconVisibility : "always";
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
     });
   }
@@ -729,8 +730,8 @@ const FLAG_SVGS = {
   function startReading(fromBlock, interruptCurrent = false) {
     if (websiteDisabled) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
-    const nextQueue = readerBlocks(true);
-    if (fromBlock && !nextQueue.includes(fromBlock)) return;
+    let nextQueue = readerBlocks(true);
+    if (fromBlock && !nextQueue.includes(fromBlock)) nextQueue = [fromBlock];
     if (!nextQueue.length) return;
     const cancelPendingSpeech = Boolean(interruptCurrent && (reading || synth?.speaking || synth?.pending || synth?.paused));
     if (interruptCurrent && reading) stopReading();
