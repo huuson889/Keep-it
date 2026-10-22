@@ -426,6 +426,10 @@ const FLAG_SVGS = {
     const hardReason = mcHardExclusion(el, custom);
     if (hardReason) return hardReason;
     if (!el.getClientRects().length) return "not visible";
+    if (!el.matches(MC_BLOCK_SEL) && !el.matches("[role='paragraph']")) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width >= (window.innerWidth || 0) * 0.92 && rect.height >= (window.innerHeight || 0) * 0.82) return "page-sized generic container";
+    }
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     // Keep prose even when its class, links, or date-like text fooled the old filters.
     if (wordCount >= 20) return "";
