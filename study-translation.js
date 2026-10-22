@@ -31,6 +31,22 @@
     return String(payload.responseData?.translatedText || "").trim().normalize("NFC");
   }
 
+  function myMemoryChunks(text, maxBytes = 450) {
+    const encoder = new TextEncoder(), chunks = [];
+    let chunk = "";
+    for (const token of String(text).match(/\s+|\S+/gu) || []) {
+      if (encoder.encode(token).length <= maxBytes && encoder.encode(chunk + token).length <= maxBytes) { chunk += token; continue; }
+      if (chunk.trim()) chunks.push(chunk.trim());
+      chunk = "";
+      for (const character of token) {
+        if (encoder.encode(chunk + character).length > maxBytes && chunk) { chunks.push(chunk); chunk = ""; }
+        chunk += character;
+      }
+    }
+    if (chunk.trim()) chunks.push(chunk.trim());
+    return chunks;
+  }
+
   function create({ browser, fetchImpl = fetch } = {}) {
     const memoryCache = new Map();
     const inFlight = new Map();
@@ -43,14 +59,14 @@
       url.searchParams.set("sl", sourceLanguage);
       url.searchParams.set("tl", targetLanguage);
       url.searchParams.set("q", source);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      const googleController = new AbortController();
+      let googleTimeout, fallbackTimeout;
       try {
         const usage = await browser.runtime.sendMessage({ type: "USAGE_CONSUME", service: "translate" });
         if (!usage?.allowed) throw new Error("Translate daily usage limit reached");
-        let googleError;
+        googleTimeout = setTimeout(() => googleController.abort(), REQUEST_TIMEOUT_MS);
         try {
-          const response = await fetchImpl(url.href, { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
+          const response = await fetchImpl(url.href, { method: "GET", signal: googleController.signal, headers: { Accept: "application/json" } });
           if (response.status === 429) {
             const retryAfter = Number(response.headers?.get?.("Retry-After")) || 0;
             cooldownUntil = Date.now() + Math.max(FAILURE_RETRY_MS, retryAfter * 1000);
@@ -64,21 +80,26 @@
           if (!result) throw new Error("Google Translate returned an empty translation");
           return result;
         } catch (error) {
-          if (controller.signal.aborted) throw error;
-          googleError = error;
           console.warn("Google Translate failed; trying MyMemory fallback", error);
         }
         const fallbackSource = sourceLanguage === "auto" ? "autodetect" : sourceLanguage;
-        const fallbackUrl = new URL("https://api.mymemory.translated.net/get");
-        fallbackUrl.searchParams.set("q", source);
-        fallbackUrl.searchParams.set("langpair", `${fallbackSource}|${targetLanguage}`);
-        const fallbackResponse = await fetchImpl(fallbackUrl.href, { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
-        if (!fallbackResponse.ok) throw new Error(`MyMemory returned HTTP ${fallbackResponse.status}`);
-        const fallbackResult = myMemoryText(await fallbackResponse.json());
-        if (!fallbackResult) throw new Error("MyMemory returned an empty translation");
-        return fallbackResult;
+        const fallbackController = new AbortController();
+        fallbackTimeout = setTimeout(() => fallbackController.abort(), REQUEST_TIMEOUT_MS);
+        const fallbackParts = myMemoryChunks(source);
+        const fallbackResults = await Promise.all(fallbackParts.map(async part => {
+          const fallbackUrl = new URL("https://api.mymemory.translated.net/get");
+          fallbackUrl.searchParams.set("q", part);
+          fallbackUrl.searchParams.set("langpair", `${fallbackSource}|${targetLanguage}`);
+          const response = await fetchImpl(fallbackUrl.href, { method: "GET", signal: fallbackController.signal, headers: { Accept: "application/json" } });
+          if (!response.ok) throw new Error(`MyMemory returned HTTP ${response.status}`);
+          const result = myMemoryText(await response.json());
+          if (!result) throw new Error("MyMemory returned an empty translation");
+          return result;
+        }));
+        return fallbackResults.join(" ").trim().normalize("NFC");
       } finally {
-        clearTimeout(timeout);
+        clearTimeout(googleTimeout);
+        clearTimeout(fallbackTimeout);
       }
     }
 
