@@ -120,6 +120,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-close]").addEventListener("click", stopReading);
   bar.querySelectorAll("[data-voices],[data-speed],[data-settings]").forEach(button => button.addEventListener("click", () => { const name = button.hasAttribute("data-voices") ? "voices" : button.hasAttribute("data-speed") ? "speed" : "settings"; const panel = popover(name), wasOpen = panel.classList.contains("lhn-open"); closePopovers(); panel.classList.toggle("lhn-open", !wasOpen); if (name === "voices" && !wasOpen) { renderVoiceChoices(); bar.querySelector('input[type="search"]').focus({ preventScroll:true }); } }));
   bar.querySelector("[data-autoscroll]").addEventListener("change", event => saveSpeechSetting({ autoScroll:event.target.checked }));
+  bar.querySelector("[data-webfont]").addEventListener("change", event => saveWebsiteFont(event.target.checked));
   bar.querySelector("[data-parabtn]").addEventListener("change", event => saveSpeechSetting({ speakerIconVisibility:event.target.checked ? "always" : "hover" }));
   
   bar.querySelector("[data-autolang]").addEventListener("change", event => saveSpeechSetting({ autoDetectVoice:event.target.checked }));
@@ -127,6 +128,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
   bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
   bar.querySelector("[data-dashboard]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-br-settings]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-account]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
   bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
@@ -193,6 +195,10 @@ const FLAG_SVGS = {
     setAttr("[data-hide-banner]", "aria-label", "readerPopupHideHint");
     setText('[data-lhn-br-popover="voices"] .lhn-br-pop-title', "readerPopupSelectVoice");
     setText('[data-lhn-br-popover="settings"] .lhn-br-pop-title', "readerPopupSettings");
+    setText("[data-br-settings-label]", "readerPopupBilingualSettings");
+    setText("[data-webfont-label]", "readerPopupCustomWebsiteFont");
+    setAttr("[data-br-settings]", "aria-label", "readerPopupBilingualSettings");
+    bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     const speedTitle = popover("speed").querySelector(".lhn-br-pop-title"); if (speedTitle?.firstChild) speedTitle.firstChild.textContent = `${popupText("readerPopupSpeed") } `;
     setAttr('input[type="search"]', "placeholder", "readerPopupSearch"); setAttr('input[type="search"]', "aria-label", "readerPopupSearch");
     setAttr(".lhn-br-range", "aria-label", "readerPopupSpeed");
