@@ -93,8 +93,12 @@
   function isAddonElement(element) { return Boolean(element.closest?.('[id^="lhn-"],.lhn-bilingual-card,.lhn-bilingual-speaker')); }
   function inspectDarkReaderLayer(element) {
     if (!(element instanceof Element) || isAddonElement(element)) return;
-    const position = getComputedStyle(element).position;
-    if (position === "fixed" || position === "sticky") element.setAttribute("data-lhn-dark-reader-layer", "true");
+    const computed = getComputedStyle(element);
+    const position = computed.position, zIndex = computed.zIndex;
+    const positionedOverlay = position === "absolute" && zIndex !== "auto" && Number(zIndex) > 0;
+    let semanticOverlay = element.matches('[role="dialog"],[role="listbox"],[role="menu"],[role="tooltip"],[aria-modal="true"]') || (element.tagName === "DIALOG" && element.open);
+    try { semanticOverlay ||= element.matches(":popover-open"); } catch {}
+    if (position === "fixed" || position === "sticky" || positionedOverlay || semanticOverlay) element.setAttribute("data-lhn-dark-reader-layer", "true");
     else element.removeAttribute("data-lhn-dark-reader-layer");
   }
   function scanDarkReaderLayers(root) {
