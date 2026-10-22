@@ -17,13 +17,13 @@
 - Với mỗi yêu cầu, nếu chưa hiểu rõ thì hỏi lại trước khi sửa.
 
 ## Quy trình sau khi sửa
-1. Tăng version trong manifest.json (ví dụ 3.4.504 -> 3.4.505).
+1. Với thay đổi phát hành của Codex/Claude, tăng version trong manifest.json. Với file được lưu trực tiếp trong repo, sync-watch.ps1 tự commit và cập nhật lại ZIP của đúng version hiện tại, không tăng version.
 2. Cập nhật PROJECT.md:
    - Thêm một mục mới vào ĐẦU phần "Nhật ký nâng cấp" (tối đa khoảng 5 dòng): đổi gì, file nào, đã test chưa (ghi rõ "đã chạy ..." hoặc "chưa chạy"), việc tiếp theo.
    - Sửa đè "Trạng thái" và "Việc đang mở" cho đúng với bản mới. Việc xong thì xóa khỏi "Việc đang mở".
    - Nhật ký chỉ giữ khoảng 10 bản gần nhất; mục cũ hơn xóa (Git đã lưu).
 3. Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".
-4. Đóng gói zip vào D:\Keepit với tên: Keepit - Addon and Extension-v<version>.zip
+4. Đóng gói zip phát hành vào D:\Keepit với tên: Keepit - Addon and Extension-v<version>.zip
    - TÊN FILE BẮT BUỘC đúng từng ký tự: "Keepit - Addon and Extension-v<version>.zip", ví dụ "Keepit - Addon and Extension-v3.4.513.zip". Giữ dấu cách và dấu gạch ngang như trên, version viết có dấu chấm. Không đổi dấu cách thành gạch dưới, không đổi dấu chấm thành gạch dưới, không thêm hay bớt chữ.
    - manifest.json nằm ở gốc zip, không kèm thư mục .git.
    - Zip PHẢI chứa AGENTS.md và PROJECT.md bản mới nhất.
@@ -31,6 +31,6 @@
 5. Báo lại: file đã đổi, lỗi đã sửa, kết quả kiểm tra thực tế.
 
 ## Không được làm
-- Không sửa hoặc xóa zip đã có trong D:\Keepit. Chỉ tạo zip mới.
+- Không sửa hoặc xóa ZIP version cũ. Ngoại lệ: watcher được phép thay thế ZIP của version hiện hành sau mỗi đợt lưu trong repo để Claude nhận được nội dung mới; giữ nguyên version.
 - Không sửa thư mục nguồn khi có zip mới đang được đồng bộ (chờ người dùng báo xong).
 - Không commit file tạm, file log, hay thư mục .git vào zip.
