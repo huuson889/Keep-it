@@ -821,7 +821,6 @@ async function load() {
   $("bilingualAutoScroll").checked = bilingualReaderSettings.autoScroll !== false;
   $("bilingualDarkReader").checked = bilingualReaderSettings.darkReader === true;
   $("bilingualDarkReaderTheme").value = ["default", "dracula"].includes(bilingualReaderSettings.darkReaderTheme) ? bilingualReaderSettings.darkReaderTheme : "default";
-  $("bilingualDarkReaderTheme").value = ["default", "dracula"].includes(bilingualReaderSettings.darkReaderTheme) ? bilingualReaderSettings.darkReaderTheme : "default";
   $("bilingualEnableTTS").checked = bilingualReaderSettings.enableTTS !== false;
   $("bilingualSpeakerIconVisibility").value = ["always", "hover", "reading"].includes(bilingualReaderSettings.speakerIconVisibility) ? bilingualReaderSettings.speakerIconVisibility : "hover";
   $("bilingualExcludeSelectors").value = Array.isArray(bilingualReaderSettings.excludeSelectors) ? bilingualReaderSettings.excludeSelectors.join("\n") : String(bilingualReaderSettings.excludeSelectors || "");
