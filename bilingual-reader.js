@@ -39,6 +39,8 @@ const FLAG_SVGS = {
     :hover>.lhn-bilingual-speaker[data-visibility="hover"]{visibility:visible;opacity:1;pointer-events:auto}
     .lhn-bilingual-speaker[data-visibility="reading"]{display:none}
     .lhn-bilingual-speaker[data-visibility="reading"][data-reading="true"]{display:inline-flex}
+    :hover>.lhn-bilingual-speaker[data-visibility="reading"]{display:inline-flex;visibility:visible;opacity:1;pointer-events:auto}
+    :hover>.lhn-bilingual-speaker[data-reader-scope="false"]{display:inline-flex!important;visibility:visible;opacity:1;pointer-events:auto}
     .lhn-bilingual-card{display:block;margin:8px 0;padding:10px 14px;border-left:4px solid var(--lhn-br-accent);background:rgba(var(--lhn-br-accent-rgb),.04);border-radius:0 8px 8px 0;font-family:var(--lhn-br-font);font-size:max(16px,var(--translation-scale,80%))!important;line-height:1.6;color:var(--lhn-br-translation-color,#2d3748);font-weight:var(--lhn-br-translation-weight,400);box-shadow:0 1px 3px rgba(0,0,0,.02);animation:lhnBrFade .25s ease-in-out}
     .lhn-bilingual-web-font{font-family:var(--lhn-br-web-font)!important}
     .lhn-bilingual-reading{outline:2px solid var(--lhn-br-accent)!important;outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08)!important;border-radius:6px}
@@ -296,7 +298,10 @@ const FLAG_SVGS = {
     if (!el || excluded.has(el.tagName) || el.closest("[data-lhn-bilingual-ui],.lhn-bilingual-card,#lhn-bilingual-reading-bar,.lhn-bilingual-speaker,button,select,label")) return false;
     const computed = getComputedStyle(el);
     if (computed.display === "inline" || computed.display === "none" || computed.visibility === "hidden" || !el.getClientRects().length) return false;
-    return Array.from(el.childNodes).some(node => node.nodeType === 3 && node.textContent.trim().length >= 2);
+    const hasDirectText = Array.from(el.childNodes).some(node => node.nodeType === 3 && node.textContent.trim().length >= 2);
+    const semanticTextBlock = /^(P|H[1-6]|LI|BLOCKQUOTE|FIGCAPTION|PRE|TD|DD|DT)$/.test(el.tagName) || el.getAttribute("role") === "paragraph";
+    const genericLeafTextBlock = /^(DIV|SECTION)$/.test(el.tagName) && !el.querySelector("p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt,div,section,[role='paragraph']");
+    return hasDirectText || ((semanticTextBlock || genericLeafTextBlock) && el.textContent.trim().length >= 2);
   }
   function blocks(root = document.body) { return Array.from(root?.querySelectorAll("*") || []).filter(isTextBlock); }
   function excludedPageContentSelector() {
