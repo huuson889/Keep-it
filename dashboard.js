@@ -808,7 +808,7 @@ async function load() {
   bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...(settingsData[BILINGUAL_READER_SETTINGS_KEY] || {}) };
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
-  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
+  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey }, lhnDarkReaderSettings:{ enabled:bilingualReaderSettings.darkReader === true } }).catch(() => {});
   $("bilingualTransFont").value = bilingualReaderSettings.fontFamily;
   $("bilingualWebFont").value = bilingualReaderSettings.webFontFamily || "";
   $("bilingualAccentColor").value = /^#[0-9a-f]{6}$/i.test(bilingualReaderSettings.accentColor) ? bilingualReaderSettings.accentColor : "#9c27b0";
@@ -2379,6 +2379,7 @@ async function saveBilingualReaderSettings(patch) {
   $("bilingualTranslationCustomColor").parentElement.classList.toggle("is-custom-selected", bilingualReaderSettings.translationTextColor === "custom");
   try {
     const values = { [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings };
+    values.lhnDarkReaderSettings = { enabled:bilingualReaderSettings.darkReader === true };
     if (Object.hasOwn(patch, "webFontFamily")) {
       const fontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
       const fontKey = fontKeys[patch.webFontFamily] || "auto";
