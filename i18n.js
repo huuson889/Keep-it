@@ -119,7 +119,17 @@
   MESSAGES.ko.autoHighlight = "자동 하이라이트";
   MESSAGES.en.settingsAutoHighlightHelp = "Save the highlight when you click outside the popup.";
   MESSAGES.vi.settingsAutoHighlightHelp = "Tự lưu phần tô sáng khi bạn bấm ra ngoài popup.";
-  MESSAGES.ko.settingsAutoHighlightHelp = "팝업 바깥을 클릭하면 하이라이트를 자동 저장합니다.";  function detectLanguage() {
+  MESSAGES.ko.settingsAutoHighlightHelp = "팝업 바깥을 클릭하면 하이라이트를 자동 저장합니다.";
+  MESSAGES.en.errorLogTitle = "Error log";
+  MESSAGES.vi.errorLogTitle = "Nhật ký lỗi";
+  MESSAGES.ko.errorLogTitle = "오류 로그";
+  MESSAGES.en.errorLogHelp = "Export up to 200 technical entries. Page URLs and selected text are not included.";
+  MESSAGES.vi.errorLogHelp = "Xuất tối đa 200 mục kỹ thuật. Không gồm URL trang hoặc văn bản được chọn.";
+  MESSAGES.ko.errorLogHelp = "최대 200개의 기술 로그를 내보냅니다. 페이지 URL과 선택한 텍스트는 포함되지 않습니다.";
+  MESSAGES.en.exportErrorLog = "Export log";
+  MESSAGES.vi.exportErrorLog = "Xuất log";
+  MESSAGES.ko.exportErrorLog = "로그 내보내기";
+  function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";

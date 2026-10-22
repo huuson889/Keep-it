@@ -35,7 +35,8 @@
     const allowedSeverities = new Set(["error", "warning"]);
     const allowedCodes = new Set(["translation.mymemory", "translation.google", "translation", "speech", "storage", "notes", "app.error", "app.warning"]);
     if (!entry || !allowedComponents.has(entry.component) || !allowedSeverities.has(entry.severity) || !allowedCodes.has(entry.code)) return null;
-    return { timestamp: new Date().toISOString(), component: entry.component, severity: entry.severity, code: entry.code };
+    const timestamp = typeof entry.timestamp === "string" && Number.isFinite(Date.parse(entry.timestamp)) ? new Date(entry.timestamp).toISOString() : new Date().toISOString();
+    return { timestamp, component: entry.component, severity: entry.severity, code: entry.code };
   }
 
   function append(entry) {
@@ -72,10 +73,8 @@
     };
   }
 
-  globalThis.addEventListener?.("error", event => {
-    if (event?.error || event?.message) record([event.error || event.message], "error");
-  });
-  globalThis.addEventListener?.("unhandledrejection", event => {
-    if (event?.reason) record([event.reason], "error");
-  });
+  if (componentName() !== "content") {
+    globalThis.addEventListener?.("error", event => { if (event?.error || event?.message) record([event.error || event.message], "error"); });
+    globalThis.addEventListener?.("unhandledrejection", event => { if (event?.reason) record([event.reason], "error"); });
+  }
 })();
