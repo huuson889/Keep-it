@@ -390,7 +390,7 @@ const FLAG_SVGS = {
   const MC_BLOCK_SEL = "p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt";
   const MC_SKIP_TAGS = new Set(["NAV","FOOTER","ASIDE","FORM","BUTTON","SCRIPT","STYLE","NOSCRIPT","SVG","LABEL","SELECT","TEXTAREA","IFRAME"]);
   const MC_HARD_BAD_ROLES = /banner|navigation|complementary|contentinfo|search|dialog|alertdialog/;
-  const MC_HARD_SKIP = "[role='dialog'],[role='alertdialog'],[aria-modal='true'],dialog,[class*='popup' i],[id*='popup' i],[class*='modal' i],[id*='modal' i]";
+  const MC_HARD_SKIP = "[role='dialog'],[role='alertdialog'],[aria-modal='true'],dialog,#rhs,[class*='popup' i],[id*='popup' i],[class*='modal' i],[id*='modal' i]";
   const MC_DEBUG_KEY = "lhn-bilingual-reader-debug";
   const MC_BAD_TOKENS = new Set(["date","time","byline","meta","author","share","social","comment","comments","tag","tags","breadcrumb","ad","ads","advert","banner","promo","sponsor","newsletter","subscribe","cookie","cookies","popup","modal","related","recommend","trending","widget","sidebar","toolbar","paywall","menu","nav"]);
   const MC_BAD_TEXT = ["xem thêm","đọc thêm","chia sẻ","bình luận","quảng cáo","tin liên quan","tin cùng chuyên mục","có thể bạn quan tâm","đăng ký","theo dõi chúng tôi","read more","related articles","share","advertisement","subscribe","sign up"];
@@ -485,7 +485,13 @@ const FLAG_SVGS = {
   }
   function mcGoogleResultsRoot() {
     if (!/(^|\.)google\./i.test(location.hostname) || !/^\/search\b/i.test(location.pathname)) return null;
-    for (const selector of ["#center_col", "#rso", "#main", "main", "[role='main']"]) {
+    const center = document.querySelector("#center_col");
+    const aiOverview = document.querySelector("[data-attrid='AIOverview'],[data-attrid*='AIOverview' i]");
+    if (aiOverview && center && !center.contains(aiOverview)) {
+      const combined = aiOverview.closest("#main,main,[role='main']") || document.querySelector("#main");
+      if (combined && combined.getClientRects().length) return combined;
+    }
+    for (const selector of ["#center_col", "#main", "#rso", "main", "[role='main']"]) {
       const el = document.querySelector(selector);
       if (el && el.getClientRects().length && !mcIsOwn(el)) return el;
     }
