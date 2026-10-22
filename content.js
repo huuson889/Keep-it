@@ -1272,6 +1272,7 @@
     clearTimeout(sidebarToastTimer);
     sidebarToastTimer = setTimeout(() => { toast.classList.remove("is-visible"); sidebarToastTimer = setTimeout(() => { if (sidebarToastRender === renderToast) sidebarToastRender = null; toast.remove(); }, 220); }, 1800);
   }
+  document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
   function syncSidebarEdgeToggle() {
     if (!sidebarEdgeToggle) {
       sidebarEdgeToggle = document.createElement("button"); sidebarEdgeToggle.id = "lhn-sidebar-edge-toggle"; sidebarEdgeToggle.type = "button";
