@@ -78,9 +78,6 @@
   MESSAGES.en.bilingualAccent = "Accent color"; MESSAGES.vi.bilingualAccent = "Màu nhấn"; MESSAGES.ko.bilingualAccent = "강조 색상";
   MESSAGES.en.bilingualSkipSame = "Skip same language"; MESSAGES.vi.bilingualSkipSame = "Bỏ qua cùng ngôn ngữ"; MESSAGES.ko.bilingualSkipSame = "같은 언어 건너뛰기";
   MESSAGES.en.bilingualReading = "Reader"; MESSAGES.vi.bilingualReading = "Trình đọc"; MESSAGES.ko.bilingualReading = "리더";
-  MESSAGES.en.bilingualDarkReader = "Dark reader"; MESSAGES.vi.bilingualDarkReader = "Giao diện trang tối"; MESSAGES.ko.bilingualDarkReader = "웹페이지 다크 모드";
-  MESSAGES.en.bilingualDarkReaderTheme = "Dark reader theme"; MESSAGES.vi.bilingualDarkReaderTheme = "Giao diện tối"; MESSAGES.ko.bilingualDarkReaderTheme = "다크 리더 테마";
-  MESSAGES.en.bilingualDarkReaderDefault = "Default"; MESSAGES.vi.bilingualDarkReaderDefault = "Mặc định"; MESSAGES.ko.bilingualDarkReaderDefault = "기본";
   MESSAGES.en.bilingualAutoScroll = "Auto-scroll while reading"; MESSAGES.vi.bilingualAutoScroll = "Tự cuộn khi đọc"; MESSAGES.ko.bilingualAutoScroll = "읽는 동안 자동 스크롤";
   MESSAGES.en.bilingualEnableTTS = "Enable text to speech"; MESSAGES.vi.bilingualEnableTTS = "Bật đọc văn bản thành tiếng"; MESSAGES.ko.bilingualEnableTTS = "텍스트 음성 변환 사용";
   MESSAGES.en.bilingualSpeakerIcon = "Show reading icon"; MESSAGES.vi.bilingualSpeakerIcon = "Hiện icon đọc"; MESSAGES.ko.bilingualSpeakerIcon = "읽기 아이콘 표시";

@@ -8,7 +8,7 @@ const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
-const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", darkReader:false, darkReaderTheme:"default", excludeSelectors:[] });
+const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", excludeSelectors:[] });
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
@@ -808,7 +808,7 @@ async function load() {
   bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...(settingsData[BILINGUAL_READER_SETTINGS_KEY] || {}) };
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
-  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey }, lhnDarkReaderSettings:{ enabled:bilingualReaderSettings.darkReader === true, theme:bilingualReaderSettings.darkReaderTheme || "default" } }).catch(() => {});
+  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
   $("bilingualTransFont").value = bilingualReaderSettings.fontFamily;
   $("bilingualWebFont").value = bilingualReaderSettings.webFontFamily || "";
   $("bilingualAccentColor").value = /^#[0-9a-f]{6}$/i.test(bilingualReaderSettings.accentColor) ? bilingualReaderSettings.accentColor : "#9c27b0";
@@ -819,8 +819,6 @@ async function load() {
   $("bilingualTranslationFontScaleValue").textContent = `${bilingualReaderSettings.translationFontScale}%`;
   $("bilingualSkipSame").checked = bilingualReaderSettings.skipSameLang !== false;
   $("bilingualAutoScroll").checked = bilingualReaderSettings.autoScroll !== false;
-  $("bilingualDarkReader").checked = bilingualReaderSettings.darkReader === true;
-  $("bilingualDarkReaderTheme").value = ["default", "dracula"].includes(bilingualReaderSettings.darkReaderTheme) ? bilingualReaderSettings.darkReaderTheme : "default";
   $("bilingualEnableTTS").checked = bilingualReaderSettings.enableTTS !== false;
   $("bilingualSpeakerIconVisibility").value = ["always", "hover", "reading"].includes(bilingualReaderSettings.speakerIconVisibility) ? bilingualReaderSettings.speakerIconVisibility : "hover";
   $("bilingualExcludeSelectors").value = Array.isArray(bilingualReaderSettings.excludeSelectors) ? bilingualReaderSettings.excludeSelectors.join("\n") : String(bilingualReaderSettings.excludeSelectors || "");
@@ -2380,7 +2378,6 @@ async function saveBilingualReaderSettings(patch) {
   $("bilingualTranslationCustomColor").parentElement.classList.toggle("is-custom-selected", bilingualReaderSettings.translationTextColor === "custom");
   try {
     const values = { [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings };
-    values.lhnDarkReaderSettings = { enabled:bilingualReaderSettings.darkReader === true, theme:bilingualReaderSettings.darkReaderTheme || "default" };
     if (Object.hasOwn(patch, "webFontFamily")) {
       const fontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
       const fontKey = fontKeys[patch.webFontFamily] || "auto";
@@ -2455,8 +2452,6 @@ $("resetBilingualTranslationFontScale").addEventListener("click", () => {
 });
 $("bilingualSkipSame").addEventListener("change", event => saveBilingualReaderSettings({ skipSameLang:event.target.checked }));
 $("bilingualAutoScroll").addEventListener("change", event => saveBilingualReaderSettings({ autoScroll:event.target.checked }));
-$("bilingualDarkReader").addEventListener("change", event => saveBilingualReaderSettings({ darkReader:event.target.checked }));
-$("bilingualDarkReaderTheme").addEventListener("change", event => saveBilingualReaderSettings({ darkReaderTheme:event.target.value }));
 $("bilingualEnableTTS").addEventListener("change", event => saveBilingualReaderSettings({ enableTTS:event.target.checked }));
 $("bilingualSpeakerIconVisibility").addEventListener("change", event => saveBilingualReaderSettings({ speakerIconVisibility:event.target.value }));
 $("bilingualExcludeSelectors").addEventListener("change", event => saveBilingualReaderSettings({ excludeSelectors:event.target.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean) }));
