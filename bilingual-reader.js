@@ -390,7 +390,9 @@ const FLAG_SVGS = {
   const MC_BLOCK_SEL = "p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt";
   const MC_CONTAINER_SEL = `${MC_BLOCK_SEL},div,section,article,ul,ol,table,figure,header,footer,aside,nav,form`;
   const MC_SKIP_TAGS = new Set(["NAV","FOOTER","ASIDE","FORM","BUTTON","SCRIPT","STYLE","NOSCRIPT","SVG","LABEL","SELECT","TEXTAREA","IFRAME"]);
-  const MC_BAD_ROLES = /banner|navigation|complementary|contentinfo|search/;
+  const MC_HARD_BAD_ROLES = /banner|navigation|complementary|contentinfo|search|dialog|alertdialog/;
+  const MC_HARD_SKIP = "[role='dialog'],[role='alertdialog'],[aria-modal='true'],dialog,[class*='popup' i],[id*='popup' i],[class*='modal' i],[id*='modal' i]";
+  const MC_DEBUG_KEY = "lhn-bilingual-reader-debug";
   const MC_BAD_TOKENS = new Set(["date","time","byline","meta","author","share","social","comment","comments","tag","tags","breadcrumb","ad","ads","advert","banner","promo","sponsor","newsletter","subscribe","cookie","cookies","popup","modal","related","recommend","trending","widget","sidebar","toolbar","paywall","menu","nav"]);
   const MC_BAD_TEXT = ["xem thêm","đọc thêm","chia sẻ","bình luận","quảng cáo","tin liên quan","tin cùng chuyên mục","có thể bạn quan tâm","đăng ký","theo dõi chúng tôi","read more","related articles","share","advertisement","subscribe","sign up"];
   const MC_OWN = ".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,[data-lhn-bilingual-ui],#lhn-panel,#lhn-sidebar,#lhn-sidebar-edit-dialog";
@@ -405,36 +407,52 @@ const FLAG_SVGS = {
     const cls = typeof el.className === "string" ? el.className : "";
     return `${el.id || ""} ${cls}`.toLowerCase().split(/[\s_\-]+/).some(t => MC_BAD_TOKENS.has(t));
   }
-  function mcAncestorExcluded(el) {
-    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
-      if (n.tagName === "ARTICLE" || n.tagName === "MAIN") return false;
-      if (MC_SKIP_TAGS.has(n.tagName)) return true;
+  function mcHardExclusion(el, custom) {
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      if (mcIsOwn(n)) return "extension UI";
+      if (MC_SKIP_TAGS.has(n.tagName)) return `inside ${n.tagName.toLowerCase()}`;
       const role = n.getAttribute("role");
-      if (role && MC_BAD_ROLES.test(role)) return true;
-      if (mcBadToken(n)) return true;
+      if (role && MC_HARD_BAD_ROLES.test(role)) return `inside role=${role}`;
+      if (n.matches?.(MC_HARD_SKIP)) return "inside popup/dialog";
+      if (custom && n.matches?.(custom)) return "custom excluded selector";
+      if (["sidebar","rightbar","right-column","col-right","most-read"].some(token => `${n.id || ""} ${typeof n.className === "string" ? n.className : ""}`.toLowerCase().includes(token))) return "sidebar";
     }
-    return false;
+    return "";
   }
   function mcDateLike(t) {
     return t.length < 60 && (/\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/.test(t) || /\d{1,2}\s+th[aá]ng\s*\d{1,2}/i.test(t) || /\d{1,2}:\d{2}/.test(t));
   }
-  function mcExcludedBlock(el, text, custom) {
-    if (mcBadToken(el) || mcAncestorExcluded(el)) return true;
-    if (custom && el.closest(custom)) return true;
-    if (el.querySelector("time") && text.length < 160) return true;
+  function mcSkipReason(el, text, custom) {
+    if (!text) return "empty text";
+    const hardReason = mcHardExclusion(el, custom);
+    if (hardReason) return hardReason;
+    if (!el.getClientRects().length) return "not visible";
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    // Keep prose even when its class, links, or date-like text fooled the old filters.
+    if (wordCount >= 20) return "";
+    if (mcBadToken(el)) return "noise class/id token";
+    if (el.querySelector("time")) return "contains time element";
     const lower = mcNorm(text);
-    if (text.length < 40 && MC_BAD_TEXT.some(b => lower === b || lower.startsWith(b + " ") || lower.startsWith(b + ":"))) return true;
-    if (mcDateLike(text)) return true;
-    if (text.length < 150 && /^(published|updated|cập nhật|đăng lúc)\b/i.test(text)) return true;
-    if (text.length < 200) {
+    if (MC_BAD_TEXT.some(b => lower === b || lower.startsWith(b + " ") || lower.startsWith(b + ":"))) return "known navigation/promo text";
+    if (mcDateLike(text)) return "date/time text";
+    if (/^(published|updated|cập nhật|đăng lúc)\b/i.test(text)) return "publication metadata";
+    {
       const linkLen = [...el.querySelectorAll("a")].reduce((sum, a) => sum + (a.textContent || "").trim().length, 0);
-      if (linkLen > 0 && linkLen / text.length > 0.6) return true;
+      if (linkLen > 0 && linkLen / text.length > 0.6) return "mostly link text";
     }
-    return el.getClientRects().length === 0;
+    return "";
   }
-  const mcHasDirectText = el => [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim().length >= 2);
-  const mcIsLeaf = el => el.tagName === "DIV" ? mcHasDirectText(el) && !el.querySelector(MC_CONTAINER_SEL) : !el.querySelector(MC_BLOCK_SEL);
-  const mcCandidates = root => [...root.querySelectorAll(`${MC_BLOCK_SEL},div`)].filter(el => !mcIsOwn(el) && mcIsLeaf(el));
+  const mcHasBlockChild = el => el.querySelector(MC_BLOCK_SEL);
+  function mcTextBlocks(root) {
+    if (!root) return [];
+    const selector = `${MC_BLOCK_SEL},div[role='paragraph'],div`;
+    const candidates = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
+    return candidates.filter(el => {
+      if (mcIsOwn(el) || !visibleReaderText(el)) return false;
+      if (el.matches("div")) return !mcHasBlockChild(el) && !el.querySelector("div");
+      return !mcHasBlockChild(el);
+    });
+  }
   function mcCustomSelector() {
     const values = Array.isArray(settings.excludeSelectors) ? settings.excludeSelectors : String(settings.excludeSelectors || "").split(/\r?\n/);
     return values.map(v => String(v).trim()).filter(Boolean).filter(sel => { try { document.querySelector(sel); return true; } catch { return false; } }).join(",");
@@ -466,25 +484,60 @@ const FLAG_SVGS = {
     if (article.excerpt) { const ex = mcNorm(article.excerpt); if (ex) texts.add(ex); }
     return { title: article.title || "", texts, arr: [...texts] };
   }
+  function mcGoogleResultsRoot() {
+    if (!/(^|\.)google\./i.test(location.hostname) || !/^\/search\b/i.test(location.pathname)) return null;
+    for (const selector of ["#center_col", "#rso", "#main", "main", "[role='main']"]) {
+      const el = document.querySelector(selector);
+      if (el && el.getClientRects().length && !mcIsOwn(el)) return el;
+    }
+    return null;
+  }
+  function mcChooseRoot(info, matched) {
+    const googleRoot = mcGoogleResultsRoot();
+    if (googleRoot) return googleRoot;
+    if (info && matched.length) {
+      for (const selector of ["[itemprop='articleBody']", "article", "main", "[role='main']", ".article-body", ".article-content", ".post-content", ".entry-content"]) {
+        const ancestor = matched[0].closest(selector);
+        if (ancestor && matched.every(block => ancestor.contains(block))) return ancestor;
+      }
+    }
+    return readerRoot();
+  }
+  function mcUpdateDebug(root, reports) {
+    const enabled = (() => { try { return localStorage.getItem(MC_DEBUG_KEY) === "1"; } catch { return false; } })();
+    const styleId = "lhn-bilingual-reader-debug-style";
+    document.getElementById(styleId)?.remove();
+    document.querySelectorAll("[data-lhn-reader-debug]").forEach(el => { delete el.dataset.lhnReaderDebug; delete el.dataset.lhnReaderDebugReason; });
+    if (!enabled) return;
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = '[data-lhn-reader-debug="read"]{outline:2px solid #16a34a!important;outline-offset:2px!important}[data-lhn-reader-debug="skip"]{outline:2px solid #ef4444!important;outline-offset:2px!important}';
+    (document.head || document.documentElement).appendChild(style);
+    const all = mcTextBlocks(root);
+    const rows = all.map(el => {
+      const text = visibleReaderText(el);
+      const reason = mcSkipReason(el, text, mcCustomSelector());
+      el.dataset.lhnReaderDebug = reason ? "skip" : "read";
+      if (reason) el.dataset.lhnReaderDebugReason = reason;
+      return {status: reason ? "skip" : "read", reason: reason || "kept", text: text.slice(0, 120), element: el};
+    });
+    console.info("Bilingual Reader debug: green = read, red = skipped; set localStorage key 'lhn-bilingual-reader-debug' to '0' and reload to turn off.");
+    console.table(rows);
+  }
   let mainBlocksCache = [], mainBlocksAt = 0, mainBlocksDirty = true;
   function computeMainBlocks() {
     const info = mcDetect();
-    if (!info) return null;
     const custom = mcCustomSelector();
-    const title = mcFindTitle(info.title);
-    const matched = mcCandidates(document.body).filter(el => {
+    const matched = info ? mcTextBlocks(document.body).filter(el => {
       const raw = mcText(el), t = mcNorm(raw);
       return t && mcMatches(t, info.texts, info.arr) && !mcExcludedBlock(el, raw, custom);
-    });
-    let root = document.body;
-    if (matched.length) for (let n = matched[0].parentElement; n && n !== document.body; n = n.parentElement) { if (n.tagName === "ARTICLE" || n.tagName === "MAIN") { root = n; break; } }
-    const extra = root === document.body ? [] : mcCandidates(root).filter(el => {
-      if (matched.includes(el)) return false;
-      const raw = mcText(el);
-      return raw.length >= 40 && !/^H[1-6]$/.test(el.tagName) && !mcExcludedBlock(el, raw, custom);
-    });
-    const result = [...matched, ...extra];
-    if (title && !mcIsOwn(title) && mcText(title).length > 3 && !result.includes(title)) result.push(title);
+    }) : [];
+    const root = mcChooseRoot(info, matched);
+    const analyzed = mcTextBlocks(root).map(el => ({el, text:visibleReaderText(el), reason:mcSkipReason(el, visibleReaderText(el), custom)}));
+    mcUpdateDebug(root, analyzed);
+    const result = analyzed.filter(item => !item.reason).map(item => item.el);
+    const title = info?.title ? mcFindTitle(info.title) : null;
+    if (title && root.contains(title) && !mcIsOwn(title) && mcText(title).length > 3 && !result.includes(title)) result.push(title);
     return result.sort((a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
   }
   // Alt+R and Alt+A both read from this list. Alt+D uses blocks() (whole page).
