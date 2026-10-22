@@ -101,7 +101,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar .lhn-br-toggle:checked{background:var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-toggle:after{content:"";position:absolute;width:19px;height:19px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .15s}
     #lhn-bilingual-reading-bar .lhn-br-toggle:checked:after{transform:translateX(19px)}
-    #lhn-bilingual-reading-bar .lhn-br-pop-foot{padding:10px 14px;background:#f8fafc;border-top:1px solid #f1f5f9;color:#64748b;font-size:11px}
+    #lhn-bilingual-reading-bar .lhn-br-pop-foot{padding:10px 16px;background:#f8fafc;border-top:1px solid #f1f5f9;color:#64748b;font-size:11px}
     #lhn-bilingual-reading-bar.lhn-dark{background:rgba(30,41,59,.97);color:#e2e8f0;border-color:#475569}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-time{color:#94a3b8}
     #lhn-bilingual-reading-bar.lhn-dark [data-lhn-br-popover]{background:#1e293b!important;color:#e2e8f0;border-color:#475569}
