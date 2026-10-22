@@ -104,9 +104,6 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice small{color:#94a3b8}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice.lhn-selected{background:#334155}
     @keyframes lhnBrFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes lhnBrSlide{from{opacity:0}to{opacity:1}}@keyframes lhnBrButtonPress{35%{transform:scale(.84);background:rgba(148,163,184,.38)}100%{transform:scale(1)}}
-    .lhn-br-dark-toggle{border:0;background:transparent;cursor:pointer;font-size:15px;line-height:1;padding:6px;border-radius:999px;min-width:32px;height:32px;color:inherit}
-    .lhn-br-dark-toggle:hover{background:rgba(148,163,184,.18)}
-    .lhn-br-dark-toggle[aria-pressed="true"]{background:rgba(148,163,184,.25)}
   `;
   (document.head || document.documentElement).appendChild(style);
   const bar = document.createElement("div");
@@ -142,15 +139,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-autolang]").addEventListener("change", event => saveSpeechSetting({ autoDetectVoice:event.target.checked }));
   bar.querySelector("[data-speed-step]").addEventListener("change", event => { const value = normalizeSpeedStep(event.target.value); event.target.value = value; saveSpeechSetting({ speechSpeedStep:value }); renderPopupText(); });
   bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
-  const makeDarkToggle = () => {
-    const btn = document.createElement("button");
-    btn.type = "button"; btn.className = "lhn-br-dark-toggle"; btn.textContent = "🌙";
-    btn.title = "Dark mode"; btn.setAttribute("aria-label", "Dark mode");
-    btn.addEventListener("click", event => { event.stopPropagation(); saveAddonThemePreference(bar.classList.contains("lhn-dark") ? "light" : "dark"); });
-    return btn;
-  };
-  bar.querySelector("[data-settings]").before(makeDarkToggle());
-  bar.querySelector('[data-lhn-br-popover="voices"]').prepend(makeDarkToggle());
+
   bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
   bar.querySelector("[data-dashboard]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-account]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
@@ -193,7 +182,6 @@ const FLAG_SVGS = {
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
     bar.querySelector("[data-theme]").checked = isDark;
-    bar.querySelectorAll(".lhn-br-dark-toggle").forEach(btn => btn.setAttribute("aria-pressed", String(isDark)));
   }
   function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
   function popupText(key) { return globalThis.LHN_I18N?.t?.(key, {}, displayLang) || key; }
