@@ -157,6 +157,7 @@ function refreshDashboardSettings() {
   renderPronunciationDictionary();
   renderDisabledWebsiteList();
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
+  $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight !== false;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
   $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
@@ -2295,6 +2296,7 @@ function saveDashboardTranslationMode(settingKey, enabled) {
   return saveDashboardSettings(updates);
 }
 $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslationMode("showOnSelect", event.target.checked));
+$("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));
 $("settingsTranslateIconEnabled").addEventListener("change", event => saveDashboardTranslationMode("translateIconEnabled", event.target.checked));
 $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDashboardTranslationMode("translationPopupEnabled", event.target.checked));

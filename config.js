@@ -17,6 +17,7 @@
   const COLOR_LABEL_KEYS = Object.freeze({ yellow: "colorYellow", green: "colorGreen", purple: "colorPurple", red: "colorRed", blue: "colorBlue", orange: "colorOrange" });
   const DEFAULT_SETTINGS = Object.freeze({
     showOnSelect: false,
+    autoHighlight: true,
     sentenceNoteEnabled: true,
     autoTranslate: true,
     autoSpeakSelectedText: true,

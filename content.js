@@ -1540,7 +1540,8 @@
     outsideMouseDown = { x: e.clientX, y: e.clientY, wasOpen: !!panel, dismissTranslateIcon:!!translateIcon && !e.target.closest?.("#lhn-translate-icon") };
     if (outsideMouseDown.dismissTranslateIcon) { translateIcon.remove(); translateIcon = null; }
     if (panel && !e.target.closest?.("#lhn-panel")) {
-      if (composerSave) composerSave();
+      if (settings.showOnSelect || settings.autoHighlight === false) removeComposer();
+      else if (composerSave) composerSave();
       else removeComposer();
     }
     if (tooltip && !e.target.closest?.("#lhn-note-pop, #lhn-highlight-actions, .lhn-mark")) removeTooltip();
