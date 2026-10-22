@@ -1,6 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
-- 2026-10-23 | v3.4.525: Compact speak popup Settings, giảm khoảng cách đầu mục/mục con, mở rộng vùng nội dung và đổi nhãn Custom web font (EN/VI/KO). File: bilingual-reader.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
+- 2026-10-23 | v3.4.525: Speak popup Settings khôi phục cỡ chữ 13px, bỏ divider thừa, căn link trái và thu hẹp khoảng cách tới footer. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm link mở Dashboard > Bilingual Reader và công tắc Website font (Inter) trong Settings speak popup; dịch EN/VI/KO. File: bilingual-reader.js, background.js, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra giao diện trực tiếp. Tiếp theo: xác nhận hai mục trên Firefox/Chrome.
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version: v3.4.525. Firefox và Chrome, Manifest V3, một bản build chung.
@@ -9,12 +9,12 @@
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
-- Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing và dịch EN/VI/KO.
+- Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing, link căn trái và nhãn dịch EN/VI/KO.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Xác nhận Settings speak popup compact, không cuộn trên màn hình thường, và hai tùy chọn hoạt động trên Firefox/Chrome.
+0. [Kiểm tra] Xác nhận Settings speak popup compact, cỡ chữ và căn lề đúng trên Firefox/Chrome.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
