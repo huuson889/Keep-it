@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"always", speechSpeed:1, speechSpeedStep:0.25, speechVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[] };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, speechVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[] };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
 const FLAG_SVGS = {
@@ -32,6 +32,8 @@ const FLAG_SVGS = {
   style.textContent = `
     .lhn-bilingual-speaker{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;color:#868e96;cursor:pointer;font-size:.8em;vertical-align:middle;user-select:none}
     .lhn-bilingual-speaker[data-reader-scope="false"]{display:none!important}
+    .lhn-bilingual-speaker[data-reader-scope="false"][data-visibility="always"]{display:inline-flex!important;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
+    :hover>.lhn-bilingual-speaker[data-reader-scope="false"][data-visibility="always"]{visibility:visible;opacity:1;pointer-events:auto}
     .lhn-bilingual-speaker:hover{color:var(--lhn-br-accent);transform:scale(1.2)}
     .lhn-bilingual-speaker[data-visibility="hover"]{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
     :hover>.lhn-bilingual-speaker[data-visibility="hover"]{visibility:visible;opacity:1;pointer-events:auto}
@@ -244,7 +246,7 @@ const FLAG_SVGS = {
     settings = { ...DEFAULTS, ...(next || {}) };
     settings.speechSpeed = Math.max(.5, Math.min(3, Math.round((Number(settings.speechSpeed) || 1) * 100) / 100));
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
-    if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "always";
+    if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
     settings.translationFontScale = Math.min(150, Math.max(50, Number(settings.translationFontScale) || DEFAULTS.translationFontScale));
     if (!/^#[0-9a-f]{6}$/i.test(settings.accentColor)) settings.accentColor = DEFAULTS.accentColor;
     document.documentElement.style.setProperty("--lhn-br-accent", settings.accentColor);
