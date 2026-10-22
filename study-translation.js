@@ -26,6 +26,11 @@
     return segments.map(segment => typeof segment === "string" ? segment : Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : "").join("").trim().normalize("NFC");
   }
 
+  function myMemoryText(payload) {
+    if (payload?.responseStatus !== 200) return "";
+    return String(payload.responseData?.translatedText || "").trim().normalize("NFC");
+  }
+
   function create({ browser, fetchImpl = fetch } = {}) {
     const memoryCache = new Map();
     const inFlight = new Map();
@@ -43,19 +48,35 @@
       try {
         const usage = await browser.runtime.sendMessage({ type: "USAGE_CONSUME", service: "translate" });
         if (!usage?.allowed) throw new Error("Translate daily usage limit reached");
-        const response = await fetchImpl(url.href, { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
-        if (response.status === 429) {
-          const retryAfter = Number(response.headers?.get?.("Retry-After")) || 0;
-          cooldownUntil = Date.now() + Math.max(FAILURE_RETRY_MS, retryAfter * 1000);
+        let googleError;
+        try {
+          const response = await fetchImpl(url.href, { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
+          if (response.status === 429) {
+            const retryAfter = Number(response.headers?.get?.("Retry-After")) || 0;
+            cooldownUntil = Date.now() + Math.max(FAILURE_RETRY_MS, retryAfter * 1000);
+          }
+          if (!response.ok) {
+            const error = new Error(`Google Translate returned HTTP ${response.status}`);
+            error.status = response.status;
+            throw error;
+          }
+          const result = translatedText(await response.json());
+          if (!result) throw new Error("Google Translate returned an empty translation");
+          return result;
+        } catch (error) {
+          if (controller.signal.aborted) throw error;
+          googleError = error;
+          console.warn("Google Translate failed; trying MyMemory fallback", error);
         }
-        if (!response.ok) {
-          const error = new Error(`Google Translate returned HTTP ${response.status}`);
-          error.status = response.status;
-          throw error;
-        }
-        const result = translatedText(await response.json());
-        if (!result) throw new Error("Google Translate returned an empty translation");
-        return result;
+        const fallbackSource = sourceLanguage === "auto" ? "autodetect" : sourceLanguage;
+        const fallbackUrl = new URL("https://api.mymemory.translated.net/get");
+        fallbackUrl.searchParams.set("q", source);
+        fallbackUrl.searchParams.set("langpair", `${fallbackSource}|${targetLanguage}`);
+        const fallbackResponse = await fetchImpl(fallbackUrl.href, { method: "GET", signal: controller.signal, headers: { Accept: "application/json" } });
+        if (!fallbackResponse.ok) throw new Error(`MyMemory returned HTTP ${fallbackResponse.status}`);
+        const fallbackResult = myMemoryText(await fallbackResponse.json());
+        if (!fallbackResult) throw new Error("MyMemory returned an empty translation");
+        return fallbackResult;
       } finally {
         clearTimeout(timeout);
       }
