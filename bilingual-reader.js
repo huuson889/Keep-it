@@ -453,7 +453,8 @@ const FLAG_SVGS = {
       let block = parent.closest(MC_BLOCK_SEL);
       if (!block || !root.contains(block)) {
         for (let current = parent; current; current = current.parentElement) {
-          if (current.matches("div,section,article,main,[role='paragraph'],[role='main']")) { block = current; break; }
+          if (current.matches("[role='paragraph']")) { block = current; break; }
+          if (current.matches("div,section") && current !== document.body && !current.querySelector(`${MC_BLOCK_SEL},div,section,article,main,[role='paragraph'],[role='main']`)) { block = current; break; }
           if (current === root) break;
         }
       }
