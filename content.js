@@ -350,6 +350,7 @@
     if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
     if (cached) {
       popup._lhnMainTranslation = cached.translation;
+      if (cached.translation?.translatedText) browser.storage.local.set({ [dictionaryTranslationCacheKey(word, targetLanguage)]:{ timestamp:Date.now(), data:cached.translation } }).catch(() => {});
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, cached, true);
       return;
