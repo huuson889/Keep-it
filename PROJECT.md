@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.525: Nếu browser không có voice khớp ngôn ngữ, dừng yêu cầu TTS và hiện toast tiếng Việt; áp dụng content, dashboard, Bilingual Reader và fallback engine. File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md. Chưa chạy kiểm tra; tiếp theo: chạy syntax/mock và xác nhận trên trình duyệt.
 - 2026-10-23 | v3.4.524: TTS dùng cấu hình `Speech voice` toàn cục để ưu tiên browser speech trước Google TTS, áp dụng cho mọi luồng gọi bộ phát chung. File: tts-engine.js, manifest.json, PROJECT.md. Đã chạy kiểm tra cú pháp và test nhánh browser voice; chưa thử phát trên trình duyệt. Tiếp theo: xác nhận bằng giọng đọc trên Chrome/Firefox.
 - 2026-10-23 | v3.4.523: Sửa nhận diện paragraph chứa chữ trong `<em>`; ép câu hỏi VnExpress vào queue main; hover hiện icon mọi chế độ, click ngoài main chỉ đọc một đoạn. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã kiểm tra DOM trang, node --check, manifest và diff-check; chưa thử TTS thực tế. Tiếp theo: cài/reload bản mới và xác nhận phát đọc.
 - 2026-10-23 | v3.4.522: Nhận diện đoạn có chữ trong thẻ inline để gắn icon; thêm câu hỏi italic từ `.fck_detail` vào queue main và hover icon mọi chế độ. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, JSON manifest, diff-check và kiểm tra DOM trang; chưa thử phát trực tiếp. Tiếp theo: xác nhận Alt+R và click icon ngoài main trên trình duyệt.
@@ -12,17 +13,17 @@
 
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.524. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.525. Firefox và Chrome, Manifest V3, một bản build chung.
 - Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy, giữ câu hỏi italic trong `.fck_detail`, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress ngoài article body. Icon speak nhận diện đoạn có chữ trong thẻ inline; hover hiện icon ở mọi chế độ. Bấm ngoài main chỉ đọc block đó; trong main tiếp tục queue.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
-- Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; Google voice vẫn dùng Google TTS.
+- Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Cài/reload v3.4.524; xác nhận Browser voice dùng cho mọi TTS, đồng thời kiểm tra Alt+R/hover icon trên VnExpress và Google Search/AI Overview.
+0. [Kiểm tra] Cài/reload v3.4.525; xác nhận thiếu browser voice thì TTS dừng và hiện toast; đồng thời kiểm tra Alt+R/hover icon trên VnExpress và Google Search/AI Overview.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
@@ -49,6 +50,11 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.525 - 2026-10-23
+- Browser TTS không phát khi thiếu voice cùng ngôn ngữ; hiện toast “Trình duyệt bạn không hỗ trợ ngôn ngữ này”. Engine dừng phần còn lại của yêu cầu.
+- File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md.
+- Kiểm tra: chưa chạy; tiếp theo chạy kiểm tra cú pháp/mock và xác nhận trên trình duyệt.
+
 ### v3.4.524 - 2026-10-23
 - TTS engine đọc `lhnSettings.speechVoice`; Browser voice phát từng đoạn bằng giọng trình duyệt, không gọi Google TTS.
 - File: tts-engine.js, manifest.json, PROJECT.md.
