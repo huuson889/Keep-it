@@ -87,12 +87,11 @@
       html[data-lhn-dark-reader-theme="dracula"]{--lhn-dr-bg:#282a36;--lhn-dr-surface:#44475a;--lhn-dr-text:#f8f8f2;--lhn-dr-border:#6272a4;--lhn-dr-link:#8be9fd;--lhn-dr-control:#44475a}
     `;
     } else {
-      // Dark mode của Keepit chỉ đổi nền trang. Không ép màu chữ/nền của từng phần tử
-      // và không theo dõi lớp nổi, vì sẽ làm mất chữ và nền trên các trang như Google.
+      // Không đổi màu nền/chữ của trang web: để Dark Reader (hoặc trang gốc) quyết định.
+      // Chỉ giữ biến màu cho UI của Keepit.
       darkStyle.textContent = `
         html[data-lhn-dark-reader="true"]{--lhn-dr-bg:#181a1b;--lhn-dr-surface:#202124;--lhn-dr-text:#e8e6e3;--lhn-dr-border:#45494c;--lhn-dr-link:#9ecbff;--lhn-dr-control:#282b2e;color-scheme:dark}
         html[data-lhn-dark-reader-theme="dracula"]{--lhn-dr-bg:#282a36;--lhn-dr-surface:#44475a;--lhn-dr-text:#f8f8f2;--lhn-dr-border:#6272a4;--lhn-dr-link:#8be9fd;--lhn-dr-control:#44475a}
-        html[data-lhn-dark-reader="true"],html[data-lhn-dark-reader="true"] body{background:var(--lhn-dr-bg)!important}
       `;
     }
     if (!darkExtObserverSet) {
