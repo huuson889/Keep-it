@@ -1,3 +1,6 @@
+if (typeof importScripts === "function") {
+  importScripts("browser-polyfill.js", "config.js", "usage-limits.js");
+}
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
 browser.runtime.onInstalled.addListener(() => USAGE_LIMITS.initialize().catch(error => console.warn("Could not initialize local usage trial", error)));
@@ -352,3 +355,19 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message.type === "SYNC_PAGE_ORDER") return syncPageOrder(message.url, message.ids);
   if (message.type === "EXPORT") return getAll();
 });
+
+// Chrome only: request Google TTS từ extension bị 404 nếu thiếu Referer.
+// Thêm Referer giống trang Google, chỉ áp dụng cho translate_tts. Firefox không dùng rule này.
+(() => {
+  const isChrome = typeof chrome !== "undefined" && chrome.declarativeNetRequest && !/Firefox\//.test(navigator.userAgent);
+  if (!isChrome) return;
+  chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [9001],
+    addRules: [{
+      id: 9001,
+      priority: 1,
+      action: { type: "modifyHeaders", requestHeaders: [{ header: "Referer", operation: "set", value: "https://translate.google.com/" }] },
+      condition: { urlFilter: "||translate.google.com/translate_tts", resourceTypes: ["xmlhttprequest", "media", "other"] }
+    }]
+  }).catch(err => console.warn("TTS referer rule failed", err));
+})();
