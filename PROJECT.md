@@ -9,6 +9,7 @@
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
+- Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing và dịch EN/VI/KO.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
