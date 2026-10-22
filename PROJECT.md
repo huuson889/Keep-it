@@ -26,4 +26,9 @@
 - Thay đổi lớn nêu rõ trong commit message.
 
 ## Việc đang mở
-- (cập nhật khi có)
+1. [Kiểm tra] Google TTS trên Chrome (v3.4.504): xác nhận translate_tts trả 200 trong flashcard và popup chọn text. Nếu vẫn 404, lấy mã trạng thái từ log service worker và báo lại.
+2. [Chưa làm] Đọc đoạn dài bằng Google TTS: chia văn bản thành đoạn khoảng 180–200 ký tự, phát nối tiếp. Hiện background giới hạn 500 ký tự.
+3. [Chưa làm] Chuỗi dự phòng TTS: Google → phát trực tiếp → giọng trình duyệt, có báo lỗi rõ ràng.
+4. [Quyết định] Bilingual reader có dùng Google TTS không? Hiện chỉ dùng giọng trình duyệt.
+5. [Kiểm tra] Firefox MV3: background có unload khi rảnh làm mất tin nhắn không.
+6. [Vệ sinh] Loại trừ AGENTS.md và PROJECT.md khi đóng gói zip.
