@@ -2564,6 +2564,27 @@ browser.runtime.onMessage.addListener(message => {
   if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
   if (!applyAnnotationChange(message.change)) load();
 });
+$("exportErrorLog")?.addEventListener("click", async () => {
+  try {
+    const key = "lhnDiagnosticErrorLogV1";
+    const stored = await browser.storage.local.get(key);
+    const entries = Array.isArray(stored[key]) ? stored[key].slice(-200).map(entry => ({
+      timestamp: typeof entry?.timestamp === "string" && Number.isFinite(Date.parse(entry.timestamp)) ? new Date(entry.timestamp).toISOString() : null,
+      component: ["background", "content", "dashboard", "popup"].includes(entry?.component) ? entry.component : "app",
+      severity: ["error", "warning"].includes(entry?.severity) ? entry.severity : "error",
+      code: typeof entry?.code === "string" && /^[a-z.]+$/.test(entry.code) ? entry.code : "app.error"
+    })) : [];
+    const blob = new Blob([JSON.stringify({ formatVersion:1, exportedAt:new Date().toISOString(), entries }, null, 2)], { type:"application/json" });
+    const url = URL.createObjectURL(blob), link = document.createElement("a");
+    link.href = url;
+    link.download = `keepit-error-log-${new Date().toISOString().slice(0, 10)}.json`;
+    link.hidden = true;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { console.warn("Could not export diagnostic log", error); }
+});
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
