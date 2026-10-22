@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Highlight Notes Dashboard</title><link rel="icon" type="image/svg+xml" href="icons/icon.svg"><link rel="stylesheet" href="ui-tokens.css"><link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="ui-theme.css">
+</head>
+<body>
+<header>
+  <div class="brand"><img class="brand-logo" src="icons/icon.svg" alt=""><div><h1 data-i18n="appName">Keepit - Highlight Notes</h1><p data-i18n="dashboardSubtitle">Keep learning everything</p></div></div>
+  <div class="top-actions">
+    <a href="#" class="menu-item item-free" data-i18n-aria-label="freePlan">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/>
+      </svg>
+      <span data-i18n="freePlan">Free</span>
+    </a>
+    <div class="profile-menu-wrap">
+      <button id="profileMenuToggle" class="profile-avatar-button" type="button" data-i18n-aria-label="profileMenuLabel" data-i18n-title="profileMenuLabel" aria-label="Profile menu" title="Profile menu" aria-haspopup="true" aria-expanded="false">
+        <span id="profileMenuAvatar" class="profile-avatar profile-avatar-guest profile-menu-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+      </button>
+      <div id="profileMenu" class="profile-menu" hidden>
+        <div id="profileMenuIdentity" class="profile-menu-identity"></div>
+        <div class="profile-menu-divider"></div>
+        <div id="profileMenuAccountHost" class="profile-menu-account-host"></div>
+        <button id="profileOpenSettings" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="settings">Settings</span></span></button>
+        <button id="profileAppearanceToggle" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-1.5a1.5 1.5 0 0 1-1.2-2.4A2 2 0 0 0 14.7 4 8.8 8.8 0 0 0 12 3Z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span data-i18n="appearance">Appearance</span></span><span id="profileAppearanceState" class="profile-menu-value">Light</span></button>
+        <div class="profile-menu-divider"></div>
+        <div class="profile-menu-export-wrap">
+          <button id="exportAllBtn" class="profile-menu-item" type="button" aria-haspopup="true" aria-expanded="false"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="export">Export</span></span><span class="profile-menu-chevron">›</span></button>
+          <div id="exportAllMenu" class="export-menu profile-export-menu" hidden></div>
+        </div>
+        <button id="profileImportJson" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg><span data-i18n="importJson">Import JSON</span></span></button>
+        <div class="profile-menu-divider"></div>
+        <button id="profileMenuSignOut" class="profile-menu-item profile-menu-sign-out" type="button" hidden><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg><span data-i18n="profileLogout">Sign out</span></span></button>
+      </div>
+    </div>
+  </div>
+  <input id="importFile" type="file" accept="application/json,.json" hidden>
+</header>
+<main>
+  <aside id="profileSidebar" class="profile-sidebar" data-i18n-aria-label="profileSidebarLabel" aria-label="Local profile">
+    <section class="profile-card">
+      <div id="profileHeaderSection" class="profile-identity"></div>
+      <div id="actionButtonsSection" class="profile-actions"></div>
+      <div id="metaInfoSection" class="profile-meta"></div>
+      <hr class="profile-divider">
+      <div class="profile-stat-grid">
+        <div><strong id="profilePageTotal">0</strong><span data-i18n="sourcePages">Pages</span></div>
+        <div><strong id="profileNoteTotal">0</strong><span data-i18n="highlightsShort">Highlights</span></div>
+        <div><strong id="profileNeedLearnTotal">0</strong><span data-i18n="profileNeedLearn">Need learn</span></div>
+      </div>
+      <div class="profile-activity" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"><div class="profile-section-title"><span data-i18n="profileActivity">Recent activity</span><span id="profileActivityTotal">0</span></div><div id="profileMonthLabels" class="profile-month-labels"></div><div class="profile-heatmap-row"><div class="profile-weekday-labels"><span>M</span><span>W</span><span>F</span></div><div id="profileHeatmap" class="profile-heatmap" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"></div></div><div class="profile-heatmap-legend"><span data-i18n="profileLess">Less</span><i></i><i></i><i></i><i></i><i></i><span data-i18n="profileMore">More</span></div></div>
+      <div class="profile-periods"><button type="button" data-profile-range="all" class="is-active" data-i18n="profilePeriodAll">All</button><span>/</span><button type="button" data-profile-range="weekly" data-i18n="profilePeriodWeekly">Weekly</button><span>/</span><button type="button" data-profile-range="yearly" data-i18n="profilePeriodYearly">Yearly</button></div>
+      <div class="profile-streaks"><div><span data-i18n="profileTotalDays">Total Days:</span><strong id="profileTotalDays">0</strong><span>💐</span></div><div><span data-i18n="profileTotalWeeks">Total Weeks:</span><strong id="profileTotalWeeks">0</strong><span>💐</span></div></div>
+      <hr class="profile-divider">
+      <div class="profile-segmented"><button id="profileTagsTab" type="button" class="is-active"><span data-i18n="profileTags">Tags</span> <span id="profileTagTotal">(0)</span></button><button id="profileDomainsTab" type="button"><span data-i18n="profileDomains">Domains</span> <span id="profileDomainTotal">(0)</span></button></div>
+      <div id="profileChips" class="profile-chips"></div>
+    </section>
+  </aside>
+  <section class="toolbar" data-i18n-aria-label="libraryControlsLabel" aria-label="Library controls">
+    <button id="clearFiltersBtn" type="button" class="secondary clear-filters-button dashboard-control" aria-label="Clear filters" data-i18n-title="clearFilters" title="Clear filters"><svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22a3 3 0 01-3-3"/><path d="M10 22c2.761 0 5-1.79 5-4-4.42 0-4.08-5-8.5-5a4.501 4.501 0 000 9z"/><path d="M10 3H8"/><path d="M12.5 11.5 22 2"/><path d="M20 13v4"/><path d="M22 15h-4"/><path d="M4 5v4"/><path d="M6 7H2"/><path d="m6.98 13.02 2.665-2.664a1.21 1.21 0 011.71 0l2.29 2.288a1.21 1.21 0 010 1.712l-2.088 2.087"/><path d="M9 2v2"/></svg></button>
+    <select id="siteFilter" class="dashboard-control" data-i18n-aria-label="websiteFilterLabel" aria-label="Website filter"><option value="" data-i18n="allWebsites">All websites</option></select>
+    <select id="colorFilter" class="dashboard-control" aria-label="Highlight color filter"><option value="" data-i18n="allColors">All colors</option></select>
+    <select id="tagFilter" class="dashboard-control" aria-label="Tag filter"><option value="" data-i18n="allTags">All tags</option></select>
+    <select id="dateFilter" class="dashboard-control" aria-label="Date filter"><option value="" data-i18n="dateAll">Any date</option><option value="today" data-i18n="dateToday">Today</option><option value="7" data-i18n="date7Days">Last 7 days</option><option value="30" data-i18n="date30Days">Last 30 days</option><option value="365" data-i18n="dateYear">Last year</option></select>
+    <select id="sortBy" class="dashboard-control" aria-label="Sort pages"><option value="created" data-i18n="sortCreated">Date created</option><option value="edited" data-i18n="sortEdited">Date edited</option><option value="count" data-i18n="sortCount">Highlight count</option></select>
+    <button id="favoritesOnly" type="button" class="favorite-filter dashboard-control" aria-pressed="false" title="Show favorite pages only"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg><span data-i18n="favoritesOnly">Favorite pages</span></button>
+    <button id="favoriteNotesOnly" type="button" class="favorite-filter dashboard-control" aria-pressed="false" data-i18n-title="favoriteNotesOnly" title="Favorite notes"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg><span data-i18n="favoriteNotesOnly">Favorite notes</span></button>
+    <label class="search-box dashboard-control"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Search notes, text, websites…"></label>
+  </section>
+  <section class="workspace">
+    <aside class="sources-panel" aria-label="Source pages">
+      <div class="panel-heading"><div><h2 data-i18n="sourcePages">Source pages</h2><p><span id="pageCount">0 pages</span><span aria-hidden="true">, </span><span id="count">0 notes</span></p></div><button id="studyModeBtn" type="button" class="secondary study-mode-button"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg><span data-i18n="studyModeButton">Study flashcard</span></button></div>
+      <div id="sourceList" class="source-list"></div>
+    </aside>
+    <section class="notes-panel" aria-label="Highlights and notes">
+      <div id="notesHeader" class="notes-header">
+        <div class="selected-page-info"><div id="selectedFavicon" class="selected-favicon" aria-hidden="true"></div><div class="selected-page-text"><h2 id="selectedTitle" data-i18n="selectSource">Select a source page</h2><a id="selectedUrl" href="#" target="_blank" rel="noreferrer"></a><p id="selectedMeta"></p></div></div>
+        <div class="page-actions"><button id="viewModeBtn" class="icon-button view-mode-button" type="button" title="List view" aria-label="List view" aria-pressed="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button><button id="favoritePageBtn" class="icon-button" title="Add to favorites" aria-label="Add to favorites" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg></button><div class="menu-wrap"><button id="exportPageBtn" class="icon-button" aria-label="Export this page" title="Export this page" aria-haspopup="true" aria-expanded="false" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg></button><div id="exportPageMenu" class="export-menu align-right" hidden></div></div><button id="deletePageBtn" class="icon-button delete-page-button" title="Delete all highlights on this page" aria-label="Delete all highlights on this page" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div>
+      </div>
+      <div id="noteColorFilters" class="note-color-filters" aria-label="Filter highlights by color"></div>
+      <div id="notesList" class="notes-list"></div>
+      <section id="empty" class="empty" hidden><div class="empty-icon"><svg class="lucide large" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/></svg></div><h2 data-i18n="noHighlightsYet">No highlights yet</h2><p data-i18n="emptyHelp">Open a website, select some text with your mouse, then add a note or save the highlight.</p></section>
+      <section id="selectPrompt" class="empty select-prompt"><div class="empty-icon"><svg class="lucide large" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7L5 3Z"/><path d="m12 13 5 6"/></svg></div><h2 data-i18n="selectSource">Select a source page</h2><p data-i18n="selectSourceHelp">Choose a page from the left to see its highlights and notes.</p></section>
+    </section>
+  </section>
+</main>
+<dialog id="profileAuthDialog" class="profile-auth-dialog">
+  <form id="profileAuthForm" method="dialog">
+    <div class="profile-auth-tabs"><button id="profileLoginTab" type="button" class="is-active" data-i18n="profileLogin">Đăng nhập</button><button id="profileRegisterTab" type="button" data-i18n="profileRegister">Đăng ký</button><button id="profileAuthClose" type="button" aria-label="Close">×</button></div>
+    <div class="profile-auth-body">
+      <button id="profileGoogleLogin" class="profile-google-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.7-5H1.3v3.2A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.2a7.2 7.2 0 0 1 0-4.4V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.2Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8L20 3.2A11.7 11.7 0 0 0 12 0 12 12 0 0 0 1.2 6.6l4.1 3.2c1-2.9 3.6-5 6.7-5Z"/></svg><span data-i18n="profileGoogleContinue">Tiếp tục với Google</span></button>
+      <div class="profile-auth-divider"><span data-i18n="profileOrEmail">hoặc email</span></div>
+      <label><span data-i18n="profileUsername">Email</span><input id="profileUsername" type="text" data-i18n-placeholder="profileUsernamePlaceholder" placeholder="Email" autocomplete="email" required></label>
+      <label><span data-i18n="profilePassword">Mật khẩu</span><input id="profilePassword" type="password" data-i18n-placeholder="profilePasswordPlaceholder" placeholder="Mật khẩu" autocomplete="current-password" required></label>
+      <label id="profileRetypePasswordLabel" hidden><span data-i18n="profileRetypePassword">Nhập lại mật khẩu</span><input id="profileRetypePassword" type="password" data-i18n-placeholder="profileRetypePassword" placeholder="Nhập lại mật khẩu" autocomplete="new-password"></label>
+      <p id="profileAuthError" class="profile-auth-error" role="status" hidden></p>
+      <button id="profileAuthSubmit" class="profile-auth-submit" type="submit">Đăng nhập ngay</button>
+      <p class="profile-auth-note" data-i18n="profileMockAuthNote">Đăng nhập mô phỏng, không gửi dữ liệu ra ngoài.</p>
+    </div>
+  </form>
+</dialog>
+<dialog id="dashboardSettingsDialog" class="dashboard-settings-dialog" aria-label="Settings">
+  <div class="settings-window">
+    <div id="settingsToast" class="settings-layer-toast" role="status" aria-live="polite" hidden></div>
+    <header class="settings-window-topbar">
+      <div class="settings-window-title"><span data-i18n="settings">Settings</span></div>
+      <div class="settings-window-actions"><button id="settingsWindowMaximize" type="button" aria-label="Maximize" title="Maximize"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg></button><button id="settingsWindowClose" type="button" aria-label="Close" title="Close">×</button></div>
+    </header>
+    <div class="settings-window-layout">
+      <aside class="settings-window-sidebar">
+        <div class="settings-window-profile"><div id="settingsProfileAvatar" class="profile-avatar profile-avatar-guest settings-profile-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div><div><strong id="settingsProfileName">You</strong><span id="settingsProfileEmail">Data stays on this device</span></div></div>
+        <label class="settings-language-row"><span data-i18n="language">Language</span><select id="settingsLanguageSelect" aria-label="Language"></select></label>
+        <nav class="settings-window-nav" aria-label="Settings navigation">
+          <button class="settings-nav-item is-active" type="button" data-settings-tab="account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span data-i18n="account">Account</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="notes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg><span data-i18n="settingsHighlightsNotes">Highlight &amp; Notes</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="translate"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span data-i18n="translateTab">Translate</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="speech"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg><span data-i18n="speechTab">Speech</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="bilingualReader"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 12v-2a4 4 0 0 1 8 0v2"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/></svg><span data-i18n="bilingualReaderTab">Bilingual Reader</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="appearance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-1.5a1.5 1.5 0 0 1-1.2-2.4A2 2 0 0 0 14.7 4 8.8 8.8 0 0 0 12 3Z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span data-i18n="appearance">Appearance</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="shortcuts"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg><span data-i18n="shortcutTab">Shortcut</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="disableWeb"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M9 12h6"/></svg><span data-i18n="disableWeb">Disable Web</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span data-i18n="notifications">Notifications</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="backup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="backup">Backup</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="upgrade"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg><span data-i18n="upgradeBilling">Upgrade &amp; Billing</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="reset"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H3"/><path d="M7 12H3"/><path d="M7 19H3"/><path d="M12 18a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L11 14"/><path d="M11 10v4h4"/></svg><span data-i18n="resetSettingsTab">Reset settings</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i18n="about">About</span></button>
+        </nav>
+      </aside>
+      <main class="settings-window-content">
+        <section class="settings-panel-page is-active" data-settings-panel="account">
+          <div class="settings-panel-heading"><h2 data-i18n="account">Account</h2><p data-i18n="accountHelp">Manage the local profile shown in this dashboard.</p></div>
+          <div id="settingsAccountState"></div>
+          <template id="settingsAccountGuestTemplate"><div class="settings-account-row"><span><strong data-i18n="accountGuestTitle">You are using the extension as a guest</strong><small data-i18n="accountGuestHelp">Sign in to show your local demo profile here.</small></span><button id="settingsAccountSignIn" type="button" class="settings-action-button settings-account-primary" data-i18n="profileLogin">Sign in</button></div></template>
+          <template id="settingsAccountSignedInTemplate"><div>
+            <div class="settings-account-row settings-picture-row"><span><strong data-i18n="accountProfilePicture">Profile picture</strong><small data-i18n="accountProfilePictureHelp">Choose an image for your profile.</small></span><div class="settings-account-controls settings-picture-controls"><span id="settingsAccountPicturePreview" class="settings-picture-preview" aria-hidden="true"></span><button id="settingsChangeProfilePicture" type="button" class="settings-action-button" data-i18n="change">Change</button><input id="settingsProfilePictureFile" type="file" accept="image/*" hidden></div></div>
+            <div class="settings-account-row"><span><strong data-i18n="accountDisplayName">Display name</strong><small data-i18n="accountDisplayNameHelp">The name shown in your profile.</small></span><div class="settings-account-controls"><input id="settingsAccountDisplayName" type="text" autocomplete="name"><button id="settingsAccountSaveName" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
+            <div class="settings-account-row"><span><strong data-i18n="accountUsername">Username</strong><small data-i18n="accountUsernameHelp">Your public username shown with @ in your profile.</small></span><div class="settings-account-controls"><input id="settingsAccountUsername" type="text" autocomplete="username"><button id="settingsAccountSaveUsername" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
+            <div class="settings-account-row"><span><strong data-i18n="accountEmail">Email</strong><small data-i18n="accountEmailHelp">The email address you signed up with. You can change it here — we'll send a link to your new address to set a new password.</small></span><div class="settings-account-controls"><input id="settingsAccountEmail" type="email" value="huuson889@gmail.com" disabled><button id="settingsAccountChangeEmail" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
+            <section class="settings-linked-account"><div class="settings-linked-top"><span><strong data-i18n="accountLinked">Linked account</strong><small data-i18n="accountLinkedHelp">Use the following service to sign in into your account.</small></span><span class="settings-account-provider"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.7-5H1.3v3.2A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.2a7.2 7.2 0 0 1 0-4.4V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.2Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8L20 3.2A11.7 11.7 0 0 0 12 0 12 12 0 0 0 1.2 6.6l4.1 3.2c1-2.9 3.6-5 6.7-5Z"/></svg><span>Google</span></span></div><div class="settings-linked-note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i18n="accountLinkedPasswordHelp">If you want to set a password for your account, please go to the login page and click "Forgot password" and set a password by clicking the link in the email.</span></div></section>
+            <div class="settings-account-row"><span><strong data-i18n="profileLogout">Sign out</strong><small data-i18n="accountSignOutHelp">Sign out of this local profile.</small></span><button id="settingsAccountSignOut" type="button" class="settings-action-button" data-i18n="profileLogout">Sign out</button></div>
+            <section class="settings-danger-zone"><div class="settings-danger-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span data-i18n="accountDangerZone">Danger Zone</span></div><div class="settings-danger-row"><span><strong data-i18n="accountDeleteTitle">Delete local account</strong><small data-i18n="accountDeleteHelp">Removes this demo profile. Your saved highlights and notes stay on this device.</small></span><button id="settingsAccountDelete" type="button" class="settings-danger-button" data-i18n="accountDeleteButton">Delete account</button></div></section>
+          </div></template>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="notes" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="settingsHighlightsNotes">Highlight &amp; Notes</h2><p data-i18n="settingsNotesHelp">Manage note, highlight, and translation behavior.</p></div>
+          <section class="settings-subsection settings-note-translate-group-first"><h3 data-i18n="settingsHighlightsNotes">Highlights and Notes</h3>
+            <div class="settings-preference-list">
+              <label class="settings-preference-row"><span><strong data-i18n="autoPopup">Auto-open note popup</strong><small data-i18n="settingsAutoPopupHelp">Show the floating toolbar when text is selected.</small></span><span class="settings-switch"><input id="settingsAutoPopup" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row"><span><strong data-i18n="autoSentenceNote">Auto sentence note</strong><small data-i18n="settingsSentenceHelp">Automatically include the sentence around a highlight.</small></span><span class="settings-switch"><input id="settingsAutoSentence" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row"><span><strong data-i18n="autoTranslateOnPopup">Auto translate to note popup</strong><small data-i18n="autoTranslateHelp">Automatically translate selected text into the note field.</small></span><span class="settings-switch"><input id="settingsAutoTranslatePopup" type="checkbox"><i></i></span></label>
+            </div>
+            <div class="settings-subsection"><h3 data-i18n="defaultHighlightColorLabel">Default highlight color</h3><div class="settings-default-colors"><button type="button" data-settings-color="yellow" data-i18n-title="colorYellow" title="Yellow"></button><button type="button" data-settings-color="green" data-i18n-title="colorGreen" title="Green"></button><button type="button" data-settings-color="purple" data-i18n-title="colorPurple" title="Purple"></button><button type="button" data-settings-color="red" data-i18n-title="colorRed" title="Red"></button><button type="button" data-settings-color="blue" data-i18n-title="colorBlue" title="Blue"></button><button type="button" data-settings-color="orange" data-i18n-title="colorOrange" title="Orange"></button></div></div>
+          </section>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="translate" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="translateTab">Translate</h2><p data-i18n="popupTranslationHelp">Choose translation behavior and language.</p></div>
+          <section class="settings-subsection settings-note-translate-group"><h3 data-i18n="translateTab">Translate</h3>
+            <div class="settings-preference-list">
+              <label class="settings-preference-row"><span><strong data-i18n="showFullEnglishDictionary">Show full English dictionary</strong><small data-i18n="showFullEnglishDictionaryHelp">Show the full dictionary popup when selecting a single English word.</small></span><span class="settings-switch"><input id="settingsFullEnglishDictionary" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row" id="settingsTranslateIconEnabledRow"><span><strong data-i18n="showKeepitIcon">Show Keepit translate icon</strong></span><span class="settings-switch"><input id="settingsTranslateIconEnabled" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row" id="settingsTranslationPopupEnabledRow"><span><strong data-i18n="showDirectTranslationPopup">Show direct translation popup</strong></span><span class="settings-switch"><input id="settingsTranslationPopupEnabled" type="checkbox"><i></i></span></label>
+            </div>
+            <section class="settings-subsection study-translate-options"><h3 data-i18n="translateLanguage">Translate language</h3>
+              <div class="settings-preference-list settings-translate-language-list">
+                <label class="settings-preference-row"><span><strong data-i18n="sourceLanguage">Source language</strong></span><select id="settingsPopupTranslationSource"></select></label>
+                <label class="settings-preference-row"><span><strong data-i18n="targetLanguage">Target language</strong></span><select id="settingsPopupTranslationTarget"></select></label>
+              </div>
+            </section>
+          </section>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="speech" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="speechTab">Speech</h2><p data-i18n="pronunciationDictionaryHelp">Manage custom pronunciations used by Google and browser voices.</p></div>
+          <section class="settings-subsection study-translate-options"><h3 data-i18n="flashcardVoice">Voice</h3>
+            <div class="settings-preference-list">
+              <label class="settings-preference-row"><span><strong data-i18n="autoSpeakWhenPopupSetting">Auto speak when popup</strong></span><span class="settings-switch"><input id="settingsAutoSpeakSelectedText" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row settings-speech-voice-row"><span><strong data-i18n="speechVoice">Speech voice</strong></span><select id="settingsSpeechVoice"><option value="browser" data-i18n="browserVoice">Browser voice</option><option value="google" data-i18n="googleVoice">Google voice</option></select></label>
+              <div class="settings-preference-row settings-speech-rate-row"><span><strong data-i18n="globalSpeechRate">Global speech rate</strong><small data-i18n="speechRateHelp">Default speed for all languages.</small></span><div class="settings-speech-rate-controls"><input id="settingsSpeechRate" type="range" min="0.5" max="2" step="0.1" aria-label="Global speech rate"><div class="settings-speech-rate-value"><input id="settingsSpeechRateValue" type="number" min="0.5" max="2" step="0.1" inputmode="decimal" aria-label="Global speech rate"></div><button id="resetGlobalSpeechRate" class="settings-action-button settings-speech-rate-reset" type="button" data-i18n="resetSpeed">Reset</button></div></div>
+              <label class="settings-preference-row"><span><strong data-i18n="useLanguageSpeechRate">Custom rate for display language</strong><small data-i18n="useLanguageSpeechRateHelp">Override the general rate for text in your display language.</small></span><span class="settings-switch"><input id="settingsUseLanguageSpeechRate" type="checkbox"><i></i></span></label>
+              <div id="settingsLanguageSpeechRateRow" class="settings-preference-row settings-speech-rate-row settings-language-speech-rate-row" hidden><label for="settingsLanguageSpeechRate"><strong id="settingsLanguageSpeechRateTitle">Your English speed</strong></label><div class="settings-speech-rate-controls"><input id="settingsLanguageSpeechRate" type="range" min="0.5" max="2" step="0.1" aria-label="Your English speed"><div class="settings-speech-rate-value"><input id="settingsLanguageSpeechRateValue" type="number" min="0.5" max="2" step="0.1" inputmode="decimal" aria-label="Your English speed"></div><button id="resetLanguageSpeechRate" class="settings-action-button settings-speech-rate-reset" type="button" data-i18n="resetSpeed">Reset</button></div></div>
+            </div>
+          </section>
+          <section class="settings-subsection pronunciation-dictionary-section">
+            <h3 data-i18n="pronunciationRules">Pronunciation Rules</h3>
+            <div class="pronunciation-language-add"><label for="pronunciationLanguageSelect" data-i18n="pronunciationAddLanguage">Add language</label><select id="pronunciationLanguageSelect"></select><button id="addPronunciationLanguage" type="button" class="settings-action-button" data-i18n="pronunciationAddLanguage">Add language</button></div>
+            <div id="pronunciationLanguageCards" class="pronunciation-language-cards" aria-live="polite"></div>
+          </section>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="bilingualReader" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="bilingualReaderTab">Bilingual Reader</h2><p data-i18n="bilingualReaderHelp">Choose how page translations and reading controls work.</p></div>
+          <section class="settings-subsection"><h3 data-i18n="bilingualTranslation">Translation</h3><div class="settings-preference-list">
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualSkipSame">Skip same language</strong></span><span class="settings-switch"><input id="bilingualSkipSame" type="checkbox" checked><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualWebFont">Website font</strong></span><select id="bilingualWebFont"><option value="" data-i18n="bilingualAutoFont">Auto (page font)</option><option value="'Inter', sans-serif">Inter</option><option value="'Lora', Georgia, serif">Lora (serif)</option><option value="'Roboto Mono', monospace">Roboto Mono</option><option value="'Fredoka', sans-serif">Fredoka</option><option value="system-ui, -apple-system, sans-serif">System</option></select></label>
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualFont">Translation font</strong></span><select id="bilingualTransFont"><option value="'Inter', sans-serif" data-i18n="bilingualInterDefault">Inter (default)</option><option value="'Lora', Georgia, serif">Lora (serif)</option><option value="'Roboto Mono', monospace">Roboto Mono</option><option value="'Fredoka', sans-serif">Fredoka</option><option value="system-ui, -apple-system, sans-serif">System</option></select></label>
+            <div class="settings-preference-row"><span><strong data-i18n="bilingualTranslateColor">Translate text color</strong></span><div class="bilingual-color-controls bilingual-translation-colors"><button type="button" data-bilingual-translation-color="default" data-i18n="bilingualCurrentColor" title="Current color">Aa</button><button type="button" data-bilingual-translation-color="#9c27b0" title="Purple"></button><button type="button" data-bilingual-translation-color="#007bff" title="Blue"></button><button type="button" data-bilingual-translation-color="#dc3545" title="Red"></button><input id="bilingualTranslationCustomColor" type="color" value="#2d3748" aria-label="Custom translate text color"></div></div>
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualTranslateBold">Translate text bold</strong></span><select id="bilingualTranslationWeight"><option value="auto" data-i18n="bilingualWeightAuto">Auto (match source)</option><option value="100">100</option><option value="200">200</option><option value="300">300</option><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option><option value="900">900</option></select></label>
+            <div class="settings-preference-row settings-speech-rate-row"><span><strong data-i18n="bilingualFontSize">Translation font size</strong></span><div class="settings-speech-rate-controls bilingual-font-scale-controls"><input id="bilingualTranslationFontScale" type="range" min="50" max="150" step="5" value="80" data-i18n-aria-label="bilingualFontSize"><output class="settings-speech-rate-value" id="bilingualTranslationFontScaleValue">80%</output><button id="resetBilingualTranslationFontScale" class="settings-action-button settings-speech-rate-reset" type="button" data-i18n="bilingualFontSizeReset">Reset</button></div></div>
+            <div class="settings-preference-row"><span><strong data-i18n="bilingualAccent">Accent color</strong></span><div class="bilingual-color-controls"><button type="button" data-bilingual-color="#9c27b0" title="Purple"></button><button type="button" data-bilingual-color="#007bff" title="Blue"></button><button type="button" data-bilingual-color="#dc3545" title="Red"></button><input id="bilingualAccentColor" type="color" value="#9c27b0" aria-label="Custom accent color"></div></div>
+          </div></section>
+          <section class="settings-subsection"><h3 data-i18n="bilingualPreview">Preview</h3><div class="bilingual-preview"><p id="bilingualPreviewSource">Keepit helps you understand, save, and remember anything you learn online. Translate content, take notes, listen, and review flashcards to turn everyday browsing into lasting knowledge.</p><div class="lhn-bilingual-card" id="bilingualPreviewTranslation" aria-live="polite">…</div></div></section>
+          <section class="settings-subsection"><h3 data-i18n="bilingualReading">Reading</h3><div class="settings-preference-list">
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualAutoScroll">Auto-scroll while reading</strong></span><span class="settings-switch"><input id="bilingualAutoScroll" type="checkbox" checked><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualEnableTTS">Enable text to speech</strong></span><span class="settings-switch"><input id="bilingualEnableTTS" type="checkbox" checked><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="bilingualSpeakerIcon">Show reading icon</strong></span><select id="bilingualSpeakerIconVisibility"><option value="always" data-i18n="bilingualSpeakerAlways">Always visible</option><option value="hover" data-i18n="bilingualSpeakerHover">Show on hover</option><option value="reading" data-i18n="bilingualSpeakerReading">Only while reading</option></select></label>
+          </div></section>
+          <section class="settings-subsection"><h3 data-i18n="bilingualExclude">Parts not to read</h3><div class="settings-preference-list"><label class="settings-preference-row"><span><strong data-i18n="bilingualExcludeTitle">Custom website filters</strong><small data-i18n="bilingualExcludeHelp">Enter CSS selectors, one per line. Matching page sections are skipped by Alt+A and Alt+R.</small></span><textarea id="bilingualExcludeSelectors" rows="4" spellcheck="false" placeholder=".sidebar&#10;#related-content"></textarea></label></div></section>
+          <section class="settings-subsection"><h3 data-i18n="bilingualCache">Cache</h3><div class="settings-preference-list"><div class="settings-preference-row"><span><strong data-i18n="bilingualCacheTitle">Translation cache</strong><small data-i18n="bilingualCacheHelp">Cached translations expire after 7 days.</small></span><button id="bilingualClearCache" class="settings-action-button" type="button" data-i18n="bilingualClearCache">Clear cache</button></div></div></section>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="disableWeb" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="disableWeb">Disable Web</h2><p data-i18n="disableWebHelp">Manage websites where Keepit is disabled.</p></div>
+          <form id="settingsDisabledWebsiteForm" class="settings-disabled-web-form"><input id="settingsDisabledWebsiteInput" type="text" autocomplete="url" spellcheck="false" data-i18n-placeholder="disabledWebsitePlaceholder" placeholder="Enter a website or domain (e.g., example.com)"><button type="submit" class="settings-action-button" data-i18n="addWebsite">Add website</button></form>
+          <div id="settingsDisabledWebsiteList" class="settings-disabled-web-list" aria-live="polite"></div>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="appearance" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="appearance">Appearance</h2><p data-i18n="settingsAppearanceHelp">Choose how Keepit looks on this device.</p></div>
+          <section class="settings-subsection settings-appearance-sidebar-group"><h3 data-i18n="settingsSidebarIndicatorGroup">Sidebar indicator</h3>
+            <div class="settings-preference-list">
+              <label class="settings-preference-row"><span><strong data-i18n="enableSidebarIndicator">Show sidebar indicator</strong><small data-i18n="enableSidebarIndicatorHelp">Show or hide the sidebar edge toggle on web pages.</small></span><span class="settings-switch"><input id="settingsSidebarIndicator" type="checkbox"><i></i></span></label>
+              <label class="settings-preference-row" id="settingsSidebarIndicatorDisabledSitesRow"><span><strong data-i18n="sidebarIndicatorDisabledSites">Show on disabled websites</strong><small data-i18n="sidebarIndicatorDisabledSitesHelp">Keep the indicator available to re-enable Keepit on disabled websites.</small></span><span class="settings-switch"><input id="settingsSidebarIndicatorDisabledSites" type="checkbox"><i></i></span></label>
+            </div>
+          </section>
+          <div class="settings-subsection"><h3 data-i18n="settingsColorMode">Color mode</h3><p data-i18n="settingsThemeHelp">Choose light, dark, or follow your system.</p>
+            <div class="settings-theme-options">
+              <button type="button" data-settings-theme="light"><span class="settings-theme-icon light"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.6" fill="currentColor"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="settings-theme-choice-label"><span data-i18n="lightMode">Light</span><svg class="settings-theme-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></button>
+              <button type="button" data-settings-theme="dark"><span class="settings-theme-icon dark"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.15 14.4A8.85 8.85 0 0 1 9.6 3.85 9.1 9.1 0 1 0 20.15 14.4Z"/></svg></span><span class="settings-theme-choice-label"><span data-i18n="darkMode">Dark</span><svg class="settings-theme-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></button>
+              <button type="button" data-settings-theme="system"><span class="settings-theme-icon system"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-5v2h3v2H6v-2h3v-2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 2v11h16V5Z"/></svg></span><span class="settings-theme-choice-label"><span data-i18n="followSystem">Follow system</span><svg class="settings-theme-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></button>
+            </div>
+          </div>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="shortcuts" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="keyboardShortcuts">Keyboard shortcuts</h2><p data-i18n="shortcutHint">Click the field and press your shortcut (e.g., Alt+S).</p></div>
+          <div class="settings-subsection settings-dashboard-shortcuts">
+            <label class="settings-shortcut-row"><span><strong data-i18n="openNotePopup">Open note popup</strong></span><input id="settingsShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="togglePageSidebar">Toggle page sidebar</strong></span><input id="settingsSidebarShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="translateSelectedText">Translate selected text</strong></span><input id="settingsTranslateShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="toggleWebsiteShortcutLabel">Toggle enable on this website</strong></span><input id="settingsWebsiteShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="speechPauseShortcutLabel">Pause or resume speech</strong></span><input id="settingsSpeechPauseShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="previousReadingShortcutLabel">Read previous paragraph</strong></span><input id="settingsPreviousReadingShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="nextReadingShortcutLabel">Read next paragraph</strong></span><input id="settingsNextReadingShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="increaseReadingSpeedShortcutLabel">Increase reading speed</strong></span><input id="settingsIncreaseReadingSpeedShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="decreaseReadingSpeedShortcutLabel">Decrease reading speed</strong></span><input id="settingsDecreaseReadingSpeedShortcut" readonly></label>
+            <div class="dashboard-shortcut-reset-row"><button id="resetDashboardShortcuts" type="button" class="settings-action-button" data-i18n="resetShortcuts">Reset</button></div>
+          </div>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="notifications" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="notifications">Notifications</h2><p data-i18n="notificationPreferencesHelp">Manage which updates and reminders are enabled on this device.</p></div>
+          <div class="settings-preference-list">
+            <label class="settings-preference-row"><span><strong data-i18n="notificationProductUpdates">Product updates and features</strong><small data-i18n="notificationProductUpdatesHelp">Show information about new features and highlighting tools.</small></span><span class="settings-switch"><input id="settingsProductUpdates" type="checkbox"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="notificationWeeklySummary">Weekly summary</strong><small data-i18n="notificationWeeklySummaryHelp">Enable a weekly summary preference for this profile.</small></span><span class="settings-switch"><input id="settingsWeeklySummary" type="checkbox"><i></i></span></label>
+          </div>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="backup" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="backup">Backup</h2><p data-i18n="settingsBackupHelp">Export or import your highlights and notes.</p></div>
+          <div class="settings-backup-row"><span><strong data-i18n="export">Export</strong><small data-i18n="settingsExportHelp">Save a local copy of your highlights and notes.</small></span><div class="settings-backup-export-wrap"><button id="settingsExportButton" type="button" class="settings-action-button" aria-haspopup="true" aria-expanded="false"><span class="settings-export-button-content"><span data-i18n="export">Export</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></span></button><div id="settingsBackupExportMenu" class="export-menu align-right" hidden></div></div></div>
+          <div class="settings-backup-row"><span><strong data-i18n="importJson">Import JSON</strong><small data-i18n="settingsImportHelp">Add highlights and notes from a JSON backup.</small></span><button id="settingsImportJson" type="button" class="settings-action-button" data-i18n="import">Import</button></div>
+        </section>
+        <section class="settings-panel-page upgrade-billing-page" data-settings-panel="upgrade" hidden>
+          <div class="upgrade-page-heading">
+            <h2 data-i18n="upgradeBilling">Upgrade &amp; Billing</h2>
+            <p data-i18n="usageLimitIntro">Manage your subscription, usage limits, payment methods, and access keys.</p>
+          </div>
+          <hr class="upgrade-divider">
+
+          <section class="upgrade-section">
+            <div class="upgrade-plan-banner">
+              <div class="upgrade-plan-copy">
+                <div class="upgrade-plan-title"><h3 data-i18n="usageCurrentSubscription">Current Subscription</h3><span id="upgradePlanBadge" class="upgrade-plan-badge">—</span></div>
+                <p id="usagePlanStatus" class="upgrade-plan-subtext">—</p>
+              </div>
+              <button id="upgradeActivateCta" class="upgrade-cta" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg><span data-i18n="upgradeToPro">Upgrade to Pro</span></button>
+            </div>
+          </section>
+
+          <section class="upgrade-section">
+            <div class="upgrade-section-heading"><h3 data-i18n="usageStatusHeading">Usage &amp; Key Status</h3><span id="upgradeKeyStatus" class="upgrade-key-status"></span></div>
+            <div class="upgrade-usage-grid">
+              <article class="upgrade-usage-card">
+                <div class="upgrade-usage-meta"><strong data-i18n="usageTranslate">Translate Today</strong><span id="usageTranslateCount">—</span></div>
+                <div class="upgrade-progress-track"><div id="usageTranslateBar" class="upgrade-progress-bar upgrade-progress-translate"></div></div>
+                <p data-i18n="usageCountCaption">Requests made today</p>
+              </article>
+              <article class="upgrade-usage-card">
+                <div class="upgrade-usage-meta"><strong data-i18n="usageGoogleTts">Google TTS Today</strong><span id="usageGoogleTtsCount">—</span></div>
+                <div class="upgrade-progress-track"><div id="usageGoogleTtsBar" class="upgrade-progress-bar upgrade-progress-tts"></div></div>
+                <p data-i18n="usageCountCaption">Requests made today</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="upgrade-section upgrade-activate-section">
+            <div class="upgrade-key-card">
+              <div class="upgrade-key-heading"><h3 data-i18n="activateKeyHeading">Activate Key</h3><p data-i18n="usageKeyHelp">Enter a valid license key below to unlock additional usage.</p></div>
+              <form id="usageKeyForm" class="upgrade-key-form">
+                <input id="usageKeyInput" type="text" autocomplete="off" spellcheck="false" placeholder="123-456789-123-AAAA" aria-label="License key">
+                <button id="usageKeyActivate" type="submit" class="upgrade-key-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M12 14v3"/></svg><span data-i18n="activateKey">Activate</span></button>
+              </form>
+              <p id="usageKeyMessage" class="upgrade-key-message" role="status" aria-live="polite"></p>
+            </div>
+          </section>
+
+          <aside class="upgrade-local-notice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span data-i18n="localKeyDisclaimer">Local key checks are temporary and can be forged. Keys bundled in this add-on are not secure secrets.</span></aside>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="reset" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="resetTab">Reset</h2><p data-i18n="restoreSettingsHelp">Restore settings to their defaults. Saved highlights and notes will remain.</p></div>
+          <section class="settings-danger-zone">
+            <div class="settings-danger-heading" data-i18n="resetTab">Reset</div>
+            <div class="settings-danger-row"><span><strong data-i18n="restoreSettings">Restore default settings</strong><small data-i18n="restoreSettingsHelp">Restore settings to their defaults. Saved highlights and notes will remain.</small></span><button id="openRestoreSettingsConfirm" type="button" class="settings-danger-button" data-i18n="restoreSettings">Restore default settings</button></div>
+          </section>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="about" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="about">About</h2><p data-i18n="appName">Keepit - Highlight Notes</p></div>
+          <div class="settings-backup-row"><span><strong data-i18n="version">Version</strong><small data-i18n="settingsLocalOnly">Highlights and notes are stored locally in this Firefox profile.</small></span><strong id="settingsVersion"></strong></div>
+        </section>
+      </main>
+    </div>
+  </div>
+</dialog>
+<dialog id="restoreSettingsConfirmDialog" class="settings-reset-confirm-dialog" aria-labelledby="restoreSettingsConfirmTitle">
+  <form method="dialog">
+    <h2 id="restoreSettingsConfirmTitle" data-i18n="restoreSettingsConfirmTitle">Are you sure you want to restore the original settings?</h2>
+    <p data-i18n="restoreSettingsConfirmMessage">All settings will return to their defaults. Saved highlights and notes will not be deleted.</p>
+    <div class="settings-reset-confirm-actions"><button type="submit" value="cancel" class="settings-action-button" data-i18n="cancel">Cancel</button><button type="submit" value="confirm" class="settings-danger-button" data-i18n="agree">Agree</button></div>
+  </form>
+</dialog>
+<dialog id="studyDialog" class="study-dialog" aria-labelledby="studyTitle">
+  <section class="study-session"><div id="studyToast" class="study-layer-toast" role="status" aria-live="polite" hidden></div>
+    <header class="study-session-header"><div class="study-heading"><img class="study-heading-logo" src="icons/icon.svg" alt=""><div class="study-heading-copy"><h2 id="studyTitle" data-i18n="studyMode">Keepit - Study flashcards</h2><p id="studyProgress"></p></div></div><div class="study-header-actions"><button id="studyJumpHighlight" class="study-jump-highlight" type="button" data-i18n-title="jumpToHighlight" data-i18n-aria-label="jumpToHighlight" aria-label="Jump to highlight" title="Jump to highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></button><button id="studyEditCard" class="study-close study-edit-card" type="button" data-i18n-title="editAnnotation" data-i18n-aria-label="editAnnotation" aria-label="Edit annotation" title="Edit annotation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button id="studyFullscreenToggle" class="study-close study-fullscreen-toggle" type="button" aria-label="Enter fullscreen" title="Enter fullscreen"></button><button id="closeStudy" class="study-close" type="button" data-i18n-title="close" data-i18n-aria-label="close" aria-label="Close" title="Close">×</button></div></header>
+    <div class="study-session-tools"><button id="studyShortcutSettings" class="study-tool-button" type="button" data-i18n-title="flashcardSettings" data-i18n-aria-label="flashcardSettings" aria-label="Setting" title="Setting"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73z"/><circle cx="12" cy="12" r="4"/></svg><span data-i18n="studyShortcutSettingsButton">Setting</span></button><button id="studyPlayAll" class="study-tool-button" type="button" aria-pressed="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg><span data-i18n="playAll">Play all</span></button><button id="studyShuffleBtn" class="study-tool-button" type="button" data-i18n-title="shuffleCardsTooltip" title="Shuffle the remaining cards into a random order."><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M4 20 20 4M20 16v5h-5"/><path d="M15 15 20 20M4 4l5 5"/></svg><span data-i18n="shuffleCards">Shuffle</span></button><button id="studyAutoSpeak" class="study-tool-button study-auto-speak" type="button" aria-pressed="false" title="Auto speak" aria-label="Auto speak"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg><span id="studyAutoSpeakLabel" data-i18n="autoSpeak">Auto speak</span></button><button id="studyFocusToggle" class="study-tool-button study-focus-toggle" type="button" aria-pressed="false" data-i18n-title="focusMode" data-i18n-aria-label="focusMode" aria-label="Focus" title="Focus"><svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><span data-i18n="focusMode">Focus</span></button></div>
+    <article id="studyCard" class="study-card">
+      <div id="studyCardSource" class="study-card-source"></div>
+      <section id="studyFront" class="study-card-face"><span class="study-face-label" data-i18n="studyFront">Front</span><div class="study-front-quote"><div id="studyQuote" class="study-quote"></div><button id="studyPlayFront" class="study-play-button" type="button" data-i18n-title="playHighlight" data-i18n-aria-label="playHighlight" aria-label="Play highlight" title="Play highlight"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg></button><label class="study-speech-language-control" title="Speech language"><span class="study-speech-language-flag" aria-hidden="true">🌐</span><select data-study-speech-language="quote" data-i18n-aria-label="speechLanguage" aria-label="Speech language"><option value="auto" data-i18n="autoSpeechLanguage">🌐 Auto</option><option value="en-US" data-i18n="englishSpeechLanguage">🇺🇸 English</option><option value="vi-VN" data-i18n="vietnameseSpeechLanguage">🇻🇳 Vietnamese</option><option value="ko-KR" data-i18n="koreanSpeechLanguage">🇰🇷 Korean</option></select></label></div><label id="studyTypedAnswerField" class="study-typed-answer-field" hidden><span data-i18n="typeTheAnswer">Type the answer</span><input id="studyTypedAnswer" type="text" autocomplete="off" data-i18n-placeholder="typeAnswerPlaceholder" placeholder="Type your answer…"></label><div id="studyFrontContextField" class="study-answer-field study-front-context" hidden><div class="study-answer-heading"><span data-i18n="sentenceNote">Sentence note</span><button id="studyPlayFrontContext" class="study-play-button" type="button" data-i18n-title="playSentence" data-i18n-aria-label="playSentence" aria-label="Play sentence note" title="Play sentence note"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg></button></div><div class="study-language-text-row"><label class="study-speech-language-control" title="Speech language"><span class="study-speech-language-flag" aria-hidden="true">🌐</span><select data-study-speech-language="context" data-i18n-aria-label="speechLanguage" aria-label="Speech language"><option value="auto" data-i18n="autoSpeechLanguage">🌐 Auto</option><option value="en-US" data-i18n="englishSpeechLanguage">🇺🇸 English</option><option value="vi-VN" data-i18n="vietnameseSpeechLanguage">🇻🇳 Vietnamese</option><option value="ko-KR" data-i18n="koreanSpeechLanguage">🇰🇷 Korean</option></select></label><p id="studyFrontContext"></p></div><p id="studyFrontContextTranslation" class="study-context-translation" hidden></p></div><div class="study-shortcut-option study-definition-shortcut-option" hidden><a id="studySearchDefinitionFront" class="study-definition-link" data-i18n="searchNoteDefinition">Search highlight definition</a><small id="studyDefinitionFrontShortcutHint" class="study-shortcut-hint"></small></div><p data-i18n="studyFrontHint">Try to recall the meaning before revealing the answer.</p><div class="study-shortcut-option"><button id="studyRevealBtn" class="study-reveal-answer" type="button"><span data-i18n="studyShowAnswer">Show answer</span></button><small id="studyRevealShortcutHint" class="study-shortcut-hint">(Enter)</small></div></section>
+      <section id="studyBack" class="study-card-face study-card-back" hidden>
+        <span class="study-face-label" data-i18n="studyBack">Answer</span>
+        <div class="study-back-quote"><label class="study-speech-language-control" title="Speech language"><span class="study-speech-language-flag" aria-hidden="true">🌐</span><select data-study-speech-language="quote" data-i18n-aria-label="speechLanguage" aria-label="Speech language"><option value="auto" data-i18n="autoSpeechLanguage">🌐 Auto</option><option value="en-US" data-i18n="englishSpeechLanguage">🇺🇸 English</option><option value="vi-VN" data-i18n="vietnameseSpeechLanguage">🇻🇳 Vietnamese</option><option value="ko-KR" data-i18n="koreanSpeechLanguage">🇰🇷 Korean</option></select></label><div id="studyBackQuote" class="study-back-quote-text"></div><button id="studyPlayBackQuote" class="study-play-button" type="button" data-i18n-title="playHighlight" data-i18n-aria-label="playHighlight" aria-label="Play highlight" title="Play highlight"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg></button></div>
+        <div id="studyTypedAnswerResult" class="study-answer-field study-typed-answer-result" hidden><span data-i18n="yourAnswer">Your answer</span><p id="studyUserAnswer"></p><small id="studyAnswerFeedback"></small><div><span data-i18n="expectedAnswer">Expected answer</span><p id="studyExpectedAnswer"></p></div></div><div class="study-shortcut-option study-definition-shortcut-option" hidden><a id="studySearchDefinitionBack" class="study-definition-link" data-i18n="searchNoteDefinition">Search highlight definition</a><small id="studyDefinitionBackShortcutHint" class="study-shortcut-hint"></small></div><div id="studyNoteField" class="study-answer-field"><span data-i18n="noteLabel">Note</span><div class="study-language-text-row study-note-text-row"><label class="study-speech-language-control" title="Speech language"><span class="study-speech-language-flag" aria-hidden="true">🌐</span><select data-study-speech-language="note" data-i18n-aria-label="speechLanguage" aria-label="Speech language"><option value="auto" data-i18n="autoSpeechLanguage">🌐 Auto</option><option value="en-US" data-i18n="englishSpeechLanguage">🇺🇸 English</option><option value="vi-VN" data-i18n="vietnameseSpeechLanguage">🇻🇳 Vietnamese</option><option value="ko-KR" data-i18n="koreanSpeechLanguage">🇰🇷 Korean</option></select></label><p id="studyNote"></p><button id="studyPlayNote" class="study-play-button" type="button" data-i18n-title="playHighlight" data-i18n-aria-label="playHighlight" aria-label="Play highlight" title="Play highlight"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg></button></div></div>
+        <div id="studyContextField" class="study-answer-field"><div class="study-answer-heading"><span data-i18n="sentenceNote">Sentence note</span><button id="studyPlayContext" class="study-play-button" type="button" data-i18n-title="playSentence" data-i18n-aria-label="playSentence" aria-label="Play sentence note" title="Play sentence note"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z"/></svg></button></div><div class="study-language-text-row"><label class="study-speech-language-control" title="Speech language"><span class="study-speech-language-flag" aria-hidden="true">🌐</span><select data-study-speech-language="context" data-i18n-aria-label="speechLanguage" aria-label="Speech language"><option value="auto" data-i18n="autoSpeechLanguage">🌐 Auto</option><option value="en-US" data-i18n="englishSpeechLanguage">🇺🇸 English</option><option value="vi-VN" data-i18n="vietnameseSpeechLanguage">🇻🇳 Vietnamese</option><option value="ko-KR" data-i18n="koreanSpeechLanguage">🇰🇷 Korean</option></select></label><p id="studyContext"></p></div><p id="studyContextTranslation" class="study-context-translation" hidden></p></div>
+        <div id="studyTags" class="tag-list" hidden></div>
+      </section>
+    </article>
+    <div id="studyRatings" class="study-ratings" hidden>
+      <div class="study-grade-option"><button type="button" class="study-grade study-again" data-grade="again"><span class="study-grade-label" data-i18n="studyAgainLabel">Again</span></button><small class="study-shortcut-hint">(Left)</small></div>
+      <div class="study-grade-option"><button type="button" class="study-grade study-hard" data-grade="hard"><span class="study-grade-label" data-i18n="studyHardLabel">Hard</span></button><small class="study-shortcut-hint">(Up)</small></div>
+      <div class="study-grade-option"><button type="button" class="study-grade study-good" data-grade="good"><span class="study-grade-label" data-i18n="studyGoodLabel">Good</span></button><small class="study-shortcut-hint">(Down)</small></div>
+      <div class="study-grade-option"><button type="button" class="study-grade study-easy" data-grade="easy"><span class="study-grade-label" data-i18n="studyEasyLabel">Easy</span></button><small class="study-shortcut-hint">(Right)</small></div>
+    </div>
+    <section id="studyComplete" class="study-complete" hidden><div class="study-complete-icon">✓</div><h3 data-i18n="studySessionDone">Session complete</h3><p id="studySummary"></p><div class="study-shortcut-option"><button id="closeStudyDone" type="button" class="study-reveal-answer" data-i18n="close">Close</button><small id="studyCompleteCloseHint" class="study-shortcut-hint">(Enter)</small></div></section>
+  </section>
+</dialog>
+<dialog id="studyShortcutDialog" class="dashboard-settings-dialog study-settings-dialog" aria-labelledby="studyShortcutTitle">
+  <div class="settings-window">
+    <div id="studySettingsToast" class="study-layer-toast" role="status" aria-live="polite" hidden></div>
+    <form id="studyShortcutForm">
+      <header class="settings-window-topbar">
+        <div id="studyShortcutTitle" class="settings-window-title"><span data-i18n="flashcardSettings">Flashcard settings</span></div>
+        <div class="settings-window-actions"><button id="studySettingsWindowMaximize" type="button" aria-label="Maximize" title="Maximize"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg></button><button id="closeStudyShortcuts" type="button" data-i18n-title="cancel" data-i18n-aria-label="cancel" aria-label="Cancel" title="Cancel">×</button></div>
+      </header>
+      <div class="settings-window-layout">
+        <aside class="settings-window-sidebar">
+          <nav class="settings-window-nav" aria-label="Flashcard settings">
+            <button class="settings-nav-item is-active" type="button" data-study-settings-tab="study"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg><span data-i18n="studyTab">Study</span></button>
+            <button class="settings-nav-item" type="button" data-study-settings-tab="custom"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h8M7 12h10M7 16h6"/></svg><span data-i18n="customFlashcardTab">Flashcard</span></button>
+            <button class="settings-nav-item" type="button" data-study-settings-tab="definition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></svg><span data-i18n="definitionTab">Definition</span></button>
+            <button class="settings-nav-item" type="button" data-study-settings-tab="translate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1"/><path d="M14 21l5-11 5 11M16 17h6"/></svg><span data-i18n="translateTab">Translate</span></button>
+            <button class="settings-nav-item" type="button" data-study-settings-tab="speech"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg><span data-i18n="speechTab">Speech</span></button>
+            <button class="settings-nav-item" type="button" data-study-settings-tab="shortcut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg><span data-i18n="shortcutTab">Shortcut</span></button>
+          </nav>
+        </aside>
+        <main class="settings-window-content">
+          <section class="settings-panel-page is-active" data-study-settings-panel="study">
+            <div class="settings-panel-heading"><h2 data-i18n="studyPlanHeading">Study plan</h2><p data-i18n="studyPlanHelp">Manage your flashcard study progress.</p></div>
+          <section class="study-reset-tools"><h3 data-i18n="studyResetTitle">Reset study progress</h3><p data-i18n="studyResetHelp">Reset review progress for cards reviewed during:</p><div><select id="studyResetRange"><option value="hour" data-i18n="studyResetHour">Last hour</option><option value="day" data-i18n="studyResetDay">Last day</option><option value="week" data-i18n="studyResetWeek">Last 7 days</option><option value="all" data-i18n="studyResetAll">All time</option></select><button id="resetStudyProgress" class="secondary" type="button" data-i18n="studyResetButton">Reset progress</button></div></section>
+          </section>
+          <section class="settings-panel-page" data-study-settings-panel="shortcut" hidden>
+            <div class="settings-panel-heading"><h2 data-i18n="studyShortcutSettings">Shortcut settings</h2><p data-i18n="studyShortcutPanelHelp">Set the keys used to control flashcards.</p></div>
+          <label class="settings-preference-row"><span><strong data-i18n="showStudyShortcuts">Show shortcuts on buttons</strong></span><span class="settings-switch"><input id="studyShowShortcuts" type="checkbox" checked><i></i></span></label>
+          <div class="study-shortcut-fields">
+            <label class="settings-shortcut-row"><span data-i18n="studyAgainLabel">Again</span><input type="text" data-study-shortcut="again" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyHardLabel">Hard</span><input type="text" data-study-shortcut="hard" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyGoodLabel">Good</span><input type="text" data-study-shortcut="good" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyEasyLabel">Easy</span><input type="text" data-study-shortcut="easy" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyShowAnswer">Show answer</span><input type="text" data-study-shortcut="reveal" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyReplaySpeech">Replay speech</span><input type="text" data-study-shortcut="replay" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyPreviousCard">Return previous card</span><input type="text" data-study-shortcut="previous" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="searchNoteDefinition">Search highlight definition</span><input type="text" data-study-shortcut="searchDefinition" readonly></label>
+            <label class="settings-shortcut-row"><span data-i18n="studyEditCardShortcut">Edit card</span><input type="text" data-study-shortcut="editCard" readonly></label>
+          </div>
+          <div class="study-shortcut-reset-row"><button id="resetStudyShortcuts" class="secondary" type="button" data-i18n="resetShortcuts">Reset</button></div>
+          </section>
+          <section class="settings-panel-page" data-study-settings-panel="custom" hidden>
+            <div class="settings-panel-heading"><h2 data-i18n="customFlashcardHeading">Custom Flashcard</h2><p data-i18n="customFlashcardPanelHelp">Choose how your flashcards look and behave.</p></div>
+          <div class="settings-preference-list study-custom-preferences">
+            <label class="settings-preference-row"><span><strong data-i18n="alwaysPlayAll">Always play all</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="alwaysPlayAll"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="alwaysAutoSpeak">Always auto speak</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="alwaysAutoSpeak"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="alwaysFocusMode">Always focus mode</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="alwaysFocusMode"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="showSentenceNoteFront">Show sentence note in front card</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="showSentenceNoteFront"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="autoSpeakSentenceNoteFront">Auto speak sentence note in front card</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="autoSpeakSentenceNoteFront"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="typeTheAnswer">Type the answer</strong><small data-i18n="typeTheAnswerHelp">Type your answer before revealing the card.</small></span><span class="settings-switch"><input type="checkbox" data-study-preference="typeTheAnswer"><i></i></span></label>
+            <label class="settings-preference-row"><span><strong data-i18n="reverseFlashcards">Reverse flashcards</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="reverseFlashcards"><i></i></span></label>
+          </div>
+          <div class="study-shortcut-reset-row study-custom-reset-row"><button id="resetCustomFlashcardSettings" class="secondary" type="button" data-i18n="resetShortcuts">Reset</button></div>
+          </section>
+          <section class="settings-panel-page" data-study-settings-panel="definition" hidden>
+            <div class="settings-panel-heading"><h2 data-i18n="definitionSearchTitle">Definition search</h2><p data-i18n="searchNoteDefinitionHelp">Show a Google definition search for the highlighted text on both sides of the card.</p></div>
+            <div class="settings-preference-list study-custom-preferences">
+              <label class="settings-preference-row"><span><strong data-i18n="searchNoteDefinition">Search highlight definition</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="searchNoteDefinition"><i></i></span></label>
+              <label class="settings-preference-row"><span><strong data-i18n="openAndSwitchSearchTab">Open and switch to the search tab</strong></span><span class="settings-switch"><input type="checkbox" data-study-preference="switchToDefinitionTab"><i></i></span></label>
+            </div>
+            <section class="settings-subsection study-translate-options"><label class="settings-shortcut-row"><span data-i18n="searchLanguage">Search language</span><select id="studyDefinitionSearchLanguage"></select></label></section>
+          </section>
+          <section class="settings-panel-page" data-study-settings-panel="translate" hidden>
+            <div class="settings-panel-heading"><h2 data-i18n="translateTab">Translate</h2><p data-i18n="translatePanelHelp">Choose where sentence note translations appear and which language to use.</p></div>
+            <div class="settings-preference-list study-custom-preferences">
+              <label class="settings-preference-row"><span><strong data-i18n="translationFront">Add translation field to front card</strong></span><span class="settings-switch"><input type="checkbox" data-study-translation-setting="showFront"><i></i></span></label>
+              <label class="settings-preference-row"><span><strong data-i18n="translationBack">Add translation field to back card</strong></span><span class="settings-switch"><input type="checkbox" data-study-translation-setting="showBack"><i></i></span></label>
+            </div>
+            <section class="settings-subsection study-translate-options"><h3 data-i18n="translateSettings">Translate Settings</h3>
+              <div class="settings-preference-list study-custom-preferences">
+                <label class="settings-preference-row"><span><strong data-i18n="flashcardSettingsOnly">Flashcard Settings Only</strong></span><span class="settings-switch"><input id="studyUseDashboardTranslateSettings" type="checkbox"><i></i></span></label>
+                <label class="settings-preference-row study-translate-setting-row"><span><strong data-i18n="sourceLanguage">Source language</strong></span><select id="studyTranslationSource"></select></label>
+                <label class="settings-preference-row study-translate-setting-row"><span><strong data-i18n="targetLanguage">Target language</strong></span><select id="studyTranslationTarget" data-study-translation-target></select></label>
+              </div>
+            </section>
+          </section>
+          <section class="settings-panel-page" data-study-settings-panel="speech" hidden>
+            <div class="settings-panel-heading"><h2 data-i18n="speechTab">Speech</h2><p data-i18n="speechPanelHelp">Choose the voice and language used to read flashcards.</p></div>
+            <section class="settings-subsection study-translate-options"><h3 data-i18n="flashcardVoice">Voice</h3>
+              <div class="settings-preference-list study-custom-preferences">
+                <label class="settings-preference-row"><span><strong data-i18n="flashcardSettingsOnly">Flashcard Settings Only</strong></span><span class="settings-switch"><input id="studyUseDashboardSpeechSettings" type="checkbox"><i></i></span></label>
+                <label class="settings-preference-row study-speech-setting-row settings-speech-voice-row"><span><strong data-i18n="speechVoice">Speech voice</strong></span><select id="studySpeechVoice"><option value="browser" data-i18n="browserVoice">Browser voice</option><option value="google" data-i18n="googleVoice">Google voice</option></select></label>
+                <div class="settings-preference-row study-speech-setting-row settings-speech-rate-row"><label for="studySpeechRate"><strong id="studySpeechRateLabel" data-i18n="speechRate">Speech rate</strong></label><div class="settings-speech-rate-controls"><input id="studySpeechRate" type="range" min="0.5" max="2" step="0.1" aria-label="Speech rate"><div class="settings-speech-rate-value"><input id="studySpeechRateValue" type="number" min="0.5" max="2" step="0.1" inputmode="decimal" aria-label="Speech rate"></div><button id="resetStudySpeechRate" class="settings-action-button settings-speech-rate-reset" type="button" data-i18n="resetSpeed">Reset</button></div></div>
+                <div id="studyFlashcardEnglishRateRow" class="settings-preference-row study-speech-setting-row settings-speech-rate-row study-flashcard-english-rate-row"><label for="studyFlashcardEnglishRate"><strong data-i18n="flashcardLanguageSpeed">Flashcard language speed</strong></label><div class="settings-speech-rate-controls"><input id="studyFlashcardEnglishRate" type="range" min="0.5" max="2" step="0.1" aria-label="Flashcard language speed"><div class="settings-speech-rate-value"><input id="studyFlashcardEnglishRateValue" type="number" min="0.5" max="2" step="0.1" inputmode="decimal" aria-label="Flashcard language speed"></div><button id="resetStudyFlashcardEnglishRate" class="settings-action-button settings-speech-rate-reset" type="button" data-i18n="resetSpeed">Reset</button></div></div>
+                <label class="settings-preference-row"><span><strong data-i18n="highlightVoice">Highlight</strong></span><select id="studyHighlightVoiceLanguage" data-i18n-aria-label="highlightVoice"></select></label>
+                <label class="settings-preference-row"><span><strong data-i18n="noteVoice">Note</strong></span><select id="studyNoteVoiceLanguage" data-i18n-aria-label="noteVoice"></select></label>
+              </div>
+            </section>
+          </section>
+        </main>
+      </div>
+    </form>
+  </div>
+</dialog>
+<dialog id="editDialog" class="composer-dialog"><form id="editForm"><h2 data-i18n="editAnnotation">Edit annotation</h2><div id="editQuotePreview" class="composer-quote"></div><div class="composer-toolbar"><div id="editColors" class="composer-colors" role="group" aria-label="Highlight color"><button type="button" class="composer-color" data-color="yellow"></button><button type="button" class="composer-color" data-color="green"></button><button type="button" class="composer-color" data-color="purple"></button><button type="button" class="composer-color" data-color="red"></button><button type="button" class="composer-color" data-color="blue"></button><button type="button" class="composer-color" data-color="orange"></button></div><button id="closeEdit" type="button" class="composer-close" data-i18n-title="cancel" data-i18n-aria-label="cancel" aria-label="Cancel" title="Cancel">×</button></div><label class="composer-field"><span data-i18n="noteLabel">Note</span><div class="composer-input-wrap"><span class="composer-note-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg></span><textarea id="editNote" rows="4" data-i18n-placeholder="addNote" placeholder="Add a note…"></textarea></div></label><label class="composer-field"><span data-i18n="sentenceNote">Sentence note</span><div class="composer-input-wrap"><span class="composer-note-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg></span><textarea id="editContextNote" rows="4" data-i18n-placeholder="sentenceNotePlaceholder" placeholder="Sentence containing the highlight…"></textarea></div></label><label class="composer-field"><span data-i18n="tagsLabel">Tags</span><div id="editTags" class="tag-editor"></div></label></form></dialog>
+<dialog id="toast" role="status" aria-live="polite"></dialog><script src="config.js"></script><script src="i18n.js"></script><script src="study-utils.js"></script><script src="study-translation.js"></script><script src="study-view.js"></script><script src="dashboard.js"></script>
+</body></html>

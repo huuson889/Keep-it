@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --lhn-app-font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --lhn-tooltip-font-family: var(--lhn-app-font-family);
+  --lhn-tooltip-font-size: 14px;
+  --lhn-tooltip-line-height: 1.45;
+  --lhn-edit-section-gap: 12px;
+  --lhn-edit-field-gap: 6px;
+  --lhn-annotation-note-gap: 4px;
+  --lhn-annotation-context-gap: 8px;
+}
+
+
+/* Shared visual system for popup, dashboard and injected extension surfaces. */
+:root { --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9; --lhn-ui-text:#334155; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8; --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#4f46e5; --lhn-ui-brand-hover:#4338ca; --lhn-ui-brand-soft:#f5f3ff; --lhn-ui-shadow:0 12px 34px rgba(15,23,42,.14),0 3px 10px rgba(15,23,42,.06); --lhn-ui-radius:14px; }
+:root.dark { --lhn-ui-page:#0b1120; --lhn-ui-surface:#111a2b; --lhn-ui-raised:#172338; --lhn-ui-subtle:#1e2b41; --lhn-ui-text:#d7deeb; --lhn-ui-strong:#f1f5fb; --lhn-ui-muted:#a4b0c3; --lhn-ui-soft:#8492a8; --lhn-ui-border:#2b3a52; --lhn-ui-border-soft:#233149; --lhn-ui-brand:#a5a9ff; --lhn-ui-brand-hover:#c0c2ff; --lhn-ui-brand-soft:#252443; --lhn-ui-shadow:0 18px 44px rgba(0,0,0,.42),0 4px 14px rgba(0,0,0,.22); }
