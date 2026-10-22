@@ -1,6 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
-- 2026-10-23 | v3.4.517: Khi lưu file trong repo, watcher tự commit rồi cập nhật ZIP cùng version; sửa D:\Keepit\sync-watch.ps1, AGENTS.md. Đã chạy kiểm tra cú pháp; đang kiểm chứng repack trên lần lưu đầu tiên. Tiếp theo: giữ bản ZIP hiện hành đồng bộ cho Claude.
+- 2026-10-23 | v3.4.517: Khi lưu file trong repo, watcher tự commit rồi cập nhật ZIP cùng version; sửa D:\Keepit\sync-watch.ps1, AGENTS.md. Đã chạy kiểm tra cú pháp; đang kiểm chứng repack sau khi lưu file. Tiếp theo: giữ bản ZIP hiện hành đồng bộ cho Claude.
 - 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; đã kiểm tra cú pháp và thử lưu/xóa file trong repo: watcher tự commit cả hai sau debounce 2 giây. Tiếp theo: dùng trực tiếp thư mục nguồn khi chỉnh sửa.
 
 
