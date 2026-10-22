@@ -88,6 +88,11 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar .lhn-br-presets{display:flex;gap:4px;justify-content:space-between;margin-top:8px}
     #lhn-bilingual-reading-bar .lhn-br-presets button{min-width:0;height:auto;padding:6px;font-size:11px}
     #lhn-bilingual-reading-bar .lhn-br-setting{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
+    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-head{padding-bottom:8px}
+    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-body{max-height:min(480px,calc(100vh - 112px));padding-top:5px}
+    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting{padding:3px 0;text-align:left}
+    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting>span:first-child{flex:1;text-align:left}
+    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting .lhn-br-toggle{flex:none}
     #lhn-bilingual-reading-bar .lhn-br-setting input[type=number]{box-sizing:border-box;width:76px;padding:5px 7px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1e293b;font:inherit}
     #lhn-bilingual-reading-bar .lhn-br-toggle{appearance:none;width:42px;height:23px;border-radius:20px;background:#e2e8f0;position:relative;cursor:pointer;transition:background .15s}
     #lhn-bilingual-reading-bar .lhn-br-toggle:checked{background:var(--lhn-br-accent)}

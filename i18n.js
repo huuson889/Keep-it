@@ -111,9 +111,9 @@
   MESSAGES.en.readerPopupBilingualSettings = "Bilingual Reader settings";
   MESSAGES.vi.readerPopupBilingualSettings = "Cài đặt Bilingual Reader";
   MESSAGES.ko.readerPopupBilingualSettings = "이중 언어 리더 설정";
-  MESSAGES.en.readerPopupCustomWebsiteFont = "Custom website font (Inter)";
-  MESSAGES.vi.readerPopupCustomWebsiteFont = "Font tùy chỉnh cho website (Inter)";
-  MESSAGES.ko.readerPopupCustomWebsiteFont = "웹사이트 사용자 지정 글꼴 (Inter)";
+  MESSAGES.en.readerPopupCustomWebsiteFont = "Custom web font";
+  MESSAGES.vi.readerPopupCustomWebsiteFont = "Font web tùy chỉnh";
+  MESSAGES.ko.readerPopupCustomWebsiteFont = "사용자 지정 웹 글꼴";
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
