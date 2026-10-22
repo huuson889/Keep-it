@@ -47,7 +47,7 @@ async function fetchTtsAudio(message) {
   const key = `${language}\n${voice}\n${text}`;
   try {
     const cached = await getCachedTtsAudio(key);
-    if (cached?.size) return { audio: await cached.arrayBuffer(), cached: true };
+    if (cached?.size) return { audioBase64: arrayBufferToBase64(await cached.arrayBuffer()), cached: true };
   } catch (error) { console.warn("TTS cache read failed; requesting fresh audio", error); }
 
   const usage = await USAGE_LIMITS.consume("googleTts");
@@ -64,7 +64,7 @@ async function fetchTtsAudio(message) {
     if (!blob.size || (blob.type && !/^audio\//i.test(blob.type))) throw new Error("Google TTS returned no playable audio");
   } finally { clearTimeout(timeout); }
   try { await cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
-  return { audio: await blob.arrayBuffer(), cached: false };
+  return { audioBase64: arrayBufferToBase64(await blob.arrayBuffer()), cached: false };
 }
 function openDatabase() {
   if (dbPromise) return dbPromise;
@@ -371,3 +371,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     }]
   }).catch(err => console.warn("TTS referer rule failed", err));
 })();
+
+// Chrome gửi message qua JSON nên ArrayBuffer bị mất; trả audio dạng base64 để dùng được trên cả hai trình duyệt.
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}

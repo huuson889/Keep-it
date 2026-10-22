@@ -29,8 +29,11 @@
       try {
         const result = await api.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: opts.googleLanguage, voice: opts.voice });
         if (!opts.isActive()) return;
-        if (!(result?.audio instanceof ArrayBuffer) || result.audio.byteLength === 0) throw new Error("Google TTS returned empty audio");
-        url = URL.createObjectURL(new Blob([result.audio], { type: "audio/mpeg" }));
+        if (!result?.audioBase64) throw new Error("Google TTS returned empty audio");
+        const bin = atob(result.audioBase64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
         const audio = new Audio(url);
         audio.playbackRate = typeof opts.rate === "function" ? opts.rate() : (opts.rate || 1);
         opts.setCurrent(audio, url);
