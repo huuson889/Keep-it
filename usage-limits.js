@@ -38,7 +38,7 @@
     function details(state, now = Date.now()) {
       const trialActive = now - state.trialStartedAt < TRIAL_MS;
       const plan = planFor(state);
-      const dailyLimit = trialActive ? Infinity : plan?.dailyLimit ?? 10;
+      const dailyLimit = trialActive ? Infinity : plan?.dailyLimit ?? Infinity;
       const day = localDay(new Date(now));
       const today = state.usage[day] || {};
       return {
