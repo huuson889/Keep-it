@@ -1,11 +1,12 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.518: Alt+A/Alt+R nay dùng Readability để chọn vùng, rồi gom các text block nhìn thấy trong vùng và lọc rác; có vùng riêng cho Google Search/AI Overview và debug viền kèm lý do. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check và kiểm tra JSON manifest; chưa kiểm tra trên trình duyệt. Tiếp theo: bật debug trên Google Search và kiểm tra các trang thực tế.
 - 2026-10-23 | v3.4.517: Khi lưu file trong repo, watcher tự commit rồi cập nhật ZIP cùng version; sửa D:\Keepit\sync-watch.ps1, AGENTS.md. Đã chạy kiểm tra cú pháp; đã kiểm tra lưu file: watcher tự commit và cập nhật ZIP cùng version. Tiếp theo: giữ bản ZIP hiện hành đồng bộ cho Claude.
 - 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; đã kiểm tra cú pháp và thử lưu/xóa file trong repo: watcher tự commit cả hai sau debounce 2 giây. Tiếp theo: dùng trực tiếp thư mục nguồn khi chỉnh sửa.
 
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.517. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.518. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
@@ -13,6 +14,8 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+0. [Kiểm tra] Alt+A/Alt+R trên Google Search (bao gồm AI Overview) và một số trang khác; debug bằng localStorage key lhn-bilingual-reader-debug.
+
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
 3. [Làm một phần] Chuỗi dự phòng TTS: hiện là Google -> giọng trình duyệt theo từng đoạn. Chưa có bước "phát trực tiếp"; lỗi mới chỉ ghi console.warn, chưa báo rõ cho người dùng.
@@ -38,6 +41,13 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.518 - 2026-10-23
+- Alt+A/Alt+R đọc các khối chữ nhìn thấy trong vùng nội dung; giữ đoạn dài, lọc rác ở đoạn ngắn, Google Search ưu tiên vùng kết quả/AI Overview.
+- Debug console: xanh = đọc, đỏ = bỏ; xem lý do trong console.table.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trình duyệt.
+- Tiếp theo: kiểm tra các trang thực tế qua debug mode.
+
 ### v3.4.516 - 2026-10-23
 - Reader: mặc định Show on hover; Always visible chỉ luôn hiện trong vùng Alt+R, ngoài vùng hiện khi hover.
 - File: bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
