@@ -7,6 +7,7 @@
 
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version: v3.4.518. Firefox và Chrome, Manifest V3, một bản build chung.
+- Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy trong vùng, giữ đoạn dài và lọc đoạn ngắn nhiễu. Google Search ưu tiên #center_col/#main; debug dùng localStorage lhn-bilingual-reader-debug.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
