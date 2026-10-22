@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.525: Thêm Auto highlight; Auto-open note popup đóng ngoài sẽ hủy, còn Auto highlight bật sẽ lưu như trước khi popup không tự mở. File: config.js, dashboard.html, dashboard.js, content.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa xác nhận UI/Tương tác trên trình duyệt. Tiếp theo: kiểm tra hai chế độ popup.
 - 2026-10-23 | v3.4.525: Đồng bộ màu hai divider trong Settings speak popup và làm đậm hơn 10%. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận màu trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm divider màu nhạt dưới Sign in trong Settings speak popup. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Speak popup Settings khôi phục cỡ chữ 13px, bỏ divider thừa, căn link trái và thu hẹp khoảng cách tới footer. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
@@ -12,11 +13,12 @@
 - Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
 - Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing, link căn trái, hai divider cùng màu #cbd1d8 và nhãn dịch EN/VI/KO.
+- Dashboard Settings > Highlights & Notes: Auto-open note popup khi click ngoài đóng mà không lưu; Auto highlight mặc định bật và giữ lưu hiện tại khi popup không tự mở.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Xác nhận Settings speak popup compact, cỡ chữ và căn lề đúng trên Firefox/Chrome.
+0. [Kiểm tra] Xác nhận Auto-open note popup đóng ngoài không lưu; Auto highlight lưu khi click ngoài.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
