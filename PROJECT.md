@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.520: Alt+R/Alt+A thêm tiêu đề và sapo VnExpress nằm ngoài article body vào luồng đọc. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã kiểm tra HTML trang và chạy node --check, JSON manifest, diff-check; chưa thử trực tiếp trên trình duyệt. Tiếp theo: xác nhận Alt+R đọc đủ headline, lead và body.
 - 2026-10-23 | v3.4.519: Alt+R/Alt+A bỏ qua khối đọc phủ gần toàn màn hình để tránh highlight tím cả trang. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra JSON manifest và diff-check; chưa kiểm tra trên trình duyệt. Tiếp theo: xác nhận trên trang đang gặp lỗi.
 - 2026-10-23 | v3.4.518: Alt+A/Alt+R nay dùng Readability để chọn vùng, rồi gom các text block nhìn thấy trong vùng và lọc rác; có vùng riêng cho Google Search/AI Overview và debug viền kèm lý do. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check và kiểm tra JSON manifest; chưa kiểm tra trên trình duyệt. Tiếp theo: bật debug trên Google Search và kiểm tra các trang thực tế.
 - 2026-10-23 | v3.4.517: Khi lưu file trong repo, watcher tự commit rồi cập nhật ZIP cùng version; sửa D:\Keepit\sync-watch.ps1, AGENTS.md. Đã chạy kiểm tra cú pháp; đã kiểm tra lưu file: watcher tự commit và cập nhật ZIP cùng version. Tiếp theo: giữ bản ZIP hiện hành đồng bộ cho Claude.
@@ -7,8 +8,8 @@
 
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.519. Firefox và Chrome, Manifest V3, một bản build chung.
-- Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy trong vùng, giữ đoạn dài, lọc đoạn ngắn nhiễu và bỏ khối phủ gần toàn màn hình để highlight không phủ cả trang. Google Search ưu tiên #center_col/#main; debug dùng localStorage lhn-bilingual-reader-debug.
+- Version: v3.4.520. Firefox và Chrome, Manifest V3, một bản build chung.
+- Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy trong vùng, giữ đoạn dài, lọc đoạn ngắn nhiễu, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress nằm ngoài article body. Google Search ưu tiên #center_col/#main; debug dùng localStorage lhn-bilingual-reader-debug.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
@@ -16,7 +17,7 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Xác nhận Alt+R không còn highlight cả trang; kiểm tra Alt+A/Alt+R trên Google Search (bao gồm AI Overview) và một số trang khác; debug bằng localStorage key lhn-bilingual-reader-debug.
+0. [Kiểm tra] Xác nhận Alt+R đọc đủ headline, lead và body trên trang VnExpress đã báo; kiểm tra Google Search (bao gồm AI Overview) và một số trang khác; debug bằng localStorage key lhn-bilingual-reader-debug.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
@@ -43,6 +44,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.520 - 2026-10-23
+- Alt+A/Alt+R đưa headline `.title_post` và sapo `.lead_post_detail` của VnExpress vào queue khi cùng khối bài viết.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: xác nhận selector/markup trên HTML trang; đã chạy node --check, parse manifest JSON, git diff --check; chưa thử trình duyệt.
+- Tiếp theo: xác nhận Alt+R đọc đủ phần mở đầu và body.
+
 ### v3.4.519 - 2026-10-23
 - Alt+A/Alt+R loại khối đọc gần phủ toàn màn hình, tránh tô tím toàn trang.
 - File: bilingual-reader.js, manifest.json, PROJECT.md.
