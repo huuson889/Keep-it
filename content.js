@@ -334,6 +334,8 @@
     word = cleanText(word); if (!settings.showFullEnglishDictionary || !isEnglishDictionaryWord(word)) return;
     if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US");
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
+    popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
+    popup._lhnMainController = new AbortController(); popup._lhnRelatedController = new AbortController();
     if (!popup._lhnHistory) popup._lhnHistory = [];
     if (recordHistory && popup.dataset.word && popup.dataset.word !== word.toLowerCase()) popup._lhnHistory.push(popup.dataset.word);
     popup.dataset.word = word.toLowerCase();
@@ -341,18 +343,31 @@
     popup._lhnAnchorRange = range;
     let targetLanguage = globalThis.LHN_I18N?.languageFor(settings) || "en";
     try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
-    const cacheKey = `${word.toLowerCase()}_${targetLanguage}`;
-    const cached = getDictionaryCache(cacheKey);
-    if (cached) { renderEnglishDictionary(popup, cached, true); return; }
+    if (requestId !== dictionaryRequestId) return;
+    const cacheKey = `${dictionaryCachePrefix}${targetLanguage}:${word.toLowerCase()}`;
+    const cached = await getDictionaryCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
+    const hiddenForOpenNote = () => popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
+    if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
+    if (cached) {
+      popup._lhnMainTranslation = cached.translation;
+      if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
+      else renderEnglishDictionary(popup, cached, true);
+      return;
+    }
     try {
-      const [translation, related, forms, collocations] = await Promise.allSettled([
-        dictionaryTranslate(word, targetLanguage), dictionaryRelatedWords(word, targetLanguage), dictionaryWordForms(word, targetLanguage), dictionaryCollocations(word, targetLanguage)
-      ]);
-      const hiddenForOpenNote = popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
-      if (requestId !== dictionaryRequestId || popup !== dictionaryPopup || (!popup.isConnected && !hiddenForOpenNote)) return;
+      const translationPromise = dictionaryTranslate(word, targetLanguage, popup._lhnMainController.signal);
+      translationPromise.then(translation => { popup._lhnMainTranslation = translation; fillNoteFromDictionary(popup); }).catch(() => {});
+      const noRelated = popup._lhnHideForNote || panel?.dataset.lhnDictionaryWord === word.toLowerCase();
+      const relatedTasks = noRelated ? [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])] : [
+        dictionaryRelatedWords(word, targetLanguage, popup._lhnRelatedController.signal),
+        dictionaryWordForms(word, targetLanguage, popup._lhnRelatedController.signal),
+        dictionaryCollocations(word, targetLanguage, popup._lhnRelatedController.signal)
+      ];
+      const [translation, related, forms, collocations] = await Promise.allSettled([translationPromise, ...relatedTasks]);
+      if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
       let ipa = `/${word.toLowerCase()}/`;
       let fallbackRelated = [];
-      if (related.status !== "fulfilled") {
+      if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
         try {
           const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
           if (response.ok) {
@@ -363,7 +378,10 @@
         } catch {}
       }
       const result = { word, ipa, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
-      setDictionaryCache(cacheKey, result); renderEnglishDictionary(popup, result, false);
+      popup._lhnMainTranslation = result.translation;
+      await setDictionaryCache(cacheKey, result);
+      if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
+      else renderEnglishDictionary(popup, result, false);
     } catch (error) {
       if (popup.isConnected) popup.textContent = t("translationUnavailable");
       if (popup._lhnHideForNote) { popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
