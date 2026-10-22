@@ -65,14 +65,15 @@
     }
     document.documentElement?.setAttribute("data-lhn-dark-reader", "true");
     const page = `body,body :not([id^="lhn-"]):not([id^="lhn-"] *):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
+    const pageElement = `:not([id^="lhn-"]):not([id^="lhn-"] *)`;
     const googleSearchFix = /(^|\.)google\./i.test(location.hostname)
-      ? `html[data-lhn-dark-reader="true"] body :not([id^="lhn-"]):not([id^="lhn-"] *){background-image:none!important}`
+      ? `html[data-lhn-dark-reader="true"] body ${pageElement}{background-image:none!important}`
       : "";
     darkStyle.textContent = `
       html[data-lhn-dark-reader="true"],html[data-lhn-dark-reader="true"] body{background:#181a1b!important;background-image:none!important;color:#e8e6e3!important;color-scheme:dark!important}
       html[data-lhn-dark-reader="true"] ${page}{background-color:transparent!important;color:#e8e6e3!important;border-color:#45494c!important}
-      html[data-lhn-dark-reader="true"] body a:not(#lhn-panel *):not(#lhn-sidebar *){color:#9ecbff!important}
-      html[data-lhn-dark-reader="true"] body button,html[data-lhn-dark-reader="true"] body input,html[data-lhn-dark-reader="true"] body select,html[data-lhn-dark-reader="true"] body textarea{background:#282b2e!important;color:#e8e6e3!important}
+      html[data-lhn-dark-reader="true"] body a${pageElement}{color:#9ecbff!important}
+      html[data-lhn-dark-reader="true"] body button${pageElement},html[data-lhn-dark-reader="true"] body input${pageElement},html[data-lhn-dark-reader="true"] body select${pageElement},html[data-lhn-dark-reader="true"] body textarea${pageElement}{background:#282b2e!important;color:#e8e6e3!important}
       html[data-lhn-dark-reader="true"] ${page}::before,html[data-lhn-dark-reader="true"] ${page}::after{background-image:none!important;background-color:transparent!important;box-shadow:none!important}
       ${googleSearchFix}
     `;
