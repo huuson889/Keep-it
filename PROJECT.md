@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.525: Mặc định tắt Auto-open note popup. File: config.js, PROJECT.md. Đã kiểm tra cú pháp/diff; tiếp theo: xác nhận tùy chọn mặc định trên Dashboard.
 - 2026-10-23 | v3.4.525: Khôi phục nền từ ZIP v3.4.525 và hủy Dark reader/Dracula theo yêu cầu; giữ các tính năng khác của bản này. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp/manifest/diff; chưa kiểm tra trực quan trên trình duyệt. Tiếp theo: cài/reload v3.4.525 và xác nhận.
 - 2026-10-23 | v3.4.525: Sửa nền xuyên lớp phủ: đánh dấu fixed/sticky, absolute có z-index và popup semantic, áp nền surface theo theme. File: custom-font.js, PROJECT.md. Đã chạy node --check và diff-check; chưa xác nhận trực quan trên Google Search.
 - 2026-10-23 | v3.4.525: Dark reader giữ nền đục cho phần tử fixed/sticky bằng quan sát DOM; thêm theme Dracula. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check, parse manifest và diff-check; chưa kiểm tra trực quan trên website.
