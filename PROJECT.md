@@ -1,6 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
-- 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; kiểm tra cú pháp PowerShell đạt, chưa xác nhận sự kiện save thực tế. Tiếp theo: xác minh watcher chạy nền và commit tự động.
+- 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; đã kiểm tra cú pháp và thử lưu/xóa file trong repo: watcher tự commit cả hai sau debounce 2 giây. Tiếp theo: dùng trực tiếp thư mục nguồn khi chỉnh sửa.
 
 
 ## 1. Trạng thái hiện tại (sửa đè)
