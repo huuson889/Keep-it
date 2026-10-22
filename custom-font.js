@@ -110,11 +110,16 @@
     if (websiteDisabled || !lastDarkReaderEnabled || darkLayerObserver) return;
     const scanPage = () => { if (document.body) scanDarkReaderLayers(document.body); };
     if (document.body) scanPage(); else document.addEventListener("DOMContentLoaded", scanPage, { once:true });
+    window.addEventListener("load", scanPage, { once:true });
     darkLayerObserver = new MutationObserver(records => {
       cancelAnimationFrame(darkLayerFrame);
       darkLayerFrame = requestAnimationFrame(() => records.forEach(record => {
         if (record.type === "attributes") inspectDarkReaderLayer(record.target);
-        else record.addedNodes.forEach(node => { if (node instanceof Element) scanDarkReaderLayers(node); });
+        else record.addedNodes.forEach(node => {
+          if (!(node instanceof Element)) return;
+          if (node.matches("style,link[rel='stylesheet']")) scanPage();
+          else scanDarkReaderLayers(node);
+        });
       }));
     });
     darkLayerObserver.observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:["class","style"] });
