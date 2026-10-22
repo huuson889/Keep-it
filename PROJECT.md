@@ -13,7 +13,7 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Xác nhận link mở Bilingual Reader và công tắc Website font (Inter) từ speak popup trên Firefox/Chrome.
+0. [Kiểm tra] Xác nhận Settings speak popup compact, không cuộn trên màn hình thường, và hai tùy chọn hoạt động trên Firefox/Chrome.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
@@ -49,11 +49,9 @@
 - File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md.
 - Kiểm tra: đã chạy node --check, parse manifest JSON, git diff --check; chưa kiểm tra trực quan trên website.
 
-- Dark reader được preload ở `document_start` bằng local settings copy như Website font; bỏ pseudo-gradient và background-image gây vùng trắng trên Google Search.
 - File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md.
 - Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google/trang web.
 
-- Bổ sung tùy chọn Dark reader trong Bilingual Reader > Reader, mặc định tắt; CSS trang không tác động UI addon và bị gỡ khi Alt+Z disable website.
 - File: dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md.
 - Kiểm tra: đã chạy node --check, parse manifest JSON và git diff --check; chưa kiểm tra trực quan trên trình duyệt.
 
