@@ -441,16 +441,25 @@ const FLAG_SVGS = {
     }
     return "";
   }
-  const mcHasBlockChild = el => el.querySelector(MC_BLOCK_SEL);
   function mcTextBlocks(root) {
     if (!root) return [];
-    const selector = `${MC_BLOCK_SEL},[role='paragraph'],div,section,article,main,[role='main']`;
-    const candidates = [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
-    return candidates.filter(el => {
-      if (mcIsOwn(el) || !(el.textContent || "").trim()) return false;
-      if (el.matches(MC_BLOCK_SEL)) return !mcHasBlockChild(el);
-      return !el.querySelector(`${MC_BLOCK_SEL},div,section,article,main,[role='paragraph'],[role='main']`);
-    });
+    const result = new Set();
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.textContent.trim() || mcIsOwn(node)) continue;
+      const parent = node.parentElement;
+      if (!parent) continue;
+      let block = parent.closest(MC_BLOCK_SEL);
+      if (!block || !root.contains(block)) {
+        for (let current = parent; current; current = current.parentElement) {
+          if (current.matches("div,section,article,main,[role='paragraph'],[role='main']")) { block = current; break; }
+          if (current === root) break;
+        }
+      }
+      if (block && root.contains(block) && !mcIsOwn(block)) result.add(block);
+    }
+    return [...result];
   }
   function mcCustomSelector() {
     const values = Array.isArray(settings.excludeSelectors) ? settings.excludeSelectors : String(settings.excludeSelectors || "").split(/\r?\n/);
@@ -517,7 +526,7 @@ const FLAG_SVGS = {
     const styleId = "lhn-bilingual-reader-debug-style";
     const existingStyle = document.getElementById(styleId);
     if (!enabled) {
-      if (existingStyle || document.querySelector("[data-lhn-reader-debug]")) {
+      if (existingStyle) {
         existingStyle?.remove();
         document.querySelectorAll("[data-lhn-reader-debug]").forEach(el => { delete el.dataset.lhnReaderDebug; delete el.dataset.lhnReaderDebugReason; });
       }
