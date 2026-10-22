@@ -709,7 +709,7 @@ const FLAG_SVGS = {
       setCurrent: audio => { googleAudio = audio; },
       clearCurrent: () => { googleAudio = null; },
       systemSpeak: (t, l, done) => {
-        if (!synth || !window.SpeechSynthesisUtterance) { done(); return; }
+        if (!synth || !window.SpeechSynthesisUtterance) { done({ unsupported:true }); return; }
         const normalize = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
         const target = normalize(l), base = target.split("-")[0];
         const voices = synth.getVoices();
@@ -738,9 +738,9 @@ const FLAG_SVGS = {
     const normalizeVoiceLang = voice => String(voice?.lang || "").toLowerCase().replace(/_/g,"-");
     const selectedVoiceMatches = selectedVoice && normalizeVoiceLang(selectedVoice).split("-")[0] === baseLang;
     activeVoice = (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
-    if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!settings.speechVoiceURI && globalThis.LHN_TTS) { speakGoogleNext(currentReadText, activeSpeechLang); return; }
+    if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
