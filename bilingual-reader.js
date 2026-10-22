@@ -95,7 +95,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting .lhn-br-toggle{flex:none}
     #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-account{padding:4px 0}
     #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-foot{padding-top:4px}
-    #lhn-bilingual-reading-bar .lhn-br-settings-divider{border:0;border-top:1px solid #cbd1d8;margin:4px 0 0}
+    #lhn-bilingual-reading-bar .lhn-br-settings-divider{border:0;border-top:1px solid #cbd1d8;}
     #lhn-bilingual-reading-bar .lhn-br-setting input[type=number]{box-sizing:border-box;width:76px;padding:5px 7px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1e293b;font:inherit}
     #lhn-bilingual-reading-bar .lhn-br-toggle{appearance:none;width:42px;height:23px;border-radius:20px;background:#e2e8f0;position:relative;cursor:pointer;transition:background .15s}
     #lhn-bilingual-reading-bar .lhn-br-toggle:checked{background:var(--lhn-br-accent)}
