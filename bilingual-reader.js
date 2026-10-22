@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, speechVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[] };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", darkReader:false, speechSpeed:1, speechSpeedStep:0.25, speechVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[] };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
 const FLAG_SVGS = {
@@ -246,6 +246,7 @@ const FLAG_SVGS = {
   synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.speechVoiceURI)||selectedVoice; syncToolbar(); if(popover("voices").classList.contains("lhn-open")) renderVoiceChoices();});
   function applySettings(next) {
     settings = { ...DEFAULTS, ...(next || {}) };
+    syncDarkReader();
     settings.speechSpeed = Math.max(.5, Math.min(3, Math.round((Number(settings.speechSpeed) || 1) * 100) / 100));
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
     if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
@@ -260,6 +261,29 @@ const FLAG_SVGS = {
     applyWebFont();
     if (!settings.enableTTS) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); }
     else updateSpeakers();
+  }
+  function syncDarkReader() {
+    const styleId = "lhn-dark-reader-style";
+    const enabled = settings.darkReader === true && !websiteDisabled;
+    let darkStyle = document.getElementById(styleId);
+    if (!enabled) {
+      darkStyle?.remove();
+      document.documentElement.classList.remove("lhn-dark-reader-active");
+      return;
+    }
+    if (!darkStyle) {
+      darkStyle = document.createElement("style");
+      darkStyle.id = styleId;
+      darkStyle.textContent = `
+        html.lhn-dark-reader-active,html.lhn-dark-reader-active body{background:#181a1b!important;color:#e8e6e3!important;color-scheme:dark!important}
+        html.lhn-dark-reader-active body{background-image:none!important}
+        html.lhn-dark-reader-active body :not([id^="lhn-"]):not([id^="lhn-"] *){background-color:transparent!important;color:#e8e6e3!important;border-color:#45494c!important}
+        html.lhn-dark-reader-active body a:not([id^="lhn-"]):not([id^="lhn-"] *){color:#9ecbff!important}
+        html.lhn-dark-reader-active body button:not([id^="lhn-"]):not([id^="lhn-"] *),html.lhn-dark-reader-active body input:not([id^="lhn-"]):not([id^="lhn-"] *),html.lhn-dark-reader-active body select:not([id^="lhn-"]):not([id^="lhn-"] *),html.lhn-dark-reader-active body textarea:not([id^="lhn-"]):not([id^="lhn-"] *){background:#282b2e!important;color:#e8e6e3!important}
+      `;
+      (document.head || document.documentElement).appendChild(darkStyle);
+    }
+    document.documentElement.classList.add("lhn-dark-reader-active");
   }
   async function applyWebFont() {
     const requestId = ++webFontRequestId, family = settings.webFontFamily;
@@ -820,6 +844,7 @@ const FLAG_SVGS = {
   });
   document.addEventListener("lhn-website-disabled-change", event => {
     websiteDisabled = Boolean(event.detail);
+    syncDarkReader();
     if (websiteDisabled) {
       lazyObserver?.disconnect(); stopReading();
       document.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(node => node.remove());
