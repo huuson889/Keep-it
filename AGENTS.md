@@ -10,6 +10,7 @@
 - Chỉ đọc các file liên quan trước khi sửa.
 - Thay đổi tối thiểu, có mục tiêu rõ ràng.
 - Giữ nguyên tính năng, UI và hành vi hiện có. Không đổi layout, màu, font, vị trí nút, hay văn bản đang có.
+- Claude tuyệt đối không được sửa UI, trừ khi được chỉ định
 - Tái sử dụng code đang chạy, không refactor không liên quan.
 - Chạy kiểm tra liên quan và báo kết quả thực tế.
 - Không nói "đã test" nếu chưa chạy test.
