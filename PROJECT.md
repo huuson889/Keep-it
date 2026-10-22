@@ -1,6 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
-- 2026-10-23 | v3.4.525: Nếu browser không có voice khớp ngôn ngữ, dừng yêu cầu TTS và hiện toast tiếng Việt; áp dụng content, dashboard, Bilingual Reader và fallback engine. File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md. Chưa chạy kiểm tra; tiếp theo: chạy syntax/mock và xác nhận trên trình duyệt.
+- 2026-10-23 | v3.4.525: Nếu browser không có voice khớp ngôn ngữ, dừng yêu cầu TTS và hiện toast tiếng Việt; áp dụng content, dashboard, Bilingual Reader và fallback engine. File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md. Đã chạy node --check, parse manifest và git diff --check; chưa xác nhận trên trình duyệt.
 - 2026-10-23 | v3.4.524: TTS dùng cấu hình `Speech voice` toàn cục để ưu tiên browser speech trước Google TTS, áp dụng cho mọi luồng gọi bộ phát chung. File: tts-engine.js, manifest.json, PROJECT.md. Đã chạy kiểm tra cú pháp và test nhánh browser voice; chưa thử phát trên trình duyệt. Tiếp theo: xác nhận bằng giọng đọc trên Chrome/Firefox.
 - 2026-10-23 | v3.4.523: Sửa nhận diện paragraph chứa chữ trong `<em>`; ép câu hỏi VnExpress vào queue main; hover hiện icon mọi chế độ, click ngoài main chỉ đọc một đoạn. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã kiểm tra DOM trang, node --check, manifest và diff-check; chưa thử TTS thực tế. Tiếp theo: cài/reload bản mới và xác nhận phát đọc.
 - 2026-10-23 | v3.4.522: Nhận diện đoạn có chữ trong thẻ inline để gắn icon; thêm câu hỏi italic từ `.fck_detail` vào queue main và hover icon mọi chế độ. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, JSON manifest, diff-check và kiểm tra DOM trang; chưa thử phát trực tiếp. Tiếp theo: xác nhận Alt+R và click icon ngoài main trên trình duyệt.
@@ -53,7 +53,7 @@
 ### v3.4.525 - 2026-10-23
 - Browser TTS không phát khi thiếu voice cùng ngôn ngữ; hiện toast “Trình duyệt bạn không hỗ trợ ngôn ngữ này”. Engine dừng phần còn lại của yêu cầu.
 - File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: chưa chạy; tiếp theo chạy kiểm tra cú pháp/mock và xác nhận trên trình duyệt.
+- Kiểm tra: node --check các script, parse manifest JSON và git diff --check đều đạt; chưa xác nhận trên trình duyệt.
 
 ### v3.4.524 - 2026-10-23
 - TTS engine đọc `lhnSettings.speechVoice`; Browser voice phát từng đoạn bằng giọng trình duyệt, không gọi Google TTS.
