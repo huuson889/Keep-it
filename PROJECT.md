@@ -1,23 +1,5 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
-- 2026-10-23 | v3.4.525: Mặc định tắt Auto-open note popup. File: config.js, PROJECT.md. Đã kiểm tra cú pháp/diff; tiếp theo: xác nhận tùy chọn mặc định trên Dashboard.
-- 2026-10-23 | v3.4.525: Khôi phục nền từ ZIP v3.4.525 và hủy Dark reader/Dracula theo yêu cầu; giữ các tính năng khác của bản này. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp/manifest/diff; chưa kiểm tra trực quan trên trình duyệt. Tiếp theo: cài/reload v3.4.525 và xác nhận.
-- 2026-10-23 | v3.4.525: Sửa nền xuyên lớp phủ: đánh dấu fixed/sticky, absolute có z-index và popup semantic, áp nền surface theo theme. File: custom-font.js, PROJECT.md. Đã chạy node --check và diff-check; chưa xác nhận trực quan trên Google Search.
-- 2026-10-23 | v3.4.525: Dark reader giữ nền đục cho phần tử fixed/sticky bằng quan sát DOM; thêm theme Dracula. File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check, parse manifest và diff-check; chưa kiểm tra trực quan trên website.
-- 2026-10-23 | v3.4.525: Dark reader preload ở `document_start` qua bản sao storage giống Website font; xử lý gradient/nền pseudo và riêng background-image Google Search. File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp và diff; chưa xác nhận trực quan trên Google.
-- 2026-10-23 | v3.4.525: Thêm tùy chọn Dark reader (mặc định tắt) trong Bilingual Reader > Reader; Alt+Z gỡ dark mode trên website bị disable. File: dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md. Đã chạy kiểm tra cú pháp/manifest/diff; chưa kiểm tra trực quan trên nhiều website.
-- 2026-10-23 | v3.4.525: Nếu browser không có voice khớp ngôn ngữ, dừng yêu cầu TTS và hiện toast tiếng Việt; áp dụng content, dashboard, Bilingual Reader và fallback engine. File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md. Đã chạy node --check, parse manifest và git diff --check; chưa xác nhận trên trình duyệt.
-- 2026-10-23 | v3.4.524: TTS dùng cấu hình `Speech voice` toàn cục để ưu tiên browser speech trước Google TTS, áp dụng cho mọi luồng gọi bộ phát chung. File: tts-engine.js, manifest.json, PROJECT.md. Đã chạy kiểm tra cú pháp và test nhánh browser voice; chưa thử phát trên trình duyệt. Tiếp theo: xác nhận bằng giọng đọc trên Chrome/Firefox.
-- 2026-10-23 | v3.4.523: Sửa nhận diện paragraph chứa chữ trong `<em>`; ép câu hỏi VnExpress vào queue main; hover hiện icon mọi chế độ, click ngoài main chỉ đọc một đoạn. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã kiểm tra DOM trang, node --check, manifest và diff-check; chưa thử TTS thực tế. Tiếp theo: cài/reload bản mới và xác nhận phát đọc.
-- 2026-10-23 | v3.4.522: Nhận diện đoạn có chữ trong thẻ inline để gắn icon; thêm câu hỏi italic từ `.fck_detail` vào queue main và hover icon mọi chế độ. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, JSON manifest, diff-check và kiểm tra DOM trang; chưa thử phát trực tiếp. Tiếp theo: xác nhận Alt+R và click icon ngoài main trên trình duyệt.
-- 2026-10-23 | v3.4.521: Alt+R giữ các câu hỏi phỏng vấn dạng italic kết thúc bằng ?; icon ngoài vùng main hiện khi hover mọi chế độ và click chỉ đọc đoạn đó. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, JSON manifest, diff-check; chưa thử phát trên trình duyệt. Tiếp theo: xác nhận các câu hỏi và hành vi icon ngoài vùng main.
-- 2026-10-23 | v3.4.520: Alt+R/Alt+A thêm tiêu đề và sapo VnExpress nằm ngoài article body vào luồng đọc. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã kiểm tra HTML trang và chạy node --check, JSON manifest, diff-check; chưa thử trực tiếp trên trình duyệt. Tiếp theo: xác nhận Alt+R đọc đủ headline, lead và body.
-- 2026-10-23 | v3.4.519: Alt+R/Alt+A bỏ qua khối đọc phủ gần toàn màn hình để tránh highlight tím cả trang. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra JSON manifest và diff-check; chưa kiểm tra trên trình duyệt. Tiếp theo: xác nhận trên trang đang gặp lỗi.
-- 2026-10-23 | v3.4.518: Alt+A/Alt+R nay dùng Readability để chọn vùng, rồi gom các text block nhìn thấy trong vùng và lọc rác; có vùng riêng cho Google Search/AI Overview và debug viền kèm lý do. File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check và kiểm tra JSON manifest; chưa kiểm tra trên trình duyệt. Tiếp theo: bật debug trên Google Search và kiểm tra các trang thực tế.
-- 2026-10-23 | v3.4.517: Khi lưu file trong repo, watcher tự commit rồi cập nhật ZIP cùng version; sửa D:\Keepit\sync-watch.ps1, AGENTS.md. Đã chạy kiểm tra cú pháp; đã kiểm tra lưu file: watcher tự commit và cập nhật ZIP cùng version. Tiếp theo: giữ bản ZIP hiện hành đồng bộ cho Claude.
-- 2026-10-23 | v3.4.517: Thêm tự commit thay đổi sau khi lưu file trong repo; sửa D:\Keepit\sync-watch.ps1; đã kiểm tra cú pháp và thử lưu/xóa file trong repo: watcher tự commit cả hai sau debounce 2 giây. Tiếp theo: dùng trực tiếp thư mục nguồn khi chỉnh sửa.
-
-
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version: v3.4.525. Firefox và Chrome, Manifest V3, một bản build chung.
 - Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy, giữ câu hỏi italic trong `.fck_detail`, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress ngoài article body. Icon speak nhận diện đoạn có chữ trong thẻ inline; hover hiện icon ở mọi chế độ. Bấm ngoài main chỉ đọc block đó; trong main tiếp tục queue.
@@ -25,12 +7,12 @@
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
-- Bilingual Reader có Dark reader (Default/Dracula); mặc định tắt, preload tại document_start, giữ nền đục cho layer fixed/sticky/absolute và popup, tắt theo Alt+Z.
+- Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Website font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-0. [Kiểm tra] Cài/reload v3.4.525; xác nhận giao diện/luồng đọc sau rollback, kiểm tra thiếu browser voice, Alt+R/hover icon trên VnExpress.
+0. [Kiểm tra] Xác nhận link mở Bilingual Reader và công tắc Website font (Inter) từ speak popup trên Firefox/Chrome.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
