@@ -359,7 +359,7 @@ const FLAG_SVGS = {
     }
     return best || document.querySelector("main,[role='main'],article") || document.body;
   }
-  function readerBlocks() {
+  function legacyReaderBlocks() {
     const root = readerRoot();
     const excluded = `${excludedPageContentSelector()},.author,.article-meta,.article__meta,.post-meta,.publication-date,.publish-date,[itemprop='datePublished'],[itemprop='author'],time,.btn-get-gg-search,.hover-info`;
     const result = new Set(blocks(root).filter(el => !el.closest(excluded)));
@@ -377,6 +377,119 @@ const FLAG_SVGS = {
     addArticleLead("h1[data-role='title'],h1[itemprop='headline']");
     addArticleLead("[data-role='sapo'],.sapo,[itemprop='description'],.article-summary,.post-summary");
     return Array.from(result).sort((a, b) => a === b ? 0 : a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+  }
+  // ---------- Main-content detection (Readability), shared by Alt+R and Alt+A ----------
+  const MC_BLOCK_SEL = "p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt";
+  const MC_CONTAINER_SEL = `${MC_BLOCK_SEL},div,section,article,ul,ol,table,figure,header,footer,aside,nav,form`;
+  const MC_SKIP_TAGS = new Set(["NAV","FOOTER","ASIDE","FORM","BUTTON","SCRIPT","STYLE","NOSCRIPT","SVG","LABEL","SELECT","TEXTAREA","IFRAME"]);
+  const MC_BAD_ROLES = /banner|navigation|complementary|contentinfo|search/;
+  const MC_BAD_TOKENS = new Set(["date","time","byline","meta","author","share","social","comment","comments","tag","tags","breadcrumb","ad","ads","advert","banner","promo","sponsor","newsletter","subscribe","cookie","cookies","popup","modal","related","recommend","trending","widget","sidebar","toolbar","paywall","menu","nav"]);
+  const MC_BAD_TEXT = ["xem thêm","đọc thêm","chia sẻ","bình luận","quảng cáo","tin liên quan","tin cùng chuyên mục","có thể bạn quan tâm","đăng ký","theo dõi chúng tôi","read more","related articles","share","advertisement","subscribe","sign up"];
+  const MC_OWN = ".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,[data-lhn-bilingual-ui],#lhn-panel,#lhn-sidebar,#lhn-sidebar-edit-dialog";
+  const mcNorm = s => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const mcIsOwn = n => { const el = n?.nodeType === 1 ? n : n?.parentElement; return !!el?.closest?.(MC_OWN); };
+  function mcText(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(n => n.remove());
+    return (clone.textContent || "").replace(/\s+/g, " ").trim();
+  }
+  function mcBadToken(el) {
+    const cls = typeof el.className === "string" ? el.className : "";
+    return `${el.id || ""} ${cls}`.toLowerCase().split(/[\s_\-]+/).some(t => MC_BAD_TOKENS.has(t));
+  }
+  function mcAncestorExcluded(el) {
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      if (n.tagName === "ARTICLE" || n.tagName === "MAIN") return false;
+      if (MC_SKIP_TAGS.has(n.tagName)) return true;
+      const role = n.getAttribute("role");
+      if (role && MC_BAD_ROLES.test(role)) return true;
+      if (mcBadToken(n)) return true;
+    }
+    return false;
+  }
+  function mcDateLike(t) {
+    return t.length < 60 && (/\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/.test(t) || /\d{1,2}\s+th[aá]ng\s*\d{1,2}/i.test(t) || /\d{1,2}:\d{2}/.test(t));
+  }
+  function mcExcludedBlock(el, text, custom) {
+    if (mcBadToken(el) || mcAncestorExcluded(el)) return true;
+    if (custom && el.closest(custom)) return true;
+    if (el.querySelector("time") && text.length < 160) return true;
+    const lower = mcNorm(text);
+    if (text.length < 40 && MC_BAD_TEXT.some(b => lower === b || lower.startsWith(b + " ") || lower.startsWith(b + ":"))) return true;
+    if (mcDateLike(text)) return true;
+    if (text.length < 150 && /^(published|updated|cập nhật|đăng lúc)\b/i.test(text)) return true;
+    if (text.length < 200) {
+      const linkLen = [...el.querySelectorAll("a")].reduce((sum, a) => sum + (a.textContent || "").trim().length, 0);
+      if (linkLen > 0 && linkLen / text.length > 0.6) return true;
+    }
+    return el.getClientRects().length === 0;
+  }
+  const mcHasDirectText = el => [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim().length >= 2);
+  const mcIsLeaf = el => el.tagName === "DIV" ? mcHasDirectText(el) && !el.querySelector(MC_CONTAINER_SEL) : !el.querySelector(MC_BLOCK_SEL);
+  const mcCandidates = root => [...root.querySelectorAll(`${MC_BLOCK_SEL},div`)].filter(el => !mcIsOwn(el) && mcIsLeaf(el));
+  function mcCustomSelector() {
+    const values = Array.isArray(settings.excludeSelectors) ? settings.excludeSelectors : String(settings.excludeSelectors || "").split(/\r?\n/);
+    return values.map(v => String(v).trim()).filter(Boolean).filter(sel => { try { document.querySelector(sel); return true; } catch { return false; } }).join(",");
+  }
+  function mcMatches(t, texts, arr) {
+    if (texts.has(t)) return true;
+    if (t.length < 30) return false;
+    const probe = t.slice(0, 80);
+    return arr.some(s => s.length >= 30 && (s.includes(probe) || t.includes(s.slice(0, 80))));
+  }
+  function mcFindTitle(title) {
+    const t = mcNorm(title).replace(/\s*[-|–]\s*[^-|–]{0,60}$/, "");
+    const heads = [...document.querySelectorAll("h1,h2")].filter(h => !mcIsOwn(h) && mcText(h).length > 3);
+    for (const h of heads) { const ht = mcNorm(mcText(h)); if (ht.length >= 10 && t && (t.includes(ht) || ht.includes(t.slice(0, 40)))) return h; }
+    return heads.find(h => h.tagName === "H1") || null;
+  }
+  function mcDetect() {
+    if (typeof Readability !== "function") return null;
+    let article = null;
+    try {
+      const doc = document.cloneNode(true);
+      doc.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,[data-lhn-bilingual-ui]").forEach(n => n.remove());
+      article = new Readability(doc, { charThreshold: 300 }).parse();
+    } catch { article = null; }
+    if (!article || !article.textContent || article.textContent.length < 300) return null;
+    const frag = new DOMParser().parseFromString(article.content, "text/html");
+    const texts = new Set();
+    frag.body.querySelectorAll(MC_BLOCK_SEL).forEach(el => { if (!el.querySelector(MC_BLOCK_SEL)) { const t = mcNorm(el.textContent); if (t) texts.add(t); } });
+    if (article.excerpt) { const ex = mcNorm(article.excerpt); if (ex) texts.add(ex); }
+    return { title: article.title || "", texts, arr: [...texts] };
+  }
+  let mainBlocksCache = [], mainBlocksAt = 0, mainBlocksDirty = true;
+  function computeMainBlocks() {
+    const info = mcDetect();
+    if (!info) return null;
+    const custom = mcCustomSelector();
+    const title = mcFindTitle(info.title);
+    const matched = mcCandidates(document.body).filter(el => {
+      const raw = mcText(el), t = mcNorm(raw);
+      return t && mcMatches(t, info.texts, info.arr) && !mcExcludedBlock(el, raw, custom);
+    });
+    let root = document.body;
+    if (matched.length) for (let n = matched[0].parentElement; n && n !== document.body; n = n.parentElement) { if (n.tagName === "ARTICLE" || n.tagName === "MAIN") { root = n; break; } }
+    const extra = root === document.body ? [] : mcCandidates(root).filter(el => {
+      if (matched.includes(el)) return false;
+      const raw = mcText(el);
+      return raw.length >= 40 && !/^H[1-6]$/.test(el.tagName) && !mcExcludedBlock(el, raw, custom);
+    });
+    const result = [...matched, ...extra];
+    if (title && !mcIsOwn(title) && mcText(title).length > 3 && !result.includes(title)) result.push(title);
+    return result.sort((a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+  }
+  // Alt+R and Alt+A both read from this list. Alt+D uses blocks() (whole page).
+  function readerBlocks(force = false) {
+    const fresh = Date.now() - mainBlocksAt < 1500;
+    if (!force && (!mainBlocksDirty || fresh) && mainBlocksCache.length) {
+      mainBlocksCache = mainBlocksCache.filter(el => el.isConnected);
+      if (mainBlocksCache.length) return mainBlocksCache;
+    }
+    const computed = computeMainBlocks();
+    mainBlocksCache = (computed && computed.length) ? computed : legacyReaderBlocks();
+    mainBlocksAt = Date.now(); mainBlocksDirty = false;
+    return mainBlocksCache;
   }
   function rawText(block, readerMode = false) {
     if (readerMode) return visibleReaderText(block);
@@ -434,7 +547,7 @@ const FLAG_SVGS = {
   function toggleLazy() {
     if (websiteDisabled) return;
     window.__lhnBilingualLazy = !window.__lhnBilingualLazy;
-    if (window.__lhnBilingualLazy) observeLazy();
+    if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
   function stopReading() {
@@ -511,7 +624,7 @@ const FLAG_SVGS = {
   function startReading(fromBlock, interruptCurrent = false) {
     if (websiteDisabled) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
-    const nextQueue = readerBlocks();
+    const nextQueue = readerBlocks(true);
     if (fromBlock && !nextQueue.includes(fromBlock)) return;
     if (!nextQueue.length) return;
     const cancelPendingSpeech = Boolean(interruptCurrent && (reading || synth?.speaking || synth?.pending || synth?.paused));
@@ -630,7 +743,7 @@ const FLAG_SVGS = {
     const hasPageChange = records.some(record => !isOwn(record.target) && [...record.addedNodes, ...record.removedNodes].some(node => !isOwn(node)));
     if (!hasPageChange) return;
     clearTimeout(pageMutationTimer);
-    pageMutationTimer = setTimeout(() => { if (settings.enableTTS) updateSpeakers(); if (window.__lhnBilingualLazy) observeLazy(); syncToolbar(); }, 180);
+    mainBlocksDirty = true; pageMutationTimer = setTimeout(() => { readerBlocks(true); if (settings.enableTTS) updateSpeakers(); if (window.__lhnBilingualLazy) observeLazy(); syncToolbar(); }, 900);
   });
   pageObserver.observe(document.documentElement, { childList:true, subtree:true });
 })();

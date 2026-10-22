@@ -24,6 +24,7 @@
    - Nhật ký chỉ giữ khoảng 10 bản gần nhất; mục cũ hơn xóa (Git đã lưu).
 3. Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".
 4. Đóng gói zip vào D:\Keepit với tên: Keepit - Addon and Extension-v<version>.zip
+   - TÊN FILE BẮT BUỘC đúng từng ký tự: "Keepit - Addon and Extension-v<version>.zip", ví dụ "Keepit - Addon and Extension-v3.4.513.zip". Giữ dấu cách và dấu gạch ngang như trên, version viết có dấu chấm. Không đổi dấu cách thành gạch dưới, không đổi dấu chấm thành gạch dưới, không thêm hay bớt chữ.
    - manifest.json nằm ở gốc zip, không kèm thư mục .git.
    - Zip PHẢI chứa AGENTS.md và PROJECT.md bản mới nhất.
    - Không bao gồm sync-watch.ps1, sync-state.txt, sync-watch.log.
