@@ -128,7 +128,7 @@
       websiteDisabled = Array.isArray(data[WEBSITE_SETTINGS_KEY]?.disabledWebsites) && data[WEBSITE_SETTINGS_KEY].disabledWebsites.includes(hostKey);
       const localCopy = data[LOCAL_FONT_KEY] || fromBilingualSettings(data[BILINGUAL_SETTINGS_KEY]);
       applyFont(localCopy);
-      applyDarkReader(data[LOCAL_DARK_READER_KEY]?.enabled ?? data[BILINGUAL_SETTINGS_KEY]?.darkReader);
+      applyDarkReader(data[LOCAL_DARK_READER_KEY] || { enabled:data[BILINGUAL_SETTINGS_KEY]?.darkReader, theme:data[BILINGUAL_SETTINGS_KEY]?.darkReaderTheme });
     }).catch(() => { applyFont({ customFontEnabled:false, fontKey:"auto" }); applyDarkReader(false); });
   }
   loadLocalSettings();
@@ -137,17 +137,17 @@
     if (changes[WEBSITE_SETTINGS_KEY]) {
       websiteDisabled = Array.isArray(changes[WEBSITE_SETTINGS_KEY].newValue?.disabledWebsites) && changes[WEBSITE_SETTINGS_KEY].newValue.disabledWebsites.includes(hostKey);
       applyFont(lastFontSettings);
-      applyDarkReader(lastDarkReaderEnabled);
+      applyDarkReader({ enabled:lastDarkReaderEnabled, theme:lastDarkReaderTheme });
     }
     if (changes[LOCAL_FONT_KEY]) applyFont(changes[LOCAL_FONT_KEY].newValue);
     else if (changes[BILINGUAL_SETTINGS_KEY]) applyFont(fromBilingualSettings(changes[BILINGUAL_SETTINGS_KEY].newValue));
-    if (changes[LOCAL_DARK_READER_KEY]) applyDarkReader(changes[LOCAL_DARK_READER_KEY].newValue?.enabled);
-    else if (changes[BILINGUAL_SETTINGS_KEY]) applyDarkReader(changes[BILINGUAL_SETTINGS_KEY].newValue?.darkReader);
+    if (changes[LOCAL_DARK_READER_KEY]) applyDarkReader(changes[LOCAL_DARK_READER_KEY].newValue);
+    else if (changes[BILINGUAL_SETTINGS_KEY]) applyDarkReader({ enabled:changes[BILINGUAL_SETTINGS_KEY].newValue?.darkReader, theme:changes[BILINGUAL_SETTINGS_KEY].newValue?.darkReaderTheme });
   });
   document.addEventListener("lhn-website-disabled-change", event => {
     websiteDisabled = Boolean(event.detail);
     applyFont(lastFontSettings);
-    applyDarkReader(lastDarkReaderEnabled);
+    applyDarkReader({ enabled:lastDarkReaderEnabled, theme:lastDarkReaderTheme });
   });
   // Shadow DOM content is not handled by this page-level font rule.
 })();
