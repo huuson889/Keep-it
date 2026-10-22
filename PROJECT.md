@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.514. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.515. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
 - bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống).
@@ -34,6 +34,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.515 - 2026-10-22
+- Thêm bước nhảy tốc độ tùy chỉnh cho phím Up/Down, mặc định 0.25; banner cập nhật theo thiết lập.
+- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và test bước nhảy; chưa chạy trên trình duyệt.
+- Tiếp theo: kiểm tra nhập bước nhảy và Up/Down trong Speak popup.
+
 ### v3.4.514 - 2026-10-22
 - Gói Free (không key/không đăng nhập) dùng Translate và Google TTS không giới hạn.
 - File: usage-limits.js, manifest.json, PROJECT.md.
