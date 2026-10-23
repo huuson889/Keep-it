@@ -167,6 +167,10 @@
 - Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trình duyệt.
 - Tiếp theo: kiểm tra các trang thực tế qua debug mode.
 
+### v3.4.517 | Codex sửa - 2026-10-23
+- Watcher tự commit khi lưu file trong thư mục nguồn; cập nhật ZIP cùng version. (Watcher nằm ngoài repo.)
+- File ghi nhận: manifest.json, PROJECT.md, D:\Keepit\sync-watch.ps1.
+- Kiểm tra: watcher ghi log cho commit/ZIP; chưa xác nhận tự chạy sau khi khởi động lại Windows.
 ### v3.4.516 | Codex sửa - 2026-10-23
 - Reader: mặc định Show on hover; Always visible chỉ luôn hiện trong vùng Alt+R, ngoài vùng hiện khi hover.
 - File: bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
@@ -203,9 +207,28 @@
 - Kiểm tra: đã chạy parse manifest JSON; chưa chạy kiểm tra chức năng addon.
 - Tiếp theo: xử lý các mục đang mở ở mục 2.
 
-### v3.4.510 | Codex sửa - 2026-10-22
-- Hiện trạng ghi nhận khi thiết lập quy trình mới: có tts-engine.js; bilingual-reader.js gọi LHN_TTS.
-- Chi tiết các bản 3.4.505 đến 3.4.510 chưa được ghi lại; xem commit Git nếu cần.
-- Kiểm tra: chưa chạy (chỉ đọc code).
-- Tiếp theo: xem mục 2.
+### v3.4.510 | ZIP sync, người sửa không xác định - 2026-10-22
+- ZIP ghi nhận `bilingual-reader.js` gọi `LHN_TTS`; commit chỉ đồng bộ ZIP nên không gán thay đổi cho Codex.
 
+### v3.4.509 | Codex sửa - 2026-10-22
+- Trả audio TTS dạng Base64 qua runtime message để tương thích Chrome; dùng cho cả audio cache và audio mới.
+- File: background.js, tts-engine.js, manifest.json. Kiểm tra lịch sử không ghi nhận.
+
+### v3.4.508 | Codex sửa - 2026-10-22
+- Dùng chung `LHN_TTS` cho chọn text và Bilingual Reader; chuyển Bilingual Reader sang Google TTS, giữ pause/resume và đổi tốc độ khi phát.
+- File: tts-engine.js, content.js, bilingual-reader.js, dashboard.js, manifest.json. Kiểm tra lịch sử không ghi nhận.
+
+### v3.4.506 | ZIP sync, người sửa không xác định - 2026-10-22
+- Đồng bộ ZIP; commit cập nhật version và bỏ AGENTS.md/PROJECT.md khỏi snapshot. Không gán thay đổi này cho Codex.
+
+### v3.4.505 | Codex sửa - 2026-10-22
+- Chia văn bản TTS dài thành đoạn ngắn để phát nối tiếp.
+- File: content.js, manifest.json, PROJECT.md. Kiểm tra lịch sử không ghi nhận.
+
+### v3.4.504 | Codex sửa - 2026-10-22
+- Chuyển sang Manifest V3 dùng chung cho Chromium và Firefox; sửa Google TTS trên Chrome.
+- File: manifest.json, background.js, popup.html, dashboard.html, browser-polyfill.js, LICENSE-WEBEXTENSION-POLYFILL.txt. Kiểm tra lịch sử không ghi nhận.
+
+### v3.4.501 | Baseline - 2026-10-22
+- Bản đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; tiêu đề README cũ: `Local Highlight Notes for Firefox Windows` (v1.30.0).
+- Git không có lịch sử trước baseline; không gán các thay đổi trước đó cho Codex.
