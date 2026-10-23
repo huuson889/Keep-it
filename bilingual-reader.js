@@ -884,7 +884,11 @@ const FLAG_SVGS = {
       document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
     }
     if (changes[DISPLAY_SETTINGS_KEY]) {
+      const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI;
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
+      settings = { ...settings, voiceMode:dashboardShortcuts.voiceMode === "browser" ? "browser" : "google", browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || "") };
+      selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
+      if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI)) restartCurrentSpeech();
       displayLang = globalThis.LHN_I18N?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
@@ -892,17 +896,19 @@ const FLAG_SVGS = {
       document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
     }
   });
-  browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(data => {
+  browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(async data => {
     dashboardShortcuts = data[DISPLAY_SETTINGS_KEY] || {};
     displayLang = globalThis.LHN_I18N?.languageFor?.(data[DISPLAY_SETTINGS_KEY]) || displayLang;
     addonThemePreference = ["light","dark","system"].includes(data[DISPLAY_SETTINGS_KEY]?.sidebarTheme) ? data[DISPLAY_SETTINGS_KEY].sidebarTheme : "system";
     targetLanguage = data[TARGET_LANGUAGE_KEY]?.targetLanguage || "auto";
     accountProfile = data[DEMO_PROFILE_KEY] || null;
-    applySettings(data[SETTINGS_KEY]);
+    let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
+    try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
+    applySettings({ ...(data[SETTINGS_KEY] || {}), ...voiceSettings });
     renderPopupText();
     settings.speechSpeed = Math.max(.5,Math.min(3,Number(settings.speechSpeed)||1));
     systemVoices = synth?.getVoices?.() || [];
-    selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.speechVoiceURI) || null;
+    selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     syncToolbar();
   }).catch(() => applySettings(DEFAULTS));
   window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", syncToolbar);
