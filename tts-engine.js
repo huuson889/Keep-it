@@ -64,7 +64,7 @@
     if (direct) return direct;
     const fallback = fallbackLanguage(fallbackLang);
     const sample = String(text || "").trim().slice(0, 200);
-    if (!sample || !/^[\p{Script=Latin}\p{M}\p{N}\p{P}\p{Z}\p{S}]*$/u.test(sample)) return fallback;
+    if (!sample || !/\p{Script=Latin}/u.test(sample) || !/^[\p{Script=Latin}\p{M}\p{N}\p{P}\p{Z}\p{S}]*$/u.test(sample)) return fallback;
     const key = hashText(sample);
     let detected = detectionCache.get(key);
     if (detected === undefined) {
@@ -95,7 +95,10 @@
       voiceMode = browserVoiceURI || shared.speechVoice === "browser" ? "browser" : "google";
       await api.storage.local.set({ [SETTINGS_KEY]:{ ...shared, voiceMode, browserVoiceURI, speechVoice:voiceMode } }).catch(() => {});
     }
-    if (voiceMode === "browser" && !browserVoiceURI && reader.speechVoiceURI) browserVoiceURI = String(reader.speechVoiceURI);
+    if (voiceMode === "browser" && !browserVoiceURI && reader.speechVoiceURI) {
+      browserVoiceURI = String(reader.speechVoiceURI);
+      await api.storage.local.set({ [SETTINGS_KEY]:{ ...shared, voiceMode, browserVoiceURI, speechVoice:voiceMode } }).catch(() => {});
+    }
     return { voiceMode, browserVoiceURI };
   }
 

@@ -249,14 +249,14 @@ const FLAG_SVGS = {
     if (autoMatches) {
       const autoSelected = settings.voiceMode !== "browser";
       const auto = document.createElement("button"); auto.type="button"; auto.className=`lhn-br-voice${autoSelected ? " lhn-selected" : ""}`; auto.innerHTML=`<span>🌐</span><span>${popupText("readerPopupAutoDetect")}<small>${popupText("readerPopupAutoDescription")}</small></span>${autoSelected ? "✓" : ""}`;
-      auto.addEventListener("click", () => { void saveReaderVoiceSettings("google", ""); closePopovers(); if(reading&&!readingPaused) restartCurrentSpeech(); }); list.appendChild(auto);
+      auto.addEventListener("click", () => { void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
     systemVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(query)).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${voice.name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
-      button.addEventListener("click",()=>{ selectedVoice=voice; void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); if(reading&&!readingPaused) restartCurrentSpeech(); }); list.appendChild(button);
+      button.addEventListener("click",()=>{ selectedVoice=voice; void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
   }
@@ -860,7 +860,7 @@ const FLAG_SVGS = {
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes[DEMO_PROFILE_KEY]) { accountProfile = changes[DEMO_PROFILE_KEY].newValue || null; syncToolbar(); }
-    if (changes[SETTINGS_KEY]) { applySettings(changes[SETTINGS_KEY].newValue); selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.speechVoiceURI) || selectedVoice; syncToolbar(); }
+    if (changes[SETTINGS_KEY]) { const voice = { voiceMode:settings.voiceMode, browserVoiceURI:settings.browserVoiceURI }; applySettings(changes[SETTINGS_KEY].newValue); settings = { ...settings, ...voice }; selectedVoice = systemVoices.find(item => item.voiceURI === settings.browserVoiceURI) || null; syncToolbar(); }
     if (changes[TARGET_LANGUAGE_KEY]) {
       targetLanguage = changes[TARGET_LANGUAGE_KEY].newValue?.targetLanguage || "auto";
       document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
@@ -868,7 +868,8 @@ const FLAG_SVGS = {
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI;
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
-      settings = { ...settings, voiceMode:dashboardShortcuts.voiceMode === "browser" ? "browser" : "google", browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || "") };
+      const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
+      settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || "") };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
       if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI)) restartCurrentSpeech();
       displayLang = globalThis.LHN_I18N?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
