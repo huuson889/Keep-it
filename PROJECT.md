@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.526: Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng chữ/từ cục bộ, nhận diện Google nền cho Latin (cache hash tối đa 500), migration một lần; giữ flashcard nguyên trạng. File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check, 12 câu mẫu, kiểm tra cache/fallback, manifest và diff; chưa kiểm tra Chrome/Firefox. Tiếp theo: xác nhận voiceMode và nhận diện trên hai trình duyệt.
 - 2026-10-23 | v3.4.525: Thêm log lỗi cục bộ tối đa 200 mục, chỉ lưu thời gian/component/severity/code đã phân loại; thêm xuất JSON ở Dashboard Settings > About, không xuất URL/nội dung trang/văn bản chọn/tài khoản. File: error-logger.js, background.js, manifest.json, dashboard.html, dashboard.js, popup.html, i18n.js, PROJECT.md. Đã chạy node --check cho JS, parse manifest và git diff --check; chưa kiểm tra tải file qua UI trên trình duyệt. Tiếp theo: xác nhận log ghi được và nút About tải JSON trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm MyMemory làm fallback cho lhn-direct-translation khi Google lỗi/timeout; nguồn Auto gửi autodetect, văn bản dài được chia dưới giới hạn API. File: study-translation.js, PROJECT.md. Đã chạy node --check study-translation.js, parse manifest.json và git diff --check; chưa thử lỗi mạng thực tế trên trình duyệt. Tiếp theo: xác nhận fallback MyMemory trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Full dict chuyển cache sang browser.storage.local (TTL 7 ngày), cache nghĩa từng từ/cụm liên quan để tái sử dụng; khi note mở, hủy yêu cầu phụ và điền ngay bản dịch chính. File: content.js, PROJECT.md. Đã chạy node --check content.js và git diff --check; chưa xác nhận trên trình duyệt. Tiếp theo: kiểm tra cache liên quan và điền note khi mạng chậm.
@@ -9,12 +10,12 @@
 - 2026-10-23 | v3.4.525: Speak popup Settings khôi phục cỡ chữ 13px, bỏ divider thừa, căn link trái và thu hẹp khoảng cách tới footer. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm link mở Dashboard > Bilingual Reader và công tắc Website font (Inter) trong Settings speak popup; dịch EN/VI/KO. File: bilingual-reader.js, background.js, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra giao diện trực tiếp. Tiếp theo: xác nhận hai mục trên Firefox/Chrome.
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.525. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.526. Firefox và Chrome, Manifest V3, một bản build chung.
 - Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy, giữ câu hỏi italic trong `.fck_detail`, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress ngoài article body. Icon speak nhận diện đoạn có chữ trong thẻ inline; hover hiện icon ở mọi chế độ. Bấm ngoài main chỉ đọc block đó; trong main tiếp tục queue.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
-- tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt.
-- Khi Dashboard settings > Speech > Speech voice chọn Browser voice, bộ phát chung chuyển tất cả luồng TTS sang giọng browser; nếu thiếu voice khớp ngôn ngữ thì dừng đọc và báo toast. Google voice vẫn dùng Google TTS.
-- bilingual-reader.js dùng Google TTS khi người dùng không chọn giọng riêng (speechVoiceURI trống); icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
+- tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
+- Chọn text và Bilingual Reader dùng voiceMode google/browser cùng browserVoiceURI; migration từ speechVoice/speechVoiceURI chạy một lần. Flashcard giữ speechVoice độc lập.
+- Bilingual Reader voice Auto dùng Google TTS và chọn giọng hệ thống đặt browserVoiceURI; icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
 - Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing, link căn trái, hai divider cùng màu #cbd1d8 và nhãn dịch EN/VI/KO.
 - Full dict cache dùng `browser.storage.local` với TTL 7 ngày; cache bản dịch chính riêng theo từ/ngôn ngữ để tái sử dụng cho Syn/Ant, Forms và Colloc. Khi note mở, các yêu cầu phụ bị hủy và bản dịch chính được điền ngay.
 - lhn-direct-translation trong study-translation.js dùng Google trước, MyMemory làm backup khi Google lỗi/timeout; nguồn Auto gửi `autodetect`, văn bản dài được chia theo giới hạn API.
@@ -31,6 +32,7 @@
 3. [Làm một phần] Chuỗi dự phòng TTS: hiện là Google -> giọng trình duyệt theo từng đoạn. Chưa có bước "phát trực tiếp"; lỗi mới chỉ ghi console.warn, chưa báo rõ cho người dùng.
 4. [Kiểm tra] Firefox MV3: background có unload khi rảnh làm mất tin nhắn không.
 5. [Vệ sinh] README.md trong dự án đã lỗi thời (ghi v1.30.0, Firefox, MV2, "không dùng mạng"). Cần viết lại khi được yêu cầu.
+6. [Kiểm tra] Xác nhận nhận diện ngôn ngữ, migration voiceMode/browserVoiceURI, chọn Browser voice và Google voice trên Chrome/Firefox.
 
 ## 3. Ràng buộc & quyết định
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
