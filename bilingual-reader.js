@@ -677,7 +677,7 @@ const FLAG_SVGS = {
     sameLangToastShown = true;
     let toast = document.getElementById("lhn-sidebar-toast");
     if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
-    toast.textContent = "Bỏ qua dịch các đoạn cùng ngôn ngữ";
+    toast.textContent = popupText("sameLangSkippedToast");
     toast.classList.add("is-visible");
     clearTimeout(toast._lhnSameLangTimer);
     toast._lhnSameLangTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
