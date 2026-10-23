@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -767,7 +767,7 @@ const FLAG_SVGS = {
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
-    currentReadText = textOverride ?? rawText(block, true); currentReadCharIndex = 0;
+    currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -789,7 +789,24 @@ const FLAG_SVGS = {
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
+  // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
+  function readTextFor(block) {
+    const source = rawText(block, true);
+    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const translated = settings.readTranslation && card ? card.textContent.trim() : "";
+    return translated ? `${source}\n${translated}` : source;
+  }
+  let readTranslationToastTimer = null;
+  function notifyReadTranslationOn() {
+    let toast = document.getElementById("lhn-sidebar-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
+    toast.textContent = popupText("readTranslationOnToast");
+    toast.classList.add("is-visible");
+    clearTimeout(readTranslationToastTimer);
+    readTranslationToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  }
   function startReading(fromBlock, interruptCurrent = false) {
+    if (settings.readTranslation) notifyReadTranslationOn();
     if (websiteDisabled || isReaderDisabledOnThisWebsite()) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
     speechDetectionRequest++;
