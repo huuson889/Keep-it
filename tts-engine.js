@@ -8,7 +8,7 @@
   const VI_WORDS = new Set(["và","của","là","các","trong","được","cho","với","này","đã","ngày","khi","một","từ","không","người","tại","bằng","sẽ","những","để","có","theo","về","đang","con","mèo","chạy","nhanh"]);
   const EN_WORDS = new Set(["the","and","to","of","in","is","that","for","with","on","as","by","from","was","are","has","have","this","which","be","it","he","she","they","an","a","but","or","will"]);
   const LATIN_MARKS = [
-    ["tr-TR", /[ğışİ]/gi], ["ro-RO", /[șțȘȚ]/g], ["pl-PL", /[łąęśźżćń]/gi],
+    ["tr-TR", /[ğışĞŞİı]/g], ["ro-RO", /[șțȘȚ]/g], ["pl-PL", /[łąęśźżćń]/gi],
     ["es-ES", /[ñ¿¡]/gi], ["de-DE", /[ßäöü]/gi], ["pt-BR", /[ãõ]/gi],
     ["vi-VN", /[ạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹđơưă]/gi]
   ];
