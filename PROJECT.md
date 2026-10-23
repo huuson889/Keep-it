@@ -231,4 +231,4 @@
 
 ### v3.4.501 | Baseline - 2026-10-22
 - Bản đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; tiêu đề README cũ: `Local Highlight Notes for Firefox Windows` (v1.30.0).
-- Git không có lịch sử trước baseline; không gán các thay đổi trước đó cho Codex.
+- Git không có lịch sử trước baseline hoặc commit .502, .503, .507; không gán thay đổi chưa xác minh cho Codex.
