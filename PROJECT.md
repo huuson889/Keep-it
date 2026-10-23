@@ -229,12 +229,13 @@
 - Chuyển sang Manifest V3 dùng chung cho Chromium và Firefox; sửa Google TTS trên Chrome.
 - File: manifest.json, background.js, popup.html, dashboard.html, browser-polyfill.js, LICENSE-WEBEXTENSION-POLYFILL.txt. Kiểm tra lịch sử không ghi nhận.
 
-### v3.4.501 | Baseline - 2026-10-22
-- Bản đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; tiêu đề README cũ: `Local Highlight Notes for Firefox Windows` (v1.30.0).
-- Git không có lịch sử trước baseline hoặc commit .502, .503, .507; không gán thay đổi chưa xác minh cho Codex.
+### v3.4.501 | Codex sửa; Git baseline - 2026-10-22
+- ZIP Codex đã xuất ghi nhận đồng bộ shortcut trong banner và Settings với giá trị đã lưu; banner cập nhật ngay khi shortcut đổi, shortcut chưa gán hiện là Off.
+- Đây là baseline đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; README cũ ghi `Local Highlight Notes for Firefox Windows` (v1.30.0).
+- Git không có lịch sử cho .502, .503 hoặc .507; không gán thay đổi chưa xác minh cho Codex.
+## 5. Nhật ký ZIP Codex đã xuất trước baseline Git
 
-## 5. Nhật ký các ZIP Codex đã xuất trong hội thoại- **v3.4.501** | 2026-10-22 | Codex sửa: Liên kết shortcut trong banner và Settings với thiết lập đã lưu; cập nhật banner ngay khi shortcut đổi, giá trị chưa gán hiển thị Off.
-- Không tìm thấy phản hồi chat có ZIP xuất bản cho v3.4.402 hoặc v3.4.485; không gán thay đổi cho hai version này.
+- Không tìm thấy phản hồi chat có ZIP cho v3.4.402 hoặc v3.4.485; không gán thay đổi cho hai version này.
 - **v3.4.500** | 2026-10-22 | Codex sửa: Đổi bước tăng/giảm tốc độ bằng phím ↑/↓ thành 0,15x và cho thanh Reading Speed kéo tự do.
 - **v3.4.499** | 2026-10-22 | Codex sửa: nhấp đúp vào nút kéo để đưa thanh đọc về vị trí mặc định: chính giữa, cách đáy màn hình 24px.
 - **v3.4.498** | 2026-10-22 | Codex sửa: icon speak ngoài vùng nội dung mà Alt+R đọc thành luôn ẩn; icon trong vùng đọc vẫn theo thiết lập hiện có.
