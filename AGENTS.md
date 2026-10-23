@@ -18,7 +18,7 @@
 - Tái sử dụng code đang chạy, không refactor không liên quan.
 - Chạy kiểm tra liên quan và báo kết quả thực tế.
 - Không nói "đã test" nếu chưa chạy test.
-- Với tác vụ addon Firefox, dùng skill firefox-extension-maintainer khi có.
+- Dùng skill Codex rule khi có.
 - Với mỗi yêu cầu, nếu chưa hiểu rõ thì hỏi lại trước khi sửa.
 
 ## Quy trình sau khi sửa
