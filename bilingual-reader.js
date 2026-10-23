@@ -730,6 +730,16 @@ const FLAG_SVGS = {
     googleResumeWaiters.splice(0).forEach(resolve => resolve());
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
+  // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
+  // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
+  function segmentRate(isTranslation) {
+    const base = Number(settings.speechSpeed) || 1;
+    if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return base;
+    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
+    const global = Number(dashboardShortcuts?.speechRate) || 1;
+    if (!Number.isFinite(custom)) return base;
+    return Math.min(3, Math.max(0.5, base + (custom - global)));
+  }
   async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
     const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
     if (requestId !== speechDetectionRequest || !reading) return;
@@ -739,7 +749,7 @@ const FLAG_SVGS = {
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
     LHN_TTS.play({
-      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => Number(settings.speechSpeed) || 1,
+      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(Boolean(forcedLang)),
       isActive: () => googleToken === token && reading,
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
