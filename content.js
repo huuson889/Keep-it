@@ -436,7 +436,7 @@
     speak.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>';
     const selectedText = cleanText(range.toString());
     const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-    speak.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); if (selectedText) speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor)); });
+    speak.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); if (selectedText) speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor), null, anchor); });
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
     // Keep host-page rules from hiding or restyling this extension-owned popup.
@@ -463,7 +463,7 @@
     const ui = forcePopup || settings.translationPopupEnabled !== false ? createTranslationPopup(range) : null;
     if (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) {
       const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-      speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor));
+      speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor), null, anchor);
     }
     try {
       const result = await translateUsingExistingCache(selectedText);
@@ -638,7 +638,7 @@
     resizeNote();
     if (settings.autoSpeakSelectedText && selectedQuote) {
       const anchor = range?.startContainer?.nodeType === Node.ELEMENT_NODE ? range.startContainer : range?.startContainer?.parentElement;
-      speakHighlightedText(selectedQuote, speechLanguageForText(selectedQuote, anchor));
+      speakHighlightedText(selectedQuote, speechLanguageForText(selectedQuote, anchor), null, anchor);
     }
     if (!skipAutoTranslate && !existing && settings.autoTranslate !== false && selectedQuote && noteTranslator) {
       const composer = panel;
@@ -781,11 +781,13 @@
   function speechLanguageForText(text, anchor) {
     return ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage] || detectQuoteLanguage(text, anchor);
   }
-  function speakWithSystemSpeech(text, lang, onEnd) {
+  function speakWithSystemSpeech(text, lang, onEnd, browserVoiceURI = "") {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) { onEnd?.(); return; }
     const synth = window.speechSynthesis;
     const normalizeLanguage = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
     const findMatchingVoice = voices => {
+      const selected = browserVoiceURI && voices.find(voice => voice.voiceURI === browserVoiceURI);
+      if (selected) return selected;
       const target = normalizeLanguage(lang);
       const base = target.split("-")[0];
       return voices.find(voice => normalizeLanguage(voice.lang) === target)
@@ -876,9 +878,7 @@
     }
   }, true);
   document.addEventListener("lhn-bilingual-reader-started", () => { speechPauseActive = false; shortcutPausedMedia = []; });
-  async function speakHighlightedText(text, lang, onEnd) {
-    const sample = LHN_PREPROCESS_SPEECH(String(text || "").trim(), lang, settings);
-    if (!sample) { onEnd?.(); return; }
+  async function speakHighlightedText(text, lang, onEnd, anchor = null) {
     const requestId = ++speakRequestId;
     speechPauseActive = false; shortcutPausedMedia = [];
     window.speechSynthesis?.cancel();
@@ -886,8 +886,17 @@
     let finished = false;
     const finish = () => { if (finished) return; finished = true; if (currentSpeakFinish === finish) currentSpeakFinish = null; onEnd?.(); };
     currentSpeakFinish = finish;
-    if (settings.speechVoice === "browser") {
-      speakWithSystemSpeech(sample, lang, finish);
+    const voiceSettings = await LHN_TTS.getVoiceSettings().catch(() => ({ voiceMode:settings.voiceMode || settings.speechVoice || "google", browserVoiceURI:settings.browserVoiceURI || "" }));
+    if (requestId !== speakRequestId) return;
+    const sourceLanguage = ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage];
+    const declaredLanguage = anchor?.closest?.("[lang]")?.getAttribute("lang") || document.documentElement.lang || window.navigator?.language || lang || "en-US";
+    if (voiceSettings.voiceMode === "google") lang = sourceLanguage || await LHN_TTS.detectLanguage(text, declaredLanguage);
+    lang = LHN_TTS.normalizeLanguage(lang) || "en-US";
+    if (requestId !== speakRequestId) return;
+    const sample = LHN_PREPROCESS_SPEECH(String(text || "").trim(), lang, settings);
+    if (!sample) { finish(); return; }
+    if (voiceSettings.voiceMode === "browser") {
+      speakWithSystemSpeech(sample, lang, finish, voiceSettings.browserVoiceURI);
       return;
     }
     const googleLanguage = String(lang || "en-US").trim().replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
@@ -896,7 +905,8 @@
       isActive: () => requestId === speakRequestId,
       setCurrent: (audio, url) => { currentSpeakAudio = audio; currentSpeakObjectUrl = url; },
       clearCurrent: () => { currentSpeakAudio = null; currentSpeakObjectUrl = null; },
-      systemSpeak: (t, l, done) => speakWithSystemSpeech(t, l, done),
+      browserVoiceURI:voiceSettings.browserVoiceURI,
+      systemSpeak: (t, l, done, uri) => speakWithSystemSpeech(t, l, done, uri),
       onEnd: finish
     });
   }
@@ -914,7 +924,7 @@
     const speakHighlight = () => {
       const text = String(item.quote || "").trim();
       if (!text || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
-      try { speakHighlightedText(text, speechLanguageForText(text, anchor)); }
+      try { speakHighlightedText(text, speechLanguageForText(text, anchor), null, anchor); }
       catch (error) { console.warn("Highlight speech playback failed", error); }
     };
     const hoverSpeakButton = makeButton("", "secondary lhn-icon-btn lhn-tooltip-speak-trigger", speakHighlight);
@@ -1639,7 +1649,7 @@
         const text = cleanText(range?.toString());
         if (text) {
           const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-          speakHighlightedText(text, visibleDictionaryPopup ? "en-US" : speechLanguageForText(text, anchor));
+          speakHighlightedText(text, visibleDictionaryPopup ? "en-US" : speechLanguageForText(text, anchor), null, anchor);
         }
         return;
       }
