@@ -1,92 +1,119 @@
-# Local Highlight Notes for Firefox Windows — v1.30.0
+# Keepit
 
-A no-server Firefox desktop extension. Highlights and notes are stored in the extension's local IndexedDB database; no account, API key, database setup, or network connection is required.
+Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox. It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
 
-## What's included
-- Select text to open a note composer automatically (configurable).
-- Yellow, red, blue, and green highlights, with editable notes.
-- Note tooltip on hover, with compact pencil/trash icon buttons for edit/delete, and automatic save when clicking outside.
-- `Enter` inserts a new line; `Shift+Enter` saves and closes the composer.
-- `Alt+S` opens the note composer for the current selection by default.
-- `Alt+Q` toggles a right-side sidebar by default. It shows the current page title and URL, filters highlights by color, and uses compact list items. Click a highlighted-text snippet in the sidebar to jump to that highlight on the page.
-- Searchable language picker in Settings: 🇺🇸 English - English, 🇻🇳 Vietnamese - Tiếng Việt, 🇰🇷 Korean - 한국어.
-- The selected language is applied to the toolbar popup, settings, note composer, tooltip, sidebar, and dashboard. The first-run default uses the computer's time zone as a privacy-friendly regional hint (Vietnam → Vietnamese, South Korea → Korean), then the Firefox/browser language; no geolocation permission or network request is used.
-- Both shortcuts are customizable in the extension popup's Settings.
-- Dashboard with search, edit, delete, JSON import, and export.
-- Dashboard annotation cards follow the same stored on-page order as the page sidebar; older annotations are synchronized when the sidebar is opened.
+Keepit helps you keep learning from anything you read online: highlight text and add notes, translate and look up words, listen to pages read aloud, read paragraphs side by side with their translation, and review your highlights as flashcards.
 
-## Install for a quick test (temporary)
+The interface is available in English, Vietnamese, and Korean.
+
+## Features
+
+### Highlights and notes
+- Select text to open a note composer (configurable), or press the shortcut for the current selection.
+- Color highlights with editable notes; hover a highlight to see its note and edit or delete it.
+- A page sidebar lists the page's highlights, filters them by color, and jumps to a highlight when you click it.
+- Highlights are saved per page URL and restored from the exact text and its nearby context.
+
+### Translation and dictionary
+- Translate the selected text with a shortcut or a direct translation popup, with optional automatic speech.
+- Full English dictionary panel with synonyms and antonyms, word forms, and collocations.
+- Translation uses Google, with MyMemory and Lingva as alternatives; Bilingual Reader results are cached locally.
+
+### Bilingual Reader
+- `Alt+A`: automatically translate the main-content paragraphs as you scroll.
+- `Alt+D`: translate the paragraph nearest to the pointer, anywhere on the page.
+- `Alt+R`: read the main content aloud. `Alt+A` and `Alt+R` use the same main-content range; dates, bylines, navigation, ads, and related-article blocks are skipped (powered by Mozilla Readability).
+- A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. Auto-scroll, paragraph play icons, and the speed step are configurable.
+- The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
+
+### Text to speech
+- Google text-to-speech by default, with an automatic fallback to the browser's own voices.
+- Select Voice offers Auto language detection, 21 Google TTS languages, and your browser's installed voices. A flag on the reading bar shows the selected language.
+- Pronunciation rules and per-language speech rates are available in Settings.
+
+### Dashboard
+- Library of source pages with search, sort, website filter, and favorites; export as TXT, CSV, Markdown, or JSON; import JSON.
+- Study mode: flashcards from your highlights with Again / Hard / Good / Easy grading, typed answers, custom flashcards, and definition search.
+- Settings: Account, Highlights & Notes, Translate, Speech, Bilingual Reader, Appearance, Keyboard shortcuts, Disable on websites, Notifications, Backup, Upgrade & Billing, Reset, About.
+
+## Keyboard shortcuts
+
+Defaults are listed below. Everything marked customizable can be changed in Dashboard > Settings > Keyboard shortcuts (click the field and press the new keys; `Backspace` clears it). Some of them can also be changed in the toolbar popup.
+
+| Shortcut | Action | Customizable |
+| --- | --- | --- |
+| `Alt+S` | Open the note popup for the selection | Yes |
+| `Alt+Q` | Toggle the page sidebar | Yes |
+| `Alt+W` | Translate selected text | Yes |
+| `Alt+Z` | Toggle Keepit on this website | Yes |
+| `Space` | Pause or resume speech | Yes |
+| `Left` / `Right` | Previous / next paragraph while reading | Yes |
+| `Up` / `Down` | Increase / decrease reading speed | Yes |
+| `Alt+L` | Select voice (opens Select Voice on the reading bar) | Yes |
+| `Alt+A` | Auto-translate main content while scrolling | No |
+| `Alt+D` | Translate the paragraph near the pointer | No |
+| `Alt+R` | Start or stop reading aloud | No |
+
+The reading-bar keys (`Space`, arrows, `Alt+L`) work while the reader is active and can be turned off in the reader settings.
+
+## Install for testing
+
+Chromium-based browsers (Chrome, Edge, Brave, …):
 1. Extract the ZIP to a normal folder.
-2. Open Firefox and visit `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…**.
-4. Select the `manifest.json` inside the extracted folder.
-5. Open a normal website (not a Firefox `about:` page), select text, and test the popup.
-6. Open the extension toolbar popup, select a language in Settings, and open the dashboard or sidebar to verify the translated UI.
+2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
+3. Click **Load unpacked** and select the folder that contains `manifest.json`.
 
-Temporary add-ons are removed when Firefox restarts. To test again after restarting, repeat steps 2–4. Data usually remains in the same Firefox profile unless extension/profile data is cleared; export JSON regularly for backup.
+Firefox (121 or later):
+1. Extract the ZIP to a normal folder.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…** and select `manifest.json`.
+
+Firefox removes temporary add-ons when it restarts; repeat the steps to test again. Your data stays in the browser profile unless you clear extension data, so export a JSON backup from the Dashboard regularly.
+
+## Privacy and permissions
+
+- Highlights and notes are stored locally in the extension's IndexedDB; settings use `browser.storage.local`. There is no Keepit server, and the sign-in in the Dashboard is a local demo profile. Supabase sync is only a documented plan (`SUPABASE_SYNC.md`, `supabase-schema.sql`); nothing is connected.
+- Text you translate or look up is sent to the translation services above. Google text-to-speech requests send the text being spoken to Google.
+- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access covers all websites for the content scripts, the translation services, and Google Fonts.
+- A local error log keeps at most 200 classified entries (time, component, severity, code) without page URLs, page text, selected text, or account details. It is exported only when you choose to in Dashboard > Settings > About.
+- Usage limits and the Upgrade & Billing page are a local prototype with no real payments.
 
 ## Limitations
-- Content scripts cannot run on Firefox internal pages (`about:`), the Add-ons Manager, some built-in PDF/document viewers, or restricted browser pages.
-- The extension narrows the document layout to reserve space for the sidebar. Some websites with fixed-position elements or custom minimum widths may not reflow perfectly.
-- Multi-node selections may not always be restored perfectly. Restoring is based on exact text and nearby context; heavily changed pages can prevent a highlight from being restored or cause ambiguity.
-- Highlights are saved per exact URL. Different query strings or fragments may be treated as different pages. On dynamic web apps, the extension now watches page-content changes and retries restoration with nearby text context; identical quotes with identical context on multiple screens can still be ambiguous.
-- Annotation data is stored in IndexedDB local to the current Firefox profile and device. The first launch migrates the legacy `browser.storage.local` annotation array; it is removed only after migration succeeds. Clearing extension data/profile can remove notes. `unlimitedStorage` requests a larger quota, but does not make disk space unlimited.
-- The content script fetches only the current page's records, but the dashboard currently loads the full library for global search, filters, counts, and export. A library with millions of records will need a paginated dashboard/query redesign and substantial local disk/RAM; this build is not a guarantee of smooth operation at 10 million notes per user.
-- This is a temporary development build using Manifest V2; it has not been signed for permanent distribution or tested across every website.
 
-## Code maintenance
-- `config.js` is the single source of truth for storage keys, default settings, highlight colors, color labels, shared UI timings, and the shared Edit/Delete/Read SVG paths. Load it before the other JavaScript files in each extension context.
-- Keep shared defaults and values in `config.js`; avoid duplicating them across the popup, dashboard, content script, and background script.
+- Content scripts cannot run on browser internal pages (`about:`, `chrome://`, `edge://`), extension stores, or some built-in PDF/document viewers.
+- Keepit narrows the page layout to make room for the sidebar; some sites with fixed elements or custom minimum widths may not reflow perfectly.
+- Highlights are restored from text and context, so heavily changed pages or identical repeated quotes can be restored imperfectly. Different query strings or fragments are treated as different pages.
+- The Dashboard loads the whole library for search, filters, and export; a very large library needs a paginated redesign.
+- Main-content detection is heuristic. Pages without a clear article (for example search results or apps) may be read differently from article pages.
+- This is a development build, not signed for store distribution; the Firefox add-on ID in `manifest.json` is a placeholder.
 
-## Files
-- `manifest.json`: extension manifest
-- `i18n.js`: English, Vietnamese, and Korean interface strings and language detection
-- `web-highlighter.js`: isolated page DOM preview, highlight wrapping/restoration, and highlight color handling
-- `content.js` / `content.css`: page events, note popovers, and sidebar, connected to `web-highlighter.js`
-- `background.js`: IndexedDB CRUD, legacy migration, and import/export message handling
-- `popup.html` / `popup.js`: toolbar popup and settings
-- `dashboard.html` / `dashboard.css` / `dashboard.js`: local dashboard
+## Project structure
 
-## Privacy
-No network requests or geolocation permissions are used. Data remains in Firefox local extension storage (IndexedDB).
+- `manifest.json`: extension manifest (Chromium uses `background.service_worker`, Firefox uses `background.scripts`)
+- `background.js`: IndexedDB storage, import/export, translation and TTS requests, usage limits
+- `content.js` / `content.css` / `content-theme.css`: page events, note popovers, sidebar, shortcuts
+- `web-highlighter.js`: highlight wrapping and restoration
+- `bilingual-reader.js` / `bilingual-flags.js`: Bilingual Reader, reading bar, Select Voice
+- `lib/Readability.js`, `lib/Readability-readerable.js`: main-content detection
+- `tts-engine.js`: Google TTS and browser-voice playback, language detection, voice settings
+- `study-translation.js` / `study-utils.js` / `study-view.js`: translation helpers and flashcard study view
+- `popup.html` / `popup.js` / `popup.css`: toolbar popup
+- `dashboard.html` / `dashboard.js` / `dashboard.css`: Dashboard
+- `config.js`: single source of truth for storage keys, default settings, and shared values
+- `i18n.js`: English, Vietnamese, and Korean strings
+- `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
+- `AGENTS.md`, `PROJECT.md`: working rules and project log for contributors and AI assistants
 
+## Development
 
-Version 1.9.0 fixes the Firefox content-script localization reference so note creation, tooltips, and the page sidebar continue working with multilingual support enabled. It also fixes color-button selection state after translating color labels.
+- There is no build step: the folder is the extension.
+- Shared code uses the `browser.*` namespace through `browser-polyfill.js`.
+- Keep shared defaults in `config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
+- Read `AGENTS.md` before changing anything, and record every change in `PROJECT.md`.
 
+## Third-party components
 
-## v1.9.0 changes
-- Tooltip action icons are positioned at the top-right; tooltip width follows its content without a minimum width.
-- Sidebar cards have a subtle gray hover state; clicking anywhere on a card locates its highlight.
-- Sidebar annotations are ordered by their on-page vertical position.
-
-
-## v1.9.0
-- Tooltip actions moved to the bottom-right.
-- Added three quick color controls on the bottom-left; choosing a color saves immediately and updates the page highlight.
-
-
-### Dashboard updates in v1.12.0
-- Two-column library: source pages on the left and selected-page highlights/notes on the right.
-- Sort source pages by creation date, edit date, or highlight count; search and website filtering remain available.
-- Mark source pages as favorites and filter to favorites.
-- Export all annotations or the selected page as TXT, CSV, Markdown, or JSON; JSON import remains supported.
-- Source rows show a site favicon thumbnail, creation date, highlight color dots, and item count.
-
-
-## v1.12.0 dashboard refinements
-- Standardized dashboard interface icons using embedded Lucide-style SVG paths; no CDN or external icon dependency.
-- Moved website filter, sort, and favorites filter to the left side of the toolbar; search is aligned to the right.
-- Made source-page and annotation columns independently scrollable on desktop.
-- Source cards use page social-preview metadata (`og:image`, `twitter:image`, or `itemprop=image`) when captured while saving an annotation; missing preview images stay blank rather than showing a favicon.
-- Updated dashboard annotation cards to match the sidebar card layout and retained only Edit/Delete actions, with page Favorite/Export controls in the top-right header.
-- Existing annotations without a stored thumbnail remain blank until edited on a page that exposes preview-image metadata.
-
-Dashboard icons follow the Lucide SVG visual style. Lucide is an open-source icon library, available for personal and commercial use under the ISC license. See `LICENSE-LUCIDE.txt` and https://lucide.dev/.
-
-
-## v1.29.0
-- Improved restoration reliability on dynamic web apps by matching normalized whitespace, supporting text split across inline nodes, preventing concurrent restore requests from being lost, and retrying temporarily unavailable text.
-
-
-## v1.30.0
-- Added an optional setting to save and highlight a newly selected text only when the user clicks outside the popup. Disabled by default to preserve v1.29 behavior. Existing editing, cancel, and Escape behavior remains unchanged.
+- Mozilla Readability (Apache License 2.0; the license header is kept in `lib/`)
+- webextension-polyfill (Mozilla Public License 2.0, `LICENSE-WEBEXTENSION-POLYFILL.txt`)
+- Lucide icons (ISC, `LICENSE-LUCIDE.txt`)
+- flag-icons (MIT, see `THIRD_PARTY_NOTICES.md`)

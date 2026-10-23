@@ -1,4 +1,7 @@
-# Codex Working Rules
+# Keepit Working Rules for all AI (Codex/Claude,..)
+
+## Giới thiệu dự án
+- Keepit app: extension/addon cho mọi trình duyệt nhân Chromium / nhân Firefox (một codebase, Manifest V3).
 
 ## Đường dẫn
 - Thư mục nguồn (Git repo, nơi sửa code): D:\Keepit\Keepit - Addon and Extension
@@ -11,6 +14,7 @@
 - Thay đổi tối thiểu, có mục tiêu rõ ràng.
 - Giữ nguyên tính năng, UI và hành vi hiện có. Không đổi layout, màu, font, vị trí nút, hay văn bản đang có.
 - Claude tuyệt đối không được sửa UI, trừ khi được chỉ định
+- Khi thêm UI mới, phải giống giao diện tổng thể của app từ trước (cùng component, class, màu, font, khoảng cách với UI đang có), không thêm lung tung.
 - Tái sử dụng code đang chạy, không refactor không liên quan.
 - Chạy kiểm tra liên quan và báo kết quả thực tế.
 - Không nói "đã test" nếu chưa chạy test.

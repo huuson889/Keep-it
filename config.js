@@ -44,6 +44,7 @@
     nextReadingShortcut: "Right",
     increaseReadingSpeedShortcut: "Up",
     decreaseReadingSpeedShortcut: "Down",
+    selectVoiceShortcut: "Alt+L",
     disabledWebsites: []
   });
 

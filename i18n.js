@@ -63,6 +63,7 @@
   MESSAGES.en.nextReadingShortcutLabel = "Read next paragraph"; MESSAGES.vi.nextReadingShortcutLabel = "Đọc đoạn phía dưới"; MESSAGES.ko.nextReadingShortcutLabel = "다음 문단 읽기";
   MESSAGES.en.increaseReadingSpeedShortcutLabel = "Increase reading speed"; MESSAGES.vi.increaseReadingSpeedShortcutLabel = "Tăng tốc độ đọc"; MESSAGES.ko.increaseReadingSpeedShortcutLabel = "읽기 속도 높이기";
   MESSAGES.en.decreaseReadingSpeedShortcutLabel = "Decrease reading speed"; MESSAGES.vi.decreaseReadingSpeedShortcutLabel = "Giảm tốc độ đọc"; MESSAGES.ko.decreaseReadingSpeedShortcutLabel = "읽기 속도 낮추기";
+  MESSAGES.en.selectVoiceShortcutLabel = "Select voice reader"; MESSAGES.vi.selectVoiceShortcutLabel = "Chọn giọng đọc"; MESSAGES.ko.selectVoiceShortcutLabel = "읽기 음성 선택";
   MESSAGES.en.bilingualTarget = "Translate to"; MESSAGES.vi.bilingualTarget = "Dịch sang"; MESSAGES.ko.bilingualTarget = "번역 언어";
   MESSAGES.en.bilingualFont = "Translation font"; MESSAGES.vi.bilingualFont = "Font bản dịch"; MESSAGES.ko.bilingualFont = "번역 글꼴";
   MESSAGES.en.bilingualInterDefault = "Inter (default)"; MESSAGES.vi.bilingualInterDefault = "Inter (mặc định)"; MESSAGES.ko.bilingualInterDefault = "Inter (기본값)";

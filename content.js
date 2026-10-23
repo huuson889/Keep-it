@@ -870,6 +870,12 @@
         return;
       }
     }
+    const selectVoiceShortcut = String(settings.selectVoiceShortcut ?? "Alt+L").toLowerCase();
+    if (selectVoiceShortcut && pressed === selectVoiceShortcut) {
+      const handled = !document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:"open-voice-select", cancelable:true }));
+      if (handled) { e.preventDefault(); e.stopImmediatePropagation(); }
+      return;
+    }
     const readingShortcuts = { [String(settings.previousReadingShortcut ?? "Left").toLowerCase()] : "previous-reading-block", [String(settings.nextReadingShortcut ?? "Right").toLowerCase()] : "next-reading-block", [String(settings.increaseReadingSpeedShortcut ?? "Up").toLowerCase()] : "increase-reading-speed", [String(settings.decreaseReadingSpeedShortcut ?? "Down").toLowerCase()] : "decrease-reading-speed" };
     const readingAction = readingShortcuts[pressed];
     if (readingAction) {
