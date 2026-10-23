@@ -233,7 +233,7 @@
 - Bản đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; tiêu đề README cũ: `Local Highlight Notes for Firefox Windows` (v1.30.0).
 - Git không có lịch sử trước baseline hoặc commit .502, .503, .507; không gán thay đổi chưa xác minh cho Codex.
 
-## 5. Nhật ký các ZIP Codex đã xuất trong hội thoại
+## 5. Nhật ký các ZIP Codex đã xuất trong hội thoại- **v3.4.501** | 2026-10-22 | Codex sửa: Liên kết shortcut trong banner và Settings với thiết lập đã lưu; cập nhật banner ngay khi shortcut đổi, giá trị chưa gán hiển thị Off.
 - Không tìm thấy phản hồi chat có ZIP xuất bản cho v3.4.402 hoặc v3.4.485; không gán thay đổi cho hai version này.
 - **v3.4.500** | 2026-10-22 | Codex sửa: Đổi bước tăng/giảm tốc độ bằng phím ↑/↓ thành 0,15x và cho thanh Reading Speed kéo tự do.
 - **v3.4.499** | 2026-10-22 | Codex sửa: nhấp đúp vào nút kéo để đưa thanh đọc về vị trí mặc định: chính giữa, cách đáy màn hình 24px.
