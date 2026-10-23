@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.534: Bilingual Reader chạy đồng thời các engine dịch và dùng bản dịch thành công đầu tiên, tránh chờ timeout tuần tự từng engine. File: background.js, manifest.json, PROJECT.md. Đã chạy node --check và git diff --check; chưa đo trực tiếp độ trễ trên trình duyệt. Tiếp theo: kiểm tra thời gian Alt+A/Alt+D trên trang thực tế.
 - 2026-10-23 | v3.4.533: Thêm Auto highlight vào Toolbar settings và đồng bộ với Highlights & Notes; mặc định tắt ở bản cài mới. File: config.js, popup.html, popup.js, dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trên trình duyệt. Tiếp theo: xác nhận hai công tắc đồng bộ trên Firefox/Chrome.
 - 2026-10-23 | v3.4.532: Khi chưa lưu tùy chọn, hiển thị Custom rate for display language theo mặc định cấu hình và dùng rate mặc định theo display language (1.2) thay vì tốc độ chung 1.0. File: dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check, git diff --check và kiểm tra tính toán mặc định; chưa kiểm tra UI trên trình duyệt. Tiếp theo: xác nhận Your speed là 1.2 cho cài mới EN/VI/KO.
 - 2026-10-23 | v3.4.531: Chuẩn hóa khoảng cách giữa mô tả “Disable reader on websites” và form thêm domain thành 16px, đồng bộ với khoảng cách các mục cài đặt. File: dashboard.css, manifest.json, PROJECT.md. Đã chạy git diff --check; chưa kiểm tra UI trực tiếp trên trình duyệt. Tiếp theo: xác nhận khoảng cách trực quan trên Firefox/Chrome.
@@ -12,7 +13,7 @@
 - 2026-10-23 | v3.4.525: Thêm MyMemory làm fallback cho lhn-direct-translation khi Google lỗi/timeout; nguồn Auto gửi autodetect, văn bản dài được chia dưới giới hạn API. File: study-translation.js, PROJECT.md. Đã chạy node --check study-translation.js, parse manifest.json và git diff --check; chưa thử lỗi mạng thực tế trên trình duyệt. Tiếp theo: xác nhận fallback MyMemory trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Full dict chuyển cache sang browser.storage.local (TTL 7 ngày), cache nghĩa từng từ/cụm liên quan để tái sử dụng; khi note mở, hủy yêu cầu phụ và điền ngay bản dịch chính. File: content.js, PROJECT.md. Đã chạy node --check content.js và git diff --check; chưa xác nhận trên trình duyệt. Tiếp theo: kiểm tra cache liên quan và điền note khi mạng chậm.
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.533. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.534. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
 - Chọn text và Bilingual Reader dùng voiceMode google/browser cùng browserVoiceURI; migration từ speechVoice/speechVoiceURI chạy một lần. Flashcard giữ speechVoice độc lập.
@@ -20,7 +21,7 @@
 - Bilingual Reader > Reader: công tắc master và nhóm Auto-scroll, Show reading icon, Disable reader on websites, Parts not to read nằm chung một mục; tắt master thì nhóm phụ bị disabled, mờ và khóa pointer. Có 27 website mặc định bị tắt (gồm google.com; tên miền con cũng khớp), seed một lần, hợp nhất với danh sách cũ và cho phép người dùng xóa.
 - Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing, link căn trái, hai divider cùng màu #cbd1d8 và nhãn dịch EN/VI/KO.
 - Full dict cache dùng `browser.storage.local` với TTL 7 ngày; cache bản dịch chính riêng theo từ/ngôn ngữ để tái sử dụng cho Syn/Ant, Forms và Colloc. Khi note mở, các yêu cầu phụ bị hủy và bản dịch chính được điền ngay.
-- lhn-direct-translation trong study-translation.js dùng Google trước, MyMemory làm backup khi Google lỗi/timeout; nguồn Auto gửi `autodetect`, văn bản dài được chia theo giới hạn API.
+- Bilingual Reader dịch qua Google/MyMemory/Lingva đồng thời, hiển thị bản đầu tiên thành công và lưu cache cục bộ 7 ngày; các engine lỗi không chặn dịch thành công.
 - Nhật ký lỗi: browser.storage.local giữ tối đa 200 mục metadata phân loại; không lưu URL, nội dung trang, chữ chọn, email hay stack. Dashboard Settings > About cho phép xuất JSON theo thao tác người dùng.
 - Dashboard Settings > Highlights & Notes: Auto-open note popup khi click ngoài đóng mà không lưu; Auto highlight mặc định tắt và giữ lưu hiện tại khi popup không tự mở.
 - Giới hạn dùng (usage-limits.js): gói Free không giới hạn translate/Google TTS; key A 100 lượt/ngày, key B không giới hạn. Key cứng trong code, chỉ là bản thử. TRIAL_MS = 0.
@@ -30,7 +31,7 @@
 9. [Kiểm tra] Xác nhận Your speed khởi tạo 1.2 và các tốc độ riêng đã lưu vẫn được ưu tiên trong UI.
 8. [Kiểm tra] Xác nhận 27 website Reader mặc định được seed vào cài đặt hiện có, website con cũng bị tắt, và domain người dùng đã xóa không tự xuất hiện lại.
 7. [Kiểm tra] Xác nhận Reader settings gộp một mục, disabled/gray và không nhận chuột khi Enable reader tắt trên Firefox/Chrome.
-0. [Kiểm tra] Xác nhận Toolbar settings và Dashboard > Highlights & Notes đồng bộ Auto highlight; bản cài mới mặc định tắt.
+10. [Kiểm tra] Đo thực tế độ trễ dịch Bilingual Reader trên Firefox/Chrome sau khi các engine được gọi đồng thời.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
