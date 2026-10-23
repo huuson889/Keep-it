@@ -15,6 +15,7 @@
 - Giữ nguyên tính năng, UI và hành vi hiện có. Không đổi layout, màu, font, vị trí nút, hay văn bản đang có.
 - Claude tuyệt đối không được sửa UI, trừ khi được chỉ định
 - Khi thêm UI mới, phải giống giao diện tổng thể của app từ trước (cùng component, class, màu, font, khoảng cách với UI đang có), không thêm lung tung.
+- Khi thêm label (nhãn mục) mới, nếu không khai báo rõ, phải đặt tên label phù hợp ngắn gọn chuẩn UI/UX app hiện đại, các label phải được dịch cho mọi quốc gia tương ứng.
 - Tái sử dụng code đang chạy, không refactor không liên quan.
 - Chạy kiểm tra liên quan và báo kết quả thực tế.
 - Không nói "đã test" nếu chưa chạy test.
