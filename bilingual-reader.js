@@ -807,6 +807,8 @@ const FLAG_SVGS = {
         const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = Number(settings.speechSpeed) || 1; u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
       },
+      strictVoice: true,
+      onGoogleVoiceFailed: error => { console.error("Bilingual Reader: Google voice failed, reading stopped (voice not switched)", error); stopReading(); },
       onBrowserVoiceUnavailable: () => { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); },
       onEnd: finish
     });

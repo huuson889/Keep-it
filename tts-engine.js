@@ -149,7 +149,8 @@
   }
 
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
-  //       clearCurrent(), systemSpeak(text, lang, done), onEnd()
+  //       clearCurrent(), systemSpeak(text, lang, done), onEnd(),
+  //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error)
   async function play(opts) {
     let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
     try { voiceSettings = await getVoiceSettings(); } catch {}
@@ -159,31 +160,44 @@
     }
     for (const chunk of splitChunks(opts.text)) {
       if (!opts.isActive()) return;
-      let played = false;
-      let url = null;
-      try {
-        const result = await api.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: opts.googleLanguage, voice: opts.voice });
+      let played = false, limitReached = false, lastError = null;
+      const maxAttempts = opts.strictVoice ? 3 : 1;
+      for (let attempt = 0; attempt < maxAttempts && !played && !limitReached; attempt++) {
+        if (attempt) { await new Promise(resolve => setTimeout(resolve, attempt * 500)); if (!opts.isActive()) return; }
+        let url = null;
+        try {
+          const result = await api.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: opts.googleLanguage, voice: opts.voice });
+          if (!opts.isActive()) return;
+          if (!result?.audioBase64) throw new Error("Google TTS returned empty audio");
+          const bin = atob(result.audioBase64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+          const audio = new Audio(url);
+          audio.playbackRate = typeof opts.rate === "function" ? opts.rate() : (opts.rate || 1);
+          opts.setCurrent(audio, url);
+          if (opts.waitIfPaused) { const wait = opts.waitIfPaused(); if (wait) await wait; if (!opts.isActive()) return; }
+          await new Promise((resolve, reject) => {
+            audio.onended = resolve;
+            audio.onerror = () => reject(new Error("Audio chunk could not be played"));
+            audio.play().catch(reject);
+          });
+          played = true;
+        } catch (error) {
+          lastError = error;
+          limitReached = /usage limit/i.test(String(error?.message || error));
+          console.warn(opts.strictVoice && !limitReached ? "Google TTS chunk failed" : "Google TTS chunk failed; using browser speech for this chunk", error);
+        } finally {
+          if (url) URL.revokeObjectURL(url);
+          opts.clearCurrent();
+        }
+      }
+      // strictVoice: giọng Google đã chọn thì không tự đổi sang giọng trình duyệt, trừ khi hết lượt (key).
+      if (!played && opts.strictVoice && !limitReached) {
         if (!opts.isActive()) return;
-        if (!result?.audioBase64) throw new Error("Google TTS returned empty audio");
-        const bin = atob(result.audioBase64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
-        const audio = new Audio(url);
-        audio.playbackRate = typeof opts.rate === "function" ? opts.rate() : (opts.rate || 1);
-        opts.setCurrent(audio, url);
-        if (opts.waitIfPaused) { const wait = opts.waitIfPaused(); if (wait) await wait; if (!opts.isActive()) return; }
-        await new Promise((resolve, reject) => {
-          audio.onended = resolve;
-          audio.onerror = () => reject(new Error("Audio chunk could not be played"));
-          audio.play().catch(reject);
-        });
-        played = true;
-      } catch (error) {
-        console.warn("Google TTS chunk failed; using browser speech for this chunk", error);
-      } finally {
-        if (url) URL.revokeObjectURL(url);
-        opts.clearCurrent();
+        opts.onGoogleVoiceFailed?.(lastError);
+        if (opts.isActive()) opts.onEnd?.();
+        return;
       }
       if (!played) {
         if (!opts.isActive()) return;
