@@ -963,6 +963,7 @@
       clearCurrent: () => { currentSpeakAudio = null; currentSpeakObjectUrl = null; },
       browserVoiceURI:voiceSettings.browserVoiceURI,
       systemSpeak: (t, l, done, uri) => speakWithSystemSpeech(t, l, done, uri),
+      onGoogleAudioSlow: () => showSidebarToast(() => t("googleAudioSlowToast")),
       onEnd: finish
     });
   }

@@ -831,6 +831,7 @@ const FLAG_SVGS = {
       strictVoice: true,
       onGoogleVoiceFailed: error => { console.error("Bilingual Reader: Google voice failed, reading stopped (voice not switched)", error); stopReading(); showReaderToast(popupText("readerToastGoogleVoiceFailed")); },
       onGoogleLimitReached: () => showReaderToast(popupText("readerToastGoogleLimit")),
+      onGoogleAudioSlow: () => showReaderToast(popupText("googleAudioSlowToast")),
       onBrowserVoiceUnavailable: () => { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); },
       onEnd: finish
     });

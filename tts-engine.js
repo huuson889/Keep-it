@@ -150,7 +150,8 @@
 
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
   //       clearCurrent(), systemSpeak(text, lang, done), onEnd(),
-  //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error), onGoogleLimitReached()
+  //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error), onGoogleLimitReached(),
+  //       onGoogleAudioSlow(error) (mỗi lần tải/phát âm thanh Google lỗi, trừ lỗi hết lượt)
   async function play(opts) {
     let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
     try { voiceSettings = await getVoiceSettings(); } catch {}
@@ -187,6 +188,7 @@
         } catch (error) {
           lastError = error;
           limitReached = /usage limit/i.test(String(error?.message || error));
+          if (!limitReached && opts.isActive()) opts.onGoogleAudioSlow?.(error);
           console.warn(opts.strictVoice && !limitReached ? "Google TTS chunk failed" : "Google TTS chunk failed; using browser speech for this chunk", error);
         } finally {
           if (url) URL.revokeObjectURL(url);

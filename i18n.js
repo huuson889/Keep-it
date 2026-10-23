@@ -94,6 +94,7 @@
   MESSAGES.en.readerToastGoogleLimit = "Google voice limit reached. Using browser voice."; MESSAGES.vi.readerToastGoogleLimit = "Hết lượt giọng Google. Đang dùng giọng trình duyệt."; MESSAGES.ko.readerToastGoogleLimit = "Google 음성 사용 한도에 도달했습니다. 브라우저 음성을 사용합니다.";
   MESSAGES.en.readerToastBrowserVoiceFailed = "Browser voice failed to play."; MESSAGES.vi.readerToastBrowserVoiceFailed = "Giọng trình duyệt bị lỗi, không phát được."; MESSAGES.ko.readerToastBrowserVoiceFailed = "브라우저 음성을 재생할 수 없습니다.";
   MESSAGES.en.readerToastBrowserVoiceMissing = "Voice “{name}” isn’t available in this browser. Reading stopped."; MESSAGES.vi.readerToastBrowserVoiceMissing = "Giọng “{name}” không có trên trình duyệt này. Đã dừng đọc."; MESSAGES.ko.readerToastBrowserVoiceMissing = "이 브라우저에는 “{name}” 음성이 없습니다. 읽기를 중지했습니다.";
+  MESSAGES.en.googleAudioSlowToast = "Slow network, loading audio"; MESSAGES.vi.googleAudioSlowToast = "Mạng chậm, đang tải âm thanh"; MESSAGES.ko.googleAudioSlowToast = "네트워크가 느립니다. 오디오를 불러오는 중입니다";
   MESSAGES.en.bilingualCache = "Cache"; MESSAGES.vi.bilingualCache = "Bộ nhớ đệm"; MESSAGES.ko.bilingualCache = "캐시";
   MESSAGES.en.bilingualExclude = "Parts not to read"; MESSAGES.vi.bilingualExclude = "Phần không đọc trên website"; MESSAGES.ko.bilingualExclude = "웹사이트에서 읽지 않을 부분";
   MESSAGES.en.bilingualExcludeTitle = "Custom website filters"; MESSAGES.vi.bilingualExcludeTitle = "Bộ lọc website tùy chỉnh"; MESSAGES.ko.bilingualExcludeTitle = "사용자 지정 웹사이트 필터";
