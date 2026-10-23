@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.532: Khi chưa lưu tùy chọn, hiển thị Custom rate for display language theo mặc định cấu hình và dùng rate mặc định theo display language (1.2) thay vì tốc độ chung 1.0. File: dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check, git diff --check và kiểm tra tính toán mặc định; chưa kiểm tra UI trên trình duyệt. Tiếp theo: xác nhận Your speed là 1.2 cho cài mới EN/VI/KO.
 - 2026-10-23 | v3.4.531: Chuẩn hóa khoảng cách giữa mô tả “Disable reader on websites” và form thêm domain thành 16px, đồng bộ với khoảng cách các mục cài đặt. File: dashboard.css, manifest.json, PROJECT.md. Đã chạy git diff --check; chưa kiểm tra UI trực tiếp trên trình duyệt. Tiếp theo: xác nhận khoảng cách trực quan trên Firefox/Chrome.
 - 2026-10-23 | v3.4.530: Seed 27 domain mặc định vào danh sách website tắt Reader; chuẩn hóa các mục google trùng/lỗi định dạng thành google.com, gộp với danh sách riêng đã có và đánh dấu seed một lần để việc xóa domain được giữ lại. File: config.js, dashboard.js, bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check, git diff --check và 3 ca migration; chưa kiểm tra trực tiếp trên trình duyệt. Tiếp theo: xác nhận danh sách hiện trên Dashboard và Reader bị tắt trên các domain này.
 - 2026-10-23 | v3.4.529: Gộp Enable reader, Auto-scroll, Show reading icon, danh sách website và Parts not to read vào một mục Reader; tắt reader làm mờ và chặn tương tác các thiết lập phụ. File: dashboard.html, dashboard.js, dashboard.css, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra cấu trúc/ID UI và git diff --check; chưa kiểm tra trình duyệt. Tiếp theo: xác nhận trạng thái khóa/mở và bố cục trên Firefox/Chrome.
@@ -9,10 +10,8 @@
 - 2026-10-23 | v3.4.525: Thêm log lỗi cục bộ tối đa 200 mục, chỉ lưu thời gian/component/severity/code đã phân loại; thêm xuất JSON ở Dashboard Settings > About, không xuất URL/nội dung trang/văn bản chọn/tài khoản. File: error-logger.js, background.js, manifest.json, dashboard.html, dashboard.js, popup.html, i18n.js, PROJECT.md. Đã chạy node --check cho JS, parse manifest và git diff --check; chưa kiểm tra tải file qua UI trên trình duyệt. Tiếp theo: xác nhận log ghi được và nút About tải JSON trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm MyMemory làm fallback cho lhn-direct-translation khi Google lỗi/timeout; nguồn Auto gửi autodetect, văn bản dài được chia dưới giới hạn API. File: study-translation.js, PROJECT.md. Đã chạy node --check study-translation.js, parse manifest.json và git diff --check; chưa thử lỗi mạng thực tế trên trình duyệt. Tiếp theo: xác nhận fallback MyMemory trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Full dict chuyển cache sang browser.storage.local (TTL 7 ngày), cache nghĩa từng từ/cụm liên quan để tái sử dụng; khi note mở, hủy yêu cầu phụ và điền ngay bản dịch chính. File: content.js, PROJECT.md. Đã chạy node --check content.js và git diff --check; chưa xác nhận trên trình duyệt. Tiếp theo: kiểm tra cache liên quan và điền note khi mạng chậm.
-- 2026-10-23 | v3.4.525: Thêm Auto highlight; Auto-open note popup đóng ngoài sẽ hủy, còn Auto highlight bật sẽ lưu như trước khi popup không tự mở. File: config.js, dashboard.html, dashboard.js, content.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa xác nhận UI/Tương tác trên trình duyệt. Tiếp theo: kiểm tra hai chế độ popup.
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.531. Firefox và Chrome, Manifest V3, một bản build chung.
-- Version: v3.4.531. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.532. Firefox và Chrome, Manifest V3, một bản build chung.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
 - Chọn text và Bilingual Reader dùng voiceMode google/browser cùng browserVoiceURI; migration từ speechVoice/speechVoiceURI chạy một lần. Flashcard giữ speechVoice độc lập.
@@ -27,6 +26,7 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+9. [Kiểm tra] Xác nhận Your speed khởi tạo 1.2 và các tốc độ riêng đã lưu vẫn được ưu tiên trong UI.
 8. [Kiểm tra] Xác nhận 27 website Reader mặc định được seed vào cài đặt hiện có, website con cũng bị tắt, và domain người dùng đã xóa không tự xuất hiện lại.
 7. [Kiểm tra] Xác nhận Reader settings gộp một mục, disabled/gray và không nhận chuột khi Enable reader tắt trên Firefox/Chrome.
 0. [Kiểm tra] Xác nhận Auto-open note popup đóng ngoài không lưu; Auto highlight lưu khi click ngoài.
