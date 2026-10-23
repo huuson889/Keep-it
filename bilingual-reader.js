@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:[] };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -893,7 +893,12 @@ const FLAG_SVGS = {
     accountProfile = data[DEMO_PROFILE_KEY] || null;
     let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
-    applySettings({ ...(data[SETTINGS_KEY] || {}), ...voiceSettings });
+    const savedReaderSettings = data[SETTINGS_KEY] || {};
+    const savedReaderSites = Array.isArray(savedReaderSettings.readerDisabledWebsites) ? savedReaderSettings.readerDisabledWebsites : [];
+    const seedReaderSites = savedReaderSettings.readerDefaultSitesSeeded !== true;
+    const mergedReaderSettings = { ...DEFAULTS, ...savedReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...(globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || []), ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
+    if (seedReaderSites) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
+    applySettings({ ...mergedReaderSettings, ...voiceSettings });
     renderPopupText();
     settings.speechSpeed = Math.max(.5,Math.min(3,Number(settings.speechSpeed)||1));
     systemVoices = synth?.getVoices?.() || [];
