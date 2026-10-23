@@ -154,13 +154,13 @@
 - Kiểm tra: xác nhận selector/markup trên HTML trang; đã chạy node --check, parse manifest JSON, git diff --check; chưa thử trình duyệt.
 - Tiếp theo: xác nhận Alt+R đọc đủ phần mở đầu và body.
 
-### v3.4.519 - 2026-10-23
+### v3.4.519 | Codex sửa - 2026-10-23
 - Alt+A/Alt+R loại khối đọc gần phủ toàn màn hình, tránh tô tím toàn trang.
 - File: bilingual-reader.js, manifest.json, PROJECT.md.
 - Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử trên trình duyệt.
 - Tiếp theo: xác nhận trên trang gặp lỗi.
 
-### v3.4.518 - 2026-10-23
+### v3.4.518 | Codex sửa - 2026-10-23
 - Alt+A/Alt+R đọc các khối chữ nhìn thấy trong vùng nội dung; giữ đoạn dài, lọc rác ở đoạn ngắn, Google Search ưu tiên vùng kết quả/AI Overview.
 - Debug console: xanh = đọc, đỏ = bỏ; xem lý do trong console.table.
 - File: bilingual-reader.js, manifest.json, PROJECT.md.
