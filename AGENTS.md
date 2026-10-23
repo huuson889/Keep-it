@@ -8,7 +8,7 @@
 - Thư mục zip: D:\Keepit
 
 ## Quy tắc làm việc
-- Bắt đầu mỗi phiên: đọc AGENTS.md, rồi PROJECT.md (mục Trạng thái, Việc đang mở, và các mục Nhật ký mới hơn version đã biết). Không đọc lại cả dự án.
+- Bắt đầu mỗi phiên: đọc AGENTS.md, rồi PROJECT.md  README.md (mục Trạng thái, Việc đang mở, và các mục Nhật ký mới hơn version đã biết). Không đọc lại cả dự án.
 - Giữ câu trả lời ngắn gọn để tiết kiệm token.
 - Chỉ đọc các file liên quan trước khi sửa.
 - Thay đổi tối thiểu, có mục tiêu rõ ràng.
