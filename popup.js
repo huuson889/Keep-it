@@ -68,6 +68,7 @@ async function load() {
   currentLang = I18N.languageFor(settings);
   if (!settings.language) { settings.language = currentLang; await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
   $("showOnSelect").checked = settings.showOnSelect;
+  $("autoHighlight").checked = settings.autoHighlight === true;
   $("sentenceNoteEnabled").checked = settings.sentenceNoteEnabled !== false;
   $("autoTranslate").checked = settings.autoTranslate !== false;
   $("autoSpeakSelectedText").checked = settings.autoSpeakSelectedText === true;
@@ -153,6 +154,7 @@ $("openSidebar").addEventListener("click", async () => {
   catch { $("status").textContent = t("pageRestricted"); }
 });
 $("showOnSelect").addEventListener("change", async e => { settings.showOnSelect = e.target.checked; if (settings.showOnSelect) { settings.translateIconEnabled = false; settings.translationPopupEnabled = false; $("translateIconEnabled").checked = false; $("translationPopupEnabled").checked = false; } syncTranslationModeAvailability(); await saveSettings(); });
+$("autoHighlight").addEventListener("change", async e => { settings.autoHighlight = e.target.checked; await saveSettings(); });
 $("sentenceNoteEnabled").addEventListener("change", async e => { settings.sentenceNoteEnabled = e.target.checked; await saveSettings(); });
 $("autoTranslate").addEventListener("change", async e => { settings.autoTranslate = e.target.checked; await saveSettings(); });
 $("autoSpeakSelectedText").addEventListener("change", async e => { settings.autoSpeakSelectedText = e.target.checked; settings.autoSpeakOnTranslate = e.target.checked; await saveSettings(); });

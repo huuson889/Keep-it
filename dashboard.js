@@ -160,7 +160,7 @@ function refreshDashboardSettings() {
   renderDisabledReaderWebsiteList();
   syncBilingualReaderControls();
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
-  $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight !== false;
+  $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
   $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
