@@ -670,6 +670,19 @@ const FLAG_SVGS = {
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
     });
   }
+  // Thông báo một lần mỗi lần tải trang khi bỏ qua đoạn cùng ngôn ngữ (dùng style toast có sẵn)
+  let sameLangToastShown = false;
+  function notifySameLangSkipped() {
+    if (sameLangToastShown) return;
+    sameLangToastShown = true;
+    let toast = document.getElementById("lhn-sidebar-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
+    toast.textContent = "Bỏ qua dịch các đoạn cùng ngôn ngữ";
+    toast.classList.add("is-visible");
+    clearTimeout(toast._lhnSameLangTimer);
+    toast._lhnSameLangTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  }
+
   async function translateBlock(block, readerMode = false) {
     if (websiteDisabled || !block || !document.body.contains(block) || block.dataset.lhnBrTranslating === "true") return;
     block.classList.toggle("lhn-bilingual-web-font", !!settings.webFontFamily && loadedWebFontFamily === settings.webFontFamily);
@@ -683,7 +696,7 @@ const FLAG_SVGS = {
       let translated = result?.translated;
       if (!translated) return;
       const source = text.trim().toLocaleLowerCase(), sameDetected = result.detectedLang && result.detectedLang.toLowerCase().split("-")[0] === targetLang;
-      if (settings.skipSameLang && !result.fallback && (sameDetected || translated.trim().toLocaleLowerCase() === source)) { card?.remove(); return; }
+      if (settings.skipSameLang && !result.fallback && (sameDetected || translated.trim().toLocaleLowerCase() === source)) { card?.remove(); notifySameLangSkipped(); return; }
       if (!document.body.contains(block)) return;
       if (!card) { card = document.createElement("div"); card.className = "lhn-bilingual-card"; }
       card.textContent = translated; card.dataset.sourceText = text; card.dataset.targetLang = targetLang;
