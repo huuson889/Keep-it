@@ -10,6 +10,7 @@
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
 const FLAG_SVGS = {
+      ...(globalThis.LHN_FLAGS?.svgs || {}),
       us: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><g fill-rule="evenodd"><path fill="#bd3d44" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 39.3h512v39.4H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.3H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0z"/><path fill="#192f5d" d="M0 0h240v275.6H0z"/><g fill="#fff"><path d="M22.5 13.5l2.4 7.3h7.7l-6.2 4.5 2.4 7.3-6.3-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6z"/></g></g></svg>`,
       uk: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><path fill="#00247d" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 0l512 512M512 0L0 512" stroke="#fff" stroke-width="60"/><path fill="#c8102e" d="M0 0l512 512M512 0L0 512" stroke="#c8102e" stroke-width="30"/><path fill="#fff" d="M256 0v512M0 256h512" stroke="#fff" stroke-width="100"/><path fill="#c8102e" d="M256 0v512M0 256h512" stroke="#c8102e" stroke-width="60"/></svg>`,
       vn: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="512" fill="#da251d"/><polygon points="256,110 297,237 431,237 323,316 364,443 256,364 148,443 189,316 81,237 215,237" fill="#ffff00"/></svg>`,
@@ -18,7 +19,7 @@ const FLAG_SVGS = {
       jp: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><circle cx="256" cy="256" r="150" fill="#bc002d"/></svg>`,
       es: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="128" fill="#c60b1e"/><rect y="128" width="512" height="256" fill="#ffc400"/><rect y="384" width="512" height="128" fill="#c60b1e"/></svg>`
     };
-  const FLAG_REGION_KEYS = { US:'us', GB:'uk', VN:'vn', FR:'fr', DE:'de', JP:'jp', ES:'es' };
+  const FLAG_REGION_KEYS = { ...(globalThis.LHN_FLAGS?.regionKeys || {}), US:'us', GB:'uk', VN:'vn', FR:'fr', DE:'de', JP:'jp', ES:'es' };
   const flagSvgForRegion = region => FLAG_SVGS[FLAG_REGION_KEYS[region] || 'us'];
   const synth = window.speechSynthesis;
   const style = document.createElement("style");
