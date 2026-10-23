@@ -182,11 +182,14 @@ const FLAG_SVGS = {
   dragHandle.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); const now = performance.now(); if (event.detail >= 2 || now - lastDragPointerDown < 350) { lastDragPointerDown = 0; bar.style.removeProperty("left"); bar.style.removeProperty("top"); bar.style.removeProperty("bottom"); bar.style.removeProperty("transform"); return; } lastDragPointerDown = now; const rect = bar.getBoundingClientRect(), pointerOffsetX = event.clientX - rect.left, pointerOffsetY = event.clientY - rect.top; bar.style.left = `${rect.left}px`; bar.style.top = `${rect.top}px`; bar.style.bottom = "auto"; bar.style.transform = "none"; dragHandle.setPointerCapture(event.pointerId); const move = e => { bar.style.left = `${Math.max(8,Math.min(innerWidth-rect.width-8,e.clientX-pointerOffsetX))}px`; bar.style.top = `${Math.max(8,Math.min(innerHeight-rect.height-8,e.clientY-pointerOffsetY))}px`; }; const end = () => { dragHandle.removeEventListener("pointermove",move); dragHandle.removeEventListener("pointerup",end); dragHandle.removeEventListener("pointercancel",end); }; dragHandle.addEventListener("pointermove",move); dragHandle.addEventListener("pointerup",end); dragHandle.addEventListener("pointercancel",end); });
   (document.body || document.documentElement).appendChild(bar);
   function saveSpeechSetting(patch) { settings = { ...settings, ...patch }; browser.storage.local.get(SETTINGS_KEY).then(data => browser.storage.local.set({ [SETTINGS_KEY]:{ ...DEFAULTS, ...(data[SETTINGS_KEY] || {}), ...patch } })).catch(() => {}); }
+  // Chọn voice: đổi cờ ngay (kể cả lúc pause), bỏ ngôn ngữ của đoạn đang đọc cũ; sau khi lưu xong cờ tự theo cài đặt mới
+  function previewVoiceFlag(lang) { readingSegment = null; voiceFlagOverride = lang || ""; syncToolbar(); }
+  function autoFlagLang() { return activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || ""; }
   async function saveReaderVoiceSettings(voiceMode, browserVoiceURI = "", readLanguage = "") {
-    const next = await LHN_TTS.setVoiceSettings(voiceMode, browserVoiceURI, readLanguage);
+    const next = await LHN_TTS.setVoiceSettings(voiceMode, browserVoiceURI, readLanguage).catch(error => { voiceFlagOverride = ""; syncToolbar(); throw error; });
     settings = { ...settings, ...next };
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
-    activeVoice = selectedVoice;
+    activeVoice = selectedVoice; voiceFlagOverride = "";
     syncToolbar();
   }
   function saveWebsiteFont(enabled) {
@@ -217,7 +220,7 @@ const FLAG_SVGS = {
     const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
     const minutes = Math.max(1,Math.ceil(totalWords / (220 * (Number(settings.speechSpeed)||1))));
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
-    const lang = readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
+    const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
     bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span>`;
     bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : (settings.voiceMode !== "browser" && settings.readLanguage ? `${readLanguageName(settings.readLanguage)} (${LHN_TTS.normalizeLanguage(settings.readLanguage)})` : popupText("readerPopupSelectVoice"));
@@ -280,7 +283,7 @@ const FLAG_SVGS = {
     if (autoMatches) {
       const autoSelected = settings.voiceMode !== "browser" && !settings.readLanguage;
       const auto = document.createElement("button"); auto.type="button"; auto.className=`lhn-br-voice${autoSelected ? " lhn-selected" : ""}`; auto.innerHTML=`<span>🌐</span><span>${popupText("readerPopupAutoDetect")}<small>${popupText("readerPopupAutoDescription")}</small></span>${autoSelected ? "✓" : ""}`;
-      auto.addEventListener("click", () => { void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
+      auto.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(autoFlagLang()); void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
     const plainQuery = plainText(query);
     const groupHeading = key => { const heading = document.createElement("div"); heading.className = "lhn-br-voice-group"; heading.setAttribute("role", "presentation"); heading.textContent = popupText(key); list.appendChild(heading); };
@@ -294,7 +297,7 @@ const FLAG_SVGS = {
       const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
       button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
-      button.addEventListener("click", () => { selectedVoice = null; void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
+      button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
     });
     systemVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(query)).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
@@ -302,7 +305,7 @@ const FLAG_SVGS = {
       if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
-      button.addEventListener("click",()=>{ selectedVoice=voice; void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
+      button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
   }
@@ -778,7 +781,7 @@ const FLAG_SVGS = {
   }
   // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
   // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
-  var readingSegment = null; // đoạn đang đọc: { translation, lang }
+  var voiceFlagOverride = ""; var readingSegment = null; // đoạn đang đọc: { translation, lang }
   function segmentRate(isTranslation) {
     const base = Number(settings.speechSpeed) || 1;
     if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return base;
@@ -858,6 +861,7 @@ const FLAG_SVGS = {
       void speakGoogleNext(seg ? seg.source : currentReadText, blockLang, requestId, voiceSettings, null, seg ? { text: seg.translated, lang: seg.lang } : null);
       return;
     }
+    readingSegment = null; // giọng trình duyệt: bỏ ngôn ngữ đoạn Google cũ để cờ theo giọng đang dùng
     let explicitVoice = null;
     if (voiceSettings.browserVoiceURI) {
       explicitVoice = await waitForBrowserVoice(voiceSettings.browserVoiceURI);
