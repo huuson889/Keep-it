@@ -226,7 +226,7 @@ const FLAG_SVGS = {
     bar.querySelector("[data-theme]").checked = isDark;
   }
   function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
-  function popupText(key) { return globalThis.LHN_I18N?.t?.(key, {}, displayLang) || key; }
+  function popupText(key, vars = {}) { return globalThis.LHN_I18N?.t?.(key, vars, displayLang) || key; }
   function renderPopupText() {
     const setAttr = (selector, attr, key) => { const element = bar.querySelector(selector); if (element) element.setAttribute(attr, popupText(key)); };
     const setText = (selector, key) => { const element = bar.querySelector(selector); if (element) element.textContent = popupText(key); };
@@ -820,6 +820,25 @@ const FLAG_SVGS = {
       onEnd: finish
     });
   }
+  // Giọng trình duyệt người dùng đã chọn: khớp theo voiceURI, rồi theo tên (giọng Google trên Chrome có voiceURI = tên). Không thay bằng giọng khác.
+  function findBrowserVoice(uri) {
+    const key = String(uri || "").trim().toLowerCase();
+    if (!key) return null;
+    const list = synth?.getVoices?.() || systemVoices || [];
+    return list.find(voice => voice.voiceURI === uri) || list.find(voice => String(voice.voiceURI || "").trim().toLowerCase() === key || String(voice.name || "").trim().toLowerCase() === key) || null;
+  }
+  // Chrome tải danh sách giọng bất đồng bộ: chờ voiceschanged tối đa timeoutMs trước khi kết luận giọng không có.
+  function waitForBrowserVoice(uri, timeoutMs = 1000) {
+    return new Promise(resolve => {
+      const found = findBrowserVoice(uri);
+      if (found || !synth) { resolve(found); return; }
+      let done = false, timer = null;
+      const finish = () => { if (done) return; done = true; clearTimeout(timer); synth.removeEventListener?.("voiceschanged", onChange); resolve(findBrowserVoice(uri)); };
+      const onChange = () => { if (findBrowserVoice(uri)) finish(); };
+      timer = setTimeout(finish, timeoutMs);
+      synth.addEventListener?.("voiceschanged", onChange);
+    });
+  }
   async function speakNext(textOverride = null) {
     if (!reading || queueIndex >= queue.length || !queue[queueIndex]) { stopReading(); return; }
     const requestId = ++speechDetectionRequest;
@@ -839,14 +858,21 @@ const FLAG_SVGS = {
       void speakGoogleNext(seg ? seg.source : currentReadText, blockLang, requestId, voiceSettings, null, seg ? { text: seg.translated, lang: seg.lang } : null);
       return;
     }
-    activeSpeechLang = settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(currentReadText, blockLang) : LHN_TTS.normalizeLanguage(blockLang);
+    let explicitVoice = null;
+    if (voiceSettings.browserVoiceURI) {
+      explicitVoice = await waitForBrowserVoice(voiceSettings.browserVoiceURI);
+      if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
+      if (!explicitVoice) { console.error("Bilingual Reader: selected browser voice not available, reading stopped (voice not switched)", voiceSettings.browserVoiceURI); stopReading(); showReaderToast(popupText("readerToastBrowserVoiceMissing", { name:voiceSettings.browserVoiceURI })); return; }
+      selectedVoice = explicitVoice;
+    }
+    activeSpeechLang = explicitVoice ? (explicitVoice.lang || LHN_TTS.normalizeLanguage(blockLang)) : settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(currentReadText, blockLang) : LHN_TTS.normalizeLanguage(blockLang);
     if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
     systemVoices = synth?.getVoices?.() || systemVoices;
     const baseLang = activeSpeechLang.toLowerCase().split(/[-_]/)[0];
     const defaultLanguageVoice = systemVoices.find(voice => voice.default && voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang);
     const normalizeVoiceLang = voice => String(voice?.lang || "").toLowerCase().replace(/_/g,"-");
     const selectedVoiceMatches = selectedVoice && normalizeVoiceLang(selectedVoice).split("-")[0] === baseLang;
-    activeVoice = (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
+    activeVoice = explicitVoice || (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
