@@ -2490,6 +2490,29 @@ $("bilingualAutoScroll").addEventListener("change", event => saveBilingualReader
 $("bilingualEnableTTS").addEventListener("change", event => saveBilingualReaderSettings({ enableTTS:event.target.checked }));
 $("bilingualSpeakerIconVisibility").addEventListener("change", event => saveBilingualReaderSettings({ speakerIconVisibility:event.target.value }));
 $("bilingualExcludeSelectors").addEventListener("change", event => saveBilingualReaderSettings({ excludeSelectors:event.target.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean) }));
+$("bilingualDisabledReaderWebForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const field = $("bilingualDisabledReaderWebInput"), site = normalizeDisabledWebsite(field.value);
+  if (!site) { toast(t("invalidWebsite")); field.focus(); return; }
+  const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
+  if (sites.includes(site)) { toast(t("websiteAlreadyDisabled")); field.focus(); return; }
+  field.value = ""; await updateDisabledReaderWebsites([...sites, site]);
+});
+$("bilingualDisabledReaderWebList").addEventListener("click", async event => {
+  const button = event.target.closest("[data-reader-site-action]"), row = button?.closest(".settings-disabled-web-item");
+  if (!button || !row) return;
+  const site = row.dataset.site, action = button.dataset.readerSiteAction;
+  const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
+  if (action === "edit") { editingDisabledReaderWebsite = site; renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); const field = $("bilingualDisabledReaderWebList").querySelector(".settings-disabled-web-edit-input"); field?.focus(); field?.select(); return; }
+  if (action === "cancel") { editingDisabledReaderWebsite = null; renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); return; }
+  if (action === "remove") { await updateDisabledReaderWebsites(sites.filter(value => value !== site)); return; }
+  if (action === "save") {
+    const field = row.querySelector(".settings-disabled-web-edit-input"), updated = normalizeDisabledWebsite(field?.value);
+    if (!updated) { toast(t("invalidWebsite")); field?.focus(); return; }
+    if (updated !== site && sites.includes(updated)) { toast(t("websiteAlreadyDisabled")); field?.focus(); return; }
+    await updateDisabledReaderWebsites(sites.map(value => value === site ? updated : value));
+  }
+});
 $("bilingualClearCache").addEventListener("click", async () => { await browser.runtime.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
 document.querySelectorAll("[data-settings-theme]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ sidebarTheme:button.dataset.settingsTheme })));
 document.querySelectorAll("[data-settings-color]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ defaultHighlightColor:button.dataset.settingsColor })));
