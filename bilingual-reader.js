@@ -677,7 +677,7 @@ const FLAG_SVGS = {
     sameLangToastShown = true;
     let toast = document.getElementById("lhn-sidebar-toast");
     if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
-    toast.textContent = "Bỏ qua dịch các đoạn cùng ngôn ngữ";
+    toast.textContent = popupText("sameLangSkippedToast");
     toast.classList.add("is-visible");
     clearTimeout(toast._lhnSameLangTimer);
     toast._lhnSameLangTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
@@ -837,6 +837,7 @@ const FLAG_SVGS = {
   }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
   document.addEventListener("lhn-bilingual-reader-command", event => {
+    if (event.detail === "toggle-lazy" || event.detail === "toggle-near-pointer") sameLangToastShown = false; // cho phép hiện lại toast khi bấm lại Alt+A/Alt+D
     if (event.detail === "toggle-lazy") toggleLazy();
     if (event.detail === "toggle-near-pointer") toggleNearPointer();
     if (event.detail === "toggle-reading") reading ? stopReading() : startReading();
