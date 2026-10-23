@@ -1,3 +1,16 @@
+# Third-Party Notices
+
+Keepit sử dụng các thành phần mã nguồn mở sau. Mỗi thành phần giữ nguyên giấy phép và thông báo bản quyền của tác giả.
+
+## flag-icons
+
+- Nguồn: https://github.com/lipis/flag-icons
+- Dùng cho: cờ quốc gia hiển thị trên thanh đọc bilingual (`bilingual-flags.js`, đã rút gọn SVG).
+- Giấy phép: MIT
+
+### Toàn văn giấy phép
+
+```
 The MIT License (MIT)
 
 Copyright (c) 2013 Panayiotis Lipiridis
@@ -19,3 +32,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```

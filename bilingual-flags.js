@@ -1,6 +1,6 @@
 // Cờ quốc gia bổ sung cho thanh đọc bilingual.
 // Nguồn: flag-icons (https://github.com/lipis/flag-icons), giấy phép MIT, Copyright (c) 2013 Panayiotis Lipiridis.
-// Bản quyền và điều khoản: third_party/flag-icons/LICENSE. Đã rút gọn SVG (bỏ comment, khoảng trắng thừa).
+// Bản quyền và điều khoản: xem THIRD_PARTY_NOTICES.md. Đã rút gọn SVG (bỏ comment, khoảng trắng thừa).
 // Nạp trước bilingual-reader.js.
 (() => {
   const svgs = {
