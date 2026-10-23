@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.529: Gộp Enable reader, Auto-scroll, Show reading icon, danh sách website và Parts not to read vào một mục Reader; tắt reader làm mờ và chặn tương tác các thiết lập phụ. File: dashboard.html, dashboard.js, dashboard.css, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra cấu trúc/ID UI và git diff --check; chưa kiểm tra trình duyệt. Tiếp theo: xác nhận trạng thái khóa/mở và bố cục trên Firefox/Chrome.
 - 2026-10-23 | v3.4.528: Đổi công tắc thành Enable reader, vô hiệu hóa thiết lập đọc liên quan khi tắt, thêm danh sách domain tắt reader có thêm/sửa/xóa. File: dashboard.html, dashboard.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md. Đã chạy node --check cho 3 JS, kiểm tra liên kết UI và git diff --check; chưa kiểm tra trực tiếp trên trình duyệt. Tiếp theo: xác nhận bật/tắt và danh sách website trên Firefox/Chrome.
 - 2026-10-23 | v3.4.527: Thu hẹp nhận diện Bengali/Devanagari về dải chữ cái và kiểm tra Bengali trước Hindi. File: tts-engine.js, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra hai dải ký tự và git diff --check; chưa kiểm tra trên Chrome/Firefox. Tiếp theo: xác nhận TTS Bengali/Hindi trên trình duyệt.
 - 2026-10-23 | v3.4.526: Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng chữ/từ cục bộ, nhận diện Google nền cho Latin (cache hash tối đa 500), migration một lần; giữ flashcard nguyên trạng. File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check, 12 câu mẫu, kiểm tra cache/fallback, manifest và diff; chưa kiểm tra Chrome/Firefox. Tiếp theo: xác nhận voiceMode và nhận diện trên hai trình duyệt.
@@ -9,15 +10,14 @@
 - 2026-10-23 | v3.4.525: Thêm Auto highlight; Auto-open note popup đóng ngoài sẽ hủy, còn Auto highlight bật sẽ lưu như trước khi popup không tự mở. File: config.js, dashboard.html, dashboard.js, content.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa xác nhận UI/Tương tác trên trình duyệt. Tiếp theo: kiểm tra hai chế độ popup.
 - 2026-10-23 | v3.4.525: Đồng bộ màu hai divider trong Settings speak popup và làm đậm hơn 10%. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận màu trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm divider màu nhạt dưới Sign in trong Settings speak popup. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
-- 2026-10-23 | v3.4.525: Speak popup Settings khôi phục cỡ chữ 13px, bỏ divider thừa, căn link trái và thu hẹp khoảng cách tới footer. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.528. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.529. Firefox và Chrome, Manifest V3, một bản build chung.
 - Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy, giữ câu hỏi italic trong `.fck_detail`, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress ngoài article body. Icon speak nhận diện đoạn có chữ trong thẻ inline; hover hiện icon ở mọi chế độ. Bấm ngoài main chỉ đọc block đó; trong main tiếp tục queue.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
 - Chọn text và Bilingual Reader dùng voiceMode google/browser cùng browserVoiceURI; migration từ speechVoice/speechVoiceURI chạy một lần. Flashcard giữ speechVoice độc lập.
 - Bilingual Reader voice Auto dùng Google TTS và chọn giọng hệ thống đặt browserVoiceURI; icon đọc mặc định hiện khi hover, chế độ Always visible luôn hiện trong vùng Alt+R và hover ngoài vùng.
-- Bilingual Reader > Reader: Enable reader (trước đây Enable text to speech) bật/tắt đọc; tắt sẽ vô hiệu hóa các thiết lập Reader liên quan. Có danh sách `readerDisabledWebsites` riêng để chặn đọc theo domain/subdomain; bản dịch song ngữ và Disable Web toàn addon giữ độc lập.
+- Bilingual Reader > Reader: Enable reader là công tắc master; Auto-scroll, Show reading icon, Disable reader on websites và Parts not to read nằm chung một mục không có divider nội bộ. Khi tắt, nhóm phụ mờ, pointer-events bị chặn và các control disabled. Danh sách website chỉ chặn đọc giọng nói theo domain/subdomain; dịch song ngữ và Disable Web addon độc lập.
 - Speak popup Settings có link tới Dashboard > Bilingual Reader và công tắc Custom web font (Inter), lưu cùng thiết lập Bilingual Reader để áp dụng font trực tiếp; menu được thu gọn spacing, link căn trái, hai divider cùng màu #cbd1d8 và nhãn dịch EN/VI/KO.
 - Full dict cache dùng `browser.storage.local` với TTL 7 ngày; cache bản dịch chính riêng theo từ/ngôn ngữ để tái sử dụng cho Syn/Ant, Forms và Colloc. Khi note mở, các yêu cầu phụ bị hủy và bản dịch chính được điền ngay.
 - lhn-direct-translation trong study-translation.js dùng Google trước, MyMemory làm backup khi Google lỗi/timeout; nguồn Auto gửi `autodetect`, văn bản dài được chia theo giới hạn API.
@@ -27,6 +27,7 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+7. [Kiểm tra] Xác nhận Reader settings gộp một mục, disabled/gray và không nhận chuột khi Enable reader tắt trên Firefox/Chrome.
 0. [Kiểm tra] Xác nhận Auto-open note popup đóng ngoài không lưu; Auto highlight lưu khi click ngoài.
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
