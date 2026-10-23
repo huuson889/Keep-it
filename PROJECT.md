@@ -1,5 +1,6 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-23 | v3.4.527: Thu hẹp nhận diện Bengali/Devanagari về dải chữ cái và kiểm tra Bengali trước Hindi. File: tts-engine.js, manifest.json, PROJECT.md. Đã chạy node --check, kiểm tra hai dải ký tự và git diff --check; chưa kiểm tra trên Chrome/Firefox. Tiếp theo: xác nhận TTS Bengali/Hindi trên trình duyệt.
 - 2026-10-23 | v3.4.526: Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng chữ/từ cục bộ, nhận diện Google nền cho Latin (cache hash tối đa 500), migration một lần; giữ flashcard nguyên trạng. File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md. Đã chạy node --check, 12 câu mẫu, kiểm tra cache/fallback, manifest và diff; chưa kiểm tra Chrome/Firefox. Tiếp theo: xác nhận voiceMode và nhận diện trên hai trình duyệt.
 - 2026-10-23 | v3.4.525: Thêm log lỗi cục bộ tối đa 200 mục, chỉ lưu thời gian/component/severity/code đã phân loại; thêm xuất JSON ở Dashboard Settings > About, không xuất URL/nội dung trang/văn bản chọn/tài khoản. File: error-logger.js, background.js, manifest.json, dashboard.html, dashboard.js, popup.html, i18n.js, PROJECT.md. Đã chạy node --check cho JS, parse manifest và git diff --check; chưa kiểm tra tải file qua UI trên trình duyệt. Tiếp theo: xác nhận log ghi được và nút About tải JSON trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm MyMemory làm fallback cho lhn-direct-translation khi Google lỗi/timeout; nguồn Auto gửi autodetect, văn bản dài được chia dưới giới hạn API. File: study-translation.js, PROJECT.md. Đã chạy node --check study-translation.js, parse manifest.json và git diff --check; chưa thử lỗi mạng thực tế trên trình duyệt. Tiếp theo: xác nhận fallback MyMemory trên Firefox/Chrome.
@@ -10,7 +11,7 @@
 - 2026-10-23 | v3.4.525: Speak popup Settings khôi phục cỡ chữ 13px, bỏ divider thừa, căn link trái và thu hẹp khoảng cách tới footer. File: bilingual-reader.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra UI trực tiếp. Tiếp theo: xác nhận trên Firefox/Chrome.
 - 2026-10-23 | v3.4.525: Thêm link mở Dashboard > Bilingual Reader và công tắc Website font (Inter) trong Settings speak popup; dịch EN/VI/KO. File: bilingual-reader.js, background.js, dashboard.js, i18n.js, PROJECT.md. Đã chạy node --check và git diff --check; chưa kiểm tra giao diện trực tiếp. Tiếp theo: xác nhận hai mục trên Firefox/Chrome.
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.526. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.527. Firefox và Chrome, Manifest V3, một bản build chung.
 - Alt+A/Alt+R: Readability khoanh vùng; lấy các block chữ nhìn thấy, giữ câu hỏi italic trong `.fck_detail`, bỏ khối phủ gần toàn màn hình, và bao gồm headline/sapo VnExpress ngoài article body. Icon speak nhận diện đoạn có chữ trong thẻ inline; hover hiện icon ở mọi chế độ. Bấm ngoài main chỉ đọc block đó; trong main tiếp tục queue.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
@@ -156,3 +157,4 @@
 - Chi tiết các bản 3.4.505 đến 3.4.510 chưa được ghi lại; xem commit Git nếu cần.
 - Kiểm tra: chưa chạy (chỉ đọc code).
 - Tiếp theo: xem mục 2.
+
