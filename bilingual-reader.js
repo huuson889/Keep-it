@@ -175,7 +175,7 @@ const FLAG_SVGS = {
   function syncToolbar() {
     bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
     bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    bar.querySelector("[data-speed]").textContent = formatSpeed(settings.speechSpeed || 1);
+    bar.querySelector("[data-speed]").textContent = formatSpeed(readingSegment?.translation ? segmentRate(true) : (settings.speechSpeed || 1));
     bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
     bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
@@ -187,7 +187,7 @@ const FLAG_SVGS = {
     const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
     const minutes = Math.max(1,Math.ceil(totalWords / (220 * (Number(settings.speechSpeed)||1))));
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
-    const lang = selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
+    const lang = readingSegment?.lang || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
     bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span>`;
     bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : popupText("readerPopupSelectVoice");
@@ -718,7 +718,7 @@ const FLAG_SVGS = {
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
   function stopReading() {
-    speechDetectionRequest++; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
+    speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
   }
   let googleAudio = null, googleToken = null, googleResumeWaiters = [];
   function cancelGoogle() {
@@ -732,6 +732,7 @@ const FLAG_SVGS = {
   }
   // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
   // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
+  var readingSegment = null; // đoạn đang đọc: { translation, lang }
   function segmentRate(isTranslation) {
     const base = Number(settings.speechSpeed) || 1;
     if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return base;
@@ -748,6 +749,7 @@ const FLAG_SVGS = {
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
+    readingSegment = { translation: Boolean(forcedLang), lang }; syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(Boolean(forcedLang)),
       isActive: () => googleToken === token && reading,
