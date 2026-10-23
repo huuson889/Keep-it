@@ -193,5 +193,5 @@
     if (opts.isActive()) opts.onEnd?.();
   }
 
-  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage });
+  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectReadLanguage, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage });
 })();
