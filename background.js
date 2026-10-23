@@ -286,7 +286,13 @@ async function translateBilingual(text, targetLang) {
     async () => { let error; for (const base of ["https://lingva.ml", "https://lingva.thedaviddelta.com"]) { try { const r = await bilingualFetch(`${base}/api/v1/auto/${targetLang}/${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); if (!d?.translation) throw Error(); return { translated:d.translation, detectedLang:d.info?.detectedSource || "" }; } catch (e) { error=e; } } throw error || Error(); }
   ];
   let entry;
-  for (const engine of engines) { try { entry = await engine(); if (entry?.translated) break; } catch {} }
+  try {
+    entry = await Promise.any(engines.map(async engine => {
+      const result = await engine();
+      if (!result?.translated) throw Error("Empty translation");
+      return result;
+    }));
+  } catch {}
   if (!entry) entry = { translated:`[Translation (${targetLang.toUpperCase()})]: ${text}`, fallback:true };
   cache[key] = { value:entry, expires:Date.now() + BILINGUAL_CACHE_TTL };
   for (const cachedKey of Object.keys(cache)) if (cache[cachedKey]?.expires <= Date.now()) delete cache[cachedKey];
