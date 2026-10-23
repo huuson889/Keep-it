@@ -1,4 +1,4 @@
-# Keepit - Hồ sơ dự án
+﻿# Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
 - 2026-10-23 | v3.4.553 | Claude sửa: Khi dùng giọng Google, mỗi lần tải hoặc phát âm thanh lỗi (trừ lỗi hết lượt) hiện toast đen "Mạng chậm, đang tải âm thanh" (EN/VI/KO, key googleAudioSlowToast). tts-engine.js thêm hook onGoogleAudioSlow, chỉ gọi khi lượt đọc còn active; content.js (Speak popup) dùng showSidebarToast, bilingual-reader.js dùng showReaderToast. Không đổi UI/CSS, dashboard (flashcard) chưa nối. File: tts-engine.js, content.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md. Đã chạy node --check 4 file và test mock engine 4 ca (không strict, strict 3 lần, đã dừng, hết lượt); chưa kiểm tra trên trình duyệt. Tiếp theo: tắt mạng/giả lập mạng chậm rồi bấm đọc để xem toast. Lưu ý: ở chế độ không strict, toast hiện rồi đoạn đó đọc bằng giọng trình duyệt.
 - 2026-10-23 | v3.4.552 | Claude sửa: Full dict tách IPA thành fetchIpa(word, lang, signal) chạy song song với dịch và Datamuse (không chờ Datamuse). Nguồn 1 dictionaryapi.dev phonetics[].text; nguồn 2 Google dt=rm đổi sang IPA bằng convertGoogleToIPA (tiện ích trong content.js, globalThis.LHN_IPA_UTILS); timeout 3 giây mỗi nguồn, dùng AbortSignal của popup. Chọn nguồn 1, không có thì nguồn 2 (lưu ipaApprox, gắn data-approx, không đổi giao diện), không có thì không vẽ .lhn-dict-ipa. Bỏ audio. Ngôn ngữ nguồn full dict ép en (đọc từ, chip Colloc), không dùng auto. Cache giữ nguyên key/TTL; mục cache cũ có ipa trùng từ sẽ bị ẩn. File: content.js, manifest.json, PROJECT.md. Đã chạy node --check và test mock (đổi ký âm, 6 ca fetchIpa gồm timeout 3s và abort); chưa chạy trên trình duyệt thật, chưa gọi mạng thật. Tiếp theo: tra thử từ trên Chrome/Firefox, xem IPA và từ không có IPA.
@@ -337,28 +337,26 @@
 - **v3.4.398** | 2026-10-20 | Codex sửa: **chỉ giao diện** trong [dashboard.html](C:\Users\Huuson\Documents\Codex\2026-10-15\jghkvjh-2\outputs\highlight-notes-firefox-windows\dashboard.html): đổi tên tab thành “Highlight & Notes”, thêm tab “Translate” với icon bạn gửi, và…
 
 ## 6. Lịch sử trước baseline Git (khôi phục từ tài liệu trong Codex)
-### v1.0.0–v1.8.0 | Chưa khôi phục được
-- Không tìm thấy ZIP, source hoặc ghi chú changelog của các phiên bản này; chưa thể xác nhận tính năng ban đầu hay người thực hiện.
+### v1.45 trở đi | Có ZIP, thiếu changelog lịch sử
+- ZIP đầu tiên tìm thấy là `highlight-notes-firefox-windows-v1.45.zip`; có các snapshot tiếp theo, nhưng không có ghi chú theo phiên bản để xác định chính xác từng thay đổi hoặc tác giả.
 
-### v1.9.0 | README ghi lại; người sửa chưa được xác nhận
-- Sửa tham chiếu localization trong content script và trạng thái chọn màu sau khi dịch nhãn; cải thiện tooltip, thẻ sidebar và thứ tự ghi chú theo vị trí trên trang.
-- README có hai ghi chú v1.9.0 mâu thuẫn về vị trí nút tooltip; không kết luận vị trí nào là bản cuối.
-
-### v1.12.0 | README ghi lại; người sửa chưa được xác nhận
-- Dashboard thư viện hai cột; sắp xếp, tìm kiếm/lọc website, đánh dấu yêu thích; xuất TXT/CSV/Markdown/JSON; thẻ trang có ảnh xem trước khi metadata sẵn có.
-- Chuẩn hóa icon, căn lại thanh công cụ và cho hai cột cuộn độc lập.
-
-### v1.29.0 | README ghi lại; người sửa chưa được xác nhận
-- Tăng độ tin cậy khi khôi phục highlight trên trang động: chuẩn hóa khoảng trắng, hỗ trợ text qua nhiều node inline, chống mất yêu cầu đồng thời và thử lại khi nội dung chưa sẵn sàng.
+### v1.31–v1.44 | Thiếu tư liệu
+- Không tìm thấy ZIP hoặc changelog trong `C:\Users\Huuson\Documents\Codex`; không gán thay đổi cho từng phiên bản.
 
 ### v1.30.0 | README ghi lại; người sửa chưa được xác nhận
 - Thêm tùy chọn chỉ lưu và highlight đoạn vừa chọn sau khi click ra ngoài; mặc định tắt để giữ hành vi cũ.
 - README v1.30.0 mô tả sản phẩm lúc đó: highlight bốn màu, note có thể sửa/xóa, popup và sidebar, giao diện EN/VI/KO, shortcut tùy chỉnh, dashboard tìm/sửa/xóa và nhập/xuất JSON.
 
-### v1.31.0–v1.44.0 | Thiếu tư liệu
-- Không tìm thấy ZIP hoặc changelog trong `C:\Users\Huuson\Documents\Codex`; không gán thay đổi cho từng phiên bản.
+### v1.29.0 | README ghi lại; người sửa chưa được xác nhận
+- Tăng độ tin cậy khi khôi phục highlight trên trang động: chuẩn hóa khoảng trắng, hỗ trợ text qua nhiều node inline, chống mất yêu cầu đồng thời và thử lại khi nội dung chưa sẵn sàng.
 
-### v1.45.0 trở đi | Có ZIP, thiếu changelog lịch sử
-- ZIP đầu tiên tìm thấy là `highlight-notes-firefox-windows-v1.45.zip`; có các snapshot tiếp theo, nhưng không có ghi chú theo phiên bản để xác định chính xác từng thay đổi hoặc tác giả.
+### v1.12.0 | README ghi lại; người sửa chưa được xác nhận
+- Dashboard thư viện hai cột; sắp xếp, tìm kiếm/lọc website, đánh dấu yêu thích; xuất TXT/CSV/Markdown/JSON; thẻ trang có ảnh xem trước khi metadata sẵn có.
+- Chuẩn hóa icon, căn lại thanh công cụ và cho hai cột cuộn độc lập.
 
+### v1.9.0 | README ghi lại; người sửa chưa được xác nhận
+- Sửa tham chiếu localization trong content script và trạng thái chọn màu sau khi dịch nhãn; cải thiện tooltip, thẻ sidebar và thứ tự ghi chú theo vị trí trên trang.
+- README có hai ghi chú v1.9.0 mâu thuẫn về vị trí nút tooltip; không kết luận vị trí nào là bản cuối.
 
+### v1.0.0–v1.8.0 | Chưa khôi phục được
+- Không tìm thấy ZIP, source hoặc ghi chú changelog của các phiên bản này; chưa thể xác nhận tính năng ban đầu hay người thực hiện.
