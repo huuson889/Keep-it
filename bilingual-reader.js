@@ -699,7 +699,7 @@ const FLAG_SVGS = {
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
   function stopReading() {
-    reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
+    speechDetectionRequest++; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
   }
   function detectReadLanguage(text, fallback) {
     if (/[\uAC00-\uD7AF]/.test(text)) return "ko-KR";
@@ -729,7 +729,10 @@ const FLAG_SVGS = {
     googleResumeWaiters.splice(0).forEach(resolve => resolve());
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
-  function speakGoogleNext(text, lang) {
+  async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings) {
+    const lang = settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang);
+    if (requestId !== speechDetectionRequest || !reading) return;
+    activeSpeechLang = lang;
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
@@ -740,12 +743,13 @@ const FLAG_SVGS = {
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
       clearCurrent: () => { googleAudio = null; },
-      systemSpeak: (t, l, done) => {
+      browserVoiceURI:voiceSettings.browserVoiceURI,
+      systemSpeak: (t, l, done, browserVoiceURI) => {
         if (!synth || !window.SpeechSynthesisUtterance) { done({ unsupported:true }); return; }
         const normalize = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
         const target = normalize(l), base = target.split("-")[0];
         const voices = synth.getVoices();
-        const voice = voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
+        const voice = voices.find(item => item.voiceURI === browserVoiceURI) || voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
         if (!voice) { done({ unsupported:true }); return; }
         const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = Number(settings.speechSpeed) || 1; u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
@@ -754,16 +758,23 @@ const FLAG_SVGS = {
       onEnd: finish
     });
   }
-  function speakNext(textOverride = null) {
+  async function speakNext(textOverride = null) {
     if (!reading || queueIndex >= queue.length || !queue[queueIndex]) { stopReading(); return; }
+    const requestId = ++speechDetectionRequest;
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? rawText(block, true); currentReadCharIndex = 0;
-    const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-GB";
-    activeSpeechLang = settings.autoDetectVoice !== false ? detectReadLanguage(currentReadText, blockLang) : blockLang;
+    const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
+    let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
+    try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
+    if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
+    settings = { ...settings, ...voiceSettings };
+    if (voiceSettings.voiceMode === "google") { void speakGoogleNext(currentReadText, blockLang, requestId, voiceSettings); return; }
+    activeSpeechLang = settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(currentReadText, blockLang) : LHN_TTS.normalizeLanguage(blockLang);
+    if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
     systemVoices = synth?.getVoices?.() || systemVoices;
     const baseLang = activeSpeechLang.toLowerCase().split(/[-_]/)[0];
     const defaultLanguageVoice = systemVoices.find(voice => voice.default && voice.lang?.toLowerCase().split(/[-_]/)[0] === baseLang);
@@ -771,7 +782,6 @@ const FLAG_SVGS = {
     const selectedVoiceMatches = selectedVoice && normalizeVoiceLang(selectedVoice).split("-")[0] === baseLang;
     activeVoice = (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
-    if (!settings.speechVoiceURI && globalThis.LHN_TTS) { speakGoogleNext(currentReadText, activeSpeechLang); return; }
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
@@ -781,6 +791,7 @@ const FLAG_SVGS = {
   function startReading(fromBlock, interruptCurrent = false) {
     if (websiteDisabled) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
+    speechDetectionRequest++;
     let nextQueue = readerBlocks(true);
     if (fromBlock && !nextQueue.includes(fromBlock)) nextQueue = [fromBlock];
     if (!nextQueue.length) return;
@@ -801,6 +812,7 @@ const FLAG_SVGS = {
     window.setTimeout(() => navigationButton.classList.remove("lhn-br-key-press"), 190);
     const nextIndex = queueIndex + delta;
     if (nextIndex < 0 || nextIndex >= queue.length || !queue[nextIndex]) return;
+    speechDetectionRequest++;
     utterance = null;
     readingPaused = false; resumeText = "";
     syncPauseShortcutState(); syncToolbar();
