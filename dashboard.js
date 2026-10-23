@@ -8,7 +8,7 @@ const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
-const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", excludeSelectors:[], readerDisabledWebsites:[] });
+const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", excludeSelectors:[], readerDisabledWebsites:CONFIG.DEFAULT_READER_DISABLED_WEBSITES, readerDefaultSitesSeeded:true });
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
@@ -839,7 +839,11 @@ function applyTranslations() {
 }
 async function load() {
   const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY]);
-  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...(settingsData[BILINGUAL_READER_SETTINGS_KEY] || {}) };
+  const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
+  const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
+  const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
+  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
+  if (seedReaderSites) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
   browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
