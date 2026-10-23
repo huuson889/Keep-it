@@ -730,14 +730,14 @@ const FLAG_SVGS = {
     googleResumeWaiters.splice(0).forEach(resolve => resolve());
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
-  async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings) {
-    const lang = settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang);
+  async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
+    const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
     if (requestId !== speechDetectionRequest || !reading) return;
     activeSpeechLang = lang;
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => Number(settings.speechSpeed) || 1,
       isActive: () => googleToken === token && reading,
@@ -773,7 +773,11 @@ const FLAG_SVGS = {
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
     if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
     settings = { ...settings, ...voiceSettings };
-    if (voiceSettings.voiceMode === "google") { void speakGoogleNext(currentReadText, blockLang, requestId, voiceSettings); return; }
+    if (voiceSettings.voiceMode === "google") {
+      const seg = textOverride == null ? readSegmentsFor(block) : null;
+      void speakGoogleNext(seg ? seg.source : currentReadText, blockLang, requestId, voiceSettings, null, seg ? { text: seg.translated, lang: seg.lang } : null);
+      return;
+    }
     activeSpeechLang = settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(currentReadText, blockLang) : LHN_TTS.normalizeLanguage(blockLang);
     if (requestId !== speechDetectionRequest || !reading || queue[queueIndex] !== block) return;
     systemVoices = synth?.getVoices?.() || systemVoices;
@@ -790,6 +794,14 @@ const FLAG_SVGS = {
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
+  // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
+  function readSegmentsFor(block) {
+    if (!settings.readTranslation) return null;
+    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const translated = card?.textContent.trim();
+    if (!translated) return null;
+    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || "" };
+  }
   function readTextFor(block) {
     const source = rawText(block, true);
     const card = block.querySelector(":scope > .lhn-bilingual-card");
