@@ -23,6 +23,7 @@
    - Thêm một mục mới vào ĐẦU phần "Nhật ký nâng cấp" (tối đa khoảng 5 dòng): đổi gì, file nào, đã test chưa (ghi rõ "đã chạy ..." hoặc "chưa chạy"), việc tiếp theo.
    - Sửa đè "Trạng thái" và "Việc đang mở" cho đúng với bản mới. Việc xong thì xóa khỏi "Việc đang mở".
    - Nhật ký chỉ giữ khoảng 10 bản gần nhất; mục cũ hơn xóa (Git đã lưu).
+   - Mỗi mục nhật ký PHẢI ghi rõ người sửa ngay sau version, đúng một trong ba dạng: "Claude sửa" (Claude sửa), "Codex sửa" (Codex sửa), "Huuson sửa" (Huuson tự sửa). Ví dụ: "- 2026-10-23 | v3.4.545 | Claude sửa: ...". Không bỏ trống, không ghi chung chung.
 3. Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".
 4. Đóng gói zip phát hành vào D:\Keepit với tên: Keepit - Addon and Extension-v<version>.zip
    - TÊN FILE BẮT BUỘC đúng từng ký tự: "Keepit - Addon and Extension-v<version>.zip", ví dụ "Keepit - Addon and Extension-v3.4.513.zip". Giữ dấu cách và dấu gạch ngang như trên, version viết có dấu chấm. Không đổi dấu cách thành gạch dưới, không đổi dấu chấm thành gạch dưới, không thêm hay bớt chữ.

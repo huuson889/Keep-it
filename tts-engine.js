@@ -99,16 +99,21 @@
       browserVoiceURI = String(reader.speechVoiceURI);
       await api.storage.local.set({ [SETTINGS_KEY]:{ ...shared, voiceMode, browserVoiceURI, speechVoice:voiceMode } }).catch(() => {});
     }
-    return { voiceMode, browserVoiceURI };
+    return { voiceMode, browserVoiceURI, readLanguage:voiceMode === "google" ? cleanReadLanguage(shared.readLanguage) : "" };
   }
 
-  async function setVoiceSettings(voiceMode, browserVoiceURI = "") {
+  function cleanReadLanguage(value) {
+    const code = String(value || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
+    return LANGUAGE_TAGS[code] ? code : "";
+  }
+
+  async function setVoiceSettings(voiceMode, browserVoiceURI = "", readLanguage = "") {
     const mode = voiceMode === "browser" ? "browser" : "google";
     const data = await api.storage.local.get(SETTINGS_KEY);
     const shared = data[SETTINGS_KEY] || {};
-    const next = { ...shared, voiceMode:mode, browserVoiceURI:mode === "browser" ? String(browserVoiceURI || "") : "", speechVoice:mode };
+    const next = { ...shared, voiceMode:mode, browserVoiceURI:mode === "browser" ? String(browserVoiceURI || "") : "", readLanguage:mode === "google" ? cleanReadLanguage(readLanguage) : "", speechVoice:mode };
     await api.storage.local.set({ [SETTINGS_KEY]:next });
-    return { voiceMode:mode, browserVoiceURI:next.browserVoiceURI };
+    return { voiceMode:mode, browserVoiceURI:next.browserVoiceURI, readLanguage:next.readLanguage };
   }
 
   function splitChunks(text, max = MAX_CHUNK) {

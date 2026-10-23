@@ -21,6 +21,11 @@ const FLAG_SVGS = {
     };
   const FLAG_REGION_KEYS = { ...(globalThis.LHN_FLAGS?.regionKeys || {}), US:'us', GB:'uk', VN:'vn', FR:'fr', DE:'de', JP:'jp', ES:'es' };
   const flagSvgForRegion = region => FLAG_SVGS[FLAG_REGION_KEYS[region] || 'us'];
+  const READ_LANGUAGE_CODES = ["en","vi","ko","ja","zh","es","pt","fr","de","it","ru","uk","pl","tr","ro","id","th","hi","bn","fa","tl"];
+  const readLanguageRegion = code => LHN_TTS.normalizeLanguage(code).split("-")[1]?.toUpperCase() || "";
+  const languageLabel = (code, locale) => { try { return new Intl.DisplayNames([locale], { type:"language" }).of(code) || code; } catch { return code; } };
+  const readLanguageName = code => languageLabel(code, displayLang);
+  const plainText = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLocaleLowerCase();
   const synth = window.speechSynthesis;
   const style = document.createElement("style");
   if (!document.querySelector('link[data-lhn-bilingual-fonts]')) {
@@ -153,8 +158,8 @@ const FLAG_SVGS = {
   dragHandle.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); const now = performance.now(); if (event.detail >= 2 || now - lastDragPointerDown < 350) { lastDragPointerDown = 0; bar.style.removeProperty("left"); bar.style.removeProperty("top"); bar.style.removeProperty("bottom"); bar.style.removeProperty("transform"); return; } lastDragPointerDown = now; const rect = bar.getBoundingClientRect(), pointerOffsetX = event.clientX - rect.left, pointerOffsetY = event.clientY - rect.top; bar.style.left = `${rect.left}px`; bar.style.top = `${rect.top}px`; bar.style.bottom = "auto"; bar.style.transform = "none"; dragHandle.setPointerCapture(event.pointerId); const move = e => { bar.style.left = `${Math.max(8,Math.min(innerWidth-rect.width-8,e.clientX-pointerOffsetX))}px`; bar.style.top = `${Math.max(8,Math.min(innerHeight-rect.height-8,e.clientY-pointerOffsetY))}px`; }; const end = () => { dragHandle.removeEventListener("pointermove",move); dragHandle.removeEventListener("pointerup",end); dragHandle.removeEventListener("pointercancel",end); }; dragHandle.addEventListener("pointermove",move); dragHandle.addEventListener("pointerup",end); dragHandle.addEventListener("pointercancel",end); });
   (document.body || document.documentElement).appendChild(bar);
   function saveSpeechSetting(patch) { settings = { ...settings, ...patch }; browser.storage.local.get(SETTINGS_KEY).then(data => browser.storage.local.set({ [SETTINGS_KEY]:{ ...DEFAULTS, ...(data[SETTINGS_KEY] || {}), ...patch } })).catch(() => {}); }
-  async function saveReaderVoiceSettings(voiceMode, browserVoiceURI = "") {
-    const next = await LHN_TTS.setVoiceSettings(voiceMode, browserVoiceURI);
+  async function saveReaderVoiceSettings(voiceMode, browserVoiceURI = "", readLanguage = "") {
+    const next = await LHN_TTS.setVoiceSettings(voiceMode, browserVoiceURI, readLanguage);
     settings = { ...settings, ...next };
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     activeVoice = selectedVoice;
@@ -188,10 +193,10 @@ const FLAG_SVGS = {
     const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
     const minutes = Math.max(1,Math.ceil(totalWords / (220 * (Number(settings.speechSpeed)||1))));
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
-    const lang = readingSegment?.lang || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
+    const lang = readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
     bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span>`;
-    bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : popupText("readerPopupSelectVoice");
+    bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : (settings.voiceMode !== "browser" && settings.readLanguage ? `${readLanguageName(settings.readLanguage)} (${LHN_TTS.normalizeLanguage(settings.readLanguage)})` : popupText("readerPopupSelectVoice"));
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
     bar.querySelector("[data-theme]").checked = isDark;
@@ -248,10 +253,21 @@ const FLAG_SVGS = {
     const list = bar.querySelector(".lhn-br-voice-list"); list.replaceChildren();
     const autoMatches = !query || "auto auto-detect language".includes(query);
     if (autoMatches) {
-      const autoSelected = settings.voiceMode !== "browser";
+      const autoSelected = settings.voiceMode !== "browser" && !settings.readLanguage;
       const auto = document.createElement("button"); auto.type="button"; auto.className=`lhn-br-voice${autoSelected ? " lhn-selected" : ""}`; auto.innerHTML=`<span>🌐</span><span>${popupText("readerPopupAutoDetect")}<small>${popupText("readerPopupAutoDescription")}</small></span>${autoSelected ? "✓" : ""}`;
       auto.addEventListener("click", () => { void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
+    const plainQuery = plainText(query);
+    READ_LANGUAGE_CODES.forEach(code => {
+      const region = readLanguageRegion(code), tag = LHN_TTS.normalizeLanguage(code);
+      const country = region ? (() => { try { return new Intl.DisplayNames([displayLang], { type:"region" }).of(region) || ""; } catch { return ""; } })() : "";
+      const name = readLanguageName(code), english = languageLabel(code, "en"), native = languageLabel(code, code);
+      if (plainQuery && !plainText(`${name} ${english} ${native} ${country} ${code} ${tag}`).includes(plainQuery)) return;
+      const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
+      button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
+      button.addEventListener("click", () => { selectedVoice = null; void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
+    });
     systemVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(query)).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
@@ -743,7 +759,7 @@ const FLAG_SVGS = {
     return Math.min(3, Math.max(0.5, base + (custom - global)));
   }
   async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
-    const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
+    const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : voiceSettings?.readLanguage ? LHN_TTS.normalizeLanguage(voiceSettings.readLanguage) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
     if (requestId !== speechDetectionRequest || !reading) return;
     activeSpeechLang = lang;
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
@@ -922,18 +938,18 @@ const FLAG_SVGS = {
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes[DEMO_PROFILE_KEY]) { accountProfile = changes[DEMO_PROFILE_KEY].newValue || null; syncToolbar(); }
-    if (changes[SETTINGS_KEY]) { const voice = { voiceMode:settings.voiceMode, browserVoiceURI:settings.browserVoiceURI }; applySettings(changes[SETTINGS_KEY].newValue); settings = { ...settings, ...voice }; selectedVoice = systemVoices.find(item => item.voiceURI === settings.browserVoiceURI) || null; syncToolbar(); }
+    if (changes[SETTINGS_KEY]) { const voice = { voiceMode:settings.voiceMode, browserVoiceURI:settings.browserVoiceURI, readLanguage:settings.readLanguage }; applySettings(changes[SETTINGS_KEY].newValue); settings = { ...settings, ...voice }; selectedVoice = systemVoices.find(item => item.voiceURI === settings.browserVoiceURI) || null; syncToolbar(); }
     if (changes[TARGET_LANGUAGE_KEY]) {
       targetLanguage = changes[TARGET_LANGUAGE_KEY].newValue?.targetLanguage || "auto";
       document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
     }
     if (changes[DISPLAY_SETTINGS_KEY]) {
-      const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI;
+      const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
-      settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || "") };
+      settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
-      if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI)) restartCurrentSpeech();
+      if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI || previousReadLanguage !== settings.readLanguage)) restartCurrentSpeech();
       displayLang = globalThis.LHN_I18N?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
