@@ -1,10 +1,10 @@
 # Keepit
 
-Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox. It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
+Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox base (Firefox, Zen,..). It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
 
 Keepit helps you keep learning from anything you read online: highlight text and add notes, translate and look up words, listen to pages read aloud, read paragraphs side by side with their translation, and review your highlights as flashcards.
 
-The interface is available in English, Vietnamese, and Korean.
+The interface is available in English, Vietnamese, and Korean, will extend more in future.
 
 ## Features
 
@@ -63,7 +63,7 @@ Chromium-based browsers (Chrome, Edge, Brave, …):
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the folder that contains `manifest.json`.
 
-Firefox (121 or later):
+Chromium-based browsers (Firefox, Zen, Floorp,..) (121 or later):
 1. Extract the ZIP to a normal folder.
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…** and select `manifest.json`.
