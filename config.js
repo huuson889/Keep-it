@@ -31,6 +31,8 @@
     autoSpeakOnTranslate: true,
     translationPopupEnabled: false,
     showFullEnglishDictionary: true,
+    voiceMode: "google",
+    browserVoiceURI: "",
     sidebarIndicatorEnabled: true,
     sidebarIndicatorOnDisabledSites: true,
     defaultHighlightColor: DEFAULT_COLOR,

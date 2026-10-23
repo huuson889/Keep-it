@@ -164,7 +164,7 @@ function refreshDashboardSettings() {
   $("settingsFullEnglishDictionary").checked = dashboardSettings.showFullEnglishDictionary !== false;
   $("settingsAutoTranslatePopup").checked = dashboardSettings.autoTranslate !== false;
   $("settingsAutoSpeakSelectedText").checked = dashboardSettings.autoSpeakSelectedText !== false;
-  $("settingsSpeechVoice").value = dashboardSettings.speechVoice === "browser" ? "browser" : "google";
+  $("settingsSpeechVoice").value = (dashboardSettings.voiceMode ?? dashboardSettings.speechVoice) === "browser" ? "browser" : "google";
   const storedSpeechRate = Number(dashboardSettings.speechRate);
   const speechRate = Number.isFinite(storedSpeechRate) ? Math.min(2, Math.max(.5, storedSpeechRate)) : 1;
   const globalSpeechRateLabel = t("globalSpeechRate");
@@ -2303,7 +2303,7 @@ $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDas
 $("settingsFullEnglishDictionary").addEventListener("change", event => saveDashboardSettings({ showFullEnglishDictionary:event.target.checked }));
 $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboardSettings({ autoTranslate:event.target.checked }));
 $("settingsAutoSpeakSelectedText").addEventListener("change", event => saveDashboardSettings({ autoSpeakSelectedText:event.target.checked }));
-$("settingsSpeechVoice").addEventListener("change", event => saveDashboardSettings({ speechVoice:event.target.value === "browser" ? "browser" : "google" }));
+$("settingsSpeechVoice").addEventListener("change", event => { const voiceMode = event.target.value === "browser" ? "browser" : "google"; saveDashboardSettings({ voiceMode, speechVoice:voiceMode }); });
 function normalizeSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 10) / 10 : 1; }
 $("settingsSpeechRate").addEventListener("input", event => { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRateValue").value = rate.toFixed(1); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } });
 $("settingsSpeechRate").addEventListener("change", event => saveDashboardSettings({ speechRate:normalizeSpeechRate(event.target.value) }));

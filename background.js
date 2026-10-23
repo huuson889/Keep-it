@@ -293,9 +293,21 @@ async function translateBilingual(text, targetLang) {
   await browser.storage.local.set({ [BILINGUAL_CACHE_KEY]:cache });
   return entry;
 }
+async function detectReadLanguageRemote(text) {
+  try {
+    const sample = String(text || "").slice(0, 200);
+    if (!/[\p{Script=Latin}]/u.test(sample)) return { detectedLang:"" };
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(sample)}`;
+    const response = await bilingualFetch(url);
+    if (!response.ok) return { detectedLang:"" };
+    const data = await response.json();
+    return { detectedLang:String(data?.[2] || "") };
+  } catch { return { detectedLang:"" }; }
+}
 browser.runtime.onMessage.addListener(async (message, sender) => {
   if (!message || !message.type) return;
   if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
+  if (message.type === "DETECT_READ_LANGUAGE") return detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") { await browser.storage.local.remove(BILINGUAL_CACHE_KEY); return { cleared:true }; }
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
