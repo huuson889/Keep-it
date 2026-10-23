@@ -38,6 +38,19 @@
     try { const resolved = new URL(raw, location.href); return /^https?:$/.test(resolved.protocol) ? resolved.href : ""; } catch { return ""; }
   };
   const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
+  const MAP = {
+    'o͝o': 'ʊ', 'o͞o': 'u', 'T͟H': 'ð', 'âr': 'ɛr', 'ûr': 'ɜr', 'îr': 'ɪr',
+    'oi': 'ɔɪ', 'ou': 'aʊ', 'NG': 'ŋ', 'TH': 'θ', 'CH': 'tʃ', 'SH': 'ʃ', 'ZH': 'ʒ',
+    'ā': 'eɪ', 'ē': 'i', 'ī': 'aɪ', 'ō': 'oʊ', 'ô': 'ɔ', 'ä': 'ɑ',
+    'a': 'æ', 'e': 'ɛ', 'i': 'ɪ', 'o': 'ɑ', 'u': 'ʌ', 'j': 'dʒ', 'y': 'j'
+  };
+  const IPA_ESC = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const IPA_RE = new RegExp(Object.keys(MAP).sort((a, b) => b.length - a.length).map(IPA_ESC).join('|'), 'g');
+  // Đổi ký âm Google (NOAD) sang IPA, một lượt regex, ưu tiên chuỗi dài trước. Dùng lại được ở nơi khác.
+  function convertGoogleToIPA(raw) {
+    return '/' + String(raw || '').normalize('NFC').replace(IPA_RE, m => MAP[m]) + '/';
+  }
+  globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
   function animateRemove(el) {
@@ -211,14 +224,14 @@
     popup.addEventListener("click", event => {
       const action = event.target.closest("[data-dict-action]"); if (!action) return;
       const word = action.dataset.word || "";
-      if (action.dataset.dictAction === "speak") speakHighlightedText(word, "en-US");
+      if (action.dataset.dictAction === "speak") speakHighlightedText(word, "en-US", null, null, true);
       else if (action.dataset.dictAction === "back") {
         const previous = popup._lhnHistory?.pop();
         if (previous) lookupEnglishDictionary(previous, popup._lhnAnchorRange, popup, { recordHistory:false, autoSpeak:true });
       } else if (word && action.classList.contains("lhn-dict-colloc")) {
         const anchorRange = popup._lhnAnchorRange;
         dictionaryRequestId++; popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
-        translateSelectedRange(anchorRange, { forcePopup:true, textOverride:word });
+        translateSelectedRange(anchorRange, { forcePopup:true, textOverride:word, sourceLanguage:"en" });
       } else if (word) lookupEnglishDictionary(word, popup._lhnAnchorRange, popup, { autoSpeak:true });
     });
     document.documentElement.appendChild(popup); dictionaryPopup = popup;
@@ -250,6 +263,40 @@
     try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
     catch (error) { console.warn("Could not save related-word translation cache", error); }
     return result;
+  }
+  const IPA_TIMEOUT_MS = 3000;
+  async function fetchIpaSource(url, signal, read) {
+    const controller = new AbortController();
+    const onAbort = () => controller.abort();
+    if (signal?.aborted) return null;
+    signal?.addEventListener("abort", onAbort, { once:true });
+    const timer = setTimeout(onAbort, IPA_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, { signal:controller.signal });
+      if (!response.ok) return null;
+      return await read(await response.json());
+    } catch { return null; }
+    finally { clearTimeout(timer); signal?.removeEventListener("abort", onAbort); }
+  }
+  // IPA độc lập: 2 nguồn chạy song song, mỗi nguồn timeout 3s. Ưu tiên nguồn 1; nếu không có thì nguồn 2 (approx:true).
+  async function fetchIpa(word, lang = "en", signal) {
+    const query = encodeURIComponent(String(word || "").toLowerCase());
+    const strip = value => String(value || "").trim().replace(/^\/+|\/+$/g, "").trim();
+    const dictSource = fetchIpaSource(`https://api.dictionaryapi.dev/api/v2/entries/${encodeURIComponent(lang)}/${query}`, signal, data => {
+      for (const entry of Array.isArray(data) ? data : []) for (const item of entry.phonetics || []) { const text = strip(item.text); if (text) return text; }
+      for (const entry of Array.isArray(data) ? data : []) { const text = strip(entry.phonetic); if (text) return text; }
+      return null;
+    });
+    const googleSource = fetchIpaSource(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(lang)}&tl=${lang === "en" ? "vi" : "en"}&dt=t&dt=rm&q=${query}`, signal, data => {
+      const parts = data?.[0] || [];
+      let raw = "";
+      for (let i = parts.length - 1; i >= 0; i--) if (typeof parts[i]?.[3] === "string") { raw = parts[i][3]; break; }
+      return raw ? strip(globalThis.LHN_IPA_UTILS.convertGoogleToIPA(raw)) : null;
+    });
+    const primary = await dictSource;
+    if (primary) return { text:primary, approx:false };
+    const secondary = await googleSource;
+    return secondary ? { text:secondary, approx:true } : null;
   }
   async function dictionaryRelatedWords(word, targetLanguage, signal) {
     const escaped = encodeURIComponent(word.toLowerCase());
@@ -302,8 +349,9 @@
     const forms = (data.forms || []).length ? `<section class="lhn-dict-related lhn-dict-forms" data-kind="Forms" data-label="Forms:">${data.forms.map(item => `<button class="lhn-dict-chip lhn-dict-form" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>${esc(item.tag)}</span><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
     const collocations = (data.collocations || []).length ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${data.collocations.map(item => `<button class="lhn-dict-chip lhn-dict-colloc" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
     const pos = (data.translation.posDict || []).map(item => `<div class="lhn-dict-pos"><span>${esc(posNames[item.pos.toLowerCase()] || item.pos)}</span><b>${esc((item.words || []).join(", "))}</b></div>`).join("");
-    const ipa = String(data.ipa || data.word.toLowerCase()).replace(/^\/+|\/+$/g, "");
-    popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong><span class="lhn-dict-ipa">/${esc(ipa)}/</span><span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button><button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${related}${forms}${collocations}</div>`;
+    const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
+    const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
+    popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button><button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${related}${forms}${collocations}</div>`;
     fillNoteFromDictionary(popup);
     if (popup._lhnHideForNote) {
       popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
@@ -332,7 +380,7 @@
   }
   async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
     word = cleanText(word); if (!settings.showFullEnglishDictionary || !isEnglishDictionaryWord(word)) return;
-    if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US");
+    if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
     popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
     popup._lhnMainController = new AbortController(); popup._lhnRelatedController = new AbortController();
@@ -364,21 +412,22 @@
         dictionaryWordForms(word, targetLanguage, popup._lhnRelatedController.signal),
         dictionaryCollocations(word, targetLanguage, popup._lhnRelatedController.signal)
       ];
-      const [translation, related, forms, collocations] = await Promise.allSettled([translationPromise, ...relatedTasks]);
+      const ipaPromise = noRelated ? Promise.resolve(null) : fetchIpa(word, "en", popup._lhnMainController.signal);
+      const [translation, related, forms, collocations, ipaResult] = await Promise.allSettled([translationPromise, ...relatedTasks, ipaPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
-      let ipa = `/${word.toLowerCase()}/`;
       let fallbackRelated = [];
       if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
         try {
           const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
           if (response.ok) {
-            const entry = (await response.json())[0]; ipa = entry?.phonetics?.find(item => item.text)?.text || ipa;
+            const entry = (await response.json())[0];
             const synonyms = [...new Set((entry?.meanings || []).flatMap(meaning => meaning.synonyms || []))].slice(0, 3);
             fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await dictionaryTranslate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
           }
         } catch {}
       }
-      const result = { word, ipa, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
+      const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
+      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
       popup._lhnMainTranslation = result.translation;
       if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await setDictionaryCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
@@ -398,10 +447,11 @@
     const targetLanguage = ["auto", "same"].includes(savedTarget) ? displayLanguage : ["en", "vi", "ko"].includes(savedTarget) ? savedTarget : displayLanguage;
     return { sourceLanguage, targetLanguage };
   }
-  async function translateUsingExistingCache(text) {
+  async function translateUsingExistingCache(text, sourceLanguage = null) {
     if (!noteTranslator) return { translation:null, targetLanguage:"en" };
     const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]);
     const options = translationOptionsFrom(data);
+    if (sourceLanguage) options.sourceLanguage = sourceLanguage;
     const translation = await noteTranslator.translate(text, options);
     return { translation, targetLanguage:options.targetLanguage };
   }
@@ -445,14 +495,14 @@
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
   }
-  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null } = {}) {
+  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null } = {}) {
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
     if (settings.showFullEnglishDictionary !== false && isEnglishDictionaryWord(selectedText)) {
       translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
       lookupEnglishDictionary(selectedText, range);
-      if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US");
+      if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US", null, null, true);
       return;
     }
     if (!noteTranslator) return;
@@ -463,10 +513,10 @@
     const ui = forcePopup || settings.translationPopupEnabled !== false ? createTranslationPopup(range) : null;
     if (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) {
       const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-      speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor), null, anchor);
+      speakHighlightedText(selectedText, sourceLanguage ? "en-US" : speechLanguageForText(selectedText, anchor), null, anchor, !!sourceLanguage);
     }
     try {
-      const result = await translateUsingExistingCache(selectedText);
+      const result = await translateUsingExistingCache(selectedText, sourceLanguage);
       if (requestId !== translationRequestId || !ui || translationPopup !== ui.popup) return;
       ui.setResult(result.translation, result.targetLanguage);
     } catch (error) { console.warn("Could not translate selected text", error); if (requestId === translationRequestId && ui && translationPopup === ui.popup) ui.setResult(null); }
@@ -884,7 +934,7 @@
     }
   }, true);
   document.addEventListener("lhn-bilingual-reader-started", () => { speechPauseActive = false; shortcutPausedMedia = []; });
-  async function speakHighlightedText(text, lang, onEnd, anchor = null) {
+  async function speakHighlightedText(text, lang, onEnd, anchor = null, forceLang = false) {
     const requestId = ++speakRequestId;
     speechPauseActive = false; shortcutPausedMedia = [];
     window.speechSynthesis?.cancel();
@@ -894,7 +944,7 @@
     currentSpeakFinish = finish;
     const voiceSettings = await LHN_TTS.getVoiceSettings().catch(() => ({ voiceMode:settings.voiceMode || settings.speechVoice || "google", browserVoiceURI:settings.browserVoiceURI || "" }));
     if (requestId !== speakRequestId) return;
-    const sourceLanguage = ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage];
+    const sourceLanguage = forceLang ? lang : ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage];
     const declaredLanguage = anchor?.closest?.("[lang]")?.getAttribute("lang") || document.documentElement.lang || window.navigator?.language || lang || "en-US";
     if (voiceSettings.voiceMode === "google") lang = sourceLanguage || await LHN_TTS.detectLanguage(text, declaredLanguage);
     lang = LHN_TTS.normalizeLanguage(lang) || "en-US";
@@ -1655,7 +1705,7 @@
         const text = cleanText(range?.toString());
         if (text) {
           const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-          speakHighlightedText(text, visibleDictionaryPopup ? "en-US" : speechLanguageForText(text, anchor), null, anchor);
+          speakHighlightedText(text, visibleDictionaryPopup ? "en-US" : speechLanguageForText(text, anchor), null, anchor, !!visibleDictionaryPopup);
         }
         return;
       }
