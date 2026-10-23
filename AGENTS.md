@@ -1,7 +1,7 @@
 # Keepit Working Rules for all AI (Codex/Claude,..)
 
 ## Giới thiệu dự án
-- Keepit app: extension/addon cho mọi trình duyệt nhân Chromium / nhân Firefox (một codebase, Manifest V3).
+- Keepit app: extension/addon cho mọi trình duyệt nhân Chromium (Chrome, Edge, Brave, …) / nhân Firefox (Firefox, Zen, Floorp,..) (một codebase, Manifest V3).
 
 ## Đường dẫn
 - Thư mục nguồn (Git repo, nơi sửa code): D:\Keepit\Keepit - Addon and Extension
