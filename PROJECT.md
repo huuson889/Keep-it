@@ -1,4 +1,4 @@
-# Keepit - Hồ sơ dự án
+﻿# Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
 - 2026-10-23 | v3.4.553 | Claude sửa: Khi dùng giọng Google, mỗi lần tải hoặc phát âm thanh lỗi (trừ lỗi hết lượt) hiện toast đen "Mạng chậm, đang tải âm thanh" (EN/VI/KO, key googleAudioSlowToast). tts-engine.js thêm hook onGoogleAudioSlow, chỉ gọi khi lượt đọc còn active; content.js (Speak popup) dùng showSidebarToast, bilingual-reader.js dùng showReaderToast. Không đổi UI/CSS, dashboard (flashcard) chưa nối. File: tts-engine.js, content.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md. Đã chạy node --check 4 file và test mock engine 4 ca (không strict, strict 3 lần, đã dừng, hết lượt); chưa kiểm tra trên trình duyệt. Tiếp theo: tắt mạng/giả lập mạng chậm rồi bấm đọc để xem toast. Lưu ý: ở chế độ không strict, toast hiện rồi đoạn đó đọc bằng giọng trình duyệt.
 - 2026-10-23 | v3.4.552 | Claude sửa: Full dict tách IPA thành fetchIpa(word, lang, signal) chạy song song với dịch và Datamuse (không chờ Datamuse). Nguồn 1 dictionaryapi.dev phonetics[].text; nguồn 2 Google dt=rm đổi sang IPA bằng convertGoogleToIPA (tiện ích trong content.js, globalThis.LHN_IPA_UTILS); timeout 3 giây mỗi nguồn, dùng AbortSignal của popup. Chọn nguồn 1, không có thì nguồn 2 (lưu ipaApprox, gắn data-approx, không đổi giao diện), không có thì không vẽ .lhn-dict-ipa. Bỏ audio. Ngôn ngữ nguồn full dict ép en (đọc từ, chip Colloc), không dùng auto. Cache giữ nguyên key/TTL; mục cache cũ có ipa trùng từ sẽ bị ẩn. File: content.js, manifest.json, PROJECT.md. Đã chạy node --check và test mock (đổi ký âm, 6 ca fetchIpa gồm timeout 3s và abort); chưa chạy trên trình duyệt thật, chưa gọi mạng thật. Tiếp theo: tra thử từ trên Chrome/Firefox, xem IPA và từ không có IPA.
@@ -65,6 +65,46 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.533 | Codex sửa - 2026-10-23
+- Thêm Auto highlight vào Toolbar settings, dùng chung `autoHighlight` với Dashboard > Highlights & Notes; mặc định tắt ở cài đặt mới.
+- File: config.js, popup.html, popup.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check cho config.js, popup.js, dashboard.js và git diff --check; chưa kiểm tra UI trên trình duyệt.
+
+### v3.4.532 | Codex sửa - 2026-10-23
+- Giá trị khởi tạo Your speed cho Custom rate for display language là 1.2; giữ ưu tiên tốc độ riêng đã lưu.
+- File: dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, git diff --check và tính toán mặc định; chưa kiểm tra UI trên trình duyệt.
+
+### v3.4.531 | Codex sửa - 2026-10-23
+- Đồng bộ khoảng cách mô tả Disable reader on websites với form thêm domain thành 16px.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: git diff --check; chưa kiểm tra UI trên trình duyệt.
+
+### v3.4.530 | Codex sửa - 2026-10-23
+- Seed danh sách 27 website mặc định tắt Reader một lần, hợp nhất với danh sách hiện có và giữ domain người dùng đã xóa.
+- File: config.js, dashboard.js, bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, git diff --check và 3 ca migration; chưa kiểm tra trên trình duyệt.
+
+### v3.4.529 | Codex sửa - 2026-10-23
+- Gộp Reader settings thành một mục; khi Enable reader tắt, các tùy chọn phụ bị mờ và khóa tương tác.
+- File: dashboard.html, dashboard.js, dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, cấu trúc/ID UI và git diff --check; chưa kiểm tra trên trình duyệt.
+
+### v3.4.528 | Codex sửa - 2026-10-23
+- Thêm Enable reader và danh sách website tắt Reader có thể thêm, sửa, xóa; vô hiệu hóa các tùy chọn liên quan khi reader tắt.
+- File: dashboard.html, dashboard.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check 3 JS, liên kết UI và git diff --check; chưa kiểm tra trên trình duyệt.
+
+### v3.4.527 | Codex sửa - 2026-10-23
+- Thu hẹp dải ký tự nhận dạng Bengali và Devanagari, ưu tiên Bengali trước Hindi.
+- File: tts-engine.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, kiểm tra dải ký tự và git diff --check; chưa kiểm tra TTS trên trình duyệt.
+
+### v3.4.526 | Codex sửa - 2026-10-23
+- Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng cục bộ và nhận diện Google nền cho Latin; giữ thiết lập giọng flashcard nguyên trạng.
+- File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, 12 câu mẫu, cache/fallback, manifest và git diff --check; chưa kiểm tra Chrome/Firefox.
+
 ### v3.4.525 | Codex sửa - 2026-10-23
 - Lớp phủ absolute có z-index và các dialog/listbox/menu/tooltip được nhận diện ngoài fixed/sticky; nền lớp phủ giữ đục theo theme để nội dung phía sau không xuyên qua.
 - File: custom-font.js, PROJECT.md.
