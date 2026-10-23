@@ -1,6 +1,6 @@
 # Keepit
 
-Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox base (Firefox, Zen,..). It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
+Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox-based browsers (Firefox, Zen,..). It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
 
 Keepit helps you keep learning from anything you read online: highlight text and add notes, translate and look up words, listen to pages read aloud, read paragraphs side by side with their translation, and review your highlights as flashcards.
 
