@@ -1196,6 +1196,11 @@ html.dark .settings-danger-heading { color:#f87171; }
 .settings-disabled-web-actions { display:flex; flex:none; gap:7px; }
 .settings-disabled-web-actions .settings-action-button { padding:6px 10px; }
 .settings-disabled-web-empty { margin:0; padding:14px 12px; color:#6b7280; font-size:12px; }
+.settings-reader-dependent { display:grid; gap:18px; margin-top:16px; }
+.settings-reader-dependent.is-disabled { opacity:.45; pointer-events:none; cursor:not-allowed; user-select:none; }
+.settings-reader-group h3 { margin:0 0 5px; }
+.settings-reader-group>p { margin:5px 0 0; color:#6b7280; font-size:12px; line-height:1.5; }
+.settings-reader-group .settings-preference-list { margin-top:16px; }
 html.dark .settings-disabled-web-item { border-color:#374151; background:#111827; }
 html.dark .settings-disabled-web-domain,html.dark .settings-disabled-web-empty { color:#d1d5db; }
 html.dark .settings-disabled-web-form input,html.dark .settings-disabled-web-edit-input { border-color:#374151; background:#111827; color:#e5e7eb; }

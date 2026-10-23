@@ -339,9 +339,11 @@ function renderDisabledReaderWebsiteList() {
 }
 function syncBilingualReaderControls() {
   const enabled = $("bilingualEnableTTS")?.checked !== false;
-  for (const id of ["bilingualAutoScroll", "bilingualSpeakerIconVisibility", "bilingualExcludeSelectors", "bilingualDisabledReaderWebInput"]) { const control = $(id); if (control) control.disabled = !enabled; }
-  const formButton = $("bilingualDisabledReaderWebForm")?.querySelector('button[type="submit"]'); if (formButton) formButton.disabled = !enabled;
-  $("bilingualDisabledReaderWebList")?.querySelectorAll("button,input").forEach(control => { control.disabled = !enabled; });
+  const dependent = $("bilingualReaderDependentSettings");
+  if (!dependent) return;
+  dependent.classList.toggle("is-disabled", !enabled);
+  dependent.setAttribute("aria-disabled", String(!enabled));
+  dependent.querySelectorAll("input,button,select,textarea").forEach(control => { control.disabled = !enabled; });
 }
 async function updateDisabledReaderWebsites(sites) {
   editingDisabledReaderWebsite = null;
