@@ -701,24 +701,6 @@ const FLAG_SVGS = {
   function stopReading() {
     speechDetectionRequest++; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
   }
-  function detectReadLanguage(text, fallback) {
-    if (/[\uAC00-\uD7AF]/.test(text)) return "ko-KR";
-    if (/[\u3040-\u30ff]/.test(text)) return "ja-JP";
-    if (/[\u4e00-\u9fff]/.test(text)) return "zh-CN";
-    const tokens = String(text || "").toLocaleLowerCase().match(/[\p{L}]+/gu) || [];
-    const viWords = new Set(["và","của","là","các","trong","được","cho","với","này","đã","ngày","khi","một","từ","không","người","tại","bằng","sẽ","những","để","có","theo","về","đang"]);
-    const enWords = new Set(["the","and","to","of","in","is","that","for","with","on","as","by","from","was","are","has","have","this","which","be","it","he","she","they","an","a","but","or","will"]);
-    const score = words => tokens.reduce((total, token) => total + (words.has(token) ? 1 : 0), 0);
-    const viScore = score(viWords) + (/[ăâđêôơư]/i.test(text) ? 2 : 0), enScore = score(enWords);
-    if (viScore >= 2 && viScore > enScore) return "vi-VN";
-    if (enScore >= 2 && enScore > viScore) return "en-GB";
-    const declared = String(fallback || "").trim().replace(/_/g, "-");
-    const base = declared.split("-")[0].toLowerCase();
-    if (base === "en") return "en-GB";
-    if (base === "vi") return declared.includes("-") ? declared : "vi-VN";
-    if (base === "ko") return declared.includes("-") ? declared : "ko-KR";
-    return declared || navigator.language || "en-GB";
-  }
   let googleAudio = null, googleToken = null, googleResumeWaiters = [];
   function cancelGoogle() {
     googleToken = null; googleResumeWaiters.splice(0).forEach(resolve => resolve());
