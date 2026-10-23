@@ -250,7 +250,7 @@
 - **v3.4.488** | 2026-10-21 | Codex sửa: `lhn-br-time` sang ước tính thời gian đọc **toàn bộ khung nội dung Reader**: số từ ÷ (220 từ/phút × tốc độ đọc). Nhãn cập nhật theo tốc độ hiện tại và ngôn ngữ hiển thị.
 - **v3.4.487** | 2026-10-21 | Codex sửa: Speak popup dùng theme và font toàn addon; Left/Right tạo hiệu ứng bấm nút đoạn trước/sau.
 - **v3.4.486** | 2026-10-21 | Codex sửa: Dịch speak popup; đổi nhãn account, reading icon và dark mode; đồng bộ Show reading icon với các chế độ Always visible/Show on hover của Reader.
-- **v3.4.484** | 2026-10-21 | Codex sửa: scrollbar Select Voice sang phải và focus ô tìm kiếm ngay khi mở popup. Cú pháp JavaScript và manifest đã được kiểm tra.
+- **v3.4.484** | 2026-10-21 | Codex sửa: Chuyển scrollbar của Select Voice sang phải và tự focus ô tìm kiếm khi mở.
 - **v3.4.483** | 2026-10-21 | Codex sửa: Banner đồng bộ trạng thái cài đặt; dùng SVG cờ từ mẫu; Select Voice chỉ còn một scrollbar.
 - **v3.4.482** | 2026-10-21 | Codex sửa: Settings bật/tắt shortcut banner; Account mở dashboard hoặc form đăng nhập tùy trạng thái.
 - **v3.4.481** | 2026-10-21 | Codex sửa: Giữ banner trên một hàng, bỏ cuộn ngang trong speak popup và thay icon Settings bằng SVG người dùng cung cấp.
@@ -267,8 +267,8 @@
 - **v3.4.470** | 2026-10-21 | Codex sửa: Khôi phục phát âm; tích hợp speak popup với Settings, chọn voice, theme, speed popup và nút mở dashboard.
 - **v3.4.469** | 2026-10-21 | Codex sửa: Tích hợp floating speak toolbar vào Bilingual Reader: play/pause, chuyển đoạn, chọn voice, chỉnh tốc độ, thời gian đọc, auto-scroll và kéo thả.
 - **v3.4.468** | 2026-10-21 | Codex sửa: chế độ hover: icon luôn ẩn khi không hover đoạn văn; focus hoặc trạng thái đọc không làm icon hiện.
-- **v3.4.467** | 2026-10-21 | Codex sửa: Đã làm trạng thái icon gắn trực tiếp với đoạn đang đọc và xóa trạng thái khi chuyển đoạn hoặc dừng đọc. Cú pháp JavaScript và cấu trúc ZIP đã được kiểm tra.
-- **v3.4.466** | 2026-10-21 | Codex sửa: lỗi: khi đọc kết thúc, focus được gỡ khỏi icon loa để icon ẩn lại nếu không còn hover. Cú pháp JavaScript và cấu trúc ZIP đã được kiểm tra.
+- **v3.4.467** | 2026-10-21 | Codex sửa: Gắn trạng thái icon speak với đoạn đang đọc; xóa trạng thái khi chuyển đoạn hoặc dừng đọc.
+- **v3.4.466** | 2026-10-21 | Codex sửa: Gỡ focus khỏi icon loa khi đọc xong để chế độ hover ẩn icon nếu con trỏ đã rời đoạn.
 - **v3.4.465** | 2026-10-21 | Codex sửa: **Show reading icon** trong **Bilingual Reader > Reader**, với ba chế độ: luôn hiện, hiện khi di chuột và chỉ hiện khi đọc. Mặc định là **luôn hiện**. Các nhãn đã được dịch sang English, Tiếng Việt và 한국어.
 - **v3.4.464** | 2026-10-21 | Codex sửa: nút **Reset** bên phải thanh trượt; bấm sẽ khôi phục mức mặc định **80%**. Nhãn nút đã có bản dịch cho English, Tiếng Việt và 한국어.
 - **v3.4.463** | 2026-10-21 | Codex sửa: tùy chọn **Translation font size** với thanh trượt `50–150%`, mặc định `80%`. Giá trị được lưu và áp dụng qua `--translation-scale` cho bản dịch trên trang và preview, với cỡ tối thiểu `14px`.
@@ -276,14 +276,14 @@
 - **v3.4.461** | 2026-10-21 | Codex sửa: nhãn thành **Bilingual**, **Song ngữ** và **이중 언어** theo ngôn ngữ giao diện.
 - **v3.4.460** | 2026-10-21 | Codex sửa: **Reading** thành **Reader**, **Trình đọc** và **리더** theo ngôn ngữ giao diện.
 - **v3.4.459** | 2026-10-21 | Codex sửa: **Translate to** khỏi Bilingual Reader. Giờ Bilingual Reader dùng trực tiếp **Translate > Target language**; khi đổi ngôn ngữ, preview và các bản dịch trên trang được cập nhật theo lựa chọn đó.
-- **v3.4.458** | 2026-10-21 | Codex sửa: nhãn **Translation color** và **Translation bold**, kèm bản dịch Tiếng Việt và 한국어. Cú pháp `i18n.js` và cấu trúc ZIP đã được kiểm tra.
+- **v3.4.458** | 2026-10-21 | Codex sửa: Đổi nhãn Translation color và Translation bold, kèm bản dịch tiếng Việt và tiếng Hàn.
 - **v3.4.457** | 2026-10-21 | Codex sửa: Tạo lại danh sách Translate to sau khi xác định ngôn ngữ giao diện để nhãn Auto được dịch đúng.
 - **v3.4.456** | 2026-10-21 | Codex sửa: whitelist cố định `en/vi/ko` khỏi luồng dịch Bilingual Reader. **Auto** dùng mã ngôn ngữ hiển thị hiện tại và chuyển mã đó tới API dịch; preview cũng chọn ngôn ngữ đích theo cài đặt giao diện.
 - **v3.4.455** | 2026-10-21 | Codex sửa: Nguyên nhân là lúc chọn ngôn ngữ hiển thị, handler cập nhật giao diện nhưng không gọi làm mới preview ngay. Tôi đã thêm bước làm mới tại sự kiện đổi ngôn ngữ; Auto sẽ tính lại ngôn ngữ đích và tải preview tương ứng.
 - **v3.4.454** | 2026-10-21 | Codex sửa: Sửa điều kiện cập nhật preview khi Translate to là Auto; so sánh theo ngôn ngữ giao diện thực tế và tải lại preview khi cần.
 - **v3.4.453** | 2026-10-21 | Codex sửa: **Translate to** mặc định là **Auto**. Khi chọn Auto, Bilingual Reader dịch theo ngôn ngữ hiển thị của extension và cập nhật các bản dịch khi ngôn ngữ hiển thị thay đổi.
 - **v3.4.452** | 2026-10-21 | Codex sửa: danh sách **Translate to** với **Translate > Target language**: cùng lựa chọn Auto và các ngôn ngữ, cùng nhãn theo ngôn ngữ giao diện.
-- **v3.4.451** | 2026-10-21 | Codex sửa: Đã dịch nhãn **Inter (default)** theo ngôn ngữ giao diện: English, Tiếng Việt (*Inter (mặc định)*) và 한국어 (*Inter (기본값)*). Kiểm tra cú pháp `i18n.js` và cấu trúc ZIP đều đạt.
+- **v3.4.451** | 2026-10-21 | Codex sửa: Dịch nhãn Inter (default) theo ngôn ngữ giao diện: English, Vietnamese và Korean.
 - **v3.4.450** | 2026-10-21 | Codex sửa: Đổi nhãn Inter (default) thành Inter trong Website font; giữ nguyên nhãn của Translation font.
 - **v3.4.449** | 2026-10-21 | Codex sửa: nhãn **Inter (default)** thành **Inter** trong dropdown **Translation font**.
 - **v3.4.448** | 2026-10-21 | Codex sửa: **Skip same language** lên đầu mục **Translation** và đặt khoảng cách **16px** giữa tiêu đề với danh sách cài đặt trong các mục Bilingual Reader, gồm cả **Translation** và **Reading**.
@@ -305,7 +305,7 @@
 - **v3.4.432** | 2026-10-21 | Codex sửa: Thêm Space pause/resume và Left/Right chuyển đoạn, có shortcut tùy chỉnh; chặn xử lý phím ngay để dừng âm thanh.
 - **v3.4.431** | 2026-10-21 | Codex sửa: shortcut **Space** mặc định để tạm dừng và tiếp tục giọng đọc tại đúng vị trí đang phát. Bạn có thể đổi phím trong **Dashboard Settings > Shortcut**; khi không có giọng đọc, Space vẫn cuộn trang bình thường.
 - **v3.4.430** | 2026-10-21 | Codex sửa: Alt+Z tắt mọi chức năng Reader trên website; Alt+A/Alt+R loại sidebar khỏi vùng đọc; thêm Parts not to read để lọc bằng CSS selector.
-- **v3.4.429** | 2026-10-21 | Codex sửa: thứ tự xử lý phím: Alt+A/D/R giờ được chuyển tới Bilingual Reader trước các kiểm tra trạng thái website, nên không bị chặn khi website đang tắt hoặc khi Alt+D trùng shortcut website đã lưu.
+- **v3.4.429** | 2026-10-21 | Codex sửa: Ưu tiên chuyển Alt+A/Alt+D/Alt+R cho Bilingual Reader trước kiểm tra disable website và xung đột với shortcut Alt+D.
 - **v3.4.428** | 2026-10-21 | Codex sửa: riêng logic Alt+A/Alt+R để chỉ lấy văn bản hiển thị; bỏ qua nội dung ẩn, mã CSS trong `<style>`, thông tin tác giả/ngày giờ và nút Google của VnExpress. Alt+D vẫn giữ phạm vi toàn trang.
 - **v3.4.427** | 2026-10-21 | Codex sửa: Đưa tiêu đề và sapo của bài Tuổi Trẻ vào vùng đọc Alt+A/Alt+R dù nằm ngoài articleBody, giữ đúng thứ tự trước thân bài.
 - **v3.4.426** | 2026-10-21 | Codex sửa: Đã giới hạn **Alt+A** và **Alt+R** vào vùng nội dung chính: nhận diện `article`/`main` và loại điều hướng, sidebar, nội dung liên quan, quảng cáo khỏi vùng dịch và đọc. **Alt+D** vẫn tìm khối gần con trỏ trên toàn trang.
@@ -315,7 +315,7 @@
 - **v3.4.422** | 2026-10-21 | Codex sửa: khoảng cách giữa **Translate Settings** và danh sách của nó thành 16px, đồng bộ với **Voice** trong Flashcard settings > Speech.
 - **v3.4.421** | 2026-10-21 | Codex sửa: điều kiện chặn shortcut khi đang phát âm. Phần còn lại được giữ: khi popup đang hiện, shortcut chỉ gọi phát âm và không thay đổi popup.
 - **v3.4.420** | 2026-10-21 | Codex sửa: Khi Auto speak bật và popup dịch/full dict đang hiện, shortcut Translate selected text chỉ phát âm, không thay đổi popup.
-- **v3.4.419** | 2026-10-20 | Codex sửa: nhãn từ loại trong full dict thành tiếng Anh, kể cả khi đổi ngôn ngữ hiển thị; có xử lý thêm các dạng viết tắt như `n`, `v`, `adj`, `adv`. Cú pháp `content.js` đã kiểm tra thành công.
+- **v3.4.419** | 2026-10-20 | Codex sửa: Giữ nhãn từ loại của full dict bằng tiếng Anh kể cả khi đổi ngôn ngữ giao diện; hỗ trợ dạng viết tắt n, v, adj, adv.
 - **v3.4.418** | 2026-10-20 | Codex sửa: Đổi nhãn từ loại trong full dict theo ngôn ngữ giao diện (English, Vietnamese hoặc Korean).
 - **v3.4.417** | 2026-10-20 | Codex sửa: đường ngăn cách thứ hai trước mục Voice trong **Flashcard settings > Speech**. Khoảng cách đến Voice giờ theo cùng chuẩn với các tab cài đặt khác; khoảng cách 16px từ Voice đến danh sách được giữ nguyên.
 - **v3.4.416** | 2026-10-20 | Codex sửa: khoảng cách tiêu đề đến danh sách thành **16px** ở cả hai tab Speech đã nêu. Quy tắc áp dụng cho danh sách của mục nên vẫn giữ khoảng cách khi thêm hoặc chuyển hàng bên trong.
