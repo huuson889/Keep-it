@@ -150,7 +150,7 @@
 
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
   //       clearCurrent(), systemSpeak(text, lang, done), onEnd(),
-  //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error)
+  //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error), onGoogleLimitReached()
   async function play(opts) {
     let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
     try { voiceSettings = await getVoiceSettings(); } catch {}
@@ -158,6 +158,7 @@
       await playWithBrowserVoice({ ...opts, browserVoiceURI:voiceSettings.browserVoiceURI });
       return;
     }
+    let limitNotified = false;
     for (const chunk of splitChunks(opts.text)) {
       if (!opts.isActive()) return;
       let played = false, limitReached = false, lastError = null;
@@ -193,6 +194,7 @@
         }
       }
       // strictVoice: giọng Google đã chọn thì không tự đổi sang giọng trình duyệt, trừ khi hết lượt (key).
+      if (!played && limitReached && opts.strictVoice && !limitNotified) { limitNotified = true; opts.onGoogleLimitReached?.(); }
       if (!played && opts.strictVoice && !limitReached) {
         if (!opts.isActive()) return;
         opts.onGoogleVoiceFailed?.(lastError);

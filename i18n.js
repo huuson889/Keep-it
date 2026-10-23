@@ -86,6 +86,12 @@
   MESSAGES.en.bilingualSpeakerAlways = "Always visible"; MESSAGES.vi.bilingualSpeakerAlways = "Luôn hiện"; MESSAGES.ko.bilingualSpeakerAlways = "항상 표시";
   MESSAGES.en.bilingualSpeakerHover = "Show on hover"; MESSAGES.vi.bilingualSpeakerHover = "Hiện khi di chuột"; MESSAGES.ko.bilingualSpeakerHover = "마우스를 올릴 때 표시";
   MESSAGES.en.bilingualSpeakerReading = "Only while reading"; MESSAGES.vi.bilingualSpeakerReading = "Chỉ hiện khi đọc"; MESSAGES.ko.bilingualSpeakerReading = "읽는 동안에만 표시";
+  MESSAGES.en.readerPopupGroupLanguages = "Languages (Google TTS)"; MESSAGES.vi.readerPopupGroupLanguages = "Ngôn ngữ (Google TTS)"; MESSAGES.ko.readerPopupGroupLanguages = "언어 (Google TTS)";
+  MESSAGES.en.readerPopupGroupBrowserVoices = "Browser voices"; MESSAGES.vi.readerPopupGroupBrowserVoices = "Giọng trình duyệt"; MESSAGES.ko.readerPopupGroupBrowserVoices = "브라우저 음성";
+  MESSAGES.en.readerPopupBrowserTag = "Browser"; MESSAGES.vi.readerPopupBrowserTag = "Trình duyệt"; MESSAGES.ko.readerPopupBrowserTag = "브라우저";
+  MESSAGES.en.readerToastGoogleVoiceFailed = "Google voice failed. Reading stopped."; MESSAGES.vi.readerToastGoogleVoiceFailed = "Giọng Google bị lỗi. Đã dừng đọc."; MESSAGES.ko.readerToastGoogleVoiceFailed = "Google 음성 오류로 읽기를 중지했습니다.";
+  MESSAGES.en.readerToastGoogleLimit = "Google voice limit reached. Using browser voice."; MESSAGES.vi.readerToastGoogleLimit = "Hết lượt giọng Google. Đang dùng giọng trình duyệt."; MESSAGES.ko.readerToastGoogleLimit = "Google 음성 사용 한도에 도달했습니다. 브라우저 음성을 사용합니다.";
+  MESSAGES.en.readerToastBrowserVoiceFailed = "Browser voice failed to play."; MESSAGES.vi.readerToastBrowserVoiceFailed = "Giọng trình duyệt bị lỗi, không phát được."; MESSAGES.ko.readerToastBrowserVoiceFailed = "브라우저 음성을 재생할 수 없습니다.";
   MESSAGES.en.bilingualCache = "Cache"; MESSAGES.vi.bilingualCache = "Bộ nhớ đệm"; MESSAGES.ko.bilingualCache = "캐시";
   MESSAGES.en.bilingualExclude = "Parts not to read"; MESSAGES.vi.bilingualExclude = "Phần không đọc trên website"; MESSAGES.ko.bilingualExclude = "웹사이트에서 읽지 않을 부분";
   MESSAGES.en.bilingualExcludeTitle = "Custom website filters"; MESSAGES.vi.bilingualExcludeTitle = "Bộ lọc website tùy chỉnh"; MESSAGES.ko.bilingualExcludeTitle = "사용자 지정 웹사이트 필터";

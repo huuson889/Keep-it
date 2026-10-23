@@ -79,6 +79,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
     #lhn-bilingual-reading-bar .lhn-br-voice{width:100%;height:auto;min-height:58px;justify-content:flex-start;gap:14px;border-radius:16px;text-align:left;padding:9px 12px;font-size:14px;font-weight:700}
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:#f1f3f5;box-shadow:0 2px 5px rgba(15,23,42,.06)}
+    #lhn-bilingual-reading-bar .lhn-br-voice-group{padding:10px 12px 4px;font-size:12px;font-weight:700;color:#64748b}
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-kb-active{background:rgba(148,163,184,.18);box-shadow:inset 0 0 0 2px var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:first-child{font-size:30px;line-height:1}
     #lhn-bilingual-reading-bar .lhn-br-voice{direction:ltr}
@@ -120,6 +121,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-setting input[type=number]{background:#0f172a;color:#e2e8f0;border-color:#475569}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice small{color:#94a3b8}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice.lhn-selected{background:#334155}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice-group{color:#94a3b8}
     @keyframes lhnBrFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes lhnBrSlide{from{opacity:0}to{opacity:1}}@keyframes lhnBrButtonPress{35%{transform:scale(.84);background:rgba(148,163,184,.38)}100%{transform:scale(1)}}
   `;
   (document.head || document.documentElement).appendChild(style);
@@ -281,11 +283,14 @@ const FLAG_SVGS = {
       auto.addEventListener("click", () => { void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
     const plainQuery = plainText(query);
+    const groupHeading = key => { const heading = document.createElement("div"); heading.className = "lhn-br-voice-group"; heading.setAttribute("role", "presentation"); heading.textContent = popupText(key); list.appendChild(heading); };
+    let languageGroupShown = false, browserGroupShown = false;
     READ_LANGUAGE_CODES.forEach(code => {
       const region = readLanguageRegion(code), tag = LHN_TTS.normalizeLanguage(code);
       const country = region ? (() => { try { return new Intl.DisplayNames([displayLang], { type:"region" }).of(region) || ""; } catch { return ""; } })() : "";
       const name = readLanguageName(code), english = languageLabel(code, "en"), native = languageLabel(code, code);
       if (plainQuery && !plainText(`${name} ${english} ${native} ${country} ${code} ${tag}`).includes(plainQuery)) return;
+      if (!languageGroupShown) { languageGroupShown = true; groupHeading("readerPopupGroupLanguages"); }
       const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
       button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
@@ -294,8 +299,9 @@ const FLAG_SVGS = {
     systemVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(query)).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
+      if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
-      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${voice.name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
       button.addEventListener("click",()=>{ selectedVoice=voice; void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
@@ -808,7 +814,8 @@ const FLAG_SVGS = {
         u.onend = done; u.onerror = done; synth.speak(u);
       },
       strictVoice: true,
-      onGoogleVoiceFailed: error => { console.error("Bilingual Reader: Google voice failed, reading stopped (voice not switched)", error); stopReading(); },
+      onGoogleVoiceFailed: error => { console.error("Bilingual Reader: Google voice failed, reading stopped (voice not switched)", error); stopReading(); showReaderToast(popupText("readerToastGoogleVoiceFailed")); },
+      onGoogleLimitReached: () => showReaderToast(popupText("readerToastGoogleLimit")),
       onBrowserVoiceUnavailable: () => { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); },
       onEnd: finish
     });
@@ -845,7 +852,7 @@ const FLAG_SVGS = {
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
-    current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
+    current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
@@ -863,6 +870,15 @@ const FLAG_SVGS = {
     return translated ? `${source}\n${translated}` : source;
   }
   let readTranslationToastTimer = null;
+  let readerErrorToastTimer = null;
+  function showReaderToast(text) {
+    let toast = document.getElementById("lhn-sidebar-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
+    toast.textContent = text;
+    toast.classList.add("is-visible");
+    clearTimeout(readerErrorToastTimer);
+    readerErrorToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+  }
   function notifyReadTranslationOn() {
     let toast = document.getElementById("lhn-sidebar-toast");
     if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
