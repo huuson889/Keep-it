@@ -22,8 +22,8 @@
     if (/[\u3040-\u30FF]/.test(str)) return "ja-JP";
     if (/[\u4E00-\u9FFF]/.test(str)) return "zh-CN";
     if (/[\u0E00-\u0E7F]/.test(str)) return "th-TH";
-    if (/[\u0900-\u097F]/.test(str)) return "hi-IN";
-    if (/[\u0980-\u09FF]/.test(str)) return "bn-BD";
+    if (/[\u0985-\u09B9]/.test(str)) return "bn-BD"; // chữ cái Bengali
+    if (/[\u0905-\u0939]/.test(str)) return "hi-IN"; // chữ cái Devanagari (Hindi)
     if (/[іїєґ]/i.test(str)) return "uk-UA";
     if (/[\u0400-\u04FF]/.test(str)) return "ru-RU";
     if (/[پچژگ]/.test(str)) return "fa-IR";
