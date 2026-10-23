@@ -175,7 +175,7 @@ function refreshDashboardSettings() {
   $("settingsSpeechRateValue").setAttribute("aria-label", globalSpeechRateLabel);
   $("settingsSpeechRate").value = String(speechRate);
   $("settingsSpeechRateValue").value = speechRate.toFixed(1);
-  const useLanguageSpeechRate = dashboardSettings.useLanguageSpeechRate === true;
+  const useLanguageSpeechRate = dashboardSettings.useLanguageSpeechRate ?? (CONFIG.DEFAULT_SETTINGS.useLanguageSpeechRate === true);
   const speechRateByLanguage = dashboardSettings.speechRateByLanguage && typeof dashboardSettings.speechRateByLanguage === "object" ? dashboardSettings.speechRateByLanguage : {};
   const hasCustomSpeechRateByLanguage = dashboardSettings.hasCustomSpeechRateByLanguage && typeof dashboardSettings.hasCustomSpeechRateByLanguage === "object" ? dashboardSettings.hasCustomSpeechRateByLanguage : {};
   const inheritedSpeechRateByLanguage = dashboardSettings.inheritedSpeechRateByLanguage && typeof dashboardSettings.inheritedSpeechRateByLanguage === "object" ? dashboardSettings.inheritedSpeechRateByLanguage : {};
@@ -184,7 +184,7 @@ function refreshDashboardSettings() {
   const customLanguageRate = useLanguageSpeechRate
     ? hasCustomSpeechRateByLanguage[currentLang] === true && Number.isFinite(languageRate)
       ? Math.min(2, Math.max(.5, languageRate))
-      : Number.isFinite(inheritedLanguageRate) ? Math.min(2, Math.max(.5, inheritedLanguageRate)) : speechRate
+      : Number.isFinite(inheritedLanguageRate) ? Math.min(2, Math.max(.5, inheritedLanguageRate)) : Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || speechRate
     : speechRate;
   $("settingsUseLanguageSpeechRate").checked = useLanguageSpeechRate;
   const languageRateLabel = t("yourLanguageSpeed", { language:t({ en:"languageEnglish", vi:"languageVietnamese", ko:"languageKorean" }[currentLang] || "languageEnglish") });
