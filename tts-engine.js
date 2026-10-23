@@ -70,7 +70,7 @@
     if (detected === undefined) {
       let pending = detectionRequests.get(key);
       if (!pending) {
-        pending = api.runtime.sendMessage({ type:"DETECT_READ_LANGUAGE", text:sample })
+        pending = Promise.resolve().then(() => api.runtime.sendMessage({ type:"DETECT_READ_LANGUAGE", text:sample }))
           .then(result => String(result?.detectedLang || "").trim().toLowerCase().split(/[-_]/)[0])
           .catch(() => "")
           .then(value => {
