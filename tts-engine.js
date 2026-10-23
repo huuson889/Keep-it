@@ -3,6 +3,110 @@
 (() => {
   const api = typeof browser !== "undefined" ? browser : chrome;
   const MAX_CHUNK = 180;
+  const SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
+  const READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
+  const VI_WORDS = new Set(["và","của","là","các","trong","được","cho","với","này","đã","ngày","khi","một","từ","không","người","tại","bằng","sẽ","những","để","có","theo","về","đang","con","mèo","chạy","nhanh"]);
+  const EN_WORDS = new Set(["the","and","to","of","in","is","that","for","with","on","as","by","from","was","are","has","have","this","which","be","it","he","she","they","an","a","but","or","will"]);
+  const LATIN_MARKS = [
+    ["tr-TR", /[ğışİ]/gi], ["ro-RO", /[șțȘȚ]/g], ["pl-PL", /[łąęśźżćń]/gi],
+    ["es-ES", /[ñ¿¡]/gi], ["de-DE", /[ßäöü]/gi], ["pt-BR", /[ãõ]/gi],
+    ["vi-VN", /[ạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹđơưă]/gi]
+  ];
+  const LANGUAGE_TAGS = Object.freeze({ en:"en-US", ja:"ja-JP", ko:"ko-KR", zh:"zh-CN", es:"es-ES", pt:"pt-BR", fr:"fr-FR", vi:"vi-VN", id:"id-ID", th:"th-TH", hi:"hi-IN", it:"it-IT", pl:"pl-PL", uk:"uk-UA", ru:"ru-RU", tr:"tr-TR", de:"de-DE", fa:"fa-IR", bn:"bn-BD", tl:"tl-PH", ro:"ro-RO" });
+  const detectionCache = new Map(), detectionRequests = new Map();
+
+  function detectReadLanguage(text) {
+    const str = String(text || "");
+    if (!str.trim()) return null;
+    if (/[\uAC00-\uD7AF]/.test(str)) return "ko-KR";
+    if (/[\u3040-\u30FF]/.test(str)) return "ja-JP";
+    if (/[\u4E00-\u9FFF]/.test(str)) return "zh-CN";
+    if (/[\u0E00-\u0E7F]/.test(str)) return "th-TH";
+    if (/[\u0900-\u097F]/.test(str)) return "hi-IN";
+    if (/[\u0980-\u09FF]/.test(str)) return "bn-BD";
+    if (/[іїєґ]/i.test(str)) return "uk-UA";
+    if (/[\u0400-\u04FF]/.test(str)) return "ru-RU";
+    if (/[پچژگ]/.test(str)) return "fa-IR";
+    let best = null, bestCount = 0;
+    for (const [lang, pattern] of LATIN_MARKS) {
+      const count = (str.match(pattern) || []).length;
+      if (count > bestCount) { best = lang; bestCount = count; }
+    }
+    if (best) return best;
+    let vi = 0, en = 0;
+    for (const token of str.toLowerCase().match(/[\p{L}]+/gu) || []) {
+      if (VI_WORDS.has(token)) vi++;
+      if (EN_WORDS.has(token)) en++;
+    }
+    if (vi >= 2 && vi > en) return "vi-VN";
+    if (en >= 2 && en > vi) return "en-US";
+    return null;
+  }
+
+  function normalizeLanguage(value) {
+    const declared = String(value || "").trim().replace(/_/g, "-");
+    if (!declared) return "";
+    return LANGUAGE_TAGS[declared.split("-")[0].toLowerCase()] || declared;
+  }
+
+  function fallbackLanguage(value) {
+    return normalizeLanguage(value) || normalizeLanguage(globalThis.navigator?.language) || "en-US";
+  }
+
+  function hashText(text) {
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index++) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+    return `${text.length}-${(hash >>> 0).toString(16)}`;
+  }
+
+  async function detectLanguage(text, fallbackLang) {
+    const direct = detectReadLanguage(text);
+    if (direct) return direct;
+    const fallback = fallbackLanguage(fallbackLang);
+    const sample = String(text || "").trim().slice(0, 200);
+    if (!sample || !/^[\p{Script=Latin}\p{M}\p{N}\p{P}\p{Z}\p{S}]*$/u.test(sample)) return fallback;
+    const key = hashText(sample);
+    let detected = detectionCache.get(key);
+    if (detected === undefined) {
+      let pending = detectionRequests.get(key);
+      if (!pending) {
+        pending = api.runtime.sendMessage({ type:"DETECT_READ_LANGUAGE", text:sample })
+          .then(result => String(result?.detectedLang || "").trim().toLowerCase().split(/[-_]/)[0])
+          .catch(() => "")
+          .then(value => {
+            detectionCache.set(key, value);
+            if (detectionCache.size > 500) detectionCache.delete(detectionCache.keys().next().value);
+            return value;
+          }).finally(() => detectionRequests.delete(key));
+        detectionRequests.set(key, pending);
+      }
+      detected = await pending;
+    }
+    return LANGUAGE_TAGS[detected] || fallback;
+  }
+
+  async function getVoiceSettings() {
+    const data = await api.storage.local.get([SETTINGS_KEY, READER_SETTINGS_KEY]);
+    const shared = data[SETTINGS_KEY] || {}, reader = data[READER_SETTINGS_KEY] || {};
+    let voiceMode = shared.voiceMode;
+    let browserVoiceURI = String(shared.browserVoiceURI || "");
+    if (voiceMode !== "google" && voiceMode !== "browser") {
+      browserVoiceURI = String(reader.speechVoiceURI || "");
+      voiceMode = browserVoiceURI || shared.speechVoice === "browser" ? "browser" : "google";
+      await api.storage.local.set({ [SETTINGS_KEY]:{ ...shared, voiceMode, browserVoiceURI, speechVoice:voiceMode } }).catch(() => {});
+    }
+    if (voiceMode === "browser" && !browserVoiceURI && reader.speechVoiceURI) browserVoiceURI = String(reader.speechVoiceURI);
+    return { voiceMode, browserVoiceURI };
+  }
+
+  async function setVoiceSettings(voiceMode, browserVoiceURI = "") {
+    const mode = voiceMode === "browser" ? "browser" : "google";
+    const data = await api.storage.local.get(SETTINGS_KEY);
+    const shared = data[SETTINGS_KEY] || {};
+    const next = { ...shared, voiceMode:mode, browserVoiceURI:mode === "browser" ? String(browserVoiceURI || "") : "", speechVoice:mode };
+    await api.storage.local.set({ [SETTINGS_KEY]:next });
+    return { voiceMode:mode, browserVoiceURI:next.browserVoiceURI };
+  }
 
   function splitChunks(text, max = MAX_CHUNK) {
     const out = [];
@@ -19,21 +123,13 @@
     return out.filter(Boolean);
   }
 
-  async function preferBrowserVoice() {
-    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-    try {
-      const data = await api.storage.local.get(settingsKey);
-      return data[settingsKey]?.speechVoice === "browser";
-    } catch { return false; }
-  }
-
   async function playWithBrowserVoice(opts) {
     for (const chunk of splitChunks(opts.text)) {
       if (!opts.isActive()) return;
       const result = await new Promise(resolve => {
         let finished = false;
         const done = status => { if (finished) return; finished = true; resolve(status); };
-        try { opts.systemSpeak(chunk, opts.lang, done); } catch { done(); }
+        try { opts.systemSpeak(chunk, opts.lang, done, opts.browserVoiceURI); } catch { done(); }
       });
       if (result?.unsupported) {
         opts.onBrowserVoiceUnavailable?.(opts.lang);
@@ -47,8 +143,10 @@
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
   //       clearCurrent(), systemSpeak(text, lang, done), onEnd()
   async function play(opts) {
-    if (await preferBrowserVoice()) {
-      await playWithBrowserVoice(opts);
+    let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
+    try { voiceSettings = await getVoiceSettings(); } catch {}
+    if (voiceSettings.voiceMode === "browser") {
+      await playWithBrowserVoice({ ...opts, browserVoiceURI:voiceSettings.browserVoiceURI });
       return;
     }
     for (const chunk of splitChunks(opts.text)) {
@@ -92,5 +190,5 @@
     if (opts.isActive()) opts.onEnd?.();
   }
 
-  globalThis.LHN_TTS = Object.freeze({ splitChunks, play });
+  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage });
 })();
