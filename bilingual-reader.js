@@ -9,6 +9,7 @@
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
+  let voiceKbIndex = -1;
 const FLAG_SVGS = {
       ...(globalThis.LHN_FLAGS?.svgs || {}),
       us: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><g fill-rule="evenodd"><path fill="#bd3d44" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 39.3h512v39.4H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.3H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0z"/><path fill="#192f5d" d="M0 0h240v275.6H0z"/><g fill="#fff"><path d="M22.5 13.5l2.4 7.3h7.7l-6.2 4.5 2.4 7.3-6.3-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6z"/></g></g></svg>`,
@@ -78,6 +79,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
     #lhn-bilingual-reading-bar .lhn-br-voice{width:100%;height:auto;min-height:58px;justify-content:flex-start;gap:14px;border-radius:16px;text-align:left;padding:9px 12px;font-size:14px;font-weight:700}
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:#f1f3f5;box-shadow:0 2px 5px rgba(15,23,42,.06)}
+    #lhn-bilingual-reading-bar .lhn-br-voice.lhn-kb-active{background:rgba(148,163,184,.18);box-shadow:inset 0 0 0 2px var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:first-child{font-size:30px;line-height:1}
     #lhn-bilingual-reading-bar .lhn-br-voice{direction:ltr}
     #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:30px;height:30px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center}
@@ -153,6 +155,26 @@ const FLAG_SVGS = {
   bar.querySelector("input[type=search]").addEventListener("input", renderVoiceChoices);
   bar.addEventListener("click", event => { if (!event.target.closest("[data-lhn-br-popover]") && !event.target.closest("[data-voices],[data-speed],[data-settings]")) closePopovers(); });
   document.addEventListener("pointerdown", event => { if (!bar.contains(event.target)) closePopovers(); }, true);
+  const voiceItems = () => Array.from(bar.querySelectorAll(".lhn-br-voice-list .lhn-br-voice"));
+  function setVoiceKb(index) {
+    const items = voiceItems(); items.forEach(item => item.classList.remove("lhn-kb-active"));
+    if (!items.length) { voiceKbIndex = -1; return; }
+    voiceKbIndex = Math.max(0, Math.min(items.length - 1, index));
+    items[voiceKbIndex].classList.add("lhn-kb-active"); items[voiceKbIndex].scrollIntoView({ block:"nearest" });
+  }
+  window.addEventListener("keydown", event => {
+    if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !popover("voices").classList.contains("lhn-open")) return;
+    if (!bar.contains(event.target) && event.target?.closest?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])")) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault(); event.stopImmediatePropagation();
+      const items = voiceItems(); if (!items.length) return;
+      const from = voiceKbIndex >= 0 ? voiceKbIndex : items.findIndex(item => item.classList.contains("lhn-selected"));
+      setVoiceKb(from + (event.key === "ArrowDown" ? 1 : -1));
+    } else if (event.key === "Enter" && voiceKbIndex >= 0) {
+      const item = voiceItems()[voiceKbIndex]; if (!item) return;
+      event.preventDefault(); event.stopImmediatePropagation(); voiceKbIndex = -1; item.click();
+    }
+  }, true);
   const dragHandle = bar.querySelector("[data-drag]");
   let lastDragPointerDown = 0;
   dragHandle.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); const now = performance.now(); if (event.detail >= 2 || now - lastDragPointerDown < 350) { lastDragPointerDown = 0; bar.style.removeProperty("left"); bar.style.removeProperty("top"); bar.style.removeProperty("bottom"); bar.style.removeProperty("transform"); return; } lastDragPointerDown = now; const rect = bar.getBoundingClientRect(), pointerOffsetX = event.clientX - rect.left, pointerOffsetY = event.clientY - rect.top; bar.style.left = `${rect.left}px`; bar.style.top = `${rect.top}px`; bar.style.bottom = "auto"; bar.style.transform = "none"; dragHandle.setPointerCapture(event.pointerId); const move = e => { bar.style.left = `${Math.max(8,Math.min(innerWidth-rect.width-8,e.clientX-pointerOffsetX))}px`; bar.style.top = `${Math.max(8,Math.min(innerHeight-rect.height-8,e.clientY-pointerOffsetY))}px`; }; const end = () => { dragHandle.removeEventListener("pointermove",move); dragHandle.removeEventListener("pointerup",end); dragHandle.removeEventListener("pointercancel",end); }; dragHandle.addEventListener("pointermove",move); dragHandle.addEventListener("pointerup",end); dragHandle.addEventListener("pointercancel",end); });
@@ -248,6 +270,7 @@ const FLAG_SVGS = {
   }
   renderPopupText();
   function renderVoiceChoices() {
+    voiceKbIndex = -1;
     systemVoices = synth?.getVoices?.() || systemVoices;
     const query = bar.querySelector("input[type=search]").value.trim().toLocaleLowerCase();
     const list = bar.querySelector(".lhn-br-voice-list"); list.replaceChildren();
