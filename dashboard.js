@@ -318,6 +318,34 @@ async function updateDisabledWebsites(sites) {
   editingDisabledWebsite = null;
   await saveDashboardSettings({ disabledWebsites: [...new Set(sites)] });
 }
+function renderDisabledReaderWebsiteList() {
+  const host = $("bilingualDisabledReaderWebList");
+  if (!host) return;
+  const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
+  if (!sites.length) { host.innerHTML = `<p class="settings-disabled-web-empty">${escapeHtml(t("noDisabledWebsites"))}</p>`; return; }
+  host.replaceChildren(...sites.map(site => {
+    const row = document.createElement("div"); row.className = "settings-disabled-web-item"; row.dataset.site = site;
+    if (editingDisabledReaderWebsite === site) {
+      row.innerHTML = `<input class="settings-disabled-web-edit-input" type="text" value="${escapeHtml(site)}" aria-label="${escapeHtml(t("bilingualDisabledReaderWeb"))}"><div class="settings-disabled-web-actions"><button type="button" class="settings-action-button" data-reader-site-action="save">${escapeHtml(t("save"))}</button><button type="button" class="settings-action-button" data-reader-site-action="cancel">${escapeHtml(t("cancel"))}</button></div>`;
+    } else {
+      const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
+      const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
+      for (const [action, key] of [["edit", "edit"], ["remove", "removeWebsite"]]) { const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset.readerSiteAction = action; button.textContent = t(key); actions.appendChild(button); }
+      row.append(label, actions);
+    }
+    return row;
+  }));
+}
+function syncBilingualReaderControls() {
+  const enabled = $("bilingualEnableTTS")?.checked !== false;
+  for (const id of ["bilingualAutoScroll", "bilingualSpeakerIconVisibility", "bilingualExcludeSelectors", "bilingualDisabledReaderWebInput"]) { const control = $(id); if (control) control.disabled = !enabled; }
+  const formButton = $("bilingualDisabledReaderWebForm")?.querySelector('button[type="submit"]'); if (formButton) formButton.disabled = !enabled;
+  $("bilingualDisabledReaderWebList")?.querySelectorAll("button,input").forEach(control => { control.disabled = !enabled; });
+}
+async function updateDisabledReaderWebsites(sites) {
+  editingDisabledReaderWebsite = null;
+  await saveBilingualReaderSettings({ readerDisabledWebsites:[...new Set(sites)] });
+}
 async function saveDashboardSettings(nextValues) {
   const previous = dashboardSettings;
   const previousToastState = dashboardSettingsChangedWhileOpen;
@@ -2378,6 +2406,8 @@ $("settingsProductUpdates").addEventListener("change", event => saveDashboardSet
 $("settingsWeeklySummary").addEventListener("change", event => saveDashboardSettings({ weeklySummaryEnabled:event.target.checked }));
 async function saveBilingualReaderSettings(patch) {
   bilingualReaderSettings = { ...bilingualReaderSettings, ...patch };
+  syncBilingualReaderControls();
+  if (Object.hasOwn(patch, "readerDisabledWebsites")) renderDisabledReaderWebsiteList();
   syncBilingualPreview();
   document.querySelectorAll("[data-bilingual-translation-color]").forEach(button => button.classList.toggle("is-selected", button.dataset.bilingualTranslationColor === (bilingualReaderSettings.translationTextColor || "default")));
   $("bilingualTranslationCustomColor").parentElement.classList.toggle("is-custom-selected", bilingualReaderSettings.translationTextColor === "custom");
