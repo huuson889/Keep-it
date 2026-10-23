@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[] };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:[] };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -290,8 +290,15 @@ const FLAG_SVGS = {
     document.documentElement.style.setProperty("--lhn-br-translation-color", getTranslationColor());
     document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, card.parentElement));
     applyWebFont();
-    if (!settings.enableTTS) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); }
+    if (!settings.enableTTS || isReaderDisabledOnThisWebsite()) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); bar.classList.remove("lhn-show"); }
     else updateSpeakers();
+  }
+  function isReaderDisabledOnThisWebsite() {
+    const hostname = location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+    return (Array.isArray(settings.readerDisabledWebsites) ? settings.readerDisabledWebsites : []).some(site => {
+      const domain = String(site || "").toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+      return domain && (hostname === domain || hostname.endsWith(`.${domain}`));
+    });
   }
   async function applyWebFont() {
     const requestId = ++webFontRequestId, family = settings.webFontFamily;
@@ -646,8 +653,7 @@ const FLAG_SVGS = {
     return (clone.innerText || clone.textContent || "").trim();
   }
   function updateSpeakers() {
-    if (websiteDisabled) return;
-    if (!settings.enableTTS) return;
+    if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
     const readableBlocks = new Set(readerBlocks());
     blocks().forEach((block, index) => {
       block.dataset.lhnBilingualIndex = String(index);
@@ -771,7 +777,7 @@ const FLAG_SVGS = {
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   function startReading(fromBlock, interruptCurrent = false) {
-    if (websiteDisabled) return;
+    if (websiteDisabled || isReaderDisabledOnThisWebsite()) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
     speechDetectionRequest++;
     let nextQueue = readerBlocks(true);
