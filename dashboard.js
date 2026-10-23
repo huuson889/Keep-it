@@ -158,6 +158,7 @@ function refreshDashboardSettings() {
   renderPronunciationDictionary();
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
+  syncBilingualReaderControls();
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight !== false;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
@@ -2407,7 +2408,7 @@ $("settingsWeeklySummary").addEventListener("change", event => saveDashboardSett
 async function saveBilingualReaderSettings(patch) {
   bilingualReaderSettings = { ...bilingualReaderSettings, ...patch };
   syncBilingualReaderControls();
-  if (Object.hasOwn(patch, "readerDisabledWebsites")) renderDisabledReaderWebsiteList();
+  if (Object.hasOwn(patch, "readerDisabledWebsites")) { renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); }
   syncBilingualPreview();
   document.querySelectorAll("[data-bilingual-translation-color]").forEach(button => button.classList.toggle("is-selected", button.dataset.bilingualTranslationColor === (bilingualReaderSettings.translationTextColor || "default")));
   $("bilingualTranslationCustomColor").parentElement.classList.toggle("is-custom-selected", bilingualReaderSettings.translationTextColor === "custom");
