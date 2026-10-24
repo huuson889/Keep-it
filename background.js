@@ -325,21 +325,12 @@ async function bilingualFetch(url) {
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 2500);
   try { return await fetch(url, { signal:controller.signal }); } finally { clearTimeout(timer); }
 }
-async function translateBilingual(text, targetLang) {
-  await prepareBilingualCache();
+const bilingualTranslationRequests = new Map();`r`nasync function translateBilingual(text, targetLang) {
+  await LHN_CACHE.prepareBilingualCache();
   const key = `${targetLang}:${text}`;
   const pending = bilingualTranslationRequests.get(key);
   if (pending) return pending;
-  const cacheStorageKey = bilingualCacheStorageKey(key);
-  const cacheData = await browser.storage.local.get(cacheStorageKey), cached = cacheData[cacheStorageKey];
-  const now = Date.now();
-  if (cached?.cacheKey === key && cached.expires > now && !cached.value?.fallback) {
-    if (now - bilingualCacheLastUsedAt(cached) >= BILINGUAL_CACHE_TOUCH_INTERVAL) {
-      await saveBilingualCacheEntry(cacheStorageKey, { ...cached, lastUsedAt:now, expires:now + BILINGUAL_CACHE_TTL });
-    }
-    return cached.value;
-  }
-  const pendingAfterRead = bilingualTranslationRequests.get(key);
+  const cached = await LHN_CACHE.getBilingualTranslation(key, { prepared:true });`r`n  if (cached) return cached;`r`n  const pendingAfterRead = bilingualTranslationRequests.get(key);
   if (pendingAfterRead) return pendingAfterRead;
   const request = (async () => {
     const engines = [
@@ -381,7 +372,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
   if (message.type === "DETECT_READ_LANGUAGE") return detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
-  if (message.type === "BILINGUAL_CLEAR_CACHE") return clearBilingualCache();
+  if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);

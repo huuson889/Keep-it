@@ -50,7 +50,6 @@
         "messaging.js",
         "config.js",
         "settings.js",
-        "cache.js",
         "languages.js",
         "web-highlighter.js",
         "study-translation.js",
