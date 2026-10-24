@@ -347,9 +347,25 @@ const FLAG_SVGS = {
     utterance=null; cancelGoogle(); speakAfterCancel(remainder);
   }
   function normalizeSpeedStep(value) { const step = Number(value); return Number.isFinite(step) && step > 0 ? Math.max(0.01, Math.min(2.5, Math.round(step * 100) / 100)) : DEFAULTS.speechSpeedStep; }
+  // Tốc độ đọc dùng chung với Dashboard Settings qua lhnSettings.speechRate; speechSpeed giữ làm bản sao cho các nhánh đọc hiện có.
+  function writeSharedSpeechRate(rate) {
+    dashboardShortcuts = { ...dashboardShortcuts, speechRate:rate };
+    browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), speechRate:rate } })).catch(() => {});
+  }
+  function applySharedSpeechRate(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    const rate = Math.max(.5, Math.min(3, Math.round(numeric * 100) / 100));
+    if (rate === settings.speechSpeed) return;
+    settings.speechSpeed = rate;
+    bar.querySelector(".lhn-br-range").value = rate;
+    bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate);
+    if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading && !readingPaused) restartCurrentSpeech();
+    syncToolbar();
+  }
   function setSpeechSpeed(value) {
     const rate=Math.max(.5,Math.min(3,Math.round(value*100)/100));
-    saveSpeechSetting({speechSpeed:rate}); bar.querySelector(".lhn-br-range").value=rate; bar.querySelector("[data-speed-value]").textContent=formatSpeed(rate); syncToolbar();
+    saveSpeechSetting({speechSpeed:rate}); writeSharedSpeechRate(rate); bar.querySelector(".lhn-br-range").value=rate; bar.querySelector("[data-speed-value]").textContent=formatSpeed(rate); syncToolbar();
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
   }
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
@@ -1051,6 +1067,7 @@ const FLAG_SVGS = {
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
+      applySharedSpeechRate(dashboardShortcuts.speechRate);
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
@@ -1074,6 +1091,18 @@ const FLAG_SVGS = {
     const savedReaderSites = Array.isArray(savedReaderSettings.readerDisabledWebsites) ? savedReaderSettings.readerDisabledWebsites : [];
     const seedReaderSites = savedReaderSettings.readerDefaultSitesSeeded !== true;
     const mergedReaderSettings = { ...DEFAULTS, ...savedReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...(globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || []), ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
+    // Đồng bộ tốc độ với lhnSettings.speechRate. Lần đầu: giữ tốc độ người dùng đã đặt ở Reader
+    // nếu Dashboard còn ở mặc định 1.0, tránh ghi đè lựa chọn cũ.
+    const sharedSpeechRate = Number(data[DISPLAY_SETTINGS_KEY]?.speechRate);
+    const readerSpeechRate = Number(savedReaderSettings.speechSpeed);
+    let nextSpeechSpeed = Number.isFinite(sharedSpeechRate) ? sharedSpeechRate : readerSpeechRate;
+    if (savedReaderSettings.speechSpeedSynced !== true) {
+      if (Number.isFinite(readerSpeechRate) && readerSpeechRate !== 1 && (!Number.isFinite(sharedSpeechRate) || sharedSpeechRate === 1)) nextSpeechSpeed = readerSpeechRate;
+      mergedReaderSettings.speechSpeedSynced = true;
+      browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
+      if (Number.isFinite(nextSpeechSpeed)) writeSharedSpeechRate(Math.max(.5, Math.min(3, nextSpeechSpeed)));
+    }
+    if (Number.isFinite(nextSpeechSpeed)) mergedReaderSettings.speechSpeed = Math.max(.5, Math.min(3, Math.round(nextSpeechSpeed * 100) / 100));
     if (seedReaderSites) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
     applySettings({ ...mergedReaderSettings, ...voiceSettings });
     renderPopupText();

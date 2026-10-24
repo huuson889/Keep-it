@@ -157,12 +157,13 @@ function refreshDashboardSettings() {
   $("settingsAutoSpeakSelectedText").checked = dashboardSettings.autoSpeakSelectedText !== false;
   $("settingsSpeechVoice").value = (dashboardSettings.voiceMode ?? dashboardSettings.speechVoice) === "browser" ? "browser" : "google";
   const storedSpeechRate = Number(dashboardSettings.speechRate);
-  const speechRate = Number.isFinite(storedSpeechRate) ? Math.min(2, Math.max(.5, storedSpeechRate)) : 1;
+  // Giá trị dùng chung có thể tới 3 khi đặt từ thanh đọc Reader; control của Dashboard vẫn giới hạn 0.5–2.
+  const speechRate = Number.isFinite(storedSpeechRate) ? Math.min(3, Math.max(.5, storedSpeechRate)) : 1;
   const globalSpeechRateLabel = t("globalSpeechRate");
   $("settingsSpeechRate").setAttribute("aria-label", globalSpeechRateLabel);
   $("settingsSpeechRateValue").setAttribute("aria-label", globalSpeechRateLabel);
-  $("settingsSpeechRate").value = String(speechRate);
-  $("settingsSpeechRateValue").value = speechRate.toFixed(1);
+  $("settingsSpeechRate").value = String(Math.min(2, speechRate));
+  $("settingsSpeechRateValue").value = Number.isInteger(speechRate * 10) ? speechRate.toFixed(1) : String(Math.round(speechRate * 100) / 100);
   const useLanguageSpeechRate = dashboardSettings.useLanguageSpeechRate ?? (CONFIG.DEFAULT_SETTINGS.useLanguageSpeechRate === true);
   const speechRateByLanguage = dashboardSettings.speechRateByLanguage && typeof dashboardSettings.speechRateByLanguage === "object" ? dashboardSettings.speechRateByLanguage : {};
   const hasCustomSpeechRateByLanguage = dashboardSettings.hasCustomSpeechRateByLanguage && typeof dashboardSettings.hasCustomSpeechRateByLanguage === "object" ? dashboardSettings.hasCustomSpeechRateByLanguage : {};

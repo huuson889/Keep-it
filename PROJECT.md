@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.585; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.586; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -9,6 +9,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+22. [Kiểm tra] Đồng bộ tốc độ Reader ↔ Dashboard Settings (v3.4.586): đổi trên thanh đọc rồi mở Settings phải thấy đúng giá trị; đổi ở Settings khi đang đọc phải đổi tốc độ ngay; giá trị Reader đã lưu trước khi nâng cấp không bị ghi đè. Chưa có kết quả trên Chrome/Firefox.
 21. [Kiểm tra] Alt+A và Alt+D dùng chung cache Reader (v3.4.585): dịch một đoạn bằng Alt+D rồi Alt+A (và ngược lại) không phát sinh request dịch mới; số mục `lhnBilingualReaderTranslationCache:v2:item:` không tăng thêm cho cùng đoạn. Chưa có kết quả trên Chrome/Firefox.
 20. [Kiểm tra] Auto sentence note khi Bilingual Reader mở (fix v3.4.584): chọn chữ trong đoạn gốc thì câu tự động chỉ có tiếng gốc; chọn chữ trong card bản dịch thì câu tự động trống. Chưa có kết quả trên Chrome/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
@@ -102,6 +103,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.586 | DeepSeek sửa:**
+
+- Đồng bộ tốc độ đọc giữa thanh đọc Reader và Dashboard Settings: Reader chỉ ghi `lhnBilingualReaderSettings.speechSpeed`, Dashboard đọc/ghi `lhnSettings.speechRate`, nên sửa bên nào cũng chỉ bên đó biết. Thêm `writeSharedSpeechRate` (ghi `speechRate` mỗi lần đổi tốc độ ở thanh đọc), `applySharedSpeechRate` (nhận `speechRate` khi storage đổi: cập nhật slider, nhãn và `playbackRate`/đọc lại đoạn), và đồng bộ lúc tải trang kèm migration một lần `speechSpeedSynced` để không ghi đè tốc độ người dùng đã đặt ở Reader.
+- Dashboard hiển thị đúng giá trị dùng chung (tới 3) trong khi control vẫn giới hạn 0.5–2; không đổi HTML/UI.
+- File: `js/reader/bilingual-reader.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file JS đạt; chưa kiểm thử trên Chrome/Firefox.
+- Lưu ý: `speechRate` là tốc độ dùng chung nên đổi trên thanh đọc cũng đổi tốc độ đọc to của popup và Dashboard.
+
 **2026-10-25 | v3.4.585 | DeepSeek sửa:**
 
 - `Alt+A`/lazy và `Alt+D` trước đây lấy text khác nhau cho cùng một đoạn: `visibleReaderText` (chuẩn hóa `\s+` → khoảng trắng) so với `clone.innerText` (giữ `\n`), nên sinh 2 khóa cache khác nhau và gọi dịch 2 lần. Đổi `rawText` về một đường dùng `visibleReaderText` cho cả hai, nên hai phím dùng chung cache Reader.
