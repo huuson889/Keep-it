@@ -325,12 +325,15 @@ async function bilingualFetch(url) {
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 2500);
   try { return await fetch(url, { signal:controller.signal }); } finally { clearTimeout(timer); }
 }
-const bilingualTranslationRequests = new Map();`r`nasync function translateBilingual(text, targetLang) {
+const bilingualTranslationRequests = new Map();
+async function translateBilingual(text, targetLang) {
   await LHN_CACHE.prepareBilingualCache();
   const key = `${targetLang}:${text}`;
   const pending = bilingualTranslationRequests.get(key);
   if (pending) return pending;
-  const cached = await LHN_CACHE.getBilingualTranslation(key, { prepared:true });`r`n  if (cached) return cached;`r`n  const pendingAfterRead = bilingualTranslationRequests.get(key);
+  const cached = await LHN_CACHE.getBilingualTranslation(key, { prepared:true });
+  if (cached) return cached;
+  const pendingAfterRead = bilingualTranslationRequests.get(key);
   if (pendingAfterRead) return pendingAfterRead;
   const request = (async () => {
     const engines = [
