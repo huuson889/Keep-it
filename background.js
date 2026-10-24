@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("browser-polyfill.js", "messaging.js", "error-logger.js", "config.js", "settings.js", "cache.js", "translate.js", "usage-limits.js");
+  importScripts("browser-polyfill.js", "messaging.js", "error-logger.js", "config.js", "settings.js", "cache.js", "translate.js", "usage-limits.js", "annotations.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
