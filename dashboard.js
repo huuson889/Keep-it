@@ -1296,7 +1296,7 @@ function downloadExport(format, items) {
 }
 async function downloadJsonExport(pageUrl = null) {
   const stamp = new Date().toISOString().slice(0, 10), exportedAt = new Date().toISOString();
-  const parts = [`{"format":"local-highlight-notes","version":1,"exportedAt":${JSON.stringify(exportedAt)},"annotations":[`];
+  const parts = [LHN_BACKUP.createJsonHeader(exportedAt)];
   const pageKeys = new Set(), exportedFavoriteNoteIds = []; let after = null, first = true;
   do {
     const batch = await LHN_MESSAGING.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE, url:pageUrl });
@@ -1310,7 +1310,7 @@ async function downloadJsonExport(pageUrl = null) {
     after = batch.nextAfter;
   } while (true);
   const exportedFavorites = favorites.filter(key => pageKeys.has(key));
-  parts.push(`],"favorites":${JSON.stringify(exportedFavorites)},"favoriteNoteIds":${JSON.stringify(exportedFavoriteNoteIds)}}`);
+  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds));
   const blob = new Blob(parts, { type:"application/json" }), blobUrl = URL.createObjectURL(blob), anchor = document.createElement("a");
   anchor.href = blobUrl; anchor.download = `highlight-notes-${stamp}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(blobUrl), 1200); toast(t("exportStarted"));
 }
@@ -2642,15 +2642,16 @@ $("profileImportJson").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files?.[0]; if (!file) return;
   try {
-    const parsed = JSON.parse(await file.text()), items = Array.isArray(parsed) ? parsed : parsed.annotations;
-    if (!Array.isArray(items)) throw new Error(t("invalidImport"));
+    const parsed = JSON.parse(await file.text()), payload = LHN_BACKUP.parseImportPayload(parsed);
+    if (!payload) throw new Error(t("invalidImport"));
+    const items = payload.items;
     const result = await LHN_MESSAGING.sendMessage({ type:"IMPORT", items, origin:DASHBOARD_INSTANCE_ID });
-    if (!Array.isArray(parsed) && Array.isArray(parsed.favorites)) {
-      favorites = [...new Set([...favorites, ...parsed.favorites.filter(value => typeof value === "string")])];
+    if (!payload.isLegacyArray && Array.isArray(payload.favorites)) {
+      favorites = [...new Set([...favorites, ...payload.favorites.filter(value => typeof value === "string")])];
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites });
     }
-    if (!Array.isArray(parsed) && Array.isArray(parsed.favoriteNoteIds)) {
-      favoriteNoteIds = new Set([...favoriteNoteIds, ...parsed.favoriteNoteIds.filter(value => typeof value === "string")]);
+    if (!payload.isLegacyArray && Array.isArray(payload.favoriteNoteIds)) {
+      favoriteNoteIds = new Set([...favoriteNoteIds, ...payload.favoriteNoteIds.filter(value => typeof value === "string")]);
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] });
     }
     await load(); toast(t("importedCount", { count:result.imported })); closeMenus();

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.577; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
+- Version hiện tại: v3.4.578; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.577: `node --check` 30/30 JS, manifest/HTML script paths hợp lệ, mock Shortcut mapping đạt; `git diff --check` đạt; ZIP 67 mục có manifest gốc và shortcuts.js. Chưa kiểm thử trình duyệt. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -48,6 +48,13 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.578 | Codex sửa:**
+
+- Bước 4 — Backup: tách nhận dạng JSON nhập/xuất và phần đóng gói favorites sang `backup.js` (`LHN_BACKUP`); Dashboard vẫn giữ thao tác file và thông báo hiện có.
+- File: backup.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, script paths, mock JSON round trip và ZIP; chưa kiểm thử trình duyệt.
+- Tiếp theo: tiếp tục Library, Sidebar, Account và Note Composer.
+
 **2026-10-24 | v3.4.577 | Codex sửa:**
 
 - Bước 1 — Shortcuts: dùng chung chuẩn hóa phím sự kiện trong `shortcuts.js` (`LHN_SHORTCUTS`) giữa content và Dashboard shortcut settings; không đổi mapping, nhãn hay xử lý phím flashcard.

@@ -104,6 +104,8 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `languages.js`: English, Vietnamese, and Korean strings
 - `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
 
+- `backup.js`: JSON import/export envelope helpers
+
 ## Development
 
 - There is no build step: the folder is the extension.
