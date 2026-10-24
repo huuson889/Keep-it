@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.592; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.593; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -104,6 +104,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.593 | DeepSeek sửa:**
+
+- Tắt "Read translation with source" giữa lúc đang đọc giờ có hiệu lực ngay: nếu đang đọc bản dịch của đoạn hiện tại thì `skipBilingualSegment()` cắt audio bản dịch (`cancelGoogle`), bỏ phần còn lại và sang đoạn kế; nếu đang đọc bản gốc mà `then` đã gắn sẵn từ đầu đoạn thì chặn không đọc bản dịch nữa.
+- Sửa phụ: khi resume mà không còn phần đọc dở thì `speakAfterCancel(null)` để đọc đoạn kế, tránh đọc chuỗi rỗng.
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
+- Lưu ý: với giọng trình duyệt, bản dịch được ghép chung vào text của đoạn nên tắt giữa đoạn gốc chưa cắt được phần đã ghép; cần xử lý riêng nếu người dùng cần.
+
 **2026-10-25 | v3.4.592 | DeepSeek sửa:**
 
 - Sửa lỗi bật "Read translation with source" giữa lúc đang đọc: đoạn đang đọc vẫn chỉ đọc bản gốc vì danh sách đọc (`readSegmentsFor`) được chốt lúc bắt đầu đoạn. Thêm `pendingTranslationFor(block)` kiểm tra lại ngay khi đoạn gốc đọc xong, cho cả nhánh Google TTS và giọng trình duyệt: có bản dịch thì đọc liền rồi mới sang đoạn kế.

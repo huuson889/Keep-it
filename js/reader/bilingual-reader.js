@@ -172,7 +172,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-parabtn]").addEventListener("change", event => saveSpeechSetting({ speakerIconVisibility:event.target.checked ? "always" : "hover" }));
   
   bar.querySelector("[data-autolang]").addEventListener("change", event => saveSpeechSetting({ autoDetectVoice:event.target.checked }));
-  bar.querySelector("[data-readtranslation]").addEventListener("change", event => { saveSpeechSetting({ readTranslation:event.target.checked }); if (event.target.checked) notifyReadTranslationOn(); });
+  bar.querySelector("[data-readtranslation]").addEventListener("change", event => { const enabled = event.target.checked; saveSpeechSetting({ readTranslation:enabled }); if (enabled) notifyReadTranslationOn(); else skipBilingualSegment(); });
   bar.querySelector("[data-speed-step]").addEventListener("change", event => { const value = normalizeSpeedStep(event.target.value); event.target.value = value; saveSpeechSetting({ speechSpeedStep:value }); renderPopupText(); });
   bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
   bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
@@ -864,7 +864,7 @@ const FLAG_SVGS = {
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) { queueIndex++; speakNext(); } return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) { queueIndex++; speakNext(); } };
     readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
@@ -971,6 +971,19 @@ const FLAG_SVGS = {
     if (!translated) return null;
     return { text:translated, lang:card.dataset.targetLang || displayLang };
   }
+  // Tắt tuỳ chọn khi đang đọc bản dịch của đoạn hiện tại: cắt ngay phần bản dịch, không đọc tiếp.
+  function skipBilingualSegment() {
+    if (!reading || readingSegment?.translation !== true) return;
+    speechDetectionRequest++;
+    utterance = null;
+    const wasPaused = readingPaused;
+    cancelGoogle();
+    resumeText = "";
+    readingSegment = null; lastAppliedSegmentRate = null;
+    queueIndex = Math.min(queue.length, queueIndex + 1);
+    if (wasPaused) { syncToolbar(); return; }
+    speakAfterCancel();
+  }
   function readTextFor(block) {
     const source = rawText(block, true);
     const card = block.querySelector(":scope > .lhn-bilingual-card");
@@ -1066,7 +1079,7 @@ const FLAG_SVGS = {
     } else if (readingPaused) {
       readingPaused = false;
       if (googleToken) { syncPauseShortcutState(); syncToolbar(); resumeGoogle(); }
-      else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining); }
+      else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining || null); }
       event.preventDefault();
     } else {
       syncPauseShortcutState(); event.preventDefault();
