@@ -64,6 +64,7 @@
         "js/core/shortcuts.js",
         "js/content/sidebar.js",
         "js/content/note-composer.js",
+        "js/content/annotation-restore.js",
         "js/content/content.js",
         "vendor/readability/Readability.js",
         "vendor/readability/Readability-readerable.js",
