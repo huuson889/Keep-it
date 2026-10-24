@@ -17,7 +17,7 @@ let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
 const annotationById = new Map();
 const annotationPositionById = new Map();
-const annotationMetadata = new WeakMap();
+const LIBRARY = globalThis.LHN_LIBRARY.create({ unknownSite:() => t("unknownWebsite") });
 let filterOptionsCache = null;
 let studyQueue = [], studyQueueHead = 0, studyHistory = [], studyReviewed = 0, studyRemembered = 0, studyAutoSpeak = true, studySpeechToken = 0, studyPlayAllSources = false, studySourceKey = null, studySpeakAfterSettingsClose = false, studyTypedAnswer = "", studyTypedAnswerForId = null, studySettingsTab = "study";
 let annotationsChangedDuringStudy = false;
@@ -636,7 +636,7 @@ function appendContextSentence(host, sentence, quote) {
   const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
   host.append(document.createTextNode(text.slice(at + length)));
 }
-function searchRank(item, query) { return LHN_SEARCH.rank(annotationMeta(item).searchFields, query); }
+function searchRank(item, query) { return LHN_SEARCH.rank(LIBRARY.searchFields(item), query); }
 function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
@@ -674,24 +674,9 @@ function toast(message) {
     if (activeToastElement === el) activeToastElement = null;
   }, CONFIG.TIMINGS.TOAST_MS);
 }
-function displayWebsiteName(host) { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; }
-function annotationMeta(item) {
-  if (!item || typeof item !== "object") return { site:t("unknownWebsite"), tags:[], searchFields:[] };
-  const cached = annotationMetadata.get(item);
-  if (cached) return cached;
-  let host;
-  try { host = new URL(item.url).hostname; } catch { host = item.hostname || item.url || t("unknownWebsite"); }
-  const raw = Array.isArray(item?.tags) ? item.tags : typeof item?.tags === "string" ? item.tags.split(",") : [];
-  const seen = new Set();
-  const tags = raw.map(tag => String(tag || "").trim()).filter(tag => { const key = tag.toLocaleLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
-  const site = displayWebsiteName(host);
-  const searchFields = [item.quote, item.note, item.contextNote, tags.join(" "), item.title, item.url, site].map(value => String(value || "").toLocaleLowerCase());
-  const metadata = { site, tags, searchFields };
-  annotationMetadata.set(item, metadata);
-  return metadata;
-}
-function siteOf(item) { return annotationMeta(item).site; }
-function tagsOf(item) { return annotationMeta(item).tags; }
+function annotationMeta(item) { return LIBRARY.metadata(item); }
+function siteOf(item) { return LIBRARY.siteOf(item); }
+function tagsOf(item) { return LIBRARY.tagsOf(item); }
 function parseTags(value) { return tagsOf({ tags: String(value || "").split(",") }); }
 function tagsEqual(a, b) { return JSON.stringify(tagsOf({ tags: a })) === JSON.stringify(tagsOf({ tags: b })); }
 function setupTagEditor(host, initialTags = []) {
@@ -753,7 +738,7 @@ function matchesDate(item, cutoff) {
   const created = dateValue(item, "createdAt");
   return created > 0 && created >= cutoff;
 }
-function pageKey(item) { return String(item.url || item.hostname || item.title || "unknown"); }
+function pageKey(item) { return globalThis.LHN_LIBRARY.pageKey ? globalThis.LHN_LIBRARY.pageKey(item) : String(item.url || item.hostname || item.title || "unknown"); }
 function dateValue(item, field) { const n = Number(item?.[field] || 0); return Number.isFinite(n) ? n : 0; }
 const incrementalListObservers = new WeakMap();
 function renderIncrementalList(host, items, createNode, { initial, batch } = {}) {
@@ -1082,35 +1067,11 @@ function dashboardFilterOptions() {
   return filterOptionsCache;
 }
 function buildPages(items) {
-  const groups = new Map();
-  for (const a of items) {
-    const key = pageKey(a);
-    if (!groups.has(key)) groups.set(key, { key, url: a.url || "", title: a.title || siteOf(a), site: siteOf(a), thumbnailUrl: a.thumbnailUrl || "", items: [] });
-    const g = groups.get(key); g.items.push(a);
-    g.searchRank = Math.min(g.searchRank ?? Number.MAX_SAFE_INTEGER, searchRank(a, $("search").value.trim().toLocaleLowerCase()));
-    if ((!g.title || g.title === g.site) && a.title) g.title = a.title;
-    if (!g.thumbnailUrl && a.thumbnailUrl) g.thumbnailUrl = a.thumbnailUrl;
-  }
-  const pages = [...groups.values()].map(g => {
-    // Reductions avoid spreading potentially large annotation arrays into Math.min/max.
-    g.createdAt = g.items.reduce((earliest, item) => {
-      const createdAt = dateValue(item, "createdAt");
-      return createdAt > 0 && createdAt < earliest ? createdAt : earliest;
-    }, Infinity);
-    if (!Number.isFinite(g.createdAt)) g.createdAt = 0;
-    g.updatedAt = g.items.reduce((latest, item) => Math.max(latest, dateValue(item, "updatedAt") || dateValue(item, "createdAt")), 0);
-    g.colors = [...new Set(g.items.map(a => CONFIG.normalizeColor(a.color)))];
-    g.favorite = favorites.includes(g.key);
-    return g;
+  return LHN_LIBRARY.groupPages(items, {
+    pageKey, siteOf, searchRank, searchQuery:$('search').value.trim().toLocaleLowerCase(),
+    normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
   });
-  const sort = $("sortBy").value;
-  pages.sort((a, b) => {
-    const relevance = $("search").value.trim() ? a.searchRank - b.searchRank : 0;
-    return relevance || (sort === "count" ? b.items.length - a.items.length || b.updatedAt - a.updatedAt : sort === "edited" ? b.updatedAt - a.updatedAt || b.createdAt - a.createdAt : b.createdAt - a.createdAt || b.updatedAt - a.updatedAt);
-  });
-  return pages.filter(p => !favoritesOnly || p.favorite);
-}
-function render({ preserveSources = false } = {}) {
+}function render({ preserveSources = false } = {}) {
   renderProfileSidebar();
   const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
   const { sites, tags } = dashboardFilterOptions();

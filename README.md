@@ -106,6 +106,8 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 - `backup.js`: JSON import/export envelope helpers
 
+- `library.js`: annotation metadata, source grouping and ordering
+
 ## Development
 
 - There is no build step: the folder is the extension.
