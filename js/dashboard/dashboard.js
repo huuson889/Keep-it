@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const I18N = globalThis.LHN_LANGUAGES;
+const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
@@ -75,7 +75,7 @@ function playToolbarActionEffect(button, event, color, particleShape) {
   }
 }
 
-function t(key, vars = {}, language = currentLang) { return I18N.t(key, vars, language); }
+function t(key, vars = {}, language = currentLang) { return LANGUAGES.t(key, vars, language); }
 const disabledTooltipTitles = new WeakMap();
 function setDisabledTooltip(control, anchor = control, reason = "") {
   if (!control || !anchor) return;
@@ -105,7 +105,7 @@ function renderPronunciationDictionary() {
   const container = $("pronunciationLanguageCards");
   if (!container) return;
   const dictionary = dashboardSettings.customPronunciationDictionary && typeof dashboardSettings.customPronunciationDictionary === "object" ? dashboardSettings.customPronunciationDictionary : {};
-  const supportedLanguages = I18N.LANGS.map(language => ({ ...language, speechCode:{ en:"en-US", vi:"vi-VN", ko:"ko-KR" }[language.code] }));
+  const supportedLanguages = LANGUAGES.LANGS.map(language => ({ ...language, speechCode:{ en:"en-US", vi:"vi-VN", ko:"ko-KR" }[language.code] }));
   const languageSelect = $("pronunciationLanguageSelect");
   if (languageSelect && !languageSelect.options.length) for (const language of supportedLanguages) { const option = document.createElement("option"); option.value = language.speechCode; option.textContent = `${language.flag} ${language.name} — ${language.native}`; languageSelect.append(option); }
   if (languageSelect) for (const option of languageSelect.options) option.disabled = Object.hasOwn(dictionary, option.value);
@@ -135,12 +135,12 @@ function renderPronunciationDictionary() {
     card.append(heading, form, list); container.append(card);
   }
 }
-const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:I18N, t, escapeHtml });
+const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
 SETTINGS_UI.initLanguagePicker();
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
-  if (!select.options.length) for (const language of I18N.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
+  if (!select.options.length) for (const language of LANGUAGES.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
   select.value = currentLang;
   syncSettingsLanguagePicker();
   renderPronunciationDictionary();
@@ -627,7 +627,7 @@ function populateStudyLanguageOptions(select, autoValue, selectedValue) {
   automatic.value = autoValue;
   automatic.textContent = `🌐 ${t("autoLanguage")}`;
   fragment.appendChild(automatic);
-  for (const language of I18N.LANGS) {
+  for (const language of LANGUAGES.LANGS) {
     const option = document.createElement("option");
     option.value = language.code;
     option.textContent = `${language.flag} ${language.name} — ${language.native}`;
@@ -659,7 +659,7 @@ function getEffectiveFlashcardTranslationSettings() {
 }
 function getEffectiveFlashcardSpeechSettings() {
   if (flashcardTranslateSettings.useDashboardSpeechSettings) return dashboardSettings;
-  const displayLanguage = I18N.languageFor(dashboardSettings);
+  const displayLanguage = LANGUAGES.languageFor(dashboardSettings);
   const languageRates = flashcardTranslateSettings.flashcardSpeechRateByLanguage && typeof flashcardTranslateSettings.flashcardSpeechRateByLanguage === "object" ? flashcardTranslateSettings.flashcardSpeechRateByLanguage : {};
   return {
     ...flashcardTranslateSettings,
@@ -817,7 +817,7 @@ async function load() {
   }
   demoProfile = settingsData[DEMO_PROFILE_KEY] && typeof settingsData[DEMO_PROFILE_KEY] === "object" ? settingsData[DEMO_PROFILE_KEY] : null;
   syncDashboardTheme();
-  currentLang = I18N.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
+  currentLang = LANGUAGES.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
   favoriteNoteIds = new Set(Array.isArray(settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES] : []);
   syncNoteFavoriteFilters();
   applyTranslations();
@@ -1246,7 +1246,7 @@ function stopStudyAudio() {
   if (objectUrl) URL.revokeObjectURL(objectUrl);
 }
 function getSpeechRate(speechSettings = dashboardSettings, spokenLanguage) {
-  const displayLanguage = I18N.languageFor(speechSettings);
+  const displayLanguage = LANGUAGES.languageFor(speechSettings);
   const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
   const flashcardDisplayLanguageRate = speechSettings.useDashboardSpeechSettings === false && speechLanguage === displayLanguage
     ? (speechSettings.flashcardSpeechRateByLanguage?.[displayLanguage] ?? speechSettings.flashcardDashboardDisplayRate)
@@ -2234,7 +2234,7 @@ $("resetGlobalSpeechRate").addEventListener("click", () => {
 $("settingsUseLanguageSpeechRate").addEventListener("change", event => {
   if (event.target.checked) {
     const inheritedRate = normalizeLanguageSpeechRate($("settingsLanguageSpeechRate").value);
-    const inheritedSpeechRateByLanguage = Object.fromEntries(I18N.LANGS.map(language => [language.code, inheritedRate]));
+    const inheritedSpeechRateByLanguage = Object.fromEntries(LANGUAGES.LANGS.map(language => [language.code, inheritedRate]));
     saveDashboardSettings({ useLanguageSpeechRate:true, inheritedSpeechRateByLanguage });
   } else {
     saveDashboardSettings({ useLanguageSpeechRate:false, hasCustomSpeechRateByLanguage:{}, inheritedSpeechRateByLanguage:{} });
@@ -2479,7 +2479,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.SETTINGS]) {
     const previousLanguage = currentLang;
     dashboardSettings = changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {};
-    currentLang = I18N.languageFor(dashboardSettings);
+    currentLang = LANGUAGES.languageFor(dashboardSettings);
     syncDashboardTheme();
     if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
     else refreshDashboardSettings();

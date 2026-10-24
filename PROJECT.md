@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.590; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.591; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -104,6 +104,12 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.591 | DeepSeek sửa:**
+
+- Đổi alias `I18N` → `LANGUAGES` trong `dashboard.js` và `popup.js` cho khớp tên module `js/core/languages.js` (chỉ đổi tên biến, không đổi hành vi). Giữ nguyên thuộc tính DOM `data-i18n`/`data-lhn-i18n` vì chúng là hợp đồng với HTML và không phải tên module.
+- File: `js/dashboard/dashboard.js`, `js/popup/popup.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file đạt; rà `\bI18N\b` trong `js/` chỉ còn thuộc tính `data-i18n`; chưa kiểm thử trên Chrome/Firefox.
+
 **2026-10-25 | v3.4.590 | DeepSeek sửa:**
 
 - Thêm tuỳ chọn "Read translation with source" vào popover Settings của thanh đọc (`[data-readtranslation]`), dùng chung khóa `readTranslation` với Dashboard > Bilingual Reader; nhãn lấy từ khóa i18n có sẵn `bilingualReadTranslation` (en/vi/ko) nên không phát sinh chuỗi mới; trạng thái checkbox đồng bộ trong `syncToolbar`; bật thì hiện toast như khi bắt đầu đọc.
