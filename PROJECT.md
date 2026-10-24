@@ -48,6 +48,13 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.577 | Codex sửa:**
+
+- Bước 1 — Shortcuts: dùng chung chuẩn hóa phím sự kiện trong `shortcuts.js` (`LHN_SHORTCUTS`) giữa content và Dashboard shortcut settings; không đổi mapping, nhãn hay xử lý phím flashcard.
+- File: shortcuts.js, content.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, thứ tự nạp, mock phím thường/Space/arrow và ZIP; chưa kiểm thử trình duyệt.
+- Tiếp theo: tiếp tục Sidebar, Library/Backup, Account và Note Composer.
+
 **2026-10-24 | v3.4.576 | Codex sửa:**
 
 - Bước 1 — Icons: chuyển bộ đường dẫn SVG dự phòng và hàm tạo markup của Dashboard sang `icons.js` (`LHN_ICONS`); giữ nguyên thứ tự ưu tiên icon và HTML trả về.

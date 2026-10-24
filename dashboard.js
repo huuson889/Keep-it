@@ -2611,10 +2611,7 @@ function setupDashboardShortcut(id, settingKey) {
     if (event.key === "Escape") { restore(); field.blur(); return; }
     if (event.key === "Backspace") { isCapturing = false; field.value = ""; await saveDashboardSettings({ [settingKey]:"" }); field.blur(); return; }
     if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return;
-    const modifiers = []; if (event.ctrlKey) modifiers.push("Ctrl"); if (event.altKey) modifiers.push("Alt"); if (event.shiftKey) modifiers.push("Shift"); if (event.metaKey) modifiers.push("Meta");
-    const key = event.code === "Space" ? "Space" : event.key === "ArrowLeft" ? "Left" : event.key === "ArrowRight" ? "Right" : event.key === "ArrowUp" ? "Up" : event.key === "ArrowDown" ? "Down" : event.key.length === 1 ? event.key.toLocaleUpperCase() : event.key;
-    if (!modifiers.length && !["Space", "Left", "Right", "Up", "Down"].includes(key)) return;
-    const value = [...modifiers, key].join("+"); isCapturing = false;
+    const value = LHN_SHORTCUTS.fromEvent(event); isCapturing = false;
     await saveDashboardSettings({ [settingKey]:value }); field.blur();
   });
 }
