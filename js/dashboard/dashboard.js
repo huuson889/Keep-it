@@ -8,7 +8,7 @@ const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
-const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, excludeSelectors:[], readerDisabledWebsites:CONFIG.DEFAULT_READER_DISABLED_WEBSITES, readerDefaultSitesSeeded:true });
+const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:true, excludeSelectors:[], readerDisabledWebsites:CONFIG.DEFAULT_READER_DISABLED_WEBSITES, readerDefaultSitesSeeded:true });
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
@@ -738,7 +738,10 @@ async function load() {
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
   const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
   bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
-  if (seedReaderSites) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
+  // "Read translation with source" mặc định bật từ v3.4.594; bản lưu cũ đã ghi cứng false nên bật lại một lần.
+  const readTranslationDefaultNeedsOn = savedBilingualReaderSettings.readTranslationDefaultOn !== true;
+  if (readTranslationDefaultNeedsOn) bilingualReaderSettings = { ...bilingualReaderSettings, readTranslation:true, readTranslationDefaultOn:true };
+  if (seedReaderSites || readTranslationDefaultNeedsOn) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
   browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});

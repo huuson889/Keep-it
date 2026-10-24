@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:true, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_LANGUAGES?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -1009,7 +1009,6 @@ const FLAG_SVGS = {
     readTranslationToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
   }
   function startReading(fromBlock, interruptCurrent = false) {
-    if (settings.readTranslation) notifyReadTranslationOn();
     if (websiteDisabled || isReaderDisabledOnThisWebsite()) return;
     if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
     speechDetectionRequest++;
@@ -1143,7 +1142,10 @@ const FLAG_SVGS = {
       mergedReaderSettings.speechSpeedSynced = true;
     }
     if (Object.hasOwn(mergedReaderSettings, "speechSpeed")) delete mergedReaderSettings.speechSpeed;
-    if (seedReaderSites || savedReaderSettings.speechSpeedSynced !== true) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
+    // Lần đầu chạy bản mặc định-bật: các bản lưu trước đã ghi cứng readTranslation:false nên phải bật lại một lần.
+    const readTranslationDefaultNeedsOn = savedReaderSettings.readTranslationDefaultOn !== true;
+    if (readTranslationDefaultNeedsOn) { mergedReaderSettings.readTranslation = true; mergedReaderSettings.readTranslationDefaultOn = true; }
+    if (seedReaderSites || savedReaderSettings.speechSpeedSynced !== true || readTranslationDefaultNeedsOn) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
     applySettings({ ...mergedReaderSettings, ...voiceSettings });
     renderPopupText();
     systemVoices = synth?.getVoices?.() || [];
