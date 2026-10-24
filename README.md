@@ -100,7 +100,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `popup.html` / `popup.js` / `popup.css`: toolbar popup
 - `dashboard.html` / `dashboard.js` / `dashboard.css`: Dashboard
 - `config.js`: single source of truth for storage keys, default settings, and shared values
-- `i18n.js`: English, Vietnamese, and Korean strings
+- `languages.js`: English, Vietnamese, and Korean strings
 - `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
 
 ## Development

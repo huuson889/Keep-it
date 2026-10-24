@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const I18N = globalThis.LHN_I18N;
+const I18N = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });

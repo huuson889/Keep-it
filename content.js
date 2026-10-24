@@ -9,10 +9,10 @@
   const STUDY_TRANSLATION_SETTINGS_KEY = "lhnStudyTranslationSettings";
   let translationSourceLanguage = "auto";
   let panel = null, activeRange = null, selectedRange = null, selectedColor = CONFIG.DEFAULT_COLOR, activeAnnotationId = null;
-  let settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_I18N?.detectLanguage() || "en") };
-  const t = (key, vars = {}) => globalThis.LHN_I18N.t(key, vars, globalThis.LHN_I18N.languageFor(settings));
+  let settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_LANGUAGES?.detectLanguage() || "en") };
+  const t = (key, vars = {}) => globalThis.LHN_LANGUAGES.t(key, vars, globalThis.LHN_LANGUAGES.languageFor(settings));
   const getSpeechRate = spokenLanguage => {
-    const displayLanguage = globalThis.LHN_I18N?.languageFor(settings) || "en";
+    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
     const customRate = settings.useLanguageSpeechRate === true && speechLanguage === displayLanguage
       ? settings.hasCustomSpeechRateByLanguage?.[displayLanguage] === true ? settings.speechRateByLanguage?.[displayLanguage] : settings.inheritedSpeechRateByLanguage?.[displayLanguage]
@@ -106,8 +106,8 @@
       translationSourceLanguage = ["auto", "en", "vi", "ko"].includes(sourceLanguage) ? sourceLanguage : "auto";
     }
     if (area === "local" && changes[CONFIG.STORAGE_KEYS.SETTINGS]) {
-      const previousLanguage = globalThis.LHN_I18N.languageFor(settings);
-      settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_I18N?.detectLanguage() || "en"), ...(changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {}) };
+      const previousLanguage = globalThis.LHN_LANGUAGES.languageFor(settings);
+      settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_LANGUAGES?.detectLanguage() || "en"), ...(changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {}) };
       updateDefaultColorIndicators();
       const nextDisabled = isWebsiteDisabledIn(settings);
       const websiteStateChanged = nextDisabled !== websiteDisabled;
@@ -118,7 +118,7 @@
       if (settings.translationPopupEnabled === false && dictionaryPopup && !dictionaryPopup._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
       if (settings.showFullEnglishDictionary === false && dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
       syncTranslateIconAvailability();
-      if (previousLanguage !== globalThis.LHN_I18N.languageFor(settings)) refreshLocalizedUI(!websiteStateChanged);
+      if (previousLanguage !== globalThis.LHN_LANGUAGES.languageFor(settings)) refreshLocalizedUI(!websiteStateChanged);
     }
     if (area === "local" && changes[CONFIG.STORAGE_KEYS.SETTINGS] && sidebarOpen) {
       syncSidebarSettingsButtons();
@@ -403,7 +403,7 @@
     popup.dataset.word = word.toLowerCase();
     if (panel?.dataset.lhnDictionaryWord === popup.dataset.word) hideDictionaryPopupForNote(popup);
     popup._lhnAnchorRange = range;
-    let targetLanguage = globalThis.LHN_I18N?.languageFor(settings) || "en";
+    let targetLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
     if (requestId !== dictionaryRequestId) return;
     const cacheKey = `${dictionaryCachePrefix}${targetLanguage}:${word.toLowerCase()}`;
@@ -454,7 +454,7 @@
   function translationOptionsFrom(data = {}) {
     const saved = data[STUDY_TRANSLATION_SETTINGS_KEY] || {};
     const displaySettings = { ...settings, ...(data[CONFIG.STORAGE_KEYS.SETTINGS] || {}) };
-    const displayLanguage = globalThis.LHN_I18N?.languageFor(displaySettings) || "en";
+    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || "en";
     const sourceLanguage = ["auto", "en", "vi", "ko"].includes(saved.sourceLanguage) ? saved.sourceLanguage : "auto";
     translationSourceLanguage = sourceLanguage;
     const savedTarget = saved.targetLanguage || "auto";

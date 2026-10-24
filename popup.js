@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const I18N = globalThis.LHN_I18N;
+const I18N = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 CONFIG.applyHighlightColors();
 const DEFAULTS = CONFIG.DEFAULT_SETTINGS;

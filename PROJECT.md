@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.563; một codebase Manifest V3 cho Chrome và Firefox.
+- Version hiện tại: v3.4.564; một codebase Manifest V3 cho Chrome và Firefox.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận flags/dark mode và các select khác đều đúng; Dashboard Settings dùng pattern combobox của toolbar, menu căn trái và ô tìm kiếm nay rộng bằng menu. v3.4.563 chờ retest Chrome/Edge. Static checks: `node --check` 20/20 JS, manifest MV3 v3.4.563, CSS parse, ZIP 55 mục integrity/version và `git diff --check` đạt. Sandbox không có browser executable; Chromium khác chưa thử; chưa commit hoặc phát hành.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -10,7 +10,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
-18. [Kiểm thử UI theo OPT 3.2] v3.4.563 mở rộng ô tìm kiếm Language để rộng bằng menu, giữ pattern toolbar, căn trái, tìm kiếm và dark theme. Chờ user kiểm tra trên Chrome/Edge: hai mép ô/menu bằng nhau, mở/đóng, lọc/chọn/lưu và bàn phím; các Chromium khác chưa thử.
+18. [Kiểm thử UI theo OPT 3.2] v3.4.564 giữ menu Language theo pattern toolbar, đồng thời chuẩn hóa tên module Languages để rộng bằng menu, giữ pattern toolbar, căn trái, tìm kiếm và dark theme. Chờ user kiểm tra trên Chrome/Edge: hai mép ô/menu bằng nhau, mở/đóng, lọc/chọn/lưu và bàn phím; các Chromium khác chưa thử.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
 15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
 14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
@@ -47,6 +47,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.564 | Codex sửa:**
+
+- Bước 1 — Languages: đổi tên module `i18n.js` thành `languages.js`, chuyển global nội bộ sang `LHN_LANGUAGES` và cập nhật các entry point/consumer; giữ nguyên bộ EN/VI/KO và chuỗi hiển thị.
+- File: languages.js (đổi tên), manifest.json, popup.html, dashboard.html, popup.js, dashboard.js, content.js, bilingual-reader.js, README.md, PROJECT.md.
+- Kiểm tra: đang chạy kiểm tra cú pháp JS, thứ tự tải và tham chiếu module; chưa kiểm thử trên trình duyệt.
+- Tiếp theo: tiếp tục tách các module nền tảng còn gắn trong entry point; đây chưa phải hoàn tất kiến trúc 27 module.
 
 **2026-10-24 | v3.4.563 | Arena sửa:**
 

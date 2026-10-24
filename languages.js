@@ -159,7 +159,7 @@
     let value = MESSAGES[code][key] ?? MESSAGES.en[key] ?? key;
     return String(value).replace(/\{(\w+)\}/g, (_, k) => vars[k] == null ? `{${k}}` : String(vars[k]));
   }
-  globalThis.LHN_I18N = { LANGS, MESSAGES, detectLanguage, languageFor, t };
+  globalThis.LHN_LANGUAGES = { LANGS, MESSAGES, detectLanguage, languageFor, t };
 })();
       
 
