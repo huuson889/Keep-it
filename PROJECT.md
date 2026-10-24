@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.560; một codebase Manifest V3 cho Chrome và Firefox.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận cờ đúng trên Chrome/Edge/Firefox; dark mode và các select khác đều đúng. v3.4.560 chỉ bổ sung căn phải cho option list trong Dashboard Settings trên Chrome/Edge; chờ retest. Kiểm tra source: `node --check` 20/20 JS, manifest MV3 v3.4.560, ZIP 55 mục integrity/version đạt, `git diff --check`; sandbox không có browser executable. Chromium khác chưa thử; chưa commit hoặc phát hành.
+- Version hiện tại: v3.4.561; một codebase Manifest V3 cho Chrome và Firefox.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận flags/dark mode và các select khác đều đúng; Chrome/Edge Dashboard Settings menu native bỏ qua căn lề option. v3.4.561 thay menu đó bằng custom listbox căn phải, đang chờ kiểm thử thực tế. Static checks: `node --check` 20/20 JS, manifest MV3 v3.4.561, CSS parse, ZIP 55 mục integrity/version và `git diff --check` đạt. Sandbox không có browser executable; Chromium khác chưa thử; chưa commit hoặc phát hành.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -10,7 +10,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
-18. [Kiểm thử UI theo OPT 3.2] Người dùng xác nhận cờ, dark mode và các select khác đều đúng trên Chrome/Edge/Firefox; riêng menu mở của Dashboard Settings còn căn trái trên Chrome/Edge. v3.4.560 thêm text-align:right cho option; chờ retest Chrome/Edge. Các Chromium khác chưa thử.
+18. [Kiểm thử UI theo OPT 3.2] Chrome/Edge native menu bỏ qua căn lề CSS trên option. v3.4.561 thay riêng Dashboard Settings language menu bằng custom listbox căn phải, giữ native select ẩn làm nguồn giá trị/change event. Chờ user kiểm tra hiển thị, chọn/lưu và bàn phím trên Chrome/Edge; các Chromium khác chưa thử.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
 15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
 14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
@@ -47,6 +47,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-24 | v3.4.561 | Arena sửa:**
+
+- Chrome/Edge bỏ qua `text-align:right` trên `<option>` của menu native; v3.4.560 vì vậy không xử lý được dropdown đang mở. Thay riêng language picker của Dashboard Settings bằng custom listbox căn phải, hỗ trợ click/ArrowUp/Down/Home/End/Enter/Escape/Tab, focus và đóng khi click ngoài. Native `settingsLanguageSelect` được giữ ẩn làm nguồn giá trị; custom lựa chọn dispatch `change` để giữ nguyên lưu settings và đổi ngôn ngữ. Không sửa toolbar, flashcard hay các select khác.
+- File: dashboard.html, dashboard.js, dashboard.css, flags.css, manifest.json, PROJECT.md.
+- Kiểm tra: HTML/ID duy nhất, keyboard/dispatch wiring, CSS parse, node --check 20/20, git diff --check và ZIP integrity đạt. Cần người dùng test thực tế giao diện, bàn phím và lưu lựa chọn trên Chrome/Edge; sandbox không có browser executable.
 
 **2026-10-24 | v3.4.560 | Arena sửa:**
 

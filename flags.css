@@ -10,6 +10,8 @@
 /* The font face contains only flag glyphs; all ordinary option text falls back to the existing UI font. */
 html.lhn-twemoji-country-flags :is(
   #settingsLanguageSelect,
+  #settingsLanguageCurrent,
+  #settingsLanguageOptions .settings-language-picker-option,
   #settingsPopupTranslationSource,
   #settingsPopupTranslationTarget,
   #pronunciationLanguageSelect,

@@ -151,10 +151,79 @@ function renderPronunciationDictionary() {
     card.append(heading, form, list); container.append(card);
   }
 }
+function closeSettingsLanguagePicker(returnFocus = false) {
+  const button = $("settingsLanguageButton"), options = $("settingsLanguageOptions");
+  if (!button || !options) return;
+  options.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+  if (returnFocus) button.focus();
+}
+function openSettingsLanguagePicker() {
+  const button = $("settingsLanguageButton"), options = $("settingsLanguageOptions");
+  if (!button || !options) return;
+  options.hidden = false;
+  button.setAttribute("aria-expanded", "true");
+  (options.querySelector('[aria-selected="true"]') || options.querySelector('[role="option"]'))?.focus();
+}
+function chooseSettingsLanguage(languageCode) {
+  const select = $("settingsLanguageSelect");
+  if (!select) return;
+  if (select.value !== languageCode) {
+    select.value = languageCode;
+    select.dispatchEvent(new Event("change", { bubbles:true }));
+  }
+  closeSettingsLanguagePicker(true);
+}
+function renderSettingsLanguagePicker() {
+  const select = $("settingsLanguageSelect"), current = $("settingsLanguageCurrent"), options = $("settingsLanguageOptions");
+  if (!select || !current || !options) return;
+  const selected = I18N.LANGS.find(language => language.code === select.value) || I18N.LANGS[0];
+  current.textContent = `${selected.flag} ${selected.name} — ${selected.native}`;
+  options.replaceChildren();
+  for (const language of I18N.LANGS) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = `settings-language-picker-option${language.code === selected.code ? " is-selected" : ""}`;
+    option.id = `settingsLanguageOption-${language.code}`;
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(language.code === selected.code));
+    option.tabIndex = -1;
+    option.textContent = `${language.flag} ${language.name} — ${language.native}`;
+    option.addEventListener("click", () => chooseSettingsLanguage(language.code));
+    option.addEventListener("keydown", event => {
+      const items = [...options.querySelectorAll('[role="option"]')];
+      const index = items.indexOf(option);
+      let next = -1;
+      if (event.key === "ArrowDown") next = (index + 1) % items.length;
+      else if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = items.length - 1;
+      else if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker(true); return; }
+      else if (event.key === "Tab") { closeSettingsLanguagePicker(); return; }
+      if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
+    });
+    options.appendChild(option);
+  }
+}
+$("settingsLanguageButton").addEventListener("click", () => {
+  if ($("settingsLanguageOptions").hidden) openSettingsLanguagePicker();
+  else closeSettingsLanguagePicker();
+});
+$("settingsLanguageButton").addEventListener("keydown", event => {
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); openSettingsLanguagePicker(); }
+  else if (event.key === "Escape") closeSettingsLanguagePicker();
+});
+$("settingsLanguagePicker").addEventListener("focusout", event => {
+  if (!event.currentTarget.contains(event.relatedTarget)) closeSettingsLanguagePicker();
+});
+document.addEventListener("pointerdown", event => {
+  if (!event.target.closest?.("#settingsLanguagePicker")) closeSettingsLanguagePicker();
+});
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
   if (!select.options.length) for (const language of I18N.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
   select.value = currentLang;
+  renderSettingsLanguagePicker();
   renderPronunciationDictionary();
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
