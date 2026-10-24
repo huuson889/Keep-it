@@ -52,7 +52,7 @@
 
 - Account: tách lưu/xóa hồ sơ demo cục bộ sang `account.js` (`LHN_ACCOUNT`); giữ nguyên storage key, trường dữ liệu và giao diện tài khoản.
 - File: account.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, script paths, mock local save/remove và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 33/33 JS; script paths hợp lệ; mock local save/remove đạt; `git diff --check` đạt; ZIP 70 mục, manifest gốc, version 3.4.580 và account.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: Sidebar và Note Composer.
 
 **2026-10-24 | v3.4.579 | Codex sửa:**
