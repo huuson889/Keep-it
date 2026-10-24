@@ -14,7 +14,11 @@ const requestResult = request => new Promise((resolve, reject) => { request.onsu
 const transactionDone = tx => new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error || new Error("IndexedDB transaction failed")); });
 const TTS_DB_NAME = "lhn-tts-audio-cache";
 const TTS_STORE_NAME = "audio";
-let ttsDbPromise;
+const TTS_CACHE_MAX_ENTRIES = 200;
+const TTS_CACHE_TRIM_TRIGGER = 50;
+const TTS_CACHE_TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
+let ttsDbPromise, ttsCacheBudgetPromise;
+const ttsAudioRequests = new Map();
 function openTtsDatabase() {
   if (ttsDbPromise) return ttsDbPromise;
   ttsDbPromise = new Promise((resolve, reject) => {
@@ -27,17 +31,55 @@ function openTtsDatabase() {
   });
   return ttsDbPromise;
 }
+async function trimTtsAudioCache() {
+  const db = await openTtsDatabase();
+  const tx = db.transaction(TTS_STORE_NAME, "readwrite"), store = tx.objectStore(TTS_STORE_NAME);
+  const allEntries = await requestResult(store.getAll());
+  const entries = [];
+  for (const entry of allEntries) {
+    if (!entry || typeof entry.key !== "string" || !(entry.audio instanceof Blob)) { if (entry?.key) store.delete(entry.key); continue; }
+    entries.push(entry);
+  }
+  entries.sort((a, b) => (Number(a.lastUsedAt) || Number(a.cachedAt) || 0) - (Number(b.lastUsedAt) || Number(b.cachedAt) || 0));
+  for (const entry of entries.slice(0, Math.max(0, entries.length - TTS_CACHE_MAX_ENTRIES))) store.delete(entry.key);
+  await transactionDone(tx);
+}
+async function trimTtsAudioCacheIfNeeded() {
+  const db = await openTtsDatabase();
+  const count = await requestResult(db.transaction(TTS_STORE_NAME, "readonly").objectStore(TTS_STORE_NAME).count());
+  if (count > TTS_CACHE_MAX_ENTRIES + TTS_CACHE_TRIM_TRIGGER) await trimTtsAudioCache();
+}
+async function ensureTtsAudioCacheBudget() {
+  if (!ttsCacheBudgetPromise) {
+    ttsCacheBudgetPromise = trimTtsAudioCacheIfNeeded().catch(error => { ttsCacheBudgetPromise = null; throw error; });
+  }
+  return ttsCacheBudgetPromise;
+}
 async function getCachedTtsAudio(key) {
   const db = await openTtsDatabase();
-  const tx = db.transaction(TTS_STORE_NAME, "readonly");
-  const result = await requestResult(tx.objectStore(TTS_STORE_NAME).get(key));
-  return result?.audio instanceof Blob ? result.audio : null;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TTS_STORE_NAME, "readwrite"), store = tx.objectStore(TTS_STORE_NAME);
+    let audio = null;
+    const request = store.get(key);
+    request.onsuccess = () => {
+      const entry = request.result, now = Date.now();
+      if (entry?.audio instanceof Blob) {
+        audio = entry.audio;
+        const lastUsedAt = Number(entry.lastUsedAt) || Number(entry.cachedAt) || 0;
+        if (now - lastUsedAt >= TTS_CACHE_TOUCH_INTERVAL) store.put({ ...entry, lastUsedAt:now });
+      }
+    };
+    tx.oncomplete = () => resolve(audio);
+    tx.onabort = tx.onerror = () => reject(tx.error || request.error || new Error("Could not read TTS cache"));
+  });
 }
 async function cacheTtsAudio(key, audio) {
-  const db = await openTtsDatabase();
+  const db = await openTtsDatabase(), cachedAt = Date.now();
   const tx = db.transaction(TTS_STORE_NAME, "readwrite");
-  tx.objectStore(TTS_STORE_NAME).put({ key, audio, cachedAt: Date.now() });
+  tx.objectStore(TTS_STORE_NAME).put({ key, audio, cachedAt, lastUsedAt:cachedAt });
   await transactionDone(tx);
+  try { await trimTtsAudioCacheIfNeeded(); }
+  catch (error) { console.warn("TTS audio cache LRU cleanup failed", error); }
 }
 async function fetchTtsAudio(message) {
   const text = typeof message.text === "string" ? message.text.trim() : "";
@@ -45,26 +87,35 @@ async function fetchTtsAudio(message) {
   const voice = typeof message.voice === "string" ? message.voice.trim() : "";
   if (!text || !language || !voice || text.length > 500) throw new Error("Invalid or unsupported TTS request");
   const key = `${language}\n${voice}\n${text}`;
-  try {
-    const cached = await getCachedTtsAudio(key);
-    if (cached?.size) return { audioBase64: arrayBufferToBase64(await cached.arrayBuffer()), cached: true };
-  } catch (error) { console.warn("TTS cache read failed; requesting fresh audio", error); }
+  const pending = ttsAudioRequests.get(key);
+  if (pending) return pending;
+  const request = (async () => {
+    try { await ensureTtsAudioCacheBudget(); }
+    catch (error) { console.warn("TTS audio cache budget check failed", error); }
+    try {
+      const cached = await getCachedTtsAudio(key);
+      if (cached?.size) return { audioBase64: arrayBufferToBase64(await cached.arrayBuffer()), cached: true };
+    } catch (error) { console.warn("TTS cache read failed; requesting fresh audio", error); }
 
-  const usage = await USAGE_LIMITS.consume("googleTts");
-  if (!usage.allowed) throw new Error("Google TTS daily usage limit reached");
+    const usage = await USAGE_LIMITS.consume("googleTts");
+    if (!usage.allowed) throw new Error("Google TTS daily usage limit reached");
 
-  const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: language, client: "tw-ob" });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
-  let blob;
-  try {
-    const response = await fetch(`https://translate.google.com/translate_tts?${params}`, { signal: controller.signal, credentials: "omit" });
-    if (!response.ok) throw new Error(`Google TTS returned HTTP ${response.status}`);
-    blob = await response.blob();
-    if (!blob.size || (blob.type && !/^audio\//i.test(blob.type))) throw new Error("Google TTS returned no playable audio");
-  } finally { clearTimeout(timeout); }
-  try { await cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
-  return { audioBase64: arrayBufferToBase64(await blob.arrayBuffer()), cached: false };
+    const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: language, client: "tw-ob" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let blob;
+    try {
+      const response = await fetch(`https://translate.google.com/translate_tts?${params}`, { signal: controller.signal, credentials: "omit" });
+      if (!response.ok) throw new Error(`Google TTS returned HTTP ${response.status}`);
+      blob = await response.blob();
+      if (!blob.size || (blob.type && !/^audio\//i.test(blob.type))) throw new Error("Google TTS returned no playable audio");
+    } finally { clearTimeout(timeout); }
+    try { await cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
+    return { audioBase64: arrayBufferToBase64(await blob.arrayBuffer()), cached: false };
+  })();
+  ttsAudioRequests.set(key, request);
+  try { return await request; }
+  finally { if (ttsAudioRequests.get(key) === request) ttsAudioRequests.delete(key); }
 }
 function openDatabase() {
   if (dbPromise) return dbPromise;
@@ -116,8 +167,9 @@ async function getBatch({ after = null, limit = 500, url = null } = {}) {
   const db = await ensureDatabaseReady();
   const size = Math.max(1, Math.min(1000, Number(limit) || 500));
   const tx = db.transaction(STORE_NAME, "readonly"), store = tx.objectStore(STORE_NAME);
-  const source = typeof url === "string" && url ? store.index("url") : store;
-  const range = typeof url === "string" && url ? IDBKeyRange.only(url) : undefined;
+  const hasUrl = typeof url === "string" && !!url;
+  const source = hasUrl ? store.index("url") : store;
+  const range = hasUrl ? IDBKeyRange.only(url) : after !== null ? IDBKeyRange.lowerBound(String(after), true) : undefined;
   return new Promise((resolve, reject) => {
     const items = [];
     const request = source.openCursor(range);
@@ -126,7 +178,7 @@ async function getBatch({ after = null, limit = 500, url = null } = {}) {
       const cursor = event.target.result;
       if (!cursor) { resolve({ items, nextAfter: items.at(-1)?.id || after, done: true }); return; }
       const id = String(cursor.primaryKey);
-      if (after !== null && id <= String(after)) { cursor.continue(); return; }
+      if (hasUrl && after !== null && id <= String(after)) { cursor.continue(); return; }
       items.push(cursor.value);
       if (items.length >= size) { resolve({ items, nextAfter: id, done: false }); return; }
       cursor.continue();
@@ -270,34 +322,131 @@ async function openHighlight(url, id) {
   return { found: false };
 }
 const BILINGUAL_CACHE_KEY = "lhnBilingualReaderTranslationCache";
+const BILINGUAL_CACHE_PREFIX = `${BILINGUAL_CACHE_KEY}:v2:item:`;
+const BILINGUAL_CACHE_READY_KEY = `${BILINGUAL_CACHE_KEY}:v2:ready`;
+const BILINGUAL_CACHE_CLEANUP_KEY = `${BILINGUAL_CACHE_KEY}:v2:lastCleanup`;
+const BILINGUAL_CACHE_COUNT_KEY = `${BILINGUAL_CACHE_KEY}:v2:count`;
 const BILINGUAL_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+const BILINGUAL_CACHE_CLEANUP_INTERVAL = 24 * 60 * 60 * 1000;
+const BILINGUAL_CACHE_MAX_ENTRIES = 500;
+const BILINGUAL_CACHE_TRIM_TRIGGER = 50;
+const BILINGUAL_CACHE_TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
+let bilingualCachePreparation, bilingualCacheEntryCount = 0;
+let bilingualCacheWriteQueue = Promise.resolve();
+const bilingualTranslationRequests = new Map();
+function bilingualCacheStorageKey(cacheKey) {
+  let hash = 14695981039346656037n;
+  for (let index = 0; index < cacheKey.length; index++) {
+    hash ^= BigInt(cacheKey.charCodeAt(index));
+    hash = BigInt.asUintN(64, hash * 1099511628211n);
+  }
+  return `${BILINGUAL_CACHE_PREFIX}${hash.toString(16).padStart(16, "0")}`;
+}
+function bilingualCacheLastUsedAt(entry) {
+  return Number(entry?.lastUsedAt) || Number(entry?.createdAt) || (Number(entry?.expires) - BILINGUAL_CACHE_TTL) || 0;
+}
+function enqueueBilingualCacheWrite(operation) {
+  const queued = bilingualCacheWriteQueue.then(operation, operation);
+  bilingualCacheWriteQueue = queued.catch(() => {});
+  return queued;
+}
+async function pruneBilingualCache(now = Date.now()) {
+  const stored = await browser.storage.local.get(null);
+  const entries = Object.keys(stored).filter(key => key.startsWith(BILINGUAL_CACHE_PREFIX)).map(key => ({ key, entry:stored[key] }));
+  const expired = entries.filter(({ entry }) => !Number.isFinite(entry?.expires) || entry.expires <= now);
+  if (expired.length) await browser.storage.local.remove(expired.map(({ key }) => key));
+  const active = entries.filter(({ entry }) => Number.isFinite(entry?.expires) && entry.expires > now);
+  active.sort((a, b) => bilingualCacheLastUsedAt(a.entry) - bilingualCacheLastUsedAt(b.entry));
+  const evicted = active.slice(0, Math.max(0, active.length - BILINGUAL_CACHE_MAX_ENTRIES));
+  if (evicted.length) await browser.storage.local.remove(evicted.map(({ key }) => key));
+  bilingualCacheEntryCount = active.length - evicted.length;
+  await browser.storage.local.set({ [BILINGUAL_CACHE_COUNT_KEY]:bilingualCacheEntryCount });
+  return bilingualCacheEntryCount;
+}
+async function saveBilingualCacheEntry(key, entry) {
+  return enqueueBilingualCacheWrite(async () => {
+    const stored = await browser.storage.local.get([key, BILINGUAL_CACHE_COUNT_KEY]);
+    const previous = stored[key];
+    const savedCount = Number(stored[BILINGUAL_CACHE_COUNT_KEY]);
+    const count = (Number.isFinite(savedCount) ? savedCount : bilingualCacheEntryCount) + (previous ? 0 : 1);
+    await browser.storage.local.set({ [key]:entry, [BILINGUAL_CACHE_COUNT_KEY]:count });
+    bilingualCacheEntryCount = count;
+    if (count > BILINGUAL_CACHE_MAX_ENTRIES + BILINGUAL_CACHE_TRIM_TRIGGER) await pruneBilingualCache(Date.now());
+  });
+}
+async function prepareBilingualCache(now = Date.now()) {
+  if (!bilingualCachePreparation) {
+    bilingualCachePreparation = (async () => {
+      const metadata = await browser.storage.local.get([BILINGUAL_CACHE_READY_KEY, BILINGUAL_CACHE_CLEANUP_KEY, BILINGUAL_CACHE_COUNT_KEY]);
+      const ready = metadata[BILINGUAL_CACHE_READY_KEY] === true;
+      if (!ready) await browser.storage.local.remove(BILINGUAL_CACHE_KEY);
+      const lastCleanup = Number(metadata[BILINGUAL_CACHE_CLEANUP_KEY]) || 0;
+      const storedCount = Number(metadata[BILINGUAL_CACHE_COUNT_KEY]);
+      const valuesToSet = {};
+      if (!ready || now - lastCleanup >= BILINGUAL_CACHE_CLEANUP_INTERVAL || !Number.isFinite(storedCount)) {
+        await pruneBilingualCache(now);
+        valuesToSet[BILINGUAL_CACHE_CLEANUP_KEY] = now;
+      } else bilingualCacheEntryCount = storedCount;
+      if (!ready) valuesToSet[BILINGUAL_CACHE_READY_KEY] = true;
+      if (Object.keys(valuesToSet).length) await browser.storage.local.set(valuesToSet);
+    })();
+  }
+  try { await bilingualCachePreparation; }
+  catch (error) { bilingualCachePreparation = null; throw error; }
+}
+async function clearBilingualCache() {
+  return enqueueBilingualCacheWrite(async () => {
+    const stored = await browser.storage.local.get(null);
+    const cacheKeys = Object.keys(stored).filter(key => key === BILINGUAL_CACHE_KEY || key.startsWith(BILINGUAL_CACHE_PREFIX));
+    if (cacheKeys.length) await browser.storage.local.remove(cacheKeys);
+    bilingualCacheEntryCount = 0;
+    await browser.storage.local.set({ [BILINGUAL_CACHE_COUNT_KEY]:0 });
+    return { cleared:true };
+  });
+}
 async function bilingualFetch(url) {
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 2500);
   try { return await fetch(url, { signal:controller.signal }); } finally { clearTimeout(timer); }
 }
 async function translateBilingual(text, targetLang) {
-  const cacheData = await browser.storage.local.get(BILINGUAL_CACHE_KEY), cache = cacheData[BILINGUAL_CACHE_KEY] || {};
+  await prepareBilingualCache();
   const key = `${targetLang}:${text}`;
-  if (cache[key]?.expires > Date.now()) return cache[key].value;
-  const engines = [
-    async () => { const r = await bilingualFetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); const value = Array.isArray(d?.[0]) ? d[0].map(row => row?.[0] || "").join("") : ""; if (!value) throw Error(); return { translated:value, detectedLang:d?.[2] || "" }; },
-    async () => { const r = await bilingualFetch(`https://translate.googleapis.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${targetLang}&q=${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); const value = Array.isArray(d) ? (typeof d[0] === "string" ? d[0] : Array.isArray(d[0]) ? d[0].map(row => Array.isArray(row) ? row[0] || "" : "").join("") : "") : d?.sentences?.map(s => s.trans).join(""); if (!value) throw Error(); return { translated:value }; },
-    async () => { const r = await bilingualFetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect%7C${targetLang}`); if (!r.ok) throw Error(); const d = await r.json(); if (!d?.responseData?.translatedText) throw Error(); return { translated:d.responseData.translatedText, detectedLang:d.responseData.detectedLanguage || "" }; },
-    async () => { let error; for (const base of ["https://lingva.ml", "https://lingva.thedaviddelta.com"]) { try { const r = await bilingualFetch(`${base}/api/v1/auto/${targetLang}/${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); if (!d?.translation) throw Error(); return { translated:d.translation, detectedLang:d.info?.detectedSource || "" }; } catch (e) { error=e; } } throw error || Error(); }
-  ];
-  let entry;
-  try {
-    entry = await Promise.any(engines.map(async engine => {
-      const result = await engine();
-      if (!result?.translated) throw Error("Empty translation");
-      return result;
-    }));
-  } catch {}
-  if (!entry) entry = { translated:`[Translation (${targetLang.toUpperCase()})]: ${text}`, fallback:true };
-  cache[key] = { value:entry, expires:Date.now() + BILINGUAL_CACHE_TTL };
-  for (const cachedKey of Object.keys(cache)) if (cache[cachedKey]?.expires <= Date.now()) delete cache[cachedKey];
-  await browser.storage.local.set({ [BILINGUAL_CACHE_KEY]:cache });
-  return entry;
+  const pending = bilingualTranslationRequests.get(key);
+  if (pending) return pending;
+  const cacheStorageKey = bilingualCacheStorageKey(key);
+  const cacheData = await browser.storage.local.get(cacheStorageKey), cached = cacheData[cacheStorageKey];
+  const now = Date.now();
+  if (cached?.cacheKey === key && cached.expires > now && !cached.value?.fallback) {
+    if (now - bilingualCacheLastUsedAt(cached) >= BILINGUAL_CACHE_TOUCH_INTERVAL) {
+      await saveBilingualCacheEntry(cacheStorageKey, { ...cached, lastUsedAt:now, expires:now + BILINGUAL_CACHE_TTL });
+    }
+    return cached.value;
+  }
+  const pendingAfterRead = bilingualTranslationRequests.get(key);
+  if (pendingAfterRead) return pendingAfterRead;
+  const request = (async () => {
+    const engines = [
+      async () => { const r = await bilingualFetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); const value = Array.isArray(d?.[0]) ? d[0].map(row => row?.[0] || "").join("") : ""; if (!value) throw Error(); return { translated:value, detectedLang:d?.[2] || "" }; },
+      async () => { const r = await bilingualFetch(`https://translate.googleapis.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${targetLang}&q=${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); const value = Array.isArray(d) ? (typeof d[0] === "string" ? d[0] : Array.isArray(d[0]) ? d[0].map(row => Array.isArray(row) ? row[0] || "" : "").join("") : "") : d?.sentences?.map(s => s.trans).join(""); if (!value) throw Error(); return { translated:value }; },
+      async () => { const r = await bilingualFetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect%7C${targetLang}`); if (!r.ok) throw Error(); const d = await r.json(); if (!d?.responseData?.translatedText) throw Error(); return { translated:d.responseData.translatedText, detectedLang:d.responseData.detectedLanguage || "" }; },
+      async () => { let error; for (const base of ["https://lingva.ml", "https://lingva.thedaviddelta.com"]) { try { const r = await bilingualFetch(`${base}/api/v1/auto/${targetLang}/${encodeURIComponent(text)}`); if (!r.ok) throw Error(); const d = await r.json(); if (!d?.translation) throw Error(); return { translated:d.translation, detectedLang:d.info?.detectedSource || "" }; } catch (e) { error=e; } } throw error || Error(); }
+    ];
+    let entry;
+    try {
+      entry = await Promise.any(engines.map(async engine => {
+        const result = await engine();
+        if (!result?.translated) throw Error("Empty translation");
+        return result;
+      }));
+    } catch {}
+    if (!entry) return { translated:`[Translation (${targetLang.toUpperCase()})]: ${text}`, fallback:true };
+    const cachedAt = Date.now();
+    await saveBilingualCacheEntry(cacheStorageKey, { cacheKey:key, value:entry, createdAt:cachedAt, lastUsedAt:cachedAt, expires:cachedAt + BILINGUAL_CACHE_TTL });
+    return entry;
+  })();
+  bilingualTranslationRequests.set(key, request);
+  try { return await request; }
+  finally { if (bilingualTranslationRequests.get(key) === request) bilingualTranslationRequests.delete(key); }
 }
 async function detectReadLanguageRemote(text) {
   try {
@@ -315,7 +464,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
   if (message.type === "DETECT_READ_LANGUAGE") return detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
-  if (message.type === "BILINGUAL_CLEAR_CACHE") { await browser.storage.local.remove(BILINGUAL_CACHE_KEY); return { cleared:true }; }
+  if (message.type === "BILINGUAL_CLEAR_CACHE") return clearBilingualCache();
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
@@ -349,12 +498,16 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message.type === "IMPORT") {
     if (!Array.isArray(message.items)) throw new Error("Invalid import file");
     const db = await ensureDatabaseReady();
-    const incoming = message.items.filter(x => x && typeof x.quote === "string" && typeof x.url === "string");
     let imported = 0;
-    for (let offset = 0; offset < incoming.length; offset += CONFIG.LIMITS.DATABASE_BATCH_SIZE) {
-      const tx = db.transaction(STORE_NAME, "readwrite"), store = tx.objectStore(STORE_NAME), batch = incoming.slice(offset, offset + CONFIG.LIMITS.DATABASE_BATCH_SIZE);
+    for (let offset = 0; offset < message.items.length; offset += CONFIG.LIMITS.DATABASE_BATCH_SIZE) {
+      const end = Math.min(message.items.length, offset + CONFIG.LIMITS.DATABASE_BATCH_SIZE), batch = [];
+      for (let index = offset; index < end; index++) {
+        const item = message.items[index];
+        if (item && typeof item.quote === "string" && typeof item.url === "string") batch.push(item);
+      }
+      if (!batch.length) continue;
+      const tx = db.transaction(STORE_NAME, "readwrite"), store = tx.objectStore(STORE_NAME);
       const known = new Set(); let pending = batch.length;
-      if (!pending) { await transactionDone(tx); continue; }
       await new Promise((resolve, reject) => {
         tx.oncomplete = resolve; tx.onabort = tx.onerror = () => reject(tx.error || new Error("Import transaction failed"));
         batch.forEach(source => {

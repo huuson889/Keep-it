@@ -1,0 +1,36 @@
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("fonts/TwemojiCountryFlags.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+}
+
+/* The font face contains only flag glyphs; all ordinary option text falls back to the existing UI font. */
+html.lhn-twemoji-country-flags :is(
+  #settingsLanguageSelect,
+  #settingsPopupTranslationSource,
+  #settingsPopupTranslationTarget,
+  #pronunciationLanguageSelect,
+  #studyTranslationSource,
+  #studyTranslationTarget,
+  #studyDefinitionSearchLanguage,
+  #studyHighlightVoiceLanguage,
+  #studyNoteVoiceLanguage,
+  #studyDialog select[data-study-speech-language]
+),
+html.lhn-twemoji-country-flags :is(
+  #settingsLanguageSelect,
+  #settingsPopupTranslationSource,
+  #settingsPopupTranslationTarget,
+  #pronunciationLanguageSelect,
+  #studyTranslationSource,
+  #studyTranslationTarget,
+  #studyDefinitionSearchLanguage,
+  #studyHighlightVoiceLanguage,
+  #studyNoteVoiceLanguage,
+  #studyDialog select[data-study-speech-language]
+) option {
+  font-family: "Twemoji Country Flags", var(--lhn-app-font-family), "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+}
