@@ -18,7 +18,7 @@
       ? settings.hasCustomSpeechRateByLanguage?.[displayLanguage] === true ? settings.speechRateByLanguage?.[displayLanguage] : settings.inheritedSpeechRateByLanguage?.[displayLanguage]
       : undefined;
     const rate = Number(customRate ?? settings.speechRate);
-    return Number.isFinite(rate) ? Math.min(2, Math.max(.5, rate)) : 1;
+    return Number.isFinite(rate) ? Math.min(3, Math.max(.5, rate)) : 1;
   };
   let hoverTimer = null, tooltip = null, hoveredMark = null, dismissTimer = null, tooltipActionRow = null, actionPopup = null;
   let translateIcon = null, translationPopup = null, translationRequestId = 0, dictionaryPopup = null, dictionaryRequestId = 0;

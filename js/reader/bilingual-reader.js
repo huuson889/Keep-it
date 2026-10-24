@@ -180,7 +180,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-account]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
   bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
-  bar.querySelector("[data-speed]").addEventListener("click", () => { bar.querySelector("[data-speed-value]").textContent = formatSpeed(settings.speechSpeed || 1); bar.querySelector(".lhn-br-range").value = settings.speechSpeed || 1; });
+  bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = segmentRate(Boolean(readingSegment?.translation)); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
   bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
   bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
   bar.querySelector("input[type=search]").addEventListener("input", renderVoiceChoices);
@@ -367,6 +367,8 @@ const FLAG_SVGS = {
   }
   function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
   function applySharedSpeechRate() {
+    const shared = clampSpeechRate(dashboardShortcuts?.speechRate);
+    if (shared !== null) settings.speechSpeed = shared;
     const rate = segmentRate(Boolean(readingSegment?.translation));
     if (rate === lastAppliedSegmentRate) { syncToolbar(); return; }
     lastAppliedSegmentRate = rate;
@@ -862,7 +864,7 @@ const FLAG_SVGS = {
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
-    readingSegment = { translation: Boolean(forcedLang), lang }; syncToolbar();
+    readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(Boolean(forcedLang)); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(Boolean(forcedLang)),
       isActive: () => googleToken === token && reading,
@@ -877,7 +879,7 @@ const FLAG_SVGS = {
         const voices = synth.getVoices();
         const voice = voices.find(item => item.voiceURI === browserVoiceURI) || voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
         if (!voice) { done({ unsupported:true }); return; }
-        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = Number(settings.speechSpeed) || 1; u.voice = voice;
+        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = segmentRate(Boolean(forcedLang)); u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
       },
       strictVoice: true,
@@ -926,7 +928,7 @@ const FLAG_SVGS = {
       void speakGoogleNext(seg ? seg.source : currentReadText, blockLang, requestId, voiceSettings, null, seg ? { text: seg.translated, lang: seg.lang } : null);
       return;
     }
-    readingSegment = null; // giọng trình duyệt: bỏ ngôn ngữ đoạn Google cũ để cờ theo giọng đang dùng
+    readingSegment = null; lastAppliedSegmentRate = segmentRate(false); // giọng trình duyệt: bỏ ngôn ngữ đoạn Google cũ để cờ theo giọng đang dùng
     let explicitVoice = null;
     if (voiceSettings.browserVoiceURI) {
       explicitVoice = await waitForBrowserVoice(voiceSettings.browserVoiceURI);
@@ -944,7 +946,7 @@ const FLAG_SVGS = {
     activeVoice = explicitVoice || (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
-    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
+    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(false); current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
@@ -1037,8 +1039,8 @@ const FLAG_SVGS = {
     if (event.detail === "toggle-reading") reading ? stopReading() : startReading();
     if (event.detail === "previous-reading-block") moveReading(-1, event);
     if (event.detail === "next-reading-block") moveReading(1, event);
-    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed((Number(settings.speechSpeed) || 1) + normalizeSpeedStep(settings.speechSpeedStep)); }
-    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed((Number(settings.speechSpeed) || 1) - normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(segmentRate(Boolean(readingSegment?.translation)) + normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(segmentRate(Boolean(readingSegment?.translation)) - normalizeSpeedStep(settings.speechSpeedStep)); }
     if (settings.readerShortcutsEnabled !== false && event.detail === "open-voice-select" && reading && bar.classList.contains("lhn-show")) { event.preventDefault(); bar.querySelector("[data-voices]").click(); }
   });
   document.addEventListener("lhn-bilingual-reader-pause", event => {

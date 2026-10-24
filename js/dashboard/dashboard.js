@@ -172,8 +172,8 @@ function refreshDashboardSettings() {
   const inheritedLanguageRate = Number(inheritedSpeechRateByLanguage[currentLang]);
   const customLanguageRate = useLanguageSpeechRate
     ? hasCustomSpeechRateByLanguage[currentLang] === true && Number.isFinite(languageRate)
-      ? Math.min(2, Math.max(.5, languageRate))
-      : Number.isFinite(inheritedLanguageRate) ? Math.min(2, Math.max(.5, inheritedLanguageRate)) : Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || speechRate
+      ? Math.min(3, Math.max(.5, languageRate))
+      : Number.isFinite(inheritedLanguageRate) ? Math.min(3, Math.max(.5, inheritedLanguageRate)) : Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || speechRate
     : speechRate;
   $("settingsUseLanguageSpeechRate").checked = useLanguageSpeechRate;
   const languageRateLabel = t("yourLanguageSpeed", { language:t({ en:"languageEnglish", vi:"languageVietnamese", ko:"languageKorean" }[currentLang] || "languageEnglish") });
@@ -2219,7 +2219,7 @@ $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboar
 $("settingsAutoSpeakSelectedText").addEventListener("change", event => saveDashboardSettings({ autoSpeakSelectedText:event.target.checked }));
 $("settingsSpeechVoice").addEventListener("change", event => { const voiceMode = event.target.value === "browser" ? "browser" : "google"; saveDashboardSettings({ voiceMode, speechVoice:voiceMode }); });
 function normalizeSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 10) / 10 : 1; }
-function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 20) / 20 : 1.25; }
+function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(3, Math.max(.5, rate)) * 20) / 20 : 1.25; }
 function formatLanguageSpeechRate(value) { const rate = normalizeLanguageSpeechRate(value); return Math.abs(rate * 10 - Math.round(rate * 10)) < 1e-8 ? rate.toFixed(1) : rate.toFixed(2); }
 $("settingsSpeechRate").addEventListener("input", event => { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRateValue").value = rate.toFixed(1); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } });
 $("settingsSpeechRate").addEventListener("change", event => saveDashboardSettings({ speechRate:normalizeSpeechRate(event.target.value) }));
