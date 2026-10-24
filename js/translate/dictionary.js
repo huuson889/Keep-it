@@ -38,6 +38,9 @@
   function dictionaryTranslationCacheKey(text, targetLanguage) {
     return `${dictionaryTranslationCachePrefix}${targetLanguage}:${cleanText(text).toLocaleLowerCase()}`;
   }
+  function dictionaryCacheKey(word, targetLanguage) {
+    return `${dictionaryCachePrefix}${targetLanguage}:${cleanText(word).toLowerCase()}`;
+  }
   async function dictionaryTranslate(text, targetLanguage, signal) {
     const cacheKey = dictionaryTranslationCacheKey(text, targetLanguage);
     let requests = dictionaryTranslationRequests;
@@ -155,6 +158,7 @@
     isEnglishWord:isEnglishDictionaryWord,
     getCache:getDictionaryCache,
     setCache:setDictionaryCache,
+    cacheKey:dictionaryCacheKey,
     translationCacheKey:dictionaryTranslationCacheKey,
     translate:dictionaryTranslate,
     fetchIpa,

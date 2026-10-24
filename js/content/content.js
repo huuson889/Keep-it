@@ -256,7 +256,7 @@
     let targetLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
     if (requestId !== dictionaryRequestId) return;
-    const cacheKey = `${dictionaryCachePrefix}${targetLanguage}:${word.toLowerCase()}`;
+    const cacheKey = LHN_DICTIONARY.cacheKey(word, targetLanguage);
     const cached = await LHN_DICTIONARY.getCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
     const hiddenForOpenNote = () => popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
     if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
