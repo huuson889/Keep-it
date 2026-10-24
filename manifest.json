@@ -14,18 +14,18 @@
     "declarativeNetRequest"
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "js/background/background.js",
     "scripts": [
-      "browser-polyfill.js",
-      "messaging.js",
-      "error-logger.js",
-      "config.js",
-      "settings.js",
-      "cache.js",
-      "translate.js",
-      "usage-limits.js",
-      "annotations.js",
-      "background.js"
+      "js/core/browser-polyfill.js",
+      "js/core/messaging.js",
+      "js/core/error-logger.js",
+      "js/core/config.js",
+      "js/core/settings.js",
+      "js/core/cache.js",
+      "js/translate/translate.js",
+      "js/background/usage-limits.js",
+      "js/background/annotations.js",
+      "js/background/background.js"
     ]
   },
   "content_scripts": [
@@ -35,10 +35,10 @@
         "https://*/*"
       ],
       "js": [
-        "browser-polyfill.js",
-        "messaging.js",
-        "error-logger.js",
-        "custom-font.js"
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
+        "js/core/error-logger.js",
+        "js/shared/custom-font.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -48,32 +48,32 @@
         "<all_urls>"
       ],
       "js": [
-        "browser-polyfill.js",
-        "messaging.js",
-        "config.js",
-        "settings.js",
-        "languages.js",
-        "web-highlighter.js",
-        "study-translation.js",
-        "dictionary.js",
-        "search.js",
-        "tts-engine.js",
-        "sentence-note.js",
-        "ui-components.js",
-        "page-layout.js",
-        "shortcuts.js",
-        "sidebar.js",
-        "note-composer.js",
-        "content.js",
-        "lib/Readability.js",
-        "lib/Readability-readerable.js",
-        "bilingual-flags.js",
-        "bilingual-reader.js"
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
+        "js/core/config.js",
+        "js/core/settings.js",
+        "js/core/languages.js",
+        "js/content/web-highlighter.js",
+        "js/translate/study-translation.js",
+        "js/translate/dictionary.js",
+        "js/translate/search.js",
+        "js/reader/tts-engine.js",
+        "js/content/sentence-note.js",
+        "js/content/ui-components.js",
+        "js/content/page-layout.js",
+        "js/core/shortcuts.js",
+        "js/content/sidebar.js",
+        "js/content/note-composer.js",
+        "js/content/content.js",
+        "vendor/readability/Readability.js",
+        "vendor/readability/Readability-readerable.js",
+        "js/reader/bilingual-flags.js",
+        "js/reader/bilingual-reader.js"
       ],
       "css": [
-        "ui-tokens.css",
-        "content.css",
-        "content-theme.css"
+        "css/shared/ui-tokens.css",
+        "css/content/content.css",
+        "css/content/content-theme.css"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -86,16 +86,16 @@
     }
   },
   "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "96": "icons/icon-96.png",
-    "128": "icons/icon-128.png"
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "96": "assets/icons/icon-96.png",
+    "128": "assets/icons/icon-128.png"
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/icon.svg"
+        "assets/icons/icon.svg"
       ],
       "matches": [
         "<all_urls>"
@@ -113,10 +113,10 @@
   ],
   "action": {
     "default_title": "Keepit - Highlight Notes",
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_icon": {
-      "32": "icons/icon-32.png",
-      "16": "icons/icon-16.png"
+      "32": "assets/icons/icon-32.png",
+      "16": "assets/icons/icon-16.png"
     }
   }
 }
