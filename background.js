@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("browser-polyfill.js", "messaging.js", "error-logger.js", "config.js", "settings.js", "usage-limits.js");
+  importScripts("browser-polyfill.js", "messaging.js", "error-logger.js", "config.js", "settings.js", "cache.js", "usage-limits.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -321,89 +321,6 @@ async function openHighlight(url, id) {
   }
   return { found: false };
 }
-const BILINGUAL_CACHE_KEY = "lhnBilingualReaderTranslationCache";
-const BILINGUAL_CACHE_PREFIX = `${BILINGUAL_CACHE_KEY}:v2:item:`;
-const BILINGUAL_CACHE_READY_KEY = `${BILINGUAL_CACHE_KEY}:v2:ready`;
-const BILINGUAL_CACHE_CLEANUP_KEY = `${BILINGUAL_CACHE_KEY}:v2:lastCleanup`;
-const BILINGUAL_CACHE_COUNT_KEY = `${BILINGUAL_CACHE_KEY}:v2:count`;
-const BILINGUAL_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-const BILINGUAL_CACHE_CLEANUP_INTERVAL = 24 * 60 * 60 * 1000;
-const BILINGUAL_CACHE_MAX_ENTRIES = 500;
-const BILINGUAL_CACHE_TRIM_TRIGGER = 50;
-const BILINGUAL_CACHE_TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
-let bilingualCachePreparation, bilingualCacheEntryCount = 0;
-let bilingualCacheWriteQueue = Promise.resolve();
-const bilingualTranslationRequests = new Map();
-function bilingualCacheStorageKey(cacheKey) {
-  let hash = 14695981039346656037n;
-  for (let index = 0; index < cacheKey.length; index++) {
-    hash ^= BigInt(cacheKey.charCodeAt(index));
-    hash = BigInt.asUintN(64, hash * 1099511628211n);
-  }
-  return `${BILINGUAL_CACHE_PREFIX}${hash.toString(16).padStart(16, "0")}`;
-}
-function bilingualCacheLastUsedAt(entry) {
-  return Number(entry?.lastUsedAt) || Number(entry?.createdAt) || (Number(entry?.expires) - BILINGUAL_CACHE_TTL) || 0;
-}
-function enqueueBilingualCacheWrite(operation) {
-  const queued = bilingualCacheWriteQueue.then(operation, operation);
-  bilingualCacheWriteQueue = queued.catch(() => {});
-  return queued;
-}
-async function pruneBilingualCache(now = Date.now()) {
-  const stored = await browser.storage.local.get(null);
-  const entries = Object.keys(stored).filter(key => key.startsWith(BILINGUAL_CACHE_PREFIX)).map(key => ({ key, entry:stored[key] }));
-  const expired = entries.filter(({ entry }) => !Number.isFinite(entry?.expires) || entry.expires <= now);
-  if (expired.length) await browser.storage.local.remove(expired.map(({ key }) => key));
-  const active = entries.filter(({ entry }) => Number.isFinite(entry?.expires) && entry.expires > now);
-  active.sort((a, b) => bilingualCacheLastUsedAt(a.entry) - bilingualCacheLastUsedAt(b.entry));
-  const evicted = active.slice(0, Math.max(0, active.length - BILINGUAL_CACHE_MAX_ENTRIES));
-  if (evicted.length) await browser.storage.local.remove(evicted.map(({ key }) => key));
-  bilingualCacheEntryCount = active.length - evicted.length;
-  await browser.storage.local.set({ [BILINGUAL_CACHE_COUNT_KEY]:bilingualCacheEntryCount });
-  return bilingualCacheEntryCount;
-}
-async function saveBilingualCacheEntry(key, entry) {
-  return enqueueBilingualCacheWrite(async () => {
-    const stored = await browser.storage.local.get([key, BILINGUAL_CACHE_COUNT_KEY]);
-    const previous = stored[key];
-    const savedCount = Number(stored[BILINGUAL_CACHE_COUNT_KEY]);
-    const count = (Number.isFinite(savedCount) ? savedCount : bilingualCacheEntryCount) + (previous ? 0 : 1);
-    await browser.storage.local.set({ [key]:entry, [BILINGUAL_CACHE_COUNT_KEY]:count });
-    bilingualCacheEntryCount = count;
-    if (count > BILINGUAL_CACHE_MAX_ENTRIES + BILINGUAL_CACHE_TRIM_TRIGGER) await pruneBilingualCache(Date.now());
-  });
-}
-async function prepareBilingualCache(now = Date.now()) {
-  if (!bilingualCachePreparation) {
-    bilingualCachePreparation = (async () => {
-      const metadata = await browser.storage.local.get([BILINGUAL_CACHE_READY_KEY, BILINGUAL_CACHE_CLEANUP_KEY, BILINGUAL_CACHE_COUNT_KEY]);
-      const ready = metadata[BILINGUAL_CACHE_READY_KEY] === true;
-      if (!ready) await browser.storage.local.remove(BILINGUAL_CACHE_KEY);
-      const lastCleanup = Number(metadata[BILINGUAL_CACHE_CLEANUP_KEY]) || 0;
-      const storedCount = Number(metadata[BILINGUAL_CACHE_COUNT_KEY]);
-      const valuesToSet = {};
-      if (!ready || now - lastCleanup >= BILINGUAL_CACHE_CLEANUP_INTERVAL || !Number.isFinite(storedCount)) {
-        await pruneBilingualCache(now);
-        valuesToSet[BILINGUAL_CACHE_CLEANUP_KEY] = now;
-      } else bilingualCacheEntryCount = storedCount;
-      if (!ready) valuesToSet[BILINGUAL_CACHE_READY_KEY] = true;
-      if (Object.keys(valuesToSet).length) await browser.storage.local.set(valuesToSet);
-    })();
-  }
-  try { await bilingualCachePreparation; }
-  catch (error) { bilingualCachePreparation = null; throw error; }
-}
-async function clearBilingualCache() {
-  return enqueueBilingualCacheWrite(async () => {
-    const stored = await browser.storage.local.get(null);
-    const cacheKeys = Object.keys(stored).filter(key => key === BILINGUAL_CACHE_KEY || key.startsWith(BILINGUAL_CACHE_PREFIX));
-    if (cacheKeys.length) await browser.storage.local.remove(cacheKeys);
-    bilingualCacheEntryCount = 0;
-    await browser.storage.local.set({ [BILINGUAL_CACHE_COUNT_KEY]:0 });
-    return { cleared:true };
-  });
-}
 async function bilingualFetch(url) {
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 2500);
   try { return await fetch(url, { signal:controller.signal }); } finally { clearTimeout(timer); }
@@ -441,7 +358,7 @@ async function translateBilingual(text, targetLang) {
     } catch {}
     if (!entry) return { translated:`[Translation (${targetLang.toUpperCase()})]: ${text}`, fallback:true };
     const cachedAt = Date.now();
-    await saveBilingualCacheEntry(cacheStorageKey, { cacheKey:key, value:entry, createdAt:cachedAt, lastUsedAt:cachedAt, expires:cachedAt + BILINGUAL_CACHE_TTL });
+    await LHN_CACHE.saveBilingualTranslation(key, entry);
     return entry;
   })();
   bilingualTranslationRequests.set(key, request);
