@@ -11,15 +11,15 @@
     if (!existing || !next) return false;
     return PERSISTED_FIELDS.every(key => JSON.stringify(existing[key]) === JSON.stringify(next[key]));
   }
-  function createFields({ document, colors:colorNames, colorMap, selectedColor, existing, t, makeButton, onSelectColor, onSetDefaultColor, onClose, createTagEditor }) {
+  function createFields({ document, colors:colorNames, colorMap, colorLabelKey, selectedColor, existing, t, makeButton, onSelectColor, onSetDefaultColor, onClose, createTagEditor }) {
     const arrow = document.createElement("div"); arrow.className = "lhn-popup-arrow"; arrow.setAttribute("aria-hidden", "true");
     const colors = document.createElement("div"); colors.className = "lhn-colors";
     colorNames.forEach(color => {
       const option = document.createElement("span"); option.className = "lhn-color-option lhn-compose-color-option"; option.dataset.color = color;
-      const button = document.createElement("button"); button.className = "lhn-color"; button.dataset.color = color; button.title = t(`color${color[0].toUpperCase()}${color.slice(1)}`); button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(color === selectedColor)); button.style.background = colorMap[color];
+      const button = document.createElement("button"); button.className = "lhn-color"; button.dataset.color = color; button.title = t(colorLabelKey(color)); button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(color === selectedColor)); button.style.background = colorMap[color];
       button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); onSelectColor(color, colors, textarea); });
       const star = makeButton("", "lhn-color-default-star", event => { event.preventDefault(); event.stopPropagation(); onSetDefaultColor(color, colors, textarea); });
-      star.title = `${t("setDefaultColor")}: ${t(`color${color[0].toUpperCase()}${color.slice(1)}`)}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>';
+      star.title = `${t("setDefaultColor")}: ${t(colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>';
       const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
       option.append(button, star, check); colors.appendChild(option);
     });
