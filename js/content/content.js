@@ -1104,75 +1104,18 @@
     const width = previousSidebar ? (Number.parseFloat(previousSidebar.style.width) || Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)))) : Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)));
     // Reserve space for the sidebar by narrowing the page content area.
     LHN_PAGE_LAYOUT.applyPageShrink(width);
-    sidebar = document.createElement("aside"); sidebar.id = "lhn-sidebar"; sidebar.style.width = width + "px";
-    const top = document.createElement("div"); top.className = "lhn-sidebar-top";
-    const brand = document.createElement("div"); brand.className = "lhn-sidebar-brand";
-    const logo = document.createElement("img"); logo.src = browser.runtime.getURL("assets/icons/icon.svg"); logo.alt = "";
-    const brandCopy = document.createElement("div"); brandCopy.className = "lhn-sidebar-brandcopy";
-    const brandName = document.createElement("span"); brandName.className = "lhn-sidebar-brandname"; brandName.textContent = "Keepit - Highlight Notes";
-    const freeLabel = document.createElement("span"); freeLabel.className = "lhn-sidebar-plan menu-item item-free"; freeLabel.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/></svg>';
-    const freeText = document.createElement("span"); freeText.textContent = t("freePlan"); freeLabel.append(freeText); freeLabel.setAttribute("aria-label", t("freePlan"));
-    brandCopy.append(brandName, freeLabel); brand.append(logo, brandCopy);
-    const brandRow = document.createElement("div"); brandRow.className = "lhn-sidebar-brandrow";
-    const headerActions = document.createElement("div"); headerActions.className = "lhn-sidebar-header-actions"; sidebarHeaderActions = headerActions;
-    const addHeaderIcon = (labelKey, icon, setting = "", handler = null) => {
-      const button = document.createElement("button"); button.type = "button"; button.className = "lhn-header-icon"; button.dataset.labelKey = labelKey; button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
-      if (setting) { button.dataset.setting = setting; button.addEventListener("click", () => toggleSidebarSetting(setting)); }
-      else if (handler) { button.dataset.siteToggle = "true"; button.addEventListener("click", handler); }
-      else button.addEventListener("click", () => LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)));
-      button.dataset.tooltip = t(labelKey); button.setAttribute("aria-label", t(labelKey)); headerActions.append(button);
-      return button;
-    };
-    const themeButton = document.createElement("button"); themeButton.type = "button"; themeButton.className = "lhn-header-icon lhn-theme-toggle"; themeButton.dataset.themeToggle = "true"; themeButton.addEventListener("click", toggleSidebarTheme); headerActions.append(themeButton);
-    if (websiteDisabled) {
-      addHeaderIcon("enableWebsite", `<circle cx="12" cy="12" r="9"/><path d="m4.9 4.9 14.2 14.2"/>`, "", toggleWebsiteDisabled);
-    } else {
-      addHeaderIcon("openDashboard", `<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>`);
-      addHeaderIcon("autoPopup", `<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`, "showOnSelect");
-      addHeaderIcon("autoSentenceNote", `<path d="M2 11.5V5a2 2 0 0 1 2-2h3.9c.7 0 1.3.3 1.7.9l.8 1.2c.4.6 1 .9 1.7.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9.5"/><path d="M11.378 13.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>`, "sentenceNoteEnabled");
-      addHeaderIcon("disableWebsite", `<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>`, "", toggleWebsiteDisabled);
-    }
-    brandRow.append(brand, headerActions); syncSidebarSettingsButtons(); syncSidebarTheme();
-    const title = document.createElement("div"); title.className = "lhn-sidebar-title"; title.textContent = pageTitle();
-    const url = document.createElement("a"); url.className = "lhn-sidebar-url"; url.href = pageUrl(); url.target = "_blank"; url.rel = "noopener noreferrer"; url.textContent = pageUrl(); url.title = pageUrl();
-   const headerCard = document.createElement("div"); headerCard.className = "lhn-sidebar-header-card";
-    headerCard.append(brandRow, title, url);
-    const searchWrap = document.createElement("label"); searchWrap.className = "lhn-sidebar-search-wrap";
-    const searchIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg"); searchIcon.setAttribute("viewBox", "0 0 24 24"); searchIcon.setAttribute("aria-hidden", "true"); searchIcon.classList.add("lhn-sidebar-search-icon");
-    const searchCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle"); searchCircle.setAttribute("cx", "11"); searchCircle.setAttribute("cy", "11"); searchCircle.setAttribute("r", "7");
-    const searchHandle = document.createElementNS("http://www.w3.org/2000/svg", "path"); searchHandle.setAttribute("d", "m20 20-4-4"); searchIcon.append(searchCircle, searchHandle);
-    const search = document.createElement("input"); search.type = "search"; search.className = "lhn-sidebar-search"; search.placeholder = t("sidebarSearchPlaceholder"); search.setAttribute("aria-label", t("sidebarSearchPlaceholder")); search.value = sidebarSearchQuery;
-    searchWrap.append(searchIcon, search);
-    search.addEventListener("input", () => {
-      sidebarSearchQuery = search.value;
-      clearTimeout(sidebarSearchTimer);
-      sidebarSearchTimer = setTimeout(() => { sidebarSearchTimer = 0; renderSidebar(true); }, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS);
+    const shell = SIDEBAR.createShell({
+      width, pageTitle:pageTitle(), pageUrl:pageUrl(), websiteDisabled, version:browser.runtime.getManifest().version, colors:COLORS,
+      filter:sidebarFilter, searchQuery:sidebarSearchQuery, t, config:CONFIG,
+      onToggleSidebarSetting:toggleSidebarSetting, onToggleWebsiteDisabled:toggleWebsiteDisabled,
+      onOpenDashboard:() => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)),
+      onToggleTheme:toggleSidebarTheme,
+      onSearch:value => { sidebarSearchQuery = value; clearTimeout(sidebarSearchTimer); sidebarSearchTimer = setTimeout(() => { sidebarSearchTimer = 0; renderSidebar(true); }, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS); },
+      onFilter:(value, filters) => { sidebarFilter = value; filters.querySelectorAll(".lhn-side-filter").forEach(button => button.classList.toggle("is-active", button.dataset.filter === sidebarFilter)); renderSidebar(true); },
+      onStopPropagation:event => event.stopPropagation()
     });
-    const filters = document.createElement("div"); filters.className = "lhn-sidebar-filters"; filters.setAttribute("aria-label", t("filterColor"));
-    const filterOptions = [{ id: "all", label: t("all") }, ...COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
-    filterOptions.forEach(option => {
-      const btn = SIDEBAR.createButton("0", "lhn-side-filter" + (sidebarFilter === option.id ? " is-active" : ""), () => {
-        sidebarFilter = option.id;
-        filters.querySelectorAll(".lhn-side-filter").forEach(el => el.classList.toggle("is-active", el.dataset.filter === sidebarFilter));
-        renderSidebar(true);
-      });
-      btn.dataset.filter = option.id;
-      btn.dataset.filterLabel = option.label;
-      if (option.id !== "all") { const swatch = document.createElement("span"); swatch.className = `lhn-filter-swatch lhn-swatch-${option.id}`; btn.prepend(swatch); }
-      filters.appendChild(btn);
-    });
-    headerCard.append(searchWrap, filters);
-    if (websiteDisabled) {
-      const disabledMessage = document.createElement("div"); disabledMessage.className = "lhn-site-disabled-message"; disabledMessage.textContent = t("websiteDisabledMessage");
-      headerCard.replaceChildren(brandRow, disabledMessage);
-      top.append(headerCard);
-    } else top.append(headerCard);
-    const list = document.createElement("div"); list.className = "lhn-sidebar-list"; list.id = "lhn-sidebar-list";
-    const footer = document.createElement("div"); footer.className = "lhn-sidebar-footer"; const footerToggle = document.createElement("button"); footerToggle.type = "button"; footerToggle.className = "lhn-sidebar-footer-toggle"; footerToggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); toggleWebsiteDisabled(); }); const footerVersion = document.createElement("span"); footerVersion.className = "lhn-sidebar-footer-version"; footerVersion.textContent = `v${browser.runtime.getManifest().version}`; footer.append(footerToggle, footerVersion);
-    sidebar.append(top, list, footer);
-    sidebar.addEventListener("mousedown", e => e.stopPropagation());
-    sidebar.addEventListener("click", e => e.stopPropagation());
-    // Keep the fixed sidebar outside the narrowed body so body overflow rules on
+    sidebar = shell.sidebar; sidebarHeaderActions = shell.headerActions;
+    syncSidebarSettingsButtons(); syncSidebarTheme();    // Keep the fixed sidebar outside the narrowed body so body overflow rules on
     // sites such as GitHub cannot clip the extension UI.
     if (previousSidebar) {
       previousSidebar.replaceWith(sidebar);
