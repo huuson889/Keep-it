@@ -52,7 +52,7 @@
 
 - Bước 1 — Cache/lưu trữ: tách cache bản dịch Bilingual Reader khỏi `background.js` vào `cache.js` (`LHN_CACHE`), giữ nguyên key, TTL 7 ngày, touch 6 giờ, dọn 24 giờ, giới hạn 500/LRU và không cache fallback.
 - File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, mock cache, thứ tự nạp, ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 23/23 JS; manifest/HTML script paths tồn tại; mock Cache prepare/hit/fallback miss/clear đạt; `git diff --check` đạt; ZIP 58 mục có manifest gốc, cache.js và version 3.4.568. Chưa kiểm thử trình duyệt.
 - Tiếp theo: rà Settings/Cache còn lại, rồi Bước 2 Translate/Dictionary/Search.
 **2026-10-24 | v3.4.567 | Codex sửa:**
 
