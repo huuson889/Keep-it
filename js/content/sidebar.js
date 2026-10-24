@@ -21,7 +21,29 @@
       metadataCache.set(item, fields); return fields;
     }
     function highlightMatches(root, query) { search.highlightMatches(root, query, '.lhn-sidebar-actions, .lhn-search-match'); }
-    return Object.freeze({ createButton, renderContextSentence, searchFields, highlightMatches });
+    function createHighlightCard(item, { config, t, query, onLocate, onEdit, onDelete, onSpeak }) {
+      const color = config.normalizeColor(item.color);
+      const card = document.createElement('article'); card.className = 'lhn-sidebar-card';
+      const quoteRow = document.createElement('div'); quoteRow.className = 'lhn-sidebar-quote-row';
+      const swatch = document.createElement('span'); swatch.className = `lhn-sidebar-swatch lhn-swatch-${color}`; swatch.title = t('colorHighlight', { color:t(config.colorLabelKey(color)) }); swatch.setAttribute('aria-label', swatch.title);
+      const quote = document.createElement('div'); quote.className = 'lhn-sidebar-quote'; quote.textContent = item.quote;
+      quote.tabIndex = 0; quote.setAttribute('role', 'button'); quote.title = t('jumpHighlight');
+      card.tabIndex = 0; card.setAttribute('role', 'button'); card.title = t('jumpHighlight');
+      card.addEventListener('click', onLocate);
+      card.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && event.target === card) { event.preventDefault(); onLocate(); } });
+      quoteRow.append(swatch, quote);
+      const note = document.createElement('div'); note.className = 'lhn-sidebar-note'; note.textContent = item.note || t('noNote');
+      const contextNote = document.createElement('div'); contextNote.className = 'lhn-sidebar-context-note'; renderContextSentence(contextNote, item.contextNote, item.quote);
+      const actions = document.createElement('div'); actions.className = 'lhn-sidebar-actions'; actions.addEventListener('click', event => event.stopPropagation());
+      const editButton = createButton('', 'lhn-side-secondary', onEdit); editButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${config.ACTION_ICON_PATHS.edit}</svg>`; editButton.title = t('editNote'); editButton.setAttribute('aria-label', t('editNote'));
+      const deleteButton = createButton('', 'lhn-side-secondary', onDelete); deleteButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${config.ACTION_ICON_PATHS.trash}</svg>`; deleteButton.title = t('deleteNote'); deleteButton.setAttribute('aria-label', t('deleteNote'));
+      const speakButton = createButton('', 'lhn-side-secondary lhn-speak-btn', onSpeak); speakButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${config.ACTION_ICON_PATHS.volume}</svg>`; speakButton.title = t('speakHighlightTooltip'); speakButton.setAttribute('aria-label', speakButton.title);
+      actions.append(editButton, deleteButton, speakButton);
+      if (item.contextNote) card.append(quoteRow, note, contextNote, actions); else card.append(quoteRow, note, actions);
+      highlightMatches(card, query);
+      return card;
+    }
+    return Object.freeze({ createButton, renderContextSentence, searchFields, highlightMatches, createHighlightCard });
   }
   globalThis.LHN_SIDEBAR = Object.freeze({ create });
 })();
