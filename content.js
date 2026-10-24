@@ -25,7 +25,7 @@
   let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
   let sidebar = null, sidebarOpen = false, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
-  const sidebarSearchMetadata = new WeakMap();
+  const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
   const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
@@ -865,22 +865,6 @@
     const r = anchor.getBoundingClientRect();
     requestAnimationFrame(() => { if (actionPopup) position(actionPopup, Number.isFinite(clickX) ? clickX - actionPopup.offsetWidth / 2 : r.left, r.top - actionPopup.offsetHeight - 7); });
   }
-  function sidebarButton(label, cls, handler) {
-    const b = document.createElement("button"); b.className = "lhn-side-btn" + (cls ? " " + cls : ""); b.textContent = label; b.type = "button"; b.addEventListener("click", handler); return b;
-  }
-  function renderContextSentence(host, sentence, quote) {
-    host.replaceChildren();
-    if (!sentence) return;
-    const text = String(sentence), selected = String(quote || "");
-    let match = null;
-    if (selected) { const pattern = selected.trim().split(/\s+/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"); try { match = new RegExp(pattern).exec(text); } catch { /* render plain text */ } }
-    const at = match?.index ?? -1, length = match?.[0].length ?? 0;
-    if (at < 0) { host.textContent = text; return; }
-    host.append(document.createTextNode(text.slice(0, at)));
-    const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
-    host.append(document.createTextNode(text.slice(at + length)));
-  }
-  function highlightSidebarSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".lhn-sidebar-actions, .lhn-search-match"); }
   function openSidebarEdit(item) {
     const pageScrollX = window.scrollX, pageScrollY = window.scrollY;
     document.getElementById("lhn-sidebar-edit-dialog")?.remove();
@@ -1188,7 +1172,7 @@
     const filters = document.createElement("div"); filters.className = "lhn-sidebar-filters"; filters.setAttribute("aria-label", t("filterColor"));
     const filterOptions = [{ id: "all", label: t("all") }, ...COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
     filterOptions.forEach(option => {
-      const btn = sidebarButton("0", "lhn-side-filter" + (sidebarFilter === option.id ? " is-active" : ""), () => {
+      const btn = SIDEBAR.createButton("0", "lhn-side-filter" + (sidebarFilter === option.id ? " is-active" : ""), () => {
         sidebarFilter = option.id;
         filters.querySelectorAll(".lhn-side-filter").forEach(el => el.classList.toggle("is-active", el.dataset.filter === sidebarFilter));
         renderSidebar(true);
@@ -1222,19 +1206,7 @@
     syncSidebarEdgeToggle();
     await renderSidebar();
   }
-  function sidebarSearchFields(item) {
-    let fields = sidebarSearchMetadata.get(item);
-    if (fields) return fields;
-    const tags = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
-    fields = {
-      quote: String(item.quote || "").toLocaleLowerCase(),
-      note: String(item.note || "").toLocaleLowerCase(),
-      contextNote: String(item.contextNote || "").toLocaleLowerCase(),
-      tags: tags.toLocaleLowerCase()
-    };
-    sidebarSearchMetadata.set(item, fields);
-    return fields;
-  }
+  const sidebarSearchFields = item => SIDEBAR.searchFields(item);
   async function renderSidebar(useCachedItems = false) {
     if (!sidebarOpen || !sidebar || websiteDisabled) return;
     const renderToken = ++sidebarRenderToken;
@@ -1333,13 +1305,13 @@
       quoteRow.append(swatch, quote);
       const note = document.createElement("div"); note.className = "lhn-sidebar-note"; note.textContent = item.note || t("noNote");
       const contextNote = document.createElement("div"); contextNote.className = "lhn-sidebar-context-note";
-      renderContextSentence(contextNote, item.contextNote, item.quote);
+      SIDEBAR.renderContextSentence(contextNote, item.contextNote, item.quote);
       const actions = document.createElement("div"); actions.className = "lhn-sidebar-actions";
       actions.addEventListener("click", e => e.stopPropagation());
-      const editBtn = sidebarButton("", "lhn-side-secondary", () => openSidebarEdit(item));
+      const editBtn = SIDEBAR.createButton("", "lhn-side-secondary", () => openSidebarEdit(item));
       editBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.edit}</svg>`;
       editBtn.title = t("editNote"); editBtn.setAttribute("aria-label", t("editNote"));
-      const deleteBtn = sidebarButton("", "lhn-side-secondary", async () => {
+      const deleteBtn = SIDEBAR.createButton("", "lhn-side-secondary", async () => {
         await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
         pageAnnotationCache.delete(item.id);
         document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
@@ -1347,13 +1319,13 @@
       });
       deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.trash}</svg>`;
       deleteBtn.title = t("deleteNote"); deleteBtn.setAttribute("aria-label", t("deleteNote"));
-      const speakBtn = sidebarButton("", "lhn-side-secondary lhn-speak-btn", () => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } });
+      const speakBtn = SIDEBAR.createButton("", "lhn-side-secondary lhn-speak-btn", () => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } });
       speakBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.volume}</svg>`;
       speakBtn.title = t("speakHighlightTooltip"); speakBtn.setAttribute("aria-label", speakBtn.title);
       actions.append(editBtn, deleteBtn, speakBtn);
       if (item.contextNote) card.append(quoteRow, note, contextNote, actions);
       else card.append(quoteRow, note, actions);
-      highlightSidebarSearchMatches(card, sidebarSearchQuery);
+      SIDEBAR.highlightMatches(card, sidebarSearchQuery);
       cardBatch.appendChild(card);
     }
     list.appendChild(cardBatch);
