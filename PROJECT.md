@@ -97,6 +97,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.583 | Kiro sửa:**
+
+- Sửa bug auto translate không chạy khi Direct translation popup tắt và Full Dict popup bật.
+- Bug: `skipAutoTranslate = true` luôn được set khi chọn từ tiếng Anh, bất kể `autoTranslate` bật/tắt.
+- Fix: Đổi thành `skipAutoTranslate = skipAutoTranslate || settings.autoTranslate === false;` để chỉ skip khi user TẮT auto translate.
+- File: `js/content/content.js`, `PROJECT.md`.
+- Kiểm tra: PowerShell sửa dòng 410, xác nhận `skipAutoTranslate = skipAutoTranslate || settings.autoTranslate === false;`.
+
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Fix full dict kẹt loading: `content.js` còn tham chiếu biến `dictionaryCachePrefix` đã bị đóng scope trong module Dictionary, gây `ReferenceError` trước khi gọi dịch. Chuyển tạo cache key qua `LHN_DICTIONARY.cacheKey()`.
