@@ -4,15 +4,16 @@
     const node = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
     const block = node?.closest("p,li,blockquote,figcaption,dd,dt,h1,h2,h3,h4,h5,h6,article,section,div") || node;
     if (!block) return "";
-    const isImmersiveTranslation = element => element?.nodeType === Node.ELEMENT_NODE &&
-      Array.from(element.classList || []).some(className => className.startsWith("immersive-translate-target-translation-"));
+    const isTranslationElement = element => element?.nodeType === Node.ELEMENT_NODE &&
+      (Array.from(element.classList || []).some(className => className.startsWith("immersive-translate-target-translation-")) ||
+        element.classList.contains("lhn-bilingual-card") || element.classList.contains("lhn-bilingual-speaker"));
     let text = block.textContent || "", start, end;
-    if (isImmersiveTranslation(block) || block.querySelector?.('[class*="immersive-translate-target-translation-"]')) {
+    if (isTranslationElement(block) || block.querySelector?.('[class*="immersive-translate-target-translation-"], .lhn-bilingual-card, .lhn-bilingual-speaker')) {
       let filteredText = "";
       const offsets = [[range.startContainer, "start", range.startOffset], [range.endContainer, "end", range.endOffset]];
       const marks = new Set();
       const visit = current => {
-        if (isImmersiveTranslation(current)) return;
+        if (isTranslationElement(current)) return;
         if (current.nodeType === Node.TEXT_NODE) {
           for (const [container, key, offset] of offsets) if (container === current && !marks.has(key)) {
             if (key === "start") start = filteredText.length + Math.min(offset, current.textContent.length);

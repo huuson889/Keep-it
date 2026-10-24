@@ -49,13 +49,13 @@ Keepit - Test/
 ├── js/
 │   ├── core/                      # browser-polyfill, config, languages, messaging, settings, cache, shortcuts
 │   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
-│   ├── content/                   # content.js (entry), highlighter, note, sidebar, page layout, UI
+│   ├── content/                   # content.js (entry), web-highlighter, sentence-note, sidebar, note-composer, page-layout, ui-components, annotation-restore
 │   │   ├── sidebar.js             # Khung, thẻ và tiện ích tìm kiếm Sidebar
 │   │   ├── note-composer.js       # Dựng form và tạo/canonicalize record note
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry), settings UI, study modules, account, library, backup, flags
+│   ├── dashboard/                 # dashboard.js (entry), settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── popup/                     # popup.js (entry)
@@ -70,10 +70,13 @@ Keepit - Test/
 │   └── fonts/                     # Font cục bộ
 ├── vendor/readability/            # Mozilla Readability cho Alt+R/Alt+A
 ├── licenses/                      # Văn bản giấy phép bên thứ ba
-└── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, THIRD_PARTY_NOTICES.md
+├── supabase-schema.sql            # Schema Supabase (cloud chưa nối)
+└── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, SUPABASE_SYNC.md, THIRD_PARTY_NOTICES.md
 ```
 
 `manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
+
+Có 2 entry `content_scripts`: entry `document_start`/`all_frames` chỉ nạp browser API, messaging, error-logger và custom-font; app chính chạy `document_idle` ở top frame.
 
 ### 4.2. Luồng tương tác giữa các module
 ```text
@@ -97,6 +100,12 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.583 | DeepSeek sửa:**
+
+- Đồng bộ bản đồ file mục 4.1 với code thật: nêu tên module của `content/` và `dashboard/`; thêm `PRIVACY-POLICY.md`, `SUPABASE_SYNC.md`, `supabase-schema.sql`; ghi rõ 2 entry `content_scripts` (`document_start`/`all_frames` và `document_idle`/top frame).
+- File: `PROJECT.md`.
+- Kiểm tra: đối chiếu cây file với `manifest.json`, `pages/popup.html`, `pages/dashboard.html` bằng liệt kê file và grep danh sách script — khớp; chưa kiểm thử trên trình duyệt.
+
 **2026-10-24 | v3.4.583 | Kiro sửa:**
 
 - Sửa bug auto translate không chạy khi Direct translation popup tắt và Full Dict popup bật.
