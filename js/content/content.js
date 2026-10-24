@@ -454,7 +454,9 @@
     });
     panel.addEventListener("mousedown", e => e.stopPropagation());
     panel.addEventListener("click", e => e.stopPropagation());
+    const rect = range?.getBoundingClientRect();
     document.documentElement.appendChild(panel);
+    requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); position(panel, rect?.left ?? innerWidth / 2 - 140, rect ? rect.bottom + 8 : innerHeight / 2); } });
     updateDefaultColorIndicators();
     resizeNote();
     if (settings.autoSpeakSelectedText && selectedQuote) {
@@ -470,9 +472,10 @@
         resizeNote();
       }).catch(error => console.warn("Could not auto-translate selected text", error));
     }
-    const rect = range?.getBoundingClientRect();
-    if (activeRange) webHighlighter.drawPreview(activeRange, selectedColor);
-    requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); position(panel, rect ? rect.left : innerWidth / 2 - 140, rect ? rect.bottom + 8 : innerHeight / 2); } });
+    if (activeRange) {
+      try { webHighlighter.drawPreview(activeRange, selectedColor); }
+      catch (error) { console.warn("Could not preview the selected highlight", error); }
+    }
     // The temporary inline wrappers keep the selected text visible after focus moves to the note field.
     requestAnimationFrame(() => { if (panel && textarea.isConnected) textarea.focus({ preventScroll: true }); }) ;
     let saveInFlight = false;
