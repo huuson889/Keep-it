@@ -728,11 +728,9 @@ const FLAG_SVGS = {
     mainBlocksAt = Date.now(); mainBlocksDirty = false;
     return mainBlocksCache;
   }
-  function rawText(block, readerMode = false) {
-    if (readerMode) return visibleReaderText(block);
-    const clone = block.cloneNode(true);
-    clone.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(el => el.remove());
-    return (clone.innerText || clone.textContent || "").trim();
+  function rawText(block) {
+    // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
+    return visibleReaderText(block);
   }
   function updateSpeakers() {
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
