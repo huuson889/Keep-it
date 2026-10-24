@@ -182,16 +182,7 @@ function renderSettingsLanguageOptions(filter = "") {
     option.textContent = settingsLanguageLabel(language);
     option.addEventListener("click", () => chooseSettingsLanguage(language));
     option.addEventListener("keydown", event => {
-      const items = [...options.querySelectorAll(".settings-language-option")];
-      const index = items.indexOf(option);
-      let next = -1;
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseSettingsLanguage(language); return; }
-      if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true, returnFocus:true }); return; }
-      if (event.key === "ArrowDown") next = (index + 1) % items.length;
-      else if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
-      else if (event.key === "Home") next = 0;
-      else if (event.key === "End") next = items.length - 1;
-      if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseSettingsLanguage(language); }
     });
     options.appendChild(option);
   });
@@ -226,10 +217,10 @@ $("settingsLanguageSearch").addEventListener("input", event => {
 });
 $("settingsLanguageSearch").addEventListener("keydown", event => {
   if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true }); return; }
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+  if (event.key === "ArrowDown") {
     event.preventDefault();
     const items = [...$("settingsLanguageOptions").querySelectorAll(".settings-language-option")];
-    (event.key === "ArrowDown" ? items[0] : items.at(-1))?.focus();
+    items[0]?.focus();
   }
 });
 $("settingsLanguagePicker").addEventListener("focusout", event => {

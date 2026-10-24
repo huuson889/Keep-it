@@ -50,6 +50,12 @@
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
+- Đồng bộ ô `settingsLanguageSearch` trong Dashboard Settings với ô chọn ngôn ngữ ở toolbar: kích thước, kiểu chữ, viền, danh sách, mục chọn và thao tác bàn phím.
+- File: dashboard.css, dashboard.js, PROJECT.md.
+- Kiểm tra: chưa chạy; sẽ kiểm tra cú pháp JavaScript và diff.
+
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
 - Bước Cache/LRU: chuyển IndexedDB TTS audio cache (trim, LRU touch, budget check, read/write) sang `cache.js` (`LHN_CACHE`); giữ database/store/key, 200 mục, 50 mục trim trigger và luồng TTS.
 - File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 35/35 JS; manifest/HTML script paths hợp lệ; Cache API smoke đạt; `git diff --check` đạt; ZIP 72 mục, manifest gốc, version 3.4.583, cache.js và background.js. Chưa kiểm thử Chrome/Firefox.
