@@ -38,19 +38,43 @@
 - Thay đổi lớn nêu rõ trong commit message.
 
 ## 4. Bản đồ file
-- `manifest.json`: quyền, content scripts, background và các entry points.
-- `pages/`: `dashboard.html` và `popup.html`.
-- `js/core/`: polyfill, cấu hình, ngôn ngữ, messaging, settings, cache và shortcuts dùng chung.
-- `js/background/`: service worker, xử lý annotation, giới hạn dùng và error logging.
-- `js/content/`: content entry point cùng highlighter, note, sidebar và UI trong trang.
-- `js/reader/`: Bilingual Reader, TTS, cờ giọng đọc; `vendor/readability/`: phát hiện nội dung chính cho Alt+R/Alt+A.
-- `js/translate/`: dịch, từ điển, search và hỗ trợ dịch flashcard.
-- `js/dashboard/`: Dashboard, study view/helpers, account, library, backup và fallback cờ.
-- `js/popup/`: toolbar popup; `js/shared/`: helpers dùng chung.
-- `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: stylesheet theo bề mặt và theme.
-- `assets/icons/`, `assets/fonts/`: biểu tượng và font cục bộ.
+```text
+Keepit - Test/
+├── manifest.json                  # Quyền và entry points của extension
+├── pages/
+│   ├── dashboard.html             # Giao diện Dashboard
+│   └── popup.html                 # Popup toolbar
+├── js/
+│   ├── core/                      # browser-polyfill, config, languages, messaging, settings, cache, shortcuts
+│   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
+│   ├── content/                   # content.js (entry), highlighter, note, sidebar, page layout, UI
+│   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
+│   ├── translate/                 # translate, dictionary, search, study translation
+│   ├── dashboard/                 # dashboard.js (entry), study modules, account, library, backup, flags
+│   ├── popup/                     # popup.js (entry)
+│   └── shared/                    # helpers như custom-font và icons
+├── css/
+│   ├── content/                   # CSS của content script
+│   ├── dashboard/                 # CSS Dashboard
+│   ├── popup/                     # CSS popup toolbar
+│   └── shared/                    # theme tokens, theme và flags
+├── assets/
+│   ├── icons/                     # Biểu tượng extension
+│   └── fonts/                     # Font cục bộ
+├── vendor/readability/            # Mozilla Readability cho Alt+R/Alt+A
+├── licenses/                      # Văn bản giấy phép bên thứ ba
+└── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, THIRD_PARTY_NOTICES.md
+```
+
+`manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
+- Đổi mục Bản đồ file trong PROJECT.md sang sơ đồ cây, ghi chú entry points và vai trò từng nhóm thư mục.
+- File: PROJECT.md.
+- Kiểm tra: `git diff --check`.
+
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Gom mã nguồn theo vai trò: JavaScript vào `js/`, CSS vào `css/`, trang vào `pages/`, icon/font vào `assets/` và Readability vào `vendor/`; cập nhật đường dẫn nạp và giữ nguyên thứ tự script.
