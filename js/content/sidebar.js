@@ -43,7 +43,7 @@
       highlightMatches(card, query);
       return card;
     }
-    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, settings, colors, filter, searchQuery, t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onStopPropagation, syncButtons, syncTheme }) {
+    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, colors, filter, searchQuery, t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onStopPropagation }) {
       const top = document.createElement('div'); top.className = 'lhn-sidebar-top';
       const brand = document.createElement('div'); brand.className = 'lhn-sidebar-brand';
       const logo = document.createElement('img'); logo.src = browser.runtime.getURL('assets/icons/icon.svg'); logo.alt = '';
@@ -69,7 +69,7 @@
         addHeaderIcon('autoSentenceNote', '<path d="M2 11.5V5a2 2 0 0 1 2-2h3.9c.7 0 1.3.3 1.7.9l.8 1.2c.4.6 1 .9 1.7.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9.5"/><path d="M11.378 13.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>', 'sentenceNoteEnabled');
         addHeaderIcon('disableWebsite', '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>', '', onToggleWebsiteDisabled);
       }
-      brandRow.append(brand, headerActions); syncButtons(); syncTheme();
+      brandRow.append(brand, headerActions);
       const title = document.createElement('div'); title.className = 'lhn-sidebar-title'; title.textContent = pageTitle;
       const url = document.createElement('a'); url.className = 'lhn-sidebar-url'; url.href = pageUrl; url.target = '_blank'; url.rel = 'noopener noreferrer'; url.textContent = pageUrl; url.title = pageUrl;
       const headerCard = document.createElement('div'); headerCard.className = 'lhn-sidebar-header-card'; headerCard.append(brandRow, title, url);
