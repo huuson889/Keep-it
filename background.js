@@ -5,77 +5,7 @@ const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
 browser.runtime.onInstalled.addListener(() => USAGE_LIMITS.initialize().catch(error => console.warn("Could not initialize local usage trial", error)));
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
-const requestResult = request => new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
-const transactionDone = tx => new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error || new Error("IndexedDB transaction failed")); });
-const TTS_DB_NAME = "lhn-tts-audio-cache";
-const TTS_STORE_NAME = "audio";
-const TTS_CACHE_MAX_ENTRIES = 200;
-const TTS_CACHE_TRIM_TRIGGER = 50;
-const TTS_CACHE_TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
-let ttsDbPromise, ttsCacheBudgetPromise;
 const ttsAudioRequests = new Map();
-function openTtsDatabase() {
-  if (ttsDbPromise) return ttsDbPromise;
-  ttsDbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(TTS_DB_NAME, 1);
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(TTS_STORE_NAME)) request.result.createObjectStore(TTS_STORE_NAME, { keyPath: "key" });
-    };
-    request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); };
-    request.onerror = () => { ttsDbPromise = null; reject(request.error); };
-  });
-  return ttsDbPromise;
-}
-async function trimTtsAudioCache() {
-  const db = await openTtsDatabase();
-  const tx = db.transaction(TTS_STORE_NAME, "readwrite"), store = tx.objectStore(TTS_STORE_NAME);
-  const allEntries = await requestResult(store.getAll());
-  const entries = [];
-  for (const entry of allEntries) {
-    if (!entry || typeof entry.key !== "string" || !(entry.audio instanceof Blob)) { if (entry?.key) store.delete(entry.key); continue; }
-    entries.push(entry);
-  }
-  entries.sort((a, b) => (Number(a.lastUsedAt) || Number(a.cachedAt) || 0) - (Number(b.lastUsedAt) || Number(b.cachedAt) || 0));
-  for (const entry of entries.slice(0, Math.max(0, entries.length - TTS_CACHE_MAX_ENTRIES))) store.delete(entry.key);
-  await transactionDone(tx);
-}
-async function trimTtsAudioCacheIfNeeded() {
-  const db = await openTtsDatabase();
-  const count = await requestResult(db.transaction(TTS_STORE_NAME, "readonly").objectStore(TTS_STORE_NAME).count());
-  if (count > TTS_CACHE_MAX_ENTRIES + TTS_CACHE_TRIM_TRIGGER) await trimTtsAudioCache();
-}
-async function ensureTtsAudioCacheBudget() {
-  if (!ttsCacheBudgetPromise) {
-    ttsCacheBudgetPromise = trimTtsAudioCacheIfNeeded().catch(error => { ttsCacheBudgetPromise = null; throw error; });
-  }
-  return ttsCacheBudgetPromise;
-}
-async function getCachedTtsAudio(key) {
-  const db = await openTtsDatabase();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(TTS_STORE_NAME, "readwrite"), store = tx.objectStore(TTS_STORE_NAME);
-    let audio = null;
-    const request = store.get(key);
-    request.onsuccess = () => {
-      const entry = request.result, now = Date.now();
-      if (entry?.audio instanceof Blob) {
-        audio = entry.audio;
-        const lastUsedAt = Number(entry.lastUsedAt) || Number(entry.cachedAt) || 0;
-        if (now - lastUsedAt >= TTS_CACHE_TOUCH_INTERVAL) store.put({ ...entry, lastUsedAt:now });
-      }
-    };
-    tx.oncomplete = () => resolve(audio);
-    tx.onabort = tx.onerror = () => reject(tx.error || request.error || new Error("Could not read TTS cache"));
-  });
-}
-async function cacheTtsAudio(key, audio) {
-  const db = await openTtsDatabase(), cachedAt = Date.now();
-  const tx = db.transaction(TTS_STORE_NAME, "readwrite");
-  tx.objectStore(TTS_STORE_NAME).put({ key, audio, cachedAt, lastUsedAt:cachedAt });
-  await transactionDone(tx);
-  try { await trimTtsAudioCacheIfNeeded(); }
-  catch (error) { console.warn("TTS audio cache LRU cleanup failed", error); }
-}
 async function fetchTtsAudio(message) {
   const text = typeof message.text === "string" ? message.text.trim() : "";
   const language = typeof message.language === "string" ? message.language.trim().toLowerCase() : "";
@@ -85,10 +15,10 @@ async function fetchTtsAudio(message) {
   const pending = ttsAudioRequests.get(key);
   if (pending) return pending;
   const request = (async () => {
-    try { await ensureTtsAudioCacheBudget(); }
+    try { await LHN_CACHE.ensureTtsAudioCacheBudget(); }
     catch (error) { console.warn("TTS audio cache budget check failed", error); }
     try {
-      const cached = await getCachedTtsAudio(key);
+      const cached = await LHN_CACHE.getCachedTtsAudio(key);
       if (cached?.size) return { audioBase64: arrayBufferToBase64(await cached.arrayBuffer()), cached: true };
     } catch (error) { console.warn("TTS cache read failed; requesting fresh audio", error); }
 
@@ -105,7 +35,7 @@ async function fetchTtsAudio(message) {
       blob = await response.blob();
       if (!blob.size || (blob.type && !/^audio\//i.test(blob.type))) throw new Error("Google TTS returned no playable audio");
     } finally { clearTimeout(timeout); }
-    try { await cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
+    try { await LHN_CACHE.cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
     return { audioBase64: arrayBufferToBase64(await blob.arrayBuffer()), cached: false };
   })();
   ttsAudioRequests.set(key, request);

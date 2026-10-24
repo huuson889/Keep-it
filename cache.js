@@ -106,5 +106,13 @@
     });
   }
 
-  globalThis.LHN_CACHE = Object.freeze({ prepareBilingualCache:prepare, getBilingualTranslation, saveBilingualTranslation, clearBilingualTranslationCache });
+  const TTS_DB_NAME = 'lhn-tts-audio-cache';
+  const TTS_STORE_NAME = 'audio';
+  const TTS_CACHE_MAX_ENTRIES = 200;
+  const TTS_CACHE_TRIM_TRIGGER = 50;
+  const TTS_CACHE_TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
+  let ttsDbPromise, ttsCacheBudgetPromise;
+  const requestResult = request => new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+  const transactionDone = tx => new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed')); });
+  globalThis.LHN_CACHE = Object.freeze({ prepareBilingualCache:prepare, getBilingualTranslation, saveBilingualTranslation, clearBilingualTranslationCache, ensureTtsAudioCacheBudget, getCachedTtsAudio, cacheTtsAudio });
 })();
