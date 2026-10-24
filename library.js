@@ -16,7 +16,8 @@
     }
     return Object.freeze({ metadata, siteOf:item => metadata(item).site, tagsOf:item => metadata(item).tags, searchFields:item => metadata(item).searchFields });
   }
-  function pageKey(item) { return String(item.url || item.hostname || item.title || "unknown"); }`r`n  function groupPages(items, { pageKey = globalThis.LHN_LIBRARY.pageKey, siteOf, searchRank, searchQuery, normalizeColor, favorites, showFavorites, sort }) {
+  function pageKey(item) { return String(item.url || item.hostname || item.title || "unknown"); }
+  function groupPages(items, { pageKey = globalThis.LHN_LIBRARY.pageKey, siteOf, searchRank, searchQuery, normalizeColor, favorites, showFavorites, sort }) {
     const groups = new Map();
     for (const item of items) {
       const key = pageKey(item);
