@@ -407,7 +407,7 @@
     const selectedBeforeComposer = cleanText(range?.toString());
     const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedBeforeComposer);
     if (useEnglishDictionary) {
-      skipAutoTranslate = true;
+      skipAutoTranslate = skipAutoTranslate || settings.autoTranslate === false;
       dictionaryWord ||= selectedBeforeComposer;
       translationRequestId++;
       translateIcon?.remove(); translateIcon = null;
