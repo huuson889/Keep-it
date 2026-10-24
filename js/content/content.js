@@ -419,45 +419,29 @@
     panel = document.createElement("div"); panel.id = "lhn-panel"; panel.dataset.lhnDictionaryWord = dictionaryWord.toLowerCase(); panel._lhnNoteEdited = !!existing; const composerPanel = panel; syncSidebarTheme();
     const paletteWidth = Math.max(230, 66 + 34 * COLORS.length);
     panel.style.width = `${Math.min(paletteWidth, 330, Math.max(200, innerWidth - 20))}px`;
-    const arrow = document.createElement("div"); arrow.className = "lhn-popup-arrow"; arrow.setAttribute("aria-hidden", "true");
-    const colors = document.createElement("div"); colors.className = "lhn-colors";
-    COLORS.forEach(c => {
-      const option = document.createElement("span"); option.className = "lhn-color-option lhn-compose-color-option"; option.dataset.color = c;
-      const b = document.createElement("button"); b.className = "lhn-color"; b.dataset.color = c; b.title = t(CONFIG.colorLabelKey(c)); b.setAttribute("aria-label", b.title); b.setAttribute("aria-pressed", String(c === selectedColor)); b.style.background = COLOR_MAP[c];
-      b.addEventListener("click", e => {
-        e.preventDefault(); e.stopPropagation(); selectedColor = c; colorChosen = true;
-        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, c);
+    const composerFields = LHN_NOTE_COMPOSER.createFields({
+      document, colors:COLORS, colorMap:COLOR_MAP, colorLabelKey:CONFIG.colorLabelKey, selectedColor, existing, t, makeButton,
+      createTagEditor:(tags, id, translate) => globalThis.LHN_UI_COMPONENTS.createTagEditor(tags, id, translate),
+      onClose:removeComposer,
+      onSelectColor:(color, colorRow, textarea) => {
+        selectedColor = color; colorChosen = true;
+        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, color);
         if (activeRange) webHighlighter.updatePreviewColor(selectedColor);
-        colors.querySelectorAll(".lhn-color").forEach(n => n.setAttribute("aria-pressed", String(n.dataset.color === c)));
-        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll: true }); });
-      });
-      const star = makeButton("", "lhn-color-default-star", e => {
-        e.preventDefault(); e.stopPropagation();
-        selectedColor = c; colorChosen = true;
-        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, c);
+        colorRow.querySelectorAll(".lhn-color").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.color === color)));
+        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll:true }); });
+      },
+      onSetDefaultColor:(color, colorRow, textarea) => {
+        selectedColor = color; colorChosen = true;
+        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, color);
         if (activeRange) webHighlighter.updatePreviewColor(selectedColor);
-        colors.querySelectorAll(".lhn-color").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.color === c)));
-        setDefaultHighlightColor(c);
-        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll: true }); });
-      });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(c))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>`;
-      const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
-      option.append(b, star, check); colors.appendChild(option);
+        colorRow.querySelectorAll(".lhn-color").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.color === color)));
+        setDefaultHighlightColor(color);
+        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll:true }); });
+      }
     });
-    const toolbar = document.createElement("div"); toolbar.className = "lhn-composer-toolbar";
-    const closeButton = makeButton("×", "lhn-close-btn", removeComposer); closeButton.setAttribute("aria-label", t("cancel")); closeButton.title = t("cancel");
-    toolbar.append(colors, closeButton);
-    const inputWrap = document.createElement("div"); inputWrap.className = "lhn-input-wrap";
-    const noteIcon = document.createElement("span"); noteIcon.className = "lhn-note-icon"; noteIcon.setAttribute("aria-hidden", "true"); noteIcon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg>`;
-    const textarea = document.createElement("textarea"); textarea.rows = 2; textarea.placeholder = t("notePlaceholder"); textarea.value = existing?.note || ""; textarea.setAttribute("aria-label", t("noteAria"));
+    const { arrow, colors, toolbar, inputWrap, textarea, tagField, tagEditor, resizeNote } = composerFields;
     let noteEdited = !!existing;
     textarea.addEventListener("input", () => { noteEdited = true; composerPanel._lhnNoteEdited = true; });
-    const tagField = document.createElement("label"); tagField.className = "lhn-composer-tags-field";
-    const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
-    const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(existing?.tags || [], "lhn-composer-tags", t); tagField.append(tagCaption, tagEditor.element);
-    const resizeNote = () => { textarea.style.height = "54px"; textarea.style.height = Math.max(54, textarea.scrollHeight) + "px"; };
-    textarea.addEventListener("input", resizeNote);
-    inputWrap.append(noteIcon, textarea);
     panel.append(arrow, toolbar, inputWrap, tagField);
     hideDictionaryPopupForNote();
     textarea.addEventListener("keydown", e => {
