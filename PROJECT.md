@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.583; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.584; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -100,6 +100,13 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.584 | DeepSeek sửa:**
+
+- Fix Auto sentence note lấy kèm bản dịch khi Bilingual Reader mở: `getContext` dùng `block.textContent` nên gồm cả `.lhn-bilingual-card` và `.lhn-bilingual-speaker` mà Reader chèn vào trong đoạn; bộ lọc cũ chỉ loại class của Immersive Translate. Đổi `isImmersiveTranslation` → `isTranslationElement`, mở rộng nhánh lọc offset cho 2 class này: câu tự động chỉ còn chữ gốc, chọn chữ trong card bản dịch trả về rỗng.
+- File: `js/content/sentence-note.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/content/sentence-note.js` đạt; `git diff --check` đạt; chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: người dùng test `Alt+A`/`Alt+D` rồi chọn chữ trong đoạn gốc và trong card bản dịch.
+
 **2026-10-25 | v3.4.583 | DeepSeek sửa:**
 
 - Đồng bộ bản đồ file mục 4.1 với code thật: nêu tên module của `content/` và `dashboard/`; thêm `PRIVACY-POLICY.md`, `SUPABASE_SYNC.md`, `supabase-schema.sql`; ghi rõ 2 entry `content_scripts` (`document_start`/`all_frames` và `document_idle`/top frame).
