@@ -192,7 +192,7 @@ function refreshDashboardSettings() {
   $("settingsLanguageSpeechRate").setAttribute("aria-label", languageRateLabel);
   $("settingsLanguageSpeechRateValue").setAttribute("aria-label", languageRateLabel);
   $("settingsLanguageSpeechRate").value = String(customLanguageRate);
-  $("settingsLanguageSpeechRateValue").value = customLanguageRate.toFixed(1);
+  $("settingsLanguageSpeechRateValue").value = formatLanguageSpeechRate(customLanguageRate);
   $("settingsLanguageSpeechRateRow").hidden = !useLanguageSpeechRate;
   const notePopupEnabled = dashboardSettings.showOnSelect !== false;
   const translateIconEnabled = dashboardSettings.translateIconEnabled === true;
@@ -1769,7 +1769,7 @@ function resetFlashcardLanguageRatesToDashboard() {
   const customRates = { ...(flashcardTranslateSettings.hasCustomFlashcardLanguageSpeechRate || {}) };
   for (const language of ["en", "vi", "ko"]) {
     const storedRate = Number(dashboardSettings.speechRateByLanguage?.[language]);
-    const defaultRate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[language]) || 1.2;
+    const defaultRate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[language]) || 1.25;
     languageRates[language] = Number.isFinite(storedRate) ? Math.min(2, Math.max(.5, storedRate)) : defaultRate;
     customRates[language] = false;
   }
@@ -1813,7 +1813,7 @@ $("studyFlashcardEnglishRate").addEventListener("change", event => updateFlashca
 $("studyFlashcardEnglishRateValue").addEventListener("input", event => { if (event.target.value !== "") $("studyFlashcardEnglishRate").value = String(normalizeSpeechRate(event.target.value)); });
 $("studyFlashcardEnglishRateValue").addEventListener("change", event => { const rate = normalizeSpeechRate(event.target.value); event.target.value = rate.toFixed(1); $("studyFlashcardEnglishRate").value = String(rate); updateFlashcardEnglishSpeechRate(rate); });
 $("resetStudyFlashcardEnglishRate").addEventListener("click", () => {
-  updateFlashcardEnglishSpeechRate(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang] || 1.2);
+  updateFlashcardEnglishSpeechRate(DEFAULT_FLASHCARD_TRANSLATE_SETTINGS.flashcardEnglishSpeechRate);
 });
 $("studyDefinitionSearchLanguage").addEventListener("change", () => {
   studyPreferences = { ...studyPreferences, definitionLanguage:$("studyDefinitionSearchLanguage").value };
@@ -2344,6 +2344,8 @@ $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboar
 $("settingsAutoSpeakSelectedText").addEventListener("change", event => saveDashboardSettings({ autoSpeakSelectedText:event.target.checked }));
 $("settingsSpeechVoice").addEventListener("change", event => { const voiceMode = event.target.value === "browser" ? "browser" : "google"; saveDashboardSettings({ voiceMode, speechVoice:voiceMode }); });
 function normalizeSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 10) / 10 : 1; }
+function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 20) / 20 : 1.25; }
+function formatLanguageSpeechRate(value) { const rate = normalizeLanguageSpeechRate(value); return Math.abs(rate * 10 - Math.round(rate * 10)) < 1e-8 ? rate.toFixed(1) : rate.toFixed(2); }
 $("settingsSpeechRate").addEventListener("input", event => { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRateValue").value = rate.toFixed(1); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } });
 $("settingsSpeechRate").addEventListener("change", event => saveDashboardSettings({ speechRate:normalizeSpeechRate(event.target.value) }));
 $("settingsSpeechRateValue").addEventListener("input", event => { if (event.target.value !== "") { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRate").value = String(rate); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } } });
@@ -2356,7 +2358,7 @@ $("resetGlobalSpeechRate").addEventListener("click", () => {
 });
 $("settingsUseLanguageSpeechRate").addEventListener("change", event => {
   if (event.target.checked) {
-    const inheritedRate = normalizeSpeechRate($("settingsLanguageSpeechRate").value);
+    const inheritedRate = normalizeLanguageSpeechRate($("settingsLanguageSpeechRate").value);
     const inheritedSpeechRateByLanguage = Object.fromEntries(I18N.LANGS.map(language => [language.code, inheritedRate]));
     saveDashboardSettings({ useLanguageSpeechRate:true, inheritedSpeechRateByLanguage });
   } else {
@@ -2364,7 +2366,7 @@ $("settingsUseLanguageSpeechRate").addEventListener("change", event => {
   }
 });
 function saveLanguageSpeechRate(value) {
-  const rate = normalizeSpeechRate(value);
+  const rate = normalizeLanguageSpeechRate(value);
   const speechRateByLanguage = dashboardSettings.speechRateByLanguage && typeof dashboardSettings.speechRateByLanguage === "object" ? dashboardSettings.speechRateByLanguage : {};
   const hasCustomSpeechRateByLanguage = dashboardSettings.hasCustomSpeechRateByLanguage && typeof dashboardSettings.hasCustomSpeechRateByLanguage === "object" ? dashboardSettings.hasCustomSpeechRateByLanguage : {};
   const inheritedSpeechRateByLanguage = dashboardSettings.inheritedSpeechRateByLanguage && typeof dashboardSettings.inheritedSpeechRateByLanguage === "object" ? dashboardSettings.inheritedSpeechRateByLanguage : {};
@@ -2372,14 +2374,14 @@ function saveLanguageSpeechRate(value) {
   delete nextInheritedSpeechRateByLanguage[currentLang];
   return saveDashboardSettings({ speechRateByLanguage:{ ...speechRateByLanguage, [currentLang]:rate }, hasCustomSpeechRateByLanguage:{ ...hasCustomSpeechRateByLanguage, [currentLang]:true }, inheritedSpeechRateByLanguage:nextInheritedSpeechRateByLanguage });
 }
-$("settingsLanguageSpeechRate").addEventListener("input", event => { $("settingsLanguageSpeechRateValue").value = normalizeSpeechRate(event.target.value).toFixed(1); });
+$("settingsLanguageSpeechRate").addEventListener("input", event => { $("settingsLanguageSpeechRateValue").value = formatLanguageSpeechRate(event.target.value); });
 $("settingsLanguageSpeechRate").addEventListener("change", event => saveLanguageSpeechRate(event.target.value));
-$("settingsLanguageSpeechRateValue").addEventListener("input", event => { if (event.target.value !== "") $("settingsLanguageSpeechRate").value = String(normalizeSpeechRate(event.target.value)); });
-$("settingsLanguageSpeechRateValue").addEventListener("change", event => { const rate = normalizeSpeechRate(event.target.value); event.target.value = rate.toFixed(1); $("settingsLanguageSpeechRate").value = String(rate); saveLanguageSpeechRate(rate); });
+$("settingsLanguageSpeechRateValue").addEventListener("input", event => { if (event.target.value !== "") $("settingsLanguageSpeechRate").value = String(normalizeLanguageSpeechRate(event.target.value)); });
+$("settingsLanguageSpeechRateValue").addEventListener("change", event => { const rate = normalizeLanguageSpeechRate(event.target.value); event.target.value = formatLanguageSpeechRate(rate); $("settingsLanguageSpeechRate").value = String(rate); saveLanguageSpeechRate(rate); });
 $("resetLanguageSpeechRate").addEventListener("click", () => {
-  const rate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || 1.2;
+  const rate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || 1.25;
   $("settingsLanguageSpeechRate").value = String(rate);
-  $("settingsLanguageSpeechRateValue").value = rate.toFixed(1);
+  $("settingsLanguageSpeechRateValue").value = formatLanguageSpeechRate(rate);
   saveLanguageSpeechRate(rate).then(saved => { if (saved) toast(t("settingsReset")); });
 });
 $("settingsPopupTranslationSource").addEventListener("change", async event => {

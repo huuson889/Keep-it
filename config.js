@@ -25,7 +25,7 @@
     speechVoice: "google",
     speechRate: 1,
     useLanguageSpeechRate: true,
-    speechRateByLanguage: Object.freeze({ en: 1.2, vi: 1.2, ko: 1.2 }),
+    speechRateByLanguage: Object.freeze({ en: 1.25, vi: 1.25, ko: 1.25 }),
     hasCustomSpeechRateByLanguage: Object.freeze({}),
     inheritedSpeechRateByLanguage: Object.freeze({}),
     translateIconEnabled: false,
