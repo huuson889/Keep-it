@@ -48,6 +48,13 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.576 | Codex sửa:**
+
+- Bước 1 — Icons: chuyển bộ đường dẫn SVG dự phòng và hàm tạo markup của Dashboard sang `icons.js` (`LHN_ICONS`); giữ nguyên thứ tự ưu tiên icon và HTML trả về.
+- File: icons.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, đường dẫn scripts, mock markup icon và ZIP; chưa kiểm thử trình duyệt.
+- Tiếp theo: tiếp tục Shortcuts, Sidebar, Library/Backup, Account và Note Composer.
+
 **2026-10-24 | v3.4.574 | Codex sửa:**
 
 - Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
