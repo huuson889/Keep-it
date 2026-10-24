@@ -53,7 +53,7 @@ async function load() {
   $("versionLabel").textContent = "v" + browser.runtime.getManifest().version;
   const data = await browser.storage.local.get(CONFIG.STORAGE_KEYS.SETTINGS);
   const storedSettings = data[CONFIG.STORAGE_KEYS.SETTINGS] || {};
-  settings = { ...DEFAULTS, ...storedSettings };
+  settings = globalThis.LHN_SETTINGS.resolve(storedSettings);
   settings.autoSpeakSelectedText = settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true;
   settings.autoSpeakOnTranslate = settings.autoSpeakSelectedText;
   if (settings.showOnSelect) { settings.translateIconEnabled = false; settings.translationPopupEnabled = false; }
@@ -66,7 +66,7 @@ async function load() {
     if (activeUrl.protocol === "http:" || activeUrl.protocol === "https:") currentWebsite = activeUrl.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   } catch { currentWebsite = ""; }
   currentLang = I18N.languageFor(settings);
-  if (!settings.language) { settings.language = currentLang; await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
+  if (!settings.language) { settings.language = currentLang; await globalThis.LHN_SETTINGS.save(settings); }
   $("showOnSelect").checked = settings.showOnSelect;
   $("autoHighlight").checked = settings.autoHighlight === true;
   $("sentenceNoteEnabled").checked = settings.sentenceNoteEnabled !== false;
@@ -90,7 +90,7 @@ async function load() {
   const selectedLanguage = I18N.LANGS.find(item => item.code === currentLang); if (selectedLanguage) $("languageSearch").value = langLabel(selectedLanguage);
 }
 async function saveSettings() {
-  await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings });
+  await globalThis.LHN_SETTINGS.save(settings);
 }
 function syncTranslationModeAvailability() {
   const autoOpen = $("showOnSelect").checked;
@@ -173,7 +173,7 @@ $("themeToggle").addEventListener("click", async () => {
   const isDark = document.documentElement.classList.contains("dark");
   settings.sidebarTheme = isDark ? "light" : "dark";
   applyPopupTheme();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
+  try { await globalThis.LHN_SETTINGS.save(settings); }
   catch (error) { settings.sidebarTheme = previousTheme; applyPopupTheme(); console.warn("Could not save popup theme", error); }
 });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => {

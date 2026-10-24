@@ -9,7 +9,7 @@
   const STUDY_TRANSLATION_SETTINGS_KEY = "lhnStudyTranslationSettings";
   let translationSourceLanguage = "auto";
   let panel = null, activeRange = null, selectedRange = null, selectedColor = CONFIG.DEFAULT_COLOR, activeAnnotationId = null;
-  let settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_LANGUAGES?.detectLanguage() || "en") };
+  let settings = globalThis.LHN_SETTINGS.resolve({}, { language:(globalThis.LHN_LANGUAGES?.detectLanguage() || "en") });
   const t = (key, vars = {}) => globalThis.LHN_LANGUAGES.t(key, vars, globalThis.LHN_LANGUAGES.languageFor(settings));
   const getSpeechRate = spokenLanguage => {
     const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
@@ -62,7 +62,7 @@
   async function loadSettings() {
     try {
       const data = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, STUDY_TRANSLATION_SETTINGS_KEY]);
-      settings = { ...settings, ...(data[CONFIG.STORAGE_KEYS.SETTINGS] || {}) };
+      settings = globalThis.LHN_SETTINGS.resolve(data[CONFIG.STORAGE_KEYS.SETTINGS], { language:settings.language });
       const sourceLanguage = data[STUDY_TRANSLATION_SETTINGS_KEY]?.sourceLanguage;
       translationSourceLanguage = ["auto", "en", "vi", "ko"].includes(sourceLanguage) ? sourceLanguage : "auto";
     }
@@ -107,7 +107,7 @@
     }
     if (area === "local" && changes[CONFIG.STORAGE_KEYS.SETTINGS]) {
       const previousLanguage = globalThis.LHN_LANGUAGES.languageFor(settings);
-      settings = { ...CONFIG.DEFAULT_SETTINGS, language: (globalThis.LHN_LANGUAGES?.detectLanguage() || "en"), ...(changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {}) };
+      settings = globalThis.LHN_SETTINGS.resolve(changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue, { language:(globalThis.LHN_LANGUAGES?.detectLanguage() || "en") });
       updateDefaultColorIndicators();
       const nextDisabled = isWebsiteDisabledIn(settings);
       const websiteStateChanged = nextDisabled !== websiteDisabled;

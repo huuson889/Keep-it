@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.565; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; bước đầu chuẩn hóa module Languages bằng languages.js (đổi tên từ i18n.js), các module còn lại tiếp tục theo thứ tự OPT.
+- Version hiện tại: v3.4.566; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; bước đầu chuẩn hóa module Languages bằng languages.js (đổi tên từ i18n.js), các module còn lại tiếp tục theo thứ tự OPT.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận flags/dark mode và các select khác đều đúng; Dashboard Settings dùng pattern combobox của toolbar, menu căn trái và ô tìm kiếm nay rộng bằng menu. v3.4.563 chờ retest Chrome/Edge. Static checks: `node --check` 20/20 JS, manifest MV3 v3.4.563, CSS parse, ZIP 55 mục integrity/version và `git diff --check` đạt. Sandbox không có browser executable; Chromium khác chưa thử; chưa commit hoặc phát hành.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -48,6 +48,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.566 | Codex sửa:**
+
+- Bước 1 — Settings: thêm module `LHN_SETTINGS` cho resolve defaults, đọc/ghi cấu hình chung và đăng ký lắng nghe thay đổi; nối popup và content script vào helper mà không đổi UI hay tên storage key.
+- File: settings.js, manifest.json, background.js, popup.html, dashboard.html, popup.js, content.js, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp và thứ tự nạp; chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Cache/lưu trữ trong Bước 1, sau đó tiếp tục các dịch vụ theo thứ tự OPT.
 **2026-10-24 | v3.4.565 | Codex sửa:**
 
 - Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
