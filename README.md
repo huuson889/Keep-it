@@ -72,11 +72,11 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Privacy and permissions
 
-- Highlights and notes are stored locally in the extension's IndexedDB; settings use `browser.storage.local`. There is no Keepit server, and the sign-in in the Dashboard is a local demo profile. Supabase sync is only a documented plan (`SUPABASE_SYNC.md`, `supabase-schema.sql`); nothing is connected.
-- Text you translate or look up is sent to the translation services above. Google text-to-speech requests send the text being spoken to Google.
-- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access covers all websites for the content scripts, the translation services, and Google Fonts.
-- A local error log keeps at most 200 classified entries (time, component, severity, code) without page URLs, page text, selected text, or account details. It is exported only when you choose to in Dashboard > Settings > About.
-- Usage limits and the Upgrade & Billing page are a local prototype with no real payments.
+- The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
+- When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
+- A local error log keeps at most 200 classified entries (time, component, severity, code), without page URLs, page text, selected text, or account details. It is not automatically uploaded; JSON is generated only when you choose Export in Dashboard > Settings > About.
+- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services.
+- The future account/cloud-sync section in the policy is explicitly marked as not active. Usage limits and Upgrade & Billing are local prototypes with no real payments.
 
 ## Limitations
 
@@ -102,18 +102,16 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `config.js`: single source of truth for storage keys, default settings, and shared values
 - `i18n.js`: English, Vietnamese, and Korean strings
 - `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
-- `AGENTS.md`, `PROJECT.md`: working rules and project log for contributors and AI assistants
 
 ## Development
 
 - There is no build step: the folder is the extension.
 - Shared code uses the `browser.*` namespace through `browser-polyfill.js`.
 - Keep shared defaults in `config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
-- Read `AGENTS.md` before changing anything, and record every change in `PROJECT.md`.
 
-## Third-party components
+## Third-party components and licenses
 
-- Mozilla Readability (Apache License 2.0; the license header is kept in `lib/`)
-- webextension-polyfill (Mozilla Public License 2.0, `LICENSE-WEBEXTENSION-POLYFILL.txt`)
-- Lucide icons (ISC, `LICENSE-LUCIDE.txt`)
-- flag-icons (MIT, see `THIRD_PARTY_NOTICES.md`)
+- Keepit's original code/assets use the proprietary notice in [`LICENSE`](LICENSE); this does not change third-party licenses.
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) indexes bundled components; full license texts are grouped in [`licenses/`](licenses/).
+- Current inventory: Mozilla Readability (Apache-2.0), webextension-polyfill (MPL-2.0), Lucide icons (ISC), and flag-icons (MIT). Source revisions/versions that are not pinned in the repository must be verified before public release.
+- Twemoji Country Flags is currently in an offline test demo, not in the extension package; its license and artwork attribution must be added if it is integrated.

@@ -19,7 +19,7 @@
   let websiteDisabled = false;
   const fontStylesheet = document.querySelector('link[data-lhn-bilingual-fonts]') || document.createElement("link");
   function attachFontStylesheet() {
-    if (fontStylesheet.isConnected) return;
+    if (document.querySelector('link[data-lhn-bilingual-fonts]')?.isConnected || fontStylesheet.isConnected) return;
     fontStylesheet.rel = "stylesheet";
     fontStylesheet.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&display=block";
     fontStylesheet.dataset.lhnBilingualFonts = "true";
@@ -28,7 +28,6 @@
   const attachStyle = () => {
     if (style.isConnected) return;
     (document.documentElement || document.head)?.appendChild(style);
-    attachFontStylesheet();
     applyFont(lastFontSettings);
   };
   if (document.documentElement) attachStyle();
@@ -44,9 +43,15 @@
     if (websiteDisabled || !customFontEnabled || fontKey === "auto") {
       style.textContent = "";
       document.documentElement?.removeAttribute("data-lhn-custom-font");
+      document.querySelectorAll('link[data-lhn-bilingual-fonts]').forEach(link => link.remove());
+      if (fontStylesheet.isConnected) fontStylesheet.remove();
       return;
     }
     const family = FONT_OPTIONS[fontKey];
+    if (fontKey === "system") {
+      document.querySelectorAll('link[data-lhn-bilingual-fonts]').forEach(link => link.remove());
+      if (fontStylesheet.isConnected) fontStylesheet.remove();
+    } else attachFontStylesheet();
     document.documentElement?.setAttribute("data-lhn-custom-font", fontKey);
     const pageText = `body, body :not(#lhn-panel):not(#lhn-panel *):not(#lhn-note-pop):not(#lhn-note-pop *):not(#lhn-sidebar):not(#lhn-sidebar *):not(#lhn-direct-translation):not(#lhn-direct-translation *):not(#lhn-full-english-dictionary):not(#lhn-full-english-dictionary *):not(#lhn-translate-icon):not(#lhn-highlight-actions):not(#lhn-bilingual-reading-bar):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
     style.textContent = `html[data-lhn-custom-font="${fontKey}"] ${pageText}{font-family:${family}!important}`;

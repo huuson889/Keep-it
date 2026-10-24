@@ -139,6 +139,7 @@
       const targetLanguage = ["en", "vi", "ko"].includes(options.targetLanguage) ? options.targetLanguage : "vi";
       const key = await cacheKey(source, sourceLanguage, targetLanguage);
       if (memoryCache.has(key)) return memoryCache.get(key);
+      if (inFlight.has(key)) return inFlight.get(key);
       try {
         const stored = (await browser.storage.local.get(key))[key];
         if (stored?.source === source && stored?.target === targetLanguage && (!stored.sourceLanguage || stored.sourceLanguage === sourceLanguage) && typeof stored.translation === "string" && stored.translation.trim()) {
@@ -146,7 +147,6 @@
           return stored.translation;
         }
       } catch (error) { console.warn("Could not read sentence translation cache", error); }
-      if (inFlight.has(key)) return inFlight.get(key);
       if ((failedUntil.get(key) || 0) > Date.now() || Date.now() < cooldownUntil) return null;
 
       let resolveJob;

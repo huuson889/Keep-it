@@ -912,7 +912,18 @@ body > header .profile-menu-avatar svg { width:13px; height:13px; }
 .settings-window-profile strong { color:#111827; font-size:13px; }
 .settings-window-profile span { color:#6b7280; font-size:11px; }
 .settings-language-row { min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 16px; border-bottom:1px solid #e5e7eb; color:#4b5563; font-size:11px; font-weight:600; }
-.settings-language-row select { max-width:145px; padding:4px 22px 4px 6px; border:0; outline:0; background:transparent; color:#6b7280; font:11px var(--lhn-app-font-family); text-align:right; }
+.settings-language-picker { position:relative; flex:0 1 145px; width:145px; min-width:0; margin:0; }
+.settings-language-native { display:none!important; }
+.settings-language-search { box-sizing:border-box; width:100%; height:30px; padding:0 28px 0 8px; border:1px solid #d1d9e3; border-radius:9px; outline:none; background:#f8fafd; color:#26354d; font:11px var(--lhn-app-font-family); text-align:right; }
+.settings-language-search:focus { border-color:#a299ec; box-shadow:0 0 0 3px #5145e815; }
+.settings-language-search[aria-expanded="true"] { text-align:left; }
+.settings-language-search::placeholder { color:#8793a7; }
+.settings-language-caret { position:absolute; top:50%; right:9px; width:14px; height:14px; color:#52627a; pointer-events:none; transform:translateY(-50%); }
+.settings-language-options { position:absolute; z-index:30; top:calc(100% + 4px); right:0; box-sizing:border-box; width:max-content; min-width:100%; max-width:min(260px,calc(100vw - 24px)); max-height:190px; overflow:auto; padding:4px; border:1px solid #d1d9e3; border-radius:9px; background:#fff; box-shadow:0 8px 24px #1a2b4520; display:none; }
+.settings-language-options.open { display:block; }
+.settings-language-option { box-sizing:border-box; width:100%; padding:7px 8px; border-radius:6px; color:#3d4a60; font-size:11px; white-space:nowrap; text-align:left; cursor:pointer; }
+.settings-language-option:hover,.settings-language-option:focus,.settings-language-option.selected { background:#f1f2ff; color:#4c40d8; outline:0; }
+.settings-language-empty { padding:7px 8px; color:#758198; font-size:11px; }
 .settings-window-nav { display:grid; align-content:start; gap:2px; padding:8px; }
 .settings-nav-item { width:100%; min-height:37px; display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:8px 12px; border-radius:8px; background:transparent; color:#374151; font:500 13px/1.2 var(--lhn-app-font-family); text-align:left; }
 .settings-nav-item:hover { background:rgba(229,231,235,.7); color:#111827; }
@@ -1081,7 +1092,14 @@ html.dark .settings-window-profile { border-color:#1f2937; }
 html.dark .settings-window-profile strong { color:#f9fafb; }
 html.dark .settings-window-profile span,.settings-window-profile span { color:#9ca3af; }
 html.dark .settings-language-row { border-color:#1f2937; color:#d1d5db; }
-html.dark .settings-language-row select { color:#9ca3af; }
+html.dark .settings-language-search { border-color:#303e51; background:#0f172a; color:#e2e8f0; }
+html.dark .settings-language-search:focus { border-color:#a299ec; }
+html.dark .settings-language-search::placeholder { color:#64748b; }
+html.dark .settings-language-caret { color:#94a3b8; }
+html.dark .settings-language-options { border-color:#303e51; background:#1e293b; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+html.dark .settings-language-option { color:#cbd5e1; }
+html.dark .settings-language-option:hover,html.dark .settings-language-option:focus,html.dark .settings-language-option.selected { background:#312e81; color:#e0e7ff; }
+html.dark .settings-language-empty { color:#94a3b8; }
 html.dark .settings-nav-item { color:#d1d5db; }
 html.dark .settings-nav-item:hover { background:rgba(31,41,55,.8); color:#fff; }
 html.dark .settings-nav-item.is-active { background:#1f2937; color:#34d399; }
