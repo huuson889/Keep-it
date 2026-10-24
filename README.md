@@ -89,22 +89,18 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Project structure
 
-- `manifest.json`: extension manifest (Chromium uses `background.service_worker`, Firefox uses `background.scripts`)
-- `background.js` / `annotations.js`: message routing and shared IndexedDB annotation storage/import/export; background TTS requests and usage limits
-- `content.js` / `content.css` / `content-theme.css`: page events, note popovers, sidebar, shortcuts; `sentence-note.js`: sentence context extraction; `ui-components.js`: shared tag editor
-- `web-highlighter.js`: highlight wrapping and restoration
-- `bilingual-reader.js` / `bilingual-flags.js`: Bilingual Reader, reading bar, Select Voice
-- `lib/Readability.js`, `lib/Readability-readerable.js`: main-content detection
-- `tts-engine.js`: Google TTS and browser-voice playback, language detection, voice settings
-- `study-translation.js` / `study-utils.js` / `study-view.js`: translation helpers and flashcard study view
-- `popup.html` / `popup.js` / `popup.css`: toolbar popup
-- `dashboard.html` / `dashboard.js` / `dashboard.css`: Dashboard
-- `config.js`: single source of truth for storage keys, default settings, and shared values
-- `languages.js`, `messaging.js`, `settings.js`, `cache.js`, `translate.js`, `dictionary.js`, `search.js`, `annotations.js`, `sentence-note.js`, `ui-components.js`, `page-layout.js`, `icons.js`, `shortcuts.js`, `sidebar.js`, `note-composer.js`: shared language, runtime, settings, caches (including TTS audio), provider, dictionary, search, annotation, sidebar, note model, UI and shortcut modules
-- `languages.js`: English, Vietnamese, and Korean strings
-- `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
-
-- `library.js`: annotation metadata, source grouping and ordering; `account.js`: local demo-profile persistence; `backup.js`: JSON import/export helpers
+- `manifest.json`: extension entry points and permissions; keep it at the repository root.
+- `pages/`: `dashboard.html` and `popup.html` UI entry points.
+- `js/core/`: browser polyfill, shared configuration, languages, settings, messaging, cache, and shortcuts.
+- `js/background/`: background service worker, annotation storage, usage limits, and error logging.
+- `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.
+- `js/reader/`: Bilingual Reader, TTS engine, and reader voice flags.
+- `js/translate/`: translation, dictionary, search, and study translation modules.
+- `js/dashboard/`: Dashboard, flashcard study, account, library, backup, and flag modules.
+- `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.
+- `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: styles grouped by surface and shared theme tokens.
+- `assets/icons/` and `assets/fonts/`: local icons and fonts; `vendor/readability/`: Mozilla Readability sources.
+- `licenses/`: third-party license texts; `AGENTS.md`, `PROJECT.md`, and `OPT-ARENA.md`: contributor rules, project handoff, and architecture plan.
 
 ## Development
 

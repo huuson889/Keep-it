@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.583; một codebase Manifest V3 cho Chrome và Firefox. Đã tách Languages, Messaging, Settings, Cache (bilingual + TTS audio), Translate, Dictionary, Search, Annotations, SentenceNote, Page Layout, Icons, Shortcuts, Backup và Library; Account, Sidebar helpers, UI Components và Note Composer model tách một phần. Highlighter, Reader, Flashcards, Content Detector, Usage và Diagnostics có module riêng. Phần mount/render Sidebar, Note Composer UI và một số Dashboard UI còn nằm trong entry points.
+- Version hiện tại: v3.4.583; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Đã tách Languages, Messaging, Settings, Cache (bilingual + TTS audio), Translate, Dictionary, Search, Annotations, SentenceNote, Page Layout, Icons, Shortcuts, Backup và Library; Account, Sidebar helpers, UI Components và Note Composer model tách một phần. Highlighter, Reader, Flashcards, Content Detector, Usage và Diagnostics có module riêng.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 35/35 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP 72 mục có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -38,16 +38,25 @@
 - Thay đổi lớn nêu rõ trong commit message.
 
 ## 4. Bản đồ file
-- manifest.json: quyền, content scripts, background.
-- background.js: dịch (chuỗi engine), TTS Google (cache IndexedDB), usage limit, rule DNR Referer cho Chrome, CRUD IndexedDB.
-- tts-engine.js: chia đoạn và phát Google TTS, dự phòng giọng trình duyệt.
-- content.js: popup chọn text, sidebar trong trang, speech.
-- bilingual-reader.js: đọc song ngữ trên trang. lib/Readability*.js: tìm nội dung chính cho Alt+R/Alt+A.
-- popup.html/js: popup toolbar. dashboard.html/js: quản lý, flash card, cài đặt. flags.js/css + fonts/TwemojiCountryFlags.woff2: fallback cờ local cho native selects trên hệ thiếu flag glyph.
-- usage-limits.js: giới hạn dùng theo ngày.
-- browser-polyfill.js: cho phép dùng browser.* trên Chrome.
+- `manifest.json`: quyền, content scripts, background và các entry points.
+- `pages/`: `dashboard.html` và `popup.html`.
+- `js/core/`: polyfill, cấu hình, ngôn ngữ, messaging, settings, cache và shortcuts dùng chung.
+- `js/background/`: service worker, xử lý annotation, giới hạn dùng và error logging.
+- `js/content/`: content entry point cùng highlighter, note, sidebar và UI trong trang.
+- `js/reader/`: Bilingual Reader, TTS, cờ giọng đọc; `vendor/readability/`: phát hiện nội dung chính cho Alt+R/Alt+A.
+- `js/translate/`: dịch, từ điển, search và hỗ trợ dịch flashcard.
+- `js/dashboard/`: Dashboard, study view/helpers, account, library, backup và fallback cờ.
+- `js/popup/`: toolbar popup; `js/shared/`: helpers dùng chung.
+- `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: stylesheet theo bề mặt và theme.
+- `assets/icons/`, `assets/fonts/`: biểu tượng và font cục bộ.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
+- Gom mã nguồn theo vai trò: JavaScript vào `js/`, CSS vào `css/`, trang vào `pages/`, icon/font vào `assets/` và Readability vào `vendor/`; cập nhật đường dẫn nạp và giữ nguyên thứ tự script.
+- File: manifest.json, background.js, content.js, dashboard.html, popup.html, các file JS/CSS đã chuyển, README.md, THIRD_PARTY_NOTICES.md, OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: đang kiểm tra cú pháp JavaScript, JSON manifest và các đường dẫn sau di chuyển. Chưa kiểm thử trên trình duyệt.
+
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Đồng bộ ô `settingsLanguageSearch` trong Dashboard Settings với ô chọn ngôn ngữ ở toolbar: kích thước, kiểu chữ, viền, danh sách, mục chọn và thao tác bàn phím.
