@@ -37,7 +37,9 @@
 - AGENTS.md và PROJECT.md nằm trong zip và được commit vào Git. Trước khi nộp store, người dùng tự xóa hai file này khỏi zip.
 - Thay đổi lớn nêu rõ trong commit message.
 
-## 4. Bản đồ file
+## 4. Cấu trúc và kiến trúc dự án
+
+### 4.1. Bản đồ file
 ```text
 Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
@@ -68,7 +70,7 @@ Keepit - Test/
 
 `manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
-## Luồng tương tác giữa các module
+### 4.2. Luồng tương tác giữa các module
 ```text
 Popup ── yêu cầu mở Dashboard / gửi thao tác tab ──┐
 Dashboard ── annotations, bilingual translate, usage ┤
@@ -90,6 +92,12 @@ Dashboard ── Library / Flashcards / Account / Backup ──> giao diện qu�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
+- Đổi mục 4 thành “Cấu trúc và kiến trúc dự án”; phân chia cây thư mục và sơ đồ tương tác thành 4.1 và 4.2.
+- File: PROJECT.md.
+- Kiểm tra: `git diff --check`.
+
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Thêm sơ đồ tương tác runtime giữa Popup, Dashboard, Content, Reader, TTS và Background vào PROJECT.md.
