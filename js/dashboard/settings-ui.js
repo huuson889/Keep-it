@@ -1,8 +1,7 @@
 (() => {
   function create({ $, document, languages, t, getCurrentLanguage, onLanguageChange, escapeHtml }) {
-    let suppressFocus = false;
     const languageLabel = language => `${language.flag} ${language.name} - ${language.native}`;
-    function closeLanguagePicker({ restoreSelection = true, returnFocus = false } = {}) {
+    function closeLanguagePicker({ restoreSelection = true } = {}) {
       const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions");
       if (!input || !options) return;
       options.classList.remove("open"); input.setAttribute("aria-expanded", "false");
@@ -10,12 +9,12 @@
         const selected = languages.LANGS.find(language => language.code === $("settingsLanguageSelect").value) || languages.LANGS[0];
         input.value = languageLabel(selected);
       }
-      if (returnFocus && document.activeElement !== input) { suppressFocus = true; input.focus(); suppressFocus = false; }
     }
     function chooseLanguage(language) {
-      const select = $("settingsLanguageSelect"); if (!select) return;
+      const select = $("settingsLanguageSelect"), input = $("settingsLanguageSearch"); if (!select || !input) return;
       const changed = select.value !== language.code; select.value = language.code;
-      closeLanguagePicker({ restoreSelection:true, returnFocus:true });
+      closeLanguagePicker({ restoreSelection:true });
+      input.blur();
       if (changed) select.dispatchEvent(new Event("change", { bubbles:true }));
     }
     function renderLanguageOptions(filter = "") {
@@ -42,7 +41,7 @@
       else { const selected = languages.LANGS.find(language => language.code === select.value) || languages.LANGS[0]; input.value = languageLabel(selected); input.setAttribute("aria-expanded", "false"); }
     }
     function initLanguagePicker() {
-      $("settingsLanguageSearch").addEventListener("focus", () => { if (suppressFocus) { suppressFocus = false; return; } openLanguagePicker(); });
+      $("settingsLanguageSearch").addEventListener("focus", openLanguagePicker);
       $("settingsLanguageSearch").addEventListener("click", openLanguagePicker);
       $("settingsLanguageSearch").addEventListener("input", event => { const options = $("settingsLanguageOptions"); if (!options.classList.contains("open")) { options.classList.add("open"); event.target.setAttribute("aria-expanded", "true"); } renderLanguageOptions(event.target.value); });
       $("settingsLanguageSearch").addEventListener("keydown", event => { if (event.key === "Escape") { event.preventDefault(); closeLanguagePicker({ restoreSelection:true }); return; } if (event.key === "ArrowDown") { event.preventDefault(); $("settingsLanguageOptions").querySelector(".settings-language-option")?.focus(); } });
