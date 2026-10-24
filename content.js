@@ -1,1917 +1,1348 @@
-(() => {
-  if (window.__localHighlightNotesLoaded) return;
-  window.__localHighlightNotesLoaded = true;
-  const CONFIG = globalThis.LHN_CONFIG;
-  CONFIG.applyHighlightColors();
-  const COLORS = CONFIG.COLORS;
-  const COLOR_MAP = CONFIG.HIGHLIGHT_COLORS;
-  const noteTranslator = globalThis.LHN_STUDY_TRANSLATION?.create({ browser });
-  const STUDY_TRANSLATION_SETTINGS_KEY = "lhnStudyTranslationSettings";
-  let translationSourceLanguage = "auto";
-  let panel = null, activeRange = null, selectedRange = null, selectedColor = CONFIG.DEFAULT_COLOR, activeAnnotationId = null;
-  let settings = globalThis.LHN_SETTINGS.resolve({}, { language:(globalThis.LHN_LANGUAGES?.detectLanguage() || "en") });
-  const t = (key, vars = {}) => globalThis.LHN_LANGUAGES.t(key, vars, globalThis.LHN_LANGUAGES.languageFor(settings));
-  const getSpeechRate = spokenLanguage => {
-    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
-    const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
-    const customRate = settings.useLanguageSpeechRate === true && speechLanguage === displayLanguage
-      ? settings.hasCustomSpeechRateByLanguage?.[displayLanguage] === true ? settings.speechRateByLanguage?.[displayLanguage] : settings.inheritedSpeechRateByLanguage?.[displayLanguage]
-      : undefined;
-    const rate = Number(customRate ?? settings.speechRate);
-    return Number.isFinite(rate) ? Math.min(2, Math.max(.5, rate)) : 1;
-  };
-  let hoverTimer = null, tooltip = null, hoveredMark = null, dismissTimer = null, tooltipActionRow = null, actionPopup = null;
-  let translateIcon = null, translationPopup = null, translationRequestId = 0, dictionaryPopup = null, dictionaryRequestId = 0;
-  let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
-  let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
-  let sidebar = null, sidebarOpen = false, pageLayoutSnapshot = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
-  const sidebarSearchMetadata = new WeakMap();
-  let websiteDisabled = false, websiteSettingsReady = false;
-  const pageUrl = () => location.href;
-  const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
-  const pageTitle = () => document.title || displayWebsiteName(location.hostname);
-  const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
-  const isWebsiteDisabledIn = value => Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey());
-  const pageThumbnailUrl = () => {
-    const meta = document.querySelector('meta[property="og:image"], meta[name="twitter:image"], meta[property="twitter:image"], meta[itemprop="image"]');
-    const raw = meta?.content?.trim();
-    if (!raw) return "";
-    try { const resolved = new URL(raw, location.href); return /^https?:$/.test(resolved.protocol) ? resolved.href : ""; } catch { return ""; }
-  };
-  const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
-  const MAP = {
-    'o͝o': 'ʊ', 'o͞o': 'u', 'T͟H': 'ð', 'âr': 'ɛr', 'ûr': 'ɜr', 'îr': 'ɪr',
-    'oi': 'ɔɪ', 'ou': 'aʊ', 'NG': 'ŋ', 'TH': 'θ', 'CH': 'tʃ', 'SH': 'ʃ', 'ZH': 'ʒ',
-    'ā': 'eɪ', 'ē': 'i', 'ī': 'aɪ', 'ō': 'oʊ', 'ô': 'ɔ', 'ä': 'ɑ',
-    'a': 'æ', 'e': 'ɛ', 'i': 'ɪ', 'o': 'ɑ', 'u': 'ʌ', 'j': 'dʒ', 'y': 'j'
-  };
-  const IPA_ESC = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const IPA_RE = new RegExp(Object.keys(MAP).sort((a, b) => b.length - a.length).map(IPA_ESC).join('|'), 'g');
-  // Đổi ký âm Google (NOAD) sang IPA, một lượt regex, ưu tiên chuỗi dài trước. Dùng lại được ở nơi khác.
-  function convertGoogleToIPA(raw) {
-    return '/' + String(raw || '').normalize('NFC').replace(IPA_RE, m => MAP[m]) + '/';
-  }
-  globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
-  const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
+# Keepit - Hồ sơ dự án
 
-  function animateRemove(el) {
-    if (!el) return;
-    el.classList.add("lhn-closing");
-    setTimeout(() => el.remove(), CONFIG.TIMINGS.REMOVE_ANIMATION_MS);
-  }
-  async function loadSettings() {
-    try {
-      const data = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, STUDY_TRANSLATION_SETTINGS_KEY]);
-      settings = globalThis.LHN_SETTINGS.resolve(data[CONFIG.STORAGE_KEYS.SETTINGS], { language:settings.language });
-      const sourceLanguage = data[STUDY_TRANSLATION_SETTINGS_KEY]?.sourceLanguage;
-      translationSourceLanguage = ["auto", "en", "vi", "ko"].includes(sourceLanguage) ? sourceLanguage : "auto";
-    }
-    catch { /* use defaults */ }
-    websiteDisabled = isWebsiteDisabledIn(settings);
-    websiteSettingsReady = true;
-    document.dispatchEvent(new CustomEvent("lhn-website-disabled-change", { detail:websiteDisabled }));
-    syncSidebarTheme();
-    if (sidebarEdgeToggle) syncSidebarEdgeToggle();
-    return settings;
-  }
-  async function setDefaultHighlightColor(color) {
-    const normalizedColor = CONFIG.normalizeColor(color);
-    const previousSettings = settings;
-    const updatedSettings = { ...settings, defaultHighlightColor: normalizedColor };
-    settings = updatedSettings;
-    updateDefaultColorIndicators();
-    try {
-      await LHN_SETTINGS.save(updatedSettings);
-      showSidebarToast(() => t("defaultColorSetToast", { color: t(CONFIG.colorLabelKey(normalizedColor)) }));
-    } catch (error) { settings = previousSettings; updateDefaultColorIndicators(); console.warn("Could not save default highlight color", error); }
-  }
-  function updateDefaultColorIndicators() {
-    document.querySelectorAll(".lhn-color-option").forEach(option => {
-      option.classList.toggle("is-default", option.dataset.color === CONFIG.normalizeColor(settings.defaultHighlightColor));
-    });
-  }
-  function shortcutForEvent(e) {
-    const parts = [];
-    if (e.ctrlKey) parts.push("Ctrl");
-    if (e.altKey) parts.push("Alt");
-    if (e.shiftKey) parts.push("Shift");
-    if (e.metaKey) parts.push("Meta");
-    const key = e.code === "Space" ? "Space" : e.key === "ArrowLeft" ? "Left" : e.key === "ArrowRight" ? "Right" : e.key === "ArrowUp" ? "Up" : e.key === "ArrowDown" ? "Down" : e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (!["Control", "Alt", "Shift", "Meta"].includes(e.key)) parts.push(key);
-    return parts.join("+");
-  }
-  browser.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
-      const sourceLanguage = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue?.sourceLanguage;
-      translationSourceLanguage = ["auto", "en", "vi", "ko"].includes(sourceLanguage) ? sourceLanguage : "auto";
-    }
-    if (area === "local" && changes[CONFIG.STORAGE_KEYS.SETTINGS]) {
-      const previousLanguage = globalThis.LHN_LANGUAGES.languageFor(settings);
-      settings = globalThis.LHN_SETTINGS.resolve(changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue, { language:(globalThis.LHN_LANGUAGES?.detectLanguage() || "en") });
-      updateDefaultColorIndicators();
-      const nextDisabled = isWebsiteDisabledIn(settings);
-      const websiteStateChanged = nextDisabled !== websiteDisabled;
-      if (websiteStateChanged) applyWebsiteDisabledState(nextDisabled);
-      syncSidebarTheme();
-      if (sidebarEdgeToggle) syncSidebarEdgeToggle();
-      if (settings.translationPopupEnabled === false && translationPopup) { translationRequestId++; translationPopup.remove(); translationPopup = null; }
-      if (settings.translationPopupEnabled === false && dictionaryPopup && !dictionaryPopup._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
-      if (settings.showFullEnglishDictionary === false && dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
-      syncTranslateIconAvailability();
-      if (previousLanguage !== globalThis.LHN_LANGUAGES.languageFor(settings)) refreshLocalizedUI(!websiteStateChanged);
-    }
-    if (area === "local" && changes[CONFIG.STORAGE_KEYS.SETTINGS] && sidebarOpen) {
-      syncSidebarSettingsButtons();
-      syncSidebarFooter();
-    }
-    if (area === "local" && changes[CONFIG.STORAGE_KEYS.ANNOTATIONS] && sidebarOpen) renderSidebar();
-  });
-  const sidebarThemeObserver = new MutationObserver(() => syncSidebarTheme());
-  sidebarThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "data-color-scheme"] });
-  window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => {
-    if (settings.sidebarTheme !== "dark" && settings.sidebarTheme !== "light") syncSidebarTheme();
-  });
-  function removeComposer() {
-    if (colorChosen && activeAnnotationId && composerOriginalColor) webHighlighter.setMarkColor(activeAnnotationId, composerOriginalColor);
-    if (dictionaryPopup?._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup = null; }
-    composerSave = null; colorChosen = false; composerOriginalColor = null;
-    if (panel) { const old = panel; panel = null; animateRemove(old); }
-    webHighlighter.clearPreview(); activeRange = null; activeAnnotationId = null;
-  }
-  function removeTooltip(cancelColorPreview = false) {
-    clearTimer("dismiss");
-    if (tooltipColorUndo) {
-      const pending = tooltipColorUndo; tooltipColorUndo = null;
-      if (cancelColorPreview) {
-        pending.item.color = pending.color;
-        webHighlighter.setMarkColor(pending.id, pending.color);
-        LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...pending.item, color: pending.color } }).then(updated => {
-          if (updated?.id) pageAnnotationCache.set(updated.id, updated);
-        }).catch(error => console.error("Highlight Notes color cancel failed", error));
-      }
-    }
-    if (tooltip) { const old = tooltip; tooltip = null; hoveredMark = null; animateRemove(old); }
-    if (actionPopup) { actionPopup.remove(); actionPopup = null; }
-    tooltipActionRow = null;
-  }
-  function position(el, x, y) {
-    const margin = 10;
-    const left = Math.max(margin, Math.min(x, innerWidth - el.offsetWidth - margin));
-    const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
-    el.style.left = left + "px"; el.style.top = top + "px";
-  }
-  function positionPopupAtAnchor(popup, anchor) {
-    const anchorNode = anchor?.startContainer || anchor;
-    if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
-    const rect = anchor.getBoundingClientRect();
-    popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
-    popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
-    position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.bottom + 8);
-    popup.style.setProperty("left", popup.style.left, "important");
-    popup.style.setProperty("top", popup.style.top, "important");
-  }
-  function positionTranslateIcon(range = selectedRange) {
-    if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
-    const rect = range.getBoundingClientRect();
-    if (!rect.width && !rect.height) return;
-    position(translateIcon, rect.right, rect.bottom);
-    translateIcon.style.setProperty("left", translateIcon.style.left, "important");
-    translateIcon.style.setProperty("top", translateIcon.style.top, "important");
-  }
-  function removeTranslationUI() {
-    translationRequestId++;
-    translateIcon?.remove(); translateIcon = null;
-    translationPopup?.remove(); translationPopup = null;
-    dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
-  }
-  function dictionaryPopupAt(popup, range) {
-    positionPopupAtAnchor(popup, range);
-  }
-  function makeDictionaryPopup(range) {
-    dictionaryPopup?.remove();
-    const popup = document.createElement("div"); popup.id = "lhn-full-english-dictionary";
-    popup.classList.toggle("lhn-dict-dark", isDictionaryDark());
-    popup.setAttribute("role", "dialog"); popup.setAttribute("aria-label", t("showFullEnglishDictionary"));
-    popup.innerHTML = '<div class="lhn-dict-loading"><span></span><span></span><span></span></div>';
-    popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
-    popup.addEventListener("click", event => {
-      const action = event.target.closest("[data-dict-action]"); if (!action) return;
-      const word = action.dataset.word || "";
-      if (action.dataset.dictAction === "speak") speakHighlightedText(word, "en-US", null, null, true);
-      else if (action.dataset.dictAction === "back") {
-        const previous = popup._lhnHistory?.pop();
-        if (previous) lookupEnglishDictionary(previous, popup._lhnAnchorRange, popup, { recordHistory:false, autoSpeak:true });
-      } else if (word && action.classList.contains("lhn-dict-colloc")) {
-        const anchorRange = popup._lhnAnchorRange;
-        dictionaryRequestId++; popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
-        translateSelectedRange(anchorRange, { forcePopup:true, textOverride:word, sourceLanguage:"en" });
-      } else if (word) lookupEnglishDictionary(word, popup._lhnAnchorRange, popup, { autoSpeak:true });
-    });
-    document.documentElement.appendChild(popup); dictionaryPopup = popup;
-    dictionaryPopupAt(popup, range);
-    requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-dict-visible"));
-    return popup;
-  }
-  function renderEnglishDictionary(popup, data, fromCache) {
-    const hiddenForOpenNote = popup?._lhnHideForNote && popup === dictionaryPopup && panel?.dataset.lhnDictionaryWord === popup.dataset.word;
-    if (!popup || (!popup.isConnected && !hiddenForOpenNote)) return;
-    const posNames = { noun:"noun", n:"noun", verb:"verb", v:"verb", adjective:"adjective", adj:"adjective", adverb:"adverb", adv:"adverb", };
-    const esc = value => String(value ?? "").normalize("NFC").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
-    const relatedByKind = kind => (data.related || []).filter(item => item.kind === kind).map(item => `<button class="lhn-dict-chip lhn-dict-${kind.toLowerCase()}" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("");
-    const related = ["Syn", "Ant"].map(kind => relatedByKind(kind) ? `<section class="lhn-dict-related lhn-dict-${kind.toLowerCase()}" data-kind="${kind}" data-label="${kind}:">${relatedByKind(kind)}</section>` : "").join("");
-    const forms = (data.forms || []).length ? `<section class="lhn-dict-related lhn-dict-forms" data-kind="Forms" data-label="Forms:">${data.forms.map(item => `<button class="lhn-dict-chip lhn-dict-form" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>${esc(item.tag)}</span><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
-    const collocations = (data.collocations || []).length ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${data.collocations.map(item => `<button class="lhn-dict-chip lhn-dict-colloc" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
-    const pos = (data.translation.posDict || []).map(item => `<div class="lhn-dict-pos"><span>${esc(posNames[item.pos.toLowerCase()] || item.pos)}</span><b>${esc((item.words || []).join(", "))}</b></div>`).join("");
-    const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
-    const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
-    popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button><button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${related}${forms}${collocations}</div>`;
-    fillNoteFromDictionary(popup);
-    if (popup._lhnHideForNote) {
-      popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
-      return;
-    }
-    dictionaryPopupAt(popup, popup._lhnAnchorRange);
-  }
-  function fillNoteFromDictionary(popup = dictionaryPopup) {
-    const popupWord = popup?.dataset.word?.toLowerCase();
-    const selectedWord = panel?.dataset.lhnDictionaryWord;
-    if (popupWord && selectedWord && popupWord !== selectedWord) return;
-    const dictionaryTranslation = popup?.querySelector(".lhn-dict-translation")?.textContent?.trim().normalize("NFC") || popup?._lhnMainTranslation?.translatedText?.trim().normalize("NFC");
-    const noteTextarea = panel && !panel._lhnNoteEdited ? panel.querySelector("textarea") : null;
-    if (!noteTextarea || !dictionaryTranslation || noteTextarea.value.trim()) return;
-    noteTextarea.value = dictionaryTranslation;
-    noteTextarea.dispatchEvent(new Event("input", { bubbles:true }));
-  }
-  function hideDictionaryPopupForNote(popup = dictionaryPopup) {
-    if (!popup || popup.dataset.word !== panel?.dataset.lhnDictionaryWord) return;
-    popup._lhnHideForNote = true;
-    popup._lhnRelatedController?.abort();
-    fillNoteFromDictionary(popup);
-    const hasTranslation = !!popup.querySelector(".lhn-dict-translation")?.textContent?.trim() || !!popup._lhnMainTranslation?.translatedText;
-    popup.remove();
-    if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
-  }
-  async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
-    word = cleanText(word); if (!settings.showFullEnglishDictionary || !LHN_DICTIONARY.isEnglishWord(word)) return;
-    if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
-    const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
-    popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
-    popup._lhnMainController = new AbortController(); popup._lhnRelatedController = new AbortController();
-    if (!popup._lhnHistory) popup._lhnHistory = [];
-    if (recordHistory && popup.dataset.word && popup.dataset.word !== word.toLowerCase()) popup._lhnHistory.push(popup.dataset.word);
-    popup.dataset.word = word.toLowerCase();
-    if (panel?.dataset.lhnDictionaryWord === popup.dataset.word) hideDictionaryPopupForNote(popup);
-    popup._lhnAnchorRange = range;
-    let targetLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
-    try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
-    if (requestId !== dictionaryRequestId) return;
-    const cacheKey = `${dictionaryCachePrefix}${targetLanguage}:${word.toLowerCase()}`;
-    const cached = await LHN_DICTIONARY.getCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
-    const hiddenForOpenNote = () => popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
-    if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
-    if (cached) {
-      popup._lhnMainTranslation = cached.translation;
-      if (cached.translation?.translatedText) browser.storage.local.set({ [LHN_DICTIONARY.translationCacheKey(word, targetLanguage)]:{ timestamp:Date.now(), data:cached.translation } }).catch(() => {});
-      if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
-      else renderEnglishDictionary(popup, cached, true);
-      return;
-    }
-    try {
-      const translationPromise = LHN_DICTIONARY.translate(word, targetLanguage, popup._lhnMainController.signal);
-      translationPromise.then(translation => { popup._lhnMainTranslation = translation; fillNoteFromDictionary(popup); }).catch(() => {});
-      const noRelated = popup._lhnHideForNote || panel?.dataset.lhnDictionaryWord === word.toLowerCase();
-      const relatedTasks = noRelated ? [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])] : [
-        LHN_DICTIONARY.relatedWords(word, targetLanguage, popup._lhnRelatedController.signal),
-        LHN_DICTIONARY.wordForms(word, targetLanguage, popup._lhnRelatedController.signal),
-        LHN_DICTIONARY.collocations(word, targetLanguage, popup._lhnRelatedController.signal)
-      ];
-      const ipaPromise = noRelated ? Promise.resolve(null) : LHN_DICTIONARY.fetchIpa(word, "en", popup._lhnMainController.signal);
-      const [translation, related, forms, collocations, ipaResult] = await Promise.allSettled([translationPromise, ...relatedTasks, ipaPromise]);
-      if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
-      let fallbackRelated = [];
-      if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
-        try {
-          const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
-          if (response.ok) {
-            const entry = (await response.json())[0];
-            const synonyms = [...new Set((entry?.meanings || []).flatMap(meaning => meaning.synonyms || []))].slice(0, 3);
-            fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await LHN_DICTIONARY.translate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
-          }
-        } catch {}
-      }
-      const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
-      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
-      popup._lhnMainTranslation = result.translation;
-      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
-      if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
-      else renderEnglishDictionary(popup, result, false);
-    } catch (error) {
-      if (popup.isConnected) popup.textContent = t("translationUnavailable");
-      if (popup._lhnHideForNote) { popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
-    }
-  }
-  function translationOptionsFrom(data = {}) {
-    const saved = data[STUDY_TRANSLATION_SETTINGS_KEY] || {};
-    const displaySettings = { ...settings, ...(data[CONFIG.STORAGE_KEYS.SETTINGS] || {}) };
-    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || "en";
-    const sourceLanguage = ["auto", "en", "vi", "ko"].includes(saved.sourceLanguage) ? saved.sourceLanguage : "auto";
-    translationSourceLanguage = sourceLanguage;
-    const savedTarget = saved.targetLanguage || "auto";
-    const targetLanguage = ["auto", "same"].includes(savedTarget) ? displayLanguage : ["en", "vi", "ko"].includes(savedTarget) ? savedTarget : displayLanguage;
-    return { sourceLanguage, targetLanguage };
-  }
-  async function translateUsingExistingCache(text, sourceLanguage = null) {
-    if (!noteTranslator) return { translation:null, targetLanguage:"en" };
-    const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]);
-    const options = translationOptionsFrom(data);
-    if (sourceLanguage) options.sourceLanguage = sourceLanguage;
-    const translation = await noteTranslator.translate(text, options);
-    return { translation, targetLanguage:options.targetLanguage };
-  }
-  function showTranslateIcon(range) {
-    if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
-    translateIcon?.remove();
-    const button = document.createElement("button");
-    button.id = "lhn-translate-icon"; button.type = "button"; button.setAttribute("aria-label", t("translateSelectedText")); button.title = t("translateSelectedText");
-    button.innerHTML = '<img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNCI+DQogIDxwYXRoIGQ9Im05IDExLTYgNnYzaDlsMy0zIi8+DQogIDxwYXRoIGQ9Im0yMiAxMi00LjYgNC42YTIgMiAwIDAgMS0yLjggMGwtNS4yLTUuMmEyIDIgMCAwIDEgMC0yLjhMMTQgNCIvPg0KPC9zdmc+DQo=" />';
-    button.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-    button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); translateSelectedRange(range, { forcePopup:true }); });
-    document.documentElement.appendChild(button); translateIcon = button;
-    // Keep host-page button rules from hiding the translate control.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"grid", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483646", width:"20px", height:"20px" })) button.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
-    positionTranslateIcon(range);
-    requestAnimationFrame(() => button.isConnected && button.classList.add("lhn-visible"));
-  }
-  function syncTranslateIconAvailability() {
-    if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {
-      translateIcon?.remove(); translateIcon = null; return;
-    }
-    showTranslateIcon(selectedRange);
-  }
-  function createTranslationPopup(range) {
-    const popup = document.createElement("div"); popup.id = "lhn-direct-translation"; popup.setAttribute("role", "status"); popup.setAttribute("aria-live", "polite");
-    popup.classList.toggle("lhn-ui-dark", isSidebarDark()); popup.classList.toggle("lhn-ui-light", !isSidebarDark());
-    const text = document.createElement("span"); text.className = "lhn-direct-translation-text"; text.setAttribute("aria-label", t("translationLoading"));
-    const loading = document.createElement("span"); loading.className = "lhn-direct-translation-loading"; loading.setAttribute("aria-hidden", "true");
-    for (let index = 0; index < 3; index++) { const dot = document.createElement("span"); dot.className = "lhn-direct-translation-dot"; loading.appendChild(dot); }
-    text.appendChild(loading);
-    const speak = document.createElement("button"); speak.type = "button"; speak.className = "lhn-direct-translation-speak"; speak.title = t("readTranslation"); speak.setAttribute("aria-label", t("readTranslation"));
-    speak.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>';
-    const selectedText = cleanText(range.toString());
-    const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-    speak.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); if (selectedText) speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor), null, anchor); });
-    popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
-    popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
-    // Keep host-page rules from hiding or restyling this extension-owned popup.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
-    positionPopupAtAnchor(popup, range);
-    requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
-    return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
-  }
-  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null } = {}) {
-    if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
-    const selectedText = cleanText(textOverride ?? range.toString());
-    if (!selectedText) return;
-    if (settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
-      translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
-      lookupEnglishDictionary(selectedText, range);
-      if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US", null, null, true);
-      return;
-    }
-    if (!noteTranslator) return;
-    translationRequestId++;
-    if (!keepIcon || !translateIcon?.isConnected) { translateIcon?.remove(); translateIcon = null; }
-    translationPopup?.remove(); translationPopup = null;
-    const requestId = translationRequestId;
-    const ui = forcePopup || settings.translationPopupEnabled !== false ? createTranslationPopup(range) : null;
-    if (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) {
-      const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-      speakHighlightedText(selectedText, sourceLanguage ? "en-US" : speechLanguageForText(selectedText, anchor), null, anchor, !!sourceLanguage);
-    }
-    try {
-      const result = await translateUsingExistingCache(selectedText, sourceLanguage);
-      if (requestId !== translationRequestId || !ui || translationPopup !== ui.popup) return;
-      ui.setResult(result.translation, result.targetLanguage);
-    } catch (error) { console.warn("Could not translate selected text", error); if (requestId === translationRequestId && ui && translationPopup === ui.popup) ui.setResult(null); }
-  }
-  function makeButton(label, cls, fn) {
-    const b = document.createElement("button"); b.className = "lhn-btn " + (cls || ""); b.textContent = label; b.type = "button"; b.addEventListener("click", fn); return b;
-  }
-  function getContext(range) {
-    if (!range) return { prefix: "", suffix: "" };
-    const text = range.startContainer.nodeType === Node.TEXT_NODE ? range.startContainer.textContent : range.startContainer.textContent || "";
-    const start = range.startOffset;
-    const end = range.endContainer === range.startContainer ? range.endOffset : start;
-    return { prefix: text.slice(Math.max(0, start - 40), start), suffix: text.slice(end, end + 40) };
-  }
-  function sameAnnotationContent(existing, next) {
-    if (!existing || !next) return false;
-    const persistedFields = ["quote", "note", "contextNote", "url", "title", "hostname", "thumbnailUrl", "prefix", "suffix", "createdAt", "color", "tags"];
-    return persistedFields.every(key => JSON.stringify(existing[key]) === JSON.stringify(next[key]));
-  }
-  function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    const selectedBeforeComposer = cleanText(range?.toString());
-    const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedBeforeComposer);
-    if (useEnglishDictionary) {
-      skipAutoTranslate = true;
-      dictionaryWord ||= selectedBeforeComposer;
-      translationRequestId++;
-      translateIcon?.remove(); translateIcon = null;
-      translationPopup?.remove(); translationPopup = null;
-      if (dictionaryPopup && dictionaryPopup.dataset.word !== selectedBeforeComposer.toLowerCase()) {
-        dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null;
-      }
-    } else removeTranslationUI();
-    removeTooltip();
-    if (panel) removeComposer(); else webHighlighter.clearPreview();
-    activeRange = range ? range.cloneRange() : null;
-    const selectedQuote = cleanText(activeRange?.toString());
-    const selectedContext = getContext(activeRange);
-    const selectedSentence = settings.sentenceNoteEnabled !== false ? LHN_SENTENCE_NOTE.getContext(activeRange, cleanText) : "";
-    selectedColor = existing ? CONFIG.normalizeColor(existing.color) : CONFIG.normalizeColor(settings.defaultHighlightColor); activeAnnotationId = existing?.id || null; colorChosen = false; composerOriginalColor = selectedColor;
-    panel = document.createElement("div"); panel.id = "lhn-panel"; panel.dataset.lhnDictionaryWord = dictionaryWord.toLowerCase(); panel._lhnNoteEdited = !!existing; const composerPanel = panel; syncSidebarTheme();
-    const paletteWidth = Math.max(230, 66 + 34 * COLORS.length);
-    panel.style.width = `${Math.min(paletteWidth, 330, Math.max(200, innerWidth - 20))}px`;
-    const arrow = document.createElement("div"); arrow.className = "lhn-popup-arrow"; arrow.setAttribute("aria-hidden", "true");
-    const colors = document.createElement("div"); colors.className = "lhn-colors";
-    COLORS.forEach(c => {
-      const option = document.createElement("span"); option.className = "lhn-color-option lhn-compose-color-option"; option.dataset.color = c;
-      const b = document.createElement("button"); b.className = "lhn-color"; b.dataset.color = c; b.title = t(CONFIG.colorLabelKey(c)); b.setAttribute("aria-label", b.title); b.setAttribute("aria-pressed", String(c === selectedColor)); b.style.background = COLOR_MAP[c];
-      b.addEventListener("click", e => {
-        e.preventDefault(); e.stopPropagation(); selectedColor = c; colorChosen = true;
-        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, c);
-        if (activeRange) webHighlighter.updatePreviewColor(selectedColor);
-        colors.querySelectorAll(".lhn-color").forEach(n => n.setAttribute("aria-pressed", String(n.dataset.color === c)));
-        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll: true }); });
-      });
-      const star = makeButton("", "lhn-color-default-star", e => {
-        e.preventDefault(); e.stopPropagation();
-        selectedColor = c; colorChosen = true;
-        if (activeAnnotationId) webHighlighter.setMarkColor(activeAnnotationId, c);
-        if (activeRange) webHighlighter.updatePreviewColor(selectedColor);
-        colors.querySelectorAll(".lhn-color").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.color === c)));
-        setDefaultHighlightColor(c);
-        requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll: true }); });
-      });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(c))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>`;
-      const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
-      option.append(b, star, check); colors.appendChild(option);
-    });
-    const toolbar = document.createElement("div"); toolbar.className = "lhn-composer-toolbar";
-    const closeButton = makeButton("×", "lhn-close-btn", removeComposer); closeButton.setAttribute("aria-label", t("cancel")); closeButton.title = t("cancel");
-    toolbar.append(colors, closeButton);
-    const inputWrap = document.createElement("div"); inputWrap.className = "lhn-input-wrap";
-    const noteIcon = document.createElement("span"); noteIcon.className = "lhn-note-icon"; noteIcon.setAttribute("aria-hidden", "true"); noteIcon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg>`;
-    const textarea = document.createElement("textarea"); textarea.rows = 2; textarea.placeholder = t("notePlaceholder"); textarea.value = existing?.note || ""; textarea.setAttribute("aria-label", t("noteAria"));
-    let noteEdited = !!existing;
-    textarea.addEventListener("input", () => { noteEdited = true; composerPanel._lhnNoteEdited = true; });
-    const tagField = document.createElement("label"); tagField.className = "lhn-composer-tags-field";
-    const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
-    const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(existing?.tags || [], "lhn-composer-tags", t); tagField.append(tagCaption, tagEditor.element);
-    const resizeNote = () => { textarea.style.height = "54px"; textarea.style.height = Math.max(54, textarea.scrollHeight) + "px"; };
-    textarea.addEventListener("input", resizeNote);
-    inputWrap.append(noteIcon, textarea);
-    panel.append(arrow, toolbar, inputWrap, tagField);
-    hideDictionaryPopupForNote();
-    textarea.addEventListener("keydown", e => {
-      if (e.key !== "Enter") return;
-      e.preventDefault(); e.stopPropagation();
-      if (e.ctrlKey || e.metaKey) {
-        textarea.setRangeText("\n", textarea.selectionStart, textarea.selectionEnd, "end");
-        textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      } else save();
-    });
-    panel.addEventListener("mousedown", e => e.stopPropagation());
-    panel.addEventListener("click", e => e.stopPropagation());
-    document.documentElement.appendChild(panel);
-    updateDefaultColorIndicators();
-    resizeNote();
-    if (settings.autoSpeakSelectedText && selectedQuote) {
-      const anchor = range?.startContainer?.nodeType === Node.ELEMENT_NODE ? range.startContainer : range?.startContainer?.parentElement;
-      speakHighlightedText(selectedQuote, speechLanguageForText(selectedQuote, anchor), null, anchor);
-    }
-    if (!skipAutoTranslate && !existing && settings.autoTranslate !== false && selectedQuote && noteTranslator) {
-      const composer = panel;
-      translateUsingExistingCache(selectedQuote).then(({ translation }) => {
-        if (!panel || panel !== composer || noteEdited || textarea.value.trim()) return;
-        if (!translation || !panel || panel !== composer || noteEdited || textarea.value.trim()) return;
-        textarea.value = translation;
-        resizeNote();
-      }).catch(error => console.warn("Could not auto-translate selected text", error));
-    }
-    const rect = range?.getBoundingClientRect();
-    if (activeRange) webHighlighter.drawPreview(activeRange, selectedColor);
-    requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); position(panel, rect ? rect.left : innerWidth / 2 - 140, rect ? rect.bottom + 8 : innerHeight / 2); } });
-    // The temporary inline wrappers keep the selected text visible after focus moves to the note field.
-    requestAnimationFrame(() => { if (panel && textarea.isConnected) textarea.focus({ preventScroll: true }); }) ;
-    let saveInFlight = false;
-    async function save() {
-      if (!panel || saveInFlight) return;
-      const q = existing?.quote || selectedQuote;
-      if (!q) { removeComposer(); return; }
-      const context = selectedContext;
-      const item = { quote: q, note: textarea.value.trim(), contextNote: selectedSentence || existing?.contextNote || "", tags: tagEditor.getTags(), color: selectedColor, url: existing?.url || pageUrl(), title: existing?.title || pageTitle(), hostname: existing?.hostname || location.hostname, thumbnailUrl: existing?.thumbnailUrl || pageThumbnailUrl(), prefix: context.prefix || existing?.prefix || "", suffix: context.suffix || existing?.suffix || "", createdAt: existing?.createdAt };
-      if (sameAnnotationContent(existing, item)) { removeComposer(); return; }
-      saveInFlight = true;
-      let persisted = false;
-      try {
-        if (existing) {
-          webHighlighter.clearPreview();
-          const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, id: existing.id } });
-          if (saved?.id) pageAnnotationCache.set(saved.id, saved);
-          webHighlighter.setMarkColor(existing.id, selectedColor);
-        } else {
-          const saved = await LHN_MESSAGING.sendMessage({ type: "ADD", item }); item.id = saved.id;
-          if (saved?.id) pageAnnotationCache.set(saved.id, saved);
-          if (webHighlighter.hasPreview()) webHighlighter.commitPreview(item);
-          else if (activeRange && activeRange.startContainer.isConnected) webHighlighter.wrapRange(activeRange, item);
-          else await restoreAnnotations();
-        }
-        persisted = true;
-      } catch (e) { console.error("Highlight Notes save failed", e); }
-      if (existing && persisted) colorChosen = false;
-      removeComposer();
-      if (sidebarOpen) renderSidebar();
-    }
-    composerSave = save;
-  }
-  async function getItem(id) {
-    const cached = pageAnnotationCacheUrl === pageUrl() ? pageAnnotationCache.get(id) : null;
-    if (cached) return cached;
-    try {
-      const item = await LHN_MESSAGING.sendMessage({ type: "GET_ONE", id });
-      if (item?.id && item.url === pageUrl()) { pageAnnotationCacheUrl = item.url; pageAnnotationCache.set(item.id, item); }
-      return item;
-    } catch { return null; }
-  }
-  function cachePageAnnotations(url, items) {
-    if (pageAnnotationCacheUrl !== url) pageAnnotationCache.clear();
-    pageAnnotationCacheUrl = url;
-    pageAnnotationCache = new Map((Array.isArray(items) ? items : []).filter(item => item?.id).map(item => [item.id, item]));
-  }
-  function attachMarkEvents(mark, id) {
-    if (mark.dataset.lhnEvents) return; mark.dataset.lhnEvents = "1";
-    mark.addEventListener("mouseenter", async () => {
-      if (!websiteSettingsReady || websiteDisabled) return;
-      clearTimer("dismiss"); clearTimer("hover");
-      hoverTimer = setTimeout(async () => { const item = await getItem(id); if (item && mark.isConnected) showNote(mark, item); }, 100);
-    });
-    mark.addEventListener("mouseleave", scheduleTooltipClose);
-    mark.addEventListener("click", async e => { if (!websiteSettingsReady || websiteDisabled) return; e.preventDefault(); e.stopPropagation(); const clickX = e.clientX; clearTimer("hover"); clearTimer("dismiss"); const item = await getItem(id); if (item) showHighlightActions(mark, item, clickX); });
-  }
-  function scheduleTooltipClose() {
-    clearTimer("dismiss"); dismissTimer = setTimeout(() => { if (!tooltip?.matches(":hover") && !actionPopup?.matches(":hover") && !hoveredMark?.matches(":hover")) removeTooltip(); }, 180);
-  }
-  function detectQuoteLanguage(text, anchor) {
-    const sample = String(text || "").trim();
-    if (!sample) return window.navigator?.language || "en-US";
+## 1. Trạng thái hiện tại (sửa đè)
+- Version hiện tại: v3.4.575; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.574: `node --check` 27/27 JS, manifest/HTML script paths hợp lệ, mock chuẩn hóa tag đạt, `git diff --check` đạt; ZIP 64 mục có manifest gốc, version khớp và ui-components.js. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
+- Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
+- `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
+- Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
-    // Script-based detection is reliable for languages with distinct writing systems.
-    if (/[\uAC00-\uD7AF]/.test(sample)) return "ko-KR";
-    if (/[\u3040-\u30FF]/.test(sample)) return "ja-JP";
-    if (/[\u4E00-\u9FFF]/.test(sample)) return "zh-CN";
-    if (/[\u0400-\u04FF]/.test(sample)) return /[ґєіїҐЄІЇ]/.test(sample) ? "uk-UA" : "ru-RU";
-    if (/[\u0E00-\u0E7F]/.test(sample)) return "th-TH";
-    if (/[\u0600-\u06FF]/.test(sample)) return /[پچژگکی]/.test(sample) ? "fa-IR" : "ar-SA";
-    if (/[\u0900-\u097F]/.test(sample)) return "hi-IN";
-    if (/[\u0370-\u03FF]/.test(sample)) return "el-GR";
-    if (/[\u0590-\u05FF]/.test(sample)) return "he-IL";
-    if (/[\u0980-\u09FF]/.test(sample)) return "bn-BD";
-    if (/[\u0A00-\u0A7F]/.test(sample)) return "pa-IN";
-    if (/[\u0A80-\u0AFF]/.test(sample)) return "gu-IN";
-    if (/[\u0B80-\u0BFF]/.test(sample)) return "ta-IN";
-    if (/[\u0C00-\u0C7F]/.test(sample)) return "te-IN";
-    if (/[\u0C80-\u0CFF]/.test(sample)) return "kn-IN";
-    if (/[\u0D00-\u0D7F]/.test(sample)) return "ml-IN";
+## 2. Việc đang mở / Tiếp theo (sửa đè)
+19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote và một phần UI Components; Highlighter có sẵn module riêng, các module giao diện/nghiệp vụ còn lại vẫn cần đánh giá/tách.
+17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
+18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
+16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
+15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
+14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
+13. [Kiểm tra] Focus ô search của Select Voice trên Edge (bản retry chưa thử trên Edge thật); Alt+L và dòng Select voice reader trong Dashboard.
+12. [Kiểm tra] Cờ lhn-br-flag đổi ngay khi chọn voice lúc đang đọc/pause trên Chrome/Firefox. [Chưa làm] Pause với Google rồi đổi giọng: Play vẫn tiếp tục audio cũ.
+11. [Kiểm tra] Giọng trình duyệt đã chọn phải đọc đúng giọng (Chrome: Google Bahasa Indonesia); thiếu giọng thì toast + dừng (Firefox/Android). Theo dõi giọng Google mạng dừng giữa chừng với đoạn dài.
+9. [Kiểm tra] Dashboard TTS: xác nhận tốc độ riêng ngôn ngữ hiển thị mặc định 1.25×, slider/ô số/reset đều chính xác; global giữ 1.0×; giá trị riêng đã lưu không bị ghi đè; flashcard-only default vẫn 1.2×.
+8. [Kiểm tra] Xác nhận 27 website Reader mặc định được seed vào cài đặt hiện có, website con cũng bị tắt, và domain người dùng đã xóa không tự xuất hiện lại.
+7. [Kiểm tra] Xác nhận Reader settings gộp một mục, disabled/gray và không nhận chuột khi Enable reader tắt trên Firefox/Chrome.
+10. [Kiểm tra] Đo thực tế độ trễ dịch Bilingual Reader trên Firefox/Chrome sau khi các engine được gọi đồng thời.
 
-    if (/[ñ¿¡]/i.test(sample)) return "es-ES";
-    if (/[ãõ]/i.test(sample)) return "pt-PT";
-    if (/[äöüß]/i.test(sample)) return "de-DE";
-    if (/[æçœëïÿ]/i.test(sample)) return "fr-FR";
+1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
+2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
+3. [Làm một phần] Chuỗi dự phòng TTS: Google -> giọng trình duyệt theo từng đoạn đã có; Speak popup/Bilingual Reader có toast khi Google audio lỗi, nhưng Dashboard flashcard chưa nối toast. Chờ kiểm tra trình duyệt.
+4. [Kiểm tra] Firefox MV3: background có unload khi rảnh làm mất tin nhắn không.
+6. [Kiểm tra] Xác nhận nhận diện ngôn ngữ, migration voiceMode/browserVoiceURI, chọn Browser voice và Google voice trên Chrome/Firefox.
 
-    // Vietnamese has a distinctive set of letters/diacritics.
-    if (/[ăâđêôơưĂÂĐÊÔƠƯáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i.test(sample)) return "vi-VN";
+## 3. Ràng buộc & quyết định
+- Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
+- Mọi API dùng browser.* (đã có polyfill).
+- Không có sidebar_action; popup và dashboard mở trong tab/popup.
+- Thư mục nguồn là nguồn duy nhất; zip do Arena đóng gói vào D:\Keepit.
+- AGENTS.md và PROJECT.md nằm trong zip và được commit vào Git. Trước khi nộp store, người dùng tự xóa hai file này khỏi zip.
+- Thay đổi lớn nêu rõ trong commit message.
 
-    // For Latin-script languages, compare common words and characteristic spellings.
-    // This is intentionally heuristic: the Web Speech API has no built-in language detector.
-    const lower = sample.toLowerCase();
-    // Match Flashcard's English-word check before isolated tokens (for example,
-    // the "e" in "e.g.") can add noise to other language scores.
-    if (/\b(?:the|and|with|this|that|from|which|have|will)\b/i.test(lower)) return "en-US";
-    const shortLanguageWords = [
-      ["es-ES", /\b(?:hola|gracias|adiós|buenos|buenas|por favor)\b/i],
-      ["fr-FR", /\b(?:bonjour|merci|salut|au revoir|oui|non)\b/i],
-      ["de-DE", /\b(?:hallo|danke|guten|guten tag|tschüss|auf wiedersehen)\b/i],
-      ["it-IT", /\b(?:ciao|grazie|buongiorno|arrivederci|prego)\b/i],
-      ["pt-PT", /\b(?:olá|obrigado|obrigada|bom dia|tchau)\b/i],
-      ["nl-NL", /\b(?:hallo|dank je|bedankt|goedemorgen|tot ziens)\b/i]
-    ];
-    for (const [language, pattern] of shortLanguageWords) if (pattern.test(lower)) return language;
-    const wordCount = (words) => words.reduce((n, word) => n + ((lower.match(new RegExp(`\\b${word}\\b`, "g")) || []).length), 0);
-    const candidates = [
-      ["es-ES", ["el","la","los","las","de","que","y","en","un","una","por","para","con","es","del","como","pero","más"]],
-      ["fr-FR", ["le","la","les","des","une","un","et","est","dans","pour","avec","que","qui","pas","sur","ce","cette","aux"]],
-      ["de-DE", ["der","die","das","und","ist","nicht","ein","eine","mit","für","auf","den","von","zu","im","werden","auch"]],
-      ["it-IT", ["il","lo","la","gli","le","di","che","e","è","un","una","per","con","non","sono","della","del"]],
-      ["pt-PT", ["o","a","os","as","de","que","e","é","um","uma","para","com","não","por","mais","dos","das","você"]],
-      ["nl-NL", ["de","het","een","en","van","is","dat","niet","op","met","voor","zijn","wordt","maar"]],
-      ["vi-VN", ["và","của","là","các","những","được","trong","không","với","một","này","đó","cho","khi","từ","người","thì","sẽ","đã","tại","theo","về","có","nếu","vì","như","để","nên","rất","họ","chúng","tôi","bạn"]]
-    ];
-    let best = { lang: "", score: 0 };
-    for (const [lang, words] of candidates) {
-      const score = wordCount(words);
-      if (score > best.score) best = { lang, score };
-    }
-    if (best.score >= 2) return best.lang;
+## 4. Bản đồ file
+- manifest.json: quyền, content scripts, background.
+- background.js: dịch (chuỗi engine), TTS Google (cache IndexedDB), usage limit, rule DNR Referer cho Chrome, CRUD IndexedDB.
+- tts-engine.js: chia đoạn và phát Google TTS, dự phòng giọng trình duyệt.
+- content.js: popup chọn text, sidebar trong trang, speech.
+- bilingual-reader.js: đọc song ngữ trên trang. lib/Readability*.js: tìm nội dung chính cho Alt+R/Alt+A.
+- popup.html/js: popup toolbar. dashboard.html/js: quản lý, flash card, cài đặt. flags.js/css + fonts/TwemojiCountryFlags.woff2: fallback cờ local cho native selects trên hệ thiếu flag glyph.
+- usage-limits.js: giới hạn dùng theo ngày.
+- browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
-    // The demo treats unrecognized Latin text as English; do not inherit a different page language.
-    if (/[A-Za-z]/.test(sample)) return "en-US";
+## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.575 | Codex sửa:**
 
-    // Prefer explicit language metadata on the highlighted node, then the page.
-    const declared = (anchor?.closest?.("[lang]")?.getAttribute("lang") || document.documentElement.lang || "").trim();
-    return declared || window.navigator?.language || "en-US";
-  }
-  function speechLanguageForText(text, anchor) {
-    return ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage] || detectQuoteLanguage(text, anchor);
-  }
-  function speakWithSystemSpeech(text, lang, onEnd, browserVoiceURI = "") {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) { onEnd?.(); return; }
-    const synth = window.speechSynthesis;
-    const normalizeLanguage = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
-    const findMatchingVoice = voices => {
-      const selected = browserVoiceURI && voices.find(voice => voice.voiceURI === browserVoiceURI);
-      if (selected) return selected;
-      const target = normalizeLanguage(lang);
-      const base = target.split("-")[0];
-      return voices.find(voice => normalizeLanguage(voice.lang) === target)
-        || voices.find(voice => normalizeLanguage(voice.lang).split("-")[0] === base);
-    };
-    const playWithVoices = voices => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voice = findMatchingVoice(voices);
-      if (!voice) {
-        console.warn(`No system speech voice matches ${lang}; skipping speech rather than reading in the wrong language.`);
-        showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này");
-        onEnd?.({ unsupported:true });
-        return;
-      }
-      utterance.voice = voice;
-      utterance.lang = voice.lang || lang;
-      utterance.rate = getSpeechRate(lang);
-      if (typeof onEnd === "function") { utterance.onend = onEnd; utterance.onerror = onEnd; }
-      synth.speak(utterance);
-    };
-    synth.cancel();
-    const voices = synth.getVoices();
-    if (findMatchingVoice(voices) || !synth.addEventListener) { playWithVoices(voices); return; }
-    // Firefox may initially expose only its default voice; wait briefly for the requested language.
-    let done = false;
-    let timeoutId;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      window.clearTimeout(timeoutId);
-      synth.removeEventListener?.("voiceschanged", onVoicesChanged);
-      playWithVoices(synth.getVoices());
-    };
-    const onVoicesChanged = () => { if (findMatchingVoice(synth.getVoices())) finish(); };
-    synth.addEventListener("voiceschanged", onVoicesChanged);
-    timeoutId = window.setTimeout(finish, 900);
-  }
-  function stopCurrentSpeakAudio() {
-    const audio = currentSpeakAudio;
-    const objectUrl = currentSpeakObjectUrl;
-    currentSpeakAudio = null; currentSpeakObjectUrl = null;
-    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.removeAttribute("src"); audio.load(); }
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    const finish = currentSpeakFinish; currentSpeakFinish = null; finish?.();
-  }
-  function toggleSpeechPause() {
-    const synth = window.speechSynthesis;
-    const shouldPause = !speechPauseActive;
-    const readerPause = new CustomEvent("lhn-bilingual-reader-pause", { detail:shouldPause, cancelable:true });
-    document.dispatchEvent(readerPause);
-    if (shouldPause) {
-      speechPauseActive = true;
-      if (!readerPause.defaultPrevented && synth?.speaking) synth.pause();
-      const media = new Set(document.querySelectorAll("audio,video"));
-      if (currentSpeakAudio) media.add(currentSpeakAudio);
-      shortcutPausedMedia = [];
-      media.forEach(item => { if (!item.paused && !item.ended) { item.pause(); shortcutPausedMedia.push(item); } });
-    } else {
-      speechPauseActive = false;
-      if (!readerPause.defaultPrevented && synth?.paused) synth.resume();
-      shortcutPausedMedia.forEach(item => { if (item.paused && !item.ended) item.play().catch(error => console.warn("Could not resume media", error)); });
-      shortcutPausedMedia = [];
-    }
-    return true;
-  }
-  document.addEventListener("lhn-bilingual-reader-pause-state", event => {
-    speechPauseActive = Boolean(event.detail);
-    if (!speechPauseActive) shortcutPausedMedia = [];
-  });
-  document.addEventListener("keydown", e => {
-    if (!websiteSettingsReady || websiteDisabled || isEditable(e.target)) return;
-    const pressed = shortcutForEvent(e).toLowerCase();
-    const pauseShortcut = String(settings.speechPauseShortcut ?? "Space").toLowerCase();
-    if (pauseShortcut && pressed === pauseShortcut) {
-      const pageMediaPlaying = Array.from(document.querySelectorAll("audio,video")).some(item => !item.paused && !item.ended);
-      const speaking = Boolean(speechPauseActive || document.querySelector(".lhn-bilingual-reading") || window.speechSynthesis?.speaking || window.speechSynthesis?.paused || (currentSpeakAudio && !currentSpeakAudio.ended) || pageMediaPlaying);
-      if (speaking) {
-        e.preventDefault(); e.stopImmediatePropagation();
-        if (!e.repeat) toggleSpeechPause();
-        return;
-      }
-    }
-    const selectVoiceShortcut = String(settings.selectVoiceShortcut ?? "Alt+L").toLowerCase();
-    if (selectVoiceShortcut && pressed === selectVoiceShortcut) {
-      const handled = !document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:"open-voice-select", cancelable:true }));
-      if (handled) { e.preventDefault(); e.stopImmediatePropagation(); }
-      return;
-    }
-    const readingShortcuts = { [String(settings.previousReadingShortcut ?? "Left").toLowerCase()] : "previous-reading-block", [String(settings.nextReadingShortcut ?? "Right").toLowerCase()] : "next-reading-block", [String(settings.increaseReadingSpeedShortcut ?? "Up").toLowerCase()] : "increase-reading-speed", [String(settings.decreaseReadingSpeedShortcut ?? "Down").toLowerCase()] : "decrease-reading-speed" };
-    const readingAction = readingShortcuts[pressed];
-    if (readingAction) {
-      const accepted = document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:readingAction, cancelable:true }));
-      if (!accepted) { speechPauseActive = false; shortcutPausedMedia = []; e.preventDefault(); e.stopImmediatePropagation(); }
-    }
-  }, true);
-  document.addEventListener("lhn-bilingual-reader-started", () => { speechPauseActive = false; shortcutPausedMedia = []; });
-  async function speakHighlightedText(text, lang, onEnd, anchor = null, forceLang = false) {
-    const requestId = ++speakRequestId;
-    speechPauseActive = false; shortcutPausedMedia = [];
-    window.speechSynthesis?.cancel();
-    stopCurrentSpeakAudio();
-    let finished = false;
-    const finish = () => { if (finished) return; finished = true; if (currentSpeakFinish === finish) currentSpeakFinish = null; onEnd?.(); };
-    currentSpeakFinish = finish;
-    const voiceSettings = await LHN_TTS.getVoiceSettings().catch(() => ({ voiceMode:settings.voiceMode || settings.speechVoice || "google", browserVoiceURI:settings.browserVoiceURI || "" }));
-    if (requestId !== speakRequestId) return;
-    const sourceLanguage = forceLang ? lang : ({ en:"en-US", vi:"vi-VN", ko:"ko-KR" })[translationSourceLanguage];
-    const declaredLanguage = anchor?.closest?.("[lang]")?.getAttribute("lang") || document.documentElement.lang || window.navigator?.language || lang || "en-US";
-    if (voiceSettings.voiceMode === "google") lang = sourceLanguage || await LHN_TTS.detectLanguage(text, declaredLanguage);
-    lang = LHN_TTS.normalizeLanguage(lang) || "en-US";
-    if (requestId !== speakRequestId) return;
-    const sample = LHN_PREPROCESS_SPEECH(String(text || "").trim(), lang, settings);
-    if (!sample) { finish(); return; }
-    if (voiceSettings.voiceMode === "browser") {
-      speakWithSystemSpeech(sample, lang, finish, voiceSettings.browserVoiceURI);
-      return;
-    }
-    const googleLanguage = String(lang || "en-US").trim().replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    LHN_TTS.play({
-      text: sample, lang, googleLanguage, voice: `google-translate-default:${googleLanguage}`, rate: getSpeechRate(lang),
-      isActive: () => requestId === speakRequestId,
-      setCurrent: (audio, url) => { currentSpeakAudio = audio; currentSpeakObjectUrl = url; },
-      clearCurrent: () => { currentSpeakAudio = null; currentSpeakObjectUrl = null; },
-      browserVoiceURI:voiceSettings.browserVoiceURI,
-      systemSpeak: (t, l, done, uri) => speakWithSystemSpeech(t, l, done, uri),
-      onGoogleAudioSlow: () => showSidebarToast(() => t("googleAudioSlowToast")),
-      onEnd: finish
-    });
-  }
-  function showNote(anchor, item) {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    removeTranslationUI();
-    if (panel && activeAnnotationId === item.id) { clearTimer("dismiss"); removeTooltip(); return; }
-    clearTimer("dismiss");
-    if (tooltip && hoveredMark === anchor && tooltip.dataset.itemId === item.id) return;
-    removeTooltip(); hoveredMark = anchor;
-    tooltip = document.createElement("div"); tooltip.id = "lhn-note-pop"; tooltip.dataset.itemId = item.id; tooltip._lhnAnchor = anchor; syncSidebarTheme();
-    tooltipColorUndo = null;
-    const note = document.createElement("div"); note.className = "lhn-tooltip-note"; note.dataset.emptyNote = String(!item.note); note.textContent = item.note || t("noNote");
-    const heading = document.createElement("div"); heading.className = "lhn-tooltip-heading";
-    const speakHighlight = () => {
-      const text = String(item.quote || "").trim();
-      if (!text || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
-      try { speakHighlightedText(text, speechLanguageForText(text, anchor), null, anchor); }
-      catch (error) { console.warn("Highlight speech playback failed", error); }
-    };
-    const hoverSpeakButton = makeButton("", "secondary lhn-icon-btn lhn-tooltip-speak-trigger", speakHighlight);
-    hoverSpeakButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.volume}</svg>`;
-    hoverSpeakButton.setAttribute("aria-label", t("speakHighlightTooltip")); hoverSpeakButton.title = t("speakHighlightTooltip");
-    const row = document.createElement("div"); row.className = "lhn-row lhn-actions lhn-tooltip-actions";
-    const colorGroup = document.createElement("div"); colorGroup.className = "lhn-tooltip-colors";
-    for (const color of COLORS) {
-      const option = document.createElement("span"); option.className = "lhn-color-option lhn-tooltip-color-option"; option.dataset.color = color;
-      const colorButton = document.createElement("button");
-      colorButton.type = "button"; colorButton.className = `lhn-tooltip-color lhn-${color}`; colorButton.dataset.color = color;
-      colorButton.style.backgroundColor = COLOR_MAP[color];
-      colorButton.title = t(CONFIG.colorLabelKey(color));
-      colorButton.setAttribute("aria-label", colorButton.title);
-      colorButton.setAttribute("aria-pressed", String((item.color || CONFIG.DEFAULT_COLOR) === color));
-      colorButton.addEventListener("click", async e => {
-        e.preventDefault(); e.stopPropagation();
-        const previousColor = CONFIG.normalizeColor(item.color);
-        if (previousColor === color) return;
-        if (!tooltipColorUndo || tooltipColorUndo.id !== item.id) tooltipColorUndo = { id: item.id, color: previousColor, item: { ...item } };
-        item.color = color;
-        webHighlighter.setMarkColor(item.id, color);
-        colorGroup.querySelectorAll(".lhn-tooltip-color").forEach(button => button.setAttribute("aria-pressed", String(button === colorButton)));
-        try {
-          const updated = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, color } });
-          if (updated?.id) pageAnnotationCache.set(updated.id, updated);
-          item.color = CONFIG.normalizeColor(updated?.color || color);
-          webHighlighter.setMarkColor(item.id, item.color);
-        } catch (error) {
-          console.error("Highlight Notes color update failed", error);
-          item.color = previousColor;
-          webHighlighter.setMarkColor(item.id, previousColor);
-          colorGroup.querySelectorAll(".lhn-tooltip-color").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.color === previousColor)));
-        }
-      });
-      const star = makeButton("", "lhn-color-default-star", e => { e.preventDefault(); e.stopPropagation(); setDefaultHighlightColor(color); });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>`;
-      const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
-      option.append(colorButton, star, check); colorGroup.appendChild(option);
-    }
-    const actionGroup = document.createElement("div"); actionGroup.className = "lhn-tooltip-icon-actions";
-    const editButton = makeButton("✎", "lhn-icon-btn", () => {
-      const range = document.createRange();
-      range.selectNodeContents(anchor);
-      showComposer(range, item);
-    });
-    editButton.setAttribute("aria-label", t("editNote")); editButton.title = t("editNote");
-    const deleteButton = makeButton("▤", "secondary lhn-icon-btn lhn-trash-btn", async () => {
-      await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
-      pageAnnotationCache.delete(item.id);
-      document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(n => n.replaceWith(...n.childNodes));
-      removeTooltip();
-    });
-    deleteButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.trash}</svg>`;
-    deleteButton.setAttribute("aria-label", t("deleteNote")); deleteButton.title = t("deleteNote");
-    editButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.edit}</svg>`;
-    const speakButton = makeButton("", "secondary lhn-icon-btn lhn-speak-btn", speakHighlight);
-    speakButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.volume}</svg>`;
-    speakButton.setAttribute("aria-label", t("speakHighlightTooltip")); speakButton.title = t("speakHighlightTooltip");
-    actionGroup.append(editButton, deleteButton, speakButton);
-    row.append(colorGroup, actionGroup);
-    heading.append(note, hoverSpeakButton);
-    tooltip.append(heading);
-    tooltipActionRow = row;
-    tooltip.addEventListener("mouseenter", () => clearTimer("dismiss")); tooltip.addEventListener("mouseleave", scheduleTooltipClose);
-    tooltip.addEventListener("mousedown", e => e.stopPropagation()); tooltip.addEventListener("click", e => e.stopPropagation());
-    document.documentElement.appendChild(tooltip);
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
-    updateDefaultColorIndicators();
-    requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, anchor); } });
-  }
-  function showHighlightActions(anchor, item, clickX) {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    if (actionPopup?.dataset.itemId === item.id) { actionPopup.remove(); actionPopup = null; return; }
-    if (!tooltip || hoveredMark !== anchor || tooltip.dataset.itemId !== item.id) showNote(anchor, item);
-    if (!tooltipActionRow) return;
-    actionPopup?.remove();
-    actionPopup = document.createElement("div"); actionPopup.id = "lhn-highlight-actions"; actionPopup.dataset.itemId = item.id;
-    actionPopup.classList.toggle("lhn-ui-dark", isSidebarDark()); actionPopup.classList.toggle("lhn-ui-light", !isSidebarDark());
-    actionPopup.appendChild(tooltipActionRow);
-    actionPopup.addEventListener("mouseenter", () => clearTimer("dismiss"));
-    actionPopup.addEventListener("mouseleave", scheduleTooltipClose);
-    actionPopup.addEventListener("mousedown", e => e.stopPropagation()); actionPopup.addEventListener("click", e => e.stopPropagation());
-    document.documentElement.appendChild(actionPopup);
-    updateDefaultColorIndicators();
-    const r = anchor.getBoundingClientRect();
-    requestAnimationFrame(() => { if (actionPopup) position(actionPopup, Number.isFinite(clickX) ? clickX - actionPopup.offsetWidth / 2 : r.left, r.top - actionPopup.offsetHeight - 7); });
-  }
-  function getInlineStyle(el, prop) {
-    return { value: el.style.getPropertyValue(prop), priority: el.style.getPropertyPriority(prop) };
-  }
-  function restoreInlineStyle(el, prop, saved) {
-    if (!saved || !el) return;
-    if (saved.value) el.style.setProperty(prop, saved.value, saved.priority);
-    else el.style.removeProperty(prop);
-  }
-  function applyPageShrink(width) {
-    const root = document.documentElement, body = document.body;
-    if (!pageLayoutSnapshot) pageLayoutSnapshot = {
-      rootWidth: getInlineStyle(root, "width"), rootMaxWidth: getInlineStyle(root, "max-width"), rootBoxSizing: getInlineStyle(root, "box-sizing"),
-      rootMarginLeft: getInlineStyle(root, "margin-left"), rootMarginRight: getInlineStyle(root, "margin-right"), rootOverflowX: getInlineStyle(root, "overflow-x"),
-      bodyWidth: body ? getInlineStyle(body, "width") : null, bodyMinWidth: body ? getInlineStyle(body, "min-width") : null,
-      bodyMarginLeft: body ? getInlineStyle(body, "margin-left") : null, bodyMaxWidth: body ? getInlineStyle(body, "max-width") : null, bodyMarginRight: body ? getInlineStyle(body, "margin-right") : null,
-      bodyOverflowX: body ? getInlineStyle(body, "overflow-x") : null
-    };
-    // Reduce the actual layout viewport, rather than merely adding a margin.
-    // This leaves a dedicated strip for the fixed sidebar and prevents it from
-    // covering the page's main content on responsive layouts.
-    root.style.setProperty("box-sizing", "border-box", "important");
-    // Keep the root viewport full-size so the fixed sidebar itself is never
-    // clipped. Narrow the body (the page layout container) instead.
-    root.style.setProperty("width", "100%", "important");
-    root.style.setProperty("max-width", "100%", "important");
-    root.style.setProperty("margin-left", "0", "important");
-    root.style.setProperty("margin-right", "0", "important");
-    root.style.setProperty("overflow-x", "visible", "important");
-    if (body) {
-      body.style.setProperty("box-sizing", "border-box", "important");
-      body.style.setProperty("width", `calc(100vw - ${width}px)`, "important");
-      body.style.setProperty("min-width", "0", "important");
-      body.style.setProperty("margin-left", "0", "important");
-      body.style.setProperty("margin-right", "0", "important");
-      body.style.setProperty("max-width", `calc(100vw - ${width}px)`, "important");
-      body.style.setProperty("overflow-x", "hidden", "important");
-    }
-  }
-  function restorePageWidth() {
-    if (!pageLayoutSnapshot) return;
-    const snap = pageLayoutSnapshot; pageLayoutSnapshot = null;
-    restoreInlineStyle(document.documentElement, "width", snap.rootWidth);
-    restoreInlineStyle(document.documentElement, "max-width", snap.rootMaxWidth);
-    restoreInlineStyle(document.documentElement, "box-sizing", snap.rootBoxSizing);
-    restoreInlineStyle(document.documentElement, "margin-left", snap.rootMarginLeft);
-    restoreInlineStyle(document.documentElement, "margin-right", snap.rootMarginRight);
-    restoreInlineStyle(document.documentElement, "overflow-x", snap.rootOverflowX);
-    if (document.body) {
-      restoreInlineStyle(document.body, "width", snap.bodyWidth);
-      restoreInlineStyle(document.body, "min-width", snap.bodyMinWidth);
-      restoreInlineStyle(document.body, "margin-left", snap.bodyMarginLeft);
-      restoreInlineStyle(document.body, "max-width", snap.bodyMaxWidth);
-      restoreInlineStyle(document.body, "margin-right", snap.bodyMarginRight);
-      restoreInlineStyle(document.body, "overflow-x", snap.bodyOverflowX);
-    }
-  }
-  function sidebarButton(label, cls, handler) {
-    const b = document.createElement("button"); b.className = "lhn-side-btn" + (cls ? " " + cls : ""); b.textContent = label; b.type = "button"; b.addEventListener("click", handler); return b;
-  }
-  function renderContextSentence(host, sentence, quote) {
-    host.replaceChildren();
-    if (!sentence) return;
-    const text = String(sentence), selected = String(quote || "");
-    let match = null;
-    if (selected) { const pattern = selected.trim().split(/\s+/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"); try { match = new RegExp(pattern).exec(text); } catch { /* render plain text */ } }
-    const at = match?.index ?? -1, length = match?.[0].length ?? 0;
-    if (at < 0) { host.textContent = text; return; }
-    host.append(document.createTextNode(text.slice(0, at)));
-    const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
-    host.append(document.createTextNode(text.slice(at + length)));
-  }
-  function highlightSidebarSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".lhn-sidebar-actions, .lhn-search-match"); }
-  function openSidebarEdit(item) {
-    const pageScrollX = window.scrollX, pageScrollY = window.scrollY;
-    document.getElementById("lhn-sidebar-edit-dialog")?.remove();
-    const dialog = document.createElement("dialog"); dialog.id = "lhn-sidebar-edit-dialog"; syncSidebarTheme();
-    const form = document.createElement("form");
-    const heading = document.createElement("h2"); heading.dataset.lhnI18n = "composerEdit"; heading.textContent = t("composerEdit");
-    const quote = document.createElement("div"); quote.className = "lhn-edit-quote"; quote.textContent = item.quote || "";
-    const colors = document.createElement("div"); colors.className = "lhn-edit-colors";
-    const toolbar = document.createElement("div"); toolbar.className = "lhn-edit-toolbar";
-    let selectedColor = CONFIG.normalizeColor(item.color);
-    COLORS.forEach(color => {
-      const button = document.createElement("button"); button.type = "button"; button.className = `lhn-edit-color lhn-${color}`; button.style.backgroundColor = COLOR_MAP[color]; button.dataset.color = color; button.setAttribute("aria-label", t(CONFIG.colorLabelKey(color))); button.setAttribute("aria-pressed", String(color === selectedColor));
-      button.addEventListener("click", () => { selectedColor = color; colors.querySelectorAll("button").forEach(el => el.setAttribute("aria-pressed", String(el === button))); }); colors.append(button);
-    });
-    const makeField = (labelText, labelKey, value) => {
-      const label = document.createElement("label"); label.className = "lhn-edit-field";
-      const caption = document.createElement("span"); caption.dataset.lhnI18n = labelKey; caption.textContent = labelText;
-      const wrap = document.createElement("div"); wrap.className = "lhn-edit-input-wrap";
-      const icon = document.createElement("span"); icon.className = "lhn-edit-note-icon"; icon.setAttribute("aria-hidden", "true"); icon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg>`;
-      const textarea = document.createElement("textarea"); textarea.value = value || ""; textarea.rows = 4; wrap.append(icon, textarea); label.append(caption, wrap); return { label, textarea };
-    };
-    const note1 = makeField(t("noteLabel"), "noteLabel", item.note); note1.textarea.classList.add("lhn-edit-note-primary"); const note2 = makeField(t("sentenceNote"), "sentenceNote", item.contextNote); note2.textarea.classList.add("lhn-edit-note-sentence");
-    const tagField = document.createElement("label"); tagField.className = "lhn-edit-field lhn-edit-tags-field";
-    const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
-    const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(item.tags || [], "lhn-edit-tags", t); tagField.append(tagCaption, tagEditor.element);
-    const parseTags = value => { const seen = new Set(); return String(value || "").split(",").map(tag => tag.trim()).filter(tag => { const key = tag.toLocaleLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; }); };
-    const sameTags = (a, b) => {
-      const normalize = value => parseTags(Array.isArray(value) ? value.join(",") : value);
-      return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
-    };
-    const autoGrow = (field, minHeight) => { field.style.height = `${minHeight}px`; field.style.height = Math.max(minHeight, field.scrollHeight) + "px"; };
-    const resizeNote1 = () => autoGrow(note1.textarea, 46); const resizeNote2 = () => autoGrow(note2.textarea, 70);
-    note1.textarea.addEventListener("input", resizeNote1); note2.textarea.addEventListener("input", resizeNote2);
-    let saving = false;
-    const saveEdit = async () => {
-      if (saving) return;
-      const note = note1.textarea.value.trim(), contextNote = note2.textarea.value.trim(), tags = tagEditor.getTags();
-      if (note === String(item.note || "").trim() && contextNote === String(item.contextNote || "").trim() && selectedColor === CONFIG.normalizeColor(item.color) && sameTags(tags, item.tags)) { dialog.close(); return; }
-      saving = true;
-      try {
-        const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: selectedColor, tags } });
-        if (saved?.id) pageAnnotationCache.set(saved.id, saved);
-        dialog.close(); await renderSidebar(); showSidebarToast(() => t("savedChanges"));
-      } finally { saving = false; }
-    };
-    [note1.textarea, note2.textarea].forEach(textarea => textarea.addEventListener("keydown", event => {
-      if (event.key !== "Enter") return;
-      event.preventDefault(); event.stopPropagation();
-      if (event.ctrlKey || event.metaKey) {
-        textarea.setRangeText("\n", textarea.selectionStart, textarea.selectionEnd, "end");
-        textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      } else saveEdit();
-    }));
-    const close = document.createElement("button"); close.type = "button"; close.className = "lhn-edit-close"; close.textContent = "×"; close.setAttribute("aria-label", t("cancel")); close.title = t("cancel"); close.addEventListener("click", () => dialog.close());
-    toolbar.append(colors, close); form.append(heading, quote, toolbar, note1.label, note2.label, tagField); dialog.append(form);
-    form.addEventListener("submit", event => { event.preventDefault(); saveEdit(); });
-    dialog.addEventListener("click", event => { if (event.target === dialog) saveEdit(); });
-    dialog.addEventListener("cancel", event => { event.preventDefault(); dialog.close(); });
-    dialog.addEventListener("close", () => dialog.remove()); document.documentElement.append(dialog); syncSidebarTheme(); dialog.showModal(); resizeNote1(); resizeNote2(); note1.textarea.focus({ preventScroll: true });
-    const restorePageScroll = () => window.scrollTo(pageScrollX, pageScrollY);
-    restorePageScroll(); requestAnimationFrame(() => { restorePageScroll(); requestAnimationFrame(restorePageScroll); });
-  }
-  function syncSidebarSettingsButtons() {
-    sidebarHeaderActions?.querySelectorAll("button[data-setting]").forEach(button => {
-      const key = button.dataset.setting;
-      const enabled = settings[key] !== false;
-      button.classList.toggle("is-on", enabled); button.setAttribute("aria-pressed", String(enabled));
-      button.dataset.tooltip = t(button.dataset.labelKey); button.removeAttribute("title"); button.setAttribute("aria-label", button.dataset.tooltip);
-    });
-    const siteButton = sidebarHeaderActions?.querySelector("button[data-site-toggle]");
-    if (siteButton) {
-      const labelKey = websiteDisabled ? "enableWebsite" : "disableWebsite";
-      siteButton.dataset.tooltip = t(labelKey); siteButton.removeAttribute("title"); siteButton.setAttribute("aria-label", siteButton.dataset.tooltip);
-      siteButton.classList.toggle("is-on", !websiteDisabled); siteButton.setAttribute("aria-pressed", String(!websiteDisabled));
-    }
-  }
-  function isSidebarDark() {
-    if (settings.sidebarTheme === "dark") return true;
-    if (settings.sidebarTheme === "light") return false;
-    const root = document.documentElement;
-    if (root.classList.contains("dark") || root.dataset.theme === "dark" || root.dataset.colorScheme === "dark") return true;
-    if (root.classList.contains("light")) return false;
-    return !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  }
-  function isDictionaryDark() {
-    if (settings.sidebarTheme === "dark") return true;
-    if (settings.sidebarTheme === "light") return false;
-    return !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  }
-  function syncSidebarTheme() {
-    const dark = isSidebarDark();
-    dictionaryPopup?.classList.toggle("lhn-dict-dark", isDictionaryDark());
-    [panel, tooltip, actionPopup, translationPopup, document.getElementById("lhn-sidebar-edit-dialog")].forEach(surface => {
-      if (!surface) return;
-      surface.classList.toggle("lhn-ui-dark", dark);
-      surface.classList.toggle("lhn-ui-light", !dark);
-    });
-    if (!sidebar) return;
-    sidebar.classList.toggle("lhn-theme-dark", dark);
-    sidebar.classList.toggle("lhn-theme-light", !dark);
-    const button = sidebarHeaderActions?.querySelector("button[data-theme-toggle]");
-    if (!button) return;
-    const label = t(dark ? "sidebarSwitchToLight" : "sidebarSwitchToDark");
-    const icon = dark
-      ? '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.804a6.5 6.5 0 0 0 8.268 8.268c.344-.215.826-.003.803.4"/>'
-      : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>';
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
-    button.dataset.tooltip = label;
-    button.setAttribute("aria-label", label);
-    button.setAttribute("aria-pressed", String(dark));
-    button.classList.toggle("is-on", dark);
-  }
-  async function toggleSidebarTheme() {
-    const previous = settings;
-    settings = { ...settings, sidebarTheme: isSidebarDark() ? "light" : "dark" };
-    syncSidebarTheme();
-    try { await LHN_SETTINGS.save(settings); }
-    catch (error) { settings = previous; syncSidebarTheme(); console.warn("Could not save sidebar theme", error); }
-  }
-  function syncSidebarFooter() {
-    const button = sidebar?.querySelector(".lhn-sidebar-footer-toggle");
-    if (!button) return;
-    const enabled = !websiteDisabled;
-    const actionLabel = t(websiteDisabled ? "enableWebsite" : "disableWebsite");
-    const icon = websiteDisabled
-      ? '<circle cx="12" cy="12" r="9"/><path d="m4.9 4.9 14.2 14.2"/>'
-      : '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>';
-    button.classList.toggle("is-enabled", enabled);
-    button.classList.toggle("is-disabled", websiteDisabled);
-    button.setAttribute("aria-pressed", String(enabled));
-    button.setAttribute("aria-label", `${actionLabel}: ${displayWebsiteName(websiteKey())}`);
-    button.title = actionLabel;
-    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
-    const name = document.createElement("span");
-    name.textContent = displayWebsiteName(websiteKey());
-    button.append(name);
-  }
-  function refreshTagEditorTranslations(root) {
-    root?.querySelectorAll(".lhn-tag-editor input").forEach(input => { input.placeholder = t("tagsPlaceholder"); input.setAttribute("aria-label", t("tagsLabel")); });
-    root?.querySelectorAll(".lhn-tag-chip").forEach(chip => { const remove = chip.querySelector("button"); if (remove) remove.setAttribute("aria-label", `${t("delete")}: ${chip.firstChild?.textContent || ""}`); });
-  }
-  function refreshColorTranslations(root) {
-    root?.querySelectorAll(".lhn-color, .lhn-tooltip-color, .lhn-edit-color").forEach(button => { const color = button.dataset.color; if (!color) return; const label = t(CONFIG.colorLabelKey(color)); button.title = label; button.setAttribute("aria-label", label); });
-    root?.querySelectorAll(".lhn-color-default-star").forEach(button => { const color = button.closest(".lhn-color-option")?.dataset.color; if (!color) return; const label = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; button.title = label; button.setAttribute("aria-label", label); });
-  }
-  function refreshLocalizedUI(refreshSidebar = true) {
-    if (panel) {
-      const textarea = panel.querySelector("textarea");
-      if (textarea) { textarea.placeholder = t("notePlaceholder"); textarea.setAttribute("aria-label", t("noteAria")); }
-      const caption = panel.querySelector(".lhn-composer-tags-field > span"); if (caption) caption.textContent = t("tagsLabel");
-      const close = panel.querySelector(".lhn-close-btn"); if (close) { close.title = t("cancel"); close.setAttribute("aria-label", t("cancel")); }
-      refreshTagEditorTranslations(panel); refreshColorTranslations(panel);
-    }
-    if (tooltip) {
-      const emptyNote = tooltip.querySelector(".lhn-tooltip-note[data-empty-note=\"true\"]"); if (emptyNote) emptyNote.textContent = t("noNote");
-      const edit = tooltip.querySelector(".lhn-tooltip-icon-actions .lhn-icon-btn:not(.lhn-trash-btn):not(.lhn-speak-btn)"); if (edit) { edit.title = t("editNote"); edit.setAttribute("aria-label", t("editNote")); }
-      const remove = tooltip.querySelector(".lhn-trash-btn"); if (remove) { remove.title = t("deleteNote"); remove.setAttribute("aria-label", t("deleteNote")); }
-      const speak = tooltip.querySelector(".lhn-speak-btn"); if (speak) { speak.title = t("speakHighlightTooltip"); speak.setAttribute("aria-label", t("speakHighlightTooltip")); }
-      refreshColorTranslations(tooltip);
-    }
-    const editDialog = document.getElementById("lhn-sidebar-edit-dialog");
-    if (editDialog) {
-      editDialog.querySelectorAll("[data-lhn-i18n]").forEach(node => { node.textContent = t(node.dataset.lhnI18n); });
-      const close = editDialog.querySelector(".lhn-edit-close"); if (close) { close.title = t("cancel"); close.setAttribute("aria-label", t("cancel")); }
-      refreshTagEditorTranslations(editDialog); refreshColorTranslations(editDialog);
-    }
-    const toast = document.getElementById("lhn-sidebar-toast");
-    if (toast?.classList.contains("is-visible") && sidebarToastRender) toast.textContent = sidebarToastRender();
-    syncSidebarEdgeToggle();
-    syncSidebarFooter();
-    if (refreshSidebar && sidebarOpen) openSidebar(true);
-  }
-  async function applyWebsiteDisabledState(disabled) {
-    if (websiteDisabled === disabled) return;
-    websiteDisabled = disabled;
-    syncSidebarEdgeToggle();
-    syncSidebarFooter();
-    if (disabled) {
-      document.dispatchEvent(new CustomEvent("lhn-website-disabled-change", { detail:true }));
-      removeComposer(); removeTooltip(); selectedRange = null; document.getElementById("lhn-sidebar-edit-dialog")?.remove();
-      if (restoreDebounce) { clearTimeout(restoreDebounce); restoreDebounce = 0; }
-      restoreObserver?.disconnect(); restoreObserver = null;
-      document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
-      if (sidebarOpen) closeSidebar();
-    } else {
-      document.dispatchEvent(new CustomEvent("lhn-website-disabled-change", { detail:false }));
-      startRestoreObserver(); scheduleRestore(150);
-      if (sidebarOpen) openSidebar(true);
-    }
-    syncSidebarSettingsButtons();
-  }
-  async function toggleWebsiteDisabled() {
-    const disabledWebsites = new Set(Array.isArray(settings.disabledWebsites) ? settings.disabledWebsites : []);
-    const host = websiteKey(), disable = !disabledWebsites.has(host);
-    if (disable) disabledWebsites.add(host); else disabledWebsites.delete(host);
-    const updated = { ...settings, disabledWebsites: [...disabledWebsites] };
-    try {
-      await LHN_SETTINGS.save(updated);
-      settings = updated;
-      await applyWebsiteDisabledState(disable);
-      showSidebarToast(() => t(disable ? "websiteDisabledToast" : "websiteEnabledToast"));
-    } catch (error) { console.warn("Could not update website setting", error); }
-  }
-  async function toggleSidebarSetting(key) {
-    const previous = settings; settings = { ...settings, [key]: settings[key] === false };
-    syncSidebarSettingsButtons();
-    try {
-      await LHN_SETTINGS.save(settings);
-      const labelKey = { showOnSelect: "autoPopup", sentenceNoteEnabled: "autoSentenceNote" }[key];
-      showSidebarToast(() => `${t(labelKey)}: ${t(settings[key] ? "settingEnabled" : "settingDisabled")}`);
-    }
-    catch (error) { settings = previous; syncSidebarSettingsButtons(); console.warn("Could not save sidebar setting", error); }
-  }
-  function showSidebarToast(message) {
-    let toast = document.getElementById("lhn-sidebar-toast");
-    if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
-    sidebarToastRender = typeof message === "function" ? message : () => message;
-    const renderToast = sidebarToastRender;
-    toast.textContent = renderToast();
-    toast.classList.add("is-visible");
-    clearTimeout(sidebarToastTimer);
-    sidebarToastTimer = setTimeout(() => { toast.classList.remove("is-visible"); sidebarToastTimer = setTimeout(() => { if (sidebarToastRender === renderToast) sidebarToastRender = null; toast.remove(); }, 220); }, 1800);
-  }
-  document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
-  function syncSidebarEdgeToggle() {
-    if (!sidebarEdgeToggle) {
-      sidebarEdgeToggle = document.createElement("button"); sidebarEdgeToggle.id = "lhn-sidebar-edge-toggle"; sidebarEdgeToggle.type = "button";
-      sidebarEdgeToggle.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-      sidebarEdgeToggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); toggleSidebar(); });
-      document.documentElement.appendChild(sidebarEdgeToggle);
-    }
-    const shortcut = settings.sidebarShortcut ?? "Alt+Q";
-    const label = shortcut ? `${t("toggleSidebar")} (${shortcut})` : t("toggleSidebar");
-    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen));
-    sidebarEdgeToggle.dataset.tooltip = label;
-    sidebarEdgeToggle.classList.toggle("is-open", sidebarOpen);
-    sidebarEdgeToggle.classList.toggle("is-site-disabled", websiteDisabled);
-    sidebarEdgeToggle.classList.toggle("lhn-hidden-by-setting", settings.sidebarIndicatorEnabled === false || (websiteDisabled && settings.sidebarIndicatorOnDisabledSites === false));
-    const width = sidebarOpen ? (Number.parseFloat(sidebar?.style.width) || 0) : 0;
-    sidebarEdgeToggle.style.right = `${width}px`;
-    const path = sidebarOpen ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
-    sidebarEdgeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
-  }
-  function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
-  function closeSidebar() {
-    clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
-    sidebarOpen = false;
-    if (sidebar) { const old = sidebar; sidebar = null; animateRemove(old); }
-    restorePageWidth();
-    syncSidebarEdgeToggle();
-  }
-  async function openSidebar(rebuild = false) {
-    clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
-    await loadSettings();
-    if (sidebarOpen && !rebuild) { await renderSidebar(); return; }
-    const previousSidebar = sidebarOpen && rebuild ? sidebar : null;
-    if (!sidebarOpen) sidebarOpen = true;
-    const width = previousSidebar ? (Number.parseFloat(previousSidebar.style.width) || Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)))) : Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)));
-    // Reserve space for the sidebar by narrowing the page content area.
-    applyPageShrink(width);
-    sidebar = document.createElement("aside"); sidebar.id = "lhn-sidebar"; sidebar.style.width = width + "px";
-    const top = document.createElement("div"); top.className = "lhn-sidebar-top";
-    const brand = document.createElement("div"); brand.className = "lhn-sidebar-brand";
-    const logo = document.createElement("img"); logo.src = browser.runtime.getURL("icons/icon.svg"); logo.alt = "";
-    const brandCopy = document.createElement("div"); brandCopy.className = "lhn-sidebar-brandcopy";
-    const brandName = document.createElement("span"); brandName.className = "lhn-sidebar-brandname"; brandName.textContent = "Keepit - Highlight Notes";
-    const freeLabel = document.createElement("span"); freeLabel.className = "lhn-sidebar-plan menu-item item-free"; freeLabel.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/></svg>';
-    const freeText = document.createElement("span"); freeText.textContent = t("freePlan"); freeLabel.append(freeText); freeLabel.setAttribute("aria-label", t("freePlan"));
-    brandCopy.append(brandName, freeLabel); brand.append(logo, brandCopy);
-    const brandRow = document.createElement("div"); brandRow.className = "lhn-sidebar-brandrow";
-    const headerActions = document.createElement("div"); headerActions.className = "lhn-sidebar-header-actions"; sidebarHeaderActions = headerActions;
-    const addHeaderIcon = (labelKey, icon, setting = "", handler = null) => {
-      const button = document.createElement("button"); button.type = "button"; button.className = "lhn-header-icon"; button.dataset.labelKey = labelKey; button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
-      if (setting) { button.dataset.setting = setting; button.addEventListener("click", () => toggleSidebarSetting(setting)); }
-      else if (handler) { button.dataset.siteToggle = "true"; button.addEventListener("click", handler); }
-      else button.addEventListener("click", () => LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)));
-      button.dataset.tooltip = t(labelKey); button.setAttribute("aria-label", t(labelKey)); headerActions.append(button);
-      return button;
-    };
-    const themeButton = document.createElement("button"); themeButton.type = "button"; themeButton.className = "lhn-header-icon lhn-theme-toggle"; themeButton.dataset.themeToggle = "true"; themeButton.addEventListener("click", toggleSidebarTheme); headerActions.append(themeButton);
-    if (websiteDisabled) {
-      addHeaderIcon("enableWebsite", `<circle cx="12" cy="12" r="9"/><path d="m4.9 4.9 14.2 14.2"/>`, "", toggleWebsiteDisabled);
-    } else {
-      addHeaderIcon("openDashboard", `<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>`);
-      addHeaderIcon("autoPopup", `<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`, "showOnSelect");
-      addHeaderIcon("autoSentenceNote", `<path d="M2 11.5V5a2 2 0 0 1 2-2h3.9c.7 0 1.3.3 1.7.9l.8 1.2c.4.6 1 .9 1.7.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-9.5"/><path d="M11.378 13.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>`, "sentenceNoteEnabled");
-      addHeaderIcon("disableWebsite", `<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>`, "", toggleWebsiteDisabled);
-    }
-    brandRow.append(brand, headerActions); syncSidebarSettingsButtons(); syncSidebarTheme();
-    const title = document.createElement("div"); title.className = "lhn-sidebar-title"; title.textContent = pageTitle();
-    const url = document.createElement("a"); url.className = "lhn-sidebar-url"; url.href = pageUrl(); url.target = "_blank"; url.rel = "noopener noreferrer"; url.textContent = pageUrl(); url.title = pageUrl();
-   const headerCard = document.createElement("div"); headerCard.className = "lhn-sidebar-header-card";
-    headerCard.append(brandRow, title, url);
-    const searchWrap = document.createElement("label"); searchWrap.className = "lhn-sidebar-search-wrap";
-    const searchIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg"); searchIcon.setAttribute("viewBox", "0 0 24 24"); searchIcon.setAttribute("aria-hidden", "true"); searchIcon.classList.add("lhn-sidebar-search-icon");
-    const searchCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle"); searchCircle.setAttribute("cx", "11"); searchCircle.setAttribute("cy", "11"); searchCircle.setAttribute("r", "7");
-    const searchHandle = document.createElementNS("http://www.w3.org/2000/svg", "path"); searchHandle.setAttribute("d", "m20 20-4-4"); searchIcon.append(searchCircle, searchHandle);
-    const search = document.createElement("input"); search.type = "search"; search.className = "lhn-sidebar-search"; search.placeholder = t("sidebarSearchPlaceholder"); search.setAttribute("aria-label", t("sidebarSearchPlaceholder")); search.value = sidebarSearchQuery;
-    searchWrap.append(searchIcon, search);
-    search.addEventListener("input", () => {
-      sidebarSearchQuery = search.value;
-      clearTimeout(sidebarSearchTimer);
-      sidebarSearchTimer = setTimeout(() => { sidebarSearchTimer = 0; renderSidebar(true); }, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS);
-    });
-    const filters = document.createElement("div"); filters.className = "lhn-sidebar-filters"; filters.setAttribute("aria-label", t("filterColor"));
-    const filterOptions = [{ id: "all", label: t("all") }, ...COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
-    filterOptions.forEach(option => {
-      const btn = sidebarButton("0", "lhn-side-filter" + (sidebarFilter === option.id ? " is-active" : ""), () => {
-        sidebarFilter = option.id;
-        filters.querySelectorAll(".lhn-side-filter").forEach(el => el.classList.toggle("is-active", el.dataset.filter === sidebarFilter));
-        renderSidebar(true);
-      });
-      btn.dataset.filter = option.id;
-      btn.dataset.filterLabel = option.label;
-      if (option.id !== "all") { const swatch = document.createElement("span"); swatch.className = `lhn-filter-swatch lhn-swatch-${option.id}`; btn.prepend(swatch); }
-      filters.appendChild(btn);
-    });
-    headerCard.append(searchWrap, filters);
-    if (websiteDisabled) {
-      const disabledMessage = document.createElement("div"); disabledMessage.className = "lhn-site-disabled-message"; disabledMessage.textContent = t("websiteDisabledMessage");
-      headerCard.replaceChildren(brandRow, disabledMessage);
-      top.append(headerCard);
-    } else top.append(headerCard);
-    const list = document.createElement("div"); list.className = "lhn-sidebar-list"; list.id = "lhn-sidebar-list";
-    const footer = document.createElement("div"); footer.className = "lhn-sidebar-footer"; const footerToggle = document.createElement("button"); footerToggle.type = "button"; footerToggle.className = "lhn-sidebar-footer-toggle"; footerToggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); toggleWebsiteDisabled(); }); const footerVersion = document.createElement("span"); footerVersion.className = "lhn-sidebar-footer-version"; footerVersion.textContent = `v${browser.runtime.getManifest().version}`; footer.append(footerToggle, footerVersion);
-    sidebar.append(top, list, footer);
-    sidebar.addEventListener("mousedown", e => e.stopPropagation());
-    sidebar.addEventListener("click", e => e.stopPropagation());
-    // Keep the fixed sidebar outside the narrowed body so body overflow rules on
-    // sites such as GitHub cannot clip the extension UI.
-    if (previousSidebar) {
-      previousSidebar.replaceWith(sidebar);
-      sidebar.classList.add("lhn-side-visible");
-    } else {
-      document.documentElement.appendChild(sidebar);
-      requestAnimationFrame(() => sidebar?.classList.add("lhn-side-visible"));
-    }
-    syncSidebarFooter();
-    syncSidebarEdgeToggle();
-    await renderSidebar();
-  }
-  function sidebarSearchFields(item) {
-    let fields = sidebarSearchMetadata.get(item);
-    if (fields) return fields;
-    const tags = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
-    fields = {
-      quote: String(item.quote || "").toLocaleLowerCase(),
-      note: String(item.note || "").toLocaleLowerCase(),
-      contextNote: String(item.contextNote || "").toLocaleLowerCase(),
-      tags: tags.toLocaleLowerCase()
-    };
-    sidebarSearchMetadata.set(item, fields);
-    return fields;
-  }
-  async function renderSidebar(useCachedItems = false) {
-    if (!sidebarOpen || !sidebar || websiteDisabled) return;
-    const renderToken = ++sidebarRenderToken;
-    let items = [];
-    if (useCachedItems && Array.isArray(sidebarItemsCache)) items = sidebarItemsCache.slice();
-    else {
-      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: pageUrl() }); } catch { /* extension context may be reloading */ }
-    }
-    if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
-    const current = items.filter(item => item.url === pageUrl());
-    cachePageAnnotations(pageUrl(), current);
-    if (!(useCachedItems && Array.isArray(sidebarItemsCache))) {
-      // Measure each rendered mark once; layout reads inside a sort comparator
-      // would force repeated style calculations for large pages.
-      const markPositions = new Map();
-      document.querySelectorAll("[data-lhn-id]").forEach((mark, domIndex) => {
-        const id = mark.dataset.lhnId;
-        if (id && !markPositions.has(id)) markPositions.set(id, { top: mark.getBoundingClientRect().top, domIndex });
-      });
-      current.sort((a, b) => {
-        const posA = markPositions.get(a.id), posB = markPositions.get(b.id);
-        if (posA && posB) return Math.abs(posA.top - posB.top) > 1 ? posA.top - posB.top : posA.domIndex - posB.domIndex;
-        if (posA) return -1;
-        if (posB) return 1;
-        return (a.createdAt || 0) - (b.createdAt || 0);
-      });
-      sidebarItemsCache = current.slice();
-      // Page order is persisted for later restoration, but it must not delay the
-      // first paint of sidebar cards.
-      LHN_MESSAGING.sendMessage({ type: "SYNC_PAGE_ORDER", url: pageUrl(), ids: current.map(item => item.id) }).catch(() => {});
-    }
-    if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
-    const counts = Object.fromEntries(COLORS.map(color => [color, 0]));
-    current.forEach(item => { const color = CONFIG.normalizeColor(item.color); if (Object.hasOwn(counts, color)) counts[color]++; });
-    sidebar.querySelectorAll(".lhn-side-filter").forEach(button => {
-      const id = button.dataset.filter, count = id === "all" ? current.length : (counts[id] || 0);
-      const label = button.dataset.filterLabel || t(CONFIG.colorLabelKey(id));
-      button.title = t("colorFilterTooltip", { color: label, count });
-      button.setAttribute("aria-label", button.title);
-      const swatch = button.querySelector(".lhn-filter-swatch");
-      const buttonText = id === "all" ? `${label}: ${count}` : String(count);
-      button.replaceChildren(...(swatch ? [swatch, document.createTextNode(buttonText)] : [document.createTextNode(buttonText)]));
-    });
-    const query = sidebarSearchQuery.trim().toLocaleLowerCase();
-    const visible = current.filter(item => {
-      if (sidebarFilter !== "all" && CONFIG.normalizeColor(item.color) !== sidebarFilter) return false;
-      if (!query) return true;
-      const fields = sidebarSearchFields(item);
-      return [fields.quote, fields.note, fields.contextNote, fields.tags].some(value => value.includes(query));
-    });
-    if (query) {
-      const rank = item => {
-        const fields = sidebarSearchFields(item);
-        if (fields.quote.includes(query)) return 0;
-        if (fields.note.includes(query)) return 1;
-        if (fields.contextNote.includes(query)) return 2;
-        return 3;
-      };
-      visible.sort((a, b) => rank(a) - rank(b));
-    }
-   const list = sidebar.querySelector("#lhn-sidebar-list");
-    if (!list) return;
-   list.replaceChildren();
-    if (!visible.length) {
-      const empty = document.createElement("div"); empty.className = "lhn-sidebar-empty";
-      empty.textContent = query ? t("noSidebarSearchResults") : current.length ? t("noColorHighlights") : t("noHighlights");
-      list.appendChild(empty); return;
-    }
-    let cardBatch = document.createDocumentFragment();
-    for (let itemIndex = 0; itemIndex < visible.length; itemIndex++) {
-      if (itemIndex && itemIndex % CONFIG.LIMITS.SIDEBAR_RENDER_CHUNK_SIZE === 0) {
-        list.appendChild(cardBatch);
-        cardBatch = document.createDocumentFragment();
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
-      }
-      const item = visible[itemIndex];
-      const color = CONFIG.normalizeColor(item.color);
-      const card = document.createElement("article"); card.className = "lhn-sidebar-card";
-      const quoteRow = document.createElement("div"); quoteRow.className = "lhn-sidebar-quote-row";
-      const swatch = document.createElement("span"); swatch.className = `lhn-sidebar-swatch lhn-swatch-${color}`; swatch.title = t("colorHighlight", { color: t(CONFIG.colorLabelKey(color)) }); swatch.setAttribute("aria-label", swatch.title);
-      const quote = document.createElement("div"); quote.className = "lhn-sidebar-quote"; quote.textContent = item.quote;
-      quote.tabIndex = 0; quote.setAttribute("role", "button"); quote.title = t("jumpHighlight");
-      const locate = async () => {
-        let mark = document.querySelector(`[data-lhn-id="${CSS.escape(item.id)}"]`);
-        if (!mark) { await restoreAnnotations(); mark = document.querySelector(`[data-lhn-id="${CSS.escape(item.id)}"]`); }
-        if (mark) { mark.scrollIntoView({ behavior: "smooth", block: "center" }); mark.classList.add("lhn-sidebar-target"); setTimeout(() => mark?.classList.remove("lhn-sidebar-target"), 1400); }
-      };
-      card.tabIndex = 0;
-      card.setAttribute("role", "button");
-      card.title = t("jumpHighlight");
-      card.addEventListener("click", locate);
-      card.addEventListener("keydown", e => {
-        if ((e.key === "Enter" || e.key === " ") && e.target === card) { e.preventDefault(); locate(); }
-      });
-      quoteRow.append(swatch, quote);
-      const note = document.createElement("div"); note.className = "lhn-sidebar-note"; note.textContent = item.note || t("noNote");
-      const contextNote = document.createElement("div"); contextNote.className = "lhn-sidebar-context-note";
-      renderContextSentence(contextNote, item.contextNote, item.quote);
-      const actions = document.createElement("div"); actions.className = "lhn-sidebar-actions";
-      actions.addEventListener("click", e => e.stopPropagation());
-      const editBtn = sidebarButton("", "lhn-side-secondary", () => openSidebarEdit(item));
-      editBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.edit}</svg>`;
-      editBtn.title = t("editNote"); editBtn.setAttribute("aria-label", t("editNote"));
-      const deleteBtn = sidebarButton("", "lhn-side-secondary", async () => {
-        await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
-        pageAnnotationCache.delete(item.id);
-        document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
-        await renderSidebar();
-      });
-      deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.trash}</svg>`;
-      deleteBtn.title = t("deleteNote"); deleteBtn.setAttribute("aria-label", t("deleteNote"));
-      const speakBtn = sidebarButton("", "lhn-side-secondary lhn-speak-btn", () => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } });
-      speakBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.volume}</svg>`;
-      speakBtn.title = t("speakHighlightTooltip"); speakBtn.setAttribute("aria-label", speakBtn.title);
-      actions.append(editBtn, deleteBtn, speakBtn);
-      if (item.contextNote) card.append(quoteRow, note, contextNote, actions);
-      else card.append(quoteRow, note, actions);
-      highlightSidebarSearchMatches(card, sidebarSearchQuery);
-      cardBatch.appendChild(card);
-    }
-    list.appendChild(cardBatch);
-  }
+- Bước 4 — Page Layout: cô lập lưu/khôi phục inline style và thu hẹp trang khi mở Sidebar vào `page-layout.js` (`LHN_PAGE_LAYOUT`); giữ nguyên kích thước, thuộc tính `!important` và thời điểm khôi phục.
+- File: page-layout.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, script paths, mock layout và ZIP; chưa kiểm thử trình duyệt.
+- Tiếp theo: tiếp tục Sidebar, Library, Backup, Account và Note Composer.
 
-  function isEditable(node) { const el = node?.nodeType === 1 ? node : node?.parentElement; return !!el?.closest("input,textarea,select,[contenteditable]:not([contenteditable='false']),[role='textbox']"); }
+**2026-10-24 | v3.4.574 | Codex sửa:**
 
-  document.addEventListener("mouseup", e => {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    if (suppressMouseUp) { suppressMouseUp = false; return; }
-    if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
-    const selection = getSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
-    if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
-    setTimeout(() => {
-      const sel = getSelection(), text = cleanText(sel?.toString());
-      if (!text || !sel.rangeCount || isEditable(sel.anchorNode)) return;
-      const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
-      selectedRange = range.cloneRange();
-      removeTranslationUI();
-      loadSettings().then(cfg => {
-        if (cfg.showOnSelect) {
-          if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
-            showComposer(range, null, { skipAutoTranslate:true, dictionaryWord:text });
-            lookupEnglishDictionary(text, selectedRange);
-          } else showComposer(range);
-        }
-        else {
-          removeTooltip();
-          if (cfg.translateIconEnabled !== false) showTranslateIcon(selectedRange);
-          if (cfg.translationPopupEnabled !== false) translateSelectedRange(selectedRange, { keepIcon:cfg.translateIconEnabled !== false });
-        }
-      });
-    }, 20);
-  });
-  document.addEventListener("mousedown", e => {
-    outsideMouseDown = { x: e.clientX, y: e.clientY, wasOpen: !!panel, dismissTranslateIcon:!!translateIcon && !e.target.closest?.("#lhn-translate-icon") };
-    if (outsideMouseDown.dismissTranslateIcon) { translateIcon.remove(); translateIcon = null; }
-    if (panel && !e.target.closest?.("#lhn-panel")) {
-      if (settings.showOnSelect || settings.autoHighlight === false) removeComposer();
-      else if (composerSave) composerSave();
-      else removeComposer();
-    }
-    if (tooltip && !e.target.closest?.("#lhn-note-pop, #lhn-highlight-actions, .lhn-mark")) removeTooltip();
-    if (translationPopup && !e.target.closest?.("#lhn-direct-translation, #lhn-translate-icon")) removeTranslationUI();
-    else if (dictionaryPopup && !dictionaryPopup._lhnHideForNote && !e.target.closest?.("#lhn-full-english-dictionary")) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
-  }, true);
-  document.addEventListener("mouseup", e => {
-    if (outsideMouseDown?.wasOpen && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) suppressMouseUp = true;
-    outsideMouseDown = null;
-  }, true);
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
-    const pressed = shortcutForEvent(e).toLowerCase();
-    const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
-    if (sidebarShortcut && pressed === sidebarShortcut) {
-      e.preventDefault(); e.stopPropagation(); toggleSidebar(); return;
-    }
-    if (!websiteSettingsReady) return;
-    const toggleWebsiteShortcut = String(settings.toggleWebsiteShortcut ?? "Alt+D").toLowerCase();
-    if (toggleWebsiteShortcut && pressed === toggleWebsiteShortcut) {
-      e.preventDefault(); e.stopPropagation(); toggleWebsiteDisabled(); return;
-    }
-    if (websiteDisabled) return;
-    const bilingualShortcuts = { "alt+a":"toggle-lazy", "alt+d":"toggle-near-pointer", "alt+r":"toggle-reading" };
-    const bilingualAction = bilingualShortcuts[pressed];
-    if (bilingualAction) {
-      e.preventDefault(); e.stopPropagation();
-      if (bilingualAction === "toggle-reading") { speechPauseActive = false; shortcutPausedMedia = []; }
-      document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:bilingualAction }));
-      return;
-    }
-    const translateShortcut = String(settings.translateSelectedShortcut ?? "Alt+W").toLowerCase();
-    const notePopupShortcut = String(settings.shortcut ?? "Alt+S").toLowerCase();
-    if (translateShortcut && pressed === translateShortcut && notePopupShortcut !== translateShortcut) {
-      if (panel || e.target.closest?.("#lhn-panel, #lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
-      const visibleTranslationPopup = translationPopup?.isConnected && translationPopup.classList.contains("lhn-visible") ? translationPopup : null;
-      const visibleDictionaryPopup = dictionaryPopup?.isConnected && dictionaryPopup.classList.contains("lhn-dict-visible") ? dictionaryPopup : null;
-      const visiblePopup = visibleTranslationPopup || visibleDictionaryPopup;
-      if (settings.autoSpeakSelectedText !== false && visiblePopup) {
-        e.preventDefault(); e.stopPropagation();
-        if (e.repeat) return;
-        const popupRange = visiblePopup._lhnAnchorRange;
-        const selection = getSelection();
-        const range = selection?.rangeCount && !selection.isCollapsed && cleanText(selection.toString()) && !isEditable(selection.anchorNode)
-          ? selection.getRangeAt(0).cloneRange()
-          : popupRange?.startContainer?.isConnected ? popupRange.cloneRange() : null;
-        const text = cleanText(range?.toString());
-        if (text) {
-          const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
-          speakHighlightedText(text, visibleDictionaryPopup ? "en-US" : speechLanguageForText(text, anchor), null, anchor, !!visibleDictionaryPopup);
-        }
-        return;
-      }
-      if (!e.repeat && !isEditable(e.target) && hoveredMark?.matches(":hover") && tooltip?.dataset.itemId === hoveredMark.dataset.lhnId) {
-        const speakButton = tooltip.querySelector(".lhn-tooltip-speak-trigger");
-        if (speakButton) { e.preventDefault(); e.stopPropagation(); speakButton.click(); return; }
-      }
-      const selection = getSelection();
-      const range = selection?.rangeCount && !selection.isCollapsed && cleanText(selection.toString()) && !isEditable(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
-      if (!e.repeat && range && cleanText(range.toString()) && !isEditable(e.target)) { e.preventDefault(); e.stopPropagation(); selectedRange = range.cloneRange(); translateSelectedRange(range, { forcePopup:true, forceSpeak:true }); }
-      return;
-    }
-    if (notePopupShortcut && pressed === notePopupShortcut) {
-      if (e.target.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
-      if (panel) { e.preventDefault(); e.stopPropagation(); removeComposer(); return; }
-      const sel = getSelection();
-      let range = selectedRange && selectedRange.startContainer.isConnected ? selectedRange.cloneRange() : null;
-      if ((!range || range.collapsed) && sel?.rangeCount && cleanText(sel.toString())) range = sel.getRangeAt(0).cloneRange();
-      if (range && !range.collapsed && cleanText(range.toString())) { e.preventDefault(); e.stopPropagation(); showComposer(range); }
-    }
-  }, true);
-  window.addEventListener("scroll", () => {
-    if (translateIcon) positionTranslateIcon();
-    if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
-    if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
-    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnAnchor);
-    if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
-  }, true);
-  window.addEventListener("resize", () => {
-    if (translateIcon) positionTranslateIcon();
-    if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
-    if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
-    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnAnchor);
-    if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
-  });
+- Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
+- File: ui-components.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 27/27 JS; manifest/HTML paths hợp lệ; mock chuẩn hóa tag `Alpha/alpha/beta` đạt; `git diff --check` đạt; ZIP 64 mục, manifest gốc, version 3.4.574 và ui-components.js. Chưa kiểm thử Chrome/Firefox.
+- Tiếp theo: hoàn thiện Note Composer/Highlighter rồi Bước 4.
 
-  const RESTORE_EXCLUDED = "script,style,noscript,textarea,input,select,option,button,[contenteditable='true'],[contenteditable=''],mark,#lhn-panel,#lhn-note-pop,#lhn-direct-translation,#lhn-translate-icon,#lhn-sidebar,.lhn-selection-preview-mark,#lhn-selection-overlay,#lhn-sidebar-edge-toggle,#lhn-sidebar-toast";
-  const webHighlighter = globalThis.LHNWebHighlighter.create({ config: CONFIG, attachMarkEvents, restoreExcludedSelector: RESTORE_EXCLUDED });
-  let restorePromise = null;
-  let restoreRequestedWhileRunning = false;
-  let restoreObserver = null;
-  let restoreDebounce = 0;
-  let restorePendingWhileEditing = false;
-  let restoreRetryCount = 0;
-  let lastRestoreUrl = pageUrl();
+**2026-10-24 | v3.4.573 | Codex sửa:**
 
-  function isRestorableTextNode(node) {
-    return !!node?.nodeValue && !!node.nodeValue.trim() && !node.parentElement?.closest(RESTORE_EXCLUDED);
-  }
-  function normalizeWithMap(value) {
-    const source = String(value || "");
-    let text = "";
-    const startMap = [];
-    const endMap = [];
-    let i = 0;
-    while (i < source.length) {
-      if (/\s/.test(source[i])) {
-        const runStart = i;
-        while (i < source.length && /\s/.test(source[i])) i++;
-        // Normalize a whitespace run to one space, retaining the full source span.
-        if (text.length && i < source.length) {
-          text += " ";
-          startMap.push(runStart);
-          endMap.push(i);
-        }
-        continue;
-      }
-      text += source[i];
-      startMap.push(i);
-      endMap.push(i + 1);
-      i++;
-    }
-    return { text, startMap, endMap };
-  }
+- Bước 3 — SentenceNote: tách trích câu chứa vùng chọn (kể cả bỏ qua text Immersive Translate) sang `sentence-note.js` (`LHN_SENTENCE_NOTE`); content script truyền hàm chuẩn hóa text hiện có, giữ nguyên kết quả và UI.
+- File: sentence-note.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 26/26 JS; đường dẫn manifest/HTML hợp lệ; smoke `getContext(null)` đạt; `git diff --check` đạt; ZIP 63 mục có manifest gốc, version 3.4.573 và sentence-note.js. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: tiếp tục Highlighter/Note Composer và Bước 4.
 
-  function findQuoteRange(item) {
-    if (!document.body || !item?.quote) return null;
-    const quote = normalizeWithMap(item.quote).text;
-    if (!quote) return null;
-    const prefix = normalizeWithMap(item.prefix || "").text;
-    const suffix = normalizeWithMap(item.suffix || "").text;
-    let best = null;
-    let bestScore = -1;
+**2026-10-24 | v3.4.572 | Codex sửa:**
 
-    function scanRun(raw, nodes) {
-      if (!raw || !nodes.length) return;
-      const normalized = normalizeWithMap(raw);
-      let from = 0, idx;
-      while ((idx = normalized.text.indexOf(quote, from)) !== -1) {
-        const before = normalized.text.slice(Math.max(0, idx - prefix.length), idx);
-        const after = normalized.text.slice(idx + quote.length, idx + quote.length + suffix.length);
-        // Context is a ranking hint, not a hard requirement: web apps often change
-        // surrounding whitespace or render the selected text inside different wrappers.
-        let score = 0;
-        if (prefix && before.endsWith(prefix)) score += 2;
-        if (suffix && after.startsWith(suffix)) score += 2;
-        const rawStart = normalized.startMap[idx];
-        const rawEnd = normalized.endMap[idx + quote.length - 1];
-        const first = nodes.find(x => rawStart >= x.start && rawStart < x.end);
-        const last = nodes.find(x => rawEnd > x.start && rawEnd <= x.end);
-        if (first && last) {
-          const range = document.createRange();
-          range.setStart(first.node, rawStart - first.start);
-          range.setEnd(last.node, rawEnd - last.start);
-          if (score > bestScore) { best = range; bestScore = score; }
-        }
-        from = idx + 1;
-      }
-    }
+- Bước 3 — Annotations: tách IndexedDB, migration, CRUD, phân trang, import/export, tiến độ ôn tập và thông báo thay đổi sang `annotations.js` (`LHN_ANNOTATIONS`); giữ message type và cấu trúc dữ liệu hiện hành.
+- File: annotations.js, background.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script manifest/HTML hợp lệ; mock API Annotations và Search rank đạt; `git diff --check` đạt; ZIP 62 mục, manifest gốc, version 3.4.572 và annotations.js. Chưa kiểm thử Chrome/Firefox.
+- Tiếp theo: tiếp tục Bước 3–4.
 
-    // Fast path: search individual text nodes first, while considering every occurrence
-    // so that saved context can disambiguate repeated phrases.
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-      acceptNode: node => isRestorableTextNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
-    });
-    let node;
-    while ((node = walker.nextNode())) {
-      const normalized = normalizeWithMap(node.nodeValue);
-      if (!normalized.text.includes(quote)) continue;
-      scanRun(node.nodeValue, [{ node, start: 0, end: node.nodeValue.length }]);
-    }
+**2026-10-24 | v3.4.571 | Codex sửa:**
 
-    // Search across adjacent inline elements (e.g. text split by <strong>/<span>).
-    // Only semantic/block containers form boundaries; span is deliberately not one.
-    const blockSelector = "p,li,dd,dt,blockquote,figcaption,h1,h2,h3,h4,h5,h6,td,th,article,section,div";
-    const blockTags = new Set(["P","LI","DD","DT","BLOCKQUOTE","FIGCAPTION","H1","H2","H3","H4","H5","H6","TD","TH","ARTICLE","SECTION","DIV"]);
-    const blocks = document.body.querySelectorAll(blockSelector);
-    for (const block of blocks) {
-      if (block.closest(RESTORE_EXCLUDED)) continue;
-      // Keep runs small and avoid rescanning every ancestor of the same paragraph.
-      if (block.querySelector(blockSelector)) continue;
-      let runNodes = [], raw = "";
-      const runs = [];
-      const flush = () => {
-        if (raw && runNodes.length) runs.push({ raw, nodes: runNodes });
-        runNodes = []; raw = "";
-      };
-      const walkInline = current => {
-        if (current.nodeType === Node.TEXT_NODE) {
-          // Keep whitespace-only text nodes inside an inline run: they often contain
-          // the only space between adjacent <span>/<strong> elements in web apps.
-          if (!current.nodeValue || current.parentElement?.closest(RESTORE_EXCLUDED)) { flush(); return; }
-          const value = current.nodeValue;
-          runNodes.push({ node: current, start: raw.length, end: raw.length + value.length });
-          raw += value;
-          return;
-        }
-        if (current.nodeType !== Node.ELEMENT_NODE && current.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return;
-        if (current.nodeType === Node.ELEMENT_NODE && current.matches(RESTORE_EXCLUDED)) { flush(); return; }
-        const isNestedBlock = current !== block && current.nodeType === Node.ELEMENT_NODE && blockTags.has(current.tagName);
-        if (isNestedBlock) flush();
-        for (const child of current.childNodes) walkInline(child);
-        if (isNestedBlock) flush();
-      };
-      walkInline(block);
-      flush();
-      for (const run of runs) {
-        if (normalizeWithMap(run.raw).text.includes(quote)) scanRun(run.raw, run.nodes);
-      }
-    }
-    // Search across block boundaries in two representations. Range.toString() can
-    // concatenate text from adjacent block elements without inserting a newline,
-    // while Selection.toString() and some DOMs include a line break. A single
-    // representation therefore fails to restore highlights spanning paragraphs.
-    // Excluded extension UI and existing marks remain hard boundaries.
-    {
-      const nodes = [];
-      let raw = "", previousBlock = null;
-      const blockSelectorForStream = "p,li,dd,dt,blockquote,figcaption,h1,h2,h3,h4,h5,h6,td,th,article,section,div,pre";
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-        acceptNode: node => node.parentElement?.closest(RESTORE_EXCLUDED) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-      });
-      let node;
-      while ((node = walker.nextNode())) {
-        if (!node.nodeValue) continue;
-        const block = node.parentElement?.closest(blockSelectorForStream) || document.body;
-        if (previousBlock && block !== previousBlock && raw && !/\s$/.test(raw)) raw += "\n";
-        const start = raw.length;
-        raw += node.nodeValue;
-        nodes.push({ node, start, end: raw.length });
-        previousBlock = block;
-      }
-      if (normalizeWithMap(raw).text.includes(quote)) scanRun(raw, nodes);
-    }
-    // Important fallback: Range.toString() often returns the literal concatenation
-    // of text nodes across <p>/<div> boundaries (no generated whitespace). Search
-    // that exact DOM-text stream too, using its own offsets so the resulting Range
-    // maps correctly back to the original text nodes.
-    {
-      const nodes = [];
-      let raw = "";
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-        acceptNode: node => node.parentElement?.closest(RESTORE_EXCLUDED) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-      });
-      let node;
-      while ((node = walker.nextNode())) {
-        if (!node.nodeValue) continue;
-        const start = raw.length;
-        raw += node.nodeValue;
-        nodes.push({ node, start, end: raw.length });
-      }
-      if (normalizeWithMap(raw).text.includes(quote)) scanRun(raw, nodes);
-    }
-    return best;
-  }
-  async function restoreAnnotations() {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    if (isEditable(document.activeElement)) { restorePendingWhileEditing = true; return; }
-    if (restorePromise) {
-      restoreRequestedWhileRunning = true;
-      return restorePromise;
-    }
-    restorePromise = (async () => {
-      let items;
-      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: pageUrl() }); }
-      catch (error) { console.warn("Highlight Notes: could not load saved highlights", error); return; }
-      if (!Array.isArray(items) || !document.body) return;
-      const currentUrl = pageUrl();
-      const current = items.filter(x => x && x.url === currentUrl && x.quote && x.id);
-      cachePageAnnotations(currentUrl, current);
-      if (!current.length) { restoreRetryCount = 0; return; }
-      // Snapshot existing marks once. Querying the whole page for every note made
-      // restoration scale as notes × DOM nodes on pages with many highlights.
-      const existingMarksById = new Map();
-      document.querySelectorAll(".lhn-mark[data-lhn-id]").forEach(mark => {
-        webHighlighter.ensureTextReadable(mark);
-        const id = mark.dataset.lhnId;
-        if (!id) return;
-        const marks = existingMarksById.get(id);
-        if (marks) marks.push(mark);
-        else existingMarksById.set(id, [mark]);
-      });
-      let missing = 0;
-      for (let itemIndex = 0; itemIndex < current.length; itemIndex++) {
-        if (isEditable(document.activeElement)) { restorePendingWhileEditing = true; return; }
-        // Search and wrap one quote at a time during idle periods so large pages
-        // with many saved highlights do not monopolize the site's main thread.
-        if (itemIndex && itemIndex % CONFIG.LIMITS.RESTORE_IDLE_BATCH_SIZE === 0) await new Promise(resolve => {
-          if (typeof requestIdleCallback === "function") requestIdleCallback(() => resolve(), { timeout: 80 });
-          else setTimeout(resolve, 0);
-        });
-        const item = current[itemIndex];
-        if (websiteDisabled || pageUrl() !== currentUrl) break;
-        // A multi-paragraph annotation is represented by several <mark> elements
-        // sharing one ID. Only consider it restored when every fragment recorded
-        // by the first mark is present; remove incomplete fragments and retry cleanly.
-        const marks = existingMarksById.get(item.id) || [];
-        if (marks.length) {
-          const expected = Math.max(1, ...marks.map(mark => Number(mark.dataset.lhnParts) || 1));
-          if (marks.length >= expected) continue;
-          for (const mark of marks) mark.replaceWith(...mark.childNodes);
-        }
-        // Resolve every range immediately before wrapping because earlier items
-        // may have changed the DOM.
-        const range = findQuoteRange(item);
-        if (range) {
-          if (!webHighlighter.wrapRange(range, item)) missing++;
-        } else missing++;
-      }
-      if (missing === 0) restoreRetryCount = 0;
-      else if (restoreRetryCount < 10) {
-        // Some apps render text in several asynchronous batches without changing the URL.
-        // Retry a bounded number of times even if their DOM changes are unusually sparse.
-        restoreRetryCount++;
-        scheduleRestore(500);
-      }
-    })().finally(() => {
-      restorePromise = null;
-      if (restoreRequestedWhileRunning) {
-        restoreRequestedWhileRunning = false;
-        scheduleRestore(120);
-      }
-    });
-    return restorePromise;
-  }
-  function scheduleRestore(delay = 350) {
-    if (!websiteSettingsReady || websiteDisabled) return;
-    if (restoreDebounce) clearTimeout(restoreDebounce);
-    restoreDebounce = setTimeout(() => {
-      restoreDebounce = 0;
-      if (isEditable(document.activeElement)) { restorePendingWhileEditing = true; return; }
-      restorePendingWhileEditing = false;
-      restoreAnnotations();
-    }, delay);
-  }
-  function isExtensionMutationNode(node) {
-    const el = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
-    return !!el?.closest?.(".lhn-mark,.lhn-selection-preview-mark,#lhn-panel,#lhn-note-pop,#lhn-direct-translation,#lhn-translate-icon,#lhn-sidebar,#lhn-selection-overlay,#lhn-sidebar-edge-toggle,#lhn-sidebar-toast");
-  }
-  function startRestoreObserver() {
-    if (restoreObserver || !document.documentElement) return;
-    restoreObserver = new MutationObserver(records => {
-      const relevant = records.some(record => {
-        if (isExtensionMutationNode(record.target)) return false;
-        const added = [...record.addedNodes];
-        const removed = [...record.removedNodes];
-        const changed = [...added, ...removed];
-        if (changed.length && changed.every(isExtensionMutationNode)) return false;
-        // Wrapping a saved quote replaces text nodes with our own <mark>. Ignore that
-        // specific mutation signature to prevent observer-triggered restoration loops.
-        if (added.length && added.every(n => n.nodeType === Node.ELEMENT_NODE && n.matches?.(".lhn-mark")) &&
-            removed.every(n => n.nodeType === Node.TEXT_NODE)) return false;
-        if (record.type === "characterData" && !isRestorableTextNode(record.target)) return false;
-        return true;
-      });
-      if (relevant) {
-        restoreRetryCount = 0;
-        if (isEditable(document.activeElement)) { restorePendingWhileEditing = true; return; }
-        scheduleRestore(300);
-      }
-    });
-    restoreObserver.observe(document.documentElement, { subtree: true, childList: true, characterData: true });
-  }
-  document.addEventListener("focusout", event => {
-    if (!restorePendingWhileEditing || isEditable(event.relatedTarget)) return;
-    scheduleRestore(120);
-  }, true);
-  function handlePossibleNavigation() {
-    const nextUrl = pageUrl();
-    if (nextUrl !== lastRestoreUrl) lastRestoreUrl = nextUrl;
-    restoreRetryCount = 0;
-    scheduleRestore(200);
-  }
-  async function jumpToHighlight(id) {
-    if (typeof id !== "string" || !id) return { found: false };
-    await loadSettings();
-    if (websiteDisabled) return { found: false };
-    await restoreAnnotations();
-    for (let attempt = 0; attempt < 40; attempt++) {
-      const mark = document.querySelector(`[data-lhn-id="${CSS.escape(id)}"]`);
-      if (mark) {
-        mark.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-        mark.classList.add("lhn-jump-target");
-        setTimeout(() => mark.classList.remove("lhn-jump-target"), 2200);
-        return { found: true };
-      }
-      await new Promise(resolve => setTimeout(resolve, 250));
-    }
-    return { found: false };
-  }
-  window.addEventListener("pagehide", restorePageWidth);
-  window.addEventListener("pageshow", () => scheduleRestore(150));
-  window.addEventListener("popstate", handlePossibleNavigation);
-  window.addEventListener("hashchange", handlePossibleNavigation);
-  // Works when history APIs are visible in this content-script world; MutationObserver remains
-  // the primary mechanism for SPAs whose URL never changes or whose history is isolated.
-  for (const method of ["pushState", "replaceState"]) {
-    try {
-      const original = history[method];
-      history[method] = function (...args) {
-        const result = original.apply(this, args);
-        queueMicrotask(handlePossibleNavigation);
-        return result;
-      };
-    } catch { /* restricted history implementation */ }
-  }
-  syncSidebarEdgeToggle();
-  loadSettings().then(() => {
-    if (websiteDisabled) {
-      removeComposer(); removeTooltip(); document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
-    } else {
-      startRestoreObserver(); setTimeout(restoreAnnotations, 600);
-    }
-  });
-  LHN_MESSAGING.onMessage.addListener(message => {
-    if (message?.type === "ANNOTATIONS_CHANGED") {
-      const change = message.change;
-      if (!change) return;
-      const currentUrl = pageUrl();
-      if (change.type === "upsert" && change.item?.id) {
-        if (change.item.url !== currentUrl) return;
-        pageAnnotationCache.set(change.item.id, change.item);
-        if (Array.isArray(sidebarItemsCache)) {
-          const index = sidebarItemsCache.findIndex(item => item.id === change.item.id);
-          if (index < 0) sidebarItemsCache.push(change.item); else sidebarItemsCache[index] = change.item;
-        }
-      } else if (change.type === "delete" && typeof change.id === "string") {
-        if (!pageAnnotationCache.has(change.id) && !sidebarItemsCache?.some(item => item.id === change.id)) return;
-        pageAnnotationCache.delete(change.id);
-        if (Array.isArray(sidebarItemsCache)) sidebarItemsCache = sidebarItemsCache.filter(item => item.id !== change.id);
-      } else if (change.type === "deletePage" && change.url === currentUrl) {
-        pageAnnotationCache.clear(); sidebarItemsCache = [];
-      } else if (change.type === "refresh") { if (sidebarOpen) renderSidebar(); return; }
-      else return;
-      if (sidebarOpen) renderSidebar(true);
-      return;
-    }
-    if (message?.type === "RESTORE_HIGHLIGHTS") return websiteDisabled ? undefined : restoreAnnotations();
-    if (message?.type === "OPEN_SIDEBAR") return openSidebar();
-    if (message?.type === "TOGGLE_SIDEBAR") return toggleSidebar();
-    if (message?.type === "JUMP_TO_HIGHLIGHT") return jumpToHighlight(message.id);
-    if (message?.type === "REMOVE_HIGHLIGHT_PAGE" && message.url === pageUrl()) {
-      document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
-      pageAnnotationCache.clear(); sidebarItemsCache = [];
-      if (sidebarOpen) renderSidebar(true);
-      return;
-    }
-    if (message?.type === "REMOVE_HIGHLIGHT_IDS" && Array.isArray(message.ids)) {
-      for (const id of message.ids) {
-        if (typeof id !== "string") continue;
-        document.querySelectorAll(`[data-lhn-id="${CSS.escape(id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
-      }
-      if (sidebarOpen) renderSidebar();
-    }
-  });
-})();
+- Bước 2 — Search: gom ranking và tô khớp kết quả dùng chung vào `search.js` (`LHN_SEARCH`), nối Library Dashboard và Sidebar; giữ nguyên trường tìm, thứ tự xếp hạng, selector loại trừ và kiểu mark hiện tại.
+- File: search.js, dashboard.js, content.js, dashboard.html, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script hợp lệ; mock Search rank đạt; `git diff --check` đạt; ZIP 61 mục, manifest gốc, version 3.4.571 và search.js. Chưa kiểm thử trình duyệt.
+- Tiếp theo: Bước 3 Annotations, Highlighter, SentenceNote và Note Composer.
+**2026-10-24 | v3.4.570 | Codex sửa:**
+
+- Bước 2 — Dictionary: tách kiểm tra từ tiếng Anh, cache/migration, dịch Google→MyMemory, IPA, synonyms/antonyms, forms và collocations sang `dictionary.js` (`LHN_DICTIONARY`); content giữ phần popup/rendering và gọi API module.
+- File: dictionary.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, mock cache/provider/dedupe và kiểm tra script load; chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Search và tiếp tục Bước 3–4.
+**2026-10-24 | v3.4.569 | Codex sửa:**
+
+- Bước 2 — Translate: tách provider pipeline Bilingual Reader và nhận diện ngôn ngữ từ `background.js` sang `translate.js` (`LHN_TRANSLATE`); giữ nguyên thứ tự engine/fallback, timeout, Promise dedupe, cache API và message contract.
+- File: translate.js, background.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 60 mục có manifest gốc, translate.js và version 3.4.570. Chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Dictionary và Search, rồi các module nghiệp vụ theo Bước 3–4.
+**2026-10-24 | v3.4.568 | Codex sửa:**
+
+- Bước 1 — Cache/lưu trữ: tách cache bản dịch Bilingual Reader khỏi `background.js` vào `cache.js` (`LHN_CACHE`), giữ nguyên key, TTL 7 ngày, touch 6 giờ, dọn 24 giờ, giới hạn 500/LRU và không cache fallback.
+- File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 23/23 JS; manifest/HTML script paths tồn tại; mock Cache prepare/hit/fallback miss/clear đạt; `git diff --check` đạt; ZIP 58 mục có manifest gốc, cache.js và version 3.4.568. Chưa kiểm thử trình duyệt.
+- Tiếp theo: rà Settings/Cache còn lại, rồi Bước 2 Translate/Dictionary/Search.
+**2026-10-24 | v3.4.567 | Codex sửa:**
+
+- Bước 1 — Settings: nối dashboard vào `LHN_SETTINGS.save` để thống nhất lưu cài đặt nền cùng popup/content; sửa helper để giữ nguyên chính xác cấu trúc object mà caller lưu, tránh tự thêm default vào dữ liệu hiện có.
+- File: settings.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; Messaging calls tập trung; mock Settings resolve/get/save/subscribe đạt và xác nhận cấu trúc lưu không đổi; `git diff --check` đạt; ZIP 57 mục có manifest gốc, ba module nền tảng và version 3.4.567. Chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Cache/lưu trữ trong Bước 1.
+**2026-10-24 | v3.4.566 | Codex sửa:**
+
+- Bước 1 — Settings: thêm module `LHN_SETTINGS` cho resolve defaults, đọc/ghi cấu hình chung và đăng ký lắng nghe thay đổi; nối popup và content script vào helper mà không đổi UI hay tên storage key.
+- File: settings.js, manifest.json, background.js, popup.html, dashboard.html, popup.js, content.js, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; mock Settings get/save/resolve/subscribe đạt; `git diff --check` đạt; ZIP 57 mục có manifest gốc, `settings.js` và version 3.4.566. Chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Cache/lưu trữ trong Bước 1, sau đó tiếp tục các dịch vụ theo thứ tự OPT.
+**2026-10-24 | v3.4.565 | Codex sửa:**
+
+- Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
+- File: messaging.js, manifest.json, background.js, content.js, dashboard.js, popup.js, error-logger.js, tts-engine.js, study-translation.js, bilingual-reader.js, popup.html, dashboard.html, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 21/21 JS; manifest/HTML script paths tồn tại; Messaging được nạp trước consumer; `git diff --check` đạt; ZIP 56 mục có manifest gốc, `messaging.js` và version 3.4.565. Chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Settings và Cache/lưu trữ trong Bước 1.
+**2026-10-24 | v3.4.564 | Codex sửa:**
+
+- Bước 1 — Languages: đổi tên module `i18n.js` thành `languages.js`, chuyển global nội bộ sang `LHN_LANGUAGES` và cập nhật các entry point/consumer; giữ nguyên bộ EN/VI/KO và chuỗi hiển thị.
+- File: languages.js (đổi tên), manifest.json, popup.html, dashboard.html, popup.js, dashboard.js, content.js, bilingual-reader.js, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 20/20 JS; manifest/HTML tham chiếu script tồn tại; không còn tham chiếu code cũ; `git diff --check` đạt; ZIP 55 mục có manifest gốc, `languages.js` và version 3.4.564. Chưa kiểm thử trình duyệt.
+- Tiếp theo: tiếp tục tách các module nền tảng còn gắn trong entry point; đây chưa phải hoàn tất kiến trúc 27 module.
+
+**2026-10-24 | v3.4.563 | Arena sửa:**
+
+- Theo ảnh: ô Language hẹp hơn menu vì menu tự giãn theo option. Chỉ chỉnh width trong Dashboard Settings: control lấp phần còn lại của hàng, popover rộng 100% theo control để hai mép trùng nhau. Không đổi toolbar, flashcard, style option hay logic combobox.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: sẽ xác minh CSS, source, cú pháp và ZIP sau đóng gói; chờ user xác nhận trực quan trên Chrome/Edge.
+
+**2026-10-24 | v3.4.562 | Arena sửa:**
+
+- Người dùng xác nhận menu v3.4.561 chưa giống các menu khác. Thay riêng Dashboard Settings control bằng cùng pattern của toolbar popup: input/combobox tìm kiếm và list `.language-option` căn trái, cùng trạng thái dark theme. Giữ hidden native select làm nguồn giá trị và dispatch change qua luồng lưu/ngôn ngữ hiện có. Không sửa toolbar, flashcard hay select khác.
+- File: dashboard.html, dashboard.js, dashboard.css, flags.css, manifest.json, PROJECT.md.
+- Kiểm tra: HTML/ID duy nhất, pattern/wiring/keyboard/dark CSS, CSS parse, node --check 20/20 và git diff --check đạt. Cần người dùng xác nhận trực quan trên Chrome/Edge; sandbox không có browser executable. ZIP v3.4.562 đóng gói và kiểm tra integrity đạt.
+
+**2026-10-24 | v3.4.561 | Arena sửa:**
+
+- Chrome/Edge bỏ qua `text-align:right` trên `<option>` của menu native; v3.4.560 vì vậy không xử lý được dropdown đang mở. Thay riêng language picker của Dashboard Settings bằng custom listbox căn phải, hỗ trợ click/ArrowUp/Down/Home/End/Enter/Escape/Tab, focus và đóng khi click ngoài. Native `settingsLanguageSelect` được giữ ẩn làm nguồn giá trị; custom lựa chọn dispatch `change` để giữ nguyên lưu settings và đổi ngôn ngữ. Không sửa toolbar, flashcard hay các select khác.
+- File: dashboard.html, dashboard.js, dashboard.css, flags.css, manifest.json, PROJECT.md.
+- Kiểm tra: HTML/ID duy nhất, keyboard/dispatch wiring, CSS parse, node --check 20/20, git diff --check và ZIP integrity đạt. Cần người dùng test thực tế giao diện, bàn phím và lưu lựa chọn trên Chrome/Edge; sandbox không có browser executable.
+
+**2026-10-24 | v3.4.560 | Arena sửa:**
+
+- Theo xác nhận mới: dark mode và các select khác đều đạt; option list của Dashboard Settings vẫn căn trái khi mở trên Chrome/Edge. Thêm `text-align:right` chỉ cho `.settings-language-row select option`; không đổi selected value, dark-mode colors, toolbar hay flashcard.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: sẽ xác minh CSS/source/ZIP sau đóng gói; cần user retest menu mở trên Chrome/Edge vì sandbox không có browser executable.
+
+**2026-10-24 | v3.4.559 | Arena sửa:**
+
+- Theo phản hồi Firefox: cờ đã render đúng nhưng giá trị đóng của language select căn trái; menu native không theo dark mode ứng dụng. Thêm `text-align-last:right` cho selected value, bật `color-scheme:dark` và màu nền/chữ/selected cho option trong dark mode. Chỉ scope `.settings-language-row`; không sửa toolbar/flashcard đã đạt.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: source/CSS tĩnh và ZIP sẽ được xác minh sau đóng gói; cần người dùng retest trực quan trên Firefox vì sandbox không có browser executable.
+
+**2026-10-24 | v3.4.558 | Arena cập nhật kiểm thử:**
+
+- Người dùng xác nhận custom flag font/fallback đúng trên Chrome và Edge cho các vị trí vừa sửa. Chưa thử các trình duyệt Chromium khác; Firefox chưa có kết quả xác nhận.
+- File: manifest.json, PROJECT.md. Không đổi code chức năng; tăng patch version theo quy ước và tạo ZIP v3.4.558.
+- Kiểm tra: manifest MV3 v3.4.558, ZIP 55 mục và integrity đạt; không commit hoặc phát hành.
+
+**2026-10-24 | v3.4.557 | Arena sửa:**
+
+- Theo ảnh kiểm tra Chrome: Dashboard Settings đã đúng; cờ ở nhãn flashcard không dùng font fallback như các option; toolbar popup là combobox tùy biến chưa nạp asset cờ. Mở rộng CSS local để áp font lên nhãn cờ flashcard và input/options của popup; nạp chung `flags.css` + detector `flags.js` trong popup. Không đổi UI, text option hay hành vi chọn.
+- File: manifest.json, flags.css, popup.html, PROJECT.md.
+- Kiểm tra: parse popup/dashboard HTML; xác nhận popup nạp flags.css và flags.js trước popup.js, các selector CSS bao phủ #languageSearch, #languageOptions .language-option và nhãn cờ flashcard; node --check 20/20 JS, git diff --check và ZIP 55 file MV3 v3.4.557 integrity đạt. Cần người dùng retest trực quan trên Chrome; sandbox không có trình duyệt.
+
+**2026-10-24 | v3.4.556 | Arena sửa:**
+
+- Tăng patch version theo quy tắc phát hành sau khi phát hiện ZIP chứa toàn bộ thay đổi nhưng vẫn mang version cũ. Khôi phục ZIP `v3.4.555` từ Git baseline ban đầu và tạo ZIP hiện hành `v3.4.556` từ source tối ưu; không thay đổi version cũ.
+- File: manifest.json, PROJECT.md, ZIP v3.4.555 và ZIP v3.4.556.
+- Kiểm tra: baseline v3.4.555 có 51 mục, manifest MV3 v3.4.555; ZIP v3.4.556 có 55 mục, manifest MV3 v3.4.556 và chứa PROJECT/flags mới nhất. Integrity hai ZIP đạt. Không commit hoặc phát hành.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- OPT 3.2 Flags: native language selects được kiểm tra bằng canvas; chỉ khi trình duyệt có color emoji nhưng thiếu flag glyph mới bật CSS cục bộ. Đóng gói `TwemojiCountryFlags.woff2` (79.5 KB), giới hạn font face vào codepoints cờ và chỉ áp lên native selects trên Dashboard; không CDN, không cài font, không sửa nội dung option. Thêm giấy phép/attribution MIT + CC BY 4.0 vào `THIRD_PARTY_NOTICES.md` và `licenses/`.
+- File: dashboard.html, flags.js, flags.css, fonts/TwemojiCountryFlags.woff2, licenses/LICENSE-TWEMOJI-COUNTRY-FLAGS.md, THIRD_PARTY_NOTICES.md, PROJECT.md.
+- Kiểm tra: `node --check flags.js`, parse HTML, mock detection (native flags không bật fallback; thiếu flags thì bật), xác nhận CSS trỏ local và `unicode-range` giới hạn cờ. Chưa xác nhận hình ảnh giá trị đang chọn/menu mở trên Chrome, Firefox, Edge thực tế.
+- Tiếp theo: chạy kiểm tra tổng thể; không commit, tăng version, ZIP hoặc phát hành.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- OPT 5.3 Fonts: font stack `system-ui` là font cục bộ nhưng trước đây cả `custom-font.js` lẫn Reader vẫn gắn/tải stylesheet Google Fonts. Nay stack system vẫn áp dụng như cũ nhưng không tải stylesheet/font từ mạng; nếu chuyển từ hosted font sang system, stylesheet cũ được gỡ. Font Google được chọn vẫn tải theo nhu cầu và dùng chung link hiện có; tắt font vẫn không tải.
+- File: custom-font.js, bilingual-reader.js, PROJECT.md.
+- Kiểm tra: cú pháp và `git diff --check` đạt; mock xác nhận system không tải stylesheet/FontFaceSet, hosted font tạo một link, disabled không tải, Reader system áp dụng stack mà không gọi tải font. Chưa kiểm thử mạng/font rendering thực tế trên Chrome/Firefox/Edge.
+- Tiếp theo: kiểm tra tổng thể sau các bước tối ưu; không commit, tăng version, ZIP hoặc phát hành.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 4.5 Backup: import lọc trực tiếp các cửa sổ tối đa 500 item từ mảng đầu vào thay vì tạo thêm mảng `incoming` toàn cục rồi cắt batch; giữ thứ tự, tiêu chí bỏ bản ghi lỗi, xử lý trùng ID và một thông báo refresh. JSON export đã stream theo batch nên giữ nguyên.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check background.js` và `git diff --check` đạt; mock 1.005 dòng xác nhận batch ≤500, 995 bản ghi hợp lệ nhập đúng thứ tự, bản ghi lỗi bỏ qua, ID trùng xử lý và chỉ một refresh. Chưa kiểm thử file lớn/runtime trên Chrome/Firefox.
+- Tiếp theo: rà mục Fonts trong OPT 5.3, rồi kiểm tra tổng thể dự án.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 4.4 Library: `applyAnnotationChange(deletePage)` compact danh sách annotations còn lại trong một lượt thay vì gọi `splice` lặp lại cho từng mục bị xóa; giữ thứ tự ổn định, xóa ID đã xóa và cập nhật vị trí ID trong cùng O(n).
+- File: dashboard.js, PROJECT.md.
+- Kiểm tra: `node --check dashboard.js` và `git diff --check` đạt; mock xác nhận thứ tự, hai index ID/vị trí, vô hiệu cache và render giữ đúng; nhánh xóa trang không còn `splice` lặp. Chưa kiểm thử Library thực tế trên Chrome/Firefox. (Một assert harness ban đầu quá rộng vì bắt nhầm `splice` của nhánh xóa một item; harness đã thu hẹp đúng nhánh và PASS.)
+- Tiếp theo: rà Backup theo OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 4.3 Flashcards: chuyển kiểm tra request dịch câu đang in-flight lên trước `storage.local.get`; `renderStudyCard` có thể prefetch lại cùng câu kế tiếp khi vẽ lại, nên các lần đó nay dùng chung Promise mà không đọc storage thêm. Cache, quota, queue và giới hạn tốc độ không đổi.
+- File: study-translation.js, PROJECT.md.
+- Kiểm tra: `node --check study-translation.js` và `git diff --check` đạt; mock xác nhận hai caller đang chạy chia sẻ một provider/quota, chỉ một storage read, kết quả được persist một lần và lần sau dùng memory cache. Chưa kiểm thử UI/runtime trên Chrome/Firefox.
+- Tiếp theo: rà Library rồi Backup theo OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 4.2 Sidebar: input Search debounce theo 80 ms đã dùng chung trong cấu hình; trường tìm kiếm của mỗi object annotation được chuẩn hóa/lowercase một lần và WeakMap tái sử dụng khi lọc/xếp hạng trên các lần gõ tiếp theo. Không đổi markup/thứ tự/UI.
+- File: content.js, PROJECT.md.
+- Kiểm tra: `node --check content.js` và `git diff --check` đạt; mock xác nhận trường tìm kiếm được cache theo object, dùng lại cùng tham chiếu và làm mới với object annotation mới. Chưa kiểm thử tương tác thực tế trên Chrome/Firefox.
+- Tiếp theo: rà Flashcards trong Bước 4, rồi Library và Backup theo OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 3.2 SentenceNote/Note Composer: giữ nguyên cách trích sentence theo DOM hiện tại (chỉ chạy khi bật và mở composer; không cache DOM động). Composer bỏ qua `UPDATE` chỉ khi mọi trường được ghi (quote, note, sentence, metadata trang, context, color, tags, createdAt) trùng chính xác và chặn submit trùng trong lúc lưu.
+- File: content.js, PROJECT.md.
+- Kiểm tra: `node --check content.js` và `git diff --check` đạt; mock xác nhận cùng nội dung được nhận diện là no-op, thay đổi từng trường được giữ lại để lưu và guard chống submit trùng hiện diện. Chưa kiểm thử runtime trên Chrome/Firefox.
+- Tiếp theo: rà Sidebar trong Bước 4, rồi Flashcards, Library và Backup theo OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 4.1 Reader: `pageObserver` không còn đánh dấu cache và quét lại khung DOM khi TTS/site Reader tắt và Lazy Translate không hoạt động; giữ debounce 900 ms khi tính năng cần thiết hoạt động, đồng thời hủy lần quét đã đặt lịch nếu site bị tắt trước khi timer chạy. Khi Reader được bật lại, cache được đánh dấu dirty để lần đọc kế tiếp thấy nội dung mới. Lazy Translate vẫn độc lập với danh sách website tắt Reader.
+- File: bilingual-reader.js, PROJECT.md.
+- Kiểm tra: `node --check bilingual-reader.js` và `git diff --check` đạt; mock observer đạt các nhánh idle, TTS, site/global-disable, Lazy-only và timer bị hủy. Chưa kiểm thử runtime trên Chrome/Firefox.
+- Tiếp theo: hoàn tất rà SentenceNote/Note Composer trong Bước 3, rồi tiếp tục Sidebar, Flashcards, Library và Backup theo OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 3.1: `getBatch` dùng `IDBKeyRange.lowerBound` cho phân trang toàn cục để bắt đầu sau ID cuối thay vì quét rồi bỏ qua các trang trước; truy vấn theo URL giữ nguyên. Highlighter trả về sớm khi trang không có annotation cần khôi phục, tránh truy vấn DOM marks không cần thiết.
+- File: background.js, content.js, PROJECT.md.
+- Kiểm tra: mock IndexedDB xác nhận global cursor bắt đầu trực tiếp sau ID và URL pagination giữ bộ lọc/thứ tự; `node --check` background.js/content.js đạt. Chưa kiểm thử hiệu năng hoặc runtime trên Chrome/Firefox.
+- Tiếp theo: hoàn tất rà SentenceNote/Note Composer trong Bước 3.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 2.3: gộp Dictionary translation đang chạy theo khóa text/đích trong cùng AbortSignal; các popup/request có signal khác nhau vẫn độc lập để giữ hành vi hủy an toàn. Rà Search: Dashboard đã debounce input và tái sử dụng metadata tìm kiếm, không cần sửa.
+- File: content.js, PROJECT.md.
+- Kiểm tra: `node --check content.js` đạt; mock xác nhận request trùng cùng signal chỉ gọi provider một lần, signal khác không bị gộp, kết quả cache vẫn tái sử dụng. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: rà Bước 3 (Annotations, Highlighter, SentenceNote, Note Composer); tiếp tục tự chủ theo chỉ đạo người dùng.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 2.2: gộp request TTS audio đang chạy theo khóa language/voice/text đã chuẩn hóa, tránh gọi Google và trừ quota lặp; voice hoặc text khác vẫn là request riêng.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock concurrency xác nhận hai caller cùng request chỉ tạo một fetch và một lần consume quota, request sau dùng cache, voice khác tạo fetch riêng. `git diff --check` đạt. Chưa kiểm thử audio runtime trên Chrome/Firefox.
+- Tiếp theo: tiếp tục rà TTS, Dictionary và Search; không phát hành hoặc tăng version giữa các bước.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 2.1: gộp các yêu cầu dịch Bilingual Reader đang chạy có cùng ngôn ngữ/text vào một Promise; nội dung khác nhau vẫn chạy độc lập, fallback không được lưu và request được xóa khỏi Map sau khi hoàn thành.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock xác nhận hai yêu cầu trùng chỉ tạo một lượt provider, nội dung khác tạo lượt riêng, fallback vẫn retry và cache/LRU không bị ảnh hưởng. `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: tiếp tục rà TTS, Dictionary và Search theo Bước 2; không phát hành hoặc tăng version giữa các bước.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước 1.3: đặt ngân sách độc lập cho cache dịch (500 mục; khi vượt 550, LRU giảm về 500; TTL trượt 7 ngày) và audio TTS (200 mục; khi vượt 250, LRU giảm về 200). Cập nhật dấu dùng gần nhất tối đa mỗi 6 giờ; giữ UI không đổi.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock dịch xác nhận touch/TTL, dọn hết hạn, eviction LRU và Clear Cache; mock IndexedDB xác nhận TTS trim 251 mục về 200 và bỏ mục ít dùng nhất. `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: tiếp tục Bước 2; kiểm thử trình duyệt vẫn cần ở đợt hồi quy trước phát hành.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước tối ưu 1.2: chuyển cache Bilingual Reader từ một object lớn sang storage key riêng cho từng bản dịch; key băm có độ dài cố định, bản ghi xác thực khóa gốc. Xóa object cache cũ một lần (theo lựa chọn của người dùng), giữ TTL 7 ngày, dọn mục hết hạn theo chu kỳ 24 giờ và cập nhật Clear Cache để xóa cả key cũ lẫn key mới.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock harness đạt cho xóa cache cũ nhưng giữ settings, key độc lập/cache hit, fallback không được lưu, dọn mục hết hạn và Clear Cache; `git diff --check` đạt. Manifest vẫn MV3 v3.4.555. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: người dùng đã cho phép tiếp tục tự chủ; kiểm thử Chrome/Firefox vẫn chưa chạy.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bước tối ưu 1.1: Bilingual Reader vẫn trả fallback khi các engine dịch lỗi nhưng không lưu fallback mới; các fallback hợp lệ đã lưu trước đây bị bỏ qua để thử dịch lại. Bản dịch thành công vẫn cache như trước.
+- File: background.js, PROJECT.md.
+- Kiểm tra: `node --check background.js` đạt; mock harness xác nhận bỏ qua fallback cũ, không lưu fallback khi tất cả engine lỗi, vẫn lưu và tái sử dụng bản dịch thành công; `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: người dùng chấp thuận tiếp tục sang Bước 1.2; chưa kiểm thử trên Chrome/Firefox.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bỏ bullet trước tiêu đề các mục 5.1–5.5, khôi phục dấu chấm sau số và giữ phần nội dung thụt vào bên dưới.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận tiêu đề không còn bullet đầu dòng, nội dung bắt đầu ở dòng kế tiếp; không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bỏ dấu chấm thừa sau số ở tiêu đề các tiểu mục 5.1–5.5 trong `AGENTS.md`.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận cách viết số mục mới và giữ nguyên nội dung; không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Định dạng lại các mục 5.1–5.5 trong `AGENTS.md`: tiêu đề ngắn in đậm, canh hàng; nội dung xuống dòng và thụt vào bên dưới.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận các mục thẳng hàng và giữ nguyên quy tắc watcher, đường dẫn, version/đóng gói.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Đánh số phân cấp các mục trong `AGENTS.md`: sáu mục lớn và năm tiểu mục quy trình.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận số mục tăng đúng thứ tự và nội dung quy tắc được giữ; không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Làm rõ cách tham khảo `OPT-ARENA.md`: đọc phần liên quan khi sửa; chỉ đọc toàn bộ khi cần đối chiếu tính nhất quán, không bắt buộc đọc lại mỗi bước.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận câu hướng dẫn mới và giữ nguyên version/lịch sử.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Đồng bộ quy tắc AGENTS với phân vai tài liệu: không bắt buộc đọc lại toàn bộ OPT mỗi bước; PROJECT giữ trạng thái và tóm tắt kiểm thử, OPT chỉ giữ thiết kế/phạm vi/quy trình.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận quy tắc đọc file và nguồn nội dung; giữ nguyên watcher/đường dẫn Windows, không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Rút gọn phần diễn giải trong `OPT-ARENA.md`, giữ đủ ý chính và toàn bộ sơ đồ text.
+- File: OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: 213 → 198 dòng; 7 sơ đồ giữ nguyên từng byte; 22 tiêu đề vẫn đánh số phân cấp.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Gom thiết kế tính năng đã chốt và ý tưởng tham khảo vào mục `Kế hoạch sắp tới` ở cuối `OPT-ARENA.md`; đánh số phân cấp mọi tiêu đề.
+- File: OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: đối chiếu đủ 7 sơ đồ text, thứ tự mục và cấp số; không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Tóm lược phần diễn giải trong `OPT-ARENA.md` để dễ đọc lại; giữ nguyên toàn bộ sơ đồ text và các thiết kế, mục tiêu/phạm vi, quy trình.
+- File: OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: 7 sơ đồ giữ nguyên từng byte; file rút từ 252 xuống 209 dòng; không còn nhật ký bước hoàn tất trong OPT.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Làm rõ định dạng năm mục là yêu cầu báo cáo trên khung chat, không yêu cầu ghi từng báo cáo bước vào biên bản `OPT-ARENA.md`.
+- File: OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: xác nhận câu mới thay đúng câu cũ, giữ nguyên các mục nhật ký; không đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Chuẩn hóa vai trò tài liệu: OPT-ARENA chỉ còn thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; bỏ trạng thái bước cùng nhật ký hoàn thành, không tạo archive mới.
+- File: AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md.
+- Kiểm tra: xác nhận phần thiết kế/quy trình được giữ, log tiến độ chỉ ở PROJECT, README không chứa theo dõi nội bộ; kiểm tra diff/ZIP, không tăng version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Phân vai tài liệu: AGENTS quy định workflow/nguồn sự thật; PROJECT giữ handoff ngắn; README hướng người dùng; OPT-ARENA lưu chi tiết tối ưu và bằng chứng.
+- File: AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md.
+- Kiểm tra: đối chiếu ranh giới/nội dung, giữ nguyên việc đang mở và lịch sử; kiểm tra diff/ZIP, không tăng version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Đánh số hai tiêu đề cuối trong `PROJECT.md` thành mục 4 (Bản đồ file) và mục 5 (Nhật ký dự án) để khớp thứ tự 1–5.
+- File: PROJECT.md, OPT-ARENA.md.
+- Kiểm tra: xác nhận thứ tự tiêu đề, bảo toàn các mục nhật ký cũ và kiểm tra ZIP; không tăng version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Sắp xếp bốn mục trạng thái, việc đang mở, ràng buộc và bản đồ file lên trước nhật ký để agents thấy thông tin hành động trước; giữ nhật ký liên tục mới nhất → cũ nhất.
+- File: PROJECT.md, OPT-ARENA.md.
+- Kiểm tra: so sánh nội dung bốn mục và thứ tự toàn bộ lịch sử; kiểm tra diff/ZIP, không tăng version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Làm rõ quy tắc phải ghi đúng tên tác nhân thực hiện từng thay đổi, gồm các ví dụ AI và trường hợp Huuson trực tiếp sửa.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận câu mới, thứ tự nhật ký, diff và ZIP; không thay đổi version.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Mở rộng quy định tăng version trong `AGENTS.md` để áp dụng với thay đổi phát hành của bất kỳ tác nhân nào.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: xác nhận câu hướng dẫn mới, giữ nguyên version và lịch sử nhật ký; xác minh diff/ZIP.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Bổ sung vào `AGENTS.md` quy định dùng một mẫu nhật ký thống nhất, in đậm tiêu đề và ghi đúng AI/người thực hiện.
+- File: AGENTS.md, PROJECT.md.
+- Kiểm tra: rà soát mẫu bắt buộc, attribution đúng tác nhân, giữ lịch sử cũ và xác minh diff/ZIP.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Gom nhật ký về một mục duy nhất ở đầu `PROJECT.md`, xếp mới → cũ; chuyển trạng thái, việc đang mở và các mục tham khảo xuống dưới.
+- File: PROJECT.md, OPT-ARENA.md.
+- Kiểm tra: rà soát thứ tự thời gian, loại mục trùng và giữ nguyên tác giả lịch sử; xác minh diff và ZIP sau khi đóng gói.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Khôi phục lịch sử còn thiếu từ file PROJECT.md bạn gửi: hai mục gần đây, 30 changelog v3.4.533–v3.4.501 và mục lịch sử ZIP/trước Git; giữ nguyên tác giả lịch sử.
+- File: PROJECT.md, OPT-ARENA.md.
+- Kiểm tra: 301 dòng thêm, không xóa dòng; diff check và ZIP v3.4.555 integrity đạt.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Đổi tên nhật ký thành `OPT-ARENA.md`, cập nhật tham chiếu và quy tắc nhãn sửa.
+- File: AGENTS.md, OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: xác nhận tên file/tham chiếu; ZIP v3.4.555 gồm 51 file, integrity đạt; ZIP v3.4.554 giữ nguyên.
+
+**2026-10-24 | v3.4.555 | Arena sửa:**
+
+- Reader chỉ tải stylesheet web font khi có font được chọn; `custom-font.js` dùng chung link và gỡ khi tắt.
+- File: bilingual-reader.js, custom-font.js, manifest.json, PROJECT.md, OPT-ARENA.md.
+- Kiểm tra: mock hai thứ tự khởi tạo, syntax JS, manifest, diff và ZIP integrity đạt; người dùng xác nhận v3.4.555 đúng, chưa nêu trình duyệt.
+
+**2026-10-24 | v3.4.554 | Arena sửa:**
+
+- Chỉ gắn Google Fonts khi custom font được bật/chọn; gỡ stylesheet khi tắt hoặc site bị disable.
+- File: custom-font.js, README.md, PRIVACY-POLICY.md, OPT-ARENA.md, PROJECT.md, manifest.json.
+- Kiểm tra: mock DOM/storage, syntax JS, manifest, diff; ZIP thử 51 file đã tạo. Chưa thử Chrome/Firefox thật.
+
+**2026-10-24 | v3.4.553 | Arena sửa:**
+
+- Soạn LICENSE độc quyền và Privacy Policy EN/VI; gom license bên thứ ba, thêm Apache-2.0 cho Readability và cập nhật README.
+- File: LICENSE, PRIVACY-POLICY.md, THIRD_PARTY_NOTICES.md, licenses/*, README.md, PROJECT.md.
+- Kiểm tra: link, license, coverage policy, syntax JS, manifest và diff đạt; còn placeholder, chưa rà soát store/trình duyệt.
+
+**2026-10-24 | v3.4.553 | Arena sửa:**
+
+- Đặt tốc độ riêng cho ngôn ngữ hiển thị mặc định 1.25×; global 1.0×, flashcard độc lập 1.2×.
+- File: config.js, dashboard.js, dashboard.html, PROJECT.md.
+- Kiểm tra: syntax JS, manifest, mock giá trị/biên/format và diff đạt; chưa kiểm tra trên trình duyệt.
+
+**2026-10-23 | v3.4.553 | Claude sửa:**
+
+- Khi dùng giọng Google, mỗi lần tải hoặc phát âm thanh lỗi (trừ lỗi hết lượt) hiện toast đen "Mạng chậm, đang tải âm thanh" (EN/VI/KO, key googleAudioSlowToast). tts-engine.js thêm hook onGoogleAudioSlow, chỉ gọi khi lượt đọc còn active; content.js (Speak popup) dùng showSidebarToast, bilingual-reader.js dùng showReaderToast. Không đổi UI/CSS, dashboard (flashcard) chưa nối.
+- File: tts-engine.js, content.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check 4 file và test mock engine 4 ca (không strict, strict 3 lần, đã dừng, hết lượt); chưa kiểm tra trên trình duyệt.
+- Tiếp theo: tắt mạng/giả lập mạng chậm rồi bấm đọc để xem toast.
+- Lưu ý: ở chế độ không strict, toast hiện rồi đoạn đó đọc bằng giọng trình duyệt.
+
+**2026-10-23 | v3.4.552 | Claude sửa:**
+
+- Full dict tách IPA thành fetchIpa(word, lang, signal) chạy song song với dịch và Datamuse (không chờ Datamuse). Nguồn 1 dictionaryapi.dev phonetics[].text; nguồn 2 Google dt=rm đổi sang IPA bằng convertGoogleToIPA (tiện ích trong content.js, globalThis.LHN_IPA_UTILS); timeout 3 giây mỗi nguồn, dùng AbortSignal của popup. Chọn nguồn 1, không có thì nguồn 2 (lưu ipaApprox, gắn data-approx, không đổi giao diện), không có thì không vẽ .lhn-dict-ipa. Bỏ audio. Ngôn ngữ nguồn full dict ép en (đọc từ, chip Colloc), không dùng auto. Cache giữ nguyên key/TTL; mục cache cũ có ipa trùng từ sẽ bị ẩn.
+- File: content.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và test mock (đổi ký âm, 6 ca fetchIpa gồm timeout 3s và abort); chưa chạy trên trình duyệt thật, chưa gọi mạng thật.
+- Tiếp theo: tra thử từ trên Chrome/Firefox, xem IPA và từ không có IPA.
+
+**2026-10-23 | v3.4.551 | Claude sửa:**
+
+- (1) Select Voice: ô tìm kiếm tự focus trên mọi trình duyệt Chromium (Chrome, Edge,...) và Firefox bằng cách thử focus lại tối đa 5 lần (30/100/250/500ms) cho tới khi nhận được; chưa tái hiện được lỗi Edge nên chưa biết nguyên nhân gốc. (2) Thêm phím Alt+L (selectVoiceShortcut, mặc định Alt+L, đổi được) bấm vào icon cờ để mở Select Voice trên thanh đọc, chỉ khi đang đọc và thanh hiện, tuân theo công tắc Keyboard shortcuts của Reader; thêm dòng "Select voice reader" (EN/VI/KO) dưới Decrease reading speed ở Dashboard > Settings > Keyboard shortcuts, cùng markup với các dòng cũ, có trong Reset. (3) AGENTS.md: đổi tiêu đề thành "Keepit Working Rules for all AI (Codex/Claude,..)", thêm giới thiệu dự án và quy tắc UI mới phải giống giao diện tổng thể. (4) Viết lại README.md (tiếng Anh) theo hiện trạng dự án.
+- File: bilingual-reader.js, content.js, config.js, dashboard.html, dashboard.js, i18n.js, manifest.json, AGENTS.md, README.md, PROJECT.md.
+- Kiểm tra: Đã chạy node --check 5 file JS, parse manifest, test mock focus (3 ca) và handler Alt+L (3 ca); chưa kiểm tra trên trình duyệt thật.
+- Tiếp theo: thử focus ô search trên Edge/Chrome/Firefox; thử Alt+L và dòng cài đặt mới trên Dashboard.
+
+**2026-10-23 | v3.4.550 | Claude sửa:**
+
+- Select Voice của Bilingual Reader đổi cờ (lhn-br-flag) và tooltip ngay khi bấm chọn Auto, ngôn ngữ Google hoặc giọng trình duyệt, kể cả lúc pause/play, không chờ lưu xong hay đoạn kế tiếp. Nguyên nhân cũ: ngôn ngữ đoạn Google đang đọc (readingSegment) luôn thắng nên cờ đứng yên, và nhánh giọng trình duyệt không xóa nó. Thêm voiceFlagOverride (xóa sau khi lưu xong hoặc lưu lỗi), speakNext nhánh giọng trình duyệt xóa readingSegment; không động vào settings trước khi lưu nên restart khi đổi giọng giữ nguyên. Không đổi UI.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và test mock 6 ca đổi cờ (Google đang đọc, pause, browser sang Google, Google sang browser, Auto, lưu lỗi) cùng 6 ca speakNext; chưa kiểm tra trên trình duyệt.
+- Tiếp theo: xác nhận cờ đổi ngay trên Chrome/Firefox khi đang đọc, pause và dừng.
+- Lưu ý: đang pause với Google, đổi giọng rồi Play vẫn tiếp tục audio cũ (resumeGoogle), chưa xử lý.
+
+**2026-10-23 | v3.4.549 | Claude sửa:**
+
+- Bilingual Reader với giọng trình duyệt đã chọn luôn dùng đúng giọng đó, không còn tự đổi sang giọng US theo ngôn ngữ đoạn (kể cả khi Auto-detect bật). Khớp theo voiceURI rồi theo tên (không phân biệt hoa thường); chờ voiceschanged tối đa 1s trước khi kết luận thiếu. Không có giọng thì ghi console.error, dừng đọc, hiện toast "Giọng “{name}” không có trên trình duyệt này" (EN/VI/KO), không đổi giọng. Không đổi UI; không chia đoạn cho giọng trình duyệt.
+- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check, parse manifest và test mock 6 ca (có giọng, khớp theo tên, thiếu, xuất hiện sau voiceschanged, không chọn giọng, request cũ); chưa kiểm tra trên trình duyệt.
+- Tiếp theo: chọn Google Bahasa Indonesia trên Chrome và xem có đọc được không; trên Firefox xác nhận toast khi thiếu giọng; để ý giọng Google mạng dừng giữa chừng với đoạn dài.
+
+**2026-10-23 | v3.4.548 | Claude sửa:**
+
+- Select Voice chia hai nhóm có tiêu đề: "Ngôn ngữ (Google TTS)" (21 ngôn ngữ) và "Giọng trình duyệt" (giọng hệ thống, tên thêm hậu tố "(Browser)"); Auto đứng đầu không thuộc nhóm; nhóm rỗng khi tìm kiếm thì ẩn tiêu đề; phím Up/Down bỏ qua tiêu đề. Thêm toast đen của app (#lhn-sidebar-toast) khi: Google voice lỗi sau 3 lần thử (dừng đọc), hết lượt Google (chuyển sang giọng trình duyệt), giọng trình duyệt lỗi phát. Toast có 3 ngôn ngữ EN/VI/KO.
+- File: bilingual-reader.js, tts-engine.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check, kiểm tra i18n 3 ngôn ngữ, test mock 10 ca vẽ danh sách/tìm kiếm, 5 ca strictVoice, 1 ca thông báo hết lượt một lần; chưa kiểm tra giao diện trên trình duyệt. Chưa có toast cho lỗi dịch (translateBlock chỉ console.warn).
+- Tiếp theo: xác nhận giao diện nhóm và toast trên Chrome/Firefox; xem lỗi thật của giọng Google Bahasa Indonesia qua toast/console.
+
+**2026-10-23 | v3.4.547 | Claude sửa:**
+
+- Bilingual Reader với voice Google không còn tự chuyển sang giọng trình duyệt khi một đoạn Google TTS lỗi: thử lại Google tối đa 3 lần (chờ 0,5s rồi 1s); vẫn lỗi thì dừng đọc và ghi console.error, không đổi giọng. Chỉ chuyển sang giọng trình duyệt khi hết lượt dùng (lỗi usage limit). Cờ strictVoice chỉ bật ở Bilingual Reader; chọn text và flashcard giữ nguyên cách cũ.
+- File: tts-engine.js, bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và test mock 5 ca (Google OK, lỗi tạm thời, lỗi kéo dài, hết lượt, nhánh không strict); chưa kiểm tra trên trình duyệt. CHƯA xác định nguyên nhân thật khiến Google TTS lỗi với tiếng Indonesia.
+- Tiếp theo: chọn Indonesian khi đang đọc, nếu dừng thì xem console.error để biết lỗi (HTTP/Referer/audio); quyết định có áp dụng strict cho popup chọn text không.
+
+**2026-10-23 | v3.4.546 | Claude sửa:**
+
+- Select Voice của Bilingual Reader dùng bàn phím: khi popover đang mở, Up/Down di chuyển mục đang chọn trong danh sách (kẹp ở đầu/cuối, bắt đầu từ mục đang dùng), Enter chọn mục đó. Chỉ khi Select Voice mở mới chặn Up/Down, nên phím chỉnh tốc độ giữ nguyên ở lúc khác. Mục đang chọn bằng phím có nền hover và viền accent (class lhn-kb-active).
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và test mock logic phím (8 ca); chưa kiểm tra trên trình duyệt.
+- Tiếp theo: xác nhận Up/Down/Enter trong Select Voice trên Chrome/Firefox, kể cả khi con trỏ đang ở ô tìm kiếm.
+
+**2026-10-23 | v3.4.545 | Claude sửa:**
+
+- AGENTS.md thêm quy tắc ghi rõ người sửa (Claude/Codex/Huuson) trong mỗi mục nhật ký. Select Voice của Bilingual Reader có đủ 21 ngôn ngữ kèm cờ (gồm Việt Nam), tìm theo tên/bản địa/mã/quốc gia, không phân biệt dấu. Chọn ngôn ngữ giữ voiceMode=google và đặt ngôn ngữ đọc (readLanguage); cờ ở thanh dưới đổi theo. Chọn Auto hoặc giọng trình duyệt thì xóa readLanguage.
+- File: tts-engine.js, bilingual-reader.js, AGENTS.md, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và test mock (lưu/đọc readLanguage, 21 cờ, tìm kiếm); chưa kiểm tra UI trên trình duyệt.
+- Tiếp theo: xác nhận chọn Vietnamese đọc đúng tiếng Việt và cờ VN đổi theo trên Chrome/Firefox.
+
+**2026-10-23 | v3.4.534 | Codex sửa:**
+
+- Bilingual Reader chạy đồng thời các engine dịch và dùng bản dịch thành công đầu tiên, tránh chờ timeout tuần tự từng engine.
+- File: background.js, manifest.json, PROJECT.md.
+- Kiểm tra: Đã chạy node --check và git diff --check; chưa đo trực tiếp độ trễ trên trình duyệt.
+- Tiếp theo: kiểm tra thời gian Alt+A/Alt+D trên trang thực tế.
+
+**2026-10-23 | v3.4.533 | Codex sửa:**
+
+- Thêm Auto highlight vào Toolbar settings, dùng chung `autoHighlight` với Dashboard > Highlights & Notes; mặc định tắt ở cài đặt mới.
+- File: config.js, popup.html, popup.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check cho config.js, popup.js, dashboard.js và git diff --check; chưa kiểm tra UI trên trình duyệt.
+
+**2026-10-23 | v3.4.532 | Codex sửa:**
+
+- Giá trị khởi tạo Your speed cho Custom rate for display language là 1.2; giữ ưu tiên tốc độ riêng đã lưu.
+- File: dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, git diff --check và tính toán mặc định; chưa kiểm tra UI trên trình duyệt.
+
+**2026-10-23 | v3.4.531 | Codex sửa:**
+
+- Đồng bộ khoảng cách mô tả Disable reader on websites với form thêm domain thành 16px.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: git diff --check; chưa kiểm tra UI trên trình duyệt.
+
+**2026-10-23 | v3.4.530 | Codex sửa:**
+
+- Seed danh sách 27 website mặc định tắt Reader một lần, hợp nhất với danh sách hiện có và giữ domain người dùng đã xóa.
+- File: config.js, dashboard.js, bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, git diff --check và 3 ca migration; chưa kiểm tra trên trình duyệt.
+
+**2026-10-23 | v3.4.529 | Codex sửa:**
+
+- Gộp Reader settings thành một mục; khi Enable reader tắt, các tùy chọn phụ bị mờ và khóa tương tác.
+- File: dashboard.html, dashboard.js, dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, cấu trúc/ID UI và git diff --check; chưa kiểm tra trên trình duyệt.
+
+**2026-10-23 | v3.4.528 | Codex sửa:**
+
+- Thêm Enable reader và danh sách website tắt Reader có thể thêm, sửa, xóa; vô hiệu hóa các tùy chọn liên quan khi reader tắt.
+- File: dashboard.html, dashboard.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check 3 JS, liên kết UI và git diff --check; chưa kiểm tra trên trình duyệt.
+
+**2026-10-23 | v3.4.527 | Codex sửa:**
+
+- Thu hẹp dải ký tự nhận dạng Bengali và Devanagari, ưu tiên Bengali trước Hindi.
+- File: tts-engine.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, kiểm tra dải ký tự và git diff --check; chưa kiểm tra TTS trên trình duyệt.
+
+**2026-10-23 | v3.4.526 | Codex sửa:**
+
+- Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng cục bộ và nhận diện Google nền cho Latin; giữ thiết lập giọng flashcard nguyên trạng.
+- File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, 12 câu mẫu, cache/fallback, manifest và git diff --check; chưa kiểm tra Chrome/Firefox.
+
+**2026-10-23 | v3.4.525 | Codex sửa:**
+
+- Lớp phủ absolute có z-index và các dialog/listbox/menu/tooltip được nhận diện ngoài fixed/sticky; nền lớp phủ giữ đục theo theme để nội dung phía sau không xuyên qua.
+- File: custom-font.js, PROJECT.md.
+- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google Search.
+
+- Sửa layer nổi fixed/sticky bị trong suốt bằng nhận diện vị trí từ computed style và gán nền theo theme; thêm Default/Dracula trong dashboard, ba ngôn ngữ.
+- File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md.
+- Kiểm tra: đã chạy node --check, parse manifest JSON, git diff --check; chưa kiểm tra trực quan trên website.
+
+- File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md.
+- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google/trang web.
+
+- File: dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md.
+- Kiểm tra: đã chạy node --check, parse manifest JSON và git diff --check; chưa kiểm tra trực quan trên trình duyệt.
+
+- Browser TTS không phát khi thiếu voice cùng ngôn ngữ; hiện toast “Trình duyệt bạn không hỗ trợ ngôn ngữ này”. Engine dừng phần còn lại của yêu cầu.
+- File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check các script, parse manifest JSON và git diff --check đều đạt; chưa xác nhận trên trình duyệt.
+
+**2026-10-23 | v3.4.524 | Codex sửa:**
+
+- TTS engine đọc `lhnSettings.speechVoice`; Browser voice phát từng đoạn bằng giọng trình duyệt, không gọi Google TTS.
+- File: tts-engine.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check và test mock xác nhận browser voice bỏ qua API Google; chưa thử trên trình duyệt.
+- Tiếp theo: xác nhận phát âm thật trên Chrome/Firefox.
+
+**2026-10-23 | v3.4.523 | Codex sửa:**
+
+- Sửa nhận diện paragraph có chữ nằm trong inline element; ép câu hỏi phỏng vấn VnExpress vào main reader queue.
+- Hover hiện icon cho đoạn chữ ở mọi chế độ; icon ngoài main chỉ đọc block đã bấm.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: kiểm tra DOM thật, node --check, parse manifest, git diff --check; chưa phát TTS thực tế.
+
+**2026-10-23 | v3.4.522 | Codex sửa:**
+
+- Thêm đoạn question trong `.fck_detail` vào queue main; semantic paragraphs có inline text vẫn nhận icon; hover hiện icon ở mọi chế độ.
+- Bấm icon ngoài main đọc riêng block được chọn; trong main giữ queue hiện tại.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: node --check, parse manifest, git diff --check và markup DOM; chưa phát thử trên trình duyệt.
+
+**2026-10-23 | v3.4.521 | Codex sửa:**
+
+- Giữ câu hỏi phỏng vấn italic kết thúc bằng dấu hỏi; icon ngoài main hiện khi hover ở mọi chế độ và chỉ đọc block được bấm.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử phát trên trình duyệt.
+- Tiếp theo: xác nhận trên trang VnExpress.
+
+**2026-10-23 | v3.4.520 | Codex sửa:**
+
+- Alt+A/Alt+R đưa headline `.title_post` và sapo `.lead_post_detail` của VnExpress vào queue khi cùng khối bài viết.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: xác nhận selector/markup trên HTML trang; đã chạy node --check, parse manifest JSON, git diff --check; chưa thử trình duyệt.
+- Tiếp theo: xác nhận Alt+R đọc đủ phần mở đầu và body.
+
+**2026-10-23 | v3.4.519 | Codex sửa:**
+
+- Alt+A/Alt+R loại khối đọc gần phủ toàn màn hình, tránh tô tím toàn trang.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử trên trình duyệt.
+- Tiếp theo: xác nhận trên trang gặp lỗi.
+
+**2026-10-23 | v3.4.518 | Codex sửa:**
+
+- Alt+A/Alt+R đọc các khối chữ nhìn thấy trong vùng nội dung; giữ đoạn dài, lọc rác ở đoạn ngắn, Google Search ưu tiên vùng kết quả/AI Overview.
+- Debug console: xanh = đọc, đỏ = bỏ; xem lý do trong console.table.
+- File: bilingual-reader.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trình duyệt.
+- Tiếp theo: kiểm tra các trang thực tế qua debug mode.
+
+**2026-10-23 | v3.4.517 | Codex sửa:**
+
+- Watcher tự commit khi lưu file trong thư mục nguồn; cập nhật ZIP cùng version. (Watcher nằm ngoài repo.)
+- File: manifest.json, PROJECT.md, D:\Keepit\sync-watch.ps1.
+- Kiểm tra: watcher ghi log cho commit/ZIP; chưa xác nhận tự chạy sau khi khởi động lại Windows.
+
+**2026-10-23 | v3.4.516 | Codex sửa:**
+
+- Reader: mặc định Show on hover; Always visible chỉ luôn hiện trong vùng Alt+R, ngoài vùng hiện khi hover.
+- File: bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check, parse manifest và kiểm tra selector/default; chưa chạy trên trình duyệt.
+- Tiếp theo: kiểm tra trực quan các chế độ icon đọc trong trang.
+
+**2026-10-22 | v3.4.515 | Codex sửa:**
+
+- Thêm bước nhảy tốc độ tùy chỉnh cho phím Up/Down, mặc định 0.25; banner cập nhật theo thiết lập.
+- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và test bước nhảy; chưa chạy trên trình duyệt.
+- Tiếp theo: kiểm tra nhập bước nhảy và Up/Down trong Speak popup.
+
+**2026-10-22 | v3.4.514 | Codex sửa:**
+
+- Gói Free (không key/không đăng nhập) dùng Translate và Google TTS không giới hạn.
+- File: usage-limits.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và test quota Free/key; đều đạt.
+- Tiếp theo: xác nhận các provider không tự giới hạn request.
+
+**2026-10-22 | v3.4.513 | Codex sửa:**
+
+- Alt+R và Alt+A dùng chung một vùng nội dung chính (Readability từ bilingual-reader 1.0.1; bỏ ngày giờ, tác giả, tin liên quan, chia sẻ...). Alt+D vẫn trên toàn trang. Không tìm được nội dung chính thì dùng lại cách cũ.
+- File: bilingual-reader.js (readerBlocks mới, cache), lib/Readability.js, lib/Readability-readerable.js, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trên trình duyệt thật.
+- Tiếp theo: thử vài trang tin (VnExpress, Dân trí, BBC) để xem Alt+A/Alt+R có cùng vùng.
+
+**2026-10-22 | v3.4.512 | Codex sửa:**
+
+- Watcher refresh Explorer khi có file mới/đổi tên ở D:\Keepit và sau khi xử lý ZIP.
+- File: D:\Keepit\sync-watch.ps1, manifest.json, PROJECT.md.
+- Kiểm tra: đã chạy PowerShell parser và gọi SHChangeNotify; chưa kiểm tra Explorer tự sắp xếp.
+- Tiếp theo: xác nhận refresh/sắp xếp trong Explorer khi ZIP mới xuất hiện.
+
+**2026-10-22 | v3.4.511 | Codex sửa:**
+
+- Thiết lập phiên bản mới theo quy tắc AGENTS.md và PROJECT.md; không đổi chức năng addon.
+- File: manifest.json, AGENTS.md, PROJECT.md.
+- Kiểm tra: đã chạy parse manifest JSON; chưa chạy kiểm tra chức năng addon.
+- Tiếp theo: xử lý các mục đang mở ở mục 2.
+
+**2026-10-22 | v3.4.510 | ZIP sync — người sửa không xác định:**
+
+- ZIP ghi nhận `bilingual-reader.js` gọi `LHN_TTS`; commit chỉ đồng bộ ZIP nên không gán thay đổi cho Codex.
+- File: `bilingual-reader.js` được nêu trong snapshot ZIP; không có sửa đổi source được gán.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
+
+**2026-10-22 | v3.4.509 | Codex sửa:**
+
+- Trả audio TTS dạng Base64 qua runtime message để tương thích Chrome; dùng cho cả audio cache và audio mới.
+- File: background.js, tts-engine.js, manifest.json.
+- Kiểm tra: Không ghi nhận trong lịch sử gốc.
+
+**2026-10-22 | v3.4.508 | Codex sửa:**
+
+- Dùng chung `LHN_TTS` cho chọn text và Bilingual Reader; chuyển Bilingual Reader sang Google TTS, giữ pause/resume và đổi tốc độ khi phát.
+- File: tts-engine.js, content.js, bilingual-reader.js, dashboard.js, manifest.json.
+- Kiểm tra: Không ghi nhận trong lịch sử gốc.
+
+**2026-10-22 | v3.4.506 | ZIP sync — người sửa không xác định:**
+
+- Đồng bộ ZIP; commit cập nhật version và bỏ AGENTS.md/PROJECT.md khỏi snapshot. Không gán thay đổi này cho Codex.
+- File: Không có file source được xác nhận; đây là mục đồng bộ ZIP.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
+
+**2026-10-22 | v3.4.505 | Codex sửa:**
+
+- Chia văn bản TTS dài thành đoạn ngắn để phát nối tiếp.
+- File: content.js, manifest.json, PROJECT.md.
+- Kiểm tra: Không ghi nhận trong lịch sử gốc.
+
+**2026-10-22 | v3.4.504 | Codex sửa:**
+
+- Chuyển sang Manifest V3 dùng chung cho Chromium và Firefox; sửa Google TTS trên Chrome.
+- File: manifest.json, background.js, popup.html, dashboard.html, browser-polyfill.js, LICENSE-WEBEXTENSION-POLYFILL.txt.
+- Kiểm tra: Không ghi nhận trong lịch sử gốc.
+
+**2026-10-22 | v3.4.501 | Codex sửa (Git baseline):**
+
+- ZIP Codex đã xuất ghi nhận đồng bộ shortcut trong banner và Settings với giá trị đã lưu; banner cập nhật ngay khi shortcut đổi, shortcut chưa gán hiện là Off.
+- Đây là baseline đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; README cũ ghi `Local Highlight Notes for Firefox Windows` (v1.30.0).
+- Git không có lịch sử cho .502, .503 hoặc .507; không gán thay đổi chưa xác minh cho Codex.
+- File: Không ghi cụ thể trong nguồn baseline.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
+
+### Nhật ký ZIP trước baseline Git — v3.4.500 đến v3.4.398
+
+**2026-10-22 | v3.4.500 | Codex sửa:**
+
+- Đổi bước tăng/giảm tốc độ bằng phím ↑/↓ thành 0,15x và cho thanh Reading Speed kéo tự do.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-22 | v3.4.499 | Codex sửa:**
+
+- nhấp đúp vào nút kéo để đưa thanh đọc về vị trí mặc định: chính giữa, cách đáy màn hình 24px.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-22 | v3.4.498 | Codex sửa:**
+
+- icon speak ngoài vùng nội dung mà Alt+R đọc thành luôn ẩn; icon trong vùng đọc vẫn theo thiết lập hiện có.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-22 | v3.4.497 | Codex sửa:**
+
+- Thêm margin: 0 -14px cho nút data-hide-banner.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.496 | Codex sửa:**
+
+- Đã chặn Up/Down cuộn trang khi shortcut tốc độ đang bật; lúc đang đọc, chúng vẫn tăng/giảm tốc độ 0,25x.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.495 | Codex sửa:**
+
+- xử lý để các popup của speak popup đóng khi bấm bên ngoài thanh `lhn-bilingual-reading-bar`.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.494 | Codex sửa:**
+
+- Đồng bộ màu shortcut trong data-shortcut-banner với màu tím chủ đạo của lhn-bilingual-reading-bar.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.493 | Codex sửa:**
+
+- Mỗi lần lhn-bilingual-reading-bar hiện lại, data-shortcut-banner cũng hiện theo; trạng thái bật/tắt do người dùng chọn vẫn được lưu.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.492 | Codex sửa:**
+
+- hover: nền tím của nút Play/Pause được giữ nguyên, chỉ sáng nhẹ và nhấc lên 1px.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.491 | Codex sửa:**
+
+- hiệu ứng nhấn cho nút Play/Pause khi bấm nút hoặc dùng Space.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.490 | Codex sửa:**
+
+- các điểm nhấn của speak popup sang tím theo màu accent của addon: nút phát, thanh tốc độ và công tắc trong Settings.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.489 | Codex sửa:**
+
+- Đổi gợi ý đóng thành Alt+R; thêm shortcut tăng/giảm tốc độ đọc trong Dashboard > Shortcuts.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.488 | Codex sửa:**
+
+- `lhn-br-time` sang ước tính thời gian đọc **toàn bộ khung nội dung Reader**: số từ ÷ (220 từ/phút × tốc độ đọc). Nhãn cập nhật theo tốc độ hiện tại và ngôn ngữ hiển thị.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.487 | Codex sửa:**
+
+- Speak popup dùng theme và font toàn addon; Left/Right tạo hiệu ứng bấm nút đoạn trước/sau.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.486 | Codex sửa:**
+
+- Dịch speak popup; đổi nhãn account, reading icon và dark mode; đồng bộ Show reading icon với các chế độ Always visible/Show on hover của Reader.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.484 | Codex sửa:**
+
+- Chuyển scrollbar của Select Voice sang phải và tự focus ô tìm kiếm khi mở.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.483 | Codex sửa:**
+
+- Banner đồng bộ trạng thái cài đặt; dùng SVG cờ từ mẫu; Select Voice chỉ còn một scrollbar.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.482 | Codex sửa:**
+
+- Settings bật/tắt shortcut banner; Account mở dashboard hoặc form đăng nhập tùy trạng thái.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.481 | Codex sửa:**
+
+- Giữ banner trên một hàng, bỏ cuộn ngang trong speak popup và thay icon Settings bằng SVG người dùng cung cấp.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.480 | Codex sửa:**
+
+- Bắt phím ↑/↓ ở capture phase và chặn cuộn trang để dùng chúng thay đổi tốc độ đọc.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.479 | Codex sửa:**
+
+- **↑ để tăng** và **↓ để giảm tốc độ mỗi lần 0.25x** khi Bilingual Reader đang đọc, đồng thời cập nhật ghi chú trên `data-shortcut-banner`.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.478 | Codex sửa:**
+
+- animation mở popup để không ghi đè transform căn giữa nữa. Lần đầu popup sẽ hiện giữa phía dưới màn hình; khi kéo, cách kéo hiện tại được giữ nguyên.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.477 | Codex sửa:**
+
+- chế độ Auto: trước tiên chọn voice mặc định của hệ thống phù hợp với ngôn ngữ đang đọc, sau đó chọn voice khớp ngôn ngữ. Cờ toolbar theo voice được gán để phát; Auto trong menu vẫn là địa cầu.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.476 | Codex sửa:**
+
+- Sửa cờ trên thanh đọc để lấy theo voice thực sự đang phát; lựa chọn Auto trong danh sách vẫn hiện địa cầu.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.475 | Codex sửa:**
+
+- Sửa cờ theo voice đang đọc và bảo đảm icon cờ mở đúng popup #voice-popup.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.474 | Codex sửa:**
+
+- Auto hiển thị cờ theo ngôn ngữ đoạn đang đọc; popup chọn voice theo mẫu và có nền đục.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.473 | Codex sửa:**
+
+- đồng bộ Space với trạng thái đọc/tạm dừng của popup. Khi nhấn Space, âm thanh và biểu tượng play/pause được cập nhật đồng thời; chuyển đoạn cũng đồng bộ lại trạng thái.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.472 | Codex sửa:**
+
+- nút kéo: thanh công cụ giữ đúng vị trí tương đối với điểm con trỏ đang nhấn, không còn giật về giữa; nút hiển thị cursor bàn tay khi rê và khi kéo.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.471 | Codex sửa:**
+
+- Hoàn thiện điều khiển speak popup: giữ điểm kéo, đồng bộ Space với trạng thái Play/Pause và chuyển voice popup đúng.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.470 | Codex sửa:**
+
+- Khôi phục phát âm; tích hợp speak popup với Settings, chọn voice, theme, speed popup và nút mở dashboard.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.469 | Codex sửa:**
+
+- Tích hợp floating speak toolbar vào Bilingual Reader: play/pause, chuyển đoạn, chọn voice, chỉnh tốc độ, thời gian đọc, auto-scroll và kéo thả.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.468 | Codex sửa:**
+
+- chế độ hover: icon luôn ẩn khi không hover đoạn văn; focus hoặc trạng thái đọc không làm icon hiện.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.467 | Codex sửa:**
+
+- Gắn trạng thái icon speak với đoạn đang đọc; xóa trạng thái khi chuyển đoạn hoặc dừng đọc.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.466 | Codex sửa:**
+
+- Gỡ focus khỏi icon loa khi đọc xong để chế độ hover ẩn icon nếu con trỏ đã rời đoạn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.465 | Codex sửa:**
+
+- **Show reading icon** trong **Bilingual Reader > Reader**, với ba chế độ: luôn hiện, hiện khi di chuột và chỉ hiện khi đọc. Mặc định là **luôn hiện**. Các nhãn đã được dịch sang English, Tiếng Việt và 한국어.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.464 | Codex sửa:**
+
+- nút **Reset** bên phải thanh trượt; bấm sẽ khôi phục mức mặc định **80%**. Nhãn nút đã có bản dịch cho English, Tiếng Việt và 한국어.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.463 | Codex sửa:**
+
+- tùy chọn **Translation font size** với thanh trượt `50–150%`, mặc định `80%`. Giá trị được lưu và áp dụng qua `--translation-scale` cho bản dịch trên trang và preview, với cỡ tối thiểu `14px`.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.462 | Codex sửa:**
+
+- nhãn thành **Bilingual translation**, **Bản dịch song ngữ** và **이중 언어 번역**.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.461 | Codex sửa:**
+
+- nhãn thành **Bilingual**, **Song ngữ** và **이중 언어** theo ngôn ngữ giao diện.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.460 | Codex sửa:**
+
+- **Reading** thành **Reader**, **Trình đọc** và **리더** theo ngôn ngữ giao diện.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.459 | Codex sửa:**
+
+- **Translate to** khỏi Bilingual Reader. Giờ Bilingual Reader dùng trực tiếp **Translate > Target language**; khi đổi ngôn ngữ, preview và các bản dịch trên trang được cập nhật theo lựa chọn đó.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.458 | Codex sửa:**
+
+- Đổi nhãn Translation color và Translation bold, kèm bản dịch tiếng Việt và tiếng Hàn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.457 | Codex sửa:**
+
+- Tạo lại danh sách Translate to sau khi xác định ngôn ngữ giao diện để nhãn Auto được dịch đúng.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.456 | Codex sửa:**
+
+- whitelist cố định `en/vi/ko` khỏi luồng dịch Bilingual Reader. **Auto** dùng mã ngôn ngữ hiển thị hiện tại và chuyển mã đó tới API dịch; preview cũng chọn ngôn ngữ đích theo cài đặt giao diện.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.455 | Codex sửa:**
+
+- Nguyên nhân là lúc chọn ngôn ngữ hiển thị, handler cập nhật giao diện nhưng không gọi làm mới preview ngay. Tôi đã thêm bước làm mới tại sự kiện đổi ngôn ngữ; Auto sẽ tính lại ngôn ngữ đích và tải preview tương ứng.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.454 | Codex sửa:**
+
+- Sửa điều kiện cập nhật preview khi Translate to là Auto; so sánh theo ngôn ngữ giao diện thực tế và tải lại preview khi cần.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.453 | Codex sửa:**
+
+- **Translate to** mặc định là **Auto**. Khi chọn Auto, Bilingual Reader dịch theo ngôn ngữ hiển thị của extension và cập nhật các bản dịch khi ngôn ngữ hiển thị thay đổi.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.452 | Codex sửa:**
+
+- danh sách **Translate to** với **Translate > Target language**: cùng lựa chọn Auto và các ngôn ngữ, cùng nhãn theo ngôn ngữ giao diện.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.451 | Codex sửa:**
+
+- Dịch nhãn Inter (default) theo ngôn ngữ giao diện: English, Vietnamese và Korean.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.450 | Codex sửa:**
+
+- Đổi nhãn Inter (default) thành Inter trong Website font; giữ nguyên nhãn của Translation font.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.449 | Codex sửa:**
+
+- nhãn **Inter (default)** thành **Inter** trong dropdown **Translation font**.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.448 | Codex sửa:**
+
+- **Skip same language** lên đầu mục **Translation** và đặt khoảng cách **16px** giữa tiêu đề với danh sách cài đặt trong các mục Bilingual Reader, gồm cả **Translation** và **Reading**.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.447 | Codex sửa:**
+
+- riêng các dropdown trong **Dashboard settings > Bilingual Reader** để khớp kiểu dáng các dropdown settings khác, gồm cả chế độ sáng và tối.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.446 | Codex sửa:**
+
+- nhãn thành **Website font** và chuyển lên trên **Translation font**. Các tên đã được cập nhật cho cả tiếng Việt và tiếng Hàn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.445 | Codex sửa:**
+
+- nguyên đoạn preview tiếng Anh làm mẫu. Khi chọn ngôn ngữ khác, preview giờ tự dịch câu đó qua dịch vụ Bilingual Reader; không còn bản dịch mẫu hardcode.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.444 | Codex sửa:**
+
+- Bilingual Reader thêm Translation color, Translation bold và preview cập nhật theo thiết lập.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.443 | Codex sửa:**
+
+- Đã nối Web font với trạng thái website: **Alt+Z tắt font tùy chỉnh ngay khi disable website; bật lại thì khôi phục font đã chọn.** Các popup và giao diện của addon vẫn được loại trừ khỏi font trang.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.442 | Codex sửa:**
+
+- Chống nháy Web font: chèn style tại document_start từ storage.local trước khi đọc storage.sync; Auto không chèn CSS, system dùng system-ui; loại trừ trang extension và ghi chú Shadow DOM chưa hỗ trợ.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.441 | Codex sửa:**
+
+- phần chờ tải font để không thể chặn việc áp dụng font tùy chỉnh vô thời hạn. Font sẽ được áp dụng sau khi tải xong; nếu tải chậm, vẫn áp dụng để trình duyệt chuyển font khi tải hoàn tất.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.440 | Codex sửa:**
+
+- để font tùy chỉnh được tải trước khi áp dụng lên đoạn văn nguồn, giúp tránh hiện font gốc trước rồi mới đổi sang font tùy chỉnh. Tùy chọn **Auto** vẫn giữ font của trang.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.439 | Codex sửa:**
+
+- Thêm Website font phía trên Translation font trong Bilingual Reader; mặc định Auto dùng font trang, các lựa chọn font khớp với Translation font.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.438 | Codex sửa:**
+
+- nút quay lại: ẩn khi chưa có từ để quay lại, và khi hiện thì cùng kích thước, padding, bo góc với nút loa, dùng màu xanh của Syn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.437 | Codex sửa:**
+
+- Thêm nút quay lại từ vừa tra trong full dict, tự đọc từ mới khi Auto speak bật và cho phép tra nghĩa cả cụm Colloc.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.436 | Codex sửa:**
+
+- Alt+A: card dịch hiện có không còn bị xóa rồi tạo lại mỗi lần observer chạy; nội dung bản dịch cũng được loại khỏi văn bản nguồn để tránh dịch lặp khi trang thay đổi. Đây là nguyên nhân gây nhấp nháy khi chọn từ, cuộn hoặc mở popup.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.435 | Codex sửa:**
+
+- Đã dịch tên tab thành **Trình đọc song ngữ** (tiếng Việt) và **이중 언어 리더** (tiếng Hàn). Tiếng Anh giữ là **Bilingual Reader**.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.434 | Codex sửa:**
+
+- Khi đang đọc, bấm icon speak ở đoạn khác sẽ dừng đoạn hiện tại ngay và chuyển sang đọc đoạn mới.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.433 | Codex sửa:**
+
+- Space để hủy giọng đọc Bilingual Reader ngay lập tức thay vì chờ đọc hết từ; khi tiếp tục, nó đọc lại từ vị trí gần nhất. Phím này cũng tạm dừng audio/video đang phát trên trang và tiếp tục chúng khi bấm lần nữa.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.432 | Codex sửa:**
+
+- Thêm Space pause/resume và Left/Right chuyển đoạn, có shortcut tùy chỉnh; chặn xử lý phím ngay để dừng âm thanh.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.431 | Codex sửa:**
+
+- shortcut **Space** mặc định để tạm dừng và tiếp tục giọng đọc tại đúng vị trí đang phát. Bạn có thể đổi phím trong **Dashboard Settings > Shortcut**; khi không có giọng đọc, Space vẫn cuộn trang bình thường.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.430 | Codex sửa:**
+
+- Alt+Z tắt mọi chức năng Reader trên website; Alt+A/Alt+R loại sidebar khỏi vùng đọc; thêm Parts not to read để lọc bằng CSS selector.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.429 | Codex sửa:**
+
+- Ưu tiên chuyển Alt+A/Alt+D/Alt+R cho Bilingual Reader trước kiểm tra disable website và xung đột với shortcut Alt+D.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.428 | Codex sửa:**
+
+- riêng logic Alt+A/Alt+R để chỉ lấy văn bản hiển thị; bỏ qua nội dung ẩn, mã CSS trong `<style>`, thông tin tác giả/ngày giờ và nút Google của VnExpress. Alt+D vẫn giữ phạm vi toàn trang.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.427 | Codex sửa:**
+
+- Đưa tiêu đề và sapo của bài Tuổi Trẻ vào vùng đọc Alt+A/Alt+R dù nằm ngoài articleBody, giữ đúng thứ tự trước thân bài.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.426 | Codex sửa:**
+
+- Đã giới hạn **Alt+A** và **Alt+R** vào vùng nội dung chính: nhận diện `article`/`main` và loại điều hướng, sidebar, nội dung liên quan, quảng cáo khỏi vùng dịch và đọc. **Alt+D** vẫn tìm khối gần con trỏ trên toàn trang.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.425 | Codex sửa:**
+
+- shortcut Bilingual Reader sang cơ chế xử lý phím hiện có của addon: **Alt+A** dịch khi cuộn, **Alt+D** dịch khối gần con trỏ, **Alt+R** bật/tắt đọc liên tục. Đã bỏ `browser.commands`.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.424 | Codex sửa:**
+
+- Bilingual Reader vào Dashboard Settings, gồm các tùy chọn theo mặc định trong file mẫu. Nội dung trang được dịch qua background script, lưu cache 7 ngày, và có đọc liên tục, đọc từ con trỏ và dịch khi cuộn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.423 | Codex sửa:**
+
+- mặc định **Toggle enable on this website** thành `Alt+Z`. Shortcut đã được tùy chỉnh trước đó sẽ không bị ghi đè.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.422 | Codex sửa:**
+
+- khoảng cách giữa **Translate Settings** và danh sách của nó thành 16px, đồng bộ với **Voice** trong Flashcard settings > Speech.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.421 | Codex sửa:**
+
+- điều kiện chặn shortcut khi đang phát âm. Phần còn lại được giữ: khi popup đang hiện, shortcut chỉ gọi phát âm và không thay đổi popup.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-21 | v3.4.420 | Codex sửa:**
+
+- Khi Auto speak bật và popup dịch/full dict đang hiện, shortcut Translate selected text chỉ phát âm, không thay đổi popup.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.419 | Codex sửa:**
+
+- Giữ nhãn từ loại của full dict bằng tiếng Anh kể cả khi đổi ngôn ngữ giao diện; hỗ trợ dạng viết tắt n, v, adj, adv.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.418 | Codex sửa:**
+
+- Đổi nhãn từ loại trong full dict theo ngôn ngữ giao diện (English, Vietnamese hoặc Korean).
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.417 | Codex sửa:**
+
+- đường ngăn cách thứ hai trước mục Voice trong **Flashcard settings > Speech**. Khoảng cách đến Voice giờ theo cùng chuẩn với các tab cài đặt khác; khoảng cách 16px từ Voice đến danh sách được giữ nguyên.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.416 | Codex sửa:**
+
+- khoảng cách tiêu đề đến danh sách thành **16px** ở cả hai tab Speech đã nêu. Quy tắc áp dụng cho danh sách của mục nên vẫn giữ khoảng cách khi thêm hoặc chuyển hàng bên trong.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.415 | Codex sửa:**
+
+- mục **Auto speak when popup** sang tab **Speech**; ID và xử lý cài đặt được giữ nguyên.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.414 | Codex sửa:**
+
+- Để full dict tuân theo điều kiện hiện popup dịch; chế độ mở note không bật popup từ điển ngoài ý muốn, nhưng vẫn dùng bản dịch từ điển để điền note.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.413 | Codex sửa:**
+
+- Chỉ tô nền đỏ cho từng chip Ant, không tô nền cho cả hàng.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.412 | Codex sửa:**
+
+- riêng font của full dict popup: toàn bộ chữ, kể cả chip, IPA và nhãn engine, giờ dùng Inter sans-serif. Nguyên nhân là reset `all: initial` trên chip làm font bị trả về mặc định của trình duyệt.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.411 | Codex sửa:**
+
+- Khi note mở, gỡ full dict popup ngay; kết quả đang tải vẫn được chuyển vào note và popup không hiện lại.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.410 | Codex sửa:**
+
+- Ẩn full dict ngay khi mở note, tiếp tục chờ bản dịch nếu cần để điền note.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.409 | Codex sửa:**
+
+- full dict popup dùng cùng cơ chế định vị với popup dịch cũ: bám theo đoạn chữ đã chọn khi cuộn hoặc đổi kích thước cửa sổ, đồng thời giữ hành vi đóng khi bấm ra ngoài hoặc nhấn Escape.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.408 | Codex sửa:**
+
+- Với một từ tiếng Anh khi bật Full English Dictionary, lấy bản dịch từ lhn-dict-translation vào note và bỏ dịch cũ; từ hai từ trở lên dùng luồng cũ.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.407 | Codex sửa:**
+
+- Đọc trực tiếp bản dịch từ lhn-dict-translation vào note kể cả khi dict popup đã mở; không ghi đè nội dung người dùng đã nhập.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.406 | Codex sửa:**
+
+- Bỏ lượt dịch riêng cho từ tiếng Anh; lấy lhn-dict-translation đổ vào note và giữ nội dung note người dùng đang sửa.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.405 | Codex sửa:**
+
+- Áp dụng Inter cho giao diện addon và chuẩn hóa chuỗi dịch Unicode NFC trước khi render.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.404 | Codex sửa:**
+
+- dark mode riêng cho full dictionary popup: giao diện lấy theo cài đặt giao diện của addon hoặc theme hệ thống, và cập nhật khi theme đổi. Đã bổ sung màu tối tương ứng cho nền, chữ, nhãn, nút và các nhóm Syn/Ant/Forms/Colloc.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.403 | Codex sửa:**
+
+- Tinh chỉnh riêng full dict theo mẫu HTML: giảm cỡ chữ/padding, dùng rem và chỉnh khoảng cách giữa các nhóm.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.401 | Codex sửa:**
+
+- Tinh chỉnh UI full dict theo file mẫu: font, cỡ/độ đậm chữ, padding, light/dark mode và IPA; không đổi luồng tra cứu.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.400 | Codex sửa:**
+
+- Thêm Show full English dictionary mặc định bật; chọn một từ tiếng Anh sẽ hiện full dictionary popup với nghĩa, từ loại, từ liên quan, word forms, collocations và phát âm.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.399 | Codex sửa:**
+
+- Đổi tên mục thành Highlights & Notes và dịch nhãn sang tiếng Việt, tiếng Hàn.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+**2026-10-20 | v3.4.398 | Codex sửa:**
+
+- Đổi tên tab thành Highlight & Notes, thêm tab Translate với icon được yêu cầu và chuyển các mục dịch/ngôn ngữ dịch sang tab mới.
+- File: Không được ghi trong nhật ký ZIP gốc.
+- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
+
+- Không tìm thấy phản hồi chat có ZIP cho v3.4.402 hoặc v3.4.485; không gán thay đổi cho hai version này.
+
+### Lịch sử trước baseline Git — các phiên bản 1.x (ngày không xác định)
+
+**v1.45 trở đi | Có ZIP, thiếu changelog lịch sử**
+
+- ZIP đầu tiên tìm thấy là `highlight-notes-firefox-windows-v1.45.zip`; có các snapshot tiếp theo, nhưng không có ghi chú theo phiên bản để xác định chính xác từng thay đổi hoặc tác giả.
+
+**v1.31–v1.44 | Thiếu tư liệu**
+
+- Không tìm thấy ZIP hoặc changelog trong `C:\Users\Huuson\Documents\Codex`; không gán thay đổi cho từng phiên bản.
+
+**v1.30.0 | README ghi lại; người sửa chưa được xác nhận**
+
+- Thêm tùy chọn chỉ lưu và highlight đoạn vừa chọn sau khi click ra ngoài; mặc định tắt để giữ hành vi cũ.
+- README v1.30.0 mô tả sản phẩm lúc đó: highlight bốn màu, note có thể sửa/xóa, popup và sidebar, giao diện EN/VI/KO, shortcut tùy chỉnh, dashboard tìm/sửa/xóa và nhập/xuất JSON.
+
+**v1.29.0 | README ghi lại; người sửa chưa được xác nhận**
+
+- Tăng độ tin cậy khi khôi phục highlight trên trang động: chuẩn hóa khoảng trắng, hỗ trợ text qua nhiều node inline, chống mất yêu cầu đồng thời và thử lại khi nội dung chưa sẵn sàng.
+
+**v1.12.0 | README ghi lại; người sửa chưa được xác nhận**
+
+- Dashboard thư viện hai cột; sắp xếp, tìm kiếm/lọc website, đánh dấu yêu thích; xuất TXT/CSV/Markdown/JSON; thẻ trang có ảnh xem trước khi metadata sẵn có.
+- Chuẩn hóa icon, căn lại thanh công cụ và cho hai cột cuộn độc lập.
+
+**v1.9.0 | README ghi lại; người sửa chưa được xác nhận**
+
+- Sửa tham chiếu localization trong content script và trạng thái chọn màu sau khi dịch nhãn; cải thiện tooltip, thẻ sidebar và thứ tự ghi chú theo vị trí trên trang.
+- README có hai ghi chú v1.9.0 mâu thuẫn về vị trí nút tooltip; không kết luận vị trí nào là bản cuối.
+
+**v1.0.0–v1.8.0 | Chưa khôi phục được**
+
+- Không tìm thấy ZIP, source hoặc ghi chú changelog của các phiên bản này; chưa thể xác nhận tính năng ban đầu hay người thực hiện.
