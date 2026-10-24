@@ -1279,48 +1279,22 @@
         if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
       }
       const item = visible[itemIndex];
-      const color = CONFIG.normalizeColor(item.color);
-      const card = document.createElement("article"); card.className = "lhn-sidebar-card";
-      const quoteRow = document.createElement("div"); quoteRow.className = "lhn-sidebar-quote-row";
-      const swatch = document.createElement("span"); swatch.className = `lhn-sidebar-swatch lhn-swatch-${color}`; swatch.title = t("colorHighlight", { color: t(CONFIG.colorLabelKey(color)) }); swatch.setAttribute("aria-label", swatch.title);
-      const quote = document.createElement("div"); quote.className = "lhn-sidebar-quote"; quote.textContent = item.quote;
-      quote.tabIndex = 0; quote.setAttribute("role", "button"); quote.title = t("jumpHighlight");
       const locate = async () => {
         let mark = document.querySelector(`[data-lhn-id="${CSS.escape(item.id)}"]`);
         if (!mark) { await restoreAnnotations(); mark = document.querySelector(`[data-lhn-id="${CSS.escape(item.id)}"]`); }
         if (mark) { mark.scrollIntoView({ behavior: "smooth", block: "center" }); mark.classList.add("lhn-sidebar-target"); setTimeout(() => mark?.classList.remove("lhn-sidebar-target"), 1400); }
       };
-      card.tabIndex = 0;
-      card.setAttribute("role", "button");
-      card.title = t("jumpHighlight");
-      card.addEventListener("click", locate);
-      card.addEventListener("keydown", e => {
-        if ((e.key === "Enter" || e.key === " ") && e.target === card) { e.preventDefault(); locate(); }
-      });
-      quoteRow.append(swatch, quote);
-      const note = document.createElement("div"); note.className = "lhn-sidebar-note"; note.textContent = item.note || t("noNote");
-      const contextNote = document.createElement("div"); contextNote.className = "lhn-sidebar-context-note";
-      SIDEBAR.renderContextSentence(contextNote, item.contextNote, item.quote);
-      const actions = document.createElement("div"); actions.className = "lhn-sidebar-actions";
-      actions.addEventListener("click", e => e.stopPropagation());
-      const editBtn = SIDEBAR.createButton("", "lhn-side-secondary", () => openSidebarEdit(item));
-      editBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.edit}</svg>`;
-      editBtn.title = t("editNote"); editBtn.setAttribute("aria-label", t("editNote"));
-      const deleteBtn = SIDEBAR.createButton("", "lhn-side-secondary", async () => {
+      const card = SIDEBAR.createHighlightCard(item, {
+        config:CONFIG, t, query:sidebarSearchQuery, onLocate:locate,
+        onEdit:() => openSidebarEdit(item),
+        onDelete:async () => {
         await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
         pageAnnotationCache.delete(item.id);
         document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
         await renderSidebar();
+        },
+        onSpeak:() => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } }
       });
-      deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.trash}</svg>`;
-      deleteBtn.title = t("deleteNote"); deleteBtn.setAttribute("aria-label", t("deleteNote"));
-      const speakBtn = SIDEBAR.createButton("", "lhn-side-secondary lhn-speak-btn", () => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } });
-      speakBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.volume}</svg>`;
-      speakBtn.title = t("speakHighlightTooltip"); speakBtn.setAttribute("aria-label", speakBtn.title);
-      actions.append(editBtn, deleteBtn, speakBtn);
-      if (item.contextNote) card.append(quoteRow, note, contextNote, actions);
-      else card.append(quoteRow, note, actions);
-      SIDEBAR.highlightMatches(card, sidebarSearchQuery);
       cardBatch.appendChild(card);
     }
     list.appendChild(cardBatch);
