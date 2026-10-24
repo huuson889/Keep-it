@@ -1,5 +1,7 @@
 # Keepit - Hồ sơ dự án
 ## Nhật ký cập nhật gần nhất
+- 2026-10-24 | v3.4.554 | Codex sửa: `custom-font.js` chỉ gắn Google Fonts khi custom font bật/chọn, gỡ khi tắt/site disabled; cập nhật README, Privacy Policy EN/VI và minutes. File: custom-font.js, README.md, PRIVACY-POLICY.md, OPTIMIZATION-MINUTES.md, PROJECT.md, manifest.json. Đã chạy mock DOM/storage, `node --check` toàn bộ JS, parse manifest, `git diff --check`; ZIP kiểm thử `Keepit - Addon and Extension-v3.4.554.zip` (51 files) đã tạo và xác nhận; chưa thử Chrome/Firefox thật. Tiếp theo: chờ người dùng kiểm tra Network/font.
+- 2026-10-24 | v3.4.553 | Codex sửa: Soạn bản nháp LICENSE độc quyền và Privacy Policy EN/VI; gom toàn văn license bên thứ ba vào licenses/, thêm Apache-2.0 cho Readability, lập lại THIRD_PARTY_NOTICES và cập nhật README. Policy ghi rõ các luồng hiện tại, log local và cloud tương lai chưa hoạt động; còn placeholder, chưa công bố. File: LICENSE, PRIVACY-POLICY.md, THIRD_PARTY_NOTICES.md, licenses/*, README.md, PROJECT.md. Đã kiểm tra link nội bộ, giữ nguyên byte nội dung license MPL/ISC cũ sau khi chuyển, kiểm tra coverage các endpoint, node --check toàn bộ JS, parse manifest và git diff --check; chưa kiểm tra store/trình duyệt. Tiếp theo: bổ sung tên chủ thể quyền, email/URL/ngày hiệu lực; rà soát provider/version và khai báo Chrome/Firefox.
 - 2026-10-24 | v3.4.553 | Codex sửa: Tốc độ TTS riêng cho ngôn ngữ hiển thị mặc định đổi 1.2×→1.25× (EN/VI/KO); control hỗ trợ bước 0.05 và hiển thị 1.25 chính xác; global vẫn 1.0×, tốc độ riêng đã lưu được giữ, mặc định flashcard độc lập vẫn 1.2×. File: config.js, dashboard.js, dashboard.html, PROJECT.md. Đã chạy node --check cho toàn bộ JS, parse manifest, test mock các giá trị/biên/format và git diff --check; chưa kiểm tra trên trình duyệt. Tiếp theo: chờ người dùng xác nhận 1.25×/reset, global 1.0× và tốc độ tùy chỉnh.
 - 2026-10-23 | v3.4.553 | Claude sửa: Khi dùng giọng Google, mỗi lần tải hoặc phát âm thanh lỗi (trừ lỗi hết lượt) hiện toast đen "Mạng chậm, đang tải âm thanh" (EN/VI/KO, key googleAudioSlowToast). tts-engine.js thêm hook onGoogleAudioSlow, chỉ gọi khi lượt đọc còn active; content.js (Speak popup) dùng showSidebarToast, bilingual-reader.js dùng showReaderToast. Không đổi UI/CSS, dashboard (flashcard) chưa nối. File: tts-engine.js, content.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md. Đã chạy node --check 4 file và test mock engine 4 ca (không strict, strict 3 lần, đã dừng, hết lượt); chưa kiểm tra trên trình duyệt. Tiếp theo: tắt mạng/giả lập mạng chậm rồi bấm đọc để xem toast. Lưu ý: ở chế độ không strict, toast hiện rồi đoạn đó đọc bằng giọng trình duyệt.
 - 2026-10-23 | v3.4.552 | Claude sửa: Full dict tách IPA thành fetchIpa(word, lang, signal) chạy song song với dịch và Datamuse (không chờ Datamuse). Nguồn 1 dictionaryapi.dev phonetics[].text; nguồn 2 Google dt=rm đổi sang IPA bằng convertGoogleToIPA (tiện ích trong content.js, globalThis.LHN_IPA_UTILS); timeout 3 giây mỗi nguồn, dùng AbortSignal của popup. Chọn nguồn 1, không có thì nguồn 2 (lưu ipaApprox, gắn data-approx, không đổi giao diện), không có thì không vẽ .lhn-dict-ipa. Bỏ audio. Ngôn ngữ nguồn full dict ép en (đọc từ, chip Colloc), không dùng auto. Cache giữ nguyên key/TTL; mục cache cũ có ipa trùng từ sẽ bị ẩn. File: content.js, manifest.json, PROJECT.md. Đã chạy node --check và test mock (đổi ký âm, 6 ca fetchIpa gồm timeout 3s và abort); chưa chạy trên trình duyệt thật, chưa gọi mạng thật. Tiếp theo: tra thử từ trên Chrome/Firefox, xem IPA và từ không có IPA.
@@ -10,9 +12,12 @@
 - 2026-10-23 | v3.4.547 | Claude sửa: Bilingual Reader với voice Google không còn tự chuyển sang giọng trình duyệt khi một đoạn Google TTS lỗi: thử lại Google tối đa 3 lần (chờ 0,5s rồi 1s); vẫn lỗi thì dừng đọc và ghi console.error, không đổi giọng. Chỉ chuyển sang giọng trình duyệt khi hết lượt dùng (lỗi usage limit). Cờ strictVoice chỉ bật ở Bilingual Reader; chọn text và flashcard giữ nguyên cách cũ. File: tts-engine.js, bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check và test mock 5 ca (Google OK, lỗi tạm thời, lỗi kéo dài, hết lượt, nhánh không strict); chưa kiểm tra trên trình duyệt. CHƯA xác định nguyên nhân thật khiến Google TTS lỗi với tiếng Indonesia. Tiếp theo: chọn Indonesian khi đang đọc, nếu dừng thì xem console.error để biết lỗi (HTTP/Referer/audio); quyết định có áp dụng strict cho popup chọn text không.
 - 2026-10-23 | v3.4.546 | Claude sửa: Select Voice của Bilingual Reader dùng bàn phím: khi popover đang mở, Up/Down di chuyển mục đang chọn trong danh sách (kẹp ở đầu/cuối, bắt đầu từ mục đang dùng), Enter chọn mục đó. Chỉ khi Select Voice mở mới chặn Up/Down, nên phím chỉnh tốc độ giữ nguyên ở lúc khác. Mục đang chọn bằng phím có nền hover và viền accent (class lhn-kb-active). File: bilingual-reader.js, manifest.json, PROJECT.md. Đã chạy node --check và test mock logic phím (8 ca); chưa kiểm tra trên trình duyệt. Tiếp theo: xác nhận Up/Down/Enter trong Select Voice trên Chrome/Firefox, kể cả khi con trỏ đang ở ô tìm kiếm.
 - 2026-10-23 | v3.4.545 | Claude sửa: AGENTS.md thêm quy tắc ghi rõ người sửa (Claude/Codex/Huuson) trong mỗi mục nhật ký. Select Voice của Bilingual Reader có đủ 21 ngôn ngữ kèm cờ (gồm Việt Nam), tìm theo tên/bản địa/mã/quốc gia, không phân biệt dấu. Chọn ngôn ngữ giữ voiceMode=google và đặt ngôn ngữ đọc (readLanguage); cờ ở thanh dưới đổi theo. Chọn Auto hoặc giọng trình duyệt thì xóa readLanguage. File: tts-engine.js, bilingual-reader.js, AGENTS.md, manifest.json, PROJECT.md. Đã chạy node --check và test mock (lưu/đọc readLanguage, 21 cờ, tìm kiếm); chưa kiểm tra UI trên trình duyệt. Tiếp theo: xác nhận chọn Vietnamese đọc đúng tiếng Việt và cờ VN đổi theo trên Chrome/Firefox.
-- 2026-10-23 | v3.4.534: Bilingual Reader chạy đồng thời các engine dịch và dùng bản dịch thành công đầu tiên, tránh chờ timeout tuần tự từng engine. File: background.js, manifest.json, PROJECT.md. Đã chạy node --check và git diff --check; chưa đo trực tiếp độ trễ trên trình duyệt. Tiếp theo: kiểm tra thời gian Alt+A/Alt+D trên trang thực tế.
+
+
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version: v3.4.553. Firefox và Chrome, Manifest V3, một bản build chung.
+- Version: v3.4.554. Firefox và Chrome, Manifest V3, một bản build chung.
+- Tài liệu pháp lý đang ở dạng draft: `LICENSE` (Keepit proprietary) và `PRIVACY-POLICY.md` (EN/VI; hiện trạng + cloud tương lai được tách nhãn); placeholders chưa điền, chưa công bố. Third-party license texts nằm trong `licenses/`, danh mục ở `THIRD_PARTY_NOTICES.md`.
+- Bước tối ưu custom font: stylesheet Google Fonts chỉ được gắn khi font tùy chỉnh bật/chọn; đã kiểm tra bằng mock và cú pháp, README/Privacy Policy đã cập nhật. Đang chờ xác nhận Network và hiển thị font trên Chrome/Firefox trước khi sang bước tiếp theo.
 - Dashboard TTS: global 1.0×; tốc độ riêng cho ngôn ngữ hiển thị mặc định 1.25× (EN/VI/KO), tăng/giảm 0.05; flashcard-only default vẫn độc lập 1.2×. Đang chờ người dùng kiểm tra trình duyệt.
 - Google TTS trên Chrome: đã thêm rule Referer (DNR). Request translate_tts trả 200 OK; CHƯA xác nhận audio phát thật trên máy.
 - tts-engine.js (dùng chung content.js, dashboard.js, bilingual-reader.js): chia đoạn ~180 ký tự, phát Google TTS nối tiếp; đoạn lỗi thì đọc bằng giọng trình duyệt. detectReadLanguage nhận diện cục bộ; detectLanguage gọi Google chỉ với tối đa 200 ký tự Latin khi chưa kết luận, timeout 2.5 giây và cache hash tối đa 500 mục.
@@ -31,6 +36,8 @@
 - Chưa nối Supabase (chỉ có supabase-schema.sql và SUPABASE_SYNC.md).
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
+17. [Kiểm tra] Bước 1 custom font: xác nhận Network không gọi Google Fonts khi tắt/site bị vô hiệu hóa và font hiển thị đúng khi bật trên Chrome/Firefox. Chờ người dùng kiểm tra trước khi sang bước tối ưu kế tiếp.
 15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
 14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
 13. [Kiểm tra] Focus ô search của Select Voice trên Edge (bản retry chưa thử trên Edge thật); Alt+L và dòng Select voice reader trong Dashboard.
@@ -43,9 +50,8 @@
 
 1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
 2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
-3. [Làm một phần] Chuỗi dự phòng TTS: hiện là Google -> giọng trình duyệt theo từng đoạn. Chưa có bước "phát trực tiếp"; lỗi mới chỉ ghi console.warn, chưa báo rõ cho người dùng.
+3. [Làm một phần] Chuỗi dự phòng TTS: Google -> giọng trình duyệt theo từng đoạn đã có; Speak popup/Bilingual Reader có toast khi Google audio lỗi, nhưng Dashboard flashcard chưa nối toast. Chờ kiểm tra trình duyệt.
 4. [Kiểm tra] Firefox MV3: background có unload khi rảnh làm mất tin nhắn không.
-5. [Vệ sinh] README.md trong dự án đã lỗi thời (ghi v1.30.0, Firefox, MV2, "không dùng mạng"). Cần viết lại khi được yêu cầu.
 6. [Kiểm tra] Xác nhận nhận diện ngôn ngữ, migration voiceMode/browserVoiceURI, chọn Browser voice và Google voice trên Chrome/Firefox.
 
 ## 3. Ràng buộc & quyết định
@@ -66,108 +72,16 @@
 - usage-limits.js: giới hạn dùng theo ngày.
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
-## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
-### v3.4.525 - 2026-10-23
-- Lớp phủ absolute có z-index và các dialog/listbox/menu/tooltip được nhận diện ngoài fixed/sticky; nền lớp phủ giữ đục theo theme để nội dung phía sau không xuyên qua.
-- File: custom-font.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google Search.
-
-- Sửa layer nổi fixed/sticky bị trong suốt bằng nhận diện vị trí từ computed style và gán nền theo theme; thêm Default/Dracula trong dashboard, ba ngôn ngữ.
-- File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest JSON, git diff --check; chưa kiểm tra trực quan trên website.
-
-- File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google/trang web.
-
-- File: dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest JSON và git diff --check; chưa kiểm tra trực quan trên trình duyệt.
-
-- Browser TTS không phát khi thiếu voice cùng ngôn ngữ; hiện toast “Trình duyệt bạn không hỗ trợ ngôn ngữ này”. Engine dừng phần còn lại của yêu cầu.
-- File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check các script, parse manifest JSON và git diff --check đều đạt; chưa xác nhận trên trình duyệt.
-
-### v3.4.524 - 2026-10-23
-- TTS engine đọc `lhnSettings.speechVoice`; Browser voice phát từng đoạn bằng giọng trình duyệt, không gọi Google TTS.
-- File: tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check và test mock xác nhận browser voice bỏ qua API Google; chưa thử trên trình duyệt.
-- Tiếp theo: xác nhận phát âm thật trên Chrome/Firefox.
-
-### v3.4.523 - 2026-10-23
-- Sửa nhận diện paragraph có chữ nằm trong inline element; ép câu hỏi phỏng vấn VnExpress vào main reader queue.
-- Hover hiện icon cho đoạn chữ ở mọi chế độ; icon ngoài main chỉ đọc block đã bấm.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: kiểm tra DOM thật, node --check, parse manifest, git diff --check; chưa phát TTS thực tế.
-
-### v3.4.522 - 2026-10-23
-- Thêm đoạn question trong `.fck_detail` vào queue main; semantic paragraphs có inline text vẫn nhận icon; hover hiện icon ở mọi chế độ.
-- Bấm icon ngoài main đọc riêng block được chọn; trong main giữ queue hiện tại.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, parse manifest, git diff --check và markup DOM; chưa phát thử trên trình duyệt.
-
-### v3.4.521 - 2026-10-23
-- Giữ câu hỏi phỏng vấn italic kết thúc bằng dấu hỏi; icon ngoài main hiện khi hover ở mọi chế độ và chỉ đọc block được bấm.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử phát trên trình duyệt.
-- Tiếp theo: xác nhận trên trang VnExpress.
-
-### v3.4.520 - 2026-10-23
-- Alt+A/Alt+R đưa headline `.title_post` và sapo `.lead_post_detail` của VnExpress vào queue khi cùng khối bài viết.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: xác nhận selector/markup trên HTML trang; đã chạy node --check, parse manifest JSON, git diff --check; chưa thử trình duyệt.
-- Tiếp theo: xác nhận Alt+R đọc đủ phần mở đầu và body.
-
-### v3.4.519 - 2026-10-23
-- Alt+A/Alt+R loại khối đọc gần phủ toàn màn hình, tránh tô tím toàn trang.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử trên trình duyệt.
-- Tiếp theo: xác nhận trên trang gặp lỗi.
-
-### v3.4.518 - 2026-10-23
-- Alt+A/Alt+R đọc các khối chữ nhìn thấy trong vùng nội dung; giữ đoạn dài, lọc rác ở đoạn ngắn, Google Search ưu tiên vùng kết quả/AI Overview.
-- Debug console: xanh = đọc, đỏ = bỏ; xem lý do trong console.table.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trình duyệt.
-- Tiếp theo: kiểm tra các trang thực tế qua debug mode.
-
-### v3.4.516 - 2026-10-23
-- Reader: mặc định Show on hover; Always visible chỉ luôn hiện trong vùng Alt+R, ngoài vùng hiện khi hover.
-- File: bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest và kiểm tra selector/default; chưa chạy trên trình duyệt.
-- Tiếp theo: kiểm tra trực quan các chế độ icon đọc trong trang.
-
-### v3.4.515 - 2026-10-22
-- Thêm bước nhảy tốc độ tùy chỉnh cho phím Up/Down, mặc định 0.25; banner cập nhật theo thiết lập.
-- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và test bước nhảy; chưa chạy trên trình duyệt.
-- Tiếp theo: kiểm tra nhập bước nhảy và Up/Down trong Speak popup.
-
-### v3.4.514 - 2026-10-22
-- Gói Free (không key/không đăng nhập) dùng Translate và Google TTS không giới hạn.
-- File: usage-limits.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và test quota Free/key; đều đạt.
-- Tiếp theo: xác nhận các provider không tự giới hạn request.
-
-### v3.4.513 - 2026-10-22
-- Alt+R và Alt+A dùng chung một vùng nội dung chính (Readability từ bilingual-reader 1.0.1; bỏ ngày giờ, tác giả, tin liên quan, chia sẻ...). Alt+D vẫn trên toàn trang. Không tìm được nội dung chính thì dùng lại cách cũ.
-- File: bilingual-reader.js (readerBlocks mới, cache), lib/Readability.js, lib/Readability-readerable.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trên trình duyệt thật.
-- Tiếp theo: thử vài trang tin (VnExpress, Dân trí, BBC) để xem Alt+A/Alt+R có cùng vùng.
-
-### v3.4.512 - 2026-10-22
-- Watcher refresh Explorer khi có file mới/đổi tên ở D:\Keepit và sau khi xử lý ZIP.
-- File: D:\Keepit\sync-watch.ps1, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy PowerShell parser và gọi SHChangeNotify; chưa kiểm tra Explorer tự sắp xếp.
-- Tiếp theo: xác nhận refresh/sắp xếp trong Explorer khi ZIP mới xuất hiện.
-
-### v3.4.511 - 2026-10-22
-- Thiết lập phiên bản mới theo quy tắc AGENTS.md và PROJECT.md; không đổi chức năng addon.
-- File: manifest.json, AGENTS.md, PROJECT.md.
-- Kiểm tra: đã chạy parse manifest JSON; chưa chạy kiểm tra chức năng addon.
-- Tiếp theo: xử lý các mục đang mở ở mục 2.
-
-### v3.4.510 - 2026-10-22
-- Hiện trạng ghi nhận khi thiết lập quy trình mới: có tts-engine.js; bilingual-reader.js gọi LHN_TTS.
-- Chi tiết các bản 3.4.505 đến 3.4.510 chưa được ghi lại; xem commit Git nếu cần.
-- Kiểm tra: chưa chạy (chỉ đọc code).
-- Tiếp theo: xem mục 2.
-
+## 4. Nhật ký nâng cấp (giữ khoảng 10 version gần nhất; mới nhất trên cùng)
+- 2026-10-24 | v3.4.554 | Codex sửa: `custom-font.js` chỉ gắn Google Fonts khi custom font bật/chọn, gỡ khi tắt/site disabled. Cập nhật README, Privacy Policy EN/VI và minutes. File: custom-font.js, README.md, PRIVACY-POLICY.md, OPTIMIZATION-MINUTES.md, PROJECT.md, manifest.json. Đã chạy mock DOM/storage, node --check toàn bộ JS, parse manifest, git diff --check; ZIP kiểm thử `Keepit - Addon and Extension-v3.4.554.zip` (51 files) đã tạo; chưa thử Chrome/Firefox. Tiếp theo: chờ người dùng kiểm tra Network/font.
+- 2026-10-24 | v3.4.553 | Codex sửa: Tạo bản nháp LICENSE độc quyền, Privacy Policy EN/VI và gom license bên thứ ba; giữ rõ cloud chưa hoạt động. Đã kiểm tra link/license, toàn bộ JS, manifest, git diff; chưa kiểm tra store/trình duyệt. Tiếp theo: điền placeholders và rà soát công bố.
+- 2026-10-24 | v3.4.553 | Codex sửa: TTS riêng cho ngôn ngữ hiển thị mặc định 1.25×; global 1.0×, flashcard độc lập 1.2×. Đã chạy syntax, manifest, mock và diff check; chờ trình duyệt.
+- 2026-10-23 | v3.4.553 | Claude sửa: Thêm cảnh báo toast khi Google TTS tải/phát lỗi, không gồm lỗi hết lượt. Đã chạy syntax và mock engine; chưa thử trình duyệt.
+- 2026-10-23 | v3.4.552 | Claude sửa: IPA tra cứu song song qua dictionaryapi.dev/Google fallback, timeout/abort, không có IPA thì ẩn. Đã chạy syntax và mock fetchIpa; chưa chạy trình duyệt/mạng thật.
+- 2026-10-23 | v3.4.551 | Claude sửa: Select Voice focus retry, Alt+L mở chọn giọng; cập nhật README/AGENTS. Đã chạy syntax và mock; chưa thử trình duyệt thật.
+- 2026-10-23 | v3.4.550 | Claude sửa: Cờ/tooltip Select Voice cập nhật ngay khi chọn, kể cả pause; giữ hành vi lưu. Đã chạy syntax và mock; chưa thử trình duyệt.
+- 2026-10-23 | v3.4.549 | Claude sửa: Reader dùng đúng browser voice được chọn; thiếu voice thì dừng và báo. Đã chạy syntax, manifest, mock; chưa thử Chrome/Firefox.
+- 2026-10-23 | v3.4.548 | Claude sửa: Select Voice chia nhóm, hỗ trợ bàn phím/tìm kiếm và thêm toast lỗi TTS. Đã chạy syntax, i18n và mock; chưa kiểm tra UI thật.
+- 2026-10-23 | v3.4.547 | Claude sửa: Reader giữ Google voice khi lỗi tạm thời, retry tối đa 3 lần; chỉ fallback khi hết lượt. Đã chạy syntax và mock; chưa xác minh lỗi mạng thật.
+- 2026-10-23 | v3.4.546 | Claude sửa: Select Voice hỗ trợ Up/Down/Enter khi mở, không chặn phím tốc độ khi đóng. Đã chạy syntax/mock; chờ kiểm tra Chrome/Firefox.
+- 2026-10-23 | v3.4.545 | Claude sửa: Select Voice có Auto, 21 ngôn ngữ Google kèm cờ, browser voices, tìm kiếm và lưu lựa chọn. Đã chạy syntax/mock; chưa kiểm tra UI trình duyệt.

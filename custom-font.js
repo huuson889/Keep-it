@@ -28,7 +28,6 @@
   const attachStyle = () => {
     if (style.isConnected) return;
     (document.documentElement || document.head)?.appendChild(style);
-    attachFontStylesheet();
     applyFont(lastFontSettings);
   };
   if (document.documentElement) attachStyle();
@@ -44,9 +43,11 @@
     if (websiteDisabled || !customFontEnabled || fontKey === "auto") {
       style.textContent = "";
       document.documentElement?.removeAttribute("data-lhn-custom-font");
+      if (fontStylesheet.isConnected) fontStylesheet.remove();
       return;
     }
     const family = FONT_OPTIONS[fontKey];
+    attachFontStylesheet();
     document.documentElement?.setAttribute("data-lhn-custom-font", fontKey);
     const pageText = `body, body :not(#lhn-panel):not(#lhn-panel *):not(#lhn-note-pop):not(#lhn-note-pop *):not(#lhn-sidebar):not(#lhn-sidebar *):not(#lhn-direct-translation):not(#lhn-direct-translation *):not(#lhn-full-english-dictionary):not(#lhn-full-english-dictionary *):not(#lhn-translate-icon):not(#lhn-highlight-actions):not(#lhn-bilingual-reading-bar):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
     style.textContent = `html[data-lhn-custom-font="${fontKey}"] ${pageText}{font-family:${family}!important}`;
