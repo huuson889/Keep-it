@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.579; một codebase Manifest V3 cho Chrome và Firefox. Đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts, Backup và Library; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar, Library, Account và Note Composer cần tiếp tục đánh giá/tách.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.578: `node --check` 31/31 JS, manifest/HTML script paths hợp lệ, mock Backup JSON đạt, `git diff --check` đạt; ZIP 68 mục có manifest gốc và backup.js. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Version hiện tại: v3.4.579; một codebase Manifest V3 cho Chrome và Firefox. Đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts, Backup và Library; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar, Account và Note Composer cần tiếp tục đánh giá/tách.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.579: `node --check` 32/32 JS, manifest/HTML paths hợp lệ, mock Library metadata/group/order/favorites đạt, `git diff --check` đạt; ZIP 69 mục, manifest gốc và library.js. Chưa kiểm thử trình duyệt. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts, Backup và Library; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar, Library, Account và Note Composer cần tiếp tục đánh giá/tách.
+19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts, Backup và Library; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar, Account và Note Composer cần tiếp tục đánh giá/tách.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
@@ -52,7 +52,7 @@
 
 - Bước 4 — Library: tách cache metadata annotation và gom/sắp xếp trang nguồn sang `library.js` (`LHN_LIBRARY`); Dashboard tiếp tục điều khiển bộ lọc và hiển thị như hiện tại.
 - File: library.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, script paths, mock grouping/order/filter và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 32/32 JS; manifest/HTML paths hợp lệ; mock grouping, thứ tự, favorites và metadata cache đạt; `git diff --check` đạt; ZIP 69 mục, manifest gốc, version 3.4.579 và library.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: Sidebar, Account và Note Composer.
 
 **2026-10-24 | v3.4.578 | Codex sửa:**
