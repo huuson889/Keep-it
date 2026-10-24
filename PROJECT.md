@@ -52,7 +52,7 @@
 
 - Đồng bộ ô `settingsLanguageSearch` trong Dashboard Settings với ô chọn ngôn ngữ ở toolbar: kích thước, kiểu chữ, viền, danh sách, mục chọn và thao tác bàn phím.
 - File: dashboard.css, dashboard.js, PROJECT.md.
-- Kiểm tra: chưa chạy; sẽ kiểm tra cú pháp JavaScript và diff.
+- Kiểm tra: `node --check dashboard.js` đạt; `git diff --check` đạt trước commit. Chưa kiểm tra giao diện trên trình duyệt. Watcher đã commit `1e75c0f` và cập nhật ZIP v3.4.583; push GitHub thất bại.
 
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
