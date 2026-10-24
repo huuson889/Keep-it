@@ -3,6 +3,15 @@
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
   const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
   const dictionaryTranslationRequests = new Map(), dictionaryTranslationRequestsBySignal = new WeakMap();
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
+    const controller = new AbortController(), sourceSignal = options.signal;
+    const abort = () => controller.abort();
+    if (sourceSignal?.aborted) abort();
+    else sourceSignal?.addEventListener("abort", abort, { once:true });
+    const timer = setTimeout(abort, timeoutMs);
+    try { return await fetch(url, { ...options, signal:controller.signal }); }
+    finally { clearTimeout(timer); sourceSignal?.removeEventListener("abort", abort); }
+  }
   async function getDictionaryCache(key, legacyKey) {
     try {
       const entry = (await browser.storage.local.get(key))[key];
@@ -46,13 +55,13 @@
       } catch (error) { console.warn("Could not read related-word translation cache", error); }
       let result;
       try {
-        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
+        const response = await fetchWithTimeout(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
         if (!response.ok) throw new Error("Google Translate unavailable");
         const data = await response.json();
         result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
       } catch (error) {
         if (signal?.aborted) throw error;
-        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
+        const response = await fetchWithTimeout(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
         if (!response.ok) throw new Error("Dictionary translation unavailable");
         const data = await response.json();
         if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
