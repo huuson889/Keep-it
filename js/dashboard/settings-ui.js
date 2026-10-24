@@ -59,7 +59,7 @@
         } else {
           const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
           const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
-          for (const [action, key] of actionKeys) { const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset[actionAttribute] = action; if (actionAttribute === "disabled-site-action") button.dataset.i18n = key; button.textContent = t(key); actions.appendChild(button); }
+          for (const [action, key] of actionKeys) { const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.setAttribute(`data-${actionAttribute}`, action); if (actionAttribute === "disabled-site-action") button.dataset.i18n = key; button.textContent = t(key); actions.appendChild(button); }
           row.append(label, actions);
         }
         return row;
