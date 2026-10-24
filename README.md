@@ -105,8 +105,8 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 ## Development
 
 - There is no build step: the folder is the extension.
-- Shared code uses the `browser.*` namespace through `browser-polyfill.js`.
-- Keep shared defaults in `config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
+- Shared code uses the `browser.*` namespace through `js/core/browser-polyfill.js`.
+- Keep shared defaults in `js/core/config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
 
 ## Third-party components and licenses
 

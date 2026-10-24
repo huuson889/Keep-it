@@ -54,8 +54,8 @@
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Gom mã nguồn theo vai trò: JavaScript vào `js/`, CSS vào `css/`, trang vào `pages/`, icon/font vào `assets/` và Readability vào `vendor/`; cập nhật đường dẫn nạp và giữ nguyên thứ tự script.
-- File: manifest.json, background.js, content.js, dashboard.html, popup.html, các file JS/CSS đã chuyển, README.md, THIRD_PARTY_NOTICES.md, OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: đang kiểm tra cú pháp JavaScript, JSON manifest và các đường dẫn sau di chuyển. Chưa kiểm thử trên trình duyệt.
+- File: manifest.json, pages/, js/, css/, assets/, vendor/readability/, README.md, THIRD_PARTY_NOTICES.md, OPT-ARENA.md, PROJECT.md.
+- Kiểm tra: manifest paths 48/48 hợp lệ; HTML 2/2, CSS 7/7 paths hợp lệ; `node --check` 37/37 JS đạt; `git diff --check` đạt. Chưa kiểm thử trên trình duyệt.
 
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
