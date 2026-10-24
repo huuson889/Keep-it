@@ -282,58 +282,18 @@ function normalizeDisabledWebsite(value) {
   } catch { return ""; }
 }
 function renderDisabledWebsiteList() {
-  const host = $("settingsDisabledWebsiteList");
-  if (!host) return;
   const sites = Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [];
-  if (!sites.length) {
-    host.innerHTML = `<p class="settings-disabled-web-empty">${escapeHtml(t("noDisabledWebsites"))}</p>`;
-    return;
-  }
-  host.replaceChildren(...sites.map(site => {
-    const row = document.createElement("div"); row.className = "settings-disabled-web-item"; row.dataset.site = site;
-    if (editingDisabledWebsite === site) {
-      row.innerHTML = `<input class="settings-disabled-web-edit-input" type="text" value="${escapeHtml(site)}" aria-label="${escapeHtml(t("disableWeb"))}"><div class="settings-disabled-web-actions"><button type="button" class="settings-action-button" data-disabled-site-action="save" data-i18n="save">${escapeHtml(t("save"))}</button><button type="button" class="settings-action-button" data-disabled-site-action="cancel" data-i18n="cancel">${escapeHtml(t("cancel"))}</button></div>`;
-    } else {
-      const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
-      const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
-      for (const [action, key] of [["edit", "edit"], ["remove", "removeWebsite"]]) {
-        const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset.disabledSiteAction = action; button.dataset.i18n = key; button.textContent = t(key); actions.appendChild(button);
-      }
-      row.append(label, actions);
-    }
-    return row;
-  }));
+  SETTINGS_UI.renderWebsiteList({ host:$("settingsDisabledWebsiteList"), sites, editing:editingDisabledWebsite, actionAttribute:"disabled-site-action", ariaLabel:"disableWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
 }
 async function updateDisabledWebsites(sites) {
   editingDisabledWebsite = null;
   await saveDashboardSettings({ disabledWebsites: [...new Set(sites)] });
 }
 function renderDisabledReaderWebsiteList() {
-  const host = $("bilingualDisabledReaderWebList");
-  if (!host) return;
   const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
-  if (!sites.length) { host.innerHTML = `<p class="settings-disabled-web-empty">${escapeHtml(t("noDisabledWebsites"))}</p>`; return; }
-  host.replaceChildren(...sites.map(site => {
-    const row = document.createElement("div"); row.className = "settings-disabled-web-item"; row.dataset.site = site;
-    if (editingDisabledReaderWebsite === site) {
-      row.innerHTML = `<input class="settings-disabled-web-edit-input" type="text" value="${escapeHtml(site)}" aria-label="${escapeHtml(t("bilingualDisabledReaderWeb"))}"><div class="settings-disabled-web-actions"><button type="button" class="settings-action-button" data-reader-site-action="save">${escapeHtml(t("save"))}</button><button type="button" class="settings-action-button" data-reader-site-action="cancel">${escapeHtml(t("cancel"))}</button></div>`;
-    } else {
-      const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
-      const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
-      for (const [action, key] of [["edit", "edit"], ["remove", "removeWebsite"]]) { const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset.readerSiteAction = action; button.textContent = t(key); actions.appendChild(button); }
-      row.append(label, actions);
-    }
-    return row;
-  }));
+  SETTINGS_UI.renderWebsiteList({ host:$("bilingualDisabledReaderWebList"), sites, editing:editingDisabledReaderWebsite, actionAttribute:"reader-site-action", ariaLabel:"bilingualDisabledReaderWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
 }
-function syncBilingualReaderControls() {
-  const enabled = $("bilingualEnableTTS")?.checked !== false;
-  const dependent = $("bilingualReaderDependentSettings");
-  if (!dependent) return;
-  dependent.classList.toggle("is-disabled", !enabled);
-  dependent.setAttribute("aria-disabled", String(!enabled));
-  dependent.querySelectorAll("input,button,select,textarea").forEach(control => { control.disabled = !enabled; });
-}
+function syncBilingualReaderControls() { SETTINGS_UI.syncReaderControls(); }
 async function updateDisabledReaderWebsites(sites) {
   editingDisabledReaderWebsite = null;
   await saveBilingualReaderSettings({ readerDisabledWebsites:[...new Set(sites)] });
