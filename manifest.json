@@ -24,8 +24,6 @@
       "cache.js",
       "translate.js",
       "usage-limits.js",
-      "annotations.js",
-      "annotations.js",
       "background.js"
     ]
   },
