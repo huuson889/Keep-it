@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("browser-polyfill.js", "messaging.js", "error-logger.js", "config.js", "settings.js", "cache.js", "translate.js", "usage-limits.js", "annotations.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -43,7 +43,7 @@ async function fetchTtsAudio(message) {
   finally { if (ttsAudioRequests.get(key) === request) ttsAudioRequests.delete(key); }
 }
 async function openDashboard(openSettings = false, openAccount = false, settingsTab = "account") {
-  const dashboardUrl = browser.runtime.getURL("dashboard.html");
+  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
   const settingsUrl = `${dashboardUrl}?openSettings=1${openAccount ? "&openAccount=1" : ""}${settingsTab !== "account" ? `&openSettingsTab=${encodeURIComponent(settingsTab)}` : ""}`;
   const [tabs, activeTabs] = await Promise.all([
     browser.tabs.query({}),

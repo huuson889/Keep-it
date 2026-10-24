@@ -1123,7 +1123,7 @@
     sidebar = document.createElement("aside"); sidebar.id = "lhn-sidebar"; sidebar.style.width = width + "px";
     const top = document.createElement("div"); top.className = "lhn-sidebar-top";
     const brand = document.createElement("div"); brand.className = "lhn-sidebar-brand";
-    const logo = document.createElement("img"); logo.src = browser.runtime.getURL("icons/icon.svg"); logo.alt = "";
+    const logo = document.createElement("img"); logo.src = browser.runtime.getURL("assets/icons/icon.svg"); logo.alt = "";
     const brandCopy = document.createElement("div"); brandCopy.className = "lhn-sidebar-brandcopy";
     const brandName = document.createElement("span"); brandName.className = "lhn-sidebar-brandname"; brandName.textContent = "Keepit - Highlight Notes";
     const freeLabel = document.createElement("span"); freeLabel.className = "lhn-sidebar-plan menu-item item-free"; freeLabel.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/></svg>';

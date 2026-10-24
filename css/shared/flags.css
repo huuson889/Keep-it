@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Twemoji Country Flags";
-  src: url("fonts/TwemojiCountryFlags.woff2") format("woff2");
+  src: url("../../assets/fonts/TwemojiCountryFlags.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
