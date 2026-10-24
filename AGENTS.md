@@ -12,8 +12,8 @@
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
 
 ## 3. Đường dẫn
-- Thư mục nguồn (Git repo, nơi sửa code): D:\Keepit\Keepit - Addon and Extension
-- Thư mục zip: D:\Keepit
+- Thư mục nguồn (Git repo, nơi sửa code): D:\Keepit\Keepit - Optimize Test\Keepit - Test
+- Thư mục zip: D:\Keepit\Keepit - Optimize Test
 
 ## 4. Quy tắc làm việc
 - Bắt đầu mỗi phiên: đọc AGENTS.md; trong PROJECT.md ưu tiên các mục 1–4 và các mục nhật ký mới hơn version/commit đã biết; không đọc lại toàn bộ lịch sử nếu không cần. Đọc README.md chỉ ở phần liên quan đến yêu cầu người dùng; Khi công việc liên quan đến OPT-ARENA.md, đọc các mục liên quan trước khi sửa; chỉ đọc toàn bộ khi cần đối chiếu tính nhất quán, không bắt buộc đọc lại toàn file trước từng bước.
