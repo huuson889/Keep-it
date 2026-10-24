@@ -101,7 +101,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Fix full dict kẹt loading: `content.js` còn tham chiếu biến `dictionaryCachePrefix` đã bị đóng scope trong module Dictionary, gây `ReferenceError` trước khi gọi dịch. Chuyển tạo cache key qua `LHN_DICTIONARY.cacheKey()`.
 - File: `js/content/content.js`, `js/translate/dictionary.js`, `PROJECT.md`.
-- Kiểm tra: đang chạy `node --check`, kiểm tra diff và smoke test cache key; chưa kiểm tra trực tiếp trên trình duyệt.
+- Kiểm tra: `node --check` hai file JS, `git diff --check` và Node smoke test `LHN_DICTIONARY.cacheKey("Success", "vi")` → `lhnFullDictionary:v2:vi:success` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
 
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
