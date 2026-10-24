@@ -106,7 +106,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 - `backup.js`: JSON import/export envelope helpers
 
-- `library.js`: annotation metadata, source grouping and ordering
+- `library.js`: annotation metadata, source grouping and ordering; `account.js`: local demo-profile persistence
 
 ## Development
 

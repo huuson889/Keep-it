@@ -6,7 +6,7 @@ const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
-const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
+const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, excludeSelectors:[], readerDisabledWebsites:CONFIG.DEFAULT_READER_DISABLED_WEBSITES, readerDefaultSitesSeeded:true });
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -595,12 +595,12 @@ function setProfileAuthMode(mode) {
 function openProfileAuth(mode = "login") { setProfileAuthMode(mode); $("profileAuthDialog").showModal(); $("profileUsername").focus(); }
 async function finishProfileAuth(profile) {
   demoProfile = profile;
-  await browser.storage.local.set({ [DEMO_PROFILE_KEY]: demoProfile });
+  await LHN_ACCOUNT.saveProfile(browser, demoProfile);
   $("profileAuthDialog").close(); renderProfileSidebar();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 async function signOutDemoProfile() {
-  await browser.storage.local.remove(DEMO_PROFILE_KEY);
+  await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
   closeMenus();
   renderProfileSidebar();
@@ -2201,21 +2201,21 @@ $("settingsAccountState").addEventListener("click", async event => {
     const email = field.value.trim();
     if (!demoProfile || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     demoProfile = { ...demoProfile, email };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     delete field.dataset.editing; refreshDashboardSettings(); renderProfileSidebar(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveName")) {
     const displayName = $("settingsAccountState").querySelector("#settingsAccountDisplayName").value.trim();
     if (!demoProfile || !displayName) return;
     demoProfile = { ...demoProfile, displayName };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveUsername")) {
     const username = $("settingsAccountState").querySelector("#settingsAccountUsername").value.trim().replace(/^@+/, "");
     if (!demoProfile || !username) return;
     demoProfile = { ...demoProfile, username };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountDelete")) {
@@ -2233,7 +2233,7 @@ $("settingsAccountState").addEventListener("change", async event => {
     canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
     demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84) };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]: demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved"));
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
