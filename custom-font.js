@@ -19,7 +19,7 @@
   let websiteDisabled = false;
   const fontStylesheet = document.querySelector('link[data-lhn-bilingual-fonts]') || document.createElement("link");
   function attachFontStylesheet() {
-    if (fontStylesheet.isConnected) return;
+    if (document.querySelector('link[data-lhn-bilingual-fonts]')?.isConnected || fontStylesheet.isConnected) return;
     fontStylesheet.rel = "stylesheet";
     fontStylesheet.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&display=block";
     fontStylesheet.dataset.lhnBilingualFonts = "true";
@@ -43,6 +43,7 @@
     if (websiteDisabled || !customFontEnabled || fontKey === "auto") {
       style.textContent = "";
       document.documentElement?.removeAttribute("data-lhn-custom-font");
+      document.querySelectorAll('link[data-lhn-bilingual-fonts]').forEach(link => link.remove());
       if (fontStylesheet.isConnected) fontStylesheet.remove();
       return;
     }

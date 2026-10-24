@@ -102,14 +102,12 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `config.js`: single source of truth for storage keys, default settings, and shared values
 - `i18n.js`: English, Vietnamese, and Korean strings
 - `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
-- `AGENTS.md`, `PROJECT.md`: working rules and project log for contributors and AI assistants
 
 ## Development
 
 - There is no build step: the folder is the extension.
 - Shared code uses the `browser.*` namespace through `browser-polyfill.js`.
 - Keep shared defaults in `config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
-- Read `AGENTS.md` before changing anything, and record every change in `PROJECT.md`.
 
 ## Third-party components and licenses
 

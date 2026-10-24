@@ -29,13 +29,30 @@ const FLAG_SVGS = {
   const plainText = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLocaleLowerCase();
   const synth = window.speechSynthesis;
   const style = document.createElement("style");
-  if (!document.querySelector('link[data-lhn-bilingual-fonts]')) {
-    const fonts = document.createElement("link"); fonts.rel = "stylesheet"; fonts.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&display=swap"; fonts.dataset.lhnBilingualFonts = "true";
-    fontStylesheetReady = new Promise(resolve => { fonts.addEventListener("load", resolve, { once:true }); fonts.addEventListener("error", resolve, { once:true }); });
-    (document.head || document.documentElement).appendChild(fonts);
-  } else {
-    const fonts = document.querySelector('link[data-lhn-bilingual-fonts]');
-    if (!fonts.sheet) fontStylesheetReady = new Promise(resolve => { fonts.addEventListener("load", resolve, { once:true }); fonts.addEventListener("error", resolve, { once:true }); });
+  let fontStylesheetLink = null;
+  function ensureWebFontStylesheet() {
+    let fonts = document.querySelector('link[data-lhn-bilingual-fonts]');
+    if (fonts?.sheet) {
+      fontStylesheetLink = fonts;
+      fontStylesheetReady = Promise.resolve();
+      return fontStylesheetReady;
+    }
+    if (!fonts) {
+      fonts = document.createElement("link");
+      fonts.rel = "stylesheet";
+      fonts.href = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono:wght@400;500&display=swap";
+      fonts.dataset.lhnBilingualFonts = "true";
+    }
+    if (fontStylesheetLink === fonts) return fontStylesheetReady;
+    fontStylesheetLink = fonts;
+    fontStylesheetReady = new Promise(resolve => {
+      const done = () => resolve();
+      fonts.addEventListener("load", done, { once:true });
+      fonts.addEventListener("error", done, { once:true });
+      if (!fonts.isConnected) (document.head || document.documentElement).appendChild(fonts);
+      if (fonts.sheet) done();
+    });
+    return fontStylesheetReady;
   }
   style.textContent = `
     .lhn-bilingual-speaker{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;color:#868e96;cursor:pointer;font-size:.8em;vertical-align:middle;user-select:none}
@@ -370,7 +387,7 @@ const FLAG_SVGS = {
       return;
     }
     try {
-      await Promise.race([fontStylesheetReady, new Promise(resolve => setTimeout(resolve, 700))]);
+      await Promise.race([ensureWebFontStylesheet(), new Promise(resolve => setTimeout(resolve, 700))]);
       await Promise.race([document.fonts.load(`16px ${family}`), new Promise(resolve => setTimeout(resolve, 1200))]);
     } catch {}
     if (requestId !== webFontRequestId || settings.webFontFamily !== family) return;
