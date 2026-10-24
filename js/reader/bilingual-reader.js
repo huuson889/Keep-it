@@ -347,25 +347,39 @@ const FLAG_SVGS = {
     utterance=null; cancelGoogle(); speakAfterCancel(remainder);
   }
   function normalizeSpeedStep(value) { const step = Number(value); return Number.isFinite(step) && step > 0 ? Math.max(0.01, Math.min(2.5, Math.round(step * 100) / 100)) : DEFAULTS.speechSpeedStep; }
-  // Tốc độ đọc dùng chung với Dashboard Settings qua lhnSettings.speechRate; speechSpeed giữ làm bản sao cho các nhánh đọc hiện có.
+  function clampSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.max(.5, Math.min(3, Math.round(rate * 100) / 100)) : null; }
+  // Khi "Custom rate for display language" bật và đang đọc bản dịch của ngôn ngữ hiển thị,
+  // tốc độ sửa trên thanh đọc chỉ thuộc ngôn ngữ đó (Your speed), không đụng Global speech rate.
+  function editingLanguageRate() { return dashboardShortcuts?.useLanguageSpeechRate === true && readingSegment?.translation === true; }
+  function writeLanguageSpeechRate(rate) {
+    const patch = {
+      speechRateByLanguage:{ ...(dashboardShortcuts.speechRateByLanguage || {}), [displayLang]:rate },
+      hasCustomSpeechRateByLanguage:{ ...(dashboardShortcuts.hasCustomSpeechRateByLanguage || {}), [displayLang]:true },
+      inheritedSpeechRateByLanguage:{ ...(dashboardShortcuts.inheritedSpeechRateByLanguage || {}) }
+    };
+    delete patch.inheritedSpeechRateByLanguage[displayLang];
+    dashboardShortcuts = { ...dashboardShortcuts, ...patch, inheritedSpeechRateByLanguage:patch.inheritedSpeechRateByLanguage };
+    browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), ...patch } })).catch(() => {});
+  }
   function writeSharedSpeechRate(rate) {
     dashboardShortcuts = { ...dashboardShortcuts, speechRate:rate };
     browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), speechRate:rate } })).catch(() => {});
   }
-  function applySharedSpeechRate(value) {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return;
-    const rate = Math.max(.5, Math.min(3, Math.round(numeric * 100) / 100));
-    if (rate === settings.speechSpeed) return;
-    settings.speechSpeed = rate;
-    bar.querySelector(".lhn-br-range").value = rate;
-    bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate);
+  function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
+  function applySharedSpeechRate() {
+    const rate = segmentRate(Boolean(readingSegment?.translation));
+    if (rate === lastAppliedSegmentRate) { syncToolbar(); return; }
+    lastAppliedSegmentRate = rate;
+    renderSpeed(rate);
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading && !readingPaused) restartCurrentSpeech();
     syncToolbar();
   }
   function setSpeechSpeed(value) {
-    const rate=Math.max(.5,Math.min(3,Math.round(value*100)/100));
-    saveSpeechSetting({speechSpeed:rate}); writeSharedSpeechRate(rate); bar.querySelector(".lhn-br-range").value=rate; bar.querySelector("[data-speed-value]").textContent=formatSpeed(rate); syncToolbar();
+    const rate = clampSpeechRate(value);
+    if (rate === null) return;
+    if (editingLanguageRate()) writeLanguageSpeechRate(rate);
+    else { saveSpeechSetting({speechSpeed:rate}); writeSharedSpeechRate(rate); }
+    lastAppliedSegmentRate = rate; renderSpeed(rate); syncToolbar();
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
   }
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
@@ -828,14 +842,17 @@ const FLAG_SVGS = {
   }
   // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
   // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
-  var voiceFlagOverride = ""; var readingSegment = null; // đoạn đang đọc: { translation, lang }
+  var voiceFlagOverride = ""; var readingSegment = null; var lastAppliedSegmentRate = null; // đoạn đang đọc: { translation, lang }
+  // Tốc độ: đoạn gốc dùng Global speech rate. Đoạn dịch dùng tốc độ riêng của ngôn ngữ hiển thị
+  // (Your speed) khi "Custom rate for display language" bật; không cộng dồn chênh lệch với Global.
   function segmentRate(isTranslation) {
-    const base = Number(settings.speechSpeed) || 1;
-    if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return base;
+    const globalRate = Number(settings.speechSpeed) || 1;
+    if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return globalRate;
     const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
-    const global = Number(dashboardShortcuts?.speechRate) || 1;
-    if (!Number.isFinite(custom)) return base;
-    return Math.min(3, Math.max(0.5, base + (custom - global)));
+    if (Number.isFinite(custom)) return clampSpeechRate(custom);
+    const inherited = Number(dashboardShortcuts?.inheritedSpeechRateByLanguage?.[displayLang]);
+    if (Number.isFinite(inherited)) return clampSpeechRate(inherited);
+    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang]) || 1.25);
   }
   async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
     const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : voiceSettings?.readLanguage ? LHN_TTS.normalizeLanguage(voiceSettings.readLanguage) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
@@ -1067,7 +1084,7 @@ const FLAG_SVGS = {
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
-      applySharedSpeechRate(dashboardShortcuts.speechRate);
+      applySharedSpeechRate();
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
