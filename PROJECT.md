@@ -52,7 +52,7 @@
 
 - Bước 1 — Settings: nối dashboard vào `LHN_SETTINGS.save` để thống nhất lưu cài đặt nền cùng popup/content; sửa helper để giữ nguyên chính xác cấu trúc object mà caller lưu, tránh tự thêm default vào dữ liệu hiện có.
 - File: settings.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, các luồng lưu và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; Messaging calls tập trung; mock Settings resolve/get/save/subscribe đạt và xác nhận cấu trúc lưu không đổi; `git diff --check` đạt; ZIP 57 mục có manifest gốc, ba module nền tảng và version 3.4.567. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Cache/lưu trữ trong Bước 1.
 **2026-10-24 | v3.4.566 | Codex sửa:**
 
