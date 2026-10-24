@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.597; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.598; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -104,6 +104,13 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.598 | DeepSeek sửa:**
+
+- Reader vẫn không đọc sau khi hoàn nguyên 3.4.596; thêm cảnh báo `console.warn` ở các nhánh `startReading` thoát sớm để biết nguyên nhân thật: website bị tắt, website nằm trong danh sách tắt Reader, TTS bị tắt/không hỗ trợ (kèm giá trị `enableTTS`, `synth`, `SpeechSynthesisUtterance`), và danh sách đoạn đọc rỗng.
+- Chỉ thêm log, không đổi hành vi. File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt; chưa kiểm thử trên Chrome/Firefox.
+- Tiếp theo: đọc cảnh báo trong Console của trang để xác định nguyên nhân rồi mới sửa.
+
 **2026-10-25 | v3.4.597 | DeepSeek sửa:**
 
 - Hoàn nguyên toàn bộ thay đổi của v3.4.596 trong `js/reader/bilingual-reader.js` (đưa file về đúng bản v3.4.595) vì người dùng báo Reader không đọc được đoạn nào sau bản đó; bản 3.4.596 là bản duy nhất trong ba bản 3.4.594–596 đụng vào luồng đọc (thêm `ownChild`, đổi truy vấn `.lhn-bilingual-card` từ `:scope >` sang tìm trong đoạn, đổi cách tra icon).

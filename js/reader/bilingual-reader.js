@@ -1014,12 +1014,13 @@ const FLAG_SVGS = {
     readTranslationToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
   }
   function startReading(fromBlock, interruptCurrent = false) {
-    if (websiteDisabled || isReaderDisabledOnThisWebsite()) return;
-    if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
+    if (websiteDisabled) { console.warn("[Keepit Reader] Không đọc: website đang bị tắt cho trang này"); return; }
+    if (isReaderDisabledOnThisWebsite()) { console.warn("[Keepit Reader] Không đọc: website nằm trong danh sách tắt Reader", location.hostname); return; }
+    if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) { console.warn("[Keepit Reader] Không đọc: TTS bị tắt hoặc trình duyệt không hỗ trợ", { enableTTS:settings.enableTTS, synth:Boolean(synth), utterance:Boolean(window.SpeechSynthesisUtterance) }); return; }
     speechDetectionRequest++;
     let nextQueue = readerBlocks(true);
     if (fromBlock && !nextQueue.includes(fromBlock)) nextQueue = [fromBlock];
-    if (!nextQueue.length) return;
+    if (!nextQueue.length) { console.warn("[Keepit Reader] Không đọc: không tìm thấy đoạn nào để đọc", { fromBlock:Boolean(fromBlock) }); return; }
     const cancelPendingSpeech = Boolean(interruptCurrent && (reading || synth?.speaking || synth?.pending || synth?.paused));
     if (interruptCurrent && reading) stopReading();
     else if (cancelPendingSpeech) { utterance = null; cancelGoogle(); }
