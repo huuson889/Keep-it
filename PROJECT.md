@@ -51,12 +51,12 @@ Keepit - Test/
 │   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
 │   ├── content/                   # content.js (entry), highlighter, note, sidebar, page layout, UI
 │   │   ├── sidebar.js             # Khung, thẻ và tiện ích tìm kiếm Sidebar
-│   │   └── note-composer.js       # Dựng form và tạo/canonicalize record note
+│   │   ├── note-composer.js       # Dựng form và tạo/canonicalize record note
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
 │   ├── dashboard/                 # dashboard.js (entry), settings UI, study modules, account, library, backup, flags
-│   │   └── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
+│   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font và icons
