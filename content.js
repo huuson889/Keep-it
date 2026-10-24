@@ -1022,29 +1022,7 @@
     const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
     host.append(document.createTextNode(text.slice(at + length)));
   }
-  function highlightSidebarSearchMatches(root, query) {
-    const needle = String(query || "").trim();
-    if (!needle) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (node.parentElement?.closest(".lhn-sidebar-actions, .lhn-search-match")) continue;
-      if (node.nodeValue.toLocaleLowerCase().includes(needle.toLocaleLowerCase())) nodes.push(node);
-    }
-    for (const node of nodes) {
-      const text = node.nodeValue, lower = text.toLocaleLowerCase(), search = needle.toLocaleLowerCase();
-      const fragment = document.createDocumentFragment(); let from = 0, at;
-      while ((at = lower.indexOf(search, from)) !== -1) {
-        if (at > from) fragment.appendChild(document.createTextNode(text.slice(from, at)));
-        const match = document.createElement("mark"); match.className = "lhn-search-match"; match.textContent = text.slice(at, at + needle.length); fragment.appendChild(match);
-        from = at + needle.length;
-      }
-      if (from === 0) continue;
-      if (from < text.length) fragment.appendChild(document.createTextNode(text.slice(from)));
-      node.replaceWith(fragment);
-    }
-  }
+  function highlightSidebarSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".lhn-sidebar-actions, .lhn-search-match"); }
   function openSidebarEdit(item) {
     const pageScrollX = window.scrollX, pageScrollY = window.scrollY;
     document.getElementById("lhn-sidebar-edit-dialog")?.remove();

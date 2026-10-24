@@ -652,34 +652,8 @@ function appendContextSentence(host, sentence, quote) {
   const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
   host.append(document.createTextNode(text.slice(at + length)));
 }
-function searchRank(item, query) {
-  if (!query) return 0;
-  const normalizedQuery = String(query).toLocaleLowerCase();
-  const fieldIndex = annotationMeta(item).searchFields.findIndex(value => value.includes(normalizedQuery));
-  return fieldIndex < 0 ? Number.MAX_SAFE_INTEGER : fieldIndex;
-}
-function highlightSearchMatches(root, query) {
-  const needle = String(query || "").trim();
-  if (!needle) return;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    if (node.parentElement?.closest(".card-actions, .lhn-search-match")) continue;
-    if (node.nodeValue.toLocaleLowerCase().includes(needle.toLocaleLowerCase())) nodes.push(node);
-  }
-  for (const node of nodes) {
-    const text = node.nodeValue, lower = text.toLocaleLowerCase(), search = needle.toLocaleLowerCase();
-    const fragment = document.createDocumentFragment(); let from = 0, at;
-    while ((at = lower.indexOf(search, from)) !== -1) {
-      if (at > from) fragment.appendChild(document.createTextNode(text.slice(from, at)));
-      const match = document.createElement("mark"); match.className = "lhn-search-match"; match.textContent = text.slice(at, at + needle.length); fragment.appendChild(match);
-      from = at + needle.length;
-    }
-    if (from === 0) continue;
-    if (from < text.length) fragment.appendChild(document.createTextNode(text.slice(from)));
-    node.replaceWith(fragment);
-  }
-}
+function searchRank(item, query) { return LHN_SEARCH.rank(annotationMeta(item).searchFields, query); }
+function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
   if (!match) return hex;
