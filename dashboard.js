@@ -370,7 +370,7 @@ function refreshDashboardSettings() {
 }
 async function refreshUsageLimitSettings() {
   try {
-    const status = await browser.runtime.sendMessage({ type:"USAGE_STATUS" });
+    const status = await LHN_MESSAGING.sendMessage({ type:"USAGE_STATUS" });
     if (!status) return;
     const planKey = ({ trial:"usagePlanTrial", free:"usagePlanFree", keyA:"usagePlanKeyA", keyB:"usagePlanKeyB" })[status.planId] || "usagePlanFree";
     const limitLabel = status.dailyLimit === null ? t("usageUnlimited") : t("usageDailyLimit", { count:status.dailyLimit });
@@ -1044,7 +1044,7 @@ async function loadAnnotationsInBatches() {
   const items = [];
   let after = null, batchCount = 0;
   while (true) {
-    const result = await browser.runtime.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE });
+    const result = await LHN_MESSAGING.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE });
     if (!result || !Array.isArray(result.items)) throw new Error("Could not load dashboard annotations");
     items.push(...result.items);
     if (result.done || !result.items.length || result.nextAfter === after) break;
@@ -1341,7 +1341,7 @@ async function downloadJsonExport(pageUrl = null) {
   const parts = [`{"format":"local-highlight-notes","version":1,"exportedAt":${JSON.stringify(exportedAt)},"annotations":[`];
   const pageKeys = new Set(), exportedFavoriteNoteIds = []; let after = null, first = true;
   do {
-    const batch = await browser.runtime.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE, url:pageUrl });
+    const batch = await LHN_MESSAGING.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE, url:pageUrl });
     if (!batch || !Array.isArray(batch.items)) throw new Error("Could not read export data");
     for (const item of batch.items) {
       if (!first) parts.push(",");
@@ -1365,9 +1365,9 @@ $("sourceList").addEventListener("click", e => { if (e.target.closest("button"))
 $("notesList").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]"); if (!b) return; const item = annotations.find(a => a.id === b.dataset.id); if (!item) return;
   if (b.dataset.action === "favorite-note") { await toggleNoteFavorite(item, b, e); return; }
-  if (b.dataset.action === "jump") { const result = await browser.runtime.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
+  if (b.dataset.action === "jump") { const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
   if (b.dataset.action === "edit") { openEditDialog(item); }
-  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await browser.runtime.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
+  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
   if (b.dataset.action === "speak") { const card = b.closest(".card"); if (!item.quote || !card) return; card.classList.add("lhn-reading-text"); speakText(item.quote, detectLanguage(item.quote, item.url), () => card.classList.remove("lhn-reading-text")); }
 });
 
@@ -1457,7 +1457,7 @@ async function saveStudySpeechLanguage(select) {
   refreshStudySpeechLanguageControls(updated);
   document.querySelectorAll("#studyDialog [data-study-speech-language]").forEach(control => { control.disabled = true; setDisabledTooltip(control, control.closest(".study-speech-language-control"), t("disabledSavingLanguage")); });
   try {
-    const saved = await browser.runtime.sendMessage({ type:"UPDATE", item:updated, origin:DASHBOARD_INSTANCE_ID });
+    const saved = await LHN_MESSAGING.sendMessage({ type:"UPDATE", item:updated, origin:DASHBOARD_INSTANCE_ID });
     applyAnnotationChange({ type:"upsert", item:saved }, false);
     studyQueue = studyQueue.map(card => card.id === saved.id ? saved : card);
     renderStudyCard({ autoSpeak:false, showAnswer:!$("studyBack").hidden });
@@ -1572,7 +1572,7 @@ async function saveEdit() {
   if (note === String(item.note || "").trim() && contextNote === String(item.contextNote || "").trim() && editColor === CONFIG.normalizeColor(item.color) && tagsEqual(tags, item.tags)) { $("editDialog").close(); return; }
   savingEdit = true;
   try {
-    const saved = await browser.runtime.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: editColor, tags }, origin: DASHBOARD_INSTANCE_ID });
+    const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: editColor, tags }, origin: DASHBOARD_INSTANCE_ID });
     $("editDialog").close();
     applyAnnotationChange({ type:"upsert", item:saved });
     if ($("studyDialog").open) {
@@ -1696,7 +1696,7 @@ async function gradeStudyCard(grade) {
   const annotation = annotationById.get(current.id);
   if (annotation) annotation.review = review;
   try {
-    const result = await browser.runtime.sendMessage({ type: "REVIEW_ANNOTATION", id: current.id, review, origin:DASHBOARD_INSTANCE_ID });
+    const result = await LHN_MESSAGING.sendMessage({ type: "REVIEW_ANNOTATION", id: current.id, review, origin:DASHBOARD_INSTANCE_ID });
     if (!result?.updated) throw new Error("Could not save card review");
     if (result.item?.updatedAt) { current.updatedAt = result.item.updatedAt; const stored = annotationById.get(current.id); if (stored) stored.updatedAt = result.item.updatedAt; }
   } catch (error) {
@@ -1721,7 +1721,7 @@ async function returnToPreviousStudyCard() {
   else delete restored.review;
   let savedCard;
   try {
-    savedCard = await browser.runtime.sendMessage({ type: "UPDATE", item: restored, origin:DASHBOARD_INSTANCE_ID });
+    savedCard = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: restored, origin:DASHBOARD_INSTANCE_ID });
     if (!savedCard?.id) throw new Error("Could not restore previous card");
   } catch (error) { toast(t("studySaveFailed")); return; }
   studyHistory.pop();
@@ -2058,7 +2058,7 @@ $("resetStudyProgress").addEventListener("click", async () => {
   const ids = annotations.filter(item => item.review && (!cutoff || lastStudyReviewAt(item) >= cutoff)).map(item => item.id).filter(id => typeof id === "string");
   if (!ids.length) { toast(t("studyResetAlready")); return; }
   try {
-    const result = await browser.runtime.sendMessage({ type: "RESET_STUDY_PROGRESS", ids, origin:DASHBOARD_INSTANCE_ID });
+    const result = await LHN_MESSAGING.sendMessage({ type: "RESET_STUDY_PROGRESS", ids, origin:DASHBOARD_INSTANCE_ID });
     if (!result?.updated) throw new Error("Could not reset study progress");
     const idSet = new Set(ids);
     annotations.forEach(item => { if (idSet.has(item.id)) delete item.review; });
@@ -2160,7 +2160,7 @@ $("studyJumpHighlight").addEventListener("click", async () => {
     return;
   }
   try {
-    const result = await browser.runtime.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id });
+    const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id });
     if (!result?.found) toast(t("highlightNotFound"));
   } catch {
     toast(t("highlightNotFound"));
@@ -2260,7 +2260,7 @@ $("deletePageBtn").addEventListener("click", async () => {
   const pageItems = annotations.filter(a => pageKey(a) === selectedUrl);
   if (!pageItems.length) return;
   if (!confirm(t("deletePageConfirm"))) return;
-  const result = await browser.runtime.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
+  const result = await LHN_MESSAGING.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
   // Remove visible marks from any currently open tab for this exact URL too.
   const tabs = await browser.tabs.query({});
   await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type: "REMOVE_HIGHLIGHT_PAGE", url:selectedUrl }).catch(() => null)));
@@ -2394,7 +2394,7 @@ $("usageKeyForm").addEventListener("submit", async event => {
   button.disabled = true;
   setDisabledTooltip(button, button, t("disabledActivatingKey"));
   try {
-    const result = await browser.runtime.sendMessage({ type:"USAGE_ACTIVATE_KEY", key:$("usageKeyInput").value });
+    const result = await LHN_MESSAGING.sendMessage({ type:"USAGE_ACTIVATE_KEY", key:$("usageKeyInput").value });
     if (!result?.activated) { message.textContent = t("usageKeyInvalid"); return; }
     $("usageKeyInput").value = "";
     message.textContent = t("usageKeyActivated");
@@ -2570,7 +2570,7 @@ function syncBilingualPreview() {
   bilingualPreviewPendingLanguage = targetLang;
   translated.textContent = "…";
   const requestId = ++bilingualPreviewRequestId;
-  browser.runtime.sendMessage({ type:"BILINGUAL_TRANSLATE", text:sourceText, targetLang }).then(result => {
+  LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text:sourceText, targetLang }).then(result => {
     const currentTargetLang = ["auto", "same"].includes(studyTranslationSettings.targetLanguage) ? currentLang : studyTranslationSettings.targetLanguage;
     if (requestId !== bilingualPreviewRequestId || currentTargetLang !== targetLang) return;
     bilingualPreviewPendingLanguage = null;
@@ -2633,7 +2633,7 @@ $("bilingualDisabledReaderWebList").addEventListener("click", async event => {
     await updateDisabledReaderWebsites(sites.map(value => value === site ? updated : value));
   }
 });
-$("bilingualClearCache").addEventListener("click", async () => { await browser.runtime.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
+$("bilingualClearCache").addEventListener("click", async () => { await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
 document.querySelectorAll("[data-settings-theme]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ sidebarTheme:button.dataset.settingsTheme })));
 document.querySelectorAll("[data-settings-color]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ defaultHighlightColor:button.dataset.settingsColor })));
 $("settingsExportButton").addEventListener("click", event => {
@@ -2689,7 +2689,7 @@ $("importFile").addEventListener("change", async e => {
   try {
     const parsed = JSON.parse(await file.text()), items = Array.isArray(parsed) ? parsed : parsed.annotations;
     if (!Array.isArray(items)) throw new Error(t("invalidImport"));
-    const result = await browser.runtime.sendMessage({ type:"IMPORT", items, origin:DASHBOARD_INSTANCE_ID });
+    const result = await LHN_MESSAGING.sendMessage({ type:"IMPORT", items, origin:DASHBOARD_INSTANCE_ID });
     if (!Array.isArray(parsed) && Array.isArray(parsed.favorites)) {
       favorites = [...new Set([...favorites, ...parsed.favorites.filter(value => typeof value === "string")])];
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites });
@@ -2733,7 +2733,7 @@ browser.storage.onChanged.addListener((changes, area) => {
     load();
   }
 });
-browser.runtime.onMessage.addListener(message => {
+LHN_MESSAGING.onMessage.addListener(message => {
   if (message?.type === "OPEN_DASHBOARD_SETTINGS") { openDashboardSettings(); return; }
   if (message?.type === "OPEN_DASHBOARD_ACCOUNT") { openDashboardSettings(); if (!demoProfile) openProfileAuth(); return; }
   if (message?.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") { openDashboardSettings("bilingualReader"); return; }

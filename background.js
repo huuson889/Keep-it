@@ -197,7 +197,7 @@ async function getOne(id) {
   return requestResult(db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(id));
 }
 function notifyAnnotationsChanged(change = null, origin = null) {
-  browser.runtime.sendMessage({ type: "ANNOTATIONS_CHANGED", change: change ? { ...change, origin } : null }).catch(() => {});
+  LHN_MESSAGING.sendMessage({ type: "ANNOTATIONS_CHANGED", change: change ? { ...change, origin } : null }).catch(() => {});
 }
 async function addOne(item) {
   const db = await ensureDatabaseReady(), now = Date.now();
@@ -459,7 +459,7 @@ async function detectReadLanguageRemote(text) {
     return { detectedLang:String(data?.[2] || "") };
   } catch { return { detectedLang:"" }; }
 }
-browser.runtime.onMessage.addListener(async (message, sender) => {
+LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (!message || !message.type) return;
   if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
   if (message.type === "DETECT_READ_LANGUAGE") return detectReadLanguageRemote(message.text);

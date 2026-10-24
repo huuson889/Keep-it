@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.564; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; bước đầu chuẩn hóa module Languages bằng languages.js (đổi tên từ i18n.js), các module còn lại tiếp tục theo thứ tự OPT.
+- Version hiện tại: v3.4.565; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; bước đầu chuẩn hóa module Languages bằng languages.js (đổi tên từ i18n.js), các module còn lại tiếp tục theo thứ tự OPT.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận flags/dark mode và các select khác đều đúng; Dashboard Settings dùng pattern combobox của toolbar, menu căn trái và ô tìm kiếm nay rộng bằng menu. v3.4.563 chờ retest Chrome/Edge. Static checks: `node --check` 20/20 JS, manifest MV3 v3.4.563, CSS parse, ZIP 55 mục integrity/version và `git diff --check` đạt. Sandbox không có browser executable; Chromium khác chưa thử; chưa commit hoặc phát hành.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -9,7 +9,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-19. [Tiếp tục kiến trúc OPT] Tách 27 module theo thứ tự nền tảng → dịch vụ dùng chung → dữ liệu/nghiệp vụ → tính năng phụ thuộc; hiện chỉ chuẩn hóa tên module Languages, chưa hoàn thành các module còn lại.
+19. [Tiếp tục kiến trúc OPT] Tách 27 module theo thứ tự nền tảng → dịch vụ dùng chung → dữ liệu/nghiệp vụ → tính năng phụ thuộc; hiện Languages và Messaging có file riêng, phần lớn module còn lại chưa tách hoàn chỉnh.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.564: kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
@@ -48,6 +48,12 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.565 | Codex sửa:**
+
+- Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
+- File: messaging.js, manifest.json, background.js, content.js, dashboard.js, popup.js, error-logger.js, tts-engine.js, study-translation.js, bilingual-reader.js, popup.html, dashboard.html, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, thứ tự nạp và tham chiếu manifest/HTML; chưa kiểm thử trình duyệt.
+- Tiếp theo: tách Settings và Cache/lưu trữ trong Bước 1.
 **2026-10-24 | v3.4.564 | Codex sửa:**
 
 - Bước 1 — Languages: đổi tên module `i18n.js` thành `languages.js`, chuyển global nội bộ sang `LHN_LANGUAGES` và cập nhật các entry point/consumer; giữ nguyên bộ EN/VI/KO và chuỗi hiển thị.

@@ -145,7 +145,7 @@
       if (cancelColorPreview) {
         pending.item.color = pending.color;
         webHighlighter.setMarkColor(pending.id, pending.color);
-        browser.runtime.sendMessage({ type: "UPDATE", item: { ...pending.item, color: pending.color } }).then(updated => {
+        LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...pending.item, color: pending.color } }).then(updated => {
           if (updated?.id) pageAnnotationCache.set(updated.id, updated);
         }).catch(error => console.error("Highlight Notes color cancel failed", error));
       }
@@ -736,11 +736,11 @@
       try {
         if (existing) {
           webHighlighter.clearPreview();
-          const saved = await browser.runtime.sendMessage({ type: "UPDATE", item: { ...item, id: existing.id } });
+          const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, id: existing.id } });
           if (saved?.id) pageAnnotationCache.set(saved.id, saved);
           webHighlighter.setMarkColor(existing.id, selectedColor);
         } else {
-          const saved = await browser.runtime.sendMessage({ type: "ADD", item }); item.id = saved.id;
+          const saved = await LHN_MESSAGING.sendMessage({ type: "ADD", item }); item.id = saved.id;
           if (saved?.id) pageAnnotationCache.set(saved.id, saved);
           if (webHighlighter.hasPreview()) webHighlighter.commitPreview(item);
           else if (activeRange && activeRange.startContainer.isConnected) webHighlighter.wrapRange(activeRange, item);
@@ -758,7 +758,7 @@
     const cached = pageAnnotationCacheUrl === pageUrl() ? pageAnnotationCache.get(id) : null;
     if (cached) return cached;
     try {
-      const item = await browser.runtime.sendMessage({ type: "GET_ONE", id });
+      const item = await LHN_MESSAGING.sendMessage({ type: "GET_ONE", id });
       if (item?.id && item.url === pageUrl()) { pageAnnotationCacheUrl = item.url; pageAnnotationCache.set(item.id, item); }
       return item;
     } catch { return null; }
@@ -1028,7 +1028,7 @@
         webHighlighter.setMarkColor(item.id, color);
         colorGroup.querySelectorAll(".lhn-tooltip-color").forEach(button => button.setAttribute("aria-pressed", String(button === colorButton)));
         try {
-          const updated = await browser.runtime.sendMessage({ type: "UPDATE", item: { ...item, color } });
+          const updated = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, color } });
           if (updated?.id) pageAnnotationCache.set(updated.id, updated);
           item.color = CONFIG.normalizeColor(updated?.color || color);
           webHighlighter.setMarkColor(item.id, item.color);
@@ -1052,7 +1052,7 @@
     });
     editButton.setAttribute("aria-label", t("editNote")); editButton.title = t("editNote");
     const deleteButton = makeButton("▤", "secondary lhn-icon-btn lhn-trash-btn", async () => {
-      await browser.runtime.sendMessage({ type: "DELETE", id: item.id });
+      await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
       pageAnnotationCache.delete(item.id);
       document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(n => n.replaceWith(...n.childNodes));
       removeTooltip();
@@ -1226,7 +1226,7 @@
       if (note === String(item.note || "").trim() && contextNote === String(item.contextNote || "").trim() && selectedColor === CONFIG.normalizeColor(item.color) && sameTags(tags, item.tags)) { dialog.close(); return; }
       saving = true;
       try {
-        const saved = await browser.runtime.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: selectedColor, tags } });
+        const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: selectedColor, tags } });
         if (saved?.id) pageAnnotationCache.set(saved.id, saved);
         dialog.close(); await renderSidebar(); showSidebarToast(() => t("savedChanges"));
       } finally { saving = false; }
@@ -1461,7 +1461,7 @@
       const button = document.createElement("button"); button.type = "button"; button.className = "lhn-header-icon"; button.dataset.labelKey = labelKey; button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
       if (setting) { button.dataset.setting = setting; button.addEventListener("click", () => toggleSidebarSetting(setting)); }
       else if (handler) { button.dataset.siteToggle = "true"; button.addEventListener("click", handler); }
-      else button.addEventListener("click", () => browser.runtime.sendMessage({ type: "OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)));
+      else button.addEventListener("click", () => LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)));
       button.dataset.tooltip = t(labelKey); button.setAttribute("aria-label", t(labelKey)); headerActions.append(button);
       return button;
     };
@@ -1546,7 +1546,7 @@
     let items = [];
     if (useCachedItems && Array.isArray(sidebarItemsCache)) items = sidebarItemsCache.slice();
     else {
-      try { items = await browser.runtime.sendMessage({ type: "GET_PAGE", url: pageUrl() }); } catch { /* extension context may be reloading */ }
+      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: pageUrl() }); } catch { /* extension context may be reloading */ }
     }
     if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
     const current = items.filter(item => item.url === pageUrl());
@@ -1569,7 +1569,7 @@
       sidebarItemsCache = current.slice();
       // Page order is persisted for later restoration, but it must not delay the
       // first paint of sidebar cards.
-      browser.runtime.sendMessage({ type: "SYNC_PAGE_ORDER", url: pageUrl(), ids: current.map(item => item.id) }).catch(() => {});
+      LHN_MESSAGING.sendMessage({ type: "SYNC_PAGE_ORDER", url: pageUrl(), ids: current.map(item => item.id) }).catch(() => {});
     }
     if (!sidebarOpen || !sidebar || renderToken !== sidebarRenderToken) return;
     const counts = Object.fromEntries(COLORS.map(color => [color, 0]));
@@ -1645,7 +1645,7 @@
       editBtn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.edit}</svg>`;
       editBtn.title = t("editNote"); editBtn.setAttribute("aria-label", t("editNote"));
       const deleteBtn = sidebarButton("", "lhn-side-secondary", async () => {
-        await browser.runtime.sendMessage({ type: "DELETE", id: item.id });
+        await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
         pageAnnotationCache.delete(item.id);
         document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
         await renderSidebar();
@@ -1963,7 +1963,7 @@
     }
     restorePromise = (async () => {
       let items;
-      try { items = await browser.runtime.sendMessage({ type: "GET_PAGE", url: pageUrl() }); }
+      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: pageUrl() }); }
       catch (error) { console.warn("Highlight Notes: could not load saved highlights", error); return; }
       if (!Array.isArray(items) || !document.body) return;
       const currentUrl = pageUrl();
@@ -2113,7 +2113,7 @@
       startRestoreObserver(); setTimeout(restoreAnnotations, 600);
     }
   });
-  browser.runtime.onMessage.addListener(message => {
+  LHN_MESSAGING.onMessage.addListener(message => {
     if (message?.type === "ANNOTATIONS_CHANGED") {
       const change = message.change;
       if (!change) return;

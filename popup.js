@@ -136,11 +136,11 @@ $("languageSearch").addEventListener("input", e => { langOpen = true; renderLang
 $("languageSearch").addEventListener("keydown", e => { if (e.key === "Escape") { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = I18N.LANGS.find(x => x.code === currentLang); $("languageSearch").value = langLabel(selected); } if (e.key === "ArrowDown") $("languageOptions").querySelector(".language-option")?.focus(); });
 document.addEventListener("mousedown", e => { if (!e.target.closest(".language-wrap")) { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = I18N.LANGS.find(x => x.code === currentLang); if (selected) $("languageSearch").value = langLabel(selected); } });
 $("dashboard").addEventListener("click", async () => {
-  try { await browser.runtime.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
+  try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard", error); $("status").textContent = t("pageRestricted"); }
 });
 $("openDashboardSettings").addEventListener("click", async () => {
-  try { await browser.runtime.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }
+  try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard settings", error); $("status").textContent = t("pageRestricted"); }
 });
 $("restore").addEventListener("click", async () => {

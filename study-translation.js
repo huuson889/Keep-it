@@ -62,7 +62,7 @@
       const googleController = new AbortController();
       let googleTimeout, fallbackTimeout;
       try {
-        const usage = await browser.runtime.sendMessage({ type: "USAGE_CONSUME", service: "translate" });
+        const usage = await LHN_MESSAGING.sendMessage({ type: "USAGE_CONSUME", service: "translate" });
         if (!usage?.allowed) throw new Error("Translate daily usage limit reached");
         googleTimeout = setTimeout(() => googleController.abort(), REQUEST_TIMEOUT_MS);
         try {

@@ -175,9 +175,9 @@ const FLAG_SVGS = {
   bar.querySelector("[data-speed-step]").addEventListener("change", event => { const value = normalizeSpeedStep(event.target.value); event.target.value = value; saveSpeechSetting({ speechSpeedStep:value }); renderPopupText(); });
   bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
   bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
-  bar.querySelector("[data-dashboard]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-br-settings]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-account]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-dashboard]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-br-settings]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-account]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
   bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
   bar.querySelector("[data-speed]").addEventListener("click", () => { bar.querySelector("[data-speed-value]").textContent = formatSpeed(settings.speechSpeed || 1); bar.querySelector(".lhn-br-range").value = settings.speechSpeed || 1; });
@@ -774,7 +774,7 @@ const FLAG_SVGS = {
       let card = block.querySelector(":scope > .lhn-bilingual-card");
       const targetLang = ["auto", "same"].includes(targetLanguage) ? displayLang : targetLanguage;
       if (card?.dataset.sourceText === text && card.dataset.targetLang === targetLang) return;
-      const result = await browser.runtime.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
+      const result = await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
       let translated = result?.translated;
       if (!translated) return;
       const source = text.trim().toLocaleLowerCase(), sameDetected = result.detectedLang && result.detectedLang.toLowerCase().split("-")[0] === targetLang;
