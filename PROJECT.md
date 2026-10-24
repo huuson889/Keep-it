@@ -99,6 +99,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
+- Sửa race lúc khởi động: giữ xử lý chọn chữ và Alt+S trong khi settings đang tải; sau khi tải xong chỉ mở `#lhn-panel` nếu website không bị tắt.
+- File: `js/content/content.js`, `PROJECT.md`.
+- Kiểm tra: `node --check js/content/content.js` và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
+
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
 - Mở popup nhập note trước khi chạy preview highlight để lỗi preview không chặn popup; giữ cách hiển thị và vị trí hiện tại.
 - File: `js/content/content.js`, `PROJECT.md`.
 - Kiểm tra: `node --check js/content/content.js` và `git diff --check` đạt; chưa kiểm tra trên trình duyệt.
