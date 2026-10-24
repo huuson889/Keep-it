@@ -2,14 +2,14 @@
 
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version hiện tại: v3.4.578; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.577: `node --check` 30/30 JS, manifest/HTML script paths hợp lệ, mock Shortcut mapping đạt; `git diff --check` đạt; ZIP 67 mục có manifest gốc và shortcuts.js. Chưa kiểm thử trình duyệt. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.578: `node --check` 31/31 JS, manifest/HTML script paths hợp lệ, mock Backup JSON đạt, `git diff --check` đạt; ZIP 68 mục có manifest gốc và backup.js. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote và một phần UI Components; Highlighter có sẵn module riêng, các module giao diện/nghiệp vụ còn lại vẫn cần đánh giá/tách.
+19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts và Backup; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar, Library, Account và Note Composer cần tiếp tục đánh giá/tách.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
@@ -48,14 +48,7 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
-**2026-10-24 | v3.4.578 | Codex sửa:**
-
-- Bước 4 — Backup: tách nhận dạng JSON nhập/xuất và phần đóng gói favorites sang `backup.js` (`LHN_BACKUP`); Dashboard vẫn giữ thao tác file và thông báo hiện có.
-- File: backup.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, script paths, mock JSON round trip và ZIP; chưa kiểm thử trình duyệt.
-- Tiếp theo: tiếp tục Library, Sidebar, Account và Note Composer.
-
-**2026-10-24 | v3.4.577 | Codex sửa:**
+**2026-10-24 | v3.4.578 | Codex sửa:**`r`n`r`n- Bước 4 — Backup: tách nhận dạng JSON nhập/xuất và đóng gói favorites sang `backup.js` (`LHN_BACKUP`); Dashboard giữ thao tác file và thông báo hiện có.`r`n- File: backup.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.`r`n- Kiểm tra: `node --check` 31/31 JS; script paths hợp lệ; mock JSON envelope/parse đạt; `git diff --check` đạt; ZIP 68 mục, manifest gốc, version 3.4.578 và backup.js. Chưa kiểm thử Chrome/Firefox.`r`n- Tiếp theo: Library, Sidebar, Account và Note Composer.`r`n`r`n**2026-10-24 | v3.4.577 | Codex sửa:**
 
 - Bước 1 — Shortcuts: dùng chung chuẩn hóa phím sự kiện trong `shortcuts.js` (`LHN_SHORTCUTS`) giữa content và Dashboard shortcut settings; không đổi mapping, nhãn hay xử lý phím flashcard.
 - File: shortcuts.js, content.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
@@ -69,6 +62,12 @@
 - Kiểm tra: `node --check` 29/29 JS; đường dẫn script hợp lệ; mock markup icon đạt; `git diff --check` đạt; ZIP 66 mục có manifest gốc, version 3.4.576 và icons.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: tiếp tục Shortcuts, Sidebar, Library/Backup, Account và Note Composer.
 
+**2026-10-24 | v3.4.575 | Codex sửa:**
+
+- Bước 4 — Page Layout: tách lưu/khôi phục inline style và thu hẹp trang khi mở Sidebar sang `page-layout.js` (`LHN_PAGE_LAYOUT`); giữ nguyên kích thước và thuộc tính style hiện hành.
+- File: page-layout.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: `node --check` 28/28 JS; script paths hợp lệ; mock thu hẹp/khôi phục trang đạt; `git diff --check` đạt; ZIP 65 mục có manifest gốc và page-layout.js. Chưa kiểm thử Chrome/Firefox.
+- Tiếp theo: Icons, Shortcuts và các module Bước 4.
 **2026-10-24 | v3.4.574 | Codex sửa:**
 
 - Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
