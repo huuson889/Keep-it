@@ -1,5 +1,6 @@
 /* Shared, named constants used by the extension's UI and storage layers. */
 (() => {
+  if (!globalThis.LHN_DEFAULTS) throw new Error("Keepit: js/core/defaults.js phải được nạp trước js/core/config.js — kiểm tra manifest.json, importScripts trong background.js và thứ tự <script> trong pages/*.html");
   const COLORS = Object.freeze(["yellow", "green", "purple", "red", "blue", "orange"]);
   const COLOR_YELLOW = "#fff3a6";
   const COLOR_GREEN = "#c2f0bd";

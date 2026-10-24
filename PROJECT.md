@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.598; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.599; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -104,6 +104,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.599 | DeepSeek sửa:**
+
+- Nguyên nhân Reader im tiếng từ v3.4.595 (và cả cấu hình sai khi tìm lỗi): `js/background/background.js` nạp core script bằng `importScripts(...)` với **danh sách cứng**, không phải qua `manifest.json`. Khi gom default ở v3.4.595 tôi chỉ thêm `js/core/defaults.js` vào `manifest.json` và hai file HTML, **quên danh sách `importScripts`**. Chrome MV3 chỉ chạy `service_worker`, nên `config.js` được nạp trước khi có `LHN_DEFAULTS` → ném lỗi ngay khi khởi động service worker → hỏng mọi thứ phụ thuộc background: dịch, audio Google TTS, annotations, usage. Reader không phát tiếng chính vì vậy.
+- Sửa: thêm `/js/core/defaults.js` ngay trước `/js/core/config.js` trong `importScripts`.
+- Thêm guard trong `config.js`: nếu thiếu `LHN_DEFAULTS` thì báo rõ cần nạp `defaults.js` trước, kèm nơi cần kiểm tra.
+- File: `js/background/background.js`, `js/core/config.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file đạt; mô phỏng thứ tự nạp trong Node — nạp `config.js` khi thiếu `defaults.js` thì báo đúng lỗi guard, nạp đủ theo thứ tự mới thì `LHN_CONFIG.DEFAULT_SETTINGS` có 29 khóa; chưa kiểm thử trên Chrome/Firefox.
+
 **2026-10-25 | v3.4.598 | DeepSeek sửa:**
 
 - Reader vẫn không đọc sau khi hoàn nguyên 3.4.596; thêm cảnh báo `console.warn` ở các nhánh `startReading` thoát sớm để biết nguyên nhân thật: website bị tắt, website nằm trong danh sách tắt Reader, TTS bị tắt/không hỗ trợ (kèm giá trị `enableTTS`, `synth`, `SpeechSynthesisUtterance`), và danh sách đoạn đọc rỗng.
