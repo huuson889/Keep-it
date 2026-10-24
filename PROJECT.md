@@ -58,7 +58,7 @@
 
 - Bước 2 — Translate: tách provider pipeline Bilingual Reader và nhận diện ngôn ngữ từ `background.js` sang `translate.js` (`LHN_TRANSLATE`); giữ nguyên thứ tự engine/fallback, timeout, Promise dedupe, cache API và message contract.
 - File: translate.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, mock provider/dedupe, thứ tự nạp và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 60 mục có manifest gốc, translate.js và version 3.4.570. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Dictionary và Search, rồi các module nghiệp vụ theo Bước 3–4.
 **2026-10-24 | v3.4.568 | Codex sửa:**
 
