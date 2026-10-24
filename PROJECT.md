@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.574; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.575: `node --check` 28/28 JS, manifest/HTML paths hợp lệ, mock thu hẹp/khôi phục trang đạt, `git diff --check` đạt; ZIP 65 mục, manifest gốc và page-layout.js. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Version hiện tại: v3.4.577; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.577: `node --check` 30/30 JS, manifest/HTML script paths hợp lệ, mock Shortcut mapping đạt; `git diff --check` đạt; ZIP 67 mục có manifest gốc và shortcuts.js. Chưa kiểm thử trình duyệt. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -52,14 +52,14 @@
 
 - Bước 1 — Shortcuts: dùng chung chuẩn hóa phím sự kiện trong `shortcuts.js` (`LHN_SHORTCUTS`) giữa content và Dashboard shortcut settings; không đổi mapping, nhãn hay xử lý phím flashcard.
 - File: shortcuts.js, content.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, thứ tự nạp, mock phím thường/Space/arrow và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 30/30 JS; script paths hợp lệ; mock Alt+A, Space và Left đạt; `git diff --check` đạt; ZIP 67 mục, manifest gốc, version 3.4.577 và shortcuts.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: tiếp tục Sidebar, Library/Backup, Account và Note Composer.
 
 **2026-10-24 | v3.4.576 | Codex sửa:**
 
 - Bước 1 — Icons: chuyển bộ đường dẫn SVG dự phòng và hàm tạo markup của Dashboard sang `icons.js` (`LHN_ICONS`); giữ nguyên thứ tự ưu tiên icon và HTML trả về.
 - File: icons.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, đường dẫn scripts, mock markup icon và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 29/29 JS; đường dẫn script hợp lệ; mock markup icon đạt; `git diff --check` đạt; ZIP 66 mục có manifest gốc, version 3.4.576 và icons.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: tiếp tục Shortcuts, Sidebar, Library/Backup, Account và Note Composer.
 
 **2026-10-24 | v3.4.574 | Codex sửa:**
@@ -93,13 +93,13 @@
 
 - Bước 2 — Dictionary: tách kiểm tra từ tiếng Anh, cache/migration, dịch Google→MyMemory, IPA, synonyms/antonyms, forms và collocations sang `dictionary.js` (`LHN_DICTIONARY`); content giữ phần popup/rendering và gọi API module.
 - File: dictionary.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, mock cache/provider/dedupe và kiểm tra script load; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 25/25 JS; đường dẫn script hợp lệ; mock Dictionary provider/dedupe/cache đạt; ZIP 60 mục, manifest gốc, version 3.4.570 và dictionary.js. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Search và tiếp tục Bước 3–4.
 **2026-10-24 | v3.4.569 | Codex sửa:**
 
 - Bước 2 — Translate: tách provider pipeline Bilingual Reader và nhận diện ngôn ngữ từ `background.js` sang `translate.js` (`LHN_TRANSLATE`); giữ nguyên thứ tự engine/fallback, timeout, Promise dedupe, cache API và message contract.
 - File: translate.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 60 mục có manifest gốc, translate.js và version 3.4.570. Chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 59 mục có manifest gốc, translate.js và version 3.4.569. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Dictionary và Search, rồi các module nghiệp vụ theo Bước 3–4.
 **2026-10-24 | v3.4.568 | Codex sửa:**
 
