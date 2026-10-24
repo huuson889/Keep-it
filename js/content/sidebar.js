@@ -44,7 +44,6 @@
       return card;
     }
     function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, settings, colors, filter, searchQuery, t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onStopPropagation, syncButtons, syncTheme }) {
-      const sidebar = document.createElement('aside'); sidebar.id = 'lhn-sidebar'; sidebar.style.width = width + 'px';
       const top = document.createElement('div'); top.className = 'lhn-sidebar-top';
       const brand = document.createElement('div'); brand.className = 'lhn-sidebar-brand';
       const logo = document.createElement('img'); logo.src = browser.runtime.getURL('assets/icons/icon.svg'); logo.alt = '';
