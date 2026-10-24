@@ -99,6 +99,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
+- Fix full dict kẹt loading: `content.js` còn tham chiếu biến `dictionaryCachePrefix` đã bị đóng scope trong module Dictionary, gây `ReferenceError` trước khi gọi dịch. Chuyển tạo cache key qua `LHN_DICTIONARY.cacheKey()`.
+- File: `js/content/content.js`, `js/translate/dictionary.js`, `PROJECT.md`.
+- Kiểm tra: đang chạy `node --check`, kiểm tra diff và smoke test cache key; chưa kiểm tra trực tiếp trên trình duyệt.
+
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
 - Full dict render nghĩa chính ngay khi dịch xong, không đợi Syn/Ant, Forms, Colloc hoặc IPA; giới hạn mỗi request dịch Google/MyMemory ở 5 giây để backup hoặc trả kết quả dự phòng khi mạng treo.
 - File: `js/content/content.js`, `js/translate/dictionary.js`, `PROJECT.md`.
 - Kiểm tra: `node --check` hai file JS và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
