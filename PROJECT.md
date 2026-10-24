@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version hiện tại: v3.4.572; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search và Annotations; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.571: `node --check` 22/22 JS, manifest và đường dẫn scripts hợp lệ, Messaging đã gom sendMessage, mock Settings get/save/resolve/subscribe đạt, `git diff --check` đạt; ZIP 57 mục, manifest gốc và version khớp. Chưa kiểm thử trình duyệt. v3.4.566 được watcher commit local và đóng gói; push GitHub thất bại trong sync-watch.log.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.572: toàn bộ JavaScript qua `node --check`, script paths hợp lệ, mock Annotations/Search đạt, `git diff --check` đạt; ZIP 62 mục có manifest gốc và modules. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -48,12 +48,19 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.572 | Codex sửa:**
+
+- Bước 3 — Annotations: tách IndexedDB, migration, CRUD, phân trang, import/export, tiến độ ôn tập và thông báo thay đổi sang `annotations.js` (`LHN_ANNOTATIONS`); giữ message type và cấu trúc dữ liệu hiện hành.
+- File: annotations.js, background.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script manifest/HTML hợp lệ; mock API Annotations và Search rank đạt; `git diff --check` đạt; ZIP 62 mục, manifest gốc, version 3.4.572 và annotations.js. Chưa kiểm thử Chrome/Firefox.
+- Tiếp theo: tiếp tục Bước 3–4.
+
 **2026-10-24 | v3.4.571 | Codex sửa:**
 
 - Bước 2 — Search: gom ranking và tô khớp kết quả dùng chung vào `search.js` (`LHN_SEARCH`), nối Library Dashboard và Sidebar; giữ nguyên trường tìm, thứ tự xếp hạng, selector loại trừ và kiểu mark hiện tại.
 - File: search.js, dashboard.js, content.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, thứ tự nạp, mock ranking và ZIP; chưa kiểm thử trình duyệt.
-- Tiếp theo: tiếp tục Bước 3 Annotations, Highlighter, SentenceNote và Note Composer.
+- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script hợp lệ; mock Search rank đạt; `git diff --check` đạt; ZIP 61 mục, manifest gốc, version 3.4.571 và search.js. Chưa kiểm thử trình duyệt.
+- Tiếp theo: Bước 3 Annotations, Highlighter, SentenceNote và Note Composer.
 **2026-10-24 | v3.4.570 | Codex sửa:**
 
 - Bước 2 — Dictionary: tách kiểm tra từ tiếng Anh, cache/migration, dịch Google→MyMemory, IPA, synonyms/antonyms, forms và collocations sang `dictionary.js` (`LHN_DICTIONARY`); content giữ phần popup/rendering và gọi API module.
