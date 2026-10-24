@@ -864,7 +864,7 @@ const FLAG_SVGS = {
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) { queueIndex++; speakNext(); } };
     readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
@@ -919,6 +919,7 @@ const FLAG_SVGS = {
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
+    const translationIncluded = textOverride == null && Boolean(settings.readTranslation) && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -949,7 +950,7 @@ const FLAG_SVGS = {
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(activeSpeechLang); lastAppliedSegmentRate = current.rate; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
-    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { if (!translationIncluded) { const pending = pendingTranslationFor(block); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } queueIndex++; speakNext(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
@@ -959,7 +960,16 @@ const FLAG_SVGS = {
     const card = block.querySelector(":scope > .lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
-    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || "" };
+    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || displayLang };
+  }
+  // Đoạn gốc vừa đọc xong: nếu tuỳ chọn được bật (kể cả vừa bật trong lúc đang đọc) và đoạn có bản dịch
+  // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
+  function pendingTranslationFor(block) {
+    if (!settings.readTranslation || !block) return null;
+    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const translated = card?.textContent.trim();
+    if (!translated) return null;
+    return { text:translated, lang:card.dataset.targetLang || displayLang };
   }
   function readTextFor(block) {
     const source = rawText(block, true);
