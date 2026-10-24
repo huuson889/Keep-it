@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.573; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
+- Version hiện tại: v3.4.574; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.573: `node --check` 26/26 JS, manifest/HTML script paths hợp lệ, smoke SentenceNote và mock Annotations/Search đạt, `git diff --check` đạt; ZIP 63 mục, manifest gốc, version khớp và sentence-note.js. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -9,7 +9,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations và SentenceNote; Highlighter có sẵn module riêng, các module giao diện/nghiệp vụ còn lại vẫn cần đánh giá/tách.
+19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote và một phần UI Components; Highlighter có sẵn module riêng, các module giao diện/nghiệp vụ còn lại vẫn cần đánh giá/tách.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
@@ -48,6 +48,13 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.574 | Codex sửa:**
+
+- Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
+- File: ui-components.js, content.js, manifest.json, README.md, PROJECT.md.
+- Kiểm tra: đang chạy cú pháp, đường dẫn script, mock tag editor và ZIP; chưa kiểm thử trình duyệt.
+- Tiếp theo: hoàn thiện Note Composer/Highlighter rồi Bước 4.
+
 **2026-10-24 | v3.4.573 | Codex sửa:**
 
 - Bước 3 — SentenceNote: tách trích câu chứa vùng chọn (kể cả bỏ qua text Immersive Translate) sang `sentence-note.js` (`LHN_SENTENCE_NOTE`); content script truyền hàm chuẩn hóa text hiện có, giữ nguyên kết quả và UI.

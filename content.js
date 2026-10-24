@@ -397,27 +397,6 @@
   function makeButton(label, cls, fn) {
     const b = document.createElement("button"); b.className = "lhn-btn " + (cls || ""); b.textContent = label; b.type = "button"; b.addEventListener("click", fn); return b;
   }
-  function makeTagEditor(initialTags = [], className = "") {
-    const element = document.createElement("div"); element.className = `lhn-tag-editor ${className}`.trim();
-    const input = document.createElement("input"); input.type = "text"; input.placeholder = t("tagsPlaceholder"); input.setAttribute("aria-label", t("tagsLabel"));
-    let tags = [], draft = "";
-    const normalize = values => { const seen = new Set(); return values.map(value => String(value || "").trim()).filter(value => { const key = value.toLocaleLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; }); };
-    const render = () => {
-      element.replaceChildren();
-      tags.forEach((tag, index) => { const chip = document.createElement("span"); chip.className = "lhn-tag-chip"; chip.append(document.createTextNode(tag)); chip.addEventListener("click", event => { if (event.target.closest("button")) return; tags.splice(index, 1); draft = tag; input.value = tag; render(); input.focus({ preventScroll: true }); input.setSelectionRange(0, input.value.length); }); const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "×"; remove.setAttribute("aria-label", `${t("delete")}: ${tag}`); remove.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); tags.splice(index, 1); render(); input.focus({ preventScroll: true }); }); chip.appendChild(remove); element.appendChild(chip); });
-      element.appendChild(input);
-    };
-    const commit = value => { const parts = String(value || "").split(","); tags = normalize([...tags, ...parts.slice(0, -1), parts.at(-1)]); input.value = ""; draft = ""; render(); input.focus({ preventScroll: true }); };
-    tags = normalize(Array.isArray(initialTags) ? initialTags : String(initialTags || "").split(","));
-    input.addEventListener("keydown", event => {
-      if (event.key === "," || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); commit(input.value); }
-      else if (event.key === "Backspace" && !input.value && tags.length) { event.preventDefault(); tags.pop(); render(); input.focus({ preventScroll: true }); }
-      else if (event.key === "Escape") event.stopPropagation();
-    });
-    input.addEventListener("input", () => { if (input.value.includes(",")) commit(input.value); else draft = input.value; });
-    element.addEventListener("click", () => input.focus({ preventScroll: true })); render();
-    return { element, getTags: () => normalize([...tags, draft]) };
-  }
   function getContext(range) {
     if (!range) return { prefix: "", suffix: "" };
     const text = range.startContainer.nodeType === Node.TEXT_NODE ? range.startContainer.textContent : range.startContainer.textContent || "";
@@ -489,7 +468,7 @@
     textarea.addEventListener("input", () => { noteEdited = true; composerPanel._lhnNoteEdited = true; });
     const tagField = document.createElement("label"); tagField.className = "lhn-composer-tags-field";
     const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
-    const tagEditor = makeTagEditor(existing?.tags || [], "lhn-composer-tags"); tagField.append(tagCaption, tagEditor.element);
+    const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(existing?.tags || [], "lhn-composer-tags", t); tagField.append(tagCaption, tagEditor.element);
     const resizeNote = () => { textarea.style.height = "54px"; textarea.style.height = Math.max(54, textarea.scrollHeight) + "px"; };
     textarea.addEventListener("input", resizeNote);
     inputWrap.append(noteIcon, textarea);
@@ -991,7 +970,7 @@
     const note1 = makeField(t("noteLabel"), "noteLabel", item.note); note1.textarea.classList.add("lhn-edit-note-primary"); const note2 = makeField(t("sentenceNote"), "sentenceNote", item.contextNote); note2.textarea.classList.add("lhn-edit-note-sentence");
     const tagField = document.createElement("label"); tagField.className = "lhn-edit-field lhn-edit-tags-field";
     const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
-    const tagEditor = makeTagEditor(item.tags || [], "lhn-edit-tags"); tagField.append(tagCaption, tagEditor.element);
+    const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(item.tags || [], "lhn-edit-tags", t); tagField.append(tagCaption, tagEditor.element);
     const parseTags = value => { const seen = new Set(); return String(value || "").split(",").map(tag => tag.trim()).filter(tag => { const key = tag.toLocaleLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; }); };
     const sameTags = (a, b) => {
       const normalize = value => parseTags(Array.isArray(value) ? value.join(",") : value);
