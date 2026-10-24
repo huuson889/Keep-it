@@ -151,79 +151,114 @@ function renderPronunciationDictionary() {
     card.append(heading, form, list); container.append(card);
   }
 }
-function closeSettingsLanguagePicker(returnFocus = false) {
-  const button = $("settingsLanguageButton"), options = $("settingsLanguageOptions");
-  if (!button || !options) return;
-  options.hidden = true;
-  button.setAttribute("aria-expanded", "false");
-  if (returnFocus) button.focus();
+let suppressSettingsLanguagePickerFocus = false;
+function settingsLanguageLabel(language) { return `${language.flag} ${language.name} - ${language.native}`; }
+function closeSettingsLanguagePicker({ restoreSelection = true, returnFocus = false } = {}) {
+  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions");
+  if (!input || !options) return;
+  options.classList.remove("open");
+  input.setAttribute("aria-expanded", "false");
+  if (restoreSelection) {
+    const selected = I18N.LANGS.find(language => language.code === $("settingsLanguageSelect").value) || I18N.LANGS[0];
+    input.value = settingsLanguageLabel(selected);
+  }
+  if (returnFocus && document.activeElement !== input) {
+    suppressSettingsLanguagePickerFocus = true;
+    input.focus();
+    suppressSettingsLanguagePickerFocus = false;
+  }
 }
-function openSettingsLanguagePicker() {
-  const button = $("settingsLanguageButton"), options = $("settingsLanguageOptions");
-  if (!button || !options) return;
-  options.hidden = false;
-  button.setAttribute("aria-expanded", "true");
-  (options.querySelector('[aria-selected="true"]') || options.querySelector('[role="option"]'))?.focus();
-}
-function chooseSettingsLanguage(languageCode) {
+function chooseSettingsLanguage(language) {
   const select = $("settingsLanguageSelect");
   if (!select) return;
-  if (select.value !== languageCode) {
-    select.value = languageCode;
-    select.dispatchEvent(new Event("change", { bubbles:true }));
-  }
-  closeSettingsLanguagePicker(true);
+  const changed = select.value !== language.code;
+  select.value = language.code;
+  closeSettingsLanguagePicker({ restoreSelection:true, returnFocus:true });
+  if (changed) select.dispatchEvent(new Event("change", { bubbles:true }));
 }
-function renderSettingsLanguagePicker() {
-  const select = $("settingsLanguageSelect"), current = $("settingsLanguageCurrent"), options = $("settingsLanguageOptions");
-  if (!select || !current || !options) return;
-  const selected = I18N.LANGS.find(language => language.code === select.value) || I18N.LANGS[0];
-  current.textContent = `${selected.flag} ${selected.name} — ${selected.native}`;
+function renderSettingsLanguageOptions(filter = "") {
+  const select = $("settingsLanguageSelect"), options = $("settingsLanguageOptions");
+  if (!select || !options) return;
   options.replaceChildren();
-  for (const language of I18N.LANGS) {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = `settings-language-picker-option${language.code === selected.code ? " is-selected" : ""}`;
-    option.id = `settingsLanguageOption-${language.code}`;
-    option.setAttribute("role", "option");
-    option.setAttribute("aria-selected", String(language.code === selected.code));
-    option.tabIndex = -1;
-    option.textContent = `${language.flag} ${language.name} — ${language.native}`;
-    option.addEventListener("click", () => chooseSettingsLanguage(language.code));
+  const query = filter.trim().toLocaleLowerCase();
+  const filtered = I18N.LANGS.filter(language => `${language.name} ${language.native} ${language.code}`.toLocaleLowerCase().includes(query));
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "language-empty settings-language-empty";
+    empty.textContent = t("languageSearchNoResults");
+    options.appendChild(empty);
+    return;
+  }
+  filtered.forEach(language => {
+    const option = document.createElement("div");
+    option.className = "language-option settings-language-option" + (language.code === select.value ? " selected" : "");
+    option.role = "option";
+    option.tabIndex = 0;
+    option.setAttribute("aria-selected", String(language.code === select.value));
+    option.textContent = settingsLanguageLabel(language);
+    option.addEventListener("click", () => chooseSettingsLanguage(language));
     option.addEventListener("keydown", event => {
-      const items = [...options.querySelectorAll('[role="option"]')];
+      const items = [...options.querySelectorAll(".settings-language-option")];
       const index = items.indexOf(option);
       let next = -1;
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseSettingsLanguage(language); return; }
+      if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true, returnFocus:true }); return; }
       if (event.key === "ArrowDown") next = (index + 1) % items.length;
       else if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
       else if (event.key === "Home") next = 0;
       else if (event.key === "End") next = items.length - 1;
-      else if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker(true); return; }
-      else if (event.key === "Tab") { closeSettingsLanguagePicker(); return; }
       if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
     });
     options.appendChild(option);
+  });
+}
+function openSettingsLanguagePicker() {
+  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions");
+  if (!input || !options || options.classList.contains("open")) return;
+  input.value = "";
+  renderSettingsLanguageOptions();
+  options.classList.add("open");
+  input.setAttribute("aria-expanded", "true");
+}
+function syncSettingsLanguagePicker() {
+  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions"), select = $("settingsLanguageSelect");
+  if (!input || !options || !select) return;
+  if (options.classList.contains("open")) renderSettingsLanguageOptions(input.value);
+  else {
+    const selected = I18N.LANGS.find(language => language.code === select.value) || I18N.LANGS[0];
+    input.value = settingsLanguageLabel(selected);
+    input.setAttribute("aria-expanded", "false");
   }
 }
-$("settingsLanguageButton").addEventListener("click", () => {
-  if ($("settingsLanguageOptions").hidden) openSettingsLanguagePicker();
-  else closeSettingsLanguagePicker();
+$("settingsLanguageSearch").addEventListener("focus", () => {
+  if (suppressSettingsLanguagePickerFocus) { suppressSettingsLanguagePickerFocus = false; return; }
+  openSettingsLanguagePicker();
 });
-$("settingsLanguageButton").addEventListener("keydown", event => {
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); openSettingsLanguagePicker(); }
-  else if (event.key === "Escape") closeSettingsLanguagePicker();
+$("settingsLanguageSearch").addEventListener("click", openSettingsLanguagePicker);
+$("settingsLanguageSearch").addEventListener("input", event => {
+  const options = $("settingsLanguageOptions");
+  if (!options.classList.contains("open")) { options.classList.add("open"); event.target.setAttribute("aria-expanded", "true"); }
+  renderSettingsLanguageOptions(event.target.value);
+});
+$("settingsLanguageSearch").addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true }); return; }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const items = [...$("settingsLanguageOptions").querySelectorAll(".settings-language-option")];
+    (event.key === "ArrowDown" ? items[0] : items.at(-1))?.focus();
+  }
 });
 $("settingsLanguagePicker").addEventListener("focusout", event => {
-  if (!event.currentTarget.contains(event.relatedTarget)) closeSettingsLanguagePicker();
+  if (!event.currentTarget.contains(event.relatedTarget)) closeSettingsLanguagePicker({ restoreSelection:true });
 });
 document.addEventListener("pointerdown", event => {
-  if (!event.target.closest?.("#settingsLanguagePicker")) closeSettingsLanguagePicker();
+  if (!event.target.closest?.("#settingsLanguagePicker")) closeSettingsLanguagePicker({ restoreSelection:true });
 });
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
   if (!select.options.length) for (const language of I18N.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
   select.value = currentLang;
-  renderSettingsLanguagePicker();
+  syncSettingsLanguagePicker();
   renderPronunciationDictionary();
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
