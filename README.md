@@ -100,13 +100,11 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `popup.html` / `popup.js` / `popup.css`: toolbar popup
 - `dashboard.html` / `dashboard.js` / `dashboard.css`: Dashboard
 - `config.js`: single source of truth for storage keys, default settings, and shared values
-- `languages.js`, `messaging.js`, `settings.js`, `cache.js`, `translate.js`, `dictionary.js`, `search.js`, `annotations.js`, `sentence-note.js`, `ui-components.js`, `page-layout.js`, `icons.js`, `shortcuts.js`: shared language, runtime, settings, cache, provider, dictionary, search, notes, UI and shortcut modules
+- `languages.js`, `messaging.js`, `settings.js`, `cache.js`, `translate.js`, `dictionary.js`, `search.js`, `annotations.js`, `sentence-note.js`, `ui-components.js`, `page-layout.js`, `icons.js`, `shortcuts.js`, `sidebar.js`, `note-composer.js`: shared language, runtime, settings, caches (including TTS audio), provider, dictionary, search, annotation, sidebar, note model, UI and shortcut modules
 - `languages.js`: English, Vietnamese, and Korean strings
 - `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
 
-- `backup.js`: JSON import/export envelope helpers
-
-- `library.js`: annotation metadata, source grouping and ordering; `account.js`: local demo-profile persistence
+- `library.js`: annotation metadata, source grouping and ordering; `account.js`: local demo-profile persistence; `backup.js`: JSON import/export helpers
 
 ## Development
 
