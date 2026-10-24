@@ -778,18 +778,35 @@ const FLAG_SVGS = {
     // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
     return visibleReaderText(block);
   }
+  // Trả về node con trực tiếp của block; nếu trang web đã bọc node của mình vào phần tử khác
+  // thì đưa nó về cấp con trực tiếp thay vì tạo bản trùng.
+  function ownChild(block, selector, anchorSelector = "") {
+    const direct = block.querySelector(`:scope > ${selector}`);
+    if (direct) return direct;
+    const nested = block.querySelector(selector);
+    if (!nested) return null;
+    const anchor = anchorSelector ? block.querySelector(`:scope > ${anchorSelector}`) : null;
+    if (anchor) anchor.before(nested); else block.appendChild(nested);
+    return nested;
+  }
   function updateSpeakers() {
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
     const readableBlocks = new Set(readerBlocks());
-    blocks().forEach((block, index) => {
+    const allBlocks = blocks(), blockSet = new Set(allBlocks);
+    const isNestedBlock = block => { for (let parent = block.parentElement; parent; parent = parent.parentElement) if (blockSet.has(parent)) return true; return false; };
+    allBlocks.forEach((block, index) => {
+      // Đoạn nằm trong một đoạn khác (ví dụ <a> block bên trong <h2>) chỉ nhận icon ở đoạn ngoài cùng.
+      if (isNestedBlock(block)) { delete block.dataset.lhnBilingualIndex; block.querySelectorAll(".lhn-bilingual-speaker").forEach(el => { if (el.parentElement === block) el.remove(); }); return; }
       block.dataset.lhnBilingualIndex = String(index);
-      let speaker = block.querySelector(":scope > .lhn-bilingual-speaker");
+      let speaker = ownChild(block, ".lhn-bilingual-speaker", ".lhn-bilingual-card");
       if (!speaker) {
         speaker = document.createElement("span"); speaker.className = "lhn-bilingual-speaker"; speaker.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
         speaker.title = "Read this paragraph; click to start reading here"; speaker.setAttribute("role", "button"); speaker.tabIndex = 0;
         speaker.addEventListener("click", event => { event.stopPropagation(); startReading(block, true); });
         speaker.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); startReading(block, true); } });
-        const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.before(speaker) : block.appendChild(speaker);
+        const card = ownChild(block, ".lhn-bilingual-card"); card ? card.before(speaker) : block.appendChild(speaker);
+      } else {
+        block.querySelectorAll(".lhn-bilingual-speaker").forEach(el => { if (el !== speaker) el.remove(); });
       }
       speaker.dataset.readerScope = String(readableBlocks.has(block));
       speaker.dataset.visibility = readableBlocks.has(block) ? settings.speakerIconVisibility : "always";
@@ -815,7 +832,7 @@ const FLAG_SVGS = {
     block.dataset.lhnBrTranslating = "true";
     try {
       const text = rawText(block, readerMode); if (!text || text.length < 2) return;
-      let card = block.querySelector(":scope > .lhn-bilingual-card");
+      let card = ownChild(block, ".lhn-bilingual-card");
       const targetLang = ["auto", "same"].includes(targetLanguage) ? displayLang : targetLanguage;
       if (card?.dataset.sourceText === text && card.dataset.targetLang === targetLang) return;
       const result = await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
@@ -827,7 +844,7 @@ const FLAG_SVGS = {
       if (!card) { card = document.createElement("div"); card.className = "lhn-bilingual-card"; }
       card.textContent = translated; card.dataset.sourceText = text; card.dataset.targetLang = targetLang;
       updateTranslationCardStyle(card, block);
-      const speaker = block.querySelector(":scope > .lhn-bilingual-speaker"); speaker ? speaker.after(card) : block.appendChild(card);
+      const speaker = ownChild(block, ".lhn-bilingual-speaker", ".lhn-bilingual-card"); speaker ? speaker.after(card) : block.appendChild(card);
     } catch (error) { console.warn("Bilingual Reader translation failed", error); }
     finally { delete block.dataset.lhnBrTranslating; }
   }
@@ -841,7 +858,7 @@ const FLAG_SVGS = {
     if (websiteDisabled) return;
     window.__lhnBilingualLazy = !window.__lhnBilingualLazy;
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
-    else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
+    else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(".lhn-bilingual-card").forEach(card => card.remove())); }
   }
   function stopReading() {
     speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
@@ -916,10 +933,10 @@ const FLAG_SVGS = {
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
-    block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
+    block.querySelector(".lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
-    const translationIncluded = textOverride == null && Boolean(settings.readTranslation) && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
+    const translationIncluded = textOverride == null && Boolean(settings.readTranslation) && Boolean(block.querySelector(".lhn-bilingual-card")?.textContent.trim());
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -957,7 +974,7 @@ const FLAG_SVGS = {
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
   function readSegmentsFor(block) {
     if (!settings.readTranslation) return null;
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = block.querySelector(".lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
     return { source: rawText(block, true), translated, lang: card.dataset.targetLang || displayLang };
@@ -966,7 +983,7 @@ const FLAG_SVGS = {
   // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
   function pendingTranslationFor(block) {
     if (!settings.readTranslation || !block) return null;
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = block.querySelector(".lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
     return { text:translated, lang:card.dataset.targetLang || displayLang };
@@ -986,7 +1003,7 @@ const FLAG_SVGS = {
   }
   function readTextFor(block) {
     const source = rawText(block, true);
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = block.querySelector(".lhn-bilingual-card");
     const translated = settings.readTranslation && card ? card.textContent.trim() : "";
     return translated ? `${source}\n${translated}` : source;
   }
@@ -1052,7 +1069,7 @@ const FLAG_SVGS = {
   }
   function toggleNearPointer() {
     const block = getBlockNearPointer(); if (!block) return;
-    const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.remove() : translateBlock(block);
+    const card = block.querySelector(".lhn-bilingual-card"); card ? card.remove() : translateBlock(block);
   }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
   document.addEventListener("lhn-bilingual-reader-command", event => {

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.595; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.596; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 38/38 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -104,6 +104,13 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.596 | DeepSeek sửa:**
+
+- Fix một số đoạn hiện 2 icon loa (ảnh tiêu đề trang tin): `updateSpeakers` coi cả `<a>` kiểu block nằm trong `<h2>` là một đoạn riêng nên tạo icon cho cả hai. Nay đoạn lồng trong đoạn khác bị bỏ qua (chỉ đoạn ngoài cùng nhận icon) và icon cũ của đoạn lồng được dọn.
+- Thêm `ownChild()`: nếu trang web bọc node của Keepit vào phần tử khác thì đưa nó về cấp con trực tiếp thay vì tạo bản trùng; xoá icon trùng còn sót trong cùng đoạn; các chỗ tra `.lhn-bilingual-card` đổi từ `:scope >` sang tìm trong đoạn để không bỏ sót card bị bọc.
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
+
 **2026-10-25 | v3.4.595 | DeepSeek sửa:**
 
 - Gom toàn bộ giá trị mặc định về một file duy nhất `js/core/defaults.js` (`LHN_DEFAULTS`: `settings`, `reader`, `studyTranslation`, `flashcard`, `readerDisabledWebsites`); `config.js`, `bilingual-reader.js`, `dashboard.js` đọc từ đó thay vì tự khai báo. Trước đây Reader và Dashboard giữ hai bản default của cùng một bộ cài đặt và đã lệch nhau (bản Dashboard thiếu `speechSpeedStep`, `voiceMode`, `browserVoiceURI`, `readerShortcutsEnabled`, `autoDetectVoice`, `widgetDarkMode`).
