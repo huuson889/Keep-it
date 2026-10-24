@@ -90,16 +90,7 @@
       option.classList.toggle("is-default", option.dataset.color === CONFIG.normalizeColor(settings.defaultHighlightColor));
     });
   }
-  function shortcutForEvent(e) {
-    const parts = [];
-    if (e.ctrlKey) parts.push("Ctrl");
-    if (e.altKey) parts.push("Alt");
-    if (e.shiftKey) parts.push("Shift");
-    if (e.metaKey) parts.push("Meta");
-    const key = e.code === "Space" ? "Space" : e.key === "ArrowLeft" ? "Left" : e.key === "ArrowRight" ? "Right" : e.key === "ArrowUp" ? "Up" : e.key === "ArrowDown" ? "Down" : e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (!["Control", "Alt", "Shift", "Meta"].includes(e.key)) parts.push(key);
-    return parts.join("+");
-  }
+  const shortcutForEvent = event => LHN_SHORTCUTS.fromEvent(event);
   browser.storage.onChanged.addListener((changes, area) => {
     if (area === "local" && changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
       const sourceLanguage = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue?.sourceLanguage;
