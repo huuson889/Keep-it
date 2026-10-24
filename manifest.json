@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.4.581",
+  "version": "3.4.582",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -63,6 +63,7 @@
         "page-layout.js",
         "shortcuts.js",
         "sidebar.js",
+        "note-composer.js",
         "content.js",
         "lib/Readability.js",
         "lib/Readability-readerable.js",

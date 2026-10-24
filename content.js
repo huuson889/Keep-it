@@ -395,11 +395,6 @@
     const end = range.endContainer === range.startContainer ? range.endOffset : start;
     return { prefix: text.slice(Math.max(0, start - 40), start), suffix: text.slice(end, end + 40) };
   }
-  function sameAnnotationContent(existing, next) {
-    if (!existing || !next) return false;
-    const persistedFields = ["quote", "note", "contextNote", "url", "title", "hostname", "thumbnailUrl", "prefix", "suffix", "createdAt", "color", "tags"];
-    return persistedFields.every(key => JSON.stringify(existing[key]) === JSON.stringify(next[key]));
-  }
   function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
     if (!websiteSettingsReady || websiteDisabled) return;
     const selectedBeforeComposer = cleanText(range?.toString());
@@ -502,8 +497,8 @@
       const q = existing?.quote || selectedQuote;
       if (!q) { removeComposer(); return; }
       const context = selectedContext;
-      const item = { quote: q, note: textarea.value.trim(), contextNote: selectedSentence || existing?.contextNote || "", tags: tagEditor.getTags(), color: selectedColor, url: existing?.url || pageUrl(), title: existing?.title || pageTitle(), hostname: existing?.hostname || location.hostname, thumbnailUrl: existing?.thumbnailUrl || pageThumbnailUrl(), prefix: context.prefix || existing?.prefix || "", suffix: context.suffix || existing?.suffix || "", createdAt: existing?.createdAt };
-      if (sameAnnotationContent(existing, item)) { removeComposer(); return; }
+      const item = LHN_NOTE_COMPOSER.buildRecord({ quote:q, note:textarea.value.trim(), contextNote:selectedSentence || existing?.contextNote || "", tags:tagEditor.getTags(), color:selectedColor, url:existing?.url || pageUrl(), title:existing?.title || pageTitle(), hostname:existing?.hostname || location.hostname, thumbnailUrl:existing?.thumbnailUrl || pageThumbnailUrl(), prefix:context.prefix || existing?.prefix || "", suffix:context.suffix || existing?.suffix || "", createdAt:existing?.createdAt });
+      if (LHN_NOTE_COMPOSER.isUnchanged(existing, item)) { removeComposer(); return; }
       saveInFlight = true;
       let persisted = false;
       try {
