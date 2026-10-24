@@ -5,7 +5,7 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
+  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_LANGUAGES?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -237,7 +237,7 @@ const FLAG_SVGS = {
   function syncToolbar() {
     bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
     bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    bar.querySelector("[data-speed]").textContent = formatSpeed(readingSegment?.translation ? segmentRate(true) : (settings.speechSpeed || 1));
+    bar.querySelector("[data-speed]").textContent = formatSpeed(segmentRate(Boolean(readingSegment?.translation)));
     bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
     bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
@@ -247,7 +247,7 @@ const FLAG_SVGS = {
     bar.querySelector("[data-autolang]").checked = settings.autoDetectVoice !== false;
     bar.querySelector("[data-speed-step]").value = settings.speechSpeedStep;
     const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
-    const minutes = Math.max(1,Math.ceil(totalWords / (220 * (Number(settings.speechSpeed)||1))));
+    const minutes = Math.max(1,Math.ceil(totalWords / (220 * baseRate())));
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
@@ -366,9 +366,8 @@ const FLAG_SVGS = {
     browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), speechRate:rate } })).catch(() => {});
   }
   function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
+  function baseRate() { const shared = clampSpeechRate(dashboardShortcuts?.speechRate); return shared === null ? 1 : shared; }
   function applySharedSpeechRate() {
-    const shared = clampSpeechRate(dashboardShortcuts?.speechRate);
-    if (shared !== null) settings.speechSpeed = shared;
     const rate = segmentRate(Boolean(readingSegment?.translation));
     if (rate === lastAppliedSegmentRate) { syncToolbar(); return; }
     lastAppliedSegmentRate = rate;
@@ -380,7 +379,7 @@ const FLAG_SVGS = {
     const rate = clampSpeechRate(value);
     if (rate === null) return;
     if (editingLanguageRate()) writeLanguageSpeechRate(rate);
-    else { saveSpeechSetting({speechSpeed:rate}); writeSharedSpeechRate(rate); }
+    else writeSharedSpeechRate(rate);
     lastAppliedSegmentRate = rate; renderSpeed(rate); syncToolbar();
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
   }
@@ -389,7 +388,6 @@ const FLAG_SVGS = {
   function applySettings(next) {
     const wasReaderActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     settings = { ...DEFAULTS, ...(next || {}) };
-    settings.speechSpeed = Math.max(.5, Math.min(3, Math.round((Number(settings.speechSpeed) || 1) * 100) / 100));
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
     if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
     settings.translationFontScale = Math.min(150, Math.max(50, Number(settings.translationFontScale) || DEFAULTS.translationFontScale));
@@ -846,7 +844,7 @@ const FLAG_SVGS = {
   // Tốc độ: đoạn gốc dùng Global speech rate. Đoạn dịch dùng tốc độ riêng của ngôn ngữ hiển thị
   // (Your speed) khi "Custom rate for display language" bật; không cộng dồn chênh lệch với Global.
   function segmentRate(isTranslation) {
-    const globalRate = Number(settings.speechSpeed) || 1;
+    const globalRate = baseRate();
     if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return globalRate;
     const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
     if (Number.isFinite(custom)) return clampSpeechRate(custom);
@@ -1108,22 +1106,18 @@ const FLAG_SVGS = {
     const savedReaderSites = Array.isArray(savedReaderSettings.readerDisabledWebsites) ? savedReaderSettings.readerDisabledWebsites : [];
     const seedReaderSites = savedReaderSettings.readerDefaultSitesSeeded !== true;
     const mergedReaderSettings = { ...DEFAULTS, ...savedReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...(globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || []), ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
-    // Đồng bộ tốc độ với lhnSettings.speechRate. Lần đầu: giữ tốc độ người dùng đã đặt ở Reader
-    // nếu Dashboard còn ở mặc định 1.0, tránh ghi đè lựa chọn cũ.
+    // Tốc độ đọc chỉ có một nguồn: lhnSettings. Lần đầu chạy bản mới, nếu Dashboard còn ở mặc định
+    // 1.0 mà Reader đã có speechSpeed cũ thì đưa giá trị cũ sang speechRate, rồi bỏ khóa cũ.
     const sharedSpeechRate = Number(data[DISPLAY_SETTINGS_KEY]?.speechRate);
-    const readerSpeechRate = Number(savedReaderSettings.speechSpeed);
-    let nextSpeechSpeed = Number.isFinite(sharedSpeechRate) ? sharedSpeechRate : readerSpeechRate;
+    const legacyReaderRate = Number(savedReaderSettings.speechSpeed);
     if (savedReaderSettings.speechSpeedSynced !== true) {
-      if (Number.isFinite(readerSpeechRate) && readerSpeechRate !== 1 && (!Number.isFinite(sharedSpeechRate) || sharedSpeechRate === 1)) nextSpeechSpeed = readerSpeechRate;
+      if (Number.isFinite(legacyReaderRate) && legacyReaderRate !== 1 && (!Number.isFinite(sharedSpeechRate) || sharedSpeechRate === 1)) writeSharedSpeechRate(Math.max(.5, Math.min(3, legacyReaderRate)));
       mergedReaderSettings.speechSpeedSynced = true;
-      browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
-      if (Number.isFinite(nextSpeechSpeed)) writeSharedSpeechRate(Math.max(.5, Math.min(3, nextSpeechSpeed)));
     }
-    if (Number.isFinite(nextSpeechSpeed)) mergedReaderSettings.speechSpeed = Math.max(.5, Math.min(3, Math.round(nextSpeechSpeed * 100) / 100));
-    if (seedReaderSites) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
+    if (Object.hasOwn(mergedReaderSettings, "speechSpeed")) delete mergedReaderSettings.speechSpeed;
+    if (seedReaderSites || savedReaderSettings.speechSpeedSynced !== true) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
     applySettings({ ...mergedReaderSettings, ...voiceSettings });
     renderPopupText();
-    settings.speechSpeed = Math.max(.5,Math.min(3,Number(settings.speechSpeed)||1));
     systemVoices = synth?.getVoices?.() || [];
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     syncToolbar();
