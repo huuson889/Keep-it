@@ -842,8 +842,6 @@ const FLAG_SVGS = {
     googleResumeWaiters.splice(0).forEach(resolve => resolve());
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
-  // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
-  // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
   var voiceFlagOverride = ""; var readingSegment = null; var lastAppliedSegmentRate = null; // đoạn đang đọc: { translation, lang }
   // Tốc độ: đoạn gốc dùng Global speech rate. Đoạn dịch dùng tốc độ riêng của ngôn ngữ hiển thị
   // (Your speed) khi "Custom rate for display language" bật; không cộng dồn chênh lệch với Global.
