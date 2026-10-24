@@ -18,7 +18,10 @@ html.lhn-twemoji-country-flags :is(
   #studyDefinitionSearchLanguage,
   #studyHighlightVoiceLanguage,
   #studyNoteVoiceLanguage,
-  #studyDialog select[data-study-speech-language]
+  #studyDialog select[data-study-speech-language],
+  #studyDialog .study-speech-language-flag,
+  #languageSearch,
+  #languageOptions .language-option
 ),
 html.lhn-twemoji-country-flags :is(
   #settingsLanguageSelect,

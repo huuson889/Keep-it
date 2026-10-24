@@ -912,7 +912,8 @@ body > header .profile-menu-avatar svg { width:13px; height:13px; }
 .settings-window-profile strong { color:#111827; font-size:13px; }
 .settings-window-profile span { color:#6b7280; font-size:11px; }
 .settings-language-row { min-height:42px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 16px; border-bottom:1px solid #e5e7eb; color:#4b5563; font-size:11px; font-weight:600; }
-.settings-language-row select { max-width:145px; padding:4px 22px 4px 6px; border:0; outline:0; background:transparent; color:#6b7280; font:11px var(--lhn-app-font-family); text-align:right; }
+.settings-language-row select { max-width:145px; padding:4px 22px 4px 6px; border:0; outline:0; background:transparent; color:#6b7280; font:11px var(--lhn-app-font-family); text-align:right; text-align-last:right; }
+.settings-language-row select option { text-align:right; }
 .settings-window-nav { display:grid; align-content:start; gap:2px; padding:8px; }
 .settings-nav-item { width:100%; min-height:37px; display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:8px 12px; border-radius:8px; background:transparent; color:#374151; font:500 13px/1.2 var(--lhn-app-font-family); text-align:left; }
 .settings-nav-item:hover { background:rgba(229,231,235,.7); color:#111827; }
@@ -1081,7 +1082,9 @@ html.dark .settings-window-profile { border-color:#1f2937; }
 html.dark .settings-window-profile strong { color:#f9fafb; }
 html.dark .settings-window-profile span,.settings-window-profile span { color:#9ca3af; }
 html.dark .settings-language-row { border-color:#1f2937; color:#d1d5db; }
-html.dark .settings-language-row select { color:#9ca3af; }
+html.dark .settings-language-row select { color:#9ca3af; color-scheme:dark; }
+html.dark .settings-language-row select option { background-color:#111827; color:#e5e7eb; }
+html.dark .settings-language-row select option:checked { background-color:#1f2937; color:#f9fafb; }
 html.dark .settings-nav-item { color:#d1d5db; }
 html.dark .settings-nav-item:hover { background:rgba(31,41,55,.8); color:#fff; }
 html.dark .settings-nav-item.is-active { background:#1f2937; color:#34d399; }

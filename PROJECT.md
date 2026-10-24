@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.556; một codebase Manifest V3 cho Chrome và Firefox.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra tổng thể đạt: `node --check` 20/20 JS, manifest MV3 v3.4.556, ZIP hiện hành 55 mục integrity/version đạt, `git diff --check`; các mock tập trung đã đạt. Chưa chạy kiểm thử trình duyệt thực tế (sandbox không có Chrome/Firefox/Edge executable); chưa phát hành hoặc commit.
+- Version hiện tại: v3.4.560; một codebase Manifest V3 cho Chrome và Firefox.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận cờ đúng trên Chrome/Edge/Firefox; dark mode và các select khác đều đúng. v3.4.560 chỉ bổ sung căn phải cho option list trong Dashboard Settings trên Chrome/Edge; chờ retest. Kiểm tra source: `node --check` 20/20 JS, manifest MV3 v3.4.560, ZIP 55 mục integrity/version đạt, `git diff --check`; sandbox không có browser executable. Chromium khác chưa thử; chưa commit hoặc phát hành.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -10,7 +10,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
-18. [Kiểm thử UI theo OPT 3.2] Trên Chrome/Firefox/Edge, xác nhận các native language/speech select hiển thị cờ ở giá trị đang chọn và trong menu mở. Mock/assets/local CSS đạt; chưa có trình duyệt trong sandbox để xác nhận thực tế.
+18. [Kiểm thử UI theo OPT 3.2] Người dùng xác nhận cờ, dark mode và các select khác đều đúng trên Chrome/Edge/Firefox; riêng menu mở của Dashboard Settings còn căn trái trên Chrome/Edge. v3.4.560 thêm text-align:right cho option; chờ retest Chrome/Edge. Các Chromium khác chưa thử.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
 15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
 14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
@@ -47,6 +47,30 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-24 | v3.4.560 | Arena sửa:**
+
+- Theo xác nhận mới: dark mode và các select khác đều đạt; option list của Dashboard Settings vẫn căn trái khi mở trên Chrome/Edge. Thêm `text-align:right` chỉ cho `.settings-language-row select option`; không đổi selected value, dark-mode colors, toolbar hay flashcard.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: sẽ xác minh CSS/source/ZIP sau đóng gói; cần user retest menu mở trên Chrome/Edge vì sandbox không có browser executable.
+
+**2026-10-24 | v3.4.559 | Arena sửa:**
+
+- Theo phản hồi Firefox: cờ đã render đúng nhưng giá trị đóng của language select căn trái; menu native không theo dark mode ứng dụng. Thêm `text-align-last:right` cho selected value, bật `color-scheme:dark` và màu nền/chữ/selected cho option trong dark mode. Chỉ scope `.settings-language-row`; không sửa toolbar/flashcard đã đạt.
+- File: dashboard.css, manifest.json, PROJECT.md.
+- Kiểm tra: source/CSS tĩnh và ZIP sẽ được xác minh sau đóng gói; cần người dùng retest trực quan trên Firefox vì sandbox không có browser executable.
+
+**2026-10-24 | v3.4.558 | Arena cập nhật kiểm thử:**
+
+- Người dùng xác nhận custom flag font/fallback đúng trên Chrome và Edge cho các vị trí vừa sửa. Chưa thử các trình duyệt Chromium khác; Firefox chưa có kết quả xác nhận.
+- File: manifest.json, PROJECT.md. Không đổi code chức năng; tăng patch version theo quy ước và tạo ZIP v3.4.558.
+- Kiểm tra: manifest MV3 v3.4.558, ZIP 55 mục và integrity đạt; không commit hoặc phát hành.
+
+**2026-10-24 | v3.4.557 | Arena sửa:**
+
+- Theo ảnh kiểm tra Chrome: Dashboard Settings đã đúng; cờ ở nhãn flashcard không dùng font fallback như các option; toolbar popup là combobox tùy biến chưa nạp asset cờ. Mở rộng CSS local để áp font lên nhãn cờ flashcard và input/options của popup; nạp chung `flags.css` + detector `flags.js` trong popup. Không đổi UI, text option hay hành vi chọn.
+- File: manifest.json, flags.css, popup.html, PROJECT.md.
+- Kiểm tra: parse popup/dashboard HTML; xác nhận popup nạp flags.css và flags.js trước popup.js, các selector CSS bao phủ #languageSearch, #languageOptions .language-option và nhãn cờ flashcard; node --check 20/20 JS, git diff --check và ZIP 55 file MV3 v3.4.557 integrity đạt. Cần người dùng retest trực quan trên Chrome; sandbox không có trình duyệt.
 
 **2026-10-24 | v3.4.556 | Arena sửa:**
 
