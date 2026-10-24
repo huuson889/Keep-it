@@ -90,7 +90,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 ## Project structure
 
 - `manifest.json`: extension manifest (Chromium uses `background.service_worker`, Firefox uses `background.scripts`)
-- `background.js`: IndexedDB storage, import/export, translation and TTS requests, usage limits
+- `background.js` / `annotations.js`: message routing and shared IndexedDB annotation storage/import/export; background TTS requests and usage limits
 - `content.js` / `content.css` / `content-theme.css`: page events, note popovers, sidebar, shortcuts
 - `web-highlighter.js`: highlight wrapping and restoration
 - `bilingual-reader.js` / `bilingual-flags.js`: Bilingual Reader, reading bar, Select Voice
