@@ -277,7 +277,14 @@
         LHN_DICTIONARY.collocations(word, targetLanguage, popup._lhnRelatedController.signal)
       ];
       const ipaPromise = noRelated ? Promise.resolve(null) : LHN_DICTIONARY.fetchIpa(word, "en", popup._lhnMainController.signal);
-      const [translation, related, forms, collocations, ipaResult] = await Promise.allSettled([translationPromise, ...relatedTasks, ipaPromise]);
+      const [translation] = await Promise.allSettled([translationPromise]);
+      if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
+      const mainTranslation = translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" };
+      popup._lhnMainTranslation = mainTranslation;
+      const mainResult = { word, ipa:"", ipaApprox:false, translation:mainTranslation, related:[], forms:[], collocations:[] };
+      if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
+      else renderEnglishDictionary(popup, mainResult, false);
+      const [related, forms, collocations, ipaResult] = await Promise.allSettled([...relatedTasks, ipaPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
       let fallbackRelated = [];
       if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
@@ -291,7 +298,7 @@
         } catch {}
       }
       const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
-      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
+      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:mainTranslation, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
       popup._lhnMainTranslation = result.translation;
       if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
