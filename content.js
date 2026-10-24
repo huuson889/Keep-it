@@ -1793,7 +1793,7 @@
     }
     return { found: false };
   }
-  window.addEventListener("pagehide", restorePageWidth);
+  window.addEventListener("pagehide", () => LHN_PAGE_LAYOUT.restorePageWidth());
   window.addEventListener("pageshow", () => scheduleRestore(150));
   window.addEventListener("popstate", handlePossibleNavigation);
   window.addEventListener("hashchange", handlePossibleNavigation);
