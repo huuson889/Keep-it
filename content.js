@@ -184,35 +184,6 @@
     translationPopup?.remove(); translationPopup = null;
     dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
   }
-  const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
-  const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
-  const dictionaryTranslationRequests = new Map(), dictionaryTranslationRequestsBySignal = new WeakMap();
-  async function getDictionaryCache(key, legacyKey) {
-    try {
-      const entry = (await browser.storage.local.get(key))[key];
-      if (entry && Date.now() - entry.timestamp < DICTIONARY_CACHE_TTL) return entry.data;
-      if (entry) await browser.storage.local.remove(key);
-    } catch (error) { console.warn("Could not read full dictionary cache", error); }
-    // Migrate a still-valid entry from the previous website-scoped cache.
-    try {
-      const oldKey = `__lhn_full_english_dictionary_v1__${legacyKey}`;
-      const oldEntry = JSON.parse(localStorage.getItem(oldKey) || "null");
-      if (oldEntry && Date.now() - oldEntry.timestamp < DICTIONARY_CACHE_TTL) {
-        await browser.storage.local.set({ [key]:oldEntry });
-        localStorage.removeItem(oldKey);
-        return oldEntry.data;
-      }
-      if (oldEntry) localStorage.removeItem(oldKey);
-    } catch {}
-    return null;
-  }
-  async function setDictionaryCache(key, data) {
-    try { await browser.storage.local.set({ [key]:{ timestamp:Date.now(), data } }); }
-    catch (error) { console.warn("Could not save full dictionary cache", error); }
-  }
-  function dictionaryTranslationCacheKey(text, targetLanguage) {
-    return `${dictionaryTranslationCachePrefix}${targetLanguage}:${cleanText(text).toLocaleLowerCase()}`;
-  }
   function dictionaryPopupAt(popup, range) {
     positionPopupAtAnchor(popup, range);
   }
@@ -240,118 +211,6 @@
     dictionaryPopupAt(popup, range);
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-dict-visible"));
     return popup;
-  }
-  async function dictionaryTranslate(text, targetLanguage, signal) {
-    const cacheKey = dictionaryTranslationCacheKey(text, targetLanguage);
-    let requests = dictionaryTranslationRequests;
-    if (signal && typeof signal === "object") {
-      requests = dictionaryTranslationRequestsBySignal.get(signal);
-      if (!requests) { requests = new Map(); dictionaryTranslationRequestsBySignal.set(signal, requests); }
-    }
-    const pending = requests.get(cacheKey);
-    if (pending) return pending;
-    const request = (async () => {
-      try {
-        const cached = (await browser.storage.local.get(cacheKey))[cacheKey];
-        if (cached && Date.now() - cached.timestamp < DICTIONARY_CACHE_TTL && cached.data?.translatedText) return cached.data;
-        if (cached) await browser.storage.local.remove(cacheKey);
-      } catch (error) { console.warn("Could not read related-word translation cache", error); }
-      let result;
-      try {
-        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
-        if (!response.ok) throw new Error("Google Translate unavailable");
-        const data = await response.json();
-        result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
-      } catch (error) {
-        if (signal?.aborted) throw error;
-        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
-        if (!response.ok) throw new Error("Dictionary translation unavailable");
-        const data = await response.json();
-        if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
-        result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
-      }
-      try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
-      catch (error) { console.warn("Could not save related-word translation cache", error); }
-      return result;
-    })();
-    requests.set(cacheKey, request);
-    try { return await request; }
-    finally { if (requests.get(cacheKey) === request) requests.delete(cacheKey); }
-  }
-  const IPA_TIMEOUT_MS = 3000;
-  async function fetchIpaSource(url, signal, read) {
-    const controller = new AbortController();
-    const onAbort = () => controller.abort();
-    if (signal?.aborted) return null;
-    signal?.addEventListener("abort", onAbort, { once:true });
-    const timer = setTimeout(onAbort, IPA_TIMEOUT_MS);
-    try {
-      const response = await fetch(url, { signal:controller.signal });
-      if (!response.ok) return null;
-      return await read(await response.json());
-    } catch { return null; }
-    finally { clearTimeout(timer); signal?.removeEventListener("abort", onAbort); }
-  }
-  // IPA độc lập: 2 nguồn chạy song song, mỗi nguồn timeout 3s. Ưu tiên nguồn 1; nếu không có thì nguồn 2 (approx:true).
-  async function fetchIpa(word, lang = "en", signal) {
-    const query = encodeURIComponent(String(word || "").toLowerCase());
-    const strip = value => String(value || "").trim().replace(/^\/+|\/+$/g, "").trim();
-    const dictSource = fetchIpaSource(`https://api.dictionaryapi.dev/api/v2/entries/${encodeURIComponent(lang)}/${query}`, signal, data => {
-      for (const entry of Array.isArray(data) ? data : []) for (const item of entry.phonetics || []) { const text = strip(item.text); if (text) return text; }
-      for (const entry of Array.isArray(data) ? data : []) { const text = strip(entry.phonetic); if (text) return text; }
-      return null;
-    });
-    const googleSource = fetchIpaSource(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(lang)}&tl=${lang === "en" ? "vi" : "en"}&dt=t&dt=rm&q=${query}`, signal, data => {
-      const parts = data?.[0] || [];
-      let raw = "";
-      for (let i = parts.length - 1; i >= 0; i--) if (typeof parts[i]?.[3] === "string") { raw = parts[i][3]; break; }
-      return raw ? strip(globalThis.LHN_IPA_UTILS.convertGoogleToIPA(raw)) : null;
-    });
-    const primary = await dictSource;
-    if (primary) return { text:primary, approx:false };
-    const secondary = await googleSource;
-    return secondary ? { text:secondary, approx:true } : null;
-  }
-  async function dictionaryRelatedWords(word, targetLanguage, signal) {
-    const escaped = encodeURIComponent(word.toLowerCase());
-    const [synonyms, antonyms] = await Promise.all([
-      fetch(`https://api.datamuse.com/words?rel_syn=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : []),
-      fetch(`https://api.datamuse.com/words?rel_ant=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : [])
-    ]);
-    const all = [...synonyms.map(item => ({ ...item, kind:"Syn" })), ...antonyms.map(item => ({ ...item, kind:"Ant" }))];
-    const translated = await Promise.all(all.map(async item => {
-      try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage, signal)).translatedText }; }
-      catch { return { ...item, meaning:item.word }; }
-    }));
-    return translated;
-  }
-  async function dictionaryWordForms(word, targetLanguage, signal) {
-    let root = word.toLowerCase();
-    if (root.endsWith("ments")) root = root.slice(0, -5); else if (root.endsWith("ment")) root = root.slice(0, -4);
-    else if (["ers", "ing", "ies"].some(suffix => root.endsWith(suffix))) root = root.slice(0, -3);
-    else if (["ed", "er", "ly"].some(suffix => root.endsWith(suffix))) root = root.slice(0, -2); else if (root.endsWith("s")) root = root.slice(0, -1);
-    try {
-      const response = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(root)}*&md=p&max=15`, { signal });
-      if (!response.ok) return [];
-      const items = await response.json(), seen = new Set([word.toLowerCase()]), results = [];
-      for (const item of items) {
-        const form = String(item.word || "").toLowerCase(); if (!form || form.includes(" ") || form.length > root.length + 8 || seen.has(form)) continue;
-        seen.add(form); const tag = item.tags?.includes("v") ? "(V)" : item.tags?.includes("adv") ? "(Adv)" : item.tags?.includes("adj") ? "(Adj)" : "(N)";
-        results.push({ word:form, tag }); if (results.length >= 4) break;
-      }
-      return Promise.all(results.map(async item => { try { return { ...item, meaning:(await dictionaryTranslate(item.word, targetLanguage, signal)).translatedText }; } catch { return { ...item, meaning:item.word }; } }));
-    } catch { return []; }
-  }
-  async function dictionaryCollocations(word, targetLanguage, signal) {
-    try {
-      const escaped = encodeURIComponent(word.toLowerCase());
-      const [before, after] = await Promise.all([
-        fetch(`https://api.datamuse.com/words?rel_jja=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : []),
-        fetch(`https://api.datamuse.com/words?rel_jjb=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : [])
-      ]);
-      const phrases = [...before.map(item => `${item.word} ${word}`), ...after.map(item => `${word} ${item.word}`)].slice(0, 3);
-      return Promise.all(phrases.map(async phrase => { try { return { word:phrase, meaning:(await dictionaryTranslate(phrase, targetLanguage, signal)).translatedText }; } catch { return { word:phrase, meaning:phrase }; } }));
-    } catch { return []; }
   }
   function renderEnglishDictionary(popup, data, fromCache) {
     const hiddenForOpenNote = popup?._lhnHideForNote && popup === dictionaryPopup && panel?.dataset.lhnDictionaryWord === popup.dataset.word;
@@ -393,7 +252,7 @@
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
   async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
-    word = cleanText(word); if (!settings.showFullEnglishDictionary || !isEnglishDictionaryWord(word)) return;
+    word = cleanText(word); if (!settings.showFullEnglishDictionary || !LHN_DICTIONARY.isEnglishWord(word)) return;
     if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
     popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
@@ -407,26 +266,26 @@
     try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
     if (requestId !== dictionaryRequestId) return;
     const cacheKey = `${dictionaryCachePrefix}${targetLanguage}:${word.toLowerCase()}`;
-    const cached = await getDictionaryCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
+    const cached = await LHN_DICTIONARY.getCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
     const hiddenForOpenNote = () => popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
     if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
     if (cached) {
       popup._lhnMainTranslation = cached.translation;
-      if (cached.translation?.translatedText) browser.storage.local.set({ [dictionaryTranslationCacheKey(word, targetLanguage)]:{ timestamp:Date.now(), data:cached.translation } }).catch(() => {});
+      if (cached.translation?.translatedText) browser.storage.local.set({ [LHN_DICTIONARY.translationCacheKey(word, targetLanguage)]:{ timestamp:Date.now(), data:cached.translation } }).catch(() => {});
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, cached, true);
       return;
     }
     try {
-      const translationPromise = dictionaryTranslate(word, targetLanguage, popup._lhnMainController.signal);
+      const translationPromise = LHN_DICTIONARY.translate(word, targetLanguage, popup._lhnMainController.signal);
       translationPromise.then(translation => { popup._lhnMainTranslation = translation; fillNoteFromDictionary(popup); }).catch(() => {});
       const noRelated = popup._lhnHideForNote || panel?.dataset.lhnDictionaryWord === word.toLowerCase();
       const relatedTasks = noRelated ? [Promise.resolve([]), Promise.resolve([]), Promise.resolve([])] : [
-        dictionaryRelatedWords(word, targetLanguage, popup._lhnRelatedController.signal),
-        dictionaryWordForms(word, targetLanguage, popup._lhnRelatedController.signal),
-        dictionaryCollocations(word, targetLanguage, popup._lhnRelatedController.signal)
+        LHN_DICTIONARY.relatedWords(word, targetLanguage, popup._lhnRelatedController.signal),
+        LHN_DICTIONARY.wordForms(word, targetLanguage, popup._lhnRelatedController.signal),
+        LHN_DICTIONARY.collocations(word, targetLanguage, popup._lhnRelatedController.signal)
       ];
-      const ipaPromise = noRelated ? Promise.resolve(null) : fetchIpa(word, "en", popup._lhnMainController.signal);
+      const ipaPromise = noRelated ? Promise.resolve(null) : LHN_DICTIONARY.fetchIpa(word, "en", popup._lhnMainController.signal);
       const [translation, related, forms, collocations, ipaResult] = await Promise.allSettled([translationPromise, ...relatedTasks, ipaPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
       let fallbackRelated = [];
@@ -436,14 +295,14 @@
           if (response.ok) {
             const entry = (await response.json())[0];
             const synonyms = [...new Set((entry?.meanings || []).flatMap(meaning => meaning.synonyms || []))].slice(0, 3);
-            fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await dictionaryTranslate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
+            fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await LHN_DICTIONARY.translate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
           }
         } catch {}
       }
       const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
       const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" }, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
       popup._lhnMainTranslation = result.translation;
-      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await setDictionaryCache(cacheKey, result);
+      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, result, false);
     } catch (error) {
@@ -513,7 +372,7 @@
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
-    if (settings.showFullEnglishDictionary !== false && isEnglishDictionaryWord(selectedText)) {
+    if (settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
       translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
       lookupEnglishDictionary(selectedText, range);
       if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US", null, null, true);
@@ -630,7 +489,7 @@
   function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
     if (!websiteSettingsReady || websiteDisabled) return;
     const selectedBeforeComposer = cleanText(range?.toString());
-    const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && isEnglishDictionaryWord(selectedBeforeComposer);
+    const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedBeforeComposer);
     if (useEnglishDictionary) {
       skipAutoTranslate = true;
       dictionaryWord ||= selectedBeforeComposer;
@@ -1680,7 +1539,7 @@
       removeTranslationUI();
       loadSettings().then(cfg => {
         if (cfg.showOnSelect) {
-          if (cfg.showFullEnglishDictionary !== false && isEnglishDictionaryWord(text)) {
+          if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
             showComposer(range, null, { skipAutoTranslate:true, dictionaryWord:text });
             lookupEnglishDictionary(text, selectedRange);
           } else showComposer(range);
