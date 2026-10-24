@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.566; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; bước đầu chuẩn hóa module Languages bằng languages.js (đổi tên từ i18n.js), các module còn lại tiếp tục theo thứ tự OPT.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Người dùng xác nhận flags/dark mode và các select khác đều đúng; Dashboard Settings dùng pattern combobox của toolbar, menu căn trái và ô tìm kiếm nay rộng bằng menu. v3.4.563 chờ retest Chrome/Edge. Static checks: `node --check` 20/20 JS, manifest MV3 v3.4.563, CSS parse, ZIP 55 mục integrity/version và `git diff --check` đạt. Sandbox không có browser executable; Chromium khác chưa thử; chưa commit hoặc phát hành.
+- Version hiện tại: v3.4.566; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; hiện đã có languages.js (Languages), messaging.js (Messaging) và settings.js (Settings helper), còn phần lớn module nghiệp vụ vẫn nằm trong entry point.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.566: `node --check` 22/22 JS, manifest và đường dẫn scripts hợp lệ, Messaging đã gom sendMessage, mock Settings get/save/resolve/subscribe đạt, `git diff --check` đạt; ZIP 57 mục, manifest gốc và version khớp. Chưa kiểm thử trình duyệt. v3.4.566 được watcher commit local và đóng gói; push GitHub thất bại trong sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -11,7 +11,7 @@
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 19. [Tiếp tục kiến trúc OPT] Tách 27 module theo thứ tự nền tảng → dịch vụ dùng chung → dữ liệu/nghiệp vụ → tính năng phụ thuộc; hiện Languages và Messaging có file riêng, phần lớn module còn lại chưa tách hoàn chỉnh.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
-18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.564: kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
+18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.566 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
 15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
 14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
@@ -52,13 +52,13 @@
 
 - Bước 1 — Settings: thêm module `LHN_SETTINGS` cho resolve defaults, đọc/ghi cấu hình chung và đăng ký lắng nghe thay đổi; nối popup và content script vào helper mà không đổi UI hay tên storage key.
 - File: settings.js, manifest.json, background.js, popup.html, dashboard.html, popup.js, content.js, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp và thứ tự nạp; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; mock Settings get/save/resolve/subscribe đạt; `git diff --check` đạt; ZIP 57 mục có manifest gốc, `settings.js` và version 3.4.566. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Cache/lưu trữ trong Bước 1, sau đó tiếp tục các dịch vụ theo thứ tự OPT.
 **2026-10-24 | v3.4.565 | Codex sửa:**
 
 - Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
 - File: messaging.js, manifest.json, background.js, content.js, dashboard.js, popup.js, error-logger.js, tts-engine.js, study-translation.js, bilingual-reader.js, popup.html, dashboard.html, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, thứ tự nạp và tham chiếu manifest/HTML; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 21/21 JS; manifest/HTML script paths tồn tại; Messaging được nạp trước consumer; `git diff --check` đạt; ZIP 56 mục có manifest gốc, `messaging.js` và version 3.4.565. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Settings và Cache/lưu trữ trong Bước 1.
 **2026-10-24 | v3.4.564 | Codex sửa:**
 
