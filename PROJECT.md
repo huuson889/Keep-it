@@ -65,6 +65,11 @@
 - browser-polyfill.js: cho phép dùng browser.* trên Chrome.
 
 ## 4. Nhật ký nâng cấp (thêm vào ĐẦU mục này, mới nhất trên cùng)
+### v3.4.553 | Codex sửa - 2026-10-24
+- Tạo nhánh thử nghiệm Keepit-Optimize-Test từ master, watcher riêng đồng bộ ZIP/thay đổi trực tiếp, commit và push lên GitHub.
+- File: PROJECT.md; script ngoài repo: D:\Keepit\Keepit - Optimize Test\sync-watch-optimize-test.ps1.
+- Kiểm tra: PowerShell parser, cấu trúc ZIP và branch push đạt; chưa chạy watcher liên tục.
+- Tiếp theo: chạy script watcher khi bắt đầu thử nghiệm.
 ### v3.4.533 | Codex sửa - 2026-10-23
 - Thêm Auto highlight vào Toolbar settings, dùng chung `autoHighlight` với Dashboard > Highlights & Notes; mặc định tắt ở cài đặt mới.
 - File: config.js, popup.html, popup.js, dashboard.js, manifest.json, PROJECT.md.
