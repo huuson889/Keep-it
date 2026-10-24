@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.571; một codebase Manifest V3 cho Chrome và Firefox. Kiến trúc 27 module chưa tách hoàn chỉnh; hiện đã có languages.js (Languages), messaging.js (Messaging) và settings.js (Settings helper), còn phần lớn module nghiệp vụ vẫn nằm trong entry point.
+- Version hiện tại: v3.4.572; một codebase Manifest V3 cho Chrome và Firefox. Đã tách các module Languages, Messaging, Settings, Cache, Translate, Dictionary, Search và Annotations; các module nghiệp vụ/giao diện còn lại chưa tách hoàn chỉnh.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.571: `node --check` 22/22 JS, manifest và đường dẫn scripts hợp lệ, Messaging đã gom sendMessage, mock Settings get/save/resolve/subscribe đạt, `git diff --check` đạt; ZIP 57 mục, manifest gốc và version khớp. Chưa kiểm thử trình duyệt. v3.4.566 được watcher commit local và đóng gói; push GitHub thất bại trong sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
@@ -9,7 +9,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-19. [Tiếp tục kiến trúc OPT] Tách 27 module theo thứ tự nền tảng → dịch vụ dùng chung → dữ liệu/nghiệp vụ → tính năng phụ thuộc; Languages, Messaging và Settings và Cache và Translate và Dictionary đã có module/file riêng; phần lớn nghiệp vụ vẫn cần tách.
+19. [Tiếp tục kiến trúc OPT] Hoàn tất các module còn lại theo thứ tự OPT; hiện đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search và Annotations; Highlighter có sẵn module riêng, các module giao diện/nghiệp vụ còn lại vẫn cần đánh giá/tách.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
 16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
