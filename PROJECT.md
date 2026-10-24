@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version hiện tại: v3.4.582; một codebase Manifest V3 cho Chrome và Firefox. Đã tách Languages, Messaging, Settings, Cache, Translate, Dictionary, Search, Annotations, SentenceNote, UI Components, Page Layout, Icons, Shortcuts, Backup và Library, Account; Highlighter, Reader, Flashcards, Content Detector đã có module riêng. Sidebar và Note Composer cần tiếp tục đánh giá/tách.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.579: `node --check` 32/32 JS, manifest/HTML paths hợp lệ, mock Library metadata/group/order/favorites đạt, `git diff --check` đạt; ZIP 69 mục, manifest gốc và library.js. Chưa kiểm thử trình duyệt. Chưa kiểm thử trình duyệt. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.582: `node --check` 35/35 JS, script paths hợp lệ, mocks module mới đạt, `git diff --check` đạt; ZIP 72 mục có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -52,14 +52,14 @@
 
 - Bước 3 — Note Composer: tách dựng bản ghi annotation và so sánh nội dung không đổi sang `note-composer.js` (`LHN_NOTE_COMPOSER`); giao diện, tự dịch và thao tác lưu vẫn do content script quản lý.
 - File: note-composer.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, script paths, mock tạo/so sánh bản ghi và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 35/35 JS; script paths hợp lệ; mock tạo/so sánh bản ghi đạt; `git diff --check` đạt; ZIP 72 mục, manifest gốc, version 3.4.582 và note-composer.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: rà các module còn lại và hoàn tất hồi quy.
 
 **2026-10-24 | v3.4.581 | Codex sửa:**
 
 - Bước 4 — Sidebar: tách tạo nút, render câu trích dẫn, cache trường tìm kiếm và tô khớp kết quả sang `sidebar.js` (`LHN_SIDEBAR`); điều phối/mount Sidebar vẫn ở content script.
 - File: sidebar.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: đang chạy cú pháp, script paths, mock helper và ZIP; chưa kiểm thử trình duyệt.
+- Kiểm tra: `node --check` 34/34 JS; manifest/HTML paths hợp lệ; mock helper cache/render Sidebar đạt; `git diff --check` đạt; ZIP 71 mục, manifest gốc, version 3.4.581 và sidebar.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: hoàn thiện Sidebar/Note Composer còn lại và rà các module OPT.
 
 **2026-10-24 | v3.4.580 | Codex sửa:**
