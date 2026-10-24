@@ -68,7 +68,34 @@ Keepit - Test/
 
 `manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
+## Luồng tương tác giữa các module
+```text
+Popup ── yêu cầu mở Dashboard / gửi thao tác tab ──┐
+Dashboard ── annotations, bilingual translate, usage ┤
+Content ── annotations, highlight, mở Dashboard ─────┼──> core/messaging
+Reader ── bilingual translate / nhận diện ngôn ngữ ──┤         │
+TTS engine ── tải audio Google TTS ──────────────────┘         ▼
+                                                     Background service worker
+                                                       ├── Translate + cache
+                                                       ├── Google TTS + audio cache
+                                                       ├── Annotations + IndexedDB
+                                                       ├── Usage limits
+                                                       └── mở tab/đi tới highlight
+
+Reader ── Readability ──> chọn nội dung chính của trang
+Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
+Dashboard ── Library / Flashcards / Account / Backup ──> giao diện quản lý
+```
+
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
+
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-24 | v3.4.583 | Codex sửa:**
+
+- Thêm sơ đồ tương tác runtime giữa Popup, Dashboard, Content, Reader, TTS và Background vào PROJECT.md.
+- File: PROJECT.md.
+- Kiểm tra: `git diff --check`.
+
 **2026-10-24 | v3.4.583 | Codex sửa:**
 
 - Đổi mục Bản đồ file trong PROJECT.md sang sơ đồ cây, ghi chú entry points và vai trò từng nhóm thư mục.
