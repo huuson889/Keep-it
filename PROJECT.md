@@ -2,7 +2,7 @@
 
 ## 1. Trạng thái hiện tại (sửa đè)
 - Version hiện tại: v3.4.583; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Tách các module nền tảng, dịch, Reader, Highlighter, Flashcards, Usage, Diagnostics; Sidebar dựng khung/thẻ, Note Composer dựng form, và Dashboard Settings dựng bộ chọn ngôn ngữ/danh sách website đã có module riêng. Entry points vẫn điều phối state và luồng giữa các module.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 35/35 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP 72 mục có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
+- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.583: `node --check` 36/36 JS, script paths hợp lệ, Cache API smoke đạt, `git diff --check` đạt; ZIP hiện hành có manifest gốc. Chưa kiểm thử trên Chrome/Firefox. Push GitHub của watcher còn lỗi; xem sync-watch.log.
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - Một số hành vi TTS/Reader còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
@@ -50,9 +50,12 @@ Keepit - Test/
 │   ├── core/                      # browser-polyfill, config, languages, messaging, settings, cache, shortcuts
 │   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
 │   ├── content/                   # content.js (entry), highlighter, note, sidebar, page layout, UI
+│   │   ├── sidebar.js             # Khung, thẻ và tiện ích tìm kiếm Sidebar
+│   │   └── note-composer.js       # Dựng form và tạo/canonicalize record note
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
 │   ├── dashboard/                 # dashboard.js (entry), settings UI, study modules, account, library, backup, flags
+│   │   └── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font và icons
 ├── css/
