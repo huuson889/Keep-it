@@ -462,7 +462,7 @@ async function saveDashboardSettings(nextValues) {
   if (changed && $("dashboardSettingsDialog")?.open) dashboardSettingsChangedWhileOpen = true;
   if (Object.hasOwn(nextValues, "sidebarTheme")) syncDashboardTheme();
   refreshDashboardSettings();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: dashboardSettings }); return true; }
+  try { await LHN_SETTINGS.save(dashboardSettings); return true; }
   catch (error) { dashboardSettings = previous; dashboardSettingsChangedWhileOpen = previousToastState; syncDashboardTheme(); refreshDashboardSettings(); console.warn("Could not save dashboard settings", error); return false; }
 }
 function openDashboardSettings(panel = "account") {
@@ -1022,7 +1022,7 @@ async function load() {
       { id:"default-en-fyi", original:"FYI", replacement:"For your information" }
     ];
     dashboardSettings = { ...dashboardSettings, customPronunciationDictionary:dictionary, pronunciationDictionaryDefaultsInitialized:true };
-    try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]:dashboardSettings }); }
+    try { await LHN_SETTINGS.save(dashboardSettings); }
     catch (error) { console.warn("Could not initialize pronunciation dictionary defaults", error); }
   }
   demoProfile = settingsData[DEMO_PROFILE_KEY] && typeof settingsData[DEMO_PROFILE_KEY] === "object" ? settingsData[DEMO_PROFILE_KEY] : null;
@@ -2433,7 +2433,7 @@ $("settingsLanguageSelect").addEventListener("change", async event => {
   currentLang = event.target.value;
   dashboardSettings = { ...dashboardSettings, language:currentLang };
   applyTranslations(); render(); renderProfileSidebar(); refreshDashboardSettings(); syncBilingualPreview();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]:dashboardSettings }); }
+  try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { console.warn("Could not save dashboard language", error); }
 });
 function saveDashboardTranslationMode(settingKey, enabled) {
@@ -2706,7 +2706,7 @@ $("profileAppearanceToggle").addEventListener("click", async () => {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
   dashboardSettings = { ...dashboardSettings, sidebarTheme: wasDark ? "light" : "dark" };
   syncDashboardTheme();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: dashboardSettings }); }
+  try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 });
 browser.storage.onChanged.addListener((changes, area) => {

@@ -81,7 +81,7 @@
     settings = updatedSettings;
     updateDefaultColorIndicators();
     try {
-      await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: updatedSettings });
+      await LHN_SETTINGS.save(updatedSettings);
       showSidebarToast(() => t("defaultColorSetToast", { color: t(CONFIG.colorLabelKey(normalizedColor)) }));
     } catch (error) { settings = previousSettings; updateDefaultColorIndicators(); console.warn("Could not save default highlight color", error); }
   }
@@ -1302,7 +1302,7 @@
     const previous = settings;
     settings = { ...settings, sidebarTheme: isSidebarDark() ? "light" : "dark" };
     syncSidebarTheme();
-    try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
+    try { await LHN_SETTINGS.save(settings); }
     catch (error) { settings = previous; syncSidebarTheme(); console.warn("Could not save sidebar theme", error); }
   }
   function syncSidebarFooter() {
@@ -1383,7 +1383,7 @@
     if (disable) disabledWebsites.add(host); else disabledWebsites.delete(host);
     const updated = { ...settings, disabledWebsites: [...disabledWebsites] };
     try {
-      await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: updated });
+      await LHN_SETTINGS.save(updated);
       settings = updated;
       await applyWebsiteDisabledState(disable);
       showSidebarToast(() => t(disable ? "websiteDisabledToast" : "websiteEnabledToast"));
@@ -1393,7 +1393,7 @@
     const previous = settings; settings = { ...settings, [key]: settings[key] === false };
     syncSidebarSettingsButtons();
     try {
-      await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings });
+      await LHN_SETTINGS.save(settings);
       const labelKey = { showOnSelect: "autoPopup", sentenceNoteEnabled: "autoSentenceNote" }[key];
       showSidebarToast(() => `${t(labelKey)}: ${t(settings[key] ? "settingEnabled" : "settingDisabled")}`);
     }

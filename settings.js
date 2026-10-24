@@ -16,7 +16,7 @@
 
   async function save(value) {
     if (!storage || !key) throw new Error("Extension settings storage is unavailable");
-    const next = resolve(value);
+    const next = value && typeof value === "object" && !Array.isArray(value) ? value : {};
     await storage.set({ [key]: next });
     return next;
   }
