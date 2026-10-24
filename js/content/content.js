@@ -1233,7 +1233,7 @@
   function isEditable(node) { const el = node?.nodeType === 1 ? node : node?.parentElement; return !!el?.closest("input,textarea,select,[contenteditable]:not([contenteditable='false']),[role='textbox']"); }
 
   document.addEventListener("mouseup", e => {
-    if (!websiteSettingsReady || websiteDisabled) return;
+    if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
     const selection = getSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
@@ -1245,6 +1245,7 @@
       selectedRange = range.cloneRange();
       removeTranslationUI();
       loadSettings().then(cfg => {
+        if (websiteDisabled) return;
         if (cfg.showOnSelect) {
           if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
             showComposer(range, null, { skipAutoTranslate:true, dictionaryWord:text });
@@ -1282,7 +1283,19 @@
     if (sidebarShortcut && pressed === sidebarShortcut) {
       e.preventDefault(); e.stopPropagation(); toggleSidebar(); return;
     }
-    if (!websiteSettingsReady) return;
+    const notePopupShortcut = String(settings.shortcut ?? "Alt+S").toLowerCase();
+    if (!websiteSettingsReady) {
+      if (notePopupShortcut && pressed === notePopupShortcut) {
+        const sel = getSelection();
+        let range = selectedRange && selectedRange.startContainer.isConnected ? selectedRange.cloneRange() : null;
+        if ((!range || range.collapsed) && sel?.rangeCount && cleanText(sel.toString())) range = sel.getRangeAt(0).cloneRange();
+        if (range && !range.collapsed && cleanText(range.toString())) {
+          e.preventDefault(); e.stopPropagation();
+          loadSettings().then(() => { if (!websiteDisabled) showComposer(range); });
+        }
+      }
+      return;
+    }
     const toggleWebsiteShortcut = String(settings.toggleWebsiteShortcut ?? "Alt+D").toLowerCase();
     if (toggleWebsiteShortcut && pressed === toggleWebsiteShortcut) {
       e.preventDefault(); e.stopPropagation(); toggleWebsiteDisabled(); return;
@@ -1297,7 +1310,6 @@
       return;
     }
     const translateShortcut = String(settings.translateSelectedShortcut ?? "Alt+W").toLowerCase();
-    const notePopupShortcut = String(settings.shortcut ?? "Alt+S").toLowerCase();
     if (translateShortcut && pressed === translateShortcut && notePopupShortcut !== translateShortcut) {
       if (panel || e.target.closest?.("#lhn-panel, #lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
       const visibleTranslationPopup = translationPopup?.isConnected && translationPopup.classList.contains("lhn-visible") ? translationPopup : null;
