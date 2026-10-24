@@ -180,7 +180,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-account]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
   bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
-  bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = segmentRate(Boolean(readingSegment?.translation)); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
+  bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = currentSegmentRate(); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
   bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
   bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
   bar.querySelector("input[type=search]").addEventListener("input", renderVoiceChoices);
@@ -237,7 +237,7 @@ const FLAG_SVGS = {
   function syncToolbar() {
     bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
     bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    bar.querySelector("[data-speed]").textContent = formatSpeed(segmentRate(Boolean(readingSegment?.translation)));
+    bar.querySelector("[data-speed]").textContent = formatSpeed(currentSegmentRate());
     bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
     bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
@@ -348,9 +348,23 @@ const FLAG_SVGS = {
   }
   function normalizeSpeedStep(value) { const step = Number(value); return Number.isFinite(step) && step > 0 ? Math.max(0.01, Math.min(2.5, Math.round(step * 100) / 100)) : DEFAULTS.speechSpeedStep; }
   function clampSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.max(.5, Math.min(3, Math.round(rate * 100) / 100)) : null; }
-  // Khi "Custom rate for display language" bật và đang đọc bản dịch của ngôn ngữ hiển thị,
-  // tốc độ sửa trên thanh đọc chỉ thuộc ngôn ngữ đó (Your speed), không đụng Global speech rate.
-  function editingLanguageRate() { return dashboardShortcuts?.useLanguageSpeechRate === true && readingSegment?.translation === true; }
+  // Luật tốc độ:
+  // - "Custom rate for display language" bật: đoạn đọc thuộc ngôn ngữ hiển thị dùng "Your speed",
+  //   đoạn thuộc ngôn ngữ khác dùng "Global speech rate".
+  // - Tắt: mọi đoạn dùng "Global speech rate".
+  function normalizeSpeechLang(value) { return String(value || "").trim().toLowerCase().replace(/_/g, "-").split("-")[0]; }
+  function isDisplaySpeechLang(lang) { const target = normalizeSpeechLang(lang); return Boolean(target) && target === normalizeSpeechLang(displayLang); }
+  function activeSegmentLang() { return (reading || readingPaused) ? (readingSegment?.lang || activeSpeechLang || "") : ""; }
+  function segmentRate(lang) {
+    if (dashboardShortcuts?.useLanguageSpeechRate !== true || !isDisplaySpeechLang(lang)) return baseRate();
+    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
+    if (Number.isFinite(custom)) return clampSpeechRate(custom) ?? 1.25;
+    const inherited = Number(dashboardShortcuts?.inheritedSpeechRateByLanguage?.[displayLang]);
+    if (Number.isFinite(inherited)) return clampSpeechRate(inherited) ?? 1.25;
+    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang])) ?? 1.25;
+  }
+  function currentSegmentRate() { return segmentRate(activeSegmentLang()); }
+  function editingLanguageRate() { return dashboardShortcuts?.useLanguageSpeechRate === true && isDisplaySpeechLang(activeSegmentLang()); }
   function writeLanguageSpeechRate(rate) {
     const patch = {
       speechRateByLanguage:{ ...(dashboardShortcuts.speechRateByLanguage || {}), [displayLang]:rate },
@@ -368,7 +382,7 @@ const FLAG_SVGS = {
   function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
   function baseRate() { const shared = clampSpeechRate(dashboardShortcuts?.speechRate); return shared === null ? 1 : shared; }
   function applySharedSpeechRate() {
-    const rate = segmentRate(Boolean(readingSegment?.translation));
+    const rate = currentSegmentRate();
     if (rate === lastAppliedSegmentRate) { syncToolbar(); return; }
     lastAppliedSegmentRate = rate;
     renderSpeed(rate);
@@ -841,17 +855,6 @@ const FLAG_SVGS = {
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
   var voiceFlagOverride = ""; var readingSegment = null; var lastAppliedSegmentRate = null; // đoạn đang đọc: { translation, lang }
-  // Tốc độ: đoạn gốc dùng Global speech rate. Đoạn dịch dùng tốc độ riêng của ngôn ngữ hiển thị
-  // (Your speed) khi "Custom rate for display language" bật; không cộng dồn chênh lệch với Global.
-  function segmentRate(isTranslation) {
-    const globalRate = baseRate();
-    if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return globalRate;
-    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
-    if (Number.isFinite(custom)) return clampSpeechRate(custom);
-    const inherited = Number(dashboardShortcuts?.inheritedSpeechRateByLanguage?.[displayLang]);
-    if (Number.isFinite(inherited)) return clampSpeechRate(inherited);
-    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang]) || 1.25);
-  }
   async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
     const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : voiceSettings?.readLanguage ? LHN_TTS.normalizeLanguage(voiceSettings.readLanguage) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
     if (requestId !== speechDetectionRequest || !reading) return;
@@ -860,9 +863,9 @@ const FLAG_SVGS = {
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
-    readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(Boolean(forcedLang)); syncToolbar();
+    readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
-      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(Boolean(forcedLang)),
+      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
       isActive: () => googleToken === token && reading,
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
@@ -875,7 +878,7 @@ const FLAG_SVGS = {
         const voices = synth.getVoices();
         const voice = voices.find(item => item.voiceURI === browserVoiceURI) || voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
         if (!voice) { done({ unsupported:true }); return; }
-        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = segmentRate(Boolean(forcedLang)); u.voice = voice;
+        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = segmentRate(l || lang); u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
       },
       strictVoice: true,
@@ -924,7 +927,7 @@ const FLAG_SVGS = {
       void speakGoogleNext(seg ? seg.source : currentReadText, blockLang, requestId, voiceSettings, null, seg ? { text: seg.translated, lang: seg.lang } : null);
       return;
     }
-    readingSegment = null; lastAppliedSegmentRate = segmentRate(false); // giọng trình duyệt: bỏ ngôn ngữ đoạn Google cũ để cờ theo giọng đang dùng
+    readingSegment = null; // giọng trình duyệt: bỏ ngôn ngữ đoạn Google cũ để cờ theo giọng đang dùng
     let explicitVoice = null;
     if (voiceSettings.browserVoiceURI) {
       explicitVoice = await waitForBrowserVoice(voiceSettings.browserVoiceURI);
@@ -942,7 +945,7 @@ const FLAG_SVGS = {
     activeVoice = explicitVoice || (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
-    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(false); current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
+    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(activeSpeechLang); lastAppliedSegmentRate = current.rate; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
     const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
@@ -1035,8 +1038,8 @@ const FLAG_SVGS = {
     if (event.detail === "toggle-reading") reading ? stopReading() : startReading();
     if (event.detail === "previous-reading-block") moveReading(-1, event);
     if (event.detail === "next-reading-block") moveReading(1, event);
-    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(segmentRate(Boolean(readingSegment?.translation)) + normalizeSpeedStep(settings.speechSpeedStep)); }
-    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(segmentRate(Boolean(readingSegment?.translation)) - normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() + normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() - normalizeSpeedStep(settings.speechSpeedStep)); }
     if (settings.readerShortcutsEnabled !== false && event.detail === "open-voice-select" && reading && bar.classList.contains("lhn-show")) { event.preventDefault(); bar.querySelector("[data-voices]").click(); }
   });
   document.addEventListener("lhn-bilingual-reader-pause", event => {
