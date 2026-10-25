@@ -790,7 +790,11 @@ function setVideoTitle() {
 function togglePlay() {
   const v = state.videoEl;
   if (!v) return;
-  if (v.paused) v.play().catch(() => {});
+  if (v.paused) {
+    state.pauseReasons.delete('sidebar-double-click');
+    if (!state.pauseReasons.size) state.managedPauseVideo = null;
+    v.play().catch(() => {});
+  }
   else v.pause();
 }
 
@@ -1387,11 +1391,11 @@ function bindUI() {
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
 
-  const mainSubtitleBox = ui('.te-sub-container');
-  mainSubtitleBox.addEventListener('mouseenter', () => {
+  const mainSubtitleText = ui('.te-sub-en');
+  mainSubtitleText.addEventListener('mouseenter', () => {
     pauseVideoFor('subtitle-main-hover');
   });
-  mainSubtitleBox.addEventListener('mouseleave', () => resumeVideoFor('subtitle-main-hover'));
+  mainSubtitleText.addEventListener('mouseleave', () => resumeVideoFor('subtitle-main-hover'));
 
   // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
   const positionModal = (modalEl) => {
@@ -1499,18 +1503,27 @@ function bindUI() {
   ui('.yt-dual-close-btn').addEventListener('click', closeOverlay);
 
   const transcriptList = $('te-transcript-list');
-  transcriptList.addEventListener('click', onTranscriptClick);
+  let transcriptClickTimer = 0;
+  transcriptList.addEventListener('click', (e) => {
+    if (e.detail > 1) return;
+    const selectedText = shadow?.getSelection?.()?.toString() || getSelection()?.toString();
+    if (selectedText?.trim()) return;
+    clearTimeout(transcriptClickTimer);
+    const target = e.target;
+    transcriptClickTimer = setTimeout(() => onTranscriptClick({ target }), 260);
+  });
   transcriptList.addEventListener('pointerover', (e) => {
-    const content = e.target.closest('.yt-dual-content');
-    if (content && !content.contains(e.relatedTarget)) pauseVideoFor('subtitle-sidebar-hover');
+    const sourceText = e.target.closest('.yt-dual-item-en');
+    if (sourceText && !sourceText.contains(e.relatedTarget)) pauseVideoFor('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('pointerout', (e) => {
-    const content = e.target.closest('.yt-dual-content');
-    if (content && !content.contains(e.relatedTarget)) resumeVideoFor('subtitle-sidebar-hover');
+    const sourceText = e.target.closest('.yt-dual-item-en');
+    if (sourceText && !sourceText.contains(e.relatedTarget)) resumeVideoFor('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('dblclick', (e) => {
     if (!e.target.closest('.yt-dual-item')) return;
-    state.videoEl?.pause();
+    clearTimeout(transcriptClickTimer);
+    pauseVideoFor('sidebar-double-click');
   });
   // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
   $('te-transcript-list').addEventListener('scroll', () => { translateVisibleRows(); }, { passive: true });
