@@ -382,7 +382,7 @@
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
-    if (settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
+    if (settings.translationPopupEnabled !== false && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
       translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
       lookupEnglishDictionary(selectedText, range);
       if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US", null, null, true);
@@ -1289,7 +1289,7 @@
       removeTranslationUI();
       loadSettings().then(cfg => {
         if (websiteDisabled) return;
-        if (isDualSubtitleSelection && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
+        if (isDualSubtitleSelection && cfg.translationPopupEnabled !== false && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
           lookupEnglishDictionary(text, selectedRange, null, { autoSpeak:true });
           return;
         }
