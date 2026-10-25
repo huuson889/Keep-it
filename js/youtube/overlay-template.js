@@ -121,10 +121,11 @@ const OVERLAY_CSS = `
 
     .te-sub-container {
       min-height: 140px;
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 16px 40px;
       text-align: center;
     }
@@ -650,15 +651,14 @@ const OVERLAY_CSS = `
     #trancy-exact-overlay.size-m .yt-dual-right-sidebar { width: max(400px, 35vw); }
     #trancy-exact-overlay.size-m .te-left-section { width: calc(100vw - max(400px, 35vw)); }
     #trancy-exact-overlay.te-sidebar-hidden .te-left-section { width: 100vw; }
-    /* Video: height tự động theo tỉ lệ 16:9 của chiều rộng, căn giữa theo chiều dọc */
+    /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
+       chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
     #trancy-exact-overlay .te-video-slot {
       flex: none;
       width: 100%;
       height: auto;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: var(--te-video-aspect, 16 / 9);
       max-height: calc(100vh - 200px);
-      margin-top: auto;
-      margin-bottom: auto;
     }
 
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */

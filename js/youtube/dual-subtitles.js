@@ -617,6 +617,16 @@ function closeOverlay() {
   detachVideo();
 }
 
+// Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
+function syncVideoAspect(video) {
+  const root = overlayEl();
+  if (!root) return;
+  const w = Number(video?.videoWidth) || 0;
+  const h = Number(video?.videoHeight) || 0;
+  if (w > 0 && h > 0) root.style.setProperty('--te-video-aspect', `${w} / ${h}`);
+  else root.style.removeProperty('--te-video-aspect');
+}
+
 function attachVideo(video, slot) {
   if (state.videoEl && state.videoEl !== video) detachVideo();
   if (video.parentElement !== slot) {
@@ -633,6 +643,8 @@ function attachVideo(video, slot) {
   video.addEventListener('pause', syncPlayButton);
   video.addEventListener('ratechange', syncSpeedButton);
   video.addEventListener('volumechange', syncMuteButton);
+  video.addEventListener('loadedmetadata', () => syncVideoAspect(video));
+  syncVideoAspect(video);
   syncPlayButton();
   syncSpeedButton();
   syncMuteButton();
@@ -1296,4 +1308,5 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   void restoreSettings().then(loaded => { settings = loaded; if (overlayEl()) applySettings(); });
   void refreshKeepitGate();
   browser.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes.lhnSettings) void refreshKeepitGate(); });
+  window.addEventListener('resize', () => { if (state.videoEl) syncVideoAspect(state.videoEl); });
 }
