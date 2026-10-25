@@ -1350,6 +1350,10 @@
       e.preventDefault(); e.stopPropagation(); toggleWebsiteDisabled(); return;
     }
     if (websiteDisabled) return;
+    const dualSubtitlesShortcut = String(settings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut).toLowerCase();
+    if (dualSubtitlesShortcut && pressed === dualSubtitlesShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
+      e.preventDefault(); e.stopPropagation(); document.dispatchEvent(new CustomEvent("lhn-youtube-dual-subtitles-toggle")); return;
+    }
     const bilingualShortcuts = { "alt+a":"toggle-lazy", "alt+d":"toggle-near-pointer", "alt+r":"toggle-reading" };
     const bilingualAction = bilingualShortcuts[pressed];
     if (bilingualAction) {

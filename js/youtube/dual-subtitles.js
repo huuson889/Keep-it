@@ -1553,6 +1553,17 @@ function tick() {
 
 // Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
+  document.addEventListener('lhn-youtube-dual-subtitles-toggle', () => {
+    if (keepitSiteDisabled) return;
+    if (state.open) closeOverlay();
+    else openOverlay();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !state.open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    closeOverlay();
+  });
   setInterval(tick, 1000);
   tick();
   void restoreSettings().then(loaded => { settings = loaded; if (overlayEl()) applySettings(); });
