@@ -77,7 +77,7 @@ const ctrl = (title) => ui(`button[title="${title}"]`);
 function pauseVideoFor(reason) {
   state.pauseReasons.add(reason);
   const video = state.videoEl || state.managedPauseVideo;
-  if (video && !video.paused && !state.managedPauseVideo) {
+  if (video && !video.paused) {
     state.managedPauseVideo = video;
     video.pause();
   }
@@ -886,7 +886,7 @@ function ensureLauncher() {
 
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
-  const video = document.querySelector('video');
+  const video = document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video');
   const slot = ui('.te-video-slot');
   if (!video || !slot) {
     alert('Không tìm thấy video trên trang.');
@@ -896,6 +896,7 @@ function openOverlay() {
   shadow.host.style.display = '';
   state.open = true;
   attachVideo(video, slot);
+  onTimeUpdate();
   startAppPopupObserver();
   setVideoTitle();
   extendLoadedWindow();
@@ -1031,7 +1032,8 @@ function toggleFullscreen() {
 function seekPrevCaption() {
   const v = state.videoEl;
   if (!v || state.captions.length === 0) return;
-  const idx = findCaptionIndex(v.currentTime);
+  let idx = findCaptionIndex(v.currentTime);
+  if (idx < 0 && state.open && state.captions.length) idx = 0;
   if (idx < 0) {
     v.currentTime = state.captions[0].start;
     return;
@@ -1662,10 +1664,12 @@ function bindUI() {
   const floatingBtn = $('te-floating-btn');
 
   const mainSubtitleText = ui('.te-sub-en');
-  mainSubtitleText.addEventListener('mouseenter', () => {
-    pauseVideoFor('subtitle-main-hover');
+  mainSubtitleText.addEventListener('pointerover', (event) => {
+    if (!mainSubtitleText.contains(event.relatedTarget)) pauseVideoFor('subtitle-main-hover');
   });
-  mainSubtitleText.addEventListener('mouseleave', () => resumeVideoFor('subtitle-main-hover'));
+  mainSubtitleText.addEventListener('pointerout', (event) => {
+    if (!mainSubtitleText.contains(event.relatedTarget)) resumeVideoFor('subtitle-main-hover');
+  });
 
   // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
   const positionModal = (modalEl) => {

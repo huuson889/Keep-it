@@ -535,6 +535,9 @@ const OVERLAY_CSS = `
     #trancy-exact-overlay .te-video-slot video {
       position: absolute !important;
       top: 0; left: 0;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
       width: 100% !important;
       height: 100% !important;
       object-fit: contain;
