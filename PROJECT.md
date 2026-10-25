@@ -10,7 +10,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.610: code hiện dùng player API `youtubei/v1/player` với client ANDROID rồi lấy track XML; dự phòng panel transcript trong DOM, timedtext từ watch page, cuối cùng đọc caption đang hiển thị. Endpoint `youtubei/v1/get_transcript` được ghi trong nhật ký v3.4.605 nhưng không còn được gọi trong code hiện tại. Cần xác nhận trên Chromium/Firefox: danh sách không trùng cue/câu; log nguồn đúng; video dọc/4:3; danh sách dịch dần khi phát/cuộn; kiểm tra popup dịch/full dict và kích thước chữ khi chọn caption trong Shadow DOM.
+24. [Kiểm tra] YouTube song ngữ v3.4.610: code dùng player API `youtubei/v1/player` + timedtext, dự phòng transcript DOM, watch-page timedtext và live captions. Ngôn ngữ phụ đề chính/dịch đã nối với Dashboard > Dịch > Ngôn ngữ nguồn; ưu tiên track khớp, nếu thiếu dùng track gốc/mặc định rồi dịch sang ngôn ngữ nguồn. Cần xác nhận trên Chromium/Firefox: chọn track/fallback và đổi ngôn ngữ; danh sách cue, video dọc/4:3, tải dần, popup dịch/full dict trong Shadow DOM.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
@@ -103,6 +103,11 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-25 | v3.4.610 | Codex sửa:**
+  - Kết nối Ngôn ngữ phụ đề với Dashboard > Dịch > Ngôn ngữ nguồn. Cả hai dòng phụ đề dùng ngôn ngữ nguồn; ưu tiên transcript track khớp, nếu thiếu dùng track gốc/mặc định và dịch sang ngôn ngữ nguồn. Đổi thiết lập sẽ tải lại track hoặc dịch lại theo ngôn ngữ mới; cache được tách theo ngôn ngữ.
+  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `PROJECT.md`.
+  - Kiểm tra: `node --check` hai file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
   - Chỉ hover pause/nền xanh nhạt trên phụ đề gốc tiếng Anh, không áp dụng câu dịch; Full Dict từ Dual Sub đọc theo thiết lập Auto speak; double-click sidebar hủy click đơn nên video không seek/đổi focus cue, đồng thời vẫn tạm dừng video.
