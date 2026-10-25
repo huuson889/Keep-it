@@ -333,11 +333,9 @@ const OVERLAY_CSS = `
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
-    .te-modal-body::-webkit-scrollbar { width: 2px; }
+    .te-modal-body::-webkit-scrollbar { width: 3px; }
     .te-modal-body::-webkit-scrollbar-track { background: transparent; }
     .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
-    .te-modal-body:hover::-webkit-scrollbar { width: 4px; }
-    .te-modal-body:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
 
     .te-menu-row {
       padding: 11px 20px;
