@@ -116,3 +116,6 @@ body,.extension-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,"
 /* Edge/Chromium: đặt rõ cơ chế thanh cuộn cho các vùng cuộn của popup để quy tắc WebKit có hiệu lực */
 html, body, .popup-main { scrollbar-width: auto; scrollbar-color: auto; }
 html::-webkit-scrollbar, body::-webkit-scrollbar, .popup-main::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
+/* Chromium: popup không có khung bo góc như Firefox, bo nội dung bằng cùng bán kính */
+html.is-chromium { background: transparent !important; }
+html.is-chromium body { border-radius: 14px; overflow: hidden; }
