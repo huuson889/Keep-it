@@ -261,6 +261,11 @@
         if (change.type === 'childList') {
           change.removedNodes.forEach(node => cleanup(root, node));
           change.addedNodes.forEach(node => walk(root, node));
+          let ancestor = change.target;
+          while (isElement(ancestor) && isOwned(ancestor, root)) {
+            attach(ancestor, root);
+            ancestor = ancestor.parentElement || ancestor.getRootNode()?.host || null;
+          }
           shouldRefresh = true;
         } else if (isOwned(change.target, root) && !change.target.closest('.lhn-slim-scrollbar-track')) {
           attach(change.target, root);
