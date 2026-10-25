@@ -108,7 +108,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Thêm hiệu ứng nhấn cho các nút thanh điều khiển khi click/shortcut; click video toggle play/pause và làm nổi nút tương ứng. Chuyển “Chế độ đọc” lên đầu “Cài đặt video” và đổi nhãn thành “Chế độ xem”.
 - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
+- Kiểm tra: `node --check` cho hai file JavaScript, parse manifest v3.4.621, xác nhận vị trí “Chế độ xem” và wiring click/shortcut, cùng `git diff --check` — đạt. Chưa kiểm thử tương tác trên trình duyệt.
 
 **2026-10-25 | v3.4.620 | Codex sửa:**
 
