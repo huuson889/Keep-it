@@ -275,17 +275,6 @@ const OVERLAY_CSS = `
       overflow-y: auto;
       padding: 8px 0;
     }
-    /* Thanh cuộn mảnh (thử nghiệm): CSS chuẩn cho Firefox, WebKit cho Chromium */
-    .te-transcript-scroll { scrollbar-width: thin; scrollbar-color: #8b70e8a8 transparent; }
-    .te-transcript-scroll::-webkit-scrollbar { width: 4px; }
-    .te-transcript-scroll::-webkit-scrollbar-track { background: transparent; }
-    .te-transcript-scroll::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
-    .te-transcript-scroll:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
-    .te-modal-body { scrollbar-width: thin; scrollbar-color: #8b70e8a8 transparent; }
-    .te-modal-body::-webkit-scrollbar { width: 4px; }
-    .te-modal-body::-webkit-scrollbar-track { background: transparent; }
-    .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
-    .te-modal-body:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
 
     .te-ts-row {
       display: flex;
@@ -342,6 +331,11 @@ const OVERLAY_CSS = `
       max-height: 520px;
       overflow-y: auto;
     }
+    .te-modal-body::-webkit-scrollbar { width: 2px; }
+    .te-modal-body::-webkit-scrollbar-track { background: transparent; }
+    .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
+    .te-modal-body:hover::-webkit-scrollbar { width: 4px; }
+    .te-modal-body:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
 
     .te-menu-row {
       padding: 11px 20px;
