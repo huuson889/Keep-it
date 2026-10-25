@@ -1034,7 +1034,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <span>Phụ đề chính</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #374151;">
-                <span>English</span>
+                <span id="te-lang-source-value">English</span>
                 <span style="font-size: 16px;">🇺🇸</span>
                 <span style="color: #9ca3af; font-size: 16px;">›</span>
               </div>
@@ -1046,7 +1046,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <span>Phụ đề dịch</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #374151;">
-                <span>Việt</span>
+                <span id="te-lang-target-value">Việt</span>
                 <span style="color: #9ca3af; font-size: 16px;">›</span>
               </div>
             </div>

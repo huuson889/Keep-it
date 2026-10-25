@@ -1053,7 +1053,7 @@ function buildCaptions() {
     start: c.start,
     end: c.end,
     en: c.en,
-    vi: state.viCache.get(c.en) || PENDING,
+    vi: state.viCache.get(translationCacheKey(c.en)) || PENDING,
   }));
   renderTranscriptList();
 }
@@ -1102,12 +1102,12 @@ function extendLoadedWindow() {
 
 function storeTranscript(videoId, cues) {
   if (!videoId || !cues.length) return;
-  transcriptCache.set(videoId, cues);
+  transcriptCache.set(`${videoId}:${state.sourceLanguageSetting}`, cues);
   while (transcriptCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptCache.delete(transcriptCache.keys().next().value);
 }
 
 function takeCachedTranscript(videoId) {
-  const cached = transcriptCache.get(videoId);
+  const cached = transcriptCache.get(`${videoId}:${state.sourceLanguageSetting}`);
   if (!cached?.length) return null;
   return cached;
 }
