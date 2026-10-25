@@ -609,16 +609,16 @@ function translateVisibleRows() {
 function updateSubtitleLanguageLabels() {
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const fill = (select, value, includeSame) => {
+  const fill = (select, value) => {
     if (!select) return;
+    select.setAttribute('aria-label', t(select.id === 'te-lang-source-select' ? 'sourceLanguage' : 'targetLanguage'));
     const options = [['auto', t('autoLanguage')]];
-    if (includeSame) options.push(['same', t('sameAsDisplayLanguage')]);
     for (const language of languages?.LANGS || []) {
       const labelKey = { en: 'languageEnglish', vi: 'languageVietnamese', ko: 'languageKorean' }[language.code];
       options.push([language.code, `${language.flag} ${t(labelKey || language.code)}`]);
     }
-    const selected = value === 'same' && !includeSame ? 'auto' : value;
-    if (select.dataset.optionsLanguage !== state.displayLanguage || select.dataset.optionsFor !== (includeSame ? 'target' : 'source')) {
+    const selected = value === 'same' ? 'auto' : value;
+    if (select.dataset.optionsLanguage !== state.displayLanguage) {
       select.replaceChildren(...options.map(([code, label]) => {
         const option = document.createElement('option');
         option.value = code;
@@ -626,12 +626,11 @@ function updateSubtitleLanguageLabels() {
         return option;
       }));
       select.dataset.optionsLanguage = state.displayLanguage;
-      select.dataset.optionsFor = includeSame ? 'target' : 'source';
     }
     select.value = selected;
   };
-  fill($('te-lang-source-select'), state.sourceLanguageSetting, false);
-  fill($('te-lang-target-select'), state.targetLanguageSetting, true);
+  fill($('te-lang-source-select'), state.sourceLanguageSetting);
+  fill($('te-lang-target-select'), state.targetLanguageSetting);
 }
 
 async function refreshSubtitleLanguageSettings() {
