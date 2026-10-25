@@ -228,16 +228,12 @@ const OVERLAY_CSS = `
 
     .te-icon-btn:hover { background: rgba(128, 128, 128, 0.15); }
 
-    @keyframes te-control-press {
-      0% { transform: scale(1); }
-      45% { transform: scale(0.88); }
+    .te-icon-btn.lhn-br-key-press,
+    .te-play-btn.lhn-br-key-press { animation: lhnBrButtonPress .18s ease-out; }
+    @keyframes lhnBrButtonPress {
+      35% { transform: scale(.84); background: rgba(148, 163, 184, .38); }
       100% { transform: scale(1); }
     }
-
-    .te-icon-btn.te-button-pressed,
-    .te-play-btn.te-button-pressed { animation: te-control-press 180ms ease-out; }
-    .te-icon-btn.te-button-pressed { background: rgba(128, 128, 128, 0.22); }
-    .te-play-btn.te-button-pressed { background: #7c3aed !important; }
 
     .te-play-btn {
       width: 34px;

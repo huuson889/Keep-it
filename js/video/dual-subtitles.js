@@ -1044,11 +1044,11 @@ function togglePlay() {
 
 function pulseControlButton(button) {
   if (!button) return;
-  button.classList.remove('te-button-pressed');
+  button.classList.remove('lhn-br-key-press');
   void button.offsetWidth;
-  button.classList.add('te-button-pressed');
+  button.classList.add('lhn-br-key-press');
   clearTimeout(button._lhnPressTimer);
-  button._lhnPressTimer = setTimeout(() => button.classList.remove('te-button-pressed'), 200);
+  button._lhnPressTimer = setTimeout(() => button.classList.remove('lhn-br-key-press'), 190);
 }
 
 function pulseControl(title) {
