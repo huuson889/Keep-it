@@ -7,7 +7,6 @@ const LAUNCHER_ID = 'yt-trancy-launcher';
 const HOST_ID = 'trancy-host';
 const OVERLAY_ID = 'trancy-exact-overlay';
 const SETTINGS_KEY = 'lhnYouTubeSettings';
-const STUDY_TRANSLATION_SETTINGS_KEY = 'lhnStudyTranslationSettings';
 const BATCH_SIZE = 15;
 const PENDING = 'Đang dịch...';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -38,9 +37,6 @@ const state = {
   captions: [],
   activeIdx: -1,
   viCache: new Map(),
-  sourceLanguage: 'auto',
-  targetLanguage: 'en',
-  captionSourceLabel: '',
   loadToken: 0,
   loadingFor: null,
   loop: false,
@@ -197,25 +193,10 @@ function extractPlayerResponse(html) {
   return null;
 }
 
-function trackLanguageCode(track) {
-  return String(track?.languageCode || '').toLowerCase().split('-')[0];
-}
-
-function trackDisplayName(track) {
-  const name = track?.name?.simpleText || track?.name?.runs?.map((part) => part.text).join('');
-  if (name) return name;
-  const code = trackLanguageCode(track);
-  return ({ en: 'English', vi: 'Tiếng Việt', ko: '한국어' })[code] || track?.languageCode || '—';
-}
-
-function pickTrack(tracks, sourceLanguage = state.sourceLanguage) {
-  const source = sourceLanguage === 'auto' ? 'en' : String(sourceLanguage || '').split('-')[0].toLowerCase();
-  const exact = tracks.filter((track) => trackLanguageCode(track) === source);
-  const preferred = exact.find((track) => track.kind !== 'asr') || exact[0];
-  const english = tracks.filter((track) => trackLanguageCode(track) === 'en');
-  const selected = preferred || english.find((track) => track.kind !== 'asr') || english[0] || tracks[0];
-  if (selected) state.captionSourceLabel = trackDisplayName(selected);
-  return selected;
+function pickTrack(tracks) {
+  return tracks.find((t) => t.languageCode === 'en' && t.kind !== 'asr')
+      || tracks.find((t) => t.languageCode === 'en')
+      || tracks[0];
 }
 
 async function waitFor(fn, timeout) {
@@ -501,29 +482,23 @@ const TRANSLATE_CONCURRENCY = 2;
 const translateInflight = new Map();
 let translateQueue = [];
 let translateActive = 0;
-let translationSettingsRevision = 0;
 
-function translationCacheKey(text, targetLanguage = state.targetLanguage) {
-  return `${targetLanguage}:${text}`;
-}
-
-async function translateOne(text, targetLanguage = state.targetLanguage) {
-  const cacheKey = translationCacheKey(text, targetLanguage);
-  if (state.viCache.has(cacheKey)) return state.viCache.get(cacheKey);
-  if (translateInflight.has(cacheKey)) return translateInflight.get(cacheKey);
+async function translateOne(text) {
+  if (state.viCache.has(text)) return state.viCache.get(text);
+  if (translateInflight.has(text)) return translateInflight.get(text);
   const job = (async () => {
     try {
-      const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: targetLanguage });
+      const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: TRANSLATE_TARGET });
       const out = res?.translated || '(không dịch được)';
-      state.viCache.set(cacheKey, out);
+      state.viCache.set(text, out);
       return out;
     } catch {
       return '(không dịch được)';
     } finally {
-      translateInflight.delete(cacheKey);
+      translateInflight.delete(text);
     }
   })();
-  translateInflight.set(cacheKey, job);
+  translateInflight.set(text, job);
   return job;
 }
 
@@ -532,9 +507,8 @@ function pumpTranslateQueue() {
     const item = translateQueue.shift();
     if (!item || item.cue.vi !== PENDING) continue;
     translateActive++;
-    translateOne(item.cue.en, item.targetLanguage)
+    translateOne(item.cue.en)
       .then((vi) => {
-        if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
         item.cue.vi = vi;
         if (item.token === state.loadToken) updateVietnameseRow(item.cue);
       })
@@ -544,8 +518,8 @@ function pumpTranslateQueue() {
 
 function queueCue(cue, token) {
   if (!cue || cue.vi !== PENDING) return;
-  if (translateQueue.some((q) => q.cue === cue && q.targetLanguage === state.targetLanguage)) return;
-  translateQueue.push({ cue, token, targetLanguage:state.targetLanguage, revision:translationSettingsRevision });
+  if (translateQueue.some((q) => q.cue === cue)) return;
+  translateQueue.push({ cue, token });
 }
 
 function translateWindow(centerIdx, token = state.loadToken) {
@@ -568,64 +542,6 @@ function translateVisibleRows() {
     if (row.offsetTop + row.offsetHeight >= top && row.offsetTop <= bottom) queueCue(cue, state.loadToken);
   });
   pumpTranslateQueue();
-}
-
-function updateSubtitleLanguageLabels() {
-  const source = $('te-lang-source-value');
-  const target = $('te-lang-target-value');
-  if (source) source.textContent = state.captionSourceLabel || ({ auto:'Tự động', en:'English', vi:'Tiếng Việt', ko:'한국어' })[state.sourceLanguage] || state.sourceLanguage;
-  if (target) {
-    const language = globalThis.LHN_LANGUAGES?.LANGS?.find((item) => item.code === state.targetLanguage);
-    target.textContent = language?.native || language?.name || state.targetLanguage;
-  }
-}
-
-async function refreshSubtitleLanguageSettings() {
-  let nextSource = 'auto';
-  let nextTarget = globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
-  try {
-    const keys = [STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS];
-    const stored = await browser.storage.local.get(keys);
-    const translation = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
-    const configuredSource = translation.sourceLanguage;
-    nextSource = ['auto', 'en', 'vi', 'ko'].includes(configuredSource) ? configuredSource : 'auto';
-    const target = translation.targetLanguage || 'auto';
-    const displaySettings = { ...(stored[CONFIG.STORAGE_KEYS.SETTINGS] || {}) };
-    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || nextTarget;
-    nextTarget = ['auto', 'same'].includes(target) ? displayLanguage : ['en', 'vi', 'ko'].includes(target) ? target : displayLanguage;
-  } catch {}
-
-  const sourceChanged = nextSource !== state.sourceLanguage;
-  const targetChanged = nextTarget !== state.targetLanguage;
-  if (!sourceChanged && !targetChanged) {
-    updateSubtitleLanguageLabels();
-    return;
-  }
-  state.sourceLanguage = nextSource;
-  state.targetLanguage = nextTarget;
-  translationSettingsRevision++;
-  translateQueue = [];
-  updateSubtitleLanguageLabels();
-
-  if (sourceChanged && state.videoId) {
-    state.loadToken++;
-    prefetchToken++;
-    state.loadingFor = null;
-    state.rawCues = [];
-    state.allCues = [];
-    state.captions = [];
-    state.activeIdx = -1;
-    loadedUntil = 0;
-    if (state.open) loadCaptions();
-    else schedulePrefetch(state.videoId);
-    return;
-  }
-
-  if (targetChanged && state.rawCues.length) {
-    state.captions = [];
-    buildCaptions();
-    translateWindow(Math.max(0, state.activeIdx));
-  }
 }
 
 
