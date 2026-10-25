@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.600; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.603; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
-- **v3.5.0 — YouTube song ngữ:** đã tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` do người dùng cung cấp. Giao diện overlay giữ nguyên 100% (CSS/HTML copy byte-identical). Đã ánh xạ sang module Keepit: `LHN_MESSAGING` (message `YOUTUBE_FETCH_TEXT` mở ở background với allowlist youtube/translate), `browser.storage.local` key `lhnYouTubeSettings`, `LHN_DEFAULTS.youtube`. Chỉ chạy trên `youtube.com`, tôn trọng `Alt+Z` (tắt Keepit trên site). **Khác OPT-ARENA 8.1.1:** bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` (endpoint nội bộ của YouTube) thay vì chỉ caption đang hiển thị; giữ theo bản tham chiếu vì người dùng yêu cầu, cần chốt lại với OPT-ARENA.
+- **v3.4.600 — YouTube song ngữ:** đã tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` do người dùng cung cấp. Giao diện overlay giữ nguyên 100% (CSS/HTML copy byte-identical). Đã ánh xạ sang module Keepit: `LHN_MESSAGING` (message `YOUTUBE_FETCH_TEXT` mở ở background với allowlist youtube/translate), `browser.storage.local` key `lhnYouTubeSettings`, `LHN_DEFAULTS.youtube`. Chỉ chạy trên `youtube.com`, tôn trọng `Alt+Z` (tắt Keepit trên site). **Khác OPT-ARENA 8.1.1:** bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` (endpoint nội bộ của YouTube) thay vì chỉ caption đang hiển thị; giữ theo bản tham chiếu vì người dùng yêu cầu, cần chốt lại với OPT-ARENA.
 - Một số hành vi TTS/Reader **khác** còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.600: khung video giờ co theo tỉ lệ thật của video (16:9, 4:3, 9:16, 21:9) thay vì ép 16:9, phụ đề bám trên và tràn hết phần còn lại. Cần xác nhận: video 16:9 hiển thị như cũ; video dọc/4:3 không còn viền đen trong khung và phụ đề nằm ngay dưới video; đổi kích thước cửa sổ khung cập nhật đúng; thu nhỏ cửa sổ không làm phụ đề bị đẩy khỏi màn hình. Chưa có kết quả trên Chrome/Firefox.
+24. [Kiểm tra] YouTube song ngữ v3.4.603: khung video giờ co theo tỉ lệ thật của video (16:9, 4:3, 9:16, 21:9) thay vì ép 16:9, phụ đề bám trên và tràn hết phần còn lại. Cần xác nhận: video 16:9 hiển thị như cũ; video dọc/4:3 không còn viền đen trong khung và phụ đề nằm ngay dưới video; đổi kích thước cửa sổ khung cập nhật đúng; thu nhỏ cửa sổ không làm phụ đề bị đẩy khỏi màn hình. Chưa có kết quả trên Chrome/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
@@ -103,21 +103,15 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
-**2026-10-25 | v3.4.600 | DeepSeek sửa:**
-
-- Sửa lại cách đánh version: từ mốc `v3.4.599` tôi đã tự nâng lên minor `3.5.0` rồi `3.5.1`, `3.5.2`, `3.5.3` mà không theo quy ước tăng patch của repo. Nay đưa về **v3.4.600** (tiếp ngay sau 3.4.599) và cập nhật `manifest.json` + mục 1 + mục 24. Các mục nhật ký `3.5.0`–`3.5.3` bên dưới **giữ nguyên** để không sửa lịch sử, chỉ ghi nhận đây là tên version đã dùng sai.
-- Từ nay: mỗi thay đổi phát hành tăng **patch** (3.4.601, 3.4.602, …); chỉ tăng minor khi người dùng yêu cầu.
-- File: `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `manifest.json` parse hợp lệ, version `3.4.600`, không có BOM; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.5.3 | DeepSeek sửa:**
+**2026-10-25 | v3.4.603 | DeepSeek sửa:**
 
 - Khung video YouTube: bỏ ép `aspect-ratio: 16 / 9` cố định, chuyển sang `aspect-ratio: var(--te-video-aspect, 16 / 9)`; thêm `syncVideoAspect()` set biến theo `video.videoWidth/videoHeight` khi gắn video, khi `loadedmetadata` và khi resize cửa sổ (chưa có metadata thì dùng 16:9). Bỏ `margin: auto` để khung bám trên, nhường chỗ dưới cho phụ đề.
 - `.te-sub-container` thêm `flex: 1` và đổi `justify-content: center` → `flex-start`: phụ đề nằm ngay dưới video và tràn hết phần còn lại, không còn căn giữa khoảng trống. Giữ `min-height: 140px` và `max-height: calc(100vh - 200px)` của khung video để phụ đề + control bar luôn đủ chỗ.
 - File: `js/youtube/dual-subtitles.js`, `js/youtube/overlay-template.js`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: `node --check` hai file đạt; sửa luôn lỗi BOM do PowerShell ghi vào `manifest.json` (đã kiểm `JSON.parse` OK). Chưa kiểm thử trên Chrome/Firefox.
+- Lưu ý: bốn mục nhật ký của đợt YouTube trước đây bị ghi sai tên version (`3.5.0`–`3.5.3`), đã đổi lại theo mạch patch là `3.4.600`–`3.4.603` theo yêu cầu người dùng. Từ nay mỗi thay đổi phát hành tăng patch (`3.4.604`, `3.4.605`, …), chỉ tăng minor khi người dùng yêu cầu.
 
-**2026-10-25 | v3.5.2 | DeepSeek sửa:**
+**2026-10-25 | v3.4.602 | DeepSeek sửa:**
 
 - Fix sidebar bản ghi (`yt-dual-right-sidebar`) không đổi màu ở light mode: các class `.yt-dual-*` hardcode màu tối và không nằm trong bộ rule `.theme-light`. Thêm khối override light mode cho sidebar/header/nút đóng/hàng/empty; màu chữ đi qua biến `--te-side-en-color`/`--te-side-vi-color` nên màu người dùng tự chọn (inline style) vẫn thắng.
 - Dịch chậm: bỏ hẳn batch `translate_a/single` tự viết trong `dual-subtitles.js`, chuyển sang **module translate của Keepit** (`BILINGUAL_TRANSLATE` → `LHN_TRANSLATE` + `LHN_CACHE`) và dịch **lười**: cửa sổ 2 cue trước / 8 cue sau quanh vị trí đang phát, thêm các dòng đang nhìn thấy khi cuộn (`translateVisibleRows`), và dịch ngay cue được bấm; concurrency 2, khử trùng theo text + `viCache` hai lớp.
@@ -125,7 +119,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: `js/youtube/dual-subtitles.js`, `js/youtube/overlay-template.js`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: `node --check` hai file đạt; rà không còn tham chiếu `translateAll`/`translateBatch`/`translateRaw`. Chưa kiểm thử trên Chrome/Firefox.
 
-**2026-10-25 | v3.5.1 | DeepSeek sửa:**
+**2026-10-25 | v3.4.601 | DeepSeek sửa:**
 
 - Người dùng báo lỗi "Không thể tải phụ đề… timedtext rỗng | DOM: đã bấm nút bản ghi nhưng panel không hiện các đoạn". Kiểm tra trực tiếp ngoài extension (PowerShell, tải `watch?v=dQw4w9WgXcQ`): `timedtext` trả **HTTP 200 nhưng 0 byte** với cả `fmt=json3` và `fmt=srv3` → YouTube đã chặn bằng proof-of-origin token, nên nguồn dữ liệu của bản tham chiếu không còn dùng được.
 - Thay nguồn dữ liệu trong `js/youtube/dual-subtitles.js` (UI giữ nguyên): panel bản ghi chuyển sang bộ selector mở (`ytd-transcript-segment-renderer`, `transcript-segment-view-model`, `[class*="transcript-segment"]`) và đọc segment tổng quát (tách timestamp bằng regex thay vì phụ thuộc `.segment-timestamp`); thêm nguồn **đọc caption đang hiển thị** (`.ytp-caption-segment`, tự bấm bật CC nếu đang tắt, gom cue 400ms/lần, ghép dần vào panel và dịch ngay cue mới).
@@ -133,7 +127,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: `node --check` đạt; đã xác minh nguyên nhân timedtext bằng request thật; chưa kiểm thử trên Chrome/Firefox.
 
-**2026-10-25 | v3.5.0 | DeepSeek sửa:**
+**2026-10-25 | v3.4.600 | DeepSeek sửa:**
 
 - Tích hợp tính năng **YouTube song ngữ** từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` (người dùng cung cấp). Copy nguyên văn UI: `js/youtube/overlay-template.js` và `css/content/youtube.css` có hash SHA-256 trùng bản gốc; controller copy sang `js/youtube/dual-subtitles.js` rồi chỉ sửa các đường nối.
 - Ánh xạ sang module Keepit: `fetchText` dùng `LHN_MESSAGING` với message mới `YOUTUBE_FETCH_TEXT` ở background (allowlist `youtube.com` + `translate.googleapis.com`, giữ `credentials: include` cho YouTube); cài đặt overlay chuyển từ `localStorage` sang `browser.storage.local` key `lhnYouTubeSettings`; bộ default chuyển vào `LHN_DEFAULTS.youtube`; thêm guard chỉ chạy trên `youtube.com` và tôn trọng danh sách `disabledWebsites` (Alt+Z).
