@@ -1014,11 +1014,13 @@ function attachVideo(video, slot) {
   syncMuteButton();
   enforceVideoPause(video);
   onTimeUpdate();
+  startAmbient();
 }
 
 function detachVideo() {
   const v = state.videoEl;
   if (!v) return;
+  stopAmbient();
   v.removeEventListener('click', handleOverlayVideoClick);
   v.removeEventListener('timeupdate', onTimeUpdate);
   v.removeEventListener('play', handleVideoPlay);
@@ -1037,9 +1039,41 @@ function detachVideo() {
   state.origNext = null;
 }
 
+// ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
+let ambientTimer = 0, ambientLastTime = -1;
+function drawAmbient() {
+  const canvas = ui('.te-ambient'), v = state.videoEl;
+  if (!canvas || !v || v.readyState < 2 || document.hidden) return;
+  if (v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
+  try {
+    const ctx = canvas.getContext('2d');
+    // Nhảy xa (seek) thì thay hẳn; còn lại pha 35% khung mới để màu chuyển mượt.
+    ctx.globalAlpha = Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    ambientLastTime = v.currentTime;
+  } catch { stopAmbient(); } // video không cho đọc hình (DRM/cross-origin): tắt hiệu ứng
+}
+function startAmbient() {
+  stopAmbient();
+  const canvas = ui('.te-ambient');
+  if (!canvas || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  canvas.classList.add('te-ambient-on');
+  drawAmbient();
+  ambientTimer = setInterval(drawAmbient, 125);
+}
+function stopAmbient() {
+  clearInterval(ambientTimer);
+  ambientTimer = 0;
+  ambientLastTime = -1;
+  const canvas = ui('.te-ambient');
+  if (!canvas) return;
+  canvas.classList.remove('te-ambient-on');
+  canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 function setVideoTitle() {
   const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim();
-  const el = ui('.te-video-title-label');
+  const el = ui('.te-video-title-text');
   if (el) el.textContent = t || 'YouTube video';
 }
 
@@ -1224,7 +1258,9 @@ function setActiveCaption(idx) {
   const row = list.querySelector(`.yt-dual-item[data-idx="${idx}"]`);
   if (row) {
     row.classList.add('active');
-    list.scrollTop = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
+    const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
+    // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
+    list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
   }
 }
 
@@ -1946,10 +1982,10 @@ function bindUI() {
   });
 
   // Tiêu đề video: hover thì chạy qua lại nếu bị cắt
-  const titleBox = ui('.te-yt-logo-box'), titleEl = ui('.te-video-title-label');
-  if (titleBox && titleEl) {
+  const titleBox = ui('.te-yt-logo-box'), titleWin = ui('.te-video-title-label'), titleEl = ui('.te-video-title-text');
+  if (titleBox && titleWin && titleEl) {
     titleBox.addEventListener('mouseenter', () => {
-      const shift = titleEl.offsetWidth - (titleBox.clientWidth - (titleEl.offsetLeft - titleBox.offsetLeft));
+      const shift = titleEl.offsetWidth - titleWin.clientWidth;
       if (shift <= 1) return;
       titleEl.style.setProperty('--te-title-shift', `${Math.ceil(shift)}px`);
       titleEl.style.setProperty('--te-title-dur', `${Math.max(2, shift / 35 + 1).toFixed(1)}s`);

@@ -36,8 +36,8 @@ const OVERLAY_CSS = `
       background-color: #f8f9fa;
       color: #1f2937;
     }
-    #keepit-exact-overlay.theme-light .te-left-section { background-color: #f1f3f5; }
-    #keepit-exact-overlay.theme-light .te-sub-container { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-left-section { background-color: #ffffff; }
+    #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; border-top: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
     #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
     #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
@@ -75,8 +75,8 @@ const OVERLAY_CSS = `
       background-color: #0b0b0b;
       color: #f3f4f6;
     }
-    #keepit-exact-overlay.theme-dark .te-left-section { background-color: #000000; }
-    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: #121212; border-top: 1px solid #222; }
+    #keepit-exact-overlay.theme-dark .te-left-section { background-color: #121212; }
+    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent; border-top: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-sub-en { color: #ffff00; }
     #keepit-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
     #keepit-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
@@ -116,7 +116,24 @@ const OVERLAY_CSS = `
       height: 100%;
       position: relative;
       padding-bottom: 60px;
+      overflow: hidden;
     }
+
+    /* Ambient mode: màu video làm mờ phát sáng phía sau (JS vẽ khung thu nhỏ vào canvas) */
+    .te-ambient {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      filter: blur(48px) saturate(1.8);
+      transform: scale(1.15);
+      transition: opacity 0.6s ease;
+    }
+    .te-ambient.te-ambient-on { opacity: 0.45; }
+    @media (prefers-reduced-motion: reduce) { .te-ambient { display: none; } }
 
     .te-video-slot {
       flex: 1;
@@ -125,10 +142,13 @@ const OVERLAY_CSS = `
       justify-content: center;
       background-color: #111;
       position: relative;
+      z-index: 1;
       overflow: hidden;
     }
 
     .te-sub-container {
+      position: relative;
+      z-index: 1;
       min-height: 140px;
       flex: 1;
       display: flex;
@@ -211,7 +231,9 @@ const OVERLAY_CSS = `
     }
 
     /* Tiêu đề dài bị cắt thì chạy qua lại khi hover (JS đặt --te-title-shift/--te-title-dur và class te-title-run) */
-    .te-yt-logo-box:hover .te-video-title-label.te-title-run {
+    .te-video-title-label { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+    .te-video-title-text { display: inline-block; white-space: nowrap; }
+    .te-yt-logo-box:hover .te-video-title-text.te-title-run {
       animation: teTitleRun var(--te-title-dur, 4s) ease-in-out infinite alternate;
     }
     @keyframes teTitleRun {
@@ -219,7 +241,7 @@ const OVERLAY_CSS = `
       88%, 100% { transform: translateX(calc(-1 * var(--te-title-shift, 0px))); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .te-yt-logo-box:hover .te-video-title-label.te-title-run { animation: none; }
+      .te-yt-logo-box:hover .te-video-title-text.te-title-run { animation: none; }
     }
 
     .te-icon-btn, .te-play-btn {
@@ -587,7 +609,7 @@ const OVERLAY_CSS = `
 }
 
 .yt-dual-sidebar-header {
-  padding: 6px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid #282828;
   display: flex;
   justify-content: space-between;
@@ -629,7 +651,8 @@ const OVERLAY_CSS = `
   margin-bottom: 8px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: inset 4px 0 0 rgba(139, 92, 246, 0);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   gap: 12px;
 }
@@ -640,7 +663,7 @@ const OVERLAY_CSS = `
 
 .yt-dual-item.active {
   background-color: #2e2640;
-  border-left: 4px solid #8b5cf6;
+  box-shadow: inset 4px 0 0 #8b5cf6;
 }
 
 .yt-dual-timestamp {
@@ -676,7 +699,8 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
 #keepit-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
 #keepit-exact-overlay.theme-light .yt-dual-item:hover { background-color: #f3f4f6; }
-#keepit-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; border-left-color: #d97706; }
+#keepit-exact-overlay.theme-light .yt-dual-item { box-shadow: inset 4px 0 0 rgba(217, 119, 6, 0); }
+#keepit-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; box-shadow: inset 4px 0 0 #d97706; }
 #keepit-exact-overlay.theme-light .yt-dual-timestamp { color: #7c3aed; }
 #keepit-exact-overlay.theme-light .yt-dual-empty { color: #6b7280; }
 
@@ -728,6 +752,7 @@ const OVERLAY_CSS = `
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Left Section -->
     <div class="te-left-section">
+      <canvas class="te-ambient" width="48" height="27" aria-hidden="true"></canvas>
       <div class="te-video-slot"></div>
       
       <!-- Subtitle box below video -->
@@ -743,7 +768,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <div class="te-ctrl-group">
           <div class="te-yt-logo-box">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-            <span class="te-video-title-label">The Power Of Practice | You Become What You Practice |...</span>
+            <span class="te-video-title-label"><span class="te-video-title-text">The Power Of Practice | You Become What You Practice |...</span></span>
           </div>
           <button class="te-icon-btn" title="Thêm vào từ vựng"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
           <button class="te-icon-btn" title="Mở bộ sưu tập"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
@@ -771,7 +796,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Right Sidebar (giao diện v1.4) -->
     <div class="yt-dual-right-sidebar">
       <div class="yt-dual-sidebar-header">
-        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
+        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
         <div class="yt-dual-actions">
           <button class="yt-dual-close-btn" title="Đóng">&times;</button>
         </div>
