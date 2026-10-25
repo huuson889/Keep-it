@@ -47,6 +47,8 @@ const PRELOAD_SECONDS = 300;
 const LOOKAHEAD_SECONDS = 600;
 const TRANSCRIPT_CACHE_LIMIT = 3;
 const transcriptCache = new Map(); // videoId -> cue[] đã làm sạch
+const failedUntil = new Map(); // videoId -> thời điểm hết hạn cache lỗi
+const FAILED_CACHE_MS = 10 * 60 * 1000;
 let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
 let prefetchToken = 0;
 let prefetchTimer = 0;
@@ -260,12 +262,20 @@ function visibleCaptionText() {
   return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+let ccStartedByKeepit = false;
 function ensureCaptionsOn() {
   const btn = document.querySelector('.ytp-subtitles-button');
-  if (btn && btn.getAttribute('aria-pressed') === 'false') btn.click();
+  if (btn && btn.getAttribute('aria-pressed') === 'false') { btn.click(); ccStartedByKeepit = true; }
+}
+
+function restoreCaptionsState() {
+  const btn = document.querySelector('.ytp-subtitles-button');
+  if (ccStartedByKeepit && btn && btn.getAttribute('aria-pressed') === 'true') btn.click();
+  ccStartedByKeepit = false;
 }
 
 function stopLiveCaptionCapture() {
+  restoreCaptionsState();
   if (livePollTimer) clearInterval(livePollTimer);
   livePollTimer = null;
   liveLastCue = null;
@@ -954,6 +964,8 @@ function schedulePrefetch(videoId) {
 // Ngầm tải phụ đề khi vừa mở video; người dùng không thấy thay đổi nào trên trang.
 async function prefetchTranscript(videoId) {
   if (!videoId || keepitSiteDisabled) return;
+  if (document.visibilityState !== 'visible') return; // (1) chỉ prefetch khi tab đang hiển thị
+  if ((failedUntil.get(videoId) || 0) > Date.now()) return; // (3) đang trong thời hạn cache lỗi
   if (state.videoId !== videoId) return;
   const cached = takeCachedTranscript(videoId);
   if (cached) {
@@ -970,6 +982,7 @@ async function prefetchTranscript(videoId) {
   if (token !== prefetchToken || state.videoId !== videoId) return;
   const cleaned = cleanCues(cues);
   if (!cleaned.length) {
+    failedUntil.set(videoId, Date.now() + FAILED_CACHE_MS);
     console.info('[Trancy] Prefetch chưa lấy được phụ đề, sẽ thử lại khi mở panel:', reasons.join(' | ') || 'không rõ lý do');
     return;
   }
