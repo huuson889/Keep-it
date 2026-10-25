@@ -1222,10 +1222,27 @@ function syncSpeedPopup() {
   if (sl) sl.value = sp;
   uiAll('#te-speed-popup .te-speed-btn').forEach((btn) => btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.speed) - sp) < 0.02));
 }
+// Đặt popup căn giữa phía trên nút "Tốc độ" (trong hệ tọa độ của overlay), kéo vào trong nếu sát mép
+function positionSpeedPopup(p) {
+  const root = overlayEl(), btn = ctrl('Tốc độ');
+  if (!root || !btn) return;
+  const rr = root.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  const pw = p.offsetWidth || 340, ph = p.offsetHeight || 0;
+  const centerX = br.left + br.width / 2 - rr.left;
+  const left = Math.max(8, Math.min(centerX - pw / 2, rr.width - pw - 8));
+  const top = Math.max(8, br.top - rr.top - ph - 12);
+  p.style.left = `${Math.round(left)}px`;
+  p.style.top = `${Math.round(top)}px`;
+}
 function toggleSpeedPopup() {
   const p = ui('#te-speed-popup');
   if (!p) return;
-  p.classList.toggle('hidden');
+  if (p.classList.contains('hidden')) {
+    p.classList.remove('hidden');   // hiện trước để đo được kích thước, rồi đặt vị trí
+    positionSpeedPopup(p);
+  } else {
+    p.classList.add('hidden');
+  }
   syncSpeedPopup();
 }
 function cycleSpeed() {
