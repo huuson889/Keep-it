@@ -1,4 +1,3 @@
-if (!/Firefox\//.test(navigator.userAgent)) document.documentElement.classList.add("is-chromium");
 const $ = id => document.getElementById(id);
 const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
