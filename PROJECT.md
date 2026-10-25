@@ -105,6 +105,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
+  - Dual Sub: neo Full Dict phía trên từ được chọn trong phụ đề dưới video; hover phụ đề chính hoặc chữ trong sidebar để pause/resume; hover từng từ có nền xanh nhạt; mở popup Full Dict, dịch hoặc note sẽ pause video cho đến khi đóng.
+  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
+  - Kiểm tra: Chưa chạy.
+
+- **2026-10-25 | v3.4.610 | Codex sửa:**
   - Chỉ trong Dual Sub: hover vùng phụ đề chính sẽ pause video và rời vùng sẽ tiếp tục; chọn từ tiếng Anh ở phụ đề dưới video sẽ mở Full Dict neo theo chữ đã chọn; double-click phụ đề bên sidebar sẽ pause video.
   - File: `js/video/dual-subtitles.js`, `js/content/content.js`, `PROJECT.md`.
   - Kiểm tra: `node --check js/video/dual-subtitles.js`, `node --check js/content/content.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.

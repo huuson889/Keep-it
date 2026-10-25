@@ -715,11 +715,11 @@ function openOverlay() {
 function closeOverlay() {
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
-  syncAppPopupPause();
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
+  syncAppPopupPause();
   stopLiveCaptionCapture();
   detachVideo();
 }
