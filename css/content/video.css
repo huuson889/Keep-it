@@ -1,5 +1,5 @@
-/* Nút mở Trancy trên trang YouTube (giao diện overlay nằm trong Shadow DOM) */
-#yt-trancy-launcher {
+/* Nút mở keepit trên trang YouTube (giao diện overlay nằm trong Shadow DOM) */
+#yt-keepit-launcher {
   position: fixed;
   right: 24px;
   bottom: 24px;
@@ -16,4 +16,4 @@
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
   z-index: 999997;
 }
-#yt-trancy-launcher svg { width: 22px; height: 22px; fill: currentColor; }
+#yt-keepit-launcher svg { width: 22px; height: 22px; fill: currentColor; }

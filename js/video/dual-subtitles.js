@@ -3,9 +3,9 @@
 // Các "đường nối" đã đổi sang module Keepit: LHN_MESSAGING (fetch bridge), browser.storage (cài đặt),
 // LHN_DEFAULTS.youtube (giá trị mặc định).
 
-const LAUNCHER_ID = 'yt-trancy-launcher';
-const HOST_ID = 'trancy-host';
-const OVERLAY_ID = 'trancy-exact-overlay';
+const LAUNCHER_ID = 'yt-keepit-launcher';
+const HOST_ID = 'keepit-host';
+const OVERLAY_ID = 'keepit-exact-overlay';
 const SETTINGS_KEY = 'lhnYouTubeSettings';
 const STUDY_TRANSLATION_SETTINGS_KEY = 'lhnStudyTranslationSettings';
 const GLOBAL_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
@@ -67,7 +67,7 @@ let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
 let prefetchToken = 0;
 let prefetchTimer = 0;
 
-let shadow = null; // ShadowRoot chứa toàn bộ giao diện Trancy
+let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
 const overlayEl = () => $(OVERLAY_ID);
 const uiCache = new Map();
@@ -940,7 +940,7 @@ function ensureLauncher() {
   if (document.getElementById(LAUNCHER_ID)) return;
   const btn = document.createElement('button');
   btn.id = LAUNCHER_ID;
-  btn.title = 'Mở Trancy';
+  btn.title = 'Mở keepit';
   btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>';
   btn.addEventListener('click', openOverlay);
   document.body.appendChild(btn);
@@ -1394,14 +1394,14 @@ async function prefetchTranscript(videoId) {
   const cleaned = cleanCues(cues);
   if (!cleaned.length) {
     failedUntil.set(videoId, Date.now() + FAILED_CACHE_MS);
-    console.info('[Trancy] Prefetch chưa lấy được phụ đề, sẽ thử lại khi mở panel:', reasons.join(' | ') || 'không rõ lý do');
+    console.info('[keepit] Prefetch chưa lấy được phụ đề, sẽ thử lại khi mở panel:', reasons.join(' | ') || 'không rõ lý do');
     return;
   }
   storeTranscript(videoId, cleaned);
   state.allCues = cleaned;
   loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
   applyLoadedWindow();
-  console.info('[Trancy] Prefetch xong:', cleaned.length, 'cue (5 phút đầu sẵn sàng)');
+  console.info('[keepit] Prefetch xong:', cleaned.length, 'cue (5 phút đầu sẵn sàng)');
 }
 
 function rebuildCaptions() {
@@ -1606,7 +1606,7 @@ async function loadCaptions() {
       // Cùng đường: đọc phụ đề đang hiển thị (nguồn cuối, chất lượng kém hơn).
       state.primaryNeedsTranslation = false;
       state.captionTrackLanguage = '';
-      console.warn('[Trancy] Không lấy được phụ đề từ player/panel/timedtext:', reasons);
+      console.warn('[keepit] Không lấy được phụ đề từ player/panel/timedtext:', reasons);
       state.allCues = [];
       loadedUntil = 0;
       startLiveCaptionCapture(reasons);
@@ -1627,12 +1627,12 @@ async function loadCaptions() {
     storeTranscript(videoId, cleaned);
     state.allCues = cleaned;
     loadedUntil = Math.max(loadedUntil, Math.min(PRELOAD_SECONDS, cleaned[cleaned.length - 1].end || PRELOAD_SECONDS));
-    console.info('[Trancy] Nguồn phụ đề đã dùng:', cleaned.length, 'cue |', reasons.length ? reasons.join(' | ') : 'player API');
+    console.info('[keepit] Nguồn phụ đề đã dùng:', cleaned.length, 'cue |', reasons.length ? reasons.join(' | ') : 'player API');
     applyLoadedWindow();
     state.loadingFor = null;
     translateWindow(0, token);
   } catch (err) {
-    console.error('[Trancy] Lỗi tải phụ đề:', err);
+    console.error('[keepit] Lỗi tải phụ đề:', err);
     if (token === state.loadToken) setStatus(errorText([...reasons, err.message]));
   } finally {
     if (token === state.loadToken) state.loadingFor = null;
@@ -1944,6 +1944,19 @@ function bindUI() {
     saveSettings();
     applySettings();
   });
+
+  // Tiêu đề video: hover thì chạy qua lại nếu bị cắt
+  const titleBox = ui('.te-yt-logo-box'), titleEl = ui('.te-video-title-label');
+  if (titleBox && titleEl) {
+    titleBox.addEventListener('mouseenter', () => {
+      const shift = titleEl.offsetWidth - (titleBox.clientWidth - (titleEl.offsetLeft - titleBox.offsetLeft));
+      if (shift <= 1) return;
+      titleEl.style.setProperty('--te-title-shift', `${Math.ceil(shift)}px`);
+      titleEl.style.setProperty('--te-title-dur', `${Math.max(2, shift / 35 + 1).toFixed(1)}s`);
+      titleEl.classList.add('te-title-run');
+    });
+    titleBox.addEventListener('mouseleave', () => titleEl.classList.remove('te-title-run'));
+  }
 
   // Thanh điều khiển trên video
   ui('.te-control-bar').addEventListener('click', (event) => {

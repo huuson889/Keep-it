@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.631; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.632; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -10,6 +10,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+25. [Kiểm tra] Overlay video v3.4.632 trên Chromium/Firefox: (a) logo Keepit bên trái tiêu đề sidebar, đúng ở theme sáng/tối; (b) hover tiêu đề video dài ở thanh điều khiển thì chạy qua lại, tiêu đề ngắn không chạy, rời chuột về vị trí cũ; (c) bật "ẩn thanh điều khiển" rồi rê chuột vào vùng đáy (cao 70px) thì thanh hiện lại, rời chuột thì ẩn; kiểm tra thêm click video vẫn play/pause. Chưa kiểm thử trên trình duyệt.
 24. [Kiểm tra] YouTube song ngữ v3.4.622: Dual Sub đọc khóa qua `globalThis.LHN_CONFIG`; Auto đích theo ngôn ngữ giao diện. Hai bộ chọn dùng chung `lhnStudyTranslationSettings`; mỗi dòng ưu tiên track khớp, nếu thiếu dùng track gốc và dịch sang ngôn ngữ dòng đó. Khi bật Kết hợp câu, cả nội dung track dịch cũng được chia/gộp theo câu. “Hiện popup dịch trực tiếp” dùng `lhnSettings.translationPopupEnabled` với Dashboard; overlay tạm bật tùy chọn này và khôi phục trạng thái trước đó khi đóng nếu người dùng không đổi. Bộ giải mã transcript xử lý entity HTML lồng nhau; thanh điều khiển neo đáy overlay. Nút điều khiển dùng đúng hiệu ứng nhấn Bilingual Reader khi click/shortcut; click video toggle play/pause. Mục Chế độ xem nằm đầu Cài đặt video. Mặc định shortcut Dual Sub là Alt+E. Cần xác nhận hiển thị/hover pause trên Chromium/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
@@ -103,6 +104,12 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-26 | v3.4.632 | Claude sửa:**
+  - Overlay video, theo yêu cầu của người dùng: (1) thêm logo SVG Keepit bên trái chữ "Keepit - Video Song Ngữ" ở `yt-dual-sidebar-header` (SVG inline từ `icon.svg`, bỏ bộ lọc đổ bóng, 20px); (2) `te-video-title-label` chạy qua lại khi hover nếu tiêu đề bị cắt (CSS keyframes + JS đo độ dài bị cắt lúc `mouseenter`, tôn trọng `prefers-reduced-motion`); (3) sửa lỗi bật "ẩn thanh điều khiển" thì hover không hiện lại: nguyên nhân là `display:none` nên phần tử không nhận hover; đổi sang `opacity:0` và hiện lại bằng `:hover`/`:focus-within`.
+  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` cho hai file JS — đạt; kiểm tra chuỗi trên template (logo, CSS ẩn thanh điều khiển, keyframes) — đạt; mô phỏng hàm đo marquee bằng Node (tiêu đề 400px: chạy, dịch 260px/8.4s; tiêu đề 90px: không chạy; rời chuột: gỡ class) — đạt. Trên trình duyệt: Chưa chạy.
+  - Lưu ý: khi thanh ẩn, vùng đáy 70px vẫn nhận chuột (trong suốt) nên click vào vùng đó không còn đến video; không có git trong môi trường làm việc, chưa commit.
 
 - **2026-10-25 | v3.4.631 | Claude sửa:**
   - Tối ưu hiệu năng overlay video (không đổi UI): (2) cache nút transcript khi còn kết nối; (3) throttle sự kiện cuộn danh sách bằng requestAnimationFrame; (5) bỏ qua cập nhật phụ đề khi dòng đang hiển thị không đổi; (6) cache tham chiếu `ui()` còn kết nối.

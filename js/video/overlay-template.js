@@ -1,4 +1,4 @@
-// Giao diện Trancy: CSS và markup lấy từ file UI gốc (chỉ thêm phần bổ sung chức năng và sidebar v1.4)
+// Giao diện keepit: CSS và markup lấy từ file UI gốc (chỉ thêm phần bổ sung chức năng và sidebar v1.4)
 const OVERLAY_CSS = `
     * {
       box-sizing: border-box;
@@ -20,7 +20,7 @@ const OVERLAY_CSS = `
     }
 
     /* Main Container */
-    #trancy-exact-overlay {
+    #keepit-exact-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -32,81 +32,81 @@ const OVERLAY_CSS = `
     }
 
     /* --- LIGHT THEME (DEFAULT) --- */
-    #trancy-exact-overlay.theme-light {
+    #keepit-exact-overlay.theme-light {
       background-color: #f8f9fa;
       color: #1f2937;
     }
-    #trancy-exact-overlay.theme-light .te-left-section { background-color: #f1f3f5; }
-    #trancy-exact-overlay.theme-light .te-sub-container { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
-    #trancy-exact-overlay.theme-light .te-sub-en { color: #111827; }
-    #trancy-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
-    #trancy-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
-    #trancy-exact-overlay.theme-light .te-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
-    #trancy-exact-overlay.theme-light .te-sidebar-top { border-bottom: 1px solid #e5e7eb; color: #111827; }
-    #trancy-exact-overlay.theme-light .te-ts-row:hover { background-color: #f3f4f6; }
-    #trancy-exact-overlay.theme-light .te-ts-row.active { background-color: #fef3c7; }
-    #trancy-exact-overlay.theme-light .te-ts-row.active .te-ts-en,
-    #trancy-exact-overlay.theme-light .te-ts-row.active .te-ts-time { color: #d97706; font-weight: 600; }
-    #trancy-exact-overlay.theme-light .te-ts-en { color: #111827; }
-    #trancy-exact-overlay.theme-light .te-ts-vi { color: #4b5563; }
-    #trancy-exact-overlay.theme-light .te-modal-box { background-color: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); color: #1f2937; }
-    #trancy-exact-overlay.theme-light .te-modal-header { border-bottom: 1px solid #f3f4f6; color: #111827; }
-    #trancy-exact-overlay.theme-light .te-menu-row { color: #374151; border-bottom: 1px solid #f9fafb; }
-    #trancy-exact-overlay.theme-light .te-menu-row:hover { background-color: #f9fafb; }
-    #trancy-exact-overlay.theme-light .te-menu-right { color: #9ca3af; }
-    #trancy-exact-overlay.theme-light .te-slider { background-color: #d1d5db; }
-    #trancy-exact-overlay.theme-light input:checked + .te-slider { background-color: #8b5cf6; }
-    #trancy-exact-overlay.theme-light .te-divider { background-color: #f3f4f6; }
-    #trancy-exact-overlay.theme-light .te-setting-item { color: #1f2937; }
-    #trancy-exact-overlay.theme-light .te-btn-group { background: #f3f4f6; }
-    #trancy-exact-overlay.theme-light .te-btn-subopt { color: #4b5563; }
-    #trancy-exact-overlay.theme-light .te-btn-subopt.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    #trancy-exact-overlay.theme-light .te-card-box { background: #ffffff; border: 1px solid #e5e7eb; }
-    #trancy-exact-overlay.theme-light .te-input-select { background: #ffffff; border: 1px solid #e5e7eb; color: #1f2937; }
+    #keepit-exact-overlay.theme-light .te-left-section { background-color: #f1f3f5; }
+    #keepit-exact-overlay.theme-light .te-sub-container { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
+    #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
+    #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-sidebar-top { border-bottom: 1px solid #e5e7eb; color: #111827; }
+    #keepit-exact-overlay.theme-light .te-ts-row:hover { background-color: #f3f4f6; }
+    #keepit-exact-overlay.theme-light .te-ts-row.active { background-color: #fef3c7; }
+    #keepit-exact-overlay.theme-light .te-ts-row.active .te-ts-en,
+    #keepit-exact-overlay.theme-light .te-ts-row.active .te-ts-time { color: #d97706; font-weight: 600; }
+    #keepit-exact-overlay.theme-light .te-ts-en { color: #111827; }
+    #keepit-exact-overlay.theme-light .te-ts-vi { color: #4b5563; }
+    #keepit-exact-overlay.theme-light .te-modal-box { background-color: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); color: #1f2937; }
+    #keepit-exact-overlay.theme-light .te-modal-header { border-bottom: 1px solid #e1e1e1; color: #111827; }
+    #keepit-exact-overlay.theme-light .te-menu-row { color: #374151; border-bottom: 1px solid #f9fafb; }
+    #keepit-exact-overlay.theme-light .te-menu-row:hover { background-color: #f9fafb; }
+    #keepit-exact-overlay.theme-light .te-menu-right { color: #9ca3af; }
+    #keepit-exact-overlay.theme-light .te-slider { background-color: #d1d5db; }
+    #keepit-exact-overlay.theme-light input:checked + .te-slider { background-color: #8b5cf6; }
+    #keepit-exact-overlay.theme-light .te-divider { background-color: #f3f4f6; }
+    #keepit-exact-overlay.theme-light .te-setting-item { color: #1f2937; }
+    #keepit-exact-overlay.theme-light .te-btn-group { background: #f3f4f6; }
+    #keepit-exact-overlay.theme-light .te-btn-subopt { color: #4b5563; }
+    #keepit-exact-overlay.theme-light .te-btn-subopt.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    #keepit-exact-overlay.theme-light .te-card-box { background: #ffffff; border: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-input-select { background: #ffffff; border: 1px solid #e5e7eb; color: #1f2937; }
     #te-modal-lang .te-modal-box, #te-modal-lang .te-modal-body, #te-modal-lang .te-card-box { overflow: visible; }
-    #trancy-exact-overlay.theme-light .te-language-picker-button { background: #fff; border: 1px solid #e5e7eb; color: #374151; }
-    #trancy-exact-overlay.theme-light .te-language-picker-menu { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
-    #trancy-exact-overlay.theme-light .te-language-picker-option { color: #374151; }
-    #trancy-exact-overlay.theme-light .te-language-picker-option:hover,
-    #trancy-exact-overlay.theme-light .te-language-picker-option[aria-selected="true"] { background: #f3f4f6; }
+    #keepit-exact-overlay.theme-light .te-language-picker-button { background: #fff; border: 1px solid #e5e7eb; color: #374151; }
+    #keepit-exact-overlay.theme-light .te-language-picker-menu { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+    #keepit-exact-overlay.theme-light .te-language-picker-option { color: #374151; }
+    #keepit-exact-overlay.theme-light .te-language-picker-option:hover,
+    #keepit-exact-overlay.theme-light .te-language-picker-option[aria-selected="true"] { background: #f3f4f6; }
 
     /* --- DARK THEME --- */
-    #trancy-exact-overlay.theme-dark {
+    #keepit-exact-overlay.theme-dark {
       background-color: #0b0b0b;
       color: #f3f4f6;
     }
-    #trancy-exact-overlay.theme-dark .te-left-section { background-color: #000000; }
-    #trancy-exact-overlay.theme-dark .te-sub-container { background-color: #121212; border-top: 1px solid #222; }
-    #trancy-exact-overlay.theme-dark .te-sub-en { color: #ffffff; }
-    #trancy-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
-    #trancy-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
-    #trancy-exact-overlay.theme-dark .te-right-sidebar { background-color: #121212; border-left: 1px solid #222; }
-    #trancy-exact-overlay.theme-dark .te-sidebar-top { border-bottom: 1px solid #222; color: #ffffff; }
-    #trancy-exact-overlay.theme-dark .te-ts-row:hover { background-color: #1f1f23; }
-    #trancy-exact-overlay.theme-dark .te-ts-row.active { background-color: #231f16; }
-    #trancy-exact-overlay.theme-dark .te-ts-row.active .te-ts-en,
-    #trancy-exact-overlay.theme-dark .te-ts-row.active .te-ts-time { color: #f59e0b; font-weight: 600; }
-    #trancy-exact-overlay.theme-dark .te-ts-en { color: #f4f4f5; }
-    #trancy-exact-overlay.theme-dark .te-ts-vi { color: #9ca3af; }
-    #trancy-exact-overlay.theme-dark .te-modal-box { background-color: #18181b; border: 1px solid #27272a; box-shadow: 0 20px 35px rgba(0,0,0,0.7); color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-modal-header { border-bottom: 1px solid #27272a; color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-menu-row { color: #e4e4e7; border-bottom: 1px solid #222225; }
-    #trancy-exact-overlay.theme-dark .te-menu-row:hover { background-color: #222226; }
-    #trancy-exact-overlay.theme-dark .te-menu-right { color: #71717a; }
-    #trancy-exact-overlay.theme-dark .te-slider { background-color: #3f3f46; }
-    #trancy-exact-overlay.theme-dark input:checked + .te-slider { background-color: #8b5cf6; }
-    #trancy-exact-overlay.theme-dark .te-divider { background-color: #27272a; }
-    #trancy-exact-overlay.theme-dark .te-setting-item { color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-btn-group { background: #27272a; }
-    #trancy-exact-overlay.theme-dark .te-btn-subopt { color: #a1a1aa; }
-    #trancy-exact-overlay.theme-dark .te-btn-subopt.active { background: #3f3f46; color: #fff; }
-    #trancy-exact-overlay.theme-dark .te-card-box { background: #27272a; border: 1px solid #3f3f46; }
-    #trancy-exact-overlay.theme-dark .te-input-select { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-language-picker-button { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-language-picker-menu { background: #27272a; border: 1px solid #3f3f46; box-shadow: 0 8px 20px rgba(0,0,0,.55); }
-    #trancy-exact-overlay.theme-dark .te-language-picker-option { color: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-language-picker-option:hover,
-    #trancy-exact-overlay.theme-dark .te-language-picker-option[aria-selected="true"] { background: #3f3f46; }
+    #keepit-exact-overlay.theme-dark .te-left-section { background-color: #000000; }
+    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: #121212; border-top: 1px solid #222; }
+    #keepit-exact-overlay.theme-dark .te-sub-en { color: #ffff00; }
+    #keepit-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
+    #keepit-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
+    #keepit-exact-overlay.theme-dark .te-right-sidebar { background-color: #121212; border-left: 1px solid #222; }
+    #keepit-exact-overlay.theme-dark .te-sidebar-top { border-bottom: 1px solid #222; color: #ffffff; }
+    #keepit-exact-overlay.theme-dark .te-ts-row:hover { background-color: #1f1f23; }
+    #keepit-exact-overlay.theme-dark .te-ts-row.active { background-color: #231f16; }
+    #keepit-exact-overlay.theme-dark .te-ts-row.active .te-ts-en,
+    #keepit-exact-overlay.theme-dark .te-ts-row.active .te-ts-time { color: #f59e0b; font-weight: 600; }
+    #keepit-exact-overlay.theme-dark .te-ts-en { color: #f4f4f5; }
+    #keepit-exact-overlay.theme-dark .te-ts-vi { color: #9ca3af; }
+    #keepit-exact-overlay.theme-dark .te-modal-box { background-color: #18181b; border: 1px solid #27272a; box-shadow: 0 20px 35px rgba(0,0,0,0.7); color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-modal-header { border-bottom: 1px solid #27272a; color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-menu-row { color: #e4e4e7; border-bottom: 1px solid #222225; }
+    #keepit-exact-overlay.theme-dark .te-menu-row:hover { background-color: #222226; }
+    #keepit-exact-overlay.theme-dark .te-menu-right { color: #71717a; }
+    #keepit-exact-overlay.theme-dark .te-slider { background-color: #3f3f46; }
+    #keepit-exact-overlay.theme-dark input:checked + .te-slider { background-color: #8b5cf6; }
+    #keepit-exact-overlay.theme-dark .te-divider { background-color: #27272a; }
+    #keepit-exact-overlay.theme-dark .te-setting-item { color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-btn-group { background: #27272a; }
+    #keepit-exact-overlay.theme-dark .te-btn-subopt { color: #a1a1aa; }
+    #keepit-exact-overlay.theme-dark .te-btn-subopt.active { background: #3f3f46; color: #fff; }
+    #keepit-exact-overlay.theme-dark .te-card-box { background: #27272a; border: 1px solid #3f3f46; }
+    #keepit-exact-overlay.theme-dark .te-input-select { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-language-picker-button { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-language-picker-menu { background: #27272a; border: 1px solid #3f3f46; box-shadow: 0 8px 20px rgba(0,0,0,.55); }
+    #keepit-exact-overlay.theme-dark .te-language-picker-option { color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-language-picker-option:hover,
+    #keepit-exact-overlay.theme-dark .te-language-picker-option[aria-selected="true"] { background: #3f3f46; }
 
     /* Left Section Layout */
     .te-left-section {
@@ -134,7 +134,7 @@ const OVERLAY_CSS = `
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
       padding: 16px 40px;
       text-align: center;
     }
@@ -157,7 +157,7 @@ const OVERLAY_CSS = `
 
     /* Control Bar */
     .te-control-bar {
-      height: 60px;
+      height: 70px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -197,7 +197,7 @@ const OVERLAY_CSS = `
       gap: 8px;
       font-size: 13.5px;
       font-weight: 500;
-      max-width: 300px;
+      max-width: 170px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -208,6 +208,18 @@ const OVERLAY_CSS = `
       height: 22px;
       color: #ff0000;
       flex-shrink: 0;
+    }
+
+    /* Tiêu đề dài bị cắt thì chạy qua lại khi hover (JS đặt --te-title-shift/--te-title-dur và class te-title-run) */
+    .te-yt-logo-box:hover .te-video-title-label.te-title-run {
+      animation: teTitleRun var(--te-title-dur, 4s) ease-in-out infinite alternate;
+    }
+    @keyframes teTitleRun {
+      0%, 12% { transform: translateX(0); }
+      88%, 100% { transform: translateX(calc(-1 * var(--te-title-shift, 0px))); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .te-yt-logo-box:hover .te-video-title-label.te-title-run { animation: none; }
     }
 
     .te-icon-btn, .te-play-btn {
@@ -407,19 +419,19 @@ const OVERLAY_CSS = `
     .te-modal-back-icon {
       display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
     }
-    #trancy-exact-overlay.theme-dark .te-modal-back-icon {
+    #keepit-exact-overlay.theme-dark .te-modal-back-icon {
       border-color: #3f3f46; background: #27272a; color: #a1a1aa;
     }
 
-    .te-setting-section-title { padding: 12px 20px 6px 20px; font-size: 13px; font-weight: 500; color: #6b7280; }
+    .te-setting-section-title { padding: 12px 20px 10px 20px; font-size: 14px; font-weight: 500; color: #6b7280; }
     .te-setting-item { padding: 8px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
     
     .te-btn-group { display: flex; border-radius: 10px; padding: 3px; gap: 2px; width: 100%; background: #f3f4f6; }
-    #trancy-exact-overlay.theme-dark .te-btn-group { background: #27272a; }
+    #keepit-exact-overlay.theme-dark .te-btn-group { background: #27272a; }
 
     .te-btn-subopt { padding: 8px 12px; font-size: 13.5px; border: none; background: transparent; cursor: pointer; border-radius: 8px; flex: 1; text-align: center; color: #6b7280; font-weight: 500; }
     .te-btn-subopt.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    #trancy-exact-overlay.theme-dark .te-btn-subopt.active { background: #3f3f46; color: #ffffff; }
+    #keepit-exact-overlay.theme-dark .te-btn-subopt.active { background: #3f3f46; color: #ffffff; }
 
     .te-card-box {
       margin: 0 20px;
@@ -455,7 +467,7 @@ const OVERLAY_CSS = `
       align-items: center;
       justify-content: center;
     }
-    #trancy-exact-overlay.theme-dark .te-counter-btn { background: #3f3f46; color: #f3f4f6; }
+    #keepit-exact-overlay.theme-dark .te-counter-btn { background: #3f3f46; color: #f3f4f6; }
 
     /* Export Modal Specific Styles */
     .te-export-tab-group {
@@ -465,7 +477,7 @@ const OVERLAY_CSS = `
       overflow: hidden;
       margin: 12px 20px 16px 20px;
     }
-    #trancy-exact-overlay.theme-dark .te-export-tab-group {
+    #keepit-exact-overlay.theme-dark .te-export-tab-group {
       border-color: #3f3f46;
     }
     .te-export-tab {
@@ -483,7 +495,7 @@ const OVERLAY_CSS = `
       color: #6b7280;
       border-right: 1px solid #e5e7eb;
     }
-    #trancy-exact-overlay.theme-dark .te-export-tab {
+    #keepit-exact-overlay.theme-dark .te-export-tab {
       border-right-color: #3f3f46;
       color: #a1a1aa;
     }
@@ -494,7 +506,7 @@ const OVERLAY_CSS = `
       background: #f3f4f6;
       color: #111827;
     }
-    #trancy-exact-overlay.theme-dark .te-export-tab.active {
+    #keepit-exact-overlay.theme-dark .te-export-tab.active {
       background: #27272a;
       color: #ffffff;
     }
@@ -541,12 +553,14 @@ const OVERLAY_CSS = `
     .te-floating-btn svg { width: 20px; height: 20px; fill: currentColor; }
   
     /* ===== Bổ sung tối thiểu cho chức năng (không đổi bố cục mặc định) ===== */
-    #trancy-exact-overlay.te-hidden { display: none !important; }
-    #trancy-exact-overlay.te-controls-hidden .te-control-bar { display: none; }
-    #trancy-exact-overlay.te-subs-hidden .te-sub-container { display: none; }
-    #trancy-exact-overlay.te-sidebar-hidden .yt-dual-right-sidebar { display: none; }
-    #trancy-exact-overlay .te-icon-btn.te-active { color: #8b5cf6; }
-    #trancy-exact-overlay .te-video-slot video {
+    #keepit-exact-overlay.te-hidden { display: none !important; }
+    #keepit-exact-overlay.te-controls-hidden .te-control-bar { opacity: 0; transition: opacity 0.2s; }
+    #keepit-exact-overlay.te-controls-hidden .te-control-bar:hover,
+    #keepit-exact-overlay.te-controls-hidden .te-control-bar:focus-within { opacity: 1; }
+    #keepit-exact-overlay.te-subs-hidden .te-sub-container { display: none; }
+    #keepit-exact-overlay.te-sidebar-hidden .yt-dual-right-sidebar { display: none; }
+    #keepit-exact-overlay .te-icon-btn.te-active { color: #8b5cf6; }
+    #keepit-exact-overlay .te-video-slot video {
       position: absolute !important;
       top: 0; left: 0;
       display: block !important;
@@ -557,8 +571,8 @@ const OVERLAY_CSS = `
       object-fit: contain;
       transform: none !important;
     }
-    #trancy-exact-overlay.hide-vi .te-sub-vi,
-    #trancy-exact-overlay.hide-vi .yt-dual-item-vi { display: none; }
+    #keepit-exact-overlay.hide-vi .te-sub-vi,
+    #keepit-exact-overlay.hide-vi .yt-dual-item-vi { display: none; }
     .yt-dual-empty { padding: 16px; font-size: 13px; color: #9ca3af; }
 
     /* ===== Sidebar theo v1.4 ===== */
@@ -573,7 +587,7 @@ const OVERLAY_CSS = `
 }
 
 .yt-dual-sidebar-header {
-  padding: 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid #282828;
   display: flex;
   justify-content: space-between;
@@ -582,12 +596,21 @@ const OVERLAY_CSS = `
   font-size: 16px;
 }
 
+.yt-dual-sidebar-header > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.te-sidebar-logo { flex-shrink: 0; }
+
 .yt-dual-close-btn {
   background: none;
   border: none;
   color: #aaa;
   font-size: 22px;
   cursor: pointer;
+  margin-right: 20px;
 }
 
 .yt-dual-close-btn:hover {
@@ -647,15 +670,15 @@ const OVERLAY_CSS = `
 
 /* Light mode cho sidebar bản ghi: các class yt-dual-* đang hardcode màu tối nên phải override.
    Màu chữ dùng biến --te-side-*-color để màu người dùng tự chọn (inline trên root) vẫn thắng. */
-#trancy-exact-overlay.theme-light { --te-side-en-color: #111827; --te-side-vi-color: #4b5563; }
-#trancy-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
-#trancy-exact-overlay.theme-light .yt-dual-sidebar-header { border-bottom: 1px solid #e5e7eb; color: #111827; }
-#trancy-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
-#trancy-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
-#trancy-exact-overlay.theme-light .yt-dual-item:hover { background-color: #f3f4f6; }
-#trancy-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; border-left-color: #d97706; }
-#trancy-exact-overlay.theme-light .yt-dual-timestamp { color: #7c3aed; }
-#trancy-exact-overlay.theme-light .yt-dual-empty { color: #6b7280; }
+#keepit-exact-overlay.theme-light { --te-side-en-color: #111827; --te-side-vi-color: #4b5563; }
+#keepit-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
+#keepit-exact-overlay.theme-light .yt-dual-sidebar-header { border-bottom: 1px solid #e5e7eb; color: #111827; }
+#keepit-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
+#keepit-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
+#keepit-exact-overlay.theme-light .yt-dual-item:hover { background-color: #f3f4f6; }
+#keepit-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; border-left-color: #d97706; }
+#keepit-exact-overlay.theme-light .yt-dual-timestamp { color: #7c3aed; }
+#keepit-exact-overlay.theme-light .yt-dual-empty { color: #6b7280; }
 
 /* ---- v1.2: thanh công cụ, ẩn bản dịch ---- */
 .yt-dual-actions {
@@ -681,16 +704,16 @@ const OVERLAY_CSS = `
 
     /* ===== Kích thước video: Nhỏ / Vừa / Lớn ===== */
     /* Tỉ lệ chiều rộng: Nhỏ video 60% / sidebar 40%, Vừa 65% / 35%, Lớn 70% / 30% (sidebar tối thiểu 400px) */
-    #trancy-exact-overlay .yt-dual-right-sidebar { width: max(400px, 30vw); flex-shrink: 0; }
-    #trancy-exact-overlay .te-left-section { flex: none; width: calc(100vw - max(400px, 30vw)); }
-    #trancy-exact-overlay.size-s .yt-dual-right-sidebar { width: max(400px, 40vw); }
-    #trancy-exact-overlay.size-s .te-left-section { width: calc(100vw - max(400px, 40vw)); }
-    #trancy-exact-overlay.size-m .yt-dual-right-sidebar { width: max(400px, 35vw); }
-    #trancy-exact-overlay.size-m .te-left-section { width: calc(100vw - max(400px, 35vw)); }
-    #trancy-exact-overlay.te-sidebar-hidden .te-left-section { width: 100vw; }
+    #keepit-exact-overlay .yt-dual-right-sidebar { width: max(400px, 30vw); flex-shrink: 0; }
+    #keepit-exact-overlay .te-left-section { flex: none; width: calc(100vw - max(400px, 30vw)); }
+    #keepit-exact-overlay.size-s .yt-dual-right-sidebar { width: max(400px, 40vw); }
+    #keepit-exact-overlay.size-s .te-left-section { width: calc(100vw - max(400px, 40vw)); }
+    #keepit-exact-overlay.size-m .yt-dual-right-sidebar { width: max(400px, 35vw); }
+    #keepit-exact-overlay.size-m .te-left-section { width: calc(100vw - max(400px, 35vw)); }
+    #keepit-exact-overlay.te-sidebar-hidden .te-left-section { width: 100vw; }
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
-    #trancy-exact-overlay .te-video-slot {
+    #keepit-exact-overlay .te-video-slot {
       flex: none;
       width: 100%;
       height: auto;
@@ -699,10 +722,10 @@ const OVERLAY_CSS = `
     }
 
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
-    #trancy-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
-    #trancy-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
+    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
+    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
 `;
-const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
+const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Left Section -->
     <div class="te-left-section">
       <div class="te-video-slot"></div>
@@ -736,7 +759,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
 
         <div class="te-ctrl-group">
           <button class="te-icon-btn" title="Audio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
-          <button class="te-icon-btn" title="AI Trancy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+          <button class="te-icon-btn" title="AI keepit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
           <button class="te-icon-btn" title="Chế độ phụ đề"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg></button>
           <button class="te-icon-btn" title="Bố cục"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
           <button class="te-icon-btn" title="Toàn màn hình"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
@@ -748,7 +771,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
     <!-- Right Sidebar (giao diện v1.4) -->
     <div class="yt-dual-right-sidebar">
       <div class="yt-dual-sidebar-header">
-        <span>Transcript Song Ngữ</span>
+        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
         <div class="yt-dual-actions">
           <button class="yt-dual-close-btn" title="Đóng">&times;</button>
         </div>
@@ -841,7 +864,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 18h12M12 4L7 14h10z"/></svg>
               <span>Đánh dấu từ</span>
             </div>
-            <div class="te-menu-right"><span>đánh dấu</span> <span>›</span></div>
+            <div class="te-menu-right"><span>Đánh dấu</span> <span>›</span></div>
           </div>
 
           <!-- Chủ đề -->
@@ -1046,7 +1069,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
               <span style="color: #10b981; font-weight: bold;">✓</span>
               <div style="border: 1px solid #d1d5db; padding: 6px 14px; border-radius: 6px; font-weight: 600; color: #f97316;">Hello</div>
             </div>
-            <span style="font-size: 13.5px;">đánh dấu</span>
+            <span style="font-size: 13.5px;">Đánh dấu</span>
           </div>
         </div>
       </div>

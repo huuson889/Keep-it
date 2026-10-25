@@ -179,7 +179,7 @@
     const anchorNode = range?.startContainer;
     const anchorRoot = anchorNode?.getRootNode?.();
     const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
-    if (anchorRoot?.host?.id === "trancy-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi")) {
+    if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi")) {
       const rect = range.getBoundingClientRect();
       if (rect.width || rect.height) {
         position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
@@ -1264,10 +1264,10 @@
 
   function isEditable(node) { const el = node?.nodeType === 1 ? node : node?.parentElement; return !!el?.closest("input,textarea,select,[contenteditable]:not([contenteditable='false']),[role='textbox']"); }
 
-  // Lấy vùng chọn: nếu chữ nằm trong overlay phụ đề YouTube (shadow root #trancy-host) thì dùng selection của shadow root,
+  // Lấy vùng chọn: nếu chữ nằm trong overlay phụ đề YouTube (shadow root #keepit-host) thì dùng selection của shadow root,
   // không thì dùng selection của document như trước. ShadowRoot.getSelection() chỉ có ở Chromium; Firefox rơi về document.
   function currentSelection() {
-    const shadowSel = document.getElementById("trancy-host")?.shadowRoot?.getSelection?.();
+    const shadowSel = document.getElementById("keepit-host")?.shadowRoot?.getSelection?.();
     if (shadowSel && String(shadowSel).trim()) return shadowSel;
     return getSelection();
   }
@@ -1313,7 +1313,7 @@
   // when the same composed event also bubbles to document.
   const boundSubtitleSelectionRoots = new WeakSet();
   function bindSubtitleSelectionRoot() {
-    const root = document.getElementById("trancy-host")?.shadowRoot;
+    const root = document.getElementById("keepit-host")?.shadowRoot;
     if (!root) return false;
     if (boundSubtitleSelectionRoots.has(root)) return true;
     boundSubtitleSelectionRoots.add(root);
