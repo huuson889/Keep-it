@@ -896,57 +896,80 @@ function rebuildCaptions() {
   translateWindow(Math.max(0, state.activeIdx));
 }
 
-// ---------- Nguồn chính: dùng đúng endpoint transcript mà panel của YouTube đang dùng ----------
-// Trả về cue có thời gian thật (startOffsetMs/durationMs) nên danh sách sạch như bản tham chiếu.
-function fetchJson(url, body) {
-  return globalThis.LHN_MESSAGING.sendMessage({ type: 'YOUTUBE_API', url, body }).then((res) => {
-    if (!res?.ok) throw new Error(res?.error || 'Fetch thất bại');
-    return res.json;
-  });
+// ---------- Nguồn chính: port từ youtube-transcript-api (client ANDROID + timedtext XML) ----------
+// Thư viện gốc kiểm tra: baseUrl có "&exp=xpe" thì cần PO token -> không tải được, phải rơi xuống nguồn khác.
+const INNERTUBE_PLAYER = 'https://www.youtube.com/youtubei/v1/player';
+const INNERTUBE_CLIENT = { clientName: 'ANDROID', clientVersion: '20.10.38' };
+
+function decodeEntities(text) {
+  return String(text || '')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(Number.parseInt(num, 10)));
 }
 
-function decodeParams(value) {
-  return String(value || '')
-    .replace(/\\u003d/gi, '=')
-    .replace(/\\u0026/gi, '&')
-    .replace(/\\\//g, '/')
-    .replace(/\\"/g, '"');
-}
-
-function cuesFromTranscriptResponse(data) {
+function parseTimedTextXml(xml) {
   const out = [];
-  const groups = (data?.actions || [])
-    .map((a) => a?.updateEngagementPanelAction?.content || a?.updateTranscriptPanelAction?.content)
-    .map((c) => c?.transcriptRenderer?.body?.transcriptBodyRenderer?.cueGroups)
-    .find(Boolean) || [];
-  for (const group of groups) {
-    for (const item of group?.transcriptCueGroupRenderer?.cues || []) {
-      const renderer = item?.transcriptCueRenderer;
-      if (!renderer) continue;
-      const text = (renderer?.cue?.simpleText || (renderer?.cue?.runs || []).map((x) => x?.text || '').join('') || '').replace(/\s+/g, ' ').trim();
-      const start = Number(renderer.startOffsetMs) / 1000;
-      const duration = Number(renderer.durationMs) / 1000;
-      if (!text || !Number.isFinite(start)) continue;
-      out.push({ start, end: start + (Number.isFinite(duration) && duration > 0 ? duration : 2), en: text, vi: 'Đang dịch...' });
-    }
-  }
+  const push = (startMs, durationMs, rawText) => {
+    const text = decodeEntities(rawText.replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+    const start = startMs / 1000;
+    if (!text || !Number.isFinite(start)) return;
+    const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs / 1000 : 2;
+    out.push({ start, end: start + duration, en: text, vi: 'Đang dịch...' });
+  };
+  let match;
+  const pTag = /<p\s+t="(\d+)"(?:\s+d="(\d+)")?[^>]*>([\s\S]*?)<\/p>/g;
+  while ((match = pTag.exec(xml)) !== null) push(Number(match[1]), Number(match[2] || 0), match[3]);
+  if (out.length) return out;
+  const textTag = /<text\s+start="([\d.]+)"(?:\s+dur="([\d.]+)")?[^>]*>([\s\S]*?)<\/text>/g;
+  while ((match = textTag.exec(xml)) !== null) push(Number(match[1]) * 1000, Number(match[2] || 0) * 1000, match[3]);
   return out;
 }
 
-async function transcriptFromInnertube(videoId, reasons) {
+async function fetchTextDirect(url, init = {}) {
+  const response = await fetch(url, { credentials: 'include', ...init });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.text();
+}
+
+async function transcriptFromPlayerApi(videoId, reasons) {
   try {
-    const html = await fetchText(`https://www.youtube.com/watch?v=${videoId}`);
-    const key = (html.match(/"INNERTUBE_API_KEY":"([^"]+)"/) || [])[1];
-    const version = (html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/) || [])[1] || '2.20240701.00.00';
-    const rawParams = (html.match(/"getTranscriptEndpoint":\{"params":"([^"]+)"/) || [])[1];
-    if (!key || !rawParams) { reasons.push('innertube: thiếu key/params transcript'); return []; }
-    const url = `https://www.youtube.com/youtubei/v1/get_transcript?key=${encodeURIComponent(key)}&prettyPrint=false`;
-    const data = await fetchJson(url, { context: { client: { clientName: 'WEB', clientVersion: version, hl: 'en', gl: 'US' } }, params: decodeParams(rawParams) });
-    const cues = cuesFromTranscriptResponse(data);
-    if (!cues.length) reasons.push('innertube: không có cue');
-    return cues;
+    const html = await fetchTextDirect(`https://www.youtube.com/watch?v=${videoId}`);
+    const key = (html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/) || [])[1];
+    if (!key) { reasons.push('player: thiếu INNERTUBE_API_KEY'); return []; }
+    const res = await fetch(`${INNERTUBE_PLAYER}?key=${encodeURIComponent(key)}&prettyPrint=false`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context: { client: INNERTUBE_CLIENT }, videoId }),
+    });
+    if (!res.ok) { reasons.push(`player: HTTP ${res.status}`); return []; }
+    const data = await res.json();
+    const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+    if (!tracks.length) { reasons.push('player: video không có caption track'); return []; }
+    const preferred = pickTrack(tracks);
+    const ordered = [preferred, ...tracks.filter((t) => t !== preferred)].filter(Boolean).slice(0, 3);
+    for (const track of ordered) {
+      const baseUrl = String(track.baseUrl || '').replace('&fmt=srv3', '');
+      if (!baseUrl) continue;
+      if (baseUrl.includes('&exp=xpe')) { reasons.push('player: track cần PO token (exp=xpe)'); continue; }
+      try {
+        const xml = await fetchTextDirect(baseUrl);
+        if (!xml) { reasons.push('player: timedtext rỗng'); continue; }
+        const cues = parseTimedTextXml(xml);
+        if (cues.length) return cues;
+        reasons.push('player: XML không có dòng nào');
+      } catch (err) {
+        reasons.push('player timedtext: ' + err.message);
+      }
+    }
+    return [];
   } catch (err) {
-    reasons.push('innertube: ' + err.message);
+    reasons.push('player: ' + err.message);
     return [];
   }
 }
@@ -961,8 +984,9 @@ async function loadCaptions() {
 
   const reasons = [];
   try {
-    // 1) Endpoint transcript của YouTube — dữ liệu có cấu trúc, sạch nhất (giống panel bản ghi).
-    let cues = await transcriptFromInnertube(videoId, reasons);
+    // 1) Player API (client ANDROID) + timedtext XML — công thức của youtube-transcript-api,
+    //    chạy fetch ngay trong content script (same-origin, có cookie phiên).
+    let cues = await transcriptFromPlayerApi(videoId, reasons);
     if (token !== state.loadToken) return;
 
     // 2) Panel "Hiển thị bản ghi" trên trang — nguồn sạch thứ hai, đúng như bản gốc dùng dự phòng.
@@ -975,7 +999,7 @@ async function loadCaptions() {
       reasons.push(...domReasons);
     }
 
-    // 3) timedtext cũ (YouTube đã chặn, thường rỗng) — chỉ thử khi 1 và 2 đều trượt.
+    // 3) timedtext từ HTML trang (bản cũ) — chỉ thử khi 1 và 2 đều trượt.
     if (cues.length === 0) {
       const tracks = await tracksFromWatchPage(videoId, reasons);
       if (token !== state.loadToken) return;
