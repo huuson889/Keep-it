@@ -1266,6 +1266,7 @@
     if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
+    const isDualSubtitleSelection = e.composedPath?.().some(node => node?.classList?.contains("te-sub-en") || node?.classList?.contains("te-sub-vi"));
     const selection = currentSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
     if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
     setTimeout(() => {
@@ -1276,6 +1277,10 @@
       removeTranslationUI();
       loadSettings().then(cfg => {
         if (websiteDisabled) return;
+        if (isDualSubtitleSelection && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
+          lookupEnglishDictionary(text, selectedRange);
+          return;
+        }
         if (cfg.showOnSelect) {
           if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
             showComposer(range, null, { skipAutoTranslate:true, dictionaryWord:text });

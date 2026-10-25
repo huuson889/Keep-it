@@ -40,6 +40,7 @@ const state = {
   loadToken: 0,
   loadingFor: null,
   loop: false,
+  hoverPausedVideo: null,
 };
 
 // Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
@@ -640,6 +641,9 @@ function openOverlay() {
 }
 
 function closeOverlay() {
+  const hoverPausedVideo = state.hoverPausedVideo;
+  state.hoverPausedVideo = null;
+  if (hoverPausedVideo && hoverPausedVideo === state.videoEl && hoverPausedVideo.paused) hoverPausedVideo.play().catch(() => {});
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
@@ -1308,6 +1312,20 @@ function bindUI() {
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
 
+  const mainSubtitleBox = ui('.te-sub-container');
+  mainSubtitleBox.addEventListener('mouseenter', () => {
+    const video = state.videoEl;
+    if (video && !video.paused) {
+      state.hoverPausedVideo = video;
+      video.pause();
+    }
+  });
+  mainSubtitleBox.addEventListener('mouseleave', () => {
+    const video = state.hoverPausedVideo;
+    state.hoverPausedVideo = null;
+    if (video && video === state.videoEl && video.paused) video.play().catch(() => {});
+  });
+
   // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
   const positionModal = (modalEl) => {
     const box = modalEl.querySelector('.te-modal-box');
@@ -1413,7 +1431,12 @@ function bindUI() {
   ui('.te-progress-track').addEventListener('click', seekByTrack);
   ui('.yt-dual-close-btn').addEventListener('click', closeOverlay);
 
-  $('te-transcript-list').addEventListener('click', onTranscriptClick);
+  const transcriptList = $('te-transcript-list');
+  transcriptList.addEventListener('click', onTranscriptClick);
+  transcriptList.addEventListener('dblclick', (e) => {
+    if (!e.target.closest('.yt-dual-item')) return;
+    state.videoEl?.pause();
+  });
   // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
   $('te-transcript-list').addEventListener('scroll', () => { translateVisibleRows(); }, { passive: true });
 
