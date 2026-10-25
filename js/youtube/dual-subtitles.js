@@ -951,11 +951,21 @@ async function loadCaptions() {
 
   const reasons = [];
   try {
-    // 1) Endpoint transcript của YouTube (dữ liệu có cấu trúc, sạch nhất).
+    // 1) Endpoint transcript của YouTube — dữ liệu có cấu trúc, sạch nhất (giống panel bản ghi).
     let cues = await transcriptFromInnertube(videoId, reasons);
     if (token !== state.loadToken) return;
 
-    // 2) timedtext cũ (nay thường rỗng) — chỉ thử khi bước 1 không có gì.
+    // 2) Panel "Hiển thị bản ghi" trên trang — nguồn sạch thứ hai, đúng như bản gốc dùng dự phòng.
+    if (cues.length === 0) {
+      const domReasons = [];
+      await openTranscriptPanel(domReasons);
+      if (token !== state.loadToken) return;
+      cues = captionsFromTranscriptPanel();
+      if (cues.length === 0) domReasons.push('DOM: không đọc được đoạn nào');
+      reasons.push(...domReasons);
+    }
+
+    // 3) timedtext cũ (YouTube đã chặn, thường rỗng) — chỉ thử khi 1 và 2 đều trượt.
     if (cues.length === 0) {
       const tracks = await tracksFromWatchPage(videoId, reasons);
       if (token !== state.loadToken) return;
@@ -977,26 +987,15 @@ async function loadCaptions() {
       }
     }
 
-    let domResult = null;
     if (cues.length === 0) {
-      const domReasons = [];
-      domResult = await openTranscriptPanel(domReasons);
-      if (token !== state.loadToken) return;
-      if (domResult === 'ok') {
-        cues = captionsFromTranscriptPanel();
-        if (cues.length === 0) domReasons.push('DOM: không đọc được đoạn nào');
-      }
-      reasons.push(...domReasons);
-    }
-
-    if (cues.length === 0) {
-      // timedtext đã bị YouTube chặn và panel bản ghi không đọc được → đọc phụ đề đang hiển thị.
-      console.warn('[Trancy] Không lấy được phụ đề từ timedtext/transcript:', reasons);
+      // Cùng đường: đọc phụ đề đang hiển thị (nguồn cuối, chất lượng kém hơn).
+      console.warn('[Trancy] Không lấy được phụ đề từ innertube/panel/timedtext:', reasons);
       startLiveCaptionCapture(reasons);
       return;
     }
 
     state.rawCues = cues;
+    console.info('[Trancy] Nguồn phụ đề đã dùng:', cues.length, 'cue |', reasons.length ? reasons.join(' | ') : 'innertube get_transcript');
     buildCaptions();
     state.loadingFor = null;
     translateWindow(0, token);
