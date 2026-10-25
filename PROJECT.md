@@ -1,14 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.599; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.5.0; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
+- **v3.5.0 — YouTube song ngữ:** đã tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` do người dùng cung cấp. Giao diện overlay giữ nguyên 100% (CSS/HTML copy byte-identical). Đã ánh xạ sang module Keepit: `LHN_MESSAGING` (message `YOUTUBE_FETCH_TEXT` mở ở background với allowlist youtube/translate), `browser.storage.local` key `lhnYouTubeSettings`, `LHN_DEFAULTS.youtube`. Chỉ chạy trên `youtube.com`, tôn trọng `Alt+Z` (tắt Keepit trên site). **Khác OPT-ARENA 8.1.1:** bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` (endpoint nội bộ của YouTube) thay vì chỉ caption đang hiển thị; giữ theo bản tham chiếu vì người dùng yêu cầu, cần chốt lại với OPT-ARENA.
 - Một số hành vi TTS/Reader **khác** còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
 - `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+24. [Kiểm tra] YouTube song ngữ v3.5.0 (tích hợp từ extension tham chiếu): mở video có phụ đề → nút mở overlay hiện ở góc phải; panel hai cột hiển thị câu gốc + bản dịch; tua theo timestamp; đổi cỡ/màu/font lưu lại sau khi tải lại; xuất SRT/TXT/CSV/PDF; tắt Keepit trên YouTube bằng `Alt+Z` thì nút mở phải ẩn. Chưa có kết quả trên Chrome/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
@@ -58,6 +60,7 @@ Keepit - Test/
 │   ├── dashboard/                 # dashboard.js (entry), settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
+│   ├── youtube/                   # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font và icons
 ├── css/
@@ -100,6 +103,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.5.0 | DeepSeek sửa:**
+
+- Tích hợp tính năng **YouTube song ngữ** từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` (người dùng cung cấp). Copy nguyên văn UI: `js/youtube/overlay-template.js` và `css/content/youtube.css` có hash SHA-256 trùng bản gốc; controller copy sang `js/youtube/dual-subtitles.js` rồi chỉ sửa các đường nối.
+- Ánh xạ sang module Keepit: `fetchText` dùng `LHN_MESSAGING` với message mới `YOUTUBE_FETCH_TEXT` ở background (allowlist `youtube.com` + `translate.googleapis.com`, giữ `credentials: include` cho YouTube); cài đặt overlay chuyển từ `localStorage` sang `browser.storage.local` key `lhnYouTubeSettings`; bộ default chuyển vào `LHN_DEFAULTS.youtube`; thêm guard chỉ chạy trên `youtube.com` và tôn trọng danh sách `disabledWebsites` (Alt+Z).
+- File: `js/youtube/overlay-template.js` (mới), `js/youtube/dual-subtitles.js` (mới), `css/content/youtube.css` (mới), `js/core/defaults.js`, `js/background/background.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` toàn bộ JS đạt; `manifest.json` parse hợp lệ; 45 path trong manifest đều tồn tại; default `youtube` đọc đúng. Chưa kiểm thử trên Chrome/Firefox.
+- Lưu ý: overlay dùng chuỗi tiếng Việt của bản gốc (chưa qua `languages.js`) để giữ nguyên 100% UI; cần bước i18n riêng nếu muốn en/ko. Bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` — khác điều khoản "không dùng endpoint transcript nội bộ" trong `OPT-ARENA.md` 8.1.1.
+
 **2026-10-25 | v3.4.599 | DeepSeek sửa:**
 
 - Người dùng xác nhận đạt trên trình duyệt các mục 20–23, nên xoá khỏi "Việc đang mở": sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source" trên thanh đọc.

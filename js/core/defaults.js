@@ -86,5 +86,15 @@
     speechLanguageSettingsRevision: {}
   });
 
-  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, readerDisabledWebsites: READER_DISABLED_WEBSITES });
+  // Giao diện YouTube song ngữ (giữ nguyên bộ giá trị của bản tham chiếu v1.12).
+  const youtube = deepFreeze({
+    theme: "light",
+    size: "L",
+    splitSentences: true,
+    hideControls: false,
+    side: { en: { pct: 100, color: null }, vi: { pct: 90, color: null } },
+    sub: { font: null, bold: false, en: { pct: 100, color: null }, vi: { pct: 90, color: null } }
+  });
+
+  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, youtube, readerDisabledWebsites: READER_DISABLED_WEBSITES });
 })();

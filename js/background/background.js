@@ -89,6 +89,16 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "DETECT_READ_LANGUAGE") return LHN_TRANSLATE.detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return LHN_TRANSLATE.translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
+  if (message.type === "YOUTUBE_FETCH_TEXT") {
+    const url = String(message.url || "");
+    const allowed = /^https:\/\/(?:www\.)?youtube\.com\//.test(url) || /^https:\/\/translate\.googleapis\.com\//.test(url);
+    if (!allowed) return { ok:false, error:"URL không được phép" };
+    try {
+      const response = await fetch(url, { credentials:url.includes("youtube.com") ? "include" : "omit" });
+      if (!response.ok) return { ok:false, error:`HTTP ${response.status}` };
+      return { ok:true, text:await response.text() };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
