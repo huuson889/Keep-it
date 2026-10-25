@@ -768,7 +768,7 @@ const OVERLAY_CSS = `
 
 
 
-                    /* ===== Ambient mode: màu video lan từ các cạnh video, mờ dần ra thanh điều khiển và thanh bên ===== */
+                    /* ===== Ambient mode: màu video lan tỏa từ các cạnh video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
     .te-ambient {
       position: absolute;
@@ -778,8 +778,8 @@ const OVERLAY_CSS = `
       height: var(--te-amb-size, 100vw);
       transform: translate(-50%, -50%);
       filter: blur(40px) saturate(1.8);
-      -webkit-mask-image: radial-gradient(circle closest-side, transparent 45%, #000 50%, rgba(0, 0, 0, 0.55) 75%, transparent 100%);
-      mask-image: radial-gradient(circle closest-side, transparent 45%, #000 50%, rgba(0, 0, 0, 0.55) 75%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle closest-side, #000 50%, transparent 100%);
+      mask-image: radial-gradient(circle closest-side, #000 50%, transparent 100%);
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.6s ease, visibility 0s linear 0.6s;
