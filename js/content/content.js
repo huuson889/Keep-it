@@ -295,7 +295,6 @@
       popup._lhnMainTranslation = mainTranslation;
       const mainResult = { word, ipa:"", ipaApprox:false, translation:mainTranslation, related:[], forms:[], collocations:[] };
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
-      else renderEnglishDictionary(popup, mainResult, false);
       const [related, forms, collocations, ipaResult] = await Promise.allSettled([...relatedTasks, ipaPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
       let fallbackRelated = [];
