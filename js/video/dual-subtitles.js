@@ -54,6 +54,7 @@ const PRELOAD_SECONDS = 300;
 const LOOKAHEAD_SECONDS = 600;
 const TRANSCRIPT_CACHE_LIMIT = 3;
 const transcriptCache = new Map(); // videoId -> cue[] đã làm sạch
+const transcriptTranslationCache = new Map();
 const failedUntil = new Map(); // videoId -> thời điểm hết hạn cache lỗi
 const FAILED_CACHE_MS = 10 * 60 * 1000;
 let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
@@ -1118,12 +1119,17 @@ function extendLoadedWindow() {
 
 function storeTranscript(videoId, cues) {
   if (!videoId || !cues.length) return;
-  transcriptCache.set(`${videoId}:${state.sourceLanguageSetting}`, cues);
+  const key = `${videoId}:${state.sourceLanguageSetting}`;
+  transcriptCache.set(key, cues);
+  transcriptTranslationCache.set(key, state.primaryNeedsTranslation);
   while (transcriptCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptCache.delete(transcriptCache.keys().next().value);
+  while (transcriptTranslationCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptTranslationCache.delete(transcriptTranslationCache.keys().next().value);
 }
 
 function takeCachedTranscript(videoId) {
-  const cached = transcriptCache.get(`${videoId}:${state.sourceLanguageSetting}`);
+  const key = `${videoId}:${state.sourceLanguageSetting}`;
+  const cached = transcriptCache.get(key);
+  state.primaryNeedsTranslation = transcriptTranslationCache.get(key) || false;
   if (!cached?.length) return null;
   return cached;
 }
@@ -1232,6 +1238,7 @@ async function transcriptFromPlayerApi(videoId, reasons) {
     const preferred = pickTrack(tracks);
     const ordered = [preferred, ...tracks.filter((t) => t !== preferred)].filter(Boolean).slice(0, 3);
     for (const track of ordered) {
+      state.primaryNeedsTranslation = trackLanguageCode(track) !== state.targetLanguage;
       const baseUrl = String(track.baseUrl || '').replace('&fmt=srv3', '');
       if (!baseUrl) continue;
       if (baseUrl.includes('&exp=xpe')) { reasons.push('player: track cần PO token (exp=xpe)'); continue; }
@@ -1295,6 +1302,7 @@ async function loadCaptions() {
         const preferred = pickTrack(tracks);
         const ordered = [preferred, ...tracks.filter((t) => t !== preferred)];
         for (const track of ordered.slice(0, 3)) {
+          state.primaryNeedsTranslation = trackLanguageCode(track) !== state.targetLanguage;
           try {
             const raw = await fetchText(track.baseUrl + '&fmt=json3');
             if (token !== state.loadToken) return;
@@ -1311,6 +1319,7 @@ async function loadCaptions() {
 
     if (cues.length === 0) {
       // Cùng đường: đọc phụ đề đang hiển thị (nguồn cuối, chất lượng kém hơn).
+      state.primaryNeedsTranslation = false;
       console.warn('[Trancy] Không lấy được phụ đề từ player/panel/timedtext:', reasons);
       state.allCues = [];
       loadedUntil = 0;
@@ -1532,6 +1541,7 @@ function bindUI() {
       modalMain.classList.add('hidden');
       target.classList.remove('hidden');
       positionModal(target);
+      if (target === modalLang) updateSubtitleLanguageLabels();
     });
     $(backId).addEventListener('click', () => {
       target.classList.add('hidden');
@@ -1765,10 +1775,17 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     event.stopPropagation();
     closeOverlay();
   });
-  setInterval(tick, 1000);
-  tick();
-  void restoreSettings().then(loaded => { settings = loaded; if (overlayEl()) applySettings(); });
+  void Promise.all([restoreSettings(), refreshSubtitleLanguageSettings()]).then(([loaded]) => {
+    settings = loaded;
+    if (overlayEl()) applySettings();
+    setInterval(tick, 1000);
+    tick();
+  });
   void refreshKeepitGate();
-  browser.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes.lhnSettings) void refreshKeepitGate(); });
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.lhnSettings) void refreshKeepitGate();
+    if (changes[STUDY_TRANSLATION_SETTINGS_KEY] || changes[CONFIG.STORAGE_KEYS.SETTINGS]) void refreshSubtitleLanguageSettings();
+  });
   window.addEventListener('resize', () => { if (state.videoEl) syncVideoAspect(state.videoEl); });
 }
