@@ -240,7 +240,7 @@ function captionsFromTranscriptPanel() {
 // YouTube đã chặn timedtext (trả 200 nhưng rỗng) nên phải đọc caption hiển thị (CC).
 const LIVE_POLL_MS = 400;
 const LIVE_CUE_SECONDS = 3;
-let livePollTimer = null, liveLastText = '', liveLastCue = null, liveTranslating = false;
+let livePollTimer = null, liveLastText = '', liveLastCue = null;
 
 function visibleCaptionText() {
   const parts = [...document.querySelectorAll('.ytp-caption-window-container .ytp-caption-segment')]
@@ -260,12 +260,6 @@ function stopLiveCaptionCapture() {
   liveLastCue = null;
 }
 
-function translateQueuedCues() {
-  if (liveTranslating) return;
-  liveTranslating = true;
-  Promise.resolve(translateAll(state.loadToken)).finally(() => { liveTranslating = false; });
-}
-
 function appendLiveCue(text, at) {
   if (liveLastCue) liveLastCue.end = Math.max(liveLastCue.end, at);
   const cue = { start: at, end: at + LIVE_CUE_SECONDS, en: text, vi: PENDING };
@@ -280,7 +274,7 @@ function appendLiveCue(text, at) {
   }));
   renderTranscriptList();
   onTimeUpdate();
-  translateQueuedCues();
+  translateWindow(state.captions.length - 1);
 }
 
 function startLiveCaptionCapture(reasons) {
@@ -376,21 +370,76 @@ function parseCaptions(events) {
   return list;
 }
 
-async function translateRaw(text) {
-  const url = 'https://translate.googleapis.com/translate_a/single'
-    + `?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
-  const data = JSON.parse(await fetchText(url));
-  return data[0].map((seg) => seg[0] || '').join('');
+// ---------- Dịch lười qua module translate của Keepit ----------
+// Dùng message BILINGUAL_TRANSLATE (background: LHN_TRANSLATE + LHN_CACHE) và chỉ dịch
+// những cue quanh vị trí đang phát / đang xem, thay vì dịch toàn bộ danh sách ngay.
+const TRANSLATE_TARGET = 'vi';
+const TRANSLATE_WINDOW_AHEAD = 8;
+const TRANSLATE_WINDOW_BEHIND = 2;
+const TRANSLATE_CONCURRENCY = 2;
+const translateInflight = new Map();
+let translateQueue = [];
+let translateActive = 0;
+
+async function translateOne(text) {
+  if (state.viCache.has(text)) return state.viCache.get(text);
+  if (translateInflight.has(text)) return translateInflight.get(text);
+  const job = (async () => {
+    try {
+      const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: TRANSLATE_TARGET });
+      const out = res?.translated || '(không dịch được)';
+      state.viCache.set(text, out);
+      return out;
+    } catch {
+      return '(không dịch được)';
+    } finally {
+      translateInflight.delete(text);
+    }
+  })();
+  translateInflight.set(text, job);
+  return job;
 }
 
-async function translateBatch(texts) {
-  const joined = await translateRaw(texts.join(' ||| '));
-  const parts = joined.split(/\s*\|\s*\|\s*\|\s*/).map((s) => s.trim());
-  if (parts.length === texts.length) return parts;
+function pumpTranslateQueue() {
+  while (translateActive < TRANSLATE_CONCURRENCY && translateQueue.length) {
+    const item = translateQueue.shift();
+    if (!item || item.cue.vi !== PENDING) continue;
+    translateActive++;
+    translateOne(item.cue.en)
+      .then((vi) => {
+        item.cue.vi = vi;
+        if (item.token === state.loadToken) updateVietnameseRow(item.cue);
+      })
+      .finally(() => { translateActive--; pumpTranslateQueue(); });
+  }
+}
 
-  const out = [];
-  for (const t of texts) out.push((await translateRaw(t)).trim());
-  return out;
+function queueCue(cue, token) {
+  if (!cue || cue.vi !== PENDING) return;
+  if (translateQueue.some((q) => q.cue === cue)) return;
+  translateQueue.push({ cue, token });
+}
+
+function translateWindow(centerIdx, token = state.loadToken) {
+  if (!state.captions.length) return;
+  const index = Number.isFinite(centerIdx) ? centerIdx : 0;
+  const from = Math.max(0, index - TRANSLATE_WINDOW_BEHIND);
+  const to = Math.min(state.captions.length, index + TRANSLATE_WINDOW_AHEAD);
+  for (let i = from; i < to; i++) queueCue(state.captions[i], token);
+  pumpTranslateQueue();
+}
+
+function translateVisibleRows() {
+  const list = $('te-transcript-list');
+  if (!list || !state.captions.length) return;
+  const top = list.scrollTop;
+  const bottom = top + list.clientHeight;
+  state.captions.forEach((cue, i) => {
+    const row = list.querySelector(`.yt-dual-item[data-idx="${i}"]`);
+    if (!row) return;
+    if (row.offsetTop + row.offsetHeight >= top && row.offsetTop <= bottom) queueCue(cue, state.loadToken);
+  });
+  pumpTranslateQueue();
 }
 
 
@@ -728,7 +777,10 @@ function onTimeUpdate() {
   }
 
   const idx = findCaptionIndex(v.currentTime);
-  if (idx >= 0 && idx !== state.activeIdx) setActiveCaption(idx);
+  if (idx >= 0 && idx !== state.activeIdx) {
+    setActiveCaption(idx);
+    translateWindow(idx);
+  }
 }
 
 function setActiveCaption(idx) {
@@ -793,27 +845,7 @@ function rebuildCaptions() {
   state.loadingFor = null;
   buildCaptions();
   onTimeUpdate();
-  translateAll(++state.loadToken);
-}
-
-async function translateAll(token) {
-  const pending = state.captions.filter((c) => c.vi === PENDING);
-  for (let i = 0; i < pending.length; i += BATCH_SIZE) {
-    const chunk = pending.slice(i, i + BATCH_SIZE);
-    let parts;
-    try {
-      parts = await translateBatch(chunk.map((c) => c.en));
-    } catch (err) {
-      console.error('[Trancy] Lỗi dịch:', err);
-      parts = [];
-    }
-    if (token !== state.loadToken) return;
-    chunk.forEach((item, idx) => {
-      item.vi = parts[idx] || '(không dịch được)';
-      state.viCache.set(item.en, item.vi);
-      updateVietnameseRow(item);
-    });
-  }
+  translateWindow(Math.max(0, state.activeIdx));
 }
 
 async function loadCaptions() {
@@ -869,7 +901,7 @@ async function loadCaptions() {
     state.rawCues = cues;
     buildCaptions();
     state.loadingFor = null;
-    translateAll(token);
+    translateWindow(0, token);
   } catch (err) {
     console.error('[Trancy] Lỗi tải phụ đề:', err);
     if (token === state.loadToken) setStatus(errorText([...reasons, err.message]));
@@ -882,8 +914,10 @@ function onTranscriptClick(e) {
   const row = e.target.closest('.yt-dual-item');
   const v = state.videoEl;
   if (!row || !v) return;
-  const cap = state.captions[Number(row.dataset.idx)];
+  const index = Number(row.dataset.idx);
+  const cap = state.captions[index];
   if (!cap) return;
+  translateWindow(index);
   v.currentTime = cap.start;
   v.play().catch(() => {});
 }
@@ -931,6 +965,9 @@ function exportBaseName() {
   return t || state.videoId || 'subtitles';
 }
 
+// Dịch lười nên có thể còn cue chưa dịch: khi xuất thì để trống thay vì ghi "Đang dịch...".
+const viForExport = (c) => (c.vi === PENDING ? '' : c.vi);
+
 function printPdf(title, showTime, includeVi) {
   const w = window.open('', '_blank');
   if (!w) {
@@ -939,7 +976,7 @@ function printPdf(title, showTime, includeVi) {
   }
   const rows = state.captions.map((c) =>
     `<tr>${showTime ? `<td class="t">${formatTime(c.start)}</td>` : ''}` +
-    `<td>${escapeHtml(c.en)}</td>${includeVi ? `<td>${escapeHtml(c.vi)}</td>` : ''}</tr>`
+    `<td>${escapeHtml(c.en)}</td>${includeVi ? `<td>${escapeHtml(viForExport(c))}</td>` : ''}</tr>`
   ).join('');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>` +
     '<style>body{font-family:Arial,sans-serif;font-size:13px;margin:24px}h2{font-size:16px}' +
@@ -962,12 +999,12 @@ function exportAs(format, opts) {
 
   if (format === 'SRT') {
     const body = caps.map((c, i) =>
-      `${i + 1}\n${srtTime(c.start)} --> ${srtTime(c.end)}\n${c.en}${includeVi ? '\n' + c.vi : ''}\n`
+      `${i + 1}\n${srtTime(c.start)} --> ${srtTime(c.end)}\n${c.en}${includeVi ? '\n' + viForExport(c) : ''}\n`
     ).join('\n');
     downloadText(`${base}.srt`, body, 'text/plain;charset=utf-8');
   } else if (format === 'TXT') {
     const body = caps.map((c) =>
-      (showTime ? `[${formatTime(c.start)}] ` : '') + c.en + (includeVi ? '\n' + c.vi : '')
+      (showTime ? `[${formatTime(c.start)}] ` : '') + c.en + (includeVi ? '\n' + viForExport(c) : '')
     ).join('\n\n');
     downloadText(`${base}.txt`, body, 'text/plain;charset=utf-8');
   } else if (format === 'CSV') {
@@ -982,7 +1019,7 @@ function exportAs(format, opts) {
       const cols = [];
       if (showTime) cols.push(formatTime(c.start));
       cols.push(c.en);
-      if (includeVi) cols.push(c.vi);
+      if (includeVi) cols.push(viForExport(c));
       lines.push(cols.map(q).join(','));
     }
     downloadText(`${base}.csv`, '\uFEFF' + lines.join('\n'), 'text/csv;charset=utf-8');
@@ -1120,6 +1157,8 @@ function bindUI() {
   ui('.yt-dual-close-btn').addEventListener('click', closeOverlay);
 
   $('te-transcript-list').addEventListener('click', onTranscriptClick);
+  // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
+  $('te-transcript-list').addEventListener('scroll', () => { translateVisibleRows(); }, { passive: true });
 
   // Tùy chọn phụ đề
   const subGroups = modalSub.querySelectorAll('.te-btn-group');

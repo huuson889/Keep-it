@@ -607,6 +607,18 @@ const OVERLAY_CSS = `
   line-height: 1.3;
 }
 
+/* Light mode cho sidebar bản ghi: các class yt-dual-* đang hardcode màu tối nên phải override.
+   Màu chữ dùng biến --te-side-*-color để màu người dùng tự chọn (inline trên root) vẫn thắng. */
+#trancy-exact-overlay.theme-light { --te-side-en-color: #111827; --te-side-vi-color: #4b5563; }
+#trancy-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
+#trancy-exact-overlay.theme-light .yt-dual-sidebar-header { border-bottom: 1px solid #e5e7eb; color: #111827; }
+#trancy-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
+#trancy-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
+#trancy-exact-overlay.theme-light .yt-dual-item:hover { background-color: #f3f4f6; }
+#trancy-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; border-left-color: #d97706; }
+#trancy-exact-overlay.theme-light .yt-dual-timestamp { color: #7c3aed; }
+#trancy-exact-overlay.theme-light .yt-dual-empty { color: #6b7280; }
+
 /* ---- v1.2: thanh công cụ, ẩn bản dịch ---- */
 .yt-dual-actions {
   display: flex;
