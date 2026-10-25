@@ -1327,7 +1327,8 @@
     subtitleHostObserver.observe(document.documentElement, { childList:true, subtree:true });
   }
   document.addEventListener("mousedown", e => {
-    outsideMouseDown = { x: e.clientX, y: e.clientY, wasOpen: !!panel, dismissTranslateIcon:!!translateIcon && !e.target.closest?.("#lhn-translate-icon") };
+    const dismissPopup = !!((translationPopup && !e.target.closest?.("#lhn-direct-translation, #lhn-translate-icon")) || (dictionaryPopup && !dictionaryPopup._lhnHideForNote && !e.target.closest?.("#lhn-full-english-dictionary")));
+    outsideMouseDown = { x: e.clientX, y: e.clientY, wasOpen: !!panel, dismissPopup, dismissTranslateIcon:!!translateIcon && !e.target.closest?.("#lhn-translate-icon") };
     if (outsideMouseDown.dismissTranslateIcon) { translateIcon.remove(); translateIcon = null; }
     if (panel && !e.target.closest?.("#lhn-panel")) {
       if (settings.showOnSelect || settings.autoHighlight === false) removeComposer();
@@ -1339,7 +1340,7 @@
     else if (dictionaryPopup && !dictionaryPopup._lhnHideForNote && !e.target.closest?.("#lhn-full-english-dictionary")) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
   }, true);
   document.addEventListener("mouseup", e => {
-    if (outsideMouseDown?.wasOpen && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) suppressMouseUp = true;
+    if ((outsideMouseDown?.wasOpen || outsideMouseDown?.dismissPopup) && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) suppressMouseUp = true;
     outsideMouseDown = null;
   }, true);
   document.addEventListener("keydown", e => {
