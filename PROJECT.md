@@ -60,7 +60,7 @@ Keepit - Test/
 │   ├── dashboard/                 # dashboard.js (entry), settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
-│   ├── youtube/                   # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
+│   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font và icons
 ├── css/
@@ -103,6 +103,11 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-25 | v3.4.610 | Codex sửa:**
+  - Đổi tên thư mục module từ `js/youtube/` thành `js/video/` và CSS từ `youtube.css` thành `video.css`; cập nhật đường dẫn nạp trong manifest. Giữ nguyên tên file, nội dung và hành vi.
+  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `css/content/video.css`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: Chưa chạy.
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
   - Thêm shortcut mặc định `Alt+C` để bật/tắt dual subtitles, cho phép đổi trong Dashboard > Shortcut; `Escape` đóng dual subtitles, không thêm trường cài đặt riêng.

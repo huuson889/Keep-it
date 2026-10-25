@@ -72,14 +72,14 @@
         "vendor/readability/Readability-readerable.js",
         "js/reader/bilingual-flags.js",
         "js/reader/bilingual-reader.js",
-        "js/youtube/overlay-template.js",
-        "js/youtube/dual-subtitles.js"
+        "js/video/overlay-template.js",
+        "js/video/dual-subtitles.js"
       ],
       "css": [
         "css/shared/ui-tokens.css",
         "css/content/content.css",
         "css/content/content-theme.css",
-        "css/content/youtube.css"
+        "css/content/video.css"
       ],
       "run_at": "document_idle",
       "all_frames": false
