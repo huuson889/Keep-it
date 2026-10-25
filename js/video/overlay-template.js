@@ -738,6 +738,7 @@ const OVERLAY_CSS = `
       height: auto;
       aspect-ratio: var(--te-video-aspect, 16 / 9);
       max-height: calc(100vh - 200px);
+      border-radius: 12px;
     }
 
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
