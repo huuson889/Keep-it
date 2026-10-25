@@ -881,7 +881,7 @@ function applySettings() {
   if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
   if (mainSw[3]) mainSw[3].checked = isVietnameseHidden();
   if (mainSw[4]) mainSw[4].checked = settings.hideControls;
-  if (mainSw[5]) mainSw[5].checked = settings.ambient !== false;
+  syncAmbientUi();
 
   // Đồng bộ menu "Tùy chọn phụ đề"
   const sub = $('te-modal-sub');
@@ -1043,7 +1043,59 @@ function detachVideo() {
 // ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
 let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
 // Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
+// ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = radial hiện tại, 2 = cạnh viền 16:9, 3 = chưa làm (bị khóa)
+const AMBIENT_LABELS = { off: 'Tắt', '1': 'Ambient 1', '2': 'Ambient 2', '3': 'Ambient 3' };
+function ambientMode() {
+  const m = settings.ambientMode;
+  if (m === 'off' || m === '1' || m === '2' || m === '3') return m;
+  return settings.ambient === false ? 'off' : '1';
+}
+function syncAmbientUi() {
+  const mode = ambientMode();
+  const label = $('te-ambient-label');
+  if (label) label.textContent = AMBIENT_LABELS[mode];
+  $('te-modal-ambient')?.querySelectorAll('.te-btn-subopt').forEach((btn) => btn.classList.toggle('active', btn.dataset.ambient === mode));
+}
+function setAmbientMode(mode) {
+  if (!AMBIENT_LABELS[mode] || mode === '3') return;
+  settings.ambientMode = mode;
+  settings.ambient = mode !== 'off';
+  saveSettings();
+  syncAmbientUi();
+  stopAmbient();
+  if (state.videoEl && mode !== 'off') startAmbient();
+}
+function placeAmbientEdge() {
+  const root = overlayEl(), slot = ui('.te-video-slot'), edge = ui('.te-ambient-edge');
+  if (!root || !slot || !edge) return;
+  const r = slot.getBoundingClientRect(), rr = root.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% khoảng đó
+  const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
+  const boxW = r.width + 0.5 * spL + 0.5 * spR, boxH = r.height + 0.5 * spT + 0.5 * spB;
+  // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
+  const w = Math.min(boxW, boxH * 16 / 9), h = w * 9 / 16;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  edge.style.setProperty('--te-edge-l', `${Math.round(cx - w / 2 - rr.left)}px`);
+  edge.style.setProperty('--te-edge-t', `${Math.round(cy - h / 2 - rr.top)}px`);
+  edge.style.setProperty('--te-edge-w', `${Math.round(w)}px`);
+  edge.style.setProperty('--te-edge-h', `${Math.round(h)}px`);
+}
+function drawAmbientEdge() {
+  const canvas = ui('.te-ambient-edge'), v = state.videoEl;
+  if (!canvas || !v || v.currentTime === ambientLastTime) return;
+  try {
+    const ctx = canvas.getContext('2d');
+    ctx.globalAlpha = Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    // Chỉ giữ viền khung hình: phần giữa bị video che nên xóa đi
+    ctx.clearRect(canvas.width * 0.15, canvas.height * 0.15, canvas.width * 0.7, canvas.height * 0.7);
+    ambientLastTime = v.currentTime;
+  } catch { stopAmbient(); }
+}
 function placeAmbient() {
+  if (ambientMode() === '2') return placeAmbientEdge();
   const root = overlayEl(), slot = ui('.te-video-slot');
   if (!root || !slot) return;
   const r = slot.getBoundingClientRect();
@@ -1053,6 +1105,7 @@ function placeAmbient() {
   root.style.setProperty('--te-amb-size', `${Math.round(Math.max(r.width, r.height) * 2.1)}px`);
 }
 function drawAmbient() {
+  if (ambientMode() === '2') return drawAmbientEdge();
   const canvas = ui('.te-ambient'), v = state.videoEl;
   if (!canvas || !v || v.readyState < 2 || document.hidden) return;
   if (v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
@@ -1066,10 +1119,11 @@ function drawAmbient() {
 }
 function startAmbient() {
   stopAmbient();
+  overlayEl()?.classList.toggle('te-ambient-mode-2', ambientMode() === '2');
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
   if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   placeAmbient();
-  if (typeof ResizeObserver === 'function') { ambientObserver = new ResizeObserver(placeAmbient); ambientObserver.observe(slot); }
+  if (typeof ResizeObserver === 'function') { ambientObserver = new ResizeObserver(placeAmbient); ambientObserver.observe(slot); ambientObserver.observe(document.documentElement); }
   root.classList.add('te-ambient-on');
   drawAmbient();
   ambientTimer = setInterval(drawAmbient, 125);
@@ -1892,6 +1946,8 @@ function bindUI() {
     });
   };
   nav('open-sub-modal', modalSub, 'back-sub');
+  nav('open-ambient-modal', $('te-modal-ambient'), 'back-ambient');
+  $('te-modal-ambient').querySelectorAll('.te-btn-subopt').forEach((btn) => btn.addEventListener('click', () => { if (!btn.disabled) setAmbientMode(btn.dataset.ambient); }));
   nav('open-mark-modal', modalMark, 'back-mark');
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');
@@ -1993,12 +2049,6 @@ function bindUI() {
     settings.hideControls = e.target.checked;
     saveSettings();
     applySettings();
-  });
-  mainSw[5].addEventListener('change', (e) => {
-    settings.ambient = e.target.checked;
-    saveSettings();
-    if (state.videoEl) startAmbient();
-    else stopAmbient();
   });
 
   // Tiêu đề video: hover thì chạy qua lại nếu bị cắt

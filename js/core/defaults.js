@@ -94,6 +94,7 @@
     splitSentences: true,
     hideControls: false,
     ambient: true,
+    ambientMode: '1',
     side: { en: { pct: 100, color: null }, vi: { pct: 90, color: null } },
     sub: { font: null, bold: false, en: { pct: 100, color: null }, vi: { pct: 90, color: null } }
   });

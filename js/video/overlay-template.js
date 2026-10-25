@@ -762,6 +762,10 @@ const OVERLAY_CSS = `
       transition: opacity 0.6s ease, visibility 0s linear 0.6s;
     }
     #keepit-exact-overlay.te-ambient-on .te-ambient { opacity: 0.5; visibility: visible; transition: opacity 0.6s ease; }
+    .te-ambient-edge { position: absolute; left: var(--te-edge-l, 0px); top: var(--te-edge-t, 0px); width: var(--te-edge-w, 0px); height: var(--te-edge-h, 0px); filter: blur(40px) saturate(1.8); visibility: hidden; pointer-events: none; }
+    #keepit-exact-overlay.te-ambient-on.te-ambient-mode-2 .te-ambient-edge { visibility: visible; opacity: 0.6; transition: opacity 0.6s ease; }
+    #keepit-exact-overlay.te-ambient-mode-2 .te-ambient { visibility: hidden; }
+    #keepit-exact-overlay .te-btn-subopt:disabled { opacity: 0.4; cursor: not-allowed; }
     /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
     #keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
     #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
@@ -771,7 +775,7 @@ const OVERLAY_CSS = `
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
-    <div class="te-ambient-layer"><canvas class="te-ambient" width="152" height="48" aria-hidden="true"></canvas></div>
+    <div class="te-ambient-layer"><canvas class="te-ambient" width="152" height="48" aria-hidden="true"></canvas><canvas class="te-ambient-edge" width="160" height="90" aria-hidden="true"></canvas></div>
     <!-- Left Section -->
     <div class="te-left-section">
       <div class="te-video-slot"></div>
@@ -903,12 +907,12 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           </div>
 
           <!-- Ambient mode -->
-          <div class="te-menu-row">
+          <div class="te-menu-row" id="open-ambient-modal">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
               <span>Ambient mode</span>
             </div>
-            <label class="te-switch"><input type="checkbox" checked><span class="te-slider"></span></label>
+            <div class="te-menu-right"><span id="te-ambient-label">Ambient 1</span> <span>›</span></div>
           </div>
           
           <div class="te-divider"></div>
@@ -981,6 +985,26 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <div class="te-menu-right"><span>›</span></div>
           </div>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Ambient mode -->
+    <div class="te-modal-backdrop hidden" id="te-modal-ambient">
+      <div class="te-modal-box">
+        <div class="te-modal-header" style="border-bottom: none; padding-bottom: 4px;">
+          <button class="te-modal-back" id="back-ambient">
+            <span class="te-modal-back-icon">‹</span>
+            <span>Ambient mode</span>
+          </button>
+        </div>
+        <div class="te-modal-body" style="padding-top: 0;">
+          <div class="te-btn-group">
+            <button class="te-btn-subopt" data-ambient="off" style="padding: 10px 0;">Tắt</button>
+            <button class="te-btn-subopt" data-ambient="1" style="padding: 10px 0;">Ambient 1</button>
+            <button class="te-btn-subopt" data-ambient="2" style="padding: 10px 0;">Ambient 2</button>
+            <button class="te-btn-subopt" data-ambient="3" style="padding: 10px 0;" disabled>Ambient 3</button>
+          </div>
         </div>
       </div>
     </div>
