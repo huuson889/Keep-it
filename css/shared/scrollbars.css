@@ -1,31 +1,75 @@
-/* Shared compact scrollbar style for Keepit-owned scroll areas. */
-:where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *) {
-  scrollbar-width: thin;
-  scrollbar-color: #8b70e8a8 transparent;
+/* Reusable custom scrollbar, matching scrollbar-demo.html. */
+.lhn-slim-scrollbar-managed {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-@supports selector(::-webkit-scrollbar) {
-  :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *) {
-    scrollbar-width: auto !important;
-    scrollbar-color: auto !important;
-  }
-
-  :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar {
-    width: 2px !important;
-    height: 2px !important;
-  }
-
-  :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar:hover {
-    width: 4px !important;
-    height: 4px !important;
-  }
-
-  :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar-thumb {
-    border-radius: 999px !important;
-    background: #8b70e8a8 !important;
-  }
-
-  :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar-thumb:hover {
-    background: #8b70e8 !important;
-  }
+.lhn-slim-scrollbar-managed::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
+
+.lhn-slim-scrollbar-track {
+  position: fixed !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 2147483647 !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  touch-action: none !important;
+  transform: translateX(-100%) !important;
+  transition: width 120ms ease, height 120ms ease, background-color 120ms ease !important;
+}
+
+.lhn-slim-scrollbar-track[hidden] { display: none !important; }
+.lhn-slim-scrollbar-track[data-axis="y"] { width: 2px !important; }
+.lhn-slim-scrollbar-track[data-axis="x"] {
+  height: 2px !important;
+  transform: translateY(-100%) !important;
+}
+
+.lhn-slim-scrollbar-track:hover,
+.lhn-slim-scrollbar-track.is-dragging {
+  background: #8b70e822 !important;
+}
+
+.lhn-slim-scrollbar-track[data-axis="y"]:hover,
+.lhn-slim-scrollbar-track[data-axis="y"].is-dragging { width: 4px !important; }
+.lhn-slim-scrollbar-track[data-axis="x"]:hover,
+.lhn-slim-scrollbar-track[data-axis="x"].is-dragging { height: 4px !important; }
+
+.lhn-slim-scrollbar-thumb {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  box-sizing: border-box !important;
+  min-width: 2px !important;
+  min-height: 28px !important;
+  border-radius: 999px !important;
+  background: #8b70e8a8 !important;
+  transition: width 120ms ease, height 120ms ease, background-color 120ms ease !important;
+}
+
+.lhn-slim-scrollbar-track[data-axis="y"] .lhn-slim-scrollbar-thumb { width: 2px !important; }
+.lhn-slim-scrollbar-track[data-axis="x"] .lhn-slim-scrollbar-thumb {
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 28px !important;
+  height: 2px !important;
+}
+
+.lhn-slim-scrollbar-track[data-axis="y"]:hover .lhn-slim-scrollbar-thumb,
+.lhn-slim-scrollbar-track[data-axis="y"].is-dragging .lhn-slim-scrollbar-thumb { width: 4px !important; }
+.lhn-slim-scrollbar-track[data-axis="x"]:hover .lhn-slim-scrollbar-thumb,
+.lhn-slim-scrollbar-track[data-axis="x"].is-dragging .lhn-slim-scrollbar-thumb { height: 4px !important; }
+
+.lhn-slim-scrollbar-track:hover .lhn-slim-scrollbar-thumb,
+.lhn-slim-scrollbar-track.is-dragging .lhn-slim-scrollbar-thumb { background: #8b70e8 !important; }

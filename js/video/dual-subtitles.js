@@ -904,6 +904,7 @@ function buildOverlay() {
   document.body.appendChild(host);
   shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
+  globalThis.LHN_SlimScrollbars?.observe(shadow);
   overlayEl().classList.add('te-hidden');
   bindUI();
   applySettings();

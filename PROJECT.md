@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.623; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.624; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -62,12 +62,12 @@ Keepit - Test/
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # helpers như custom-font và icons
+│   └── shared/                    # helpers như custom-font, icons và slim-scrollbars
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard
 │   ├── popup/                     # CSS popup toolbar
-│   └── shared/                    # theme tokens, theme, flags và scrollbars dùng chung
+│   └── shared/                    # theme tokens, theme, flags và style scrollbars dùng chung
 ├── assets/
 │   ├── icons/                     # Biểu tượng extension
 │   └── fonts/                     # Font cục bộ
@@ -98,12 +98,19 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> giao diện quản lý
-`css/shared/scrollbars.css` ──> định dạng vùng cuộn do addon quản lý; Shadow DOM giữ rule trong stylesheet của component.
+`js/shared/slim-scrollbars.js` + `css/shared/scrollbars.css` ──> thanh cuộn tùy chỉnh cho vùng UI addon; helper cũng được nối vào Shadow DOM Dual Sub.
 ```
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-25 | v3.4.624 | Codex sửa:**
+
+- Thay scrollbar native bằng helper thanh cuộn tùy chỉnh khớp demo: 2 px khi nghỉ, 4 px khi hover trực tiếp; hỗ trợ kéo, bấm track và cập nhật theo cuộn. Nối vào content UI, Dashboard, popup, Reader và Dual Sub gồm menu Cài đặt video; chỉ quản lý vùng do addon tạo.
+- File: `js/shared/slim-scrollbars.js`, `css/shared/scrollbars.css`, `js/video/dual-subtitles.js`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `PROJECT.md`.
+- Gia cố CSS của track/thumb bằng `!important` để stylesheet của Chromium hoặc website không ghi đè kích thước 2/4 px, trạng thái hover và vùng tương tác; áp dụng cả trong Shadow DOM của overlay.
+- Kiểm tra: `node --check` cho hai JS liên quan, JSON manifest, đường dẫn tài nguyên, và `git diff --check` đạt. Chưa kiểm tra trực tiếp tương tác trên Chromium/Firefox.
 
 **2026-10-25 | v3.4.623 | Codex sửa:**
 
