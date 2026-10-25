@@ -1122,6 +1122,7 @@ function drawAmbient() {
 function startAmbient() {
   stopAmbient();
   overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
+  overlayEl()?.classList.toggle('te-ambient-mode-3', ambientMode() === '3');
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
   if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   placeAmbient();

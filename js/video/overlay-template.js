@@ -764,6 +764,8 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-ambient-on .te-ambient { opacity: 0.5; visibility: visible; transition: opacity 0.6s ease; }
     .te-ambient-edge { position: absolute; left: var(--te-edge-l, 0px); top: var(--te-edge-t, 0px); width: var(--te-edge-w, 0px); height: var(--te-edge-h, 0px); filter: blur(40px) saturate(1.8); visibility: hidden; pointer-events: none; }
     #keepit-exact-overlay.te-ambient-on.te-ambient-mode-2 .te-ambient-edge { visibility: visible; opacity: 0.6; transition: opacity 0.6s ease; }
+    /* Ambient 3: sáng hơn Ambient 2 và mờ dần về phía mép khung */
+    #keepit-exact-overlay.te-ambient-on.te-ambient-mode-3 .te-ambient-edge { opacity: 0.85; -webkit-mask-image: radial-gradient(ellipse closest-side, #000 45%, transparent 100%); mask-image: radial-gradient(ellipse closest-side, #000 45%, transparent 100%); }
     #keepit-exact-overlay.te-ambient-mode-2 .te-ambient { visibility: hidden; }
     #keepit-exact-overlay .te-btn-subopt:disabled { opacity: 0.4; cursor: not-allowed; }
     /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
