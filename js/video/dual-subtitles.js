@@ -40,7 +40,8 @@ const state = {
   viCache: new Map(),
   sourceLanguageSetting: 'auto',
   targetLanguageSetting: 'auto',
-  targetLanguage: 'en',
+  targetLanguage: globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en',
+  displayLanguage: globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en',
   primaryNeedsTranslation: false,
   secondaryNeedsTranslation: false,
   captionTrackLanguage: '',
@@ -606,20 +607,37 @@ function translateVisibleRows() {
 }
 
 function updateSubtitleLanguageLabels() {
-  const languageLabel = (code) => {
-    const language = globalThis.LHN_LANGUAGES?.LANGS?.find((item) => item.code === code);
-    return language?.native || language?.name || code;
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const fill = (select, value, includeSame) => {
+    if (!select) return;
+    const options = [['auto', t('autoLanguage')]];
+    if (includeSame) options.push(['same', t('sameAsDisplayLanguage')]);
+    for (const language of languages?.LANGS || []) {
+      const labelKey = { en: 'languageEnglish', vi: 'languageVietnamese', ko: 'languageKorean' }[language.code];
+      options.push([language.code, `${language.flag} ${t(labelKey || language.code)}`]);
+    }
+    const selected = value === 'same' && !includeSame ? 'auto' : value;
+    if (select.dataset.optionsLanguage !== state.displayLanguage || select.dataset.optionsFor !== (includeSame ? 'target' : 'source')) {
+      select.replaceChildren(...options.map(([code, label]) => {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = label;
+        return option;
+      }));
+      select.dataset.optionsLanguage = state.displayLanguage;
+      select.dataset.optionsFor = includeSame ? 'target' : 'source';
+    }
+    select.value = selected;
   };
-  const sourceLabel = $('te-lang-source-value');
-  const targetLabel = $('te-lang-target-value');
-  if (sourceLabel) sourceLabel.textContent = languageLabel(state.mainLanguage);
-  if (targetLabel) targetLabel.textContent = languageLabel(state.targetLanguage);
+  fill($('te-lang-source-select'), state.sourceLanguageSetting, false);
+  fill($('te-lang-target-select'), state.targetLanguageSetting, true);
 }
 
 async function refreshSubtitleLanguageSettings() {
-  let sourceLanguageSetting = 'auto';
-  let targetLanguageSetting = 'auto';
-  let targetLanguage = globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
+  let sourceLanguageSetting = state.sourceLanguageSetting;
+  let targetLanguageSetting = state.targetLanguageSetting;
+  let displayLanguage = state.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
   try {
     const keys = [STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS];
     const stored = await browser.storage.local.get(keys);
@@ -627,13 +645,16 @@ async function refreshSubtitleLanguageSettings() {
     sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
     targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
     const displaySettings = stored[CONFIG.STORAGE_KEYS.SETTINGS] || {};
-    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || targetLanguage;
-    targetLanguage = ['auto', 'same'].includes(targetLanguageSetting) ? displayLanguage : targetLanguageSetting;
-  } catch {}
+    displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || displayLanguage;
+  } catch (error) {
+    console.warn('Could not read shared subtitle language settings', error);
+  }
+  const targetLanguage = ['auto', 'same'].includes(targetLanguageSetting) ? displayLanguage : targetLanguageSetting;
 
   const sourceChanged = sourceLanguageSetting !== state.sourceLanguageSetting;
   const targetSettingChanged = targetLanguageSetting !== state.targetLanguageSetting;
   const targetChanged = targetLanguage !== state.targetLanguage;
+  state.displayLanguage = displayLanguage;
   if (!sourceChanged && !targetSettingChanged && !targetChanged) {
     updateSubtitleLanguageLabels();
     return;
@@ -1658,6 +1679,23 @@ function bindUI() {
   nav('open-mark-modal', modalMark, 'back-mark');
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');
+
+  const saveSubtitleLanguage = async (key, value, select) => {
+    const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'same', 'en', 'vi', 'ko'];
+    if (!allowed.includes(value)) return;
+    try {
+      const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
+      const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
+      await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
+      await refreshSubtitleLanguageSettings();
+    } catch (error) {
+      console.warn(`Could not save subtitle ${key}`, error);
+      updateSubtitleLanguageLabels();
+      if (select) select.value = key === 'sourceLanguage' ? state.sourceLanguageSetting : state.targetLanguageSetting;
+    }
+  };
+  $('te-lang-source-select')?.addEventListener('change', (event) => saveSubtitleLanguage('sourceLanguage', event.target.value, event.target));
+  $('te-lang-target-select')?.addEventListener('change', (event) => saveSubtitleLanguage('targetLanguage', event.target.value, event.target));
 
   // Nút chọn trong nhóm: chỉ đổi trạng thái active (giữ như UI gốc)
   uiAll('.te-btn-group, .te-export-tab-group').forEach((group) => {

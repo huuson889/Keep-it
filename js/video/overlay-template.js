@@ -1033,11 +1033,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg>
                 <span>Phụ đề chính</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #374151;">
-                <span id="te-lang-source-value">English</span>
-                <span style="font-size: 16px;">🇺🇸</span>
-                <span style="color: #9ca3af; font-size: 16px;">›</span>
-              </div>
+              <select id="te-lang-source-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề chính" style="max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
             </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer;">
@@ -1045,10 +1041,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span>Phụ đề dịch</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #374151;">
-                <span id="te-lang-target-value">Việt</span>
-                <span style="color: #9ca3af; font-size: 16px;">›</span>
-              </div>
+              <select id="te-lang-target-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề dịch" style="max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
             </div>
           </div>
         </div>

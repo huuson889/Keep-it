@@ -2494,6 +2494,16 @@ browser.storage.onChanged.addListener((changes, area) => {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
     refreshFavoriteDashboard();
   }
+  if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
+    const saved = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue || {};
+    studyTranslationSettings = { ...DEFAULT_STUDY_TRANSLATION_SETTINGS, ...saved };
+    if (!['auto', 'en', 'vi', 'ko'].includes(studyTranslationSettings.sourceLanguage)) studyTranslationSettings.sourceLanguage = DEFAULT_STUDY_TRANSLATION_SETTINGS.sourceLanguage;
+    if (!['auto', 'same', 'en', 'vi', 'ko'].includes(studyTranslationSettings.targetLanguage)) studyTranslationSettings.targetLanguage = DEFAULT_STUDY_TRANSLATION_SETTINGS.targetLanguage;
+    populateStudyLanguageSelects();
+    refreshFlashcardTranslateSettingsUI();
+    syncBilingualPreview();
+    if ($('dashboardSettingsDialog')?.open) refreshDashboardSettings();
+  }
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
     render();
