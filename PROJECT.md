@@ -107,7 +107,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - **2026-10-25 | v3.4.610 | Codex sửa:**
   - Thêm shortcut mặc định `Alt+C` để bật/tắt dual subtitles, cho phép đổi trong Dashboard > Shortcut; `Escape` đóng dual subtitles, không thêm trường cài đặt riêng.
   - File: `js/core/defaults.js`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `js/content/content.js`, `js/youtube/dual-subtitles.js`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
+  - Kiểm tra: `node --check` năm file JavaScript, xác thực JSON `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trong trình duyệt.
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
   - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem vừa; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
