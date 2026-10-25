@@ -1686,24 +1686,6 @@ function bindUI() {
   nav('open-export-modal', modalExport, 'back-export');
 
   let subtitleLanguageSaveQueue = Promise.resolve();
-  const saveSubtitleLanguage = (key, value, select) => {
-    const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'same', 'en', 'vi', 'ko'];
-    if (!allowed.includes(value)) return;
-    const save = async () => {
-      try {
-        const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
-        const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
-        await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
-        await refreshSubtitleLanguageSettings();
-      } catch (error) {
-        console.warn(`Could not save subtitle ${key}`, error);
-        updateSubtitleLanguageLabels();
-        if (select) select.value = key === 'sourceLanguage' ? state.sourceLanguageSetting : state.targetLanguageSetting;
-      }
-    };
-    subtitleLanguageSaveQueue = subtitleLanguageSaveQueue.then(save, save);
-    return subtitleLanguageSaveQueue;
-  };
   const languagePickers = [
     { button: $('te-lang-source-picker'), menu: $('te-lang-source-options'), key: 'sourceLanguage' },
     { button: $('te-lang-target-picker'), menu: $('te-lang-target-options'), key: 'targetLanguage' },
@@ -1735,14 +1717,37 @@ function bindUI() {
   const saveSubtitleLanguage = (key, value, button) => {
     const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'en', 'vi', 'ko'];
     if (!allowed.includes(value)) return;
+    // Update the active overlay immediately; persistence continues to use the
+    // single Dashboard translation settings object.
+    if (key === 'sourceLanguage') state.sourceLanguageSetting = value;
+    else state.targetLanguageSetting = value;
+    if (key === 'targetLanguage') state.targetLanguage = value === 'auto' ? state.displayLanguage : value;
+    state.mainLanguage = state.sourceLanguageSetting === 'auto'
+      ? (state.captionTrackLanguage || 'en')
+      : state.sourceLanguageSetting;
+    translationSettingsRevision++;
+    translateQueue = [];
+    updateSubtitleLanguageLabels();
+    if (state.videoId) {
+      state.loadToken++;
+      prefetchToken++;
+      state.loadingFor = null;
+      state.rawCues = [];
+      state.allCues = [];
+      state.captions = [];
+      state.activeIdx = -1;
+      loadedUntil = 0;
+      if (state.open) loadCaptions();
+      else schedulePrefetch(state.videoId);
+    }
     const save = async () => {
       try {
         const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
         const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
         await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
-        await refreshSubtitleLanguageSettings();
       } catch (error) {
         console.warn(`Could not save subtitle ${key}`, error);
+        await refreshSubtitleLanguageSettings();
         updateSubtitleLanguageLabels();
       }
     };
