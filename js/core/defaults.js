@@ -34,7 +34,7 @@
     sidebarShortcut: "Alt+Q",
     translateSelectedShortcut: "Alt+W",
     toggleWebsiteShortcut: "Alt+Z",
-    dualSubtitlesShortcut: "Alt+C",
+    dualSubtitlesShortcut: "Alt+E",
     speechPauseShortcut: "Space",
     previousReadingShortcut: "Left",
     nextReadingShortcut: "Right",
