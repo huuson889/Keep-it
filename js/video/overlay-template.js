@@ -745,29 +745,87 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
 
-    /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
-    .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
-    .te-ambient {
-      position: absolute;
-      left: var(--te-amb-x, 35%);
-      top: var(--te-amb-y, 30%);
-      width: var(--te-amb-size, 100vw);
-      height: var(--te-amb-size, 100vw);
-      transform: translate(-50%, -50%);
-      filter: blur(40px) saturate(1.8);
-      -webkit-mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
-      mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.6s ease, visibility 0s linear 0.6s;
-    }
-    #keepit-exact-overlay.te-ambient-on .te-ambient { opacity: 0.5; visibility: visible; transition: opacity 0.6s ease; }
-    /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
-    #keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
-    #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
-    #keepit-exact-overlay.te-ambient-on .te-left-section,
-    #keepit-exact-overlay.te-ambient-on .te-control-bar,
-    #keepit-exact-overlay.te-ambient-on .yt-dual-right-sidebar { background-color: transparent; }
+    /* ===== Ambient mode: màu video lan từ các cạnh video, mờ dần ra thanh điều khiển và thanh bên ===== */
+.te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+
+/* 4 dải quầng sáng tỏa ra từ 4 cạnh video */
+.te-ambient-top,
+.te-ambient-bottom,
+.te-ambient-left,
+.te-ambient-right {
+  position: absolute;
+  filter: blur(40px) saturate(1.8) brightness(0.8);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+}
+
+/* Cạnh trên: định vị ở viền trên video, tỏa ánh sáng lên phía trên */
+.te-ambient-top {
+  top: 0;
+  left: var(--te-amb-x, 35%);
+  width: var(--te-amb-size, 100vw);
+  height: calc(var(--te-amb-size, 100vw) / 2);
+  transform: translate(-50%, -50%);
+  background: var(--te-amb-top, rgba(255, 255, 255, 0.5));
+  -webkit-mask-image: radial-gradient(ellipse at bottom, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse at bottom, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+}
+
+/* Cạnh dưới: định vị ở viền dưới video, tỏa xuống thanh điều khiển */
+.te-ambient-bottom {
+  top: calc(var(--te-amb-y, 30%) * 2);
+  left: var(--te-amb-x, 35%);
+  width: var(--te-amb-size, 100vw);
+  height: calc(var(--te-amb-size, 100vw) / 2);
+  transform: translate(-50%, -50%);
+  background: var(--te-amb-bottom, rgba(255, 255, 255, 0.5));
+  -webkit-mask-image: radial-gradient(ellipse at top, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse at top, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+}
+
+/* Cạnh trái: định vị ở viền trái video, tỏa sang lề trái */
+.te-ambient-left {
+  top: var(--te-amb-y, 30%);
+  left: 0;
+  width: calc(var(--te-amb-size, 100vw) / 2);
+  height: var(--te-amb-size, 100vw);
+  transform: translate(-50%, -50%);
+  background: var(--te-amb-left, rgba(255, 255, 255, 0.5));
+  -webkit-mask-image: radial-gradient(ellipse at right, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse at right, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+}
+
+/* Cạnh phải: định vị ở viền phải video, tỏa sang thanh bên */
+.te-ambient-right {
+  top: var(--te-amb-y, 30%);
+  left: calc(var(--te-amb-x, 35%) * 2);
+  width: calc(var(--te-amb-size, 100vw) / 2);
+  height: var(--te-amb-size, 100vw);
+  transform: translate(-50%, -50%);
+  background: var(--te-amb-right, rgba(255, 255, 255, 0.5));
+  -webkit-mask-image: radial-gradient(ellipse at left, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse at left, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+}
+
+/* Bật ambient mode: Giảm độ sáng tổng thể xuống 20% (opacity: 0.2) */
+#keepit-exact-overlay.te-ambient-on .te-ambient-top,
+#keepit-exact-overlay.te-ambient-on .te-ambient-bottom,
+#keepit-exact-overlay.te-ambient-on .te-ambient-left,
+#keepit-exact-overlay.te-ambient-on .te-ambient-right {
+  opacity: 0.2;
+  visibility: visible;
+  transition: opacity 0.6s ease;
+}
+
+/* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
+#keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
+#keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
+#keepit-exact-overlay.te-ambient-on .te-left-section,
+#keepit-exact-overlay.te-ambient-on .te-control-bar,
+#keepit-exact-overlay.te-ambient-on .yt-dual-right-sidebar { background-color: transparent; }
+
+
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
