@@ -1,11 +1,11 @@
 const $ = id => document.getElementById(id);
-const I18N = globalThis.LHN_I18N;
+const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 CONFIG.applyHighlightColors();
 const DEFAULTS = CONFIG.DEFAULT_SETTINGS;
 let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "";
 const langLabel = item => `${item.flag} ${item.name} - ${item.native}`;
-function t(key, vars = {}) { return I18N.t(key, vars, currentLang); }
+function t(key, vars = {}) { return LANGUAGES.t(key, vars, currentLang); }
 const disabledTooltipTitles = new WeakMap();
 function setDisabledTooltip(control, anchor = control, reason = "") {
   if (!control || !anchor) return;
@@ -53,7 +53,7 @@ async function load() {
   $("versionLabel").textContent = "v" + browser.runtime.getManifest().version;
   const data = await browser.storage.local.get(CONFIG.STORAGE_KEYS.SETTINGS);
   const storedSettings = data[CONFIG.STORAGE_KEYS.SETTINGS] || {};
-  settings = { ...DEFAULTS, ...storedSettings };
+  settings = globalThis.LHN_SETTINGS.resolve(storedSettings);
   settings.autoSpeakSelectedText = settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true;
   settings.autoSpeakOnTranslate = settings.autoSpeakSelectedText;
   if (settings.showOnSelect) { settings.translateIconEnabled = false; settings.translationPopupEnabled = false; }
@@ -65,8 +65,8 @@ async function load() {
     const activeUrl = new URL(activeTab?.url || "");
     if (activeUrl.protocol === "http:" || activeUrl.protocol === "https:") currentWebsite = activeUrl.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   } catch { currentWebsite = ""; }
-  currentLang = I18N.languageFor(settings);
-  if (!settings.language) { settings.language = currentLang; await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
+  currentLang = LANGUAGES.languageFor(settings);
+  if (!settings.language) { settings.language = currentLang; await globalThis.LHN_SETTINGS.save(settings); }
   $("showOnSelect").checked = settings.showOnSelect;
   $("autoHighlight").checked = settings.autoHighlight === true;
   $("sentenceNoteEnabled").checked = settings.sentenceNoteEnabled !== false;
@@ -87,10 +87,10 @@ async function load() {
   $("translateSelectedShortcut").value = settings.translateSelectedShortcut;
   $("toggleWebsiteShortcut").value = settings.toggleWebsiteShortcut;
   applyTranslations(); renderLanguages();
-  const selectedLanguage = I18N.LANGS.find(item => item.code === currentLang); if (selectedLanguage) $("languageSearch").value = langLabel(selectedLanguage);
+  const selectedLanguage = LANGUAGES.LANGS.find(item => item.code === currentLang); if (selectedLanguage) $("languageSearch").value = langLabel(selectedLanguage);
 }
 async function saveSettings() {
-  await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings });
+  await globalThis.LHN_SETTINGS.save(settings);
 }
 function syncTranslationModeAvailability() {
   const autoOpen = $("showOnSelect").checked;
@@ -123,7 +123,7 @@ function renderDefaultColors() {
 function renderLanguages(filter = "") {
   const options = $("languageOptions"); options.replaceChildren();
   const query = filter.trim().toLocaleLowerCase();
-  const filtered = I18N.LANGS.filter(item => `${item.name} ${item.native} ${item.code}`.toLocaleLowerCase().includes(query));
+  const filtered = LANGUAGES.LANGS.filter(item => `${item.name} ${item.native} ${item.code}`.toLocaleLowerCase().includes(query));
   if (!filtered.length) { const empty = document.createElement("div"); empty.className = "language-empty"; empty.textContent = t("languageSearchNoResults"); options.appendChild(empty); return; }
   filtered.forEach(item => {
     const option = document.createElement("div"); option.className = "language-option" + (item.code === currentLang ? " selected" : ""); option.role = "option"; option.tabIndex = 0; option.setAttribute("aria-selected", String(item.code === currentLang)); option.textContent = langLabel(item);
@@ -133,14 +133,14 @@ function renderLanguages(filter = "") {
 }
 $("languageSearch").addEventListener("focus", () => { langOpen = true; $("languageSearch").value = ""; renderLanguages(); $("languageOptions").classList.add("open"); $("languageSearch").setAttribute("aria-expanded", "true"); });
 $("languageSearch").addEventListener("input", e => { langOpen = true; renderLanguages(e.target.value); $("languageOptions").classList.add("open"); $("languageSearch").setAttribute("aria-expanded", "true"); });
-$("languageSearch").addEventListener("keydown", e => { if (e.key === "Escape") { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = I18N.LANGS.find(x => x.code === currentLang); $("languageSearch").value = langLabel(selected); } if (e.key === "ArrowDown") $("languageOptions").querySelector(".language-option")?.focus(); });
-document.addEventListener("mousedown", e => { if (!e.target.closest(".language-wrap")) { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = I18N.LANGS.find(x => x.code === currentLang); if (selected) $("languageSearch").value = langLabel(selected); } });
+$("languageSearch").addEventListener("keydown", e => { if (e.key === "Escape") { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = LANGUAGES.LANGS.find(x => x.code === currentLang); $("languageSearch").value = langLabel(selected); } if (e.key === "ArrowDown") $("languageOptions").querySelector(".language-option")?.focus(); });
+document.addEventListener("mousedown", e => { if (!e.target.closest(".language-wrap")) { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = LANGUAGES.LANGS.find(x => x.code === currentLang); if (selected) $("languageSearch").value = langLabel(selected); } });
 $("dashboard").addEventListener("click", async () => {
-  try { await browser.runtime.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
+  try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard", error); $("status").textContent = t("pageRestricted"); }
 });
 $("openDashboardSettings").addEventListener("click", async () => {
-  try { await browser.runtime.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }
+  try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard settings", error); $("status").textContent = t("pageRestricted"); }
 });
 $("restore").addEventListener("click", async () => {
@@ -173,7 +173,7 @@ $("themeToggle").addEventListener("click", async () => {
   const isDark = document.documentElement.classList.contains("dark");
   settings.sidebarTheme = isDark ? "light" : "dark";
   applyPopupTheme();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: settings }); }
+  try { await globalThis.LHN_SETTINGS.save(settings); }
   catch (error) { settings.sidebarTheme = previousTheme; applyPopupTheme(); console.warn("Could not save popup theme", error); }
 });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => {

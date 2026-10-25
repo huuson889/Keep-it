@@ -5,8 +5,8 @@
   const TARGET_LANGUAGE_KEY = "lhnStudyTranslationSettings";
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
-  const DEFAULTS = { accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, speechSpeed:1, speechSpeedStep:0.25, voiceMode:"google", browserVoiceURI:"", readerShortcutsEnabled:true, autoDetectVoice:true, widgetDarkMode:null, excludeSelectors:[], readerDisabledWebsites:globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || [], readerDefaultSitesSeeded:true };
-  let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_I18N?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
+  const DEFAULTS = globalThis.LHN_DEFAULTS.reader;
+  let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_LANGUAGES?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
   let voiceKbIndex = -1;
@@ -87,13 +87,14 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"]{left:auto;right:0;transform:none}
     #lhn-bilingual-reading-bar .lhn-br-pop-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #f1f5f9}
     #lhn-bilingual-reading-bar .lhn-br-pop-title{font-size:18px;font-weight:700;margin:0}
-    #lhn-bilingual-reading-bar .lhn-br-pop-body{padding:12px 16px;max-height:360px;overflow-y:auto;overflow-x:hidden;box-sizing:border-box}
+    #lhn-bilingual-reading-bar .lhn-br-pop-body{padding:12px 16px;max-height:360px;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#8b70e8a8 transparent}
+    #lhn-bilingual-reading-bar .lhn-br-pop-body::-webkit-scrollbar,#lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar{width:2px;height:2px}
+    #lhn-bilingual-reading-bar .lhn-br-pop-body::-webkit-scrollbar:hover,#lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar:hover{width:4px;height:4px}
+    #lhn-bilingual-reading-bar .lhn-br-pop-body::-webkit-scrollbar-thumb,#lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{border-radius:999px;background:#8b70e8a8}
+    #lhn-bilingual-reading-bar .lhn-br-pop-body::-webkit-scrollbar-thumb:hover,#lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb:hover{background:#8b70e8}
     #lhn-bilingual-reading-bar input[type=search]{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid transparent;border-radius:11px;background:#f1f5f9;font:inherit;margin-bottom:8px}
     #lhn-bilingual-reading-bar .lhn-br-pop-body[data-voice-pop-body]{max-height:none;overflow:hidden}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list{max-height:min(300px,calc(100vh - 220px));overflow-y:auto;overflow-x:hidden;direction:ltr;scrollbar-width:thin;scrollbar-color:#cbd5e1 #f1f1f1}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar{width:6px}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-track{background:#f1f1f1;border-radius:4px}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+    #lhn-bilingual-reading-bar .lhn-br-voice-list{max-height:min(300px,calc(100vh - 220px));overflow-y:auto;overflow-x:hidden;direction:ltr;scrollbar-width:thin;scrollbar-color:#8b70e8a8 transparent}
     #lhn-bilingual-reading-bar .lhn-br-voice{width:100%;height:auto;min-height:58px;justify-content:flex-start;gap:14px;border-radius:16px;text-align:left;padding:9px 12px;font-size:14px;font-weight:700}
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:#f1f3f5;box-shadow:0 2px 5px rgba(15,23,42,.06)}
     #lhn-bilingual-reading-bar .lhn-br-voice-group{padding:10px 12px 4px;font-size:12px;font-weight:700;color:#64748b}
@@ -145,7 +146,7 @@ const FLAG_SVGS = {
   const bar = document.createElement("div");
   bar.id = "lhn-bilingual-reading-bar"; bar.setAttribute("aria-live", "polite");
   bar.setAttribute("data-lhn-bilingual-ui", "true");
-  bar.innerHTML = `<div data-shortcut-banner><span><b>Space</b> pause · <b>↑/↓</b> speed ±0.15x · <b>←/→</b> previous/next · <b>Alt+R</b> close</span><button type="button" data-hide-banner aria-label="Hide shortcut hint">×</button></div><button type="button" data-drag title="Drag controls" aria-label="Drag controls"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></button><button class="lhn-br-play" type="button" data-play title="Play/Pause"><span data-play-icon>▶</span></button><button type="button" data-prev title="Previous paragraph" aria-label="Previous paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 19-7-7 7-7"/><path d="m20 19-7-7 7-7"/></svg></button><button type="button" data-next title="Next paragraph" aria-label="Next paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 5 7 7-7 7"/><path d="m13 5 7 7-7 7"/></svg></button><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-voices title="Select voice" aria-label="Select voice">🌐</button><button class="lhn-br-speed" type="button" data-speed title="Playback speed">1.0x</button><span class="lhn-br-time" data-time title="Estimated remaining time">—</span><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-pdf title="PDF Document View" aria-label="PDF Document View"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></button><button type="button" data-dashboard title="Account / Dashboard" aria-label="Account / Dashboard"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></button><button type="button" data-settings title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" data-close title="Stop reading" aria-label="Stop reading">×</button><section data-lhn-br-popover="voices"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Select Voice</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body" data-voice-pop-body><input type="search" placeholder="Search country / voice" aria-label="Search country / voice"><div class="lhn-br-voice-list"></div></div></section><section data-lhn-br-popover="speed"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Reading Speed <span data-speed-value>1.0x</span></h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><input class="lhn-br-range" type="range" min="0.5" max="3" step="any" value="1" aria-label="Reading speed"><div class="lhn-br-presets">${[0.75,1,1.25,1.5,2].map(value=>`<button type="button" data-preset="${value}">${formatSpeed(value)}</button>`).join("")}</div></div></section><section data-lhn-br-popover="settings"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Settings</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><label class="lhn-br-setting">Auto scroll<input class="lhn-br-toggle" type="checkbox" data-autoscroll></label><label class="lhn-br-setting">Paragraph play buttons<input class="lhn-br-toggle" type="checkbox" data-parabtn></label><label class="lhn-br-setting">Keyboard shortcuts<input class="lhn-br-toggle" type="checkbox" data-shortcuts></label><label class="lhn-br-setting">Auto-detect language<input class="lhn-br-toggle" type="checkbox" data-autolang></label><label class="lhn-br-setting">Speed step<input type="number" min="0.01" max="2.5" step="0.01" value="0.25" data-speed-step></label><label class="lhn-br-setting">Match theme to background<input class="lhn-br-toggle" type="checkbox" data-theme></label><button type="button" data-br-settings class="lhn-br-account"><span data-br-settings-label>Bilingual Reader settings</span><span>↗</span></button><label class="lhn-br-setting"><span data-webfont-label>Custom website font</span><input class="lhn-br-toggle" type="checkbox" data-webfont></label><hr class="lhn-br-settings-divider"><button type="button" data-account class="lhn-br-account"><span data-account-label>Account / Open Dashboard</span><span>↗</span></button><hr class="lhn-br-settings-divider"></div><footer class="lhn-br-pop-foot"><b>Space</b> pause · <b>← / →</b> previous/next · <b>Alt+R</b> close</footer></section>`;
+  bar.innerHTML = `<div data-shortcut-banner><span><b>Space</b> pause · <b>↑/↓</b> speed ±0.15x · <b>←/→</b> previous/next · <b>Alt+R</b> close</span><button type="button" data-hide-banner aria-label="Hide shortcut hint">×</button></div><button type="button" data-drag title="Drag controls" aria-label="Drag controls"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></button><button class="lhn-br-play" type="button" data-play title="Play/Pause"><span data-play-icon>▶</span></button><button type="button" data-prev title="Previous paragraph" aria-label="Previous paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 19-7-7 7-7"/><path d="m20 19-7-7 7-7"/></svg></button><button type="button" data-next title="Next paragraph" aria-label="Next paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 5 7 7-7 7"/><path d="m13 5 7 7-7 7"/></svg></button><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-voices title="Select voice" aria-label="Select voice">🌐</button><button class="lhn-br-speed" type="button" data-speed title="Playback speed">1.0x</button><span class="lhn-br-time" data-time title="Estimated remaining time">—</span><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-pdf title="PDF Document View" aria-label="PDF Document View"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></button><button type="button" data-dashboard title="Account / Dashboard" aria-label="Account / Dashboard"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></button><button type="button" data-settings title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" data-close title="Stop reading" aria-label="Stop reading">×</button><section data-lhn-br-popover="voices"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Select Voice</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body" data-voice-pop-body><input type="search" placeholder="Search country / voice" aria-label="Search country / voice"><div class="lhn-br-voice-list"></div></div></section><section data-lhn-br-popover="speed"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Reading Speed <span data-speed-value>1.0x</span></h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><input class="lhn-br-range" type="range" min="0.5" max="3" step="any" value="1" aria-label="Reading speed"><div class="lhn-br-presets">${[0.75,1,1.25,1.5,2].map(value=>`<button type="button" data-preset="${value}">${formatSpeed(value)}</button>`).join("")}</div></div></section><section data-lhn-br-popover="settings"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Settings</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><label class="lhn-br-setting">Auto scroll<input class="lhn-br-toggle" type="checkbox" data-autoscroll></label><label class="lhn-br-setting">Paragraph play buttons<input class="lhn-br-toggle" type="checkbox" data-parabtn></label><label class="lhn-br-setting">Keyboard shortcuts<input class="lhn-br-toggle" type="checkbox" data-shortcuts></label><label class="lhn-br-setting">Auto-detect language<input class="lhn-br-toggle" type="checkbox" data-autolang></label><label class="lhn-br-setting">Read translation with source<input class="lhn-br-toggle" type="checkbox" data-readtranslation></label><label class="lhn-br-setting">Speed step<input type="number" min="0.01" max="2.5" step="0.01" value="0.25" data-speed-step></label><label class="lhn-br-setting">Match theme to background<input class="lhn-br-toggle" type="checkbox" data-theme></label><button type="button" data-br-settings class="lhn-br-account"><span data-br-settings-label>Bilingual Reader settings</span><span>↗</span></button><label class="lhn-br-setting"><span data-webfont-label>Custom website font</span><input class="lhn-br-toggle" type="checkbox" data-webfont></label><hr class="lhn-br-settings-divider"><button type="button" data-account class="lhn-br-account"><span data-account-label>Account / Open Dashboard</span><span>↗</span></button><hr class="lhn-br-settings-divider"></div><footer class="lhn-br-pop-foot"><b>Space</b> pause · <b>← / →</b> previous/next · <b>Alt+R</b> close</footer></section>`;
   bar.querySelector('[data-lhn-br-popover="voices"]').id = "voice-popup";
   const popover = name => bar.querySelector(`[data-lhn-br-popover="${name}"]`);
   // Focus ô tìm kiếm của Select voice trên mọi trình duyệt Chromium (Chrome, Edge, ...) và Firefox: thử lại vài lần vì có trình duyệt chưa nhận focus ngay sau khi popover hiện
@@ -172,15 +173,16 @@ const FLAG_SVGS = {
   bar.querySelector("[data-parabtn]").addEventListener("change", event => saveSpeechSetting({ speakerIconVisibility:event.target.checked ? "always" : "hover" }));
   
   bar.querySelector("[data-autolang]").addEventListener("change", event => saveSpeechSetting({ autoDetectVoice:event.target.checked }));
+  bar.querySelector("[data-readtranslation]").addEventListener("change", event => { const enabled = event.target.checked; saveSpeechSetting({ readTranslation:enabled }); if (enabled) notifyReadTranslationOn(); else skipBilingualSegment(); });
   bar.querySelector("[data-speed-step]").addEventListener("change", event => { const value = normalizeSpeedStep(event.target.value); event.target.value = value; saveSpeechSetting({ speechSpeedStep:value }); renderPopupText(); });
   bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
   bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
-  bar.querySelector("[data-dashboard]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-br-settings]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-account]").addEventListener("click", () => browser.runtime.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-dashboard]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-br-settings]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
+  bar.querySelector("[data-account]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
   bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
   bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
-  bar.querySelector("[data-speed]").addEventListener("click", () => { bar.querySelector("[data-speed-value]").textContent = formatSpeed(settings.speechSpeed || 1); bar.querySelector(".lhn-br-range").value = settings.speechSpeed || 1; });
+  bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = currentSegmentRate(); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
   bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
   bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
   bar.querySelector("input[type=search]").addEventListener("input", renderVoiceChoices);
@@ -237,7 +239,7 @@ const FLAG_SVGS = {
   function syncToolbar() {
     bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
     bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    bar.querySelector("[data-speed]").textContent = formatSpeed(readingSegment?.translation ? segmentRate(true) : (settings.speechSpeed || 1));
+    bar.querySelector("[data-speed]").textContent = formatSpeed(currentSegmentRate());
     bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
     bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
     bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
@@ -245,9 +247,10 @@ const FLAG_SVGS = {
     const accountLabel = bar.querySelector("[data-account-label]");
     if (accountProfile) { const name = accountProfile.displayName || accountProfile.username || "Account"; const email = accountProfile.email || ""; accountLabel.textContent = email ? `${name} · ${email}` : name; bar.querySelector("[data-account]").title = email ? `${name} (${email})` : name; } else { accountLabel.textContent = popupText("readerPopupSignIn"); bar.querySelector("[data-account]").title = popupText("readerPopupSignIn"); }
     bar.querySelector("[data-autolang]").checked = settings.autoDetectVoice !== false;
+    bar.querySelector("[data-readtranslation]").checked = !!settings.readTranslation;
     bar.querySelector("[data-speed-step]").value = settings.speechSpeedStep;
     const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
-    const minutes = Math.max(1,Math.ceil(totalWords / (220 * (Number(settings.speechSpeed)||1))));
+    const minutes = Math.max(1,Math.ceil(totalWords / (220 * baseRate())));
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
@@ -258,7 +261,7 @@ const FLAG_SVGS = {
     bar.querySelector("[data-theme]").checked = isDark;
   }
   function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
-  function popupText(key, vars = {}) { return globalThis.LHN_I18N?.t?.(key, vars, displayLang) || key; }
+  function popupText(key, vars = {}) { return globalThis.LHN_LANGUAGES?.t?.(key, vars, displayLang) || key; }
   function renderPopupText() {
     const setAttr = (selector, attr, key) => { const element = bar.querySelector(selector); if (element) element.setAttribute(attr, popupText(key)); };
     const setText = (selector, key) => { const element = bar.querySelector(selector); if (element) element.textContent = popupText(key); };
@@ -281,7 +284,7 @@ const FLAG_SVGS = {
     const speedTitle = popover("speed").querySelector(".lhn-br-pop-title"); if (speedTitle?.firstChild) speedTitle.firstChild.textContent = `${popupText("readerPopupSpeed") } `;
     setAttr('input[type="search"]', "placeholder", "readerPopupSearch"); setAttr('input[type="search"]', "aria-label", "readerPopupSearch");
     setAttr(".lhn-br-range", "aria-label", "readerPopupSpeed");
-    for (const [selector, key] of [["[data-autoscroll]","readerPopupAutoScroll"],["[data-parabtn]","bilingualSpeakerIcon"],["[data-shortcuts]","readerPopupShortcuts"],["[data-autolang]","readerPopupAutoDetect"],["[data-speed-step]","readerPopupSpeedStep"],["[data-theme]","readerPopupDarkMode"]]) {
+    for (const [selector, key] of [["[data-autoscroll]","readerPopupAutoScroll"],["[data-parabtn]","bilingualSpeakerIcon"],["[data-shortcuts]","readerPopupShortcuts"],["[data-autolang]","readerPopupAutoDetect"],["[data-readtranslation]","bilingualReadTranslation"],["[data-speed-step]","readerPopupSpeedStep"],["[data-theme]","readerPopupDarkMode"]]) {
       const label = bar.querySelector(selector)?.closest("label"); if (label?.firstChild) label.firstChild.textContent = `${popupText(key)} `;
     }
     const shortcutLabel = (key, fallback) => {
@@ -347,9 +350,54 @@ const FLAG_SVGS = {
     utterance=null; cancelGoogle(); speakAfterCancel(remainder);
   }
   function normalizeSpeedStep(value) { const step = Number(value); return Number.isFinite(step) && step > 0 ? Math.max(0.01, Math.min(2.5, Math.round(step * 100) / 100)) : DEFAULTS.speechSpeedStep; }
+  function clampSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.max(.5, Math.min(3, Math.round(rate * 100) / 100)) : null; }
+  // Luật tốc độ:
+  // - "Custom rate for display language" bật: đoạn đọc thuộc ngôn ngữ hiển thị dùng "Your speed",
+  //   đoạn thuộc ngôn ngữ khác dùng "Global speech rate".
+  // - Tắt: mọi đoạn dùng "Global speech rate".
+  function normalizeSpeechLang(value) { return String(value || "").trim().toLowerCase().replace(/_/g, "-").split("-")[0]; }
+  function isDisplaySpeechLang(lang) { const target = normalizeSpeechLang(lang); return Boolean(target) && target === normalizeSpeechLang(displayLang); }
+  function activeSegmentLang() { return (reading || readingPaused) ? (readingSegment?.lang || activeSpeechLang || "") : ""; }
+  function segmentRate(lang) {
+    if (dashboardShortcuts?.useLanguageSpeechRate !== true || !isDisplaySpeechLang(lang)) return baseRate();
+    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
+    if (Number.isFinite(custom)) return clampSpeechRate(custom) ?? 1.25;
+    const inherited = Number(dashboardShortcuts?.inheritedSpeechRateByLanguage?.[displayLang]);
+    if (Number.isFinite(inherited)) return clampSpeechRate(inherited) ?? 1.25;
+    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang])) ?? 1.25;
+  }
+  function currentSegmentRate() { return segmentRate(activeSegmentLang()); }
+  function editingLanguageRate() { return dashboardShortcuts?.useLanguageSpeechRate === true && isDisplaySpeechLang(activeSegmentLang()); }
+  function writeLanguageSpeechRate(rate) {
+    const patch = {
+      speechRateByLanguage:{ ...(dashboardShortcuts.speechRateByLanguage || {}), [displayLang]:rate },
+      hasCustomSpeechRateByLanguage:{ ...(dashboardShortcuts.hasCustomSpeechRateByLanguage || {}), [displayLang]:true },
+      inheritedSpeechRateByLanguage:{ ...(dashboardShortcuts.inheritedSpeechRateByLanguage || {}) }
+    };
+    delete patch.inheritedSpeechRateByLanguage[displayLang];
+    dashboardShortcuts = { ...dashboardShortcuts, ...patch, inheritedSpeechRateByLanguage:patch.inheritedSpeechRateByLanguage };
+    browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), ...patch } })).catch(() => {});
+  }
+  function writeSharedSpeechRate(rate) {
+    dashboardShortcuts = { ...dashboardShortcuts, speechRate:rate };
+    browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), speechRate:rate } })).catch(() => {});
+  }
+  function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
+  function baseRate() { const shared = clampSpeechRate(dashboardShortcuts?.speechRate); return shared === null ? 1 : shared; }
+  function applySharedSpeechRate() {
+    const rate = currentSegmentRate();
+    if (rate === lastAppliedSegmentRate) { syncToolbar(); return; }
+    lastAppliedSegmentRate = rate;
+    renderSpeed(rate);
+    if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading && !readingPaused) restartCurrentSpeech();
+    syncToolbar();
+  }
   function setSpeechSpeed(value) {
-    const rate=Math.max(.5,Math.min(3,Math.round(value*100)/100));
-    saveSpeechSetting({speechSpeed:rate}); bar.querySelector(".lhn-br-range").value=rate; bar.querySelector("[data-speed-value]").textContent=formatSpeed(rate); syncToolbar();
+    const rate = clampSpeechRate(value);
+    if (rate === null) return;
+    if (editingLanguageRate()) writeLanguageSpeechRate(rate);
+    else writeSharedSpeechRate(rate);
+    lastAppliedSegmentRate = rate; renderSpeed(rate); syncToolbar();
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
   }
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
@@ -357,7 +405,6 @@ const FLAG_SVGS = {
   function applySettings(next) {
     const wasReaderActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     settings = { ...DEFAULTS, ...(next || {}) };
-    settings.speechSpeed = Math.max(.5, Math.min(3, Math.round((Number(settings.speechSpeed) || 1) * 100) / 100));
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
     if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
     settings.translationFontScale = Math.min(150, Math.max(50, Number(settings.translationFontScale) || DEFAULTS.translationFontScale));
@@ -728,17 +775,20 @@ const FLAG_SVGS = {
     mainBlocksAt = Date.now(); mainBlocksDirty = false;
     return mainBlocksCache;
   }
-  function rawText(block, readerMode = false) {
-    if (readerMode) return visibleReaderText(block);
-    const clone = block.cloneNode(true);
-    clone.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(el => el.remove());
-    return (clone.innerText || clone.textContent || "").trim();
+  function rawText(block) {
+    // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
+    return visibleReaderText(block);
   }
   function updateSpeakers() {
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
     const readableBlocks = new Set(readerBlocks());
-    blocks().forEach((block, index) => {
+    const allBlocks = blocks(), blockSet = new Set(allBlocks);
+    const isNestedBlock = block => { for (let parent = block.parentElement; parent; parent = parent.parentElement) if (blockSet.has(parent)) return true; return false; };
+    allBlocks.forEach((block, index) => {
       block.dataset.lhnBilingualIndex = String(index);
+      // Đoạn nằm trong một đoạn khác (ví dụ <a> block trong <h2>) chỉ nhận icon ở đoạn ngoài cùng,
+      // tránh 2 icon loa cho cùng một tiêu đề.
+      if (isNestedBlock(block)) { block.querySelectorAll(":scope > .lhn-bilingual-speaker").forEach(el => el.remove()); return; }
       let speaker = block.querySelector(":scope > .lhn-bilingual-speaker");
       if (!speaker) {
         speaker = document.createElement("span"); speaker.className = "lhn-bilingual-speaker"; speaker.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
@@ -774,7 +824,7 @@ const FLAG_SVGS = {
       let card = block.querySelector(":scope > .lhn-bilingual-card");
       const targetLang = ["auto", "same"].includes(targetLanguage) ? displayLang : targetLanguage;
       if (card?.dataset.sourceText === text && card.dataset.targetLang === targetLang) return;
-      const result = await browser.runtime.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
+      const result = await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
       let translated = result?.translated;
       if (!translated) return;
       const source = text.trim().toLocaleLowerCase(), sameDetected = result.detectedLang && result.detectedLang.toLowerCase().split("-")[0] === targetLang;
@@ -812,17 +862,7 @@ const FLAG_SVGS = {
     googleResumeWaiters.splice(0).forEach(resolve => resolve());
     synth?.resume(); googleAudio?.play().catch(() => {});
   }
-  // Tốc độ: đoạn web dùng tốc độ của trình đọc. Đoạn dịch (khi bật Custom rate for display language):
-  // tốc độ web + (tốc độ riêng ngôn ngữ hiển thị - tốc độ chung)
-  var voiceFlagOverride = ""; var readingSegment = null; // đoạn đang đọc: { translation, lang }
-  function segmentRate(isTranslation) {
-    const base = Number(settings.speechSpeed) || 1;
-    if (!isTranslation || dashboardShortcuts?.useLanguageSpeechRate !== true) return base;
-    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
-    const global = Number(dashboardShortcuts?.speechRate) || 1;
-    if (!Number.isFinite(custom)) return base;
-    return Math.min(3, Math.max(0.5, base + (custom - global)));
-  }
+  var voiceFlagOverride = ""; var readingSegment = null; var lastAppliedSegmentRate = null; // đoạn đang đọc: { translation, lang }
   async function speakGoogleNext(text, fallbackLang, requestId, voiceSettings, forcedLang = null, then = null) {
     const lang = forcedLang ? LHN_TTS.normalizeLanguage(forcedLang) : voiceSettings?.readLanguage ? LHN_TTS.normalizeLanguage(voiceSettings.readLanguage) : (settings.autoDetectVoice !== false ? await LHN_TTS.detectLanguage(text, fallbackLang) : LHN_TTS.normalizeLanguage(fallbackLang));
     if (requestId !== speechDetectionRequest || !reading) return;
@@ -830,10 +870,10 @@ const FLAG_SVGS = {
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (reading) { queueIndex++; speakNext(); } };
-    readingSegment = { translation: Boolean(forcedLang), lang }; syncToolbar();
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) { queueIndex++; speakNext(); } return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) { queueIndex++; speakNext(); } };
+    readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
-      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(Boolean(forcedLang)),
+      text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
       isActive: () => googleToken === token && reading,
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
@@ -846,7 +886,7 @@ const FLAG_SVGS = {
         const voices = synth.getVoices();
         const voice = voices.find(item => item.voiceURI === browserVoiceURI) || voices.find(item => normalize(item.lang) === target) || voices.find(item => normalize(item.lang).split("-")[0] === base);
         if (!voice) { done({ unsupported:true }); return; }
-        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = Number(settings.speechSpeed) || 1; u.voice = voice;
+        const u = new SpeechSynthesisUtterance(t); u.lang = voice.lang || l; u.rate = segmentRate(l || lang); u.voice = voice;
         u.onend = done; u.onerror = done; synth.speak(u);
       },
       strictVoice: true,
@@ -885,6 +925,7 @@ const FLAG_SVGS = {
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
+    const translationIncluded = textOverride == null && Boolean(settings.readTranslation) && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -913,9 +954,9 @@ const FLAG_SVGS = {
     activeVoice = explicitVoice || (selectedVoiceMatches ? selectedVoice : null) || defaultLanguageVoice || systemVoices.find(voice => normalizeVoiceLang(voice) === activeSpeechLang.toLowerCase().replace(/_/g,"-")) || systemVoices.find(voice => normalizeVoiceLang(voice).split("-")[0] === baseLang) || null;
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
-    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = Number(settings.speechSpeed) || 1; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
+    const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(activeSpeechLang); lastAppliedSegmentRate = current.rate; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
     current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
-    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { if (!translationIncluded) { const pending = pendingTranslationFor(block); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } queueIndex++; speakNext(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
@@ -925,7 +966,29 @@ const FLAG_SVGS = {
     const card = block.querySelector(":scope > .lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
-    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || "" };
+    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || displayLang };
+  }
+  // Đoạn gốc vừa đọc xong: nếu tuỳ chọn được bật (kể cả vừa bật trong lúc đang đọc) và đoạn có bản dịch
+  // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
+  function pendingTranslationFor(block) {
+    if (!settings.readTranslation || !block) return null;
+    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const translated = card?.textContent.trim();
+    if (!translated) return null;
+    return { text:translated, lang:card.dataset.targetLang || displayLang };
+  }
+  // Tắt tuỳ chọn khi đang đọc bản dịch của đoạn hiện tại: cắt ngay phần bản dịch, không đọc tiếp.
+  function skipBilingualSegment() {
+    if (!reading || readingSegment?.translation !== true) return;
+    speechDetectionRequest++;
+    utterance = null;
+    const wasPaused = readingPaused;
+    cancelGoogle();
+    resumeText = "";
+    readingSegment = null; lastAppliedSegmentRate = null;
+    queueIndex = Math.min(queue.length, queueIndex + 1);
+    if (wasPaused) { syncToolbar(); return; }
+    speakAfterCancel();
   }
   function readTextFor(block) {
     const source = rawText(block, true);
@@ -952,13 +1015,13 @@ const FLAG_SVGS = {
     readTranslationToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
   }
   function startReading(fromBlock, interruptCurrent = false) {
-    if (settings.readTranslation) notifyReadTranslationOn();
-    if (websiteDisabled || isReaderDisabledOnThisWebsite()) return;
-    if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) return;
+    if (websiteDisabled) { console.warn("[Keepit Reader] Không đọc: website đang bị tắt cho trang này"); return; }
+    if (isReaderDisabledOnThisWebsite()) { console.warn("[Keepit Reader] Không đọc: website nằm trong danh sách tắt Reader", location.hostname); return; }
+    if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) { console.warn("[Keepit Reader] Không đọc: TTS bị tắt hoặc trình duyệt không hỗ trợ", { enableTTS:settings.enableTTS, synth:Boolean(synth), utterance:Boolean(window.SpeechSynthesisUtterance) }); return; }
     speechDetectionRequest++;
     let nextQueue = readerBlocks(true);
     if (fromBlock && !nextQueue.includes(fromBlock)) nextQueue = [fromBlock];
-    if (!nextQueue.length) return;
+    if (!nextQueue.length) { console.warn("[Keepit Reader] Không đọc: không tìm thấy đoạn nào để đọc", { fromBlock:Boolean(fromBlock) }); return; }
     const cancelPendingSpeech = Boolean(interruptCurrent && (reading || synth?.speaking || synth?.pending || synth?.paused));
     if (interruptCurrent && reading) stopReading();
     else if (cancelPendingSpeech) { utterance = null; cancelGoogle(); }
@@ -1006,8 +1069,8 @@ const FLAG_SVGS = {
     if (event.detail === "toggle-reading") reading ? stopReading() : startReading();
     if (event.detail === "previous-reading-block") moveReading(-1, event);
     if (event.detail === "next-reading-block") moveReading(1, event);
-    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed((Number(settings.speechSpeed) || 1) + normalizeSpeedStep(settings.speechSpeedStep)); }
-    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed((Number(settings.speechSpeed) || 1) - normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() + normalizeSpeedStep(settings.speechSpeedStep)); }
+    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() - normalizeSpeedStep(settings.speechSpeedStep)); }
     if (settings.readerShortcutsEnabled !== false && event.detail === "open-voice-select" && reading && bar.classList.contains("lhn-show")) { event.preventDefault(); bar.querySelector("[data-voices]").click(); }
   });
   document.addEventListener("lhn-bilingual-reader-pause", event => {
@@ -1022,7 +1085,7 @@ const FLAG_SVGS = {
     } else if (readingPaused) {
       readingPaused = false;
       if (googleToken) { syncPauseShortcutState(); syncToolbar(); resumeGoogle(); }
-      else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining); }
+      else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining || null); }
       event.preventDefault();
     } else {
       syncPauseShortcutState(); event.preventDefault();
@@ -1053,11 +1116,12 @@ const FLAG_SVGS = {
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
+      applySharedSpeechRate();
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
       if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI || previousReadLanguage !== settings.readLanguage)) restartCurrentSpeech();
-      displayLang = globalThis.LHN_I18N?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
+      displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
       syncToolbar();
@@ -1066,7 +1130,7 @@ const FLAG_SVGS = {
   });
   browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(async data => {
     dashboardShortcuts = data[DISPLAY_SETTINGS_KEY] || {};
-    displayLang = globalThis.LHN_I18N?.languageFor?.(data[DISPLAY_SETTINGS_KEY]) || displayLang;
+    displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(data[DISPLAY_SETTINGS_KEY]) || displayLang;
     addonThemePreference = ["light","dark","system"].includes(data[DISPLAY_SETTINGS_KEY]?.sidebarTheme) ? data[DISPLAY_SETTINGS_KEY].sidebarTheme : "system";
     targetLanguage = data[TARGET_LANGUAGE_KEY]?.targetLanguage || "auto";
     accountProfile = data[DEMO_PROFILE_KEY] || null;
@@ -1076,10 +1140,21 @@ const FLAG_SVGS = {
     const savedReaderSites = Array.isArray(savedReaderSettings.readerDisabledWebsites) ? savedReaderSettings.readerDisabledWebsites : [];
     const seedReaderSites = savedReaderSettings.readerDefaultSitesSeeded !== true;
     const mergedReaderSettings = { ...DEFAULTS, ...savedReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...(globalThis.LHN_CONFIG?.DEFAULT_READER_DISABLED_WEBSITES || []), ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
-    if (seedReaderSites) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
+    // Tốc độ đọc chỉ có một nguồn: lhnSettings. Lần đầu chạy bản mới, nếu Dashboard còn ở mặc định
+    // 1.0 mà Reader đã có speechSpeed cũ thì đưa giá trị cũ sang speechRate, rồi bỏ khóa cũ.
+    const sharedSpeechRate = Number(data[DISPLAY_SETTINGS_KEY]?.speechRate);
+    const legacyReaderRate = Number(savedReaderSettings.speechSpeed);
+    if (savedReaderSettings.speechSpeedSynced !== true) {
+      if (Number.isFinite(legacyReaderRate) && legacyReaderRate !== 1 && (!Number.isFinite(sharedSpeechRate) || sharedSpeechRate === 1)) writeSharedSpeechRate(Math.max(.5, Math.min(3, legacyReaderRate)));
+      mergedReaderSettings.speechSpeedSynced = true;
+    }
+    if (Object.hasOwn(mergedReaderSettings, "speechSpeed")) delete mergedReaderSettings.speechSpeed;
+    // Lần đầu chạy bản mặc định-bật: các bản lưu trước đã ghi cứng readTranslation:false nên phải bật lại một lần.
+    const readTranslationDefaultNeedsOn = savedReaderSettings.readTranslationDefaultOn !== true;
+    if (readTranslationDefaultNeedsOn) { mergedReaderSettings.readTranslation = true; mergedReaderSettings.readTranslationDefaultOn = true; }
+    if (seedReaderSites || savedReaderSettings.speechSpeedSynced !== true || readTranslationDefaultNeedsOn) browser.storage.local.set({ [SETTINGS_KEY]:mergedReaderSettings }).catch(() => {});
     applySettings({ ...mergedReaderSettings, ...voiceSettings });
     renderPopupText();
-    settings.speechSpeed = Math.max(.5,Math.min(3,Number(settings.speechSpeed)||1));
     systemVoices = synth?.getVoices?.() || [];
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     syncToolbar();

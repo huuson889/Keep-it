@@ -59,7 +59,7 @@
       void append(entry);
       return;
     }
-    try { void browser.runtime.sendMessage({ type: "LHN_ERROR_LOG", entry }).catch(() => {}); } catch {}
+    try { void LHN_MESSAGING.sendMessage({ type: "LHN_ERROR_LOG", entry }).catch(() => {}); } catch {}
   }
 
   globalThis.LHN_ERROR_LOGGER = { append };

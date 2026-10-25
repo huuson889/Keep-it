@@ -1,0 +1,19 @@
+/* Nút mở Trancy trên trang YouTube (giao diện overlay nằm trong Shadow DOM) */
+#yt-trancy-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  z-index: 999997;
+}
+#yt-trancy-launcher svg { width: 22px; height: 22px; fill: currentColor; }

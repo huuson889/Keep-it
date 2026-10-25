@@ -70,7 +70,7 @@
     if (detected === undefined) {
       let pending = detectionRequests.get(key);
       if (!pending) {
-        pending = Promise.resolve().then(() => api.runtime.sendMessage({ type:"DETECT_READ_LANGUAGE", text:sample }))
+        pending = Promise.resolve().then(() => LHN_MESSAGING.sendMessage({ type:"DETECT_READ_LANGUAGE", text:sample }))
           .then(result => String(result?.detectedLang || "").trim().toLowerCase().split(/[-_]/)[0])
           .catch(() => "")
           .then(value => {
@@ -168,7 +168,7 @@
         if (attempt) { await new Promise(resolve => setTimeout(resolve, attempt * 500)); if (!opts.isActive()) return; }
         let url = null;
         try {
-          const result = await api.runtime.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: opts.googleLanguage, voice: opts.voice });
+          const result = await LHN_MESSAGING.sendMessage({ type: "FETCH_TTS_AUDIO", text: chunk, language: opts.googleLanguage, voice: opts.voice });
           if (!opts.isActive()) return;
           if (!result?.audioBase64) throw new Error("Google TTS returned empty audio");
           const bin = atob(result.audioBase64);

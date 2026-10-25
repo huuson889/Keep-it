@@ -1,5 +1,6 @@
 /* Shared, named constants used by the extension's UI and storage layers. */
 (() => {
+  if (!globalThis.LHN_DEFAULTS) throw new Error("Keepit: js/core/defaults.js phải được nạp trước js/core/config.js — kiểm tra manifest.json, importScripts trong background.js và thứ tự <script> trong pages/*.html");
   const COLORS = Object.freeze(["yellow", "green", "purple", "red", "blue", "orange"]);
   const COLOR_YELLOW = "#fff3a6";
   const COLOR_GREEN = "#c2f0bd";
@@ -9,44 +10,14 @@
   const COLOR_ORANGE = "#ffd0a3";
   const HIGHLIGHT_COLORS = Object.freeze({ yellow: COLOR_YELLOW, green: COLOR_GREEN, purple: COLOR_PURPLE, red: COLOR_RED, blue: COLOR_BLUE, orange: COLOR_ORANGE });
   const DEFAULT_COLOR = "yellow";
-  const DEFAULT_READER_DISABLED_WEBSITES = Object.freeze(["facebook.com", "messenger.com", "zalo.me", "youtube.com", "netflix.com", "github.com", "stackoverflow.com", "discord.com", "telegram.org", "twitch.tv", "soundcloud.com", "spotify.com", "google.com", "linkedin.com", "twitter.com", "x.com", "reddit.com", "tiktok.com", "instagram.com", "dropbox.com", "paypal.com", "behance.net", "dribbble.com", "figma.com", "canva.com", "chatgpt.com", "claude.ai"]);
+  const DEFAULT_READER_DISABLED_WEBSITES = globalThis.LHN_DEFAULTS.readerDisabledWebsites;
   const ACTION_ICON_PATHS = Object.freeze({
     edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>',
     trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>',
     volume: '<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'
   });
   const COLOR_LABEL_KEYS = Object.freeze({ yellow: "colorYellow", green: "colorGreen", purple: "colorPurple", red: "colorRed", blue: "colorBlue", orange: "colorOrange" });
-  const DEFAULT_SETTINGS = Object.freeze({
-    showOnSelect: false,
-    autoHighlight: false,
-    sentenceNoteEnabled: true,
-    autoTranslate: true,
-    autoSpeakSelectedText: true,
-    speechVoice: "google",
-    speechRate: 1,
-    useLanguageSpeechRate: true,
-    speechRateByLanguage: Object.freeze({ en: 1.25, vi: 1.25, ko: 1.25 }),
-    hasCustomSpeechRateByLanguage: Object.freeze({}),
-    inheritedSpeechRateByLanguage: Object.freeze({}),
-    translateIconEnabled: false,
-    autoSpeakOnTranslate: true,
-    translationPopupEnabled: false,
-    showFullEnglishDictionary: true,
-    sidebarIndicatorEnabled: true,
-    sidebarIndicatorOnDisabledSites: true,
-    defaultHighlightColor: DEFAULT_COLOR,
-    shortcut: "Alt+S",
-    sidebarShortcut: "Alt+Q",
-    translateSelectedShortcut: "Alt+W",
-    toggleWebsiteShortcut: "Alt+Z",
-    speechPauseShortcut: "Space",
-    previousReadingShortcut: "Left",
-    nextReadingShortcut: "Right",
-    increaseReadingSpeedShortcut: "Up",
-    decreaseReadingSpeedShortcut: "Down",
-    selectVoiceShortcut: "Alt+L",
-    disabledWebsites: []
-  });
+  const DEFAULT_SETTINGS = globalThis.LHN_DEFAULTS.settings;
 
   globalThis.LHN_CONFIG = Object.freeze({
     STORAGE_KEYS: Object.freeze({

@@ -1,14 +1,14 @@
 const $ = id => document.getElementById(id);
-const I18N = globalThis.LHN_I18N;
+const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
-const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
+const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
-const DEFAULT_BILINGUAL_READER_SETTINGS = Object.freeze({ accentColor:"#9c27b0", fontFamily:"'Inter', sans-serif", webFontFamily:"", translationTextColor:"default", translationCustomColor:"#2d3748", translationTextWeight:"auto", translationFontScale:80, skipSameLang:true, autoScroll:true, enableTTS:true, speakerIconVisibility:"hover", readTranslation:false, excludeSelectors:[], readerDisabledWebsites:CONFIG.DEFAULT_READER_DISABLED_WEBSITES, readerDefaultSitesSeeded:true });
+const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
@@ -17,7 +17,7 @@ let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
 const annotationById = new Map();
 const annotationPositionById = new Map();
-const annotationMetadata = new WeakMap();
+const LIBRARY = globalThis.LHN_LIBRARY.create({ unknownSite:() => t("unknownWebsite") });
 let filterOptionsCache = null;
 let studyQueue = [], studyQueueHead = 0, studyHistory = [], studyReviewed = 0, studyRemembered = 0, studyAutoSpeak = true, studySpeechToken = 0, studyPlayAllSources = false, studySourceKey = null, studySpeakAfterSettingsClose = false, studyTypedAnswer = "", studyTypedAnswerForId = null, studySettingsTab = "study";
 let annotationsChangedDuringStudy = false;
@@ -28,9 +28,9 @@ let studyDefinitionTabId = null, studyDefinitionTabQueue = Promise.resolve();
 const DEFAULT_STUDY_PREFERENCES = Object.freeze({ alwaysPlayAll: false, alwaysAutoSpeak: true, alwaysFocusMode: true, showSentenceNoteFront: true, autoSpeakSentenceNoteFront: true, typeTheAnswer: true, reverseFlashcards: false, searchNoteDefinition: true, switchToDefinitionTab: true, definitionLanguage: "auto" });
 const CUSTOM_FLASHCARD_PREFERENCE_KEYS = Object.freeze(["alwaysPlayAll", "alwaysAutoSpeak", "alwaysFocusMode", "showSentenceNoteFront", "autoSpeakSentenceNoteFront", "typeTheAnswer", "reverseFlashcards"]);
 let studyPreferences = { ...DEFAULT_STUDY_PREFERENCES };
-const DEFAULT_STUDY_TRANSLATION_SETTINGS = Object.freeze({ showFront:false, showBack:true, sourceLanguage:"auto", targetLanguage:"auto" });
+const DEFAULT_STUDY_TRANSLATION_SETTINGS = globalThis.LHN_DEFAULTS.studyTranslation;
 let studyTranslationSettings = { ...DEFAULT_STUDY_TRANSLATION_SETTINGS };
-const DEFAULT_FLASHCARD_TRANSLATE_SETTINGS = Object.freeze({ useDashboardSettings:true, useDashboardSpeechSettings:true, sourceLanguage:"auto", targetLanguage:"auto", speechVoice:"google", speechRate:1, flashcardEnglishSpeechRate:1.2, flashcardSpeechRateByLanguage:{}, hasCustomFlashcardLanguageSpeechRate:{}, hasCustomSpeechRate:false, hasCustomEnglishSpeechRate:false, highlightSpeechLanguage:"auto", noteSpeechLanguage:"auto", speechLanguageSettingsRevision:{} });
+const DEFAULT_FLASHCARD_TRANSLATE_SETTINGS = globalThis.LHN_DEFAULTS.flashcard;
 let flashcardTranslateSettings = { ...DEFAULT_FLASHCARD_TRANSLATE_SETTINGS };
 let studySettingsSnapshot = null;
 let studySettingsCloseToastKey = "settingsNoChanges";
@@ -46,23 +46,7 @@ const EXPORTS = [
   { id: "json", ext: "json", labelKey: "exportJson", icon: "file-json" }
 ];
 
-const ICON_PATHS = {
-  "file-text": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/>',
-  "file-spreadsheet": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M8 13h8M8 17h8M12 12v6"/>',
-  "file-code": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M10 13l-2 2 2 2M14 13l2 2-2 2"/>',
-  "file-json": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M10 12c-1 0-1 1-1 2s0 2-1 2M14 12c1 0 1 1 1 2s0 2 1 2"/>',
-  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/>',
-  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
-  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/>',
-  external: '<path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
-  sparkles: '<path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/>',
-  cursor: '<path d="m5 3 14 9-7 1-3 7L5 3Z"/><path d="m12 13 5 6"/>',
-  "square-text": '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h8M7 12h10M7 16h6"',
-  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'
-};
-function icon(name, cls = "") { const path = CONFIG.ACTION_ICON_PATHS[name] || ICON_PATHS[name] || ICON_PATHS.sparkles; return `<svg class="lucide ${cls}" viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`; }
+function icon(name, cls = "") { return LHN_ICONS.render(name, cls); }
 function updateViewModeButton() { const button = $("viewModeBtn"); if (!button) return; const isGrid = viewMode === "grid"; button.innerHTML = isGrid ? icon("grid") : '<svg class="lucide preview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7"/><path d="M14 9h7"/><path d="M14 15h7"/><path d="M14 20h7"/></svg>'; button.title = t(isGrid ? "gridViewLabel" : "listViewLabel"); button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(isGrid)); $("notesList").classList.toggle("is-grid-view", isGrid); }
 
 function playToolbarActionEffect(button, event, color, particleShape) {
@@ -91,7 +75,7 @@ function playToolbarActionEffect(button, event, color, particleShape) {
   }
 }
 
-function t(key, vars = {}, language = currentLang) { return I18N.t(key, vars, language); }
+function t(key, vars = {}, language = currentLang) { return LANGUAGES.t(key, vars, language); }
 const disabledTooltipTitles = new WeakMap();
 function setDisabledTooltip(control, anchor = control, reason = "") {
   if (!control || !anchor) return;
@@ -121,7 +105,7 @@ function renderPronunciationDictionary() {
   const container = $("pronunciationLanguageCards");
   if (!container) return;
   const dictionary = dashboardSettings.customPronunciationDictionary && typeof dashboardSettings.customPronunciationDictionary === "object" ? dashboardSettings.customPronunciationDictionary : {};
-  const supportedLanguages = I18N.LANGS.map(language => ({ ...language, speechCode:{ en:"en-US", vi:"vi-VN", ko:"ko-KR" }[language.code] }));
+  const supportedLanguages = LANGUAGES.LANGS.map(language => ({ ...language, speechCode:{ en:"en-US", vi:"vi-VN", ko:"ko-KR" }[language.code] }));
   const languageSelect = $("pronunciationLanguageSelect");
   if (languageSelect && !languageSelect.options.length) for (const language of supportedLanguages) { const option = document.createElement("option"); option.value = language.speechCode; option.textContent = `${language.flag} ${language.name} — ${language.native}`; languageSelect.append(option); }
   if (languageSelect) for (const option of languageSelect.options) option.disabled = Object.hasOwn(dictionary, option.value);
@@ -151,112 +135,12 @@ function renderPronunciationDictionary() {
     card.append(heading, form, list); container.append(card);
   }
 }
-let suppressSettingsLanguagePickerFocus = false;
-function settingsLanguageLabel(language) { return `${language.flag} ${language.name} - ${language.native}`; }
-function closeSettingsLanguagePicker({ restoreSelection = true, returnFocus = false } = {}) {
-  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions");
-  if (!input || !options) return;
-  options.classList.remove("open");
-  input.setAttribute("aria-expanded", "false");
-  if (restoreSelection) {
-    const selected = I18N.LANGS.find(language => language.code === $("settingsLanguageSelect").value) || I18N.LANGS[0];
-    input.value = settingsLanguageLabel(selected);
-  }
-  if (returnFocus && document.activeElement !== input) {
-    suppressSettingsLanguagePickerFocus = true;
-    input.focus();
-    suppressSettingsLanguagePickerFocus = false;
-  }
-}
-function chooseSettingsLanguage(language) {
-  const select = $("settingsLanguageSelect");
-  if (!select) return;
-  const changed = select.value !== language.code;
-  select.value = language.code;
-  closeSettingsLanguagePicker({ restoreSelection:true, returnFocus:true });
-  if (changed) select.dispatchEvent(new Event("change", { bubbles:true }));
-}
-function renderSettingsLanguageOptions(filter = "") {
-  const select = $("settingsLanguageSelect"), options = $("settingsLanguageOptions");
-  if (!select || !options) return;
-  options.replaceChildren();
-  const query = filter.trim().toLocaleLowerCase();
-  const filtered = I18N.LANGS.filter(language => `${language.name} ${language.native} ${language.code}`.toLocaleLowerCase().includes(query));
-  if (!filtered.length) {
-    const empty = document.createElement("div");
-    empty.className = "language-empty settings-language-empty";
-    empty.textContent = t("languageSearchNoResults");
-    options.appendChild(empty);
-    return;
-  }
-  filtered.forEach(language => {
-    const option = document.createElement("div");
-    option.className = "language-option settings-language-option" + (language.code === select.value ? " selected" : "");
-    option.role = "option";
-    option.tabIndex = 0;
-    option.setAttribute("aria-selected", String(language.code === select.value));
-    option.textContent = settingsLanguageLabel(language);
-    option.addEventListener("click", () => chooseSettingsLanguage(language));
-    option.addEventListener("keydown", event => {
-      const items = [...options.querySelectorAll(".settings-language-option")];
-      const index = items.indexOf(option);
-      let next = -1;
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); chooseSettingsLanguage(language); return; }
-      if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true, returnFocus:true }); return; }
-      if (event.key === "ArrowDown") next = (index + 1) % items.length;
-      else if (event.key === "ArrowUp") next = (index - 1 + items.length) % items.length;
-      else if (event.key === "Home") next = 0;
-      else if (event.key === "End") next = items.length - 1;
-      if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
-    });
-    options.appendChild(option);
-  });
-}
-function openSettingsLanguagePicker() {
-  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions");
-  if (!input || !options || options.classList.contains("open")) return;
-  input.value = "";
-  renderSettingsLanguageOptions();
-  options.classList.add("open");
-  input.setAttribute("aria-expanded", "true");
-}
-function syncSettingsLanguagePicker() {
-  const input = $("settingsLanguageSearch"), options = $("settingsLanguageOptions"), select = $("settingsLanguageSelect");
-  if (!input || !options || !select) return;
-  if (options.classList.contains("open")) renderSettingsLanguageOptions(input.value);
-  else {
-    const selected = I18N.LANGS.find(language => language.code === select.value) || I18N.LANGS[0];
-    input.value = settingsLanguageLabel(selected);
-    input.setAttribute("aria-expanded", "false");
-  }
-}
-$("settingsLanguageSearch").addEventListener("focus", () => {
-  if (suppressSettingsLanguagePickerFocus) { suppressSettingsLanguagePickerFocus = false; return; }
-  openSettingsLanguagePicker();
-});
-$("settingsLanguageSearch").addEventListener("click", openSettingsLanguagePicker);
-$("settingsLanguageSearch").addEventListener("input", event => {
-  const options = $("settingsLanguageOptions");
-  if (!options.classList.contains("open")) { options.classList.add("open"); event.target.setAttribute("aria-expanded", "true"); }
-  renderSettingsLanguageOptions(event.target.value);
-});
-$("settingsLanguageSearch").addEventListener("keydown", event => {
-  if (event.key === "Escape") { event.preventDefault(); closeSettingsLanguagePicker({ restoreSelection:true }); return; }
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    event.preventDefault();
-    const items = [...$("settingsLanguageOptions").querySelectorAll(".settings-language-option")];
-    (event.key === "ArrowDown" ? items[0] : items.at(-1))?.focus();
-  }
-});
-$("settingsLanguagePicker").addEventListener("focusout", event => {
-  if (!event.currentTarget.contains(event.relatedTarget)) closeSettingsLanguagePicker({ restoreSelection:true });
-});
-document.addEventListener("pointerdown", event => {
-  if (!event.target.closest?.("#settingsLanguagePicker")) closeSettingsLanguagePicker({ restoreSelection:true });
-});
+const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
+SETTINGS_UI.initLanguagePicker();
+function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
-  if (!select.options.length) for (const language of I18N.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
+  if (!select.options.length) for (const language of LANGUAGES.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
   select.value = currentLang;
   syncSettingsLanguagePicker();
   renderPronunciationDictionary();
@@ -273,12 +157,13 @@ function refreshDashboardSettings() {
   $("settingsAutoSpeakSelectedText").checked = dashboardSettings.autoSpeakSelectedText !== false;
   $("settingsSpeechVoice").value = (dashboardSettings.voiceMode ?? dashboardSettings.speechVoice) === "browser" ? "browser" : "google";
   const storedSpeechRate = Number(dashboardSettings.speechRate);
-  const speechRate = Number.isFinite(storedSpeechRate) ? Math.min(2, Math.max(.5, storedSpeechRate)) : 1;
+  // Giá trị dùng chung có thể tới 3 khi đặt từ thanh đọc Reader; control của Dashboard vẫn giới hạn 0.5–2.
+  const speechRate = Number.isFinite(storedSpeechRate) ? Math.min(3, Math.max(.5, storedSpeechRate)) : 1;
   const globalSpeechRateLabel = t("globalSpeechRate");
   $("settingsSpeechRate").setAttribute("aria-label", globalSpeechRateLabel);
   $("settingsSpeechRateValue").setAttribute("aria-label", globalSpeechRateLabel);
-  $("settingsSpeechRate").value = String(speechRate);
-  $("settingsSpeechRateValue").value = speechRate.toFixed(1);
+  $("settingsSpeechRate").value = String(Math.min(2, speechRate));
+  $("settingsSpeechRateValue").value = Number.isInteger(speechRate * 10) ? speechRate.toFixed(1) : String(Math.round(speechRate * 100) / 100);
   const useLanguageSpeechRate = dashboardSettings.useLanguageSpeechRate ?? (CONFIG.DEFAULT_SETTINGS.useLanguageSpeechRate === true);
   const speechRateByLanguage = dashboardSettings.speechRateByLanguage && typeof dashboardSettings.speechRateByLanguage === "object" ? dashboardSettings.speechRateByLanguage : {};
   const hasCustomSpeechRateByLanguage = dashboardSettings.hasCustomSpeechRateByLanguage && typeof dashboardSettings.hasCustomSpeechRateByLanguage === "object" ? dashboardSettings.hasCustomSpeechRateByLanguage : {};
@@ -287,8 +172,8 @@ function refreshDashboardSettings() {
   const inheritedLanguageRate = Number(inheritedSpeechRateByLanguage[currentLang]);
   const customLanguageRate = useLanguageSpeechRate
     ? hasCustomSpeechRateByLanguage[currentLang] === true && Number.isFinite(languageRate)
-      ? Math.min(2, Math.max(.5, languageRate))
-      : Number.isFinite(inheritedLanguageRate) ? Math.min(2, Math.max(.5, inheritedLanguageRate)) : Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || speechRate
+      ? Math.min(3, Math.max(.5, languageRate))
+      : Number.isFinite(inheritedLanguageRate) ? Math.min(3, Math.max(.5, inheritedLanguageRate)) : Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || speechRate
     : speechRate;
   $("settingsUseLanguageSpeechRate").checked = useLanguageSpeechRate;
   const languageRateLabel = t("yourLanguageSpeed", { language:t({ en:"languageEnglish", vi:"languageVietnamese", ko:"languageKorean" }[currentLang] || "languageEnglish") });
@@ -326,14 +211,15 @@ function refreshDashboardSettings() {
   $("settingsSidebarShortcut").value = dashboardSettings.sidebarShortcut ?? CONFIG.DEFAULT_SETTINGS.sidebarShortcut;
   $("settingsTranslateShortcut").value = dashboardSettings.translateSelectedShortcut ?? CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut;
   $("settingsWebsiteShortcut").value = dashboardSettings.toggleWebsiteShortcut ?? CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut;
+  $("settingsDualSubtitlesShortcut").value = dashboardSettings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut;
   $("settingsSpeechPauseShortcut").value = dashboardSettings.speechPauseShortcut ?? CONFIG.DEFAULT_SETTINGS.speechPauseShortcut;
   $("settingsPreviousReadingShortcut").value = dashboardSettings.previousReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.previousReadingShortcut;
   $("settingsNextReadingShortcut").value = dashboardSettings.nextReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.nextReadingShortcut;
   $("settingsIncreaseReadingSpeedShortcut").value = dashboardSettings.increaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.increaseReadingSpeedShortcut;
   $("settingsDecreaseReadingSpeedShortcut").value = dashboardSettings.decreaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.decreaseReadingSpeedShortcut;
   $("settingsSelectVoiceShortcut").value = dashboardSettings.selectVoiceShortcut ?? CONFIG.DEFAULT_SETTINGS.selectVoiceShortcut;
-  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
-  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
+  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
+  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
   $("settingsVersion").textContent = `v${browser.runtime.getManifest().version}`;
   const displayName = demoProfile?.displayName || t("profileGuest"), email = demoProfile ? (demoProfile.email || "huuson889@gmail.com") : t("profileLocal");
   $("settingsProfileName").textContent = displayName;
@@ -370,7 +256,7 @@ function refreshDashboardSettings() {
 }
 async function refreshUsageLimitSettings() {
   try {
-    const status = await browser.runtime.sendMessage({ type:"USAGE_STATUS" });
+    const status = await LHN_MESSAGING.sendMessage({ type:"USAGE_STATUS" });
     if (!status) return;
     const planKey = ({ trial:"usagePlanTrial", free:"usagePlanFree", keyA:"usagePlanKeyA", keyB:"usagePlanKeyB" })[status.planId] || "usagePlanFree";
     const limitLabel = status.dailyLimit === null ? t("usageUnlimited") : t("usageDailyLimit", { count:status.dailyLimit });
@@ -398,58 +284,18 @@ function normalizeDisabledWebsite(value) {
   } catch { return ""; }
 }
 function renderDisabledWebsiteList() {
-  const host = $("settingsDisabledWebsiteList");
-  if (!host) return;
   const sites = Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [];
-  if (!sites.length) {
-    host.innerHTML = `<p class="settings-disabled-web-empty">${escapeHtml(t("noDisabledWebsites"))}</p>`;
-    return;
-  }
-  host.replaceChildren(...sites.map(site => {
-    const row = document.createElement("div"); row.className = "settings-disabled-web-item"; row.dataset.site = site;
-    if (editingDisabledWebsite === site) {
-      row.innerHTML = `<input class="settings-disabled-web-edit-input" type="text" value="${escapeHtml(site)}" aria-label="${escapeHtml(t("disableWeb"))}"><div class="settings-disabled-web-actions"><button type="button" class="settings-action-button" data-disabled-site-action="save" data-i18n="save">${escapeHtml(t("save"))}</button><button type="button" class="settings-action-button" data-disabled-site-action="cancel" data-i18n="cancel">${escapeHtml(t("cancel"))}</button></div>`;
-    } else {
-      const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
-      const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
-      for (const [action, key] of [["edit", "edit"], ["remove", "removeWebsite"]]) {
-        const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset.disabledSiteAction = action; button.dataset.i18n = key; button.textContent = t(key); actions.appendChild(button);
-      }
-      row.append(label, actions);
-    }
-    return row;
-  }));
+  SETTINGS_UI.renderWebsiteList({ host:$("settingsDisabledWebsiteList"), sites, editing:editingDisabledWebsite, actionAttribute:"disabled-site-action", ariaLabel:"disableWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
 }
 async function updateDisabledWebsites(sites) {
   editingDisabledWebsite = null;
   await saveDashboardSettings({ disabledWebsites: [...new Set(sites)] });
 }
 function renderDisabledReaderWebsiteList() {
-  const host = $("bilingualDisabledReaderWebList");
-  if (!host) return;
   const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
-  if (!sites.length) { host.innerHTML = `<p class="settings-disabled-web-empty">${escapeHtml(t("noDisabledWebsites"))}</p>`; return; }
-  host.replaceChildren(...sites.map(site => {
-    const row = document.createElement("div"); row.className = "settings-disabled-web-item"; row.dataset.site = site;
-    if (editingDisabledReaderWebsite === site) {
-      row.innerHTML = `<input class="settings-disabled-web-edit-input" type="text" value="${escapeHtml(site)}" aria-label="${escapeHtml(t("bilingualDisabledReaderWeb"))}"><div class="settings-disabled-web-actions"><button type="button" class="settings-action-button" data-reader-site-action="save">${escapeHtml(t("save"))}</button><button type="button" class="settings-action-button" data-reader-site-action="cancel">${escapeHtml(t("cancel"))}</button></div>`;
-    } else {
-      const label = document.createElement("span"); label.className = "settings-disabled-web-domain"; label.textContent = site;
-      const actions = document.createElement("div"); actions.className = "settings-disabled-web-actions";
-      for (const [action, key] of [["edit", "edit"], ["remove", "removeWebsite"]]) { const button = document.createElement("button"); button.type = "button"; button.className = "settings-action-button"; button.dataset.readerSiteAction = action; button.textContent = t(key); actions.appendChild(button); }
-      row.append(label, actions);
-    }
-    return row;
-  }));
+  SETTINGS_UI.renderWebsiteList({ host:$("bilingualDisabledReaderWebList"), sites, editing:editingDisabledReaderWebsite, actionAttribute:"reader-site-action", ariaLabel:"bilingualDisabledReaderWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
 }
-function syncBilingualReaderControls() {
-  const enabled = $("bilingualEnableTTS")?.checked !== false;
-  const dependent = $("bilingualReaderDependentSettings");
-  if (!dependent) return;
-  dependent.classList.toggle("is-disabled", !enabled);
-  dependent.setAttribute("aria-disabled", String(!enabled));
-  dependent.querySelectorAll("input,button,select,textarea").forEach(control => { control.disabled = !enabled; });
-}
+function syncBilingualReaderControls() { SETTINGS_UI.syncReaderControls(); }
 async function updateDisabledReaderWebsites(sites) {
   editingDisabledReaderWebsite = null;
   await saveBilingualReaderSettings({ readerDisabledWebsites:[...new Set(sites)] });
@@ -462,7 +308,7 @@ async function saveDashboardSettings(nextValues) {
   if (changed && $("dashboardSettingsDialog")?.open) dashboardSettingsChangedWhileOpen = true;
   if (Object.hasOwn(nextValues, "sidebarTheme")) syncDashboardTheme();
   refreshDashboardSettings();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: dashboardSettings }); return true; }
+  try { await LHN_SETTINGS.save(dashboardSettings); return true; }
   catch (error) { dashboardSettings = previous; dashboardSettingsChangedWhileOpen = previousToastState; syncDashboardTheme(); refreshDashboardSettings(); console.warn("Could not save dashboard settings", error); return false; }
 }
 function openDashboardSettings(panel = "account") {
@@ -542,21 +388,7 @@ function renderProfileSidebar() {
     metaHost.hidden = true;
   }
   if (!profileDataCache || profileDataCache.source !== annotations) {
-    const pageKeys = new Set(), tagCounts = new Map(), sitePages = new Map(), dailyCounts = new Map();
-    const statsNow = Date.now(); let needLearnCount = 0;
-    for (const item of annotations) {
-      pageKeys.add(pageKey(item));
-      for (const tag of tagsOf(item)) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-      const site = siteOf(item);
-      if (!sitePages.has(site)) sitePages.set(site, new Set());
-      sitePages.get(site).add(pageKey(item));
-      const created = dateValue(item, "createdAt");
-      if (created) { const date = new Date(created); date.setHours(0, 0, 0, 0); const key = date.toISOString().slice(0, 10); dailyCounts.set(key, (dailyCounts.get(key) || 0) + 1); }
-      const dueAt = Number(item.review?.dueAt) || 0;
-      if (!dueAt || dueAt <= statsNow) needLearnCount++;
-    }
-    const siteCounts = new Map([...sitePages].map(([site, pages]) => [site, pages.size]));
-    profileDataCache = { source:annotations, pageCount:pageKeys.size, noteCount:annotations.length, tagCounts, siteCounts, dailyCounts, needLearnCount };
+    profileDataCache = globalThis.LHN_PROFILE_STATS.build(annotations, { tagsOf, siteOf, pageKey, dateValue });
   }
   const { pageCount, noteCount, tagCounts, siteCounts, dailyCounts, needLearnCount } = profileDataCache;
   $("profilePageTotal").textContent = pageCount.toLocaleString(currentLang);
@@ -611,12 +443,12 @@ function setProfileAuthMode(mode) {
 function openProfileAuth(mode = "login") { setProfileAuthMode(mode); $("profileAuthDialog").showModal(); $("profileUsername").focus(); }
 async function finishProfileAuth(profile) {
   demoProfile = profile;
-  await browser.storage.local.set({ [DEMO_PROFILE_KEY]: demoProfile });
+  await LHN_ACCOUNT.saveProfile(browser, demoProfile);
   $("profileAuthDialog").close(); renderProfileSidebar();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 async function signOutDemoProfile() {
-  await browser.storage.local.remove(DEMO_PROFILE_KEY);
+  await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
   closeMenus();
   renderProfileSidebar();
@@ -652,34 +484,8 @@ function appendContextSentence(host, sentence, quote) {
   const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
   host.append(document.createTextNode(text.slice(at + length)));
 }
-function searchRank(item, query) {
-  if (!query) return 0;
-  const normalizedQuery = String(query).toLocaleLowerCase();
-  const fieldIndex = annotationMeta(item).searchFields.findIndex(value => value.includes(normalizedQuery));
-  return fieldIndex < 0 ? Number.MAX_SAFE_INTEGER : fieldIndex;
-}
-function highlightSearchMatches(root, query) {
-  const needle = String(query || "").trim();
-  if (!needle) return;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    if (node.parentElement?.closest(".card-actions, .lhn-search-match")) continue;
-    if (node.nodeValue.toLocaleLowerCase().includes(needle.toLocaleLowerCase())) nodes.push(node);
-  }
-  for (const node of nodes) {
-    const text = node.nodeValue, lower = text.toLocaleLowerCase(), search = needle.toLocaleLowerCase();
-    const fragment = document.createDocumentFragment(); let from = 0, at;
-    while ((at = lower.indexOf(search, from)) !== -1) {
-      if (at > from) fragment.appendChild(document.createTextNode(text.slice(from, at)));
-      const match = document.createElement("mark"); match.className = "lhn-search-match"; match.textContent = text.slice(at, at + needle.length); fragment.appendChild(match);
-      from = at + needle.length;
-    }
-    if (from === 0) continue;
-    if (from < text.length) fragment.appendChild(document.createTextNode(text.slice(from)));
-    node.replaceWith(fragment);
-  }
-}
+function searchRank(item, query) { return LHN_SEARCH.rank(LIBRARY.searchFields(item), query); }
+function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
   if (!match) return hex;
@@ -716,24 +522,9 @@ function toast(message) {
     if (activeToastElement === el) activeToastElement = null;
   }, CONFIG.TIMINGS.TOAST_MS);
 }
-function displayWebsiteName(host) { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; }
-function annotationMeta(item) {
-  if (!item || typeof item !== "object") return { site:t("unknownWebsite"), tags:[], searchFields:[] };
-  const cached = annotationMetadata.get(item);
-  if (cached) return cached;
-  let host;
-  try { host = new URL(item.url).hostname; } catch { host = item.hostname || item.url || t("unknownWebsite"); }
-  const raw = Array.isArray(item?.tags) ? item.tags : typeof item?.tags === "string" ? item.tags.split(",") : [];
-  const seen = new Set();
-  const tags = raw.map(tag => String(tag || "").trim()).filter(tag => { const key = tag.toLocaleLowerCase(); if (!key || seen.has(key)) return false; seen.add(key); return true; });
-  const site = displayWebsiteName(host);
-  const searchFields = [item.quote, item.note, item.contextNote, tags.join(" "), item.title, item.url, site].map(value => String(value || "").toLocaleLowerCase());
-  const metadata = { site, tags, searchFields };
-  annotationMetadata.set(item, metadata);
-  return metadata;
-}
-function siteOf(item) { return annotationMeta(item).site; }
-function tagsOf(item) { return annotationMeta(item).tags; }
+function annotationMeta(item) { return LIBRARY.metadata(item); }
+function siteOf(item) { return LIBRARY.siteOf(item); }
+function tagsOf(item) { return LIBRARY.tagsOf(item); }
 function parseTags(value) { return tagsOf({ tags: String(value || "").split(",") }); }
 function tagsEqual(a, b) { return JSON.stringify(tagsOf({ tags: a })) === JSON.stringify(tagsOf({ tags: b })); }
 function setupTagEditor(host, initialTags = []) {
@@ -795,7 +586,7 @@ function matchesDate(item, cutoff) {
   const created = dateValue(item, "createdAt");
   return created > 0 && created >= cutoff;
 }
-function pageKey(item) { return String(item.url || item.hostname || item.title || "unknown"); }
+function pageKey(item) { return globalThis.LHN_LIBRARY.pageKey ? globalThis.LHN_LIBRARY.pageKey(item) : String(item.url || item.hostname || item.title || "unknown"); }
 function dateValue(item, field) { const n = Number(item?.[field] || 0); return Number.isFinite(n) ? n : 0; }
 const incrementalListObservers = new WeakMap();
 function renderIncrementalList(host, items, createNode, { initial, batch } = {}) {
@@ -837,7 +628,7 @@ function populateStudyLanguageOptions(select, autoValue, selectedValue) {
   automatic.value = autoValue;
   automatic.textContent = `🌐 ${t("autoLanguage")}`;
   fragment.appendChild(automatic);
-  for (const language of I18N.LANGS) {
+  for (const language of LANGUAGES.LANGS) {
     const option = document.createElement("option");
     option.value = language.code;
     option.textContent = `${language.flag} ${language.name} — ${language.native}`;
@@ -869,7 +660,7 @@ function getEffectiveFlashcardTranslationSettings() {
 }
 function getEffectiveFlashcardSpeechSettings() {
   if (flashcardTranslateSettings.useDashboardSpeechSettings) return dashboardSettings;
-  const displayLanguage = I18N.languageFor(dashboardSettings);
+  const displayLanguage = LANGUAGES.languageFor(dashboardSettings);
   const languageRates = flashcardTranslateSettings.flashcardSpeechRateByLanguage && typeof flashcardTranslateSettings.flashcardSpeechRateByLanguage === "object" ? flashcardTranslateSettings.flashcardSpeechRateByLanguage : {};
   return {
     ...flashcardTranslateSettings,
@@ -948,7 +739,10 @@ async function load() {
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
   const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
   bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
-  if (seedReaderSites) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
+  // "Read translation with source" mặc định bật từ v3.4.594; bản lưu cũ đã ghi cứng false nên bật lại một lần.
+  const readTranslationDefaultNeedsOn = savedBilingualReaderSettings.readTranslationDefaultOn !== true;
+  if (readTranslationDefaultNeedsOn) bilingualReaderSettings = { ...bilingualReaderSettings, readTranslation:true, readTranslationDefaultOn:true };
+  if (seedReaderSites || readTranslationDefaultNeedsOn) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
   browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
@@ -1022,12 +816,12 @@ async function load() {
       { id:"default-en-fyi", original:"FYI", replacement:"For your information" }
     ];
     dashboardSettings = { ...dashboardSettings, customPronunciationDictionary:dictionary, pronunciationDictionaryDefaultsInitialized:true };
-    try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]:dashboardSettings }); }
+    try { await LHN_SETTINGS.save(dashboardSettings); }
     catch (error) { console.warn("Could not initialize pronunciation dictionary defaults", error); }
   }
   demoProfile = settingsData[DEMO_PROFILE_KEY] && typeof settingsData[DEMO_PROFILE_KEY] === "object" ? settingsData[DEMO_PROFILE_KEY] : null;
   syncDashboardTheme();
-  currentLang = I18N.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
+  currentLang = LANGUAGES.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
   favoriteNoteIds = new Set(Array.isArray(settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES] : []);
   syncNoteFavoriteFilters();
   applyTranslations();
@@ -1044,7 +838,7 @@ async function loadAnnotationsInBatches() {
   const items = [];
   let after = null, batchCount = 0;
   while (true) {
-    const result = await browser.runtime.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE });
+    const result = await LHN_MESSAGING.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE });
     if (!result || !Array.isArray(result.items)) throw new Error("Could not load dashboard annotations");
     items.push(...result.items);
     if (result.done || !result.items.length || result.nextAfter === after) break;
@@ -1124,35 +918,11 @@ function dashboardFilterOptions() {
   return filterOptionsCache;
 }
 function buildPages(items) {
-  const groups = new Map();
-  for (const a of items) {
-    const key = pageKey(a);
-    if (!groups.has(key)) groups.set(key, { key, url: a.url || "", title: a.title || siteOf(a), site: siteOf(a), thumbnailUrl: a.thumbnailUrl || "", items: [] });
-    const g = groups.get(key); g.items.push(a);
-    g.searchRank = Math.min(g.searchRank ?? Number.MAX_SAFE_INTEGER, searchRank(a, $("search").value.trim().toLocaleLowerCase()));
-    if ((!g.title || g.title === g.site) && a.title) g.title = a.title;
-    if (!g.thumbnailUrl && a.thumbnailUrl) g.thumbnailUrl = a.thumbnailUrl;
-  }
-  const pages = [...groups.values()].map(g => {
-    // Reductions avoid spreading potentially large annotation arrays into Math.min/max.
-    g.createdAt = g.items.reduce((earliest, item) => {
-      const createdAt = dateValue(item, "createdAt");
-      return createdAt > 0 && createdAt < earliest ? createdAt : earliest;
-    }, Infinity);
-    if (!Number.isFinite(g.createdAt)) g.createdAt = 0;
-    g.updatedAt = g.items.reduce((latest, item) => Math.max(latest, dateValue(item, "updatedAt") || dateValue(item, "createdAt")), 0);
-    g.colors = [...new Set(g.items.map(a => CONFIG.normalizeColor(a.color)))];
-    g.favorite = favorites.includes(g.key);
-    return g;
+  return LHN_LIBRARY.groupPages(items, {
+    pageKey, siteOf, searchRank, searchQuery:$('search').value.trim().toLocaleLowerCase(),
+    normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
   });
-  const sort = $("sortBy").value;
-  pages.sort((a, b) => {
-    const relevance = $("search").value.trim() ? a.searchRank - b.searchRank : 0;
-    return relevance || (sort === "count" ? b.items.length - a.items.length || b.updatedAt - a.updatedAt : sort === "edited" ? b.updatedAt - a.updatedAt || b.createdAt - a.createdAt : b.createdAt - a.createdAt || b.updatedAt - a.updatedAt);
-  });
-  return pages.filter(p => !favoritesOnly || p.favorite);
-}
-function render({ preserveSources = false } = {}) {
+}function render({ preserveSources = false } = {}) {
   renderProfileSidebar();
   const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
   const { sites, tags } = dashboardFilterOptions();
@@ -1338,10 +1108,10 @@ function downloadExport(format, items) {
 }
 async function downloadJsonExport(pageUrl = null) {
   const stamp = new Date().toISOString().slice(0, 10), exportedAt = new Date().toISOString();
-  const parts = [`{"format":"local-highlight-notes","version":1,"exportedAt":${JSON.stringify(exportedAt)},"annotations":[`];
+  const parts = [LHN_BACKUP.createJsonHeader(exportedAt)];
   const pageKeys = new Set(), exportedFavoriteNoteIds = []; let after = null, first = true;
   do {
-    const batch = await browser.runtime.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE, url:pageUrl });
+    const batch = await LHN_MESSAGING.sendMessage({ type:"GET_BATCH", after, limit:CONFIG.LIMITS.DATABASE_BATCH_SIZE, url:pageUrl });
     if (!batch || !Array.isArray(batch.items)) throw new Error("Could not read export data");
     for (const item of batch.items) {
       if (!first) parts.push(",");
@@ -1352,7 +1122,7 @@ async function downloadJsonExport(pageUrl = null) {
     after = batch.nextAfter;
   } while (true);
   const exportedFavorites = favorites.filter(key => pageKeys.has(key));
-  parts.push(`],"favorites":${JSON.stringify(exportedFavorites)},"favoriteNoteIds":${JSON.stringify(exportedFavoriteNoteIds)}}`);
+  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds));
   const blob = new Blob(parts, { type:"application/json" }), blobUrl = URL.createObjectURL(blob), anchor = document.createElement("a");
   anchor.href = blobUrl; anchor.download = `highlight-notes-${stamp}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(blobUrl), 1200); toast(t("exportStarted"));
 }
@@ -1365,9 +1135,9 @@ $("sourceList").addEventListener("click", e => { if (e.target.closest("button"))
 $("notesList").addEventListener("click", async e => {
   const b = e.target.closest("button[data-action]"); if (!b) return; const item = annotations.find(a => a.id === b.dataset.id); if (!item) return;
   if (b.dataset.action === "favorite-note") { await toggleNoteFavorite(item, b, e); return; }
-  if (b.dataset.action === "jump") { const result = await browser.runtime.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
+  if (b.dataset.action === "jump") { const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
   if (b.dataset.action === "edit") { openEditDialog(item); }
-  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await browser.runtime.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
+  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
   if (b.dataset.action === "speak") { const card = b.closest(".card"); if (!item.quote || !card) return; card.classList.add("lhn-reading-text"); speakText(item.quote, detectLanguage(item.quote, item.url), () => card.classList.remove("lhn-reading-text")); }
 });
 
@@ -1457,7 +1227,7 @@ async function saveStudySpeechLanguage(select) {
   refreshStudySpeechLanguageControls(updated);
   document.querySelectorAll("#studyDialog [data-study-speech-language]").forEach(control => { control.disabled = true; setDisabledTooltip(control, control.closest(".study-speech-language-control"), t("disabledSavingLanguage")); });
   try {
-    const saved = await browser.runtime.sendMessage({ type:"UPDATE", item:updated, origin:DASHBOARD_INSTANCE_ID });
+    const saved = await LHN_MESSAGING.sendMessage({ type:"UPDATE", item:updated, origin:DASHBOARD_INSTANCE_ID });
     applyAnnotationChange({ type:"upsert", item:saved }, false);
     studyQueue = studyQueue.map(card => card.id === saved.id ? saved : card);
     renderStudyCard({ autoSpeak:false, showAnswer:!$("studyBack").hidden });
@@ -1480,7 +1250,7 @@ function stopStudyAudio() {
   if (objectUrl) URL.revokeObjectURL(objectUrl);
 }
 function getSpeechRate(speechSettings = dashboardSettings, spokenLanguage) {
-  const displayLanguage = I18N.languageFor(speechSettings);
+  const displayLanguage = LANGUAGES.languageFor(speechSettings);
   const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
   const flashcardDisplayLanguageRate = speechSettings.useDashboardSpeechSettings === false && speechLanguage === displayLanguage
     ? (speechSettings.flashcardSpeechRateByLanguage?.[displayLanguage] ?? speechSettings.flashcardDashboardDisplayRate)
@@ -1572,7 +1342,7 @@ async function saveEdit() {
   if (note === String(item.note || "").trim() && contextNote === String(item.contextNote || "").trim() && editColor === CONFIG.normalizeColor(item.color) && tagsEqual(tags, item.tags)) { $("editDialog").close(); return; }
   savingEdit = true;
   try {
-    const saved = await browser.runtime.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: editColor, tags }, origin: DASHBOARD_INSTANCE_ID });
+    const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, note, contextNote, color: editColor, tags }, origin: DASHBOARD_INSTANCE_ID });
     $("editDialog").close();
     applyAnnotationChange({ type:"upsert", item:saved });
     if ($("studyDialog").open) {
@@ -1696,7 +1466,7 @@ async function gradeStudyCard(grade) {
   const annotation = annotationById.get(current.id);
   if (annotation) annotation.review = review;
   try {
-    const result = await browser.runtime.sendMessage({ type: "REVIEW_ANNOTATION", id: current.id, review, origin:DASHBOARD_INSTANCE_ID });
+    const result = await LHN_MESSAGING.sendMessage({ type: "REVIEW_ANNOTATION", id: current.id, review, origin:DASHBOARD_INSTANCE_ID });
     if (!result?.updated) throw new Error("Could not save card review");
     if (result.item?.updatedAt) { current.updatedAt = result.item.updatedAt; const stored = annotationById.get(current.id); if (stored) stored.updatedAt = result.item.updatedAt; }
   } catch (error) {
@@ -1721,7 +1491,7 @@ async function returnToPreviousStudyCard() {
   else delete restored.review;
   let savedCard;
   try {
-    savedCard = await browser.runtime.sendMessage({ type: "UPDATE", item: restored, origin:DASHBOARD_INSTANCE_ID });
+    savedCard = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: restored, origin:DASHBOARD_INSTANCE_ID });
     if (!savedCard?.id) throw new Error("Could not restore previous card");
   } catch (error) { toast(t("studySaveFailed")); return; }
   studyHistory.pop();
@@ -2058,7 +1828,7 @@ $("resetStudyProgress").addEventListener("click", async () => {
   const ids = annotations.filter(item => item.review && (!cutoff || lastStudyReviewAt(item) >= cutoff)).map(item => item.id).filter(id => typeof id === "string");
   if (!ids.length) { toast(t("studyResetAlready")); return; }
   try {
-    const result = await browser.runtime.sendMessage({ type: "RESET_STUDY_PROGRESS", ids, origin:DASHBOARD_INSTANCE_ID });
+    const result = await LHN_MESSAGING.sendMessage({ type: "RESET_STUDY_PROGRESS", ids, origin:DASHBOARD_INSTANCE_ID });
     if (!result?.updated) throw new Error("Could not reset study progress");
     const idSet = new Set(ids);
     annotations.forEach(item => { if (idSet.has(item.id)) delete item.review; });
@@ -2160,7 +1930,7 @@ $("studyJumpHighlight").addEventListener("click", async () => {
     return;
   }
   try {
-    const result = await browser.runtime.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id });
+    const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id });
     if (!result?.found) toast(t("highlightNotFound"));
   } catch {
     toast(t("highlightNotFound"));
@@ -2260,7 +2030,7 @@ $("deletePageBtn").addEventListener("click", async () => {
   const pageItems = annotations.filter(a => pageKey(a) === selectedUrl);
   if (!pageItems.length) return;
   if (!confirm(t("deletePageConfirm"))) return;
-  const result = await browser.runtime.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
+  const result = await LHN_MESSAGING.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
   // Remove visible marks from any currently open tab for this exact URL too.
   const tabs = await browser.tabs.query({});
   await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type: "REMOVE_HIGHLIGHT_PAGE", url:selectedUrl }).catch(() => null)));
@@ -2282,21 +2052,21 @@ $("settingsAccountState").addEventListener("click", async event => {
     const email = field.value.trim();
     if (!demoProfile || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     demoProfile = { ...demoProfile, email };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     delete field.dataset.editing; refreshDashboardSettings(); renderProfileSidebar(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveName")) {
     const displayName = $("settingsAccountState").querySelector("#settingsAccountDisplayName").value.trim();
     if (!demoProfile || !displayName) return;
     demoProfile = { ...demoProfile, displayName };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveUsername")) {
     const username = $("settingsAccountState").querySelector("#settingsAccountUsername").value.trim().replace(/^@+/, "");
     if (!demoProfile || !username) return;
     demoProfile = { ...demoProfile, username };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]:demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountDelete")) {
@@ -2314,7 +2084,7 @@ $("settingsAccountState").addEventListener("change", async event => {
     canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
     demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84) };
-    await browser.storage.local.set({ [DEMO_PROFILE_KEY]: demoProfile });
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved"));
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
@@ -2394,7 +2164,7 @@ $("usageKeyForm").addEventListener("submit", async event => {
   button.disabled = true;
   setDisabledTooltip(button, button, t("disabledActivatingKey"));
   try {
-    const result = await browser.runtime.sendMessage({ type:"USAGE_ACTIVATE_KEY", key:$("usageKeyInput").value });
+    const result = await LHN_MESSAGING.sendMessage({ type:"USAGE_ACTIVATE_KEY", key:$("usageKeyInput").value });
     if (!result?.activated) { message.textContent = t("usageKeyInvalid"); return; }
     $("usageKeyInput").value = "";
     message.textContent = t("usageKeyActivated");
@@ -2433,7 +2203,7 @@ $("settingsLanguageSelect").addEventListener("change", async event => {
   currentLang = event.target.value;
   dashboardSettings = { ...dashboardSettings, language:currentLang };
   applyTranslations(); render(); renderProfileSidebar(); refreshDashboardSettings(); syncBilingualPreview();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]:dashboardSettings }); }
+  try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { console.warn("Could not save dashboard language", error); }
 });
 function saveDashboardTranslationMode(settingKey, enabled) {
@@ -2453,7 +2223,7 @@ $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboar
 $("settingsAutoSpeakSelectedText").addEventListener("change", event => saveDashboardSettings({ autoSpeakSelectedText:event.target.checked }));
 $("settingsSpeechVoice").addEventListener("change", event => { const voiceMode = event.target.value === "browser" ? "browser" : "google"; saveDashboardSettings({ voiceMode, speechVoice:voiceMode }); });
 function normalizeSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 10) / 10 : 1; }
-function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 20) / 20 : 1.25; }
+function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(3, Math.max(.5, rate)) * 20) / 20 : 1.25; }
 function formatLanguageSpeechRate(value) { const rate = normalizeLanguageSpeechRate(value); return Math.abs(rate * 10 - Math.round(rate * 10)) < 1e-8 ? rate.toFixed(1) : rate.toFixed(2); }
 $("settingsSpeechRate").addEventListener("input", event => { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRateValue").value = rate.toFixed(1); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } });
 $("settingsSpeechRate").addEventListener("change", event => saveDashboardSettings({ speechRate:normalizeSpeechRate(event.target.value) }));
@@ -2468,7 +2238,7 @@ $("resetGlobalSpeechRate").addEventListener("click", () => {
 $("settingsUseLanguageSpeechRate").addEventListener("change", event => {
   if (event.target.checked) {
     const inheritedRate = normalizeLanguageSpeechRate($("settingsLanguageSpeechRate").value);
-    const inheritedSpeechRateByLanguage = Object.fromEntries(I18N.LANGS.map(language => [language.code, inheritedRate]));
+    const inheritedSpeechRateByLanguage = Object.fromEntries(LANGUAGES.LANGS.map(language => [language.code, inheritedRate]));
     saveDashboardSettings({ useLanguageSpeechRate:true, inheritedSpeechRateByLanguage });
   } else {
     saveDashboardSettings({ useLanguageSpeechRate:false, hasCustomSpeechRateByLanguage:{}, inheritedSpeechRateByLanguage:{} });
@@ -2570,7 +2340,7 @@ function syncBilingualPreview() {
   bilingualPreviewPendingLanguage = targetLang;
   translated.textContent = "…";
   const requestId = ++bilingualPreviewRequestId;
-  browser.runtime.sendMessage({ type:"BILINGUAL_TRANSLATE", text:sourceText, targetLang }).then(result => {
+  LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text:sourceText, targetLang }).then(result => {
     const currentTargetLang = ["auto", "same"].includes(studyTranslationSettings.targetLanguage) ? currentLang : studyTranslationSettings.targetLanguage;
     if (requestId !== bilingualPreviewRequestId || currentTargetLang !== targetLang) return;
     bilingualPreviewPendingLanguage = null;
@@ -2633,7 +2403,7 @@ $("bilingualDisabledReaderWebList").addEventListener("click", async event => {
     await updateDisabledReaderWebsites(sites.map(value => value === site ? updated : value));
   }
 });
-$("bilingualClearCache").addEventListener("click", async () => { await browser.runtime.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
+$("bilingualClearCache").addEventListener("click", async () => { await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
 document.querySelectorAll("[data-settings-theme]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ sidebarTheme:button.dataset.settingsTheme })));
 document.querySelectorAll("[data-settings-color]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ defaultHighlightColor:button.dataset.settingsColor })));
 $("settingsExportButton").addEventListener("click", event => {
@@ -2653,10 +2423,7 @@ function setupDashboardShortcut(id, settingKey) {
     if (event.key === "Escape") { restore(); field.blur(); return; }
     if (event.key === "Backspace") { isCapturing = false; field.value = ""; await saveDashboardSettings({ [settingKey]:"" }); field.blur(); return; }
     if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return;
-    const modifiers = []; if (event.ctrlKey) modifiers.push("Ctrl"); if (event.altKey) modifiers.push("Alt"); if (event.shiftKey) modifiers.push("Shift"); if (event.metaKey) modifiers.push("Meta");
-    const key = event.code === "Space" ? "Space" : event.key === "ArrowLeft" ? "Left" : event.key === "ArrowRight" ? "Right" : event.key === "ArrowUp" ? "Up" : event.key === "ArrowDown" ? "Down" : event.key.length === 1 ? event.key.toLocaleUpperCase() : event.key;
-    if (!modifiers.length && !["Space", "Left", "Right", "Up", "Down"].includes(key)) return;
-    const value = [...modifiers, key].join("+"); isCapturing = false;
+    const value = LHN_SHORTCUTS.fromEvent(event); isCapturing = false;
     await saveDashboardSettings({ [settingKey]:value }); field.blur();
   });
 }
@@ -2664,6 +2431,7 @@ setupDashboardShortcut("settingsShortcut", "shortcut");
 setupDashboardShortcut("settingsSidebarShortcut", "sidebarShortcut");
 setupDashboardShortcut("settingsTranslateShortcut", "translateSelectedShortcut");
 setupDashboardShortcut("settingsWebsiteShortcut", "toggleWebsiteShortcut");
+setupDashboardShortcut("settingsDualSubtitlesShortcut", "dualSubtitlesShortcut");
 setupDashboardShortcut("settingsSpeechPauseShortcut", "speechPauseShortcut");
 setupDashboardShortcut("settingsPreviousReadingShortcut", "previousReadingShortcut");
 setupDashboardShortcut("settingsNextReadingShortcut", "nextReadingShortcut");
@@ -2675,6 +2443,7 @@ $("resetDashboardShortcuts").addEventListener("click", () => saveDashboardSettin
   sidebarShortcut:CONFIG.DEFAULT_SETTINGS.sidebarShortcut,
   translateSelectedShortcut:CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut,
   toggleWebsiteShortcut:CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut,
+  dualSubtitlesShortcut:CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut,
   speechPauseShortcut:CONFIG.DEFAULT_SETTINGS.speechPauseShortcut,
   previousReadingShortcut:CONFIG.DEFAULT_SETTINGS.previousReadingShortcut,
   nextReadingShortcut:CONFIG.DEFAULT_SETTINGS.nextReadingShortcut,
@@ -2687,15 +2456,16 @@ $("profileImportJson").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files?.[0]; if (!file) return;
   try {
-    const parsed = JSON.parse(await file.text()), items = Array.isArray(parsed) ? parsed : parsed.annotations;
-    if (!Array.isArray(items)) throw new Error(t("invalidImport"));
-    const result = await browser.runtime.sendMessage({ type:"IMPORT", items, origin:DASHBOARD_INSTANCE_ID });
-    if (!Array.isArray(parsed) && Array.isArray(parsed.favorites)) {
-      favorites = [...new Set([...favorites, ...parsed.favorites.filter(value => typeof value === "string")])];
+    const parsed = JSON.parse(await file.text()), payload = LHN_BACKUP.parseImportPayload(parsed);
+    if (!payload) throw new Error(t("invalidImport"));
+    const items = payload.items;
+    const result = await LHN_MESSAGING.sendMessage({ type:"IMPORT", items, origin:DASHBOARD_INSTANCE_ID });
+    if (!payload.isLegacyArray && Array.isArray(payload.favorites)) {
+      favorites = [...new Set([...favorites, ...payload.favorites.filter(value => typeof value === "string")])];
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites });
     }
-    if (!Array.isArray(parsed) && Array.isArray(parsed.favoriteNoteIds)) {
-      favoriteNoteIds = new Set([...favoriteNoteIds, ...parsed.favoriteNoteIds.filter(value => typeof value === "string")]);
+    if (!payload.isLegacyArray && Array.isArray(payload.favoriteNoteIds)) {
+      favoriteNoteIds = new Set([...favoriteNoteIds, ...payload.favoriteNoteIds.filter(value => typeof value === "string")]);
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] });
     }
     await load(); toast(t("importedCount", { count:result.imported })); closeMenus();
@@ -2706,7 +2476,7 @@ $("profileAppearanceToggle").addEventListener("click", async () => {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
   dashboardSettings = { ...dashboardSettings, sidebarTheme: wasDark ? "light" : "dark" };
   syncDashboardTheme();
-  try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.SETTINGS]: dashboardSettings }); }
+  try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 });
 browser.storage.onChanged.addListener((changes, area) => {
@@ -2715,7 +2485,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.SETTINGS]) {
     const previousLanguage = currentLang;
     dashboardSettings = changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {};
-    currentLang = I18N.languageFor(dashboardSettings);
+    currentLang = LANGUAGES.languageFor(dashboardSettings);
     syncDashboardTheme();
     if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
     else refreshDashboardSettings();
@@ -2723,6 +2493,16 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
     refreshFavoriteDashboard();
+  }
+  if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
+    const saved = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue || {};
+    studyTranslationSettings = { ...DEFAULT_STUDY_TRANSLATION_SETTINGS, ...saved };
+    if (!['auto', 'en', 'vi', 'ko'].includes(studyTranslationSettings.sourceLanguage)) studyTranslationSettings.sourceLanguage = DEFAULT_STUDY_TRANSLATION_SETTINGS.sourceLanguage;
+    if (!['auto', 'same', 'en', 'vi', 'ko'].includes(studyTranslationSettings.targetLanguage)) studyTranslationSettings.targetLanguage = DEFAULT_STUDY_TRANSLATION_SETTINGS.targetLanguage;
+    populateStudyLanguageSelects();
+    refreshFlashcardTranslateSettingsUI();
+    syncBilingualPreview();
+    if ($('dashboardSettingsDialog')?.open) refreshDashboardSettings();
   }
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
@@ -2733,7 +2513,7 @@ browser.storage.onChanged.addListener((changes, area) => {
     load();
   }
 });
-browser.runtime.onMessage.addListener(message => {
+LHN_MESSAGING.onMessage.addListener(message => {
   if (message?.type === "OPEN_DASHBOARD_SETTINGS") { openDashboardSettings(); return; }
   if (message?.type === "OPEN_DASHBOARD_ACCOUNT") { openDashboardSettings(); if (!demoProfile) openProfileAuth(); return; }
   if (message?.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") { openDashboardSettings("bilingualReader"); return; }
