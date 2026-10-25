@@ -274,7 +274,14 @@ const OVERLAY_CSS = `
       flex: 1;
       overflow-y: auto;
       padding: 8px 0;
+      scrollbar-width: thin;
+      scrollbar-color: #8b70e8a8 transparent;
     }
+
+    .te-transcript-scroll::-webkit-scrollbar, .te-modal-body::-webkit-scrollbar { width: 2px; height: 2px; }
+    .te-transcript-scroll::-webkit-scrollbar:hover, .te-modal-body::-webkit-scrollbar:hover { width: 4px; height: 4px; }
+    .te-transcript-scroll::-webkit-scrollbar-thumb, .te-modal-body::-webkit-scrollbar-thumb { border-radius: 999px; background: #8b70e8a8; }
+    .te-transcript-scroll::-webkit-scrollbar-thumb:hover, .te-modal-body::-webkit-scrollbar-thumb:hover { background: #8b70e8; }
 
     .te-ts-row {
       display: flex;
@@ -330,6 +337,8 @@ const OVERLAY_CSS = `
       padding: 6px 0;
       max-height: 520px;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #8b70e8a8 transparent;
     }
 
     .te-menu-row {

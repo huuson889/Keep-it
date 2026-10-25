@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.4.622",
+  "version": "3.4.623",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -79,7 +79,8 @@
         "css/shared/ui-tokens.css",
         "css/content/content.css",
         "css/content/content-theme.css",
-        "css/content/video.css"
+        "css/content/video.css",
+        "css/shared/scrollbars.css"
       ],
       "run_at": "document_idle",
       "all_frames": false
