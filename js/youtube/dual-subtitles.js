@@ -33,6 +33,7 @@ const state = {
   origParent: null,
   origNext: null,
   rawCues: [],
+  allCues: [],       // toàn bộ cue đã tải + làm sạch; rawCues chỉ là cửa sổ đang hiển thị
   captions: [],
   activeIdx: -1,
   viCache: new Map(),
@@ -40,6 +41,15 @@ const state = {
   loadingFor: null,
   loop: false,
 };
+
+// Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
+const PRELOAD_SECONDS = 300;
+const LOOKAHEAD_SECONDS = 600;
+const TRANSCRIPT_CACHE_LIMIT = 3;
+const transcriptCache = new Map(); // videoId -> cue[] đã làm sạch
+let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
+let prefetchToken = 0;
+let prefetchTimer = 0;
 
 let shadow = null; // ShadowRoot chứa toàn bộ giao diện Trancy
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
