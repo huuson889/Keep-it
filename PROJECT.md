@@ -108,7 +108,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Transcript Dual Sub giải mã entity HTML lồng nhau để dấu câu hiển thị đúng như phụ đề YouTube; thanh điều khiển neo cố định dưới overlay. Khi mở overlay, “Hiện popup dịch trực tiếp” được bật tạm và trở về trạng thái cũ lúc đóng nếu người dùng không đổi. Shortcut mặc định đã là Alt+E nên giữ nguyên cấu hình và các lựa chọn tùy chỉnh.
 - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
+- Kiểm tra: `node --check` cho hai file JavaScript, parse manifest v3.4.620, cấu hình mặc định Alt+E, decoder với entity quote/apostrophe lồng nhau và `git diff --check` — đạt. Chưa kiểm thử trình duyệt.
 
 **2026-10-25 | v3.4.619 | Codex sửa:**
 
