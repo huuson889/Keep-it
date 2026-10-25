@@ -628,6 +628,7 @@ function updateSubtitleLanguageLabels() {
       select.dataset.optionsLanguage = state.displayLanguage;
     }
     select.value = selected;
+    select.dataset.lastHandledValue = selected;
   };
   fill($('te-lang-source-select'), state.sourceLanguageSetting);
   fill($('te-lang-target-select'), state.targetLanguageSetting);
@@ -644,7 +645,10 @@ async function refreshSubtitleLanguageSettings() {
     sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
     targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
     const displaySettings = stored[CONFIG.STORAGE_KEYS.SETTINGS] || {};
-    displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || displayLanguage;
+    const declaredDisplayLanguage = String(displaySettings.language || '').trim().toLowerCase().replace('_', '-').split('-')[0];
+    displayLanguage = globalThis.LHN_LANGUAGES?.LANGS?.some((item) => item.code === declaredDisplayLanguage)
+      ? declaredDisplayLanguage
+      : globalThis.LHN_LANGUAGES?.detectLanguage?.() || displayLanguage;
   } catch (error) {
     console.warn('Could not read shared subtitle language settings', error);
   }
@@ -1679,22 +1683,38 @@ function bindUI() {
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');
 
-  const saveSubtitleLanguage = async (key, value, select) => {
+  let subtitleLanguageSaveQueue = Promise.resolve();
+  const saveSubtitleLanguage = (key, value, select) => {
     const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'same', 'en', 'vi', 'ko'];
     if (!allowed.includes(value)) return;
-    try {
-      const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
-      const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
-      await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
-      await refreshSubtitleLanguageSettings();
-    } catch (error) {
-      console.warn(`Could not save subtitle ${key}`, error);
-      updateSubtitleLanguageLabels();
-      if (select) select.value = key === 'sourceLanguage' ? state.sourceLanguageSetting : state.targetLanguageSetting;
-    }
+    const save = async () => {
+      try {
+        const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
+        const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
+        await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
+        await refreshSubtitleLanguageSettings();
+      } catch (error) {
+        console.warn(`Could not save subtitle ${key}`, error);
+        updateSubtitleLanguageLabels();
+        if (select) select.value = key === 'sourceLanguage' ? state.sourceLanguageSetting : state.targetLanguageSetting;
+      }
+    };
+    subtitleLanguageSaveQueue = subtitleLanguageSaveQueue.then(save, save);
+    return subtitleLanguageSaveQueue;
   };
-  $('te-lang-source-select')?.addEventListener('change', (event) => saveSubtitleLanguage('sourceLanguage', event.target.value, event.target));
-  $('te-lang-target-select')?.addEventListener('change', (event) => saveSubtitleLanguage('targetLanguage', event.target.value, event.target));
+  const bindLanguageSelect = (select, key) => {
+    const handle = (event) => {
+      event.stopPropagation();
+      const value = event.currentTarget.value;
+      if (event.currentTarget.dataset.lastHandledValue === value) return;
+      event.currentTarget.dataset.lastHandledValue = value;
+      saveSubtitleLanguage(key, value, event.currentTarget);
+    };
+    select?.addEventListener('input', handle, true);
+    select?.addEventListener('change', handle, true);
+  };
+  bindLanguageSelect($('te-lang-source-select'), 'sourceLanguage');
+  bindLanguageSelect($('te-lang-target-select'), 'targetLanguage');
 
   // Nút chọn trong nhóm: chỉ đổi trạng thái active (giữ như UI gốc)
   uiAll('.te-btn-group, .te-export-tab-group').forEach((group) => {

@@ -63,6 +63,7 @@ const OVERLAY_CSS = `
     #trancy-exact-overlay.theme-light .te-btn-subopt.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     #trancy-exact-overlay.theme-light .te-card-box { background: #ffffff; border: 1px solid #e5e7eb; }
     #trancy-exact-overlay.theme-light .te-input-select { background: #ffffff; border: 1px solid #e5e7eb; color: #1f2937; }
+    #te-modal-lang .te-modal-box, #te-modal-lang .te-modal-body, #te-modal-lang .te-card-box { overflow: visible; }
 
     /* --- DARK THEME --- */
     #trancy-exact-overlay.theme-dark {
@@ -1033,7 +1034,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg>
                 <span>Phụ đề chính</span>
               </div>
-              <select id="te-lang-source-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề chính" style="max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
+              <select id="te-lang-source-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề chính" style="position: relative; z-index: 2; pointer-events: auto; max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
             </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer;">
@@ -1041,7 +1042,7 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span>Phụ đề dịch</span>
               </div>
-              <select id="te-lang-target-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề dịch" style="max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
+              <select id="te-lang-target-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề dịch" style="position: relative; z-index: 2; pointer-events: auto; max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
             </div>
           </div>
         </div>
