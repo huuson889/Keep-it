@@ -741,9 +741,6 @@ const OVERLAY_CSS = `
       border-radius: 12px;
     }
 
-    /* Tiêu đề nhóm trong Cài đặt video */
-    .te-group-title { padding: 10px 16px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7280; }
-    #keepit-exact-overlay.theme-dark .te-group-title { color: #71717a; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
@@ -848,15 +845,68 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         </div>
         <div class="te-modal-body">
 
-                    <div class="te-group-title">Hiển thị</div>
+          <!-- Chế độ xem -->
           <div class="te-setting-section-title">Chế độ xem</div>
-          <div class="te-menu-row" id="toggle-theme-btn">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10c0-2.5-2-4.5-4.5-4.5H15a2 2 0 0 1-2-2V4.5C13 3.1 12.6 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.5"/><circle cx="12" cy="7.5" r="1.5"/><circle cx="16.5" cy="11.5" r="1.5"/></svg>
-              <span>Chủ đề</span>
+          <div id="te-view-mode-options" style="padding: 0 20px 14px 20px;">
+            <div class="te-btn-group">
+              <button class="te-btn-subopt" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg>
+              </button>
+              <button class="te-btn-subopt active" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/></svg>
+              </button>
+              <button class="te-btn-subopt" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+              </button>
             </div>
-            <div class="te-menu-right"><span id="te-theme-label">Light</span> <span>›</span></div>
           </div>
+          
+          <!-- Hiện popup dịch trực tiếp -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><circle cx="10" cy="13" r="3"/><path d="m12 15 2 2"/></svg>
+              <span>Hiện popup dịch trực tiếp</span>
+            </div>
+            <label class="te-switch"><input type="checkbox" id="te-translation-popup-enabled"><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Nhấp để phát âm -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><path d="M10 9v6l4-3z"/></svg>
+              <span>Nhấp để phát âm</span>
+            </div>
+            <label class="te-switch"><input type="checkbox" checked><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Kết hợp câu -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7h8a2 2 0 0 1 2 2v2M8 17h8a2 2 0 0 0 2-2v-2"/><path d="m11 4-3 3 3 3M11 14l-3 3 3 3"/></svg>
+              <span>Kết hợp câu</span>
+            </div>
+            <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Ẩn bản dịch -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h12M10 7v11M14 12h6M17 12v6"/></svg>
+              <span>Ẩn bản dịch</span>
+            </div>
+            <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Ẩn thanh điều khiển -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15h18"/></svg>
+              <span>Ẩn thanh điều khiển</span>
+            </div>
+            <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Ambient mode -->
           <div class="te-menu-row" id="open-ambient-modal">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -864,59 +914,10 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
             <div class="te-menu-right"><span id="te-ambient-label">Ambient 1</span> <span>›</span></div>
           </div>
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15h18"/></svg>
-              <span>Ẩn thanh điều khiển</span>
-            </div>
-            <label class="te-switch"><input type="checkbox" data-setting="hidectrl"><span class="te-slider"></span></label>
-          </div>
+          
           <div class="te-divider"></div>
-          <div class="te-group-title">Phụ đề</div>
-          <div class="te-menu-row" id="open-lang-modal">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span>Ngôn ngữ phụ đề</span>
-            </div>
-            <div class="te-menu-right"><span>›</span></div>
-          </div>
-          <div class="te-menu-row" id="open-sub-modal">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h12M10 7v11M14 12h6M17 12v6"/></svg>
-              <span>Tùy chọn phụ đề</span>
-            </div>
-            <div class="te-menu-right"><span>›</span></div>
-          </div>
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7h8a2 2 0 0 1 2 2v2M8 17h8a2 2 0 0 0 2-2v-2"/><path d="m11 4-3 3 3 3M11 14l-3 3 3 3"/></svg>
-              <span>Kết hợp câu</span>
-            </div>
-            <label class="te-switch"><input type="checkbox" data-setting="combine"><span class="te-slider"></span></label>
-          </div>
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h12M10 7v11M14 12h6M17 12v6"/></svg>
-              <span>Ẩn bản dịch</span>
-            </div>
-            <label class="te-switch"><input type="checkbox" data-setting="hidevi"><span class="te-slider"></span></label>
-          </div>
-          <div class="te-divider"></div>
-          <div class="te-group-title">Học tập và tương tác</div>
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><circle cx="10" cy="13" r="3"/><path d="m12 15 2 2"/></svg>
-              <span>Hiện popup dịch trực tiếp</span>
-            </div>
-            <label class="te-switch"><input type="checkbox" data-setting="popup" id="te-translation-popup-enabled"><span class="te-slider"></span></label>
-          </div>
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><path d="M10 9v6l4-3z"/></svg>
-              <span>Nhấp để phát âm</span>
-            </div>
-            <label class="te-switch"><input type="checkbox" data-setting="speak" checked><span class="te-slider"></span></label>
-          </div>
+          
+          <!-- Đánh dấu từ -->
           <div class="te-menu-row" id="open-mark-modal">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 18h12M12 4L7 14h10z"/></svg>
@@ -924,8 +925,37 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
             <div class="te-menu-right"><span>Đánh dấu</span> <span>›</span></div>
           </div>
+
+          <!-- Chủ đề -->
+          <div class="te-menu-row" id="toggle-theme-btn">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10c0-2.5-2-4.5-4.5-4.5H15a2 2 0 0 1-2-2V4.5C13 3.1 12.6 2 12 2z"/><circle cx="7.5" cy="11.5" r="1.5"/><circle cx="12" cy="7.5" r="1.5"/><circle cx="16.5" cy="11.5" r="1.5"/></svg>
+              <span>Chủ đề</span>
+            </div>
+            <div class="te-menu-right"><span id="te-theme-label">Light</span> <span>›</span></div>
+          </div>
+
+          <!-- Tùy chọn phụ đề -->
+          <div class="te-menu-row" id="open-sub-modal">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h12M10 7v11M14 12h6M17 12v6"/></svg>
+              <span>Tùy chọn phụ đề</span>
+            </div>
+            <div class="te-menu-right"><span>›</span></div>
+          </div>
+          
           <div class="te-divider"></div>
-          <div class="te-group-title">Dữ liệu và công cụ</div>
+          
+          <!-- Bộ sưu tập -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 9h18M3 15h18"/></svg>
+              <span>Bộ sưu tập</span>
+            </div>
+            <div class="te-menu-right"><span>›</span></div>
+          </div>
+
+          <!-- Bộ dịch -->
           <div class="te-menu-row">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>
@@ -936,13 +966,17 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               <span>›</span>
             </div>
           </div>
-          <div class="te-menu-row">
+
+          <!-- Ngôn ngữ phụ đề -->
+          <div class="te-menu-row" id="open-lang-modal">
             <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 9h18M3 15h18"/></svg>
-              <span>Bộ sưu tập</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>Ngôn ngữ phụ đề</span>
             </div>
             <div class="te-menu-right"><span>›</span></div>
           </div>
+
+          <!-- Xuất phụ đề -->
           <div class="te-menu-row" id="open-export-modal">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M11 15h6M14 12l3 3-3 3"/></svg>
@@ -950,8 +984,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
             <div class="te-menu-right"><span>›</span></div>
           </div>
-          
-
 
         </div>
       </div>

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.640; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.641; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -104,6 +104,12 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-26 | v3.4.641 | Claude sửa:**
+  - Hoàn tác v3.4.640 (gom nhóm Cài đặt video): mã nguồn trở về đúng nội dung v3.4.639, theo yêu cầu. Đánh số 3.4.641 vì gói 3.4.639 đã xuất và không ghi đè được.
+  - File: toàn bộ mã nguồn được khôi phục từ gói 3.4.639 (`js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`).
+  - Kiểm tra: so sánh nội dung với gói 3.4.639 — khớp. Trên trình duyệt: Chưa chạy.
+
 
 - **2026-10-26 | v3.4.640 | Claude sửa:**
   - Cài đặt video gom thành 4 nhóm có tiêu đề: Hiển thị (Chế độ xem, Chủ đề, Ambient mode, Ẩn thanh điều khiển); Phụ đề (Ngôn ngữ phụ đề, Tùy chọn phụ đề, Kết hợp câu, Ẩn bản dịch); Học tập và tương tác (Hiện popup dịch trực tiếp, Nhấp để phát âm, Đánh dấu từ); Dữ liệu và công cụ (Bộ dịch, Bộ sưu tập, Xuất phụ đề).

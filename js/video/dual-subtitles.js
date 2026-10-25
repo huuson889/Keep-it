@@ -78,7 +78,6 @@ const ui = (sel) => {
   if (el) uiCache.set(sel, el); else uiCache.delete(sel);
   return el;
 };
-const sw = (key) => $('te-modal-main')?.querySelector(`input[data-setting="${key}"]`) || null;
 const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
 const ctrl = (title) => ui(`button[title="${title}"]`);
 
@@ -878,10 +877,10 @@ function applySettings() {
 
   // Đồng bộ công tắc trong menu cài đặt chính
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
-  if (sw('popup')) sw('popup').checked = translationPopupEnabled;
-  if (sw('combine')) sw('combine').checked = settings.splitSentences;
-  if (sw('hidevi')) sw('hidevi').checked = isVietnameseHidden();
-  if (sw('hidectrl')) sw('hidectrl').checked = settings.hideControls;
+  if (mainSw[0]) mainSw[0].checked = translationPopupEnabled;
+  if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
+  if (mainSw[3]) mainSw[3].checked = isVietnameseHidden();
+  if (mainSw[4]) mainSw[4].checked = settings.hideControls;
   syncAmbientUi();
 
   // Đồng bộ menu "Tùy chọn phụ đề"
@@ -2039,16 +2038,16 @@ function bindUI() {
   // Công tắc trong menu chính: [0] popup dịch trực tiếp, [1] nhấp để phát âm,
   // [2] kết hợp câu, [3] ẩn thanh điều khiển
   const mainSw = modalMain.querySelectorAll('input[type=checkbox]');
-  sw('popup').addEventListener('change', (event) => {
+  mainSw[0].addEventListener('change', (event) => {
     void saveTranslationPopupSetting(event.target.checked);
   });
-  sw('combine').addEventListener('change', (e) => {
+  mainSw[2].addEventListener('change', (e) => {
     settings.splitSentences = e.target.checked;
     saveSettings();
     rebuildCaptions();
   });
-  sw('hidevi').addEventListener('change', (e) => setVietnameseHidden(e.target.checked));
-  sw('hidectrl').addEventListener('change', (e) => {
+  mainSw[3].addEventListener('change', (e) => setVietnameseHidden(e.target.checked));
+  mainSw[4].addEventListener('change', (e) => {
     settings.hideControls = e.target.checked;
     saveSettings();
     applySettings();
