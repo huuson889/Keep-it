@@ -240,7 +240,9 @@ function captionsFromTranscriptPanel() {
 // YouTube đã chặn timedtext (trả 200 nhưng rỗng) nên phải đọc caption hiển thị (CC).
 const LIVE_POLL_MS = 400;
 const LIVE_CUE_SECONDS = 3;
-let livePollTimer = null, liveLastText = '', liveLastCue = null;
+const LIVE_STABLE_TICKS = 2; // text phải ổn định ~0.8s mới chốt thành cue
+let livePollTimer = null, liveLastCue = null;
+let livePendingText = '', livePendingTicks = 0, livePendingStart = 0, liveCommittedText = '';
 
 function visibleCaptionText() {
   const parts = [...document.querySelectorAll('.ytp-caption-window-container .ytp-caption-segment')]
@@ -256,25 +258,29 @@ function ensureCaptionsOn() {
 function stopLiveCaptionCapture() {
   if (livePollTimer) clearInterval(livePollTimer);
   livePollTimer = null;
-  liveLastText = '';
   liveLastCue = null;
+  livePendingText = '';
+  livePendingTicks = 0;
+  liveCommittedText = '';
 }
 
-function appendLiveCue(text, at) {
-  if (liveLastCue) liveLastCue.end = Math.max(liveLastCue.end, at);
-  const cue = { start: at, end: at + LIVE_CUE_SECONDS, en: text, vi: PENDING };
-  state.rawCues.push(cue);
-  liveLastCue = cue;
-  state.captions = state.rawCues.map((c, i) => ({
-    id: i,
-    start: c.start,
-    end: c.end,
-    en: c.en,
-    vi: state.viCache.get(c.en) || c.vi || PENDING,
-  }));
-  renderTranscriptList();
+// YouTube hay cộng dồn chữ trong container: text mới có thể chứa cả cue trước.
+// Khi đó mở rộng cue hiện tại thay vì tạo cue mới (tránh lặp 1 câu 2 lần).
+function commitLiveCue(text, start, nowAt) {
+  const last = liveLastCue;
+  if (last && text.startsWith(last.en)) {
+    if (text !== last.en) last.en = text;
+    last.end = Math.max(last.end, nowAt);
+  } else if (last && last.en.startsWith(text)) {
+    last.end = Math.max(last.end, nowAt);
+  } else {
+    if (last) last.end = Math.max(last.end, start);
+    liveLastCue = { start, end: start + LIVE_CUE_SECONDS, en: text, vi: PENDING };
+    state.rawCues.push(liveLastCue);
+  }
+  buildCaptions();
   onTimeUpdate();
-  translateWindow(state.captions.length - 1);
+  translateWindow(Math.max(0, state.captions.length - 1));
 }
 
 function startLiveCaptionCapture(reasons) {
@@ -285,9 +291,13 @@ function startLiveCaptionCapture(reasons) {
     const video = state.videoEl || document.querySelector('video');
     if (!video) return;
     const text = visibleCaptionText();
-    if (!text || text === liveLastText) return;
-    liveLastText = text;
-    appendLiveCue(text, video.currentTime);
+    if (!text) { livePendingText = ''; livePendingTicks = 0; return; }
+    if (text === livePendingText) livePendingTicks++;
+    else { livePendingText = text; livePendingTicks = 1; livePendingStart = video.currentTime; }
+    if (livePendingTicks < LIVE_STABLE_TICKS) return;
+    if (text === liveCommittedText) return;
+    liveCommittedText = text;
+    commitLiveCue(text, livePendingStart, video.currentTime);
   }, LIVE_POLL_MS);
   reasons.push('đọc phụ đề trực tiếp từ video');
 }
@@ -840,8 +850,24 @@ function updateVietnameseRow(item) {
   if (idx === state.activeIdx) $('te-sub-vi-text').textContent = item.vi;
 }
 
+// Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
+function dedupeSentences(list) {
+  const out = [];
+  for (const cue of list) {
+    const text = String(cue.en || '').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.en === text && Math.abs(prev.start - cue.start) < 1.5) {
+      prev.end = Math.max(prev.end, cue.end);
+      continue;
+    }
+    out.push({ ...cue, en: text });
+  }
+  return out;
+}
+
 function buildCaptions() {
-  const base = settings.splitSentences ? resegmentBySentence(state.rawCues) : state.rawCues;
+  const base = dedupeSentences(settings.splitSentences ? resegmentBySentence(state.rawCues) : state.rawCues);
   state.captions = base.map((c, i) => ({
     id: i,
     start: c.start,
