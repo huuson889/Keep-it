@@ -630,32 +630,32 @@
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-pos>span{color:#fcd34d!important;}
 #lhn-full-english-dictionary .lhn-dict-pos>b{color:#1e293b!important;font-size:11px!important;font-weight:500!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-pos>b{color:#e2e8f0!important;}
-/* Match the reference Tailwind utilities directly; sizing follows its rem scale. */
-#lhn-full-english-dictionary{padding:.75rem!important;border-radius:.75rem!important;background:rgba(255,255,255,.95)!important;color:#0f172a!important;font-family:Inter,sans-serif!important;font-size:.75rem!important;line-height:1rem!important;}
+/* Keep the reference sizing independent of the host page's root font size. */
+#lhn-full-english-dictionary{padding:12px!important;border-radius:12px!important;background:rgba(255,255,255,.95)!important;color:#0f172a!important;font-family:Inter,sans-serif!important;font-size:12px!important;line-height:16px!important;}
 #lhn-full-english-dictionary.lhn-dict-dark{background:rgba(15,23,42,.95)!important;color:#f1f5f9!important;}
-#lhn-full-english-dictionary .lhn-dict-body{gap:.5rem!important;}
-#lhn-full-english-dictionary header{gap:.5rem!important;padding-bottom:.5rem!important;}
-#lhn-full-english-dictionary header>div{gap:.5rem!important;}
-#lhn-full-english-dictionary header strong{font-size:.9rem!important;line-height:1.25rem!important;letter-spacing:.025em!important;}
-#lhn-full-english-dictionary .lhn-dict-ipa{font-size:.75rem!important;line-height:1rem!important;font-weight:600!important;}
-#lhn-full-english-dictionary .lhn-dict-engine{padding:.125rem .375rem!important;border-radius:.25rem!important;font-size:9px!important;line-height:1rem!important;}
-#lhn-full-english-dictionary .lhn-dict-speak{width:auto!important;height:auto!important;padding:.25rem!important;border-radius:.25rem!important;}
-#lhn-full-english-dictionary .lhn-dict-speak svg{width:.875rem!important;height:.875rem!important;}
-#lhn-full-english-dictionary .lhn-dict-translation{padding:0!important;border:0!important;font-size:.8rem!important;line-height:1rem!important;font-weight:700!important;}
-#lhn-full-english-dictionary .lhn-dict-pos-list{gap:.25rem!important;padding:.25rem 0 0!important;border-top:1px solid #e2e8f0!important;border-bottom:0!important;}
+#lhn-full-english-dictionary .lhn-dict-body{gap:8px!important;}
+#lhn-full-english-dictionary header{gap:8px!important;padding-bottom:8px!important;}
+#lhn-full-english-dictionary header>div{gap:8px!important;}
+#lhn-full-english-dictionary header strong{font-size:14.4px!important;line-height:20px!important;letter-spacing:.025em!important;}
+#lhn-full-english-dictionary .lhn-dict-ipa{font-size:12px!important;line-height:16px!important;font-weight:600!important;}
+#lhn-full-english-dictionary .lhn-dict-engine{padding:2px 6px!important;border-radius:4px!important;font-size:9px!important;line-height:16px!important;}
+#lhn-full-english-dictionary .lhn-dict-speak{width:auto!important;height:auto!important;padding:4px!important;border-radius:4px!important;}
+#lhn-full-english-dictionary .lhn-dict-speak svg{width:14px!important;height:14px!important;}
+#lhn-full-english-dictionary .lhn-dict-translation{padding:0!important;border:0!important;font-size:12.8px!important;line-height:16px!important;font-weight:700!important;}
+#lhn-full-english-dictionary .lhn-dict-pos-list{gap:4px!important;padding:4px 0 0!important;border-top:1px solid #e2e8f0!important;border-bottom:0!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-pos-list{border-color:#1e293b!important;}
-#lhn-full-english-dictionary .lhn-dict-pos{gap:.375rem!important;line-height:1.25rem!important;}
-#lhn-full-english-dictionary .lhn-dict-pos>span{padding:.125rem .25rem!important;border-radius:.25rem!important;font-size:.7rem!important;line-height:1rem!important;font-weight:600!important;}
-#lhn-full-english-dictionary .lhn-dict-pos>b{font-size:0.76rem!important;line-height:1rem!important;font-weight:500!important;}
-#lhn-full-english-dictionary .lhn-dict-related{gap:.375rem!important;padding-top:.375rem!important;border-top:1px solid #e2e8f0!important;}
-#lhn-full-english-dictionary .lhn-dict-related:before{margin-right:.125rem!important;font-size:10px!important;line-height:1rem!important;}
-#lhn-full-english-dictionary .lhn-dict-syn{margin-top:.375rem!important;padding-top:.375rem!important;}
-#lhn-full-english-dictionary .lhn-dict-related.lhn-dict-ant{margin-top:.25rem!important;padding-top:.25rem!important;border-top:0!important;}
-#lhn-full-english-dictionary .lhn-dict-forms,#lhn-full-english-dictionary .lhn-dict-collocations{margin-top:.375rem!important;padding-top:.375rem!important;}
+#lhn-full-english-dictionary .lhn-dict-pos{gap:6px!important;line-height:20px!important;}
+#lhn-full-english-dictionary .lhn-dict-pos>span{padding:2px 4px!important;border-radius:4px!important;font-size:11.2px!important;line-height:16px!important;font-weight:600!important;}
+#lhn-full-english-dictionary .lhn-dict-pos>b{font-size:12.16px!important;line-height:16px!important;font-weight:500!important;}
+#lhn-full-english-dictionary .lhn-dict-related{gap:6px!important;padding-top:6px!important;border-top:1px solid #e2e8f0!important;}
+#lhn-full-english-dictionary .lhn-dict-related:before{margin-right:2px!important;font-size:10px!important;line-height:16px!important;}
+#lhn-full-english-dictionary .lhn-dict-syn{margin-top:6px!important;padding-top:6px!important;}
+#lhn-full-english-dictionary .lhn-dict-related.lhn-dict-ant{margin-top:4px!important;padding-top:4px!important;border-top:0!important;}
+#lhn-full-english-dictionary .lhn-dict-forms,#lhn-full-english-dictionary .lhn-dict-collocations{margin-top:6px!important;padding-top:6px!important;}
 #lhn-full-english-dictionary .lhn-dict-collocations{border-color:#e2e8f0 !important;}
-#lhn-full-english-dictionary .lhn-dict-chip{gap:.25rem!important;padding:.125rem .375rem!important;border-radius:.25rem!important;font-size:10px!important;line-height:1rem!important;font-weight:500!important;}
-#lhn-full-english-dictionary .lhn-dict-chip b{font-size:.75rem!important;line-height:1rem!important;font-weight:600!important;}
-#lhn-full-english-dictionary .lhn-dict-chip span{font-size:9px!important;line-height:1rem!important;font-weight:500!important;}
+#lhn-full-english-dictionary .lhn-dict-chip{gap:4px!important;padding:2px 6px!important;border-radius:4px!important;font-size:10px!important;line-height:16px!important;font-weight:500!important;}
+#lhn-full-english-dictionary .lhn-dict-chip b{font-size:12px!important;line-height:16px!important;font-weight:600!important;}
+#lhn-full-english-dictionary .lhn-dict-chip span{font-size:9px!important;line-height:16px!important;font-weight:500!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-syn .lhn-dict-chip{color:#6ee7b7!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-syn .lhn-dict-chip span{color:#34d399!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-ant .lhn-dict-chip{color:#fda4af!important;}
@@ -669,12 +669,12 @@
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-related[data-kind="Forms"]:before{color:#818cf8!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-related[data-kind="Colloc"]:before{color:#38bdf8!important;}
 #lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-pos>span{background:rgba(245,158,11,.15)!important;border-color:rgba(245,158,11,.3)!important;color:#fcd34d!important;}
-#lhn-full-english-dictionary .lhn-dict-related:before{content:attr(data-label)!important;flex:none!important;color:#047857!important;font-size:.75rem!important;font-weight:700!important;}
+#lhn-full-english-dictionary .lhn-dict-related:before{content:attr(data-label)!important;flex:none!important;color:#047857!important;font-size:12px!important;font-weight:700!important;}
 #lhn-full-english-dictionary .lhn-dict-related[data-kind="Ant"]:before{color:#be123c!important;}
 #lhn-full-english-dictionary .lhn-dict-related[data-kind="Forms"]:before{color:#4338ca!important;}
 #lhn-full-english-dictionary .lhn-dict-related[data-kind="Colloc"]:before{color:#0369a1!important;}
 #lhn-full-english-dictionary .lhn-dict-chip{all:initial!important;display:inline-flex!important;align-items:center!important;gap:4px!important;max-width:100%!important;padding:2px 6px!important;border:1px solid rgba(16,185,129,.3)!important;border-radius:5px!important;background:rgba(16,185,129,.12)!important;color:#065f46!important;font-size:10px!important;cursor:pointer!important;}
-#lhn-full-english-dictionary .lhn-dict-chip span{color:inherit!important;font-size:.75rem!important;font-weight:500!important;}
+#lhn-full-english-dictionary .lhn-dict-chip span{color:inherit!important;font-size:12px!important;font-weight:500!important;}
 /* Keep every dictionary label on the reference's single Inter sans-serif family. */
 #lhn-full-english-dictionary .lhn-dict-ipa,#lhn-full-english-dictionary .lhn-dict-engine,#lhn-full-english-dictionary .lhn-dict-chip,#lhn-full-english-dictionary .lhn-dict-chip *{font-family:Inter,sans-serif!important;}
 #lhn-full-english-dictionary .lhn-dict-chip.lhn-dict-ant{border-color:rgba(244,63,94,.3)!important;background:rgba(244,63,94,.12)!important;color:#9f1239!important;}
@@ -688,4 +688,4 @@
 #lhn-full-english-dictionary .lhn-dict-loading span{display:block!important;height:9px!important;width:160px!important;border-radius:5px!important;background:#cbd5e1!important;animation:lhn-dict-pulse 1.1s ease-in-out infinite alternate!important;}
 #lhn-full-english-dictionary .lhn-dict-loading span:nth-child(2){width:210px!important;}#lhn-full-english-dictionary .lhn-dict-loading span:nth-child(3){width:130px!important;}
 @keyframes lhn-dict-pulse{to{opacity:.35!important;}}
-#lhn-full-english-dictionary .lhn-dict-back{all:initial!important;display:grid!important;flex:none!important;width:auto!important;height:auto!important;padding:.25rem!important;place-items:center!important;border:0!important;border-radius:.25rem!important;background:rgba(16,185,129,.12)!important;color:#065f46!important;cursor:pointer!important;}#lhn-full-english-dictionary .lhn-dict-back[hidden]{display:none!important;}#lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-back{background:rgba(16,185,129,.2)!important;color:#6ee7b7!important;}#lhn-full-english-dictionary .lhn-dict-back svg{width:.875rem!important;height:.875rem!important;}#lhn-full-english-dictionary header{justify-content:flex-start!important;}#lhn-full-english-dictionary header>div{flex:1!important;}
+#lhn-full-english-dictionary .lhn-dict-back{all:initial!important;display:grid!important;flex:none!important;width:auto!important;height:auto!important;padding:4px!important;place-items:center!important;border:0!important;border-radius:4px!important;background:rgba(16,185,129,.12)!important;color:#065f46!important;cursor:pointer!important;}#lhn-full-english-dictionary .lhn-dict-back[hidden]{display:none!important;}#lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-back{background:rgba(16,185,129,.2)!important;color:#6ee7b7!important;}#lhn-full-english-dictionary .lhn-dict-back svg{width:14px!important;height:14px!important;}#lhn-full-english-dictionary header{justify-content:flex-start!important;}#lhn-full-english-dictionary header>div{flex:1!important;}
