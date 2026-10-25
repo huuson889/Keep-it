@@ -40,7 +40,9 @@ const state = {
   loadToken: 0,
   loadingFor: null,
   loop: false,
-  hoverPausedVideo: null,
+  pauseReasons: new Set(),
+  managedPauseVideo: null,
+  popupObserver: null,
 };
 
 // Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
@@ -60,6 +62,75 @@ const overlayEl = () => $(OVERLAY_ID);
 const ui = (sel) => overlayEl()?.querySelector(sel) || null;
 const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
 const ctrl = (title) => ui(`button[title="${title}"]`);
+
+function pauseVideoFor(reason) {
+  state.pauseReasons.add(reason);
+  const video = state.videoEl || state.managedPauseVideo;
+  if (video && !video.paused && !state.managedPauseVideo) {
+    state.managedPauseVideo = video;
+    video.pause();
+  }
+}
+
+function resumeVideoFor(reason) {
+  state.pauseReasons.delete(reason);
+  if (state.pauseReasons.size) return;
+  const video = state.managedPauseVideo;
+  state.managedPauseVideo = null;
+  if (video?.paused) video.play().catch(() => {});
+}
+
+function enforceVideoPause(video) {
+  if (!state.pauseReasons.size || video.paused) return;
+  state.managedPauseVideo = video;
+  video.pause();
+}
+
+const APP_POPUP_SELECTOR = '#lhn-full-english-dictionary, #lhn-direct-translation, #lhn-panel, #lhn-note-pop';
+
+function hasVisibleAppPopup() {
+  return [...document.querySelectorAll(APP_POPUP_SELECTOR)].some((popup) => {
+    const style = getComputedStyle(popup);
+    return style.display !== 'none' && style.visibility !== 'hidden' && popup.getBoundingClientRect().width > 0;
+  });
+}
+
+function syncAppPopupPause() {
+  if (hasVisibleAppPopup()) pauseVideoFor('app-popup');
+  else {
+    resumeVideoFor('app-popup');
+    if (!state.open && state.popupObserver) {
+      state.popupObserver.disconnect();
+      state.popupObserver = null;
+    }
+  }
+}
+
+function startAppPopupObserver() {
+  if (!state.popupObserver) {
+    const isPopupNode = (node) => node?.nodeType === Node.ELEMENT_NODE &&
+      (node.matches(APP_POPUP_SELECTOR) || node.querySelector(APP_POPUP_SELECTOR));
+    state.popupObserver = new MutationObserver((records) => {
+      const relevant = records.some((record) => record.type === 'attributes'
+        ? record.target.matches?.(APP_POPUP_SELECTOR)
+        : [...record.addedNodes, ...record.removedNodes].some(isPopupNode));
+      if (relevant) syncAppPopupPause();
+    });
+    state.popupObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
+  }
+  syncAppPopupPause();
+}
+
+function renderHoverWords(text) {
+  return String(text ?? '').split(/(\s+)/u).map((part) => /^\s+$/u.test(part)
+    ? part
+    : `<span class="yt-dual-word">${escapeHtml(part)}</span>`).join('');
+}
 
 // ---------- Lấy phụ đề (đã kiểm chứng ở v1.4) ----------
 const SENTENCE_END_RE = /[.!?…]["'”’)\]]*$/;
@@ -635,15 +706,16 @@ function openOverlay() {
   shadow.host.style.display = '';
   state.open = true;
   attachVideo(video, slot);
+  startAppPopupObserver();
   setVideoTitle();
   extendLoadedWindow();
   if (state.captions.length === 0 && state.loadingFor !== state.videoId) loadCaptions();
 }
 
 function closeOverlay() {
-  const hoverPausedVideo = state.hoverPausedVideo;
-  state.hoverPausedVideo = null;
-  if (hoverPausedVideo && hoverPausedVideo === state.videoEl && hoverPausedVideo.paused) hoverPausedVideo.play().catch(() => {});
+  resumeVideoFor('subtitle-main-hover');
+  resumeVideoFor('subtitle-sidebar-hover');
+  syncAppPopupPause();
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
@@ -675,6 +747,7 @@ function attachVideo(video, slot) {
   video.controls = false;
   video.addEventListener('timeupdate', onTimeUpdate);
   video.addEventListener('play', syncPlayButton);
+  video.addEventListener('play', enforceVideoPause);
   video.addEventListener('pause', syncPlayButton);
   video.addEventListener('ratechange', syncSpeedButton);
   video.addEventListener('volumechange', syncMuteButton);
@@ -683,6 +756,7 @@ function attachVideo(video, slot) {
   syncPlayButton();
   syncSpeedButton();
   syncMuteButton();
+  enforceVideoPause(video);
   onTimeUpdate();
 }
 
@@ -691,6 +765,7 @@ function detachVideo() {
   if (!v) return;
   v.removeEventListener('timeupdate', onTimeUpdate);
   v.removeEventListener('play', syncPlayButton);
+  v.removeEventListener('play', enforceVideoPause);
   v.removeEventListener('pause', syncPlayButton);
   v.removeEventListener('ratechange', syncSpeedButton);
   v.removeEventListener('volumechange', syncMuteButton);
@@ -835,8 +910,8 @@ function onTimeUpdate() {
 function setActiveCaption(idx) {
   state.activeIdx = idx;
   const cap = state.captions[idx];
-  $('te-sub-en-text').textContent = cap.en;
-  $('te-sub-vi-text').textContent = cap.vi;
+  $('te-sub-en-text').innerHTML = renderHoverWords(cap.en);
+  $('te-sub-vi-text').innerHTML = renderHoverWords(cap.vi);
 
   const list = $('te-transcript-list');
   list.querySelectorAll('.yt-dual-item.active').forEach((r) => r.classList.remove('active'));
@@ -862,8 +937,8 @@ function renderTranscriptList() {
     <div class="yt-dual-item" data-idx="${i}">
       <div class="yt-dual-timestamp">${formatTime(c.start)}</div>
       <div class="yt-dual-content">
-        <div class="yt-dual-item-en">${escapeHtml(c.en)}</div>
-        <div class="yt-dual-item-vi">${escapeHtml(c.vi)}</div>
+        <div class="yt-dual-item-en">${renderHoverWords(c.en)}</div>
+        <div class="yt-dual-item-vi">${renderHoverWords(c.vi)}</div>
       </div>
     </div>`).join('');
   state.activeIdx = -1;
@@ -873,8 +948,8 @@ function updateVietnameseRow(item) {
   const idx = state.captions.indexOf(item);
   if (idx < 0) return;
   const row = $('te-transcript-list').querySelector(`.yt-dual-item[data-idx="${idx}"]`);
-  if (row) row.querySelector('.yt-dual-item-vi').textContent = item.vi;
-  if (idx === state.activeIdx) $('te-sub-vi-text').textContent = item.vi;
+  if (row) row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+  if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
 }
 
 // Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
@@ -1314,17 +1389,9 @@ function bindUI() {
 
   const mainSubtitleBox = ui('.te-sub-container');
   mainSubtitleBox.addEventListener('mouseenter', () => {
-    const video = state.videoEl;
-    if (video && !video.paused) {
-      state.hoverPausedVideo = video;
-      video.pause();
-    }
+    pauseVideoFor('subtitle-main-hover');
   });
-  mainSubtitleBox.addEventListener('mouseleave', () => {
-    const video = state.hoverPausedVideo;
-    state.hoverPausedVideo = null;
-    if (video && video === state.videoEl && video.paused) video.play().catch(() => {});
-  });
+  mainSubtitleBox.addEventListener('mouseleave', () => resumeVideoFor('subtitle-main-hover'));
 
   // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
   const positionModal = (modalEl) => {
@@ -1433,6 +1500,14 @@ function bindUI() {
 
   const transcriptList = $('te-transcript-list');
   transcriptList.addEventListener('click', onTranscriptClick);
+  transcriptList.addEventListener('pointerover', (e) => {
+    const content = e.target.closest('.yt-dual-content');
+    if (content && !content.contains(e.relatedTarget)) pauseVideoFor('subtitle-sidebar-hover');
+  });
+  transcriptList.addEventListener('pointerout', (e) => {
+    const content = e.target.closest('.yt-dual-content');
+    if (content && !content.contains(e.relatedTarget)) resumeVideoFor('subtitle-sidebar-hover');
+  });
   transcriptList.addEventListener('dblclick', (e) => {
     if (!e.target.closest('.yt-dual-item')) return;
     state.videoEl?.pause();

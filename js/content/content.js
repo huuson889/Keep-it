@@ -176,6 +176,18 @@
     dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
   }
   function dictionaryPopupAt(popup, range) {
+    const anchorNode = range?.startContainer;
+    const anchorRoot = anchorNode?.getRootNode?.();
+    const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
+    if (anchorRoot?.host?.id === "trancy-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi")) {
+      const rect = range.getBoundingClientRect();
+      if (rect.width || rect.height) {
+        position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
+        popup.style.setProperty("left", popup.style.left, "important");
+        popup.style.setProperty("top", popup.style.top, "important");
+        return;
+      }
+    }
     positionPopupAtAnchor(popup, range);
   }
   function makeDictionaryPopup(range) {

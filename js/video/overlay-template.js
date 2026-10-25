@@ -137,6 +137,8 @@ const OVERLAY_CSS = `
       line-height: 1.35;
     }
 
+    .yt-dual-word:hover { background: rgba(147, 197, 253, 0.45); border-radius: 2px; }
+
     .te-sub-vi {
       font-size: 18px;
       font-weight: 400;
@@ -601,6 +603,8 @@ const OVERLAY_CSS = `
   margin-bottom: 4px;
   line-height: 1.3;
 }
+
+.yt-dual-word:hover { background: rgba(147, 197, 253, 0.45); border-radius: 2px; }
 
 .yt-dual-item-vi {
   font-size: 13px;
