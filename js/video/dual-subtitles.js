@@ -206,21 +206,41 @@ function trackLanguageCode(track) {
   return String(track?.languageCode || '').toLowerCase().split('-')[0];
 }
 
+function originalTrackFor(tracks) {
+  return tracks.find((track) => track.isDefault) || tracks.find((track) => track.kind !== 'asr') || tracks[0] || null;
+}
+
+function selectLanguageTrack(tracks, language) {
+  const original = originalTrackFor(tracks);
+  if (!language || language === 'auto') return { track: original, original, needsTranslation: false };
+  const matching = tracks
+    .filter((track) => trackLanguageCode(track) === language)
+    .sort((a, b) => Number(a.kind === 'asr') - Number(b.kind === 'asr'))[0] || null;
+  return { track: matching || original, original, needsTranslation: !matching && !!original };
+}
+
 function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting) {
-  if (sourceLanguage !== 'auto') {
-    const matching = tracks.filter((track) => trackLanguageCode(track) === sourceLanguage);
-    const selected = matching.find((track) => track.kind !== 'asr') || matching[0];
-    if (selected) {
-      state.captionTrackLanguage = trackLanguageCode(selected);
-      state.primaryNeedsTranslation = false;
-      return selected;
-    }
-  }
-  // YouTube's first/default track is the best available proxy for the video's original-language track.
-  const originalTrack = tracks[0] || null;
-  state.captionTrackLanguage = trackLanguageCode(originalTrack);
-  state.primaryNeedsTranslation = !!originalTrack && state.captionTrackLanguage !== state.targetLanguage;
-  return originalTrack;
+  const selected = selectLanguageTrack(tracks, sourceLanguage);
+  state.captionTrackLanguage = trackLanguageCode(selected.track);
+  state.primaryNeedsTranslation = selected.needsTranslation;
+  return selected.track;
+}
+
+function markSingleTrackCues(cues, language = state.captionTrackLanguage) {
+  const sourceNeedsTranslation = state.sourceLanguageSetting !== 'auto' && language !== state.sourceLanguageSetting;
+  const targetNeedsTranslation = language !== state.targetLanguage;
+  state.primaryNeedsTranslation = sourceNeedsTranslation;
+  state.secondaryNeedsTranslation = targetNeedsTranslation;
+  state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (language || 'en') : state.sourceLanguageSetting;
+  return cues.map((cue) => ({
+    ...cue,
+    mainNeedsTranslation: sourceNeedsTranslation,
+    mainTranslationInput: cue.en,
+    mainText: sourceNeedsTranslation ? PENDING : cue.en,
+    secondaryNeedsTranslation: targetNeedsTranslation,
+    secondaryTranslationInput: cue.en,
+    vi: targetNeedsTranslation ? PENDING : cue.en,
+  }));
 }
 
 async function waitFor(fn, timeout) {
@@ -534,23 +554,28 @@ async function translateOne(text, targetLanguage = state.targetLanguage) {
 function pumpTranslateQueue() {
   while (translateActive < TRANSLATE_CONCURRENCY && translateQueue.length) {
     const item = translateQueue.shift();
-    if (!item || item.cue.vi !== PENDING) continue;
+    if (!item || item.cue[item.field] !== PENDING) continue;
     translateActive++;
-    translateOne(item.cue.en, item.targetLanguage)
-      .then((vi) => {
+    translateOne(item.text, item.targetLanguage)
+      .then((translated) => {
         if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
-        item.cue.vi = vi;
-        item.cue.mainText = vi;
+        item.cue[item.field] = translated;
         if (item.token === state.loadToken) updateVietnameseRow(item.cue);
       })
       .finally(() => { translateActive--; pumpTranslateQueue(); });
   }
 }
 
+function queueCueTranslation(cue, token, field, text, targetLanguage) {
+  if (!cue || cue[field] !== PENDING || !text || !targetLanguage) return;
+  if (translateQueue.some((q) => q.cue === cue && q.field === field && q.targetLanguage === targetLanguage)) return;
+  translateQueue.push({ cue, token, field, text, targetLanguage, revision:translationSettingsRevision });
+}
+
 function queueCue(cue, token) {
-  if (!cue || cue.vi !== PENDING) return;
-  if (translateQueue.some((q) => q.cue === cue && q.targetLanguage === state.targetLanguage)) return;
-  translateQueue.push({ cue, token, targetLanguage:state.targetLanguage, revision:translationSettingsRevision });
+  if (!cue) return;
+  if (cue.mainNeedsTranslation) queueCueTranslation(cue, token, 'mainText', cue.mainTranslationInput || cue.en, state.mainLanguage);
+  if (cue.secondaryNeedsTranslation) queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, state.targetLanguage);
 }
 
 function translateWindow(centerIdx, token = state.loadToken) {
@@ -611,6 +636,7 @@ async function refreshSubtitleLanguageSettings() {
   state.sourceLanguageSetting = sourceLanguageSetting;
   state.targetLanguageSetting = targetLanguageSetting;
   state.targetLanguage = targetLanguage;
+  state.mainLanguage = sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : sourceLanguageSetting;
   translationSettingsRevision++;
   translateQueue = [];
   updateSubtitleLanguageLabels();
@@ -1072,15 +1098,24 @@ function dedupeSentences(list) {
 function buildCaptions() {
   const base = dedupeSentences(settings.splitSentences ? resegmentBySentence(state.rawCues) : state.rawCues);
   state.captions = base.map((c, i) => {
-    const cached = state.viCache.get(translationCacheKey(c.en));
-    const mainText = state.primaryNeedsTranslation ? (cached || PENDING) : c.en;
+    const mainNeedsTranslation = c.mainNeedsTranslation ?? state.primaryNeedsTranslation;
+    const secondaryNeedsTranslation = c.secondaryNeedsTranslation ?? state.secondaryNeedsTranslation;
+    const mainInput = c.mainTranslationInput || c.en;
+    const secondaryInput = c.secondaryTranslationInput || c.en;
+    const mainCached = mainNeedsTranslation ? state.viCache.get(translationCacheKey(mainInput, state.mainLanguage)) : null;
+    const secondaryCached = secondaryNeedsTranslation ? state.viCache.get(translationCacheKey(secondaryInput, state.targetLanguage)) : null;
     return {
+      ...c,
       id: i,
       start: c.start,
       end: c.end,
       en: c.en,
-      mainText,
-      vi: state.primaryNeedsTranslation ? mainText : c.en,
+      mainNeedsTranslation,
+      secondaryNeedsTranslation,
+      mainTranslationInput: mainInput,
+      secondaryTranslationInput: secondaryInput,
+      mainText: mainNeedsTranslation ? (mainCached || PENDING) : (c.mainText || c.en),
+      vi: secondaryNeedsTranslation ? (secondaryCached || PENDING) : (c.vi || c.en),
     };
   });
   renderTranscriptList();
@@ -1095,7 +1130,7 @@ function cleanCues(list) {
     const start = Number(cue?.start);
     if (!text || !Number.isFinite(start) || start < 0) continue;
     const end = Number(cue?.end);
-    cleaned.push({ start, end: Number.isFinite(end) && end > start ? end : start + 2, en: text, vi: PENDING });
+    cleaned.push({ ...cue, start, end: Number.isFinite(end) && end > start ? end : start + 2, en: text, vi: cue.vi || PENDING });
   }
   cleaned.sort((a, b) => a.start - b.start);
   for (let i = 0; i < cleaned.length - 1; i++) {
@@ -1130,7 +1165,7 @@ function extendLoadedWindow() {
 
 function storeTranscript(videoId, cues) {
   if (!videoId || !cues.length) return;
-  const key = `${videoId}:${state.sourceLanguageSetting}`;
+  const key = `${videoId}:${state.sourceLanguageSetting}:${state.targetLanguage}`;
   transcriptCache.set(key, cues);
   transcriptTrackLanguageCache.set(key, state.captionTrackLanguage);
   while (transcriptCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptCache.delete(transcriptCache.keys().next().value);
@@ -1138,10 +1173,12 @@ function storeTranscript(videoId, cues) {
 }
 
 function takeCachedTranscript(videoId) {
-  const key = `${videoId}:${state.sourceLanguageSetting}`;
+  const key = `${videoId}:${state.sourceLanguageSetting}:${state.targetLanguage}`;
   const cached = transcriptCache.get(key);
   state.captionTrackLanguage = transcriptTrackLanguageCache.get(key) || '';
-  state.primaryNeedsTranslation = !!state.captionTrackLanguage && state.captionTrackLanguage !== state.targetLanguage;
+  state.primaryNeedsTranslation = !!cached?.[0]?.mainNeedsTranslation;
+  state.secondaryNeedsTranslation = !!cached?.[0]?.secondaryNeedsTranslation;
+  state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : state.sourceLanguageSetting;
   if (!cached?.length) return null;
   return cached;
 }
@@ -1232,6 +1269,79 @@ async function fetchTextDirect(url, init = {}) {
   return response.text();
 }
 
+function closestCue(cues, cue) {
+  let best = null;
+  let bestOverlap = 0;
+  let bestDistance = Infinity;
+  for (const candidate of cues || []) {
+    const overlap = Math.max(0, Math.min(cue.end, candidate.end) - Math.max(cue.start, candidate.start));
+    const distance = Math.abs(candidate.start - cue.start);
+    if (overlap > bestOverlap || (overlap === bestOverlap && distance < bestDistance)) {
+      best = candidate;
+      bestOverlap = overlap;
+      bestDistance = distance;
+    }
+  }
+  return bestOverlap > 0 || bestDistance <= 1.5 ? best : null;
+}
+
+async function cuesForTrack(track, reasons) {
+  if (!track?.baseUrl) return [];
+  const baseUrl = String(track.baseUrl).replace('&fmt=srv3', '');
+  if (baseUrl.includes('&exp=xpe')) {
+    reasons.push('player: track cần PO token (exp=xpe)');
+    return [];
+  }
+  try {
+    const xml = await fetchTextDirect(baseUrl);
+    const cues = parseTimedTextXml(xml);
+    if (!cues.length) reasons.push('player: track không có dòng nào');
+    return cues;
+  } catch (err) {
+    reasons.push('player timedtext: ' + err.message);
+    return [];
+  }
+}
+
+async function captionsFromTracks(tracks, reasons) {
+  if (!tracks.length) return [];
+  const primary = selectLanguageTrack(tracks, state.sourceLanguageSetting);
+  const secondary = selectLanguageTrack(tracks, state.targetLanguage);
+  const original = primary.original;
+  const needed = [...new Set([primary.track, secondary.track, (primary.needsTranslation || secondary.needsTranslation) ? original : null].filter(Boolean))];
+  const fetched = await Promise.all(needed.map(async (track) => [track, await cuesForTrack(track, reasons)]));
+  const byTrack = new Map(fetched);
+  const mainCues = byTrack.get(primary.track) || [];
+  if (!mainCues.length) return [];
+  const originalCues = byTrack.get(original) || mainCues;
+  const targetCues = byTrack.get(secondary.track) || [];
+
+  state.captionTrackLanguage = trackLanguageCode(primary.track);
+  state.primaryNeedsTranslation = primary.needsTranslation;
+  state.secondaryNeedsTranslation = secondary.needsTranslation;
+  state.mainLanguage = state.sourceLanguageSetting === 'auto'
+    ? (state.captionTrackLanguage || state.mainLanguage || 'en')
+    : state.sourceLanguageSetting;
+
+  return mainCues.map((cue) => {
+    const originalCue = closestCue(originalCues, cue) || cue;
+    const targetCue = primary.track === secondary.track
+      ? cue
+      : closestCue(targetCues, cue);
+    const translateMain = primary.needsTranslation;
+    const translateSecondary = secondary.needsTranslation || !targetCue;
+    return {
+      ...cue,
+      mainNeedsTranslation: translateMain,
+      mainTranslationInput: translateMain ? originalCue.en : cue.en,
+      mainText: translateMain ? PENDING : cue.en,
+      secondaryNeedsTranslation: translateSecondary,
+      secondaryTranslationInput: translateSecondary ? originalCue.en : '',
+      vi: translateSecondary ? PENDING : targetCue.en,
+    };
+  });
+}
+
 async function transcriptFromPlayerApi(videoId, reasons) {
   try {
     const html = await fetchTextDirect(`https://www.youtube.com/watch?v=${videoId}`);
@@ -1247,25 +1357,7 @@ async function transcriptFromPlayerApi(videoId, reasons) {
     const data = await res.json();
     const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
     if (!tracks.length) { reasons.push('player: video không có caption track'); return []; }
-    const preferred = pickTrack(tracks);
-    const ordered = [preferred, ...tracks.filter((t) => t !== preferred)].filter(Boolean).slice(0, 3);
-    for (const track of ordered) {
-      state.captionTrackLanguage = trackLanguageCode(track);
-      state.primaryNeedsTranslation = state.captionTrackLanguage !== state.targetLanguage;
-      const baseUrl = String(track.baseUrl || '').replace('&fmt=srv3', '');
-      if (!baseUrl) continue;
-      if (baseUrl.includes('&exp=xpe')) { reasons.push('player: track cần PO token (exp=xpe)'); continue; }
-      try {
-        const xml = await fetchTextDirect(baseUrl);
-        if (!xml) { reasons.push('player: timedtext rỗng'); continue; }
-        const cues = parseTimedTextXml(xml);
-        if (cues.length) return cues;
-        reasons.push('player: XML không có dòng nào');
-      } catch (err) {
-        reasons.push('player timedtext: ' + err.message);
-      }
-    }
-    return [];
+    return await captionsFromTracks(tracks, reasons);
   } catch (err) {
     reasons.push('player: ' + err.message);
     return [];
@@ -1312,22 +1404,7 @@ async function loadCaptions() {
       const tracks = await tracksFromWatchPage(videoId, reasons);
       if (token !== state.loadToken) return;
       if (tracks.length) {
-        const preferred = pickTrack(tracks);
-        const ordered = [preferred, ...tracks.filter((t) => t !== preferred)];
-        for (const track of ordered.slice(0, 3)) {
-          state.captionTrackLanguage = trackLanguageCode(track);
-          state.primaryNeedsTranslation = state.captionTrackLanguage !== state.targetLanguage;
-          try {
-            const raw = await fetchText(track.baseUrl + '&fmt=json3');
-            if (token !== state.loadToken) return;
-            if (!raw) { reasons.push('timedtext rỗng'); continue; }
-            cues = parseCaptions(JSON.parse(raw).events);
-            if (cues.length) break;
-            reasons.push('timedtext không có dòng nào');
-          } catch (err) {
-            reasons.push('timedtext: ' + err.message);
-          }
-        }
+        cues = await captionsFromTracks(tracks, reasons);
       }
     }
 
@@ -1340,6 +1417,12 @@ async function loadCaptions() {
       loadedUntil = 0;
       startLiveCaptionCapture(reasons);
       return;
+    }
+
+    if (!cues[0]?.mainNeedsTranslation && !cues[0]?.secondaryNeedsTranslation && !state.captionTrackLanguage) {
+      cues = markSingleTrackCues(cues, '');
+    } else if (!Object.hasOwn(cues[0] || {}, 'mainNeedsTranslation')) {
+      cues = markSingleTrackCues(cues);
     }
 
     const cleaned = cleanCues(cues);
