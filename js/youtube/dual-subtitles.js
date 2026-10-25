@@ -915,7 +915,8 @@ function decodeEntities(text) {
 function parseTimedTextXml(xml) {
   const out = [];
   const push = (startMs, durationMs, rawText) => {
-    const text = decodeEntities(rawText.replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+    // XML có thể bị escape hai lớp (vd "&amp;#39;") nên giải mã 2 lần như ElementTree + html.unescape.
+    const text = decodeEntities(decodeEntities(rawText.replace(/<[^>]*>/g, ''))).replace(/\s+/g, ' ').trim();
     const start = startMs / 1000;
     if (!text || !Number.isFinite(start)) return;
     const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs / 1000 : 2;

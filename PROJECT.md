@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.605; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.606; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage và Diagnostics. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** đã tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` do người dùng cung cấp. Giao diện overlay giữ nguyên 100% (CSS/HTML copy byte-identical). Đã ánh xạ sang module Keepit: `LHN_MESSAGING` (message `YOUTUBE_FETCH_TEXT` mở ở background với allowlist youtube/translate), `browser.storage.local` key `lhnYouTubeSettings`, `LHN_DEFAULTS.youtube`. Chỉ chạy trên `youtube.com`, tôn trọng `Alt+Z` (tắt Keepit trên site). **Khác OPT-ARENA 8.1.1:** bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` (endpoint nội bộ của YouTube) thay vì chỉ caption đang hiển thị; giữ theo bản tham chiếu vì người dùng yêu cầu, cần chốt lại với OPT-ARENA.
@@ -10,7 +10,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.605: thứ tự nguồn phụ đề mới là innertube `get_transcript` → panel bản ghi → timedtext → caption trực tiếp; khung video co theo tỉ lệ thật và phụ đề tràn phần còn lại. Cần xác nhận: danh sách bản ghi sạch (không trùng timestamp, không lặp câu); Console in `[Trancy] Nguồn phụ đề đã dùng: …` cho biết nguồn nào; video dọc/4:3 hiển thị đúng; danh sách dịch dần khi phát/cuộn. Chưa có kết quả trên Chrome/Firefox.
+24. [Kiểm tra] YouTube song ngữ v3.4.606: nguồn chính là **player API client ANDROID + timedtext XML** (port từ `youtube-transcript-api`) chạy fetch trong content script; dự phòng panel bản ghi, rồi timedtext từ HTML, rồi caption trực tiếp. Cần xác nhận: danh sách sạch (không trùng timestamp, không lặp câu); Console in `[Trancy] Nguồn phụ đề đã dùng: …`; video dọc/4:3 hiển thị đúng; danh sách dịch dần khi phát/cuộn. Chưa có kết quả trên Chrome/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
@@ -103,6 +103,14 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+**2026-10-25 | v3.4.606 | DeepSeek sửa:**
+
+- Tìm ra nguyên nhân thật của "timedtext rỗng": track lấy từ `ytInitialPlayerResponse` nhúng trong HTML có `&exp=xpe` → **cần PO token**, và chính `youtube-transcript-api` cũng bỏ qua các track này (`raise PoTokenRequired`). Port công thức của thư viện đó sang JS: POST `youtubei/v1/player?key=<INNERTUBE_API_KEY>` với `client ANDROID 20.10.38` → lấy `captionTracks` mới (không có `exp=xpe`) → GET `baseUrl` (bỏ `&fmt=srv3`) → parse XML thẻ `<p t d>` hoặc `<text start dur>`; toàn bộ `fetch` chạy **trong content script** (same-origin, có cookie) thay vì background.
+- Bỏ `get_transcript` khỏi chuỗi nguồn: từ 12/2025 YouTube chặn 100% (400), xác nhận qua issue `LuanRT/YouTube.js#1102` và thử thật từ máy.
+- Giải mã XML hai lớp (ví dụ `&amp;#39;` thành dấu nháy đơn) giống ElementTree + html.unescape của thư viện Python.
+- File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt; chạy thật từ máy: player OK, **6 caption track**, track tiếng Anh **không có `exp=xpe`**, timedtext trả **4801 bytes XML**; unit test parser cho `[music]`, `We 're…`, `"You know the rules" & so do I` đúng. Chưa test trong trình duyệt.
+
 **2026-10-25 | v3.4.605 | DeepSeek sửa:**
 
 - Trả lại chất lượng dữ liệu như bản tham chiếu: thêm nguồn **`youtubei/v1/get_transcript`** (đúng endpoint panel bản ghi của YouTube dùng) trả về `transcriptCueRenderer` có `startOffsetMs`/`durationMs`/`cue` nên danh sách sạch, đủ, timestamp thật. Background thêm message `YOUTUBE_API` (POST JSON, chỉ cho youtube.com).
