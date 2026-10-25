@@ -10,7 +10,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.605: khung video giờ co theo tỉ lệ thật của video (16:9, 4:3, 9:16, 21:9) thay vì ép 16:9, phụ đề bám trên và tràn hết phần còn lại. Cần xác nhận: video 16:9 hiển thị như cũ; video dọc/4:3 không còn viền đen trong khung và phụ đề nằm ngay dưới video; đổi kích thước cửa sổ khung cập nhật đúng; thu nhỏ cửa sổ không làm phụ đề bị đẩy khỏi màn hình. Chưa có kết quả trên Chrome/Firefox.
+24. [Kiểm tra] YouTube song ngữ v3.4.605: thứ tự nguồn phụ đề mới là innertube `get_transcript` → panel bản ghi → timedtext → caption trực tiếp; khung video co theo tỉ lệ thật và phụ đề tràn phần còn lại. Cần xác nhận: danh sách bản ghi sạch (không trùng timestamp, không lặp câu); Console in `[Trancy] Nguồn phụ đề đã dùng: …` cho biết nguồn nào; video dọc/4:3 hiển thị đúng; danh sách dịch dần khi phát/cuộn. Chưa có kết quả trên Chrome/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
