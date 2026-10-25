@@ -755,8 +755,8 @@ const OVERLAY_CSS = `
       height: var(--te-amb-size, 100vw);
       transform: translate(-50%, -50%);
       filter: blur(40px) saturate(1.8);
-      -webkit-mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
-      mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+      mask-image: radial-gradient(ellipse closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.6s ease, visibility 0s linear 0.6s;
