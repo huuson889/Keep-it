@@ -6,26 +6,26 @@
 
 @supports selector(::-webkit-scrollbar) {
   :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *) {
-    scrollbar-width: auto;
-    scrollbar-color: auto;
+    scrollbar-width: auto !important;
+    scrollbar-color: auto !important;
   }
 
   :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar {
-    width: 2px;
-    height: 2px;
+    width: 2px !important;
+    height: 2px !important;
   }
 
   :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar:hover {
-    width: 4px;
-    height: 4px;
+    width: 4px !important;
+    height: 4px !important;
   }
 
   :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #8b70e8a8;
+    border-radius: 999px !important;
+    background: #8b70e8a8 !important;
   }
 
   :where(html[data-lhn-app] *, [id^="lhn-"], [id^="lhn-"] *, [class^="lhn-"], [class^="lhn-"] *, [class*=" lhn-"], [class*=" lhn-"] *)::-webkit-scrollbar-thumb:hover {
-    background: #8b70e8;
+    background: #8b70e8 !important;
   }
 }

@@ -67,7 +67,7 @@ Keepit - Test/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard
 │   ├── popup/                     # CSS popup toolbar
-│   └── shared/                    # theme tokens, theme và flags
+│   └── shared/                    # theme tokens, theme, flags và scrollbars dùng chung
 ├── assets/
 │   ├── icons/                     # Biểu tượng extension
 │   └── fonts/                     # Font cục bộ
@@ -98,6 +98,7 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> giao diện quản lý
+`css/shared/scrollbars.css` ──> định dạng vùng cuộn do addon quản lý; Shadow DOM giữ rule trong stylesheet của component.
 ```
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
@@ -107,7 +108,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 **2026-10-25 | v3.4.623 | Codex sửa:**
 
 - Đồng bộ scrollbar của các vùng cuộn do addon quản lý: 2 px khi nghỉ, 4 px khi hover trực tiếp lên thanh. Dùng CSS chung cho content UI, Dashboard và popup; bổ sung kiểu tương ứng trong Reader và Dual Sub Shadow DOM. Không áp dụng toàn cục lên scrollbar website. Firefox native giữ dạng mảnh do giới hạn CSS.
-- File: `css/shared/scrollbars.css`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `js/video/overlay-template.js`, `js/reader/bilingual-reader.js`, `PROJECT.md`.
+- File: `css/shared/scrollbars.css`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `js/video/overlay-template.js`, `js/reader/bilingual-reader.js`, `PROJECT.md`. Kèm thay đổi hướng dẫn do Huuson thêm trong `AGENTS.md` về cập nhật bản đồ khi đổi cấu trúc.
 - Kiểm tra: Chưa chạy.
 
 **2026-10-25 | v3.4.622 | Codex sửa:**
