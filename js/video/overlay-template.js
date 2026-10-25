@@ -37,7 +37,7 @@ const OVERLAY_CSS = `
       color: #1f2937;
     }
     #keepit-exact-overlay.theme-light .te-left-section { background-color: #ffffff; }
-    #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; border-top: 1px solid #e5e7eb; }
+    #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; }
     #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
     #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
     #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
@@ -76,7 +76,7 @@ const OVERLAY_CSS = `
       color: #f3f4f6;
     }
     #keepit-exact-overlay.theme-dark .te-left-section { background-color: #121212; }
-    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent; border-top: 1px solid #222; }
+    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent;}
     #keepit-exact-overlay.theme-dark .te-sub-en { color: #ffff00; }
     #keepit-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
     #keepit-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
