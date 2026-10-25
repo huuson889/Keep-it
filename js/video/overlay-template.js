@@ -330,6 +330,8 @@ const OVERLAY_CSS = `
       padding: 6px 0;
       max-height: 520px;
       overflow-y: auto;
+      scrollbar-width: auto;
+      scrollbar-color: auto;
     }
     .te-modal-body::-webkit-scrollbar { width: 2px; }
     .te-modal-body::-webkit-scrollbar-track { background: transparent; }
