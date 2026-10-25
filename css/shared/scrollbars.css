@@ -12,6 +12,9 @@
 
 .lhn-slim-scrollbar-track {
   position: fixed !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   z-index: 2147483647 !important;
   box-sizing: border-box !important;
   padding: 0 !important;

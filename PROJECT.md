@@ -109,7 +109,8 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Thay scrollbar native bằng helper thanh cuộn tùy chỉnh khớp demo: 2 px khi nghỉ, 4 px khi hover trực tiếp; hỗ trợ kéo, bấm track và cập nhật theo cuộn. Nối vào content UI, Dashboard, popup, Reader và Dual Sub gồm menu Cài đặt video; chỉ quản lý vùng do addon tạo.
 - File: `js/shared/slim-scrollbars.js`, `css/shared/scrollbars.css`, `js/video/dual-subtitles.js`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
+- Gia cố CSS của track/thumb bằng `!important` để stylesheet của Chromium hoặc website không ghi đè kích thước 2/4 px, trạng thái hover và vùng tương tác; áp dụng cả trong Shadow DOM của overlay.
+- Kiểm tra: `node --check` cho hai JS liên quan, JSON manifest, đường dẫn tài nguyên, và `git diff --check` đạt. Chưa kiểm tra trực tiếp tương tác trên Chromium/Firefox.
 
 **2026-10-25 | v3.4.623 | Codex sửa:**
 
