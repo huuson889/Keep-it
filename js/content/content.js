@@ -1252,14 +1252,21 @@
 
   function isEditable(node) { const el = node?.nodeType === 1 ? node : node?.parentElement; return !!el?.closest("input,textarea,select,[contenteditable]:not([contenteditable='false']),[role='textbox']"); }
 
+  // Lấy vùng chọn: nếu chữ nằm trong overlay phụ đề YouTube (shadow root #trancy-host) thì dùng selection của shadow root,
+  // không thì dùng selection của document như trước. ShadowRoot.getSelection() chỉ có ở Chromium; Firefox rơi về document.
+  function currentSelection() {
+    const shadowSel = document.getElementById("trancy-host")?.shadowRoot?.getSelection?.();
+    if (shadowSel && String(shadowSel).trim()) return shadowSel;
+    return getSelection();
+  }
   document.addEventListener("mouseup", e => {
     if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
-    const selection = getSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
+    const selection = currentSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
     if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
     setTimeout(() => {
-      const sel = getSelection(), text = cleanText(sel?.toString());
+      const sel = currentSelection(), text = cleanText(sel?.toString());
       if (!text || !sel.rangeCount || isEditable(sel.anchorNode)) return;
       const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
       selectedRange = range.cloneRange();
