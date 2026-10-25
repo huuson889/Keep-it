@@ -8,6 +8,7 @@ const HOST_ID = 'trancy-host';
 const OVERLAY_ID = 'trancy-exact-overlay';
 const SETTINGS_KEY = 'lhnYouTubeSettings';
 const STUDY_TRANSLATION_SETTINGS_KEY = 'lhnStudyTranslationSettings';
+const GLOBAL_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
 const BATCH_SIZE = 15;
 const PENDING = 'Đang dịch...';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -743,6 +744,30 @@ async function restoreSettings() {
 }
 
 let settings = defaultSettings();
+let translationPopupEnabled = false;
+
+async function refreshTranslationPopupSetting() {
+  try {
+    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
+    translationPopupEnabled = values[GLOBAL_SETTINGS_KEY]?.translationPopupEnabled === true;
+    if (overlayEl()) applySettings();
+  } catch {}
+}
+
+async function saveTranslationPopupSetting(enabled) {
+  translationPopupEnabled = enabled;
+  if (overlayEl()) applySettings();
+  try {
+    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
+    const current = values[GLOBAL_SETTINGS_KEY] || {};
+    const next = { ...current, translationPopupEnabled: enabled };
+    // Match Dashboard's existing exclusive translation-mode behavior.
+    if (enabled) Object.assign(next, { showOnSelect: false, translateIconEnabled: false });
+    await browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
+  } catch {
+    await refreshTranslationPopupSetting();
+  }
+}
 
 // Trả về nhóm màu/cỡ chữ: 'en'|'vi' (phụ đề chính) hoặc 'side-en'|'side-vi' (phụ đề thanh bên)
 function groupRef(g) {
@@ -790,6 +815,7 @@ function applySettings() {
 
   // Đồng bộ công tắc trong menu cài đặt chính
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
+  if (mainSw[0]) mainSw[0].checked = translationPopupEnabled;
   if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
   if (mainSw[3]) mainSw[3].checked = isVietnameseHidden();
   if (mainSw[4]) mainSw[4].checked = settings.hideControls;
@@ -1780,9 +1806,12 @@ function bindUI() {
     });
   });
 
-  // Công tắc trong menu chính: [0] di chuột để dịch, [1] nhấp để phát âm,
+  // Công tắc trong menu chính: [0] popup dịch trực tiếp, [1] nhấp để phát âm,
   // [2] kết hợp câu, [3] ẩn thanh điều khiển
   const mainSw = modalMain.querySelectorAll('input[type=checkbox]');
+  mainSw[0].addEventListener('change', (event) => {
+    void saveTranslationPopupSetting(event.target.checked);
+  });
   mainSw[2].addEventListener('change', (e) => {
     settings.splitSentences = e.target.checked;
     saveSettings();
@@ -1999,11 +2028,16 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     tick();
   });
   void refreshKeepitGate();
+  void refreshTranslationPopupSetting();
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (changes.lhnSettings) void refreshKeepitGate();
-    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
-    if (changes[STUDY_TRANSLATION_SETTINGS_KEY] || changes[settingsKey]) void refreshSubtitleLanguageSettings();
+    if (changes[GLOBAL_SETTINGS_KEY]) {
+      translationPopupEnabled = changes[GLOBAL_SETTINGS_KEY].newValue?.translationPopupEnabled === true;
+      if (overlayEl()) applySettings();
+      void refreshKeepitGate();
+      void refreshSubtitleLanguageSettings();
+    }
+    if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) void refreshSubtitleLanguageSettings();
   });
   window.addEventListener('resize', () => { if (state.videoEl) syncVideoAspect(state.videoEl); });
 }

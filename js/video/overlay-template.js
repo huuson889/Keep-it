@@ -755,13 +755,13 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
         </div>
         <div class="te-modal-body">
           
-          <!-- Di chuột để dịch -->
+          <!-- Hiện popup dịch trực tiếp -->
           <div class="te-menu-row">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><circle cx="10" cy="13" r="3"/><path d="m12 15 2 2"/></svg>
-              <span>Di chuột để dịch</span>
+              <span>Hiện popup dịch trực tiếp</span>
             </div>
-            <label class="te-switch"><input type="checkbox" checked><span class="te-slider"></span></label>
+            <label class="te-switch"><input type="checkbox" id="te-translation-popup-enabled"><span class="te-slider"></span></label>
           </div>
 
           <!-- Nhấp để phát âm -->
