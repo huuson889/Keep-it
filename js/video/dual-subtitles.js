@@ -40,6 +40,7 @@ const state = {
   viCache: new Map(),
   sourceLanguageSetting: 'auto',
   targetLanguage: 'en',
+  primaryNeedsTranslation: false,
   loadToken: 0,
   loadingFor: null,
   loop: false,
@@ -204,10 +205,15 @@ function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting) {
   if (sourceLanguage !== 'auto') {
     const matching = tracks.filter((track) => trackLanguageCode(track) === sourceLanguage);
     const selected = matching.find((track) => track.kind !== 'asr') || matching[0];
-    if (selected) return selected;
+    if (selected) {
+      state.primaryNeedsTranslation = false;
+      return selected;
+    }
   }
   // YouTube's first/default track is the best available proxy for the video's original-language track.
-  return tracks[0] || null;
+  const originalTrack = tracks[0] || null;
+  state.primaryNeedsTranslation = !!originalTrack && trackLanguageCode(originalTrack) !== state.targetLanguage;
+  return originalTrack;
 }
 
 async function waitFor(fn, timeout) {
@@ -527,6 +533,7 @@ function pumpTranslateQueue() {
       .then((vi) => {
         if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
         item.cue.vi = vi;
+        item.cue.mainText = vi;
         if (item.token === state.loadToken) updateVietnameseRow(item.cue);
       })
       .finally(() => { translateActive--; pumpTranslateQueue(); });
@@ -988,7 +995,7 @@ function onTimeUpdate() {
 function setActiveCaption(idx) {
   state.activeIdx = idx;
   const cap = state.captions[idx];
-  $('te-sub-en-text').innerHTML = renderHoverWords(cap.en);
+  $('te-sub-en-text').innerHTML = renderHoverWords(cap.mainText);
   $('te-sub-vi-text').innerHTML = renderHoverWords(cap.vi);
 
   const list = $('te-transcript-list');
@@ -1015,7 +1022,7 @@ function renderTranscriptList() {
     <div class="yt-dual-item" data-idx="${i}">
       <div class="yt-dual-timestamp">${formatTime(c.start)}</div>
       <div class="yt-dual-content">
-        <div class="yt-dual-item-en">${renderHoverWords(c.en)}</div>
+        <div class="yt-dual-item-en">${renderHoverWords(c.mainText)}</div>
         <div class="yt-dual-item-vi">${renderHoverWords(c.vi)}</div>
       </div>
     </div>`).join('');
@@ -1026,7 +1033,11 @@ function updateVietnameseRow(item) {
   const idx = state.captions.indexOf(item);
   if (idx < 0) return;
   const row = $('te-transcript-list').querySelector(`.yt-dual-item[data-idx="${idx}"]`);
-  if (row) row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+  if (row) {
+    row.querySelector('.yt-dual-item-en').innerHTML = renderHoverWords(item.mainText);
+    row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+  }
+  if (idx === state.activeIdx) $('te-sub-en-text').innerHTML = renderHoverWords(item.mainText);
   if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
 }
 
@@ -1048,13 +1059,18 @@ function dedupeSentences(list) {
 
 function buildCaptions() {
   const base = dedupeSentences(settings.splitSentences ? resegmentBySentence(state.rawCues) : state.rawCues);
-  state.captions = base.map((c, i) => ({
-    id: i,
-    start: c.start,
-    end: c.end,
-    en: c.en,
-    vi: state.viCache.get(translationCacheKey(c.en)) || PENDING,
-  }));
+  state.captions = base.map((c, i) => {
+    const cached = state.viCache.get(translationCacheKey(c.en));
+    const mainText = state.primaryNeedsTranslation ? (cached || PENDING) : c.en;
+    return {
+      id: i,
+      start: c.start,
+      end: c.end,
+      en: c.en,
+      mainText,
+      vi: state.primaryNeedsTranslation ? mainText : c.en,
+    };
+  });
   renderTranscriptList();
 }
 
