@@ -228,6 +228,17 @@ const OVERLAY_CSS = `
 
     .te-icon-btn:hover { background: rgba(128, 128, 128, 0.15); }
 
+    @keyframes te-control-press {
+      0% { transform: scale(1); }
+      45% { transform: scale(0.88); }
+      100% { transform: scale(1); }
+    }
+
+    .te-icon-btn.te-button-pressed,
+    .te-play-btn.te-button-pressed { animation: te-control-press 180ms ease-out; }
+    .te-icon-btn.te-button-pressed { background: rgba(128, 128, 128, 0.22); }
+    .te-play-btn.te-button-pressed { background: #7c3aed !important; }
+
     .te-play-btn {
       width: 34px;
       height: 34px;
@@ -762,6 +773,22 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
           <button class="te-close-sidebar" id="te-close-modal">&times;</button>
         </div>
         <div class="te-modal-body">
+
+          <!-- Chế độ xem -->
+          <div class="te-setting-section-title">Chế độ xem</div>
+          <div id="te-view-mode-options" style="padding: 0 20px 14px 20px;">
+            <div class="te-btn-group">
+              <button class="te-btn-subopt" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg>
+              </button>
+              <button class="te-btn-subopt active" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/></svg>
+              </button>
+              <button class="te-btn-subopt" style="padding: 10px 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+              </button>
+            </div>
+          </div>
           
           <!-- Hiện popup dịch trực tiếp -->
           <div class="te-menu-row">
@@ -917,21 +944,6 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
             <div class="te-btn-group">
               <button class="te-btn-subopt active">Bình thường</button>
               <button class="te-btn-subopt">Đậm</button>
-            </div>
-          </div>
-
-          <div class="te-setting-section-title">Chế độ đọc</div>
-          <div style="padding: 0 20px 14px 20px;">
-            <div class="te-btn-group">
-              <button class="te-btn-subopt" style="padding: 10px 0;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg>
-              </button>
-              <button class="te-btn-subopt active" style="padding: 10px 0;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/></svg>
-              </button>
-              <button class="te-btn-subopt" style="padding: 10px 0;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align: middle;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
-              </button>
             </div>
           </div>
 

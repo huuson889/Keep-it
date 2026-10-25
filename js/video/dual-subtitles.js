@@ -876,7 +876,7 @@ function applySettings() {
   groups[0].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === presetIdx));
   groups[1].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === (settings.sub.bold ? 1 : 0)));
   const sizeIdx = { S: 0, M: 1, L: 2 }[settings.size] ?? 2;
-  groups[2].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
+  $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
   sub.querySelector('select').value = settings.sub.font || 'Inter';
 
   const counters = sub.querySelectorAll('.te-counter-btn');
@@ -915,8 +915,8 @@ function buildOverlay() {
     if (![...subSel.options].some((o) => o.value === name)) subSel.add(new Option(name, name));
   });
 
-  // Nhóm "Chế độ đọc" -> Nhỏ / Vừa / Lớn (kích thước video)
-  const sizeBtns = $('te-modal-sub').querySelectorAll('.te-btn-group')[2].querySelectorAll('button');
+  // Nhóm "Chế độ xem" -> Nhỏ / Vừa / Lớn (kích thước video)
+  const sizeBtns = $('te-view-mode-options').querySelectorAll('button');
   ['Nhỏ', 'Vừa', 'Lớn'].forEach((t, i) => {
     sizeBtns[i].textContent = t;
     sizeBtns[i].dataset.size = ['S', 'M', 'L'][i];
@@ -1957,7 +1957,7 @@ function bindUI() {
     applySettings();
   });
 
-  modalSub.querySelectorAll('.te-btn-group')[2].querySelectorAll('button').forEach((b) => {
+  $('te-view-mode-options').querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
       settings.size = b.dataset.size;
       saveSettings();
