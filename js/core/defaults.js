@@ -88,8 +88,8 @@
 
   // Giao diện YouTube song ngữ (giữ nguyên bộ giá trị của bản tham chiếu v1.12).
   const youtube = deepFreeze({
-    theme: "light",
-    size: "L",
+    theme: "dark",
+    size: "S",
     splitSentences: true,
     hideControls: false,
     side: { en: { pct: 100, color: null }, vi: { pct: 90, color: null } },

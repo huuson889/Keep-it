@@ -105,6 +105,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
+  - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem nhỏ; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
+  - File: `js/core/defaults.js`, `PROJECT.md`.
+  - Kiểm tra: `node --check js/core/defaults.js` và `git diff --check` — đạt.
+
+- **2026-10-25 | v3.4.610 | Codex sửa:**
   - Khắc phục chữ và khoảng cách full dict bị thu nhỏ trên một số trang: các đơn vị `rem` trong riêng popup phụ thuộc cỡ chữ gốc trang (YouTube có thể đặt root nhỏ hơn). Đổi sang kích thước `px` tương đương ở nền 16px. Đối chiếu CSS với v3.5.3 cho thấy stylesheet giống hệt; khác biệt là cỡ chữ root của trang nơi popup được mở.
   - File: `css/content/content.css`, `manifest.json`, `PROJECT.md`.
   - Kiểm tra: `git diff --check` đạt; chưa kiểm thử trên trình duyệt.
