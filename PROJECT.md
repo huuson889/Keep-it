@@ -108,7 +108,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Khi mở overlay, ưu tiên video chính của YouTube và ép video hiển thị dù đang pause/play. Nếu thời điểm phát chưa nằm trong cue nào, kích hoạt câu đầu tiên. Hover phụ đề chính dùng pointer events và pause luôn tác động lên video đang phát.
 - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
+- Kiểm tra: `node --check` cho hai file JavaScript, parse `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
 
 **2026-10-25 | v3.4.618 | Codex sửa:**
 
