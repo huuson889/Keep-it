@@ -1043,13 +1043,13 @@ function detachVideo() {
 // ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
 let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
 // Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
-// ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = radial hiện tại, 2 = cạnh viền 16:9, 3 = chưa làm (bị khóa)
+// ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = cạnh viền 16:9 lan 50%, 2 = cạnh viền 16:9 lan 100%, 3 = radial
 const AMBIENT_LABELS = { off: 'Tắt', '1': 'Ambient 1', '2': 'Ambient 2', '3': 'Ambient 3' };
-function isEdgeAmbient() { const m = ambientMode(); return m === '2' || m === '3'; }
+function isEdgeAmbient() { const m = ambientMode(); return m === '1' || m === '2'; }
 function ambientMode() {
-  const m = settings.ambientMode;
+  const m = settings.ambientStyle;
   if (m === 'off' || m === '1' || m === '2' || m === '3') return m;
-  return settings.ambient === false ? 'off' : '1';
+  return settings.ambient === false ? 'off' : '3';
 }
 function syncAmbientUi() {
   const mode = ambientMode();
@@ -1059,7 +1059,7 @@ function syncAmbientUi() {
 }
 function setAmbientMode(mode) {
   if (!AMBIENT_LABELS[mode]) return;
-  settings.ambientMode = mode;
+  settings.ambientStyle = mode;
   settings.ambient = mode !== 'off';
   saveSettings();
   syncAmbientUi();
@@ -1072,8 +1072,8 @@ function placeAmbientEdge() {
   const r = slot.getBoundingClientRect(), rr = root.getBoundingClientRect();
   if (!r.width || !r.height) return;
   const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
-  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 2) hoặc 100% (Ambient 3) khoảng đó
-  const reach = ambientMode() === '3' ? 1.0 : 0.5;
+  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 1) hoặc 100% (Ambient 2) khoảng đó
+  const reach = ambientMode() === '2' ? 1.0 : 0.5;
   const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
   const boxW = r.width + reach * spL + reach * spR, boxH = r.height + reach * spT + reach * spB;
   // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
@@ -1122,7 +1122,6 @@ function drawAmbient() {
 function startAmbient() {
   stopAmbient();
   overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
-  overlayEl()?.classList.toggle('te-ambient-mode-3', ambientMode() === '3');
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
   if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   placeAmbient();

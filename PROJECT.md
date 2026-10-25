@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.638; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.639; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -104,6 +104,15 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-26 | v3.4.639 | Claude sửa:**
+  - Gỡ đề xuất Ambient 3 của v3.4.638 (sáng hơn, mờ dần): Ambient 3 trở về như v3.4.637.
+  - Đổi thứ tự và nhãn: Ambient 1 = cạnh viền lan 50% (trước là 2); Ambient 2 = cạnh viền lan 100% (trước là 3); Ambient 3 = radial (trước là 1). Menu Tắt | Ambient 1 | Ambient 2 | Ambient 3.
+  - Khóa lưu đổi từ `ambientMode` sang `ambientStyle`, mặc định Ambient 3 (radial). Các lựa chọn đã lưu trước đó sẽ về mặc định.
+  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+  - Việc đang mở: nhãn "Ambient 1–3" và "Tắt" chưa dịch (theo yêu cầu tạm thời).
+
 
 - **2026-10-26 | v3.4.638 | Claude sửa:**
   - Ambient 3 khác Ambient 2: sáng hơn (opacity 0.85 so với 0.6) và mờ dần về phía mép khung 100% bằng mặt nạ radial (class `te-ambient-mode-3`).
