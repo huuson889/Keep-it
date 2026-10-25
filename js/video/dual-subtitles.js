@@ -987,12 +987,13 @@ function attachVideo(video, slot) {
   }
   state.videoEl = video;
   video.controls = false;
+  video.addEventListener('click', handleOverlayVideoClick);
   video.addEventListener('timeupdate', onTimeUpdate);
-  video.addEventListener('play', syncPlayButton);
+  video.addEventListener('play', handleVideoPlay);
   video.addEventListener('play', enforceVideoPause);
-  video.addEventListener('pause', syncPlayButton);
-  video.addEventListener('ratechange', syncSpeedButton);
-  video.addEventListener('volumechange', syncMuteButton);
+  video.addEventListener('pause', handleVideoPause);
+  video.addEventListener('ratechange', handleVideoRateChange);
+  video.addEventListener('volumechange', handleVideoVolumeChange);
   video.addEventListener('loadedmetadata', () => syncVideoAspect(video));
   syncVideoAspect(video);
   syncPlayButton();
@@ -1005,12 +1006,13 @@ function attachVideo(video, slot) {
 function detachVideo() {
   const v = state.videoEl;
   if (!v) return;
+  v.removeEventListener('click', handleOverlayVideoClick);
   v.removeEventListener('timeupdate', onTimeUpdate);
-  v.removeEventListener('play', syncPlayButton);
+  v.removeEventListener('play', handleVideoPlay);
   v.removeEventListener('play', enforceVideoPause);
-  v.removeEventListener('pause', syncPlayButton);
-  v.removeEventListener('ratechange', syncSpeedButton);
-  v.removeEventListener('volumechange', syncMuteButton);
+  v.removeEventListener('pause', handleVideoPause);
+  v.removeEventListener('ratechange', handleVideoRateChange);
+  v.removeEventListener('volumechange', handleVideoVolumeChange);
   if (state.origParent && v.parentElement !== state.origParent) {
     const next = state.origNext && state.origNext.parentNode === state.origParent ? state.origNext : null;
     const wasPlaying = !v.paused;
@@ -1038,6 +1040,46 @@ function togglePlay() {
     v.play().catch(() => {});
   }
   else v.pause();
+}
+
+function pulseControlButton(button) {
+  if (!button) return;
+  button.classList.remove('te-button-pressed');
+  void button.offsetWidth;
+  button.classList.add('te-button-pressed');
+  clearTimeout(button._lhnPressTimer);
+  button._lhnPressTimer = setTimeout(() => button.classList.remove('te-button-pressed'), 200);
+}
+
+function pulseControl(title) {
+  pulseControlButton(ctrl(title));
+}
+
+function handleOverlayVideoClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  togglePlay();
+  pulseControl('Phát/Tạm dừng');
+}
+
+function handleVideoPlay() {
+  syncPlayButton();
+  pulseControl('Phát/Tạm dừng');
+}
+
+function handleVideoPause() {
+  syncPlayButton();
+  pulseControl('Phát/Tạm dừng');
+}
+
+function handleVideoRateChange() {
+  syncSpeedButton();
+  pulseControl('Tốc độ');
+}
+
+function handleVideoVolumeChange() {
+  syncMuteButton();
+  pulseControl('Audio');
 }
 
 function syncPlayButton() {
@@ -1887,6 +1929,10 @@ function bindUI() {
   });
 
   // Thanh điều khiển trên video
+  ui('.te-control-bar').addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (button) pulseControlButton(button);
+  });
   ctrl('Lặp lại câu').addEventListener('click', (e) => {
     state.loop = !state.loop;
     e.currentTarget.classList.toggle('te-active', state.loop);
@@ -2078,10 +2124,23 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     else openOverlay();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !state.open) return;
-    event.preventDefault();
-    event.stopPropagation();
-    closeOverlay();
+    if (!state.open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeOverlay();
+      return;
+    }
+    if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    const shortcutButtons = {
+      ' ': 'Phát/Tạm dừng', k: 'Phát/Tạm dừng',
+      ArrowLeft: 'Câu trước', j: 'Câu trước',
+      ArrowRight: 'Câu tiếp theo', l: 'Câu tiếp theo',
+      ArrowUp: 'Audio', ArrowDown: 'Audio',
+      '>': 'Tốc độ', '<': 'Tốc độ',
+    };
+    const buttonTitle = shortcutButtons[event.key];
+    if (buttonTitle) pulseControl(buttonTitle);
   });
   void Promise.all([restoreSettings(), refreshSubtitleLanguageSettings()]).then(([loaded]) => {
     settings = loaded;
