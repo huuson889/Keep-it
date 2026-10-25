@@ -745,7 +745,30 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
 
-    /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
+                    /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
+                    /*.te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+                    .te-ambient {
+                      position: absolute;
+                      left: var(--te-amb-x, 35%);
+                      top: var(--te-amb-y, 30%);
+                      width: var(--te-amb-size, 100vw);
+                      height: var(--te-amb-size, 100vw);
+                      transform: translate(-50%, -50%);
+                      filter: blur(40px) saturate(1.8);
+                      -webkit-mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+                      mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+                      opacity: 0;
+                      visibility: hidden;
+                      transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+                    } */
+
+
+
+
+
+
+
+                    /* ===== Ambient mode: màu video lan từ các cạnh video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
     .te-ambient {
       position: absolute;
@@ -755,12 +778,28 @@ const OVERLAY_CSS = `
       height: var(--te-amb-size, 100vw);
       transform: translate(-50%, -50%);
       filter: blur(40px) saturate(1.8);
-      -webkit-mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
-      mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle closest-side, transparent 45%, #000 50%, rgba(0, 0, 0, 0.55) 75%, transparent 100%);
+      mask-image: radial-gradient(circle closest-side, transparent 45%, #000 50%, rgba(0, 0, 0, 0.55) 75%, transparent 100%);
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.6s ease, visibility 0s linear 0.6s;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     #keepit-exact-overlay.te-ambient-on .te-ambient { opacity: 0.5; visibility: visible; transition: opacity 0.6s ease; }
     /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
     #keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
