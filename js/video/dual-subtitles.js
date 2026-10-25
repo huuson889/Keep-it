@@ -1072,8 +1072,8 @@ function placeAmbientEdge() {
   const r = slot.getBoundingClientRect(), rr = root.getBoundingClientRect();
   if (!r.width || !r.height) return;
   const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
-  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 2) hoặc 80% (Ambient 3) khoảng đó
-  const reach = ambientMode() === '3' ? 0.8 : 0.5;
+  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 2) hoặc 100% (Ambient 3) khoảng đó
+  const reach = ambientMode() === '3' ? 1.0 : 0.5;
   const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
   const boxW = r.width + reach * spL + reach * spR, boxH = r.height + reach * spT + reach * spB;
   // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
