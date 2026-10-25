@@ -275,6 +275,12 @@ const OVERLAY_CSS = `
       overflow-y: auto;
       padding: 8px 0;
     }
+    /* Thanh cuộn mảnh (thử nghiệm): CSS chuẩn cho Firefox, WebKit cho Chromium */
+    .te-transcript-scroll { scrollbar-width: thin; scrollbar-color: #8b70e8a8 transparent; }
+    .te-transcript-scroll::-webkit-scrollbar { width: 4px; }
+    .te-transcript-scroll::-webkit-scrollbar-track { background: transparent; }
+    .te-transcript-scroll::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
+    .te-transcript-scroll:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
 
     .te-ts-row {
       display: flex;
