@@ -115,6 +115,7 @@ const OVERLAY_CSS = `
       flex-direction: column;
       height: 100%;
       position: relative;
+      padding-bottom: 60px;
     }
 
     .te-video-slot {

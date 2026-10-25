@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.619; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.620; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -10,7 +10,7 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.619: Dual Sub đọc khóa qua `globalThis.LHN_CONFIG`; Auto đích theo ngôn ngữ giao diện. Hai bộ chọn dùng chung `lhnStudyTranslationSettings`; mỗi dòng ưu tiên track khớp, nếu thiếu dùng track gốc và dịch sang ngôn ngữ dòng đó. Khi bật Kết hợp câu, cả nội dung track dịch cũng được chia/gộp theo câu. “Hiện popup dịch trực tiếp” dùng `lhnSettings.translationPopupEnabled` với Dashboard; khi tắt, chọn từ không mở Full Dict trực tiếp. Click ngoài popup không làm popup mở lại; khi mở overlay, video được chọn rõ ràng, cue đầu tiên được kích hoạt nếu thời điểm video chưa rơi vào cue nào, và hover pause xử lý qua pointer event. Cần xác nhận hiển thị/hover pause trên Chromium/Firefox.
+24. [Kiểm tra] YouTube song ngữ v3.4.620: Dual Sub đọc khóa qua `globalThis.LHN_CONFIG`; Auto đích theo ngôn ngữ giao diện. Hai bộ chọn dùng chung `lhnStudyTranslationSettings`; mỗi dòng ưu tiên track khớp, nếu thiếu dùng track gốc và dịch sang ngôn ngữ dòng đó. Khi bật Kết hợp câu, cả nội dung track dịch cũng được chia/gộp theo câu. “Hiện popup dịch trực tiếp” dùng `lhnSettings.translationPopupEnabled` với Dashboard; overlay tạm bật tùy chọn này và khôi phục trạng thái trước đó khi đóng nếu người dùng không đổi. Bộ giải mã transcript xử lý entity HTML lồng nhau; thanh điều khiển neo đáy overlay. Mặc định shortcut Dual Sub đã là Alt+E. Cần xác nhận hiển thị/hover pause trên Chromium/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
 17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
 18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
@@ -103,6 +103,12 @@ Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> g
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-25 | v3.4.620 | Codex sửa:**
+
+- Transcript Dual Sub giải mã entity HTML lồng nhau để dấu câu hiển thị đúng như phụ đề YouTube; thanh điều khiển neo cố định dưới overlay. Khi mở overlay, “Hiện popup dịch trực tiếp” được bật tạm và trở về trạng thái cũ lúc đóng nếu người dùng không đổi. Shortcut mặc định đã là Alt+E nên giữ nguyên cấu hình và các lựa chọn tùy chỉnh.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chưa chạy.
 
 **2026-10-25 | v3.4.619 | Codex sửa:**
 

@@ -774,7 +774,7 @@ async function saveTranslationPopupSetting(enabled) {
 }
 
 async function enableTemporaryTranslationPopup() {
-  if (translationPopupEnabled || temporaryTranslationPopupSnapshot) return;
+  if (temporaryTranslationPopupSnapshot) return;
   try {
     const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
     const current = values[GLOBAL_SETTINGS_KEY] || {};
