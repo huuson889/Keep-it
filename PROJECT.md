@@ -105,7 +105,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
 - **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem nhỏ; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
+  - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem vừa; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
   - File: `js/core/defaults.js`, `PROJECT.md`.
   - Kiểm tra: `node --check js/core/defaults.js` và `git diff --check` — đạt.
 
