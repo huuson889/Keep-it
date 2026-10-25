@@ -126,9 +126,6 @@ const OVERLAY_CSS = `
       background-color: #111;
       position: relative;
       overflow: hidden;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23d6c7b2"/><text x="50%" y="40%" font-size="28" font-weight="bold" fill="%23111" text-anchor="middle">They want a better future, but they do not</text><text x="50%" y="50%" font-size="28" font-weight="bold" fill="%23111" text-anchor="middle">practice better habits today.</text><text x="50%" y="68%" font-size="30" font-weight="bold" fill="%23111" text-anchor="middle">The truth is simple: Your future is</text><text x="50%" y="78%" font-size="30" font-weight="bold" fill="%23111" text-anchor="middle">shaped by what you practice every day.</text></svg>');
-      background-size: cover;
-      background-position: center;
     }
 
     .te-sub-container {

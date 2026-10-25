@@ -70,7 +70,14 @@ let prefetchTimer = 0;
 let shadow = null; // ShadowRoot chứa toàn bộ giao diện Trancy
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
 const overlayEl = () => $(OVERLAY_ID);
-const ui = (sel) => overlayEl()?.querySelector(sel) || null;
+const uiCache = new Map();
+const ui = (sel) => {
+  const cached = uiCache.get(sel);
+  if (cached && cached.isConnected) return cached;
+  const el = overlayEl()?.querySelector(sel) || null;
+  if (el) uiCache.set(sel, el); else uiCache.delete(sel);
+  return el;
+};
 const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
 const ctrl = (title) => ui(`button[title="${title}"]`);
 
@@ -270,7 +277,13 @@ async function tracksFromWatchPage(videoId, reasons) {
   }
 }
 
+let lastTranscriptButton = null;
 function findTranscriptButton() {
+  if (lastTranscriptButton && lastTranscriptButton.isConnected) return lastTranscriptButton;
+  lastTranscriptButton = findTranscriptButtonUncached();
+  return lastTranscriptButton;
+}
+function findTranscriptButtonUncached() {
   // Ưu tiên nút trong khu vực transcript của mô tả (kể cả khi đang ẩn: click() vẫn hoạt động)
   const inSection = document.querySelector(
     'ytd-video-description-transcript-section-renderer button'
@@ -1197,10 +1210,14 @@ function onTimeUpdate() {
 }
 
 function setActiveCaption(idx) {
+  const prevIdx = state.activeIdx;
   state.activeIdx = idx;
   const cap = state.captions[idx];
-  $('te-sub-en-text').innerHTML = renderHoverWords(cap.mainText);
-  $('te-sub-vi-text').innerHTML = renderHoverWords(cap.vi);
+  const enEl = $('te-sub-en-text'), viEl = $('te-sub-vi-text');
+  if (prevIdx === idx && enEl?.dataset.idx === String(idx) && viEl?.dataset.idx === String(idx)) return;
+  enEl.innerHTML = renderHoverWords(cap.mainText);
+  viEl.innerHTML = renderHoverWords(cap.vi);
+  enEl.dataset.idx = viEl.dataset.idx = String(idx);
 
   const list = $('te-transcript-list');
   list.querySelectorAll('.yt-dual-item.active').forEach((r) => r.classList.remove('active'));
@@ -1978,7 +1995,11 @@ function bindUI() {
     pauseVideoFor('sidebar-double-click');
   });
   // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
-  $('te-transcript-list').addEventListener('scroll', () => { translateVisibleRows(); }, { passive: true });
+  let scrollRaf = 0;
+  $('te-transcript-list').addEventListener('scroll', () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; translateVisibleRows(); });
+  }, { passive: true });
 
   // Tùy chọn phụ đề
   const subGroups = modalSub.querySelectorAll('.te-btn-group');
