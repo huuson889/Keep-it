@@ -772,7 +772,7 @@ const OVERLAY_CSS = `
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
     .te-ambient {
       position: absolute;
-      left: var(--te-amb-x, 35%);
+      left: var(--te-amb-x, 95%);
       top: var(--te-amb-y, 30%);
       width: var(--te-amb-size, 100vw);
       height: var(--te-amb-size, 100vw);
