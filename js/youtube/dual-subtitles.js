@@ -157,8 +157,19 @@ function findTranscriptMenuItem() {
     .find((el) => TRANSCRIPT_LABEL.test(el.textContent || '')) || null;
 }
 
+const TRANSCRIPT_SEGMENT_SELECTOR = [
+  'ytd-transcript-segment-renderer',
+  'ytd-transcript-segment-list-renderer ytd-transcript-segment-renderer',
+  'transcript-segment-view-model',
+  '[class*="transcript-segment"]',
+].join(',');
+
+function transcriptSegments() {
+  return [...document.querySelectorAll(TRANSCRIPT_SEGMENT_SELECTOR)].filter((el) => (el.textContent || '').trim());
+}
+
 async function openTranscriptPanel(reasons) {
-  if (document.querySelector('ytd-transcript-segment-renderer')) return 'ok';
+  if (transcriptSegments().length) return 'ok';
 
   // Cách 1: nút trong mô tả (mở rộng mô tả nếu cần)
   let btn = findTranscriptButton();
@@ -187,7 +198,7 @@ async function openTranscriptPanel(reasons) {
     item.click();
   }
 
-  const ok = await waitFor(() => document.querySelector('ytd-transcript-segment-renderer'), 6000);
+  const ok = await waitFor(() => transcriptSegments().length, 6000);
   if (!ok) reasons.push('DOM: đã bấm nút bản ghi nhưng panel không hiện các đoạn');
   return ok ? 'ok' : 'failed';
 }
@@ -198,19 +209,93 @@ function parseTimestamp(text) {
   return parts.reduce((acc, v) => acc * 60 + v, 0);
 }
 
+function segmentTextAndTime(seg) {
+  const timestampEl = seg.querySelector('.segment-timestamp, [class*="timestamp"]');
+  let time = parseTimestamp(timestampEl?.textContent || '');
+  let text = (seg.querySelector('.segment-text, [class*="segment-text"]')?.textContent || '').replace(/\s+/g, ' ').trim();
+  if (time == null || !text) {
+    const raw = (seg.textContent || '').replace(/\s+/g, ' ').trim();
+    const m = raw.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
+    if (!m) return null;
+    if (time == null) time = parseTimestamp(m[1]);
+    if (!text) text = `${raw.slice(0, m.index)} ${raw.slice(m.index + m[1].length)}`.replace(/\s+/g, ' ').trim();
+  }
+  return time == null || !text ? null : { start: time, en: text };
+}
+
 function captionsFromTranscriptPanel() {
   const items = [];
-  for (const seg of document.querySelectorAll('ytd-transcript-segment-renderer')) {
-    const start = parseTimestamp(seg.querySelector('.segment-timestamp')?.textContent || '');
-    const en = (seg.querySelector('.segment-text')?.textContent || '').replace(/\s+/g, ' ').trim();
-    if (start == null || !en) continue;
-    items.push({ start, en });
+  for (const seg of transcriptSegments()) {
+    const parsed = segmentTextAndTime(seg);
+    if (parsed) items.push(parsed);
   }
   return items.map((it, i) => {
     const next = items[i + 1]?.start;
     const end = next != null ? Math.max(next, it.start + 0.5) : it.start + 3;
     return { id: i, start: it.start, end, en: it.en, vi: 'Đang dịch...' };
   });
+}
+
+// ---------- Nguồn dự phòng: đọc phụ đề đang hiển thị trên video ----------
+// YouTube đã chặn timedtext (trả 200 nhưng rỗng) nên phải đọc caption hiển thị (CC).
+const LIVE_POLL_MS = 400;
+const LIVE_CUE_SECONDS = 3;
+let livePollTimer = null, liveLastText = '', liveLastCue = null, liveTranslating = false;
+
+function visibleCaptionText() {
+  const parts = [...document.querySelectorAll('.ytp-caption-window-container .ytp-caption-segment')]
+    .map((el) => el.textContent || '');
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function ensureCaptionsOn() {
+  const btn = document.querySelector('.ytp-subtitles-button');
+  if (btn && btn.getAttribute('aria-pressed') === 'false') btn.click();
+}
+
+function stopLiveCaptionCapture() {
+  if (livePollTimer) clearInterval(livePollTimer);
+  livePollTimer = null;
+  liveLastText = '';
+  liveLastCue = null;
+}
+
+function translateQueuedCues() {
+  if (liveTranslating) return;
+  liveTranslating = true;
+  Promise.resolve(translateAll(state.loadToken)).finally(() => { liveTranslating = false; });
+}
+
+function appendLiveCue(text, at) {
+  if (liveLastCue) liveLastCue.end = Math.max(liveLastCue.end, at);
+  const cue = { start: at, end: at + LIVE_CUE_SECONDS, en: text, vi: PENDING };
+  state.rawCues.push(cue);
+  liveLastCue = cue;
+  state.captions = state.rawCues.map((c, i) => ({
+    id: i,
+    start: c.start,
+    end: c.end,
+    en: c.en,
+    vi: state.viCache.get(c.en) || c.vi || PENDING,
+  }));
+  renderTranscriptList();
+  onTimeUpdate();
+  translateQueuedCues();
+}
+
+function startLiveCaptionCapture(reasons) {
+  stopLiveCaptionCapture();
+  ensureCaptionsOn();
+  setStatus('Đang đọc phụ đề trực tiếp từ video. Hãy bật phụ đề (CC) nếu chưa thấy chữ.');
+  livePollTimer = setInterval(() => {
+    const video = state.videoEl || document.querySelector('video');
+    if (!video) return;
+    const text = visibleCaptionText();
+    if (!text || text === liveLastText) return;
+    liveLastText = text;
+    appendLiveCue(text, video.currentTime);
+  }, LIVE_POLL_MS);
+  reasons.push('đọc phụ đề trực tiếp từ video');
 }
 
 function splitCueText(cue) {
@@ -479,6 +564,7 @@ function closeOverlay() {
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
+  stopLiveCaptionCapture();
   detachVideo();
 }
 
@@ -774,10 +860,9 @@ async function loadCaptions() {
     }
 
     if (cues.length === 0) {
-      console.warn('[Trancy] Không lấy được phụ đề:', reasons);
-      setStatus(tracks.length === 0 && domResult === 'missing'
-        ? 'Video này không có phụ đề hoặc transcript.'
-        : errorText(reasons));
+      // timedtext đã bị YouTube chặn và panel bản ghi không đọc được → đọc phụ đề đang hiển thị.
+      console.warn('[Trancy] Không lấy được phụ đề từ timedtext/transcript:', reasons);
+      startLiveCaptionCapture(reasons);
       return;
     }
 
@@ -1150,6 +1235,7 @@ function tick() {
   if (videoId === state.videoId) return;
 
   if (state.open) closeOverlay();
+  stopLiveCaptionCapture();
   state.videoId = videoId;
   state.loadToken++;
   state.rawCues = [];
