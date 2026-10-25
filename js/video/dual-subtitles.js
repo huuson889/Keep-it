@@ -470,7 +470,7 @@ function resegmentBySentence(cues) {
 
   for (const cue of cues) {
     for (const piece of splitCueText(cue)) {
-      if (!buf) buf = { start: piece.start, end: piece.end, text: '' };
+      if (!buf) buf = { ...cue, start: piece.start, end: piece.end, text: '' };
       buf.text = (buf.text + ' ' + piece.text).trim();
       buf.end = piece.end;
 
@@ -485,11 +485,15 @@ function resegmentBySentence(cues) {
   if (buf && buf.text) sentences.push(buf);
 
   return sentences.map((s, i) => ({
+    ...s,
     id: i,
     start: s.start,
     end: Math.max(s.end, s.start + 0.5),
     en: s.text,
-    vi: 'Đang dịch...',
+    mainTranslationInput: s.mainNeedsTranslation ? s.text : s.mainTranslationInput,
+    secondaryTranslationInput: s.secondaryNeedsTranslation ? s.text : s.secondaryTranslationInput,
+    mainText: s.mainNeedsTranslation ? PENDING : s.text,
+    vi: s.secondaryNeedsTranslation ? PENDING : (s.vi || s.text),
   }));
 }
 
@@ -1322,6 +1326,7 @@ async function captionsFromTracks(tracks, reasons) {
   state.mainLanguage = state.sourceLanguageSetting === 'auto'
     ? (state.captionTrackLanguage || state.mainLanguage || 'en')
     : state.sourceLanguageSetting;
+  updateSubtitleLanguageLabels();
 
   return mainCues.map((cue) => {
     const originalCue = closestCue(originalCues, cue) || cue;
