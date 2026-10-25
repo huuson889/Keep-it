@@ -587,7 +587,7 @@ const OVERLAY_CSS = `
 }
 
 .yt-dual-sidebar-header {
-  padding: 10px 16px;
+  padding: 6px 16px;
   border-bottom: 1px solid #282828;
   display: flex;
   justify-content: space-between;
@@ -771,7 +771,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Right Sidebar (giao diện v1.4) -->
     <div class="yt-dual-right-sidebar">
       <div class="yt-dual-sidebar-header">
-        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
+        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
         <div class="yt-dual-actions">
           <button class="yt-dual-close-btn" title="Đóng">&times;</button>
         </div>
