@@ -109,7 +109,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Đồng bộ scrollbar của các vùng cuộn do addon quản lý: 2 px khi nghỉ, 4 px khi hover trực tiếp lên thanh. Dùng CSS chung cho content UI, Dashboard và popup; bổ sung kiểu tương ứng trong Reader và Dual Sub Shadow DOM. Không áp dụng toàn cục lên scrollbar website. Firefox native giữ dạng mảnh do giới hạn CSS.
 - File: `css/shared/scrollbars.css`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `js/video/overlay-template.js`, `js/reader/bilingual-reader.js`, `PROJECT.md`. Kèm thay đổi hướng dẫn do Huuson thêm trong `AGENTS.md` về cập nhật bản đồ khi đổi cấu trúc.
-- Kiểm tra: Chưa chạy.
+- Kiểm tra: `node --check` hai file JS đạt; manifest JSON, đường dẫn stylesheet, rule 2/4 px và `git diff --check` đạt. Chưa kiểm tra trực tiếp trên trình duyệt.
 
 **2026-10-25 | v3.4.622 | Codex sửa:**
 
