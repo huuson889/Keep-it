@@ -16,19 +16,16 @@
 - Thư mục zip: D:\Keepit\Keepit - Optimize Test
 
 ## 4. Quy tắc làm việc
-- Bắt đầu mỗi phiên: đọc AGENTS.md; trong PROJECT.md ưu tiên các mục 1–4 và các mục nhật ký mới hơn version/commit đã biết; không đọc lại toàn bộ lịch sử nếu không cần. Đọc README.md chỉ ở phần liên quan đến yêu cầu người dùng; Khi công việc liên quan đến OPT-ARENA.md, đọc các mục liên quan trước khi sửa; chỉ đọc toàn bộ khi cần đối chiếu tính nhất quán, không bắt buộc đọc lại toàn file trước từng bước.
-- Giữ câu trả lời ngắn gọn để tiết kiệm token.
-- Chỉ đọc các file liên quan trước khi sửa.
-- Thay đổi tối thiểu, có mục tiêu rõ ràng.
-- Giữ nguyên tính năng, UI và hành vi hiện có. Không đổi layout, màu, font, vị trí nút, hay văn bản đang có.
-- Claude tuyệt đối không được sửa UI, trừ khi được chỉ định
-- Khi thêm UI mới, phải giống giao diện tổng thể của app từ trước (cùng component, class, màu, font, khoảng cách với UI đang có), không thêm lung tung.
-- Khi thêm label (nhãn mục) mới, nếu không khai báo rõ, phải đặt tên label phù hợp ngắn gọn chuẩn UI/UX app hiện đại, các label phải được dịch cho mọi quốc gia tương ứng.
-- Tái sử dụng code đang chạy, không refactor không liên quan.
-- Chạy kiểm tra liên quan và báo kết quả thực tế.
-- Không nói "đã test" nếu chưa chạy test.
-- Dùng skill Codex rule khi có.
-- Với mỗi yêu cầu, nếu chưa hiểu rõ thì hỏi lại trước khi sửa.
+- Đầu mỗi phiên, đọc `AGENTS.md`; ưu tiên mục 1–4 và nhật ký mới trong `PROJECT.md`. Chỉ đọc phần liên quan trong `README.md` và `OPT-ARENA.md`.
+- Chỉ hỏi lại khi yêu cầu chưa rõ hoặc thiếu thông tin ảnh hưởng đến kết quả. Nếu yêu cầu chưa tối ưu, cảnh báo và đề xuất phương án tốt hơn.
+- Trước khi sửa, nêu version hiện tại, ngắn gọn mục tiêu, kết quả mong đợi và cách làm.
+- Chỉ đọc, sửa và kiểm tra những phần liên quan. Thay đổi tối thiểu, tái sử dụng code hiện có, không refactor ngoài phạm vi.
+- Giữ nguyên tính năng, UI và hành vi hiện tại. **Claude không được sửa UI nếu chưa được cho phép.** Agent khác cũng không tự ý thay đổi UI ngoài yêu cầu.
+- UI mới phải thống nhất với thiết kế hiện có. Label mới phải ngắn gọn, phù hợp UI/UX và được dịch sang mọi ngôn ngữ ứng dụng hỗ trợ.
+- Các AI phải sử dụng skill phù hợp đã được quy định trước.
+- Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
+- Phản hồi ngắn gọn, luôn ghi version hiện tại ở cuối; không tự đoán version.
+
 
 ## 5. Quy trình sau khi sửa
 
