@@ -741,6 +741,40 @@ const OVERLAY_CSS = `
       border-radius: 12px;
     }
 
+    /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
+    #te-speed-popup { position: absolute; right: 16px; bottom: 76px; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
+    #te-speed-popup.hidden { display: none !important; }
+    #te-speed-popup .te-speed-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    #te-speed-popup .te-speed-title { font-size: 16px; font-weight: 600; color: #1f2937; }
+    #te-speed-popup #te-speed-value { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #111827; }
+    #te-speed-popup .te-speed-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    #te-speed-popup .te-speed-step { width: 36px; height: 36px; border-radius: 9999px; border: none; background: #f3f4f6; color: #1f2937; font-weight: 700; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color .2s, transform .1s; }
+    #te-speed-popup .te-speed-step:hover { background: #e5e7eb; }
+    #te-speed-popup .te-speed-step:active { transform: scale(0.95); }
+    #te-speed-popup .te-speed-slider-wrap { flex: 1; padding: 0 4px; display: flex; align-items: center; }
+    #te-speed-popup #te-speed-slider { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; margin: 0; }
+    #te-speed-popup #te-speed-slider:focus { outline: none; }
+    #te-speed-popup #te-speed-slider::-webkit-slider-runnable-track { width: 100%; height: 6px; border-radius: 9999px; background: #E5E7EB; cursor: pointer; }
+    #te-speed-popup #te-speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #000000; margin-top: -9px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1); }
+    #te-speed-popup #te-speed-slider::-moz-range-track { width: 100%; height: 6px; border-radius: 9999px; background: #E5E7EB; cursor: pointer; }
+    #te-speed-popup #te-speed-slider::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; border: none; background: #000000; cursor: pointer; }
+    #te-speed-popup .te-speed-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    #te-speed-popup .te-speed-btn { height: 44px; border-radius: 9999px; border: none; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color .2s; }
+    #te-speed-popup .te-speed-btn:hover { background: #e5e7eb; }
+    #te-speed-popup .te-speed-btn.te-speed-normal { flex-direction: column; line-height: 1.1; font-weight: 800; text-align: center; padding: 0 4px; }
+    #te-speed-popup .te-speed-btn.active { background: #7000FF; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    #keepit-exact-overlay.theme-dark #te-speed-popup { background: #151517; border-color: rgba(31,41,55,0.8); }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-title { color: #e5e7eb; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-value { color: #ffffff; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-step { background: #222225; color: #e5e7eb; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-step:hover { background: #374151; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-slider::-webkit-slider-runnable-track { background: #374151; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-slider::-webkit-slider-thumb { background: #ffffff; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-slider::-moz-range-track { background: #374151; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-slider::-moz-range-thumb { background: #ffffff; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn { background: #222225; color: #d1d5db; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn:hover { background: #374151; }
+    #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn.active { background: #FACC15; color: #000000; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
@@ -986,6 +1020,29 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           </div>
 
         </div>
+      </div>
+    </div>
+
+    <!-- Popup tốc độ (từ speed_control_component) -->
+    <div id="te-speed-popup" class="te-speed-popup hidden">
+      <div class="te-speed-head">
+        <span class="te-speed-title">Tốc độ</span>
+        <span id="te-speed-value">1.00x</span>
+      </div>
+      <div class="te-speed-row">
+        <button id="te-speed-dec" class="te-speed-step" type="button">-</button>
+        <div class="te-speed-slider-wrap"><input type="range" id="te-speed-slider" min="0.5" max="2" step="0.05" value="1"></div>
+        <button id="te-speed-inc" class="te-speed-step" type="button">+</button>
+      </div>
+      <div class="te-speed-grid">
+        <button class="te-speed-btn" type="button" data-speed="0.5">0.5x</button>
+        <button class="te-speed-btn" type="button" data-speed="0.75">0.75x</button>
+        <button class="te-speed-btn" type="button" data-speed="0.9">0.9x</button>
+        <button class="te-speed-btn te-speed-normal" type="button" data-speed="1.0"><span>Bình</span><span>thường</span></button>
+        <button class="te-speed-btn" type="button" data-speed="1.1">1.1x</button>
+        <button class="te-speed-btn" type="button" data-speed="1.25">1.25x</button>
+        <button class="te-speed-btn" type="button" data-speed="1.5">1.5x</button>
+        <button class="te-speed-btn" type="button" data-speed="2.0">2.0x</button>
       </div>
     </div>
 

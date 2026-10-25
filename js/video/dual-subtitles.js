@@ -1206,6 +1206,28 @@ function syncPlayButton() {
   btn.querySelector('svg').innerHTML = v.paused ? PLAY_PATH : PAUSE_PATH;
 }
 
+// ---- Popup tốc độ: nút "Tốc độ" mở popup (không chuyển tuần tự nữa) ----
+const SPEED_MIN = 0.5, SPEED_MAX = 2.0;
+function setVideoSpeed(val) {
+  const sp = Math.max(SPEED_MIN, Math.min(SPEED_MAX, parseFloat(val)));
+  if (state.videoEl) state.videoEl.playbackRate = sp;
+  syncSpeedPopup();
+  syncSpeedButton();
+}
+function syncSpeedPopup() {
+  const sp = state.videoEl?.playbackRate ?? 1;
+  const val = $('te-speed-value');
+  if (val) val.textContent = `${sp.toFixed(2)}x`;
+  const sl = $('te-speed-slider');
+  if (sl) sl.value = sp;
+  uiAll('#te-speed-popup .te-speed-btn').forEach((btn) => btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.speed) - sp) < 0.02));
+}
+function toggleSpeedPopup() {
+  const p = ui('#te-speed-popup');
+  if (!p) return;
+  p.classList.toggle('hidden');
+  syncSpeedPopup();
+}
 function cycleSpeed() {
   const v = state.videoEl;
   if (!v) return;
@@ -2086,7 +2108,15 @@ function bindUI() {
   ctrl('Câu trước').addEventListener('click', seekPrevCaption);
   ctrl('Câu tiếp theo').addEventListener('click', seekNextCaption);
   ctrl('Phát/Tạm dừng').addEventListener('click', togglePlay);
-  ctrl('Tốc độ').addEventListener('click', cycleSpeed);
+  ctrl('Tốc độ').addEventListener('click', (e) => { e.stopPropagation(); toggleSpeedPopup(); });
+  $('te-speed-slider').addEventListener('input', (e) => setVideoSpeed(e.target.value));
+  $('te-speed-dec').addEventListener('click', () => setVideoSpeed((state.videoEl?.playbackRate ?? 1) - 0.05));
+  $('te-speed-inc').addEventListener('click', () => setVideoSpeed((state.videoEl?.playbackRate ?? 1) + 0.05));
+  uiAll('#te-speed-popup .te-speed-btn').forEach((btn) => btn.addEventListener('click', () => setVideoSpeed(btn.dataset.speed)));
+  overlayEl().addEventListener('click', (e) => {
+    if (e.target.closest('#te-speed-popup') || ctrl('Tốc độ')?.contains(e.target)) return;
+    ui('#te-speed-popup')?.classList.add('hidden');
+  });
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
