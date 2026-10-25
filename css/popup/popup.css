@@ -113,3 +113,6 @@ html.dark .header-status .menu-item.item-free { border-color:#303e51; background
 #status{display:none!important;}
 body,.extension-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
 *::-webkit-scrollbar{ width:var(--lhn-scrollbar-width); height:var(--lhn-scrollbar-width); }
+/* Edge/Chromium: đặt rõ cơ chế thanh cuộn cho các vùng cuộn của popup để quy tắc WebKit có hiệu lực */
+html, body, .popup-main { scrollbar-width: auto; scrollbar-color: auto; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, .popup-main::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
