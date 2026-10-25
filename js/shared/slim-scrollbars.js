@@ -43,6 +43,12 @@
     return metrics.view > 0 && metrics.extent > metrics.view + 1;
   }
 
+  function isAppViewportScroller(element, root) {
+    return root.nodeType === Node.DOCUMENT_NODE
+      && root.documentElement?.hasAttribute('data-lhn-app')
+      && element === root.scrollingElement;
+  }
+
   function clipInsets(element, axis, trackTop, trackLeft, trackHeight, trackWidth) {
     let top = 0, right = 0, bottom = 0, left = 0;
     let ancestor = element.parentElement;
@@ -168,8 +174,9 @@
       return;
     }
     const style = getComputedStyle(record.element);
-    const canY = /auto|scroll|overlay/.test(style.overflowY) && axisVisible(record.element, 'y');
-    const canX = /auto|scroll|overlay/.test(style.overflowX) && axisVisible(record.element, 'x');
+    const pageScroller = isAppViewportScroller(record.element, record.root);
+    const canY = (pageScroller || /auto|scroll|overlay/.test(style.overflowY)) && axisVisible(record.element, 'y');
+    const canX = (pageScroller || /auto|scroll|overlay/.test(style.overflowX)) && axisVisible(record.element, 'x');
     if (!canY && !canX) {
       record.element.classList.remove('lhn-slim-scrollbar-managed');
       record.y.track.hidden = true;
@@ -194,7 +201,7 @@
   function attach(element, root) {
     if (!isElement(element) || !isOwned(element, root)) return;
     const css = getComputedStyle(element);
-    if (!/auto|scroll|overlay/.test(`${css.overflowY} ${css.overflowX}`)) return;
+    if (!isAppViewportScroller(element, root) && !/auto|scroll|overlay/.test(`${css.overflowY} ${css.overflowX}`)) return;
     let record = managed.get(element);
     if (record) {
       refreshRecord(record);
