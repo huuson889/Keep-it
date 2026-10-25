@@ -164,7 +164,11 @@ const OVERLAY_CSS = `
       align-items: center;
       justify-content: space-between;
       padding: 0 16px;
-      position: relative;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      z-index: 2;
       flex-shrink: 0;
     }
 

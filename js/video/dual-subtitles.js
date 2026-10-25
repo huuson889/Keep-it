@@ -745,6 +745,9 @@ async function restoreSettings() {
 
 let settings = defaultSettings();
 let translationPopupEnabled = false;
+let temporaryTranslationPopupSnapshot = null;
+let temporaryTranslationPopupWrite = Promise.resolve();
+const TRANSLATION_MODE_KEYS = ['translationPopupEnabled', 'showOnSelect', 'translateIconEnabled'];
 
 async function refreshTranslationPopupSetting() {
   try {
@@ -755,6 +758,7 @@ async function refreshTranslationPopupSetting() {
 }
 
 async function saveTranslationPopupSetting(enabled) {
+  temporaryTranslationPopupSnapshot = null;
   translationPopupEnabled = enabled;
   if (overlayEl()) applySettings();
   try {
@@ -764,6 +768,51 @@ async function saveTranslationPopupSetting(enabled) {
     // Match Dashboard's existing exclusive translation-mode behavior.
     if (enabled) Object.assign(next, { showOnSelect: false, translateIconEnabled: false });
     await browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
+  } catch {
+    await refreshTranslationPopupSetting();
+  }
+}
+
+async function enableTemporaryTranslationPopup() {
+  if (translationPopupEnabled || temporaryTranslationPopupSnapshot) return;
+  try {
+    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
+    const current = values[GLOBAL_SETTINGS_KEY] || {};
+    if (current.translationPopupEnabled === true) return;
+    temporaryTranslationPopupSnapshot = Object.fromEntries(TRANSLATION_MODE_KEYS.map((key) => [
+      key,
+      { existed: Object.prototype.hasOwnProperty.call(current, key), value: current[key] },
+    ]));
+    const next = { ...current, translationPopupEnabled: true, showOnSelect: false, translateIconEnabled: false };
+    translationPopupEnabled = true;
+    if (overlayEl()) applySettings();
+    temporaryTranslationPopupWrite = browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
+    await temporaryTranslationPopupWrite;
+  } catch {
+    temporaryTranslationPopupSnapshot = null;
+    await refreshTranslationPopupSetting();
+  }
+}
+
+async function restoreTemporaryTranslationPopup() {
+  const snapshot = temporaryTranslationPopupSnapshot;
+  if (!snapshot) return;
+  temporaryTranslationPopupSnapshot = null;
+  try {
+    await temporaryTranslationPopupWrite;
+    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
+    const current = values[GLOBAL_SETTINGS_KEY] || {};
+    const stillTemporary = current.translationPopupEnabled === true &&
+      current.showOnSelect === false && current.translateIconEnabled === false;
+    if (!stillTemporary) return;
+    const next = { ...current };
+    for (const key of TRANSLATION_MODE_KEYS) {
+      if (snapshot[key].existed) next[key] = snapshot[key].value;
+      else delete next[key];
+    }
+    await browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
+    translationPopupEnabled = next.translationPopupEnabled === true;
+    if (overlayEl()) applySettings();
   } catch {
     await refreshTranslationPopupSetting();
   }
@@ -895,6 +944,7 @@ function openOverlay() {
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
+  void enableTemporaryTranslationPopup();
   attachVideo(video, slot);
   onTimeUpdate();
   startAppPopupObserver();
@@ -910,6 +960,7 @@ function closeOverlay() {
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
+  void restoreTemporaryTranslationPopup();
   syncAppPopupPause();
   stopLiveCaptionCapture();
   detachVideo();
@@ -1308,14 +1359,21 @@ const INNERTUBE_PLAYER = 'https://www.youtube.com/youtubei/v1/player';
 const INNERTUBE_CLIENT = { clientName: 'ANDROID', clientVersion: '20.10.38' };
 
 function decodeEntities(text) {
-  return String(text || '')
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(Number.parseInt(num, 10)));
+  const named = { amp: '&', apos: "'", gt: '>', lt: '<', nbsp: ' ', quot: '"' };
+  let decoded = String(text || '');
+  for (let pass = 0; pass < 4; pass++) {
+    const next = decoded.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (entity, code) => {
+      if (code[0] !== '#') return named[code.toLowerCase()] ?? entity;
+      const number = code[1].toLowerCase() === 'x'
+        ? Number.parseInt(code.slice(2), 16)
+        : Number.parseInt(code.slice(1), 10);
+      try { return Number.isFinite(number) ? String.fromCodePoint(number) : entity; }
+      catch { return entity; }
+    });
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
 }
 
 function parseTimedTextXml(xml) {
@@ -2037,6 +2095,12 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     if (area !== 'local') return;
     if (changes[GLOBAL_SETTINGS_KEY]) {
       translationPopupEnabled = changes[GLOBAL_SETTINGS_KEY].newValue?.translationPopupEnabled === true;
+      if (temporaryTranslationPopupSnapshot) {
+        const current = changes[GLOBAL_SETTINGS_KEY].newValue || {};
+        if (TRANSLATION_MODE_KEYS.some((key) => current[key] !== (key === 'translationPopupEnabled'))) {
+          temporaryTranslationPopupSnapshot = null;
+        }
+      }
       if (overlayEl()) applySettings();
       void refreshKeepitGate();
       void refreshSubtitleLanguageSettings();
