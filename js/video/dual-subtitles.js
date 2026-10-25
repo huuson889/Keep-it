@@ -232,6 +232,7 @@ function markSingleTrackCues(cues, language = state.captionTrackLanguage) {
   state.primaryNeedsTranslation = sourceNeedsTranslation;
   state.secondaryNeedsTranslation = targetNeedsTranslation;
   state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (language || 'en') : state.sourceLanguageSetting;
+  updateSubtitleLanguageLabels();
   return cues.map((cue) => ({
     ...cue,
     mainNeedsTranslation: sourceNeedsTranslation,
@@ -645,7 +646,7 @@ async function refreshSubtitleLanguageSettings() {
   translateQueue = [];
   updateSubtitleLanguageLabels();
 
-  if ((sourceChanged || targetSettingChanged) && state.videoId) {
+  if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
     prefetchToken++;
     state.loadingFor = null;
@@ -1385,6 +1386,9 @@ async function loadCaptions() {
 
   const token = ++state.loadToken;
   state.loadingFor = videoId;
+  state.captionTrackLanguage = '';
+  state.primaryNeedsTranslation = false;
+  state.secondaryNeedsTranslation = false;
   setStatus('Đang tải phụ đề...');
 
   const reasons = [];
@@ -1424,9 +1428,7 @@ async function loadCaptions() {
       return;
     }
 
-    if (!cues[0]?.mainNeedsTranslation && !cues[0]?.secondaryNeedsTranslation && !state.captionTrackLanguage) {
-      cues = markSingleTrackCues(cues, '');
-    } else if (!Object.hasOwn(cues[0] || {}, 'mainNeedsTranslation')) {
+    if (!Object.prototype.hasOwnProperty.call(cues[0] || {}, 'mainNeedsTranslation')) {
       cues = markSingleTrackCues(cues);
     }
 
