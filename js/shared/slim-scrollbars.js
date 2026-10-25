@@ -218,8 +218,15 @@
     if (isElement(node)) attach(node, root);
     if (!node?.querySelectorAll) return;
     if (root.nodeType === Node.DOCUMENT_NODE && !root.documentElement?.hasAttribute('data-lhn-app')) {
-      if (isElement(node) && node.matches(HOST_SELECTOR)) attach(node, root);
-      node.querySelectorAll(HOST_SELECTOR).forEach(element => attach(element, root));
+      if (isElement(node) && isOwned(node, root)) {
+        attach(node, root);
+        node.querySelectorAll('*').forEach(element => attach(element, root));
+      } else {
+        node.querySelectorAll(HOST_SELECTOR).forEach(host => {
+          attach(host, root);
+          host.querySelectorAll('*').forEach(element => attach(element, root));
+        });
+      }
       return;
     }
     node.querySelectorAll('*').forEach(element => attach(element, root));
@@ -255,7 +262,7 @@
           change.removedNodes.forEach(node => cleanup(root, node));
           change.addedNodes.forEach(node => walk(root, node));
           shouldRefresh = true;
-        } else if (isOwned(change.target, root) && !change.target.classList.contains('lhn-slim-scrollbar-track')) {
+        } else if (isOwned(change.target, root) && !change.target.closest('.lhn-slim-scrollbar-track')) {
           attach(change.target, root);
           shouldRefresh = true;
         }
@@ -263,7 +270,8 @@
       if (shouldRefresh) scheduleRefresh(state);
     });
     const target = root.nodeType === Node.DOCUMENT_NODE ? root.documentElement : root;
-    observer.observe(target, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
+    const observeAttributes = root.nodeType !== Node.DOCUMENT_NODE || !!root.documentElement?.hasAttribute('data-lhn-app');
+    observer.observe(target, { subtree: true, childList: true, attributes: observeAttributes, attributeFilter: ['class', 'style'] });
     state.observer = observer;
 
     const doc = root.nodeType === Node.DOCUMENT_NODE ? root : root.host?.ownerDocument;
