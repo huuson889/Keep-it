@@ -91,7 +91,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar input[type=search]{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid transparent;border-radius:11px;background:#f1f5f9;font:inherit;margin-bottom:8px}
     #lhn-bilingual-reading-bar .lhn-br-pop-body[data-voice-pop-body]{max-height:none;overflow:hidden}
     #lhn-bilingual-reading-bar .lhn-br-voice-list{max-height:min(300px,calc(100vh - 220px));overflow-y:auto;overflow-x:hidden;direction:ltr;scrollbar-width:thin;scrollbar-color:#cbd5e1 #f1f1f1}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar{width:6px}
+    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar{width:var(--lhn-scrollbar-width)}
     #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-track{background:#f1f1f1;border-radius:4px}
     #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
     #lhn-bilingual-reading-bar .lhn-br-voice{width:100%;height:auto;min-height:58px;justify-content:flex-start;gap:14px;border-radius:16px;text-align:left;padding:9px 12px;font-size:14px;font-weight:700}

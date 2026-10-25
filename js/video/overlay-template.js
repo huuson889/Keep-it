@@ -333,7 +333,7 @@ const OVERLAY_CSS = `
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
-    .te-modal-body::-webkit-scrollbar { width: 3px; }
+    *::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
     .te-modal-body::-webkit-scrollbar-track { background: transparent; }
     .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
 

@@ -645,7 +645,7 @@ main {
 /* Match the attached account sidebar layout and keep all dashboard filters on one row. */
 main { max-width:none; margin:0; padding-left:8px; padding-right:8px; grid-template-columns:minmax(0,.8fr) minmax(0,3fr); }
 body > header { padding-left:8px; padding-right:8px; }
-.toolbar { flex-wrap:nowrap!important; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; gap:5px; padding-bottom:4px; }
+.toolbar { flex-wrap:nowrap!important; overflow-x:auto; overflow-y:hidden; scrollbar-width:auto; gap:5px; padding-bottom:4px; }
 .toolbar select { flex:0 1 132px; width:auto; min-width:76px; max-width:145px; height:34px; padding:0 20px 0 7px; font-size:11px; }
 .toolbar .clear-filters-button { flex:0 0 34px; width:34px; height:34px; min-width:34px; }
 .toolbar .favorite-filter { flex:0 0 auto; min-height:34px; padding:6px 7px; font-size:11px; }
@@ -1418,3 +1418,4 @@ body,.extension-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,"
 .bilingual-translation-colors.is-custom-selected input[type=color]{box-shadow:0 0 0 2px #111827}
 .bilingual-preview{padding:14px 16px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}.bilingual-preview>p{margin:0 0 8px;color:#253047;font-size:14px;line-height:1.55}.bilingual-preview>.lhn-bilingual-card{margin:0;padding:10px 14px;border-left:4px solid #9c27b0;background:rgba(156,39,176,.04);border-radius:0 8px 8px 0;font-size:.96rem;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,.02)}
 html.dark .bilingual-preview{border-color:#374151;background:#111827}html.dark .bilingual-preview>p{color:#e5e7eb}
+*::-webkit-scrollbar{ width:var(--lhn-scrollbar-width); height:var(--lhn-scrollbar-width); }
