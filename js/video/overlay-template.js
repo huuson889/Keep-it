@@ -281,6 +281,11 @@ const OVERLAY_CSS = `
     .te-transcript-scroll::-webkit-scrollbar-track { background: transparent; }
     .te-transcript-scroll::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
     .te-transcript-scroll:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
+    .te-modal-body { scrollbar-width: thin; scrollbar-color: #8b70e8a8 transparent; }
+    .te-modal-body::-webkit-scrollbar { width: 4px; }
+    .te-modal-body::-webkit-scrollbar-track { background: transparent; }
+    .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
+    .te-modal-body:hover::-webkit-scrollbar-thumb { background: #8b70e8; }
 
     .te-ts-row {
       display: flex;
