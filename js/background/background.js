@@ -99,6 +99,16 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
       return { ok:true, text:await response.text() };
     } catch (error) { return { ok:false, error:String(error?.message || error) }; }
   }
+  // POST JSON tới API nội bộ của YouTube (get_transcript) — chỉ cho phép youtube.com.
+  if (message.type === "YOUTUBE_API") {
+    const url = String(message.url || "");
+    if (!/^https:\/\/(?:www\.)?youtube\.com\//.test(url)) return { ok:false, error:"URL không được phép" };
+    try {
+      const response = await fetch(url, { method:"POST", credentials:"include", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(message.body || {}) });
+      if (!response.ok) return { ok:false, error:`HTTP ${response.status}` };
+      return { ok:true, json:await response.json() };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
   if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);

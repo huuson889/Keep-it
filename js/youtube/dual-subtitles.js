@@ -886,6 +886,61 @@ function rebuildCaptions() {
   translateWindow(Math.max(0, state.activeIdx));
 }
 
+// ---------- Nguồn chính: dùng đúng endpoint transcript mà panel của YouTube đang dùng ----------
+// Trả về cue có thời gian thật (startOffsetMs/durationMs) nên danh sách sạch như bản tham chiếu.
+function fetchJson(url, body) {
+  return globalThis.LHN_MESSAGING.sendMessage({ type: 'YOUTUBE_API', url, body }).then((res) => {
+    if (!res?.ok) throw new Error(res?.error || 'Fetch thất bại');
+    return res.json;
+  });
+}
+
+function decodeParams(value) {
+  return String(value || '')
+    .replace(/\\u003d/gi, '=')
+    .replace(/\\u0026/gi, '&')
+    .replace(/\\\//g, '/')
+    .replace(/\\"/g, '"');
+}
+
+function cuesFromTranscriptResponse(data) {
+  const out = [];
+  const groups = (data?.actions || [])
+    .map((a) => a?.updateEngagementPanelAction?.content || a?.updateTranscriptPanelAction?.content)
+    .map((c) => c?.transcriptRenderer?.body?.transcriptBodyRenderer?.cueGroups)
+    .find(Boolean) || [];
+  for (const group of groups) {
+    for (const item of group?.transcriptCueGroupRenderer?.cues || []) {
+      const renderer = item?.transcriptCueRenderer;
+      if (!renderer) continue;
+      const text = (renderer?.cue?.simpleText || (renderer?.cue?.runs || []).map((x) => x?.text || '').join('') || '').replace(/\s+/g, ' ').trim();
+      const start = Number(renderer.startOffsetMs) / 1000;
+      const duration = Number(renderer.durationMs) / 1000;
+      if (!text || !Number.isFinite(start)) continue;
+      out.push({ start, end: start + (Number.isFinite(duration) && duration > 0 ? duration : 2), en: text, vi: 'Đang dịch...' });
+    }
+  }
+  return out;
+}
+
+async function transcriptFromInnertube(videoId, reasons) {
+  try {
+    const html = await fetchText(`https://www.youtube.com/watch?v=${videoId}`);
+    const key = (html.match(/"INNERTUBE_API_KEY":"([^"]+)"/) || [])[1];
+    const version = (html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/) || [])[1] || '2.20240701.00.00';
+    const rawParams = (html.match(/"getTranscriptEndpoint":\{"params":"([^"]+)"/) || [])[1];
+    if (!key || !rawParams) { reasons.push('innertube: thiếu key/params transcript'); return []; }
+    const url = `https://www.youtube.com/youtubei/v1/get_transcript?key=${encodeURIComponent(key)}&prettyPrint=false`;
+    const data = await fetchJson(url, { context: { client: { clientName: 'WEB', clientVersion: version, hl: 'en', gl: 'US' } }, params: decodeParams(rawParams) });
+    const cues = cuesFromTranscriptResponse(data);
+    if (!cues.length) reasons.push('innertube: không có cue');
+    return cues;
+  } catch (err) {
+    reasons.push('innertube: ' + err.message);
+    return [];
+  }
+}
+
 async function loadCaptions() {
   const videoId = state.videoId;
   if (!videoId) return;
@@ -896,23 +951,28 @@ async function loadCaptions() {
 
   const reasons = [];
   try {
-    const tracks = await tracksFromWatchPage(videoId, reasons);
+    // 1) Endpoint transcript của YouTube (dữ liệu có cấu trúc, sạch nhất).
+    let cues = await transcriptFromInnertube(videoId, reasons);
     if (token !== state.loadToken) return;
 
-    let cues = [];
-    if (tracks.length) {
-      const preferred = pickTrack(tracks);
-      const ordered = [preferred, ...tracks.filter((t) => t !== preferred)];
-      for (const track of ordered.slice(0, 3)) {
-        try {
-          const raw = await fetchText(track.baseUrl + '&fmt=json3');
-          if (token !== state.loadToken) return;
-          if (!raw) { reasons.push('timedtext rỗng'); continue; }
-          cues = parseCaptions(JSON.parse(raw).events);
-          if (cues.length) break;
-          reasons.push('timedtext không có dòng nào');
-        } catch (err) {
-          reasons.push('timedtext: ' + err.message);
+    // 2) timedtext cũ (nay thường rỗng) — chỉ thử khi bước 1 không có gì.
+    if (cues.length === 0) {
+      const tracks = await tracksFromWatchPage(videoId, reasons);
+      if (token !== state.loadToken) return;
+      if (tracks.length) {
+        const preferred = pickTrack(tracks);
+        const ordered = [preferred, ...tracks.filter((t) => t !== preferred)];
+        for (const track of ordered.slice(0, 3)) {
+          try {
+            const raw = await fetchText(track.baseUrl + '&fmt=json3');
+            if (token !== state.loadToken) return;
+            if (!raw) { reasons.push('timedtext rỗng'); continue; }
+            cues = parseCaptions(JSON.parse(raw).events);
+            if (cues.length) break;
+            reasons.push('timedtext không có dòng nào');
+          } catch (err) {
+            reasons.push('timedtext: ' + err.message);
+          }
         }
       }
     }
