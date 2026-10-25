@@ -1209,10 +1209,14 @@ function syncPlayButton() {
 // ---- Popup tốc độ: nút "Tốc độ" mở popup (không chuyển tuần tự nữa) ----
 const SPEED_MIN = 0.5, SPEED_MAX = 2.0;
 function setVideoSpeed(val) {
-  const sp = Math.max(SPEED_MIN, Math.min(SPEED_MAX, parseFloat(val)));
+  const sp = Math.round(Math.max(SPEED_MIN, Math.min(SPEED_MAX, parseFloat(val))) * 100) / 100;
   if (state.videoEl) state.videoEl.playbackRate = sp;
   syncSpeedPopup();
   syncSpeedButton();
+}
+function syncSpeedLabel() {
+  const label = $('te-speed-label');
+  if (label) label.textContent = `${(state.videoEl?.playbackRate ?? 1).toFixed(2)}x`;
 }
 function syncSpeedPopup() {
   const sp = state.videoEl?.playbackRate ?? 1;
@@ -1257,6 +1261,7 @@ function syncSpeedButton() {
   const v = state.videoEl;
   const btn = ctrl('Tốc độ');
   if (v && btn) btn.setAttribute('aria-label', `Tốc độ ${v.playbackRate}x`);
+  syncSpeedLabel();
 }
 
 function toggleMute() {
@@ -2320,6 +2325,15 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     if (state.open) closeOverlay();
     else openOverlay();
   });
+  // ↑/↓: tăng/giảm tốc độ 0.05 (chặn trước YouTube để không đổi âm lượng khi overlay đang mở)
+  window.addEventListener('keydown', (event) => {
+    if (!state.open || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    setVideoSpeed((state.videoEl?.playbackRate ?? 1) + (event.key === 'ArrowUp' ? 0.05 : -0.05));
+  }, true);
   document.addEventListener('keydown', (event) => {
     if (!state.open) return;
     if (event.key === 'Escape') {
@@ -2333,7 +2347,6 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
       ' ': 'Phát/Tạm dừng', k: 'Phát/Tạm dừng',
       ArrowLeft: 'Câu trước', j: 'Câu trước',
       ArrowRight: 'Câu tiếp theo', l: 'Câu tiếp theo',
-      ArrowUp: 'Audio', ArrowDown: 'Audio',
       '>': 'Tốc độ', '<': 'Tốc độ',
     };
     const buttonTitle = shortcutButtons[event.key];
