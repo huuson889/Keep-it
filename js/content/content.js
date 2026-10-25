@@ -1259,7 +1259,10 @@
     if (shadowSel && String(shadowSel).trim()) return shadowSel;
     return getSelection();
   }
-  document.addEventListener("mouseup", e => {
+  const handledSelectionMouseUps = new WeakSet();
+  function handleSelectionMouseUp(e) {
+    if (handledSelectionMouseUps.has(e)) return;
+    handledSelectionMouseUps.add(e);
     if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
@@ -1286,7 +1289,26 @@
         }
       });
     }, 20);
-  });
+  }
+  document.addEventListener("mouseup", handleSelectionMouseUp);
+  // Mouse events from a shadow tree may not reach the document listener in every host/browser.
+  // Bind directly when the bilingual subtitle host appears; the WeakSet prevents double handling
+  // when the same composed event also bubbles to document.
+  const boundSubtitleSelectionRoots = new WeakSet();
+  function bindSubtitleSelectionRoot() {
+    const root = document.getElementById("trancy-host")?.shadowRoot;
+    if (!root) return false;
+    if (boundSubtitleSelectionRoots.has(root)) return true;
+    boundSubtitleSelectionRoots.add(root);
+    root.addEventListener("mouseup", handleSelectionMouseUp);
+    return true;
+  }
+  if (!bindSubtitleSelectionRoot()) {
+    const subtitleHostObserver = new MutationObserver(() => {
+      if (bindSubtitleSelectionRoot()) subtitleHostObserver.disconnect();
+    });
+    subtitleHostObserver.observe(document.documentElement, { childList:true, subtree:true });
+  }
   document.addEventListener("mousedown", e => {
     outsideMouseDown = { x: e.clientX, y: e.clientY, wasOpen: !!panel, dismissTranslateIcon:!!translateIcon && !e.target.closest?.("#lhn-translate-icon") };
     if (outsideMouseDown.dismissTranslateIcon) { translateIcon.remove(); translateIcon = null; }
