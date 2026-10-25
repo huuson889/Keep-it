@@ -1045,6 +1045,7 @@ let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
 // Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
 // ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = radial hiện tại, 2 = cạnh viền 16:9, 3 = chưa làm (bị khóa)
 const AMBIENT_LABELS = { off: 'Tắt', '1': 'Ambient 1', '2': 'Ambient 2', '3': 'Ambient 3' };
+function isEdgeAmbient() { const m = ambientMode(); return m === '2' || m === '3'; }
 function ambientMode() {
   const m = settings.ambientMode;
   if (m === 'off' || m === '1' || m === '2' || m === '3') return m;
@@ -1057,7 +1058,7 @@ function syncAmbientUi() {
   $('te-modal-ambient')?.querySelectorAll('.te-btn-subopt').forEach((btn) => btn.classList.toggle('active', btn.dataset.ambient === mode));
 }
 function setAmbientMode(mode) {
-  if (!AMBIENT_LABELS[mode] || mode === '3') return;
+  if (!AMBIENT_LABELS[mode]) return;
   settings.ambientMode = mode;
   settings.ambient = mode !== 'off';
   saveSettings();
@@ -1071,9 +1072,10 @@ function placeAmbientEdge() {
   const r = slot.getBoundingClientRect(), rr = root.getBoundingClientRect();
   if (!r.width || !r.height) return;
   const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
-  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% khoảng đó
+  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 2) hoặc 80% (Ambient 3) khoảng đó
+  const reach = ambientMode() === '3' ? 0.8 : 0.5;
   const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
-  const boxW = r.width + 0.5 * spL + 0.5 * spR, boxH = r.height + 0.5 * spT + 0.5 * spB;
+  const boxW = r.width + reach * spL + reach * spR, boxH = r.height + reach * spT + reach * spB;
   // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
   const w = Math.min(boxW, boxH * 16 / 9), h = w * 9 / 16;
   const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -1095,7 +1097,7 @@ function drawAmbientEdge() {
   } catch { stopAmbient(); }
 }
 function placeAmbient() {
-  if (ambientMode() === '2') return placeAmbientEdge();
+  if (isEdgeAmbient()) return placeAmbientEdge();
   const root = overlayEl(), slot = ui('.te-video-slot');
   if (!root || !slot) return;
   const r = slot.getBoundingClientRect();
@@ -1105,7 +1107,7 @@ function placeAmbient() {
   root.style.setProperty('--te-amb-size', `${Math.round(Math.max(r.width, r.height) * 2.1)}px`);
 }
 function drawAmbient() {
-  if (ambientMode() === '2') return drawAmbientEdge();
+  if (isEdgeAmbient()) return drawAmbientEdge();
   const canvas = ui('.te-ambient'), v = state.videoEl;
   if (!canvas || !v || v.readyState < 2 || document.hidden) return;
   if (v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
@@ -1119,7 +1121,7 @@ function drawAmbient() {
 }
 function startAmbient() {
   stopAmbient();
-  overlayEl()?.classList.toggle('te-ambient-mode-2', ambientMode() === '2');
+  overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
   if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
   placeAmbient();

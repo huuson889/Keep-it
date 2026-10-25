@@ -1003,7 +1003,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <button class="te-btn-subopt" data-ambient="off" style="padding: 10px 0;">Tắt</button>
             <button class="te-btn-subopt" data-ambient="1" style="padding: 10px 0;">Ambient 1</button>
             <button class="te-btn-subopt" data-ambient="2" style="padding: 10px 0;">Ambient 2</button>
-            <button class="te-btn-subopt" data-ambient="3" style="padding: 10px 0;" disabled>Ambient 3</button>
+            <button class="te-btn-subopt" data-ambient="3" style="padding: 10px 0;">Ambient 3</button>
           </div>
         </div>
       </div>
