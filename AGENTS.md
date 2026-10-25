@@ -24,7 +24,7 @@
 - UI mới phải thống nhất với thiết kế hiện có. Label mới phải ngắn gọn, phù hợp UI/UX và được dịch sang mọi ngôn ngữ ứng dụng hỗ trợ.
 - Các AI phải sử dụng skill phù hợp đã được quy định trước.
 - Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
-- Phản hồi ngắn gọn, luôn ghi sửa từ version -> version; không tự đoán version.
+- Phản hồi ngắn gọn, luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
 
 
 ## 5. Quy trình sau khi sửa
