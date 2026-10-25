@@ -440,8 +440,8 @@ function startLiveCaptionCapture(reasons) {
   reasons.push('đọc phụ đề trực tiếp từ video');
 }
 
-function splitCueText(cue) {
-  const raw = cue.en.split(/(?<=[.!?…]["'”’)\]]*)\s+/);
+function splitCueText(cue, sourceText = cue.en) {
+  const raw = sourceText.split(/(?<=[.!?…]["'”’)\]]*)\s+/);
   const merged = [];
   for (const piece of raw) {
     const last = merged.length - 1;
@@ -452,7 +452,7 @@ function splitCueText(cue) {
     }
   }
 
-  const total = cue.en.length;
+  const total = sourceText.length;
   const span = cue.end - cue.start;
   let offset = 0;
   return merged.map((text) => {
@@ -471,10 +471,23 @@ function resegmentBySentence(cues) {
   let buf = null;
 
   for (const cue of cues) {
-    for (const piece of splitCueText(cue)) {
-      if (!buf) buf = { ...cue, start: piece.start, end: piece.end, text: '' };
+    const sourcePieces = splitCueText(cue);
+    const translatedText = String(cue.vi || '').trim();
+    const translatedPieces = translatedText && translatedText !== PENDING
+      ? splitCueText(cue, translatedText)
+      : [];
+    for (let pieceIndex = 0; pieceIndex < sourcePieces.length; pieceIndex++) {
+      const piece = sourcePieces[pieceIndex];
+      if (!buf) buf = { ...cue, start: piece.start, end: piece.end, text: '', translatedText: '', lastTranslatedPiece: '' };
       buf.text = (buf.text + ' ' + piece.text).trim();
       buf.end = piece.end;
+      const translatedPiece = translatedPieces.length === sourcePieces.length
+        ? translatedPieces[pieceIndex].text
+        : pieceIndex === 0 ? translatedText : '';
+      if (translatedPiece && translatedPiece !== buf.lastTranslatedPiece) {
+        buf.translatedText = (buf.translatedText + ' ' + translatedPiece).trim();
+        buf.lastTranslatedPiece = translatedPiece;
+      }
 
       const wordCount = buf.text.split(/\s+/).length;
       const tooLong = buf.end - buf.start > MAX_SENTENCE_SEC || wordCount > MAX_SENTENCE_WORDS;
@@ -495,7 +508,7 @@ function resegmentBySentence(cues) {
     mainTranslationInput: s.mainNeedsTranslation ? s.text : s.mainTranslationInput,
     secondaryTranslationInput: s.secondaryNeedsTranslation ? s.text : s.secondaryTranslationInput,
     mainText: s.mainNeedsTranslation ? PENDING : s.text,
-    vi: s.secondaryNeedsTranslation ? PENDING : (s.vi || s.text),
+    vi: s.secondaryNeedsTranslation ? PENDING : (s.translatedText || s.vi || s.text),
   }));
 }
 
