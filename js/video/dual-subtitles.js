@@ -881,6 +881,7 @@ function applySettings() {
   if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
   if (mainSw[3]) mainSw[3].checked = isVietnameseHidden();
   if (mainSw[4]) mainSw[4].checked = settings.hideControls;
+  if (mainSw[5]) mainSw[5].checked = settings.ambient !== false;
 
   // Đồng bộ menu "Tùy chọn phụ đề"
   const sub = $('te-modal-sub');
@@ -1040,7 +1041,17 @@ function detachVideo() {
 }
 
 // ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
-let ambientTimer = 0, ambientLastTime = -1;
+let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
+// Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
+function placeAmbient() {
+  const root = overlayEl(), slot = ui('.te-video-slot');
+  if (!root || !slot) return;
+  const r = slot.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  root.style.setProperty('--te-amb-x', `${Math.round(r.left + r.width / 2)}px`);
+  root.style.setProperty('--te-amb-y', `${Math.round(r.top + r.height / 2)}px`);
+  root.style.setProperty('--te-amb-size', `${Math.round(Math.max(r.width, r.height) * 2.1)}px`);
+}
 function drawAmbient() {
   const canvas = ui('.te-ambient'), v = state.videoEl;
   if (!canvas || !v || v.readyState < 2 || document.hidden) return;
@@ -1055,9 +1066,11 @@ function drawAmbient() {
 }
 function startAmbient() {
   stopAmbient();
-  const canvas = ui('.te-ambient');
-  if (!canvas || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-  canvas.classList.add('te-ambient-on');
+  const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
+  if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  placeAmbient();
+  if (typeof ResizeObserver === 'function') { ambientObserver = new ResizeObserver(placeAmbient); ambientObserver.observe(slot); }
+  root.classList.add('te-ambient-on');
   drawAmbient();
   ambientTimer = setInterval(drawAmbient, 125);
 }
@@ -1065,10 +1078,11 @@ function stopAmbient() {
   clearInterval(ambientTimer);
   ambientTimer = 0;
   ambientLastTime = -1;
+  ambientObserver?.disconnect();
+  ambientObserver = null;
+  overlayEl()?.classList.remove('te-ambient-on');
   const canvas = ui('.te-ambient');
-  if (!canvas) return;
-  canvas.classList.remove('te-ambient-on');
-  canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function setVideoTitle() {
@@ -1980,18 +1994,32 @@ function bindUI() {
     saveSettings();
     applySettings();
   });
+  mainSw[5].addEventListener('change', (e) => {
+    settings.ambient = e.target.checked;
+    saveSettings();
+    if (state.videoEl) startAmbient();
+    else stopAmbient();
+  });
 
   // Tiêu đề video: hover thì chạy qua lại nếu bị cắt
   const titleBox = ui('.te-yt-logo-box'), titleWin = ui('.te-video-title-label'), titleEl = ui('.te-video-title-text');
   if (titleBox && titleWin && titleEl) {
+    const stopTitleRun = () => { titleEl.classList.remove('te-title-run'); titleEl.querySelector('.te-title-dup')?.remove(); };
     titleBox.addEventListener('mouseenter', () => {
-      const shift = titleEl.offsetWidth - titleWin.clientWidth;
-      if (shift <= 1) return;
-      titleEl.style.setProperty('--te-title-shift', `${Math.ceil(shift)}px`);
-      titleEl.style.setProperty('--te-title-dur', `${Math.max(2, shift / 35 + 1).toFixed(1)}s`);
+      stopTitleRun();
+      if (titleEl.offsetWidth - titleWin.clientWidth <= 1) return;
+      // Nhân đôi chữ (cách 32px, khớp CSS .te-title-dup) rồi chạy đúng một vòng: đuôi nối vào đầu.
+      const loop = titleEl.offsetWidth + 32;
+      const dup = document.createElement('span');
+      dup.className = 'te-title-dup';
+      dup.setAttribute('aria-hidden', 'true');
+      dup.textContent = titleEl.textContent;
+      titleEl.appendChild(dup);
+      titleEl.style.setProperty('--te-title-shift', `${loop}px`);
+      titleEl.style.setProperty('--te-title-dur', `${Math.max(4, loop / 40).toFixed(1)}s`);
       titleEl.classList.add('te-title-run');
     });
-    titleBox.addEventListener('mouseleave', () => titleEl.classList.remove('te-title-run'));
+    titleBox.addEventListener('mouseleave', stopTitleRun);
   }
 
   // Thanh điều khiển trên video

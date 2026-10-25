@@ -116,24 +116,7 @@ const OVERLAY_CSS = `
       height: 100%;
       position: relative;
       padding-bottom: 60px;
-      overflow: hidden;
     }
-
-    /* Ambient mode: màu video làm mờ phát sáng phía sau (JS vẽ khung thu nhỏ vào canvas) */
-    .te-ambient {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      opacity: 0;
-      filter: blur(48px) saturate(1.8);
-      transform: scale(1.15);
-      transition: opacity 0.6s ease;
-    }
-    .te-ambient.te-ambient-on { opacity: 0.45; }
-    @media (prefers-reduced-motion: reduce) { .te-ambient { display: none; } }
 
     .te-video-slot {
       flex: 1;
@@ -142,13 +125,10 @@ const OVERLAY_CSS = `
       justify-content: center;
       background-color: #111;
       position: relative;
-      z-index: 1;
       overflow: hidden;
     }
 
     .te-sub-container {
-      position: relative;
-      z-index: 1;
       min-height: 140px;
       flex: 1;
       display: flex;
@@ -230,15 +210,16 @@ const OVERLAY_CSS = `
       flex-shrink: 0;
     }
 
-    /* Tiêu đề dài bị cắt thì chạy qua lại khi hover (JS đặt --te-title-shift/--te-title-dur và class te-title-run) */
+    /* Tiêu đề dài bị cắt thì chạy vòng tròn nối đuôi khi hover (JS nhân đôi chữ, đặt --te-title-shift/--te-title-dur và class te-title-run) */
     .te-video-title-label { flex: 1 1 auto; min-width: 0; overflow: hidden; }
     .te-video-title-text { display: inline-block; white-space: nowrap; }
+    .te-video-title-text .te-title-dup { margin-left: 32px; }
     .te-yt-logo-box:hover .te-video-title-text.te-title-run {
-      animation: teTitleRun var(--te-title-dur, 4s) ease-in-out infinite alternate;
+      animation: teTitleRun var(--te-title-dur, 6s) linear infinite;
     }
     @keyframes teTitleRun {
-      0%, 12% { transform: translateX(0); }
-      88%, 100% { transform: translateX(calc(-1 * var(--te-title-shift, 0px))); }
+      from { transform: translateX(0); }
+      to { transform: translateX(calc(-1 * var(--te-title-shift, 0px))); }
     }
     @media (prefers-reduced-motion: reduce) {
       .te-yt-logo-box:hover .te-video-title-text.te-title-run { animation: none; }
@@ -624,7 +605,16 @@ const OVERLAY_CSS = `
   gap: 8px;
 }
 
-.te-sidebar-logo { flex-shrink: 0; }
+.te-sidebar-logo { flex-shrink: 0; display: block; }
+
+/* Chữ canh theo chiều cao chữ hoa nên không bị thấp do metrics font; trình duyệt chưa hỗ trợ thì nhích lên nhẹ */
+.te-sidebar-title { display: block; line-height: 1.2; }
+@supports (text-box: trim-both cap alphabetic) {
+  .te-sidebar-title { text-box: trim-both cap alphabetic; }
+}
+@supports not (text-box: trim-both cap alphabetic) {
+  .te-sidebar-title { transform: translateY(-1.5px); }
+}
 
 .yt-dual-close-btn {
   background: none;
@@ -633,7 +623,13 @@ const OVERLAY_CSS = `
   font-size: 22px;
   cursor: pointer;
   margin-right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
+
+.yt-dual-close-btn svg { display: block; width: 22px; height: 22px; }
 
 .yt-dual-close-btn:hover {
   color: #fff;
@@ -748,11 +744,36 @@ const OVERLAY_CSS = `
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
+
+    /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
+    .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+    .te-ambient {
+      position: absolute;
+      left: var(--te-amb-x, 35%);
+      top: var(--te-amb-y, 30%);
+      width: var(--te-amb-size, 100vw);
+      height: var(--te-amb-size, 100vw);
+      transform: translate(-50%, -50%);
+      filter: blur(40px) saturate(1.8);
+      -webkit-mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+      mask-image: radial-gradient(circle closest-side, #000 20%, rgba(0, 0, 0, 0.55) 55%, transparent 100%);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+    }
+    #keepit-exact-overlay.te-ambient-on .te-ambient { opacity: 0.5; visibility: visible; transition: opacity 0.6s ease; }
+    /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
+    #keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
+    #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
+    #keepit-exact-overlay.te-ambient-on .te-left-section,
+    #keepit-exact-overlay.te-ambient-on .te-control-bar,
+    #keepit-exact-overlay.te-ambient-on .yt-dual-right-sidebar { background-color: transparent; }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
+    <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
+    <div class="te-ambient-layer"><canvas class="te-ambient" width="48" height="48" aria-hidden="true"></canvas></div>
     <!-- Left Section -->
     <div class="te-left-section">
-      <canvas class="te-ambient" width="48" height="27" aria-hidden="true"></canvas>
       <div class="te-video-slot"></div>
       
       <!-- Subtitle box below video -->
@@ -796,9 +817,9 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Right Sidebar (giao diện v1.4) -->
     <div class="yt-dual-right-sidebar">
       <div class="yt-dual-sidebar-header">
-        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>Keepit - Video Song Ngữ</span>
+        <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg><span class="te-sidebar-title">Keepit - Video Song Ngữ</span></span>
         <div class="yt-dual-actions">
-          <button class="yt-dual-close-btn" title="Đóng">&times;</button>
+          <button class="yt-dual-close-btn" title="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
         </div>
       </div>
       <div class="yt-dual-transcript-list" id="te-transcript-list"></div>
@@ -879,6 +900,15 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               <span>Ẩn thanh điều khiển</span>
             </div>
             <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
+          </div>
+
+          <!-- Ambient mode -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+              <span>Ambient mode</span>
+            </div>
+            <label class="te-switch"><input type="checkbox" checked><span class="te-slider"></span></label>
           </div>
           
           <div class="te-divider"></div>
