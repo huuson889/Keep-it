@@ -641,12 +641,13 @@ async function refreshSubtitleLanguageSettings() {
   let targetLanguageSetting = state.targetLanguageSetting;
   let displayLanguage = state.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
   try {
-    const keys = [STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS];
+    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
+    const keys = [STUDY_TRANSLATION_SETTINGS_KEY, settingsKey];
     const stored = await browser.storage.local.get(keys);
     const translation = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
     sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
     targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
-    const displaySettings = stored[CONFIG.STORAGE_KEYS.SETTINGS] || {};
+    const displaySettings = stored[settingsKey] || {};
     const declaredDisplayLanguage = String(displaySettings.language || '').trim().toLowerCase().replace('_', '-').split('-')[0];
     displayLanguage = globalThis.LHN_LANGUAGES?.LANGS?.some((item) => item.code === declaredDisplayLanguage)
       ? declaredDisplayLanguage
@@ -1988,7 +1989,8 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.lhnSettings) void refreshKeepitGate();
-    if (changes[STUDY_TRANSLATION_SETTINGS_KEY] || changes[CONFIG.STORAGE_KEYS.SETTINGS]) void refreshSubtitleLanguageSettings();
+    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
+    if (changes[STUDY_TRANSLATION_SETTINGS_KEY] || changes[settingsKey]) void refreshSubtitleLanguageSettings();
   });
   window.addEventListener('resize', () => { if (state.videoEl) syncVideoAspect(state.videoEl); });
 }
