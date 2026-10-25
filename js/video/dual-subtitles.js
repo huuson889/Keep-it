@@ -609,29 +609,31 @@ function translateVisibleRows() {
 function updateSubtitleLanguageLabels() {
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const fill = (select, value) => {
-    if (!select) return;
-    select.setAttribute('aria-label', t(select.id === 'te-lang-source-select' ? 'sourceLanguage' : 'targetLanguage'));
+  const fill = (picker, valueNode, menu, value, labelKey) => {
+    if (!picker || !valueNode || !menu) return;
     const options = [['auto', t('autoLanguage')]];
     for (const language of languages?.LANGS || []) {
       const labelKey = { en: 'languageEnglish', vi: 'languageVietnamese', ko: 'languageKorean' }[language.code];
       options.push([language.code, `${language.flag} ${t(labelKey || language.code)}`]);
     }
     const selected = value === 'same' ? 'auto' : value;
-    if (select.dataset.optionsLanguage !== state.displayLanguage) {
-      select.replaceChildren(...options.map(([code, label]) => {
-        const option = document.createElement('option');
-        option.value = code;
-        option.textContent = label;
-        return option;
-      }));
-      select.dataset.optionsLanguage = state.displayLanguage;
-    }
-    select.value = selected;
-    select.dataset.lastHandledValue = selected;
+    const selectedLabel = options.find(([code]) => code === selected)?.[1] || options[0][1];
+    picker.setAttribute('aria-label', t(labelKey));
+    picker.dataset.value = selected;
+    valueNode.textContent = selectedLabel;
+    menu.replaceChildren(...options.map(([code, label]) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'te-language-picker-option';
+      option.dataset.languageValue = code;
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', String(code === selected));
+      option.textContent = label;
+      return option;
+    }));
   };
-  fill($('te-lang-source-select'), state.sourceLanguageSetting);
-  fill($('te-lang-target-select'), state.targetLanguageSetting);
+  fill($('te-lang-source-picker'), $('te-lang-source-value'), $('te-lang-source-options'), state.sourceLanguageSetting, 'sourceLanguage');
+  fill($('te-lang-target-picker'), $('te-lang-target-value'), $('te-lang-target-options'), state.targetLanguageSetting, 'targetLanguage');
 }
 
 async function refreshSubtitleLanguageSettings() {
@@ -1702,19 +1704,51 @@ function bindUI() {
     subtitleLanguageSaveQueue = subtitleLanguageSaveQueue.then(save, save);
     return subtitleLanguageSaveQueue;
   };
-  const bindLanguageSelect = (select, key) => {
-    const handle = (event) => {
+  const languagePickers = [
+    { button: $('te-lang-source-picker'), menu: $('te-lang-source-options'), key: 'sourceLanguage' },
+    { button: $('te-lang-target-picker'), menu: $('te-lang-target-options'), key: 'targetLanguage' },
+  ];
+  const closeLanguagePickers = () => languagePickers.forEach(({ button, menu }) => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  });
+  languagePickers.forEach(({ button, menu, key }) => {
+    button.addEventListener('click', (event) => {
       event.stopPropagation();
-      const value = event.currentTarget.value;
-      if (event.currentTarget.dataset.lastHandledValue === value) return;
-      event.currentTarget.dataset.lastHandledValue = value;
-      saveSubtitleLanguage(key, value, event.currentTarget);
+      const shouldOpen = menu.hidden;
+      closeLanguagePickers();
+      menu.hidden = !shouldOpen;
+      button.setAttribute('aria-expanded', String(shouldOpen));
+    });
+    menu.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-language-value]');
+      if (!option) return;
+      event.stopPropagation();
+      const value = option.dataset.languageValue;
+      closeLanguagePickers();
+      saveSubtitleLanguage(key, value, button);
+    });
+  });
+  modalLang.addEventListener('click', (event) => {
+    if (!event.target.closest('.te-language-picker')) closeLanguagePickers();
+  });
+  const saveSubtitleLanguage = (key, value, button) => {
+    const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'en', 'vi', 'ko'];
+    if (!allowed.includes(value)) return;
+    const save = async () => {
+      try {
+        const stored = await browser.storage.local.get(STUDY_TRANSLATION_SETTINGS_KEY);
+        const current = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
+        await browser.storage.local.set({ [STUDY_TRANSLATION_SETTINGS_KEY]: { ...current, [key]: value } });
+        await refreshSubtitleLanguageSettings();
+      } catch (error) {
+        console.warn(`Could not save subtitle ${key}`, error);
+        updateSubtitleLanguageLabels();
+      }
     };
-    select?.addEventListener('input', handle, true);
-    select?.addEventListener('change', handle, true);
+    subtitleLanguageSaveQueue = subtitleLanguageSaveQueue.then(save, save);
+    return subtitleLanguageSaveQueue;
   };
-  bindLanguageSelect($('te-lang-source-select'), 'sourceLanguage');
-  bindLanguageSelect($('te-lang-target-select'), 'targetLanguage');
 
   // Nút chọn trong nhóm: chỉ đổi trạng thái active (giữ như UI gốc)
   uiAll('.te-btn-group, .te-export-tab-group').forEach((group) => {

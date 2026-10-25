@@ -64,6 +64,11 @@ const OVERLAY_CSS = `
     #trancy-exact-overlay.theme-light .te-card-box { background: #ffffff; border: 1px solid #e5e7eb; }
     #trancy-exact-overlay.theme-light .te-input-select { background: #ffffff; border: 1px solid #e5e7eb; color: #1f2937; }
     #te-modal-lang .te-modal-box, #te-modal-lang .te-modal-body, #te-modal-lang .te-card-box { overflow: visible; }
+    #trancy-exact-overlay.theme-light .te-language-picker-button { background: #fff; border: 1px solid #e5e7eb; color: #374151; }
+    #trancy-exact-overlay.theme-light .te-language-picker-menu { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+    #trancy-exact-overlay.theme-light .te-language-picker-option { color: #374151; }
+    #trancy-exact-overlay.theme-light .te-language-picker-option:hover,
+    #trancy-exact-overlay.theme-light .te-language-picker-option[aria-selected="true"] { background: #f3f4f6; }
 
     /* --- DARK THEME --- */
     #trancy-exact-overlay.theme-dark {
@@ -97,6 +102,11 @@ const OVERLAY_CSS = `
     #trancy-exact-overlay.theme-dark .te-btn-subopt.active { background: #3f3f46; color: #fff; }
     #trancy-exact-overlay.theme-dark .te-card-box { background: #27272a; border: 1px solid #3f3f46; }
     #trancy-exact-overlay.theme-dark .te-input-select { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
+    #trancy-exact-overlay.theme-dark .te-language-picker-button { background: #27272a; border: 1px solid #3f3f46; color: #f3f4f6; }
+    #trancy-exact-overlay.theme-dark .te-language-picker-menu { background: #27272a; border: 1px solid #3f3f46; box-shadow: 0 8px 20px rgba(0,0,0,.55); }
+    #trancy-exact-overlay.theme-dark .te-language-picker-option { color: #f3f4f6; }
+    #trancy-exact-overlay.theme-dark .te-language-picker-option:hover,
+    #trancy-exact-overlay.theme-dark .te-language-picker-option[aria-selected="true"] { background: #3f3f46; }
 
     /* Left Section Layout */
     .te-left-section {
@@ -402,6 +412,12 @@ const OVERLAY_CSS = `
       border-radius: 12px;
       overflow: hidden;
     }
+
+    .te-language-picker { position: relative; z-index: 3; }
+    .te-language-picker-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 132px; max-width: 170px; padding: 7px 10px; border-radius: 8px; font-size: 13.5px; cursor: pointer; }
+    .te-language-picker-menu { position: absolute; top: calc(100% + 4px); right: 0; min-width: 170px; padding: 4px; border-radius: 8px; z-index: 1000002; }
+    .te-language-picker-menu[hidden] { display: none !important; }
+    .te-language-picker-option { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 5px; background: transparent; text-align: left; font-size: 13px; cursor: pointer; }
 
     .te-color-pill {
       width: 32px;
@@ -1034,7 +1050,10 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg>
                 <span>Phụ đề chính</span>
               </div>
-              <select id="te-lang-source-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề chính" style="position: relative; z-index: 2; pointer-events: auto; max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
+              <div class="te-language-picker">
+                <button type="button" class="te-language-picker-button" id="te-lang-source-picker" aria-haspopup="listbox" aria-expanded="false"><span id="te-lang-source-value"></span><span aria-hidden="true">⌄</span></button>
+                <div class="te-language-picker-menu" id="te-lang-source-options" role="listbox" hidden></div>
+              </div>
             </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer;">
@@ -1042,7 +1061,10 @@ const OVERLAY_HTML = `<div id="trancy-exact-overlay" class="theme-light">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span>Phụ đề dịch</span>
               </div>
-              <select id="te-lang-target-select" class="te-input-select" aria-label="Ngôn ngữ phụ đề dịch" style="position: relative; z-index: 2; pointer-events: auto; max-width: 170px; padding: 7px 28px 7px 10px; border-radius: 8px; font-size: 13.5px; outline: none; cursor: pointer;"></select>
+              <div class="te-language-picker">
+                <button type="button" class="te-language-picker-button" id="te-lang-target-picker" aria-haspopup="listbox" aria-expanded="false"><span id="te-lang-target-value"></span><span aria-hidden="true">⌄</span></button>
+                <div class="te-language-picker-menu" id="te-lang-target-options" role="listbox" hidden></div>
+              </div>
             </div>
           </div>
         </div>
