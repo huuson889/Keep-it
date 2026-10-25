@@ -751,7 +751,7 @@ const OVERLAY_CSS = `
       position: absolute;
       left: var(--te-amb-x, 35%);
       top: var(--te-amb-y, 30%);
-      width: var(--te-amb-size, 100vw);
+      width: calc(var(--te-amb-size, 100vw)*16/9);
       height: var(--te-amb-size, 100vw);
       transform: translate(-50%, -50%);
       filter: blur(40px) saturate(1.8);
