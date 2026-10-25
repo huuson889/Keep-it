@@ -625,6 +625,7 @@ function openOverlay() {
   state.open = true;
   attachVideo(video, slot);
   setVideoTitle();
+  extendLoadedWindow();
   if (state.captions.length === 0 && state.loadingFor !== state.videoId) loadCaptions();
 }
 
@@ -813,6 +814,8 @@ function onTimeUpdate() {
     setActiveCaption(idx);
     translateWindow(idx);
   }
+  // Overlay đang mở: giữ cửa sổ phụ đề trước vị trí phát 10 phút.
+  if (state.open) extendLoadedWindow();
 }
 
 function setActiveCaption(idx) {
@@ -886,6 +889,95 @@ function buildCaptions() {
     vi: state.viCache.get(c.en) || PENDING,
   }));
   renderTranscriptList();
+}
+
+// ---------- Làm sạch, cửa sổ hiển thị và prefetch ----------
+// Chuẩn hoá cue tải về: bỏ rỗng/sai thời gian, sắp xếp, cắt chồng lấn, gộp câu trùng liền kề.
+function cleanCues(list) {
+  const cleaned = [];
+  for (const cue of list || []) {
+    const text = String(cue?.en || '').replace(/\s+/g, ' ').trim();
+    const start = Number(cue?.start);
+    if (!text || !Number.isFinite(start) || start < 0) continue;
+    const end = Number(cue?.end);
+    cleaned.push({ start, end: Number.isFinite(end) && end > start ? end : start + 2, en: text, vi: PENDING });
+  }
+  cleaned.sort((a, b) => a.start - b.start);
+  for (let i = 0; i < cleaned.length - 1; i++) {
+    const next = cleaned[i + 1];
+    if (next.start > cleaned[i].start && cleaned[i].end > next.start) cleaned[i].end = next.start;
+  }
+  return dedupeSentences(cleaned);
+}
+
+// Chỉ dựng danh sách cho phần đã nạp (cửa sổ), không render toàn bộ video dài.
+function applyLoadedWindow() {
+  if (!state.allCues.length) return;
+  const windowCues = state.allCues.filter((cue) => loadedUntil <= 0 || cue.start < loadedUntil);
+  if (!windowCues.length) return;
+  state.rawCues = windowCues;
+  buildCaptions();
+  onTimeUpdate();
+  translateWindow(Math.max(0, state.activeIdx));
+}
+
+// Khi overlay mở: nới cửa sổ tới vị trí đang phát + 10 phút (chỉ nới, không thu lại).
+function extendLoadedWindow() {
+  if (!state.allCues.length) return;
+  const video = state.videoEl || document.querySelector('video');
+  const current = Number(video?.currentTime) || 0;
+  const duration = Number.isFinite(video?.duration) ? video.duration : Infinity;
+  const target = Math.min(duration, current + LOOKAHEAD_SECONDS);
+  if (target <= loadedUntil + 5) return;
+  loadedUntil = Math.max(loadedUntil, target);
+  applyLoadedWindow();
+}
+
+function storeTranscript(videoId, cues) {
+  if (!videoId || !cues.length) return;
+  transcriptCache.set(videoId, cues);
+  while (transcriptCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptCache.delete(transcriptCache.keys().next().value);
+}
+
+function takeCachedTranscript(videoId) {
+  const cached = transcriptCache.get(videoId);
+  if (!cached?.length) return null;
+  return cached;
+}
+
+function schedulePrefetch(videoId) {
+  if (prefetchTimer) clearTimeout(prefetchTimer);
+  prefetchToken++;
+  prefetchTimer = window.setTimeout(() => { void prefetchTranscript(videoId); }, 1500);
+}
+
+// Ngầm tải phụ đề khi vừa mở video; người dùng không thấy thay đổi nào trên trang.
+async function prefetchTranscript(videoId) {
+  if (!videoId || keepitSiteDisabled) return;
+  if (state.videoId !== videoId) return;
+  const cached = takeCachedTranscript(videoId);
+  if (cached) {
+    state.allCues = cached;
+    loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
+    applyLoadedWindow();
+    return;
+  }
+  const video = document.querySelector('video');
+  if (video?.duration === Infinity) return; // livestream: không có transcript
+  const token = prefetchToken;
+  const reasons = [];
+  const cues = await transcriptFromPlayerApi(videoId, reasons);
+  if (token !== prefetchToken || state.videoId !== videoId) return;
+  const cleaned = cleanCues(cues);
+  if (!cleaned.length) {
+    console.info('[Trancy] Prefetch chưa lấy được phụ đề, sẽ thử lại khi mở panel:', reasons.join(' | ') || 'không rõ lý do');
+    return;
+  }
+  storeTranscript(videoId, cleaned);
+  state.allCues = cleaned;
+  loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
+  applyLoadedWindow();
+  console.info('[Trancy] Prefetch xong:', cleaned.length, 'cue (5 phút đầu sẵn sàng)');
 }
 
 function rebuildCaptions() {
@@ -978,6 +1070,16 @@ async function loadCaptions() {
   const videoId = state.videoId;
   if (!videoId) return;
 
+  // Đã prefetch xong cho video này: hiện ngay, không gọi mạng lại.
+  const cached = takeCachedTranscript(videoId);
+  if (cached) {
+    state.allCues = cached;
+    loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
+    state.loadingFor = null;
+    applyLoadedWindow();
+    return;
+  }
+
   const token = ++state.loadToken;
   state.loadingFor = videoId;
   setStatus('Đang tải phụ đề...');
@@ -1023,14 +1125,25 @@ async function loadCaptions() {
 
     if (cues.length === 0) {
       // Cùng đường: đọc phụ đề đang hiển thị (nguồn cuối, chất lượng kém hơn).
-      console.warn('[Trancy] Không lấy được phụ đề từ innertube/panel/timedtext:', reasons);
+      console.warn('[Trancy] Không lấy được phụ đề từ player/panel/timedtext:', reasons);
+      state.allCues = [];
+      loadedUntil = 0;
       startLiveCaptionCapture(reasons);
       return;
     }
 
-    state.rawCues = cues;
-    console.info('[Trancy] Nguồn phụ đề đã dùng:', cues.length, 'cue |', reasons.length ? reasons.join(' | ') : 'innertube get_transcript');
-    buildCaptions();
+    const cleaned = cleanCues(cues);
+    if (!cleaned.length) {
+      state.allCues = [];
+      loadedUntil = 0;
+      startLiveCaptionCapture([...reasons, 'danh sách cue rỗng sau khi làm sạch']);
+      return;
+    }
+    storeTranscript(videoId, cleaned);
+    state.allCues = cleaned;
+    loadedUntil = Math.max(loadedUntil, Math.min(PRELOAD_SECONDS, cleaned[cleaned.length - 1].end || PRELOAD_SECONDS));
+    console.info('[Trancy] Nguồn phụ đề đã dùng:', cleaned.length, 'cue |', reasons.length ? reasons.join(' | ') : 'player API');
+    applyLoadedWindow();
     state.loadingFor = null;
     translateWindow(0, token);
   } catch (err) {
@@ -1409,10 +1522,15 @@ function tick() {
   state.videoId = videoId;
   state.loadToken++;
   state.rawCues = [];
+  state.allCues = [];
   state.captions = [];
   state.activeIdx = -1;
   state.viCache = new Map();
   state.loadingFor = null;
+  loadedUntil = 0;
+  if (prefetchTimer) { clearTimeout(prefetchTimer); prefetchTimer = 0; }
+  prefetchToken++;
+  if (videoId) schedulePrefetch(videoId);
 
   if (overlayEl()) {
     setStatus('');
