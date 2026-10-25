@@ -39,9 +39,12 @@ const state = {
   activeIdx: -1,
   viCache: new Map(),
   sourceLanguageSetting: 'auto',
+  targetLanguageSetting: 'auto',
   targetLanguage: 'en',
   primaryNeedsTranslation: false,
+  secondaryNeedsTranslation: false,
   captionTrackLanguage: '',
+  mainLanguage: 'en',
   loadToken: 0,
   loadingFor: null,
   loop: false,
@@ -573,42 +576,46 @@ function translateVisibleRows() {
 }
 
 function updateSubtitleLanguageLabels() {
-  const language = globalThis.LHN_LANGUAGES?.LANGS?.find((item) => item.code === state.targetLanguage);
-  const label = language?.native || language?.name || state.targetLanguage;
+  const languageLabel = (code) => {
+    const language = globalThis.LHN_LANGUAGES?.LANGS?.find((item) => item.code === code);
+    return language?.native || language?.name || code;
+  };
   const sourceLabel = $('te-lang-source-value');
   const targetLabel = $('te-lang-target-value');
-  if (sourceLabel) sourceLabel.textContent = label;
-  if (targetLabel) targetLabel.textContent = label;
+  if (sourceLabel) sourceLabel.textContent = languageLabel(state.mainLanguage);
+  if (targetLabel) targetLabel.textContent = languageLabel(state.targetLanguage);
 }
 
 async function refreshSubtitleLanguageSettings() {
   let sourceLanguageSetting = 'auto';
+  let targetLanguageSetting = 'auto';
   let targetLanguage = globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
   try {
     const keys = [STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS];
     const stored = await browser.storage.local.get(keys);
     const translation = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
     sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
+    targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
     const displaySettings = stored[CONFIG.STORAGE_KEYS.SETTINGS] || {};
-    targetLanguage = sourceLanguageSetting === 'auto'
-      ? (globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || targetLanguage)
-      : sourceLanguageSetting;
+    const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(displaySettings) || targetLanguage;
+    targetLanguage = ['auto', 'same'].includes(targetLanguageSetting) ? displayLanguage : targetLanguageSetting;
   } catch {}
 
   const sourceChanged = sourceLanguageSetting !== state.sourceLanguageSetting;
+  const targetSettingChanged = targetLanguageSetting !== state.targetLanguageSetting;
   const targetChanged = targetLanguage !== state.targetLanguage;
-  if (!sourceChanged && !targetChanged) {
+  if (!sourceChanged && !targetSettingChanged && !targetChanged) {
     updateSubtitleLanguageLabels();
     return;
   }
   state.sourceLanguageSetting = sourceLanguageSetting;
+  state.targetLanguageSetting = targetLanguageSetting;
   state.targetLanguage = targetLanguage;
-  state.primaryNeedsTranslation = !!state.captionTrackLanguage && state.captionTrackLanguage !== targetLanguage;
   translationSettingsRevision++;
   translateQueue = [];
   updateSubtitleLanguageLabels();
 
-  if (sourceChanged && state.videoId) {
+  if ((sourceChanged || targetSettingChanged) && state.videoId) {
     state.loadToken++;
     prefetchToken++;
     state.loadingFor = null;
@@ -622,7 +629,7 @@ async function refreshSubtitleLanguageSettings() {
     return;
   }
 
-  if (targetChanged && state.rawCues.length) {
+  if ((targetChanged || sourceChanged || targetSettingChanged) && state.rawCues.length) {
     const activeIndex = state.activeIdx;
     state.captions = [];
     buildCaptions();
