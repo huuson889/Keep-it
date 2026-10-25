@@ -175,8 +175,9 @@ const OVERLAY_CSS = `
       top: 0;
       left: 0;
       width: 100%;
-      height: 3px;
+      height: 4px;
       background: rgba(139, 92, 246, 0.2);
+      cursor: pointer;
     }
 
     .te-progress-fill {
