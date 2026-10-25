@@ -584,7 +584,6 @@ const OVERLAY_CSS = `
   width: 400px;
   height: 100%;
   background-color: #121212;
-  border-left: 1px solid #282828;
   display: flex;
   flex-direction: column;
 }
