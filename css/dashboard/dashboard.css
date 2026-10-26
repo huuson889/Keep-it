@@ -1149,7 +1149,7 @@ html.dark .settings-action-button:hover { background:#374151; }
 
 /* Keep the Settings content in the flexible right-hand column, independent of dashboard main-grid rules. */
 .settings-window-content { display:block!important; flex:1 1 0%; width:0; min-width:0; max-width:none; align-self:stretch; box-sizing:border-box; }
-.settings-panel-page { width:100%; max-width:none; }
+.settings-panel-page { width:100%; max-width:none; margin-top: 16px;}
 .settings-profile-avatar { width:40px; height:40px; font-size:17px; }
 .settings-profile-avatar:not(.profile-avatar-guest) { background:#64748b; }
 .settings-profile-avatar.profile-avatar-guest { background:#f1f5f9; color:#94a3b8; }
