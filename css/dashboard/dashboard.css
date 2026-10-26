@@ -1094,8 +1094,14 @@ html.dark .settings-language-row { border-color:#1f2937; color:#d1d5db; }
 html.dark .settings-language-search { border-color:#303e51; background:#0f172a; color:#e2e8f0; }
 html.dark .settings-language-search:focus { border-color:#a299ec; }
 html.dark .settings-language-search::placeholder { color:#64748b; }
-.settings-search { margin:0 0 16px; }
-.settings-search .settings-language-search { padding-right:9px; }
+.settings-search { --settings-pad-y:28px; position:sticky; top:calc(-1 * var(--settings-pad-y)); z-index:20; margin:calc(-1 * var(--settings-pad-y)) -3px 0; padding:var(--settings-pad-y) 3px 16px; background:#fff; }
+@media(max-width:700px) { .settings-search { --settings-pad-y:20px; } }
+@media(max-width:520px) { .settings-search { --settings-pad-y:16px; } }
+html.dark .settings-search { background:#111827; }
+.settings-search .settings-language-search { height:40px; padding-left:38px; padding-right:9px; }
+.settings-search-icon { position:absolute; top:calc(var(--settings-pad-y) + 20px); left:16px; width:16px; height:16px; transform:translateY(-50%); color:#52627a; pointer-events:none; }
+html.dark .settings-search-icon { color:#94a3b8; }
+html.dark .settings-window-content mark.lhn-search-match { color:#111827; }
 .settings-search-hidden { display:none!important; }
 .settings-window-content.is-searching .dashboard-shortcut-reset-row { display:none; }
 .settings-window-content.is-searching .settings-panel-page:not(.has-search-match) { display:none!important; }

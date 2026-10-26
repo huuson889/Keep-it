@@ -78,7 +78,35 @@
       const groupOf = row => row.closest(".settings-subsection"), panelOf = row => row.closest(".settings-panel-page");
       // Tiêu đề h3 gần nhất phía trên hàng (một nhóm có thể chứa nhiều h3)
       const headingOf = row => { const heads = [...(groupOf(row)?.querySelectorAll("h3") || [])].filter(head => head.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING); return heads.length ? heads[heads.length - 1].textContent : ""; };
+      // Tô sáng kết quả bằng mark.lhn-search-match (cùng kiểu Dashboard/sidebar); khớp không phân biệt hoa thường và dấu
+      const fold = value => String(value).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+      function unmark() {
+        content.querySelectorAll("mark.lhn-search-match").forEach(mark => { const parent = mark.parentNode; mark.replaceWith(document.createTextNode(mark.textContent)); parent.normalize(); });
+      }
+      function markMatches(query) {
+        const needle = LHN_INDEX_SEARCH.normalize(query); if (!needle) return;
+        content.querySelectorAll(".has-search-match :is(h2, h3, .settings-panel-heading p, strong, small)").forEach(root => {
+          if (root.closest(".settings-search-hidden, [hidden]:not(.settings-panel-page), button, select, template")) return;
+          const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+          while (walker.nextNode()) nodes.push(walker.currentNode);
+          nodes.forEach(node => {
+            const text = node.nodeValue, folded = [], origin = [];
+            for (let i = 0; i < text.length; i++) for (const char of fold(text[i])) { folded.push(char); origin.push(i); }
+            const haystack = folded.join(""), fragment = document.createDocumentFragment(); let from = 0, at, last = 0;
+            while ((at = haystack.indexOf(needle, from)) !== -1) {
+              const start = origin[at], end = origin[at + needle.length - 1] + 1;
+              if (start > last) fragment.appendChild(document.createTextNode(text.slice(last, start)));
+              const mark = document.createElement("mark"); mark.className = "lhn-search-match"; mark.textContent = text.slice(start, end); fragment.appendChild(mark);
+              last = end; from = at + needle.length;
+            }
+            if (!last) return;
+            if (last < text.length) fragment.appendChild(document.createTextNode(text.slice(last)));
+            node.replaceWith(fragment);
+          });
+        });
+      }
       function clear() {
+        unmark();
         content.classList.remove("is-searching");
         content.querySelectorAll(".settings-search-hidden,.has-search-match").forEach(node => node.classList.remove("settings-search-hidden", "has-search-match"));
         if (empty) empty.hidden = true;
@@ -86,6 +114,7 @@
       function apply() {
         const query = input.value;
         input.setAttribute("aria-label", t("settingsSearchPlaceholder"));
+        unmark();
         if (!LHN_INDEX_SEARCH.normalize(query)) { clear(); return; }
         const rows = [...content.querySelectorAll(SEARCH_ROWS)];
         const rowIndex = LHN_INDEX_SEARCH.createIndex(rows, row => [row.querySelector("strong")?.textContent || row.textContent, text(row, "small"), headingOf(row), panelOf(row) ? text(panelOf(row), ".settings-panel-heading") : ""], row => row);
@@ -108,6 +137,7 @@
           if (visible) anyPanel = true;
         });
         content.classList.add("is-searching");
+        markMatches(query);
         if (empty) empty.hidden = anyPanel;
       }
       const debouncedApply = LHN_INDEX_SEARCH.debounce(apply, 200);
