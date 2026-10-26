@@ -139,7 +139,7 @@ const OVERLAY_CSS = `
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px 40px;
+      padding: 16px 10px;
       text-align: center;
     }
 
