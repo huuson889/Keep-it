@@ -743,7 +743,7 @@ const OVERLAY_CSS = `
     }
 
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
-    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
+    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 16px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
     #te-speed-popup.hidden { display: none !important; }
     #te-speed-popup .te-speed-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     #te-speed-popup .te-speed-title { font-size: 16px; font-weight: 600; color: #1f2937; }
