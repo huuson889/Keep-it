@@ -72,6 +72,7 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar,#lhn-bilingual-reading-bar *{font-family:var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif)!important}
     #lhn-bilingual-reading-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:2147483646;display:none;align-items:center;gap:6px;padding:7px 10px;border:1px solid rgba(148,163,184,.35);border-radius:999px;background:#fff;color:#334155;font:500 13px/1.2 var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);box-shadow:0 0 10px rgba(15, 23, 42, 0.33);user-select:none}
     #lhn-bilingual-reading-bar.lhn-show{display:flex;animation:lhnBrSlide .25s ease}
+    .lhn-br-voice-country{display:block;font-weight:600;}
     #lhn-bilingual-reading-bar button{position:relative;border:0;border-radius:999px;padding:7px;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px}
     #lhn-bilingual-reading-bar button:hover{background:rgba(148,163,184,.18)}
     #lhn-bilingual-reading-bar button.lhn-br-key-press{animation:lhnBrButtonPress .18s ease-out}
@@ -331,13 +332,37 @@ const FLAG_SVGS = {
       button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
     });
     const flagMissLogged = new Set(); // debug: log một lần cho mỗi vùng thiếu cờ
-    systemVoices.filter(voice => `${voice.name} ${voice.lang}`.toLocaleLowerCase().includes(query)).forEach(voice => {
+    const escVoiceHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    // Tìm kiếm giọng trình duyệt: chuẩn hóa (bỏ dấu, chữ thường) và gom tên giọng, mã vùng, mã ngôn ngữ, tên quốc gia/ngôn ngữ (ngôn ngữ hiển thị + tiếng Anh)
+    const normVoiceQuery = (text) => String(text || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+    const voiceShortName = (voice) => (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name || "";
+    const voiceSearchText = (voice) => {
+      const parts = (voice.lang || "").split(/[-_]/);
+      const baseLang = (parts[0] || "").toLowerCase(), region = (parts[1] || "").toUpperCase();
+      const names = [];
+      const add = (dn, code) => { try { const v = dn && code ? dn.of(code) : ""; if (v) names.push(v); } catch {} };
+      let regionEn = null, langEn = null;
+      try { regionEn = new Intl.DisplayNames(["en"], { type:"region" }); langEn = new Intl.DisplayNames(["en"], { type:"language" }); } catch {}
+      add(voiceRegionNames, region); add(voiceLangNames, baseLang); add(regionEn, region); add(langEn, baseLang);
+      return normVoiceQuery([voice.name, voice.lang, region, baseLang, voiceShortName(voice), ...names].join(" "));
+    };
+    let voiceRegionNames = null, voiceLangNames = null;
+    try { voiceRegionNames = new Intl.DisplayNames([displayLang], { type:"region" }); voiceLangNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
+    systemVoices.filter(voice => voiceSearchText(voice).includes(normVoiceQuery(query))).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
       if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
+      {
+        const baseLang = (voice.lang || "").split(/[-_]/)[0].toLowerCase();
+        let langLabel = baseLang; try { langLabel = voiceLangNames?.of(baseLang) || baseLang; } catch {}
+        let countryLabel = region || langLabel; try { if (region) countryLabel = voiceRegionNames?.of(region) || region; } catch {}
+        const shortVoice = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name;
+        button.innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span class="lhn-br-voice-text"><span class="lhn-br-voice-country">${escVoiceHtml(countryLabel)}</span><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${isSelected ? "✓" : ""}`;
+        button.title = `${voice.name} · ${voice.lang}`;
+      }
       button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
