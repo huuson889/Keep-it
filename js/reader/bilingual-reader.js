@@ -165,7 +165,7 @@ const FLAG_SVGS = {
   bar.querySelector("[data-play]").addEventListener("click", () => { if (!reading) { animatePlayButton(); startReading(); } else document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:!readingPaused, cancelable:true })); });
   bar.querySelector("[data-prev]").addEventListener("click", event => moveReading(-1, event));
   bar.querySelector("[data-next]").addEventListener("click", event => moveReading(1, event));
-  bar.querySelector("[data-close]").addEventListener("click", stopReading);
+  bar.querySelector("[data-close]").addEventListener("click", closeReadingBar);
   bar.querySelectorAll("[data-voices],[data-speed],[data-settings]").forEach(button => button.addEventListener("click", () => { const name = button.hasAttribute("data-voices") ? "voices" : button.hasAttribute("data-speed") ? "speed" : "settings"; const panel = popover(name), wasOpen = panel.classList.contains("lhn-open"); closePopovers(); panel.classList.toggle("lhn-open", !wasOpen); if (name === "voices" && !wasOpen) { renderVoiceChoices(); focusVoiceSearch(); } }));
   bar.querySelector("[data-autoscroll]").addEventListener("change", event => saveSpeechSetting({ autoScroll:event.target.checked }));
   bar.querySelector("[data-webfont]").addEventListener("change", event => saveWebsiteFont(event.target.checked));
@@ -416,7 +416,7 @@ const FLAG_SVGS = {
     document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, card.parentElement));
     applyWebFont();
     const readerActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
-    if (!readerActive) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); bar.classList.remove("lhn-show"); }
+    if (!readerActive) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); }
     else { if (!wasReaderActive) mainBlocksDirty = true; updateSpeakers(); }
   }
   function isReaderDisabledOnThisWebsite() {
@@ -848,8 +848,9 @@ const FLAG_SVGS = {
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
+  function closeReadingBar() { stopReading(); bar.classList.remove("lhn-show"); }
   function stopReading() {
-    speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); bar.classList.remove("lhn-show"); closePopovers(); syncToolbar();
+    speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
   }
   let googleAudio = null, googleToken = null, googleResumeWaiters = [];
   function cancelGoogle() {
@@ -1065,7 +1066,7 @@ const FLAG_SVGS = {
     if (event.detail === "toggle-lazy" || event.detail === "toggle-near-pointer") sameLangToastShown = false; // cho phép hiện lại toast khi bấm lại Alt+A/Alt+D
     if (event.detail === "toggle-lazy") toggleLazy();
     if (event.detail === "toggle-near-pointer") toggleNearPointer();
-    if (event.detail === "toggle-reading") reading ? stopReading() : startReading();
+    if (event.detail === "toggle-reading") reading ? closeReadingBar() : startReading();
     if (event.detail === "previous-reading-block") moveReading(-1, event);
     if (event.detail === "next-reading-block") moveReading(1, event);
     if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() + normalizeSpeedStep(settings.speechSpeedStep)); }
@@ -1096,7 +1097,6 @@ const FLAG_SVGS = {
       lazyObserver?.disconnect(); stopReading();
       document.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(node => node.remove());
       document.querySelectorAll(".lhn-bilingual-web-font").forEach(node => node.classList.remove("lhn-bilingual-web-font"));
-      bar.classList.remove("lhn-show");
     } else {
       mainBlocksDirty = true;
       applyWebFont();

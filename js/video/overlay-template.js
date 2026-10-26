@@ -37,11 +37,9 @@ const OVERLAY_CSS = `
       color: #1f2937;
     }
     #keepit-exact-overlay.theme-light .te-left-section { background-color: #ffffff; }
-    #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; }
+    #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; border-top: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
-    #keepit-exact-overlay.theme-light .te-sub-vi { color: #2f2f2f; }
-    #keepit-exact-overlay.theme-light .yt-dual-item-en {color: #ff0000; }
-    #keepit-exact-overlay.theme-light .yt-dual-item-vi { color: #2f2f2f; }
+    #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
     #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-sidebar-top { border-bottom: 1px solid #e5e7eb; color: #111827; }
@@ -78,11 +76,9 @@ const OVERLAY_CSS = `
       color: #f3f4f6;
     }
     #keepit-exact-overlay.theme-dark .te-left-section { background-color: #121212; }
-    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent;}
+    #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent; border-top: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-sub-en { color: #ffff00; }
-    #keepit-exact-overlay.theme-dark .te-sub-vi { color: #ffffff; }
-    #keepit-exact-overlay.theme-dark .yt-dual-item-en {color: #ffff00; }
-    #keepit-exact-overlay.theme-dark .yt-dual-item-vi { color: #ffffff; }
+    #keepit-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
     #keepit-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-right-sidebar { background-color: #121212; border-left: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-sidebar-top { border-bottom: 1px solid #222; color: #ffffff; }
@@ -139,7 +135,7 @@ const OVERLAY_CSS = `
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px 10px;
+      padding: 16px 40px;
       text-align: center;
     }
 
@@ -179,9 +175,8 @@ const OVERLAY_CSS = `
       top: 0;
       left: 0;
       width: 100%;
-      height: 4px;
+      height: 3px;
       background: rgba(139, 92, 246, 0.2);
-      cursor: pointer;
     }
 
     .te-progress-fill {
@@ -202,7 +197,7 @@ const OVERLAY_CSS = `
       gap: 8px;
       font-size: 13.5px;
       font-weight: 500;
-      max-width: 200px;
+      max-width: 170px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -694,7 +689,7 @@ const OVERLAY_CSS = `
 /* Light mode cho sidebar bản ghi: các class yt-dual-* đang hardcode màu tối nên phải override.
    Màu chữ dùng biến --te-side-*-color để màu người dùng tự chọn (inline trên root) vẫn thắng. */
 #keepit-exact-overlay.theme-light { --te-side-en-color: #111827; --te-side-vi-color: #4b5563; }
-#keepit-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; }
+#keepit-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
 #keepit-exact-overlay.theme-light .yt-dual-sidebar-header { border-bottom: 1px solid #e5e7eb; color: #111827; }
 #keepit-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
 #keepit-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
@@ -743,12 +738,11 @@ const OVERLAY_CSS = `
       height: auto;
       aspect-ratio: var(--te-video-aspect, 16 / 9);
       max-height: calc(100vh - 200px);
-      border-radius: 20px;
-      margin: 8px 0 0 8px;
+      border-radius: 12px;
     }
 
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
-    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 16px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
+    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
     #te-speed-popup.hidden { display: none !important; }
     #te-speed-popup .te-speed-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     #te-speed-popup .te-speed-title { font-size: 16px; font-weight: 600; color: #1f2937; }
@@ -769,7 +763,7 @@ const OVERLAY_CSS = `
     #te-speed-popup .te-speed-btn:hover { background: #e5e7eb; }
     #te-speed-popup .te-speed-btn.te-speed-normal { flex-direction: column; line-height: 1.1; font-weight: 800; text-align: center; padding: 0 4px; }
     #te-speed-popup .te-speed-btn.active { background: #7000FF; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    #keepit-exact-overlay.theme-dark #te-speed-popup { background: #151517f7; border-color: rgba(31,41,55,0.8); }
+    #keepit-exact-overlay.theme-dark #te-speed-popup { background: #151517; border-color: rgba(31,41,55,0.8); }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-title { color: #e5e7eb; }
     #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-value { color: #ffffff; }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-step { background: #222225; color: #e5e7eb; }
@@ -782,10 +776,10 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn:hover { background: #374151; }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn.active { background: #FACC15; color: #000000; }
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
-    .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 15px; font-weight: 400; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
+    .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
-    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 17px); color: var(--te-side-en-color, #e5e7eb); }
-    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 15px); color: var(--te-side-vi-color, #c8c8c8); }
+    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
+    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
 
     /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
