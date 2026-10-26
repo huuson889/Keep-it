@@ -27,5 +27,5 @@
     return wrapped;
   }
 
-  globalThis.LHN_SEARCH = Object.freeze({ normalize, createIndex, search, debounce });
+  globalThis.LHN_INDEX_SEARCH = Object.freeze({ normalize, createIndex, search, debounce });
 })();

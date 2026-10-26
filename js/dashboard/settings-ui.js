@@ -20,8 +20,7 @@
     function renderLanguageOptions(filter = "") {
       const select = $("settingsLanguageSelect"), options = $("settingsLanguageOptions"); if (!select || !options) return;
       options.replaceChildren();
-      const query = filter.trim().toLocaleLowerCase();
-      const filtered = languages.LANGS.filter(language => `${language.name} ${language.native} ${language.code}`.toLocaleLowerCase().includes(query));
+      const filtered = LHN_INDEX_SEARCH.search(LHN_INDEX_SEARCH.createIndex(languages.LANGS, language => [language.name, language.native, language.code], language => language.code), filter);
       if (!filtered.length) { const empty = document.createElement("div"); empty.className = "language-empty settings-language-empty"; empty.textContent = t("languageSearchNoResults"); options.appendChild(empty); return; }
       filtered.forEach(language => {
         const option = document.createElement("div"); option.className = "language-option settings-language-option" + (language.code === select.value ? " selected" : "");

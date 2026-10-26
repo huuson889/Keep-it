@@ -122,8 +122,7 @@ function renderDefaultColors() {
 }
 function renderLanguages(filter = "") {
   const options = $("languageOptions"); options.replaceChildren();
-  const query = filter.trim().toLocaleLowerCase();
-  const filtered = LANGUAGES.LANGS.filter(item => `${item.name} ${item.native} ${item.code}`.toLocaleLowerCase().includes(query));
+  const filtered = LHN_INDEX_SEARCH.search(LHN_INDEX_SEARCH.createIndex(LANGUAGES.LANGS, item => [item.name, item.native, item.code], item => item.code), filter);
   if (!filtered.length) { const empty = document.createElement("div"); empty.className = "language-empty"; empty.textContent = t("languageSearchNoResults"); options.appendChild(empty); return; }
   filtered.forEach(item => {
     const option = document.createElement("div"); option.className = "language-option" + (item.code === currentLang ? " selected" : ""); option.role = "option"; option.tabIndex = 0; option.setAttribute("aria-selected", String(item.code === currentLang)); option.textContent = langLabel(item);

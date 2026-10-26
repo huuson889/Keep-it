@@ -185,8 +185,8 @@ const FLAG_SVGS = {
   bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = currentSegmentRate(); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
   bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
   bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
-  const debouncedRenderVoiceChoices = LHN_SEARCH.debounce(() => {
-    if (LHN_SEARCH.normalize(bar.querySelector("input[type=search]").value) === lastVoiceQuery) return;
+  const debouncedRenderVoiceChoices = LHN_INDEX_SEARCH.debounce(() => {
+    if (LHN_INDEX_SEARCH.normalize(bar.querySelector("input[type=search]").value) === lastVoiceQuery) return;
     renderVoiceChoices();
   }, 200);
   bar.querySelector("input[type=search]").addEventListener("input", debouncedRenderVoiceChoices);
@@ -319,7 +319,7 @@ const FLAG_SVGS = {
     try { regionNames = new Intl.DisplayNames([displayLang], { type:"region" }); langNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
     try { regionEn = new Intl.DisplayNames(["en"], { type:"region" }); langEn = new Intl.DisplayNames(["en"], { type:"language" }); } catch {}
     const safeName = (dn, code) => { try { return dn && code ? (dn.of(code) || "") : ""; } catch { return ""; } };
-    const index = LHN_SEARCH.createIndex(systemVoices, (voice) => {
+    const index = LHN_INDEX_SEARCH.createIndex(systemVoices, (voice) => {
       const parts = (voice.lang || "").split(/[-_]/);
       const baseLang = (parts[0] || "").toLowerCase(), region = (parts[1] || "").toUpperCase();
       const shortName = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name || "";
@@ -330,7 +330,7 @@ const FLAG_SVGS = {
   }
   function renderVoiceChoices() {
     voiceKbIndex = -1;
-    lastVoiceQuery = LHN_SEARCH.normalize(bar.querySelector("input[type=search]").value);
+    lastVoiceQuery = LHN_INDEX_SEARCH.normalize(bar.querySelector("input[type=search]").value);
     systemVoices = synth?.getVoices?.() || systemVoices;
     const query = bar.querySelector("input[type=search]").value.trim().toLocaleLowerCase();
     const list = bar.querySelector(".lhn-br-voice-list"); list.replaceChildren();
@@ -358,7 +358,7 @@ const FLAG_SVGS = {
     const escVoiceHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     let voiceRegionNames = null, voiceLangNames = null;
     try { voiceRegionNames = new Intl.DisplayNames([displayLang], { type:"region" }); voiceLangNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
-    LHN_SEARCH.search(getVoiceIndex(), query).forEach(voice => {
+    LHN_INDEX_SEARCH.search(getVoiceIndex(), query).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
