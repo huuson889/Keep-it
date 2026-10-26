@@ -692,7 +692,7 @@ const OVERLAY_CSS = `
 /* Light mode cho sidebar bản ghi: các class yt-dual-* đang hardcode màu tối nên phải override.
    Màu chữ dùng biến --te-side-*-color để màu người dùng tự chọn (inline trên root) vẫn thắng. */
 #keepit-exact-overlay.theme-light { --te-side-en-color: #111827; --te-side-vi-color: #4b5563; }
-#keepit-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
+#keepit-exact-overlay.theme-light .yt-dual-right-sidebar { background-color: #ffffff; }
 #keepit-exact-overlay.theme-light .yt-dual-sidebar-header { border-bottom: 1px solid #e5e7eb; color: #111827; }
 #keepit-exact-overlay.theme-light .yt-dual-close-btn { color: #6b7280; }
 #keepit-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
