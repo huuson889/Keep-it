@@ -779,8 +779,8 @@ const OVERLAY_CSS = `
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
     .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 15px; font-weight: 400; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
-    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
-    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #c8c8c8); }
+    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 17px); color: var(--te-side-en-color, #e5e7eb); }
+    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 15px); color: var(--te-side-vi-color, #c8c8c8); }
 
     /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
