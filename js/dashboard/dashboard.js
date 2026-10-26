@@ -137,6 +137,7 @@ function renderPronunciationDictionary() {
 }
 const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
 SETTINGS_UI.initLanguagePicker();
+SETTINGS_UI.initSettingsSearch();
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");

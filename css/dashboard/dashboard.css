@@ -1094,6 +1094,13 @@ html.dark .settings-language-row { border-color:#1f2937; color:#d1d5db; }
 html.dark .settings-language-search { border-color:#303e51; background:#0f172a; color:#e2e8f0; }
 html.dark .settings-language-search:focus { border-color:#a299ec; }
 html.dark .settings-language-search::placeholder { color:#64748b; }
+.settings-search { margin:0 0 16px; }
+.settings-search .settings-language-search { padding-right:9px; }
+.settings-search-hidden { display:none!important; }
+.settings-window-content.is-searching .dashboard-shortcut-reset-row { display:none; }
+.settings-window-content.is-searching .settings-panel-page:not(.has-search-match) { display:none!important; }
+.settings-window-content.is-searching .settings-panel-page.has-search-match { display:block!important; margin-bottom:28px; }
+#dashboardSettingsDialog .settings-window-content.is-searching .settings-panel-page.has-search-match[data-settings-panel="shortcuts"] { display:flex!important; height:auto; }
 html.dark .settings-language-caret { color:#94a3b8; }
 html.dark .settings-language-options { border-color:#303e51; background:#1e293b; box-shadow:0 8px 24px rgba(0,0,0,.35); }
 html.dark .settings-language-option { color:#cbd5e1; }
