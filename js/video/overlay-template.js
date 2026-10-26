@@ -79,6 +79,8 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.theme-dark .te-sub-container { background-color: transparent;}
     #keepit-exact-overlay.theme-dark .te-sub-en { color: #ffff00; }
     #keepit-exact-overlay.theme-dark .te-sub-vi { color: #d1d5db; }
+    #keepit-exact-overlay.theme-dark .yt-dual-item-en {color: #ffff00; }
+    #keepit-exact-overlay.theme-dark .yt-dual-item-vi { color: #c8c8c8; }
     #keepit-exact-overlay.theme-dark .te-control-bar { background-color: #0f0f0f; border-top: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-right-sidebar { background-color: #121212; border-left: 1px solid #222; }
     #keepit-exact-overlay.theme-dark .te-sidebar-top { border-bottom: 1px solid #222; color: #ffffff; }
