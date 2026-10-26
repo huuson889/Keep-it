@@ -40,6 +40,8 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent; }
     #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
     #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
+    #keepit-exact-overlay.theme-light .yt-dual-item-en {color: #ff0000; }
+    #keepit-exact-overlay.theme-light .yt-dual-item-vi { color: #c8c8c8; }
     #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; border-top: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-sidebar-top { border-bottom: 1px solid #e5e7eb; color: #111827; }
