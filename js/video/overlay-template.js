@@ -777,7 +777,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn:hover { background: #374151; }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn.active { background: #FACC15; color: #000000; }
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
-    .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
+    .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 15px; font-weight: 400; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
     #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
     #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
