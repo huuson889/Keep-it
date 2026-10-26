@@ -764,7 +764,7 @@ const OVERLAY_CSS = `
     #te-speed-popup .te-speed-btn:hover { background: #e5e7eb; }
     #te-speed-popup .te-speed-btn.te-speed-normal { flex-direction: column; line-height: 1.1; font-weight: 800; text-align: center; padding: 0 4px; }
     #te-speed-popup .te-speed-btn.active { background: #7000FF; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    #keepit-exact-overlay.theme-dark #te-speed-popup { background: #151517; border-color: rgba(31,41,55,0.8); }
+    #keepit-exact-overlay.theme-dark #te-speed-popup { background: #151517d6; border-color: rgba(31,41,55,0.8); }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-title { color: #e5e7eb; }
     #keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-value { color: #ffffff; }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-step { background: #222225; color: #e5e7eb; }
