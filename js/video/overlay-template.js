@@ -744,6 +744,7 @@ const OVERLAY_CSS = `
       aspect-ratio: var(--te-video-aspect, 16 / 9);
       max-height: calc(100vh - 200px);
       border-radius: 20px;
+      margin: 8px 0 0 8px;
     }
 
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
