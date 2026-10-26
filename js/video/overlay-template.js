@@ -198,7 +198,7 @@ const OVERLAY_CSS = `
       gap: 8px;
       font-size: 13.5px;
       font-weight: 500;
-      max-width: 170px;
+      max-width: 200px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
