@@ -185,7 +185,11 @@ const FLAG_SVGS = {
   bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = currentSegmentRate(); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
   bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
   bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
-  bar.querySelector("input[type=search]").addEventListener("input", renderVoiceChoices);
+  const debouncedRenderVoiceChoices = LHN_SEARCH.debounce(() => {
+    if (LHN_SEARCH.normalize(bar.querySelector("input[type=search]").value) === lastVoiceQuery) return;
+    renderVoiceChoices();
+  }, 200);
+  bar.querySelector("input[type=search]").addEventListener("input", debouncedRenderVoiceChoices);
   bar.addEventListener("click", event => { if (!event.target.closest("[data-lhn-br-popover]") && !event.target.closest("[data-voices],[data-speed],[data-settings]")) closePopovers(); });
   document.addEventListener("pointerdown", event => { if (!bar.contains(event.target)) closePopovers(); }, true);
   const voiceItems = () => Array.from(bar.querySelectorAll(".lhn-br-voice-list .lhn-br-voice"));
@@ -306,8 +310,27 @@ const FLAG_SVGS = {
     if (popover("voices").classList.contains("lhn-open")) renderVoiceChoices();
   }
   renderPopupText();
+  var voiceSearchCache = { signature: "", lang: "", index: null };
+  var lastVoiceQuery = "";
+  function getVoiceIndex() {
+    const signature = systemVoices.map(v => v.voiceURI).join("|");
+    if (voiceSearchCache.index && voiceSearchCache.signature === signature && voiceSearchCache.lang === displayLang) return voiceSearchCache.index;
+    let regionNames = null, langNames = null, regionEn = null, langEn = null;
+    try { regionNames = new Intl.DisplayNames([displayLang], { type:"region" }); langNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
+    try { regionEn = new Intl.DisplayNames(["en"], { type:"region" }); langEn = new Intl.DisplayNames(["en"], { type:"language" }); } catch {}
+    const safeName = (dn, code) => { try { return dn && code ? (dn.of(code) || "") : ""; } catch { return ""; } };
+    const index = LHN_SEARCH.createIndex(systemVoices, (voice) => {
+      const parts = (voice.lang || "").split(/[-_]/);
+      const baseLang = (parts[0] || "").toLowerCase(), region = (parts[1] || "").toUpperCase();
+      const shortName = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name || "";
+      return [voice.name, voice.lang, region, baseLang, shortName, safeName(regionNames, region), safeName(langNames, baseLang), safeName(regionEn, region), safeName(langEn, baseLang)];
+    }, (voice) => voice.voiceURI);
+    voiceSearchCache = { signature, lang: displayLang, index };
+    return index;
+  }
   function renderVoiceChoices() {
     voiceKbIndex = -1;
+    lastVoiceQuery = LHN_SEARCH.normalize(bar.querySelector("input[type=search]").value);
     systemVoices = synth?.getVoices?.() || systemVoices;
     const query = bar.querySelector("input[type=search]").value.trim().toLocaleLowerCase();
     const list = bar.querySelector(".lhn-br-voice-list"); list.replaceChildren();
@@ -333,22 +356,9 @@ const FLAG_SVGS = {
     });
     const flagMissLogged = new Set(); // debug: log một lần cho mỗi vùng thiếu cờ
     const escVoiceHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-    // Tìm kiếm giọng trình duyệt: chuẩn hóa (bỏ dấu, chữ thường) và gom tên giọng, mã vùng, mã ngôn ngữ, tên quốc gia/ngôn ngữ (ngôn ngữ hiển thị + tiếng Anh)
-    const normVoiceQuery = (text) => String(text || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
-    const voiceShortName = (voice) => (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name || "";
-    const voiceSearchText = (voice) => {
-      const parts = (voice.lang || "").split(/[-_]/);
-      const baseLang = (parts[0] || "").toLowerCase(), region = (parts[1] || "").toUpperCase();
-      const names = [];
-      const add = (dn, code) => { try { const v = dn && code ? dn.of(code) : ""; if (v) names.push(v); } catch {} };
-      let regionEn = null, langEn = null;
-      try { regionEn = new Intl.DisplayNames(["en"], { type:"region" }); langEn = new Intl.DisplayNames(["en"], { type:"language" }); } catch {}
-      add(voiceRegionNames, region); add(voiceLangNames, baseLang); add(regionEn, region); add(langEn, baseLang);
-      return normVoiceQuery([voice.name, voice.lang, region, baseLang, voiceShortName(voice), ...names].join(" "));
-    };
     let voiceRegionNames = null, voiceLangNames = null;
     try { voiceRegionNames = new Intl.DisplayNames([displayLang], { type:"region" }); voiceLangNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
-    systemVoices.filter(voice => voiceSearchText(voice).includes(normVoiceQuery(query))).forEach(voice => {
+    LHN_SEARCH.search(getVoiceIndex(), query).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
