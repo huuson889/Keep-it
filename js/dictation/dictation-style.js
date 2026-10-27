@@ -129,7 +129,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-row.current.solved { border-color: rgba(245, 158, 11, .6); background: rgba(245, 158, 11, .08); color: #b45309; }
 #keepit-exact-overlay .te-dict-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; background: #e5e7eb; color: #4b5563; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
 #keepit-exact-overlay .te-dict-row.current .te-dict-num { background: #f59e0b; color: #000; }
-#keepit-exact-overlay .te-dict-text { color: inherit; font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
+#keepit-exact-overlay .te-dict-text { color: inherit; font-size: 15px;font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
 #keepit-exact-overlay .te-dict-row.current .te-dict-text { font-weight: 700; }
 #keepit-exact-overlay .te-dict-row:not(.solved) .te-dict-text { filter: blur(5px); user-select: none; }
 #keepit-exact-overlay .te-dict-row.solved .te-dict-text { filter: none; user-select: text; }
