@@ -104,33 +104,60 @@ globalThis.LHN_DICTATION_CSS = `
   padding: 2px 3px 4px 0;
 }
 #keepit-exact-overlay #te-dict-sentences,
-#keepit-exact-overlay .te-dict-input {
+#keepit-exact-overlay .te-dict-center-body,
+#keepit-exact-overlay .te-dict-input,
+#keepit-exact-overlay .te-dict-note-body,
+#keepit-exact-overlay .te-dict-note-input {
   scrollbar-width: auto;
   scrollbar-color: auto;
 }
 #keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar,
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar {
+#keepit-exact-overlay .te-dict-center-body::-webkit-scrollbar,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar,
+#keepit-exact-overlay .te-dict-note-body::-webkit-scrollbar,
+#keepit-exact-overlay .te-dict-note-input::-webkit-scrollbar {
   width: var(--lhn-scrollbar-width);
   height: var(--lhn-scrollbar-width);
 }
 #keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar:vertical,
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar:vertical { width: var(--lhn-scrollbar-width); }
+#keepit-exact-overlay .te-dict-center-body::-webkit-scrollbar:vertical,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar:vertical,
+#keepit-exact-overlay .te-dict-note-body::-webkit-scrollbar:vertical,
+#keepit-exact-overlay .te-dict-note-input::-webkit-scrollbar:vertical { width: var(--lhn-scrollbar-width); }
 #keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar:horizontal,
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar:horizontal { height: var(--lhn-scrollbar-width); }
+#keepit-exact-overlay .te-dict-center-body::-webkit-scrollbar:horizontal,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar:horizontal,
+#keepit-exact-overlay .te-dict-note-body::-webkit-scrollbar:horizontal,
+#keepit-exact-overlay .te-dict-note-input::-webkit-scrollbar:horizontal { height: var(--lhn-scrollbar-width); }
 #keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar-track,
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar-track { background: transparent; }
+#keepit-exact-overlay .te-dict-center-body::-webkit-scrollbar-track,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar-track,
+#keepit-exact-overlay .te-dict-note-body::-webkit-scrollbar-track,
+#keepit-exact-overlay .te-dict-note-input::-webkit-scrollbar-track { background: transparent; }
 #keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar-thumb,
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar-thumb {
+#keepit-exact-overlay .te-dict-center-body::-webkit-scrollbar-thumb,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar-thumb,
+#keepit-exact-overlay .te-dict-note-body::-webkit-scrollbar-thumb,
+#keepit-exact-overlay .te-dict-note-input::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: #cbd5e1;
 }
 #keepit-exact-overlay.theme-dark #te-dict-sentences::-webkit-scrollbar-thumb,
-#keepit-exact-overlay.theme-dark .te-dict-input::-webkit-scrollbar-thumb { background: #a1a1aa; }
+#keepit-exact-overlay.theme-dark .te-dict-center-body::-webkit-scrollbar-thumb,
+#keepit-exact-overlay.theme-dark .te-dict-input::-webkit-scrollbar-thumb,
+#keepit-exact-overlay.theme-dark .te-dict-note-body::-webkit-scrollbar-thumb,
+#keepit-exact-overlay.theme-dark .te-dict-note-input::-webkit-scrollbar-thumb { background: #a1a1aa; }
 @supports (-moz-appearance: none) {
   #keepit-exact-overlay #te-dict-sentences,
-  #keepit-exact-overlay .te-dict-input { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  #keepit-exact-overlay .te-dict-center-body,
+  #keepit-exact-overlay .te-dict-input,
+  #keepit-exact-overlay .te-dict-note-body,
+  #keepit-exact-overlay .te-dict-note-input { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
   #keepit-exact-overlay.theme-dark #te-dict-sentences,
-  #keepit-exact-overlay.theme-dark .te-dict-input { scrollbar-color: #a1a1aa transparent; }
+  #keepit-exact-overlay.theme-dark .te-dict-center-body,
+  #keepit-exact-overlay.theme-dark .te-dict-input,
+  #keepit-exact-overlay.theme-dark .te-dict-note-body,
+  #keepit-exact-overlay.theme-dark .te-dict-note-input { scrollbar-color: #a1a1aa transparent; }
 }
 #keepit-exact-overlay .te-dict-row {
   display: grid;

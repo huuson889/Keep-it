@@ -28,6 +28,8 @@ const OVERLAY_CSS = `
       height: 100vh;
       display: flex;
       z-index: 999998;
+      scrollbar-width: auto;
+      scrollbar-color: auto;
       transition: background-color 0.2s, color 0.2s;
     }
 
@@ -345,7 +347,8 @@ const OVERLAY_CSS = `
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
-    *::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
+    #keepit-exact-overlay::-webkit-scrollbar,
+    #keepit-exact-overlay *::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
     .te-modal-body::-webkit-scrollbar-track { background: transparent; }
     .te-modal-body::-webkit-scrollbar-thumb { background: #8b70e8a8; border-radius: 999px; }
 

@@ -944,6 +944,8 @@ function buildOverlay() {
   const host = document.createElement('div');
   host.id = HOST_ID;
   host.style.display = 'none';
+  const sharedScrollbarWidth = getComputedStyle(document.documentElement).getPropertyValue('--lhn-scrollbar-width').trim() || '3px';
+  host.style.setProperty('--lhn-scrollbar-width', sharedScrollbarWidth);
   document.body.appendChild(host);
   shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
