@@ -2025,7 +2025,11 @@ function bindUI() {
     }
   };
   settingsBtn.addEventListener('click', toggleMain);
-  floatingBtn.addEventListener('click', toggleMain);
+  floatingBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    root.classList.remove('te-sidebar-hidden');
+    ctrl('Bố cục')?.classList.remove('te-active');
+  });
   $('te-close-modal').addEventListener('click', () => modalMain.classList.add('hidden'));
 
   uiAll('.te-modal-backdrop').forEach((bd) => {

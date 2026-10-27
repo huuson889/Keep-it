@@ -562,6 +562,9 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-controls-hidden .te-control-bar:focus-within { opacity: 1; }
     #keepit-exact-overlay.te-subs-hidden .te-sub-container { display: none; }
     #keepit-exact-overlay.te-sidebar-hidden .yt-dual-right-sidebar { display: none; }
+    #keepit-exact-overlay #te-floating-btn { display: none; z-index: 10; }
+    #keepit-exact-overlay:not(.te-dictation-active).te-sidebar-hidden #te-floating-btn { display: flex; }
+    #keepit-exact-overlay:not(.te-dictation-active).te-sidebar-hidden .te-control-bar button[title="Bố cục"] { display: none !important; }
     #keepit-exact-overlay .te-icon-btn.te-active { color: #8b5cf6; }
     #keepit-exact-overlay .te-video-slot video {
       position: absolute !important;
@@ -864,13 +867,12 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       </div>
       <div class="yt-dual-transcript-list" id="te-transcript-list"></div>
 
-      <!-- Floating button inside transcript bottom right -->
-      <div style="position: relative; height: 0;">
-        <button class="te-floating-btn" id="te-floating-btn" title="Mở cài đặt">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
-        </button>
-      </div>
     </div>
+
+    <!-- Nút nổi bật sidebar: nằm ngoài panel để vẫn dùng được khi sidebar ẩn -->
+    <button class="te-floating-btn" id="te-floating-btn" title="Bật sidebar" aria-label="Bật sidebar">
+      <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h5V5H5zm7 0v14h7V5h-7z"/></svg>
+    </button>
 
     <!-- Modal 1: Cài đặt video Main Menu -->
     <div class="te-modal-backdrop" id="te-modal-main">
