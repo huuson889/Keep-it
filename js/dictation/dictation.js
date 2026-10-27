@@ -710,6 +710,26 @@
     ui.error.hidden = false;
   }
 
+  function renderPrefixSuggestion(reference, answer) {
+    setErrorPanelSuccess(false);
+    const words = [...String(reference).matchAll(/[\p{L}\p{N}’‘`´']+/gu)].map((match) => match[0]);
+    const enteredCount = globalThis.LHN_DICTATION_SCORE.tokenize(answer).length;
+    const visibleCount = Math.min(words.length, enteredCount + 1);
+    const suggestion = words.map((word, index) => {
+      if (index < visibleCount) return word;
+      const normalized = globalThis.LHN_DICTATION_SCORE.tokenize(word)[0] || word;
+      return "_".repeat([...normalized].length);
+    }).join(" ");
+    ui.errorWords.replaceChildren();
+    const line = document.createElement("span");
+    line.className = "te-dict-missing-hints";
+    line.textContent = suggestion;
+    ui.errorWords.appendChild(line);
+    clearInputWrongMarks();
+    ui.work?.classList.add("te-dict-has-error");
+    ui.error.hidden = false;
+  }
+
   function localConfetti() {
     if (!ui?.root) return;
     const layer = document.createElement("div");
@@ -821,6 +841,110 @@
       }
     }
     return output;
+  }
+
+  function canonicalizeCorrectWords(reference, answer) {
+    const wordPattern = /[\p{L}\p{N}’‘`´']+/gu;
+    const expectedWords = [...String(reference).matchAll(wordPattern)];
+    const typedWords = [...String(answer).matchAll(wordPattern)];
+    const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
+    const replacements = [];
+    let expectedIndex = 0;
+    let typedIndex = 0;
+    for (const op of operations) {
+      if (op.type === "missing") { expectedIndex++; continue; }
+      if (op.type === "extra") { typedIndex++; continue; }
+      const expected = expectedWords[expectedIndex];
+      const typed = typedWords[typedIndex];
+      if (op.type === "ok" && expected && typed && expected[0] !== typed[0]) {
+        replacements.push({ start: typed.index, end: typed.index + typed[0].length, text: expected[0] });
+      }
+      expectedIndex++;
+      typedIndex++;
+    }
+    let result = String(answer);
+    for (const replacement of replacements.reverse()) {
+      result = result.slice(0, replacement.start) + replacement.text + result.slice(replacement.end);
+    }
+    return result;
+  }
+
+  function restoreAlignedPunctuation(reference, answer) {
+    const wordPattern = /[\p{L}\p{N}’‘`´']+/gu;
+    const expectedWords = [...String(reference).matchAll(wordPattern)];
+    const typedWords = [...String(answer).matchAll(wordPattern)];
+    const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
+    const expectedToTyped = new Array(expectedWords.length).fill(-1);
+    let expectedIndex = 0;
+    let typedIndex = 0;
+    for (const op of operations) {
+      if (op.type === "missing") { expectedIndex++; continue; }
+      if (op.type === "extra") { typedIndex++; continue; }
+      expectedToTyped[expectedIndex++] = typedIndex++;
+    }
+
+    const punctuation = (text) => [...String(text).matchAll(/\p{P}/gu)].map((match) => match[0]);
+    const insertions = new Map();
+    for (let boundary = 0; boundary <= expectedWords.length; boundary++) {
+      const gapStart = boundary === 0 ? 0 : expectedWords[boundary - 1].index + expectedWords[boundary - 1][0].length;
+      const gapEnd = boundary === expectedWords.length ? String(reference).length : expectedWords[boundary].index;
+      const expectedMarks = punctuation(String(reference).slice(gapStart, gapEnd));
+      if (!expectedMarks.length) continue;
+
+      let leftExpected = boundary - 1;
+      while (leftExpected >= 0 && expectedToTyped[leftExpected] < 0) leftExpected--;
+      let rightExpected = boundary;
+      while (rightExpected < expectedWords.length && expectedToTyped[rightExpected] < 0) rightExpected++;
+      const leftTyped = leftExpected >= 0 ? expectedToTyped[leftExpected] : -1;
+      const rightTyped = rightExpected < expectedWords.length ? expectedToTyped[rightExpected] : -1;
+      if (leftTyped < 0 && rightTyped < 0) continue;
+
+      const typedGapStart = leftTyped >= 0
+        ? typedWords[leftTyped].index + typedWords[leftTyped][0].length
+        : 0;
+      const typedGapEnd = rightTyped >= 0 ? typedWords[rightTyped].index : String(answer).length;
+      if (typedGapEnd < typedGapStart) continue;
+      const remainingMarks = [...expectedMarks];
+      let unexpectedMark = false;
+      for (const mark of punctuation(String(answer).slice(typedGapStart, typedGapEnd))) {
+        const markIndex = remainingMarks.indexOf(mark);
+        if (markIndex < 0) { unexpectedMark = true; break; }
+        remainingMarks.splice(markIndex, 1);
+      }
+      if (!remainingMarks.length || unexpectedMark) continue;
+
+      let position;
+      if (boundary === expectedWords.length) position = String(answer).trimEnd().length;
+      else if (leftTyped >= 0) position = typedWords[leftTyped].index + typedWords[leftTyped][0].length;
+      else position = typedWords[rightTyped].index;
+      const existingMarks = insertions.get(position) || "";
+      const countMarks = (marks) => marks.reduce((counts, mark) => counts.set(mark, (counts.get(mark) || 0) + 1), new Map());
+      const existingCounts = countMarks([...existingMarks]);
+      const desiredCounts = countMarks(remainingMarks);
+      const addedCounts = new Map();
+      const uniqueMissingMarks = remainingMarks.filter((mark) => {
+        const added = addedCounts.get(mark) || 0;
+        const needed = (desiredCounts.get(mark) || 0) - (existingCounts.get(mark) || 0);
+        if (added >= needed) return false;
+        addedCounts.set(mark, added + 1);
+        return true;
+      });
+      if (uniqueMissingMarks.length) insertions.set(position, `${existingMarks}${uniqueMissingMarks.join("")}`);
+    }
+
+    let result = String(answer);
+    for (const [position, text] of [...insertions.entries()].sort((a, b) => b[0] - a[0])) {
+      result = result.slice(0, position) + text + result.slice(position);
+    }
+    return result;
+  }
+
+  function normalizeCorrectAnswer(reference, answer) {
+    const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
+    const hasMissingOrExtra = operations.some((op) => op.type === "missing" || op.type === "extra");
+    if (!hasMissingOrExtra) return addMissingPunctuation(reference, answer);
+    const canonicalAnswer = canonicalizeCorrectWords(reference, answer);
+    return restoreAlignedPunctuation(reference, canonicalAnswer);
   }
 
   function submit() {
@@ -1008,11 +1132,21 @@
       event.preventDefault();
       const cue = sentenceCues[current];
       if (cue && isCorrectIncompletePrefix(cue.en, ui.input.value)) {
-        const spacedValue = `${ui.input.value.trimEnd()} `;
+        const canonicalPrefix = canonicalizeCorrectWords(cue.en, ui.input.value);
+        const spacedValue = `${canonicalPrefix.trimEnd()} `;
         ui.input.value = spacedValue;
         ui.input.setSelectionRange(spacedValue.length, spacedValue.length);
         onAnswerInput();
+        renderPrefixSuggestion(cue.en, spacedValue);
         return;
+      }
+      if (cue) {
+        const normalizedAnswer = normalizeCorrectAnswer(cue.en, ui.input.value);
+        if (normalizedAnswer !== ui.input.value) {
+          ui.input.value = normalizedAnswer;
+          ui.input.setSelectionRange(normalizedAnswer.length, normalizedAnswer.length);
+          onAnswerInput();
+        }
       }
       const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
       if (isPerfect && solved.has(current) && checkedCurrent) { ui?.btnNext?.click(); return; }
