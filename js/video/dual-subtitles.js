@@ -1014,11 +1014,9 @@ function openOverlay() {
     alert('Không tìm thấy video trên trang.');
     return;
   }
-  const root = overlayEl();
-  root.classList.add('te-sidebar-hidden');
-  ctrl('Bố cục')?.classList.remove('te-active');
+  document.documentElement.classList.add('lhn-video-overlay-open');
   hideOverlayPageScrollbar();
-  root.classList.remove('te-hidden');
+  overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
   void enableTemporaryTranslationPopup();
@@ -1032,6 +1030,7 @@ function openOverlay() {
 
 function closeOverlay() {
   globalThis.LHN_DICTATION?.close?.();
+  document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
@@ -2031,9 +2030,10 @@ function bindUI() {
   };
   settingsBtn.addEventListener('click', toggleMain);
   floatingBtn.addEventListener('click', (event) => {
+    event.preventDefault();
     event.stopPropagation();
-    root.classList.remove('te-sidebar-hidden');
-    ctrl('Bố cục')?.classList.remove('te-active');
+    const sidebarToggle = document.getElementById('lhn-sidebar-edge-toggle');
+    if (sidebarToggle && !sidebarToggle.classList.contains('is-open')) sidebarToggle.click();
   });
   $('te-close-modal').addEventListener('click', () => modalMain.classList.add('hidden'));
 
