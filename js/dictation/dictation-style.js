@@ -390,6 +390,7 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay .te-dict-toast.visible { opacity: 1; transform: translate(-50%, 0); }
 #keepit-exact-overlay.theme-light .te-dict-toast { background: #fff; color: #111827; }
+#keepit-exact-overlay .te-dict-confetti-layer { position: absolute; inset: 0; z-index: 70; overflow: hidden; pointer-events: none; contain: layout paint; }
 #keepit-exact-overlay .te-dict-confetti { position: absolute; z-index: 70; top: 60%; left: 50%; width: 7px; height: 11px; border-radius: 2px; pointer-events: none; animation: te-dict-confetti-fall 1300ms cubic-bezier(.2, .7, .4, 1) forwards; }
 @keyframes te-dict-confetti-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 40% { transform: translate(var(--ux), var(--uy)) rotate(calc(var(--rot) * .5)); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {

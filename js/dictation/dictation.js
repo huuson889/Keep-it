@@ -644,10 +644,11 @@
 
   function localConfetti() {
     if (!ui?.root) return;
+    const layer = document.createElement("div");
+    layer.className = "te-dict-confetti-layer";
+    layer.setAttribute("aria-hidden", "true");
     const colors = ["#22c55e", "#ef4444", "#f59e0b"];
-    const fragment = document.createDocumentFragment();
-    const bits = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 90; i++) {
       const bit = document.createElement("span");
       bit.className = "te-dict-confetti";
       const angle = (Math.random() - 0.5) * (80 * Math.PI / 180) * 2; // lệch ±80° so với phương thẳng đứng
@@ -658,11 +659,10 @@
       bit.style.setProperty("--dx", `${Math.round(Math.sin(angle) * speed * 1.25)}px`);
       bit.style.setProperty("--dy", `${Math.round(160 + Math.random() * 260)}px`);
       bit.style.setProperty("--rot", `${Math.round(Math.random() * 720 - 360)}deg`);
-      fragment.appendChild(bit);
-      bits.push(bit);
+      layer.appendChild(bit);
     }
-    ui.root.appendChild(fragment);
-    setTimeout(() => bits.forEach((bit) => bit.remove()), 1500);
+    ui.root.appendChild(layer);
+    setTimeout(() => layer.remove(), 1500);
   }
 
   function audioContext() {
