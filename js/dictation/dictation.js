@@ -260,8 +260,8 @@
 
     ui.close.addEventListener("click", close);
     ui.check.addEventListener("click", () => { submit(); refocus(); });
-    ui.btnPrev.addEventListener("click", () => { if (current > 0) selectSentence(current - 1, true); });
-    ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1, true); });
+    ui.btnPrev.addEventListener("click", () => { if (current > 0) selectSentence(current - 1); });
+    ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1); });
     ui.btnReplay.addEventListener("click", () => { playSentence(current); refocus(); });
     ui.audioBtn.addEventListener("click", () => { playSentence(current); refocus(); });
     ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
@@ -383,6 +383,7 @@
     ui.success.hidden = true;
     ui.translation.hidden = true;
     ui.translation.textContent = "";
+    updateRows(false);
   }
 
   function updateRows(scrollCurrent = true) {
@@ -390,7 +391,7 @@
     ui.sentences.querySelectorAll(".te-dict-row").forEach((row) => {
       const index = Number(row.dataset.index);
       const isSolved = solved.has(index);
-      const isLocked = index > current || (index === current && !isSolved);
+      const isLocked = index > current || (index === current && !checkedCurrent);
       const isPast = index < current;
       row.disabled = isLocked;
       row.classList.toggle("solved", isSolved);
@@ -400,9 +401,10 @@
       const stateLabel = isSolved ? `, ${tr("dictationSolved")}` : isLocked ? `, ${tr("dictationLocked")}` : "";
       row.setAttribute("aria-label", `${tr("dictationSentenceNumber")} ${index + 1}${stateLabel}`);
       const translation = row.querySelector(".te-dict-vi");
-      const showTranslation = isSolved && !isLocked;
-      translation.textContent = showTranslation ? (translations[String(index)] || "") : "";
-      translation.hidden = !showTranslation || !translation.textContent;
+      const showTranslation = !isLocked;
+      translation.textContent = showTranslation ? (translations[String(index)] || tr("dictationTranslationLoading")) : "";
+      translation.hidden = !showTranslation;
+      if (showTranslation && !translations[String(index)]) void ensureVietnamese(index);
     });
     if (scrollCurrent) {
       const currentRow = ui.sentences.querySelector(`.te-dict-row[data-index="${current}"]`);
@@ -416,19 +418,19 @@
     row.type = "button";
     row.className = "te-dict-row";
     row.dataset.index = String(index);
-    row.disabled = index >= current;
+    row.disabled = index > current || (index === current && !checkedCurrent);
     row.classList.toggle("past", index < current);
     row.setAttribute("role", "listitem");
     row.innerHTML = `<span class="te-dict-num"></span><span class="te-dict-text"></span><span class="te-dict-icon" aria-hidden="true"><svg class="play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="te-dict-vi" hidden></span>`;
     row.querySelector(".te-dict-num").textContent = String(index + 1);
     row.querySelector(".te-dict-text").textContent = cue.en;
     const translation = row.querySelector(".te-dict-vi");
-    const showTranslation = solved.has(index) && index < current;
-    translation.textContent = showTranslation ? (translations[String(index)] || "") : "";
-    translation.hidden = !showTranslation || !translation.textContent;
+    const showTranslation = index < current || (index === current && checkedCurrent);
+    translation.textContent = showTranslation ? (translations[String(index)] || tr("dictationTranslationLoading")) : "";
+    translation.hidden = !showTranslation;
     row.addEventListener("click", () => {
-      if (index >= current && !solved.has(index)) return;
-      selectSentence(index, true);
+      if (index >= current && !checkedCurrent) return;
+      selectSentence(index);
     });
     return row;
   }
@@ -485,13 +487,13 @@
 
   function renderCurrent() {
     if (!ui || !active) return;
+    checkedCurrent = false;
     while (current < listStart && listStart > 0) renderPrevious();
     while (current >= listEnd && listEnd < sentenceCues.length) renderMore();
     updateCounter();
     updateRows();
     updateProgressControls();
     const wasSolved = solved.has(current);
-    checkedCurrent = false;
     setNotesLocked(true);
     ui.btnNext?.classList.remove("te-dict-ready");
     ui.check?.classList.add("te-dict-act-primary");
@@ -510,29 +512,29 @@
     setScore(wasSolved ? 100 : null);
   }
 
-  function selectSentence(index, autoPlay) {
+  function selectSentence(index) {
     if (!sentenceCues[index]) return;
     flushNotes();
     current = index;
     renderCurrent();
     void saveRecord();
     prepareCue();
-    if (autoPlay && ui?.auto.checked && repeatCount > 0) playSentence(index, { count: repeatCount });
+    playSentence(index, { count: repeatCount + 1 });
     ui?.input.focus({ preventScroll: true });
   }
 
   function updateTranslationViews(index) {
-    if (!ui || !solved.has(index)) return;
+    if (!ui) return;
     const translated = translations[String(index)] || "";
+    const canShowTranslation = index < current || (index === current && checkedCurrent);
     const row = ui.sentences.querySelector(`.te-dict-row[data-index="${index}"] .te-dict-vi`);
     if (row) {
-      const showInList = solved.has(index) && index < current;
-      row.textContent = showInList ? translated : "";
-      row.hidden = !showInList || !translated;
+      row.textContent = canShowTranslation ? (translated || tr("dictationTranslationLoading")) : "";
+      row.hidden = !canShowTranslation;
     }
-    if (current === index && solved.has(index) && ui.input.classList.contains("correct")) {
+    if (current === index) {
       ui.translation.textContent = translated || tr("dictationTranslationLoading");
-      ui.translation.hidden = false;
+      ui.translation.hidden = !checkedCurrent;
     }
   }
 
@@ -592,6 +594,20 @@
     ui.errorTitleIcon.innerHTML = success
       ? '<path d="m5 12 4 4L19 6"/>'
       : '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>';
+  }
+
+  function renderCorrectWords() {
+    if (!ui?.errorWords) return;
+    ui.errorWords.replaceChildren();
+    for (const word of sentenceCues[current]?.en?.trim().split(/\s+/).filter(Boolean) || []) {
+      const group = document.createElement("span");
+      group.className = "te-dict-wg";
+      const token = document.createElement("span");
+      token.className = "te-dict-w ok";
+      token.textContent = word;
+      group.appendChild(token);
+      ui.errorWords.appendChild(group);
+    }
   }
 
   function renderError() {
@@ -700,7 +716,7 @@
       solved.add(current);
       ui.input.classList.add("correct");
       setErrorPanelSuccess(true);
-      ui.errorWords.replaceChildren();
+      renderCorrectWords();
       ui.error.hidden = false;
       ui.success.hidden = false;
       setNotesLocked(false);
@@ -720,6 +736,7 @@
     ui.success.hidden = true;
     ui.translation.hidden = true;
     ui.translation.textContent = "";
+    updateRows(false);
     renderError();
     playErrorSound();
     setNotesLocked(!solved.has(current));
@@ -790,7 +807,7 @@
       renderCurrent();
       void saveRecord();
     }
-    const count = options.count ?? Math.max(1, repeatCount);
+    const count = options.count ?? (repeatCount + 1);
     if (count < 1) return;
     endPlayback();
     if (options.rate) {
@@ -834,9 +851,9 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     if (title === "Câu trước") {
-      if (current > 0) selectSentence(current - 1, true);
+      if (current > 0) selectSentence(current - 1);
     } else if (title === "Câu tiếp theo") {
-      if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1, true);
+      if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1);
     } else if (title === "Lặp lại câu") {
       playSentence(current);
     } else {
@@ -888,6 +905,7 @@
     ui.success.hidden = true;
     ui.translation.hidden = true;
     ui.translation.textContent = "";
+    updateRows(false);
     setScore(solved.has(current) ? 100 : null);
     ui.input.focus({ preventScroll: true });
   }
@@ -946,6 +964,7 @@
     sentenceCues = getCues();
     if (!sentenceCues.length) { showToastBeforeOpen(); return; }
     active = true;
+    checkedCurrent = false;
     hideYouTubeScrollbar();
     const generation = ++panelGeneration;
     current = 0;
@@ -983,7 +1002,7 @@
     listEnd = 0;
     renderInitialRows();
     renderCurrent();
-    playSentence(current, { count: Math.max(1, repeatCount) });
+    playSentence(current, { count: repeatCount + 1 });
     void saveRecord();
     ui.input.focus({ preventScroll: true });
   }

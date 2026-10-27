@@ -139,7 +139,6 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-row.current .te-dict-icon .play { display: none; }
 #keepit-exact-overlay .te-dict-row.current .te-dict-icon .vol { display: inline; }
 #keepit-exact-overlay .te-dict-vi { grid-column: 2 / 4; margin-top: 4px; color: #6b7280; font-size: 13px; line-height: 1.45; }
-#keepit-exact-overlay .te-dict-row:not(.solved) .te-dict-vi,
 #keepit-exact-overlay .te-dict-row.locked .te-dict-vi { display: none !important; }
 #keepit-exact-overlay.theme-dark .te-dict-row { border-color: #27272a; color: #a1a1aa; }
 #keepit-exact-overlay.theme-dark .te-dict-row.solved { background: rgba(255, 255, 255, .055); }
