@@ -139,7 +139,10 @@
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
           <div class="te-dict-answer-stack">
-            <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+            <div class="te-dict-input-wrap">
+              <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+              <div class="te-dict-input-markup" id="te-dict-input-markup" aria-hidden="true" hidden><div class="te-dict-input-markup-content" id="te-dict-input-markup-content"></div></div>
+            </div>
             <div class="te-dict-hint" id="te-dict-hint"></div>
             <div class="te-dict-error" id="te-dict-error" hidden>
               <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
@@ -215,6 +218,8 @@
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
+      inputMarkup: center.querySelector("#te-dict-input-markup"),
+      inputMarkupContent: center.querySelector("#te-dict-input-markup-content"),
       work: center.querySelector(".te-dict-work"),
       score: center.querySelector("#te-dict-score"),
       hint: center.querySelector("#te-dict-hint"),
@@ -278,6 +283,7 @@
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
     ui.input.addEventListener("input", onAnswerInput);
+    ui.input.addEventListener("scroll", syncInputMarkupScroll, { passive: true });
     ui.input.addEventListener("keyup", stopFieldKeyEvent);
     ui.input.addEventListener("keypress", stopFieldKeyEvent);
     ui.vocab.addEventListener("input", scheduleSaveNotes);
@@ -379,8 +385,52 @@
     ui.check.classList.toggle("te-dict-done", perfect);
   }
 
+  function syncInputMarkupScroll() {
+    if (!ui?.inputMarkupContent || !ui?.input) return;
+    ui.inputMarkupContent.style.transform = `translate(${-ui.input.scrollLeft}px, ${-ui.input.scrollTop}px)`;
+  }
+
+  function clearInputWrongMarks() {
+    if (!ui?.inputMarkup) return;
+    ui.inputMarkup.hidden = true;
+    ui.inputMarkupContent?.replaceChildren();
+    ui.inputMarkupContent?.style.removeProperty("transform");
+  }
+
+  function renderInputWrongMarks(ops) {
+    if (!ui?.inputMarkup || !ui.inputMarkupContent) return;
+    const value = ui.input.value;
+    const typedWords = [...value.matchAll(/[\p{L}\p{N}’‘`´']+/gu)];
+    const ranges = [];
+    let typedIndex = 0;
+    for (const op of ops) {
+      if (op.type === "missing") continue;
+      const match = typedWords[typedIndex++];
+      if (match && (op.type === "wrong" || op.type === "extra")) {
+        ranges.push({ start: match.index, end: match.index + match[0].length });
+      }
+    }
+    if (!ranges.length) { clearInputWrongMarks(); return; }
+    const fragment = document.createDocumentFragment();
+    let offset = 0;
+    for (const range of ranges) {
+      if (range.start < offset) continue;
+      if (range.start > offset) fragment.append(document.createTextNode(value.slice(offset, range.start)));
+      const word = document.createElement("span");
+      word.className = "te-dict-input-wrong-word";
+      word.textContent = value.slice(range.start, range.end);
+      fragment.append(word);
+      offset = range.end;
+    }
+    if (offset < value.length) fragment.append(document.createTextNode(value.slice(offset)));
+    ui.inputMarkupContent.replaceChildren(fragment);
+    ui.inputMarkup.hidden = false;
+    syncInputMarkupScroll();
+  }
+
   function onAnswerInput() {
     if (!ui) return;
+    clearInputWrongMarks();
     const wasChecked = checkedCurrent;
     checkedCurrent = false;
     ui.input.classList.remove("correct");
@@ -513,6 +563,7 @@
     ui.note.value = typeof saved.note === "string" ? saved.note : "";
     ui.saved.textContent = "";
     ui.input.value = "";
+    clearInputWrongMarks();
     ui.input.classList.remove("correct");
     ui.error.hidden = true;
     ui.work?.classList.remove("te-dict-has-error");
@@ -624,6 +675,10 @@
   function renderError() {
     setErrorPanelSuccess(false);
     const cue = sentenceCues[current];
+    const answer = ui.input.value;
+    const operations = globalThis.LHN_DICTATION_SCORE.diff(cue?.en || "", answer);
+    const displayOperations = positionalOps(cue?.en, answer);
+    const missingWords = operations.filter((op) => op.type === "missing").map((op) => op.expected);
     ui.errorWords.replaceChildren();
     const chip = (className, text) => {
       const node = document.createElement("span");
@@ -631,25 +686,26 @@
       node.textContent = text;
       return node;
     };
-    if (!ui.input.value.trim()) {
-      ui.errorWords.appendChild(chip("te-dict-empty", tr("dictationEmptyAnswer")));
-    } else {
-      for (const op of positionalOps(cue?.en, ui.input.value)) {
-        const group = document.createElement("span");
-        group.className = "te-dict-wg";
-        if (op.type === "ok") group.appendChild(chip("te-dict-w ok", op.typed));
-        else if (op.type === "wrong") {
-          group.appendChild(chip("te-dict-w bad", op.typed));
-          group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
-        } else if (op.type === "missing") {
-          group.appendChild(chip("te-dict-w fix", op.expected));
-        } else if (op.type === "extra") {
-          group.appendChild(chip("te-dict-w bad", op.typed));
-          group.appendChild(chip("te-dict-w fix", `→ ${tr("dictationExtra")}`));
-        }
-        ui.errorWords.appendChild(group);
+    if (!answer.trim()) ui.errorWords.appendChild(chip("te-dict-empty", tr("dictationEmptyAnswer")));
+    for (const op of displayOperations) {
+      if (op.type === "missing") continue;
+      const group = document.createElement("span");
+      group.className = "te-dict-wg";
+      if (op.type === "ok") group.appendChild(chip("te-dict-w ok", op.typed));
+      else if (op.type === "wrong") {
+        group.appendChild(chip("te-dict-w bad", op.typed));
+        group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
+      } else if (op.type === "extra") {
+        group.appendChild(chip("te-dict-w bad", op.typed));
+        group.appendChild(chip("te-dict-w fix", `→ ${tr("dictationExtra")}`));
       }
+      ui.errorWords.appendChild(group);
     }
+    if (missingWords.length) {
+      const blanks = missingWords.map((word) => "_".repeat([...(globalThis.LHN_DICTATION_SCORE.tokenize(word)[0] || String(word))].length));
+      ui.errorWords.appendChild(chip("te-dict-missing-hints", blanks.join(" ")));
+    }
+    renderInputWrongMarks(operations);
     ui.work?.classList.add("te-dict-has-error");
     ui.error.hidden = false;
   }
@@ -733,8 +789,7 @@
       const typedLetters = [...typed].filter((char) => !isApostrophe(char));
       if (expectedLetters.length !== typedLetters.length
         || expectedLetters.map((char) => char.toLowerCase()).join("") !== typedLetters.map((char) => char.toLowerCase()).join("")) return typed;
-      let letterIndex = 0;
-      return [...expected].map((char) => isApostrophe(char) ? char : typedLetters[letterIndex++]).join("");
+      return expected;
     };
     const punctuation = (text) => [...text.matchAll(/\p{P}/gu)].map((match) => match[0]);
     let output = "";
@@ -777,6 +832,7 @@
     if (result.perfect) {
       const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
       if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
+      clearInputWrongMarks();
       ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
       solved.add(current);
@@ -936,6 +992,13 @@
     if (event.key !== "Escape") event.stopPropagation();
   }
 
+  function isCorrectIncompletePrefix(reference, answer) {
+    const expected = globalThis.LHN_DICTATION_SCORE.tokenize(reference);
+    const entered = globalThis.LHN_DICTATION_SCORE.tokenize(answer);
+    return entered.length > 0 && entered.length < expected.length
+      && entered.every((word, index) => word === expected[index]);
+  }
+
   function onAnswerKeyDown(event) {
     if (event.key === "Escape") return; // Let the existing overlay Esc handler close the whole overlay.
     if (ui?.error) ui.error.hidden = true;
@@ -944,6 +1007,13 @@
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       const cue = sentenceCues[current];
+      if (cue && isCorrectIncompletePrefix(cue.en, ui.input.value)) {
+        const spacedValue = `${ui.input.value.trimEnd()} `;
+        ui.input.value = spacedValue;
+        ui.input.setSelectionRange(spacedValue.length, spacedValue.length);
+        onAnswerInput();
+        return;
+      }
       const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
       if (isPerfect && solved.has(current) && checkedCurrent) { ui?.btnNext?.click(); return; }
       ui.check.click();
@@ -963,6 +1033,7 @@
     if (!ui) return;
     checkedCurrent = false;
     ui.input.value = "";
+    clearInputWrongMarks();
     ui.input.classList.remove("correct");
     ui.check.classList.add("te-dict-act-primary");
     ui.check.classList.remove("te-dict-done");
