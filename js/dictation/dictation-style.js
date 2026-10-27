@@ -26,7 +26,6 @@ globalThis.LHN_DICTATION_CSS = `
   overflow: hidden;
   position: relative;
   z-index: 1;
-  border-right: 1px solid #e5e7eb;
 }
 #keepit-exact-overlay.te-dictation-active .te-video-slot {
   flex: 0 0 auto;
