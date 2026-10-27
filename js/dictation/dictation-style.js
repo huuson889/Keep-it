@@ -211,6 +211,8 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-auto input { accent-color: #f59e0b; }
 #keepit-exact-overlay.theme-dark .te-dict-auto { color: #a1a1aa; }
 #keepit-exact-overlay .te-dict-work { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 12px; }
+#keepit-exact-overlay .te-dict-answer-stack { position: relative; display: flex; flex-direction: column; gap: 12px; }
+#keepit-exact-overlay .te-dict-work.te-dict-has-error .te-dict-answer-stack > .te-dict-error { position: absolute; top: calc(100% + 12px); left: 0; right: 0; z-index: 1; }
 #keepit-exact-overlay .te-dict-input {
   display: block;
   width: 100%;

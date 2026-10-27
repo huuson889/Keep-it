@@ -138,11 +138,13 @@
         </div>
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
-          <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-          <div class="te-dict-hint" id="te-dict-hint"></div>
-          <div class="te-dict-error" id="te-dict-error" hidden>
-            <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
-            <div class="te-dict-error-words" id="te-dict-error-words"></div>
+          <div class="te-dict-answer-stack">
+            <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+            <div class="te-dict-hint" id="te-dict-hint"></div>
+            <div class="te-dict-error" id="te-dict-error" hidden>
+              <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
+              <div class="te-dict-error-words" id="te-dict-error-words"></div>
+            </div>
           </div>
           <div class="te-dict-translation" id="te-dict-translation" hidden></div>
         </div>
@@ -213,6 +215,7 @@
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
+      work: center.querySelector(".te-dict-work"),
       score: center.querySelector("#te-dict-score"),
       hint: center.querySelector("#te-dict-hint"),
       error: center.querySelector("#te-dict-error"),
@@ -380,6 +383,7 @@
     ui.btnNext?.classList.remove("te-dict-ready");
     setScore(null);
     ui.error.hidden = true;
+    ui.work?.classList.remove("te-dict-has-error");
     ui.success.hidden = true;
     ui.translation.hidden = true;
     ui.translation.textContent = "";
@@ -505,6 +509,7 @@
     ui.input.value = "";
     ui.input.classList.remove("correct");
     ui.error.hidden = true;
+    ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
     ui.translation.hidden = true;
@@ -639,6 +644,7 @@
         ui.errorWords.appendChild(group);
       }
     }
+    ui.work?.classList.add("te-dict-has-error");
     ui.error.hidden = false;
   }
 
@@ -765,6 +771,7 @@
     if (result.perfect) {
       const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
       if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
+      ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
       solved.add(current);
       ui.input.classList.add("correct");
@@ -954,6 +961,7 @@
     ui.check.classList.remove("te-dict-done");
     ui.btnNext?.classList.remove("te-dict-ready");
     ui.error.hidden = true;
+    ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
     ui.translation.hidden = true;
