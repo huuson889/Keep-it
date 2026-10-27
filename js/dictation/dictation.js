@@ -257,7 +257,12 @@
     ui.vocab.placeholder = tr("dictationVocabularyPlaceholder");
     ui.note.placeholder = tr("dictationNotesPlaceholder");
     ui.save.textContent = tr("dictationSaveNote");
-    ui.hint.textContent = `${tr("dictationEnterHint")} · ${tr("dictationShortcutHint")}`;
+    const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 3);
+    ui.hint.replaceChildren(...hintTexts.map((text) => {
+      const item = document.createElement("span");
+      item.textContent = text;
+      return item;
+    }));
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
 
