@@ -18,6 +18,7 @@
   let stopAt = -1;
   let attachedVideo = null;
   let ctrlAlone = false;
+  let escapeFilledAnswer = false;
   let panelGeneration = 0;
   let saveTimer = 0;
   let toastTimer = 0;
@@ -429,6 +430,7 @@
 
   function onAnswerInput() {
     if (!ui) return;
+    escapeFilledAnswer = false;
     clearInputWrongMarks();
     const wasChecked = checkedCurrent;
     checkedCurrent = false;
@@ -561,6 +563,7 @@
     ui.vocab.value = typeof saved.vocab === "string" ? saved.vocab : "";
     ui.note.value = typeof saved.note === "string" ? saved.note : "";
     ui.saved.textContent = "";
+    escapeFilledAnswer = false;
     ui.input.value = "";
     clearInputWrongMarks();
     ui.input.classList.remove("correct");
@@ -1003,6 +1006,7 @@
   }
 
   function submit() {
+    escapeFilledAnswer = false;
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
@@ -1143,6 +1147,15 @@
     if (attachedVideo.currentTime >= stopAt - 0.03) finishCue();
   }
 
+  function toggleVideoPlayback() {
+    const video = A?.state?.videoEl;
+    if (!video) return;
+    if (video.paused) {
+      const playing = video.play();
+      if (playing?.catch) playing.catch(() => {});
+    } else video.pause();
+  }
+
   function onControlClick(event) {
     if (!active || !ui) return;
     const button = event.target.closest?.("button[title]");
@@ -1158,12 +1171,7 @@
     } else if (title === "Lặp lại câu") {
       playSentence(current);
     } else {
-      const video = A?.state?.videoEl;
-      if (!video) return;
-      if (video.paused) {
-        const playing = video.play();
-        if (playing?.catch) playing.catch(() => {});
-      } else video.pause();
+      toggleVideoPlayback();
     }
   }
 
@@ -1178,8 +1186,26 @@
       && entered.every((word, index) => word === expected[index]);
   }
 
+  function handleAnswerEscape() {
+    const cue = sentenceCues[current];
+    if (!ui || !cue) return;
+    if (escapeFilledAnswer) {
+      resetAnswer();
+      return;
+    }
+    ui.input.value = cue.en;
+    ui.input.setSelectionRange(cue.en.length, cue.en.length);
+    onAnswerInput();
+    escapeFilledAnswer = true;
+  }
+
   function onAnswerKeyDown(event) {
-    if (event.key === "Escape") return; // Let the existing overlay Esc handler close the whole overlay.
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      handleAnswerEscape();
+      return;
+    }
     if (ui?.error) ui.error.hidden = true;
     if (event.key === "ArrowUp" || event.key === "ArrowDown") return;
     event.stopPropagation();
@@ -1220,6 +1246,7 @@
 
   function resetAnswer() {
     if (!ui) return;
+    escapeFilledAnswer = false;
     checkedCurrent = false;
     ui.input.value = "";
     clearInputWrongMarks();
@@ -1249,11 +1276,21 @@
       if (!editable) { event.preventDefault(); event.stopImmediatePropagation(); }
       return;
     }
-    if (event.key === "Escape") { ctrlAlone = false; return; }
-    if (event.altKey && event.key.toLowerCase() === "x") {
+    if (event.key === "Escape") {
+      ctrlAlone = false;
+      const path = event.composedPath?.() || [];
+      if (path.includes(ui?.input) || event.target === ui?.input) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        handleAnswerEscape();
+      }
+      return;
+    }
+    const isBacktick = event.key === "`" || (event.code === "Backquote" && !event.shiftKey);
+    if (isBacktick && !event.ctrlKey && !event.altKey && !event.metaKey) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      resetAnswer();
+      if (!event.repeat) toggleVideoPlayback();
       return;
     }
     if (event.key === "Control") { ctrlAlone = true; return; }
