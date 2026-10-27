@@ -1858,7 +1858,8 @@ async function loadCaptions() {
 }
 
 function onTranscriptClick(e) {
-  const row = e.target.closest('.yt-dual-item');
+  const timestamp = e.target.closest('.yt-dual-timestamp');
+  const row = timestamp?.closest('.yt-dual-item');
   const v = state.videoEl;
   if (!row || !v) return;
   const index = Number(row.dataset.idx);
@@ -2229,11 +2230,12 @@ function bindUI() {
   let transcriptClickTimer = 0;
   transcriptList.addEventListener('click', (e) => {
     if (e.detail > 1) return;
+    const timestamp = e.target.closest('.yt-dual-timestamp');
+    if (!timestamp) return;
     const selectedText = shadow?.getSelection?.()?.toString() || getSelection()?.toString();
     if (selectedText?.trim()) return;
     clearTimeout(transcriptClickTimer);
-    const target = e.target;
-    transcriptClickTimer = setTimeout(() => onTranscriptClick({ target }), 260);
+    transcriptClickTimer = setTimeout(() => onTranscriptClick({ target: timestamp }), 260);
   });
   transcriptList.addEventListener('pointerover', (e) => {
     const sourceText = e.target.closest('.yt-dual-item-en');
@@ -2244,7 +2246,7 @@ function bindUI() {
     if (sourceText && !sourceText.contains(e.relatedTarget)) resumeVideoFor('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('dblclick', (e) => {
-    if (!e.target.closest('.yt-dual-item')) return;
+    if (!e.target.closest('.yt-dual-timestamp')) return;
     clearTimeout(transcriptClickTimer);
     pauseVideoFor('sidebar-double-click');
   });
