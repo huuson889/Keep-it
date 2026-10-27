@@ -323,7 +323,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-w.ok { background: rgba(16, 185, 129, .2); color: #059669; }
 #keepit-exact-overlay .te-dict-w.bad { background: rgba(239, 68, 68, .2); color: #dc2626; text-decoration: line-through; }
 #keepit-exact-overlay .te-dict-w.fix { background: rgba(245, 158, 11, .2); color: #b45309; font-size: 11px; }
-#keepit-exact-overlay .te-dict-missing-hints { flex: 0 1 auto; min-width: 0; color: #b45309; white-space: pre-wrap; letter-spacing: .08em; }
+#keepit-exact-overlay .te-dict-missing-hints { flex: 0 0 auto; color: #b45309; white-space: nowrap; letter-spacing: .08em; }
 #keepit-exact-overlay.theme-dark .te-dict-missing-hints { color: #fcd34d; }
 #keepit-exact-overlay.theme-dark .te-dict-w.ok { color: #34d399; }
 #keepit-exact-overlay.theme-dark .te-dict-w.bad { color: #f87171; }

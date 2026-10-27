@@ -672,12 +672,12 @@
   }
 
   function appendMissingMasks(words) {
-    if (!words.length) return;
-    const text = words.map((word) => "_".repeat([...word.norm].length)).join(" ");
-    const mask = document.createElement("span");
-    mask.className = "te-dict-missing-hints";
-    mask.textContent = text;
-    ui.errorWords.appendChild(mask);
+    for (const word of words) {
+      const mask = document.createElement("span");
+      mask.className = "te-dict-missing-hints";
+      mask.textContent = "_".repeat([...word.norm].length);
+      ui.errorWords.appendChild(mask);
+    }
   }
 
   function renderPrefixSuggestion(reference, answer) {
