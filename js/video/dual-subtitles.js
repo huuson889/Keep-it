@@ -1218,9 +1218,13 @@ function togglePlay() {
   if (v.paused) {
     state.pauseReasons.delete('sidebar-double-click');
     if (!state.pauseReasons.size) state.managedPauseVideo = null;
-    v.play().catch(() => {});
+    syncPlayButton(false);
+    try { v.play().catch(() => syncPlayButton()); }
+    catch { syncPlayButton(); }
+  } else {
+    v.pause();
+    syncPlayButton(true);
   }
-  else v.pause();
 }
 
 function pulseControlButton(button) {
@@ -1245,12 +1249,10 @@ function handleOverlayVideoClick(event) {
 
 function handleVideoPlay() {
   syncPlayButton();
-  pulseControl('Phát/Tạm dừng');
 }
 
 function handleVideoPause() {
   syncPlayButton();
-  pulseControl('Phát/Tạm dừng');
 }
 
 function handleVideoRateChange() {
@@ -1263,11 +1265,12 @@ function handleVideoVolumeChange() {
   pulseControl('Audio');
 }
 
-function syncPlayButton() {
+function syncPlayButton(paused = null) {
   const v = state.videoEl;
   const btn = ctrl('Phát/Tạm dừng');
-  if (!v || !btn) return;
-  btn.querySelector('svg').innerHTML = v.paused ? PLAY_PATH : PAUSE_PATH;
+  const icon = btn?.querySelector('svg');
+  if (!v || !icon) return;
+  icon.innerHTML = (paused ?? v.paused) ? PLAY_PATH : PAUSE_PATH;
 }
 
 // ---- Popup tốc độ: nút "Tốc độ" mở popup (không chuyển tuần tự nữa) ----
