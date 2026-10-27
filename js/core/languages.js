@@ -143,7 +143,7 @@
   MESSAGES.vi.exportErrorLog = "Xuất log";
   MESSAGES.ko.exportErrorLog = "로그 내보내기";
   Object.assign(MESSAGES.en, {
-    dictationTitle: "Dictation", dictationSentences: "Sentences", dictationAnswer: "Your answer", dictationLessonNotes: "Lesson notes",
+    dictationTitle: "Dictation & check", dictationSentences: "Sentences", dictationAnswer: "Your answer", dictationLessonNotes: "Lesson notes",
     dictationVocabulary: "Vocabulary", dictationGrammarNotes: "Notes / grammar", dictationNotesLocked: "Notes are locked",
     dictationNotesLockHelp: "Type the current sentence with 100% accuracy to unlock these notes.", dictationType: "Type", dictationAccuracy: "Accuracy",
     dictationClose: "Close Dictation", dictationPlaceholder: "Type the sentence you hear…", dictationVocabularyPlaceholder: "Add a word or phrase…",
@@ -152,10 +152,14 @@
     dictationSolved: "solved", dictationLocked: "locked", dictationTranslationLoading: "Getting the Vietnamese translation…",
     dictationTranslationFailed: "Vietnamese translation unavailable.", dictationCorrect: "Correct!", dictationTryAgain: "Not quite — keep trying.",
     dictationCaptionsLoading: "English subtitles are still loading. Try again shortly.",
-    dictationEnglishOnly: "Dictation is available only for videos with English subtitles."
+    dictationEnglishOnly: "Dictation is available only for videos with English subtitles.",
+    dictationAudioTitle: "Audio from the video", dictationAudioSource: "YouTube", dictationAudioHelp: "Press play to hear the current sentence",
+    dictationAutoPlay: "Auto-play when changing sentence", dictationErrorTitle: "Error analysis:", dictationSuccess: "Excellent! You typed it 100% correctly",
+    dictationEmptyAnswer: "(Nothing typed yet)", dictationExtra: "(extra)", dictationRepeat: "Repeat:", dictationPrev: "Previous",
+    dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device"
   });
   Object.assign(MESSAGES.vi, {
-    dictationTitle: "Luyện chép", dictationSentences: "Danh sách câu", dictationAnswer: "Câu trả lời", dictationLessonNotes: "Ghi chú bài học",
+    dictationTitle: "Luyện chép & kiểm tra", dictationSentences: "Danh sách câu", dictationAnswer: "Câu trả lời", dictationLessonNotes: "Ghi chú bài học",
     dictationVocabulary: "Từ vựng", dictationGrammarNotes: "Ghi chú / ngữ pháp", dictationNotesLocked: "Ghi chú đang khóa",
     dictationNotesLockHelp: "Gõ đúng 100% câu hiện tại để mở khóa ghi chú.", dictationType: "Đánh máy", dictationAccuracy: "Độ chính xác",
     dictationClose: "Đóng chế độ luyện chép", dictationPlaceholder: "Gõ câu bạn nghe được…", dictationVocabularyPlaceholder: "Thêm từ hoặc cụm từ…",
@@ -164,10 +168,14 @@
     dictationSolved: "đã hoàn thành", dictationLocked: "đang khóa", dictationTranslationLoading: "Đang lấy bản dịch tiếng Việt…",
     dictationTranslationFailed: "Không lấy được bản dịch tiếng Việt.", dictationCorrect: "Chính xác!", dictationTryAgain: "Chưa đúng — thử lại.",
     dictationCaptionsLoading: "Phụ đề tiếng Anh đang tải. Vui lòng thử lại sau.",
-    dictationEnglishOnly: "Chỉ dùng Dictation với video có phụ đề tiếng Anh."
+    dictationEnglishOnly: "Chỉ dùng Dictation với video có phụ đề tiếng Anh.",
+    dictationAudioTitle: "Âm thanh từ video", dictationAudioSource: "YouTube", dictationAudioHelp: "Nhấn nút phát để nghe câu hiện tại",
+    dictationAutoPlay: "Tự phát khi chuyển câu", dictationErrorTitle: "Phân tích lỗi sai:", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
+    dictationEmptyAnswer: "(Chưa nhập câu)", dictationExtra: "(thừa)", dictationRepeat: "Lặp:", dictationPrev: "Câu trước",
+    dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này"
   });
   Object.assign(MESSAGES.ko, {
-    dictationTitle: "받아쓰기", dictationSentences: "문장 목록", dictationAnswer: "내 답변", dictationLessonNotes: "학습 노트",
+    dictationTitle: "받아쓰기 & 확인", dictationSentences: "문장 목록", dictationAnswer: "내 답변", dictationLessonNotes: "학습 노트",
     dictationVocabulary: "어휘", dictationGrammarNotes: "메모 / 문법", dictationNotesLocked: "노트가 잠겨 있습니다",
     dictationNotesLockHelp: "현재 문장을 100% 정확하게 입력하면 노트가 열립니다.", dictationType: "타이핑", dictationAccuracy: "정확도",
     dictationClose: "받아쓰기 닫기", dictationPlaceholder: "들리는 문장을 입력하세요…", dictationVocabularyPlaceholder: "단어나 구문 추가…",
@@ -176,7 +184,11 @@
     dictationSolved: "완료", dictationLocked: "잠김", dictationTranslationLoading: "베트남어 번역을 불러오는 중…",
     dictationTranslationFailed: "베트남어 번역을 사용할 수 없습니다.", dictationCorrect: "정답!", dictationTryAgain: "아직 다릅니다 — 다시 해 보세요.",
     dictationCaptionsLoading: "영어 자막을 불러오는 중입니다. 잠시 후 다시 시도하세요.",
-    dictationEnglishOnly: "받아쓰기는 영어 자막이 있는 영상에서만 사용할 수 있습니다."
+    dictationEnglishOnly: "받아쓰기는 영어 자막이 있는 영상에서만 사용할 수 있습니다.",
+    dictationAudioTitle: "영상 오디오", dictationAudioSource: "YouTube", dictationAudioHelp: "재생 버튼을 눌러 현재 문장을 들어보세요",
+    dictationAutoPlay: "문장 전환 시 자동 재생", dictationErrorTitle: "오류 분석:", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
+    dictationEmptyAnswer: "(입력 없음)", dictationExtra: "(불필요)", dictationRepeat: "반복:", dictationPrev: "이전",
+    dictationReplay: "다시 듣기", dictationSlow: "느리게", dictationNext: "다음", dictationAutosave: "노트는 이 기기에 자동 저장됩니다"
   });
 
   function detectLanguage() {

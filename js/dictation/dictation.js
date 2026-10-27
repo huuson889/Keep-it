@@ -19,6 +19,12 @@
   let panelGeneration = 0;
   let saveTimer = 0;
   let toastTimer = 0;
+  let rafId = 0;
+  let repeatLeft = 0;
+  let repeatCount = 1;
+  let savedRate = null;
+  let savedLoop = null;
+  let audioCtx = null;
   const translating = new Map();
 
   const language = () => {
@@ -91,25 +97,52 @@
     center.id = "te-dictation-center";
     center.innerHTML = `
       <div class="te-dict-panel-head">
-        <h2 class="te-dict-heading" data-dict-label="dictationTitle"></h2>
-        <span class="te-dict-score" id="te-dict-score">—</span>
+        <h2 class="te-dict-heading">${makeSvg('<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>')}<span data-dict-label="dictationTitle"></span></h2>
+        <span class="te-dict-acc"><span class="te-dict-acc-label" data-dict-label="dictationAccuracy"></span><span class="te-dict-score" id="te-dict-score">---</span></span>
       </div>
       <div class="te-dict-center-body">
-        <label class="te-dict-heading" for="te-dict-input" data-dict-label="dictationAnswer"></label>
-        <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-        <div class="te-dict-hint" id="te-dict-hint"></div>
-        <div class="te-dict-feedback" id="te-dict-feedback" aria-live="polite"></div>
-        <div class="te-dict-word-feedback" id="te-dict-word-feedback" aria-label=""></div>
-        <button class="te-dict-check" id="te-dict-check" type="button"></button>
-        <div class="te-dict-translation" id="te-dict-translation" hidden></div>
+        <div class="te-dict-audio-card">
+          <button class="te-dict-audio-btn" id="te-dict-audio-btn" type="button">${makeSvg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>')}</button>
+          <div class="te-dict-audio-text">
+            <div class="te-dict-audio-title"><span data-dict-label="dictationAudioTitle"></span><span class="te-dict-chip" data-dict-label="dictationAudioSource"></span></div>
+            <p data-dict-label="dictationAudioHelp"></p>
+          </div>
+          <label class="te-dict-auto"><input type="checkbox" id="te-dict-auto" checked><span data-dict-label="dictationAutoPlay"></span></label>
+        </div>
+        <div class="te-dict-work">
+          <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+          <div class="te-dict-hint" id="te-dict-hint"></div>
+          <div class="te-dict-error" id="te-dict-error" hidden>
+            <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
+            <div class="te-dict-error-words" id="te-dict-error-words"></div>
+          </div>
+          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
+          <div class="te-dict-translation" id="te-dict-translation" hidden></div>
+        </div>
+      </div>
+      <div class="te-dict-footer">
+        <div class="te-dict-repeat">
+          <span class="te-dict-repeat-label" data-dict-label="dictationRepeat"></span>
+          ${[0, 1, 2, 3].map((n) => `<button type="button" class="te-dict-repeat-btn${n === repeatCount ? " active" : ""}" data-count="${n}">${n}x</button>`).join("")}
+        </div>
+        <div class="te-dict-actions">
+          <button type="button" class="te-dict-act" id="te-dict-btn-prev">${makeSvg('<path d="m15 6-6 6 6 6"/>')}<span data-dict-label="dictationPrev"></span></button>
+          <button type="button" class="te-dict-act" id="te-dict-btn-replay">${makeSvg('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>')}<span data-dict-label="dictationReplay"></span></button>
+          <button type="button" class="te-dict-act te-dict-act-primary" id="te-dict-check">${makeSvg('<path d="m5 12 5 5 9-10"/>')}<span data-dict-label="dictationCheck"></span></button>
+          <button type="button" class="te-dict-act" id="te-dict-btn-slow">${makeSvg('<path d="M12 14l4-4"/><path d="M3.3 16a9 9 0 1 1 17.4 0"/>')}<span data-dict-label="dictationSlow"></span></button>
+          <button type="button" class="te-dict-act" id="te-dict-btn-next"><span data-dict-label="dictationNext"></span>${makeSvg('<path d="m9 6 6 6-6 6"/>')}</button>
+        </div>
       </div>`;
 
     const notesPanel = document.createElement("section");
     notesPanel.id = "te-dictation-notes";
     notesPanel.innerHTML = `
       <div class="te-dict-panel-head">
-        <h2 class="te-dict-heading" data-dict-label="dictationLessonNotes"></h2>
-        <button class="yt-dual-close-btn te-dict-close" id="te-dict-close" type="button"><span aria-hidden="true">×</span></button>
+        <h2 class="te-dict-heading">${makeSvg('<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>')}<span data-dict-label="dictationLessonNotes"></span></h2>
+        <div class="te-dict-head-actions">
+          <button class="te-dict-save" id="te-dict-save" type="button"></button>
+          <button class="yt-dual-close-btn te-dict-close" id="te-dict-close" type="button"><span aria-hidden="true">×</span></button>
+        </div>
       </div>
       <div class="te-dict-note-body">
         <div>
@@ -126,9 +159,9 @@
           <span data-dict-label="dictationNotesLockHelp"></span>
         </div>
       </div>
-      <div class="te-dict-panel-head te-dict-note-footer">
+      <div class="te-dict-note-footer">
         <span class="te-dict-saved" id="te-dict-saved" aria-live="polite"></span>
-        <button class="te-dict-save" id="te-dict-save" type="button"></button>
+        <span class="te-dict-autosave" data-dict-label="dictationAutosave"></span>
       </div>`;
 
     root.append(center, notesPanel);
@@ -140,7 +173,10 @@
         ${makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>')}
         <span data-dict-label="dictationType"></span>
       </button>
-      <span class="te-dict-toolbar-accuracy"><span data-dict-label="dictationAccuracy"></span><strong id="te-dict-toolbar-score">—</strong></span>`;
+      <span class="te-dict-toolbar-accuracy">
+        <svg class="te-dict-ring" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle class="te-dict-ring-bg" cx="12" cy="12" r="9"/><circle class="te-dict-ring-fg" id="te-dict-ring-fg" cx="12" cy="12" r="9" transform="rotate(-90 12 12)"/></svg>
+        <span class="te-dict-acc-col"><span data-dict-label="dictationAccuracy"></span><strong id="te-dict-toolbar-score">0%</strong></span>
+      </span>`;
     primaryGroup.prepend(tools);
     primaryGroup.classList.add("te-dict-primary-group");
 
@@ -151,12 +187,22 @@
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
       score: center.querySelector("#te-dict-score"),
-      feedback: center.querySelector("#te-dict-feedback"),
-      wordFeedback: center.querySelector("#te-dict-word-feedback"),
+      hint: center.querySelector("#te-dict-hint"),
+      error: center.querySelector("#te-dict-error"),
+      errorWords: center.querySelector("#te-dict-error-words"),
+      success: center.querySelector("#te-dict-success"),
       translation: center.querySelector("#te-dict-translation"),
       check: center.querySelector("#te-dict-check"),
+      audioBtn: center.querySelector("#te-dict-audio-btn"),
+      auto: center.querySelector("#te-dict-auto"),
+      repeatBtns: [...center.querySelectorAll(".te-dict-repeat-btn")],
+      btnPrev: center.querySelector("#te-dict-btn-prev"),
+      btnReplay: center.querySelector("#te-dict-btn-replay"),
+      btnSlow: center.querySelector("#te-dict-btn-slow"),
+      btnNext: center.querySelector("#te-dict-btn-next"),
       typeControl: tools.querySelector("#te-dict-type-control"),
       toolbarScore: tools.querySelector("#te-dict-toolbar-score"),
+      ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
       vocab: notesPanel.querySelector("#te-dict-vocab"),
       note: notesPanel.querySelector("#te-dict-note"),
@@ -178,15 +224,19 @@
     ui.input.setAttribute("aria-label", tr("dictationAnswer"));
     ui.vocab.placeholder = tr("dictationVocabularyPlaceholder");
     ui.note.placeholder = tr("dictationNotesPlaceholder");
-    ui.check.textContent = tr("dictationCheck");
     ui.save.textContent = tr("dictationSaveNote");
-    ui.hint = center.querySelector("#te-dict-hint");
     ui.hint.textContent = `${tr("dictationEnterHint")} · ${tr("dictationShortcutHint")}`;
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
 
     ui.close.addEventListener("click", close);
-    ui.check.addEventListener("click", submit);
+    ui.check.addEventListener("click", () => { submit(); refocus(); });
+    ui.btnPrev.addEventListener("click", () => { if (current > 0) selectSentence(current - 1, true); });
+    ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1, true); });
+    ui.btnReplay.addEventListener("click", () => { playSentence(current); refocus(); });
+    ui.audioBtn.addEventListener("click", () => { playSentence(current); refocus(); });
+    ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6, count: 1 }); refocus(); });
+    ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
     ui.typeControl.addEventListener("click", () => ui?.input.focus());
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
@@ -201,6 +251,13 @@
     }
     ui.sentences.addEventListener("scroll", onSentenceScroll, { passive: true });
     ui.bar.addEventListener("click", onControlClick, true);
+  }
+
+  function refocus() { ui?.input.focus({ preventScroll: true }); }
+
+  function setRepeat(count) {
+    repeatCount = Math.max(0, Math.min(3, count | 0));
+    ui?.repeatBtns.forEach((button) => button.classList.toggle("active", Number(button.dataset.count) === repeatCount));
   }
 
   function showToastBeforeOpen() {
@@ -269,20 +326,21 @@
 
   function updateProgressControls() {
     if (!ui) return;
-    if (ui.previous) {
-      ui.previous.disabled = current <= 0;
-      ui.previous.setAttribute("aria-disabled", String(ui.previous.disabled));
-    }
-    if (ui.next) {
-      ui.next.disabled = current >= sentenceCues.length - 1 || !solved.has(current);
-      ui.next.setAttribute("aria-disabled", String(ui.next.disabled));
+    const prevOff = current <= 0;
+    const nextOff = current >= sentenceCues.length - 1 || !solved.has(current);
+    for (const [button, off] of [[ui.previous, prevOff], [ui.next, nextOff], [ui.btnPrev, prevOff], [ui.btnNext, nextOff]]) {
+      if (!button) continue;
+      button.disabled = off;
+      button.setAttribute("aria-disabled", String(off));
     }
   }
 
-  function setScore(text) {
+  function setScore(percent) {
     if (!ui) return;
-    ui.score.textContent = text;
-    ui.toolbarScore.textContent = text;
+    const has = Number.isFinite(percent);
+    ui.score.textContent = has ? `${percent}%` : "---";
+    ui.toolbarScore.textContent = `${has ? percent : 0}%`;
+    ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
   }
 
   function updateRows(scrollCurrent = true) {
@@ -312,7 +370,7 @@
     row.dataset.index = String(index);
     row.disabled = !solved.has(index);
     row.setAttribute("role", "listitem");
-    row.innerHTML = '<span class="te-dict-num"></span><span class="te-dict-text"></span><span class="te-dict-vi" hidden></span>';
+    row.innerHTML = `<span class="te-dict-num"></span><span class="te-dict-text"></span><span class="te-dict-icon" aria-hidden="true"><svg class="play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="te-dict-vi" hidden></span>`;
     row.querySelector(".te-dict-num").textContent = String(index + 1);
     row.querySelector(".te-dict-text").textContent = cue.en;
     const translation = row.querySelector(".te-dict-vi");
@@ -389,21 +447,22 @@
     ui.saved.textContent = "";
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    ui.feedback.textContent = "";
-    ui.feedback.className = "te-dict-feedback";
-    ui.wordFeedback.replaceChildren();
+    ui.error.hidden = true;
+    ui.errorWords.replaceChildren();
+    ui.success.hidden = true;
     ui.translation.hidden = !wasSolved;
     ui.translation.textContent = "";
-    setScore(wasSolved ? "100%" : "—");
+    setScore(wasSolved ? 100 : null);
     if (wasSolved) void ensureVietnamese(current);
   }
 
-  function selectSentence(index, replay) {
+  function selectSentence(index, autoPlay) {
     if (!sentenceCues[index]) return;
     flushNotes();
     current = index;
     renderCurrent();
-    if (replay) playSentence(index);
+    prepareCue();
+    if (autoPlay && ui?.auto.checked && repeatCount > 0) playSentence(index, { count: repeatCount });
     ui?.input.focus({ preventScroll: true });
   }
 
@@ -452,43 +511,117 @@
     return request;
   }
 
-  function renderWordFeedback(result) {
-    ui.wordFeedback.replaceChildren();
-    for (const token of result.words || []) {
-      const word = document.createElement("span");
-      word.className = `te-dict-word${token.ok ? " correct" : ""}`;
-      word.textContent = token.w;
-      ui.wordFeedback.appendChild(word);
+  function renderError(result) {
+    ui.errorWords.replaceChildren();
+    const chip = (className, text) => {
+      const node = document.createElement("span");
+      node.className = className;
+      node.textContent = text;
+      return node;
+    };
+    if (!ui.input.value.trim()) {
+      ui.errorWords.appendChild(chip("te-dict-empty", tr("dictationEmptyAnswer")));
+    } else {
+      const ops = result.ops || [];
+      for (let k = 0; k < ops.length; k++) {
+        const op = ops[k];
+        const group = document.createElement("span");
+        group.className = "te-dict-wg";
+        if (op.type === "missing") {
+          // Chỉ báo số từ thiếu, không lộ đáp án (giống file mẫu: chỉ hiện đáp án tại từ đã gõ).
+          let run = 1;
+          while (ops[k + 1]?.type === "missing") { run++; k++; }
+          group.appendChild(chip("te-dict-w fix", `+${run}`));
+          ui.errorWords.appendChild(group);
+          continue;
+        }
+        if (op.type === "ok") group.appendChild(chip("te-dict-w ok", op.typed));
+        else if (op.type === "wrong") {
+          group.appendChild(chip("te-dict-w bad", op.typed));
+          group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
+        } else if (op.type === "extra") {
+          group.appendChild(chip("te-dict-w bad", op.typed));
+          group.appendChild(chip("te-dict-w fix", `→ ${tr("dictationExtra")}`));
+        }
+        ui.errorWords.appendChild(group);
+      }
     }
+    ui.error.hidden = false;
   }
 
   function localConfetti() {
-    if (!ui?.center) return;
+    if (!ui?.root) return;
     const colors = ["#22c55e", "#ef4444", "#f59e0b"];
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < 90; i++) {
       const bit = document.createElement("span");
       bit.className = "te-dict-confetti";
+      const angle = (Math.random() - 0.5) * (80 * Math.PI / 180) * 2; // lệch ±80° so với phương thẳng đứng
+      const speed = 180 + Math.random() * 260;
       bit.style.backgroundColor = colors[i % colors.length];
-      bit.style.setProperty("--dx", `${Math.round((Math.random() - 0.5) * 340)}px`);
-      bit.style.setProperty("--dy", `${Math.round(120 + Math.random() * 210)}px`);
-      bit.style.setProperty("--rot", `${Math.round(Math.random() * 540 - 270)}deg`);
-      bit.style.left = `${38 + Math.random() * 24}%`;
-      ui.center.appendChild(bit);
-      setTimeout(() => bit.remove(), 900);
+      bit.style.setProperty("--ux", `${Math.round(Math.sin(angle) * speed)}px`);
+      bit.style.setProperty("--uy", `${Math.round(-Math.cos(angle) * speed)}px`);
+      bit.style.setProperty("--dx", `${Math.round(Math.sin(angle) * speed * 1.25)}px`);
+      bit.style.setProperty("--dy", `${Math.round(160 + Math.random() * 260)}px`);
+      bit.style.setProperty("--rot", `${Math.round(Math.random() * 720 - 360)}deg`);
+      ui.root.appendChild(bit);
+      setTimeout(() => bit.remove(), 1500);
     }
+  }
+
+  function audioContext() {
+    try {
+      audioCtx = audioCtx || new (globalThis.AudioContext || globalThis.webkitAudioContext)();
+      if (audioCtx.state === "suspended") void audioCtx.resume();
+      return audioCtx;
+    } catch {
+      return null;
+    }
+  }
+
+  function playSuccessSound() {
+    const ac = audioContext();
+    if (!ac) return;
+    const now = ac.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, now + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.3);
+    });
+  }
+
+  function playErrorSound() {
+    const ac = audioContext();
+    if (!ac) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
   }
 
   function submit() {
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
-    setScore(`${result.percent}%`);
-    renderWordFeedback(result);
+    setScore(result.percent);
     if (result.perfect) {
       solved.add(current);
       ui.input.classList.add("correct");
-      ui.feedback.className = "te-dict-feedback good";
-      ui.feedback.textContent = `${tr("dictationCorrect")} 100%`;
+      ui.error.hidden = true;
+      ui.success.hidden = false;
       setNotesLocked(false);
       updateRows();
       updateProgressControls();
@@ -496,16 +629,74 @@
       ui.translation.textContent = translations[String(current)] || tr("dictationTranslationLoading");
       void saveRecord();
       void ensureVietnamese(current);
+      playSuccessSound();
       localConfetti();
       return;
     }
     ui.input.classList.remove("correct");
-    ui.feedback.className = "te-dict-feedback bad";
-    ui.feedback.textContent = `${tr("dictationTryAgain")} ${result.percent}%`;
+    ui.success.hidden = true;
+    if (!solved.has(current)) ui.translation.hidden = true;
+    renderError(result);
+    playErrorSound();
     setNotesLocked(!solved.has(current));
   }
 
-  function playSentence(index) {
+  // Phát đúng một câu rồi dừng: rAF canh điểm kết thúc (timeupdate chỉ ~4 lần/giây nên dễ trôi sang câu sau).
+  function stopWatch() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
+  }
+
+  function restoreRate() {
+    if (savedRate !== null && attachedVideo) {
+      try { attachedVideo.playbackRate = savedRate; } catch {}
+    }
+    savedRate = null;
+  }
+
+  function endPlayback() {
+    stopWatch();
+    stopAt = -1;
+    repeatLeft = 0;
+    restoreRate();
+  }
+
+  function finishCue() {
+    const video = attachedVideo;
+    const cue = sentenceCues[current];
+    if (repeatLeft > 0 && video && cue) {
+      repeatLeft--;
+      try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+      watchPlayback();
+      return;
+    }
+    video?.pause();
+    endPlayback();
+  }
+
+  function watchPlayback() {
+    stopWatch();
+    const step = () => {
+      rafId = 0;
+      const video = attachedVideo;
+      if (!active || stopAt < 0 || !video) return;
+      if (video.paused) return; // tiếp tục khi sự kiện "play" kích hoạt lại
+      if (video.currentTime >= stopAt - 0.03 || video.ended) { finishCue(); return; }
+      rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+  }
+
+  function prepareCue() {
+    const video = A?.state?.videoEl;
+    const cue = sentenceCues[current];
+    endPlayback();
+    if (!video || !cue) return;
+    video.pause();
+    try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+  }
+
+  function playSentence(index, options = {}) {
     const cue = sentenceCues[index];
     const video = A?.state?.videoEl;
     if (!cue || !video || !active) return;
@@ -514,18 +705,39 @@
       current = index;
       renderCurrent();
     }
+    const count = options.count ?? Math.max(1, repeatCount);
+    if (count < 1) return;
+    endPlayback();
+    if (options.rate) {
+      savedRate = video.playbackRate;
+      try { video.playbackRate = options.rate; } catch {}
+    }
+    repeatLeft = count - 1;
     stopAt = Number(cue.end) || -1;
     try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+    watchPlayback();
     const playing = video.play();
     if (playing?.catch) playing.catch(() => {});
   }
 
-  function onVideoTimeUpdate() {
-    if (!active || stopAt < 0 || !attachedVideo) return;
-    if (attachedVideo.currentTime >= stopAt) {
-      attachedVideo.pause();
-      stopAt = -1;
+  // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
+  function onVideoPlay() {
+    if (!active || !attachedVideo) return;
+    const cue = sentenceCues[current];
+    if (!cue) return;
+    if (stopAt >= 0) { if (!rafId) watchPlayback(); return; }
+    const time = attachedVideo.currentTime;
+    if (time < cue.start - 0.05 || time >= cue.end - 0.03) {
+      try { attachedVideo.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
     }
+    stopAt = Number(cue.end) || -1;
+    repeatLeft = 0;
+    watchPlayback();
+  }
+
+  function onVideoTimeUpdate() {
+    if (!active || stopAt < 0 || !attachedVideo || attachedVideo.paused) return;
+    if (attachedVideo.currentTime >= stopAt - 0.03) finishCue();
   }
 
   function onControlClick(event) {
@@ -544,15 +756,11 @@
       playSentence(current);
     } else {
       const video = A?.state?.videoEl;
-      const cue = sentenceCues[current];
-      if (!video || !cue) return;
-      if (!video.paused) video.pause();
-      else if (video.currentTime < cue.start || video.currentTime >= cue.end) playSentence(current);
-      else {
-        stopAt = cue.end;
+      if (!video) return;
+      if (video.paused) {
         const playing = video.play();
         if (playing?.catch) playing.catch(() => {});
-      }
+      } else video.pause();
     }
   }
 
@@ -582,10 +790,10 @@
     if (!ui) return;
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    ui.feedback.textContent = "";
-    ui.feedback.className = "te-dict-feedback";
-    ui.wordFeedback.replaceChildren();
-    setScore(solved.has(current) ? "100%" : "—");
+    ui.error.hidden = true;
+    ui.errorWords.replaceChildren();
+    ui.success.hidden = true;
+    setScore(solved.has(current) ? 100 : null);
     ui.input.focus({ preventScroll: true });
   }
 
@@ -615,12 +823,14 @@
   function attachVideoEvents() {
     attachedVideo = A?.state?.videoEl || null;
     attachedVideo?.addEventListener("timeupdate", onVideoTimeUpdate);
+    attachedVideo?.addEventListener("play", onVideoPlay);
   }
 
   function detachVideoEvents() {
+    endPlayback();
     attachedVideo?.removeEventListener("timeupdate", onVideoTimeUpdate);
+    attachedVideo?.removeEventListener("play", onVideoPlay);
     attachedVideo = null;
-    stopAt = -1;
   }
 
   async function openPanel() {
@@ -644,13 +854,16 @@
     ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
     document.addEventListener("keydown", onGlobalKeyDown, true);
     document.addEventListener("keyup", onGlobalKeyUp, true);
+    savedLoop = typeof A?.state?.loop === "boolean" ? A.state.loop : null;
+    if (savedLoop !== null) A.state.loop = false; // vòng lặp câu của Dual Sub sẽ làm video chạy lệch câu
     attachVideoEvents();
     renderInitialRows();
     setNotesLocked(true);
-    setScore("—");
+    setScore(null);
     await loadProgress(videoId, generation);
     if (!active || panelGeneration !== generation || currentVideoId() !== videoId) return;
     renderCurrent();
+    prepareCue();
     ui.input.focus({ preventScroll: true });
   }
 
@@ -662,6 +875,10 @@
     document.removeEventListener("keydown", onGlobalKeyDown, true);
     document.removeEventListener("keyup", onGlobalKeyUp, true);
     detachVideoEvents();
+    if (savedLoop !== null && A?.state) A.state.loop = savedLoop;
+    savedLoop = null;
+    void audioCtx?.close?.();
+    audioCtx = null;
     ui.bar.removeEventListener("click", onControlClick, true);
     for (const [button, original] of ui.originalButtonState) {
       button.disabled = original.disabled;

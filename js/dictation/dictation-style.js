@@ -68,12 +68,17 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay #te-dict-sentence-head { padding: 0 0 8px; border: 0; }
 #keepit-exact-overlay .te-dict-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: .02em;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
+#keepit-exact-overlay .te-dict-heading svg { flex: none; color: #f59e0b; }
 #keepit-exact-overlay .te-dict-counter,
 #keepit-exact-overlay .te-dict-score {
   flex: 0 0 auto;
@@ -101,14 +106,17 @@ globalThis.LHN_DICTATION_CSS = `
   scrollbar-width: thin;
 }
 #keepit-exact-overlay .te-dict-row {
-  display: block;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  align-items: start;
+  column-gap: 8px;
   width: 100%;
   margin: 0 0 6px;
-  padding: 9px 10px;
-  border: 1px solid transparent;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: transparent;
-  color: inherit;
+  color: #4b5563;
   font: inherit;
   text-align: left;
   cursor: default;
@@ -116,17 +124,30 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-row:not(:disabled) { cursor: pointer; }
 #keepit-exact-overlay .te-dict-row:disabled { opacity: 1; }
 #keepit-exact-overlay .te-dict-row:not(:disabled):hover { background: rgba(148, 163, 184, .12); }
-#keepit-exact-overlay .te-dict-row.current { border-color: rgba(245, 158, 11, .72); background: rgba(245, 158, 11, .08); }
 #keepit-exact-overlay .te-dict-row.solved { background: rgba(148, 163, 184, .10); }
-#keepit-exact-overlay .te-dict-num { display: inline-block; min-width: 24px; color: #9ca3af; font-size: 11px; font-variant-numeric: tabular-nums; }
-#keepit-exact-overlay .te-dict-text { color: #374151; font-size: 13px; line-height: 1.5; }
+#keepit-exact-overlay .te-dict-row.current,
+#keepit-exact-overlay .te-dict-row.current.solved { border-color: rgba(245, 158, 11, .6); background: rgba(245, 158, 11, .08); color: #b45309; }
+#keepit-exact-overlay .te-dict-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; background: #e5e7eb; color: #4b5563; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#keepit-exact-overlay .te-dict-row.current .te-dict-num { background: #f59e0b; color: #000; }
+#keepit-exact-overlay .te-dict-text { color: inherit; font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; }
+#keepit-exact-overlay .te-dict-row.current .te-dict-text { font-weight: 700; }
 #keepit-exact-overlay .te-dict-row:not(.solved) .te-dict-text { filter: blur(5px); user-select: none; }
 #keepit-exact-overlay .te-dict-row.solved .te-dict-text { filter: none; user-select: text; }
-#keepit-exact-overlay .te-dict-vi { display: block; margin: 4px 0 0 24px; color: #6b7280; font-size: 12px; line-height: 1.45; }
-#keepit-exact-overlay.theme-dark .te-dict-text { color: #e5e7eb; }
-#keepit-exact-overlay.theme-dark .te-dict-vi { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-icon { display: inline-flex; margin-top: 4px; color: #9ca3af; }
+#keepit-exact-overlay .te-dict-icon svg { width: 12px; height: 12px; }
+#keepit-exact-overlay .te-dict-icon .vol { display: none; }
+#keepit-exact-overlay .te-dict-row.current .te-dict-icon { color: #f59e0b; }
+#keepit-exact-overlay .te-dict-row.current .te-dict-icon .play { display: none; }
+#keepit-exact-overlay .te-dict-row.current .te-dict-icon .vol { display: inline; }
+#keepit-exact-overlay .te-dict-vi { grid-column: 2 / 4; margin-top: 4px; color: #6b7280; font-size: 12px; line-height: 1.45; }
+#keepit-exact-overlay.theme-dark .te-dict-row { border-color: #27272a; color: #a1a1aa; }
 #keepit-exact-overlay.theme-dark .te-dict-row.solved { background: rgba(255, 255, 255, .055); }
 #keepit-exact-overlay.theme-dark .te-dict-row:not(:disabled):hover { background: rgba(255, 255, 255, .08); }
+#keepit-exact-overlay.theme-dark .te-dict-row.current,
+#keepit-exact-overlay.theme-dark .te-dict-row.current.solved { background: rgba(245, 158, 11, .1); color: #fcd34d; }
+#keepit-exact-overlay.theme-dark .te-dict-num { background: #262626; color: #a1a1aa; }
+#keepit-exact-overlay.theme-dark .te-dict-row.current .te-dict-num { background: #f59e0b; color: #000; }
+#keepit-exact-overlay.theme-dark .te-dict-vi { color: #a1a1aa; }
 
 #keepit-exact-overlay #te-dictation-center,
 #keepit-exact-overlay #te-dictation-notes {
@@ -168,60 +189,92 @@ globalThis.LHN_DICTATION_CSS = `
   flex: 1;
   min-height: 0;
   flex-direction: column;
-  justify-content: center;
   gap: 12px;
   overflow: auto;
-  padding: clamp(12px, 2vw, 28px);
+  padding: 14px clamp(12px, 2vw, 28px);
 }
+#keepit-exact-overlay .te-dict-acc { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; }
+#keepit-exact-overlay .te-dict-acc-label::after { content: ":"; }
+#keepit-exact-overlay.theme-dark .te-dict-acc { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-audio-card { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
+#keepit-exact-overlay.theme-dark .te-dict-audio-card { border-color: #27272a; background: rgba(255, 255, 255, .03); }
+#keepit-exact-overlay .te-dict-audio-btn { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; border-radius: 10px; background: #f59e0b; color: #000; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, .3); }
+#keepit-exact-overlay .te-dict-audio-btn:hover { background: #fbbf24; }
+#keepit-exact-overlay .te-dict-audio-btn svg { width: 20px; height: 20px; }
+#keepit-exact-overlay .te-dict-audio-text { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+#keepit-exact-overlay .te-dict-audio-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 650; }
+#keepit-exact-overlay .te-dict-chip { padding: 1px 6px; border-radius: 4px; background: #e5e7eb; color: #4b5563; font-size: 10px; font-weight: 600; }
+#keepit-exact-overlay.theme-dark .te-dict-chip { background: #262626; color: #d4d4d8; }
+#keepit-exact-overlay .te-dict-audio-text p { margin: 0; color: #6b7280; font-size: 11px; }
+#keepit-exact-overlay.theme-dark .te-dict-audio-text p { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-auto { display: inline-flex; flex: none; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; cursor: pointer; }
+#keepit-exact-overlay .te-dict-auto input { accent-color: #f59e0b; }
+#keepit-exact-overlay.theme-dark .te-dict-auto { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-work { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 12px; }
 #keepit-exact-overlay .te-dict-input {
   display: block;
   width: 100%;
-  min-height: 96px;
-  resize: vertical;
-  padding: 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
+  min-height: 110px;
+  resize: none;
+  padding: 16px;
+  border: 1.5px solid rgba(245, 158, 11, .4);
+  border-radius: 12px;
   outline: none;
   background: #fff;
   color: #111827;
   caret-color: #f59e0b;
   font: inherit;
-  font-size: clamp(16px, 1.45vw, 21px);
-  font-weight: 650;
-  line-height: 1.55;
-}
-#keepit-exact-overlay .te-dict-input:focus,
-#keepit-exact-overlay .te-dict-note-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .16); }
-#keepit-exact-overlay.theme-dark .te-dict-input { background: #18181b; border-color: #3f3f46; color: #f3f4f6; }
-#keepit-exact-overlay .te-dict-hint { color: #6b7280; font-size: 11px; line-height: 1.5; }
-#keepit-exact-overlay.theme-dark .te-dict-hint { color: #a1a1aa; }
-#keepit-exact-overlay .te-dict-feedback { min-height: 22px; color: #6b7280; font-size: 13px; font-weight: 600; }
-#keepit-exact-overlay .te-dict-feedback.good { color: #15803d; }
-#keepit-exact-overlay .te-dict-feedback.bad { color: #dc2626; }
-#keepit-exact-overlay.theme-dark .te-dict-feedback.good { color: #4ade80; }
-#keepit-exact-overlay.theme-dark .te-dict-feedback.bad { color: #f87171; }
-#keepit-exact-overlay .te-dict-word-feedback { display: flex; flex-wrap: wrap; gap: 5px; }
-#keepit-exact-overlay .te-dict-word { padding: 3px 6px; border-radius: 5px; background: rgba(239,68,68,.12); color: #dc2626; font-size: 12px; }
-#keepit-exact-overlay .te-dict-word.correct { background: rgba(34,197,94,.12); color: #15803d; }
-#keepit-exact-overlay.theme-dark .te-dict-word { color: #f87171; }
-#keepit-exact-overlay.theme-dark .te-dict-word.correct { color: #4ade80; }
-#keepit-exact-overlay .te-dict-check {
-  align-self: flex-start;
-  min-height: 36px;
-  padding: 8px 14px;
-  border: 1px solid #d97706;
-  border-radius: 7px;
-  background: #f59e0b;
-  color: #111827;
-  font: inherit;
-  font-size: 12px;
+  font-size: clamp(18px, 1.6vw, 24px);
   font-weight: 700;
-  cursor: pointer;
+  letter-spacing: .01em;
+  line-height: 1.6;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
 }
-#keepit-exact-overlay .te-dict-check:hover { background: #fbbf24; }
-#keepit-exact-overlay .te-dict-translation { padding: 12px; border: 1px solid rgba(245,158,11,.42); border-radius: 9px; background: rgba(245,158,11,.08); color: #92400e; font-size: 14px; line-height: 1.55; }
+#keepit-exact-overlay .te-dict-input:focus { border-color: #f59e0b; box-shadow: 0 0 18px rgba(245, 158, 11, .3); }
+#keepit-exact-overlay .te-dict-input.correct { border-color: #10b981; background: rgba(16, 185, 129, .12); color: #10b981; box-shadow: 0 0 18px rgba(16, 185, 129, .25); }
+#keepit-exact-overlay .te-dict-note-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .16); }
+#keepit-exact-overlay.theme-dark .te-dict-input { background: #18181b; color: #f3f4f6; }
+#keepit-exact-overlay.theme-dark .te-dict-input.correct { background: rgba(16, 185, 129, .12); color: #10b981; }
+#keepit-exact-overlay .te-dict-hint { padding: 0 4px; color: #6b7280; font-size: 11px; line-height: 1.5; }
+#keepit-exact-overlay.theme-dark .te-dict-hint { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-error { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid rgba(239, 68, 68, .3); border-radius: 12px; background: rgba(239, 68, 68, .08); }
+#keepit-exact-overlay .te-dict-error[hidden], #keepit-exact-overlay .te-dict-success[hidden] { display: none !important; }
+#keepit-exact-overlay .te-dict-error-title { display: flex; align-items: center; gap: 8px; color: #dc2626; font-size: 12px; font-weight: 700; }
+#keepit-exact-overlay.theme-dark .te-dict-error-title { color: #f87171; }
+#keepit-exact-overlay .te-dict-error-words { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+#keepit-exact-overlay .te-dict-wg { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; }
+#keepit-exact-overlay.theme-dark .te-dict-wg { border-color: #27272a; background: #18181b; }
+#keepit-exact-overlay .te-dict-w { padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+#keepit-exact-overlay .te-dict-w.ok { background: rgba(16, 185, 129, .2); color: #059669; }
+#keepit-exact-overlay .te-dict-w.bad { background: rgba(239, 68, 68, .2); color: #dc2626; text-decoration: line-through; }
+#keepit-exact-overlay .te-dict-w.fix { background: rgba(245, 158, 11, .2); color: #b45309; font-size: 11px; }
+#keepit-exact-overlay.theme-dark .te-dict-w.ok { color: #34d399; }
+#keepit-exact-overlay.theme-dark .te-dict-w.bad { color: #f87171; }
+#keepit-exact-overlay.theme-dark .te-dict-w.fix { color: #fcd34d; }
+#keepit-exact-overlay .te-dict-empty { color: #6b7280; font-size: 12px; font-style: italic; font-weight: 400; }
+#keepit-exact-overlay .te-dict-success { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border: 1px solid rgba(16, 185, 129, .3); border-radius: 12px; background: rgba(16, 185, 129, .1); color: #059669; font-size: 12px; font-weight: 800; }
+#keepit-exact-overlay.theme-dark .te-dict-success { color: #34d399; }
+#keepit-exact-overlay .te-dict-translation { padding: 12px; border: 1px solid rgba(245, 158, 11, .3); border-radius: 12px; background: rgba(245, 158, 11, .06); color: #92400e; font-size: clamp(14px, 1.1vw, 16px); font-weight: 700; line-height: 1.55; text-align: center; }
 #keepit-exact-overlay.theme-dark .te-dict-translation { color: #fcd34d; }
 #keepit-exact-overlay .te-dict-translation[hidden] { display: none !important; }
+#keepit-exact-overlay .te-dict-footer { display: flex; flex: none; flex-direction: column; gap: 10px; padding: 10px clamp(12px, 2vw, 28px) 14px; border-top: 1px solid #e5e7eb; }
+#keepit-exact-overlay.theme-dark .te-dict-footer { border-color: #27272a; }
+#keepit-exact-overlay .te-dict-repeat { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; }
+#keepit-exact-overlay .te-dict-repeat-label { color: #6b7280; font-weight: 700; }
+#keepit-exact-overlay .te-dict-repeat-btn { padding: 2px 8px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #6b7280; font: inherit; font-size: 12px; cursor: pointer; }
+#keepit-exact-overlay .te-dict-repeat-btn:hover { color: #f59e0b; }
+#keepit-exact-overlay .te-dict-repeat-btn.active { border-color: rgba(245, 158, 11, .4); background: rgba(245, 158, 11, .2); color: #d97706; font-weight: 700; }
+#keepit-exact-overlay .te-dict-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+#keepit-exact-overlay .te-dict-act { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; padding: 10px 6px; border: 1px solid #d1d5db; border-radius: 8px; background: #f3f4f6; color: #1f2937; font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color .15s ease, opacity .15s ease; }
+#keepit-exact-overlay .te-dict-act:hover:not(:disabled) { background: #e5e7eb; }
+#keepit-exact-overlay .te-dict-act svg { flex: none; width: 14px; height: 14px; }
+#keepit-exact-overlay .te-dict-act:disabled { opacity: .42; cursor: not-allowed; }
+#keepit-exact-overlay.theme-dark .te-dict-act { border-color: #404040; background: #262626; color: #e2e8f0; }
+#keepit-exact-overlay.theme-dark .te-dict-act:hover:not(:disabled) { background: #333; }
+#keepit-exact-overlay .te-dict-act-primary,
+#keepit-exact-overlay.theme-dark .te-dict-act-primary { border-color: #f59e0b; background: #f59e0b; color: #000; font-weight: 700; box-shadow: 0 4px 10px rgba(245, 158, 11, .2); }
+#keepit-exact-overlay .te-dict-act-primary:hover:not(:disabled),
+#keepit-exact-overlay.theme-dark .te-dict-act-primary:hover:not(:disabled) { background: #fbbf24; }
 #keepit-exact-overlay .te-dict-note-body { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 12px; overflow: auto; padding: 14px; }
 #keepit-exact-overlay .te-dict-note-label { display: block; margin-bottom: 5px; color: #6b7280; font-size: 11px; font-weight: 700; }
 #keepit-exact-overlay .te-dict-note-text-wrap { display: flex; flex: 1; min-height: 0; flex-direction: column; }
@@ -259,8 +312,15 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-lock[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-save { border: 0; background: transparent; color: #b45309; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 #keepit-exact-overlay.theme-dark .te-dict-save { color: #fbbf24; }
-#keepit-exact-overlay .te-dict-saved { min-height: 16px; color: #15803d; font-size: 11px; }
+#keepit-exact-overlay .te-dict-saved { flex: none; min-height: 16px; color: #15803d; font-size: 11px; }
 #keepit-exact-overlay.theme-dark .te-dict-saved { color: #4ade80; }
+#keepit-exact-overlay .te-dict-head-actions { display: flex; align-items: center; gap: 6px; }
+#keepit-exact-overlay .te-dict-save { padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #f3f4f6; }
+#keepit-exact-overlay.theme-dark .te-dict-save { border-color: #404040; background: #262626; }
+#keepit-exact-overlay .te-dict-note-footer { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid #e5e7eb; }
+#keepit-exact-overlay.theme-dark .te-dict-note-footer { border-color: #27272a; }
+#keepit-exact-overlay .te-dict-autosave { color: #6b7280; font-size: 10px; text-align: right; }
+#keepit-exact-overlay.theme-dark .te-dict-autosave { color: #a1a1aa; }
 
 #keepit-exact-overlay.te-dictation-active .te-control-bar {
   grid-area: 2 / 1 / 3 / 4;
@@ -292,10 +352,15 @@ globalThis.LHN_DICTATION_CSS = `
   cursor: pointer;
 }
 #keepit-exact-overlay.theme-dark .te-dict-type-control { color: #fbbf24; }
-#keepit-exact-overlay .te-dict-toolbar-accuracy { color: #6b7280; font-size: 11px; white-space: nowrap; }
-#keepit-exact-overlay .te-dict-toolbar-accuracy strong { margin-left: 3px; color: #b45309; font-size: 13px; font-variant-numeric: tabular-nums; }
+#keepit-exact-overlay .te-dict-toolbar-accuracy { display: inline-flex; align-items: center; gap: 8px; color: #6b7280; font-size: 11px; white-space: nowrap; }
+#keepit-exact-overlay .te-dict-acc-col { display: flex; flex-direction: column; line-height: 1.2; }
+#keepit-exact-overlay .te-dict-acc-col strong { color: #b45309; font-size: 13px; font-variant-numeric: tabular-nums; }
+#keepit-exact-overlay .te-dict-ring { flex: none; }
+#keepit-exact-overlay .te-dict-ring-bg { fill: none; stroke: #e5e7eb; stroke-width: 3; }
+#keepit-exact-overlay .te-dict-ring-fg { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 56.55; stroke-dashoffset: 56.55; transition: stroke-dashoffset .4s ease; }
 #keepit-exact-overlay.theme-dark .te-dict-toolbar-accuracy { color: #a1a1aa; }
-#keepit-exact-overlay.theme-dark .te-dict-toolbar-accuracy strong { color: #fbbf24; }
+#keepit-exact-overlay.theme-dark .te-dict-acc-col strong { color: #fbbf24; }
+#keepit-exact-overlay.theme-dark .te-dict-ring-bg { stroke: #3f3f46; }
 #keepit-exact-overlay.te-dictation-active .te-control-bar .te-dict-primary-group { justify-content: flex-start; }
 #keepit-exact-overlay.te-dictation-active .te-control-bar button:disabled { opacity: .42; cursor: not-allowed; }
 #keepit-exact-overlay .te-dict-toast {
@@ -320,8 +385,8 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay .te-dict-toast.visible { opacity: 1; transform: translate(-50%, 0); }
 #keepit-exact-overlay.theme-light .te-dict-toast { background: #fff; color: #111827; }
-#keepit-exact-overlay .te-dict-confetti { position: absolute; z-index: 4; top: 34%; left: 50%; width: 7px; height: 11px; border-radius: 2px; pointer-events: none; animation: te-dict-confetti-fall 850ms ease-out forwards; }
-@keyframes te-dict-confetti-fall { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
+#keepit-exact-overlay .te-dict-confetti { position: absolute; z-index: 70; top: 60%; left: 50%; width: 7px; height: 11px; border-radius: 2px; pointer-events: none; animation: te-dict-confetti-fall 1300ms cubic-bezier(.2, .7, .4, 1) forwards; }
+@keyframes te-dict-confetti-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 40% { transform: translate(var(--ux), var(--uy)) rotate(calc(var(--rot) * .5)); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   #keepit-exact-overlay .te-dict-toast { transition: none; }
   #keepit-exact-overlay .te-dict-confetti { animation-duration: 1ms; }

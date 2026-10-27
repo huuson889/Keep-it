@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.658; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics, YouTube Dual Sub và Dictation. Dictation v1 đổi layout ngay trong overlay hiện có, chỉ gõ đáp án và lưu tiến độ/ghi chú cục bộ; chưa có chế độ Nói. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.659; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics, YouTube Dual Sub và Dictation. Dictation v1 đổi layout ngay trong overlay hiện có theo file mẫu `FILE_DICTATION_OK_NHẤT.html` (phân tích lỗi từng từ, âm đúng/sai, pháo giấy cục bộ, hàng Lặp 0x–3x), chỉ gõ đáp án, phát đúng một câu video rồi dừng và lưu tiến độ/ghi chú cục bộ; chưa có chế độ Nói. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -11,7 +11,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 29. [Chưa làm — tách đợt] Dictation v2 “Nói”: Chromium SpeechRecognition để chấm; Firefox chỉ ghi âm/phát lại. Trước khi làm cần chốt quyền/disclosure và kiểm tra riêng tư micro.
-28. [Kiểm thử UI/runtime] Dictation v1 v3.4.658 trên YouTube thật (Chrome/Edge/Firefox): track English only; bố cục ba cột trên cùng overlay, thanh điều khiển full-width và khôi phục bằng X/AI keepit; danh sách cuộn/blur/khóa, căn chỉnh chấm điểm, dịch VI sau đúng, notes khóa/lưu theo video/câu, dark/light, Enter/Esc/Alt+X/Ctrl. Chưa chạy trên browser thật.
+28. [Kiểm thử UI/runtime] Dictation v1 v3.4.659 trên YouTube thật (Chrome/Edge/Firefox): video chỉ phát đúng một câu rồi dừng (Ctrl, Phát lại, Nghe chậm 0.6x, Lặp 0x–3x, click video/Space), không tự nhảy câu; âm đúng/sai và pháo giấy; panel phân tích lỗi; track English only; bố cục ba cột trên cùng overlay, thanh điều khiển full-width và khôi phục bằng X/AI keepit; danh sách cuộn/blur/khóa, căn chỉnh chấm điểm, dịch VI sau đúng, notes khóa/lưu theo video/câu, dark/light, Enter/Esc/Alt+X/Ctrl. Chưa chạy trên browser thật.
 27. [Chưa làm — đã chốt] (a) Làm nổi bật ẩn: áp dụng cho ghi chú và highlight ở Dashboard và sidebar; nền vàng đổi sang chữ đen ở dark mode; có một khóa ẩn trong code để bật/tắt. (b) Điều hướng ↑/↓ chỉ áp dụng cho danh sách xổ xuống có ô tìm; có một khóa ẩn trong code để bật/tắt. Hai việc này chưa triển khai.
 26. [Kiểm tra] Ô tìm Settings v3.4.656 trên Chrome/Edge/Firefox với Dashboard thật: gõ lọc hàng qua mọi tab, ẩn nhóm/tab trống, thông báo "No settings found", Esc/đổi tab/đóng hộp thoại xóa ô tìm; ô cao 40px, icon bên trái, ô dính đầu khi cuộn (cả cửa sổ rộng ≤700px và ≤520px), tô sáng `mark.lhn-search-match`; kiểm tra tiếng Việt có dấu (VI/KO) và dark mode. Đã kiểm trên Chromium headless với markup/CSS Settings thật nhưng chưa kiểm trên Dashboard chạy trong extension.
 25. [Kiểm tra] Overlay video v3.4.634 trên Edge/Chrome/Firefox với video YouTube thật: (a) Ambient mode: vòng sáng lan tròn từ tâm video ra thanh điều khiển và thanh bên, mờ dần, cả theme sáng/tối; công tắc "Ambient mode" trong Cài đặt video (mặc định bật) bật/tắt ngay và được lưu; video DRM không bật; chữ phụ đề và danh sách bên vẫn dễ đọc, máy yếu không giật (độ sáng 0.5, blur 40px, vẽ mỗi 125 ms); (b) hover tiêu đề video dài ở thanh điều khiển: chạy vòng tròn nối đuôi, rời chuột về vị trí cũ; (c) logo, chữ "Keepit - Video Song Ngữ" và dấu × cùng căn giữa dọc trên Windows (font Segoe UI) và Firefox (nhánh dự phòng nhích 1,5px); (d) ẩn phụ đề/thanh điều khiển vẫn cùng màu nền sáng/tối, hover đáy thì thanh hiện lại; (e) chuyển câu active ở sidebar mượt. Chưa kiểm thử trên YouTube thật.
@@ -66,7 +66,7 @@ Keepit - Test/
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
-│   ├── dictation/                 # dictation.js (overlay mode), dictation-score.js (căn chỉnh từ), dictation-style.js (CSS cục bộ)
+│   ├── dictation/                 # dictation.js (overlay mode), dictation-score.js (căn chỉnh từ + diff từng từ), dictation-style.js (CSS cục bộ)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
@@ -109,7 +109,7 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
                            không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
 YouTube Dual Sub (`state.allCues`, track language, live video)
-  └── API overlay hiện có ──> Dictation v1 (3 cột trong overlay, score + ghi chú)
+  └── API overlay hiện có ──> Dictation v1 (3 cột trong overlay, score + phân tích lỗi + ghi chú; phát đúng một câu bằng requestAnimationFrame)
                                   ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
                                   └── browser.storage.local → solved / notes / bản dịch theo video+câu
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
@@ -118,6 +118,14 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-27 | v3.4.659 | Claude sửa:**
+  - Dictation v1 đổi UI khu giữa theo file mẫu: tiêu đề + huy hiệu độ chính xác, thẻ âm thanh video kèm "Tự phát khi chuyển câu", ô nhập lớn viền hổ phách, phân tích lỗi từng từ (đúng/sai gạch + từ sửa/thừa; từ thiếu gộp thành chip +N, không lộ đáp án), banner thành công, thẻ dịch, hàng Lặp 0x–3x và 5 nút Câu trước/Phát lại/Chấm điểm/Nghe chậm/Câu tiếp. Hàng câu dùng chip số + icon; ghi chú có nút lưu ở tiêu đề, dòng tự lưu ở chân; thanh điều khiển có vòng độ chính xác. Giữ nguyên các điểm đã chốt: thanh điều khiển full-width, "Câu tiếp" khóa đến khi gõ đúng, `#18181b` chỉ ở dark mode, chưa làm Nói.
+  - Âm thanh Web Audio đúng (4 nốt) và sai (sawtooth) như file mẫu; pháo giấy cục bộ 90 mảnh, không dùng CDN.
+  - Phát đúng một câu: mở Dictation thì tạm dừng và tua về đầu câu; mọi lần phát (Ctrl, nút, click video, Space) bị giới hạn trong câu hiện tại và dừng bằng requestAnimationFrame (không dùng timeupdate vì trôi sang câu sau); không tự nhảy câu; tạm tắt vòng lặp câu của Dual Sub khi mở và khôi phục khi đóng; Nghe chậm 0.6x tự khôi phục tốc độ.
+  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/dictation/dictation-score.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` cho 3 file Dictation và `languages.js`; manifest parse được; 40 khóa `dictation*` có đủ EN/VI/KO; kịch bản Chromium headless (Playwright) trên CSS/HTML overlay thật với video giả lập có đồng hồ: 30/30 mục đạt, không lỗi trang. Chưa chạy trên YouTube thật (Chrome/Edge/Firefox).
+  - Lưu ý: chưa làm dòng IPA dưới ô nhập (file mẫu có) và chế độ Nói (v2); README và OPT-ARENA.md chưa cập nhật.
 
 - **2026-10-27 | v3.4.658 | Arena sửa:**
   - Hoàn thiện Dictation v1 ngay trong YouTube overlay Dual Sub hiện có: video YouTube thật, danh sách câu tiếng Anh nạp dần quanh câu đang phát, chấm theo căn chỉnh từ, dịch Việt sau khi giải đúng, ghi chú/tiến độ lưu cục bộ theo video và câu; tái sử dụng thanh điều khiển và giữ X/AI keepit để đóng chế độ.
