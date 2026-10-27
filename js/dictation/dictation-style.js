@@ -102,7 +102,16 @@ globalThis.LHN_DICTATION_CSS = `
   overflow: auto;
   overscroll-behavior: contain;
   padding: 2px 3px 4px 0;
-  scrollbar-width: thin;
+}
+#keepit-exact-overlay #te-dict-sentences,
+#keepit-exact-overlay .te-dict-input {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+#keepit-exact-overlay #te-dict-sentences::-webkit-scrollbar,
+#keepit-exact-overlay .te-dict-input::-webkit-scrollbar {
+  width: var(--lhn-scrollbar-width);
+  height: var(--lhn-scrollbar-width);
 }
 #keepit-exact-overlay .te-dict-row {
   display: grid;
@@ -218,6 +227,7 @@ globalThis.LHN_DICTATION_CSS = `
   width: 100%;
   min-height: 110px;
   resize: none;
+  overflow-y: auto;
   padding: 16px;
   border: 1.5px solid rgba(245, 158, 11, .4);
   border-radius: 12px;
@@ -230,13 +240,7 @@ globalThis.LHN_DICTATION_CSS = `
   font-weight: 700;
   letter-spacing: .01em;
   line-height: 1.6;
-  scrollbar-width: auto;
-  scrollbar-color: auto;
   transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
-}
-#keepit-exact-overlay .te-dict-input::-webkit-scrollbar {
-  width: var(--lhn-scrollbar-width);
-  height: var(--lhn-scrollbar-width);
 }
 #keepit-exact-overlay .te-dict-input:focus { border-color: #f59e0b; box-shadow: 0 0 18px rgba(245, 158, 11, .3); }
 #keepit-exact-overlay .te-dict-input.correct { border-color: #10b981; background: rgba(16, 185, 129, .12); color: #10b981; box-shadow: 0 0 18px rgba(16, 185, 129, .25); }
