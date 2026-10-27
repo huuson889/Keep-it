@@ -390,4 +390,9 @@ globalThis.LHN_DICTATION_CSS = `
   #keepit-exact-overlay .te-dict-toast { transition: none; }
   #keepit-exact-overlay .te-dict-confetti { animation-duration: 1ms; }
 }
+#keepit-exact-overlay .te-dict-row.locked .te-dict-text { filter: blur(5px); user-select: none; }
+#keepit-exact-overlay .te-dict-row.locked { pointer-events: none; }
+#keepit-exact-overlay .te-dict-act.te-dict-ready { background: #f59e0b !important; border-color: #f59e0b !important; color: #000 !important; font-weight: 700; }
+#keepit-exact-overlay .te-dict-act-primary.te-dict-done { background: #6b7280 !important; border-color: #6b7280 !important; color: #fff !important; box-shadow: none !important; }
+#keepit-exact-overlay #te-dictation-notes.te-dict-notes-locked .te-dict-note-body > div:not(.te-dict-lock) { filter: blur(5px); user-select: none; pointer-events: none; }
 `;

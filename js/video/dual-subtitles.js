@@ -2363,12 +2363,13 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   });
   // ↑/↓: tăng/giảm tốc độ 0.05 (chặn trước YouTube để không đổi âm lượng khi overlay đang mở)
   window.addEventListener('keydown', (event) => {
-    if (!state.open || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+    if (!state.open || (event.key !== '>' && event.key !== '<')) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    const realTarget = event.composedPath?.()[0] || event.target;
+    if (realTarget?.closest?.('input, textarea, select, [contenteditable="true"]') || realTarget?.isContentEditable) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    setVideoSpeed((state.videoEl?.playbackRate ?? 1) + (event.key === 'ArrowUp' ? 0.05 : -0.05));
+    setVideoSpeed((state.videoEl?.playbackRate ?? 1) + (event.key === '>' ? 0.05 : -0.05));
   }, true);
   document.addEventListener('keydown', (event) => {
     if (!state.open) return;

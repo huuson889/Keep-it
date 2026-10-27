@@ -21,7 +21,7 @@
   let toastTimer = 0;
   let rafId = 0;
   let repeatLeft = 0;
-  let repeatCount = 1;
+  let repeatCount = 3;
   let savedRate = null;
   let savedLoop = null;
   let audioCtx = null;
@@ -110,13 +110,13 @@
           <label class="te-dict-auto"><input type="checkbox" id="te-dict-auto" checked><span data-dict-label="dictationAutoPlay"></span></label>
         </div>
         <div class="te-dict-work">
+          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
           <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
           <div class="te-dict-hint" id="te-dict-hint"></div>
           <div class="te-dict-error" id="te-dict-error" hidden>
             <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
             <div class="te-dict-error-words" id="te-dict-error-words"></div>
           </div>
-          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
           <div class="te-dict-translation" id="te-dict-translation" hidden></div>
         </div>
       </div>
@@ -235,7 +235,7 @@
     ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1, true); });
     ui.btnReplay.addEventListener("click", () => { playSentence(current); refocus(); });
     ui.audioBtn.addEventListener("click", () => { playSentence(current); refocus(); });
-    ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6, count: 1 }); refocus(); });
+    ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
     ui.typeControl.addEventListener("click", () => ui?.input.focus());
     ui.save.addEventListener("click", () => saveNotesNow(true));
@@ -348,9 +348,10 @@
     ui.sentences.querySelectorAll(".te-dict-row").forEach((row) => {
       const index = Number(row.dataset.index);
       const isSolved = solved.has(index);
-      row.disabled = !isSolved;
+      row.disabled = index >= current || !isSolved;
       row.classList.toggle("solved", isSolved);
       row.classList.toggle("current", index === current);
+      row.classList.toggle("locked", index >= current);
       row.setAttribute("aria-label", `${tr("dictationSentenceNumber")} ${index + 1}${isSolved ? `, ${tr("dictationSolved")}` : `, ${tr("dictationLocked")}`}`);
       const translation = row.querySelector(".te-dict-vi");
       translation.textContent = isSolved ? (translations[String(index)] || "") : "";
@@ -358,7 +359,7 @@
     });
     if (scrollCurrent) {
       const currentRow = ui.sentences.querySelector(`.te-dict-row[data-index="${current}"]`);
-      currentRow?.scrollIntoView({ block: "nearest" });
+      currentRow?.scrollIntoView({ block: "center" });
     }
   }
 
@@ -426,6 +427,7 @@
 
   function setNotesLocked(locked) {
     if (!ui) return;
+    ui.notesPanel.classList.toggle("te-dict-notes-locked", locked);
     ui.lock.hidden = !locked;
     ui.vocab.disabled = locked;
     ui.note.disabled = locked;
@@ -440,7 +442,9 @@
     updateRows();
     updateProgressControls();
     const wasSolved = solved.has(current);
-    setNotesLocked(!wasSolved);
+    setNotesLocked(true);
+    ui.btnNext?.classList.remove("te-dict-ready");
+    ui.check?.classList.remove("te-dict-done");
     const saved = notes[String(current)] || {};
     ui.vocab.value = typeof saved.vocab === "string" ? saved.vocab : "";
     ui.note.value = typeof saved.note === "string" ? saved.note : "";
@@ -511,7 +515,26 @@
     return request;
   }
 
-  function renderError(result) {
+  // So theo vị trí: từng từ gõ so với từ cùng vị trí của câu gốc. Dừng ở lỗi (sai/thiếu) đầu tiên.
+  function positionalOps(refText, typedText) {
+    const toWords = (text) => (String(text ?? "").match(/[\p{L}\p{N}’‘`´']+/gu) || [])
+      .map((raw) => ({ raw: raw.replace(/^[’‘`´']+|[’‘`´']+$/g, ""), norm: globalThis.LHN_DICTATION_SCORE.tokenize(raw)[0] || "" }))
+      .filter((w) => w.norm);
+    const ref = toWords(refText), typed = toWords(typedText);
+    const ops = [];
+    const n = Math.max(ref.length, typed.length);
+    for (let k = 0; k < n; k++) {
+      const r = ref[k], t = typed[k];
+      if (r && t && r.norm === t.norm) { ops.push({ type: "ok", typed: t.raw }); continue; }
+      if (r && t) { ops.push({ type: "wrong", typed: t.raw, expected: r.raw }); break; }
+      if (r && !t) { ops.push({ type: "missing", expected: r.raw }); break; }
+      ops.push({ type: "extra", typed: t.raw });
+    }
+    return ops;
+  }
+
+  function renderError() {
+    const cue = sentenceCues[current];
     ui.errorWords.replaceChildren();
     const chip = (className, text) => {
       const node = document.createElement("span");
@@ -522,22 +545,14 @@
     if (!ui.input.value.trim()) {
       ui.errorWords.appendChild(chip("te-dict-empty", tr("dictationEmptyAnswer")));
     } else {
-      const ops = result.ops || [];
-      for (let k = 0; k < ops.length; k++) {
-        const op = ops[k];
+      for (const op of positionalOps(cue?.en, ui.input.value)) {
         const group = document.createElement("span");
         group.className = "te-dict-wg";
-        if (op.type === "missing") {
-          // Chỉ báo số từ thiếu, không lộ đáp án (giống file mẫu: chỉ hiện đáp án tại từ đã gõ).
-          let run = 1;
-          while (ops[k + 1]?.type === "missing") { run++; k++; }
-          group.appendChild(chip("te-dict-w fix", `+${run}`));
-          ui.errorWords.appendChild(group);
-          continue;
-        }
         if (op.type === "ok") group.appendChild(chip("te-dict-w ok", op.typed));
         else if (op.type === "wrong") {
           group.appendChild(chip("te-dict-w bad", op.typed));
+          group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
+        } else if (op.type === "missing") {
           group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
         } else if (op.type === "extra") {
           group.appendChild(chip("te-dict-w bad", op.typed));
@@ -623,6 +638,8 @@
       ui.error.hidden = true;
       ui.success.hidden = false;
       setNotesLocked(false);
+      ui.btnNext?.classList.add("te-dict-ready");
+      ui.check?.classList.add("te-dict-done");
       updateRows();
       updateProgressControls();
       ui.translation.hidden = false;
@@ -636,7 +653,7 @@
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
     if (!solved.has(current)) ui.translation.hidden = true;
-    renderError(result);
+    renderError();
     playErrorSound();
     setNotesLocked(!solved.has(current));
   }
@@ -773,6 +790,7 @@
     event.stopPropagation();
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
+      if (solved.has(current)) { ui?.btnNext?.focus({ preventScroll: true }); return; }
       submit();
     }
   }
@@ -799,6 +817,12 @@
 
   function onGlobalKeyDown(event) {
     if (!active) return;
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      const real = event.composedPath?.()[0] || event.target;
+      const editable = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
+      if (!editable) { event.preventDefault(); event.stopImmediatePropagation(); }
+      return;
+    }
     if (event.key === "Escape") { ctrlAlone = false; return; }
     if (event.altKey && event.key.toLowerCase() === "x") {
       event.preventDefault();
