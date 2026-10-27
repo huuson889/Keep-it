@@ -7,6 +7,7 @@
   let active = false;
   let current = 0;
   let checkedCurrent = false;
+  let savedPageScrollStyles = null;
   let listStart = 0;
   let listEnd = 0;
   let sentenceCues = [];
@@ -47,6 +48,31 @@
     style.id = "te-dictation-style";
     style.textContent = globalThis.LHN_DICTATION_CSS || "";
     root.prepend(style);
+  }
+
+  function hideYouTubeScrollbar() {
+    if (savedPageScrollStyles) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const snapshot = (element) => element ? {
+      value: element.style.getPropertyValue("overflow-y"),
+      priority: element.style.getPropertyPriority("overflow-y"),
+    } : null;
+    savedPageScrollStyles = { html, body, htmlStyle: snapshot(html), bodyStyle: snapshot(body) };
+    html?.style.setProperty("overflow-y", "hidden", "important");
+    body?.style.setProperty("overflow-y", "hidden", "important");
+  }
+
+  function restoreYouTubeScrollbar() {
+    if (!savedPageScrollStyles) return;
+    const restore = (element, style) => {
+      if (!element || !style) return;
+      if (style.value) element.style.setProperty("overflow-y", style.value, style.priority);
+      else element.style.removeProperty("overflow-y");
+    };
+    restore(savedPageScrollStyles.html, savedPageScrollStyles.htmlStyle);
+    restore(savedPageScrollStyles.body, savedPageScrollStyles.bodyStyle);
+    savedPageScrollStyles = null;
   }
 
   function showToast(message) {
@@ -190,6 +216,8 @@
       score: center.querySelector("#te-dict-score"),
       hint: center.querySelector("#te-dict-hint"),
       error: center.querySelector("#te-dict-error"),
+      errorTitleText: center.querySelector(".te-dict-error-title span"),
+      errorTitleIcon: center.querySelector(".te-dict-error-title svg"),
       errorWords: center.querySelector("#te-dict-error-words"),
       success: center.querySelector("#te-dict-success"),
       translation: center.querySelector("#te-dict-translation"),
@@ -362,7 +390,7 @@
     ui.sentences.querySelectorAll(".te-dict-row").forEach((row) => {
       const index = Number(row.dataset.index);
       const isSolved = solved.has(index);
-      const isLocked = index >= current;
+      const isLocked = index > current || (index === current && !isSolved);
       const isPast = index < current;
       row.disabled = isLocked;
       row.classList.toggle("solved", isSolved);
@@ -557,7 +585,17 @@
     return ops;
   }
 
+  function setErrorPanelSuccess(success) {
+    if (!ui?.error) return;
+    ui.error.classList.toggle("te-dict-error-success", success);
+    ui.errorTitleText.textContent = tr(success ? "dictationCorrectSentence" : "dictationErrorTitle");
+    ui.errorTitleIcon.innerHTML = success
+      ? '<path d="m5 12 4 4L19 6"/>'
+      : '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>';
+  }
+
   function renderError() {
+    setErrorPanelSuccess(false);
     const cue = sentenceCues[current];
     ui.errorWords.replaceChildren();
     const chip = (className, text) => {
@@ -577,7 +615,7 @@
           group.appendChild(chip("te-dict-w bad", op.typed));
           group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
         } else if (op.type === "missing") {
-          group.appendChild(chip("te-dict-w fix", `→ ${op.expected}`));
+          group.appendChild(chip("te-dict-w fix", op.expected));
         } else if (op.type === "extra") {
           group.appendChild(chip("te-dict-w bad", op.typed));
           group.appendChild(chip("te-dict-w fix", `→ ${tr("dictationExtra")}`));
@@ -661,7 +699,9 @@
       checkedCurrent = true;
       solved.add(current);
       ui.input.classList.add("correct");
-      ui.error.hidden = true;
+      setErrorPanelSuccess(true);
+      ui.errorWords.replaceChildren();
+      ui.error.hidden = false;
       ui.success.hidden = false;
       setNotesLocked(false);
       ui.btnNext?.classList.add("te-dict-ready");
@@ -906,6 +946,7 @@
     sentenceCues = getCues();
     if (!sentenceCues.length) { showToastBeforeOpen(); return; }
     active = true;
+    hideYouTubeScrollbar();
     const generation = ++panelGeneration;
     current = 0;
     listStart = 0;
@@ -942,13 +983,14 @@
     listEnd = 0;
     renderInitialRows();
     renderCurrent();
-    prepareCue();
+    playSentence(current, { count: Math.max(1, repeatCount) });
     void saveRecord();
     ui.input.focus({ preventScroll: true });
   }
 
   function close() {
     if (!active || !ui) return;
+    restoreYouTubeScrollbar();
     flushNotes();
     active = false;
     panelGeneration++;

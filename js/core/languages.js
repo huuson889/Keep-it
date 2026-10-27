@@ -154,7 +154,7 @@
     dictationCaptionsLoading: "English subtitles are still loading. Try again shortly.",
     dictationEnglishOnly: "Dictation is available only for videos with English subtitles.",
     dictationAudioTitle: "Audio from the video", dictationAudioSource: "YouTube", dictationAudioHelp: "Press play to hear the current sentence",
-    dictationAutoPlay: "Auto-play when changing sentence", dictationErrorTitle: "Error analysis:", dictationSuccess: "Excellent! You typed it 100% correctly",
+    dictationAutoPlay: "Auto-play when changing sentence", dictationErrorTitle: "Error analysis:", dictationCorrectSentence: "Correct sentence", dictationSuccess: "Excellent! You typed it 100% correctly",
     dictationEmptyAnswer: "(Nothing typed yet)", dictationExtra: "(extra)", dictationRepeat: "Repeat:", dictationPrev: "Previous",
     dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device"
   });
@@ -170,7 +170,7 @@
     dictationCaptionsLoading: "Phụ đề tiếng Anh đang tải. Vui lòng thử lại sau.",
     dictationEnglishOnly: "Chỉ dùng Dictation với video có phụ đề tiếng Anh.",
     dictationAudioTitle: "Âm thanh từ video", dictationAudioSource: "YouTube", dictationAudioHelp: "Nhấn nút phát để nghe câu hiện tại",
-    dictationAutoPlay: "Tự phát khi chuyển câu", dictationErrorTitle: "Phân tích lỗi sai:", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
+    dictationAutoPlay: "Tự phát khi chuyển câu", dictationErrorTitle: "Phân tích lỗi sai:", dictationCorrectSentence: "Câu đúng", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
     dictationEmptyAnswer: "(Chưa nhập câu)", dictationExtra: "(thừa)", dictationRepeat: "Lặp:", dictationPrev: "Câu trước",
     dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này"
   });
@@ -186,7 +186,7 @@
     dictationCaptionsLoading: "영어 자막을 불러오는 중입니다. 잠시 후 다시 시도하세요.",
     dictationEnglishOnly: "받아쓰기는 영어 자막이 있는 영상에서만 사용할 수 있습니다.",
     dictationAudioTitle: "영상 오디오", dictationAudioSource: "YouTube", dictationAudioHelp: "재생 버튼을 눌러 현재 문장을 들어보세요",
-    dictationAutoPlay: "문장 전환 시 자동 재생", dictationErrorTitle: "오류 분석:", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
+    dictationAutoPlay: "문장 전환 시 자동 재생", dictationErrorTitle: "오류 분석:", dictationCorrectSentence: "정답 문장", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
     dictationEmptyAnswer: "(입력 없음)", dictationExtra: "(불필요)", dictationRepeat: "반복:", dictationPrev: "이전",
     dictationReplay: "다시 듣기", dictationSlow: "느리게", dictationNext: "다음", dictationAutosave: "노트는 이 기기에 자동 저장됩니다"
   });
