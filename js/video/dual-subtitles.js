@@ -28,6 +28,8 @@ const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
 const PAUSE_PATH = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 
+let pendingDictationShortcut = false;
+
 const state = {
   open: false,
   videoId: null,
@@ -1029,6 +1031,7 @@ function openOverlay() {
 }
 
 function closeOverlay() {
+  pendingDictationShortcut = false;
   globalThis.LHN_DICTATION?.close?.();
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
@@ -1046,8 +1049,38 @@ function closeOverlay() {
 
 function toggleDictationFromShortcut() {
   if (keepitSiteDisabled) return;
+  const dictation = globalThis.LHN_DICTATION;
+  if (dictation?.isOpen?.()) {
+    pendingDictationShortcut = false;
+    dictation.close();
+    return;
+  }
+  if (pendingDictationShortcut) {
+    pendingDictationShortcut = false;
+    return;
+  }
   if (!state.open) openOverlay();
-  if (state.open) globalThis.LHN_DICTATION?.toggle?.();
+  if (!state.open) return;
+  if (globalThis.LHN_OVERLAY_API?.getDictationCues?.().length) {
+    dictation?.open?.();
+    return;
+  }
+  if (state.videoId && state.loadingFor === state.videoId) {
+    pendingDictationShortcut = true;
+    return;
+  }
+  dictation?.open?.();
+}
+
+function openPendingDictationShortcut() {
+  if (!pendingDictationShortcut) return;
+  if (!state.open) {
+    pendingDictationShortcut = false;
+    return;
+  }
+  if (!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length && state.loadingFor === state.videoId) return;
+  pendingDictationShortcut = false;
+  globalThis.LHN_DICTATION?.open?.();
 }
 
 // Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
@@ -2408,6 +2441,7 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     else openOverlay();
   });
   document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
+  document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
   // ↑/↓: tăng/giảm tốc độ 0.05 (chặn trước YouTube để không đổi âm lượng khi overlay đang mở)
   window.addEventListener('keydown', (event) => {
     if (!state.open || (event.key !== '>' && event.key !== '<')) return;

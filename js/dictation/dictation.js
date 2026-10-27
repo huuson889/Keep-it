@@ -1155,5 +1155,5 @@
     attachControls();
   });
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
-  globalThis.LHN_DICTATION = Object.freeze({ toggle, open: openPanel, close });
+  globalThis.LHN_DICTATION = Object.freeze({ toggle, open: openPanel, close, isOpen: () => active });
 })();
