@@ -109,6 +109,17 @@
     if (!root || !left || !bar || !primaryGroup || !videoSlot) return;
     ensureStyle(root);
 
+    const compactAudio = document.createElement("div");
+    compactAudio.className = "te-dict-mini-audio";
+    compactAudio.setAttribute("role", "group");
+    compactAudio.setAttribute("aria-label", tr("dictationAudioTitle"));
+    compactAudio.innerHTML = `
+      <div class="te-dict-mini-art"><img class="te-dict-mini-thumb" alt=""></div>
+      <div class="te-dict-mini-info"><div class="te-dict-mini-title"></div><div class="te-dict-mini-source"></div></div>
+      <div class="te-dict-spectrum" aria-hidden="true">${Array.from({ length: 5 }, () => '<span></span>').join("")}</div>
+      <button class="te-dict-mini-play" type="button"><span class="te-dict-mini-play-icon">${makeSvg('<path d="M8 5v14l11-7z"/>')}</span></button>`;
+    videoSlot.appendChild(compactAudio);
+
     const sentenceArea = document.createElement("section");
     sentenceArea.id = "te-dict-sentence-area";
     sentenceArea.setAttribute("aria-label", tr("dictationSentences"));
@@ -135,6 +146,7 @@
             <div class="te-dict-audio-title"><span data-dict-label="dictationAudioTitle"></span><span class="te-dict-chip" data-dict-label="dictationAudioSource"></span></div>
             <p data-dict-label="dictationAudioHelp"></p>
           </div>
+          <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
           <label class="te-dict-auto"><input type="checkbox" id="te-dict-auto" checked><span data-dict-label="dictationAutoPlay"></span></label>
         </div>
         <div class="te-dict-work">
@@ -214,7 +226,15 @@
     primaryGroup.classList.add("te-dict-primary-group");
 
     ui = {
-      root, left, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
+      root, left, videoSlot, compactAudio, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
+      videoCompactToggle: center.querySelector("#te-dict-video-toggle"),
+      miniThumb: compactAudio.querySelector(".te-dict-mini-thumb"),
+      miniTitle: compactAudio.querySelector(".te-dict-mini-title"),
+      miniSource: compactAudio.querySelector(".te-dict-mini-source"),
+      miniPlay: compactAudio.querySelector(".te-dict-mini-play"),
+      miniPlayIcon: compactAudio.querySelector(".te-dict-mini-play-icon"),
+      videoExpandedHeight: 0, videoExpandedHeightSaved: false, videoTransitionToken: 0, videoResizeObserver: null,
+      originalVideoSlotHeight: { value: videoSlot.style.getPropertyValue("height"), priority: videoSlot.style.getPropertyPriority("height") },
       primaryGroup, tools, sentenceArea, center, notesPanel,
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
@@ -271,6 +291,20 @@
     }));
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    ui.miniSource.textContent = tr("dictationAudioSource");
+    updateCompactAudioInfo();
+    updateCompactAudioPlaybackState();
+    ui.videoCompactToggle.addEventListener("click", toggleCompactVideo);
+    ui.miniPlay.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleVideoPlayback();
+    });
+    ui.videoSlot.addEventListener("transitionend", onVideoSlotTransitionEnd);
+    if (typeof ResizeObserver === "function") {
+      ui.videoResizeObserver = new ResizeObserver(onDictationVideoResize);
+      ui.videoResizeObserver.observe(ui.left);
+    }
 
     ui.close.addEventListener("click", close);
     ui.check.addEventListener("click", () => { submit(); refocus(); });
@@ -303,6 +337,90 @@
   function setRepeat(count) {
     repeatCount = Math.max(0, Math.min(3, count | 0));
     ui?.repeatBtns.forEach((button) => button.classList.toggle("active", Number(button.dataset.count) === repeatCount));
+  }
+
+  function updateCompactAudioInfo() {
+    if (!ui) return;
+    const title = (document.title || "").replace(/\s*-\s*YouTube$/i, "").trim();
+    ui.miniTitle.textContent = title || tr("dictationTitle");
+    ui.miniSource.textContent = tr("dictationAudioSource");
+    const id = String(A?.state?.videoId || "");
+    if (/^[A-Za-z0-9_-]+$/.test(id)) {
+      ui.miniThumb.hidden = false;
+      ui.miniThumb.src = `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+    } else {
+      ui.miniThumb.hidden = true;
+      ui.miniThumb.removeAttribute("src");
+    }
+    const thumbnail = ui.miniThumb;
+    thumbnail.onerror = () => { thumbnail.hidden = true; };
+    const compact = ui.root.classList.contains("te-dict-video-compact");
+    const label = tr(compact ? "dictationExpandVideo" : "dictationCompactVideo");
+    ui.videoCompactToggle.title = label;
+    ui.videoCompactToggle.setAttribute("aria-label", label);
+    ui.videoCompactToggle.setAttribute("aria-pressed", String(compact));
+    ui.videoCompactToggle.innerHTML = makeSvg(compact
+      ? '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>'
+      : '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>');
+  }
+
+  function updateCompactAudioPlaybackState() {
+    if (!ui) return;
+    const video = attachedVideo || A?.state?.videoEl;
+    const playing = !!video && !video.paused;
+    ui.compactAudio.classList.toggle("playing", playing);
+    const label = tr(playing ? "dictationMiniPause" : "dictationMiniPlay");
+    ui.miniPlay.title = label;
+    ui.miniPlay.setAttribute("aria-label", label);
+    ui.miniPlayIcon.innerHTML = makeSvg(playing
+      ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+      : '<path d="M8 5v14l11-7z"/>');
+  }
+
+  function toggleCompactVideo() {
+    if (!ui?.videoSlot) return;
+    const compact = ui.root.classList.contains("te-dict-video-compact");
+    const slot = ui.videoSlot;
+    const currentHeight = slot.getBoundingClientRect().height;
+    if (!currentHeight) return;
+    if (!compact && !ui.videoExpandedHeightSaved) {
+      ui.videoExpandedHeight = currentHeight;
+      ui.videoExpandedHeightSaved = true;
+    }
+    const targetHeight = compact ? ui.videoExpandedHeight : ui.videoExpandedHeight / 3;
+    if (!targetHeight) return;
+    const token = ++ui.videoTransitionToken;
+    slot.style.height = `${currentHeight}px`;
+    void slot.offsetHeight;
+    ui.root.classList.toggle("te-dict-video-compact", !compact);
+    updateCompactAudioInfo();
+    requestAnimationFrame(() => {
+      if (!ui || ui.videoTransitionToken !== token) return;
+      slot.style.height = `${targetHeight}px`;
+    });
+  }
+
+  function onDictationVideoResize() {
+    if (!ui?.root.classList.contains("te-dict-video-compact") || !ui.videoExpandedHeightSaved) return;
+    const slotWidth = ui.videoSlot.getBoundingClientRect().width;
+    const leftHeight = ui.left.getBoundingClientRect().height;
+    const video = attachedVideo || A?.state?.videoEl;
+    const aspect = video?.videoWidth && video?.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
+    if (!slotWidth || !leftHeight || !aspect) return;
+    ui.videoExpandedHeight = Math.min(slotWidth / aspect, leftHeight * .42);
+    if (ui.videoExpandedHeight > 0) ui.videoSlot.style.height = `${ui.videoExpandedHeight / 3}px`;
+  }
+
+  function onVideoSlotTransitionEnd(event) {
+    if (!ui || event.target !== ui.videoSlot || event.propertyName !== "height") return;
+    if (ui.root.classList.contains("te-dict-video-compact")) return;
+    if (ui.videoExpandedHeightSaved) {
+      ui.videoExpandedHeight = ui.videoSlot.getBoundingClientRect().height;
+      ui.videoExpandedHeightSaved = false;
+    }
+    const original = ui.originalVideoSlotHeight;
+    if (original.value) ui.videoSlot.style.setProperty("height", original.value, original.priority);
+    else ui.videoSlot.style.removeProperty("height");
   }
 
   function showToastBeforeOpen() {
@@ -1129,6 +1247,7 @@
 
   // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
   function onVideoPlay() {
+    updateCompactAudioPlaybackState();
     if (!active || !attachedVideo) return;
     const cue = sentenceCues[current];
     if (!cue) return;
@@ -1140,6 +1259,10 @@
     stopAt = Number(cue.end) || -1;
     repeatLeft = 0;
     watchPlayback();
+  }
+
+  function onVideoPause() {
+    updateCompactAudioPlaybackState();
   }
 
   function onVideoTimeUpdate() {
@@ -1311,12 +1434,15 @@
     attachedVideo = A?.state?.videoEl || null;
     attachedVideo?.addEventListener("timeupdate", onVideoTimeUpdate);
     attachedVideo?.addEventListener("play", onVideoPlay);
+    attachedVideo?.addEventListener("pause", onVideoPause);
+    updateCompactAudioPlaybackState();
   }
 
   function detachVideoEvents() {
     endPlayback();
     attachedVideo?.removeEventListener("timeupdate", onVideoTimeUpdate);
     attachedVideo?.removeEventListener("play", onVideoPlay);
+    attachedVideo?.removeEventListener("pause", onVideoPause);
     attachedVideo = null;
   }
 
@@ -1386,12 +1512,19 @@
     void audioCtx?.close?.();
     audioCtx = null;
     ui.bar.removeEventListener("click", onControlClick, true);
+    ui.videoTransitionToken++;
+    ui.videoResizeObserver?.disconnect();
+    ui.videoSlot.removeEventListener("transitionend", onVideoSlotTransitionEnd);
+    const originalVideoHeight = ui.originalVideoSlotHeight;
+    if (originalVideoHeight.value) ui.videoSlot.style.setProperty("height", originalVideoHeight.value, originalVideoHeight.priority);
+    else ui.videoSlot.style.removeProperty("height");
+    ui.compactAudio.remove();
     for (const [button, original] of ui.originalButtonState) {
       button.disabled = original.disabled;
       if (original.aria === null) button.removeAttribute("aria-disabled");
       else button.setAttribute("aria-disabled", original.aria);
     }
-    ui.root.classList.remove("te-dictation-active");
+    ui.root.classList.remove("te-dictation-active", "te-dict-video-compact");
     if (ui.barParent?.isConnected) {
       if (ui.barNextSibling?.parentNode === ui.barParent) ui.barParent.insertBefore(ui.bar, ui.barNextSibling);
       else ui.barParent.appendChild(ui.bar);
