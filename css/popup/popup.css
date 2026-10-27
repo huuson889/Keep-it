@@ -116,4 +116,3 @@ body,.extension-container{font-family:'Inter',-apple-system,BlinkMacSystemFont,"
 /* Edge/Chromium: đặt rõ cơ chế thanh cuộn cho các vùng cuộn của popup để quy tắc WebKit có hiệu lực */
 html, body, .popup-main { scrollbar-width: auto; scrollbar-color: auto; }
 html::-webkit-scrollbar, body::-webkit-scrollbar, .popup-main::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
-.language-option.lhn-kb-active{outline:2px solid #6d5ef5;outline-offset:-2px}

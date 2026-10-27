@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.655; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.656; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -10,6 +10,8 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+27. [Chưa làm — đã chốt] (a) Làm nổi bật ẩn: áp dụng cho ghi chú và highlight ở Dashboard và sidebar; nền vàng đổi sang chữ đen ở dark mode; có một khóa ẩn trong code để bật/tắt. (b) Điều hướng ↑/↓ chỉ áp dụng cho danh sách xổ xuống có ô tìm; có một khóa ẩn trong code để bật/tắt. Hai việc này chưa triển khai.
+26. [Kiểm tra] Ô tìm Settings v3.4.656 trên Chrome/Edge/Firefox với Dashboard thật: gõ lọc hàng qua mọi tab, ẩn nhóm/tab trống, thông báo "No settings found", Esc/đổi tab/đóng hộp thoại xóa ô tìm; ô cao 40px, icon bên trái, ô dính đầu khi cuộn (cả cửa sổ rộng ≤700px và ≤520px), tô sáng `mark.lhn-search-match`; kiểm tra tiếng Việt có dấu (VI/KO) và dark mode. Đã kiểm trên Chromium headless với markup/CSS Settings thật nhưng chưa kiểm trên Dashboard chạy trong extension.
 25. [Kiểm tra] Overlay video v3.4.634 trên Edge/Chrome/Firefox với video YouTube thật: (a) Ambient mode: vòng sáng lan tròn từ tâm video ra thanh điều khiển và thanh bên, mờ dần, cả theme sáng/tối; công tắc "Ambient mode" trong Cài đặt video (mặc định bật) bật/tắt ngay và được lưu; video DRM không bật; chữ phụ đề và danh sách bên vẫn dễ đọc, máy yếu không giật (độ sáng 0.5, blur 40px, vẽ mỗi 125 ms); (b) hover tiêu đề video dài ở thanh điều khiển: chạy vòng tròn nối đuôi, rời chuột về vị trí cũ; (c) logo, chữ "Keepit - Video Song Ngữ" và dấu × cùng căn giữa dọc trên Windows (font Segoe UI) và Firefox (nhánh dự phòng nhích 1,5px); (d) ẩn phụ đề/thanh điều khiển vẫn cùng màu nền sáng/tối, hover đáy thì thanh hiện lại; (e) chuyển câu active ở sidebar mượt. Chưa kiểm thử trên YouTube thật.
 24. [Kiểm tra] YouTube song ngữ v3.4.622: Dual Sub đọc khóa qua `globalThis.LHN_CONFIG`; Auto đích theo ngôn ngữ giao diện. Hai bộ chọn dùng chung `lhnStudyTranslationSettings`; mỗi dòng ưu tiên track khớp, nếu thiếu dùng track gốc và dịch sang ngôn ngữ dòng đó. Khi bật Kết hợp câu, cả nội dung track dịch cũng được chia/gộp theo câu. “Hiện popup dịch trực tiếp” dùng `lhnSettings.translationPopupEnabled` với Dashboard; overlay tạm bật tùy chọn này và khôi phục trạng thái trước đó khi đóng nếu người dùng không đổi. Bộ giải mã transcript xử lý entity HTML lồng nhau; thanh điều khiển neo đáy overlay. Nút điều khiển dùng đúng hiệu ứng nhấn Bilingual Reader khi click/shortcut; click video toggle play/pause. Mục Chế độ xem nằm đầu Cài đặt video. Mặc định shortcut Dual Sub là Alt+E. Cần xác nhận hiển thị/hover pause trên Chromium/Firefox.
 19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
@@ -47,7 +49,7 @@
 Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
 ├── pages/
-│   ├── dashboard.html             # Giao diện Dashboard
+│   ├── dashboard.html             # Giao diện Dashboard (gồm ô tìm Settings `#settingsSearch`)
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
@@ -59,11 +61,11 @@ Keepit - Test/
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
 │   ├── dashboard/                 # dashboard.js (entry), settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
-│   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
+│   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # helpers như custom-font và icons
+│   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard
@@ -82,12 +84,6 @@ Keepit - Test/
 
 Có 2 entry `content_scripts`: entry `document_start`/`all_frames` chỉ nạp browser API, messaging, error-logger và custom-font; app chính chạy `document_idle` ở top frame.
 
-- `js/shared/search.js` → `LHN_INDEX_SEARCH`: `normalize`, `createIndex`, `search`, `debounce` (200 ms), `attachListKeyboard` (↑/↓/Enter), `features` (khóa ẩn `highlight`, `arrowKeys`). Nạp trước mọi script dùng nó.
-- `js/translate/search.js` → `LHN_SEARCH` (`rank`, `highlightMatches`). Tên riêng, không dùng chung với module trên.
-- `js/dictation/dictation-score.js` → `LHN_DICTATION_SCORE` (`tokenize`, `score`): chấm chính tả theo căn chỉnh từ (LCS); bỏ qua hoa thường, dấu câu, nháy (kể cả nháy cong).
-- `js/dictation/dictation-style.js` → `LHN_DICTATION_CSS`: CSS dictation nhúng vào shadow root của overlay (theme tối mặc định, theme sáng qua `#keepit-exact-overlay.theme-light`).
-- `js/dictation/dictation.js` → `LHN_DICTATION` (`toggle`, `open`, `close`): panel dictation trong overlay video; danh sách câu lazy load từ `state.captions` (câu bị blur cho đến khi chấm đúng, lưu `storage.local` theo video); nút "AI keepit" mở/đóng; nối các nút điều khiển `Câu trước`, `Câu tiếp theo`, `Phát/Tạm dừng`, `Lặp lại câu` vào dictation khi đang mở; Nói (Chrome chấm bằng nhận dạng giọng nói, Firefox chỉ ghi âm để nghe lại); đánh máy; độ chính xác.
-
 ### 4.2. Luồng tương tác giữa các module
 ```text
 Popup ── yêu cầu mở Dashboard / gửi thao tác tab ──┐
@@ -105,36 +101,30 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> giao diện quản lý
+Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
+                      └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
+                           trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
+                           không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
+Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
-- Dictation: `dual-subtitles.js` đặt `globalThis.LHN_OVERLAY_API` và phát sự kiện `lhn-overlay-ready` khi overlay được dựng; `dictation.js` (nạp trước `dual-subtitles.js`) nghe sự kiện, gắn nút "AI keepit" và các nút Nói/Đánh máy/Độ chính xác vào `te-control-bar`. Khi dictation mở: ẩn 3 nút bên trái (Thêm từ vựng, Mở bộ sưu tập, Lặp lại câu), chặn click điều khiển để chuyển câu/phát trong dictation; Esc xóa ô nhập; Ctrl một mình nghe lại câu; Enter chấm; nút × hoặc bấm lại "AI keepit" đóng.
-- Ô tìm và danh sách xổ xuống: xem các mục 4.1 (`LHN_INDEX_SEARCH`); khóa ẩn bật/tắt highlight và điều hướng ↑/↓ trong `js/shared/search.js`.
-
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-- **2026-10-27 | v3.4.658 | Claude sửa:**
-  - Sửa vị trí panel dictation: gắn vào cột `.te-right-sidebar` bên dưới tiêu đề (top 56px) thay vì phủ toàn overlay; bỏ hàng bộ đếm/× trùng với sidebar, bộ đếm và × chuyển xuống trong panel; ô nhập nằm ở chân panel. Vùng video không đổi.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên trình duyệt: Chưa chạy (cần xác nhận khoảng 56px dưới tiêu đề sidebar).
-
-
-- **2026-10-26 | v3.4.657 | Claude sửa:**
-  - Thêm module Dictation mở bằng nút "AI keepit" trong `te-control-bar` của overlay video: danh sách câu lazy load từ transcript, câu bị blur cho đến khi chấm đúng (lưu `storage.local` theo video), chấm khi Enter (bỏ qua hoa thường, dấu câu, nháy), Esc xóa ô nhập, Ctrl một mình nghe lại câu, nút × đóng, bộ đếm `sentence-counter`, độ chính xác, Nói (Chrome: nhận dạng giọng nói; Firefox: ghi âm nghe lại), đánh máy. Nhãn mới đủ EN/VI/KO.
-  - Thêm 3 file `js/dictation/` (score, style, dictation) và điểm nối nhỏ `LHN_OVERLAY_API` + sự kiện `lhn-overlay-ready` trong `dual-subtitles.js`. Cập nhật mục 4.1 và 4.2.
-  - File: `js/dictation/dictation-score.js`, `js/dictation/dictation-style.js`, `js/dictation/dictation.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file đã sửa — đạt. Thử chấm điểm trong Node: 7/7 trường hợp đúng. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: kiểm tra trên YouTube (nút AI keepit, lazy load, blur, lưu tiến độ, Nói trên Chrome/Firefox, phím tắt, sáng/tối) và kiểm tra nhãn chưa dịch đủ nếu có.
-
+- **2026-10-26 | v3.4.656 | Claude sửa:**
+  - Chỉ sửa ô tìm Settings của Dashboard: (1) cao 40px; (2) thêm icon tìm kiếm bên trái trong ô (bộ path `search` của app); (3) ô dính ở đầu khi cuộn (`position: sticky`, nền trùng nền Settings, bù padding của vùng nội dung ở các mức ≤700px và ≤520px); (4) tô sáng kết quả bằng `mark.lhn-search-match` (nền `#fff2ad` như Dashboard/sidebar), chỉ trong nhãn, mô tả và tiêu đề của hàng/nhóm đang hiện, khớp không phân biệt hoa thường và dấu; gỡ sạch mark khi xóa ô tìm.
+  - Thêm một quy tắc dark mode giới hạn trong Settings: chữ trong mark đổi sang `#111827` để đọc được trên nền vàng. Không đổi highlight ở Dashboard/sidebar.
+  - Lưu ý: chuẩn hóa dùng chung chưa gộp chữ `đ` thành `d` nên gõ "toc do" chưa khớp "tốc độ" (gõ "toc" khớp); lọc và tô sáng cùng hành vi.
+  - File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/settings-ui.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check js/dashboard/settings-ui.js` và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật: ô cao đúng 40px, icon nằm trong ô và canh giữa, mark chỉ nằm trong hàng đang hiện, khớp không dấu ("toc" → "tốc"), ô dính ở top 0 sau khi cuộn hết, sau Esc DOM giống hệt ban đầu và không còn mark, dark mode có màu mark và nền ô đúng. Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
 
 - **2026-10-26 | v3.4.655 | Claude sửa:**
-  - Làm nổi bật kết quả tìm (Dashboard, sidebar): chữ đen trên nền vàng ở dark mode. Có khóa ẩn `LHN_INDEX_SEARCH.features.highlight` trong `js/shared/search.js` để bật/tắt.
-  - ↑/↓ chọn mục và Enter chọn trong danh sách xổ xuống có ô tìm (popup ngôn ngữ, Settings ngôn ngữ) qua `attachListKeyboard`. Khóa ẩn `features.arrowKeys`. Danh sách giọng trình duyệt đã có sẵn điều hướng riêng, không đổi.
-  - File: `js/shared/search.js`, `js/popup/popup.js`, `js/dashboard/settings-ui.js`, `js/dashboard/dashboard.js`, `js/content/sidebar.js`, `css/dashboard/dashboard.css`, `css/content/content.css`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: chưa xác định class theme của sidebar trong content.css; kiểm tra chữ đen ở dark mode trên sidebar.
-
+  - Thêm ô tìm ở đầu Settings của Dashboard: gõ (debounce 200 ms, `LHN_INDEX_SEARCH`, không phân biệt hoa thường và dấu) để ẩn các hàng không khớp qua mọi tab, ẩn nhóm/tab trống và hiện "No settings found" khi không có kết quả; xóa ô tìm (Esc, đổi tab, đóng hộp thoại) thì về nguyên trạng. Từ khóa mỗi hàng gồm nhãn, mô tả, tiêu đề h3 gần nhất và tiêu đề tab; không làm nổi bật kết quả. Chỉ bật/tắt class tạm, không đổi `hidden`.
+  - Chuỗi mới `settingsSearchPlaceholder`, `settingsSearchNoResults` (EN/VI/KO). Nút Reset của tab Shortcut được ẩn trong lúc tìm.
+  - Chưa làm (đã chốt, xem Việc đang mở 27): làm nổi bật ẩn và điều hướng ↑/↓.
+  - File: `pages/dashboard.html`, `js/dashboard/settings-ui.js`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `css/dashboard/dashboard.css`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` 3 file JS đã sửa và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật + `search.js` + `settings-ui.js`: 10 ca đạt (debounce, lọc theo nhãn/mô tả/tiêu đề tab, không khớp, Esc/đổi tab/đóng hộp thoại xóa sạch class, thuộc tính `hidden` không đổi). Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
 
 - **2026-10-26 | v3.4.654 | Claude sửa:**
   - Sửa lỗi xung đột tên: `js/shared/search.js` (v3.4.652–653) ghi đè `globalThis.LHN_SEARCH` của `js/translate/search.js` (có `highlightMatches`, `rank`), làm hỏng highlight ở sidebar và Dashboard. Đổi tên module mới thành `LHN_INDEX_SEARCH` và cập nhật các nơi gọi (bilingual-reader, popup, settings-ui).

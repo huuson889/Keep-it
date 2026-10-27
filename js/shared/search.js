@@ -27,27 +27,5 @@
     return wrapped;
   }
 
-  // Khóa ẩn (không hiển thị trong UI): bật/tắt làm nổi bật và điều hướng ↑/↓ trong danh sách xổ xuống
-  const features = { highlight: true, arrowKeys: true };
-
-  // ↑/↓ chọn mục trong danh sách xổ xuống có ô tìm, Enter để chọn (ô tìm phải có danh sách .language-option)
-  function attachListKeyboard(input, list, choose) {
-    let index = -1;
-    input.addEventListener("keydown", (event) => {
-      if (!features.arrowKeys || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
-      const items = Array.from(list.querySelectorAll(".language-option"));
-      if (!items.length) return;
-      if (event.key === "Enter") {
-        if (index < 0) return;
-        event.preventDefault(); choose(items[index]); index = -1; return;
-      }
-      event.preventDefault();
-      index = Math.max(0, Math.min(items.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)));
-      items.forEach((el, i) => el.classList.toggle("lhn-kb-active", i === index));
-      items[index].scrollIntoView({ block: "nearest" });
-    });
-    input.addEventListener("input", () => { index = -1; });
-  }
-
-  globalThis.LHN_INDEX_SEARCH = Object.freeze({ normalize, createIndex, search, debounce, features, attachListKeyboard });
+  globalThis.LHN_INDEX_SEARCH = Object.freeze({ normalize, createIndex, search, debounce });
 })();

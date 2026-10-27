@@ -2130,9 +2130,6 @@ function bindUI() {
   ctrl('Câu trước').addEventListener('click', seekPrevCaption);
   ctrl('Câu tiếp theo').addEventListener('click', seekNextCaption);
   ctrl('Phát/Tạm dừng').addEventListener('click', togglePlay);
-  // API cho module dictation (js/dictation/dictation.js)
-  globalThis.LHN_OVERLAY_API = { overlayEl, ctrl, ui, state, lang: () => displayLanguage, shadow: () => shadow };
-  document.dispatchEvent(new CustomEvent('lhn-overlay-ready', { detail: globalThis.LHN_OVERLAY_API }));
   ctrl('Tốc độ').addEventListener('click', (e) => { e.stopPropagation(); toggleSpeedPopup(); });
   $('te-speed-slider').addEventListener('input', (e) => setVideoSpeed(e.target.value));
   $('te-speed-dec').addEventListener('click', () => setVideoSpeed((state.videoEl?.playbackRate ?? 1) - 0.05));
