@@ -66,6 +66,7 @@ const FAILED_CACHE_MS = 10 * 60 * 1000;
 let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
 let prefetchToken = 0;
 let prefetchTimer = 0;
+let savedOverlayPageScrollStyles = null;
 
 let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
@@ -978,6 +979,31 @@ function ensureLauncher() {
   document.body.appendChild(btn);
 }
 
+function hideOverlayPageScrollbar() {
+  if (savedOverlayPageScrollStyles) return;
+  const html = document.documentElement;
+  const body = document.body;
+  const snapshot = (element) => element ? {
+    value: element.style.getPropertyValue('overflow-y'),
+    priority: element.style.getPropertyPriority('overflow-y'),
+  } : null;
+  savedOverlayPageScrollStyles = { html, body, htmlStyle: snapshot(html), bodyStyle: snapshot(body) };
+  html?.style.setProperty('overflow-y', 'hidden', 'important');
+  body?.style.setProperty('overflow-y', 'hidden', 'important');
+}
+
+function restoreOverlayPageScrollbar() {
+  if (!savedOverlayPageScrollStyles) return;
+  const restore = (element, style) => {
+    if (!element || !style) return;
+    if (style.value) element.style.setProperty('overflow-y', style.value, style.priority);
+    else element.style.removeProperty('overflow-y');
+  };
+  restore(savedOverlayPageScrollStyles.html, savedOverlayPageScrollStyles.htmlStyle);
+  restore(savedOverlayPageScrollStyles.body, savedOverlayPageScrollStyles.bodyStyle);
+  savedOverlayPageScrollStyles = null;
+}
+
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
   const video = document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video');
@@ -986,6 +1012,7 @@ function openOverlay() {
     alert('Không tìm thấy video trên trang.');
     return;
   }
+  hideOverlayPageScrollbar();
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
@@ -1000,6 +1027,7 @@ function openOverlay() {
 
 function closeOverlay() {
   globalThis.LHN_DICTATION?.close?.();
+  restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
   overlayEl()?.classList.add('te-hidden');
