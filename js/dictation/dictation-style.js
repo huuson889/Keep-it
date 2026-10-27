@@ -308,7 +308,7 @@ globalThis.LHN_DICTATION_CSS = `
   text-align: center;
   backdrop-filter: blur(4px);
 }
-#keepit-exact-overlay.theme-dark .te-dict-lock { background: rgba(10,10,12,.95); color: #e5e7eb; }
+#keepit-exact-overlay.theme-dark .te-dict-lock { background: rgb(18 18 18 / 32%); color: #e5e7eb; }
 #keepit-exact-overlay .te-dict-lock[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-save { border: 0; background: transparent; color: #b45309; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 #keepit-exact-overlay.theme-dark .te-dict-save { color: #fbbf24; }
