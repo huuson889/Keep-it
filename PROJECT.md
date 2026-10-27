@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.656; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
+- Version hiện tại: v3.4.658; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics, YouTube Dual Sub và Dictation. Dictation v1 đổi layout ngay trong overlay hiện có, chỉ gõ đáp án và lưu tiến độ/ghi chú cục bộ; chưa có chế độ Nói. Entry points vẫn điều phối state và vòng đời.
 - Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
 - Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
 - **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
@@ -10,6 +10,8 @@
 - Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+29. [Chưa làm — tách đợt] Dictation v2 “Nói”: Chromium SpeechRecognition để chấm; Firefox chỉ ghi âm/phát lại. Trước khi làm cần chốt quyền/disclosure và kiểm tra riêng tư micro.
+28. [Kiểm thử UI/runtime] Dictation v1 v3.4.658 trên YouTube thật (Chrome/Edge/Firefox): track English only; bố cục ba cột trên cùng overlay, thanh điều khiển full-width và khôi phục bằng X/AI keepit; danh sách cuộn/blur/khóa, căn chỉnh chấm điểm, dịch VI sau đúng, notes khóa/lưu theo video/câu, dark/light, Enter/Esc/Alt+X/Ctrl. Chưa chạy trên browser thật.
 27. [Chưa làm — đã chốt] (a) Làm nổi bật ẩn: áp dụng cho ghi chú và highlight ở Dashboard và sidebar; nền vàng đổi sang chữ đen ở dark mode; có một khóa ẩn trong code để bật/tắt. (b) Điều hướng ↑/↓ chỉ áp dụng cho danh sách xổ xuống có ô tìm; có một khóa ẩn trong code để bật/tắt. Hai việc này chưa triển khai.
 26. [Kiểm tra] Ô tìm Settings v3.4.656 trên Chrome/Edge/Firefox với Dashboard thật: gõ lọc hàng qua mọi tab, ẩn nhóm/tab trống, thông báo "No settings found", Esc/đổi tab/đóng hộp thoại xóa ô tìm; ô cao 40px, icon bên trái, ô dính đầu khi cuộn (cả cửa sổ rộng ≤700px và ≤520px), tô sáng `mark.lhn-search-match`; kiểm tra tiếng Việt có dấu (VI/KO) và dark mode. Đã kiểm trên Chromium headless với markup/CSS Settings thật nhưng chưa kiểm trên Dashboard chạy trong extension.
 25. [Kiểm tra] Overlay video v3.4.634 trên Edge/Chrome/Firefox với video YouTube thật: (a) Ambient mode: vòng sáng lan tròn từ tâm video ra thanh điều khiển và thanh bên, mờ dần, cả theme sáng/tối; công tắc "Ambient mode" trong Cài đặt video (mặc định bật) bật/tắt ngay và được lưu; video DRM không bật; chữ phụ đề và danh sách bên vẫn dễ đọc, máy yếu không giật (độ sáng 0.5, blur 40px, vẽ mỗi 125 ms); (b) hover tiêu đề video dài ở thanh điều khiển: chạy vòng tròn nối đuôi, rời chuột về vị trí cũ; (c) logo, chữ "Keepit - Video Song Ngữ" và dấu × cùng căn giữa dọc trên Windows (font Segoe UI) và Firefox (nhánh dự phòng nhích 1,5px); (d) ẩn phụ đề/thanh điều khiển vẫn cùng màu nền sáng/tối, hover đáy thì thanh hiện lại; (e) chuyển câu active ở sidebar mượt. Chưa kiểm thử trên YouTube thật.
@@ -64,6 +66,7 @@ Keepit - Test/
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
+│   ├── dictation/                 # dictation.js (overlay mode), dictation-score.js (căn chỉnh từ), dictation-style.js (CSS cục bộ)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
@@ -105,12 +108,23 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
                            không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
+YouTube Dual Sub (`state.allCues`, track language, live video)
+  └── API overlay hiện có ──> Dictation v1 (3 cột trong overlay, score + ghi chú)
+                                  ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
+                                  └── browser.storage.local → solved / notes / bản dịch theo video+câu
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-27 | v3.4.658 | Arena sửa:**
+  - Hoàn thiện Dictation v1 ngay trong YouTube overlay Dual Sub hiện có: video YouTube thật, danh sách câu tiếng Anh nạp dần quanh câu đang phát, chấm theo căn chỉnh từ, dịch Việt sau khi giải đúng, ghi chú/tiến độ lưu cục bộ theo video và câu; tái sử dụng thanh điều khiển và giữ X/AI keepit để đóng chế độ.
+  - Khóa cạnh tranh khi nạp tiến độ/dịch theo video và phiên hiện hành; chuyển câu xóa trạng thái đúng cũ; tải phụ đề thất bại phát sự kiện để không giữ nội dung cũ. Chỉ có chế độ Đánh máy trong v1, không xin quyền micro.
+  - Chuỗi giao diện mới có EN/VI/KO; README, OPT-ARENA §8.1.2 và bản đồ kiến trúc được cập nhật.
+  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/video/dual-subtitles.js`, `js/core/languages.js`, `manifest.json`, `README.md`, `OPT-ARENA.md`, `PROJECT.md`.
+  - Kiểm tra: `node --check` 45/45 JS; `python3 -m json.tool manifest.json`; CSS Dictation (97 quy tắc, 0 lỗi); 44 đường dẫn cục bộ trong manifest; chuỗi EN/VI/KO đủ; 3 ca scorer (hoa thường/dấu câu/nháy cong, căn chỉnh, từ thừa); kiểm tra scope v1/load order; `git diff --check` — đạt. Kiểm thử UI trên trình duyệt thật: Chưa chạy (môi trường không có trình duyệt/Playwright).
 
 - **2026-10-26 | v3.4.656 | Claude sửa:**
   - Chỉ sửa ô tìm Settings của Dashboard: (1) cao 40px; (2) thêm icon tìm kiếm bên trái trong ô (bộ path `search` của app); (3) ô dính ở đầu khi cuộn (`position: sticky`, nền trùng nền Settings, bù padding của vùng nội dung ở các mức ≤700px và ≤520px); (4) tô sáng kết quả bằng `mark.lhn-search-match` (nền `#fff2ad` như Dashboard/sidebar), chỉ trong nhãn, mô tả và tiêu đề của hàng/nhóm đang hiện, khớp không phân biệt hoa thường và dấu; gỡ sạch mark khi xóa ô tìm.

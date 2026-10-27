@@ -142,6 +142,43 @@
   MESSAGES.en.exportErrorLog = "Export log";
   MESSAGES.vi.exportErrorLog = "Xuất log";
   MESSAGES.ko.exportErrorLog = "로그 내보내기";
+  Object.assign(MESSAGES.en, {
+    dictationTitle: "Dictation", dictationSentences: "Sentences", dictationAnswer: "Your answer", dictationLessonNotes: "Lesson notes",
+    dictationVocabulary: "Vocabulary", dictationGrammarNotes: "Notes / grammar", dictationNotesLocked: "Notes are locked",
+    dictationNotesLockHelp: "Type the current sentence with 100% accuracy to unlock these notes.", dictationType: "Type", dictationAccuracy: "Accuracy",
+    dictationClose: "Close Dictation", dictationPlaceholder: "Type the sentence you hear…", dictationVocabularyPlaceholder: "Add a word or phrase…",
+    dictationNotesPlaceholder: "Write lesson notes…", dictationCheck: "Check", dictationSaveNote: "Save note", dictationEnterHint: "Press Enter to check",
+    dictationShortcutHint: "Alt+X clears the answer · Ctrl replays the sentence", dictationSaved: "Saved", dictationSentenceNumber: "Sentence",
+    dictationSolved: "solved", dictationLocked: "locked", dictationTranslationLoading: "Getting the Vietnamese translation…",
+    dictationTranslationFailed: "Vietnamese translation unavailable.", dictationCorrect: "Correct!", dictationTryAgain: "Not quite — keep trying.",
+    dictationCaptionsLoading: "English subtitles are still loading. Try again shortly.",
+    dictationEnglishOnly: "Dictation is available only for videos with English subtitles."
+  });
+  Object.assign(MESSAGES.vi, {
+    dictationTitle: "Luyện chép", dictationSentences: "Danh sách câu", dictationAnswer: "Câu trả lời", dictationLessonNotes: "Ghi chú bài học",
+    dictationVocabulary: "Từ vựng", dictationGrammarNotes: "Ghi chú / ngữ pháp", dictationNotesLocked: "Ghi chú đang khóa",
+    dictationNotesLockHelp: "Gõ đúng 100% câu hiện tại để mở khóa ghi chú.", dictationType: "Đánh máy", dictationAccuracy: "Độ chính xác",
+    dictationClose: "Đóng chế độ luyện chép", dictationPlaceholder: "Gõ câu bạn nghe được…", dictationVocabularyPlaceholder: "Thêm từ hoặc cụm từ…",
+    dictationNotesPlaceholder: "Viết ghi chú bài học…", dictationCheck: "Chấm điểm", dictationSaveNote: "Lưu ghi chú", dictationEnterHint: "Nhấn Enter để chấm",
+    dictationShortcutHint: "Alt+X xóa câu trả lời · Ctrl phát lại câu", dictationSaved: "Đã lưu", dictationSentenceNumber: "Câu",
+    dictationSolved: "đã hoàn thành", dictationLocked: "đang khóa", dictationTranslationLoading: "Đang lấy bản dịch tiếng Việt…",
+    dictationTranslationFailed: "Không lấy được bản dịch tiếng Việt.", dictationCorrect: "Chính xác!", dictationTryAgain: "Chưa đúng — thử lại.",
+    dictationCaptionsLoading: "Phụ đề tiếng Anh đang tải. Vui lòng thử lại sau.",
+    dictationEnglishOnly: "Chỉ dùng Dictation với video có phụ đề tiếng Anh."
+  });
+  Object.assign(MESSAGES.ko, {
+    dictationTitle: "받아쓰기", dictationSentences: "문장 목록", dictationAnswer: "내 답변", dictationLessonNotes: "학습 노트",
+    dictationVocabulary: "어휘", dictationGrammarNotes: "메모 / 문법", dictationNotesLocked: "노트가 잠겨 있습니다",
+    dictationNotesLockHelp: "현재 문장을 100% 정확하게 입력하면 노트가 열립니다.", dictationType: "타이핑", dictationAccuracy: "정확도",
+    dictationClose: "받아쓰기 닫기", dictationPlaceholder: "들리는 문장을 입력하세요…", dictationVocabularyPlaceholder: "단어나 구문 추가…",
+    dictationNotesPlaceholder: "학습 노트를 작성하세요…", dictationCheck: "확인", dictationSaveNote: "노트 저장", dictationEnterHint: "Enter를 눌러 확인",
+    dictationShortcutHint: "Alt+X 답변 지우기 · Ctrl 문장 다시 듣기", dictationSaved: "저장됨", dictationSentenceNumber: "문장",
+    dictationSolved: "완료", dictationLocked: "잠김", dictationTranslationLoading: "베트남어 번역을 불러오는 중…",
+    dictationTranslationFailed: "베트남어 번역을 사용할 수 없습니다.", dictationCorrect: "정답!", dictationTryAgain: "아직 다릅니다 — 다시 해 보세요.",
+    dictationCaptionsLoading: "영어 자막을 불러오는 중입니다. 잠시 후 다시 시도하세요.",
+    dictationEnglishOnly: "받아쓰기는 영어 자막이 있는 영상에서만 사용할 수 있습니다."
+  });
+
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {

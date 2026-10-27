@@ -26,6 +26,11 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. Auto-scroll, paragraph play icons, and the speed step are configurable.
 - The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
 
+### YouTube Dictation (v1)
+- Open **AI keepit** in the existing YouTube overlay to switch it into a three-column typing exercise. It is available only when the active Dual Sub transcript uses English captions.
+- Listen to the real YouTube video, type each sentence, and press Enter to check. Scoring aligns words and ignores capitalization, punctuation, and curly apostrophes. Unsolved sentences stay blurred; a Vietnamese translation appears after a correct answer.
+- Lesson notes and solved-sentence progress are stored locally in `browser.storage.local`, keyed by video and sentence. This v1 does not access the microphone or record speech. Speech practice is planned as a separate phase.
+
 ### Text to speech
 - Google text-to-speech by default, with an automatic fallback to the browser's own voices.
 - Select Voice offers Auto language detection, 21 Google TTS languages, and your browser's installed voices. A flag on the reading bar shows the selected language.
@@ -56,6 +61,8 @@ Defaults are listed below. Everything marked customizable can be changed in Dash
 
 The reading-bar keys (`Space`, arrows, `Alt+L`) work while the reader is active and can be turned off in the reader settings.
 
+While YouTube Dictation is open, `Alt+X` clears the answer and returns focus to it; pressing and releasing `Ctrl` by itself replays the current sentence. `Esc` keeps its existing behavior and closes the video overlay.
+
 ## Install for testing
 
 Chromium-based browsers (Chrome, Edge, Brave, …):
@@ -72,10 +79,10 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Privacy and permissions
 
-- The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
-- When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
+- The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. Dictation v1 also stores solved-sentence progress, lesson notes, and any revealed Vietnamese sentence translations in `browser.storage.local`, keyed by YouTube video and sentence. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
+- When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Dictation v1 requests a Vietnamese translation of a sentence only after you type it correctly; that sentence may be sent through the existing translation service. Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
 - A local error log keeps at most 200 classified entries (time, component, severity, code), without page URLs, page text, selected text, or account details. It is not automatically uploaded; JSON is generated only when you choose Export in Dashboard > Settings > About.
-- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services.
+- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services. Dictation v1 requests no microphone permission and does not record speech; the planned speech-practice phase is not included in this build.
 - The future account/cloud-sync section in the policy is explicitly marked as not active. Usage limits and Upgrade & Billing are local prototypes with no real payments.
 
 ## Limitations
@@ -95,6 +102,8 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `js/background/`: background service worker, annotation storage, usage limits, and error logging.
 - `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.
 - `js/reader/`: Bilingual Reader, TTS engine, and reader voice flags.
+- `js/video/`: YouTube Dual Sub adapter and the existing overlay template.
+- `js/dictation/`: word-alignment scorer, local overlay styles, and YouTube Dictation controller.
 - `js/translate/`: translation, dictionary, search, and study translation modules.
 - `js/dashboard/`: Dashboard, flashcard study, account, library, backup, and flag modules.
 - `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.

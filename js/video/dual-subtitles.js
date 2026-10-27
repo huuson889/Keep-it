@@ -911,6 +911,34 @@ function applySettings() {
 }
 
 // ---------- Overlay: tạo, mở, đóng ----------
+function createDictationOverlayApi() {
+  if (globalThis.LHN_OVERLAY_API) return globalThis.LHN_OVERLAY_API;
+  const api = Object.freeze({
+    state,
+    overlayEl,
+    ctrl,
+    lang: () => state.displayLanguage,
+    getDictationCues: () => {
+      if (state.captionTrackLanguage !== 'en' || !state.allCues.length) return [];
+      return dedupeSentences(resegmentBySentence(state.allCues)).map((cue, index) => ({
+        id: index,
+        start: cue.start,
+        end: cue.end,
+        en: String(cue.en || '').replace(/\s+/g, ' ').trim(),
+      })).filter((cue) => cue.en);
+    },
+    translateToVietnamese: (text) => translateOne(text, 'vi'),
+  });
+  globalThis.LHN_OVERLAY_API = api;
+  return api;
+}
+
+function announceDictationCaptionsUpdated() {
+  document.dispatchEvent(new CustomEvent('lhn-dual-captions-updated', {
+    detail: { videoId: state.videoId, language: state.captionTrackLanguage, count: state.allCues.length },
+  }));
+}
+
 function buildOverlay() {
   const host = document.createElement('div');
   host.id = HOST_ID;
@@ -935,6 +963,9 @@ function buildOverlay() {
     sizeBtns[i].textContent = t;
     sizeBtns[i].dataset.size = ['S', 'M', 'L'][i];
   });
+
+  const dictationApi = createDictationOverlayApi();
+  document.dispatchEvent(new CustomEvent('lhn-overlay-ready', { detail: dictationApi }));
 }
 
 function ensureLauncher() {
@@ -968,6 +999,7 @@ function openOverlay() {
 }
 
 function closeOverlay() {
+  globalThis.LHN_DICTATION?.close?.();
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
   overlayEl()?.classList.add('te-hidden');
@@ -1452,6 +1484,7 @@ function buildCaptions() {
     };
   });
   renderTranscriptList();
+  announceDictationCaptionsUpdated();
 }
 
 // ---------- Làm sạch, cửa sổ hiển thị và prefetch ----------
@@ -1785,7 +1818,10 @@ async function loadCaptions() {
     console.error('[keepit] Lỗi tải phụ đề:', err);
     if (token === state.loadToken) setStatus(errorText([...reasons, err.message]));
   } finally {
-    if (token === state.loadToken) state.loadingFor = null;
+    if (token === state.loadToken) {
+      state.loadingFor = null;
+      announceDictationCaptionsUpdated();
+    }
   }
 }
 
