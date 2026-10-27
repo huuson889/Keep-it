@@ -1866,6 +1866,7 @@ function onTranscriptClick(e) {
   const cap = state.captions[index];
   if (!cap) return;
   translateWindow(index);
+  resumeVideoFor('subtitle-sidebar-hover');
   v.currentTime = cap.start;
   v.play().catch(() => {});
 }
@@ -2238,17 +2239,14 @@ function bindUI() {
     transcriptClickTimer = setTimeout(() => onTranscriptClick({ target: timestamp }), 260);
   });
   transcriptList.addEventListener('pointerover', (e) => {
-    const sourceText = e.target.closest('.yt-dual-item-en');
-    if (sourceText && !sourceText.contains(e.relatedTarget)) pauseVideoFor('subtitle-sidebar-hover');
+    const item = e.target.closest('.yt-dual-item');
+    const previousItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
+    if (item && !previousItem) pauseVideoFor('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('pointerout', (e) => {
-    const sourceText = e.target.closest('.yt-dual-item-en');
-    if (sourceText && !sourceText.contains(e.relatedTarget)) resumeVideoFor('subtitle-sidebar-hover');
-  });
-  transcriptList.addEventListener('dblclick', (e) => {
-    if (!e.target.closest('.yt-dual-timestamp')) return;
-    clearTimeout(transcriptClickTimer);
-    pauseVideoFor('sidebar-double-click');
+    const item = e.target.closest('.yt-dual-item');
+    const nextItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
+    if (item && !nextItem) resumeVideoFor('subtitle-sidebar-hover');
   });
   // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
   let scrollRaf = 0;
