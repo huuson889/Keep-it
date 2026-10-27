@@ -376,6 +376,7 @@
 
   function onAnswerInput() {
     if (!ui) return;
+    const wasChecked = checkedCurrent;
     checkedCurrent = false;
     ui.input.classList.remove("correct");
     ui.check.classList.add("te-dict-act-primary");
@@ -387,7 +388,7 @@
     ui.success.hidden = true;
     ui.translation.hidden = true;
     ui.translation.textContent = "";
-    updateRows(false);
+    if (wasChecked) updateRows(false);
   }
 
   function updateRows(scrollCurrent = true) {
