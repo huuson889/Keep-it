@@ -213,14 +213,15 @@ function refreshDashboardSettings() {
   $("settingsTranslateShortcut").value = dashboardSettings.translateSelectedShortcut ?? CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut;
   $("settingsWebsiteShortcut").value = dashboardSettings.toggleWebsiteShortcut ?? CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut;
   $("settingsDualSubtitlesShortcut").value = dashboardSettings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut;
+  $("settingsDictationShortcut").value = dashboardSettings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut;
   $("settingsSpeechPauseShortcut").value = dashboardSettings.speechPauseShortcut ?? CONFIG.DEFAULT_SETTINGS.speechPauseShortcut;
   $("settingsPreviousReadingShortcut").value = dashboardSettings.previousReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.previousReadingShortcut;
   $("settingsNextReadingShortcut").value = dashboardSettings.nextReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.nextReadingShortcut;
   $("settingsIncreaseReadingSpeedShortcut").value = dashboardSettings.increaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.increaseReadingSpeedShortcut;
   $("settingsDecreaseReadingSpeedShortcut").value = dashboardSettings.decreaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.decreaseReadingSpeedShortcut;
   $("settingsSelectVoiceShortcut").value = dashboardSettings.selectVoiceShortcut ?? CONFIG.DEFAULT_SETTINGS.selectVoiceShortcut;
-  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
-  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
+  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsDictationShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
+  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "dictationShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
   $("settingsVersion").textContent = `v${browser.runtime.getManifest().version}`;
   const displayName = demoProfile?.displayName || t("profileGuest"), email = demoProfile ? (demoProfile.email || "huuson889@gmail.com") : t("profileLocal");
   $("settingsProfileName").textContent = displayName;
@@ -2433,6 +2434,7 @@ setupDashboardShortcut("settingsSidebarShortcut", "sidebarShortcut");
 setupDashboardShortcut("settingsTranslateShortcut", "translateSelectedShortcut");
 setupDashboardShortcut("settingsWebsiteShortcut", "toggleWebsiteShortcut");
 setupDashboardShortcut("settingsDualSubtitlesShortcut", "dualSubtitlesShortcut");
+setupDashboardShortcut("settingsDictationShortcut", "dictationShortcut");
 setupDashboardShortcut("settingsSpeechPauseShortcut", "speechPauseShortcut");
 setupDashboardShortcut("settingsPreviousReadingShortcut", "previousReadingShortcut");
 setupDashboardShortcut("settingsNextReadingShortcut", "nextReadingShortcut");
@@ -2445,6 +2447,7 @@ $("resetDashboardShortcuts").addEventListener("click", () => saveDashboardSettin
   translateSelectedShortcut:CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut,
   toggleWebsiteShortcut:CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut,
   dualSubtitlesShortcut:CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut,
+  dictationShortcut:CONFIG.DEFAULT_SETTINGS.dictationShortcut,
   speechPauseShortcut:CONFIG.DEFAULT_SETTINGS.speechPauseShortcut,
   previousReadingShortcut:CONFIG.DEFAULT_SETTINGS.previousReadingShortcut,
   nextReadingShortcut:CONFIG.DEFAULT_SETTINGS.nextReadingShortcut,

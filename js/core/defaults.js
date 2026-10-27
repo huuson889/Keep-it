@@ -35,6 +35,7 @@
     translateSelectedShortcut: "Alt+W",
     toggleWebsiteShortcut: "Alt+Z",
     dualSubtitlesShortcut: "Alt+E",
+    dictationShortcut: "Alt+F",
     speechPauseShortcut: "Space",
     previousReadingShortcut: "Left",
     nextReadingShortcut: "Right",

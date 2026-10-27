@@ -1044,6 +1044,12 @@ function closeOverlay() {
   detachVideo();
 }
 
+function toggleDictationFromShortcut() {
+  if (keepitSiteDisabled) return;
+  if (!state.open) openOverlay();
+  if (state.open) globalThis.LHN_DICTATION?.toggle?.();
+}
+
 // Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
 function syncVideoAspect(video) {
   const root = overlayEl();
@@ -2401,6 +2407,7 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     if (state.open) closeOverlay();
     else openOverlay();
   });
+  document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   // ↑/↓: tăng/giảm tốc độ 0.05 (chặn trước YouTube để không đổi âm lượng khi overlay đang mở)
   window.addEventListener('keydown', (event) => {
     if (!state.open || (event.key !== '>' && event.key !== '<')) return;

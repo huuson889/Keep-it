@@ -1370,6 +1370,12 @@
       e.preventDefault(); e.stopPropagation(); toggleWebsiteDisabled(); return;
     }
     if (websiteDisabled) return;
+    const dictationShortcut = String(settings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut).toLowerCase();
+    if (dictationShortcut && pressed === dictationShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
+      e.preventDefault(); e.stopPropagation();
+      if (!e.repeat) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
+      return;
+    }
     const dualSubtitlesShortcut = String(settings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut).toLowerCase();
     if (dualSubtitlesShortcut && pressed === dualSubtitlesShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
       e.preventDefault(); e.stopPropagation(); document.dispatchEvent(new CustomEvent("lhn-youtube-dual-subtitles-toggle")); return;
