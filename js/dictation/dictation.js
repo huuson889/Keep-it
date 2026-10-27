@@ -336,11 +336,9 @@
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
   }
 
-  function updateCheckButtonStyle(result = null) {
+  function updateCheckButtonStyle() {
     if (!ui?.check) return;
-    const cue = sentenceCues[current];
-    const perfect = result ? result.perfect : !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
-    ui.check.classList.toggle("te-dict-act-primary", !perfect);
+    ui.check.classList.add("te-dict-act-primary");
     ui.check.classList.remove("te-dict-done");
   }
 
@@ -348,7 +346,7 @@
     if (!ui) return;
     const cue = sentenceCues[current];
     const result = cue ? globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value) : null;
-    updateCheckButtonStyle(result);
+    updateCheckButtonStyle();
     ui.input.classList.toggle("correct", !!result?.perfect && solved.has(current));
     ui.error.hidden = true;
     if (!result?.perfect) {
@@ -473,7 +471,7 @@
     ui.saved.textContent = "";
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    updateCheckButtonStyle({ perfect: wasSolved });
+    updateCheckButtonStyle();
     ui.error.hidden = true;
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
@@ -656,7 +654,7 @@
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
     setScore(result.percent);
-    updateCheckButtonStyle(result);
+    updateCheckButtonStyle();
     if (result.perfect) {
       solved.add(current);
       ui.input.classList.add("correct");
@@ -819,7 +817,7 @@
       event.preventDefault();
       const cue = sentenceCues[current];
       const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
-      if (isPerfect && solved.has(current)) { ui?.btnNext?.click(); return; }
+      if (isPerfect && solved.has(current)) { ui?.btnNext?.focus({ preventScroll: true }); return; }
       ui.check.click();
     }
   }
@@ -837,7 +835,7 @@
     if (!ui) return;
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    updateCheckButtonStyle({ perfect: solved.has(current) });
+    updateCheckButtonStyle();
     ui.error.hidden = true;
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
