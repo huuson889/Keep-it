@@ -6,6 +6,7 @@
   let ui = null;
   let active = false;
   let current = 0;
+  let checkedCurrent = false;
   let listStart = 0;
   let listEnd = 0;
   let sentenceCues = [];
@@ -336,24 +337,24 @@
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
   }
 
-  function updateCheckButtonStyle() {
+  function updateCheckButtonStyle(perfect) {
     if (!ui?.check) return;
-    ui.check.classList.add("te-dict-act-primary");
-    ui.check.classList.remove("te-dict-done");
+    ui.check.classList.toggle("te-dict-act-primary", !perfect);
+    ui.check.classList.toggle("te-dict-done", perfect);
   }
 
   function onAnswerInput() {
     if (!ui) return;
-    const cue = sentenceCues[current];
-    const result = cue ? globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value) : null;
-    updateCheckButtonStyle();
-    ui.input.classList.toggle("correct", !!result?.perfect && solved.has(current));
+    checkedCurrent = false;
+    ui.input.classList.remove("correct");
+    ui.check.classList.add("te-dict-act-primary");
+    ui.check.classList.remove("te-dict-done");
+    ui.btnNext?.classList.remove("te-dict-ready");
+    setScore(null);
     ui.error.hidden = true;
-    if (!result?.perfect) {
-      ui.success.hidden = true;
-      ui.translation.hidden = true;
-      ui.translation.textContent = "";
-    }
+    ui.success.hidden = true;
+    ui.translation.hidden = true;
+    ui.translation.textContent = "";
   }
 
   function updateRows(scrollCurrent = true) {
@@ -462,8 +463,10 @@
     updateRows();
     updateProgressControls();
     const wasSolved = solved.has(current);
+    checkedCurrent = false;
     setNotesLocked(true);
     ui.btnNext?.classList.remove("te-dict-ready");
+    ui.check?.classList.add("te-dict-act-primary");
     ui.check?.classList.remove("te-dict-done");
     const saved = notes[String(current)] || {};
     ui.vocab.value = typeof saved.vocab === "string" ? saved.vocab : "";
@@ -471,7 +474,6 @@
     ui.saved.textContent = "";
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    updateCheckButtonStyle();
     ui.error.hidden = true;
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
@@ -654,8 +656,9 @@
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
     setScore(result.percent);
-    updateCheckButtonStyle();
+    updateCheckButtonStyle(result.perfect);
     if (result.perfect) {
+      checkedCurrent = true;
       solved.add(current);
       ui.input.classList.add("correct");
       ui.error.hidden = true;
@@ -672,6 +675,7 @@
       localConfetti();
       return;
     }
+    checkedCurrent = false;
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
     ui.translation.hidden = true;
@@ -817,7 +821,7 @@
       event.preventDefault();
       const cue = sentenceCues[current];
       const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
-      if (isPerfect && solved.has(current)) { ui?.btnNext?.focus({ preventScroll: true }); return; }
+      if (isPerfect && solved.has(current) && checkedCurrent) { ui?.btnNext?.click(); return; }
       ui.check.click();
     }
   }
@@ -833,12 +837,17 @@
 
   function resetAnswer() {
     if (!ui) return;
+    checkedCurrent = false;
     ui.input.value = "";
     ui.input.classList.remove("correct");
-    updateCheckButtonStyle();
+    ui.check.classList.add("te-dict-act-primary");
+    ui.check.classList.remove("te-dict-done");
+    ui.btnNext?.classList.remove("te-dict-ready");
     ui.error.hidden = true;
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
+    ui.translation.hidden = true;
+    ui.translation.textContent = "";
     setScore(solved.has(current) ? 100 : null);
     ui.input.focus({ preventScroll: true });
   }
