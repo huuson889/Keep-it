@@ -716,7 +716,8 @@
     if (!speechPauseActive) shortcutPausedMedia = [];
   });
   document.addEventListener("keydown", e => {
-    if (!websiteSettingsReady || websiteDisabled || isEditable(e.target)) return;
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    if (!websiteSettingsReady || websiteDisabled || isEditable(e.target) || arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const pauseShortcut = String(settings.speechPauseShortcut ?? "Space").toLowerCase();
     if (pauseShortcut && pressed === pauseShortcut) {
@@ -1344,6 +1345,8 @@
   }, true);
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
     if (sidebarShortcut && pressed === sidebarShortcut) {

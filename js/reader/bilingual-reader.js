@@ -201,7 +201,8 @@ const FLAG_SVGS = {
   }
   window.addEventListener("keydown", event => {
     if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !popover("voices").classList.contains("lhn-open")) return;
-    if (!bar.contains(event.target) && event.target?.closest?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])")) return;
+    const editableInPath = (event.composedPath?.() || []).some(node => node?.matches?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])"));
+    if (!bar.contains(event.target) && (event.target?.closest?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])") || editableInPath)) return;
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault(); event.stopImmediatePropagation();
       const items = voiceItems(); if (!items.length) return;
