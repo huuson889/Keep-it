@@ -705,6 +705,53 @@
     osc.stop(now + 0.25);
   }
 
+  function addMissingPunctuation(reference, answer) {
+    const wordPattern = /[\p{L}\p{N}’‘`´']+/gu;
+    const referenceWords = [...String(reference).matchAll(wordPattern)];
+    const answerWords = [...String(answer).matchAll(wordPattern)];
+    if (referenceWords.length !== answerWords.length) return answer;
+
+    const isApostrophe = (char) => "’‘`´'".includes(char);
+    const restoreWordApostrophes = (expected, typed) => {
+      const expectedLetters = [...expected].filter((char) => !isApostrophe(char));
+      const typedLetters = [...typed].filter((char) => !isApostrophe(char));
+      if (expectedLetters.length !== typedLetters.length
+        || expectedLetters.map((char) => char.toLowerCase()).join("") !== typedLetters.map((char) => char.toLowerCase()).join("")) return typed;
+      let letterIndex = 0;
+      return [...expected].map((char) => isApostrophe(char) ? char : typedLetters[letterIndex++]).join("");
+    };
+    const punctuation = (text) => [...text.matchAll(/\p{P}/gu)].map((match) => match[0]);
+    let output = "";
+    let referenceOffset = 0;
+    let answerOffset = 0;
+
+    for (let index = 0; index <= referenceWords.length; index++) {
+      const referenceEnd = index < referenceWords.length ? referenceWords[index].index : String(reference).length;
+      const answerEnd = index < answerWords.length ? answerWords[index].index : String(answer).length;
+      const expectedGap = String(reference).slice(referenceOffset, referenceEnd);
+      const typedGap = String(answer).slice(answerOffset, answerEnd);
+      const expectedMarks = punctuation(expectedGap);
+      const typedMarks = punctuation(typedGap);
+      const remainingMarks = [...expectedMarks];
+      let unexpectedMark = false;
+      for (const mark of typedMarks) {
+        const position = remainingMarks.indexOf(mark);
+        if (position < 0) { unexpectedMark = true; break; }
+        remainingMarks.splice(position, 1);
+      }
+      output += remainingMarks.length && !unexpectedMark ? expectedGap : typedGap;
+
+      if (index < referenceWords.length) {
+        const expectedWord = referenceWords[index][0];
+        const typedWord = answerWords[index][0];
+        output += restoreWordApostrophes(expectedWord, typedWord);
+        referenceOffset = referenceWords[index].index + expectedWord.length;
+        answerOffset = answerWords[index].index + typedWord.length;
+      }
+    }
+    return output;
+  }
+
   function submit() {
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
@@ -712,6 +759,8 @@
     setScore(result.percent);
     updateCheckButtonStyle(result.perfect);
     if (result.perfect) {
+      const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
+      if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
       checkedCurrent = true;
       solved.add(current);
       ui.input.classList.add("correct");
