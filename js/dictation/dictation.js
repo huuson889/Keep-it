@@ -818,8 +818,11 @@
   function onGlobalKeyDown(event) {
     if (!active) return;
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      const real = event.composedPath?.()[0] || event.target;
-      const editable = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
+      // Trong ô nhập/ô ghi chú: để trình duyệt tự xử lý ↑/↓ (di chuyển con trỏ như văn bản thường)
+      const path = event.composedPath?.() || [];
+      const real = path[0] || event.target;
+      const editable = path.includes(ui?.input) || path.includes(ui?.vocab) || path.includes(ui?.note)
+        || real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
       if (!editable) { event.preventDefault(); event.stopImmediatePropagation(); }
       return;
     }
