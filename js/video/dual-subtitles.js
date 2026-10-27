@@ -1014,8 +1014,11 @@ function openOverlay() {
     alert('Không tìm thấy video trên trang.');
     return;
   }
+  const root = overlayEl();
+  root.classList.add('te-sidebar-hidden');
+  ctrl('Bố cục')?.classList.remove('te-active');
   hideOverlayPageScrollbar();
-  overlayEl().classList.remove('te-hidden');
+  root.classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
   void enableTemporaryTranslationPopup();
