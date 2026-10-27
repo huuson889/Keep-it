@@ -292,7 +292,7 @@ globalThis.LHN_DICTATION_CSS = `
   font-size: 12px;
 }
 #keepit-exact-overlay textarea.te-dict-note-input { flex: 1; min-height: 90px; resize: none; line-height: 1.5; }
-#keepit-exact-overlay.theme-dark .te-dict-note-input { background: #0a0a0c; border-color: #3f3f46; color: #f3f4f6; }
+#keepit-exact-overlay.theme-dark .te-dict-note-input { background: #121212; border-color: #3f3f46; color: #f3f4f6; }
 #keepit-exact-overlay .te-dict-lock {
   position: absolute;
   z-index: 2;
