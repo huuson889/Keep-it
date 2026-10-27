@@ -26,6 +26,7 @@
 - Các AI phải sử dụng skill phù hợp đã được quy định trước.
 - Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
 - Phản hồi ngắn gọn, luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
+- Nếu thay đổi module, cấu trúc file hay luồng tương tác các module thì phải cập nhật vào mục 4. Cấu trúc và kiến trúc dự án file project.md
 
 
 ## 5. Quy trình sau khi sửa
