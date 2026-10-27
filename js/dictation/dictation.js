@@ -240,7 +240,7 @@
     ui.typeControl.addEventListener("click", () => ui?.input.focus());
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
-    ui.input.addEventListener("input", () => updateCheckButtonStyle());
+    ui.input.addEventListener("input", onAnswerInput);
     ui.input.addEventListener("keyup", stopFieldKeyEvent);
     ui.input.addEventListener("keypress", stopFieldKeyEvent);
     ui.vocab.addEventListener("input", scheduleSaveNotes);
@@ -267,31 +267,23 @@
     showToast(tr(loading ? "dictationCaptionsLoading" : "dictationEnglishOnly"));
   }
 
-  function cueAtVideoTime() {
-    const time = Number(A?.state?.videoEl?.currentTime) || 0;
-    const containing = sentenceCues.findIndex((cue) => time >= cue.start && time < cue.end);
-    if (containing >= 0) return containing;
-    const next = sentenceCues.findIndex((cue) => cue.start >= time);
-    return next >= 0 ? next : Math.max(0, sentenceCues.length - 1);
-  }
-
   async function loadProgress(requestVideoId, generation) {
     const key = `dictation:${requestVideoId}`;
     let record = {};
     try {
       record = (await ext.storage.local.get(key))[key] || {};
     } catch {}
-    if (!active || videoId !== requestVideoId || panelGeneration !== generation) return false;
+    if (!active || videoId !== requestVideoId || panelGeneration !== generation) return null;
     solved = new Set(Array.isArray(record.solved) ? record.solved.map(Number).filter(Number.isInteger) : []);
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
-    return true;
+    return record;
   }
 
   function saveRecord() {
     if (!videoId || !ext?.storage?.local) return Promise.resolve();
     return ext.storage.local.set({
-      [storageKey()]: { version: 1, solved: [...solved], notes, translations },
+      [storageKey()]: { version: 1, current, solved: [...solved], notes, translations },
     }).catch(() => {});
   }
 
@@ -352,17 +344,34 @@
     ui.check.classList.remove("te-dict-done");
   }
 
+  function onAnswerInput() {
+    if (!ui) return;
+    const cue = sentenceCues[current];
+    const result = cue ? globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value) : null;
+    updateCheckButtonStyle(result);
+    ui.input.classList.toggle("correct", !!result?.perfect && solved.has(current));
+    ui.error.hidden = true;
+    if (!result?.perfect) {
+      ui.success.hidden = true;
+      ui.translation.hidden = true;
+      ui.translation.textContent = "";
+    }
+  }
+
   function updateRows(scrollCurrent = true) {
     if (!ui) return;
     ui.sentences.querySelectorAll(".te-dict-row").forEach((row) => {
       const index = Number(row.dataset.index);
       const isSolved = solved.has(index);
       const isLocked = index >= current;
-      row.disabled = isLocked || !isSolved;
+      const isPast = index < current;
+      row.disabled = isLocked;
       row.classList.toggle("solved", isSolved);
       row.classList.toggle("current", index === current);
       row.classList.toggle("locked", isLocked);
-      row.setAttribute("aria-label", `${tr("dictationSentenceNumber")} ${index + 1}${isSolved ? `, ${tr("dictationSolved")}` : `, ${tr("dictationLocked")}`}`);
+      row.classList.toggle("past", isPast);
+      const stateLabel = isSolved ? `, ${tr("dictationSolved")}` : isLocked ? `, ${tr("dictationLocked")}` : "";
+      row.setAttribute("aria-label", `${tr("dictationSentenceNumber")} ${index + 1}${stateLabel}`);
       const translation = row.querySelector(".te-dict-vi");
       const showTranslation = isSolved && !isLocked;
       translation.textContent = showTranslation ? (translations[String(index)] || "") : "";
@@ -380,7 +389,8 @@
     row.type = "button";
     row.className = "te-dict-row";
     row.dataset.index = String(index);
-    row.disabled = !solved.has(index);
+    row.disabled = index >= current;
+    row.classList.toggle("past", index < current);
     row.setAttribute("role", "listitem");
     row.innerHTML = `<span class="te-dict-num"></span><span class="te-dict-text"></span><span class="te-dict-icon" aria-hidden="true"><svg class="play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="te-dict-vi" hidden></span>`;
     row.querySelector(".te-dict-num").textContent = String(index + 1);
@@ -390,7 +400,7 @@
     translation.textContent = showTranslation ? (translations[String(index)] || "") : "";
     translation.hidden = !showTranslation || !translation.textContent;
     row.addEventListener("click", () => {
-      if (!solved.has(index)) return;
+      if (index >= current && !solved.has(index)) return;
       selectSentence(index, true);
     });
     return row;
@@ -467,10 +477,9 @@
     ui.error.hidden = true;
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
-    ui.translation.hidden = !wasSolved;
+    ui.translation.hidden = true;
     ui.translation.textContent = "";
     setScore(wasSolved ? 100 : null);
-    if (wasSolved) void ensureVietnamese(current);
   }
 
   function selectSentence(index, autoPlay) {
@@ -478,6 +487,7 @@
     flushNotes();
     current = index;
     renderCurrent();
+    void saveRecord();
     prepareCue();
     if (autoPlay && ui?.auto.checked && repeatCount > 0) playSentence(index, { count: repeatCount });
     ui?.input.focus({ preventScroll: true });
@@ -492,7 +502,7 @@
       row.textContent = showInList ? translated : "";
       row.hidden = !showInList || !translated;
     }
-    if (current === index) {
+    if (current === index && solved.has(index) && ui.input.classList.contains("correct")) {
       ui.translation.textContent = translated || tr("dictationTranslationLoading");
       ui.translation.hidden = false;
     }
@@ -666,7 +676,8 @@
     }
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
-    if (!solved.has(current)) ui.translation.hidden = true;
+    ui.translation.hidden = true;
+    ui.translation.textContent = "";
     renderError();
     playErrorSound();
     setNotesLocked(!solved.has(current));
@@ -735,6 +746,7 @@
       flushNotes();
       current = index;
       renderCurrent();
+      void saveRecord();
     }
     const count = options.count ?? Math.max(1, repeatCount);
     if (count < 1) return;
@@ -801,12 +813,13 @@
 
   function onAnswerKeyDown(event) {
     if (event.key === "Escape") return; // Let the existing overlay Esc handler close the whole overlay.
+    if (ui?.error) ui.error.hidden = true;
     event.stopPropagation();
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       const cue = sentenceCues[current];
       const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
-      if (isPerfect && solved.has(current)) { ui?.btnNext?.focus({ preventScroll: true }); return; }
+      if (isPerfect && solved.has(current)) { ui?.btnNext?.click(); return; }
       ui.check.click();
     }
   }
@@ -887,7 +900,7 @@
     if (!sentenceCues.length) { showToastBeforeOpen(); return; }
     active = true;
     const generation = ++panelGeneration;
-    current = cueAtVideoTime();
+    current = 0;
     listStart = 0;
     listEnd = 0;
     solved = new Set();
@@ -904,10 +917,26 @@
     renderInitialRows();
     setNotesLocked(true);
     setScore(null);
-    await loadProgress(videoId, generation);
-    if (!active || panelGeneration !== generation || currentVideoId() !== videoId) return;
+    const record = await loadProgress(videoId, generation);
+    if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
+    if (solved.size) {
+      const savedCurrent = Number(record.current);
+      if (Number.isInteger(savedCurrent) && savedCurrent >= 0 && savedCurrent < sentenceCues.length) {
+        current = savedCurrent;
+      } else {
+        let nextUnsolved = 0;
+        while (nextUnsolved < sentenceCues.length && solved.has(nextUnsolved)) nextUnsolved++;
+        current = Math.min(nextUnsolved, sentenceCues.length - 1);
+      }
+    } else {
+      current = 0;
+    }
+    listStart = 0;
+    listEnd = 0;
+    renderInitialRows();
     renderCurrent();
     prepareCue();
+    void saveRecord();
     ui.input.focus({ preventScroll: true });
   }
 
@@ -966,6 +995,7 @@
     current = matchingIndex >= 0 ? matchingIndex : 0;
     renderInitialRows();
     renderCurrent();
+    void saveRecord();
   }
 
   function onToggleClick(event) {
