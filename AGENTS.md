@@ -19,14 +19,12 @@
 - Đầu mỗi phiên, đọc `AGENTS.md`; ưu tiên mục 1–4 và nhật ký mới trong `PROJECT.md`. Chỉ đọc phần liên quan trong `README.md` và `OPT-ARENA.md`.
 - Chỉ hỏi lại khi yêu cầu chưa rõ hoặc thiếu thông tin ảnh hưởng đến kết quả. Nếu yêu cầu chưa tối ưu, cảnh báo và đề xuất phương án tốt hơn.
 - Trước khi sửa, nêu version hiện tại, (mục tiêu, kết quả mong đợi và cách làm) mỗi đầu mục in đậm và gạch đầu dòng ngắn gọn tương ứng.
-- Phải phân biệt yêu cầu thảo luận và yêu cầu thực thi, người dùng đang hỏi nghĩa là đang thảo luận, không được thực thi, chỉ trả lời.
 - Chỉ đọc, sửa và kiểm tra những phần liên quan. Thay đổi tối thiểu, tái sử dụng code hiện có, không refactor ngoài phạm vi.
 - Giữ nguyên tính năng, UI và hành vi hiện tại. **Claude không được sửa UI nếu chưa được cho phép.** Agent khác cũng không tự ý thay đổi UI ngoài yêu cầu.
 - UI mới phải thống nhất với thiết kế hiện có. Label mới phải ngắn gọn, phù hợp UI/UX và được dịch sang mọi ngôn ngữ ứng dụng hỗ trợ.
 - Các AI phải sử dụng skill phù hợp đã được quy định trước.
 - Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
 - Phản hồi ngắn gọn, luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
-- Nếu thay đổi module, cấu trúc file hay luồng tương tác các module thì phải cập nhật vào mục 4. Cấu trúc và kiến trúc dự án file project.md
 
 
 ## 5. Quy trình sau khi sửa

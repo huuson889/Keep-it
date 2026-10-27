@@ -137,7 +137,6 @@ function renderPronunciationDictionary() {
 }
 const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
 SETTINGS_UI.initLanguagePicker();
-SETTINGS_UI.initSettingsSearch();
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
@@ -486,7 +485,7 @@ function appendContextSentence(host, sentence, quote) {
   host.append(document.createTextNode(text.slice(at + length)));
 }
 function searchRank(item, query) { return LHN_SEARCH.rank(LIBRARY.searchFields(item), query); }
-function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
+function highlightSearchMatches(root, query) { if (LHN_INDEX_SEARCH.features.highlight) LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
   if (!match) return hex;

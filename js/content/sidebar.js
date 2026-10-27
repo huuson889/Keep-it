@@ -20,7 +20,7 @@
       fields = { quote:String(item.quote || '').toLocaleLowerCase(), note:String(item.note || '').toLocaleLowerCase(), contextNote:String(item.contextNote || '').toLocaleLowerCase(), tags:tags.toLocaleLowerCase() };
       metadataCache.set(item, fields); return fields;
     }
-    function highlightMatches(root, query) { search.highlightMatches(root, query, '.lhn-sidebar-actions, .lhn-search-match'); }
+    function highlightMatches(root, query) { if (globalThis.LHN_INDEX_SEARCH?.features?.highlight === false) return; search.highlightMatches(root, query, '.lhn-sidebar-actions, .lhn-search-match'); }
     function createHighlightCard(item, { config, t, query, onLocate, onEdit, onDelete, onSpeak }) {
       const color = config.normalizeColor(item.color);
       const card = document.createElement('article'); card.className = 'lhn-sidebar-card';

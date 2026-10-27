@@ -132,6 +132,7 @@ function renderLanguages(filter = "") {
 }
 $("languageSearch").addEventListener("focus", () => { langOpen = true; $("languageSearch").value = ""; renderLanguages(); $("languageOptions").classList.add("open"); $("languageSearch").setAttribute("aria-expanded", "true"); });
 $("languageSearch").addEventListener("input", e => { langOpen = true; renderLanguages(e.target.value); $("languageOptions").classList.add("open"); $("languageSearch").setAttribute("aria-expanded", "true"); });
+LHN_INDEX_SEARCH.attachListKeyboard($("languageSearch"), $("languageOptions"), (el) => el.click());
 $("languageSearch").addEventListener("keydown", e => { if (e.key === "Escape") { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = LANGUAGES.LANGS.find(x => x.code === currentLang); $("languageSearch").value = langLabel(selected); } if (e.key === "ArrowDown") $("languageOptions").querySelector(".language-option")?.focus(); });
 document.addEventListener("mousedown", e => { if (!e.target.closest(".language-wrap")) { langOpen = false; $("languageOptions").classList.remove("open"); $("languageSearch").setAttribute("aria-expanded", "false"); const selected = LANGUAGES.LANGS.find(x => x.code === currentLang); if (selected) $("languageSearch").value = langLabel(selected); } });
 $("dashboard").addEventListener("click", async () => {
