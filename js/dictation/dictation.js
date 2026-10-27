@@ -934,6 +934,7 @@
   function onAnswerKeyDown(event) {
     if (event.key === "Escape") return; // Let the existing overlay Esc handler close the whole overlay.
     if (ui?.error) ui.error.hidden = true;
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") return;
     event.stopPropagation();
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
