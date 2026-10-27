@@ -191,6 +191,8 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay #te-dictation-notes { grid-area: 1 / 3 / 2 / 4; }
 #keepit-exact-overlay.theme-dark #te-dictation-center,
 #keepit-exact-overlay.theme-dark #te-dictation-notes { background: #121212; color: #f3f4f6; }
+#keepit-exact-overlay.te-dictation-active.te-ambient-on #te-dictation-center,
+#keepit-exact-overlay.te-dictation-active.te-ambient-on #te-dictation-notes { background-color: transparent; }
 #keepit-exact-overlay.theme-dark #te-dictation-center { border-color: #27272a; }
 #keepit-exact-overlay.theme-light .te-dict-panel-head { background: #f9fafb; }
 #keepit-exact-overlay.theme-dark .te-dict-panel-head { background: #16161c; }
