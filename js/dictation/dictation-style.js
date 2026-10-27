@@ -259,7 +259,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-translation[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-footer { display: flex; flex: none; flex-direction: column; gap: 10px; padding: 10px clamp(12px, 2vw, 28px) 14px; border-top: 1px solid #e5e7eb; }
 #keepit-exact-overlay.theme-dark .te-dict-footer { border-color: #27272a; }
-#keepit-exact-overlay .te-dict-repeat { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; }
+#keepit-exact-overlay .te-dict-repeat { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; margin-bottom: 20px;}
 #keepit-exact-overlay .te-dict-repeat-label { color: #6b7280; font-weight: 700; }
 #keepit-exact-overlay .te-dict-repeat-btn { padding: 2px 8px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #6b7280; font: inherit; font-size: 12px; cursor: pointer; }
 #keepit-exact-overlay .te-dict-repeat-btn:hover { color: #f59e0b; }
