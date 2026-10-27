@@ -29,7 +29,8 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay.te-dictation-active .te-video-slot {
   flex: 0 0 auto;
-  width: 100%;
+  width: auto;
+  margin-inline: 12px;
   height: auto;
   max-height: 42%;
   aspect-ratio: var(--te-video-aspect, 16 / 9);
