@@ -47,21 +47,22 @@
     panel.id = "te-dictation";
     panel.className = "hidden";
     panel.innerHTML = `
-      <div class="te-dict-top">
-        <span class="te-dict-counter" id="sentence-counter"></span>
-        <button class="te-dict-close" type="button" id="te-dict-x" aria-label="Close">×</button>
-      </div>
       <div class="te-dict-body">
         <div class="te-dict-stage"></div>
         <div class="te-dict-side">
+          <div class="te-dict-top">
+            <span class="te-dict-counter" id="sentence-counter"></span>
+            <button class="te-dict-close" type="button" id="te-dict-x" aria-label="Close">×</button>
+          </div>
           <div class="te-dict-list" id="te-dict-list"></div>
         </div>
       </div>
-      <div style="padding:0 16px 12px">
+      <div class="te-dict-foot">
         <input class="te-dict-input" id="te-dict-input" type="text" autocomplete="off" spellcheck="false">
         <div class="te-dict-feedback" id="te-dict-feedback"></div>
       </div>`;
-    root.appendChild(panel);
+    const sidebar = root.querySelector(".te-right-sidebar");
+    if (sidebar) { panel.classList.add("in-sidebar"); sidebar.appendChild(panel); } else { root.appendChild(panel); }
     input = panel.querySelector("#te-dict-input");
     list = panel.querySelector("#te-dict-list");
     counter = panel.querySelector("#sentence-counter");

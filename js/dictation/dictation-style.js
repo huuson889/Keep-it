@@ -2,6 +2,14 @@
 globalThis.LHN_DICTATION_CSS = `
 #te-dictation { position: absolute; left: 0; right: 0; top: 0; bottom: 84px; display: flex; flex-direction: column; background: transparent; color: #e5e7eb; font-family: inherit; z-index: 40; pointer-events: auto; }
 #te-dictation.hidden { display: none !important; }
+#te-dictation.in-sidebar { position: absolute; top: 56px; left: 0; right: 0; bottom: 0; z-index: 30; background: #0b0b0b; padding: 0; }
+#te-dictation.in-sidebar .te-dict-stage { display: none; }
+#te-dictation.in-sidebar .te-dict-body { padding: 8px 12px 0; gap: 0; }
+#te-dictation.in-sidebar .te-dict-side { border: 0; background: transparent; }
+#te-dictation.in-sidebar .te-dict-top { padding: 0 0 6px; }
+#te-dictation .te-dict-foot { padding: 8px 12px 12px; }
+#keepit-exact-overlay.theme-light #te-dictation.in-sidebar { background: #ffffff; }
+#keepit-exact-overlay .te-right-sidebar { position: relative; }
 #te-dictation .te-dict-top { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 16px 0; }
 #te-dictation .te-dict-counter { font-size: 13px; font-weight: 600; color: #9ca3af; font-variant-numeric: tabular-nums; }
 #te-dictation .te-dict-close { background: transparent; border: 0; color: #9ca3af; font-size: 18px; cursor: pointer; line-height: 1; }

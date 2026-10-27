@@ -114,6 +114,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-10-27 | v3.4.658 | Claude sửa:**
+  - Sửa vị trí panel dictation: gắn vào cột `.te-right-sidebar` bên dưới tiêu đề (top 56px) thay vì phủ toàn overlay; bỏ hàng bộ đếm/× trùng với sidebar, bộ đếm và × chuyển xuống trong panel; ô nhập nằm ở chân panel. Vùng video không đổi.
+  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` đạt. Trên trình duyệt: Chưa chạy (cần xác nhận khoảng 56px dưới tiêu đề sidebar).
+
+
 - **2026-10-26 | v3.4.657 | Claude sửa:**
   - Thêm module Dictation mở bằng nút "AI keepit" trong `te-control-bar` của overlay video: danh sách câu lazy load từ transcript, câu bị blur cho đến khi chấm đúng (lưu `storage.local` theo video), chấm khi Enter (bỏ qua hoa thường, dấu câu, nháy), Esc xóa ô nhập, Ctrl một mình nghe lại câu, nút × đóng, bộ đếm `sentence-counter`, độ chính xác, Nói (Chrome: nhận dạng giọng nói; Firefox: ghi âm nghe lại), đánh máy. Nhãn mới đủ EN/VI/KO.
   - Thêm 3 file `js/dictation/` (score, style, dictation) và điểm nối nhỏ `LHN_OVERLAY_API` + sự kiện `lhn-overlay-ready` trong `dual-subtitles.js`. Cập nhật mục 4.1 và 4.2.
