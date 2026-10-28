@@ -283,7 +283,7 @@
     ui.vocab.placeholder = tr("dictationVocabularyPlaceholder");
     ui.note.placeholder = tr("dictationNotesPlaceholder");
     ui.save.textContent = tr("dictationSaveNote");
-    const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 3);
+    const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 4);
     ui.hint.replaceChildren(...hintTexts.map((text) => {
       const item = document.createElement("span");
       item.textContent = text;
