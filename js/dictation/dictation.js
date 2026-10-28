@@ -622,6 +622,7 @@
       event.stopPropagation();
       toggleVideoPlayback();
     });
+    ui.videoSlot.addEventListener("transitionend", onVideoSlotTransitionEnd);
     if (typeof ResizeObserver === "function") {
       ui.videoResizeObserver = new ResizeObserver(onDictationVideoResize);
       ui.videoResizeObserver.observe(ui.left);
@@ -710,57 +711,37 @@
 
   function toggleCompactVideo() {
     if (!ui?.videoSlot) return;
-    const slot = ui.videoSlot;
     const compact = ui.root.classList.contains("te-dict-video-compact");
-    const nextCompact = !compact;
+    const slot = ui.videoSlot;
     const currentHeight = slot.getBoundingClientRect().height;
     if (!currentHeight) return;
     if (!compact && !ui.videoExpandedHeightSaved) {
       ui.videoExpandedHeight = currentHeight;
       ui.videoExpandedHeightSaved = true;
     }
-    const expandedHeight = ui.videoExpandedHeight || currentHeight;
-    const targetHeight = nextCompact ? expandedHeight / 3 : expandedHeight;
+    const targetHeight = compact ? ui.videoExpandedHeight : ui.videoExpandedHeight / 3;
     if (!targetHeight) return;
-
-    const siblings = [...slot.parentElement.children].slice([...slot.parentElement.children].indexOf(slot) + 1);
-    const beforeTops = new Map(siblings.filter((element) => element.getClientRects().length)
-      .map((element) => [element, element.getBoundingClientRect().top]));
-    ui.videoShiftAnimations?.forEach((animation) => animation.cancel());
-    ui.videoShiftAnimations = [];
     const token = ++ui.videoTransitionToken;
-    slot.style.setProperty("--te-dict-video-transition-height", `${expandedHeight}px`);
-    ui.root.classList.add("te-dict-video-transitioning");
-
-    if (nextCompact) {
-      ui.root.classList.add("te-dict-video-compact");
-      slot.style.height = `${targetHeight}px`;
-    } else {
-      ui.root.classList.remove("te-dict-video-compact");
-      const original = ui.originalVideoSlotHeight;
-      if (original.value) slot.style.setProperty("height", original.value, original.priority);
-      else slot.style.removeProperty("height");
-      ui.videoExpandedHeight = slot.getBoundingClientRect().height || targetHeight;
-      ui.videoExpandedHeightSaved = false;
-    }
+    slot.style.height = `${currentHeight}px`;
+    void slot.offsetHeight;
+    ui.root.classList.toggle("te-dict-video-compact", !compact);
     updateCompactAudioInfo();
-    const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-
-    for (const [element, beforeTop] of beforeTops) {
-      if (reducedMotion || typeof element.animate !== "function") continue;
-      const deltaY = beforeTop - element.getBoundingClientRect().top;
-      if (Math.abs(deltaY) < 1) continue;
-      ui.videoShiftAnimations.push(element.animate(
-        [{ transform: `translateY(${deltaY}px)` }, { transform: "translateY(0)" }],
-        { duration: 340, easing: "cubic-bezier(.22, 1, .36, 1)" }
-      ));
-    }
     requestAnimationFrame(() => {
       if (!ui || ui.videoTransitionToken !== token) return;
-      ui.root.classList.remove("te-dict-video-transitioning");
-      slot.style.removeProperty("--te-dict-video-transition-height");
-      ui.videoShiftAnimations = ui.videoShiftAnimations.filter((animation) => animation.playState === "running");
+      slot.style.height = `${targetHeight}px`;
     });
+  }
+
+  function onVideoSlotTransitionEnd(event) {
+    if (!ui || event.target !== ui.videoSlot || event.propertyName !== "height") return;
+    if (ui.root.classList.contains("te-dict-video-compact")) return;
+    if (ui.videoExpandedHeightSaved) {
+      ui.videoExpandedHeight = ui.videoSlot.getBoundingClientRect().height;
+      ui.videoExpandedHeightSaved = false;
+    }
+    const original = ui.originalVideoSlotHeight;
+    if (original.value) ui.videoSlot.style.setProperty("height", original.value, original.priority);
+    else ui.videoSlot.style.removeProperty("height");
   }
 
   function onDictationVideoResize() {
@@ -2191,10 +2172,8 @@
     audioCtx = null;
     ui.bar.removeEventListener("click", onControlClick, true);
     ui.videoTransitionToken++;
-    ui.videoShiftAnimations?.forEach((animation) => animation.cancel());
-    ui.root.classList.remove("te-dict-video-transitioning");
-    ui.videoSlot.style.removeProperty("--te-dict-video-transition-height");
     ui.videoResizeObserver?.disconnect();
+    ui.videoSlot.removeEventListener("transitionend", onVideoSlotTransitionEnd);
     ui.columnLayoutResizeObserver?.disconnect();
     persistDictationLayoutPrefs();
     const originalVideoHeight = ui.originalVideoSlotHeight;
