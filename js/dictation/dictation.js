@@ -207,9 +207,71 @@
         </div>
       </div>
       <div class="te-dict-note-body">
-        <div>
-          <label class="te-dict-note-label" for="te-dict-vocab" data-dict-label="dictationVocabulary"></label>
-          <input class="te-dict-note-input" id="te-dict-vocab" type="text" autocomplete="off">
+        <div class="te-dict-stats-host">
+          <section class="te-dict-stats-card" aria-label="${tr("dictationWrongStatsTitle")}">
+            <header class="te-dict-stats-head">
+              <div class="te-dict-stats-title-group">
+                <span class="te-dict-stats-icon" aria-hidden="true">${makeSvg('<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>')}</span>
+                <div class="te-dict-stats-title-copy">
+                  <h3 data-dict-label="dictationWrongStatsTitle"></h3>
+                  <p data-dict-label="dictationWrongStatsSummary"></p>
+                </div>
+              </div>
+              <span class="te-dict-stats-sample" data-dict-label="dictationWrongStatsSample"></span>
+            </header>
+            <div class="te-dict-stats-filter-bar" aria-label="${tr("dictationWrongStatsTitle")}">
+              <label class="te-dict-stats-search">
+                ${makeSvg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>')}
+                <input id="te-dict-stats-search" type="search" autocomplete="off" readonly>
+              </label>
+              <button class="te-dict-stats-filter active" type="button"><span data-dict-label="dictationWrongStatsAll"></span></button>
+              <button class="te-dict-stats-filter" type="button"><span data-dict-label="dictationWrongStatsNeedsFix"></span></button>
+            </div>
+            <div class="te-dict-stats-scroll" tabindex="0" aria-label="${tr("dictationWrongStatsTitle")}">
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#1</span><strong>necessary</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>8 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>3 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>27%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:27%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">neccessary <b>×4</b></span><span class="te-dict-stats-variant">necesary <b>×2</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+2 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">nescessary <b>×1</b></span><span class="te-dict-stats-variant extra">nessessary <b>×1</b></span></details></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#2</span><strong>accommodate</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>6 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>1 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>14%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:14%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">accommodat <b>×3</b></span><span class="te-dict-stats-variant">acommodate <b>×2</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+1 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">accommodatte <b>×1</b></span></details></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#3</span><strong>because</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>4 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>33%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:33%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">becaus <b>×2</b></span><span class="te-dict-stats-variant">becase <b>×2</b></span></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#4</span><strong>rhythm</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>6 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>5 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>45%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:45%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">rythm <b>×4</b></span><span class="te-dict-stats-variant">rythym <b>×2</b></span></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#5</span><strong>beautiful</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>4 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>3 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>43%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:43%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">beautifull <b>×3</b></span><span class="te-dict-stats-variant">beautful <b>×1</b></span></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#6</span><strong>unconscious</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>5 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>29%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:29%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">unconcious <b>×3</b></span><span class="te-dict-stats-variant">unconsious <b>×1</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+1 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">unkonscious <b>×1</b></span></details></div></div>
+              </article>
+              <article class="te-dict-stats-word">
+                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#7</span><strong>receive</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
+                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>50%</strong></span></div>
+                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:50%"></span></div>
+                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">recieve <b>×2</b></span></div></div>
+              </article>
+            </div>
+          </section>
         </div>
         <div class="te-dict-note-text-wrap">
           <label class="te-dict-note-label" for="te-dict-note" data-dict-label="dictationGrammarNotes"></label>
@@ -279,7 +341,7 @@
       toolbarScore: tools.querySelector("#te-dict-toolbar-score"),
       ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
-      vocab: notesPanel.querySelector("#te-dict-vocab"),
+      statsSearch: notesPanel.querySelector("#te-dict-stats-search"),
       note: notesPanel.querySelector("#te-dict-note"),
       lock: notesPanel.querySelector("#te-dict-lock"),
       save: notesPanel.querySelector("#te-dict-save"),
@@ -297,7 +359,7 @@
     ui.close.title = tr("dictationClose");
     ui.input.placeholder = tr("dictationPlaceholder");
     ui.input.setAttribute("aria-label", tr("dictationAnswer"));
-    ui.vocab.placeholder = tr("dictationVocabularyPlaceholder");
+    ui.statsSearch.placeholder = tr("dictationWrongStatsSearch");
     ui.note.placeholder = tr("dictationNotesPlaceholder");
     ui.save.textContent = tr("dictationSaveNote");
     const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 4);
@@ -338,9 +400,8 @@
     ui.input.addEventListener("scroll", syncInputMarkupScroll, { passive: true });
     ui.input.addEventListener("keyup", stopFieldKeyEvent);
     ui.input.addEventListener("keypress", stopFieldKeyEvent);
-    ui.vocab.addEventListener("input", scheduleSaveNotes);
     ui.note.addEventListener("input", scheduleSaveNotes);
-    for (const field of [ui.vocab, ui.note]) {
+    for (const field of [ui.note]) {
       field.addEventListener("keydown", onNoteKeyDown);
       field.addEventListener("keyup", stopFieldKeyEvent);
       field.addEventListener("keypress", stopFieldKeyEvent);
@@ -475,7 +536,7 @@
   function saveNotesNow(showSaved) {
     clearTimeout(saveTimer);
     if (!active || !solved.has(current) || !ui) return;
-    notes[String(current)] = { vocab: ui.vocab.value, note: ui.note.value };
+    notes[String(current)] = { ...(notes[String(current)] || {}), note: ui.note.value };
     void saveRecord().then(() => {
       if (showSaved && ui?.saved) {
         ui.saved.textContent = tr("dictationSaved");
@@ -487,7 +548,7 @@
   function flushNotes() {
     if (!active || !ui || !solved.has(current)) return;
     clearTimeout(saveTimer);
-    notes[String(current)] = { vocab: ui.vocab.value, note: ui.note.value };
+    notes[String(current)] = { ...(notes[String(current)] || {}), note: ui.note.value };
     void saveRecord();
   }
 
@@ -676,7 +737,6 @@
     if (!ui) return;
     ui.notesPanel.classList.toggle("te-dict-notes-locked", locked);
     ui.lock.hidden = !locked;
-    ui.vocab.disabled = locked;
     ui.note.disabled = locked;
     ui.save.disabled = locked;
   }
@@ -695,7 +755,6 @@
     ui.check?.classList.add("te-dict-act-primary");
     ui.check?.classList.remove("te-dict-done");
     const saved = notes[String(current)] || {};
-    ui.vocab.value = typeof saved.vocab === "string" ? saved.vocab : "";
     ui.note.value = typeof saved.note === "string" ? saved.note : "";
     ui.saved.textContent = "";
     escapeFilledAnswer = false;
@@ -1378,10 +1437,6 @@
   function onNoteKeyDown(event) {
     if (event.key === "Escape") return;
     event.stopPropagation();
-    if (event.currentTarget === ui?.vocab && event.key === "Enter") {
-      event.preventDefault();
-      saveNotesNow(true);
-    }
   }
 
   function resetAnswer() {
@@ -1411,7 +1466,7 @@
       // Trong ô nhập/ô ghi chú: để trình duyệt tự xử lý ↑/↓ (di chuyển con trỏ như văn bản thường)
       const path = event.composedPath?.() || [];
       const real = path[0] || event.target;
-      const editable = path.includes(ui?.input) || path.includes(ui?.vocab) || path.includes(ui?.note)
+      const editable = path.includes(ui?.input) || path.includes(ui?.note)
         || real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
       if (!editable) { event.preventDefault(); event.stopImmediatePropagation(); }
       return;

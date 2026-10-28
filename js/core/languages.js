@@ -144,6 +144,10 @@
   MESSAGES.vi.exportErrorLog = "Xuất log";
   MESSAGES.ko.exportErrorLog = "로그 내보내기";
   Object.assign(MESSAGES.en, {
+    dictationWrongStatsTitle: "Wrong-word stats", dictationWrongStatsSummary: "Spelling mistakes summary", dictationWrongStatsSample: "Sample data",
+    dictationWrongStatsSearch: "Search misspellings…", dictationWrongStatsAll: "All", dictationWrongStatsNeedsFix: "Needs practice", dictationWrongStatsWord: "words",
+    dictationWrongStatsErrors: "Errors:", dictationWrongStatsCorrect: "Correct:", dictationWrongStatsAccuracy: "Rate:", dictationWrongStatsTimes: "times",
+    dictationWrongStatsLastWrong: "Wrong last", dictationWrongStatsLastCorrect: "Corrected", dictationWrongStatsVariants: "Common typos:", dictationWrongStatsMore: "more", dictationWrongStatsCollapse: "Collapse",
     dictationTitle: "Dictation & check", dictationSentences: "Sentences", dictationAnswer: "Your answer", dictationLessonNotes: "Lesson notes",
     dictationVocabulary: "Vocabulary", dictationGrammarNotes: "Notes / grammar", dictationNotesLocked: "Notes are locked",
     dictationNotesLockHelp: "Type the current sentence with 100% accuracy to unlock these notes.", dictationType: "Type", dictationAccuracy: "Accuracy",
@@ -160,6 +164,10 @@
     dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device"
   });
   Object.assign(MESSAGES.vi, {
+    dictationWrongStatsTitle: "Thống kê từ sai", dictationWrongStatsSummary: "Tổng hợp lỗi chính tả", dictationWrongStatsSample: "Dữ liệu minh họa",
+    dictationWrongStatsSearch: "Tìm từ gõ sai…", dictationWrongStatsAll: "Tất cả", dictationWrongStatsNeedsFix: "Cần sửa", dictationWrongStatsWord: "từ",
+    dictationWrongStatsErrors: "Lỗi:", dictationWrongStatsCorrect: "Đúng:", dictationWrongStatsAccuracy: "Tỷ lệ:", dictationWrongStatsTimes: "lần",
+    dictationWrongStatsLastWrong: "Sai mới nhất", dictationWrongStatsLastCorrect: "Đã sửa đúng", dictationWrongStatsVariants: "Hay gõ sai:", dictationWrongStatsMore: "nữa", dictationWrongStatsCollapse: "Thu gọn",
     dictationTitle: "Luyện chép & kiểm tra", dictationSentences: "Danh sách câu", dictationAnswer: "Câu trả lời", dictationLessonNotes: "Ghi chú bài học",
     dictationVocabulary: "Từ vựng", dictationGrammarNotes: "Ghi chú / ngữ pháp", dictationNotesLocked: "Ghi chú đang khóa",
     dictationNotesLockHelp: "Gõ đúng 100% câu hiện tại để mở khóa ghi chú.", dictationType: "Đánh máy", dictationAccuracy: "Độ chính xác",
@@ -176,6 +184,10 @@
     dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này"
   });
   Object.assign(MESSAGES.ko, {
+    dictationWrongStatsTitle: "오답 단어 통계", dictationWrongStatsSummary: "맞춤법 오류 요약", dictationWrongStatsSample: "예시 데이터",
+    dictationWrongStatsSearch: "오타 검색…", dictationWrongStatsAll: "전체", dictationWrongStatsNeedsFix: "수정 필요", dictationWrongStatsWord: "단어",
+    dictationWrongStatsErrors: "오답:", dictationWrongStatsCorrect: "정답:", dictationWrongStatsAccuracy: "정확도:", dictationWrongStatsTimes: "회",
+    dictationWrongStatsLastWrong: "최근 오답", dictationWrongStatsLastCorrect: "수정 완료", dictationWrongStatsVariants: "자주 틀리는 입력:", dictationWrongStatsMore: "더", dictationWrongStatsCollapse: "접기",
     dictationTitle: "받아쓰기 & 확인", dictationSentences: "문장 목록", dictationAnswer: "내 답변", dictationLessonNotes: "학습 노트",
     dictationVocabulary: "어휘", dictationGrammarNotes: "메모 / 문법", dictationNotesLocked: "노트가 잠겨 있습니다",
     dictationNotesLockHelp: "현재 문장을 100% 정확하게 입력하면 노트가 열립니다.", dictationType: "타이핑", dictationAccuracy: "정확도",
