@@ -231,12 +231,15 @@
     const startX = event.clientX;
     const startWidth = side === "left" ? state.leftWidth : state.rightWidth;
     const pointerId = event.pointerId;
+    let didDrag = false;
     splitter.focus?.({ preventScroll: true });
     splitter.classList.add("is-dragging");
     splitter.setPointerCapture?.(pointerId);
     const onMove = (moveEvent) => {
       if (moveEvent.pointerId !== pointerId) return;
       const delta = moveEvent.clientX - startX;
+      if (!didDrag && Math.abs(delta) < 4) return;
+      didDrag = true;
       setDictationColumnWidth(side, startWidth + (side === "left" ? delta : -delta));
     };
     const finish = (finishEvent) => {
@@ -246,6 +249,10 @@
       splitter.removeEventListener("pointercancel", finish);
       splitter.classList.remove("is-dragging");
       if (splitter.hasPointerCapture?.(pointerId)) splitter.releasePointerCapture(pointerId);
+      if (didDrag && finishEvent.type === "pointerup") {
+        splitter.dataset.suppressCollapseClick = "true";
+        window.setTimeout(() => { delete splitter.dataset.suppressCollapseClick; }, 100);
+      }
       persistDictationLayoutPrefs();
     };
     splitter.addEventListener("pointermove", onMove);
@@ -254,6 +261,11 @@
   }
 
   function onDictationSplitterKeyDown(event, side) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setDictationColumnHidden(side, true);
+      return;
+    }
     const bounds = getDictationColumnBounds(side);
     const state = getDictationColumnState();
     const currentWidth = side === "left" ? state.leftWidth : state.rightWidth;
@@ -272,8 +284,29 @@
   function installDictationColumnControls() {
     if (!ui) return;
     for (const [splitter, side] of [[ui.leftColumnSplitter, "left"], [ui.rightColumnSplitter, "right"]]) {
+      let collapseTimer = null;
       splitter.addEventListener("pointerdown", (event) => beginDictationColumnDrag(event, side, splitter));
-      splitter.addEventListener("dblclick", (event) => { event.preventDefault(); resetDictationColumnWidth(side); });
+      splitter.addEventListener("click", (event) => {
+        if (splitter.dataset.suppressCollapseClick === "true") {
+          delete splitter.dataset.suppressCollapseClick;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        if (event.detail === 0) return;
+        if (collapseTimer) window.clearTimeout(collapseTimer);
+        if (event.detail > 1) return;
+        collapseTimer = window.setTimeout(() => {
+          collapseTimer = null;
+          if (ui?.root?.contains(splitter)) setDictationColumnHidden(side, true);
+        }, 350);
+      });
+      splitter.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        if (collapseTimer) window.clearTimeout(collapseTimer);
+        collapseTimer = null;
+        resetDictationColumnWidth(side);
+      });
       splitter.addEventListener("keydown", (event) => onDictationSplitterKeyDown(event, side));
     }
     ui.hideLeftColumn.addEventListener("click", () => setDictationColumnHidden("left", true));
