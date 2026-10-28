@@ -414,13 +414,13 @@
     sentenceArea.setAttribute("aria-label", tr("dictationSentences"));
     sentenceArea.innerHTML = `
       <div id="te-dict-sentence-head">
-        <div class="te-dict-sentence-title-group">
-          <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
-          <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
-        </div>
+        <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
         <span class="te-dict-counter" id="te-dict-counter" aria-live="polite">0/0</span>
       </div>
-      <div id="te-dict-sentences" role="list"></div>`;
+      <div id="te-dict-sentences" role="list"></div>
+      <div class="te-dict-sentence-footer">
+        <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
+      </div>`;
     const subtitleBox = left.querySelector(".te-sub-container");
     left.insertBefore(sentenceArea, subtitleBox || null);
 
@@ -479,7 +479,6 @@
       <div class="te-dict-panel-head">
         <h2 class="te-dict-heading">${makeSvg('<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>')}<span data-dict-label="dictationLessonNotes"></span></h2>
         <div class="te-dict-head-actions">
-          <button class="te-dict-column-toggle" id="te-dict-hide-notes" type="button">${makeSvg('<path d="m10 7 5 5-5 5"/>')}</button>
           <button class="te-dict-save" id="te-dict-save" type="button"></button>
           <button class="yt-dual-close-btn te-dict-close" id="te-dict-close" type="button"><span aria-hidden="true">×</span></button>
         </div>
@@ -520,8 +519,8 @@
         </div>
       </div>
       <div class="te-dict-note-footer">
+        <button class="te-dict-column-toggle" id="te-dict-hide-notes" type="button">${makeSvg('<path d="m10 7 5 5-5 5"/>')}</button>
         <span class="te-dict-saved" id="te-dict-saved" aria-live="polite"></span>
-        <span class="te-dict-autosave" data-dict-label="dictationAutosave"></span>
       </div>`;
 
     const leftColumnSplitter = document.createElement("div");
