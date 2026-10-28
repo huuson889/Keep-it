@@ -15,6 +15,7 @@
   let solved = new Set();
   let notes = {};
   let translations = {};
+  let wrongWordStats = { version: 1, words: {} };
   let stopAt = -1;
   let attachedVideo = null;
   let ctrlAlone = false;
@@ -217,59 +218,16 @@
                   <p data-dict-label="dictationWrongStatsSummary"></p>
                 </div>
               </div>
-              <span class="te-dict-stats-sample" data-dict-label="dictationWrongStatsSample"></span>
             </header>
             <div class="te-dict-stats-filter-bar" aria-label="${tr("dictationWrongStatsTitle")}">
               <label class="te-dict-stats-search">
                 ${makeSvg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>')}
-                <input id="te-dict-stats-search" type="search" autocomplete="off" readonly>
+                <input id="te-dict-stats-search" type="search" autocomplete="off">
               </label>
-              <button class="te-dict-stats-filter active" type="button"><span data-dict-label="dictationWrongStatsAll"></span></button>
-              <button class="te-dict-stats-filter" type="button"><span data-dict-label="dictationWrongStatsNeedsFix"></span></button>
+              <button class="te-dict-stats-filter active" type="button" data-stats-filter="all" aria-pressed="true"><span data-dict-label="dictationWrongStatsAll"></span></button>
+              <button class="te-dict-stats-filter" type="button" data-stats-filter="needs-fix" aria-pressed="false"><span data-dict-label="dictationWrongStatsNeedsFix"></span></button>
             </div>
             <div class="te-dict-stats-scroll" tabindex="0" aria-label="${tr("dictationWrongStatsTitle")}">
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#1</span><strong>necessary</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>8 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>3 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>27%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:27%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">neccessary <b>×4</b></span><span class="te-dict-stats-variant">necesary <b>×2</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+2 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">nescessary <b>×1</b></span><span class="te-dict-stats-variant extra">nessessary <b>×1</b></span></details></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#2</span><strong>accommodate</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>6 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>1 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>14%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:14%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">accommodat <b>×3</b></span><span class="te-dict-stats-variant">acommodate <b>×2</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+1 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">accommodatte <b>×1</b></span></details></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank top3">#3</span><strong>because</strong></div><span class="te-dict-stats-status wrong"><i></i><span data-dict-label="dictationWrongStatsLastWrong"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>4 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>33%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:33%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">becaus <b>×2</b></span><span class="te-dict-stats-variant">becase <b>×2</b></span></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#4</span><strong>rhythm</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>6 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>5 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>45%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:45%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">rythm <b>×4</b></span><span class="te-dict-stats-variant">rythym <b>×2</b></span></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#5</span><strong>beautiful</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>4 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>3 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>43%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:43%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">beautifull <b>×3</b></span><span class="te-dict-stats-variant">beautful <b>×1</b></span></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#6</span><strong>unconscious</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>5 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>29%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:29%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">unconcious <b>×3</b></span><span class="te-dict-stats-variant">unconsious <b>×1</b></span><details class="te-dict-stats-more"><summary><span class="more-label">+1 <span data-dict-label="dictationWrongStatsMore"></span> ▼</span><span class="less-label"><span data-dict-label="dictationWrongStatsCollapse"></span> ▲</span></summary><span class="te-dict-stats-variant extra">unkonscious <b>×1</b></span></details></div></div>
-              </article>
-              <article class="te-dict-stats-word">
-                <div class="te-dict-stats-word-head"><div class="te-dict-stats-word-title"><span class="te-dict-stats-rank">#7</span><strong>receive</strong></div><span class="te-dict-stats-status correct"><i></i><span data-dict-label="dictationWrongStatsLastCorrect"></span></span></div>
-                <div class="te-dict-stats-metrics"><span class="wrong"><span data-dict-label="dictationWrongStatsErrors"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span class="correct"><span data-dict-label="dictationWrongStatsCorrect"></span><strong>2 <span data-dict-label="dictationWrongStatsTimes"></span></strong></span><span><span data-dict-label="dictationWrongStatsAccuracy"></span><strong>50%</strong></span></div>
-                <div class="te-dict-stats-accuracy" aria-hidden="true"><span style="width:50%"></span></div>
-                <div class="te-dict-stats-variants"><span class="te-dict-stats-variants-label" data-dict-label="dictationWrongStatsVariants"></span><div class="te-dict-stats-variant-list"><span class="te-dict-stats-variant">recieve <b>×2</b></span></div></div>
-              </article>
             </div>
           </section>
         </div>
@@ -342,6 +300,8 @@
       ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
       statsSearch: notesPanel.querySelector("#te-dict-stats-search"),
+      statsScroll: notesPanel.querySelector(".te-dict-stats-scroll"),
+      statsFilters: [...notesPanel.querySelectorAll(".te-dict-stats-filter")],
       note: notesPanel.querySelector("#te-dict-note"),
       lock: notesPanel.querySelector("#te-dict-lock"),
       save: notesPanel.querySelector("#te-dict-save"),
@@ -401,6 +361,16 @@
     ui.input.addEventListener("keyup", stopFieldKeyEvent);
     ui.input.addEventListener("keypress", stopFieldKeyEvent);
     ui.note.addEventListener("input", scheduleSaveNotes);
+    ui.statsSearch.addEventListener("input", renderWrongWordStats);
+    for (const eventName of ["keydown", "keyup", "keypress"]) ui.statsSearch.addEventListener(eventName, stopFieldKeyEvent);
+    ui.statsFilters.forEach((button) => button.addEventListener("click", () => {
+      ui.statsFilters.forEach((item) => {
+        const selected = item === button;
+        item.classList.toggle("active", selected);
+        item.setAttribute("aria-pressed", String(selected));
+      });
+      renderWrongWordStats();
+    }));
     for (const field of [ui.note]) {
       field.addEventListener("keydown", onNoteKeyDown);
       field.addEventListener("keyup", stopFieldKeyEvent);
@@ -517,13 +487,14 @@
     solved = new Set(Array.isArray(record.solved) ? record.solved.map(Number).filter(Number.isInteger) : []);
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
+    wrongWordStats = normalizeWrongWordStats(record.wrongWordStats);
     return record;
   }
 
   function saveRecord() {
     if (!videoId || !ext?.storage?.local) return Promise.resolve();
     return ext.storage.local.set({
-      [storageKey()]: { version: 1, current, solved: [...solved], notes, translations },
+      [storageKey()]: { version: 1, current, solved: [...solved], notes, translations, wrongWordStats },
     }).catch(() => {});
   }
 
@@ -550,6 +521,236 @@
     clearTimeout(saveTimer);
     notes[String(current)] = { ...(notes[String(current)] || {}), note: ui.note.value };
     void saveRecord();
+  }
+
+  function normalizeWrongWordStats(value) {
+    const normalized = { version: 1, words: {} };
+    const source = value && typeof value === "object" && value.words && typeof value.words === "object"
+      ? value.words : {};
+    const safeCount = (candidate) => {
+      const number = Number(candidate);
+      return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+    };
+    for (const [storageKey, item] of Object.entries(source)) {
+      if (!storageKey.startsWith("w:") || !item || typeof item !== "object") continue;
+      const variants = {};
+      const sourceVariants = item.variants && typeof item.variants === "object" ? item.variants : {};
+      for (const [key, variant] of Object.entries(sourceVariants)) {
+        if (!key.startsWith("v:") || !variant || typeof variant !== "object") continue;
+        variants[key] = { text: typeof variant.text === "string" ? variant.text : "", count: safeCount(variant.count) };
+      }
+      const occurrences = {};
+      const sourceOccurrences = item.occurrences && typeof item.occurrences === "object" ? item.occurrences : {};
+      for (const [key, occurrence] of Object.entries(sourceOccurrences)) {
+        if (!key.startsWith("o:") || !occurrence || typeof occurrence !== "object") continue;
+        occurrences[key] = { pending: !!occurrence.pending, wrongStreak: safeCount(occurrence.wrongStreak) };
+      }
+      const word = typeof item.word === "string" ? item.word : storageKey.slice(2);
+      const errors = safeCount(item.errors);
+      if (!word || errors < 1) continue;
+      normalized.words[storageKey] = {
+        word,
+        errors,
+        corrections: safeCount(item.corrections),
+        variants,
+        occurrences,
+        lastResult: item.lastResult === "wrong" ? "wrong" : "correct",
+        lastAt: safeCount(item.lastAt),
+      };
+    }
+    return normalized;
+  }
+
+  function recordWrongWordSubmission(stats, cueIndex, result, timestamp = Date.now()) {
+    if (!stats || !stats.words || !Array.isArray(result?.ops)) return false;
+    const tokenFor = (value) => globalThis.LHN_DICTATION_SCORE.tokenize(value)[0] || "";
+    const byWord = new Map();
+    let expectedIndex = 0;
+    for (const operation of result.ops) {
+      if (!operation || operation.type === "extra") continue;
+      const tokenIndex = expectedIndex++;
+      const target = String(operation.expected || "");
+      const normalizedTarget = tokenFor(target);
+      if (!normalizedTarget) continue;
+      if (!byWord.has(normalizedTarget)) byWord.set(normalizedTarget, []);
+      byWord.get(normalizedTarget).push({ operation, tokenIndex, target });
+    }
+
+    let changed = false;
+    for (const [normalizedTarget, events] of byWord) {
+      const storageKey = `w:${normalizedTarget}`;
+      const hasError = events.some(({ operation }) => operation.type === "wrong" || operation.type === "missing");
+      let item = stats.words[storageKey];
+      if (!item && !hasError) continue; // first-try-correct words do not enter wrong-word stats
+      if (!item) {
+        item = { word: events[0].target, errors: 0, corrections: 0, variants: {}, occurrences: {}, lastResult: "wrong", lastAt: 0 };
+        stats.words[storageKey] = item;
+      }
+      item.variants ||= {};
+      item.occurrences ||= {};
+      for (const { operation, tokenIndex, target } of events) {
+        const occurrenceKey = `o:${cueIndex}:${tokenIndex}:${normalizedTarget}`;
+        const isError = operation.type === "wrong" || operation.type === "missing";
+        let occurrence = item.occurrences[occurrenceKey];
+        if (isError) {
+          occurrence ||= { pending: false, wrongStreak: 0 };
+          item.errors++;
+          occurrence.pending = true;
+          occurrence.wrongStreak++;
+          const typed = operation.type === "missing" ? "" : String(operation.typed || "");
+          const normalizedVariant = tokenFor(typed) || "__missing__";
+          const variantKey = `v:${normalizedVariant}`;
+          const variant = item.variants[variantKey] || (item.variants[variantKey] = { text: typed, count: 0 });
+          variant.count++;
+          item.occurrences[occurrenceKey] = occurrence;
+        } else if (operation.type === "ok" && occurrence?.pending) {
+          item.corrections++;
+          occurrence.pending = false;
+          occurrence.wrongStreak = 0;
+        }
+      }
+      item.lastResult = hasError ? "wrong" : "correct";
+      item.lastAt = timestamp;
+      changed = true;
+    }
+    return changed;
+  }
+
+  function wrongWordStreak(item) {
+    let streak = 0;
+    for (const occurrence of Object.values(item.occurrences || {})) {
+      if (occurrence?.pending) streak = Math.max(streak, Number(occurrence.wrongStreak) || 0);
+    }
+    return streak;
+  }
+
+  function renderWrongWordStats() {
+    if (!ui?.statsScroll) return;
+    const stats = normalizeWrongWordStats(wrongWordStats);
+    const allItems = Object.entries(stats.words).map(([key, item]) => ({ key, ...item, streak: wrongWordStreak(item) }));
+    allItems.sort((a, b) => {
+      const aWrong = a.lastResult === "wrong", bWrong = b.lastResult === "wrong";
+      if (aWrong !== bWrong) return aWrong ? -1 : 1;
+      if (aWrong && a.streak !== b.streak) return b.streak - a.streak;
+      if (a.errors !== b.errors) return b.errors - a.errors;
+      if (a.lastAt !== b.lastAt) return b.lastAt - a.lastAt;
+      return a.word.localeCompare(b.word);
+    });
+    const ranks = new Map(allItems.map((item, index) => [item.key, index + 1]));
+    const query = String(ui.statsSearch?.value || "").trim().toLowerCase();
+    const filter = ui.statsFilters.find((button) => button.classList.contains("active"))?.dataset.statsFilter || "all";
+    const visibleItems = allItems.filter((item) => {
+      if (filter === "needs-fix" && item.lastResult !== "wrong") return false;
+      if (!query) return true;
+      const variants = Object.values(item.variants || {}).map((variant) => variant.text || tr("dictationWrongStatsOmitted"));
+      return [item.word, ...variants].some((text) => text.toLowerCase().includes(query));
+    });
+
+    ui.statsScroll.replaceChildren();
+    if (!allItems.length || !visibleItems.length) {
+      const empty = document.createElement("p");
+      empty.className = "te-dict-stats-empty";
+      empty.setAttribute("role", "status");
+      empty.textContent = allItems.length ? tr("dictationWrongStatsNoResults") : tr("dictationWrongStatsEmpty");
+      ui.statsScroll.appendChild(empty);
+      return;
+    }
+
+    const label = (key) => {
+      const node = document.createElement("span");
+      node.textContent = tr(key);
+      return node;
+    };
+    const countMetric = (key, value, className = "") => {
+      const metric = document.createElement("span");
+      if (className) metric.className = className;
+      metric.append(label(key));
+      const number = document.createElement("strong");
+      number.append(document.createTextNode(`${value} `), label("dictationWrongStatsTimes"));
+      metric.appendChild(number);
+      return metric;
+    };
+    const variantChip = (variant, extra = false) => {
+      const chip = document.createElement("span");
+      chip.className = `te-dict-stats-variant${extra ? " extra" : ""}`;
+      chip.append(document.createTextNode(variant.text || tr("dictationWrongStatsOmitted")));
+      const count = document.createElement("b");
+      count.textContent = `×${variant.count}`;
+      chip.appendChild(count);
+      return chip;
+    };
+
+    visibleItems.forEach((item) => {
+      const rank = ranks.get(item.key) || 0;
+      const isWrong = item.lastResult === "wrong";
+      const denominator = item.errors + item.corrections;
+      const rate = denominator ? Math.round((item.corrections / denominator) * 100) : 0;
+      const article = document.createElement("article");
+      article.className = "te-dict-stats-word";
+
+      const head = document.createElement("div");
+      head.className = "te-dict-stats-word-head";
+      const title = document.createElement("div");
+      title.className = "te-dict-stats-word-title";
+      const rankNode = document.createElement("span");
+      rankNode.className = `te-dict-stats-rank${rank <= 3 ? " top3" : ""}`;
+      rankNode.textContent = `#${rank}`;
+      const word = document.createElement("strong");
+      word.textContent = item.word;
+      title.append(rankNode, word);
+      const status = document.createElement("span");
+      status.className = `te-dict-stats-status ${isWrong ? "wrong" : "correct"}`;
+      const statusDot = document.createElement("i");
+      statusDot.setAttribute("aria-hidden", "true");
+      status.append(statusDot, label(isWrong ? "dictationWrongStatsLastWrong" : "dictationWrongStatsLastCorrect"));
+      head.append(title, status);
+
+      const metrics = document.createElement("div");
+      metrics.className = "te-dict-stats-metrics";
+      metrics.append(countMetric("dictationWrongStatsErrors", item.errors, "wrong"));
+      metrics.append(countMetric("dictationWrongStatsCorrect", item.corrections, "correct"));
+      const rateMetric = document.createElement("span");
+      rateMetric.append(label("dictationWrongStatsAccuracy"));
+      const rateValue = document.createElement("strong");
+      rateValue.textContent = `${rate}%`;
+      rateMetric.appendChild(rateValue);
+      metrics.appendChild(rateMetric);
+
+      const bar = document.createElement("div");
+      bar.className = "te-dict-stats-accuracy";
+      bar.setAttribute("aria-hidden", "true");
+      const fill = document.createElement("span");
+      fill.style.width = `${rate}%`;
+      bar.appendChild(fill);
+
+      const variantsWrap = document.createElement("div");
+      variantsWrap.className = "te-dict-stats-variants";
+      const variantsLabel = label("dictationWrongStatsVariants");
+      variantsLabel.className = "te-dict-stats-variants-label";
+      const variantList = document.createElement("div");
+      variantList.className = "te-dict-stats-variant-list";
+      const variants = Object.values(item.variants || {}).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
+      variants.slice(0, 2).forEach((variant) => variantList.appendChild(variantChip(variant)));
+      const extras = variants.slice(2);
+      if (extras.length) {
+        const details = document.createElement("details");
+        details.className = "te-dict-stats-more";
+        const summary = document.createElement("summary");
+        const more = document.createElement("span");
+        more.className = "more-label";
+        more.append(document.createTextNode(`${extras.length} `), label("dictationWrongStatsMore"), document.createTextNode(" ▼"));
+        const less = document.createElement("span");
+        less.className = "less-label";
+        less.textContent = `${tr("dictationWrongStatsCollapse")} ▲`;
+        summary.append(more, less);
+        details.appendChild(summary);
+        extras.forEach((variant) => details.appendChild(variantChip(variant, true)));
+        variantList.appendChild(details);
+      }
+      variantsWrap.append(variantsLabel, variantList);
+      article.append(head, metrics, bar, variantsWrap);
+      ui.statsScroll.appendChild(article);
+    });
   }
 
   function updateCounter() {
@@ -1204,6 +1405,8 @@
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
+    const statsUpdated = recordWrongWordSubmission(wrongWordStats, current, result);
+    if (statsUpdated) renderWrongWordStats();
     setScore(result.percent);
     updateCheckButtonStyle(result.perfect);
     if (result.perfect) {
@@ -1237,6 +1440,7 @@
     ui.translation.textContent = "";
     updateRows(false);
     renderError();
+    if (statsUpdated) void saveRecord();
     playErrorSound();
     setNotesLocked(!solved.has(current));
   }
@@ -1536,6 +1740,7 @@
     solved = new Set();
     notes = {};
     translations = {};
+    wrongWordStats = { version: 1, words: {} };
     ui.root.classList.add("te-dictation-active");
     ui.root.insertBefore(ui.bar, ui.center);
     ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
@@ -1549,6 +1754,7 @@
     setScore(null);
     const record = await loadProgress(videoId, generation);
     if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
+    renderWrongWordStats();
     if (solved.size) {
       const savedCurrent = Number(record.current);
       if (Number.isInteger(savedCurrent) && savedCurrent >= 0 && savedCurrent < sentenceCues.length) {
