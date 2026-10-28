@@ -37,7 +37,7 @@ globalThis.LHN_DICTATION_CSS = `
   background: #000;
 }
 #keepit-exact-overlay.te-dictation-active .te-video-slot {
-  transition: height .6s cubic-bezier(.16, 1, .3, 1), border-radius .5s ease, box-shadow .5s ease;
+  transition: border-radius .3s ease, box-shadow .3s ease;
 }
 #keepit-exact-overlay.te-dictation-active .te-video-slot video {
   display: block;
@@ -46,7 +46,7 @@ globalThis.LHN_DICTATION_CSS = `
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: opacity .4s cubic-bezier(.16, 1, .3, 1);
+  transition: opacity .2s ease;
 }
 #keepit-exact-overlay .te-dict-brand {
   position: absolute;
@@ -86,6 +86,14 @@ globalThis.LHN_DICTATION_CSS = `
   opacity: 0 !important;
   pointer-events: none !important;
 }
+#keepit-exact-overlay.te-dictation-active.te-dict-video-transitioning .te-video-slot {
+  overflow: hidden !important;
+}
+#keepit-exact-overlay.te-dictation-active.te-dict-video-transitioning .te-video-slot video {
+  height: var(--te-dict-video-transition-height) !important;
+  opacity: 0 !important;
+  transition: opacity .14s ease !important;
+}
 #keepit-exact-overlay .te-dict-mini-audio {
   position: absolute;
   inset: 0 12px;
@@ -106,14 +114,14 @@ globalThis.LHN_DICTATION_CSS = `
   visibility: hidden;
   pointer-events: none;
   transform: scale(.98);
-  transition: opacity .4s ease, transform .6s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .4s;
+  transition: opacity .24s ease, transform .34s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .24s;
 }
 #keepit-exact-overlay.te-dictation-active.te-dict-video-compact .te-dict-mini-audio {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: scale(1);
-  transition: opacity .4s ease, transform .6s cubic-bezier(.16, 1, .3, 1), visibility 0s;
+  transition: opacity .24s ease, transform .34s cubic-bezier(.22, 1, .36, 1), visibility 0s;
 }
 #keepit-exact-overlay .te-dict-mini-art {
   flex: 0 0 52px;
@@ -158,6 +166,9 @@ globalThis.LHN_DICTATION_CSS = `
   #keepit-exact-overlay.te-dictation-active .te-video-slot,
   #keepit-exact-overlay .te-dict-mini-audio,
   #keepit-exact-overlay .te-dict-mini-play { transition-duration: .01ms; }
+  #keepit-exact-overlay.te-dictation-active.te-dict-video-transitioning .te-video-slot video,
+  #keepit-exact-overlay.te-dictation-active .te-dict-mini-audio,
+  #keepit-exact-overlay.te-dictation-active.te-dict-video-compact .te-dict-mini-audio { transition-duration: .01ms !important; }
   #keepit-exact-overlay .te-dict-mini-audio.playing .te-dict-spectrum span { animation: none; }
 }
 #keepit-exact-overlay.te-dictation-active .te-sub-container,
