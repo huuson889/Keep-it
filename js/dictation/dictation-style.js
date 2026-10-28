@@ -531,8 +531,10 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-stats-variant-list { display: flex; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; align-items: center; gap: 4px; }
 #keepit-exact-overlay .te-dict-stats-variant { display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border: 1px solid rgba(239,68,68,.25); border-radius: 5px; background: rgba(239,68,68,.08); color: #dc2626; font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
 #keepit-exact-overlay .te-dict-stats-variant b { font-family: inherit; font-size: 9px; }
-#keepit-exact-overlay .te-dict-stats-more { flex: 0 0 auto; }
-#keepit-exact-overlay .te-dict-stats-more[open] { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 4px; }
+#keepit-exact-overlay .te-dict-stats-more { flex: 0 0 auto; margin-left: auto; }
+#keepit-exact-overlay .te-dict-stats-more[open] { display: flex; flex: 1 1 100%; min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
+#keepit-exact-overlay .te-dict-stats-more[open] > summary { align-self: flex-end; }
+#keepit-exact-overlay .te-dict-stats-extra-list { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 4px; }
 #keepit-exact-overlay .te-dict-stats-more > summary { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f3f4f6; color: #b45309; font-size: 9px; font-weight: 700; cursor: pointer; list-style: none; user-select: none; }
 #keepit-exact-overlay .te-dict-stats-more > summary::-webkit-details-marker { display: none; }
 #keepit-exact-overlay .te-dict-stats-more > summary::marker { content: ""; }
@@ -541,18 +543,18 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-stats-more[open] .less-label { display: inline; }
 #keepit-exact-overlay .te-dict-stats-more .extra { display: none; }
 #keepit-exact-overlay .te-dict-stats-more[open] .extra { display: inline-flex; }
-#keepit-exact-overlay.theme-dark .te-dict-stats-card { border-color: rgba(255,255,255,.08); background: #141722; color: #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-#keepit-exact-overlay.theme-dark .te-dict-stats-head { border-color: rgba(255,255,255,.08); background: #1a1e2e; }
+#keepit-exact-overlay.theme-dark .te-dict-stats-card { border-color: rgba(255,255,255,.08); background: #121212; color: #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+#keepit-exact-overlay.theme-dark .te-dict-stats-head { border-color: rgba(255,255,255,.08); background: #121212; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-title-copy p { color: #94a3b8; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-filter-bar { border-color: rgba(255,255,255,.08); }
-#keepit-exact-overlay.theme-dark .te-dict-stats-search input { border-color: rgba(255,255,255,.08); background: #1a1e2e; color: #f1f5f9; }
-#keepit-exact-overlay.theme-dark .te-dict-stats-filter { border-color: rgba(255,255,255,.08); background: #1a1e2e; color: #94a3b8; }
+#keepit-exact-overlay.theme-dark .te-dict-stats-search input { border-color: rgba(255,255,255,.08); background: #121212; color: #f1f5f9; }
+#keepit-exact-overlay.theme-dark .te-dict-stats-filter { border-color: rgba(255,255,255,.08); background: #1a1a1a; color: #94a3b8; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-filter.active { border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.15); color: #fbbf24; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-scroll { scrollbar-color: #52525b transparent; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-empty { color: #94a3b8; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-scroll::-webkit-scrollbar-thumb { background: #52525b; }
-#keepit-exact-overlay.theme-dark .te-dict-stats-word { border-color: rgba(255,255,255,.06); background: #181c2e; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-#keepit-exact-overlay.theme-dark .te-dict-stats-word:hover { border-color: rgba(245,158,11,.35); background: #20243b; }
+#keepit-exact-overlay.theme-dark .te-dict-stats-word { border-color: rgba(255,255,255,.06); background: #121212; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+#keepit-exact-overlay.theme-dark .te-dict-stats-word:hover { border-color: rgba(245,158,11,.35); background: #18181b; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-word-title strong { color: #f1f5f9; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-rank { color: #64748b; }
 #keepit-exact-overlay.theme-dark .te-dict-stats-rank.top3 { background: rgba(245,158,11,.15); color: #fbbf24; }

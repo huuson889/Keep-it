@@ -732,8 +732,9 @@
       const variants = Object.values(item.variants || {}).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
       variants.slice(0, 2).forEach((variant) => variantList.appendChild(variantChip(variant)));
       const extras = variants.slice(2);
+      let details = null;
       if (extras.length) {
-        const details = document.createElement("details");
+        details = document.createElement("details");
         details.className = "te-dict-stats-more";
         const summary = document.createElement("summary");
         const more = document.createElement("span");
@@ -743,11 +744,13 @@
         less.className = "less-label";
         less.textContent = `${tr("dictationWrongStatsCollapse")} ▲`;
         summary.append(more, less);
-        details.appendChild(summary);
-        extras.forEach((variant) => details.appendChild(variantChip(variant, true)));
-        variantList.appendChild(details);
+        const extraList = document.createElement("div");
+        extraList.className = "te-dict-stats-extra-list";
+        extras.forEach((variant) => extraList.appendChild(variantChip(variant, true)));
+        details.append(summary, extraList);
       }
       variantsWrap.append(variantsLabel, variantList);
+      if (details) variantsWrap.appendChild(details);
       article.append(head, metrics, bar, variantsWrap);
       ui.statsScroll.appendChild(article);
     });
