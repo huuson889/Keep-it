@@ -50,9 +50,14 @@ globalThis.LHN_DICTATION_CSS = `
   height: 48px;
   background: #f59e0b;
 }
-#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter:focus-visible {
-  outline: 2px solid #f59e0b;
-  outline-offset: -2px;
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.is-dragging::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 1;
+  width: 1px;
+  background: #f59e0b;
+  pointer-events: none;
 }
 #keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-left { grid-column: 2; }
 #keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-right { grid-column: 4; }
