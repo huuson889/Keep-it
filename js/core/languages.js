@@ -161,7 +161,8 @@
     dictationAudioTitle: "Audio from the video", dictationAudioSource: "YouTube", dictationAudioHelp: "Press play to hear the current sentence",
     dictationShowHints: "Show hints", dictationCompactVideo: "Shrink video", dictationExpandVideo: "Expand video", dictationMiniPlay: "Play video audio", dictationMiniPause: "Pause video audio", dictationErrorTitle: "Error analysis:", dictationCorrectSentence: "Correct sentence", dictationSuccess: "Excellent! You typed it 100% correctly",
     dictationEmptyAnswer: "(Nothing typed yet)", dictationExtra: "(extra)", dictationRepeat: "Repeat:", dictationPrev: "Previous",
-    dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device"
+    dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device",
+    dictationHideSentencesColumn: "Hide sentences column", dictationShowSentencesColumn: "Show sentences column", dictationHideNotesColumn: "Hide notes column", dictationShowNotesColumn: "Show notes column", dictationResizeSentencesColumn: "Resize sentences column", dictationResizeNotesColumn: "Resize notes column", dictationResizeColumnHelp: "Drag or use arrow keys to resize; double-click to reset."
   });
   Object.assign(MESSAGES.vi, {
     dictationWrongStatsTitle: "Thống kê từ sai", dictationWrongStatsSummary: "Tổng hợp lỗi chính tả",
@@ -181,7 +182,8 @@
     dictationAudioTitle: "Âm thanh từ video", dictationAudioSource: "YouTube", dictationAudioHelp: "Nhấn nút phát để nghe câu hiện tại",
     dictationShowHints: "Hiện gợi ý", dictationCompactVideo: "Thu nhỏ video", dictationExpandVideo: "Phóng to video", dictationMiniPlay: "Phát âm thanh video", dictationMiniPause: "Tạm dừng âm thanh video", dictationErrorTitle: "Phân tích lỗi sai:", dictationCorrectSentence: "Câu đúng", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
     dictationEmptyAnswer: "(Chưa nhập câu)", dictationExtra: "(thừa)", dictationRepeat: "Lặp:", dictationPrev: "Câu trước",
-    dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này"
+    dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này",
+    dictationHideSentencesColumn: "Ẩn cột câu", dictationShowSentencesColumn: "Hiện cột câu", dictationHideNotesColumn: "Ẩn cột ghi chú", dictationShowNotesColumn: "Hiện cột ghi chú", dictationResizeSentencesColumn: "Điều chỉnh độ rộng cột câu", dictationResizeNotesColumn: "Điều chỉnh độ rộng cột ghi chú", dictationResizeColumnHelp: "Kéo hoặc dùng phím mũi tên để đổi độ rộng; nhấp đúp để đặt lại."
   });
   Object.assign(MESSAGES.ko, {
     dictationWrongStatsTitle: "오답 단어 통계", dictationWrongStatsSummary: "맞춤법 오류 요약",
@@ -201,7 +203,8 @@
     dictationAudioTitle: "영상 오디오", dictationAudioSource: "YouTube", dictationAudioHelp: "재생 버튼을 눌러 현재 문장을 들어보세요",
     dictationShowHints: "힌트 표시", dictationCompactVideo: "영상 축소", dictationExpandVideo: "영상 확대", dictationMiniPlay: "영상 오디오 재생", dictationMiniPause: "영상 오디오 일시정지", dictationErrorTitle: "오류 분석:", dictationCorrectSentence: "정답 문장", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
     dictationEmptyAnswer: "(입력 없음)", dictationExtra: "(불필요)", dictationRepeat: "반복:", dictationPrev: "이전",
-    dictationReplay: "다시 듣기", dictationSlow: "느리게", dictationNext: "다음", dictationAutosave: "노트는 이 기기에 자동 저장됩니다"
+    dictationReplay: "다시 듣기", dictationSlow: "느리게", dictationNext: "다음", dictationAutosave: "노트는 이 기기에 자동 저장됩니다",
+    dictationHideSentencesColumn: "문장 열 숨기기", dictationShowSentencesColumn: "문장 열 표시", dictationHideNotesColumn: "노트 열 숨기기", dictationShowNotesColumn: "노트 열 표시", dictationResizeSentencesColumn: "문장 열 너비 조절", dictationResizeNotesColumn: "노트 열 너비 조절", dictationResizeColumnHelp: "드래그하거나 화살표 키로 너비를 조절하고 두 번 클릭해 초기화하세요."
   });
 
   function detectLanguage() {

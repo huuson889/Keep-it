@@ -2,17 +2,96 @@
 globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.te-dictation-active {
   display: grid !important;
-  grid-template-columns: minmax(0, 32fr) minmax(0, 45fr) minmax(0, 23fr);
+  grid-template-columns: var(--te-dict-left-track, 32fr) var(--te-dict-left-splitter, 8px) minmax(var(--te-dict-center-min, 380px), 1fr) var(--te-dict-right-splitter, 8px) var(--te-dict-right-track, 23fr);
   grid-template-rows: minmax(0, 1fr) 70px;
   overflow: hidden;
 }
 #keepit-exact-overlay.te-dictation-active > .te-ambient-layer {
-  grid-area: 1 / 1 / 3 / 4;
+  grid-area: 1 / 1 / 3 / 6;
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
 }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  grid-row: 1;
+  align-items: stretch;
+  justify-content: center;
+  min-width: 0;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter::before {
+  content: "";
+  align-self: center;
+  width: 2px;
+  height: 34px;
+  border-radius: 2px;
+  background: rgba(107, 114, 128, .48);
+  transition: background-color .12s ease, width .12s ease, height .12s ease;
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter:hover::before,
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter:focus-visible::before,
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.is-dragging::before {
+  width: 4px;
+  height: 48px;
+  background: #f59e0b;
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: -2px;
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-left { grid-column: 2; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-right { grid-column: 4; }
+#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-dict-splitter-left,
+#keepit-exact-overlay.te-dictation-active.te-dict-column-right-hidden > .te-dict-splitter-right { display: none; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore {
+  position: relative;
+  z-index: 9;
+  display: none;
+  grid-row: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore:hover,
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore:focus-visible { background: rgba(245, 158, 11, .14); color: #b45309; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore svg { width: 15px; height: 15px; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore.te-dict-restore-left { grid-column: 1; border-right: 1px solid #e5e7eb; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-restore.te-dict-restore-right { grid-column: 5; border-left: 1px solid #e5e7eb; }
+#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-dict-restore-left,
+#keepit-exact-overlay.te-dictation-active.te-dict-column-right-hidden > .te-dict-restore-right { display: flex; }
+#keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore { background: #171717; color: #a1a1aa; }
+#keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore.te-dict-restore-left { border-color: #27272a; }
+#keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore.te-dict-restore-right { border-color: #27272a; }
+#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-left-section { display: none !important; }
+#keepit-exact-overlay.te-dictation-active.te-dict-column-right-hidden > #te-dictation-notes { display: none !important; }
+#keepit-exact-overlay.te-dictation-active .te-dict-column-toggle {
+  display: inline-flex;
+  flex: 0 0 26px;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+#keepit-exact-overlay.te-dictation-active .te-dict-column-toggle:hover,
+#keepit-exact-overlay.te-dictation-active .te-dict-column-toggle:focus-visible { border-color: rgba(245, 158, 11, .35); background: rgba(245, 158, 11, .1); color: #b45309; }
+#keepit-exact-overlay.te-dictation-active .te-dict-column-toggle svg { width: 14px; height: 14px; }
 #keepit-exact-overlay.te-dictation-active > .te-left-section {
   grid-area: 1 / 1 / 2 / 2;
   display: flex;
@@ -346,8 +425,8 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay.te-dictation-active #te-dictation-center,
 #keepit-exact-overlay.te-dictation-active #te-dictation-notes { display: flex; }
-#keepit-exact-overlay #te-dictation-center { grid-area: 1 / 2 / 2 / 3; border-right: 1px solid #e5e7eb; }
-#keepit-exact-overlay #te-dictation-notes { grid-area: 1 / 3 / 2 / 4; }
+#keepit-exact-overlay #te-dictation-center { grid-area: 1 / 3 / 2 / 4; border-right: 1px solid #e5e7eb; }
+#keepit-exact-overlay #te-dictation-notes { grid-area: 1 / 5 / 2 / 6; }
 #keepit-exact-overlay.theme-dark #te-dictation-center,
 #keepit-exact-overlay.theme-dark #te-dictation-notes { background: #121212; color: #f3f4f6; }
 #keepit-exact-overlay.te-dictation-active.te-ambient-on #te-dictation-center,
@@ -653,7 +732,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark .te-dict-autosave { color: #a1a1aa; }
 
 #keepit-exact-overlay.te-dictation-active .te-control-bar {
-  grid-area: 2 / 1 / 3 / 4;
+  grid-area: 2 / 1 / 3 / 6;
   position: relative !important;
   left: auto !important;
   bottom: auto !important;

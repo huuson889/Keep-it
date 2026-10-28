@@ -5,6 +5,7 @@
   let A = null;
   let ui = null;
   let active = false;
+  let openingPanel = false;
   let current = 0;
   let checkedCurrent = false;
   let savedPageScrollStyles = null;
@@ -44,6 +45,242 @@
     return Array.isArray(list) ? list.filter((cue) => cue && typeof cue.en === "string" && cue.en.trim()) : [];
   };
   const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
+  const dictationLayoutStorageKey = "dictation:layout:v1";
+  const dictationLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
+  let dictationLayoutLoadPromise = null;
+
+  function clampDictationColumn(value, minimum, maximum) {
+    return Math.min(maximum, Math.max(minimum, value));
+  }
+
+  async function loadDictationLayoutPrefs() {
+    if (!dictationLayoutLoadPromise) {
+      dictationLayoutLoadPromise = (async () => {
+        try {
+          const result = await ext.storage.local.get(dictationLayoutStorageKey);
+          const stored = result?.[dictationLayoutStorageKey];
+          if (!stored || typeof stored !== "object") return;
+          const leftScale = Number(stored.leftScale);
+          const rightScale = Number(stored.rightScale);
+          if (Number.isFinite(leftScale)) dictationLayoutPrefs.leftScale = clampDictationColumn(leftScale, 2 / 3, 1);
+          if (Number.isFinite(rightScale)) dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, 1, 1.5);
+          dictationLayoutPrefs.leftHidden = stored.leftHidden === true;
+          dictationLayoutPrefs.rightHidden = stored.rightHidden === true;
+        } catch (error) {
+          console.warn("Could not load Dictation column layout", error);
+        }
+      })();
+    }
+    await dictationLayoutLoadPromise;
+  }
+
+  function persistDictationLayoutPrefs() {
+    try {
+      const result = ext.storage.local.set({
+        [dictationLayoutStorageKey]: { version: 1, ...dictationLayoutPrefs },
+      });
+      result?.catch?.((error) => console.warn("Could not save Dictation column layout", error));
+    } catch (error) {
+      console.warn("Could not save Dictation column layout", error);
+    }
+  }
+
+  function getDictationColumnMetrics() {
+    const width = Math.max(0, ui?.root?.clientWidth || ui?.root?.getBoundingClientRect?.().width || 0);
+    const available = Math.max(0, width - 16);
+    const scale = Math.min(1, available / 880);
+    const minLeft = 220 * scale;
+    const minCenter = 380 * scale;
+    const minRight = 280 * scale;
+    let baseLeft = Math.max(minLeft, available * .32);
+    let baseRight = Math.max(minRight, available * .23);
+    const sideBudget = Math.max(0, available - minCenter);
+    const excess = Math.max(0, baseLeft + baseRight - sideBudget);
+    if (excess > 0) {
+      const leftRoom = Math.max(0, baseLeft - minLeft);
+      const rightRoom = Math.max(0, baseRight - minRight);
+      const totalRoom = leftRoom + rightRoom;
+      if (totalRoom > 0) {
+        baseLeft -= Math.min(leftRoom, excess * leftRoom / totalRoom);
+        baseRight -= Math.min(rightRoom, excess * rightRoom / totalRoom);
+      }
+    }
+    return { width, minLeft, minCenter, minRight, baseLeft, baseRight };
+  }
+
+  function getDictationColumnState() {
+    const metrics = getDictationColumnMetrics();
+    const leftSplitterWidth = dictationLayoutPrefs.leftHidden ? 0 : 8;
+    const rightSplitterWidth = dictationLayoutPrefs.rightHidden ? 0 : 8;
+    const leftRailWidth = dictationLayoutPrefs.leftHidden ? 24 : 0;
+    const rightRailWidth = dictationLayoutPrefs.rightHidden ? 24 : 0;
+    const panelBudget = Math.max(0, metrics.width - leftSplitterWidth - rightSplitterWidth - leftRailWidth - rightRailWidth);
+    const leftWidth = dictationLayoutPrefs.leftHidden ? 0 : clampDictationColumn(
+      metrics.baseLeft * dictationLayoutPrefs.leftScale, Math.max(metrics.minLeft, metrics.baseLeft * 2 / 3), metrics.baseLeft
+    );
+    const rightMaximum = Math.max(metrics.baseRight, Math.min(
+      metrics.baseRight * 1.5, panelBudget - leftWidth - metrics.minCenter
+    ));
+    const rightWidth = dictationLayoutPrefs.rightHidden ? 0 : clampDictationColumn(
+      metrics.baseRight * dictationLayoutPrefs.rightScale, metrics.baseRight, rightMaximum
+    );
+    return {
+      ...metrics,
+      leftWidth,
+      rightWidth,
+      leftTrackWidth: dictationLayoutPrefs.leftHidden ? 24 : leftWidth,
+      rightTrackWidth: dictationLayoutPrefs.rightHidden ? 24 : rightWidth,
+      leftSplitterWidth,
+      rightSplitterWidth,
+      leftHidden: dictationLayoutPrefs.leftHidden,
+      rightHidden: dictationLayoutPrefs.rightHidden,
+    };
+  }
+
+  function getDictationColumnBounds(side, state = getDictationColumnState()) {
+    if (side === "left") {
+      const minimum = Math.max(state.minLeft, state.baseLeft * 2 / 3);
+      const maximum = Math.min(state.baseLeft,
+        state.width - state.leftSplitterWidth - state.rightSplitterWidth - state.rightTrackWidth - state.minCenter);
+      return { minimum, maximum: Math.max(minimum, maximum) };
+    }
+    const minimum = state.baseRight;
+    const maximum = Math.min(state.baseRight * 1.5,
+      state.width - state.leftTrackWidth - state.leftSplitterWidth - state.rightSplitterWidth - state.minCenter);
+    return { minimum, maximum: Math.max(minimum, maximum) };
+  }
+
+  function updateDictationSplitterAccessibility(splitter, side, state) {
+    if (!splitter) return;
+    const bounds = getDictationColumnBounds(side, state);
+    const value = side === "left" ? state.leftWidth : state.rightWidth;
+    splitter.setAttribute("aria-valuemin", String(Math.round(bounds.minimum)));
+    splitter.setAttribute("aria-valuemax", String(Math.round(bounds.maximum)));
+    splitter.setAttribute("aria-valuenow", String(Math.round(value)));
+    splitter.setAttribute("aria-valuetext", `${Math.round(value)} px`);
+  }
+
+  function applyDictationColumnLayout() {
+    if (!ui?.root) return;
+    const state = getDictationColumnState();
+    const root = ui.root;
+    root.style.setProperty("--te-dict-left-track", `${state.leftTrackWidth}px`);
+    root.style.setProperty("--te-dict-right-track", `${state.rightTrackWidth}px`);
+    root.style.setProperty("--te-dict-left-splitter", `${state.leftSplitterWidth}px`);
+    root.style.setProperty("--te-dict-right-splitter", `${state.rightSplitterWidth}px`);
+    root.style.setProperty("--te-dict-center-min", `${state.minCenter}px`);
+    root.classList.toggle("te-dict-column-left-hidden", state.leftHidden);
+    root.classList.toggle("te-dict-column-right-hidden", state.rightHidden);
+    ui.left.setAttribute("aria-hidden", String(state.leftHidden));
+    ui.notesPanel.setAttribute("aria-hidden", String(state.rightHidden));
+    const labels = [
+      [ui.hideLeftColumn, "dictationHideSentencesColumn"],
+      [ui.showLeftColumn, "dictationShowSentencesColumn"],
+      [ui.hideRightColumn, "dictationHideNotesColumn"],
+      [ui.showRightColumn, "dictationShowNotesColumn"],
+    ];
+    for (const [button, key] of labels) {
+      if (!button) continue;
+      button.setAttribute("aria-label", tr(key));
+      button.title = tr(key);
+    }
+    ui.hideLeftColumn.setAttribute("aria-controls", "te-dict-sentence-area");
+    ui.hideRightColumn.setAttribute("aria-controls", "te-dictation-notes");
+    ui.showLeftColumn.setAttribute("aria-controls", "te-dict-sentence-area");
+    ui.showRightColumn.setAttribute("aria-controls", "te-dictation-notes");
+    ui.hideLeftColumn.setAttribute("aria-expanded", String(!state.leftHidden));
+    ui.hideRightColumn.setAttribute("aria-expanded", String(!state.rightHidden));
+    ui.showLeftColumn.setAttribute("aria-expanded", String(!state.leftHidden));
+    ui.showRightColumn.setAttribute("aria-expanded", String(!state.rightHidden));
+    updateDictationSplitterAccessibility(ui.leftColumnSplitter, "left", state);
+    updateDictationSplitterAccessibility(ui.rightColumnSplitter, "right", state);
+  }
+
+  function setDictationColumnWidth(side, requestedWidth, persist = false) {
+    const state = getDictationColumnState();
+    const bounds = getDictationColumnBounds(side, state);
+    const width = clampDictationColumn(requestedWidth, bounds.minimum, bounds.maximum);
+    if (side === "left" && state.baseLeft > 0) dictationLayoutPrefs.leftScale = clampDictationColumn(width / state.baseLeft, 2 / 3, 1);
+    if (side === "right" && state.baseRight > 0) dictationLayoutPrefs.rightScale = clampDictationColumn(width / state.baseRight, 1, 1.5);
+    applyDictationColumnLayout();
+    if (persist) persistDictationLayoutPrefs();
+  }
+
+  function setDictationColumnHidden(side, hidden) {
+    if (side === "left") dictationLayoutPrefs.leftHidden = hidden;
+    else dictationLayoutPrefs.rightHidden = hidden;
+    applyDictationColumnLayout();
+    const focusTarget = side === "left"
+      ? (hidden ? ui.showLeftColumn : ui.hideLeftColumn)
+      : (hidden ? ui.showRightColumn : ui.hideRightColumn);
+    focusTarget?.focus?.({ preventScroll: true });
+    persistDictationLayoutPrefs();
+  }
+
+  function resetDictationColumnWidth(side) {
+    if (side === "left") dictationLayoutPrefs.leftScale = 1;
+    else dictationLayoutPrefs.rightScale = 1;
+    applyDictationColumnLayout();
+    persistDictationLayoutPrefs();
+  }
+
+  function beginDictationColumnDrag(event, side, splitter) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const state = getDictationColumnState();
+    const startX = event.clientX;
+    const startWidth = side === "left" ? state.leftWidth : state.rightWidth;
+    const pointerId = event.pointerId;
+    splitter.focus?.({ preventScroll: true });
+    splitter.classList.add("is-dragging");
+    splitter.setPointerCapture?.(pointerId);
+    const onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      const delta = moveEvent.clientX - startX;
+      setDictationColumnWidth(side, startWidth + (side === "left" ? delta : -delta));
+    };
+    const finish = (finishEvent) => {
+      if (finishEvent.pointerId !== pointerId) return;
+      splitter.removeEventListener("pointermove", onMove);
+      splitter.removeEventListener("pointerup", finish);
+      splitter.removeEventListener("pointercancel", finish);
+      splitter.classList.remove("is-dragging");
+      if (splitter.hasPointerCapture?.(pointerId)) splitter.releasePointerCapture(pointerId);
+      persistDictationLayoutPrefs();
+    };
+    splitter.addEventListener("pointermove", onMove);
+    splitter.addEventListener("pointerup", finish);
+    splitter.addEventListener("pointercancel", finish);
+  }
+
+  function onDictationSplitterKeyDown(event, side) {
+    const bounds = getDictationColumnBounds(side);
+    const state = getDictationColumnState();
+    const currentWidth = side === "left" ? state.leftWidth : state.rightWidth;
+    let target = null;
+    if (event.key === "Home") target = bounds.minimum;
+    else if (event.key === "End") target = bounds.maximum;
+    else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const step = event.shiftKey ? 48 : 16;
+      target = currentWidth + direction * step * (side === "left" ? 1 : -1);
+    } else return;
+    event.preventDefault();
+    setDictationColumnWidth(side, target, true);
+  }
+
+  function installDictationColumnControls() {
+    if (!ui) return;
+    for (const [splitter, side] of [[ui.leftColumnSplitter, "left"], [ui.rightColumnSplitter, "right"]]) {
+      splitter.addEventListener("pointerdown", (event) => beginDictationColumnDrag(event, side, splitter));
+      splitter.addEventListener("dblclick", (event) => { event.preventDefault(); resetDictationColumnWidth(side); });
+      splitter.addEventListener("keydown", (event) => onDictationSplitterKeyDown(event, side));
+    }
+    ui.hideLeftColumn.addEventListener("click", () => setDictationColumnHidden("left", true));
+    ui.hideRightColumn.addEventListener("click", () => setDictationColumnHidden("right", true));
+    ui.showLeftColumn.addEventListener("click", () => setDictationColumnHidden("left", false));
+    ui.showRightColumn.addEventListener("click", () => setDictationColumnHidden("right", false));
+  }
 
   function ensureStyle(root = A?.overlayEl?.()) {
     if (!root || root.querySelector("#te-dictation-style")) return;
@@ -145,6 +382,7 @@
     sentenceArea.innerHTML = `
       <div id="te-dict-sentence-head">
         <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
+        <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
         <span class="te-dict-counter" id="te-dict-counter" aria-live="polite">0/0</span>
       </div>
       <div id="te-dict-sentences" role="list"></div>`;
@@ -206,6 +444,7 @@
       <div class="te-dict-panel-head">
         <h2 class="te-dict-heading">${makeSvg('<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>')}<span data-dict-label="dictationLessonNotes"></span></h2>
         <div class="te-dict-head-actions">
+          <button class="te-dict-column-toggle" id="te-dict-hide-notes" type="button">${makeSvg('<path d="m10 7 5 5-5 5"/>')}</button>
           <button class="te-dict-save" id="te-dict-save" type="button"></button>
           <button class="yt-dual-close-btn te-dict-close" id="te-dict-close" type="button"><span aria-hidden="true">×</span></button>
         </div>
@@ -250,7 +489,35 @@
         <span class="te-dict-autosave" data-dict-label="dictationAutosave"></span>
       </div>`;
 
-    root.append(center, notesPanel);
+    const leftColumnSplitter = document.createElement("div");
+    leftColumnSplitter.className = "te-dict-column-splitter te-dict-splitter-left";
+    leftColumnSplitter.setAttribute("role", "separator");
+    leftColumnSplitter.setAttribute("aria-orientation", "vertical");
+    leftColumnSplitter.setAttribute("aria-label", tr("dictationResizeSentencesColumn"));
+    leftColumnSplitter.title = tr("dictationResizeColumnHelp");
+    leftColumnSplitter.setAttribute("aria-description", tr("dictationResizeColumnHelp"));
+    leftColumnSplitter.setAttribute("aria-controls", "te-dict-sentence-area");
+    leftColumnSplitter.tabIndex = 0;
+    const rightColumnSplitter = document.createElement("div");
+    rightColumnSplitter.className = "te-dict-column-splitter te-dict-splitter-right";
+    rightColumnSplitter.setAttribute("role", "separator");
+    rightColumnSplitter.setAttribute("aria-orientation", "vertical");
+    rightColumnSplitter.setAttribute("aria-label", tr("dictationResizeNotesColumn"));
+    rightColumnSplitter.title = tr("dictationResizeColumnHelp");
+    rightColumnSplitter.setAttribute("aria-description", tr("dictationResizeColumnHelp"));
+    rightColumnSplitter.setAttribute("aria-controls", "te-dictation-notes");
+    rightColumnSplitter.tabIndex = 0;
+
+    const showLeftColumn = document.createElement("button");
+    showLeftColumn.className = "te-dict-column-restore te-dict-restore-left";
+    showLeftColumn.type = "button";
+    showLeftColumn.innerHTML = makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16m5-11 3 3-3 3"/>');
+    const showRightColumn = document.createElement("button");
+    showRightColumn.className = "te-dict-column-restore te-dict-restore-right";
+    showRightColumn.type = "button";
+    showRightColumn.innerHTML = makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 4v16m-5-11-3 3 3 3"/>');
+
+    root.append(center, notesPanel, leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn);
 
     const tools = document.createElement("div");
     tools.className = "te-dict-toolbar-tools";
@@ -275,8 +542,13 @@
       miniPlay: compactAudio.querySelector(".te-dict-mini-play"),
       miniPlayIcon: compactAudio.querySelector(".te-dict-mini-play-icon"),
       videoExpandedHeight: 0, videoExpandedHeightSaved: false, videoTransitionToken: 0, videoResizeObserver: null,
+      columnLayoutResizeObserver: null,
+      originalLeftAriaHidden: left.getAttribute("aria-hidden"),
       originalVideoSlotHeight: { value: videoSlot.style.getPropertyValue("height"), priority: videoSlot.style.getPropertyPriority("height") },
       primaryGroup, tools, sentenceArea, center, notesPanel,
+      leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn,
+      hideLeftColumn: sentenceArea.querySelector("#te-dict-hide-sentences"),
+      hideRightColumn: notesPanel.querySelector("#te-dict-hide-notes"),
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
@@ -337,6 +609,7 @@
     }));
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    installDictationColumnControls();
     ui.miniSource.textContent = tr("dictationAudioSource");
     updateCompactAudioInfo();
     updateCompactAudioPlaybackState();
@@ -1837,14 +2110,18 @@
   }
 
   async function openPanel() {
-    if (active) return;
+    if (active || openingPanel) return;
     if (!isEnglishReady()) { showToastBeforeOpen(); return; }
+    openingPanel = true;
     build();
-    if (!ui) return;
+    if (!ui) { openingPanel = false; return; }
+    await loadDictationLayoutPrefs();
+    if (!ui || !isEnglishReady()) { openingPanel = false; return; }
     videoId = currentVideoId();
     sentenceCues = getCues();
-    if (!sentenceCues.length) { showToastBeforeOpen(); return; }
+    if (!sentenceCues.length) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
+    openingPanel = false;
     checkedCurrent = false;
     hideYouTubeScrollbar();
     const generation = ++panelGeneration;
@@ -1856,6 +2133,11 @@
     translations = {};
     wrongWordStats = { version: 1, words: {} };
     ui.root.classList.add("te-dictation-active");
+    applyDictationColumnLayout();
+    if (typeof ResizeObserver === "function") {
+      ui.columnLayoutResizeObserver = new ResizeObserver(applyDictationColumnLayout);
+      ui.columnLayoutResizeObserver.observe(ui.root);
+    }
     ui.root.insertBefore(ui.bar, ui.center);
     ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
     document.addEventListener("keydown", onGlobalKeyDown, true);
@@ -1910,6 +2192,8 @@
     ui.root.classList.remove("te-dict-video-transitioning");
     ui.videoSlot.style.removeProperty("--te-dict-video-transition-height");
     ui.videoResizeObserver?.disconnect();
+    ui.columnLayoutResizeObserver?.disconnect();
+    persistDictationLayoutPrefs();
     const originalVideoHeight = ui.originalVideoSlotHeight;
     if (originalVideoHeight.value) ui.videoSlot.style.setProperty("height", originalVideoHeight.value, originalVideoHeight.priority);
     else ui.videoSlot.style.removeProperty("height");
@@ -1920,7 +2204,12 @@
       if (original.aria === null) button.removeAttribute("aria-disabled");
       else button.setAttribute("aria-disabled", original.aria);
     }
-    ui.root.classList.remove("te-dictation-active", "te-dict-video-compact");
+    ui.root.classList.remove("te-dictation-active", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
+    for (const property of ["--te-dict-left-track", "--te-dict-right-track", "--te-dict-left-splitter", "--te-dict-right-splitter", "--te-dict-center-min"]) {
+      ui.root.style.removeProperty(property);
+    }
+    if (ui.originalLeftAriaHidden === null) ui.left.removeAttribute("aria-hidden");
+    else ui.left.setAttribute("aria-hidden", ui.originalLeftAriaHidden);
     if (ui.barParent?.isConnected) {
       if (ui.barNextSibling?.parentNode === ui.barParent) ui.barParent.insertBefore(ui.bar, ui.barNextSibling);
       else ui.barParent.appendChild(ui.bar);
@@ -1928,6 +2217,10 @@
     ui.sentenceArea.remove();
     ui.center.remove();
     ui.notesPanel.remove();
+    ui.leftColumnSplitter.remove();
+    ui.rightColumnSplitter.remove();
+    ui.showLeftColumn.remove();
+    ui.showRightColumn.remove();
     ui.tools.remove();
     ui.primaryGroup.classList.remove("te-dict-primary-group");
     ui = null;
