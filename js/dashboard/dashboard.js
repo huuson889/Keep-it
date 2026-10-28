@@ -2061,6 +2061,19 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
+const dashboardHomeView = $("dashboardHomeView"), dashboardGrammarPracticeView = $("dashboardGrammarPracticeView");
+function setDashboardView(view) {
+  const showHome = view === "home";
+  dashboardHomeView.hidden = !showHome;
+  dashboardGrammarPracticeView.hidden = showHome;
+  dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
+    const active = link.dataset.dashboardView === view;
+    link.classList.toggle("is-active", active);
+    if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+  });
+}
+dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
+setDashboardView("home");
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);

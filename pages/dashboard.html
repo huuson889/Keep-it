@@ -17,12 +17,12 @@
   <path d="m16 15-3-3 3-3" /></svg></button>
   </div>
   <nav class="dashboard-reference-nav" aria-label="Menu chính">
-    <a href="#" class="reference-nav-item is-active"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <a href="#" class="reference-nav-item is-active" data-dashboard-view="home" aria-current="page"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
   <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg></span><span class="nav-label">Trang chủ</span></a>
     <a href="#" class="reference-nav-item"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
   <path d="M22 10v6" />
   <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg></span><span class="nav-label">Khóa ngữ pháp</span></a>
-    <a href="#" class="reference-nav-item"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 7v14" />
+    <a href="#" class="reference-nav-item" data-dashboard-view="grammar"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 7v14" />
   <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></svg></span><span class="nav-label">Luyện ngữ pháp</span></a>
     <a href="#" class="reference-nav-item"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" /></svg></span><span class="nav-label">Luyện nghe</span></a>
     <a href="#" class="reference-nav-item"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
@@ -110,26 +110,7 @@
   </div>
 </aside>
 
-<main>
-  <aside id="profileSidebar" class="profile-sidebar" data-i18n-aria-label="profileSidebarLabel" aria-label="Local profile">
-    <section class="profile-card">
-      <div id="profileHeaderSection" class="profile-identity"></div>
-      <div id="actionButtonsSection" class="profile-actions"></div>
-      <div id="metaInfoSection" class="profile-meta"></div>
-      <hr class="profile-divider">
-      <div class="profile-stat-grid">
-        <div><strong id="profilePageTotal">0</strong><span data-i18n="sourcePages">Pages</span></div>
-        <div><strong id="profileNoteTotal">0</strong><span data-i18n="highlightsShort">Highlights</span></div>
-        <div><strong id="profileNeedLearnTotal">0</strong><span data-i18n="profileNeedLearn">Need learn</span></div>
-      </div>
-      <div class="profile-activity" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"><div class="profile-section-title"><span data-i18n="profileActivity">Recent activity</span><span id="profileActivityTotal">0</span></div><div id="profileMonthLabels" class="profile-month-labels"></div><div class="profile-heatmap-row"><div class="profile-weekday-labels"><span>M</span><span>W</span><span>F</span></div><div id="profileHeatmap" class="profile-heatmap" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"></div></div><div class="profile-heatmap-legend"><span data-i18n="profileLess">Less</span><i></i><i></i><i></i><i></i><i></i><span data-i18n="profileMore">More</span></div></div>
-      <div class="profile-periods"><button type="button" data-profile-range="all" class="is-active" data-i18n="profilePeriodAll">All</button><span>/</span><button type="button" data-profile-range="weekly" data-i18n="profilePeriodWeekly">Weekly</button><span>/</span><button type="button" data-profile-range="yearly" data-i18n="profilePeriodYearly">Yearly</button></div>
-      <div class="profile-streaks"><div><span data-i18n="profileTotalDays">Total Days:</span><strong id="profileTotalDays">0</strong><span>💐</span></div><div><span data-i18n="profileTotalWeeks">Total Weeks:</span><strong id="profileTotalWeeks">0</strong><span>💐</span></div></div>
-      <hr class="profile-divider">
-      <div class="profile-segmented"><button id="profileTagsTab" type="button" class="is-active"><span data-i18n="profileTags">Tags</span> <span id="profileTagTotal">(0)</span></button><button id="profileDomainsTab" type="button"><span data-i18n="profileDomains">Domains</span> <span id="profileDomainTotal">(0)</span></button></div>
-      <div id="profileChips" class="profile-chips"></div>
-    </section>
-  </aside>
+<main id="dashboardHomeView" class="dashboard-home-view">
   <section class="toolbar" data-i18n-aria-label="libraryControlsLabel" aria-label="Library controls">
     <button id="clearFiltersBtn" type="button" class="secondary clear-filters-button dashboard-control" aria-label="Clear filters" data-i18n-title="clearFilters" title="Clear filters"><svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22a3 3 0 01-3-3"/><path d="M10 22c2.761 0 5-1.79 5-4-4.42 0-4.08-5-8.5-5a4.501 4.501 0 000 9z"/><path d="M10 3H8"/><path d="M12.5 11.5 22 2"/><path d="M20 13v4"/><path d="M22 15h-4"/><path d="M4 5v4"/><path d="M6 7H2"/><path d="m6.98 13.02 2.665-2.664a1.21 1.21 0 011.71 0l2.29 2.288a1.21 1.21 0 010 1.712l-2.088 2.087"/><path d="M9 2v2"/></svg></button>
     <select id="siteFilter" class="dashboard-control" data-i18n-aria-label="websiteFilterLabel" aria-label="Website filter"><option value="" data-i18n="allWebsites">All websites</option></select>
@@ -158,6 +139,27 @@
     </section>
   </section>
 </main>
+<section id="dashboardGrammarPracticeView" class="dashboard-grammar-view" aria-label="Luyện ngữ pháp" hidden>
+  <aside id="profileSidebar" class="profile-sidebar" data-i18n-aria-label="profileSidebarLabel" aria-label="Local profile">
+    <section class="profile-card">
+      <div id="profileHeaderSection" class="profile-identity"></div>
+      <div id="actionButtonsSection" class="profile-actions"></div>
+      <div id="metaInfoSection" class="profile-meta"></div>
+      <hr class="profile-divider">
+      <div class="profile-stat-grid">
+        <div><strong id="profilePageTotal">0</strong><span data-i18n="sourcePages">Pages</span></div>
+        <div><strong id="profileNoteTotal">0</strong><span data-i18n="highlightsShort">Highlights</span></div>
+        <div><strong id="profileNeedLearnTotal">0</strong><span data-i18n="profileNeedLearn">Need learn</span></div>
+      </div>
+      <div class="profile-activity" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"><div class="profile-section-title"><span data-i18n="profileActivity">Recent activity</span><span id="profileActivityTotal">0</span></div><div id="profileMonthLabels" class="profile-month-labels"></div><div class="profile-heatmap-row"><div class="profile-weekday-labels"><span>M</span><span>W</span><span>F</span></div><div id="profileHeatmap" class="profile-heatmap" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"></div></div><div class="profile-heatmap-legend"><span data-i18n="profileLess">Less</span><i></i><i></i><i></i><i></i><i></i><span data-i18n="profileMore">More</span></div></div>
+      <div class="profile-periods"><button type="button" data-profile-range="all" class="is-active" data-i18n="profilePeriodAll">All</button><span>/</span><button type="button" data-profile-range="weekly" data-i18n="profilePeriodWeekly">Weekly</button><span>/</span><button type="button" data-profile-range="yearly" data-i18n="profilePeriodYearly">Yearly</button></div>
+      <div class="profile-streaks"><div><span data-i18n="profileTotalDays">Total Days:</span><strong id="profileTotalDays">0</strong><span>💐</span></div><div><span data-i18n="profileTotalWeeks">Total Weeks:</span><strong id="profileTotalWeeks">0</strong><span>💐</span></div></div>
+      <hr class="profile-divider">
+      <div class="profile-segmented"><button id="profileTagsTab" type="button" class="is-active"><span data-i18n="profileTags">Tags</span> <span id="profileTagTotal">(0)</span></button><button id="profileDomainsTab" type="button"><span data-i18n="profileDomains">Domains</span> <span id="profileDomainTotal">(0)</span></button></div>
+      <div id="profileChips" class="profile-chips"></div>
+    </section>
+  </aside>
+</section>
 <dialog id="profileAuthDialog" class="profile-auth-dialog">
   <form id="profileAuthForm" method="dialog">
     <div class="profile-auth-tabs"><button id="profileLoginTab" type="button" class="is-active" data-i18n="profileLogin">Đăng nhập</button><button id="profileRegisterTab" type="button" data-i18n="profileRegister">Đăng ký</button><button id="profileAuthClose" type="button" aria-label="Close">×</button></div>
