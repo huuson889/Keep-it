@@ -415,14 +415,12 @@ globalThis.LHN_DICTATION_CSS = `
   transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
 }
 #keepit-exact-overlay .te-dict-hints-toggle svg { width: 18px; height: 18px; }
-#keepit-exact-overlay .te-dict-hints-toggle.active { border-color: #4b5563; background: #4b5563; color: #fff; }
-#keepit-exact-overlay .te-dict-hints-toggle:not(.active):hover { border-color: #8b5cf6; background: rgba(139, 92, 246, .1); }
-#keepit-exact-overlay .te-dict-hints-toggle.active:hover { border-color: #374151; background: #374151; color: #fff; }
+#keepit-exact-overlay .te-dict-hints-toggle.active { background: transparent; color: #fff; }
+#keepit-exact-overlay .te-dict-hints-toggle:hover { border-color: #8b5cf6; background: rgba(139, 92, 246, .1); }
 #keepit-exact-overlay .te-dict-hints-toggle:active { transform: scale(.94); }
 #keepit-exact-overlay.theme-dark .te-dict-hints-toggle { border-color: #3f3f46; color: #71717a; }
-#keepit-exact-overlay.theme-dark .te-dict-hints-toggle.active { border-color: #52525b; background: #52525b; color: #fff; }
-#keepit-exact-overlay.theme-dark .te-dict-hints-toggle:not(.active):hover { border-color: #a78bfa; }
-#keepit-exact-overlay.theme-dark .te-dict-hints-toggle.active:hover { border-color: #3f3f46; background: #3f3f46; color: #fff; }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle.active { background: transparent; color: #fff; }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle:hover { border-color: #a78bfa; }
 #keepit-exact-overlay .te-dict-work { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 12px; }
 #keepit-exact-overlay .te-dict-answer-stack { position: relative; display: flex; flex-direction: column; gap: 12px; }
 #keepit-exact-overlay .te-dict-work.te-dict-has-error .te-dict-answer-stack > .te-dict-error { position: absolute; top: calc(100% + 12px); left: 0; right: 0; z-index: 1; }
