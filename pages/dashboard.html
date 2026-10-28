@@ -5,18 +5,37 @@
 <title>Highlight Notes Dashboard</title><link rel="icon" type="image/svg+xml" href="../assets/icons/icon.svg"><link rel="stylesheet" href="../css/shared/ui-tokens.css"><link rel="stylesheet" href="../css/dashboard/dashboard.css"><link rel="stylesheet" href="../css/shared/ui-theme.css"><link rel="stylesheet" href="../css/shared/flags.css">
 </head>
 <body>
-<header>
-  <div class="brand"><img class="brand-logo" src="../assets/icons/icon.svg" alt=""><div><h1 data-i18n="appName">Keepit - Highlight Notes</h1><p data-i18n="dashboardSubtitle">Keep learning everything</p></div></div>
-  <div class="top-actions">
-    <a href="#" class="menu-item item-free" data-i18n-aria-label="freePlan">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/>
-      </svg>
-      <span data-i18n="freePlan">Free</span>
+<aside id="dashboardSidebar" class="dashboard-sidebar sidebar-collapsed" data-i18n-aria-label="dashboardNavigationLabel" aria-label="Dashboard navigation">
+  <div class="dashboard-sidebar-head">
+    <a class="dashboard-sidebar-brand" href="#" data-dashboard-nav aria-label="Keepit">
+      <span class="dashboard-sidebar-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.75A1.75 1.75 0 0 1 7.75 2h8.5A1.75 1.75 0 0 1 18 3.75V22l-6-3.7L6 22V3.75Z"/></svg></span>
+      <span class="dashboard-sidebar-brand-name">Keepit</span>
     </a>
+    <button id="dashboardSidebarPin" class="dashboard-sidebar-pin" type="button" aria-pressed="false" data-i18n-title="dashboardSidebarPin" data-i18n-aria-label="dashboardSidebarPin" title="Pin sidebar" aria-label="Pin sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-4 1-4 4 2 6-2 2-4-6-4 4-2-2 4-4-6-4 2-2 6 2 4-4 1-4Z"/></svg></button>
+  </div>
+  <nav class="dashboard-sidebar-nav" data-i18n-aria-label="dashboardNavigationLabel" aria-label="Dashboard navigation">
+    <a class="dashboard-nav-item is-active" href="#" data-dashboard-nav data-i18n-title="dashboardNavHome" data-i18n-aria-label="dashboardNavHome" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-8h6v8"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavHome">Trang chủ</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavGrammarCourses" data-i18n-aria-label="dashboardNavGrammarCourses" title="Grammar courses" aria-label="Grammar courses"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H5a2 2 0 0 0-2 2"/><path d="M8 7h8M8 11h6"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavGrammarCourses">Khóa ngữ pháp</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavGrammarPractice" data-i18n-aria-label="dashboardNavGrammarPractice" title="Grammar practice" aria-label="Grammar practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 2.5 2.5L16 9M8 6h8"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavGrammarPractice">Luyện ngữ pháp</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavListening" data-i18n-aria-label="dashboardNavListening" title="Listening" aria-label="Listening"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14v-3a9 9 0 0 1 18 0v3"/><path d="M3 14h4v7H5a2 2 0 0 1-2-2v-5Zm18 0h-4v7h2a2 2 0 0 0 2-2v-5Z"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavListening">Luyện nghe</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavLRPractice" data-i18n-aria-label="dashboardNavLRPractice" title="LR practice tests" aria-label="LR practice tests"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2m-3 7 1 1 2-2m-3 7 1 1 2-2"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavLRPractice">Luyện đề LR</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavSWPractice" data-i18n-aria-label="dashboardNavSWPractice" title="SW practice tests" aria-label="SW practice tests"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavSWPractice">Luyện đề SW</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavWriting" data-i18n-aria-label="dashboardNavWriting" title="Writing" aria-label="Writing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavWriting">Luyện viết</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavShadowing" data-i18n-aria-label="dashboardNavShadowing" title="Shadowing practice" aria-label="Shadowing practice"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3m-4 0h8"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavShadowing">Luyện nói Shadowing</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavVocabulary" data-i18n-aria-label="dashboardNavVocabulary" title="Vocabulary" aria-label="Vocabulary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8m-8 4h6"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavVocabulary">Từ vựng</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavReading" data-i18n-aria-label="dashboardNavReading" title="Reading" aria-label="Reading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H5a2 2 0 0 0-2 2"/><path d="M8 8h2m2 0h2m2 0h1M8 12h8"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavReading">Luyện đọc</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavNews" data-i18n-aria-label="dashboardNavNews" title="News feed" aria-label="News feed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8v4H8zM8 15h3m2 0h3m-8 2h8"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavNews">Bảng tin</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavMessages" data-i18n-aria-label="dashboardNavMessages" title="Messages" aria-label="Messages"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavMessages">Tin nhắn</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavAffiliate" data-i18n-aria-label="dashboardNavAffiliate" title="Affiliate" aria-label="Affiliate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavAffiliate">Affiliate</span></a>
+    <a class="dashboard-nav-item" href="#" data-dashboard-nav data-i18n-title="dashboardNavTeachers" data-i18n-aria-label="dashboardNavTeachers" title="For teachers" aria-label="For teachers"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 10-10-5L2 10l10 5 10-5ZM6 12v5c3.5 3 8.5 3 12 0v-5M22 10v6"/></svg><span class="dashboard-sidebar-label" data-i18n="dashboardNavTeachers">Dành cho giáo viên</span></a>
+  </nav>
+  <div class="dashboard-sidebar-footer">
+    <a href="#" class="menu-item item-free" data-i18n-aria-label="freePlan" data-i18n-title="freePlan" aria-label="Free" title="Free"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.5 3.6 10.3 8 11 4.4-.7 8-5.5 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg><span class="dashboard-sidebar-label" data-i18n="freePlan">Free</span></a>
+    <button id="dashboardSidebarThemeToggle" class="dashboard-sidebar-theme-toggle" type="button" aria-label="Switch theme" title="Switch theme"><svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg><svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg><span class="dashboard-sidebar-label" data-i18n="appearance">Appearance</span></button>
     <div class="profile-menu-wrap">
       <button id="profileMenuToggle" class="profile-avatar-button" type="button" data-i18n-aria-label="profileMenuLabel" data-i18n-title="profileMenuLabel" aria-label="Profile menu" title="Profile menu" aria-haspopup="true" aria-expanded="false">
         <span id="profileMenuAvatar" class="profile-avatar profile-avatar-guest profile-menu-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+        <span class="dashboard-sidebar-profile-copy"><strong id="dashboardSidebarProfileName" data-i18n="profileGuest">You</strong><span id="dashboardSidebarProfileEmail" data-i18n="profileLocal">Data stays on this device</span></span>
       </button>
       <div id="profileMenu" class="profile-menu" hidden>
         <div id="profileMenuIdentity" class="profile-menu-identity"></div>
@@ -35,8 +54,8 @@
       </div>
     </div>
   </div>
-  <input id="importFile" type="file" accept="application/json,.json" hidden>
-</header>
+</aside>
+<input id="importFile" type="file" accept="application/json,.json" hidden>
 <main>
   <aside id="profileSidebar" class="profile-sidebar" data-i18n-aria-label="profileSidebarLabel" aria-label="Local profile">
     <section class="profile-card">
