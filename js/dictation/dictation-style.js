@@ -73,7 +73,6 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore { background: #171717; color: #a1a1aa; }
 #keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore.te-dict-restore-left { border-color: #27272a; }
 #keepit-exact-overlay.theme-dark.te-dictation-active > .te-dict-column-restore.te-dict-restore-right { border-color: #27272a; }
-#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-left-section { display: none !important; }
 #keepit-exact-overlay.te-dictation-active.te-dict-column-right-hidden > #te-dictation-notes { display: none !important; }
 #keepit-exact-overlay.te-dictation-active .te-dict-column-toggle {
   display: inline-flex;
@@ -431,6 +430,17 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark #te-dictation-notes { background: #121212; color: #f3f4f6; }
 #keepit-exact-overlay.te-dictation-active.te-ambient-on #te-dictation-center,
 #keepit-exact-overlay.te-dictation-active.te-ambient-on #te-dictation-notes { background-color: transparent; }
+#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-left-section {
+  grid-area: 1 / 1 / 2 / 4;
+  display: flex !important;
+  z-index: 1;
+  pointer-events: none;
+}
+#keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden #te-dictation-center {
+  z-index: 3;
+  background-color: #fff !important;
+}
+#keepit-exact-overlay.theme-dark.te-dictation-active.te-dict-column-left-hidden #te-dictation-center { background-color: #121212 !important; }
 #keepit-exact-overlay.theme-dark #te-dictation-center { border-color: #27272a; }
 #keepit-exact-overlay.theme-light .te-dict-panel-head { background: #f9fafb; }
 #keepit-exact-overlay.theme-dark .te-dict-panel-head { background: #16161c; }
