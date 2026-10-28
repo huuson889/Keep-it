@@ -753,7 +753,7 @@
       const variantList = document.createElement("div");
       variantList.className = "te-dict-stats-variant-list";
       const variants = Object.values(item.variants || {}).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
-      variants.slice(0, 2).forEach((variant) => variantList.appendChild(variantChip(variant)));
+      variants.forEach((variant, index) => variantList.appendChild(variantChip(variant, index >= 2)));
       const extras = variants.slice(2);
       let details = null;
       if (extras.length) {
@@ -767,15 +767,13 @@
         less.className = "less-label";
         less.appendChild(statsChevronIcon(true));
         summary.append(more, less);
-        const updateToggleLabel = () => {
+        const updateToggleState = () => {
+          variantsWrap.classList.toggle("expanded", details.open);
           summary.setAttribute("aria-label", details.open ? tr("dictationWrongStatsCollapse") : `${extras.length} ${tr("dictationWrongStatsMore")}`);
         };
-        updateToggleLabel();
-        details.addEventListener("toggle", updateToggleLabel);
-        const extraList = document.createElement("div");
-        extraList.className = "te-dict-stats-extra-list";
-        extras.forEach((variant) => extraList.appendChild(variantChip(variant, true)));
-        details.append(summary, extraList);
+        updateToggleState();
+        details.addEventListener("toggle", updateToggleState);
+        details.appendChild(summary);
       }
       variantsWrap.append(variantsLabel, variantList);
       if (details) variantsWrap.appendChild(details);
