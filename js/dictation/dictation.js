@@ -414,8 +414,10 @@
     sentenceArea.setAttribute("aria-label", tr("dictationSentences"));
     sentenceArea.innerHTML = `
       <div id="te-dict-sentence-head">
-        <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
-        <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
+        <div class="te-dict-sentence-title-group">
+          <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
+          <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
+        </div>
         <span class="te-dict-counter" id="te-dict-counter" aria-live="polite">0/0</span>
       </div>
       <div id="te-dict-sentences" role="list"></div>`;
