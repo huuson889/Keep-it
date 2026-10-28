@@ -166,7 +166,9 @@
             <p data-dict-label="dictationAudioHelp"></p>
           </div>
           <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
-          <label class="te-dict-hints-toggle"><input type="checkbox" id="te-dict-show-hints" checked><span data-dict-label="dictationShowHints"></span></label>
+          <button class="te-dict-hints-toggle active" id="te-dict-show-hints" type="button" aria-pressed="true" aria-label="" title="">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb preview-icon" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          </button>
         </div>
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
@@ -325,6 +327,8 @@
     ui.statsSearch.placeholder = tr("dictationWrongStatsSearch");
     ui.note.placeholder = tr("dictationNotesPlaceholder");
     ui.save.textContent = tr("dictationSaveNote");
+    ui.showHints.setAttribute("aria-label", tr("dictationShowHints"));
+    ui.showHints.title = tr("dictationShowHints");
     const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 4);
     ui.hint.replaceChildren(...hintTexts.map((text) => {
       const item = document.createElement("span");
@@ -354,7 +358,7 @@
     ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1); });
     ui.btnReplay.addEventListener("click", () => { playSentence(current); refocus(); });
     ui.audioBtn.addEventListener("click", () => { playSentence(current); refocus(); });
-    ui.showHints.addEventListener("change", onShowHintsChange);
+    ui.showHints.addEventListener("click", onShowHintsToggle);
     ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
     ui.typeControl.addEventListener("click", () => ui?.input.focus());
@@ -1687,9 +1691,9 @@
 
   function shouldShowHints(kind, answer) {
     if (!hintResult || hintResult.current !== current || hintResult.kind !== kind || hintResult.answer !== answer) {
-      hintResult = { current, kind, answer, revealed: !!ui?.showHints?.checked };
+      hintResult = { current, kind, answer, revealed: hintsEnabled() };
     }
-    return !!ui?.showHints?.checked || hintResult.revealed;
+    return hintsEnabled() || hintResult.revealed;
   }
 
   function renderHintResult(result) {
@@ -1699,16 +1703,26 @@
   }
 
   function revealPendingHint() {
-    if (!ui || ui.showHints.checked || !hintResult || hintResult.revealed
+    if (!ui || hintsEnabled() || !hintResult || hintResult.revealed
       || hintResult.current !== current || hintResult.answer !== ui.input.value) return false;
     hintResult.revealed = true;
     renderHintResult(hintResult);
     return true;
   }
 
-  function onShowHintsChange() {
-    if (!ui || !hintResult || hintResult.current !== current || hintResult.answer !== ui.input.value) return;
-    hintResult.revealed = ui.showHints.checked;
+  function hintsEnabled() {
+    return ui?.showHints?.getAttribute("aria-pressed") === "true";
+  }
+
+  function onShowHintsToggle(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!ui) return;
+    const enabled = !hintsEnabled();
+    ui.showHints.setAttribute("aria-pressed", String(enabled));
+    ui.showHints.classList.toggle("active", enabled);
+    if (!hintResult || hintResult.current !== current || hintResult.answer !== ui.input.value) return;
+    hintResult.revealed = enabled;
     if (!ui.error.hidden) renderHintResult(hintResult);
   }
 

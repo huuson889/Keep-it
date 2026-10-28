@@ -400,9 +400,29 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-video-toggle svg { width: 18px; height: 18px; }
 #keepit-exact-overlay.theme-dark .te-dict-video-toggle { border-color: #3f3f46; color: #d4d4d8; }
 #keepit-exact-overlay.theme-dark .te-dict-video-toggle:hover { border-color: #a78bfa; color: #c4b5fd; }
-#keepit-exact-overlay .te-dict-hints-toggle { display: inline-flex; flex: none; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; cursor: pointer; }
-#keepit-exact-overlay .te-dict-hints-toggle input { accent-color: #f59e0b; }
-#keepit-exact-overlay.theme-dark .te-dict-hints-toggle { color: #a1a1aa; }
+#keepit-exact-overlay .te-dict-hints-toggle {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+}
+#keepit-exact-overlay .te-dict-hints-toggle svg { width: 18px; height: 18px; }
+#keepit-exact-overlay .te-dict-hints-toggle.active { border-color: #4b5563; background: #4b5563; color: #fff; }
+#keepit-exact-overlay .te-dict-hints-toggle:not(.active):hover { border-color: #8b5cf6; background: rgba(139, 92, 246, .1); }
+#keepit-exact-overlay .te-dict-hints-toggle.active:hover { border-color: #374151; background: #374151; color: #fff; }
+#keepit-exact-overlay .te-dict-hints-toggle:active { transform: scale(.94); }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle { border-color: #3f3f46; color: #71717a; }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle.active { border-color: #52525b; background: #52525b; color: #fff; }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle:not(.active):hover { border-color: #a78bfa; }
+#keepit-exact-overlay.theme-dark .te-dict-hints-toggle.active:hover { border-color: #3f3f46; background: #3f3f46; color: #fff; }
 #keepit-exact-overlay .te-dict-work { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 12px; }
 #keepit-exact-overlay .te-dict-answer-stack { position: relative; display: flex; flex-direction: column; gap: 12px; }
 #keepit-exact-overlay .te-dict-work.te-dict-has-error .te-dict-answer-stack > .te-dict-error { position: absolute; top: calc(100% + 12px); left: 0; right: 0; z-index: 1; }
