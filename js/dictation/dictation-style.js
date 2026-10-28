@@ -68,9 +68,17 @@ globalThis.LHN_DICTATION_CSS = `
   color: #18181b;
   box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
   font: 700 18px/1 system-ui, sans-serif;
-  pointer-events: none;
+  pointer-events: auto;
 }
-#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-right:not(.is-dragging):hover::after { content: "›"; }
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-left:not(.is-dragging):hover::after {
+  left: calc(50% - 4px);
+  transform: translate(-100%, -50%);
+}
+#keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-right:not(.is-dragging):hover::after {
+  left: calc(50% + 4px);
+  transform: translate(0, -50%);
+  content: "›";
+}
 #keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-left { grid-column: 2; }
 #keepit-exact-overlay.te-dictation-active > .te-dict-column-splitter.te-dict-splitter-right { grid-column: 4; }
 #keepit-exact-overlay.te-dictation-active.te-dict-column-left-hidden > .te-dict-splitter-left,
