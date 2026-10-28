@@ -508,13 +508,14 @@
 
   function saveNotesNow(showSaved) {
     clearTimeout(saveTimer);
-    if (!active || !solved.has(current) || !ui) return;
+    if (!active || !solved.has(current) || !ui) return Promise.resolve(false);
     notes[String(current)] = { ...(notes[String(current)] || {}), note: ui.note.value };
-    void saveRecord().then(() => {
+    return saveRecord().then(() => {
       if (showSaved && ui?.saved) {
         ui.saved.textContent = tr("dictationSaved");
         setTimeout(() => { if (ui?.saved) ui.saved.textContent = ""; }, 1600);
       }
+      return true;
     });
   }
 
@@ -1670,6 +1671,11 @@
   function onNoteKeyDown(event) {
     if (event.key === "Escape") return;
     event.stopPropagation();
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      const noteField = event.currentTarget || ui?.note;
+      void saveNotesNow(true).then((saved) => { if (saved) noteField?.blur(); });
+    }
   }
 
   function resetAnswer() {
