@@ -29,8 +29,8 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay.te-dictation-active .te-video-slot {
   flex: 0 0 auto;
-  width: auto;
-  margin-inline: 12px;
+  width: 100%;
+  margin-inline: 0;
   height: auto;
   max-height: 42%;
   aspect-ratio: var(--te-video-aspect, 16 / 9);
@@ -51,10 +51,11 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.te-dictation-active.te-dict-video-compact .te-video-slot {
   aspect-ratio: auto !important;
   max-height: none !important;
-  border: 1px solid rgba(168, 85, 247, .35);
-  border-radius: 18px;
-  background: #151c2c;
-  box-shadow: 0 16px 36px rgba(124, 58, 237, .25);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 #keepit-exact-overlay.te-dictation-active.te-dict-video-compact .te-video-slot video {
   opacity: 0 !important;
@@ -62,18 +63,20 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay .te-dict-mini-audio {
   position: absolute;
-  inset: 0;
+  inset: 0 12px;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 14px;
-  width: 100%;
+  width: auto;
   height: 100%;
   padding: 0 20px;
   overflow: hidden;
-  border-radius: inherit;
+  border: 1px solid rgba(168, 85, 247, .35);
+  border-radius: 18px;
   background: linear-gradient(135deg, rgba(21, 28, 44, .97), rgba(15, 23, 42, .99));
   color: #f8fafc;
+  box-shadow: 0 16px 36px rgba(124, 58, 237, .25);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
