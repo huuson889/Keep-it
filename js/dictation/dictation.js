@@ -516,8 +516,11 @@
     showRightColumn.className = "te-dict-column-restore te-dict-restore-right";
     showRightColumn.type = "button";
     showRightColumn.innerHTML = makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 4v16m-5-11-3 3 3 3"/>');
+    const videoMask = document.createElement("div");
+    videoMask.className = "te-dict-video-mask";
+    videoMask.setAttribute("aria-hidden", "true");
 
-    root.append(center, notesPanel, leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn);
+    root.append(center, notesPanel, leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn, videoMask);
 
     const tools = document.createElement("div");
     tools.className = "te-dict-toolbar-tools";
@@ -546,7 +549,7 @@
       originalLeftAriaHidden: left.getAttribute("aria-hidden"),
       originalVideoSlotHeight: { value: videoSlot.style.getPropertyValue("height"), priority: videoSlot.style.getPropertyPriority("height") },
       primaryGroup, tools, sentenceArea, center, notesPanel,
-      leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn,
+      leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn, videoMask,
       hideLeftColumn: sentenceArea.querySelector("#te-dict-hide-sentences"),
       hideRightColumn: notesPanel.querySelector("#te-dict-hide-notes"),
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
@@ -2221,6 +2224,7 @@
     ui.rightColumnSplitter.remove();
     ui.showLeftColumn.remove();
     ui.showRightColumn.remove();
+    ui.videoMask.remove();
     ui.tools.remove();
     ui.primaryGroup.classList.remove("te-dict-primary-group");
     ui = null;
