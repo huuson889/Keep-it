@@ -218,6 +218,7 @@
                   <p data-dict-label="dictationWrongStatsSummary"></p>
                 </div>
               </div>
+              <span class="te-dict-stats-count" id="te-dict-stats-count" aria-live="polite"></span>
             </header>
             <div class="te-dict-stats-filter-bar" aria-label="${tr("dictationWrongStatsTitle")}">
               <label class="te-dict-stats-search">
@@ -300,6 +301,7 @@
       ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
       statsSearch: notesPanel.querySelector("#te-dict-stats-search"),
+      statsCount: notesPanel.querySelector("#te-dict-stats-count"),
       statsScroll: notesPanel.querySelector(".te-dict-stats-scroll"),
       statsFilters: [...notesPanel.querySelectorAll(".te-dict-stats-filter")],
       note: notesPanel.querySelector("#te-dict-note"),
@@ -624,10 +626,31 @@
     return streak;
   }
 
+  function statsChevronIcon(pointsUp) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", pointsUp ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6");
+    svg.appendChild(path);
+    return svg;
+  }
+
   function renderWrongWordStats() {
     if (!ui?.statsScroll) return;
     const stats = normalizeWrongWordStats(wrongWordStats);
     const allItems = Object.entries(stats.words).map(([key, item]) => ({ key, ...item, streak: wrongWordStreak(item) }));
+    if (ui.statsCount) {
+      const spacing = language() === "ko" ? "" : " ";
+      ui.statsCount.textContent = `${allItems.length}${spacing}${tr("dictationWrongStatsWord")}`;
+    }
     allItems.sort((a, b) => {
       const aWrong = a.lastResult === "wrong", bWrong = b.lastResult === "wrong";
       if (aWrong !== bWrong) return aWrong ? -1 : 1;
@@ -739,11 +762,16 @@
         const summary = document.createElement("summary");
         const more = document.createElement("span");
         more.className = "more-label";
-        more.append(document.createTextNode(`${extras.length} `), label("dictationWrongStatsMore"), document.createTextNode(" ▼"));
+        more.append(document.createTextNode(`+${extras.length}`), statsChevronIcon(false));
         const less = document.createElement("span");
         less.className = "less-label";
-        less.textContent = `${tr("dictationWrongStatsCollapse")} ▲`;
+        less.appendChild(statsChevronIcon(true));
         summary.append(more, less);
+        const updateToggleLabel = () => {
+          summary.setAttribute("aria-label", details.open ? tr("dictationWrongStatsCollapse") : `${extras.length} ${tr("dictationWrongStatsMore")}`);
+        };
+        updateToggleLabel();
+        details.addEventListener("toggle", updateToggleLabel);
         const extraList = document.createElement("div");
         extraList.className = "te-dict-stats-extra-list";
         extras.forEach((variant) => extraList.appendChild(variantChip(variant, true)));
