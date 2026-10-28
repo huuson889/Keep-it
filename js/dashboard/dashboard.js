@@ -96,15 +96,6 @@ function syncDashboardTheme() {
   document.documentElement.classList.toggle("dark", dark);
   const state = $("profileAppearanceState");
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
-  const sidebarThemeButton = $("dashboardSidebarThemeToggle");
-  if (sidebarThemeButton) {
-    const switchLabel = t(dark ? "sidebarSwitchToLight" : "sidebarSwitchToDark");
-    sidebarThemeButton.title = switchLabel;
-    sidebarThemeButton.setAttribute("aria-label", switchLabel);
-    sidebarThemeButton.setAttribute("aria-pressed", String(dark));
-    const modeLabel = sidebarThemeButton.querySelector(".dashboard-sidebar-label");
-    if (modeLabel) modeLabel.textContent = t(dark ? "darkMode" : "lightMode");
-  }
 }
 function showDashboardSettingsPanel(name) {
   document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === name; panel.hidden = !active; panel.classList.toggle("is-active", active); });
@@ -365,9 +356,6 @@ async function restoreAddonSettings() {
 function renderProfileSidebar() {
   const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
-  const sidebarProfileName = $("dashboardSidebarProfileName"), sidebarProfileEmail = $("dashboardSidebarProfileEmail");
-  if (sidebarProfileName) sidebarProfileName.textContent = demoProfile ? (demoProfile.displayName || "Huson") : t("profileGuest");
-  if (sidebarProfileEmail) sidebarProfileEmail.textContent = demoProfile ? (demoProfile.email || `@${profileUsername()}`) : t("profileLocal");
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
   const syncTooltip = escapeHtml(t(demoProfile ? "profileLocal" : "profileNotSynced"));
   const syncIcon = demoProfile
@@ -2053,29 +2041,6 @@ $("deletePageBtn").addEventListener("click", async () => {
 });
 document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const page = option.closest("#exportPageMenu"), format = option.dataset.export; if (format === "json") downloadJsonExport(page ? selectedUrl : null).catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else { const items = page ? annotations.filter(a => pageKey(a) === selectedUrl) : annotations; downloadExport(format, items); } closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
 document.querySelector(".menu-item.item-free").addEventListener("click", event => event.preventDefault());
-const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin");
-let dashboardSidebarPinned = false, dashboardSidebarPointerInside = false;
-function setDashboardSidebarExpanded(expanded) {
-  dashboardSidebar.classList.toggle("sidebar-expanded", expanded);
-  dashboardSidebar.classList.toggle("sidebar-collapsed", !expanded);
-}
-function syncDashboardSidebarPinLabel() {
-  const key = dashboardSidebarPinned ? "dashboardSidebarUnpin" : "dashboardSidebarPin";
-  dashboardSidebarPin.dataset.i18nTitle = key;
-  dashboardSidebarPin.dataset.i18nAriaLabel = key;
-  dashboardSidebarPin.title = t(key);
-  dashboardSidebarPin.setAttribute("aria-label", t(key));
-  dashboardSidebarPin.setAttribute("aria-pressed", String(dashboardSidebarPinned));
-}
-dashboardSidebar.addEventListener("mouseenter", () => { dashboardSidebarPointerInside = true; if (!dashboardSidebarPinned) setDashboardSidebarExpanded(true); });
-dashboardSidebar.addEventListener("mouseleave", () => { dashboardSidebarPointerInside = false; if (!dashboardSidebarPinned) setDashboardSidebarExpanded(false); });
-dashboardSidebarPin.addEventListener("click", () => {
-  dashboardSidebarPinned = !dashboardSidebarPinned;
-  dashboardSidebar.classList.toggle("is-pinned", dashboardSidebarPinned);
-  syncDashboardSidebarPinLabel();
-  setDashboardSidebarExpanded(dashboardSidebarPinned || dashboardSidebarPointerInside);
-});
-dashboardSidebar.querySelectorAll("[data-dashboard-nav]").forEach(link => link.addEventListener("click", event => event.preventDefault()));
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
@@ -2511,15 +2476,13 @@ $("importFile").addEventListener("change", async e => {
   } catch (error) { alert(t("importFailed", { error:error.message })); }
   e.target.value = "";
 });
-async function toggleDashboardAppearance() {
+$("profileAppearanceToggle").addEventListener("click", async () => {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
   dashboardSettings = { ...dashboardSettings, sidebarTheme: wasDark ? "light" : "dark" };
   syncDashboardTheme();
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
-}
-$("profileAppearanceToggle").addEventListener("click", toggleDashboardAppearance);
-$("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardAppearance);
+});
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();
