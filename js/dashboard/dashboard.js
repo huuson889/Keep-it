@@ -96,6 +96,14 @@ function syncDashboardTheme() {
   document.documentElement.classList.toggle("dark", dark);
   const state = $("profileAppearanceState");
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
+  const sidebarThemeLabel = $("dashboardSidebarThemeText"), sidebarThemeButton = $("dashboardSidebarThemeToggle");
+  if (sidebarThemeLabel) sidebarThemeLabel.textContent = dark ? "Giao diện tối" : "Giao diện sáng";
+  if (sidebarThemeButton) {
+    const label = dark ? "Giao diện tối" : "Giao diện sáng";
+    sidebarThemeButton.setAttribute("aria-pressed", String(dark));
+    sidebarThemeButton.setAttribute("aria-label", label);
+    sidebarThemeButton.title = "Đổi giao diện Sáng / Tối";
+  }
 }
 function showDashboardSettingsPanel(name) {
   document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === name; panel.hidden = !active; panel.classList.toggle("is-active", active); });
@@ -2041,6 +2049,18 @@ $("deletePageBtn").addEventListener("click", async () => {
 });
 document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const page = option.closest("#exportPageMenu"), format = option.dataset.export; if (format === "json") downloadJsonExport(page ? selectedUrl : null).catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else { const items = page ? annotations.filter(a => pageKey(a) === selectedUrl) : annotations; downloadExport(format, items); } closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
 document.querySelector(".menu-item.item-free").addEventListener("click", event => event.preventDefault());
+const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin");
+function togglePin() {
+  const pinned = !dashboardSidebar.classList.contains("sidebar-pinned");
+  dashboardSidebar.classList.toggle("sidebar-pinned", pinned);
+  document.body.classList.toggle("dashboard-sidebar-pinned", pinned);
+  dashboardSidebarPin.setAttribute("aria-pressed", String(pinned));
+  dashboardSidebarPin.setAttribute("aria-expanded", String(pinned));
+  const label = pinned ? "Bỏ ghim thanh bên" : "Ghim thanh bên";
+  dashboardSidebarPin.title = label;
+  dashboardSidebarPin.setAttribute("aria-label", label);
+}
+dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
@@ -2483,6 +2503,7 @@ $("profileAppearanceToggle").addEventListener("click", async () => {
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 });
+$("dashboardSidebarThemeToggle").addEventListener("click", () => $("profileAppearanceToggle").click());
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();
