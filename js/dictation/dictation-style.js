@@ -48,6 +48,31 @@ globalThis.LHN_DICTATION_CSS = `
   object-fit: contain;
   transition: opacity .4s cubic-bezier(.16, 1, .3, 1);
 }
+#keepit-exact-overlay .te-dict-brand {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 24px);
+  padding: 5px 9px 5px 6px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 9px;
+  background: rgba(10, 13, 23, .72);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .24);
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+#keepit-exact-overlay.te-dictation-active:not(.te-dict-video-compact) .te-dict-brand { display: flex; }
+#keepit-exact-overlay .te-dict-brand img { display: block; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 5px; object-fit: cover; }
+#keepit-exact-overlay .te-dict-brand-separator { opacity: .78; font-weight: 500; }
 #keepit-exact-overlay.te-dictation-active.te-dict-video-compact .te-video-slot {
   aspect-ratio: auto !important;
   max-height: none !important;

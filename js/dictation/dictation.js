@@ -120,6 +120,23 @@
       <button class="te-dict-mini-play" type="button"><span class="te-dict-mini-play-icon">${makeSvg('<path d="M8 5v14l11-7z"/>')}</span></button>`;
     videoSlot.appendChild(compactAudio);
 
+    const brand = document.createElement("div");
+    brand.className = "te-dict-brand";
+    brand.setAttribute("role", "img");
+    brand.setAttribute("aria-label", "Keepit");
+    const brandIcon = document.createElement("img");
+    brandIcon.src = ext.runtime.getURL("assets/icons/icon.svg");
+    brandIcon.alt = "";
+    brandIcon.setAttribute("aria-hidden", "true");
+    const brandSeparator = document.createElement("span");
+    brandSeparator.className = "te-dict-brand-separator";
+    brandSeparator.textContent = "-";
+    const brandName = document.createElement("span");
+    brandName.className = "te-dict-brand-name";
+    brandName.textContent = "Keepit";
+    brand.append(brandIcon, brandSeparator, brandName);
+    videoSlot.appendChild(brand);
+
     const sentenceArea = document.createElement("section");
     sentenceArea.id = "te-dict-sentence-area";
     sentenceArea.setAttribute("aria-label", tr("dictationSentences"));
@@ -226,7 +243,7 @@
     primaryGroup.classList.add("te-dict-primary-group");
 
     ui = {
-      root, left, videoSlot, compactAudio, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
+      root, left, videoSlot, compactAudio, brand, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
       videoCompactToggle: center.querySelector("#te-dict-video-toggle"),
       miniThumb: compactAudio.querySelector(".te-dict-mini-thumb"),
       miniTitle: compactAudio.querySelector(".te-dict-mini-title"),
@@ -342,7 +359,7 @@
   function updateCompactAudioInfo() {
     if (!ui) return;
     const title = (document.title || "").replace(/\s*-\s*YouTube$/i, "").trim();
-    ui.miniTitle.textContent = title || tr("dictationTitle");
+    ui.miniTitle.textContent = `Keepit - ${title || tr("dictationTitle")}`;
     ui.miniSource.textContent = tr("dictationAudioSource");
     const id = String(A?.state?.videoId || "");
     if (/^[A-Za-z0-9_-]+$/.test(id)) {
@@ -1519,6 +1536,7 @@
     if (originalVideoHeight.value) ui.videoSlot.style.setProperty("height", originalVideoHeight.value, originalVideoHeight.priority);
     else ui.videoSlot.style.removeProperty("height");
     ui.compactAudio.remove();
+    ui.brand.remove();
     for (const [button, original] of ui.originalButtonState) {
       button.disabled = original.disabled;
       if (original.aria === null) button.removeAttribute("aria-disabled");
