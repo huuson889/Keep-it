@@ -26,6 +26,7 @@
   let rafId = 0;
   let repeatLeft = 0;
   let repeatCount = 3;
+  let hintResult = null;
   let savedRate = null;
   let savedLoop = null;
   let audioCtx = null;
@@ -165,7 +166,7 @@
             <p data-dict-label="dictationAudioHelp"></p>
           </div>
           <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
-          <label class="te-dict-auto"><input type="checkbox" id="te-dict-auto" checked><span data-dict-label="dictationAutoPlay"></span></label>
+          <label class="te-dict-hints-toggle"><input type="checkbox" id="te-dict-show-hints" checked><span data-dict-label="dictationShowHints"></span></label>
         </div>
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
@@ -290,7 +291,7 @@
       translation: center.querySelector("#te-dict-translation"),
       check: center.querySelector("#te-dict-check"),
       audioBtn: center.querySelector("#te-dict-audio-btn"),
-      auto: center.querySelector("#te-dict-auto"),
+      showHints: center.querySelector("#te-dict-show-hints"),
       repeatBtns: [...center.querySelectorAll(".te-dict-repeat-btn")],
       btnPrev: center.querySelector("#te-dict-btn-prev"),
       btnReplay: center.querySelector("#te-dict-btn-replay"),
@@ -353,6 +354,7 @@
     ui.btnNext.addEventListener("click", () => { if (solved.has(current) && current < sentenceCues.length - 1) selectSentence(current + 1); });
     ui.btnReplay.addEventListener("click", () => { playSentence(current); refocus(); });
     ui.audioBtn.addEventListener("click", () => { playSentence(current); refocus(); });
+    ui.showHints.addEventListener("change", onShowHintsChange);
     ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
     ui.typeControl.addEventListener("click", () => ui?.input.focus());
@@ -858,6 +860,7 @@
   function onAnswerInput() {
     if (!ui) return;
     escapeFilledAnswer = false;
+    hintResult = null;
     clearInputWrongMarks();
     const wasChecked = checkedCurrent;
     checkedCurrent = false;
@@ -975,6 +978,7 @@
   function renderCurrent() {
     if (!ui || !active) return;
     checkedCurrent = false;
+    hintResult = null;
     while (current < listStart && listStart > 0) renderPrevious();
     while (current >= listEnd && listEnd < sentenceCues.length) renderMore();
     updateCounter();
@@ -1112,7 +1116,8 @@
     setErrorPanelSuccess(false);
     const words = getTranscriptWordTokens(reference);
     const enteredCount = globalThis.LHN_DICTATION_SCORE.tokenize(answer).length;
-    const visibleCount = Math.min(words.length, enteredCount + 1);
+    const showHint = shouldShowHints("prefix", answer);
+    const visibleCount = Math.min(words.length, enteredCount + (showHint ? 1 : 0));
     ui.errorWords.replaceChildren();
     for (let index = 0; index < visibleCount; index++) {
       const group = document.createElement("span");
@@ -1133,6 +1138,7 @@
     setErrorPanelSuccess(false);
     const cue = sentenceCues[current];
     const answer = ui.input.value;
+    const showHints = shouldShowHints("error", answer);
     const words = getTranscriptWordTokens(cue?.en || "");
     const operations = globalThis.LHN_DICTATION_SCORE.diff(cue?.en || "", answer);
     const displayOperations = positionalOps(cue?.en, answer);
@@ -1160,8 +1166,14 @@
           const group = document.createElement("span");
           group.className = "te-dict-wg";
           group.appendChild(chip("te-dict-w bad", operation.typed));
-          group.appendChild(chip("te-dict-w fix", `→ ${words[expectedIndex]?.display || operation.expected}`));
+          if (showHints) {
+            group.appendChild(chip("te-dict-w fix", `→ ${words[expectedIndex]?.display || operation.expected}`));
+          }
           ui.errorWords.appendChild(group);
+          if (!showHints) {
+            const expected = words[expectedIndex] || { norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "" };
+            appendMissingMasks([expected]);
+          }
           expectedIndex++;
           appendMissingMasks(words.slice(expectedIndex));
           break;
@@ -1639,6 +1651,11 @@
       handleAnswerEscape();
       return;
     }
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229 && revealPendingHint()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     if (ui?.error) ui.error.hidden = true;
     if (event.key === "ArrowUp" || event.key === "ArrowDown") return;
     event.stopPropagation();
@@ -1668,6 +1685,33 @@
     }
   }
 
+  function shouldShowHints(kind, answer) {
+    if (!hintResult || hintResult.current !== current || hintResult.kind !== kind || hintResult.answer !== answer) {
+      hintResult = { current, kind, answer, revealed: !!ui?.showHints?.checked };
+    }
+    return !!ui?.showHints?.checked || hintResult.revealed;
+  }
+
+  function renderHintResult(result) {
+    if (!ui || !result || result.current !== current || result.answer !== ui.input.value) return;
+    if (result.kind === "prefix") renderPrefixSuggestion(sentenceCues[current]?.en || "", result.answer);
+    else if (result.kind === "error") renderError();
+  }
+
+  function revealPendingHint() {
+    if (!ui || ui.showHints.checked || !hintResult || hintResult.revealed
+      || hintResult.current !== current || hintResult.answer !== ui.input.value) return false;
+    hintResult.revealed = true;
+    renderHintResult(hintResult);
+    return true;
+  }
+
+  function onShowHintsChange() {
+    if (!ui || !hintResult || hintResult.current !== current || hintResult.answer !== ui.input.value) return;
+    hintResult.revealed = ui.showHints.checked;
+    if (!ui.error.hidden) renderHintResult(hintResult);
+  }
+
   function onNoteKeyDown(event) {
     if (event.key === "Escape") return;
     event.stopPropagation();
@@ -1680,6 +1724,7 @@
 
   function resetAnswer() {
     if (!ui) return;
+    hintResult = null;
     escapeFilledAnswer = false;
     checkedCurrent = false;
     ui.input.value = "";
@@ -1816,6 +1861,7 @@
     restoreYouTubeScrollbar();
     flushNotes();
     active = false;
+    hintResult = null;
     panelGeneration++;
     document.removeEventListener("keydown", onGlobalKeyDown, true);
     document.removeEventListener("keyup", onGlobalKeyUp, true);
