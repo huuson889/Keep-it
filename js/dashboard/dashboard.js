@@ -2121,7 +2121,10 @@ const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarP
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = "overview", parentTopbarCompact = false, parentTopbarScrollTarget = null;
 function updateSharedTopbarContent(view) {
-  const labelKey = view === "listening" ? "ovNavListening" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
+  const fallbackKey = view === "listening" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
+  const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
+  const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
+  const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
   const inHighlightsNotes = view === "highlights-notes";
   if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
@@ -2182,7 +2185,7 @@ function mountSharedTopbarInParent(view) {
   dashboardSharedTopbar?.classList.remove("is-compact");
   parentTopbarCompact = false;
   updateSharedTopbarContent(view);
-  const host = view === "listening" ? dashboardListeningView : dashboardOverviewView?.querySelector(".ov-content");
+  const host = view === "listening" ? dashboardListeningView?.querySelector(".content") : dashboardOverviewView?.querySelector(".ov-content");
   if (host && dashboardSharedTopbar) host.prepend(dashboardSharedTopbar);
   bindParentTopbarScrollTarget();
 }

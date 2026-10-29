@@ -18,13 +18,15 @@ test("All three routes share the single Overview topbar node and change its labe
   assert.doesNotMatch(notesHtml, /class="[^"]*(?:^|\s)(?:ov-topbar|demo-topbar)(?:\s|")/);
   assert.match(dashboardJs, /host\.prepend\(dashboardSharedTopbar\)/);
   assert.match(dashboardJs, /home\.prepend\(dashboardSharedTopbar\)/);
-  for (const key of ["ovNavOverview", "ovNavListening", "ovMenuHighlightsNotes"]) assert.ok(dashboardJs.includes(key));
+  for (const key of ["ovNavOverview", "ovMenuDictation", "ovMenuHighlightsNotes"]) assert.ok(dashboardJs.includes(key));
+  assert.match(dashboardJs, /sidebarItem\?\.querySelector\("\[data-i18n\]"\)\?\.dataset\.i18n/);
+  assert.match(dashboardHtml, /data-i18n-aria-label="ovMenuDictation"/);
   assert.match(dashboardJs, /dashboardSharedTopbarLabel\.textContent\s*=\s*t\(labelKey\)/);
   assert.match(dashboardJs, /const next = dashboardSharedTopbar\.getBoundingClientRect\(\)\.top <= 1/);
   assert.match(notesJs, /getBoundingClientRect\(\)\.top<=1/);
   assert.doesNotMatch(dashboardJs, /classList\.toggle\("demo-topbar"/);
   assert.match(dashboardJs, /findSharedTopbarScrollTarget\(dashboardSharedTopbar\)/);
-  assert.match(dashboardJs, /view === "listening" \? dashboardListeningView : dashboardOverviewView\?\.querySelector\("\.ov-content"\)/);
+  assert.match(dashboardJs, /view === "listening" \? dashboardListeningView\?\.querySelector\("\.content"\) : dashboardOverviewView\?\.querySelector\("\.ov-content"\)/);
   assert.match(notesJs, /bindSharedTopbarScrollTarget\(\)/);
 });
 
