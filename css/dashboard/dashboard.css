@@ -1457,8 +1457,7 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .nav-label { display:none; max-width:0; overflow:hidden; opacity:0; transition:opacity .15s ease,max-width .22s ease; white-space:nowrap; }
 #dashboardSidebar:hover .nav-label { display:inline-block; max-width:150px; opacity:1; }
 #dashboardSidebar:hover .dashboard-reference-brand-copy { display:flex; }
-#dashboardSidebar .dashboard-reference-nav { display:flex; min-height:0; flex:1 1 auto; flex-direction:column; gap:4px; overflow-x:hidden; overflow-y:auto; padding:8px; scrollbar-width:none; }
-#dashboardSidebar .dashboard-reference-nav::-webkit-scrollbar { display:none; }
+#dashboardSidebar .dashboard-reference-nav { display:flex; min-height:0; flex:1 1 auto; flex-direction:column; gap:4px; overflow-x:hidden; overflow-y:auto; padding:8px; }
 #dashboardSidebar .reference-nav-item { display:flex; width:100%; height:40px; min-height:40px; flex:0 0 40px; align-items:center; gap:12px; overflow:hidden; padding:0 10px; border-radius:12px; color:#475569; text-decoration:none; white-space:nowrap; transition:color .15s ease,background-color .15s ease; }
 #dashboardSidebar .reference-nav-item:hover { background:#f1f5f9; color:#0f172a; }
 #dashboardSidebar .reference-nav-item.is-active { background:#eff6ff; color:#2563eb; font-weight:500; }
@@ -1618,3 +1617,30 @@ body.dashboard-sidebar-pinned > #dashboardGrammarPracticeView { margin-left:0; }
 #dashboardLRPracticeView[hidden] { display:none!important; }
 body.dashboard-sidebar-pinned > #dashboardLRPracticeView { margin-left:0!important; }
 #dashboardLRPracticeFrame { display:block; width:100%; height:100%; border:0; background:#f5f7fb; }
+
+/* Dashboard scrollbars: 3px on Chromium (both axes), thin on engines without pixel sizing. */
+:root { --lhn-scrollbar-thumb:#cbd5e1; }
+html.dark { --lhn-scrollbar-thumb:#475569; }
+html, body, body * {
+  scrollbar-width:auto!important;
+  scrollbar-color:var(--lhn-scrollbar-thumb) transparent!important;
+}
+/* Firefox only exposes auto/thin; use its narrowest supported size. */
+@-moz-document url-prefix() {
+  html, body, body * { scrollbar-width:thin!important; }
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+body *::-webkit-scrollbar {
+  width:var(--lhn-scrollbar-width,3px)!important;
+  height:var(--lhn-scrollbar-width,3px)!important;
+}
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+body *::-webkit-scrollbar-track { background:transparent!important; }
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+body *::-webkit-scrollbar-thumb {
+  border-radius:999px!important;
+  background:var(--lhn-scrollbar-thumb)!important;
+}

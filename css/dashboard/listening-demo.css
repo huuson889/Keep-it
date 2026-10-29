@@ -99,8 +99,7 @@
 .listen-demo-root .section-head p{margin:4px 0 0;color:#8a91a5;font-size:13px}
 .listen-demo-root .count-badge{padding:5px 8px;border-radius:12px;background:#f0edff;color:#6d5fd1;font-size:12px;font-weight:800;white-space:nowrap}
 .listen-demo-root .library-tools{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:11px}
-.listen-demo-root .filters{display:flex;align-items:center;gap:4px;overflow:auto;padding:3px;border-radius:10px;background:#f0eff7;scrollbar-width:none}
-.listen-demo-root .filters::-webkit-scrollbar{display:none}
+.listen-demo-root .filters{display:flex;align-items:center;gap:4px;overflow:auto;padding:3px;border-radius:10px;background:#f0eff7;scrollbar-width:auto}
 .listen-demo-root .filter{display:inline-flex;align-items:center;gap:5px;min-height:27px;padding:0 9px;border:0;border-radius:7px;background:transparent;color:#848ba0;font-size:12px;font-weight:700;white-space:nowrap;transition:all .15s}
 .listen-demo-root .filter .num{font-size:11px;opacity:.75}
 .listen-demo-root .filter.active{background:#fff;color:#6454d0;box-shadow:0 1px 4px #33305b17}
@@ -274,3 +273,120 @@
 #dashboardListeningView .listen-hero-row>.hero,#dashboardListeningView .listen-hero-row>.continue-card{min-width:0;margin:0}
 @media(max-width:1050px){#dashboardListeningView .listen-hero-row>.continue-card{grid-template-columns:minmax(0,1fr) 145px;gap:12px;padding:15px}}
 @media(max-width:850px){#dashboardListeningView .listen-hero-row{grid-template-columns:1fr}}
+
+/* Dark palette for the actual Listening demo markup, aligned with Dashboard Overview. */
+html.dark #dashboardListeningView.dashboard-listening-view,
+html.dark #dashboardListeningView .listen-demo-root {
+  color-scheme:dark!important;
+  background:#0b1120!important;
+  color:#d7deeb!important;
+}
+html.dark #dashboardListeningView .topbar,
+html.dark #dashboardListeningView .search-panel,
+html.dark #dashboardListeningView .session-card,
+html.dark #dashboardListeningView .panel {
+  border-color:#2b3a52!important;
+  background:#111a2b!important;
+  box-shadow:0 9px 25px rgba(0,0,0,.2)!important;
+}
+html.dark #dashboardListeningView .topbar { box-shadow:0 4px 14px rgba(0,0,0,.18)!important; }
+html.dark #dashboardListeningView .hero {
+  border-color:#413e6b!important;
+  background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)!important;
+  box-shadow:0 13px 30px rgba(0,0,0,.28)!important;
+}
+html.dark #dashboardListeningView .continue-card {
+  border-color:#413e6b!important;
+  background:linear-gradient(115deg,#111a2b 0%,#111a2b 65%,#191a32 100%)!important;
+  box-shadow:0 9px 25px rgba(0,0,0,.2)!important;
+}
+html.dark #dashboardListeningView .continue-card:after { background:#252443!important; }
+html.dark #dashboardListeningView .search-row,
+html.dark #dashboardListeningView .mini-stat,
+html.dark #dashboardListeningView .filters,
+html.dark #dashboardListeningView .mistake-filter,
+html.dark #dashboardListeningView .key-hint,
+html.dark #dashboardListeningView .engine-link,
+html.dark #dashboardListeningView .no-results {
+  border-color:#2b3a52!important;
+  background:#172338!important;
+}
+html.dark #dashboardListeningView .search-row:focus-within { border-color:#7773bf!important; }
+html.dark #dashboardListeningView .search-row input,
+html.dark #dashboardListeningView .sort-select { color:#f1f5fb!important; }
+html.dark #dashboardListeningView .search-row input::placeholder { color:#8492a8!important; }
+html.dark #dashboardListeningView .search-row>.icon,
+html.dark #dashboardListeningView .crumb strong,
+html.dark #dashboardListeningView .progress-label strong,
+html.dark #dashboardListeningView .text-btn,
+html.dark #dashboardListeningView .resume-link { color:#b8b7ff!important; }
+html.dark #dashboardListeningView .crumb,
+html.dark #dashboardListeningView .crumb .slash,
+html.dark #dashboardListeningView .search-help,
+html.dark #dashboardListeningView .external-label,
+html.dark #dashboardListeningView .demo-search-note,
+html.dark #dashboardListeningView .continue-copy p,
+html.dark #dashboardListeningView .section-head p,
+html.dark #dashboardListeningView .meta-pill,
+html.dark #dashboardListeningView .card-domain,
+html.dark #dashboardListeningView .progress-label,
+html.dark #dashboardListeningView .last-practiced,
+html.dark #dashboardListeningView .panel-head p,
+html.dark #dashboardListeningView .mini-label,
+html.dark #dashboardListeningView .mini-unit,
+html.dark #dashboardListeningView .mini-foot,
+html.dark #dashboardListeningView .mistake-source,
+html.dark #dashboardListeningView .pair-arrow,
+html.dark #dashboardListeningView .tiny-warning,
+html.dark #dashboardListeningView .footer { color:#a4b0c3!important; }
+html.dark #dashboardListeningView .demo-badge { border-color:#413e6b!important; background:#252443!important; color:#c4b5fd!important; }
+html.dark #dashboardListeningView .demo-dot { background:#a5a9ff!important; box-shadow:0 0 0 3px #34315d!important; }
+html.dark #dashboardListeningView .external-btn,
+html.dark #dashboardListeningView .sort-select {
+  border-color:#2b3a52!important;
+  background:#172338!important;
+}
+html.dark #dashboardListeningView .external-btn { color:#d7deeb!important; }
+html.dark #dashboardListeningView .external-btn:hover,
+html.dark #dashboardListeningView .engine-link:hover { border-color:#413e6b!important; background:#1e2b41!important; }
+html.dark #dashboardListeningView .section-eyebrow { color:#f0a8bd!important; }
+html.dark #dashboardListeningView .continue-copy h2,
+html.dark #dashboardListeningView .section-head h2,
+html.dark #dashboardListeningView .card-title,
+html.dark #dashboardListeningView .panel-head h2,
+html.dark #dashboardListeningView .mini-value,
+html.dark #dashboardListeningView .mistake-head h3,
+html.dark #dashboardListeningView .search-elsewhere h2 { color:#f1f5fb!important; }
+html.dark #dashboardListeningView .meta-pill { background:#172338!important; }
+html.dark #dashboardListeningView .count-badge,
+html.dark #dashboardListeningView .filter.active,
+html.dark #dashboardListeningView .mistake-count,
+html.dark #dashboardListeningView .stats-note {
+  background:#252443!important;
+  color:#c4b5fd!important;
+}
+html.dark #dashboardListeningView .filter { color:#a4b0c3!important; }
+html.dark #dashboardListeningView .filter.active { box-shadow:inset 0 0 0 1px #413e6b!important; }
+html.dark #dashboardListeningView .source-chip { border-color:#334155!important; background:#172338e8!important; color:#e2e8f0!important; }
+html.dark #dashboardListeningView .progress-track { background:#1e2b41!important; }
+html.dark #dashboardListeningView .resume-link { border-color:#413e6b!important; background:#252443!important; }
+html.dark #dashboardListeningView .resume-link:hover { background:#302d58!important; }
+html.dark #dashboardListeningView .complete-badge,
+html.dark #dashboardListeningView .right-word { background:#173226!important; color:#6ee7b7!important; }
+html.dark #dashboardListeningView .no-results { border-color:#394760!important; color:#a4b0c3!important; }
+html.dark #dashboardListeningView .panel-icon { background:#29264a!important; color:#c4b5fd!important; }
+html.dark #dashboardListeningView .stats-divider { background:#233149!important; }
+html.dark #dashboardListeningView .mistake-row { border-color:#233149!important; }
+html.dark #dashboardListeningView .mistake-filter button { color:#a4b0c3!important; }
+html.dark #dashboardListeningView .mistake-filter button.active { background:#252443!important; color:#c4b5fd!important; }
+html.dark #dashboardListeningView .wrong-word { background:#3b2029!important; color:#fda4af!important; }
+html.dark #dashboardListeningView .mistake-count { color:#c4b5fd!important; }
+html.dark #dashboardListeningView .all-mistakes,
+html.dark #dashboardListeningView .engine-link { border-color:#2b3a52!important; background:#172338!important; color:#d7deeb!important; }
+html.dark #dashboardListeningView .all-mistakes:hover { background:#1e2b41!important; }
+html.dark #dashboardListeningView .engine-icon { background:#3b2029!important; color:#fda4af!important; }
+html.dark #dashboardListeningView .engine-icon.web { background:#173226!important; color:#6ee7b7!important; }
+html.dark #dashboardListeningView .engine-arrow { color:#8492a8!important; }
+html.dark #dashboardListeningView .search-elsewhere { border-color:#413e6b!important; background:linear-gradient(145deg,#111a2b,#191a32)!important; }
+html.dark #dashboardListeningView .search-elsewhere p { color:#a4b0c3!important; }
+html.dark #dashboardListeningView .toast { border-color:#2b3a52!important; background:#172338!important; color:#f1f5fb!important; box-shadow:0 10px 30px rgba(0,0,0,.35)!important; }

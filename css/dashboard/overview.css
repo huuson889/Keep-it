@@ -331,7 +331,7 @@ html.dark #dashboardOverviewView .ov-note strong { color:#c4b5fd; }
 #dashboardListeningView .listen-section-head p{margin:4px 0 0;color:#8a91a5;font-size:13px}
 #dashboardListeningView .listen-count-badge{padding:5px 8px;border-radius:12px;background:#f0edff;color:#6d5fd1;font-size:12px;font-weight:800;white-space:nowrap}
 #dashboardListeningView .listen-library-tools{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:11px}
-#dashboardListeningView .listen-filters{display:flex;align-items:center;gap:4px;overflow:auto;padding:3px;border-radius:10px;background:#f0eff7;scrollbar-width:none}
+#dashboardListeningView .listen-filters{display:flex;align-items:center;gap:4px;overflow:auto;padding:3px;border-radius:10px;background:#f0eff7;scrollbar-width:thin}
 #dashboardListeningView .listen-filters button{min-height:27px;padding:0 9px;border:0;border-radius:7px;background:transparent;color:#848ba0;font-size:12px;font-weight:700;white-space:nowrap}
 #dashboardListeningView .listen-filters button:first-child{background:#fff;color:#6454d0;box-shadow:0 1px 4px #33305b17}
 #dashboardListeningView .listen-library-tools select{height:31px;max-width:132px;padding:0 9px;border:1px solid #e8e6ef;border-radius:9px;background:#fff;color:#687187;font-size:12px}

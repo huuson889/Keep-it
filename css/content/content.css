@@ -377,8 +377,7 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
 #lhn-sidebar .lhn-sidebar-search-wrap:focus-within{ border-color:#8b5cf6 !important; background:#fff !important; box-shadow:0 0 0 3px rgba(139,92,246,.16) !important; }
 #lhn-sidebar .lhn-sidebar-search{ color:#334155 !important; }
 #lhn-sidebar .lhn-sidebar-search::placeholder{ color:#94a3b8 !important; }
-#lhn-sidebar .lhn-sidebar-filters{ scrollbar-width:none; }
-#lhn-sidebar .lhn-sidebar-filters::-webkit-scrollbar{ display:none !important; }
+#lhn-sidebar .lhn-sidebar-filters{ scrollbar-width:auto; }
 #lhn-sidebar .lhn-side-filter{ border-color:rgba(226,232,240,.9) !important; border-radius:9px !important; background:#fff !important; color:#475569 !important; box-shadow:0 2px 4px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9) !important; transition:background-color 130ms ease,border-color 130ms ease,color 130ms ease,box-shadow 130ms ease !important; }
 #lhn-sidebar .lhn-side-filter:hover{ border-color:#cbd5e1 !important; background:#f8fafc !important; }
 #lhn-sidebar .lhn-side-filter.is-active{ border-color:rgba(139,92,246,.38) !important; background:#f5f3ff !important; color:#7c3aed !important; box-shadow:0 2px 4px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9) !important; }
@@ -690,3 +689,18 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
 #lhn-full-english-dictionary .lhn-dict-loading span:nth-child(2){width:210px!important;}#lhn-full-english-dictionary .lhn-dict-loading span:nth-child(3){width:130px!important;}
 @keyframes lhn-dict-pulse{to{opacity:.35!important;}}
 #lhn-full-english-dictionary .lhn-dict-back{all:initial!important;display:grid!important;flex:none!important;width:auto!important;height:auto!important;padding:4px!important;place-items:center!important;border:0!important;border-radius:4px!important;background:rgba(16,185,129,.12)!important;color:#065f46!important;cursor:pointer!important;}#lhn-full-english-dictionary .lhn-dict-back[hidden]{display:none!important;}#lhn-full-english-dictionary.lhn-dict-dark .lhn-dict-back{background:rgba(16,185,129,.2)!important;color:#6ee7b7!important;}#lhn-full-english-dictionary .lhn-dict-back svg{width:14px!important;height:14px!important;}#lhn-full-english-dictionary header{justify-content:flex-start!important;}#lhn-full-english-dictionary header>div{flex:1!important;}
+
+
+/* Keepit scrollports: 3px WebKit scrollbars, Firefox's narrowest supported size. */
+#lhn-sidebar, #lhn-sidebar .lhn-sidebar-url, #lhn-sidebar .lhn-sidebar-list, #lhn-sidebar .lhn-sidebar-filters, #lhn-sidebar-edit-dialog .lhn-edit-quote {
+  scrollbar-width:auto!important;
+  scrollbar-color:var(--lhn-sb-scrollbar,#cbd5e1) transparent!important;
+}
+@-moz-document url-prefix() {
+  #lhn-sidebar, #lhn-sidebar .lhn-sidebar-url, #lhn-sidebar .lhn-sidebar-list, #lhn-sidebar .lhn-sidebar-filters, #lhn-sidebar-edit-dialog .lhn-edit-quote { scrollbar-width:thin!important; }
+}
+[id^="lhn-"] ::-webkit-scrollbar, [id^="lhn-"]::-webkit-scrollbar, #lhn-sidebar-edit-dialog .lhn-edit-quote::-webkit-scrollbar {
+  width:var(--lhn-scrollbar-width,3px)!important;
+  height:var(--lhn-scrollbar-width,3px)!important;
+}
+[id^="lhn-"] ::-webkit-scrollbar-thumb, [id^="lhn-"]::-webkit-scrollbar-thumb { border-radius:999px; background:var(--lhn-sb-scrollbar,#cbd5e1); }
