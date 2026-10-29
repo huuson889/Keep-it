@@ -2059,12 +2059,17 @@ html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!impo
 </style>
 <style>
 /* Embedded in Dashboard: the host sidebar remains; the copied demo supplies content only. */
-html.lr-demo-embedded, html.lr-demo-embedded body {
+html.lr-demo-embedded {
   min-height:100%;
   overflow-x:hidden!important;
   overflow-y:auto!important;
 }
-html.lr-demo-embedded body { display:block!important; flex-direction:initial!important; }
+html.lr-demo-embedded body {
+  min-height:100%;
+  overflow:visible!important;
+  display:block!important;
+  flex-direction:initial!important;
+}
 html.lr-demo-embedded body > main#dashboardHomeView {
   width:100%!important;
   max-width:none!important;

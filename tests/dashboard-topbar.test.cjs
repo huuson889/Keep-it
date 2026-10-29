@@ -15,7 +15,7 @@ test("All three routes share the single Overview topbar node and change its labe
   assert.match(dashboardHtml, /id="dashboardSharedTopbar" class="ov-topbar"/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarLabel"/);
   assert.doesNotMatch(dashboardHtml, /class="topbar ov-topbar"/);
-  assert.doesNotMatch(notesHtml, /<div class="demo-topbar ov-topbar"/);
+  assert.doesNotMatch(notesHtml, /class="[^"]*(?:^|\s)(?:ov-topbar|demo-topbar)(?:\s|")/);
   assert.match(dashboardJs, /host\.prepend\(dashboardSharedTopbar\)/);
   assert.match(dashboardJs, /home\.prepend\(dashboardSharedTopbar\)/);
   for (const key of ["ovNavOverview", "ovNavListening", "ovMenuHighlightsNotes"]) assert.ok(dashboardJs.includes(key));
@@ -42,6 +42,8 @@ test("The shared topbar sticks at the viewport edge, shrinks by height, and reta
   assert.match(notesHtml, /#dashboardSharedTopbar\.ov-topbar\{position:sticky;top:0/);
   assert.match(notesHtml, /#dashboardSharedTopbar\.is-compact\{height:46px[^}]*margin-bottom:10px/);
   assert.doesNotMatch(notesHtml, /#dashboardSharedTopbar\.demo-topbar\{/);
+  assert.match(notesHtml, /html\.lr-demo-embedded\s*\{[^}]*overflow-y:auto!important/);
+  assert.match(notesHtml, /html\.lr-demo-embedded body\s*\{[^}]*overflow:visible!important/);
   assert.match(notesHtml, /#dashboardHomeView>#dashboardSharedTopbar\{grid-column:1!important;grid-row:1!important\}/);
   assert.match(notesHtml, /id="dashboardSharedTopbarActionsSource" hidden/);
   assert.match(notesHtml, /id="exportAllDemoBtn"/);
