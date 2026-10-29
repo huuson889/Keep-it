@@ -1,15 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.731; Manifest V3. Bản đồ mã nguồn nằm ở mục 4.
+- Version hiện tại: v3.4.732; Manifest V3. Bản đồ mã nguồn nằm ở mục 4.
 - Dashboard: Trang chủ hiển thị thư viện; Luyện ngữ pháp hiển thị `#profileSidebar`. Các mục sidebar khác chưa có điều hướng; hover/ghim/theme vẫn dùng chung.
 - Lưu ý: `--lhn-ui-shadow` đang giữ nguyên chuỗi `++rgb++(...)` theo yêu cầu; giá trị này có thể làm các `box-shadow` dùng biến không hợp lệ. Cloud sync và thanh toán chưa được tích hợp.
-- Kiểm tra gần nhất (v3.4.729): static CSS/manifest và `git diff --check` đạt; UI/runtime trình duyệt chưa kiểm thử.
+- Kiểm tra gần nhất: chọn caption track Auto đã qua `node --check` và mô phỏng 4/4 trường hợp metadata; UI trên YouTube thật chưa kiểm thử.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra chuyển view, workspace, sidebar hover/ghim/theme và shadow; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
+- Lỗi Auto chọn sai ngôn ngữ: thử lại video `oTAv7A4khP0` và `QbfxZcNNxm8` trong Dual Sub/Dictation; xác nhận lấy track khớp audio mặc định (English, không phải Arabic). Chưa kiểm thử browser.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
@@ -103,6 +104,11 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều khiển hai view nội bộ: Trang chủ (toolbar + workspace thư viện) và Luyện ngữ pháp (`#profileSidebar`); các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-29 | v3.4.732 | Arena sửa:**
+  - Sửa chọn phụ đề nguồn khi để Auto: trước đây ưu tiên `isDefault`/track thủ công đầu tiên, có thể chọn Arabic dù audio gốc tiếng Anh. Nay ưu tiên caption track được liên kết với audio track mặc định từ player metadata (`audioTracks`, `defaultAudioTrackIndex`, `audioTrackId`/`captionTrackIndices`), rồi mới dùng fallback cũ. Áp dụng cho cả Player API và watch-page fallback; Dual Sub và Dictation dùng chung kết quả.
+  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` 45/45 JavaScript; mô phỏng tracklist synthetic 4/4 trường hợp (English gốc thắng Arabic `isDefault`, chọn đúng audio mặc định không hardcode English, explicit language override, fallback legacy); manifest JSON và `git diff --check` — đạt. Chưa kiểm thử trên hai video trong trình duyệt thật.
 
 - **2026-10-29 | v3.4.731 | Arena sửa:**
   - Cụ thể hóa quy tắc cho mọi agent: mục 1 là snapshot 3–5 gạch đầu dòng; mục 2 chỉ giữ việc đang mở, có trạng thái rõ; mục 5 là nhật ký thay đổi, không chép lặp lịch sử vào snapshot/open tasks.

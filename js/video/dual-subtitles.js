@@ -218,12 +218,45 @@ function trackLanguageCode(track) {
   return String(track?.languageCode || '').toLowerCase().split('-')[0];
 }
 
-function originalTrackFor(tracks) {
-  return tracks.find((track) => track.isDefault) || tracks.find((track) => track.kind !== 'asr') || tracks[0] || null;
+// Auto source follows the default audio track's linked caption, not YouTube's account-locale `isDefault` flag.
+function audioTrackCaptionFor(tracks, tracklist) {
+  const audioTracks = Array.isArray(tracklist?.audioTracks) ? tracklist.audioTracks : [];
+  const defaultIndex = Number(tracklist?.defaultAudioTrackIndex);
+  const audioTrack = Number.isInteger(defaultIndex) && defaultIndex >= 0 && defaultIndex < audioTracks.length
+    ? audioTracks[defaultIndex]
+    : audioTracks.find((item) => item?.isDefault) || null;
+  if (!audioTrack) return null;
+
+  const trackAt = (index) => {
+    const value = Number(index);
+    return Number.isInteger(value) && value >= 0 && value < tracks.length ? tracks[value] : null;
+  };
+  const mappedTracks = Array.isArray(audioTrack.captionTrackIndices)
+    ? audioTrack.captionTrackIndices.map(trackAt).filter(Boolean)
+    : [];
+  const audioLanguage = String(audioTrack.audioTrackId || '').split('.')[0].toLowerCase().split('-')[0];
+  if (audioLanguage) {
+    const matching = (mappedTracks.length ? mappedTracks : tracks)
+      .filter((track) => trackLanguageCode(track) === audioLanguage)
+      .sort((a, b) => Number(a.kind === 'asr') - Number(b.kind === 'asr'))[0];
+    if (matching) return matching;
+  }
+
+  const defaultCaption = trackAt(audioTrack.defaultCaptionTrackIndex ?? tracklist?.defaultCaptionTrackIndex);
+  if (defaultCaption && (!mappedTracks.length || mappedTracks.includes(defaultCaption))) return defaultCaption;
+  return mappedTracks.find((track) => track.kind !== 'asr') || mappedTracks[0] || null;
 }
 
-function selectLanguageTrack(tracks, language) {
-  const original = originalTrackFor(tracks);
+function originalTrackFor(tracks, tracklist) {
+  return audioTrackCaptionFor(tracks, tracklist)
+    || tracks.find((track) => track.isDefault)
+    || tracks.find((track) => track.kind !== 'asr')
+    || tracks[0]
+    || null;
+}
+
+function selectLanguageTrack(tracks, language, tracklist = null) {
+  const original = originalTrackFor(tracks, tracklist);
   if (!language || language === 'auto') return { track: original, original, needsTranslation: false };
   const matching = tracks
     .filter((track) => trackLanguageCode(track) === language)
@@ -231,8 +264,8 @@ function selectLanguageTrack(tracks, language) {
   return { track: matching || original, original, needsTranslation: !matching && !!original };
 }
 
-function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting) {
-  const selected = selectLanguageTrack(tracks, sourceLanguage);
+function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting, tracklist = null) {
+  const selected = selectLanguageTrack(tracks, sourceLanguage, tracklist);
   state.captionTrackLanguage = trackLanguageCode(selected.track);
   state.primaryNeedsTranslation = selected.needsTranslation;
   return selected.track;
@@ -271,9 +304,9 @@ async function tracksFromWatchPage(videoId, reasons) {
     const html = await fetchText(`https://www.youtube.com/watch?v=${videoId}`);
     const pr = extractPlayerResponse(html);
     if (!pr) reasons.push('trang watch: không tìm thấy dữ liệu player');
-    const tracks = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
-    if (!tracks.length) reasons.push('trang watch: không có danh sách phụ đề');
-    return tracks;
+    const tracklist = pr?.captions?.playerCaptionsTracklistRenderer || null;
+    if (!tracklist?.captionTracks?.length) reasons.push('trang watch: không có danh sách phụ đề');
+    return tracklist;
   } catch (err) {
     reasons.push('trang watch: ' + err.message);
     return [];
@@ -1750,10 +1783,10 @@ async function cuesForTrack(track, reasons) {
   }
 }
 
-async function captionsFromTracks(tracks, reasons) {
+async function captionsFromTracks(tracks, reasons, tracklist = null) {
   if (!tracks.length) return [];
-  const primary = selectLanguageTrack(tracks, state.sourceLanguageSetting);
-  const secondary = selectLanguageTrack(tracks, state.targetLanguage);
+  const primary = selectLanguageTrack(tracks, state.sourceLanguageSetting, tracklist);
+  const secondary = selectLanguageTrack(tracks, state.targetLanguage, tracklist);
   const original = primary.original;
   const needed = [...new Set([primary.track, secondary.track, (primary.needsTranslation || secondary.needsTranslation) ? original : null].filter(Boolean))];
   const fetched = await Promise.all(needed.map(async (track) => [track, await cuesForTrack(track, reasons)]));
@@ -1803,9 +1836,10 @@ async function transcriptFromPlayerApi(videoId, reasons) {
     });
     if (!res.ok) { reasons.push(`player: HTTP ${res.status}`); return []; }
     const data = await res.json();
-    const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+    const tracklist = data?.captions?.playerCaptionsTracklistRenderer || null;
+    const tracks = tracklist?.captionTracks || [];
     if (!tracks.length) { reasons.push('player: video không có caption track'); return []; }
-    return await captionsFromTracks(tracks, reasons);
+    return await captionsFromTracks(tracks, reasons, tracklist);
   } catch (err) {
     reasons.push('player: ' + err.message);
     return [];
@@ -1852,10 +1886,11 @@ async function loadCaptions() {
 
     // 3) timedtext từ HTML trang (bản cũ) — chỉ thử khi 1 và 2 đều trượt.
     if (cues.length === 0) {
-      const tracks = await tracksFromWatchPage(videoId, reasons);
+      const tracklist = await tracksFromWatchPage(videoId, reasons);
       if (token !== state.loadToken) return;
+      const tracks = tracklist?.captionTracks || [];
       if (tracks.length) {
-        cues = await captionsFromTracks(tracks, reasons);
+        cues = await captionsFromTracks(tracks, reasons, tracklist);
       }
     }
 
