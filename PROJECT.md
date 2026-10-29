@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.777; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.778; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.777, `node --check` 48 JavaScript files đạt, 16/16 tests, 10 CSS files + 2 inline blocks parse 0 lỗi; manifest `3.4.777` và `git diff --check` đạt. ZIP có 108 files, manifest root đúng version và CRC hợp lệ. Topbar Chép chính tả đã được người dùng xác nhận trên Chrome; sidebar `.776` được người dùng xác nhận trông tốt.
+- Kiểm tra gần nhất: v3.4.778, `node --check` 48 JavaScript files đạt, 16/16 tests, 10 CSS files + 2 inline blocks parse 0 lỗi; manifest `3.4.778`, `git diff --check` và ZIP 108 files/CRC đạt. Topbar Chép chính tả đã được người dùng xác nhận trên Chrome; sidebar `.776` được người dùng xác nhận trông tốt.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): sidebar `.776` đã được người dùng xác nhận trông tốt; topbar sticky/compact đã được xác nhận trên Chrome ở v3.4.775. Còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và scrollbar dark mode mới bằng browser thật; hiện mới có hồi quy static.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): sidebar `.776` đã được người dùng xác nhận trông tốt; topbar sticky/compact đã được xác nhận trên Chrome ở v3.4.775. Còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và xác nhận trực quan trên browser cho nền track iframe dark mode đã sửa ở `.778`; hiện mới có hồi quy static.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.778 | Arena.ai Agent sửa:**
+
+- Sửa đúng nền lộ qua track trong suốt: ở dark mode, đặt nền host `#dashboardHighlightsNotesFrame` theo `--lhn-ui-page` thay vì để màu sáng `#f5f7fb` xuyên qua. Giữ scrollbar track trong suốt, thumb theo theme, light mode và các tab/sidebar/topbar không đổi.
+- File: `css/dashboard/dashboard.css`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.778.zip`.
+- Kiểm tra: `node --check` 48 JavaScript files đạt; `node --test tests/*.test.cjs` đạt 16/16; 10 CSS files + 2 inline blocks parse 0 lỗi; manifest `3.4.778`, `git diff --check` và ZIP 108 files (manifest gốc, CRC hợp lệ) đạt. Chưa kiểm thử browser thật.
 
 **2026-10-30 | v3.4.777 | Arena.ai Agent sửa:**
 

@@ -7,6 +7,7 @@ const root = path.join(__dirname, "..");
 const dashboardHtml = fs.readFileSync(path.join(root, "pages/dashboard.html"), "utf8");
 const dashboardJs = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js"), "utf8");
 const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
+const dashboardCss = fs.readFileSync(path.join(root, "css/dashboard/dashboard.css"), "utf8");
 const listeningCss = fs.readFileSync(path.join(root, "css/dashboard/listening-demo.css"), "utf8");
 const notesHtml = fs.readFileSync(path.join(root, "pages/lr-practice-demo.html"), "utf8");
 const notesJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
@@ -39,6 +40,8 @@ test("Highlights & Notes root scrollbar uses the synced dark thumb and a transpa
   assert.match(notesHtml, /html\.lr-demo-embedded::-webkit-scrollbar-track,[\s\S]*?html\.lr-demo-embedded body \*::-webkit-scrollbar-track \{ background:transparent!important; \}/);
   assert.match(notesHtml, /html\.lr-demo-embedded::-webkit-scrollbar-thumb,[\s\S]*?html\.lr-demo-embedded body \*::-webkit-scrollbar-thumb \{ border-radius:999px!important; background:var\(--lr-scrollbar-thumb\)!important; \}/);
   assert.match(themeSyncJs, /document\.documentElement\.classList\.toggle\("dark", isDark\)/);
+  assert.match(dashboardCss, /#dashboardHighlightsNotesFrame \{[^}]*background:#f5f7fb/);
+  assert.match(dashboardCss, /html\.dark #dashboardHighlightsNotesFrame \{ background:var\(--lhn-ui-page,#0b1120\); \}/);
 });
 
 test("The shared topbar sticks at the viewport edge, shrinks by height, and retains iframe export controls", () => {
