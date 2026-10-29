@@ -6,7 +6,7 @@
 
 ## 2. Vai trò tài liệu & nguồn sự thật
 - `AGENTS.md`: quy trình và quy tắc dành cho AI/contributor.
-- `PROJECT.md`: handoff hiện tại, việc đang mở, ràng buộc, bản đồ file và nhật ký tóm tắt duy nhất.
+- `PROJECT.md`: handoff hiện tại; mục 1 là snapshot ngắn, mục 2 chỉ giữ việc đang mở, mục 4 là bản đồ kiến trúc, mục 5 là nhật ký thay đổi duy nhất.
 - `README.md`: hướng dẫn/tính năng/giới hạn hướng tới người dùng; không dùng làm nơi giữ trạng thái nội bộ.
 - `OPT-ARENA.md`: thiết kế đã chốt, sơ đồ text, mục tiêu/phạm vi và quy trình tối ưu; không ghi trạng thái từng bước hoặc nhật ký hoàn thành.
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
@@ -36,7 +36,11 @@
 
 **5.2. Cập nhật PROJECT.md**
   - Thêm mục mới vào đầu **mục nhật ký duy nhất** trong `PROJECT.md`, xếp theo thời gian mới nhất đến cũ nhất; không tạo bản sao của cùng nhật ký ở nhiều mục.
-  - Giữ mục 1 của `PROJECT.md` là snapshot ngắn; `PROJECT.md` là nguồn duy nhất cho trạng thái, việc đang mở, ràng buộc, bản đồ file, nhật ký và tóm tắt kiểm thử. `OPT-ARENA.md` chỉ giữ thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; `README.md` mô tả cho người dùng.
+  - **Mục 1 — Trạng thái hiện tại:** viết snapshot ngắn, tối đa 3–5 gạch đầu dòng: version, trạng thái sản phẩm/kiến trúc cần biết, rủi ro quan trọng và tình trạng kiểm thử mới nhất. Không chép lịch sử thay đổi hay đặc tả dài; trỏ tới mục 4/5 khi cần.
+  - **Mục 2 — Việc đang mở:** chỉ liệt kê việc chưa hoàn tất; nhóm theo tính năng/loại việc và ưu tiên. Mỗi gạch đầu dòng nêu hành động, môi trường liên quan và trạng thái thực tế (chưa chạy/đã chạy một phần/đã xác nhận). Không giữ việc đã hoàn tất hoặc chép changelog.
+  - Khi rút gọn mục 1/2, **không tự bỏ hoặc đánh dấu xong việc chưa xác nhận**. Gộp các kiểm thử cùng nhóm nhưng giữ điều kiện chấp nhận tối thiểu; nếu checklist chi tiết quá dài, đặt ở tài liệu QA liên quan và dẫn link từ mục 2. `PROJECT.md` vẫn là nguồn duy nhất về trạng thái và danh sách việc đang mở.
+  - **Mục 5 — Nhật ký:** lưu lịch sử thay đổi theo version. Ghi thay đổi, file và kiểm tra thực tế; không lặp lại toàn bộ chi tiết lịch sử trong mục 1/2. Việc hiện tại và bước tiếp theo có thể được nhắc ngắn ở mục 1/2 khi cần cho bàn giao.
+  - `OPT-ARENA.md` chỉ giữ thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; `README.md` mô tả cho người dùng.
   - Mỗi mục nhật ký phải theo cùng mẫu, với tiêu đề in đậm và các thông tin bên dưới thành bullet:
     - **YYYY-MM-DD | vX.Y.Z | <Tên AI/người thực sự sửa> sửa:**
     - Tóm tắt ngắn gọn thay đổi.
@@ -45,7 +49,7 @@
     - Có thể thêm "Tiếp theo" hoặc "Lưu ý" khi cần.
   - Ghi đúng tên bất kỳ tác nhân thực hiện từng thay đổi (ví dụ: Arena, Claude, Codex,....; "Huuson" nếu Huuson trực tiếp sửa). Không mặc định ghi Codex/Arena thay cho AI khác. Nếu nhiều tác nhân sửa, tách thành các mục riêng; lịch sử không xác định tác giả thì ghi rõ "người sửa không xác định", không tự gán.
   - Giữ nguyên các bản ghi lịch sử và tác giả đã có; không xóa hoặc gán lại nhật ký cũ trừ khi người dùng yêu cầu.
-  - Sửa đè "Trạng thái" và "Việc đang mở" cho đúng với bản mới. Việc xong thì xóa khỏi "Việc đang mở".
+  - Sau mỗi thay đổi, sửa đè mục 1 và 2 theo các quy tắc snapshot/open-items bên trên; việc đã xác nhận hoàn tất thì gỡ khỏi mục 2. Giữ mục 5 theo thứ tự mới nhất → cũ nhất.
 
 **5.3. Commit**
   - Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".

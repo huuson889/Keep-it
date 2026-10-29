@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.730; Manifest V3. Bản đồ mã nguồn nằm ở mục 4.
+- Version hiện tại: v3.4.731; Manifest V3. Bản đồ mã nguồn nằm ở mục 4.
 - Dashboard: Trang chủ hiển thị thư viện; Luyện ngữ pháp hiển thị `#profileSidebar`. Các mục sidebar khác chưa có điều hướng; hover/ghim/theme vẫn dùng chung.
 - Lưu ý: `--lhn-ui-shadow` đang giữ nguyên chuỗi `++rgb++(...)` theo yêu cầu; giá trị này có thể làm các `box-shadow` dùng biến không hợp lệ. Cloud sync và thanh toán chưa được tích hợp.
 - Kiểm tra gần nhất (v3.4.729): static CSS/manifest và `git diff --check` đạt; UI/runtime trình duyệt chưa kiểm thử.
@@ -103,6 +103,11 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều khiển hai view nội bộ: Trang chủ (toolbar + workspace thư viện) và Luyện ngữ pháp (`#profileSidebar`); các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+- **2026-10-29 | v3.4.731 | Arena sửa:**
+  - Cụ thể hóa quy tắc cho mọi agent: mục 1 là snapshot 3–5 gạch đầu dòng; mục 2 chỉ giữ việc đang mở, có trạng thái rõ; mục 5 là nhật ký thay đổi, không chép lặp lịch sử vào snapshot/open tasks.
+  - File: `AGENTS.md`, `PROJECT.md`, `manifest.json`.
+  - Kiểm tra: `git diff --check`, manifest JSON và kiểm tra cấu trúc mục 1/2 cùng version — đạt; không đổi mã ứng dụng.
 
 - **2026-10-29 | v3.4.730 | Arena sửa:**
   - Rút gọn mục 1 thành snapshot hiện tại; gom các việc còn mở ở mục 2 theo nhóm kiểm thử và triển khai, giữ chi tiết lịch sử trong nhật ký mục 5.
