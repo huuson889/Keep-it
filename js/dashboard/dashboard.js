@@ -1682,9 +1682,9 @@ function renderStudyCard({ autoSpeak = true, showAnswer = false } = {}) {
     STUDY_TRANSLATOR.prefetch(nextItem.contextNote, { sourceLanguage:flashcardTranslation.sourceLanguage, targetLanguage }).catch(() => {});
   }
 }
-function startStudySession() {
+function startStudySession({ allSources = false } = {}) {
   stopStudySpeech();
-  studySourceKey = selectedUrl; studyPlayAllSources = studyPreferences.alwaysPlayAll; studyAutoSpeak = studyPreferences.alwaysAutoSpeak; studyFocusMode = studyPreferences.alwaysFocusMode; studyCompletedIds.clear();
+  studySourceKey = allSources ? null : selectedUrl; studyPlayAllSources = allSources || studyPreferences.alwaysPlayAll; studyAutoSpeak = studyPreferences.alwaysAutoSpeak; studyFocusMode = studyPreferences.alwaysFocusMode; studyCompletedIds.clear();
   const deck = getStudyCandidates({ sourceKey: studyPlayAllSources ? null : studySourceKey });
   setStudyQueue(deck); studyHistory = []; studyReviewed = 0; studyRemembered = 0; syncStudyScopeButton(); updateStudyAutoSpeakButton(); updateStudyFocusButton();
   studyTypedAnswerForId = null; studyTypedAnswer = "";
@@ -1772,7 +1772,7 @@ async function returnToPreviousStudyCard() {
   renderStudyCard({ autoSpeak: studyAutoSpeak });
   focusStudyPrimaryAction();
 }
-$("studyModeBtn").addEventListener("click", startStudySession);
+$("studyModeBtn").addEventListener("click", () => startStudySession());
 async function openStudyDefinitionSearch(url) {
   const switchToSearchTab = studyPreferences.switchToDefinitionTab !== false;
   studyDefinitionTabQueue = studyDefinitionTabQueue.catch(() => {}).then(async () => {
@@ -2331,6 +2331,10 @@ function setDashboardView(view) {
   });
 }
 dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
+dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
+  event.preventDefault();
+  startStudySession({ allSources:true });
+});
 setDashboardView("overview");
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });

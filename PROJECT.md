@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.735; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.736; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Overview mở mặc định và dùng annotations/index Dictation cục bộ; Listening vẫn placeholder, Library và Grammar giữ route hiện có.
 - Lưu ý: Overview không giả lập số liệu; CTA vẫn presentation-only. Index Dictation bổ sung, giữ nguyên `dictation:<videoId>`; Cloud sync và thanh toán chưa tích hợp.
 - Kiểm tra gần nhất: JavaScript 47/47 `node --check`; 5 test unit, HTML 311 ID duy nhất/4 route, en/vi/ko Overview i18n, manifest/CSS và `git diff --check` đạt. Chưa kiểm thử UI trên trình duyệt thật.
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe vẫn là placeholder; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.736 | Arena sửa:**
+
+- Đổi mục trái “Khóa ngữ pháp” thành “Ôn tập Flashcards” (en/vi/ko) và nối click vào flashcard review trên tất cả nguồn (`startStudySession({ allSources:true })`); route “Luyện ngữ pháp” vẫn giữ nguyên.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.736.zip`.
+- Kiểm tra: `node --check` toàn bộ 47 file JavaScript; 5/5 unit test; HTML 311 ID duy nhất, 4 route, menu action/script/style và bản dịch mới được audit; manifest/CSS và `git diff --check` đạt. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-29 | v3.4.735 | Arena sửa:**
 

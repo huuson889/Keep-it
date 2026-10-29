@@ -10,7 +10,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html) | `<script>`, view IDs, `data-dashboard-view` | Markup, stylesheets và thứ tự nạp helper/entry. |
+| [`pages/dashboard.html`](../../pages/dashboard.html) | `<script>`, view IDs, `data-dashboard-view`, `data-dashboard-action` | Markup, stylesheets, view routes và action menu. |
 | [`css/dashboard/overview.css`](../../css/dashboard/overview.css) | `#dashboardOverviewView`, `#dashboardListeningView` | Style scoped cho Overview dữ liệu cục bộ và Listening placeholder. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `setDashboardView`, `load`, `render` | Điều hướng 4 view và điều phối thư viện/settings/study/profile. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `LANGUAGES.t` | Bản dịch giao diện en/vi/ko. |
@@ -29,14 +29,14 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 2. `load()` đọc settings/preferences và lấy annotations theo batch qua `LHN_MESSAGING`; `render()` cập nhật thư viện, panel và Overview.
 3. Overview dùng `LHN_DASHBOARD_OVERVIEW_DATA` trên dữ liệu annotation đã tải: số trang/tô sáng/ghi chú/thẻ đến hạn, thẻ ôn hôm nay, hoạt động tạo annotation theo ngày, tag và hoạt động gần đây. Không có dữ liệu thì hiển thị số 0/trạng thái rỗng; heatmap không giả lập lịch sử review.
 4. Dictation summary đọc index cục bộ provider-neutral; migration chỉ đọc record YouTube cũ và thêm metadata vào index, không sửa/xóa `dictation:<videoId>`.
-5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`) và Grammar; Listening vẫn là placeholder.
+5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`) và Grammar; Listening vẫn là placeholder. Action menu Flashcards gọi `startStudySession({ allSources:true })` để mở review trên các nguồn.
 6. Sửa/xóa/review annotation gửi message tới Background (chủ sở hữu IndexedDB); `origin` tránh xử lý lặp sự kiện do Dashboard tạo.
 7. Flashcards dùng `study-utils`/`study-view`; Translate, Reader và Background đảm nhiệm dịch, TTS, định nghĩa.
 8. Import/export cập nhật annotations/favorites theo kết quả trả về.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Bốn route: Tổng quan, Luyện nghe, Thư viện (`home`) và Luyện ngữ pháp; các mục sidebar khác chưa điều hướng.
+- Bốn route: Tổng quan, Luyện nghe, Thư viện (`home`) và Luyện ngữ pháp; mục “Ôn tập Flashcards” là action riêng (`data-dashboard-action`) gọi `startStudySession({ allSources:true })`, không tạo route mới.
 - Overview dùng dữ liệu annotation và Dictation index cục bộ thật; Listening vẫn là placeholder. Nút CTA của Overview vẫn chỉ để trình bày theo phạm vi đã duyệt, không thêm handler.
 - Chỉ `data-dashboard-view` đổi view; giữ luồng thư viện và `#profileSidebar` của Grammar.
 - Chuỗi UI mới dùng `data-i18n`/`data-i18n-aria-label`, có bản dịch trong `MESSAGES` cho en, vi, ko.
