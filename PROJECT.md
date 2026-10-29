@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.750; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard: Overview mở mặc định; Library (`#dashboardHomeView`) dùng bố cục/CSS/hiệu ứng theo demo mới nhất nhưng đọc annotations thật và giữ CRUD, lọc, yêu thích, export. Listening vẫn là preview demo-only; Grammar giữ route hiện có.
+- Version hiện tại: v3.4.751; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ nguyên route; “Luyện đề LR” hiển thị bản sao cô lập của demo Library mới nhất trong iframe, dùng dữ liệu demo và không kết nối app.
 - Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: toàn bộ JS syntax đạt; Library CSS parser 0 lỗi; HTML 364 ID duy nhất; i18n mới đủ en/vi/ko; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử tương tác/giao diện trên trình duyệt thật.
+- Kiểm tra gần nhất: cú pháp toàn bộ JavaScript đạt; CSS Dashboard parse 0 lỗi; 5/5 tests; HTML Dashboard/demo không trùng ID, local iframe/script refs hợp lệ và markup demo trùng nguồn (chỉ tách script); manifest v3.4.751; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Thư viện/Luyện ngữ pháp, responsive, sidebar hover/ghim/theme và shadow; chưa chạy UI thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Thư viện/Luyện ngữ pháp/Luyện đề LR (iframe demo), responsive, sidebar hover/ghim/theme và shadow; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -33,7 +33,8 @@
 Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
 ├── pages/
-│   ├── dashboard.html             # Giao diện Dashboard (`#dashboardSidebar`, Overview/Listening/Library/Grammar, ô tìm Settings)
+│   ├── dashboard.html             # Giao diện Dashboard (`#dashboardSidebar`, Overview/Listening/Library/Grammar/LR, ô tìm Settings)
+│   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Luyện đề LR
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
@@ -44,7 +45,7 @@ Keepit - Test/
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry; điều hướng Overview/Listening/Library/Grammar), overview.css, overview-data, settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
+│   ├── dashboard/                 # dashboard.js (entry; điều hướng Overview/Listening/Library/Grammar/LR), overview.css, overview-data, settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags, lr-practice-demo.js (sample cục bộ, không tích hợp app)
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
@@ -53,7 +54,7 @@ Keepit - Test/
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` cho Listening, `library-demo.css` cho giao diện Library
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` port giao diện Listening
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
@@ -103,15 +104,15 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng `#dashboardHomeView` với layout/hiệu ứng theo `demos/library-tab-demo.html` nhưng renderer, bộ lọc, favorite và CRUD đọc dữ liệu thật; Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển năm route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`; Luyện đề LR tải bản sao nguyên UI `demos/library-tab-demo.html` trong iframe, với script demo tự chứa, không nối API/storage hoặc handler của Dashboard. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-29 | v3.4.750 | Arena sửa:**
+**2026-10-29 | v3.4.751 | Arena.ai Agent sửa:**
 
-- Port bố cục, toolbar, stats, thẻ nguồn, responsive scroll và hiệu ứng tim/xóa lọc từ Library demo vào tab Library thật; giữ các renderer, storage/messages và thao tác dữ liệu thật. Stats lấy từ annotations cục bộ; không dùng mảng mẫu của demo.
-- File: `pages/dashboard.html`, `css/dashboard/library-demo.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `demos/library-tab-demo.html`, `Keepit - Optimize Test-v3.4.750.zip`.
-- Kiểm tra: toàn bộ `js/dashboard/*.js` và `js/core/languages.js` qua `node --check`; 5/5 tests; HTML 364 ID duy nhất; Library CSS recursive parser 0 lỗi; i18n Library đủ en/vi/ko; `git diff --check` và ZIP integrity đạt. Chưa kiểm thử tương tác/giao diện trên trình duyệt thật.
+- Tạo từ baseline v3.4.749; thêm route “Luyện đề LR” để hiển thị nguyên UI của demo Library mới nhất trong iframe cô lập. Demo giữ sample data và hành vi demo-local; không đọc hoặc sửa dữ liệu app.
+- File: `pages/dashboard.html`, `pages/lr-practice-demo.html`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/dashboard.css`, `demos/library-tab-demo.html`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`.
+- Kiểm tra: `node --check` toàn bộ JS; 5/5 tests; CSS parse 0 lỗi; HTML IDs/local refs và demo markup parity đạt; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.749 | Arena sửa:**
 

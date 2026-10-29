@@ -274,42 +274,6 @@
     let value = MESSAGES[code][key] ?? MESSAGES.en[key] ?? key;
     return String(value).replace(/\{(\w+)\}/g, (_, k) => vars[k] == null ? `{${k}}` : String(vars[k]));
   }
-  Object.assign(MESSAGES.en, {
-    libraryLocalData:"LOCAL DATA", libraryStatsScopeLabel:"Statistics scope", libraryActivityPeriodLabel:"Activity period", libraryQuickFiltersLabel:"Quick filters", libraryColorFilterLabel:"Highlight color filter", libraryTagFilterLabel:"Tag filter", libraryDateFilterLabel:"Date filter", libraryNotesPanelLabel:"Highlights and notes", libraryClearFilters:"Clear filters", librarySearchPlaceholder:"Search by title, domain, highlight or note…", librarySortCreated:"Sort: Recently saved", librarySortEdited:"Sort: Last edited", librarySortCount:"Sort: Most highlights", libraryHeroEyebrow:"YOUR LIBRARY", libraryHeroTitle:"Saved pages, highlights and notes",
-    libraryHeroDescription:"Find what you've saved, revisit your notes, and manage your learning sources in one place.",
-    libraryLocalTag:"Stored on this device", librarySearchTag:"Search and filter quickly", libraryStatsTitle:"Library stats",
-    libraryStatsFiltered:"Based on current filters", libraryStatsAll:"Based on all saved items", libraryStatsFilteredButton:"Filtered",
-    libraryStatsAllButton:"All", libraryActivityTitle:"Activity", libraryItemsSaved:"Items saved", libraryDistributionTitle:"Distribution",
-    libraryDistributionSubtitle:"By highlights", libraryDistributionNote:"Calculated from saved items in the selected scope.",
-    libraryQuickAll:"All", libraryQuickHasNotes:"Has notes", libraryQuickFavorites:"Favorites", librarySiteAll:"Source: All",
-    libraryColorAll:"Color: All", libraryTagAll:"Tag: All", libraryDateAll:"Date: All", librarySortLabel:"Sort pages",
-    libraryNoDescription:"No saved excerpt", libraryNoDistribution:"No data yet", libraryHeatDay:"{date} · {count} saved highlights",
-    libraryStatsClose:"Collapse library statistics", libraryStatsExpand:"Expand library statistics", libraryCategory:"SAVED PAGE"
-  });
-  Object.assign(MESSAGES.vi, {
-    libraryLocalData:"DỮ LIỆU CỤC BỘ", libraryStatsScopeLabel:"Phạm vi thống kê", libraryActivityPeriodLabel:"Khoảng thời gian hoạt động", libraryQuickFiltersLabel:"Lọc nhanh", libraryColorFilterLabel:"Lọc theo màu highlight", libraryTagFilterLabel:"Lọc theo thẻ", libraryDateFilterLabel:"Lọc theo ngày", libraryNotesPanelLabel:"Highlights và ghi chú", libraryClearFilters:"Xóa lọc", librarySearchPlaceholder:"Tìm theo tiêu đề, tên miền, highlight hoặc ghi chú…", librarySortCreated:"Sắp xếp: Mới lưu", librarySortEdited:"Sắp xếp: Ngày sửa", librarySortCount:"Sắp xếp: Nhiều highlights", libraryHeroEyebrow:"THƯ VIỆN CỦA BẠN", libraryHeroTitle:"Trang, highlights và ghi chú đã lưu",
-    libraryHeroDescription:"Tìm lại những nội dung bạn đã đánh dấu, xem ghi chú và quản lý nguồn học tập trong cùng một nơi.",
-    libraryLocalTag:"Lưu cục bộ trên thiết bị", librarySearchTag:"Tìm kiếm và lọc nhanh", libraryStatsTitle:"Thống kê",
-    libraryStatsFiltered:"Tính trên tập đang lọc", libraryStatsAll:"Tính trên toàn bộ dữ liệu đã lưu", libraryStatsFilteredButton:"Đang lọc",
-    libraryStatsAllButton:"Toàn bộ", libraryActivityTitle:"Hoạt động", libraryItemsSaved:"Mục đã lưu", libraryDistributionTitle:"Phân bố",
-    libraryDistributionSubtitle:"Theo số highlights", libraryDistributionNote:"Phân bố được tính từ các trang trong phạm vi chọn.",
-    libraryQuickAll:"Tất cả", libraryQuickHasNotes:"Có ghi chú", libraryQuickFavorites:"Yêu thích", librarySiteAll:"Nguồn: Tất cả",
-    libraryColorAll:"Màu: Tất cả", libraryTagAll:"Thẻ: Tất cả", libraryDateAll:"Ngày: Tất cả", librarySortLabel:"Sắp xếp trang",
-    libraryNoDescription:"Chưa có trích đoạn đã lưu", libraryNoDistribution:"Chưa có dữ liệu", libraryHeatDay:"{date} · {count} highlights đã lưu",
-    libraryStatsClose:"Thu gọn thống kê thư viện", libraryStatsExpand:"Mở rộng thống kê thư viện", libraryCategory:"TRANG ĐÃ LƯU"
-  });
-  Object.assign(MESSAGES.ko, {
-    libraryLocalData:"로컬 데이터", libraryStatsScopeLabel:"통계 범위", libraryActivityPeriodLabel:"활동 기간", libraryQuickFiltersLabel:"빠른 필터", libraryColorFilterLabel:"하이라이트 색상 필터", libraryTagFilterLabel:"태그 필터", libraryDateFilterLabel:"날짜 필터", libraryNotesPanelLabel:"하이라이트 및 메모", libraryClearFilters:"필터 지우기", librarySearchPlaceholder:"제목, 도메인, 하이라이트 또는 메모로 검색…", librarySortCreated:"정렬: 최근 저장순", librarySortEdited:"정렬: 최근 수정순", librarySortCount:"정렬: 하이라이트 많은 순", libraryHeroEyebrow:"내 라이브러리", libraryHeroTitle:"저장된 페이지, 하이라이트 및 메모",
-    libraryHeroDescription:"저장한 내용을 다시 찾고 메모를 확인하며 학습 자료를 한곳에서 관리하세요.",
-    libraryLocalTag:"이 기기에 로컬 저장", librarySearchTag:"빠른 검색 및 필터", libraryStatsTitle:"라이브러리 통계",
-    libraryStatsFiltered:"현재 필터 기준", libraryStatsAll:"저장된 전체 항목 기준", libraryStatsFilteredButton:"필터됨",
-    libraryStatsAllButton:"전체", libraryActivityTitle:"활동", libraryItemsSaved:"저장된 항목", libraryDistributionTitle:"분포",
-    libraryDistributionSubtitle:"하이라이트 기준", libraryDistributionNote:"선택한 범위의 저장 항목을 기준으로 계산됩니다.",
-    libraryQuickAll:"전체", libraryQuickHasNotes:"메모 있음", libraryQuickFavorites:"즐겨찾기", librarySiteAll:"출처: 전체",
-    libraryColorAll:"색상: 전체", libraryTagAll:"태그: 전체", libraryDateAll:"날짜: 전체", librarySortLabel:"페이지 정렬",
-    libraryNoDescription:"저장된 발췌 없음", libraryNoDistribution:"데이터 없음", libraryHeatDay:"{date} · 저장된 하이라이트 {count}개",
-    libraryStatsClose:"라이브러리 통계 접기", libraryStatsExpand:"라이브러리 통계 펼치기", libraryCategory:"저장된 페이지"
-  });
   globalThis.LHN_LANGUAGES = { LANGS, MESSAGES, detectLanguage, languageFor, t };
 })();
       
