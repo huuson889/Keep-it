@@ -101,7 +101,7 @@
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-kb-active{background:rgba(148,163,184,.18);box-shadow:inset 0 0 0 2px var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:first-child{font-size:30px;line-height:1}
     #lhn-bilingual-reading-bar .lhn-br-voice{direction:ltr}
-    #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:40px;height:40px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center;font-family:"Twemoji Country Flags",var(--lhn-app-font-family,"Segoe UI Emoji",sans-serif)!important;font-size:40px!important;line-height:1!important}
+    #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:40px;height:40px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center;font-family:"Twemoji Country Flags",var(--lhn-app-font-family,"Segoe UI Emoji",sans-serif)!important;font-size:54px!important;line-height:1!important}
     #lhn-bilingual-reading-bar [data-voices] .lhn-br-flag{width:40px;height:40px}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:nth-child(2){flex:1}
     #lhn-bilingual-reading-bar .lhn-br-voice small{display:block;color:#64748b}

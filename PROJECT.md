@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.779; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.780; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Highlights & Notes là bề mặt duy nhất cho highlights/notes; chi tiết route/bridge ở mục 4.
-- Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ ở 40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
-- Kiểm tra gần nhất: `node --check` 48 JavaScript files, 18/18 tests, 10 CSS files + 2 inline HTML blocks + Reader injected CSS parse, manifest `3.4.779`, `git diff --check`, và ZIP 109 file entries/CRC đạt. Reader mới kiểm thử tĩnh; chưa browser-test.
+- Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ với glyph 54px trong vòng tròn 40×40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
+- Kiểm tra gần nhất: `node --check` 48 JavaScript files; 18/18 tests; 10 CSS files + 2 inline HTML styles + Reader injected CSS parse; manifest `3.4.780`, `git diff --check` và ZIP 109 file entries/CRC đạt. Chưa browser-test Reader.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard (Chrome/Firefox, desktop và màn hình hẹp): sidebar `.776` đã được người dùng xác nhận trông tốt; topbar sticky/compact đã được xác nhận trên Chrome ở v3.4.775. Còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và xác nhận trực quan trên browser cho nền track iframe dark mode đã sửa ở `.778`; hiện mới có hồi quy static.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
-- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và hiển thị cờ Twemoji 40px trên trang thật; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
+- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và hiển thị cờ Twemoji 54px trên trang thật; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
 - Dictation v2 “Nói”: chốt quyền và disclosure microphone; dự kiến SpeechRecognition trên Chromium, ghi âm/phát lại trên Firefox.
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.780 | Arena.ai Agent sửa:**
+
+- Tăng cỡ glyph cờ Reader từ 40px lên 54px theo kiểm tra trực quan của người dùng; giữ vòng tròn 40×40px, clipping và các SVG biểu tượng UI không đổi.
+- File: `js/reader/bilingual-reader.js`, `tests/reader-country-flags.test.cjs`, `THIRD_PARTY_NOTICES.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.780.zip`.
+- Kiểm tra: `node --check` 48 JavaScript files; `node --test tests/*.test.cjs` đạt 18/18; 10 CSS files + 2 inline HTML styles + Reader injected CSS parse 0 lỗi; manifest `3.4.780`, `git diff --check` và ZIP 109 file entries/CRC đạt. Chưa kiểm thử trên browser thật.
 
 **2026-10-30 | v3.4.779 | Arena.ai Agent sửa:**
 

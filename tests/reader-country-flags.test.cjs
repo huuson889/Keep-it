@@ -32,13 +32,13 @@ test('Reader country flag helper maps supported regions and aliases to Unicode f
   assert.doesNotMatch(flagHelperSource, /<svg|FLAG_SVGS|flag-icons/i);
 });
 
-test('Reader uses the bundled Twemoji font at 40px and declares it web-accessible', () => {
+test('Reader uses the bundled Twemoji font at 54px and declares it web-accessible', () => {
   const resources = manifest.web_accessible_resources.flatMap(entry => entry.resources);
   assert.ok(resources.includes('assets/fonts/TwemojiCountryFlags.woff2'));
   assert.ok(fs.statSync(path.join(root, 'assets/fonts/TwemojiCountryFlags.woff2')).size > 0);
   assert.match(readerSource, /getURL\?\.\("assets\/fonts\/TwemojiCountryFlags\.woff2"\)/);
   assert.match(readerSource, /@font-face\s*\{[^}]*Twemoji Country Flags[^}]*url\("\$\{flagFontUrl\}"\)/s);
-  assert.match(readerSource, /\.lhn-br-flag\{[^}]*font-size:40px!important/s);
+  assert.match(readerSource, /\.lhn-br-flag\{[^}]*font-size:54px!important/s);
   assert.match(readerSource, /flagEmojiForRegion\(/);
   assert.doesNotMatch(readerSource, /FLAG_SVGS|flagSvgForRegion|<svg[^>]*(?:flag|🇺🇸|🇻🇳)/i);
 });

@@ -11,4 +11,4 @@ Keepit includes or adapts the components below. Each component remains subject t
 
 The versions for components whose source revision is not recorded in this repository must be verified and filled in before a public release. Preserve any upstream `NOTICE` file or additional attribution that applies to the exact version distributed.
 
-The Twemoji Country Flags font is bundled locally at `assets/fonts/TwemojiCountryFlags.woff2`. The Dashboard loads it as a fallback when country-flag glyphs are missing; the Bilingual Reader loads it for its 40px voice flags. The font subset covers flag codepoints only; no flag assets are fetched from a CDN.
+The Twemoji Country Flags font is bundled locally at `assets/fonts/TwemojiCountryFlags.woff2`. The Dashboard loads it as a fallback when country-flag glyphs are missing; the Bilingual Reader loads it for its 54px voice-flag glyphs. The font subset covers flag codepoints only; no flag assets are fetched from a CDN.
