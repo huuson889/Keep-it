@@ -30,9 +30,10 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 3. Overview dùng `LHN_DASHBOARD_OVERVIEW_DATA` trên dữ liệu annotation đã tải: số trang/tô sáng/ghi chú/thẻ đến hạn, thẻ ôn hôm nay, hoạt động tạo annotation theo ngày, tag và hoạt động gần đây. Không có dữ liệu thì hiển thị số 0/trạng thái rỗng; heatmap không giả lập lịch sử review.
 4. Dictation summary đọc index cục bộ provider-neutral; migration chỉ đọc record YouTube cũ và thêm metadata vào index, không sửa/xóa `dictation:<videoId>`.
 5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`) và Grammar; Listening vẫn là placeholder. Action menu Flashcards gọi `startStudySession({ allSources:true })` để mở review trên các nguồn.
-6. Sửa/xóa/review annotation gửi message tới Background (chủ sở hữu IndexedDB); `origin` tránh xử lý lặp sự kiện do Dashboard tạo.
-7. Flashcards dùng `study-utils`/`study-view`; Translate, Reader và Background đảm nhiệm dịch, TTS, định nghĩa.
-8. Import/export cập nhật annotations/favorites theo kết quả trả về.
+6. Menu hồ sơ mở các tab Settings tương ứng; “Cài đặt tiện ích” dùng tab mở gần nhất và ghi nhớ qua `lhnDashboardLastSettingsTab`. Tên/email menu đọc từ hồ sơ cục bộ đang hoạt động; khi khách, chỉ hiện nhãn bản địa hóa “Bạn”/tương đương, không hiện email. Đăng xuất xóa hồ sơ cục bộ qua `LHN_ACCOUNT`.
+7. Sửa/xóa/review annotation gửi message tới Background (chủ sở hữu IndexedDB); `origin` tránh xử lý lặp sự kiện do Dashboard tạo.
+8. Flashcards dùng `study-utils`/`study-view`; Translate, Reader và Background đảm nhiệm dịch, TTS, định nghĩa.
+9. Import/export cập nhật annotations/favorites theo kết quả trả về.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 

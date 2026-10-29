@@ -8,6 +8,9 @@ const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
+const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
@@ -90,6 +93,13 @@ function setDisabledTooltip(control, anchor = control, reason = "") {
   }
 }
 function profileUsername(profile = demoProfile) { return String(profile?.username || "huson").replace(/^@+/, "").split("@")[0]; }
+function profileDisplayName(profile = demoProfile) {
+  const displayName = String(profile?.displayName || "").trim();
+  if (displayName) return displayName;
+  const username = String(profile?.username || "").trim().replace(/^@+/, "");
+  const email = String(profile?.email || "").trim();
+  return (username || email).split("@")[0] || t("profileGuest");
+}
 function profilePictureMarkup(profile = demoProfile, fallback = "") { return profile?.avatarDataUrl ? `<img class="profile-picture-img" src="${escapeHtml(profile.avatarDataUrl)}" alt="">` : fallback; }
 function syncDashboardTheme() {
   const preference = dashboardSettings.sidebarTheme;
@@ -107,8 +117,12 @@ function syncDashboardTheme() {
   }
 }
 function showDashboardSettingsPanel(name) {
-  document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === name; panel.hidden = !active; panel.classList.toggle("is-active", active); });
-  document.querySelectorAll("[data-settings-tab]").forEach(button => button.classList.toggle("is-active", button.dataset.settingsTab === name));
+  const requestedPanel = DASHBOARD_SETTINGS_TAB_NAMES.has(name) ? name : "account";
+  const panelName = !demoProfile && requestedPanel === "upgrade" ? "account" : requestedPanel;
+  lastDashboardSettingsTab = panelName;
+  browser.storage.local.set({ [LAST_DASHBOARD_SETTINGS_TAB_KEY]:panelName }).catch(() => {});
+  document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === panelName; panel.hidden = !active; panel.classList.toggle("is-active", active); });
+  document.querySelectorAll("[data-settings-tab]").forEach(button => button.classList.toggle("is-active", button.dataset.settingsTab === panelName));
 }
 function renderPronunciationDictionary() {
   const container = $("pronunciationLanguageCards");
@@ -232,7 +246,7 @@ function refreshDashboardSettings() {
   ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsDictationShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
   $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "dictationShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
   $("settingsVersion").textContent = `v${browser.runtime.getManifest().version}`;
-  const displayName = demoProfile?.displayName || t("profileGuest"), email = demoProfile ? (demoProfile.email || "huuson889@gmail.com") : t("profileLocal");
+  const displayName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest"), email = demoProfile ? String(demoProfile.email || "").trim() : t("profileLocal");
   $("settingsProfileName").textContent = displayName;
   $("settingsProfileEmail").textContent = email;
   const upgradeTab = document.querySelector('[data-settings-tab="upgrade"]');
@@ -252,7 +266,7 @@ function refreshDashboardSettings() {
     const picturePreview = accountState.querySelector("#settingsAccountPicturePreview");
     if (picturePreview) picturePreview.innerHTML = profilePictureMarkup(demoProfile, escapeHtml(String(displayName).slice(0, 1).toLocaleUpperCase()));
     const emailField = accountState.querySelector("#settingsAccountEmail");
-    emailField.value = demoProfile.email || "huuson889@gmail.com";
+    emailField.value = String(demoProfile.email || "").trim();
     emailField.disabled = emailField.dataset.editing !== "true";
     setDisabledTooltip(emailField, emailField.closest(".settings-account-controls"), emailField.disabled ? t("disabledEmail") : "");
   }
@@ -365,6 +379,18 @@ async function restoreAddonSettings() {
 function renderProfileSidebar() {
   const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
+  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan");
+  const activeEmail = String(demoProfile?.email || "").trim();
+  const activeName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest");
+  if (menuToggleName) menuToggleName.textContent = activeName;
+  if (popoverName) popoverName.textContent = activeName;
+  for (const emailNode of [menuToggleEmail, popoverEmail]) {
+    if (!emailNode) continue;
+    emailNode.textContent = activeEmail;
+    emailNode.hidden = !demoProfile || !activeEmail;
+  }
+  if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
+  if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
   const syncTooltip = escapeHtml(t(demoProfile ? "profileLocal" : "profileNotSynced"));
   const syncIcon = demoProfile
@@ -745,7 +771,8 @@ function applyTranslations() {
   renderExportMenus();
 }
 async function load() {
-  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY]);
+  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
+  if (DASHBOARD_SETTINGS_TAB_NAMES.has(settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY])) lastDashboardSettingsTab = settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY];
   const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
   const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
@@ -2337,6 +2364,16 @@ dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEvent
 });
 setDashboardView("overview");
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
+$("profileMenu").addEventListener("click", async event => {
+  const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;
+  if (!action) return;
+  event.preventDefault();
+  if (action === "account") openDashboardSettings("account");
+  else if (action === "settings") openDashboardSettings(lastDashboardSettingsTab);
+  else if (action === "appearance") openDashboardSettings("appearance");
+  else if (action === "shortcuts") openDashboardSettings("shortcuts");
+  else if (action === "logout") await signOutDemoProfile();
+});
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
 $("settingsAccountState").addEventListener("click", async event => {
@@ -2771,14 +2808,14 @@ $("importFile").addEventListener("change", async e => {
   } catch (error) { alert(t("importFailed", { error:error.message })); }
   e.target.value = "";
 });
-$("profileAppearanceToggle").addEventListener("click", async () => {
+async function toggleDashboardTheme() {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
-  dashboardSettings = { ...dashboardSettings, sidebarTheme: wasDark ? "light" : "dark" };
+  dashboardSettings = { ...dashboardSettings, sidebarTheme:wasDark ? "light" : "dark" };
   syncDashboardTheme();
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
-});
-$("dashboardSidebarThemeToggle").addEventListener("click", () => $("profileAppearanceToggle").click());
+}
+$("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardTheme);
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();

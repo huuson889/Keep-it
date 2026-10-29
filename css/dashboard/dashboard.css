@@ -1477,6 +1477,7 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .dashboard-reference-user-copy strong,#dashboardSidebar .dashboard-reference-user-copy span { display:block; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #dashboardSidebar .dashboard-reference-user-copy strong { color:#1e293b; font-size:12px; font-weight:600; }
 #dashboardSidebar .dashboard-reference-user-copy span { color:#64748b; font-size:10px; }
+#dashboardSidebar .dashboard-reference-user-copy span[hidden], #profileMenu .dashboard-avatar-identity > span[hidden], #profileMenu .dashboard-reference-plan[hidden] { display:none !important; }
 #dashboardSidebar .dashboard-reference-profile-wrap { position:static; }
 #profileMenu.dashboard-avatar-popover { position:absolute; z-index:1000; bottom:56px; left:10px; width:256px; padding:6px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; color:#334155; box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1); font-size:12px; transform-origin:bottom left; }
 #profileMenu.dashboard-avatar-popover[hidden] { display:none!important; }
