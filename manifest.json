@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.4.778",
+  "version": "3.4.779",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -106,7 +106,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/icons/icon.svg"
+        "assets/icons/icon.svg",
+        "assets/fonts/TwemojiCountryFlags.woff2"
       ],
       "matches": [
         "<all_urls>"

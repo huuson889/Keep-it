@@ -12,13 +12,13 @@ Reader cung cấp dịch song ngữ trên trang và thanh đọc/TTS. `bilingual
 |---|---|---|
 | [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | Content script controller | Tìm khối đọc, dịch, toolbar, voice/settings và đọc liên tục. |
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS` | Chia chunk, phát Google audio, fallback browser speech và ngôn ngữ/voice settings. |
-| [`js/reader/bilingual-flags.js`](../../js/reader/bilingual-flags.js) | `LHN_FLAGS` | Cờ vùng bổ sung; phải nạp trước `bilingual-reader.js`. |
+| [`js/reader/bilingual-flags.js`](../../js/reader/bilingual-flags.js) | `LHN_FLAGS.emojiForRegion` | Bản đồ mã vùng nhỏ, đổi mã quốc gia thành emoji cờ bằng font Twemoji cục bộ; không chứa SVG. |
 | [`vendor/readability/Readability.js`](../../vendor/readability/Readability.js) | `Readability` | Trích nội dung chính cho các luồng đọc/lazy trên trang. |
 | [`js/translate/translate.js`](../../js/translate/translate.js), [`js/core/messaging.js`](../../js/core/messaging.js) | `BILINGUAL_TRANSLATE` | Dịch block qua Background và cache. |
 
 ## 3. Luồng chính
 
-1. Content script nạp Reader sau Readability, language/config và flags; Reader chọn vùng nội dung và tạo toolbar trên trang.
+1. Content script nạp Reader sau Readability, language/config và mã vùng cờ; Reader chọn vùng nội dung và tạo toolbar trên trang. Thanh voice dùng emoji cờ qua font Twemoji cục bộ (tài nguyên được phép truy cập từ trang).
 2. Translation theo nhu cầu đọc: tìm block, chuẩn hóa text và gọi `BILINGUAL_TRANSLATE`; tránh dịch lại cùng block bằng cache/state hiện có.
 3. TTS lấy đoạn/segment và ngôn ngữ; `LHN_TTS` tách chunk giới hạn, ưu tiên audio provider, rồi fallback sang browser speech khi audio request lỗi.
 4. Toolbar đọc liên tục hoặc từ vị trí con trỏ, đồng bộ pause/stop và cập nhật tiến độ; settings voice/rate lưu qua storage và dùng chung với Dashboard.
@@ -26,7 +26,7 @@ Reader cung cấp dịch song ngữ trên trang và thanh đọc/TTS. `bilingual
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Nạp `bilingual-flags.js` trước `bilingual-reader.js`; Readability phải có trước khi Reader gọi `new Readability`.
+- Nạp `bilingual-flags.js` trước `bilingual-reader.js`; helper chỉ giữ mã vùng và hàm tạo emoji, không chứa bảng SVG. Font `TwemojiCountryFlags.woff2` phải nằm trong `web_accessible_resources` vì Reader gắn `@font-face` vào trang host. Readability phải có trước khi Reader gọi `new Readability`.
 - Dùng `LHN_TTS` cho chia chunk, normalize language, voice settings và playback; không tạo TTS riêng chỉ cho Reader.
 - Translation đi qua `LHN_MESSAGING`/Background để tận dụng providers và cache chung; không bỏ qua cache nếu thêm đường dịch mới.
 - Reader settings (`lhnBilingualReaderSettings`), display settings (`lhnSettings`) và translation language (`lhnStudyTranslationSettings`) có vai trò riêng; giữ migration/sync behavior.

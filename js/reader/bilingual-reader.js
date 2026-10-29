@@ -10,18 +10,10 @@
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
   let voiceKbIndex = -1;
-const FLAG_SVGS = {
-      ...(globalThis.LHN_FLAGS?.svgs || {}),
-      us: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><g fill-rule="evenodd"><path fill="#bd3d44" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 39.3h512v39.4H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.3H0zm0 78.7h512v39.4H0zm0 78.8h512v39.4H0z"/><path fill="#192f5d" d="M0 0h240v275.6H0z"/><g fill="#fff"><path d="M22.5 13.5l2.4 7.3h7.7l-6.2 4.5 2.4 7.3-6.3-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6zm52.5 0l2.4 7.3h7.7l-6.2 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.2-4.5h7.6z"/></g></g></svg>`,
-      uk: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><path fill="#00247d" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 0l512 512M512 0L0 512" stroke="#fff" stroke-width="60"/><path fill="#c8102e" d="M0 0l512 512M512 0L0 512" stroke="#c8102e" stroke-width="30"/><path fill="#fff" d="M256 0v512M0 256h512" stroke="#fff" stroke-width="100"/><path fill="#c8102e" d="M256 0v512M0 256h512" stroke="#c8102e" stroke-width="60"/></svg>`,
-      vn: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="512" fill="#da251d"/><polygon points="256,110 297,237 431,237 323,316 364,443 256,364 148,443 189,316 81,237 215,237" fill="#ffff00"/></svg>`,
-      fr: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="170.7" height="512" fill="#002395"/><rect x="170.7" width="170.7" height="512" fill="#fff"/><rect x="341.4" width="170.7" height="512" fill="#ed2939"/></svg>`,
-      de: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="170.7" fill="#000"/><rect y="170.7" width="512" height="170.7" fill="#dd0000"/><rect y="341.4" width="512" height="170.7" fill="#ffce00"/></svg>`,
-      jp: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="512" fill="#fff"/><circle cx="256" cy="256" r="150" fill="#bc002d"/></svg>`,
-      es: `<svg class="w-full h-full object-cover" viewBox="0 0 512 512"><rect width="512" height="128" fill="#c60b1e"/><rect y="128" width="512" height="256" fill="#ffc400"/><rect y="384" width="512" height="128" fill="#c60b1e"/></svg>`
-    };
-  const FLAG_REGION_KEYS = { ...(globalThis.LHN_FLAGS?.regionKeys || {}), US:'us', GB:'uk', VN:'vn', FR:'fr', DE:'de', JP:'jp', ES:'es' };
-  const flagSvgForRegion = region => FLAG_SVGS[FLAG_REGION_KEYS[region] || 'us'];
+  const FLAG_REGION_KEYS = globalThis.LHN_FLAGS?.regionKeys || Object.freeze({ US: "US" });
+  const flagEmojiForRegion = region => globalThis.LHN_FLAGS?.emojiForRegion?.(region) || "🇺🇸";
+  const flagFontUrl = globalThis.browser?.runtime?.getURL?.("assets/fonts/TwemojiCountryFlags.woff2")
+    || globalThis.chrome?.runtime?.getURL?.("assets/fonts/TwemojiCountryFlags.woff2") || "";
   const READ_LANGUAGE_CODES = ["en","vi","ko","ja","zh","es","pt","fr","de","it","ru","uk","pl","tr","ro","id","th","hi","bn","fa","tl"];
   const readLanguageRegion = code => LHN_TTS.normalizeLanguage(code).split("-")[1]?.toUpperCase() || "";
   const languageLabel = (code, locale) => { try { return new Intl.DisplayNames([locale], { type:"language" }).of(code) || code; } catch { return code; } };
@@ -55,6 +47,14 @@ const FLAG_SVGS = {
     return fontStylesheetReady;
   }
   style.textContent = `
+    @font-face{
+      font-family:"Twemoji Country Flags";
+      src:url("${flagFontUrl}") format("woff2");
+      font-style:normal;
+      font-weight:400;
+      font-display:swap;
+      unicode-range:U+1F1E6-1F1FF,U+1F3F4,U+E0062-E0063,U+E0065,U+E0067,U+E006C,U+E006E,U+E0073-E0074,U+E0077,U+E007F;
+    }
     .lhn-bilingual-speaker{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;color:#868e96;cursor:pointer;font-size:.8em;vertical-align:middle;user-select:none}
     .lhn-bilingual-speaker[data-reader-scope="false"]{display:none!important}
     .lhn-bilingual-speaker[data-reader-scope="false"][data-visibility="always"]{display:inline-flex!important;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
@@ -101,9 +101,8 @@ const FLAG_SVGS = {
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-kb-active{background:rgba(148,163,184,.18);box-shadow:inset 0 0 0 2px var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:first-child{font-size:30px;line-height:1}
     #lhn-bilingual-reading-bar .lhn-br-voice{direction:ltr}
-    #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:30px;height:30px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center}
-    #lhn-bilingual-reading-bar .lhn-br-flag svg{display:block;width:100%;height:100%;object-fit:cover}
-    #lhn-bilingual-reading-bar [data-voices] .lhn-br-flag{width:26px;height:26px}
+    #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:40px;height:40px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center;font-family:"Twemoji Country Flags",var(--lhn-app-font-family,"Segoe UI Emoji",sans-serif)!important;font-size:40px!important;line-height:1!important}
+    #lhn-bilingual-reading-bar [data-voices] .lhn-br-flag{width:40px;height:40px}
     #lhn-bilingual-reading-bar .lhn-br-voice>span:nth-child(2){flex:1}
     #lhn-bilingual-reading-bar .lhn-br-voice small{display:block;color:#64748b}
     #lhn-bilingual-reading-bar .lhn-br-account{width:100%;height:auto;justify-content:space-between;border-radius:8px;padding:10px 4px;text-align:left;white-space:normal}
@@ -259,7 +258,7 @@ const FLAG_SVGS = {
     bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
-    bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span>`;
+    bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span>`;
     bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : (settings.voiceMode !== "browser" && settings.readLanguage ? `${readLanguageName(settings.readLanguage)} (${LHN_TTS.normalizeLanguage(settings.readLanguage)})` : popupText("readerPopupSelectVoice"));
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
@@ -352,7 +351,7 @@ const FLAG_SVGS = {
       if (!languageGroupShown) { languageGroupShown = true; groupHeading("readerPopupGroupLanguages"); }
       const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
-      button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
+      button.innerHTML=`<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
       button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
     });
     const flagMissLogged = new Set(); // debug: log một lần cho mỗi vùng thiếu cờ
@@ -365,13 +364,13 @@ const FLAG_SVGS = {
       const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
       if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
-      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
       {
         const baseLang = (voice.lang || "").split(/[-_]/)[0].toLowerCase();
         let langLabel = baseLang; try { langLabel = voiceLangNames?.of(baseLang) || baseLang; } catch {}
         let countryLabel = region || langLabel; try { if (region) countryLabel = voiceRegionNames?.of(region) || region; } catch {}
         const shortVoice = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name;
-        button.innerHTML = `<span class="lhn-br-flag">${flagSvgForRegion(region)}</span><span class="lhn-br-voice-text"><span class="lhn-br-voice-country">${escVoiceHtml(countryLabel)}</span><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${isSelected ? "✓" : ""}`;
+        button.innerHTML = `<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span class="lhn-br-voice-text"><span class="lhn-br-voice-country">${escVoiceHtml(countryLabel)}</span><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${isSelected ? "✓" : ""}`;
         button.title = `${voice.name} · ${voice.lang}`;
       }
       button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);

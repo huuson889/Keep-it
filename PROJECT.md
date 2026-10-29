@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.778; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
-- Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.778, `node --check` 48 JavaScript files đạt, 16/16 tests, 10 CSS files + 2 inline blocks parse 0 lỗi; manifest `3.4.778`, `git diff --check` và ZIP 108 files/CRC đạt. Topbar Chép chính tả đã được người dùng xác nhận trên Chrome; sidebar `.776` được người dùng xác nhận trông tốt.
+- Version hiện tại: v3.4.779; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Highlights & Notes là bề mặt duy nhất cho highlights/notes; chi tiết route/bridge ở mục 4.
+- Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ ở 40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
+- Kiểm tra gần nhất: `node --check` 48 JavaScript files, 18/18 tests, 10 CSS files + 2 inline HTML blocks + Reader injected CSS parse, manifest `3.4.779`, `git diff --check`, và ZIP 109 file entries/CRC đạt. Reader mới kiểm thử tĩnh; chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard (Chrome/Firefox, desktop và màn hình hẹp): sidebar `.776` đã được người dùng xác nhận trông tốt; topbar sticky/compact đã được xác nhận trên Chrome ở v3.4.775. Còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và xác nhận trực quan trên browser cho nền track iframe dark mode đã sửa ở `.778`; hiện mới có hồi quy static.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
-- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
+- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và hiển thị cờ Twemoji 40px trên trang thật; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
 - Dictation v2 “Nói”: chốt quyền và disclosure microphone; dự kiến SpeechRecognition trên Chromium, ghi âm/phát lại trên Firefox.
@@ -106,6 +106,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.779 | Arena.ai Agent sửa:**
+
+- Thay artwork SVG cờ của Reader bằng emoji mã vùng, render từ TwemojiCountryFlags.woff2 cục bộ ở 40px; giữ các SVG biểu tượng UI và rà thấy Dashboard/Popup không có SVG cờ cần chuyển.
+- Cho phép font qua `web_accessible_resources`; cập nhật license notice, hướng dẫn Reader và regression tests.
+- File: `js/reader/bilingual-flags.js`, `js/reader/bilingual-reader.js`, `manifest.json`, `tests/reader-country-flags.test.cjs`, `docs/modules/reader.md`, `THIRD_PARTY_NOTICES.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.779.zip`.
+- Kiểm tra: `node --check` 48 JavaScript files đạt; `node --test tests/*.test.cjs` đạt 18/18; 10 CSS files + 2 inline HTML blocks + Reader injected stylesheet parse 0 lỗi; manifest `3.4.779`, `git diff --check`, ZIP 109 file entries/CRC đạt. Archive nhỏ hơn bản `.778` khoảng 169 KB (xấp xỉ 15,3%). Chưa kiểm thử trên browser thật.
 
 **2026-10-30 | v3.4.778 | Arena.ai Agent sửa:**
 
