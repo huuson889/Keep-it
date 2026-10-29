@@ -1012,18 +1012,16 @@ html.dark .bilingual-preview{border-color:#374151;background:#111827}html.dark .
 /* Dashboard reference sidebar UI (v3.4.725) */
 html,body { height:100%; }
 body { height:100vh!important; overflow:hidden!important; display:flex!important; flex-direction:row!important; align-items:stretch; }
-body > main { width:auto!important; max-width:none!important; min-width:0!important; height:100vh!important; flex:1 1 0!important; margin:0 0 0 56px!important; padding-left:0!important; padding-right:14px!important; }
-body.dashboard-sidebar-pinned > main { margin-left:0!important; }
-#dashboardSidebar.dashboard-reference-sidebar { position:fixed; z-index:50; top:0; bottom:0; left:0; display:flex; width:56px; height:100vh; min-height:0; flex:0 0 56px; flex-direction:column; overflow:visible; border-right:1px solid #e2e8f0; background:#fff; color:#475569; font-family:var(--lhn-app-font-family); transition:width .22s cubic-bezier(.4,0,.2,1),background-color .2s ease,border-color .2s ease; }
-#dashboardSidebar.dashboard-reference-sidebar:hover { width:220px; }
-#dashboardSidebar.dashboard-reference-sidebar.sidebar-pinned { position:relative; top:auto; bottom:auto; left:auto; width:220px; flex:0 0 220px; }
-body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { position:relative; top:auto; bottom:auto; left:auto; width:220px; flex:0 0 220px; }
+body > main { width:auto!important; max-width:none!important; min-width:0!important; height:100vh!important; flex:1 1 0!important; margin:0!important; padding-left:0!important; padding-right:14px!important; }
+#dashboardSidebar.dashboard-reference-sidebar { position:relative; z-index:50; top:auto; bottom:auto; left:auto; display:flex; width:56px; height:100vh; min-height:0; flex:0 0 56px; flex-direction:column; overflow:visible; border-right:1px solid #e2e8f0; background:#fff; color:#475569; font-family:var(--lhn-app-font-family); transition:width .22s cubic-bezier(.4,0,.2,1),flex-basis .22s cubic-bezier(.4,0,.2,1),background-color .2s ease,border-color .2s ease; }
+#dashboardSidebar.dashboard-reference-sidebar.sidebar-pinned { width:220px; flex:0 0 220px; }
+body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { width:220px; flex:0 0 220px; }
 #dashboardSidebar .dashboard-reference-header { position:relative; display:flex; height:64px; min-height:64px; flex:0 0 64px; align-items:center; overflow:hidden; padding:0 12px; border-bottom:1px solid #e2e8f0; }
 #dashboardSidebar .dashboard-reference-brand { display:flex; width:100%; min-width:0; align-items:center; gap:12px; overflow:hidden; }
 #dashboardSidebar .dashboard-reference-logo { display:flex; width:32px; height:32px; flex:0 0 32px; align-items:center; justify-content:center; border-radius:12px; background:linear-gradient(to top right,#2563eb,#6366f1); color:#fff; box-shadow:0 4px 8px rgba(59,130,246,.2); }
 #dashboardSidebar .dashboard-reference-logo svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 #dashboardSidebar .dashboard-reference-brand-copy { display:none; flex-direction:column; justify-content:center; padding-right:32px; }
-#dashboardSidebar:hover .dashboard-reference-brand-copy { display:flex; }
+#dashboardSidebar.sidebar-pinned:hover .dashboard-reference-brand-copy { display:flex; }
 #dashboardSidebar .dashboard-reference-brand-copy strong { color:#1e293b; font-size:14px; font-weight:700; line-height:1.25; letter-spacing:.025em; }
 #dashboardSidebar .dashboard-reference-brand-copy span { color:#64748b; font-size:10px; font-weight:500; line-height:1.25; }
 #dashboardSidebar .dashboard-reference-pin { position:absolute; top:50%; right:10px; display:none; width:auto; align-items:center; justify-content:center; padding:6px; transform:translateY(-50%); border:0; border-radius:8px; background:transparent; color:#94a3b8; cursor:pointer; }
@@ -1031,8 +1029,8 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .dashboard-reference-pin:hover { background:#f1f5f9; color:#334155; }
 #dashboardSidebar .dashboard-reference-pin svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 #dashboardSidebar .nav-label { display:none; max-width:0; overflow:hidden; opacity:0; transition:opacity .15s ease,max-width .22s ease; white-space:nowrap; }
-#dashboardSidebar:hover .nav-label { display:inline-block; max-width:150px; opacity:1; }
-#dashboardSidebar:hover .dashboard-reference-brand-copy { display:flex; }
+#dashboardSidebar.sidebar-pinned:hover .nav-label { display:inline-block; max-width:150px; opacity:1; }
+#dashboardSidebar.sidebar-pinned:hover .dashboard-reference-brand-copy { display:flex; }
 #dashboardSidebar .dashboard-reference-nav { display:flex; min-height:0; flex:1 1 auto; flex-direction:column; gap:4px; overflow-x:hidden; overflow-y:auto; padding:8px; scrollbar-width:none; }
 #dashboardSidebar .dashboard-reference-nav::-webkit-scrollbar { display:none; }
 #dashboardSidebar .reference-nav-item { display:flex; width:100%; height:40px; min-height:40px; flex:0 0 40px; align-items:center; gap:12px; overflow:hidden; padding:0 10px; border-radius:12px; color:#475569; text-decoration:none; white-space:nowrap; transition:color .15s ease,background-color .15s ease; }
@@ -1051,9 +1049,9 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .dashboard-reference-user-copy { min-width:0; flex-direction:column; text-align:left; }
 #dashboardSidebar .reference-footer-button > .dashboard-profile-free-badge { flex:0 0 auto; margin-left:auto; min-height:21px; padding:4px 8px; border:1px solid #d7dce4; border-radius:999px; background:#f1f5f9; color:#64748b; font:600 10px/1 var(--lhn-app-font-family); white-space:nowrap; box-shadow:none!important; }
 #dashboardSidebar .dashboard-profile-free-badge svg { display:block; width:12px; height:12px; flex:none; }
-#dashboardSidebar:hover .nav-label.dashboard-profile-free-badge,
+#dashboardSidebar.sidebar-pinned:hover .nav-label.dashboard-profile-free-badge,
 #dashboardSidebar.sidebar-pinned .nav-label.dashboard-profile-free-badge { display:inline-flex; align-items:center; justify-content:center; gap:5px; }
-#dashboardSidebar:hover .dashboard-reference-user-copy { display:flex; }
+#dashboardSidebar.sidebar-pinned:hover .dashboard-reference-user-copy { display:flex; }
 #dashboardSidebar .dashboard-reference-user-copy strong,#dashboardSidebar .dashboard-reference-user-copy span { display:block; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #dashboardSidebar .dashboard-reference-user-copy strong { color:#1e293b; font-size:12px; font-weight:600; }
 #dashboardSidebar .dashboard-reference-user-copy span { color:#64748b; font-size:10px; }
@@ -1113,16 +1111,15 @@ html.dark #profileMenu .dashboard-avatar-logout .dashboard-avatar-guest-login sv
 #dashboardSidebar :focus-visible,#profileMenu :focus-visible { outline:2px solid #6366f1; outline-offset:2px; }
 @media(prefers-reduced-motion:reduce) { #dashboardSidebar,#dashboardSidebar *,#profileMenu { transition:none!important; } }
 
-/* Hover overlays the library; only pinning reserves the expanded sidebar width. */
-#dashboardSidebar.dashboard-reference-sidebar:not(.sidebar-pinned) { position:fixed; left:0; top:0; bottom:0; width:56px; flex:0 0 56px; }
-#dashboardSidebar.dashboard-reference-sidebar:not(.sidebar-pinned):hover { width:220px; }
+/* The sidebar remains in the flex row in both states; flex-basis animates the content shift. */
+#dashboardSidebar.dashboard-reference-sidebar:not(.sidebar-pinned) { position:relative; top:auto; bottom:auto; left:auto; width:56px; flex:0 0 56px; }
 #dashboardSidebar.dashboard-reference-sidebar.sidebar-pinned,
 body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { position:relative; top:auto; bottom:auto; left:auto; width:220px; flex:0 0 220px; }
 #dashboardSidebar.sidebar-pinned .toggle-btn-expanded { display:flex; }
 #dashboardSidebar.sidebar-pinned .nav-label { display:inline-block; max-width:150px; opacity:1; }
 #dashboardSidebar.sidebar-pinned .dashboard-reference-brand-copy { display:flex; }
 #dashboardSidebar.sidebar-pinned .dashboard-reference-user-copy { display:flex; }
-body > main { margin-left:56px!important; padding-left:0!important; padding-right:14px!important; }
+body > main { margin-left:0!important; padding-left:0!important; padding-right:14px!important; }
 body.dashboard-sidebar-pinned > main { margin-left:0!important; }
 #dashboardSidebar .dashboard-theme-sun { display:none; }
 html:not(.dark) #dashboardSidebar .dashboard-theme-moon { display:none; }
@@ -1136,7 +1133,7 @@ html.dark #dashboardSidebar .dashboard-theme-sun { display:none; }
   flex:1 1 0;
   min-width:0;
   height:100vh;
-  margin:0 0 0 56px!important;
+  margin:0!important;
   padding:0!important;
   overflow:hidden;
 }

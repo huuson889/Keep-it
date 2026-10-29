@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.775; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.776; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.775, `node --check` toàn bộ JS đạt, 14/14 tests, 10 CSS files + 2 inline blocks parse 0 lỗi, manifest đúng version, cascade regression test và `git diff --check` đạt; ZIP 107 entries, manifest gốc đúng, CRC hợp lệ. Chưa kiểm thử browser thật; cần xác nhận trực quan topbar Chép chính tả.
+- Kiểm tra gần nhất: v3.4.776, `node --check` toàn bộ JS đạt, 15/15 tests, 10 CSS files + 2 inline blocks parse 0 lỗi, manifest và `git diff --check` đạt; ZIP 108 entries, manifest gốc đúng, CRC hợp lệ. Topbar Chép chính tả đã được người dùng xác nhận trên Chrome; layout sidebar phiên bản này chưa được xác nhận trực quan.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra một shared topbar đi qua Overview/Listening/Highlights & Notes iframe, label theo route, sticky/thu nhỏ/hoàn nguyên và export; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra sidebar mở mặc định và pin toggle 220px/56px với content reflow; topbar sticky/compact đã được người dùng xác nhận trên Chrome ở v3.4.775; còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions và responsive; chưa chạy UI thật cho thay đổi sidebar.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -89,7 +89,7 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
-Dashboard sidebar UI (các mục ngoài 3 route) ──> hover overlay/pin/avatar popover; hai nút theme dùng setting app đã lưu
+Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.776 | Arena.ai Agent sửa:**
+
+- Mặc định mở rộng sidebar 220px. `dashboardSidebarPin` toggle sang 56px/220px; sidebar luôn là flex item nên nội dung bên phải đi theo chuyển động `flex-basis` mượt, không bị hover bung lại sau khi thu gọn. Các route chính/iframe bỏ margin giả định sidebar fixed.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `css/dashboard/overview.css`, `tests/dashboard-sidebar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.776.zip`.
+- Kiểm tra: `node --check` toàn bộ JS đạt; `node --test tests/*.test.cjs` đạt 15/15; 10 CSS files + 2 inline blocks parse 0 lỗi; manifest v3.4.776, `git diff --check` và ZIP 108 entries/CRC đạt. Chưa kiểm thử trực quan thay đổi sidebar trong browser.
 
 **2026-10-30 | v3.4.775 | Arena.ai Agent sửa:**
 
