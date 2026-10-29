@@ -255,6 +255,10 @@
     listenDemoBadge:"예시 데이터", listenSortTitle:"제목순 A–Z", listenSortProgress:"진행률", listenEnterSearch:"먼저 검색어를 입력하세요.", listenSearchEmpty:"입력하면서 저장된 세션을 검색하세요.", listenSearchResults:"저장된 세션 {count}개가 “{query}”와 일치합니다.", listenSearchYoutubeQuery:"YouTube에서 “{query}” 검색", listenSearchGoogleQuery:"Google에서 “{query}” 검색", listenSearchRightNote:"외부 검색은 데모 화면일 뿐입니다.", listenVisibleCount:"예시 세션 {count}개", listenNoResults:"일치하는 저장 세션이 없습니다. 다른 검색어를 입력하거나 위에서 YouTube / Google을 검색하세요.", listenExternalToast:"데모: {engine}에서 “{query}” 검색 결과가 열립니다.", listenPreviewActionToast:"미리보기 전용: 이 Dictation 세션은 연결되지 않았습니다.", listenMistakeFilterToast:"데모 미리보기: “{filter}” 필터가 선택되었습니다."
   });
 
+  Object.assign(MESSAGES.en, { ovMenuDictation:"Dictation", ovMenuDraft1:"Draft 1", ovMenuDraft2:"Draft 2", ovMenuHighlightsNotes:"Highlights & Notes" });
+  Object.assign(MESSAGES.vi, { ovMenuDictation:"Chép chính tả", ovMenuDraft1:"nháp 1", ovMenuDraft2:"nháp 2", ovMenuHighlightsNotes:"Tô sáng & Ghi chú" });
+  Object.assign(MESSAGES.ko, { ovMenuDictation:"받아쓰기", ovMenuDraft1:"초안 1", ovMenuDraft2:"초안 2", ovMenuHighlightsNotes:"하이라이트 및 메모" });
+
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
