@@ -35,6 +35,7 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 - “Tô sáng & Ghi chú” là giao diện duy nhất để xem và quản lý highlights/notes. Không khôi phục hai route nháp, không thêm API/backend hay nguồn lưu annotation thứ hai.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ `dashboardHighlightsNotesFrame.contentWindow` cùng `location.origin`; protocol version là `1`.
 - Giữ đúng một node `#dashboardSharedTopbar`; parent chuyển node qua các route và sang iframe cùng origin. Menu export vẫn nằm trong document iframe khi route Highlights & Notes active để delegated click handlers hiện có tiếp tục hoạt động.
+- Iframe Highlights & Notes dùng `html.lr-demo-embedded` làm scrollport; CSS scrollbar WebKit phải nhắm cả root `html` lẫn vùng cuộn con, với track trong suốt và thumb qua `--lr-scrollbar-thumb`. `lr-practice-theme-sync.js` đồng bộ class `dark` từ Dashboard để màu thumb theo theme.
 - `KEEPIT_HIGHLIGHTS_NOTES_DATA` chỉ là bản sao trong bộ nhớ iframe. IndexedDB/Background tiếp tục là nguồn annotation duy nhất; thao tác ghi phải quay lại parent handler.
 - Giữ đồng bộ annotations, page favorites và note favorites sau `load()`, CRUD và storage changes để iframe không dùng snapshot cũ.
 - Export toàn thư viện và import JSON, edit/delete, page/note favorite, review flashcard và thao tác mở/đọc highlight tiếp tục dùng dữ liệu cục bộ và handler hiện có.

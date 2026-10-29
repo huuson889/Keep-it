@@ -10,6 +10,7 @@ const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"
 const listeningCss = fs.readFileSync(path.join(root, "css/dashboard/listening-demo.css"), "utf8");
 const notesHtml = fs.readFileSync(path.join(root, "pages/lr-practice-demo.html"), "utf8");
 const notesJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
+const themeSyncJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-theme-sync.js"), "utf8");
 
 test("All three routes share the single Overview topbar node and change its label", () => {
   assert.equal((dashboardHtml.match(/id="dashboardSharedTopbar"/g) || []).length, 1);
@@ -31,6 +32,13 @@ test("All three routes share the single Overview topbar node and change its labe
   assert.match(dashboardJs, /activeDashboardView === "listening"\s*\? dashboardListeningView\s*:\s*findSharedTopbarScrollTarget\(dashboardSharedTopbar\)/);
   assert.match(overviewCss, /#dashboardListeningView>\.ov-topbar\{width:100%;max-width:1320px;margin-left:auto;margin-right:auto\}/);
   assert.match(notesJs, /bindSharedTopbarScrollTarget\(\)/);
+});
+
+test("Highlights & Notes root scrollbar uses the synced dark thumb and a transparent track", () => {
+  assert.match(notesHtml, /html\.lr-demo-embedded\.dark\s*\{\s*--lr-scrollbar-thumb:#475569;\s*\}/);
+  assert.match(notesHtml, /html\.lr-demo-embedded::-webkit-scrollbar-track,[\s\S]*?html\.lr-demo-embedded body \*::-webkit-scrollbar-track \{ background:transparent!important; \}/);
+  assert.match(notesHtml, /html\.lr-demo-embedded::-webkit-scrollbar-thumb,[\s\S]*?html\.lr-demo-embedded body \*::-webkit-scrollbar-thumb \{ border-radius:999px!important; background:var\(--lr-scrollbar-thumb\)!important; \}/);
+  assert.match(themeSyncJs, /document\.documentElement\.classList\.toggle\("dark", isDark\)/);
 });
 
 test("The shared topbar sticks at the viewport edge, shrinks by height, and retains iframe export controls", () => {
