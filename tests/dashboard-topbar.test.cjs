@@ -32,7 +32,7 @@ test("The shared topbar sticks at the viewport edge, shrinks by height, and reta
   assert.match(overviewCss, /#dashboardOverviewView \.ov-topbar[\s\S]*?position:\s*sticky[\s\S]*?top:\s*0/);
   assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{[^}]*padding:0 clamp\(/);
   assert.match(overviewCss, /#dashboardOverviewView \.ov-content\{padding-top:22px\}/);
-  assert.match(overviewCss, /#dashboardListeningView\{[^}]*padding:0 24px 24px!important/);
+  assert.match(overviewCss, /#dashboardListeningView\{[^}]*min-height:0!important[^}]*overflow-x:hidden!important;overflow-y:auto!important[^}]*padding:0 24px 24px!important/);
   assert.match(overviewCss, /#dashboardListeningView::before\{content:"";display:block;height:24px\}/);
   assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{padding:0 14px 30px!important\}/);
   assert.match(overviewCss, /@media\(max-width:620px\)\{#dashboardListeningView\{padding:0 15px 15px!important\}/);
