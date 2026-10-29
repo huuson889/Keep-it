@@ -105,6 +105,7 @@ function syncDashboardTheme() {
   const preference = dashboardSettings.sidebarTheme;
   const dark = preference === "dark" || (preference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.classList.remove("dashboard-theme-pending");
   const state = $("profileAppearanceState");
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
   const sidebarThemeLabel = $("dashboardSidebarThemeText"), sidebarThemeButton = $("dashboardSidebarThemeToggle");

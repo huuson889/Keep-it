@@ -1619,6 +1619,14 @@ body.dashboard-sidebar-pinned > #dashboardGrammarPracticeView { margin-left:0; }
 body.dashboard-sidebar-pinned > #dashboardLRPracticeView { margin-left:0!important; }
 #dashboardLRPracticeFrame { display:block; width:100%; height:100%; border:0; background:#f5f7fb; }
 
+/* Hold the initial canvas dark and hide content until the saved theme is restored. */
+html.dashboard-theme-pending,
+html.dashboard-theme-pending body {
+  background:#0b1120!important;
+}
+html.dashboard-theme-pending { color-scheme:dark; }
+html.dashboard-theme-pending body { visibility:hidden!important; }
+
 /* Dashboard scrollbars: 3px on Chromium (both axes), thin on engines without pixel sizing. */
 :root { --lhn-scrollbar-thumb:#cbd5e1; }
 html.dark { --lhn-scrollbar-thumb:#475569; }
