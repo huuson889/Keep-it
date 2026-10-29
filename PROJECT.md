@@ -8,7 +8,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Highlights & Notes iframe, gồm topbar sticky/thu gọn theo đúng vùng cuộn; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra một shared topbar đi qua Overview/Listening/Highlights & Notes iframe, label theo route, sticky/thu nhỏ/hoàn nguyên và export; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -109,8 +109,8 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 **2026-10-30 | v3.4.767 | Arena.ai Agent sửa:**
 
-- Chỉnh điều kiện thu gọn: chỉ khi topbar chạm mép trên viewport mới thu nhỏ; thêm ngưỡng hồi vị để tránh rung khi reflow/scale màn hình. Highlights & Notes iframe theo dõi scroll ở document capture và viewport; đồng bộ lại trạng thái khi đổi route/resize.
-- File: `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/overview.css`, `pages/lr-practice-demo.html`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.767.zip`.
+- Thay các topbar route riêng bằng một node chung theo Overview; khi đổi route chỉ thay nhãn. Node đi theo từng content scroller, gồm document iframe Highlights & Notes; chạm mép viewport thì sticky `top:0` và thu nhỏ chiều cao thật, cuộn ngược thì mở lại. Giữ action export hiện có trong iframe.
+- File: `pages/dashboard.html`, `pages/lr-practice-demo.html`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/overview.css`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.767.zip`.
 - Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 14/14; 10 CSS files và Dashboard/iframe inline styles parse 0 lỗi; manifest v3.4.767, `git diff --check` đạt; ZIP v3.4.767 có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-30 | v3.4.766 | Arena.ai Agent sửa:**
