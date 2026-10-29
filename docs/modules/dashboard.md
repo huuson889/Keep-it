@@ -4,53 +4,45 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ sơ. `dashboard.js` điều phối state/DOM; annotation CRUD thuộc Background, còn settings và một số preference lưu qua `browser.storage.local`.
+Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ sơ. `dashboard.js` điều phối state/DOM; Background sở hữu annotation CRUD/IndexedDB, còn favorites và một số preferences lưu qua `browser.storage.local`.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html), [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js), [`js/dashboard/lr-practice-theme-sync.js`](../../js/dashboard/lr-practice-theme-sync.js) | `#dashboardLRPracticeView`, demo script, `syncDashboardTheme` | Dashboard routes; phần nội dung demo LR không kèm sidebar; theme sync parent, không nối dữ liệu app. |
-| [`css/dashboard/overview.css`](../../css/dashboard/overview.css), [`css/dashboard/dashboard.css`](../../css/dashboard/dashboard.css) | Overview/Listening styles, `#dashboardLRPracticeView` | Style Dashboard và khung iframe LR. |
-| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `setDashboardView`, `load`, `render` | Điều hướng 5 view và điều phối thư viện/settings/study/profile. |
-| [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `LANGUAGES.t` | Bản dịch giao diện en/vi/ko. |
-| [`js/dashboard/library.js`](../../js/dashboard/library.js) | `LHN_LIBRARY` | Metadata, nhóm trang và key annotation. |
+| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardLRPracticeFrame` | Dashboard routes và UI LR giữ bố cục demo trong iframe. |
+| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `render`, `setDashboardView`, `syncLRPracticeFrame` | Nạp local data, điều hướng, quản lý UI và cầu dữ liệu/actions cho iframe LR. |
+| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Nhóm annotation để hiển thị; lọc, thống kê và gửi thao tác qua parent. |
+| [`js/dashboard/lr-practice-theme-sync.js`](../../js/dashboard/lr-practice-theme-sync.js) | `syncDashboardTheme` | Đồng bộ class sáng/tối từ parent. |
+| [`js/dashboard/library.js`](../../js/dashboard/library.js) | `LHN_LIBRARY` | Metadata, nhóm trang và page key annotation. |
+| [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_DASHBOARD_OVERVIEW_DATA` | Tổng hợp Overview từ annotation cục bộ. |
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Render flashcards và tiện ích thuật toán. |
-| [`js/dashboard/settings-ui.js`](../../js/dashboard/settings-ui.js) | `LHN_DASHBOARD_SETTINGS_UI` | Bộ chọn ngôn ngữ, website và tìm Settings. |
-| [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Import/export và profile demo. |
-| [`js/dashboard/profile-stats.js`](../../js/dashboard/profile-stats.js) | `LHN_PROFILE_STATS` | Tổng hợp số liệu hồ sơ từ annotation. |
-| [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_DASHBOARD_OVERVIEW_DATA` | Helper thuần tổng hợp số liệu thật từ annotations cho Overview. |
-| [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Hợp đồng/chuẩn hóa session Dictation dùng chung giữa provider và Dashboard. |
-| [`js/dashboard/flags.js`](../../js/dashboard/flags.js) | module side effect | Hỗ trợ emoji cờ cho Dashboard. |
+| [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Import/export và profile cục bộ. |
+| [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `LANGUAGES.t` | Bản dịch Dashboard en/vi/ko. |
 
 ## 3. Luồng chính
 
-1. `dashboard.html` nạp core/helpers trước entry; giữ thứ tự script khi chỉnh markup.
-2. `load()` đọc settings/preferences và lấy annotations theo batch qua `LHN_MESSAGING`; `render()` cập nhật thư viện, panel và Overview.
-3. Overview dùng `LHN_DASHBOARD_OVERVIEW_DATA` trên dữ liệu annotation đã tải: số trang/tô sáng/ghi chú/thẻ đến hạn, thẻ ôn hôm nay, hoạt động tạo annotation theo ngày, tag và hoạt động gần đây. Không có dữ liệu thì hiển thị số 0/trạng thái rỗng; heatmap không giả lập lịch sử review.
-4. Dictation summary đọc index cục bộ provider-neutral; migration chỉ đọc record YouTube cũ và thêm metadata vào index, không sửa/xóa `dictation:<videoId>`.
-5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`), Grammar và LR practice; route LR nhúng phần nội dung demo trong iframe (không kèm sidebar trùng); script mẫu chạy riêng và theme đồng bộ từ class dark của Dashboard, không đọc/ghi dữ liệu app. Action menu Flashcards gọi `startStudySession({ allSources:true })` để mở review trên các nguồn.
-6. Menu hồ sơ mở các tab Settings tương ứng; “Cài đặt tiện ích” dùng tab mở gần nhất và ghi nhớ qua `lhnDashboardLastSettingsTab`. Tên/email menu đọc từ hồ sơ cục bộ đang hoạt động; khi khách, phần đầu hiện “Bạn” và “Đăng nhập để đồng bộ” bên trái, nút cloud-off nhỏ bên phải; khi đăng nhập, nút đó dùng cloud icon hiện có. Nút hồ sơ sidebar luôn có huy hiệu gói miễn phí kiểu toolbar popup, kể cả khi đã đăng nhập. Ẩn Đồng bộ dữ liệu, Trợ giúp & Phản hồi, Đăng xuất, thay bằng nút Đăng nhập mở form. Đăng xuất khi đã đăng nhập xóa hồ sơ cục bộ qua `LHN_ACCOUNT`.
-7. Sửa/xóa/review annotation gửi message tới Background (chủ sở hữu IndexedDB); `origin` tránh xử lý lặp sự kiện do Dashboard tạo.
-8. Flashcards dùng `study-utils`/`study-view`; Translate, Reader và Background đảm nhiệm dịch, TTS, định nghĩa.
-9. Import/export cập nhật annotations/favorites theo kết quả trả về.
+1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ nguyên thứ tự script khi chỉnh markup.
+2. `load()` đọc settings và tải annotations theo batch qua `LHN_MESSAGING`, sau đó render các view.
+3. Overview tổng hợp từ annotations và Dictation session index cục bộ; dữ liệu rỗng cho số 0/trạng thái rỗng, không dựng lịch sử review.
+4. `setDashboardView()` chuyển năm route: Overview, Listening, Library, Grammar và LR practice. Các view còn lại giữ route/hành vi hiện có.
+5. LR practice giữ nguyên UI iframe. Parent gửi annotation records cùng favorites/language bằng `postMessage`; iframe nhóm trang từ schema hiện có, áp bộ lọc và tính thống kê cục bộ.
+6. Iframe gửi edit/delete/favorite/export/study/jump/speak qua cầu cùng origin. `dashboard.js` kiểm tra source/origin, gọi handler hiện có và gửi state mới về iframe.
+7. CRUD annotation đi qua Background; favorites qua `browser.storage.local`. Import/export và flashcards tiếp tục dùng helper/handler Dashboard hiện có.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Năm route: Tổng quan, Luyện nghe, Thư viện (`home`), Luyện ngữ pháp và Luyện đề LR; mục “Ôn tập Flashcards” là action riêng (`data-dashboard-action`) gọi `startStudySession({ allSources:true })`, không tạo route mới.
-- Overview dùng dữ liệu annotation và Dictation index cục bộ thật; Listening và Luyện đề LR là preview UI dùng dữ liệu mẫu, không kết nối storage/API/handler của app. LR chạy riêng trong iframe từ `pages/lr-practice-demo.html`; `lr-practice-theme-sync.js` chỉ đồng bộ sáng/tối từ parent, không kết nối dữ liệu. Nút CTA của Overview vẫn chỉ để trình bày theo phạm vi đã duyệt, không thêm handler.
-- Chỉ `data-dashboard-view` đổi view; giữ luồng thư viện và `#profileSidebar` của Grammar.
-- Chuỗi UI mới dùng `data-i18n`/`data-i18n-aria-label`, có bản dịch trong `MESSAGES` cho en, vi, ko.
-- Annotation CRUD/review đi qua Background message (`GET_BATCH`, `UPDATE`, `DELETE`, `REVIEW_ANNOTATION`, `IMPORT`); không truy cập IndexedDB trực tiếp.
-- Settings/favorites/study/Reader preferences có storage keys riêng; dùng `LHN_DEFAULTS`/`LHN_SETTINGS` khi cần default.
-- Dictation index key `dictation:session-index:v1` chứa summary theo hợp đồng `{sourceType, sourceId, title, url, currentIndex, totalCount, solvedCount, updatedAt, status}`; `currentIndex` zero-based. Consumer không dựa trực tiếp vào key YouTube. Legacy backfill là additive, failure-isolated.
-- Giữ thứ tự nạp helper và API `LHN_*`; đổi contract thì cập nhật consumer trong `dashboard.js`/HTML.
-- Đồng bộ storage/message events; optimistic UI cần xử lý lỗi/rollback.
-- `flags.js` nằm trong `dashboard/`; bảng file chỉ liệt kê phần phụ trợ chính.
+- Giữ năm route hiện có; action Flashcards trên sidebar vẫn gọi `startStudySession({ allSources:true })` và không tạo route mới.
+- LR demo chỉ kết nối local annotations qua parent; không gọi API/backend, không truy cập IndexedDB trực tiếp và không đổi route khác.
+- Chỉ nhận `LR_DEMO_READY`/`LR_DEMO_ACTION` từ `dashboardLRPracticeFrame.contentWindow` cùng `location.origin`; protocol version hiện là `1`.
+- `KEEPIT_LR_DATA` chỉ là bản sao trong bộ nhớ iframe. Background/IndexedDB vẫn là nguồn annotation duy nhất; các thao tác ghi phải quay lại handler parent.
+- Giữ đồng bộ annotations, page favorites và note favorites sau `load()`, CRUD và storage changes để iframe không giữ snapshot cũ.
+- Annotation CRUD/review tiếp tục dùng Background messages (`GET_BATCH`, `UPDATE`, `DELETE`, `DELETE_PAGE`, `REVIEW_ANNOTATION`, `IMPORT`).
+- Settings/favorites/preferences giữ storage keys hiện có; optimistic favorite phải phục hồi state khi lưu lỗi.
+- Parent labels mới dùng `data-i18n`/`data-i18n-aria-label`; chuỗi LR mới có en/vi/ko trong dictionary iframe và nhận `currentLang` qua bridge.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/dashboard/*.js js/dictation/session-index.js; do node --check "$f" || exit; done`; `node --test tests/dashboard-overview-data.test.cjs`; parse `manifest.json`; kiểm tra script/style path và i18n của Overview trong `pages/dashboard.html`.
-- Thử chuyển 5 view, responsive, sidebar/theme và iframe LR; mô phỏng DOM không thay thế browser test.
-- Thử library CRUD/filter/favorites/import/export và refresh để xác nhận dữ liệu bền vững.
-- Thử flashcards: queue, review, shortcuts, focus, dịch/TTS và restore settings.
+- Static: `for f in js/dashboard/*.js; do node --check "$f" || exit; done`; `node --test tests/*.test.cjs`; parse `manifest.json`; audit iframe/local refs và message contract.
+- Thử trên browser: chuyển năm view, theme/responsive; kiểm tra LR dữ liệu rỗng/có dữ liệu, filter/favorites, edit/delete, export từng trang/toàn bộ và refresh để xác nhận lưu bền vững.
+- Mô phỏng DOM hoặc static assertion không thay thế kiểm thử Chrome/Firefox thật; chỉ ghi nhận browser verification sau khi thực hiện trực tiếp.
