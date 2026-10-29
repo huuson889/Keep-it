@@ -392,19 +392,22 @@ function renderProfileSidebar() {
   if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
   if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
   if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
-  if (popoverSyncButton) {
-    popoverSyncButton.hidden = Boolean(demoProfile);
-    popoverSyncButton.title = t("profileSignInToSync");
-    popoverSyncButton.setAttribute("aria-label", t("profileSignInToSync"));
-  }
   for (const item of [syncMenuItem, helpMenuItem]) if (item) item.hidden = !demoProfile;
   if (logoutMenuItem) logoutMenuItem.hidden = !demoProfile;
   if (guestLoginItem) guestLoginItem.hidden = Boolean(demoProfile);
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
-  const syncTooltip = escapeHtml(t(demoProfile ? "profileLocal" : "profileNotSynced"));
+  const syncStatusLabel = t(demoProfile ? "profileLocal" : "profileNotSynced"), syncTooltip = escapeHtml(syncStatusLabel);
   const syncIcon = demoProfile
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud preview-icon" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-off preview-icon" aria-hidden="true"><path d="M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"/><path d="M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"/><path d="m2 2 20 20"/></svg>';
+  if (popoverSyncButton) {
+    popoverSyncButton.hidden = false;
+    popoverSyncButton.innerHTML = syncIcon;
+    popoverSyncButton.title = syncStatusLabel;
+    popoverSyncButton.setAttribute("aria-label", syncStatusLabel);
+    if (demoProfile) popoverSyncButton.removeAttribute("data-profile-menu-action");
+    else popoverSyncButton.dataset.profileMenuAction = "login";
+  }
   const syncStatusIcon = `<button type="button" class="profile-sync-status menu-item item-free" data-tooltip="${syncTooltip}" aria-label="${syncTooltip}">${syncIcon}</button>`;
   if (menuAvatar) {
     menuAvatar.classList.toggle("profile-avatar-guest", !demoProfile);
