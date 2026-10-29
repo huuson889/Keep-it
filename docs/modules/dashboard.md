@@ -11,7 +11,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
 | [`pages/dashboard.html`](../../pages/dashboard.html) | `<script>`, view IDs, `data-dashboard-view`, `data-dashboard-action` | Markup, stylesheets, view routes và action menu. |
-| [`css/dashboard/overview.css`](../../css/dashboard/overview.css) | `#dashboardOverviewView`, `#dashboardListeningView` | Style scoped cho Overview dữ liệu cục bộ và Listening placeholder. |
+| [`css/dashboard/overview.css`](../../css/dashboard/overview.css) | `#dashboardOverviewView`, `#dashboardListeningView` | Style scoped cho Overview dữ liệu cục bộ/dark mode theo palette Dashboard và Listening placeholder. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `setDashboardView`, `load`, `render` | Điều hướng 4 view và điều phối thư viện/settings/study/profile. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `LANGUAGES.t` | Bản dịch giao diện en/vi/ko. |
 | [`js/dashboard/library.js`](../../js/dashboard/library.js) | `LHN_LIBRARY` | Metadata, nhóm trang và key annotation. |
