@@ -379,7 +379,7 @@ async function restoreAddonSettings() {
 function renderProfileSidebar() {
   const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
-  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan");
+  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
   const activeEmail = String(demoProfile?.email || "").trim();
   const activeName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest");
   if (menuToggleName) menuToggleName.textContent = activeName;
@@ -391,6 +391,15 @@ function renderProfileSidebar() {
   }
   if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
   if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
+  if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
+  if (popoverSyncButton) {
+    popoverSyncButton.hidden = Boolean(demoProfile);
+    popoverSyncButton.title = t("profileSignInToSync");
+    popoverSyncButton.setAttribute("aria-label", t("profileSignInToSync"));
+  }
+  for (const item of [syncMenuItem, helpMenuItem]) if (item) item.hidden = !demoProfile;
+  if (logoutMenuItem) logoutMenuItem.hidden = !demoProfile;
+  if (guestLoginItem) guestLoginItem.hidden = Boolean(demoProfile);
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
   const syncTooltip = escapeHtml(t(demoProfile ? "profileLocal" : "profileNotSynced"));
   const syncIcon = demoProfile
@@ -2372,6 +2381,7 @@ $("profileMenu").addEventListener("click", async event => {
   else if (action === "settings") openDashboardSettings(lastDashboardSettingsTab);
   else if (action === "appearance") openDashboardSettings("appearance");
   else if (action === "shortcuts") openDashboardSettings("shortcuts");
+  else if (action === "login") { closeMenus(); openProfileAuth("login"); }
   else if (action === "logout") await signOutDemoProfile();
 });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
