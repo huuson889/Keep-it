@@ -6,6 +6,7 @@ const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
 let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
+let libraryHasNotesOnly = false, libraryStatsScope = "filtered", libraryStatsPeriod = "365", libraryDistributionMode = "tags";
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
@@ -988,7 +989,7 @@ function applyAnnotationChange(change, renderNow = true) {
 function getFilteredAnnotations() {
   const query = $("search").value.trim().toLocaleLowerCase(), site = $("siteFilter").value, color = $("colorFilter").value, tag = $("tagFilter").value, dateRange = $("dateFilter").value;
   const dateCutoff = dateFilterCutoff(dateRange), normalizedTag = tag.toLocaleLowerCase();
-  const filtered = annotations.filter(a => (!site || siteOf(a) === site) && (!color || CONFIG.normalizeColor(a.color) === color) && (!tag || tagsOf(a).some(value => value.toLocaleLowerCase() === normalizedTag)) && matchesDate(a, dateCutoff) && (!favoriteNotesOnly || favoriteNoteIds.has(a.id)) && (!query || searchRank(a, query) < Number.MAX_SAFE_INTEGER));
+  const filtered = annotations.filter(a => (!site || siteOf(a) === site) && (!color || CONFIG.normalizeColor(a.color) === color) && (!tag || tagsOf(a).some(value => value.toLocaleLowerCase() === normalizedTag)) && matchesDate(a, dateCutoff) && (!libraryHasNotesOnly || Boolean(String(a.note || "").trim())) && (!favoriteNotesOnly || favoriteNoteIds.has(a.id)) && (!query || searchRank(a, query) < Number.MAX_SAFE_INTEGER));
   if (query) filtered.sort((a, b) => searchRank(a, query) - searchRank(b, query));
   return filtered;
 }
@@ -1029,6 +1030,126 @@ function buildPages(items) {
     normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
   });
 }
+function libraryRelativeDate(timestamp) {
+  if (!timestamp) return t("dateUnknown");
+  const date = new Date(timestamp), today = new Date();
+  date.setHours(0, 0, 0, 0); today.setHours(0, 0, 0, 0);
+  const days = Math.round((today.getTime() - date.getTime()) / 86400000);
+  return days === 0 ? t("ovToday") : days === 1 ? t("ovYesterday") : fmtDate(timestamp);
+}
+function libraryPageTags(page) {
+  const seen = new Set(), tags = [];
+  for (const item of page.items || []) for (const tag of tagsOf(item)) {
+    const key = tag.toLocaleLowerCase();
+    if (!seen.has(key)) { seen.add(key); tags.push(tag); }
+  }
+  return tags;
+}
+function libraryPageDescription(page) {
+  const source = (page.items || []).find(item => item.contextNote || item.quote || item.note);
+  const text = String(source?.contextNote || source?.quote || source?.note || t("libraryNoDescription")).replace(/\s+/g, " ").trim();
+  return text.length > 185 ? `${text.slice(0, 182).trimEnd()}…` : text;
+}
+function librarySiteHost(page) {
+  try { return new URL(page.url).hostname.replace(/^www\./i, ""); } catch { return String(page.site || "").replace(/^www\./i, ""); }
+}
+function librarySiteIcon(page) {
+  const host = librarySiteHost(page).toLowerCase();
+  if (host.includes("youtube.com") || host === "youtu.be") return '<span class="source-site-icon youtube" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/></svg></span>';
+  if (host.includes("medium.com")) return '<span class="source-site-icon medium" aria-hidden="true">M</span>';
+  if (host.includes("bbc.")) return '<span class="source-site-icon bbc" aria-hidden="true">BBC</span>';
+  if (host.includes("nationalgeographic.")) return '<span class="source-site-icon natgeo" aria-hidden="true"><i></i></span>';
+  const initial = escapeHtml((host || page.site || "?").slice(0, 1).toUpperCase());
+  return `<span class="source-site-icon" aria-hidden="true">${initial}</span>`;
+}
+function getLibraryVisibleAnnotations() { return buildPages(getFilteredAnnotations()).flatMap(page => page.items); }
+function syncLibraryQuickFilters() {
+  document.querySelectorAll("[data-library-quick]").forEach(button => {
+    const mode = button.dataset.libraryQuick;
+    const active = mode === "favorites" ? favoritesOnly : mode === "notes" ? libraryHasNotesOnly : !favoritesOnly && !libraryHasNotesOnly;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+function renderLibraryDistribution(items) {
+  const totals = new Map();
+  for (const item of items) {
+    if (libraryDistributionMode === "tags") {
+      for (const tag of new Set(tagsOf(item).map(value => value.trim()).filter(Boolean))) totals.set(tag, (totals.get(tag) || 0) + 1);
+    } else {
+      const domain = siteOf(item) || t("unknownWebsite");
+      totals.set(domain, (totals.get(domain) || 0) + 1);
+    }
+  }
+  const rows = [...totals].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], currentLang)).slice(0, 4);
+  const host = $("libraryDistribution");
+  host.replaceChildren();
+  if (!rows.length) { const empty = document.createElement("span"); empty.className = "ld-demo-empty"; empty.textContent = t("libraryNoDistribution"); host.appendChild(empty); return; }
+  const maximum = Math.max(1, ...rows.map(([, count]) => count));
+  rows.forEach(([label, count]) => {
+    const row = document.createElement("div"); row.className = "old-dist-row";
+    row.innerHTML = '<span class="old-dist-label"></span><span class="old-dist-count"></span><div class="old-dist-track"><div class="old-dist-fill"></div></div>';
+    row.querySelector(".old-dist-label").textContent = libraryDistributionMode === "tags" ? `#${label}` : label;
+    row.querySelector(".old-dist-count").textContent = count.toLocaleString(currentLang);
+    row.querySelector(".old-dist-fill").style.width = `${Math.max(8, count / maximum * 100)}%`;
+    host.appendChild(row);
+  });
+}
+function renderLibraryActivity(items) {
+  let oldestTimestamp = Date.now();
+  for (const item of items) { const timestamp = dateValue(item, "createdAt"); if (timestamp > 0 && timestamp < oldestTimestamp) oldestTimestamp = timestamp; }
+  const host = $("libraryHeatmap"), days = libraryStatsPeriod === "all"
+    ? Math.min(3650, Math.max(365, Math.ceil((Date.now() - oldestTimestamp) / 86400000) + 1))
+    : Number(libraryStatsPeriod) || 365;
+  const dayCounts = new Map(), weekKeys = new Set();
+  for (const item of items) {
+    const timestamp = dateValue(item, "createdAt");
+    if (!timestamp) continue;
+    const date = new Date(timestamp); date.setHours(0, 0, 0, 0);
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const visible = [];
+  for (let offset = days - 1; offset >= 0; offset--) {
+    const date = new Date(today); date.setDate(date.getDate() - offset);
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    visible.push({ date, count: dayCounts.get(key) || 0 });
+  }
+  const max = Math.max(1, ...visible.map(day => day.count));
+  host.replaceChildren();
+  let activeDays = 0;
+  visible.forEach(({ date, count }) => {
+    const cell = document.createElement("span");
+    const level = count ? Math.max(1, Math.ceil(count / max * 4)) : 0;
+    cell.className = "old-heat-cell"; cell.dataset.level = String(level);
+    cell.title = t("libraryHeatDay", { date:fmtDate(date.getTime()), count:count.toLocaleString(currentLang) });
+    if (count) {
+      activeDays++;
+      const week = new Date(date); week.setDate(week.getDate() - (week.getDay() + 6) % 7);
+      weekKeys.add(`${week.getFullYear()}-${week.getMonth()}-${week.getDate()}`);
+    }
+    host.appendChild(cell);
+  });
+  $("libraryActiveDays").textContent = t("ovActiveDays", { count:activeDays.toLocaleString(currentLang) });
+  $("libraryTotalDays").textContent = activeDays.toLocaleString(currentLang);
+  $("libraryTotalWeeks").textContent = weekKeys.size.toLocaleString(currentLang);
+  $("libraryActiveItems").textContent = items.length.toLocaleString(currentLang);
+  document.querySelectorAll("[data-library-period]").forEach(button => button.classList.toggle("active", button.dataset.libraryPeriod === libraryStatsPeriod));
+}
+function renderLibraryStats(filteredItems) {
+  const items = libraryStatsScope === "all" ? annotations : filteredItems;
+  const pageCount = new Set(items.map(pageKey)).size;
+  const noteCount = items.filter(item => String(item.note || "").trim()).length;
+  $("libraryMetricPages").textContent = pageCount.toLocaleString(currentLang);
+  $("libraryMetricHighlights").textContent = items.length.toLocaleString(currentLang);
+  $("libraryMetricNotes").textContent = noteCount.toLocaleString(currentLang);
+  $("libraryStatsSubtitle").textContent = t(libraryStatsScope === "all" ? "libraryStatsAll" : "libraryStatsFiltered");
+  document.querySelectorAll("[data-library-stats-scope]").forEach(button => button.classList.toggle("active", button.dataset.libraryStatsScope === libraryStatsScope));
+  renderLibraryActivity(items);
+  renderLibraryDistribution(items);
+}
+
 const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
 const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
 let overviewSessionEntries = [];
@@ -1285,11 +1406,11 @@ function render({ preserveSources = false } = {}) {
   renderDashboardOverview();
   const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
   const { sites, tags } = dashboardFilterOptions();
-  $("siteFilter").innerHTML = `<option value="">${escapeHtml(t("allWebsites"))}</option>` + sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  $("siteFilter").innerHTML = `<option value="">${escapeHtml(t("librarySiteAll"))}</option>` + sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
   if (sites.includes(siteValue)) $("siteFilter").value = siteValue;
-  $("colorFilter").innerHTML = `<option value="">${escapeHtml(t("allColors"))}</option>` + CONFIG.COLORS.map(color => `<option value="${color}">${escapeHtml(t(CONFIG.colorLabelKey(color)))}</option>`).join("");
+  $("colorFilter").innerHTML = `<option value="">${escapeHtml(t("libraryColorAll"))}</option>` + CONFIG.COLORS.map(color => `<option value="${color}">${escapeHtml(t(CONFIG.colorLabelKey(color)))}</option>`).join("");
   if (CONFIG.COLORS.includes(colorValue)) $("colorFilter").value = colorValue;
-  $("tagFilter").innerHTML = `<option value="">${escapeHtml(t("allTags"))}</option>` + tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("");
+  $("tagFilter").innerHTML = `<option value="">${escapeHtml(t("libraryTagAll"))}</option>` + tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("");
   if (tags.some(tag => tag.toLocaleLowerCase() === tagValue.toLocaleLowerCase())) $("tagFilter").value = tagValue;
   const filtered = getFilteredAnnotations();
   const pages = buildPages(filtered);
@@ -1303,29 +1424,37 @@ function render({ preserveSources = false } = {}) {
   const selected = pages.find(p => p.key === selectedUrl) || null;
   renderNoteColorFilters(selected);
   renderSelectedPage(selected, filtered);
+  syncLibraryQuickFilters();
+  renderLibraryStats(pages.flatMap(page => page.items));
   $("empty").hidden = filtered.length > 0 || !!selectedUrl;
   $("selectPrompt").hidden = !!selected || filtered.length === 0;
 }
 function renderSources(pages) {
   const host = $("sourceList");
   if (!pages.length) { incrementalListObservers.get(host)?.disconnect(); host.innerHTML = `<div class="source-empty">${escapeHtml(t("noMatchingPages"))}</div>`; return; }
-  renderIncrementalList(host, pages, p => {
-    const row = document.createElement("article"); row.className = `source-item${p.key === selectedUrl ? " active" : ""}`; row.dataset.url = p.key; row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", p.title || p.site);
-    row.innerHTML = `<div class="source-thumb">${p.thumbnailUrl ? `<img src="${escapeHtml(p.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="thumb-fallback" aria-hidden="true">${icon("file")}</span></div><div class="source-info"><div class="source-title">${escapeHtml(p.title || p.site)}</div><div class="source-host">${escapeHtml(p.site)}</div><div class="source-meta"><span class="source-date">${escapeHtml(fmtDate(p.createdAt))}</span><span class="source-meta-count">${p.colors.map(c => `<span class="color-dot ${c}" title="${escapeHtml(t(`color${c[0].toUpperCase()}${c.slice(1)}`))}"></span>`).join("")}<span class="source-count-number">${p.items.length}</span><span class="source-count-icon">${icon("square-text")}</span></span></div></div>`;
-    const sourceQuery = $("search").value.trim();
-    highlightSearchMatches(row.querySelector(".source-title"), sourceQuery);
-    highlightSearchMatches(row.querySelector(".source-host"), sourceQuery);
-    const img = row.querySelector("img");
-    if (img) {
-      const fallback = row.querySelector(".thumb-fallback");
-      img.addEventListener("load", () => { if (fallback) fallback.hidden = true; }, { once: true });
-      img.addEventListener("error", () => { img.remove(); }, { once: true });
-      if (img.complete && img.naturalWidth > 0 && fallback) fallback.hidden = true;
+  renderIncrementalList(host, pages, page => {
+    const row = document.createElement("article"); row.className = `source-item${page.key === selectedUrl ? " active" : ""}`; row.dataset.url = page.key; row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", page.title || page.site);
+    const tags = libraryPageTags(page), siteHost = librarySiteHost(page), isVideo = /youtube\.com|youtu\.be/i.test(siteHost), siteLabel = isVideo ? "YouTube" : (page.site || siteHost), description = libraryPageDescription(page), category = tags.length ? tags.slice(0, 3).join(" · ").toLocaleUpperCase(currentLang) : t("libraryCategory");
+    const tagsHtml = tags.map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`).join("");
+    const colorDots = page.colors.map(color => `<span class="color-dot ${escapeHtml(color)}" title="${escapeHtml(t(CONFIG.colorLabelKey(color)))}"></span>`).join("");
+    row.innerHTML = `<div class="source-thumb">${page.thumbnailUrl ? `<img src="${escapeHtml(page.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="thumb-fallback" aria-hidden="true">${icon("file")}</span><span class="source-thumb-badge"><i class="${isVideo ? "video" : "article"}"></i>${escapeHtml(siteLabel)}</span><span class="source-thumb-label">${escapeHtml(category)}</span></div><div class="source-info"><div class="source-title">${escapeHtml(page.title || page.site)}</div><div class="source-host">${librarySiteIcon(page)}<span class="source-host-text">${escapeHtml(siteHost || page.site)}</span></div><p class="source-description">${escapeHtml(description)}</p>${tagsHtml ? `<div class="source-tags">${tagsHtml}</div>` : ""}<div class="source-meta"><span class="source-date">${escapeHtml(libraryRelativeDate(page.createdAt))}</span><span class="source-meta-count">${colorDots}<span class="source-count-number">${page.items.length.toLocaleString(currentLang)}</span><span class="source-count-icon">${icon("square-text")}</span></span></div></div>`;
+    const query = $("search").value.trim();
+    for (const selector of [".source-title", ".source-host", ".source-description", ".source-tags"]) {
+      const target = row.querySelector(selector); if (target) highlightSearchMatches(target, query);
     }
-    const choose = () => { selectedUrl = p.key; render({ preserveSources: true }); };
-    row.addEventListener("click", choose); row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } }); return row;
-  }, { initial: CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL, batch: CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH });
+    const image = row.querySelector("img");
+    if (image) {
+      const fallback = row.querySelector(".thumb-fallback");
+      image.addEventListener("load", () => { if (fallback) fallback.hidden = true; }, { once:true });
+      image.addEventListener("error", () => { image.remove(); }, { once:true });
+      if (image.complete && image.naturalWidth > 0 && fallback) fallback.hidden = true;
+    }
+    const choose = () => { selectedUrl = page.key; render({ preserveSources:true }); };
+    row.addEventListener("click", choose); row.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); choose(); } });
+    return row;
+  }, { initial:CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL, batch:CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH });
 }
+
 function refreshFavoriteDashboard() {
   const pages = buildPages(getFilteredAnnotations());
   if (!pages.some(page => page.key === selectedUrl)) { render(); return; }
@@ -1348,8 +1477,9 @@ function renderNoteColorFilters(page) {
   host.innerHTML = options.map(option => {
     const countLabel = option.id === "all" ? `${total}` : `${counts[option.id]}/${total}`;
     return `<button type="button" class="note-color-filter${noteColorFilter === option.id ? " is-active" : ""}" data-filter="${option.id}" aria-pressed="${noteColorFilter === option.id}">${option.id === "all" ? "" : `<span class="lhn-filter-swatch lhn-swatch-${option.id}"></span>`}<span>${escapeHtml(option.label)}</span><span class="filter-count">${countLabel}</span></button>`;
-  }).join("");
+  }).join("") + `<button id="favoriteNotesOnly" type="button" class="note-color-filter library-note-favorite-filter${favoriteNotesOnly ? " is-active" : ""}" aria-pressed="${favoriteNotesOnly}" title="${escapeHtml(t("favoriteNotesOnly"))}">${icon("heart")}<span>${escapeHtml(t("favoriteNotesOnly"))}</span></button>`;
   host.hidden = !page;
+  syncNoteFavoriteFilters();
 }
 
 function setSelectedFavicon(pageUrl) {
@@ -1728,11 +1858,11 @@ $("editDialog").addEventListener("click", async e => {
 $("editDialog").addEventListener("cancel", e => { e.preventDefault(); $("editDialog").close(); });
 $("editForm").addEventListener("submit", e => { e.preventDefault(); saveEdit(); });
 $("noteColorFilters").addEventListener("click", e => {
+  const favoriteButton = e.target.closest("#favoriteNotesOnly");
+  if (favoriteButton) { e.preventDefault(); e.stopPropagation(); favoriteNotesOnly = !favoriteNotesOnly; syncNoteFavoriteFilters(); render(); return; }
   const button = e.target.closest("button[data-filter]");
   if (!button || !e.currentTarget.contains(button)) return;
-  e.preventDefault(); e.stopPropagation();
-  noteColorFilter = button.dataset.filter;
-  render();
+  e.preventDefault(); e.stopPropagation(); noteColorFilter = button.dataset.filter; render();
 });
 $("actionButtonsSection").addEventListener("click", event => {
   if (event.target.closest("#profileEditAction")) openDashboardSettings();
@@ -1754,9 +1884,18 @@ document.addEventListener("keydown", e => {
     e.preventDefault(); e.stopPropagation(); $("clearFiltersBtn").click();
   }
 }, true);
-$("favoritesOnly").addEventListener("click", () => { favoritesOnly = !favoritesOnly; $("favoritesOnly").classList.toggle("is-active", favoritesOnly); $("favoritesOnly").setAttribute("aria-pressed", String(favoritesOnly)); render(); });
-$("favoriteNotesOnly").addEventListener("click", () => { favoriteNotesOnly = !favoriteNotesOnly; syncNoteFavoriteFilters(); render(); });
-$("clearFiltersBtn").addEventListener("click", event => { playToolbarActionEffect(event.currentTarget, event, "#3b82f6", "sparkle"); $("search").value = ""; $("siteFilter").value = ""; $("colorFilter").value = ""; $("tagFilter").value = ""; $("dateFilter").value = ""; favoritesOnly = false; favoriteNotesOnly = false; noteColorFilter = "all"; $("favoritesOnly").classList.remove("is-active"); $("favoritesOnly").setAttribute("aria-pressed", "false"); syncNoteFavoriteFilters(); render(); });
+document.querySelectorAll("[data-library-quick]").forEach(button => button.addEventListener("click", () => {
+  const mode = button.dataset.libraryQuick;
+  if (mode === "all") { favoritesOnly = false; libraryHasNotesOnly = false; }
+  else if (mode === "notes") { libraryHasNotesOnly = !libraryHasNotesOnly; favoritesOnly = false; }
+  else { favoritesOnly = !favoritesOnly; libraryHasNotesOnly = false; }
+  syncLibraryQuickFilters(); render();
+}));
+document.querySelectorAll("[data-library-stats-scope]").forEach(button => button.addEventListener("click", () => { libraryStatsScope = button.dataset.libraryStatsScope; renderLibraryStats(getLibraryVisibleAnnotations()); }));
+document.querySelectorAll("[data-library-period]").forEach(button => button.addEventListener("click", () => { libraryStatsPeriod = button.dataset.libraryPeriod; renderLibraryStats(getLibraryVisibleAnnotations()); }));
+document.querySelectorAll("[data-library-dist]").forEach(button => button.addEventListener("click", () => { libraryDistributionMode = button.dataset.libraryDist; document.querySelectorAll("[data-library-dist]").forEach(tab => { const active = tab === button; tab.classList.toggle("active", active); tab.setAttribute("aria-selected", String(active)); }); renderLibraryDistribution(libraryStatsScope === "all" ? annotations : getLibraryVisibleAnnotations()); }));
+$("libraryStatsClose").addEventListener("click", event => { const panel = $("libraryStats"), collapsed = panel.classList.toggle("is-collapsed"), button = event.currentTarget; button.textContent = collapsed ? "+" : "×"; button.setAttribute("aria-expanded", String(!collapsed)); button.setAttribute("aria-label", t(collapsed ? "libraryStatsExpand" : "libraryStatsClose")); button.title = button.getAttribute("aria-label"); });
+$("clearFiltersBtn").addEventListener("click", event => { playToolbarActionEffect(event.currentTarget, event, "#3b82f6", "sparkle"); $("search").value = ""; $("siteFilter").value = ""; $("colorFilter").value = ""; $("tagFilter").value = ""; $("dateFilter").value = ""; favoritesOnly = false; libraryHasNotesOnly = false; favoriteNotesOnly = false; noteColorFilter = "all"; syncLibraryQuickFilters(); syncNoteFavoriteFilters(); render(); });
 function renderStudyCard({ autoSpeak = true, showAnswer = false } = {}) {
   const item = currentStudyCard();
   if (item?.id !== studyTypedAnswerForId) { studyTypedAnswerForId = item?.id || null; studyTypedAnswer = ""; }

@@ -12,6 +12,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 |---|---|---|
 | [`pages/dashboard.html`](../../pages/dashboard.html) | `<script>`, view IDs, `data-dashboard-view`, `data-dashboard-action` | Markup, stylesheets, view routes và action menu. |
 | [`css/dashboard/overview.css`](../../css/dashboard/overview.css) | `#dashboardOverviewView`, `#dashboardListeningView` | Style scoped cho Overview và Listening preview UI; dark mode theo palette Dashboard. |
+| [`css/dashboard/library-demo.css`](../../css/dashboard/library-demo.css) | `#dashboardHomeView`, `.source-item`, `.demo-library-toolbar` | Port style/scroll/animation từ Library demo; chỉ tác động view Library. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `setDashboardView`, `load`, `render` | Điều hướng 4 view và điều phối thư viện/settings/study/profile. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `LANGUAGES.t` | Bản dịch giao diện en/vi/ko. |
 | [`js/dashboard/library.js`](../../js/dashboard/library.js) | `LHN_LIBRARY` | Metadata, nhóm trang và key annotation. |
@@ -29,7 +30,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 2. `load()` đọc settings/preferences và lấy annotations theo batch qua `LHN_MESSAGING`; `render()` cập nhật thư viện, panel và Overview.
 3. Overview dùng `LHN_DASHBOARD_OVERVIEW_DATA` trên dữ liệu annotation đã tải: số trang/tô sáng/ghi chú/thẻ đến hạn, thẻ ôn hôm nay, hoạt động tạo annotation theo ngày, tag và hoạt động gần đây. Không có dữ liệu thì hiển thị số 0/trạng thái rỗng; heatmap không giả lập lịch sử review.
 4. Dictation summary đọc index cục bộ provider-neutral; migration chỉ đọc record YouTube cũ và thêm metadata vào index, không sửa/xóa `dictation:<videoId>`.
-5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`) và Grammar; Listening hiển thị preview tĩnh với dữ liệu mẫu, không nối storage, tìm kiếm hay action. Action menu Flashcards gọi `startStudySession({ allSources:true })` để mở review trên các nguồn.
+5. `setDashboardView()` chuyển Overview, Listening, Library (`#dashboardHomeView`) và Grammar. Library dùng bố cục/CSS/hiệu ứng theo demo nhưng renderer, thống kê, tìm kiếm/lọc, favorites, note actions và export dùng annotations/state thật; stats chỉ tính dữ liệu cục bộ. Listening vẫn là preview tĩnh với dữ liệu mẫu, không nối storage, tìm kiếm hay action. Action menu Flashcards gọi `startStudySession({ allSources:true })` để mở review trên các nguồn.
 6. Menu hồ sơ mở các tab Settings tương ứng; “Cài đặt tiện ích” dùng tab mở gần nhất và ghi nhớ qua `lhnDashboardLastSettingsTab`. Tên/email menu đọc từ hồ sơ cục bộ đang hoạt động; khi khách, phần đầu hiện “Bạn” và “Đăng nhập để đồng bộ” bên trái, nút cloud-off nhỏ bên phải; khi đăng nhập, nút đó dùng cloud icon hiện có. Nút hồ sơ sidebar luôn có huy hiệu gói miễn phí kiểu toolbar popup, kể cả khi đã đăng nhập. Ẩn Đồng bộ dữ liệu, Trợ giúp & Phản hồi, Đăng xuất, thay bằng nút Đăng nhập mở form. Đăng xuất khi đã đăng nhập xóa hồ sơ cục bộ qua `LHN_ACCOUNT`.
 7. Sửa/xóa/review annotation gửi message tới Background (chủ sở hữu IndexedDB); `origin` tránh xử lý lặp sự kiện do Dashboard tạo.
 8. Flashcards dùng `study-utils`/`study-view`; Translate, Reader và Background đảm nhiệm dịch, TTS, định nghĩa.
@@ -38,7 +39,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Bốn route: Tổng quan, Luyện nghe, Thư viện (`home`) và Luyện ngữ pháp; mục “Ôn tập Flashcards” là action riêng (`data-dashboard-action`) gọi `startStudySession({ allSources:true })`, không tạo route mới.
-- Overview dùng dữ liệu annotation và Dictation index cục bộ thật; Listening hiện chỉ là preview UI với nội dung/số liệu mẫu được gắn nhãn, chưa kết nối dữ liệu hoặc handler. Nút CTA của Overview vẫn chỉ để trình bày theo phạm vi đã duyệt, không thêm handler.
+- Overview dùng dữ liệu annotation và Dictation index cục bộ thật; Listening hiện chỉ là preview UI với nội dung/số liệu mẫu được gắn nhãn, chưa kết nối dữ liệu hoặc handler. Library dùng demo làm visual reference, không chép data mẫu: giữ annotation IDs/message flow, local favorites, filter state và hành vi CRUD. Nút CTA của Overview vẫn chỉ để trình bày theo phạm vi đã duyệt, không thêm handler.
 - Chỉ `data-dashboard-view` đổi view; giữ luồng thư viện và `#profileSidebar` của Grammar.
 - Chuỗi UI mới dùng `data-i18n`/`data-i18n-aria-label`, có bản dịch trong `MESSAGES` cho en, vi, ko.
 - Annotation CRUD/review đi qua Background message (`GET_BATCH`, `UPDATE`, `DELETE`, `REVIEW_ANNOTATION`, `IMPORT`); không truy cập IndexedDB trực tiếp.
@@ -50,7 +51,7 @@ Dashboard quản lý thư viện annotation, flashcards, cài đặt và hồ s�
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/dashboard/*.js js/dictation/session-index.js; do node --check "$f" || exit; done`; `node --test tests/dashboard-overview-data.test.cjs`; parse `manifest.json`; kiểm tra script/style path và i18n của Overview trong `pages/dashboard.html`.
+- Static: `for f in js/dashboard/*.js js/dictation/session-index.js; do node --check "$f" || exit; done`; `node --test tests/dashboard-overview-data.test.cjs`; parse `manifest.json`; kiểm tra script/style path, HTML IDs, i18n Library/Overview và parse `css/dashboard/library-demo.css`.
 - Thử chuyển 4 view, responsive, sidebar/theme; mô phỏng DOM không thay thế browser test.
 - Thử library CRUD/filter/favorites/import/export và refresh để xác nhận dữ liệu bền vững.
 - Thử flashcards: queue, review, shortcuts, focus, dịch/TTS và restore settings.

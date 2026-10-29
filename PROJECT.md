@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.749; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ route hiện có.
+- Version hiện tại: v3.4.750; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard: Overview mở mặc định; Library (`#dashboardHomeView`) dùng bố cục/CSS/hiệu ứng theo demo mới nhất nhưng đọc annotations thật và giữ CRUD, lọc, yêu thích, export. Listening vẫn là preview demo-only; Grammar giữ route hiện có.
 - Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: JavaScript syntax đạt; Listening CSS parser 0 lỗi; 59 key UI đủ en/vi/ko; không trùng HTML ID; manifest v3.4.749; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Kiểm tra gần nhất: toàn bộ JS syntax đạt; Library CSS parser 0 lỗi; HTML 364 ID duy nhất; i18n mới đủ en/vi/ko; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử tương tác/giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -53,7 +53,7 @@ Keepit - Test/
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` port giao diện Listening
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` cho Listening, `library-demo.css` cho giao diện Library
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
@@ -103,9 +103,15 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng `#dashboardHomeView` với layout/hiệu ứng theo `demos/library-tab-demo.html` nhưng renderer, bộ lọc, favorite và CRUD đọc dữ liệu thật; Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.750 | Arena sửa:**
+
+- Port bố cục, toolbar, stats, thẻ nguồn, responsive scroll và hiệu ứng tim/xóa lọc từ Library demo vào tab Library thật; giữ các renderer, storage/messages và thao tác dữ liệu thật. Stats lấy từ annotations cục bộ; không dùng mảng mẫu của demo.
+- File: `pages/dashboard.html`, `css/dashboard/library-demo.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `demos/library-tab-demo.html`, `Keepit - Optimize Test-v3.4.750.zip`.
+- Kiểm tra: toàn bộ `js/dashboard/*.js` và `js/core/languages.js` qua `node --check`; 5/5 tests; HTML 364 ID duy nhất; Library CSS recursive parser 0 lỗi; i18n Library đủ en/vi/ko; `git diff --check` và ZIP integrity đạt. Chưa kiểm thử tương tác/giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.749 | Arena sửa:**
 
