@@ -1,10 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.780; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.781; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Highlights & Notes là bề mặt duy nhất cho highlights/notes; chi tiết route/bridge ở mục 4.
 - Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ với glyph 54px trong vòng tròn 40×40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
-- Kiểm tra gần nhất: `node --check` 48 JavaScript files; 18/18 tests; 10 CSS files + 2 inline HTML styles + Reader injected CSS parse; manifest `3.4.780`, `git diff --check` và ZIP 109 file entries/CRC đạt. Chưa browser-test Reader.
+- Dọn khỏi gói các demo không chạy trong app, hai ảnh icon không được tham chiếu và license flag-icons đã hết dùng; giữ nguyên icon mà manifest yêu cầu và các trang runtime.
+- Kiểm tra gần nhất: 48 JS syntax checks, 18/18 tests; 10 CSS + 2 inline styles parse; manifest paths hợp lệ, tài nguyên đã xóa vắng mặt, không còn tham chiếu runtime, `git diff --check` và ZIP 104 file/CRC đạt. Gói nhỏ hơn `.780` khoảng 228 KB (~24%); chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +107,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.781 | Arena.ai Agent sửa:**
+
+- Chỉ dọn file không dùng: xóa thư mục `demos/`, `assets/icons/logo-original.png`, `assets/icons/icon-256.png` và license `licenses/LICENSE-MIT-flag-icons.txt` đã hết sử dụng; bỏ comment trỏ tới demo đã xóa. Không thay đổi luồng/tài nguyên runtime.
+- File: `demos/library-tab-demo.html` (xóa), `demos/listening-dictation-demo.html` (xóa), `assets/icons/logo-original.png` (xóa), `assets/icons/icon-256.png` (xóa), `licenses/LICENSE-MIT-flag-icons.txt` (xóa), `css/dashboard/listening-demo.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.781.zip`.
+- Kiểm tra: `node --check` 48 JavaScript files; `node --test tests/*.test.cjs` đạt 18/18; 10 CSS files + 2 inline HTML styles parse 0 lỗi; manifest `3.4.781` và toàn bộ resource paths hợp lệ; các file đã xóa vắng mặt, không còn tham chiếu runtime; `git diff --check` và ZIP 104 file entries/CRC đạt. Archive nhỏ hơn `.780` khoảng 228 KB (~24%). Chưa browser-test.
 
 **2026-10-30 | v3.4.780 | Arena.ai Agent sửa:**
 

@@ -1,4 +1,4 @@
-/* Faithful, route-scoped port of demos/listening-dictation-demo.html. */
+/* Route-scoped Listening UI, isolated from shared Dashboard styles. */
 .listen-demo-root{
     color-scheme:light;
     --page:#f5f5ff;--surface:#fff;--surface-soft:#fbfaff;--ink:#252640;--ink-2:#354056;
