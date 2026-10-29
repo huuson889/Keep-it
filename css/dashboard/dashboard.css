@@ -1539,9 +1539,9 @@ html.dark #dashboardSidebar .dashboard-theme-sun { display:none; }
   grid-template-columns:minmax(0,1fr)!important;
   grid-template-rows:auto minmax(0,1fr)!important;
   column-gap:0!important;
-  row-gap:10px!important;
+  row-gap:6px!important;
   min-height:0!important;
-  padding:15px 14px 15px 0!important;
+  padding:8px 10px 8px 8px!important;
   overflow:hidden!important;
 }
 #dashboardHomeView[hidden],
@@ -1574,7 +1574,7 @@ body.dashboard-sidebar-pinned > #dashboardGrammarPracticeView { margin-left:0; }
 }
 #dashboardGrammarPracticeView > #profileSidebar > .profile-card { min-height:100%; }
 @media(max-width:800px) {
-  #dashboardHomeView { grid-template-rows:auto minmax(0,1fr)!important; row-gap:8px!important; }
+  #dashboardHomeView { grid-template-rows:auto minmax(0,1fr)!important; row-gap:6px!important; }
   #dashboardHomeView > .workspace { grid-template-columns:minmax(220px,.85fr) minmax(0,1.4fr)!important; }
 }
 @media(max-width:560px) {
