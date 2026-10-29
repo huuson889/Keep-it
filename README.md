@@ -37,7 +37,7 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - Pronunciation rules and per-language speech rates are available in Settings.
 
 ### Dashboard
-- Library of source pages with search, sort, website filter, and favorites; export as TXT, CSV, Markdown, or JSON; import JSON.
+- **Highlights & Notes** is the single place to browse and manage locally saved annotations by source page, search and filter them, favorite pages or notes, edit/delete entries, and export as TXT, CSV, Markdown, or JSON; import JSON backups.
 - Study mode: flashcards from your highlights with Again / Hard / Good / Easy grading, typed answers, custom flashcards, and definition search.
 - Settings: Account, Highlights & Notes, Translate, Speech, Bilingual Reader, Appearance, Keyboard shortcuts, Disable on websites, Notifications, Backup, Upgrade & Billing, Reset, About.
 
@@ -90,7 +90,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - Content scripts cannot run on browser internal pages (`about:`, `chrome://`, `edge://`), extension stores, or some built-in PDF/document viewers.
 - Keepit narrows the page layout to make room for the sidebar; some sites with fixed elements or custom minimum widths may not reflow perfectly.
 - Highlights are restored from text and context, so heavily changed pages or identical repeated quotes can be restored imperfectly. Different query strings or fragments are treated as different pages.
-- The Dashboard loads the whole library for search, filters, and export; a very large library needs a paginated redesign.
+- The **Highlights & Notes** surface currently loads all local annotations for search, filters, and export; a very large collection will need a paginated redesign.
 - Main-content detection is heuristic. Pages without a clear article (for example search results or apps) may be read differently from article pages.
 - This is a development build, not signed for store distribution; the Firefox add-on ID in `manifest.json` is a placeholder.
 
@@ -105,7 +105,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `js/video/`: YouTube Dual Sub adapter and the existing overlay template.
 - `js/dictation/`: word-alignment scorer, local overlay styles, and YouTube Dictation controller.
 - `js/translate/`: translation, dictionary, search, and study translation modules.
-- `js/dashboard/`: Dashboard, flashcard study, account, library, backup, and flag modules.
+- `js/dashboard/`: Dashboard, annotation utilities, flashcard study, account, backup, and flag modules.
 - `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.
 - `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: styles grouped by surface and shared theme tokens.
 - `assets/icons/` and `assets/fonts/`: local icons and fonts; `vendor/readability/`: Mozilla Readability sources.

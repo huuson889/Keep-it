@@ -5,7 +5,7 @@ const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
-let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
+let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, editColor = CONFIG.DEFAULT_COLOR, dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
@@ -15,14 +15,14 @@ const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
-let demoProfile = null, profileDataCache = null, profileAuthMode = "login", profileChipMode = "domains", profileActivityRange = "all";
+let demoProfile = null, profileAuthMode = "login";
 let overviewSessionsReady = false, overviewSessionsLoading = false;
 let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
 const annotationById = new Map();
 const annotationPositionById = new Map();
-const LIBRARY = globalThis.LHN_LIBRARY.create({ unknownSite:() => t("unknownWebsite") });
-let filterOptionsCache = null;
+const ANNOTATION_UTILS = globalThis.LHN_ANNOTATION_UTILS.create({ unknownSite:() => t("unknownWebsite") });
+let annotationDataRevision = 0;
 let studyQueue = [], studyQueueHead = 0, studyHistory = [], studyReviewed = 0, studyRemembered = 0, studyAutoSpeak = true, studySpeechToken = 0, studyPlayAllSources = false, studySourceKey = null, studySpeakAfterSettingsClose = false, studyTypedAnswer = "", studyTypedAnswerForId = null, studySettingsTab = "study";
 let annotationsChangedDuringStudy = false;
 const studyCompletedIds = new Set();
@@ -51,33 +51,8 @@ const EXPORTS = [
 ];
 
 function icon(name, cls = "") { return LHN_ICONS.render(name, cls); }
-function updateViewModeButton() { const button = $("viewModeBtn"); if (!button) return; const isGrid = viewMode === "grid"; button.innerHTML = isGrid ? icon("grid") : '<svg class="lucide preview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7"/><path d="M14 9h7"/><path d="M14 15h7"/><path d="M14 20h7"/></svg>'; button.title = t(isGrid ? "gridViewLabel" : "listViewLabel"); button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(isGrid)); $("notesList").classList.toggle("is-grid-view", isGrid); }
 
-function playToolbarActionEffect(button, event, color, particleShape) {
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-  const rect = button.getBoundingClientRect();
-  const x = Number.isFinite(event.clientX) && (event.clientX || event.clientY) ? event.clientX : rect.left + rect.width / 2;
-  const y = Number.isFinite(event.clientY) && (event.clientX || event.clientY) ? event.clientY : rect.top + rect.height / 2;
-  let layer = $("toolbarActionEffectLayer");
-  if (!layer) { layer = document.createElement("div"); layer.id = "toolbarActionEffectLayer"; layer.setAttribute("aria-hidden", "true"); document.body.appendChild(layer); }
-  button.classList.remove("toolbar-action-pulse"); void button.offsetWidth; button.classList.add("toolbar-action-pulse");
-  button.addEventListener("animationend", event => { if (event.animationName === "favorite-heartbeat") button.classList.remove("toolbar-action-pulse"); }, { once:true });
-  for (let index = 0; index < 2; index++) {
-    const ring = document.createElement("span"); ring.className = "toolbar-action-ripple-ring"; ring.style.setProperty("--effect-color", color);
-    ring.style.left = `${x}px`; ring.style.top = `${y}px`; ring.style.setProperty("--delay", `${index * 100}ms`);
-    layer.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once:true });
-  }
-  for (let index = 0; index < 10; index++) {
-    const particle = document.createElement("span"), angle = Math.PI * 2 * index / 10 + (Math.random() - .5) * .45, distance = 34 + Math.random() * 42;
-    particle.className = `toolbar-action-ripple-particle${particleShape === "sparkle" ? " is-sparkle" : ""}`; particle.style.left = `${x}px`; particle.style.top = `${y}px`; particle.style.setProperty("--effect-color", color);
-    particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`); particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`);
-    particle.style.setProperty("--turn", `${Math.round((Math.random() - .5) * 70)}deg`);
-    particle.innerHTML = particleShape === "sparkle"
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/></svg>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-    layer.appendChild(particle); particle.addEventListener("animationend", () => particle.remove(), { once:true });
-  }
-}
+
 
 function t(key, vars = {}, language = currentLang) { return LANGUAGES.t(key, vars, language); }
 const disabledTooltipTitles = new WeakMap();
@@ -380,8 +355,7 @@ async function restoreAddonSettings() {
     toast(t("restoreSettingsFailed"));
   }
 }
-function renderProfileSidebar() {
-  const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
+function renderProfileMenu() {
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
   const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
   const activeEmail = String(demoProfile?.email || "").trim();
@@ -400,7 +374,7 @@ function renderProfileSidebar() {
   if (logoutMenuItem) logoutMenuItem.hidden = !demoProfile;
   if (guestLoginItem) guestLoginItem.hidden = Boolean(demoProfile);
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
-  const syncStatusLabel = t(demoProfile ? "profileLocal" : "profileNotSynced"), syncTooltip = escapeHtml(syncStatusLabel);
+  const syncStatusLabel = t(demoProfile ? "profileLocal" : "profileNotSynced");
   const syncIcon = demoProfile
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud preview-icon" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-off preview-icon" aria-hidden="true"><path d="M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"/><path d="M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"/><path d="m2 2 20 20"/></svg>';
@@ -412,7 +386,6 @@ function renderProfileSidebar() {
     if (demoProfile) popoverSyncButton.removeAttribute("data-profile-menu-action");
     else popoverSyncButton.dataset.profileMenuAction = "login";
   }
-  const syncStatusIcon = `<button type="button" class="profile-sync-status menu-item item-free" data-tooltip="${syncTooltip}" aria-label="${syncTooltip}">${syncIcon}</button>`;
   if (menuAvatar) {
     menuAvatar.classList.toggle("profile-avatar-guest", !demoProfile);
     menuAvatar.innerHTML = demoProfile ? profilePictureMarkup(demoProfile, escapeHtml(String(demoProfile.displayName || demoProfile.username || "H").slice(0, 1).toLocaleUpperCase())) : guestAvatar;
@@ -428,58 +401,7 @@ function renderProfileSidebar() {
     if (!demoProfile) accountHost.innerHTML = `<button id="profileMenuSignIn" class="profile-menu-item profile-menu-sign-in" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span>${escapeHtml(t("profileLogin"))}</span></span></button>`;
   }
   if (signOutButton) signOutButton.hidden = !demoProfile;
-  if (demoProfile) {
-    const name = escapeHtml(demoProfile.displayName || "Huson"), username = escapeHtml(profileUsername());
-    profileHeader.innerHTML = `<div class="profile-avatar">${profilePictureMarkup(demoProfile, name.slice(0,1).toLocaleUpperCase())}</div><div class="profile-name"><h2>${name}</h2><span>@${username}</span></div>${syncStatusIcon}`;
-    actionHost.innerHTML = `<button id="profileAskAIAction" class="profile-action-primary" type="button"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2m16 0h2M9 13h.01M15 13h.01M9 17h6"/></svg><span>${escapeHtml(t("profileAskAI"))}</span></button><button id="profileEditAction" class="profile-action-secondary" type="button">${icon("edit")}<span>${escapeHtml(t("profileEdit"))}</span></button>`;
-    const joined = demoProfile.createdAt ? new Intl.DateTimeFormat(currentLang, { dateStyle:"medium" }).format(new Date(demoProfile.createdAt)) : "—";
-    metaHost.innerHTML = `<div>◷ <span>${escapeHtml(t("profileJoined", { date:joined }))}</span></div><div><span><strong>0</strong> ${escapeHtml(t("profileFollowing"))}</span><span><strong>0</strong> ${escapeHtml(t("profileFollowers"))}</span></div>`;
-    metaHost.hidden = false;
-  } else {
-    profileHeader.innerHTML = `<div class="profile-avatar profile-avatar-guest">${guestAvatar}</div><div class="profile-name"><h2>${escapeHtml(t("profileGuest"))}</h2><span>${escapeHtml(t("profileSignInToSync"))}</span></div>${syncStatusIcon}`;
-    actionHost.innerHTML = `<button id="profileLoginAction" class="profile-login-action" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span>${escapeHtml(t("profileLoginRegister"))}</span></span></button>`;
-    metaHost.hidden = true;
-  }
-  if (!profileDataCache || profileDataCache.source !== annotations) {
-    profileDataCache = globalThis.LHN_PROFILE_STATS.build(annotations, { tagsOf, siteOf, pageKey, dateValue });
-  }
-  const { pageCount, noteCount, tagCounts, siteCounts, dailyCounts, needLearnCount } = profileDataCache;
-  $("profilePageTotal").textContent = pageCount.toLocaleString(currentLang);
-  $("profileNoteTotal").textContent = noteCount.toLocaleString(currentLang);
-  $("profileNeedLearnTotal").textContent = needLearnCount.toLocaleString(currentLang);
-  const heatmap = $("profileHeatmap"), today = new Date(); today.setHours(0, 0, 0, 0);
-  let days = profileActivityRange === "weekly" ? 7 : profileActivityRange === "yearly" ? 364 : 84;
-  if (profileActivityRange === "all" && dailyCounts.size) {
-    const first = [...dailyCounts.keys()].sort()[0], firstDate = new Date(`${first}T00:00:00`);
-    days = Math.min(364, Math.max(84, Math.floor((today - firstDate) / 86400000) + 1));
-  }
-  const start = new Date(today); start.setDate(today.getDate() - days + 1);
-  const monthLabels = $("profileMonthLabels");
-  const months = [];
-  for (let offset = 3; offset >= 0; offset--) { const date = new Date(today.getFullYear(), today.getMonth() - offset, 1); months.push(new Intl.DateTimeFormat(currentLang, { month:"short" }).format(date)); }
-  monthLabels.replaceChildren(...months.map(label => { const span = document.createElement("span"); span.textContent = label; return span; }));
-  const maxDaily = Math.max(1, [...dailyCounts.values()].reduce((max, count) => Math.max(max, count), 0)); let activeDays = 0;
-  const cells = [];
-  for (let day = 0; day < days; day++) {
-    const date = new Date(start); date.setDate(start.getDate() + day);
-    const key = date.toISOString().slice(0, 10), count = dailyCounts.get(key) || 0;
-    if (count) activeDays++;
-    const level = count ? Math.min(4, Math.ceil(count / maxDaily * 4)) : 0;
-    cells.push(`<i class="profile-heat-cell level-${level}" title="${escapeHtml(new Intl.DateTimeFormat(currentLang, { dateStyle:"medium" }).format(date))}: ${count}" aria-label="${count}"></i>`);
-  }
-  heatmap.innerHTML = cells.join("");
-  $("profileActivityTotal").textContent = activeDays.toLocaleString(currentLang);
-  const allActiveWeeks = new Set([...dailyCounts.keys()].map(key => { const date = new Date(`${key}T00:00:00`); date.setDate(date.getDate() - date.getDay()); return date.toISOString().slice(0,10); }));
-  $("profileTotalDays").textContent = dailyCounts.size.toLocaleString(currentLang);
-  $("profileTotalWeeks").textContent = allActiveWeeks.size.toLocaleString(currentLang);
-  $("profileTagTotal").textContent = `(${tagCounts.size.toLocaleString(currentLang)})`;
-  $("profileDomainTotal").textContent = `(${siteCounts.size.toLocaleString(currentLang)})`;
-  const tagsTab = $("profileTagsTab"), domainsTab = $("profileDomainsTab");
-  tagsTab.classList.toggle("is-active", profileChipMode === "tags"); domainsTab.classList.toggle("is-active", profileChipMode === "domains");
-  const entries = [...(profileChipMode === "tags" ? tagCounts : siteCounts)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], currentLang)).slice(0, 12);
-  const chips = $("profileChips"); chips.replaceChildren(...entries.map(([name, count]) => { const chip = document.createElement("button"); chip.type = "button"; chip.className = "profile-chip"; const label = document.createElement("span"); label.className = "profile-chip-name"; label.textContent = name; const total = document.createElement("span"); total.className = "profile-chip-count"; total.textContent = `(${count.toLocaleString(currentLang)})`; chip.append(label, total); chip.title = `${name} · ${count.toLocaleString(currentLang)}`; chip.dataset.name = name; return chip; }));
-  if (!entries.length) { const empty = document.createElement("span"); empty.className = "profile-chip-empty"; empty.textContent = "—"; chips.appendChild(empty); }
-  document.querySelectorAll("[data-profile-range]").forEach(button => button.classList.toggle("is-active", button.dataset.profileRange === profileActivityRange));
+
 }
 function setProfileAuthMode(mode) {
   const isRegister = mode === "register";
@@ -497,14 +419,14 @@ function openProfileAuth(mode = "login") { setProfileAuthMode(mode); $("profileA
 async function finishProfileAuth(profile) {
   demoProfile = profile;
   await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-  $("profileAuthDialog").close(); renderProfileSidebar();
+  $("profileAuthDialog").close(); renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 async function signOutDemoProfile() {
   await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
   closeMenus();
-  renderProfileSidebar();
+  renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 function setStudyQueue(items) { studyQueue = items; studyQueueHead = 0; }
@@ -537,8 +459,6 @@ function appendContextSentence(host, sentence, quote) {
   const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
   host.append(document.createTextNode(text.slice(at + length)));
 }
-function searchRank(item, query) { return LHN_SEARCH.rank(LIBRARY.searchFields(item), query); }
-function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
   if (!match) return hex;
@@ -575,9 +495,8 @@ function toast(message) {
     if (activeToastElement === el) activeToastElement = null;
   }, CONFIG.TIMINGS.TOAST_MS);
 }
-function annotationMeta(item) { return LIBRARY.metadata(item); }
-function siteOf(item) { return LIBRARY.siteOf(item); }
-function tagsOf(item) { return LIBRARY.tagsOf(item); }
+function siteOf(item) { return ANNOTATION_UTILS.siteOf(item); }
+function tagsOf(item) { return ANNOTATION_UTILS.tagsOf(item); }
 function parseTags(value) { return tagsOf({ tags: String(value || "").split(",") }); }
 function tagsEqual(a, b) { return JSON.stringify(tagsOf({ tags: a })) === JSON.stringify(tagsOf({ tags: b })); }
 function setupTagEditor(host, initialTags = []) {
@@ -628,51 +547,7 @@ function setupTagEditor(host, initialTags = []) {
   host.onclick = () => input.focus({ preventScroll: true }); render();
   return { getTags: () => normalize(tags.map(tag => tag === editingTag && input.value.trim() ? input.value : tag.value).concat(editingTag === null ? [input.value] : [])) };
 }
-function dateFilterCutoff(range) {
-  if (!range) return null;
-  if (range === "today") { const start = new Date(); start.setHours(0, 0, 0, 0); return start.getTime(); }
-  const days = Number(range);
-  return Number.isFinite(days) ? Date.now() - days * 86400000 : NaN;
-}
-function matchesDate(item, cutoff) {
-  if (cutoff === null) return true;
-  const created = dateValue(item, "createdAt");
-  return created > 0 && created >= cutoff;
-}
-function pageKey(item) { return globalThis.LHN_LIBRARY.pageKey ? globalThis.LHN_LIBRARY.pageKey(item) : String(item.url || item.hostname || item.title || "unknown"); }
-function dateValue(item, field) { const n = Number(item?.[field] || 0); return Number.isFinite(n) ? n : 0; }
-const incrementalListObservers = new WeakMap();
-function renderIncrementalList(host, items, createNode, { initial, batch } = {}) {
-  const pageSize = initial ?? CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL;
-  const batchSize = batch ?? CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH;
-  incrementalListObservers.get(host)?.disconnect();
-  host.replaceChildren();
-  if (!items.length) return;
-  if (!("IntersectionObserver" in window)) {
-    const fragment = document.createDocumentFragment();
-    for (const item of items) fragment.appendChild(createNode(item));
-    host.appendChild(fragment);
-    return;
-  }
-  let offset = 0, observer;
-  const sentinel = document.createElement("div");
-  sentinel.className = "dashboard-list-sentinel";
-  sentinel.setAttribute("aria-hidden", "true");
-  const appendBatch = () => {
-    const fragment = document.createDocumentFragment();
-    const end = Math.min(items.length, offset + (offset === 0 ? pageSize : batchSize));
-    for (; offset < end; offset++) fragment.appendChild(createNode(items[offset]));
-    host.insertBefore(fragment, sentinel);
-    if (offset >= items.length) { observer?.disconnect(); sentinel.remove(); incrementalListObservers.delete(host); }
-  };
-  observer = new IntersectionObserver(entries => {
-    if (entries.some(entry => entry.isIntersecting)) appendBatch();
-  }, { root: host, rootMargin: `${CONFIG.LIMITS.DASHBOARD_LIST_PREFETCH_PX}px 0px` });
-  host.appendChild(sentinel);
-  incrementalListObservers.set(host, observer);
-  appendBatch();
-  if (offset < items.length) observer.observe(sentinel);
-}
+function pageKey(item) { return ANNOTATION_UTILS.pageKey(item); }
 function fmtDate(value) { if (!value) return t("dateUnknown"); try { return new Intl.DateTimeFormat(currentLang === "vi" ? "vi-VN" : currentLang === "ko" ? "ko-KR" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value)); } catch { return t("dateUnknown"); } }
 function populateStudyLanguageOptions(select, autoValue, selectedValue) {
   if (!select) return;
@@ -932,14 +807,13 @@ async function load() {
   syncDashboardTheme();
   currentLang = LANGUAGES.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
   favoriteNoteIds = new Set(Array.isArray(settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES] : []);
-  syncNoteFavoriteFilters();
   applyTranslations();
   syncBilingualPreview();
   annotations = await loadAnnotationsInBatches();
+  invalidateAnnotationCaches();
   annotationById.clear();
   annotationPositionById.clear();
   annotations.forEach((item, index) => { if (item?.id) { annotationById.set(item.id, item); annotationPositionById.set(item.id, index); } });
-  filterOptionsCache = null;
   render();
   syncLRPracticeFrame();
   if (!overviewSessionsReady) void loadOverviewDictationSessions();
@@ -985,8 +859,7 @@ function applyAnnotationChange(change, renderNow = true) {
     }
     if (changed) annotations.length = write;
   } else return false;
-  profileDataCache = null;
-  filterOptionsCache = null;
+  invalidateAnnotationCaches();
   if (renderNow) render();
   syncLRPracticeFrame();
   return true;
@@ -1032,7 +905,7 @@ async function handleLRPracticeAction(event, data) {
         favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];
         try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites }); }
         catch (error) { favorites = wasFavorite ? [...favorites, key] : favorites.filter(value => value !== key); throw error; }
-        refreshFavoriteDashboard(); syncLRPracticeFrame(); replyToLRPractice(event, requestId, true); return;
+        render(); syncLRPracticeFrame(); replyToLRPractice(event, requestId, true); return;
       }
       case "delete-page": {
         if (!key) throw new Error("Source page not found");
@@ -1090,55 +963,12 @@ window.addEventListener("message", event => {
   if (event.data.type === "LR_DEMO_READY") { lrPracticeFrameReady = true; syncLRPracticeFrame(); return; }
   if (event.data.type === "LR_DEMO_ACTION" && event.data.version === 1) void handleLRPracticeAction(event, event.data);
 });
-function getFilteredAnnotations() {
-  const query = $("search").value.trim().toLocaleLowerCase(), site = $("siteFilter").value, color = $("colorFilter").value, tag = $("tagFilter").value, dateRange = $("dateFilter").value;
-  const dateCutoff = dateFilterCutoff(dateRange), normalizedTag = tag.toLocaleLowerCase();
-  const filtered = annotations.filter(a => (!site || siteOf(a) === site) && (!color || CONFIG.normalizeColor(a.color) === color) && (!tag || tagsOf(a).some(value => value.toLocaleLowerCase() === normalizedTag)) && matchesDate(a, dateCutoff) && (!favoriteNotesOnly || favoriteNoteIds.has(a.id)) && (!query || searchRank(a, query) < Number.MAX_SAFE_INTEGER));
-  if (query) filtered.sort((a, b) => searchRank(a, query) - searchRank(b, query));
-  return filtered;
-}
-function syncNoteFavoriteFilters() {
-  const button = $("favoriteNotesOnly");
-  if (!button) return;
-  button.classList.toggle("is-active", favoriteNotesOnly);
-  button.setAttribute("aria-pressed", String(favoriteNotesOnly));
-}
-async function toggleNoteFavorite(item, button, event) {
-  const wasFavorite = favoriteNoteIds.has(item.id);
-  playToolbarActionEffect(button, event, "#f43f5e", "heart");
-  if (wasFavorite) favoriteNoteIds.delete(item.id);
-  else favoriteNoteIds.add(item.id);
-  render();
-  try {
-    await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]: [...favoriteNoteIds] });
-  } catch (error) {
-    if (wasFavorite) favoriteNoteIds.add(item.id);
-    else favoriteNoteIds.delete(item.id);
-    render();
-    console.warn("Could not save note favorite", error);
-  }
-}
-function dashboardFilterOptions() {
-  if (filterOptionsCache?.source === annotations && filterOptionsCache.language === currentLang) return filterOptionsCache;
-  const sites = new Set(), tags = new Set();
-  for (const item of annotations) {
-    sites.add(siteOf(item));
-    for (const tag of tagsOf(item)) tags.add(tag);
-  }
-  filterOptionsCache = { source:annotations, language:currentLang, sites:[...sites].sort((a, b) => a.localeCompare(b)), tags:[...tags].sort((a, b) => a.localeCompare(b, currentLang)) };
-  return filterOptionsCache;
-}
-function buildPages(items) {
-  return LHN_LIBRARY.groupPages(items, {
-    pageKey, siteOf, searchRank, searchQuery:$('search').value.trim().toLocaleLowerCase(),
-    normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
-  });
-}
 const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
 const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
 let overviewSessionEntries = [];
 let overviewSummaryCache = null;
-let overviewSummaryCacheSource = null;
+let overviewSummaryCacheRevision = -1;
+function invalidateAnnotationCaches() { annotationDataRevision++; }
 
 function overviewSetText(id, value) {
   const node = $(id);
@@ -1359,9 +1189,9 @@ function renderOverviewDictationSessions() {
 function renderDashboardOverview() {
   const overview = globalThis.LHN_DASHBOARD_OVERVIEW_DATA;
   if (!overview) return;
-  if (overviewSummaryCacheSource !== profileDataCache) {
+  if (overviewSummaryCacheRevision !== annotationDataRevision) {
     overviewSummaryCache = overview.build(annotations, { pageKey, siteOf, tagsOf, reviewTimestamp:lastStudyReviewAt });
-    overviewSummaryCacheSource = profileDataCache;
+    overviewSummaryCacheRevision = annotationDataRevision;
   }
   const model = overviewSummaryCache;
   overviewSetText("overviewPillPages", overviewFormatCount(model.sourcePageCount));
@@ -1385,164 +1215,12 @@ function renderDashboardOverview() {
   renderOverviewDictationSessions();
 }
 
-function render({ preserveSources = false } = {}) {
-  renderProfileSidebar();
+function render() {
+  renderProfileMenu();
   renderDashboardOverview();
-  const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
-  const { sites, tags } = dashboardFilterOptions();
-  $("siteFilter").innerHTML = `<option value="">${escapeHtml(t("allWebsites"))}</option>` + sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-  if (sites.includes(siteValue)) $("siteFilter").value = siteValue;
-  $("colorFilter").innerHTML = `<option value="">${escapeHtml(t("allColors"))}</option>` + CONFIG.COLORS.map(color => `<option value="${color}">${escapeHtml(t(CONFIG.colorLabelKey(color)))}</option>`).join("");
-  if (CONFIG.COLORS.includes(colorValue)) $("colorFilter").value = colorValue;
-  $("tagFilter").innerHTML = `<option value="">${escapeHtml(t("allTags"))}</option>` + tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("");
-  if (tags.some(tag => tag.toLocaleLowerCase() === tagValue.toLocaleLowerCase())) $("tagFilter").value = tagValue;
-  const filtered = getFilteredAnnotations();
-  const pages = buildPages(filtered);
-  const selectedStillVisible = pages.some(p => p.key === selectedUrl);
-  if (!selectedStillVisible) selectedUrl = pages[0]?.key || null;
-  $("count").textContent = t("notesCount", { count: filtered.length });
-  $("pageCount").textContent = t("pagesCount", { count: pages.length });
-  if (preserveSources) {
-    $("sourceList").querySelectorAll(".source-item").forEach(row => row.classList.toggle("active", row.dataset.url === selectedUrl));
-  } else renderSources(pages);
-  const selected = pages.find(p => p.key === selectedUrl) || null;
-  renderNoteColorFilters(selected);
-  renderSelectedPage(selected, filtered);
-  $("empty").hidden = filtered.length > 0 || !!selectedUrl;
-  $("selectPrompt").hidden = !!selected || filtered.length === 0;
 }
-function renderSources(pages) {
-  const host = $("sourceList");
-  if (!pages.length) { incrementalListObservers.get(host)?.disconnect(); host.innerHTML = `<div class="source-empty">${escapeHtml(t("noMatchingPages"))}</div>`; return; }
-  renderIncrementalList(host, pages, p => {
-    const row = document.createElement("article"); row.className = `source-item${p.key === selectedUrl ? " active" : ""}`; row.dataset.url = p.key; row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", p.title || p.site);
-    row.innerHTML = `<div class="source-thumb">${p.thumbnailUrl ? `<img src="${escapeHtml(p.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="thumb-fallback" aria-hidden="true">${icon("file")}</span></div><div class="source-info"><div class="source-title">${escapeHtml(p.title || p.site)}</div><div class="source-host">${escapeHtml(p.site)}</div><div class="source-meta"><span class="source-date">${escapeHtml(fmtDate(p.createdAt))}</span><span class="source-meta-count">${p.colors.map(c => `<span class="color-dot ${c}" title="${escapeHtml(t(`color${c[0].toUpperCase()}${c.slice(1)}`))}"></span>`).join("")}<span class="source-count-number">${p.items.length}</span><span class="source-count-icon">${icon("square-text")}</span></span></div></div>`;
-    const sourceQuery = $("search").value.trim();
-    highlightSearchMatches(row.querySelector(".source-title"), sourceQuery);
-    highlightSearchMatches(row.querySelector(".source-host"), sourceQuery);
-    const img = row.querySelector("img");
-    if (img) {
-      const fallback = row.querySelector(".thumb-fallback");
-      img.addEventListener("load", () => { if (fallback) fallback.hidden = true; }, { once: true });
-      img.addEventListener("error", () => { img.remove(); }, { once: true });
-      if (img.complete && img.naturalWidth > 0 && fallback) fallback.hidden = true;
-    }
-    const choose = () => { selectedUrl = p.key; render({ preserveSources: true }); };
-    row.addEventListener("click", choose); row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } }); return row;
-  }, { initial: CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL, batch: CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH });
-}
-function refreshFavoriteDashboard() {
-  const pages = buildPages(getFilteredAnnotations());
-  if (!pages.some(page => page.key === selectedUrl)) { render(); return; }
-  renderSources(pages);
-  const page = pages.find(item => item.key === selectedUrl);
-  const button = $("favoritePageBtn"), isFavorite = favorites.includes(page.key);
-  button.disabled = false;
-  button.classList.toggle("is-favorite", isFavorite);
-  button.classList.toggle("is-active", isFavorite);
-  button.title = isFavorite ? t("removeFavorite") : t("addFavorite");
-  button.setAttribute("aria-label", button.title);
-}
-function renderNoteColorFilters(page) {
-  const host = $("noteColorFilters");
-  const options = [{ id: "all", label: t("all") }, ...CONFIG.COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
-  if (!page) noteColorFilter = "all";
-  const total = page?.items.length || 0;
-  const counts = Object.fromEntries(CONFIG.COLORS.map(color => [color, 0]));
-  for (const item of page?.items || []) counts[CONFIG.normalizeColor(item.color)]++;
-  host.innerHTML = options.map(option => {
-    const countLabel = option.id === "all" ? `${total}` : `${counts[option.id]}/${total}`;
-    return `<button type="button" class="note-color-filter${noteColorFilter === option.id ? " is-active" : ""}" data-filter="${option.id}" aria-pressed="${noteColorFilter === option.id}">${option.id === "all" ? "" : `<span class="lhn-filter-swatch lhn-swatch-${option.id}"></span>`}<span>${escapeHtml(option.label)}</span><span class="filter-count">${countLabel}</span></button>`;
-  }).join("");
-  host.hidden = !page;
-}
-
-function setSelectedFavicon(pageUrl) {
-  const host = $("selectedFavicon");
-  let origin = "";
-  try { origin = new URL(pageUrl).origin; } catch { host.innerHTML = icon("file"); return; }
-  const img = document.createElement("img");
-  const direct = `${origin}/favicon.ico`;
-  const fallback = `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=64`;
-  img.alt = ""; img.referrerPolicy = "no-referrer";
-  img.addEventListener("error", () => {
-    if (!img.dataset.fallbackUsed) { img.dataset.fallbackUsed = "1"; img.src = fallback; }
-    else host.innerHTML = icon("file");
-  });
-  host.replaceChildren(img); img.src = direct;
-}
-
-function renderSelectedPage(page, filtered) {
-  const header = $("notesHeader"), list = $("notesList"), empty = $("empty"), prompt = $("selectPrompt");
-  incrementalListObservers.get(list)?.disconnect();
-  list.innerHTML = "";
-  updateViewModeButton();
-  if (!page) {
-    $("selectedTitle").textContent = t("selectSource"); $("selectedUrl").textContent = ""; $("selectedUrl").removeAttribute("href"); $("selectedMeta").textContent = ""; $("selectedFavicon").innerHTML = icon("file");
-    $("favoritePageBtn").disabled = true; $("exportPageBtn").disabled = true; $("deletePageBtn").disabled = true; $("favoritePageBtn").classList.remove("is-favorite", "is-active");
-    setDisabledTooltip($("favoritePageBtn"), $("favoritePageBtn"), t("disabledNoPage"));
-    setDisabledTooltip($("exportPageBtn"), $("exportPageBtn"), t("disabledNoPage"));
-    setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), t("disabledNoPage"));
-    header.classList.add("no-selection"); empty.hidden = filtered.length > 0; prompt.hidden = filtered.length === 0; return;
-  }
-  header.classList.remove("no-selection"); prompt.hidden = true; empty.hidden = true;
-  $("selectedTitle").textContent = page.title || page.site;
-  const link = $("selectedUrl"); link.textContent = page.url; link.href = page.url;
-  $("selectedMeta").textContent = `${t("createdLabel")}: ${fmtDate(page.createdAt)} · ${t("editedLabel")}: ${fmtDate(page.updatedAt)} · ${page.items.length} ${t("highlightsShort")}`;
-  setSelectedFavicon(page.url);
-  const fav = favorites.includes(page.key), favBtn = $("favoritePageBtn"); favBtn.disabled = false; setDisabledTooltip(favBtn, favBtn, ""); favBtn.classList.toggle("is-favorite", fav); favBtn.innerHTML = icon("heart"); favBtn.classList.toggle("is-active", fav); favBtn.title = fav ? t("removeFavorite") : t("addFavorite"); favBtn.setAttribute("aria-label", favBtn.title);
-  $("exportPageBtn").disabled = false; setDisabledTooltip($("exportPageBtn"), $("exportPageBtn"), "");
-  $("deletePageBtn").disabled = page.items.length === 0;
-  if (!$("deletePageBtn").disabled) setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), "");
-  $("deletePageBtn").title = t("deletePageButton"); $("deletePageBtn").setAttribute("aria-label", t("deletePageButton"));
-  setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), $("deletePageBtn").disabled ? t("disabledEmptyPage") : "");
-  // Match the on-page order used by the sidebar. Older annotations without
-  // pageOrder retain a stable creation-date fallback until the page is visited.
-  const query = $("search").value.trim().toLocaleLowerCase();
-  const allNotes = page.items.slice().sort((a, b) => {
-    if (query) { const relevance = searchRank(a, query) - searchRank(b, query); if (relevance) return relevance; }
-    const orderA = Number.isFinite(a.pageOrder) ? a.pageOrder : Infinity;
-    const orderB = Number.isFinite(b.pageOrder) ? b.pageOrder : Infinity;
-    return orderA - orderB || (dateValue(a, "createdAt") || 0) - (dateValue(b, "createdAt") || 0);
-  });
-  const notes = noteColorFilter === "all" ? allNotes : allNotes.filter(a => CONFIG.normalizeColor(a.color) === noteColorFilter);
-  if (!notes.length && noteColorFilter !== "all") {
-    list.innerHTML = `<div class="empty color-filter-empty">${escapeHtml(t("noColorHighlights"))}</div>`;
-    return;
-  }
-  renderIncrementalList(list, notes, a => {
-    const card = document.createElement("article"); card.className = "lhn-sidebar-card card";
-    const tagsHtml = tagsOf(a).map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`).join("");
-    const isNoteFavorite = favoriteNoteIds.has(a.id), favoriteLabel = t(isNoteFavorite ? "removeFavorite" : "addFavorite"), escapedId = escapeHtml(a.id);
-    card.classList.toggle("has-note-favorite", isNoteFavorite);
-    card.innerHTML = `${isNoteFavorite ? `<button class="note-favorite-corner" data-action="favorite-note" data-id="${escapedId}" title="${escapeHtml(favoriteLabel)}" aria-label="${escapeHtml(favoriteLabel)}">${icon("heart")}</button>` : ""}<div class="lhn-sidebar-quote-row"><span class="lhn-sidebar-swatch lhn-swatch-${escapeHtml(CONFIG.normalizeColor(a.color))}"></span><div class="lhn-sidebar-quote">${escapeHtml(a.quote)}</div></div><div class="lhn-sidebar-note">${escapeHtml(a.note || t("noNoteAdded"))}</div><div class="lhn-sidebar-context-note"></div>${tagsHtml ? `<div class="tag-list">${tagsHtml}</div>` : ""}<div class="lhn-sidebar-actions card-actions"><button class="lhn-side-btn" data-action="jump" data-id="${escapedId}" title="${escapeHtml(t("jumpToHighlight"))}" aria-label="${escapeHtml(t("jumpToHighlight"))}">${icon("external")}</button><button class="lhn-side-btn" data-action="edit" data-id="${escapedId}" title="${escapeHtml(t("edit"))}" aria-label="${escapeHtml(t("edit"))}">${icon("edit")}</button><button class="lhn-side-btn" data-action="delete" data-id="${escapedId}" title="${escapeHtml(t("delete"))}" aria-label="${escapeHtml(t("delete"))}">${icon("trash")}</button><button class="lhn-side-btn" data-action="speak" data-id="${escapedId}" title="${escapeHtml(t("speakHighlightTooltip"))}" aria-label="${escapeHtml(t("speakHighlightTooltip"))}">${icon("volume")}</button><button class="lhn-side-btn note-favorite-btn${isNoteFavorite ? " is-favorite" : ""}" data-action="favorite-note" data-id="${escapedId}" title="${escapeHtml(favoriteLabel)}" aria-label="${escapeHtml(favoriteLabel)}">${icon("heart")}</button></div>`;
-    if (a.contextNote) appendContextSentence(card.querySelector(".lhn-sidebar-context-note"), a.contextNote, a.quote);
-    else card.querySelector(".lhn-sidebar-context-note")?.remove();
-    highlightSearchMatches(card, query);
-    return card;
-  }, { initial: CONFIG.LIMITS.DASHBOARD_NOTE_INITIAL, batch: CONFIG.LIMITS.DASHBOARD_NOTE_BATCH });
-}
-
-$("selectedUrl").addEventListener("click", async event => {
-  const href = event.currentTarget.href;
-  if (!href || href === "#") return;
-  event.preventDefault();
-  const normalizeUrl = value => { try { return new URL(value).href; } catch { return ""; } };
-  const targetUrl = normalizeUrl(href);
-  if (!targetUrl) return;
-  try {
-    const tabs = await browser.tabs.query({});
-    const existing = tabs.find(tab => normalizeUrl(tab.url || tab.pendingUrl) === targetUrl);
-    if (existing?.id != null) {
-      await browser.tabs.update(existing.id, { active: true });
-      if (existing.windowId != null) await browser.windows.update(existing.windowId, { focused: true });
-    } else {
-      await browser.tabs.create({ url: targetUrl, active: true });
-    }
-  } catch (error) { console.warn("Could not activate the source tab", error); }
-});
 function renderExportMenus() {
-  for (const menuId of ["exportAllMenu", "exportPageMenu", "settingsBackupExportMenu"]) {
+  for (const menuId of ["exportAllMenu", "settingsBackupExportMenu"]) {
     const menu = $(menuId); if (!menu) continue;
     menu.innerHTML = EXPORTS.map(f => `<button class="export-option" data-export="${f.id}"><span class="file-icon ${f.id}">${icon(f.icon)}</span><span>${escapeHtml(t(f.labelKey))} <span class="export-ext">(.${f.ext})</span></span></button>`).join("");
   }
@@ -1591,20 +1269,10 @@ async function downloadJsonExport(pageUrl = null) {
   anchor.href = blobUrl; anchor.download = `highlight-notes-${stamp}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(blobUrl), 1200); toast(t("exportStarted"));
 }
 function closeMenus() {
-  $("exportAllMenu").hidden = true; $("exportPageMenu").hidden = true; $("settingsBackupExportMenu").hidden = true; $("profileMenu").hidden = true;
-  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false"); $("exportPageBtn").setAttribute("aria-expanded", "false");
+  $("exportAllMenu").hidden = true; $("settingsBackupExportMenu").hidden = true; $("profileMenu").hidden = true;
+  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false");
   $("settingsExportButton").setAttribute("aria-expanded", "false");
 }
-$("sourceList").addEventListener("click", e => { if (e.target.closest("button")) return; });
-$("notesList").addEventListener("click", async e => {
-  const b = e.target.closest("button[data-action]"); if (!b) return; const item = annotations.find(a => a.id === b.dataset.id); if (!item) return;
-  if (b.dataset.action === "favorite-note") { await toggleNoteFavorite(item, b, e); return; }
-  if (b.dataset.action === "jump") { const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
-  if (b.dataset.action === "edit") { openEditDialog(item); }
-  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
-  if (b.dataset.action === "speak") { const card = b.closest(".card"); if (!item.quote || !card) return; card.classList.add("lhn-reading-text"); speakText(item.quote, detectLanguage(item.quote, item.url), () => card.classList.remove("lhn-reading-text")); }
-});
-
 function detectLanguage(text, url) {
   const s = String(text || "");
   if (/[\uAC00-\uD7AF]/.test(s)) return "ko-KR";
@@ -1832,36 +1500,6 @@ $("editDialog").addEventListener("click", async e => {
 });
 $("editDialog").addEventListener("cancel", e => { e.preventDefault(); $("editDialog").close(); });
 $("editForm").addEventListener("submit", e => { e.preventDefault(); saveEdit(); });
-$("noteColorFilters").addEventListener("click", e => {
-  const button = e.target.closest("button[data-filter]");
-  if (!button || !e.currentTarget.contains(button)) return;
-  e.preventDefault(); e.stopPropagation();
-  noteColorFilter = button.dataset.filter;
-  render();
-});
-$("actionButtonsSection").addEventListener("click", event => {
-  if (event.target.closest("#profileEditAction")) openDashboardSettings();
-});
-let dashboardSearchTimer = 0;
-$("search").addEventListener("input", () => {
-  clearTimeout(dashboardSearchTimer);
-  dashboardSearchTimer = setTimeout(render, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS);
-});
-$("siteFilter").addEventListener("change", render); $("colorFilter").addEventListener("change", render); $("tagFilter").addEventListener("change", render); $("dateFilter").addEventListener("change", render); $("sortBy").addEventListener("change", render);
-document.addEventListener("keydown", e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-    if (document.querySelector("dialog[open]")) return;
-    e.preventDefault(); e.stopPropagation();
-    const search = $("search"); search.focus(); search.setSelectionRange(search.value.length, search.value.length);
-    return;
-  }
-  if (e.key === "Escape" && !document.querySelector("dialog[open]")) {
-    e.preventDefault(); e.stopPropagation(); $("clearFiltersBtn").click();
-  }
-}, true);
-$("favoritesOnly").addEventListener("click", () => { favoritesOnly = !favoritesOnly; $("favoritesOnly").classList.toggle("is-active", favoritesOnly); $("favoritesOnly").setAttribute("aria-pressed", String(favoritesOnly)); render(); });
-$("favoriteNotesOnly").addEventListener("click", () => { favoriteNotesOnly = !favoriteNotesOnly; syncNoteFavoriteFilters(); render(); });
-$("clearFiltersBtn").addEventListener("click", event => { playToolbarActionEffect(event.currentTarget, event, "#3b82f6", "sparkle"); $("search").value = ""; $("siteFilter").value = ""; $("colorFilter").value = ""; $("tagFilter").value = ""; $("dateFilter").value = ""; favoritesOnly = false; favoriteNotesOnly = false; noteColorFilter = "all"; $("favoritesOnly").classList.remove("is-active"); $("favoritesOnly").setAttribute("aria-pressed", "false"); syncNoteFavoriteFilters(); render(); });
 function renderStudyCard({ autoSpeak = true, showAnswer = false } = {}) {
   const item = currentStudyCard();
   if (item?.id !== studyTypedAnswerForId) { studyTypedAnswerForId = item?.id || null; studyTypedAnswer = ""; }
@@ -1890,15 +1528,11 @@ function startStudySession({ allSources = false } = {}) {
   $("studyCard").hidden = false; $("studyComplete").hidden = true; $("studyDialog").showModal(); renderStudyCard({ showAnswer:false }); focusStudyPrimaryAction();
 }
 function getStudyCandidates({ sourceKey = null } = {}) {
-  const candidates = getFilteredAnnotations(), favoritePages = favoritesOnly ? new Set(favorites) : null, now = Date.now();
-  let count = 0;
-  for (const item of candidates) {
+  const now = Date.now();
+  return annotations.filter(item => {
     const dueAt = Number(item.review?.dueAt) || 0;
-    if ((favoritePages && !favoritePages.has(pageKey(item))) || studyCompletedIds.has(item.id) || (dueAt && dueAt > now) || (sourceKey && pageKey(item) !== sourceKey)) continue;
-    candidates[count++] = item;
-  }
-  candidates.length = count;
-  return candidates;
+    return !studyCompletedIds.has(item.id) && (!dueAt || dueAt <= now) && (!sourceKey || pageKey(item) === sourceKey);
+  });
 }
 function syncStudyScopeButton() { const button = $("studyPlayAll"); if (!button) return; button.classList.toggle("is-active", studyPlayAllSources); button.setAttribute("aria-pressed", String(studyPlayAllSources)); button.title = t("playAllTooltip"); }
 function setStudyScope(enabled) {
@@ -1942,8 +1576,8 @@ async function gradeStudyCard(grade) {
   studyHistory.push({ item: current, previousReview, grade });
   if (grade === "again") studyQueue.push(current);
   else { studyRemembered++; studyCompletedIds.add(current.id); }
-  profileDataCache = null;
-  renderProfileSidebar();
+  invalidateAnnotationCaches();
+  renderDashboardOverview();
   renderStudyCard(); if (studyQueueLength()) focusStudyPrimaryAction();
 }
 async function returnToPreviousStudyCard() {
@@ -1959,19 +1593,20 @@ async function returnToPreviousStudyCard() {
     if (!savedCard?.id) throw new Error("Could not restore previous card");
   } catch (error) { toast(t("studySaveFailed")); return; }
   studyHistory.pop();
-  const existingCard = annotationById.get(savedCard.id);
-  if (existingCard) Object.assign(existingCard, savedCard);
-  else { annotationPositionById.set(savedCard.id, annotations.length); annotations.push(savedCard); annotationById.set(savedCard.id, savedCard); }
-  profileDataCache = null;
+  const existingIndex = annotationPositionById.get(savedCard.id);
+  if (Number.isInteger(existingIndex)) annotations[existingIndex] = savedCard;
+  else { annotationPositionById.set(savedCard.id, annotations.length); annotations.push(savedCard); }
+  annotationById.set(savedCard.id, savedCard);
+  invalidateAnnotationCaches();
+  renderDashboardOverview();
   setStudyQueue(studyQueueItems().filter(item => item.id !== savedCard.id));
-  returnStudyCardToFront(existingCard || savedCard);
+  returnStudyCardToFront(savedCard);
   if (previous.grade !== "again") studyRemembered = Math.max(0, studyRemembered - 1);
   studyReviewed = Math.max(0, studyReviewed - 1);
   studyCompletedIds.delete(savedCard.id);
   renderStudyCard({ autoSpeak: studyAutoSpeak });
   focusStudyPrimaryAction();
 }
-$("studyModeBtn").addEventListener("click", () => startStudySession());
 async function openStudyDefinitionSearch(url) {
   const switchToSearchTab = studyPreferences.switchToDefinitionTab !== false;
   studyDefinitionTabQueue = studyDefinitionTabQueue.catch(() => {}).then(async () => {
@@ -2296,11 +1931,11 @@ $("resetStudyProgress").addEventListener("click", async () => {
     if (!result?.updated) throw new Error("Could not reset study progress");
     const idSet = new Set(ids);
     annotations.forEach(item => { if (idSet.has(item.id)) delete item.review; });
-    profileDataCache = null;
+    invalidateAnnotationCaches();
+    renderDashboardOverview();
     studyCompletedIds.clear(); studyHistory = [];
     setStudyQueue(getStudyCandidates({ sourceKey: studyPlayAllSources ? null : studySourceKey }));
     studyReviewed = 0; studyRemembered = 0;
-    renderProfileSidebar();
     renderStudyCard({ autoSpeak: false });
     toast(t("studyResetDone", { count: result.resetCount || ids.length }));
     studySpeakAfterSettingsClose = studyAutoSpeak && studyQueueLength() > 0;
@@ -2466,43 +2101,8 @@ $("profileAuthForm").addEventListener("submit", async event => {
   const displayName = username.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
   await finishProfileAuth({ username:username.split("@")[0], email:username, displayName, createdAt:Date.now() });
 });
-$("actionButtonsSection").addEventListener("click", async event => {
-  if (event.target.closest("#profileLoginAction")) { openProfileAuth("login"); return; }
-});
-$("profileTagsTab").addEventListener("click", () => { profileChipMode = "tags"; renderProfileSidebar(); });
-$("profileDomainsTab").addEventListener("click", () => { profileChipMode = "domains"; renderProfileSidebar(); });
-$("profileChips").addEventListener("click", event => {
-  const chip = event.target.closest(".profile-chip"); if (!chip) return;
-  if (profileChipMode === "tags") $("tagFilter").value = chip.dataset.name;
-  else $("siteFilter").value = chip.dataset.name;
-  render();
-});
-document.querySelectorAll("[data-profile-range]").forEach(button => button.addEventListener("click", () => { profileActivityRange = button.dataset.profileRange; renderProfileSidebar(); }));
-$("viewModeBtn").addEventListener("click", () => { viewMode = viewMode === "list" ? "grid" : "list"; updateViewModeButton(); });
-$("favoritePageBtn").addEventListener("click", async event => {
-  if (!selectedUrl) return;
-  const addingFavorite = !favorites.includes(selectedUrl);
-  playToolbarActionEffect(event.currentTarget, event, "#f43f5e", "heart");
-  favorites = addingFavorite ? [...favorites, selectedUrl] : favorites.filter(x => x !== selectedUrl);
-  await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]: favorites });
-  refreshFavoriteDashboard();
-});
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
-$("exportPageBtn").addEventListener("click", e => { e.stopPropagation(); if (!selectedUrl) return; const menu = $("exportPageMenu"); const open = menu.hidden; closeMenus(); menu.hidden = !open; $("exportPageBtn").setAttribute("aria-expanded", String(open)); });
-$("deletePageBtn").addEventListener("click", async () => {
-  if (!selectedUrl) return;
-  const pageItems = annotations.filter(a => pageKey(a) === selectedUrl);
-  if (!pageItems.length) return;
-  if (!confirm(t("deletePageConfirm"))) return;
-  const result = await LHN_MESSAGING.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
-  // Remove visible marks from any currently open tab for this exact URL too.
-  const tabs = await browser.tabs.query({});
-  await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type: "REMOVE_HIGHLIGHT_PAGE", url:selectedUrl }).catch(() => null)));
-  applyAnnotationChange({ type:"deletePage", url:selectedUrl });
-  toast(t("deletePageDone", { count: result?.deletedCount ?? ids.length }));
-});
-document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const page = option.closest("#exportPageMenu"), format = option.dataset.export; if (format === "json") downloadJsonExport(page ? selectedUrl : null).catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else { const items = page ? annotations.filter(a => pageKey(a) === selectedUrl) : annotations; downloadExport(format, items); } closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
-document.querySelector(".menu-item.item-free").addEventListener("click", event => event.preventDefault());
+document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
 const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin");
 function togglePin() {
   const pinned = !dashboardSidebar.classList.contains("sidebar-pinned");
@@ -2515,13 +2115,12 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
-const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHomeView = $("dashboardHomeView"), dashboardGrammarPracticeView = $("dashboardGrammarPracticeView"), dashboardLRPracticeView = $("dashboardLRPracticeView");
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardLRPracticeView = $("dashboardLRPracticeView");
 function setDashboardView(view) {
-  const showOverview = view === "overview", showListening = view === "listening", showHome = view === "home", showGrammar = view === "grammar", showLRPractice = view === "lr-practice";
+  if (!["overview", "listening", "lr-practice"].includes(view)) view = "overview";
+  const showOverview = view === "overview", showListening = view === "listening", showLRPractice = view === "lr-practice";
   dashboardOverviewView.hidden = !showOverview;
   dashboardListeningView.hidden = !showListening;
-  dashboardHomeView.hidden = !showHome;
-  dashboardGrammarPracticeView.hidden = !showGrammar;
   dashboardLRPracticeView.hidden = !showLRPractice;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
@@ -2531,6 +2130,7 @@ function setDashboardView(view) {
   });
 }
 dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
+document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventListener("click", event => { event.preventDefault(); setDashboardView("lr-practice"); });
 dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
   event.preventDefault();
   startStudySession({ allSources:true });
@@ -2561,21 +2161,21 @@ $("settingsAccountState").addEventListener("click", async event => {
     if (!demoProfile || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     demoProfile = { ...demoProfile, email };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    delete field.dataset.editing; refreshDashboardSettings(); renderProfileSidebar(); toast(t("settingsSaved")); return;
+    delete field.dataset.editing; refreshDashboardSettings(); renderProfileMenu(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveName")) {
     const displayName = $("settingsAccountState").querySelector("#settingsAccountDisplayName").value.trim();
     if (!demoProfile || !displayName) return;
     demoProfile = { ...demoProfile, displayName };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveUsername")) {
     const username = $("settingsAccountState").querySelector("#settingsAccountUsername").value.trim().replace(/^@+/, "");
     if (!demoProfile || !username) return;
     demoProfile = { ...demoProfile, username };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountDelete")) {
     if (!demoProfile || !confirm(t("accountDeleteConfirm"))) return;
@@ -2593,7 +2193,7 @@ $("settingsAccountState").addEventListener("change", async event => {
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
     demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84) };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved"));
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved"));
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
 });
@@ -2710,7 +2310,7 @@ $("settingsLanguageSelect").addEventListener("change", async event => {
   dashboardSettingsChangedWhileOpen = true;
   currentLang = event.target.value;
   dashboardSettings = { ...dashboardSettings, language:currentLang };
-  applyTranslations(); render(); renderProfileSidebar(); refreshDashboardSettings(); syncBilingualPreview();
+  applyTranslations(); render(); refreshDashboardSettings(); syncBilingualPreview();
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { console.warn("Could not save dashboard language", error); }
 });
@@ -3004,7 +2604,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
-    refreshFavoriteDashboard();
+    render();
     syncLRPracticeFrame();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
