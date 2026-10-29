@@ -13,7 +13,7 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 | [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardLRPracticeFrame` | Ba route còn lại và UI Highlights & Notes trong iframe. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `render`, `setDashboardView`, `syncLRPracticeFrame` | Nạp annotations cục bộ, chuyển route và làm cầu dữ liệu/actions cho LR. |
 | [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Nhóm, lọc, thống kê và hiển thị annotations; gửi actions về parent. |
-| [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js) | `LHN_ANNOTATION_UTILS` | Chuẩn hóa site, tags và page key dùng chung. |
+| [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js) | `LHN_ANNOTATION_UTILS.create`, `pageKey` | Chuẩn hóa site, tags và page key; API instance cũng cung cấp `pageKey` cho Overview và LR bridge. |
 | [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_DASHBOARD_OVERVIEW_DATA` | Tổng hợp Overview từ annotations cục bộ. |
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Render flashcards và tiện ích thuật toán. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Import/export và profile cục bộ. |

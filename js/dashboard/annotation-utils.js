@@ -27,7 +27,8 @@
     return Object.freeze({
       metadata,
       siteOf:item => metadata(item).site,
-      tagsOf:item => metadata(item).tags
+      tagsOf:item => metadata(item).tags,
+      pageKey
     });
   }
   function pageKey(item) {

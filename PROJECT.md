@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.761; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.762; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; LR là bề mặt highlights/notes duy nhất và tiếp tục dùng bridge dữ liệu/action cục bộ. Lối tắt Highlights & Notes ở Overview mở LR.
-- Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 8/8 tests, CSS parse, route/ID/shortcut static checks và `git diff --check` đều đạt; ZIP 3.4.761 gồm 104 mục và CRC hợp lệ. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Regression v3.4.761: `ANNOTATION_UTILS.pageKey` bị thiếu trên instance, khiến Overview ném TypeError và `load()` dừng trước khi sync LR. Đã sửa ở v3.4.762; chưa browser-test. Nếu đã bấm Import ở v3.4.761, xác minh dữ liệu trước khi import lại vì thao tác import có thể đã commit trước lỗi render.
+- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 8/8 tests, CSS parse, route/ID static checks và `git diff --check` đạt; ZIP 3.4.762 gồm 104 file entries và CRC hợp lệ. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe LR và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. LR là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.762 | Arena.ai Agent sửa:**
+
+- Sửa lỗi runtime: `dashboard.js` dùng `ANNOTATION_UTILS.pageKey` nhưng object tạo bởi `create()` chưa export hàm này. `renderDashboardOverview()` ném TypeError, làm `load()` dừng trước khi chuyển annotations vào LR; vì vậy giao diện trống và thao tác phụ thuộc vào lần tải lại cũng báo lỗi.
+- Export `pageKey` trên annotation-utils instance và thêm regression test cho hợp đồng này. Không thay đổi Background/IndexedDB hoặc logic import. Lưu ý: import ở v3.4.761 có thể đã ghi dữ liệu trước khi `load()` lỗi; xác minh trước khi import lại.
+- File: `js/dashboard/annotation-utils.js`, `tests/dashboard-annotation-utils.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.762.zip`.
+- Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 8/8; CSS Dashboard parse không lỗi; route/ID tĩnh và `git diff --check` đạt. ZIP v3.4.762 có 104 file entries, manifest gốc đúng version và CRC hợp lệ. Chưa kiểm thử trên trình duyệt thật.
 
 **2026-10-30 | v3.4.761 | Arena.ai Agent sửa:**
 

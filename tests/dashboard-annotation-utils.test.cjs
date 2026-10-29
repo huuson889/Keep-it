@@ -20,9 +20,11 @@ test("annotation metadata supports legacy tag strings and unknown sites", () => 
   assert.equal(utils.siteOf({}), "Unknown website");
 });
 
-test("page keys preserve existing URL, hostname, and title fallbacks", () => {
-  assert.equal(context.LHN_ANNOTATION_UTILS.pageKey({ url:"https://example.com/a" }), "https://example.com/a");
-  assert.equal(context.LHN_ANNOTATION_UTILS.pageKey({ hostname:"example.org" }), "example.org");
-  assert.equal(context.LHN_ANNOTATION_UTILS.pageKey({ title:"A saved page" }), "A saved page");
-  assert.equal(context.LHN_ANNOTATION_UTILS.pageKey({}), "unknown");
+test("page keys are available on dashboard instances and preserve all fallbacks", () => {
+  for (const api of [utils, context.LHN_ANNOTATION_UTILS]) {
+    assert.equal(api.pageKey({ url:"https://example.com/a" }), "https://example.com/a");
+    assert.equal(api.pageKey({ hostname:"example.org" }), "example.org");
+    assert.equal(api.pageKey({ title:"A saved page" }), "A saved page");
+    assert.equal(api.pageKey({}), "unknown");
+  }
 });
