@@ -20,8 +20,12 @@ test("All three routes share the single Overview topbar node and change its labe
   assert.match(dashboardJs, /home\.prepend\(dashboardSharedTopbar\)/);
   for (const key of ["ovNavOverview", "ovNavListening", "ovMenuHighlightsNotes"]) assert.ok(dashboardJs.includes(key));
   assert.match(dashboardJs, /dashboardSharedTopbarLabel\.textContent\s*=\s*t\(labelKey\)/);
-  assert.match(dashboardJs, /const next = top <= 1/);
+  assert.match(dashboardJs, /const next = dashboardSharedTopbar\.getBoundingClientRect\(\)\.top <= 1/);
   assert.match(notesJs, /getBoundingClientRect\(\)\.top<=1/);
+  assert.doesNotMatch(dashboardJs, /classList\.toggle\("demo-topbar"/);
+  assert.match(dashboardJs, /findSharedTopbarScrollTarget\(dashboardSharedTopbar\)/);
+  assert.match(dashboardJs, /view === "listening" \? dashboardListeningView : dashboardOverviewView\?\.querySelector\("\.ov-content"\)/);
+  assert.match(notesJs, /bindSharedTopbarScrollTarget\(\)/);
 });
 
 test("The shared topbar sticks at the viewport edge, shrinks by height, and retains iframe export controls", () => {
@@ -29,8 +33,10 @@ test("The shared topbar sticks at the viewport edge, shrinks by height, and reta
   assert.match(overviewCss, /\.ov-topbar\.is-compact[\s\S]*?height:\s*46px/);
   assert.match(overviewCss, /\.ov-topbar\.is-compact[\s\S]*?margin-bottom:\s*30px/);
   assert.doesNotMatch(overviewCss, /\.ov-topbar\.is-compact[^}]*transform\s*:/);
-  assert.match(notesHtml, /#dashboardSharedTopbar\.demo-topbar\{position:sticky;top:0/);
-  assert.match(notesHtml, /#dashboardSharedTopbar\.demo-topbar\.is-compact\{height:46px[^}]*margin-bottom:10px/);
+  assert.match(notesHtml, /#dashboardSharedTopbar\.ov-topbar\{position:sticky;top:0/);
+  assert.match(notesHtml, /#dashboardSharedTopbar\.is-compact\{height:46px[^}]*margin-bottom:10px/);
+  assert.doesNotMatch(notesHtml, /#dashboardSharedTopbar\.demo-topbar\{/);
+  assert.match(notesHtml, /#dashboardHomeView>#dashboardSharedTopbar\{grid-column:1!important;grid-row:1!important\}/);
   assert.match(notesHtml, /id="dashboardSharedTopbarActionsSource" hidden/);
   assert.match(notesHtml, /id="exportAllDemoBtn"/);
   assert.match(notesHtml, /id="exportAllDemoMenu"/);

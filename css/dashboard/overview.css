@@ -430,6 +430,7 @@ html.dark #dashboardListeningView .ov-demo{border-color:#413e6b;background:#2524
 #dashboardListeningView .ov-demo{font-size:13px}
 
 /* Shared sticky/shrinking topbar across the Dashboard scroll surfaces. */
+#dashboardListeningView > #dashboardSharedTopbar { width:100%; max-width:1320px; margin-left:auto; margin-right:auto; }
 #dashboardOverviewView .ov-topbar,
 #dashboardListeningView .ov-topbar {
   position: sticky;

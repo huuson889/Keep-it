@@ -1959,7 +1959,7 @@ html.dark .sources-panel > .panel-heading .study-mode-button:hover { background:
 
 /* Overview-like frame requested for the standalone demo. The copied Library controls/workspace keep app CSS. */
 #dashboardHomeView{grid-template-rows:auto auto auto auto minmax(0,1fr)!important;row-gap:10px!important;padding:16px clamp(18px,2.2vw,34px)!important}
-#dashboardHomeView>.demo-topbar{grid-column:1!important;grid-row:1!important}
+#dashboardHomeView>#dashboardSharedTopbar{grid-column:1!important;grid-row:1!important}
 #dashboardHomeView>.demo-hero{grid-column:1!important;grid-row:2!important}
 #dashboardHomeView>.toolbar{grid-column:1!important;grid-row:4!important}
 #dashboardHomeView>.library-demo-stats{grid-column:1!important;grid-row:3!important}
@@ -2074,7 +2074,6 @@ html.lr-demo-embedded body > main#dashboardHomeView {
 
 /* Follow the Dashboard theme and keep the demo's violet accents on the same dark palette. */
 html.lr-demo-embedded.dark { color-scheme:dark; }
-html.lr-demo-embedded.dark .demo-topbar,
 html.lr-demo-embedded.dark .library-demo-stats,
 html.lr-demo-embedded.dark .old-stats-section {
   background:#111a2b!important;
@@ -2207,13 +2206,20 @@ html.lr-demo-embedded.dark .demo-quick-filters button.active {
   box-shadow:0 1px 4px rgba(0,0,0,.24)!important;
 }
 
-/* Shared sticky/shrinking topbar for the iframe scroll surface. */
-#dashboardSharedTopbar.demo-topbar{position:sticky;top:0;z-index:30;box-sizing:border-box;height:56px;min-height:56px;align-self:start;padding:0 19px;border-radius:30px;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease}
+/* Render the moved node with the same Overview topbar, not the standalone demo bar. */
+#dashboardSharedTopbar.ov-topbar{position:sticky;top:0;z-index:30;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:15px;align-self:start;height:56px;min-height:56px;margin-bottom:0;padding:0 19px;border:1px solid #eeedf7;border-radius:30px;background:#fff;box-shadow:0 4px 14px #6156a30a;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease}
+#dashboardSharedTopbar .ov-crumb{color:#8d93a6;font-size:13px}
+#dashboardSharedTopbar .ov-crumb strong{color:#695bd6;font-size:14px;font-weight:800}
+#dashboardSharedTopbar .ov-crumb span{padding:0 8px;color:#c3c6d2}
 #dashboardSharedTopbar .dashboard-shared-topbar-right{min-width:0;display:flex;align-items:center;gap:9px}
 #dashboardSharedTopbarActionsSlot:not([hidden]){min-width:0;display:flex;align-items:center}
-#dashboardSharedTopbar.demo-topbar.is-compact{height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;margin-bottom:10px;box-shadow:0 7px 18px rgba(49,43,92,.10)}
-@media(max-width:560px){#dashboardSharedTopbar.demo-topbar{height:48px;min-height:48px}#dashboardSharedTopbar.demo-topbar.is-compact{height:42px;min-height:42px;margin-bottom:6px}}
-@media(prefers-reduced-motion:reduce){#dashboardSharedTopbar.demo-topbar{transition:none}}
+#dashboardSharedTopbar.is-compact{height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;margin-bottom:10px;box-shadow:0 7px 18px rgba(49,43,92,.10)}
+html.lr-demo-embedded.dark #dashboardSharedTopbar.ov-topbar{border-color:#2b3a52;background:#111a2b;color:#d7deeb;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+html.lr-demo-embedded.dark #dashboardSharedTopbar .ov-crumb{color:#a4b0c3}
+html.lr-demo-embedded.dark #dashboardSharedTopbar .ov-crumb strong{color:#a5a9ff}
+html.lr-demo-embedded.dark #dashboardSharedTopbar .ov-crumb span{color:#64748b}
+@media(max-width:560px){#dashboardSharedTopbar.ov-topbar{height:48px;min-height:48px;padding-left:12px;padding-right:12px}#dashboardSharedTopbar.is-compact{height:42px;min-height:42px;margin-bottom:6px}}
+@media(prefers-reduced-motion:reduce){#dashboardSharedTopbar.ov-topbar{transition:none}}
 </style>
 </head>
 <body class="dashboard-overview-active">

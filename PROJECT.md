@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.768; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.769; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.768, toàn bộ JavaScript syntax đạt, 14/14 tests, 10 CSS files cùng Dashboard/iframe inline styles parse và `git diff --check` đạt; ZIP có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
+- Kiểm tra gần nhất: v3.4.769, toàn bộ JavaScript syntax đạt, 14/14 tests, 10 CSS files cùng Dashboard/iframe inline styles parse và `git diff --check` đạt; ZIP có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -107,11 +107,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-30 | v3.4.768 | Arena.ai Agent sửa:**
+**2026-10-30 | v3.4.769 | Arena.ai Agent sửa:**
 
-- Tăng version phát hành từ v3.4.767 lên v3.4.768; không thay đổi code/chức năng.
-- File: `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.768.zip`.
-- Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 14/14; manifest v3.4.768 và `git diff --check` đạt; ZIP v3.4.768 có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
+- Sửa lại shared topbar: giữ nguyên class/kiểu dáng `ov-topbar` ở cả ba route thay vì chuyển sang `.demo-topbar`; đặt topbar Listening trực tiếp trong scroll root; gắn compact handler theo scroll root đang chứa node ở parent và iframe. Ngưỡng vẫn là cạnh trên `<= 1px`, co chiều cao thật và mở lại khi cuộn ngược. Giữ export action trong iframe.
+- File: `css/dashboard/overview.css`, `docs/modules/dashboard.md`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `pages/lr-practice-demo.html`, `tests/dashboard-topbar.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.769.zip`.
+- Kiểm tra: toàn bộ JavaScript syntax đạt; 14/14 tests; 10 CSS files và inline styles parse 0 lỗi; manifest v3.4.769 và `git diff --check` đạt; ZIP v3.4.769 có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-30 | v3.4.767 | Arena.ai Agent sửa:**
 

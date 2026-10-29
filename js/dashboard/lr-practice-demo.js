@@ -210,13 +210,14 @@ function handleCardAction(button,event){
  if(button.dataset.action==='jump'){sendParent('jump-to-highlight',{itemId:note.id});return}
  if(button.dataset.action==='speak'){sendParent('speak-highlight',{itemId:note.id});return}
 }
-let sharedTopbarCompact=false;
+let sharedTopbarCompact=false,sharedTopbarScrollTarget=null;
 function updateSharedTopbarCompact(){const topbar=document.getElementById('dashboardSharedTopbar');if(!topbar){sharedTopbarCompact=false;return}const next=topbar.getBoundingClientRect().top<=1;if(next===sharedTopbarCompact)return;sharedTopbarCompact=next;topbar.classList.toggle('is-compact',sharedTopbarCompact)}
-document.addEventListener('scroll',updateSharedTopbarCompact,{passive:true,capture:true});window.addEventListener('scroll',updateSharedTopbarCompact,{passive:true});window.addEventListener('resize',updateSharedTopbarCompact,{passive:true});
+function bindSharedTopbarScrollTarget(){sharedTopbarScrollTarget?.removeEventListener('scroll',updateSharedTopbarCompact);sharedTopbarScrollTarget=null;const topbar=document.getElementById('dashboardSharedTopbar');if(!topbar){sharedTopbarCompact=false;return}let node=topbar.parentElement;while(node&&node!==document.body&&node!==document.documentElement){const style=getComputedStyle(node);if(/auto|scroll|overlay/.test(style.overflowY)&&node.scrollHeight>node.clientHeight+1){sharedTopbarScrollTarget=node;break}node=node.parentElement}if(!sharedTopbarScrollTarget)sharedTopbarScrollTarget=document.scrollingElement||document.documentElement;sharedTopbarScrollTarget.addEventListener('scroll',updateSharedTopbarCompact,{passive:true});updateSharedTopbarCompact()}
+document.addEventListener('scroll',updateSharedTopbarCompact,{passive:true,capture:true});window.addEventListener('scroll',updateSharedTopbarCompact,{passive:true});window.addEventListener('resize',bindSharedTopbarScrollTarget,{passive:true});
 function onParentMessage(event){
  if(event.source!==window.parent||event.origin!==window.location.origin||!event.data||typeof event.data!=='object')return;
  const message=event.data;
- if(message.type==='KEEPIT_SHARED_TOPBAR_MOUNTED'){sharedTopbarCompact=false;updateSharedTopbarCompact();return}
+ if(message.type==='KEEPIT_SHARED_TOPBAR_MOUNTED'){sharedTopbarCompact=false;bindSharedTopbarScrollTarget();return}
  if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_DATA'){applyData(message);return}
  if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_RESULT'){if(message.message)showToast(String(message.message));else if(message.ok===false)showToast(text('genericError'))}
 }

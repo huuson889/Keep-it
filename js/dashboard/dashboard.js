@@ -2119,8 +2119,7 @@ dashboardSidebarPin.addEventListener("click", event => { event.preventDefault();
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
-const dashboardSharedTopbarCrumb = $("dashboardSharedTopbarCrumb"), dashboardSharedTopbarSlash = $("dashboardSharedTopbarSlash");
-let activeDashboardView = "overview", parentTopbarCompact = false;
+let activeDashboardView = "overview", parentTopbarCompact = false, parentTopbarScrollTarget = null;
 function updateSharedTopbarContent(view) {
   const labelKey = view === "listening" ? "ovNavListening" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
@@ -2128,9 +2127,6 @@ function updateSharedTopbarContent(view) {
   if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
   if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "listening" ? "listenDemoBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
-  dashboardSharedTopbar?.classList.toggle("demo-topbar", inHighlightsNotes);
-  dashboardSharedTopbarCrumb?.classList.toggle("demo-crumb", inHighlightsNotes);
-  dashboardSharedTopbarSlash?.classList.toggle("demo-slash", inHighlightsNotes);
 }
 function closeSharedTopbarExportMenu() {
   const menu = dashboardSharedTopbar?.querySelector("#exportAllDemoMenu");
@@ -2138,10 +2134,31 @@ function closeSharedTopbarExportMenu() {
   if (menu) menu.hidden = true;
   if (button) button.setAttribute("aria-expanded", "false");
 }
+function findSharedTopbarScrollTarget(topbar) {
+  let node = topbar?.parentElement;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = getComputedStyle(node);
+    if (/(auto|scroll|overlay)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
+    node = node.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+function unbindParentTopbarScrollTarget() {
+  parentTopbarScrollTarget?.removeEventListener("scroll", updateParentTopbarCompact);
+  parentTopbarScrollTarget = null;
+}
+function bindParentTopbarScrollTarget() {
+  unbindParentTopbarScrollTarget();
+  if (!dashboardSharedTopbar || activeDashboardView === "highlights-notes" || dashboardSharedTopbar.ownerDocument !== document) return;
+  parentTopbarScrollTarget = findSharedTopbarScrollTarget(dashboardSharedTopbar);
+  parentTopbarScrollTarget?.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
+  updateParentTopbarCompact();
+}
 function mountSharedTopbarInIframe() {
   const frame = highlightsNotesFrame;
   const frameDocument = frame?.contentDocument;
   const home = frameDocument?.getElementById("dashboardHomeView");
+  unbindParentTopbarScrollTarget();
   if (!highlightsNotesFrameReady || !frameDocument || !home) {
     dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
     return;
@@ -2161,26 +2178,22 @@ function mountSharedTopbarInIframe() {
 }
 function mountSharedTopbarInParent(view) {
   closeSharedTopbarExportMenu();
-  dashboardSharedTopbar?.classList.remove("is-compact", "demo-topbar");
-  dashboardSharedTopbarCrumb?.classList.remove("demo-crumb");
-  dashboardSharedTopbarSlash?.classList.remove("demo-slash");
+  unbindParentTopbarScrollTarget();
+  dashboardSharedTopbar?.classList.remove("is-compact");
   parentTopbarCompact = false;
   updateSharedTopbarContent(view);
-  const host = view === "listening" ? dashboardListeningView?.querySelector(".content") : dashboardOverviewView?.querySelector(".ov-content");
+  const host = view === "listening" ? dashboardListeningView : dashboardOverviewView?.querySelector(".ov-content");
   if (host && dashboardSharedTopbar) host.prepend(dashboardSharedTopbar);
-  updateParentTopbarCompact();
+  bindParentTopbarScrollTarget();
 }
 function updateParentTopbarCompact() {
   if (!dashboardSharedTopbar || activeDashboardView === "highlights-notes" || dashboardSharedTopbar.ownerDocument !== document) return;
-  const top = dashboardSharedTopbar.getBoundingClientRect().top;
-  const next = top <= 1;
+  const next = dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
   parentTopbarCompact = next;
   dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);
 }
-dashboardOverviewView.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
-dashboardListeningView.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
-window.addEventListener("resize", updateParentTopbarCompact, { passive:true });
+window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
 function setDashboardView(view) {
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
   activeDashboardView = view;
