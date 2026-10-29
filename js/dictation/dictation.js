@@ -40,12 +40,41 @@
   const tr = (key) => globalThis.LHN_LANGUAGES?.t?.(key, {}, language()) || key;
   const currentVideoId = () => String(A?.state?.videoId || "");
   const storageKey = () => `dictation:${videoId}`;
+  const dictationSessionIndex = globalThis.LHN_DICTATION_SESSION_INDEX;
+  const dictationSessionIndexKey = dictationSessionIndex.STORAGE_KEY;
   const getCues = () => {
     const list = A?.getDictationCues?.();
     return Array.isArray(list) ? list.filter((cue) => cue && typeof cue.en === "string" && cue.en.trim()) : [];
   };
   const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
   const dictationLayoutStorageKey = "dictation:layout:v1";
+
+  function getCurrentVideoTitle() {
+    try {
+      const heading = document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim();
+      if (heading) return heading.slice(0, 240);
+      return String(document.title || "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
+    } catch { return ""; }
+  }
+
+  async function saveDictationSessionIndex(session) {
+    try {
+      const stored = await ext.storage.local.get(dictationSessionIndexKey);
+      const previous = dictationSessionIndex.normalizeIndex(stored?.[dictationSessionIndexKey]);
+      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, session);
+      await ext.storage.local.set({
+        [dictationSessionIndexKey]: {
+          version: dictationSessionIndex.VERSION,
+          updatedAt: Date.now(),
+          legacyMigrationComplete: previous.legacyMigrationComplete,
+          sessions,
+        },
+      });
+    } catch (error) {
+      // Overview indexing is additive: failure must never affect Dictation's existing progress record.
+      console.warn("Could not update Dictation session summary", error);
+    }
+  }
   const dictationLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
   let dictationLayoutLoadPromise = null;
 
@@ -812,9 +841,26 @@
 
   function saveRecord() {
     if (!videoId || !ext?.storage?.local) return Promise.resolve();
-    return ext.storage.local.set({
-      [storageKey()]: { version: 1, current, solved: [...solved], notes, translations, wrongWordStats },
-    }).catch(() => {});
+    const record = { version: 1, current, solved: [...solved], notes, translations, wrongWordStats };
+    const sessionId = `youtube:${videoId}`;
+    const totalCount = sentenceCues.length;
+    const solvedCount = solved.size;
+    const session = {
+      version: 1,
+      sessionId,
+      sourceType: "youtube",
+      sourceId: videoId,
+      title: getCurrentVideoTitle(),
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      currentIndex: Math.max(0, Math.floor(Number(current) || 0)),
+      totalCount: Math.max(0, Math.floor(Number(totalCount) || 0)),
+      solvedCount: Math.max(0, Math.floor(Number(solvedCount) || 0)),
+      updatedAt: Date.now(),
+      status: totalCount > 0 && solvedCount >= totalCount ? "complete" : "in_progress",
+    };
+    return ext.storage.local.set({ [storageKey()]: record })
+      .then(() => { void saveDictationSessionIndex(session); })
+      .catch(() => {});
   }
 
   function scheduleSaveNotes() {

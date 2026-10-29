@@ -13,16 +13,19 @@ Dictation v1 là chế độ luyện nghe/gõ lời thoại dùng video YouTube 
 | [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION`, `openPanel` | Panel luyện tập, đồng bộ cue/video, state, lưu tiến độ và ghi chú. |
 | [`js/dictation/dictation-score.js`](../../js/dictation/dictation-score.js) | `LHN_DICTATION_SCORE` | Tokenize, score và word-level diff. |
 | [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | CSS được gắn vào Shadow DOM của overlay Video. |
+| [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Hợp đồng provider-neutral dùng để chuẩn hóa/merge metadata session. |
 | [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Provider của video, caption cues và overlay controls. |
-| [`manifest.json`](../../manifest.json) | `content_scripts` order | Nạp `dictation-score.js`, style rồi controller sau Video. |
+| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | session-index consumer | Đọc session summary chung cho Overview, không gắn với YouTube keys. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` order | Nạp scorer, style, shared session index rồi controller sau Video. |
 
 ## 3. Luồng chính
 
 1. Dictation nhận `lhn-overlay-ready`, lấy API `LHN_OVERLAY_API` và gắn nút vào overlay; `LHN_DICTATION` công khai `open`, `close`, `toggle`, `isOpen` cho consumer.
 2. Khi mở, lấy video ID và cue qua `getDictationCues()`. Cue chỉ dùng khi track language là English; nếu caption còn tải, event `lhn-dual-captions-updated` cho phép đồng bộ lại.
 3. Người học gõ câu; `LHN_DICTATION_SCORE` tokenize/căn chỉnh từ để xác định đúng, sai, thừa và thiếu. Playback và seek sử dụng cùng video/cue, không tải player riêng.
-4. Tiến độ, câu đã giải, ghi chú, bản dịch và thống kê lỗi lưu theo video; tùy chọn bố cục cột lưu bằng storage key riêng.
-5. Khi đóng hoặc video đổi, flush dữ liệu cần thiết, gỡ listener/timer và trả trạng thái overlay cho Dual Sub.
+4. Tiến độ, câu đã giải, ghi chú, bản dịch và thống kê lỗi tiếp tục lưu theo key hiện có `dictation:<videoId>`; tùy chọn bố cục cột lưu bằng storage key riêng.
+5. Sau khi lưu record hiện hữu thành công, Dictation cập nhật thêm `dictation:session-index:v1` với metadata provider-neutral (source, title/URL, vị trí, tổng câu, số câu đã giải, thời gian cập nhật, trạng thái). Lỗi index không làm hỏng hoặc chặn lưu record hiện hữu.
+6. Khi đóng hoặc video đổi, flush dữ liệu cần thiết, gỡ listener/timer và trả trạng thái overlay cho Dual Sub.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -30,7 +33,9 @@ Dictation v1 là chế độ luyện nghe/gõ lời thoại dùng video YouTube 
 - Không tạo video element/overlay song song; Dictation phải làm việc với video thật do module Video quản lý.
 - Chỉ nhận cue tiếng Anh (`captionTrackLanguage === "en"` sau normalize). Không tự đổi sang track khác khi Dictation mở.
 - Scorer là logic dùng chung; giữ chuẩn hóa case/dấu câu và cấu trúc diff mà phần hiển thị phân tích lỗi tiêu thụ.
-- Record tiến độ có key `dictation:<videoId>`; layout có key `dictation:layout:v1`. Giữ tương thích schema/migration khi đổi dữ liệu.
+- Giữ nguyên record `dictation:<videoId>` cùng toàn bộ field hiện tại; layout có key `dictation:layout:v1`.
+- Index bổ sung có key `dictation:session-index:v1`, envelope `{version:1, updatedAt, legacyMigrationComplete, sessions:[...]}`; mỗi session có `{version:1, sessionId, sourceType, sourceId, title, url, currentIndex, totalCount, solvedCount, updatedAt, status}`. `currentIndex` zero-based. Tên provider hiện tại là `youtube`; provider web tương lai có thể dùng cùng hợp đồng mà không đổi consumer Overview.
+- Backfill cũ chỉ đọc `dictation:<videoId>` và thêm session metadata, không đổi/xóa record gốc. Thất bại khi ghi index phải được cô lập; dữ liệu legacy vẫn đọc được.
 - Cleanup là bắt buộc khi close, đổi video hoặc panel không còn active để tránh cập nhật UI cũ.
 
 ## 5. Kiểm tra và xác minh

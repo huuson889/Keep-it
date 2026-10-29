@@ -115,6 +115,7 @@ body.dashboard-sidebar-pinned.dashboard-overview-active>main#dashboardOverviewVi
 #dashboardOverviewView .ov-mode-shadow .ov-mode-note{margin-top:9px;color:#9c896c;font-size:9px;line-height:1.45}
 #dashboardOverviewView .ov-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px;margin-top:20px}
 #dashboardOverviewView .ov-dist-list{display:grid;gap:13px;margin-top:14px}
+#dashboardOverviewView .ov-empty{padding:12px 2px;color:#8d96a8;font-size:11px;line-height:1.5}
 #dashboardOverviewView .ov-dist-row{display:grid;grid-template-columns:105px minmax(0,1fr) 30px;align-items:center;gap:10px}
 #dashboardOverviewView .ov-dist-label{overflow:hidden;color:#68758b;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
 #dashboardOverviewView .ov-dist-track{height:8px;overflow:hidden;border-radius:10px;background:#f0eff6}

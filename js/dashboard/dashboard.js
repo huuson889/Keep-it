@@ -13,6 +13,7 @@ let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
 let demoProfile = null, profileDataCache = null, profileAuthMode = "login", profileChipMode = "domains", profileActivityRange = "all";
+let overviewSessionsReady = false, overviewSessionsLoading = false;
 let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
 const annotationById = new Map();
@@ -842,6 +843,7 @@ async function load() {
   annotations.forEach((item, index) => { if (item?.id) { annotationById.set(item.id, item); annotationPositionById.set(item.id, index); } });
   filterOptionsCache = null;
   render();
+  if (!overviewSessionsReady) void loadOverviewDictationSessions();
   if ($("dashboardSettingsDialog")?.open) refreshDashboardSettings();
 }
 async function loadAnnotationsInBatches() {
@@ -932,8 +934,261 @@ function buildPages(items) {
     pageKey, siteOf, searchRank, searchQuery:$('search').value.trim().toLocaleLowerCase(),
     normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
   });
-}function render({ preserveSources = false } = {}) {
+}
+const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
+const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
+let overviewSessionEntries = [];
+let overviewSummaryCache = null;
+let overviewSummaryCacheSource = null;
+
+function overviewSetText(id, value) {
+  const node = $(id);
+  if (node) node.textContent = String(value ?? "");
+}
+function overviewFormatCount(value) { return Math.max(0, Number(value) || 0).toLocaleString(currentLang); }
+function overviewSetMeter(id, ratio) {
+  const node = $(id);
+  if (!node) return;
+  node.style.width = `${Math.min(100, Math.max(0, Number(ratio) || 0))}%`;
+}
+function renderOverviewActivityCalendar(model) {
+  const heatmap = $("overviewHeatmap"), monthHost = $("overviewMonthLabels");
+  if (!heatmap || !monthHost) return;
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start = new Date(today);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 51 * 7);
+  const windowActiveDays = new Set(), windowActiveWeeks = new Set(), cells = document.createDocumentFragment();
+  const formatter = new Intl.DateTimeFormat(currentLang === "vi" ? "vi-VN" : currentLang === "ko" ? "ko-KR" : "en-US", { month:"short" });
+  const months = [];
+  const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const lastMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  while (monthCursor <= lastMonth) {
+    months.push(new Date(monthCursor));
+    monthCursor.setMonth(monthCursor.getMonth() + 1);
+  }
+  for (let index = 0; index < 364; index++) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + index);
+    const key = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.localDayKey(day.getTime());
+    const count = day <= today ? Number(model.dailyCounts.get(key) || 0) : 0;
+    if (count > 0) {
+      windowActiveDays.add(key);
+      windowActiveWeeks.add(globalThis.LHN_DASHBOARD_OVERVIEW_DATA.localWeekKey(day.getTime()));
+    }
+    const cell = document.createElement("span");
+    cell.className = "ov-heat-cell";
+    cell.dataset.level = String(Math.min(4, count));
+    cell.setAttribute("aria-hidden", "true");
+    cell.title = `${formatter.format(day)} ${day.getDate()}, ${day.getFullYear()}: ${t("ovHeatActivityCount", { count })}`;
+    cells.appendChild(cell);
+  }
+  heatmap.replaceChildren(cells);
+  monthHost.replaceChildren(...months.map(date => {
+    const label = document.createElement("span");
+    label.textContent = formatter.format(date);
+    return label;
+  }));
+  monthHost.style.gridTemplateColumns = `repeat(${Math.max(1, months.length)}, minmax(0, 1fr))`;
+  overviewSetText("overviewActiveDays", t("ovActiveDays", { count:overviewFormatCount(windowActiveDays.size) }));
+  overviewSetText("overviewTotalDays", overviewFormatCount(windowActiveDays.size));
+  overviewSetText("overviewTotalWeeks", overviewFormatCount(windowActiveWeeks.size));
+}
+function renderOverviewTags(model) {
+  const host = $("overviewTopTags");
+  if (!host) return;
+  host.replaceChildren();
+  const tags = model.topTags.slice(0, 5);
+  if (!tags.length) {
+    const empty = document.createElement("div");
+    empty.className = "ov-empty";
+    empty.textContent = t("ovNoTags");
+    host.appendChild(empty);
+    return;
+  }
+  const maxCount = tags[0][1] || 1;
+  for (const [name, count] of tags) {
+    const row = document.createElement("div");
+    row.className = "ov-dist-row";
+    const label = document.createElement("span");
+    label.className = "ov-dist-label";
+    label.textContent = name;
+    const track = document.createElement("span");
+    track.className = "ov-dist-track";
+    const fill = document.createElement("span");
+    fill.style.width = `${Math.max(3, Math.round(count / maxCount * 100))}%`;
+    track.appendChild(fill);
+    const value = document.createElement("span");
+    value.className = "ov-dist-count";
+    value.textContent = overviewFormatCount(count);
+    row.append(label, track, value);
+    host.appendChild(row);
+  }
+}
+function renderOverviewRecentItems(model) {
+  const host = $("overviewRecentItems");
+  if (!host) return;
+  host.replaceChildren();
+  const items = model.recentItems.slice(0, 4);
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "ov-empty";
+    empty.textContent = t("ovNoRecentItems");
+    host.appendChild(empty);
+    return;
+  }
+  for (const { item, timestamp } of items) {
+    const row = document.createElement("div");
+    row.className = "ov-activity";
+    const itemText = [item?.note, item?.quote, item?.selectedText, item?.text].find(value => typeof value === "string" && value.trim()) || "";
+    const titleText = String(item?.title || item?.hostname || siteOf(item) || t("unknownWebsite"));
+    const detailText = itemText.trim().replace(/\s+/g, " ").slice(0, 112) || String(item?.url || "");
+    const iconNode = document.createElement("span");
+    iconNode.className = "ov-activity-icon";
+    iconNode.textContent = item?.note ? "🗒️" : "📚";
+    const textWrap = document.createElement("span");
+    const title = document.createElement("span");
+    title.className = "ov-activity-title";
+    title.textContent = titleText;
+    const detail = document.createElement("span");
+    detail.className = "ov-activity-sub";
+    detail.textContent = detailText || t("ovNoNotes");
+    textWrap.append(title, detail);
+    const when = document.createElement("span");
+    when.className = "ov-activity-time";
+    when.textContent = fmtDate(timestamp);
+    row.append(iconNode, textWrap, when);
+    host.appendChild(row);
+  }
+}
+function normalizeOverviewSessionIndex(value) { return DICTATION_SESSION_INDEX.normalizeIndex(value); }
+function mergeOverviewSessions(...groups) { return DICTATION_SESSION_INDEX.mergeSessions(...groups); }
+function migrateLegacyDictationRecords(storageData, existingSessions) {
+  const known = new Set((existingSessions || []).map(session => session.sessionId));
+  const titleByVideoId = new Map();
+  for (const item of annotations) {
+    const id = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.youtubeVideoId(item?.url);
+    if (id && !titleByVideoId.has(id) && item?.title) titleByVideoId.set(id, String(item.title));
+  }
+  const legacy = [];
+  for (const [key, record] of Object.entries(storageData || {})) {
+    if (!key.startsWith("dictation:")) continue;
+    const sourceId = key.slice("dictation:".length);
+    const sessionId = `youtube:${sourceId}`;
+    if (known.has(sessionId)) continue;
+    const session = DICTATION_SESSION_INDEX.fromLegacyYouTubeRecord(sourceId, record, { title:titleByVideoId.get(sourceId) || "" });
+    if (session) legacy.push(session);
+  }
+  return legacy.filter(Boolean);
+}
+async function loadOverviewDictationSessions() {
+  if (overviewSessionsReady || overviewSessionsLoading) return;
+  overviewSessionsLoading = true;
+  try {
+    const saved = await browser.storage.local.get(OVERVIEW_DICTATION_SESSION_INDEX_KEY);
+    let index = normalizeOverviewSessionIndex(saved?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+    let sessions = index.sessions;
+    if (!index.legacyMigrationComplete) {
+      const allData = await browser.storage.local.get(null);
+      const latestIndex = normalizeOverviewSessionIndex(allData?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+      sessions = mergeOverviewSessions(latestIndex.sessions, migrateLegacyDictationRecords(allData, latestIndex.sessions));
+      const migrated = { version:1, updatedAt:Date.now(), legacyMigrationComplete:true, sessions };
+      try {
+        const recheck = await browser.storage.local.get(OVERVIEW_DICTATION_SESSION_INDEX_KEY);
+        const concurrent = normalizeOverviewSessionIndex(recheck?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+        if (concurrent.sessions.length) migrated.sessions = mergeOverviewSessions(concurrent.sessions, sessions);
+        await browser.storage.local.set({ [OVERVIEW_DICTATION_SESSION_INDEX_KEY]:migrated });
+      } catch (error) {
+        console.warn("Could not persist Dictation session index migration", error);
+      }
+      index = migrated;
+    }
+    overviewSessionEntries = mergeOverviewSessions(sessions);
+  } catch (error) {
+    overviewSessionEntries = [];
+    console.warn("Could not load local Dictation session index", error);
+  } finally {
+    overviewSessionsLoading = false;
+    overviewSessionsReady = true;
+  }
+  renderOverviewDictationSessions();
+}
+function chooseOverviewDictationSession() {
+  const sessions = overviewSessionEntries;
+  const datedInProgress = sessions.filter(item => item.updatedAt > 0 && item.status !== "complete").sort((a, b) => b.updatedAt - a.updatedAt);
+  if (datedInProgress.length) return datedInProgress[0];
+  const dated = sessions.filter(item => item.updatedAt > 0).sort((a, b) => b.updatedAt - a.updatedAt);
+  if (dated.length) return dated[0];
+  const plausibleLegacy = sessions.filter(item => item.legacy && (item.currentIndex > 0 || item.solvedCount > 0));
+  if (plausibleLegacy.length === 1) return plausibleLegacy[0];
+  return null;
+}
+function renderOverviewDictationSessions() {
+  const session = chooseOverviewDictationSession();
+  const titleNode = $("overviewSessionTitle");
+  const detailNode = $("overviewSessionDetail");
+  const metaNode = $("overviewSessionMeta");
+  const selectedTitle = session?.title || (session?.sourceType === "youtube" ? `${t("ovSourceYoutube")} · ${session.sourceId}` : session?.sourceType === "web" ? t("ovSourceWeb") : "");
+  const sourceLabel = session?.sourceType === "youtube" ? "YouTube" : session?.sourceType === "web" ? t("ovSourceWeb") : session?.sourceType || "";
+  if (session) {
+    const current = session.currentIndex + 1;
+    titleNode.textContent = selectedTitle || t("ovNoDictationSession");
+    detailNode.textContent = session.totalCount > 0
+      ? t("ovSessionPosition", { current:overviewFormatCount(current), total:overviewFormatCount(session.totalCount) })
+      : t("ovSessionCurrentSentence", { current:overviewFormatCount(current) });
+    const metaParts = [sourceLabel, t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }), session.updatedAt ? t("ovSessionSaved", { date:fmtDate(session.updatedAt) }) : t("ovSessionLegacy")];
+    metaNode.replaceChildren(...metaParts.map(value => { const span=document.createElement("span"); span.textContent=value; return span; }));
+    overviewSetText("overviewModeDictationProgress", session.totalCount > 0 ? `${overviewFormatCount(current)} / ${overviewFormatCount(session.totalCount)}` : overviewFormatCount(current));
+    overviewSetText("overviewModeDictationSolved", t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }));
+    overviewSetText("overviewModeDictationTitle", selectedTitle || session.sourceId);
+    overviewSetText("overviewModeDictationSource", sourceLabel);
+    const progress = session.totalCount > 0 ? session.solvedCount / session.totalCount : 0;
+    overviewSetMeter("overviewDictationMeter", progress * 100);
+    const modeTitle = $("overviewModeDictationTitle");
+    if (modeTitle) modeTitle.title = selectedTitle || session.sourceId;
+  } else {
+    const legacyCount = overviewSessionEntries.filter(item => item.legacy).length;
+    titleNode.textContent = legacyCount > 1 ? t("ovMultipleLegacySessions", { count:overviewFormatCount(legacyCount) }) : t("ovNoDictationSession");
+    detailNode.textContent = legacyCount > 1 ? t("ovLegacySessionHelp") : t("ovNoDictationSession");
+    metaNode.replaceChildren();
+    overviewSetText("overviewModeDictationProgress", "—");
+    overviewSetText("overviewModeDictationSolved", "");
+    overviewSetText("overviewModeDictationTitle", t("ovNoSessionMode"));
+    overviewSetText("overviewModeDictationSource", "");
+    overviewSetMeter("overviewDictationMeter", 0);
+  }
+}
+function renderDashboardOverview() {
+  const overview = globalThis.LHN_DASHBOARD_OVERVIEW_DATA;
+  if (!overview) return;
+  if (overviewSummaryCacheSource !== profileDataCache) {
+    overviewSummaryCache = overview.build(annotations, { pageKey, siteOf, tagsOf, reviewTimestamp:lastStudyReviewAt });
+    overviewSummaryCacheSource = profileDataCache;
+  }
+  const model = overviewSummaryCache;
+  overviewSetText("overviewPillPages", overviewFormatCount(model.sourcePageCount));
+  overviewSetText("overviewPillHighlights", overviewFormatCount(model.highlightCount));
+  overviewSetText("overviewPillNotes", overviewFormatCount(model.notesCount));
+  overviewSetText("overviewSourcePageCount", overviewFormatCount(model.sourcePageCount));
+  overviewSetText("overviewHighlightCount", overviewFormatCount(model.highlightCount));
+  overviewSetText("overviewDueCount", overviewFormatCount(model.dueCount));
+  overviewSetText("overviewNoteCount", overviewFormatCount(model.notesCount));
+  overviewSetText("overviewQuickDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
+  overviewSetText("overviewModeDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
+  overviewSetText("overviewLibraryCardTotal", t("ovSavedAnnotationsCount", { count:overviewFormatCount(model.highlightCount) }));
+  overviewSetText("overviewTodayReviewCount", t("ovTodayReviewValue", { count:overviewFormatCount(model.reviewedToday) }));
+  overviewSetText("overviewModeReviewedToday", overviewFormatCount(model.reviewedToday));
+  overviewSetText("overviewReviewedCards", overviewFormatCount(model.reviewedCardCount));
+  overviewSetMeter("overviewTodayReviewMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
+  overviewSetMeter("overviewFlashcardMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
+  renderOverviewActivityCalendar(model);
+  renderOverviewTags(model);
+  renderOverviewRecentItems(model);
+  renderOverviewDictationSessions();
+}
+
+function render({ preserveSources = false } = {}) {
   renderProfileSidebar();
+  renderDashboardOverview();
   const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
   const { sites, tags } = dashboardFilterOptions();
   $("siteFilter").innerHTML = `<option value="">${escapeHtml(t("allWebsites"))}</option>` + sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
@@ -2548,6 +2803,12 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
     render();
+  }
+  if (changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY]) {
+    const index = normalizeOverviewSessionIndex(changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY].newValue);
+    overviewSessionEntries = mergeOverviewSessions(index.sessions);
+    overviewSessionsReady = true;
+    renderOverviewDictationSessions();
   }
   if (changes[CONFIG.STORAGE_KEYS.ANNOTATIONS]) {
     if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
