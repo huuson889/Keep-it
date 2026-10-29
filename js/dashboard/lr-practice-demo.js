@@ -235,6 +235,6 @@ document.querySelectorAll('[data-demo-dist]').forEach(button=>button.addEventLis
 window.addEventListener('message',onParentMessage);
 window.parent.postMessage({type:'HIGHLIGHTS_NOTES_READY',version:1},window.location.origin);
 const demoTopbar=document.querySelector('.demo-topbar.ov-topbar');
-if(demoTopbar){const update=()=>demoTopbar.classList.toggle('is-compact',window.scrollY>24);window.addEventListener('scroll',update,{passive:true});update()}
+if(demoTopbar){let compact=false;const update=()=>{const top=demoTopbar.getBoundingClientRect().top;const next=compact?top<=24:top<=1;if(next===compact)return;compact=next;demoTopbar.classList.toggle('is-compact',compact)};document.addEventListener('scroll',update,{passive:true,capture:true});window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update,{passive:true});update()}
 refresh();
 })();

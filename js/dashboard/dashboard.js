@@ -2118,13 +2118,27 @@ dashboardSidebarPin.addEventListener("click", event => { event.preventDefault();
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
 function bindCompactTopbar(scrollRoot) {
   const topbar = scrollRoot?.querySelector(".ov-topbar");
-  if (!topbar) return;
-  const update = () => topbar.classList.toggle("is-compact", scrollRoot.scrollTop > 24);
+  if (!topbar) return () => {};
+  let compact = false;
+  const update = () => {
+    if (scrollRoot.hidden) {
+      compact = false;
+      topbar.classList.remove("is-compact");
+      return;
+    }
+    const top = topbar.getBoundingClientRect().top;
+    const next = compact ? top <= 24 : top <= 1;
+    if (next === compact) return;
+    compact = next;
+    topbar.classList.toggle("is-compact", compact);
+  };
   scrollRoot.addEventListener("scroll", update, { passive:true });
+  window.addEventListener("resize", update, { passive:true });
   update();
+  return update;
 }
-bindCompactTopbar(dashboardOverviewView);
-bindCompactTopbar(dashboardListeningView);
+const updateOverviewTopbar = bindCompactTopbar(dashboardOverviewView);
+const updateListeningTopbar = bindCompactTopbar(dashboardListeningView);
 function setDashboardView(view) {
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
   const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
@@ -2132,6 +2146,8 @@ function setDashboardView(view) {
   dashboardListeningView.hidden = !showListening;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
+  updateOverviewTopbar();
+  updateListeningTopbar();
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
     link.classList.toggle("is-active", active);

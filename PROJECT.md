@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.766; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.767; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.766, toàn bộ JavaScript syntax đạt, 14/14 tests, 10 CSS files và Dashboard/iframe inline styles parse, `git diff --check` đạt; ZIP có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
+- Kiểm tra gần nhất: v3.4.767, toàn bộ JavaScript syntax đạt, 14/14 tests, 10 CSS files cùng Dashboard/iframe inline styles parse và `git diff --check` đạt; ZIP có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.767 | Arena.ai Agent sửa:**
+
+- Chỉnh điều kiện thu gọn: chỉ khi topbar chạm mép trên viewport mới thu nhỏ; thêm ngưỡng hồi vị để tránh rung khi reflow/scale màn hình. Highlights & Notes iframe theo dõi scroll ở document capture và viewport; đồng bộ lại trạng thái khi đổi route/resize.
+- File: `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/overview.css`, `pages/lr-practice-demo.html`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.767.zip`.
+- Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 14/14; 10 CSS files và Dashboard/iframe inline styles parse 0 lỗi; manifest v3.4.767, `git diff --check` đạt; ZIP v3.4.767 có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-30 | v3.4.766 | Arena.ai Agent sửa:**
 

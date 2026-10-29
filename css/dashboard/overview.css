@@ -433,7 +433,7 @@ html.dark #dashboardListeningView .ov-demo{border-color:#413e6b;background:#2524
 #dashboardOverviewView .ov-topbar,
 #dashboardListeningView .ov-topbar {
   position: sticky;
-  top: 12px;
+  top: 0;
   z-index: 30;
   box-sizing: border-box;
   height: 56px;
