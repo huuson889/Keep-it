@@ -2061,11 +2061,14 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
-const dashboardHomeView = $("dashboardHomeView"), dashboardGrammarPracticeView = $("dashboardGrammarPracticeView");
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHomeView = $("dashboardHomeView"), dashboardGrammarPracticeView = $("dashboardGrammarPracticeView");
 function setDashboardView(view) {
-  const showHome = view === "home";
+  const showOverview = view === "overview", showListening = view === "listening", showHome = view === "home", showGrammar = view === "grammar";
+  dashboardOverviewView.hidden = !showOverview;
+  dashboardListeningView.hidden = !showListening;
   dashboardHomeView.hidden = !showHome;
-  dashboardGrammarPracticeView.hidden = showHome;
+  dashboardGrammarPracticeView.hidden = !showGrammar;
+  document.body.classList.toggle("dashboard-overview-active", showOverview);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
     link.classList.toggle("is-active", active);
@@ -2073,7 +2076,7 @@ function setDashboardView(view) {
   });
 }
 dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
-setDashboardView("home");
+setDashboardView("overview");
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
