@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.765; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.766; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 12/12 tests, 10 CSS files và Dashboard/iframe inline styles parse, `git diff --check` đạt; ZIP v3.4.765 có 106 entries và CRC hợp lệ. Chưa xác nhận favicon trên trình duyệt thật.
+- Kiểm tra gần nhất: v3.4.766, toàn bộ JavaScript syntax đạt, 14/14 tests, 10 CSS files và Dashboard/iframe inline styles parse, `git diff --check` đạt; ZIP có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Highlights & Notes iframe; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Highlights & Notes iframe, gồm topbar sticky/thu gọn theo đúng vùng cuộn; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.766 | Arena.ai Agent sửa:**
+
+- Thống nhất topbar Overview, Listening và “Tô sáng & Ghi chú”: sticky theo vùng cuộn riêng của mỗi view/iframe và thu nhỏ chiều cao thực tế khi cuộn; giữ lại các điều khiển hiện hữu, gồm menu xuất dữ liệu trong iframe.
+- File: `pages/dashboard.html`, `pages/lr-practice-demo.html`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/overview.css`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.766.zip`.
+- Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 14/14; 10 CSS files và Dashboard/iframe inline styles parse 0 lỗi; manifest v3.4.766, `git diff --check` đạt; ZIP v3.4.766 có 107 entries và CRC hợp lệ. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-30 | v3.4.765 | Arena.ai Agent sửa:**
 

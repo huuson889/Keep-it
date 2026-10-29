@@ -428,3 +428,34 @@ html.dark #dashboardListeningView .ov-demo{border-color:#413e6b;background:#2524
 
 /* Match the final standalone demo’s more readable small type. */
 #dashboardListeningView .ov-demo{font-size:13px}
+
+/* Shared sticky/shrinking topbar across the Dashboard scroll surfaces. */
+#dashboardOverviewView .ov-topbar,
+#dashboardListeningView .ov-topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  box-sizing: border-box;
+  height: 56px;
+  min-height: 56px;
+  transition: height 180ms ease, min-height 180ms ease, padding 180ms ease, border-radius 180ms ease, box-shadow 180ms ease;
+}
+#dashboardOverviewView .ov-topbar.is-compact,
+#dashboardListeningView .ov-topbar.is-compact {
+  height: 46px;
+  min-height: 46px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-radius: 24px;
+  box-shadow: 0 7px 18px rgba(49,43,92,.10);
+}
+@media(prefers-reduced-motion:reduce) {
+  #dashboardOverviewView .ov-topbar,
+  #dashboardListeningView .ov-topbar { transition: none; }
+}
+@media(max-width:560px) {
+  #dashboardOverviewView .ov-topbar,
+  #dashboardListeningView .ov-topbar { height: 48px; min-height: 48px; }
+  #dashboardOverviewView .ov-topbar.is-compact,
+  #dashboardListeningView .ov-topbar.is-compact { height: 42px; min-height: 42px; }
+}

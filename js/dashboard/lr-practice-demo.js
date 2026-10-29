@@ -234,5 +234,7 @@ document.querySelector('.old-stats-close').addEventListener('click',()=>showToas
 document.querySelectorAll('[data-demo-dist]').forEach(button=>button.addEventListener('click',()=>{distMode=button.dataset.demoDist;document.querySelectorAll('[data-demo-dist]').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active))});drawDemoDistribution()}));
 window.addEventListener('message',onParentMessage);
 window.parent.postMessage({type:'HIGHLIGHTS_NOTES_READY',version:1},window.location.origin);
+const demoTopbar=document.querySelector('.demo-topbar.ov-topbar');
+if(demoTopbar){const update=()=>demoTopbar.classList.toggle('is-compact',window.scrollY>24);window.addEventListener('scroll',update,{passive:true});update()}
 refresh();
 })();

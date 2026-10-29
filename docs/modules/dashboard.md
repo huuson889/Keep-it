@@ -25,7 +25,7 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 3. `setDashboardView()` chỉ chuyển Overview, Listening và `highlights-notes`; sidebar không còn mục Grammar/Library. Lối tắt Highlights & Notes trên Overview cũng mở route Highlights & Notes này.
 4. iframe Highlights & Notes nhận annotations, page favorites, note favorites và ngôn ngữ qua same-origin `postMessage`; iframe dựng danh sách và tính bộ lọc/thống kê cục bộ. Favicon của trang đang chọn và site badge cạnh tên miền đều thử `/favicon.ico`, rồi Google S2; nếu cả hai lỗi thì hiện icon dự phòng. Ảnh xem trước bài viết ở thumbnail không bị thay thế.
 5. Edit/delete/favorite/export/study/jump/speak từ Highlights & Notes quay về các handler parent hiện có; parent lưu CRUD/review qua Background và favorites qua `browser.storage.local`.
-6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng.
+6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng. Topbar của hai view thu gọn theo vùng cuộn riêng, còn iframe Highlights & Notes theo dõi cuộn trong document của chính nó; cả ba sticky và giảm chiều cao thực tế, giữ nguyên điều khiển.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 

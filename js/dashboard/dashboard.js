@@ -2116,6 +2116,15 @@ function togglePin() {
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
+function bindCompactTopbar(scrollRoot) {
+  const topbar = scrollRoot?.querySelector(".ov-topbar");
+  if (!topbar) return;
+  const update = () => topbar.classList.toggle("is-compact", scrollRoot.scrollTop > 24);
+  scrollRoot.addEventListener("scroll", update, { passive:true });
+  update();
+}
+bindCompactTopbar(dashboardOverviewView);
+bindCompactTopbar(dashboardListeningView);
 function setDashboardView(view) {
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
   const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
