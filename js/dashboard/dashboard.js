@@ -768,6 +768,60 @@ function refreshFlashcardTranslateSettingsUI() {
     row.classList.toggle("is-disabled", sharedSpeech);
   });
 }
+let listeningPreviewFilter = "all", listeningPreviewInitialized = false;
+function refreshListeningPreview() {
+  const input = $("listenSessionSearch");
+  if (!input) return;
+  const query = input.value.trim(), normalizedQuery = query.toLocaleLowerCase(currentLang);
+  const cards = [...document.querySelectorAll("#dashboardListeningView .session-card")];
+  let visible = 0;
+  cards.forEach(card => {
+    const matchesSource = listeningPreviewFilter === "all" || card.dataset.source === listeningPreviewFilter;
+    const cardText = `${card.dataset.search || ""} ${card.textContent}`.toLocaleLowerCase(currentLang);
+    const matchesText = !normalizedQuery || cardText.includes(normalizedQuery);
+    card.hidden = !(matchesSource && matchesText);
+    if (!card.hidden) visible++;
+  });
+  const status = $("listenSearchStatus"), actions = $("listenExternalActions"), noResults = $("listenNoResults"), count = $("listenVisibleCount");
+  if (status) status.textContent = query ? t("listenSearchResults", { count:visible, query }) : t("listenSearchEmpty");
+  actions?.classList.toggle("visible", Boolean(query));
+  const youtubeText = $("listenYoutubeSearchText"), googleText = $("listenGoogleSearchText");
+  if (youtubeText) youtubeText.textContent = query ? t("listenSearchYoutubeQuery", { query }) : t("listenSearchYoutube");
+  if (googleText) googleText.textContent = query ? t("listenSearchGoogleQuery", { query }) : t("listenSearchGoogle");
+  if (count) count.textContent = t("listenVisibleCount", { count:visible });
+  if (noResults) { noResults.hidden = visible > 0; noResults.classList.toggle("visible", visible === 0); }
+}
+function initListeningPreview() {
+  if (listeningPreviewInitialized) return;
+  const input = $("listenSessionSearch");
+  if (!input) return;
+  listeningPreviewInitialized = true;
+  input.addEventListener("input", refreshListeningPreview);
+  document.querySelectorAll("#dashboardListeningView .filters [data-filter]").forEach(button => button.addEventListener("click", () => {
+    listeningPreviewFilter = button.dataset.filter || "all";
+    document.querySelectorAll("#dashboardListeningView .filters [data-filter]").forEach(filter => {
+      const active = filter === button;
+      filter.classList.toggle("active", active);
+      filter.setAttribute("aria-pressed", String(active));
+    });
+    refreshListeningPreview();
+  }));
+  document.querySelectorAll("#dashboardListeningView [data-engine]").forEach(button => button.addEventListener("click", () => {
+    const query = input.value.trim();
+    if (!query) { input.focus(); toast(t("listenEnterSearch")); return; }
+    toast(t("listenExternalToast", { query, engine:button.dataset.engine }));
+  }));
+  document.querySelectorAll("#dashboardListeningView .demo-action").forEach(button => button.addEventListener("click", () => toast(t("listenPreviewActionToast"))));
+  document.querySelectorAll("#dashboardListeningView .mistake-filter button").forEach(button => button.addEventListener("click", () => {
+    button.parentElement.querySelectorAll("button").forEach(filter => filter.classList.toggle("active", filter === button));
+    toast(t("listenMistakeFilterToast", { filter:button.textContent.trim() }));
+  }));
+  document.addEventListener("keydown", event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dashboardListeningView").hidden) { event.preventDefault(); input.focus(); }
+    if (event.key === "Escape" && document.activeElement === input) { input.value = ""; refreshListeningPreview(); input.blur(); }
+  });
+  refreshListeningPreview();
+}
 function applyTranslations() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -781,6 +835,7 @@ function applyTranslations() {
   document.title = `${t("appName")} — ${currentLang === "vi" ? "Bảng quản lý" : currentLang === "ko" ? "대시보드" : "Dashboard"}`;
   refreshFlashcardTranslateSettingsUI();
   renderExportMenus();
+  refreshListeningPreview();
 }
 async function load() {
   const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
@@ -2902,6 +2957,7 @@ $("exportErrorLog")?.addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
+  initListeningPreview();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

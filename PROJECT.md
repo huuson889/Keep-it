@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.745; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard: Overview mở mặc định; Listening có UI preview tĩnh gắn nhãn dữ liệu mẫu, chưa tích hợp; Library và Grammar giữ route hiện có.
-- Lưu ý: Listening không đọc session index, search provider hay chạy action; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: Listening CSS parser 0 lỗi; manifest v3.4.745; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Version hiện tại: v3.4.746; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ route hiện có.
+- Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
+- Kiểm tra gần nhất: JavaScript syntax đạt; Listening CSS parser 0 lỗi; 59 key UI đủ en/vi/ko; không trùng HTML ID; manifest v3.4.746; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -53,7 +53,7 @@ Keepit - Test/
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard, gồm `overview.css` cho Overview/Listening
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` port giao diện Listening
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
@@ -103,9 +103,17 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe hiển thị preview tĩnh với dữ liệu mẫu, chưa nối dữ liệu/handler; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.746 | Arena sửa:**
+
+- Thay phần Listening gần đúng bằng markup và CSS được port, scope từ standalone demo cuối; giữ sidebar, route và localization của dashboard.
+- Nối tìm kiếm/lọc cục bộ cho sáu thẻ mẫu; khi nhập query, cập nhật trạng thái bên trái và nút YouTube/Google demo ở giữa hàng, giữ ghi chú demo bên phải. Search ngoài và các CTA vẫn demo-only, không API/backend.
+- Giữ panel thống kê từ sai ở bên phải, đánh dấu số liệu minh họa rõ ràng.
+- File: `pages/dashboard.html`, `css/dashboard/listening-demo.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.746.zip`.
+- Kiểm tra: JavaScript syntax toàn bộ; 5/5 tests; CSS parser 0 lỗi; 59 key Listening đủ en/vi/ko; HTML không trùng ID; `git diff --check` và ZIP integrity đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.745 | Arena sửa:**
 
