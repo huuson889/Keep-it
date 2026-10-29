@@ -379,7 +379,7 @@ async function restoreAddonSettings() {
 function renderProfileSidebar() {
   const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
-  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), profileTogglePlan = $("profileMenuTogglePlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
+  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
   const activeEmail = String(demoProfile?.email || "").trim();
   const activeName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest");
   if (menuToggleName) menuToggleName.textContent = activeName;
@@ -391,7 +391,6 @@ function renderProfileSidebar() {
   }
   if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
   if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
-  if (profileTogglePlan) profileTogglePlan.hidden = Boolean(demoProfile);
   if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
   if (popoverSyncButton) {
     popoverSyncButton.hidden = Boolean(demoProfile);

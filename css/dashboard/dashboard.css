@@ -1473,8 +1473,10 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .dashboard-reference-avatar-button { margin:0; }
 #dashboardSidebar .reference-avatar-letter { display:flex; width:28px; height:28px; flex:0 0 28px; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,.3); border-radius:50%; background:rgba(37,99,235,.2); color:#2563eb; font-size:12px; font-weight:600; }
 #dashboardSidebar .dashboard-reference-user-copy { min-width:0; flex-direction:column; text-align:left; }
-#dashboardSidebar .dashboard-profile-free-badge[hidden] { display:none!important; }
-#dashboardSidebar .reference-footer-button > .dashboard-profile-free-badge { flex:none; margin-left:auto; padding:4px 7px; border:1px solid #e2e8f0; border-radius:999px; background:#f1f5f9; color:#64748b; font-size:9px; font-weight:700; line-height:1; }
+#dashboardSidebar .reference-footer-button > .dashboard-profile-free-badge { flex:0 0 auto; margin-left:auto; min-height:21px; padding:4px 8px; border:1px solid #d7dce4; border-radius:999px; background:#f1f5f9; color:#64748b; font:600 10px/1 var(--lhn-app-font-family); white-space:nowrap; box-shadow:none!important; }
+#dashboardSidebar .dashboard-profile-free-badge svg { display:block; width:12px; height:12px; flex:none; }
+#dashboardSidebar:hover .nav-label.dashboard-profile-free-badge,
+#dashboardSidebar.sidebar-pinned .nav-label.dashboard-profile-free-badge { display:inline-flex; align-items:center; justify-content:center; gap:5px; }
 #dashboardSidebar:hover .dashboard-reference-user-copy { display:flex; }
 #dashboardSidebar .dashboard-reference-user-copy strong,#dashboardSidebar .dashboard-reference-user-copy span { display:block; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #dashboardSidebar .dashboard-reference-user-copy strong { color:#1e293b; font-size:12px; font-weight:600; }
