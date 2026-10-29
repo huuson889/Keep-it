@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.763; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.764; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
-- Regression v3.4.761 do thiếu `ANNOTATION_UTILS.pageKey` đã sửa ở v3.4.762; phiên bản này chỉ đổi tên route và bridge identifiers. Chưa browser-test.
-- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 10/10 tests, 309 ID duy nhất, ba route và message contract parent/iframe khớp; CSS parse và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Favicon trang đang chọn thử `/favicon.ico`, dự phòng Google S2 rồi icon mặc định; không thay đổi schema/lưu trữ annotations.
+- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 11/11 tests, CSS parse và `git diff --check` đạt; chưa kiểm thử favicon trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.764 | Arena.ai Agent sửa:**
+
+- Khôi phục favicon website cho trang đang chọn trong iframe Highlights & Notes: tải `${origin}/favicon.ico`, nếu lỗi dùng Google S2, nếu tiếp tục lỗi hiện icon dự phòng. Không đổi dữ liệu hay schema annotations.
+- File: `js/dashboard/lr-practice-demo.js`, `tests/dashboard-selected-favicon.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.764.zip`.
+- Kiểm tra: `node --check` toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 11/11; 10 CSS files parse không lỗi; `git diff --check` đạt. Chưa xác nhận favicon tải trong trình duyệt thật.
 
 **2026-10-30 | v3.4.763 | Arena.ai Agent sửa:**
 

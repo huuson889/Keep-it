@@ -44,6 +44,14 @@ function pageKeyOf(item){return String(item.__keepitPageKey||item.url||item.host
 function normalizedColor(value){return validColors.includes(String(value||'').toLowerCase())?String(value).toLowerCase():'yellow'}
 function safeThumbnailUrl(value){if(typeof value!=='string'||!value)return '';try{const url=new URL(value,window.location.href);return ['http:','https:','data:'].includes(url.protocol)?url.href:''}catch{return ''}}
 function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:'#'}catch{return '#'}}
+function setSelectedFavicon(pageUrl){
+ const host=$('selectedFavicon');let origin='';
+ try{origin=new URL(pageUrl).origin}catch{host.innerHTML=icon('file');return}
+ const img=document.createElement('img'),direct=`${origin}/favicon.ico`,fallback=`https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=64`;
+ img.alt='';img.referrerPolicy='no-referrer';
+ img.addEventListener('error',()=>{if(!img.dataset.fallbackUsed){img.dataset.fallbackUsed='1';img.src=fallback}else host.innerHTML=icon('file')});
+ host.replaceChildren(img);img.src=direct;
+}
 function tagsOf(item){const raw=Array.isArray(item.__keepitTags)?item.__keepitTags:Array.isArray(item.tags)?item.tags:typeof item.tags==='string'?item.tags.split(','):[];const seen=new Set();return raw.map(value=>String(value||'').trim()).filter(value=>{const key=value.toLocaleLowerCase();if(!key||seen.has(key))return false;seen.add(key);return true})}
 function hashText(text){let hash=0;for(const char of String(text||''))hash=(hash*31+char.charCodeAt(0))|0;return Math.abs(hash)}
 function buildPages(items){
@@ -122,7 +130,7 @@ function renderSelected(){
   favoriteButton.disabled=true;exportButton.disabled=true;deleteButton.disabled=true;return;
  }
  header.classList.remove('no-selection');$('selectPrompt').hidden=true;$('empty').hidden=true;$('selectedTitle').textContent=selected.title;$('selectedUrl').textContent=selected.url;$('selectedUrl').href=safePageHref(selected.url);
- $('selectedFavicon').innerHTML='<img alt="">';$('selectedFavicon').querySelector('img').src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="9" fill="${thumbnailSiteLabel(selected)==='YouTube'?'#d13c35':'#eaf1ff'}"/><text x="24" y="31" text-anchor="middle" font-family="Arial" font-size="23" font-weight="700" fill="${thumbnailSiteLabel(selected)==='YouTube'?'#fff':'#2463d3'}">${thumbnailSiteLabel(selected)==='YouTube'?'▶':esc(selected.site[0]?.toUpperCase()||'W')}</text></svg>`);
+ setSelectedFavicon(selected.url);
  $('selectedMeta').textContent=`Ngày tạo: ${selected.created} · Ngày sửa: ${selected.edited} · ${selected.highlights} highlights`;
  favoriteButton.disabled=false;favoriteButton.classList.toggle('is-favorite',selected.favorite);favoriteButton.setAttribute('aria-pressed',String(selected.favorite));favoriteButton.innerHTML=icon('heart');
  exportButton.disabled=false;deleteButton.disabled=selected.notes.length===0;$('noteColorFilters').hidden=false;renderColorFilters();

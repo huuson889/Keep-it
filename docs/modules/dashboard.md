@@ -23,7 +23,7 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ đúng thứ tự script.
 2. `load()` đọc settings, favorites và annotations theo batch qua `LHN_MESSAGING`, sau đó cập nhật Overview và gửi snapshot sang iframe Highlights & Notes.
 3. `setDashboardView()` chỉ chuyển Overview, Listening và `highlights-notes`; sidebar không còn mục Grammar/Library. Lối tắt Highlights & Notes trên Overview cũng mở route Highlights & Notes này.
-4. iframe Highlights & Notes nhận annotations, page favorites, note favorites và ngôn ngữ qua same-origin `postMessage`; iframe dựng danh sách và tính bộ lọc/thống kê cục bộ.
+4. iframe Highlights & Notes nhận annotations, page favorites, note favorites và ngôn ngữ qua same-origin `postMessage`; iframe dựng danh sách và tính bộ lọc/thống kê cục bộ. Favicon của trang đang chọn thử `/favicon.ico`, rồi Google S2; nếu cả hai lỗi thì hiện icon dự phòng.
 5. Edit/delete/favorite/export/study/jump/speak từ Highlights & Notes quay về các handler parent hiện có; parent lưu CRUD/review qua Background và favorites qua `browser.storage.local`.
 6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng.
 
