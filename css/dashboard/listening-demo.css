@@ -268,3 +268,19 @@
 
 @media(max-width:850px){#dashboardListeningView.dashboard-listening-view{padding:16px 18px 28px!important}}
 @media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:12px 11px 25px!important}}
+
+/* Keep the featured continue card alongside the Listening title. */
+#dashboardListeningView .hero{align-items:stretch;gap:18px}
+#dashboardListeningView .hero-copy{flex:1 1 46%;min-width:0;align-self:center}
+#dashboardListeningView .hero>.continue-card{position:relative;z-index:1;flex:1 1 54%;min-width:0;margin:0}
+@media(max-width:850px){
+  #dashboardListeningView .hero{gap:12px}
+  #dashboardListeningView .hero>.continue-card{grid-template-columns:minmax(0,1fr) 110px;gap:10px;padding:13px}
+  #dashboardListeningView .hero>.continue-card .continue-art{height:84px}
+}
+@media(max-width:620px){
+  #dashboardListeningView .hero{flex-direction:column;align-items:stretch;gap:14px}
+  #dashboardListeningView .hero-copy{flex:initial;align-self:stretch}
+  #dashboardListeningView .hero>.continue-card{width:100%;flex:initial}
+  #dashboardListeningView .hero>.continue-card .continue-art{height:82px}
+}
