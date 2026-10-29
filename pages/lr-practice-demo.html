@@ -1994,6 +1994,10 @@ html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!impo
 #sourceList .source-host{display:flex;align-items:center;gap:6px;margin:0 0 7px;color:#687386;font-size:12px;line-height:1.35;white-space:nowrap}
 #sourceList .source-host-text{overflow:hidden;text-overflow:ellipsis}
 .source-site-icon{width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;border-radius:5px;background:#f1efff;color:#7666dc;font-size:11px;font-weight:800}
+.source-site-icon.site-favicon{position:relative;overflow:hidden}
+.source-site-icon.site-favicon img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:contain;border-radius:inherit}
+.source-site-icon.site-favicon img[hidden],.source-site-icon.site-favicon .site-favicon-fallback[hidden]{display:none}
+.source-site-icon.site-favicon .site-favicon-fallback{position:absolute;inset:0;display:grid;place-items:center}
 .source-site-icon.youtube{background:#f2efff;color:#7764dd}.source-site-icon.youtube svg{width:13px;height:13px;fill:currentColor;stroke:none}.source-site-icon.medium{background:#f1efff;color:#7666dc}.source-site-icon.bbc{background:#343b48;color:#fff;font-size:7px;letter-spacing:-.5px}.source-site-icon.natgeo{background:#fff;border:1.5px solid #f4bd3f;border-radius:2px}.source-site-icon.natgeo i{width:6px;height:10px;border:1px solid #e3a928}
 #sourceList .source-description{display:-webkit-box;overflow:hidden;margin:0;color:#586477;font-size:13px;line-height:1.45;text-overflow:ellipsis;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 #sourceList .source-tags{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:8px 0 0}

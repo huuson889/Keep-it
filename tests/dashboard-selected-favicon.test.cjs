@@ -13,3 +13,11 @@ test("selected source page loads its site favicon with the existing fallback cha
   assert.match(source, /img\.dataset\.fallbackUsed/);
   assert.match(source, /setSelectedFavicon\(selected\.url\)/);
 });
+
+test("source cards show site favicons beside host names without replacing article thumbnails", () => {
+  assert.match(source, /function siteBadge\(page\)[\s\S]*?site-favicon/);
+  assert.match(source, /function loadSiteBadgeFavicon\(host,pageUrl\)/);
+  assert.match(source, /loadSiteBadgeFavicon\(siteIcon,page\.url\)/);
+  assert.match(source, /row\.querySelector\('\.source-thumb img'\)/);
+  assert.match(source, /function loadSiteBadgeFavicon[\s\S]*?favicon\.ico[\s\S]*?favicons\?domain_url=/);
+});

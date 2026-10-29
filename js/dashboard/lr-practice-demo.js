@@ -90,7 +90,16 @@ function thumbnailSiteLabel(page){return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i
 function thumbnailCategoryLabel(page){return (page.tags.length?page.tags.slice(0,3).join(' · '):page.site).toUpperCase()}
 function sourceDescription(page){const quote=page.notes.find(note=>note.quote)?.quote||'';return quote.length>112?`${quote.slice(0,109)}…`:quote}
 function sourceDate(page){if(!page.date)return 'Không rõ ngày';const today=dateKey(new Date()),yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(page.date===today)return 'Hôm nay';if(page.date===dateKey(yesterday))return 'Hôm qua';const time=dateMs(page.date+'T12:00:00');return Number.isFinite(time)?dateLabel(time):'Không rõ ngày'}
-function siteBadge(page){const site=page.site.toLocaleLowerCase();if(/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(site))return '<span class="source-site-icon youtube" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/></svg></span>';if(site==='medium.com')return '<span class="source-site-icon medium" aria-hidden="true">M</span>';if(site==='bbc.co.uk')return '<span class="source-site-icon bbc" aria-hidden="true">BBC</span>';if(site==='nationalgeographic.com')return '<span class="source-site-icon natgeo" aria-hidden="true"><i></i></span>';return `<span class="source-site-icon" aria-hidden="true">${esc(page.site.slice(0,1).toUpperCase())}</span>`}
+function siteBadge(page){const site=page.site.toLocaleLowerCase();if(/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(site))return '<span class="source-site-icon youtube" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/></svg></span>';if(site==='medium.com')return '<span class="source-site-icon medium" aria-hidden="true">M</span>';if(site==='bbc.co.uk')return '<span class="source-site-icon bbc" aria-hidden="true">BBC</span>';if(site==='nationalgeographic.com')return '<span class="source-site-icon natgeo" aria-hidden="true"><i></i></span>';return `<span class="source-site-icon site-favicon" aria-hidden="true"><img alt="" hidden><span class="site-favicon-fallback">${esc(page.site.slice(0,1).toUpperCase())}</span></span>`}
+function loadSiteBadgeFavicon(host,pageUrl){
+ const image=host.querySelector('img'),fallback=host.querySelector('.site-favicon-fallback');let origin='';
+ try{const url=new URL(pageUrl);if(!['http:','https:'].includes(url.protocol))return;origin=url.origin}catch{return}
+ const direct=`${origin}/favicon.ico`,google=`https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=32`;
+ image.referrerPolicy='no-referrer';
+ image.addEventListener('load',()=>{image.hidden=false;fallback.hidden=true});
+ image.addEventListener('error',()=>{if(!image.dataset.fallbackUsed){image.dataset.fallbackUsed='1';image.src=google}else{image.hidden=true;fallback.hidden=false}});
+ image.src=direct;
+}
 function filteredRecords(){
  const q=$('search').value.trim().toLocaleLowerCase('vi'),site=$('siteFilter').value,color=$('colorFilter').value,tag=$('tagFilter').value,date=$('dateFilter').value,now=Date.now();
  return annotationRecords.filter(item=>{
@@ -115,7 +124,8 @@ function renderSources(){
   const colors=page.colors.map(color=>`<span class="color-dot ${color}" title="${colorNames[color]||color}"></span>`).join('');
   const tags=page.tags.map(tag=>`<span class="tag-chip">${esc(tag)}</span>`).join('');
   row.innerHTML=`<div class="source-thumb"><img alt="" loading="lazy"><span class="thumb-fallback" aria-hidden="true">${icon('file')}</span><span class="source-thumb-badge"><i class="${thumbnailSiteLabel(page)==='YouTube'?'video':'article'}"></i>${thumbnailSiteLabel(page)}</span><span class="source-thumb-label">${esc(thumbnailCategoryLabel(page))}</span></div><div class="source-info"><div class="source-title">${esc(page.title)}</div><div class="source-host">${siteBadge(page)}<span class="source-host-text">${esc(page.site)}</span></div><div class="source-description">${esc(sourceDescription(page))}</div><div class="source-tags tag-list">${tags}</div><div class="source-meta"><span class="source-date">${esc(sourceDate(page))}</span><span class="source-meta-count">${colors}<span class="source-count-number">${page.highlights}</span><span class="source-count-icon">${icon('square')}</span></span></div></div>`;
-  const image=row.querySelector('img');image.src=page.thumbnailUrl||thumbUrl(page);image.addEventListener('load',()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),{once:true});image.addEventListener('error',()=>image.remove(),{once:true});if(image.complete&&image.naturalWidth>0)row.querySelector('.thumb-fallback')?.setAttribute('hidden','');
+  const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
+  const image=row.querySelector('.source-thumb img');image.src=page.thumbnailUrl||thumbUrl(page);image.addEventListener('load',()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),{once:true});image.addEventListener('error',()=>image.remove(),{once:true});if(image.complete&&image.naturalWidth>0)row.querySelector('.thumb-fallback')?.setAttribute('hidden','');
   const choose=()=>{selected=page;noteColor='all';renderSources();renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
  });
  updateStats(visible);
