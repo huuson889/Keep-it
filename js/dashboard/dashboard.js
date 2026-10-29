@@ -2153,7 +2153,9 @@ function unbindParentTopbarScrollTarget() {
 function bindParentTopbarScrollTarget() {
   unbindParentTopbarScrollTarget();
   if (!dashboardSharedTopbar || activeDashboardView === "highlights-notes" || dashboardSharedTopbar.ownerDocument !== document) return;
-  parentTopbarScrollTarget = findSharedTopbarScrollTarget(dashboardSharedTopbar);
+  parentTopbarScrollTarget = activeDashboardView === "listening"
+    ? dashboardListeningView
+    : findSharedTopbarScrollTarget(dashboardSharedTopbar);
   parentTopbarScrollTarget?.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
   updateParentTopbarCompact();
 }
@@ -2185,7 +2187,7 @@ function mountSharedTopbarInParent(view) {
   dashboardSharedTopbar?.classList.remove("is-compact");
   parentTopbarCompact = false;
   updateSharedTopbarContent(view);
-  const host = view === "listening" ? dashboardListeningView?.querySelector(".content") : dashboardOverviewView?.querySelector(".ov-content");
+  const host = view === "listening" ? dashboardListeningView : dashboardOverviewView?.querySelector(".ov-content");
   if (host && dashboardSharedTopbar) host.prepend(dashboardSharedTopbar);
   bindParentTopbarScrollTarget();
 }

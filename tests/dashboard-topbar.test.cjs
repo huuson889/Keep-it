@@ -26,7 +26,9 @@ test("All three routes share the single Overview topbar node and change its labe
   assert.match(notesJs, /getBoundingClientRect\(\)\.top<=1/);
   assert.doesNotMatch(dashboardJs, /classList\.toggle\("demo-topbar"/);
   assert.match(dashboardJs, /findSharedTopbarScrollTarget\(dashboardSharedTopbar\)/);
-  assert.match(dashboardJs, /view === "listening" \? dashboardListeningView\?\.querySelector\("\.content"\) : dashboardOverviewView\?\.querySelector\("\.ov-content"\)/);
+  assert.match(dashboardJs, /view === "listening" \? dashboardListeningView : dashboardOverviewView\?\.querySelector\("\.ov-content"\)/);
+  assert.match(dashboardJs, /activeDashboardView === "listening"\s*\? dashboardListeningView\s*:\s*findSharedTopbarScrollTarget\(dashboardSharedTopbar\)/);
+  assert.match(overviewCss, /#dashboardListeningView>\.ov-topbar\{width:100%;max-width:1320px;margin-left:auto;margin-right:auto\}/);
   assert.match(notesJs, /bindSharedTopbarScrollTarget\(\)/);
 });
 
