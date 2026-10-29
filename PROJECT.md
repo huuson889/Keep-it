@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.762; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; LR là bề mặt highlights/notes duy nhất và tiếp tục dùng bridge dữ liệu/action cục bộ. Lối tắt Highlights & Notes ở Overview mở LR.
-- Regression v3.4.761: `ANNOTATION_UTILS.pageKey` bị thiếu trên instance, khiến Overview ném TypeError và `load()` dừng trước khi sync LR. Đã sửa ở v3.4.762; chưa browser-test. Nếu đã bấm Import ở v3.4.761, xác minh dữ liệu trước khi import lại vì thao tác import có thể đã commit trước lỗi render.
-- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 8/8 tests, CSS parse, route/ID static checks và `git diff --check` đạt; ZIP 3.4.762 gồm 104 file entries và CRC hợp lệ. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Version hiện tại: v3.4.763; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
+- Regression v3.4.761 do thiếu `ANNOTATION_UTILS.pageKey` đã sửa ở v3.4.762; phiên bản này chỉ đổi tên route và bridge identifiers. Chưa browser-test.
+- Kiểm tra gần nhất: syntax toàn bộ JavaScript, 10/10 tests, 309 ID duy nhất, ba route và message contract parent/iframe khớp; CSS parse và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/LR iframe; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra Overview/Listening/Highlights & Notes iframe; xác nhận local bridge khi không có/có annotations, favorites, CRUD, filters, exports, flashcard actions và route retained; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
@@ -33,8 +33,8 @@
 Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
 ├── pages/
-│   ├── dashboard.html             # Giao diện Dashboard (Overview/Listening/LR, sidebar và ô tìm Settings)
-│   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Luyện đề LR
+│   ├── dashboard.html             # Giao diện Dashboard (Overview/Listening/Highlights & Notes, sidebar và ô tìm Settings)
+│   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Tô sáng & Ghi chú
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
@@ -45,7 +45,7 @@ Keepit - Test/
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry; 3 route và bridge iframe LR), overview.css/data, annotation-utils, settings-ui, study/backup/account helpers, lr-practice-demo.js và theme sync
+│   ├── dashboard/                 # dashboard.js (entry; route highlights-notes và bridge), overview.css/data, annotation-utils, settings-ui, study/backup/account helpers, iframe UI và theme sync
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── dictation/                 # session-index.js (hợp đồng tóm tắt provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh từ + diff từng từ), dictation-style.js (CSS cục bộ)
@@ -103,9 +103,15 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe LR và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. LR là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.763 | Arena.ai Agent sửa:**
+
+- Đổi route nội bộ `lr-practice` thành `highlights-notes`; đổi ID/class view, iframe và tên helper/action ở parent, đồng thời đồng bộ message types với iframe. Nhãn hiển thị “Tô sáng & Ghi chú”, dữ liệu và luồng bridge không đổi.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/dashboard.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.763.zip`.
+- Kiểm tra: syntax toàn bộ JavaScript đạt; `node --test tests/*.test.cjs` đạt 10/10; CSS parse không lỗi; Dashboard có 309 ID duy nhất và route set Overview/Listening/Highlights & Notes; iframe src tồn tại, parent/iframe message types khớp; `git diff --check` đạt. Chưa kiểm thử trên trình duyệt thật.
 
 **2026-10-30 | v3.4.762 | Arena.ai Agent sửa:**
 
@@ -180,7 +186,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 **2026-10-29 | v3.4.751 | Arena.ai Agent sửa:**
 
-- Tạo từ baseline v3.4.749; thêm route “Luyện đề LR” để hiển thị nguyên UI của demo Library mới nhất trong iframe cô lập. Demo giữ sample data và hành vi demo-local; không đọc hoặc sửa dữ liệu app.
+- Tạo từ baseline v3.4.749; thêm route “Tô sáng & Ghi chú” để hiển thị nguyên UI của demo Library mới nhất trong iframe cô lập. Demo giữ sample data và hành vi demo-local; không đọc hoặc sửa dữ liệu app.
 - File: `pages/dashboard.html`, `pages/lr-practice-demo.html`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/dashboard.css`, `demos/library-tab-demo.html`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`.
 - Kiểm tra: `node --check` toàn bộ JS; 5/5 tests; CSS parse 0 lỗi; HTML IDs/local refs và demo markup parity đạt; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 

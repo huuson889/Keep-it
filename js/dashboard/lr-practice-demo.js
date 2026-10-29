@@ -178,7 +178,7 @@ function populateFilters(){
 function applyData(data){
  const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);selected=pages.find(page=>page.key===previousKey)||pages[0]||null;populateFilters();refresh();
 }
-function sendParent(action,payload={}){const requestId=`lr-${Date.now()}-${++requestSequence}`;window.parent.postMessage({type:'LR_DEMO_ACTION',version:1,action,requestId,...payload},window.location.origin);return requestId}
+function sendParent(action,payload={}){const requestId=`lr-${Date.now()}-${++requestSequence}`;window.parent.postMessage({type:'HIGHLIGHTS_NOTES_ACTION',version:1,action,requestId,...payload},window.location.origin);return requestId}
 function exportMenuMarkup(scopeName){return ['txt','csv','md','json'].map(format=>`<button class="export-option" type="button" data-export="${format}" data-scope="${scopeName}"><span class="file-icon ${format}">${format.toUpperCase()}</span><span>${text(scopeName==='page'?'exportPage':'exportAll')} (.${format})</span></button>`).join('')}
 function setExportMenus(){ $('exportPageMenu').innerHTML=exportMenuMarkup('page');$('exportAllDemoMenu').innerHTML=exportMenuMarkup('all') }
 function toggleMenu(menu,button){const open=menu.hidden;closeExportMenus();menu.hidden=!open;button.setAttribute('aria-expanded',String(open))}
@@ -195,8 +195,8 @@ function handleCardAction(button,event){
 function onParentMessage(event){
  if(event.source!==window.parent||event.origin!==window.location.origin||!event.data||typeof event.data!=='object')return;
  const message=event.data;
- if(message.type==='KEEPIT_LR_DATA'){applyData(message);return}
- if(message.type==='KEEPIT_LR_RESULT'){if(message.message)showToast(String(message.message));else if(message.ok===false)showToast(text('genericError'))}
+ if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_DATA'){applyData(message);return}
+ if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_RESULT'){if(message.message)showToast(String(message.message));else if(message.ok===false)showToast(text('genericError'))}
 }
 setExportMenus();populateFilters();applyNewLabels();
 $('viewModeBtn').setAttribute('aria-pressed','true');notesList.classList.add('is-grid-view');$('viewModeBtn').innerHTML=icon('grid');$('viewModeBtn').addEventListener('click',()=>{viewMode=viewMode==='grid'?'list':'grid';updateViewModeButton()});
@@ -215,6 +215,6 @@ document.querySelectorAll('[data-heat-period]').forEach(button=>button.addEventL
 document.querySelector('.old-stats-close').addEventListener('click',()=>showToast('Thống kê được giữ mở.'));
 document.querySelectorAll('[data-demo-dist]').forEach(button=>button.addEventListener('click',()=>{distMode=button.dataset.demoDist;document.querySelectorAll('[data-demo-dist]').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active))});drawDemoDistribution()}));
 window.addEventListener('message',onParentMessage);
-window.parent.postMessage({type:'LR_DEMO_READY',version:1},window.location.origin);
+window.parent.postMessage({type:'HIGHLIGHTS_NOTES_READY',version:1},window.location.origin);
 refresh();
 })();

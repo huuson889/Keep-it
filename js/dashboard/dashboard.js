@@ -815,7 +815,7 @@ async function load() {
   annotationPositionById.clear();
   annotations.forEach((item, index) => { if (item?.id) { annotationById.set(item.id, item); annotationPositionById.set(item.id, index); } });
   render();
-  syncLRPracticeFrame();
+  syncHighlightsNotesFrame();
   if (!overviewSessionsReady) void loadOverviewDictationSessions();
   if ($("dashboardSettingsDialog")?.open) refreshDashboardSettings();
 }
@@ -861,22 +861,22 @@ function applyAnnotationChange(change, renderNow = true) {
   } else return false;
   invalidateAnnotationCaches();
   if (renderNow) render();
-  syncLRPracticeFrame();
+  syncHighlightsNotesFrame();
   return true;
 }
-let lrPracticeFrameReady = false;
-function syncLRPracticeFrame() {
-  const frame = $("dashboardLRPracticeFrame");
-  if (!frame?.contentWindow || !lrPracticeFrameReady) return;
-  try { frame.contentWindow.postMessage({ type:"KEEPIT_LR_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteNoteIds:[...favoriteNoteIds] }, location.origin); }
-  catch (error) { console.warn("Could not sync local annotations to LR practice view", error); }
+let highlightsNotesFrameReady = false;
+function syncHighlightsNotesFrame() {
+  const frame = $("dashboardHighlightsNotesFrame");
+  if (!frame?.contentWindow || !highlightsNotesFrameReady) return;
+  try { frame.contentWindow.postMessage({ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteNoteIds:[...favoriteNoteIds] }, location.origin); }
+  catch (error) { console.warn("Could not sync local annotations to Highlights & Notes view", error); }
 }
-function replyToLRPractice(event, requestId, ok, message = "") {
+function replyToHighlightsNotes(event, requestId, ok, message = "") {
   if (!event.source || typeof requestId !== "string") return;
-  try { event.source.postMessage({ type:"KEEPIT_LR_RESULT", requestId, ok:!!ok, message }, location.origin); }
-  catch (error) { console.warn("Could not reply to LR practice action", error); }
+  try { event.source.postMessage({ type:"KEEPIT_HIGHLIGHTS_NOTES_RESULT", requestId, ok:!!ok, message }, location.origin); }
+  catch (error) { console.warn("Could not reply to Highlights & Notes action", error); }
 }
-async function handleLRPracticeAction(event, data) {
+async function handleHighlightsNotesAction(event, data) {
   const requestId = typeof data.requestId === "string" ? data.requestId : "";
   const item = typeof data.itemId === "string" ? annotationById.get(data.itemId) || annotations.find(annotation => annotation.id === data.itemId) : null;
   const key = typeof data.pageKey === "string" ? data.pageKey : "";
@@ -884,20 +884,20 @@ async function handleLRPracticeAction(event, data) {
     switch (data.action) {
       case "edit-note":
         if (!item) throw new Error("Highlight not found");
-        openEditDialog(item); replyToLRPractice(event, requestId, true); return;
+        openEditDialog(item); replyToHighlightsNotes(event, requestId, true); return;
       case "delete-note":
         if (!item) throw new Error("Highlight not found");
-        if (!confirm(t("deleteAnnotationConfirm"))) { replyToLRPractice(event, requestId, true); return; }
+        if (!confirm(t("deleteAnnotationConfirm"))) { replyToHighlightsNotes(event, requestId, true); return; }
         await LHN_MESSAGING.sendMessage({ type:"DELETE", id:item.id, origin:DASHBOARD_INSTANCE_ID });
         applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted"));
-        replyToLRPractice(event, requestId, true); return;
+        replyToHighlightsNotes(event, requestId, true); return;
       case "toggle-note-favorite": {
         if (!item) throw new Error("Highlight not found");
         const wasFavorite = favoriteNoteIds.has(item.id);
         if (wasFavorite) favoriteNoteIds.delete(item.id); else favoriteNoteIds.add(item.id);
         try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] }); }
         catch (error) { if (wasFavorite) favoriteNoteIds.add(item.id); else favoriteNoteIds.delete(item.id); throw error; }
-        render(); syncLRPracticeFrame(); replyToLRPractice(event, requestId, true); return;
+        render(); syncHighlightsNotesFrame(); replyToHighlightsNotes(event, requestId, true); return;
       }
       case "toggle-page-favorite": {
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
@@ -905,21 +905,21 @@ async function handleLRPracticeAction(event, data) {
         favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];
         try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites }); }
         catch (error) { favorites = wasFavorite ? [...favorites, key] : favorites.filter(value => value !== key); throw error; }
-        render(); syncLRPracticeFrame(); replyToLRPractice(event, requestId, true); return;
+        render(); syncHighlightsNotesFrame(); replyToHighlightsNotes(event, requestId, true); return;
       }
       case "delete-page": {
         if (!key) throw new Error("Source page not found");
         const pageItems = annotations.filter(annotation => pageKey(annotation) === key);
         if (!pageItems.length) throw new Error("Source page not found");
-        if (!confirm(t("deletePageConfirm"))) { replyToLRPractice(event, requestId, true); return; }
+        if (!confirm(t("deletePageConfirm"))) { replyToHighlightsNotes(event, requestId, true); return; }
         const result = await LHN_MESSAGING.sendMessage({ type:"DELETE_PAGE", url:key, origin:DASHBOARD_INSTANCE_ID });
         applyAnnotationChange({ type:"deletePage", url:key });
         try {
           const tabs = await browser.tabs.query({});
           await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type:"REMOVE_HIGHLIGHT_PAGE", url:key }).catch(() => null)));
-        } catch (error) { console.warn("Could not remove visible LR page highlights", error); }
+        } catch (error) { console.warn("Could not remove visible page highlights", error); }
         toast(t("deletePageDone", { count:result?.deletedCount ?? pageItems.length }));
-        replyToLRPractice(event, requestId, true); return;
+        replyToHighlightsNotes(event, requestId, true); return;
       }
       case "export": {
         const format = ["txt","csv","md","json"].includes(data.format) ? data.format : null;
@@ -928,40 +928,40 @@ async function handleLRPracticeAction(event, data) {
         if (data.scope === "page" && (!pageUrl || !annotations.some(annotation => pageKey(annotation) === pageUrl))) throw new Error("Source page not found");
         const exportItems = pageUrl ? annotations.filter(annotation => pageKey(annotation) === pageUrl) : annotations;
         if (format === "json") await downloadJsonExport(pageUrl); else downloadExport(format, exportItems);
-        replyToLRPractice(event, requestId, true); return;
+        replyToHighlightsNotes(event, requestId, true); return;
       }
       case "study": {
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
         const previousUrl = selectedUrl; selectedUrl = key;
         try { startStudySession(); } finally { selectedUrl = previousUrl; }
-        replyToLRPractice(event, requestId, true); return;
+        replyToHighlightsNotes(event, requestId, true); return;
       }
       case "jump-to-highlight": {
         if (!item) throw new Error("Highlight not found");
         const result = await LHN_MESSAGING.sendMessage({ type:"OPEN_HIGHLIGHT", url:item.url, id:item.id });
-        replyToLRPractice(event, requestId, !!result?.found, result?.found ? "" : t("highlightNotFound")); return;
+        replyToHighlightsNotes(event, requestId, !!result?.found, result?.found ? "" : t("highlightNotFound")); return;
       }
       case "speak-highlight":
         if (!item?.quote) throw new Error("Highlight not found");
         speakText(item.quote, detectLanguage(item.quote, item.url));
-        replyToLRPractice(event, requestId, true); return;
-      default: throw new Error("Unsupported LR practice action");
+        replyToHighlightsNotes(event, requestId, true); return;
+      default: throw new Error("Unsupported Highlights & Notes action");
     }
   } catch (error) {
-    console.warn("LR practice action failed", data.action, error);
-    syncLRPracticeFrame();
-    replyToLRPractice(event, requestId, false);
+    console.warn("Highlights & Notes action failed", data.action, error);
+    syncHighlightsNotesFrame();
+    replyToHighlightsNotes(event, requestId, false);
   }
 }
-const lrPracticeFrame = $("dashboardLRPracticeFrame");
-if (lrPracticeFrame) {
-  lrPracticeFrame.addEventListener("load", () => { lrPracticeFrameReady = true; syncLRPracticeFrame(); });
-  try { if (lrPracticeFrame.contentDocument?.readyState === "complete") lrPracticeFrameReady = true; } catch { /* same-origin load event will synchronize later */ }
+const highlightsNotesFrame = $("dashboardHighlightsNotesFrame");
+if (highlightsNotesFrame) {
+  highlightsNotesFrame.addEventListener("load", () => { highlightsNotesFrameReady = true; syncHighlightsNotesFrame(); });
+  try { if (highlightsNotesFrame.contentDocument?.readyState === "complete") highlightsNotesFrameReady = true; } catch { /* same-origin load event will synchronize later */ }
 }
 window.addEventListener("message", event => {
-  if (!lrPracticeFrame || event.source !== lrPracticeFrame.contentWindow || event.origin !== location.origin || !event.data || typeof event.data !== "object") return;
-  if (event.data.type === "LR_DEMO_READY") { lrPracticeFrameReady = true; syncLRPracticeFrame(); return; }
-  if (event.data.type === "LR_DEMO_ACTION" && event.data.version === 1) void handleLRPracticeAction(event, event.data);
+  if (!highlightsNotesFrame || event.source !== highlightsNotesFrame.contentWindow || event.origin !== location.origin || !event.data || typeof event.data !== "object") return;
+  if (event.data.type === "HIGHLIGHTS_NOTES_READY") { highlightsNotesFrameReady = true; syncHighlightsNotesFrame(); return; }
+  if (event.data.type === "HIGHLIGHTS_NOTES_ACTION" && event.data.version === 1) void handleHighlightsNotesAction(event, event.data);
 });
 const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
 const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
@@ -2115,13 +2115,13 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
-const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardLRPracticeView = $("dashboardLRPracticeView");
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
 function setDashboardView(view) {
-  if (!["overview", "listening", "lr-practice"].includes(view)) view = "overview";
-  const showOverview = view === "overview", showListening = view === "listening", showLRPractice = view === "lr-practice";
+  if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
+  const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
   dashboardListeningView.hidden = !showListening;
-  dashboardLRPracticeView.hidden = !showLRPractice;
+  dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
@@ -2130,7 +2130,7 @@ function setDashboardView(view) {
   });
 }
 dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
-document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventListener("click", event => { event.preventDefault(); setDashboardView("lr-practice"); });
+document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventListener("click", event => { event.preventDefault(); setDashboardView("highlights-notes"); });
 dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
   event.preventDefault();
   startStudySession({ allSources:true });
@@ -2600,12 +2600,12 @@ browser.storage.onChanged.addListener((changes, area) => {
     syncDashboardTheme();
     if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
     else refreshDashboardSettings();
-    syncLRPracticeFrame();
+    syncHighlightsNotesFrame();
   }
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
     render();
-    syncLRPracticeFrame();
+    syncHighlightsNotesFrame();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
     const saved = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue || {};
@@ -2620,7 +2620,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
     render();
-    syncLRPracticeFrame();
+    syncHighlightsNotesFrame();
   }
   if (changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY]) {
     const index = normalizeOverviewSessionIndex(changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY].newValue);
