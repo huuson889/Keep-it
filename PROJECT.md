@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.774; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.775; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Hai route dự phòng Grammar/Library đã bị xóa; Highlights & Notes là bề mặt duy nhất cho highlights/notes, với route key `highlights-notes` và bridge dữ liệu/action cục bộ. Lối tắt Overview mở route này.
 - Favicon trang đang chọn và site badge trong source card thử `/favicon.ico`, dự phòng Google S2 rồi chữ cái mặc định; ảnh thumbnail bài viết được giữ riêng, không thay đổi schema/lưu trữ annotations.
-- Kiểm tra gần nhất: v3.4.774, JavaScript syntax đạt, 14/14 tests, 10 CSS files parse 0 lỗi, manifest đúng version và `git diff --check` đạt; ZIP v3.4.774 có 107 entries, manifest gốc đúng và CRC hợp lệ. Chưa kiểm thử trình duyệt thật; cần xác nhận topbar Chép chính tả trong browser.
+- Kiểm tra gần nhất: v3.4.775, `node --check` toàn bộ JS đạt, 14/14 tests, 10 CSS files + 2 inline blocks parse 0 lỗi, manifest đúng version, cascade regression test và `git diff --check` đạt; ZIP 107 entries, manifest gốc đúng, CRC hợp lệ. Chưa kiểm thử browser thật; cần xác nhận trực quan topbar Chép chính tả.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.775 | Arena.ai Agent sửa:**
+
+- Tìm ra xung đột thật trong cascade: `listening-demo.css` nạp sau `overview.css` đặt `padding-top:21px` cho `#dashboardListeningView.dashboard-listening-view` (16px/12px ở breakpoint), ghi đè padding top 0 của scrollport. Đây chính là khoảng lệch khiến sticky dừng dưới mép viewport. Đặt top padding về 0 ở mọi breakpoint; giữ nguyên padding ngang/dưới và spacer `::before`.
+- File: `css/dashboard/listening-demo.css`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.775.zip`.
+- Kiểm tra: `node --check` toàn bộ JS đạt; `node --test tests/*.test.cjs` đạt 14/14; 10 CSS files và 2 inline blocks parse 0 lỗi; cascade regression test, manifest v3.4.775, `git diff --check` và ZIP 107 entries/CRC đạt. Chưa kiểm thử browser thật.
 
 **2026-10-30 | v3.4.774 | Arena.ai Agent sửa:**
 

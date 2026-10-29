@@ -260,13 +260,13 @@
 .listen-demo-root *::before,
 .listen-demo-root *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* The demo lives inside the dashboard tab, not a separate page. */
-#dashboardListeningView.dashboard-listening-view{padding:21px clamp(16px,3vw,42px) 34px!important;background:#f5f5ff!important;color:#252640!important}
+#dashboardListeningView.dashboard-listening-view{padding:0 clamp(16px,3vw,42px) 34px!important;background:#f5f5ff!important;color:#252640!important}
 #dashboardListeningView .listen-demo-root{box-sizing:border-box;min-height:100%;background:#f5f5ff;color:#252640}
 #dashboardListeningView .listen-demo-root,#dashboardListeningView .listen-demo-root *{box-sizing:border-box}
-@media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:12px 11px 25px!important}}
+@media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:0 11px 25px!important}}
 
-@media(max-width:850px){#dashboardListeningView.dashboard-listening-view{padding:16px 18px 28px!important}}
-@media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:12px 11px 25px!important}}
+@media(max-width:850px){#dashboardListeningView.dashboard-listening-view{padding:0 18px 28px!important}}
+@media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:0 11px 25px!important}}
 
 /* Separate top-row panels: the purple hero and white continue card are siblings. */
 #dashboardListeningView .listen-hero-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}

@@ -7,6 +7,7 @@ const root = path.join(__dirname, "..");
 const dashboardHtml = fs.readFileSync(path.join(root, "pages/dashboard.html"), "utf8");
 const dashboardJs = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js"), "utf8");
 const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
+const listeningCss = fs.readFileSync(path.join(root, "css/dashboard/listening-demo.css"), "utf8");
 const notesHtml = fs.readFileSync(path.join(root, "pages/lr-practice-demo.html"), "utf8");
 const notesJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
 
@@ -38,6 +39,11 @@ test("The shared topbar sticks at the viewport edge, shrinks by height, and reta
   assert.match(overviewCss, /#dashboardOverviewView \.ov-content\{padding-top:22px\}/);
   assert.match(overviewCss, /#dashboardListeningView\{[^}]*min-height:0!important[^}]*overflow-x:hidden!important;overflow-y:auto!important[^}]*padding:0 24px 24px!important/);
   assert.match(overviewCss, /#dashboardListeningView::before\{content:"";display:block;height:24px\}/);
+  assert.ok(dashboardHtml.indexOf("../css/dashboard/overview.css") < dashboardHtml.indexOf("../css/dashboard/listening-demo.css"));
+  assert.match(listeningCss, /#dashboardListeningView\.dashboard-listening-view\{padding:0 clamp\(/);
+  assert.doesNotMatch(listeningCss, /#dashboardListeningView\.dashboard-listening-view\{padding:(?:21|16|12)px/);
+  assert.match(listeningCss, /@media\(max-width:850px\)\{#dashboardListeningView\.dashboard-listening-view\{padding:0 18px 28px!important\}\}/);
+  assert.match(listeningCss, /@media\(max-width:620px\)\{#dashboardListeningView\.dashboard-listening-view\{padding:0 11px 25px!important\}\}/);
   assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{padding:0 14px 30px!important\}/);
   assert.match(overviewCss, /@media\(max-width:620px\)\{#dashboardListeningView\{padding:0 15px 15px!important\}/);
   assert.match(overviewCss, /\.ov-topbar\.is-compact[\s\S]*?height:\s*46px/);
