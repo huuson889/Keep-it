@@ -1473,6 +1473,8 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar .dashboard-reference-avatar-button { margin:0; }
 #dashboardSidebar .reference-avatar-letter { display:flex; width:28px; height:28px; flex:0 0 28px; align-items:center; justify-content:center; border:1px solid rgba(59,130,246,.3); border-radius:50%; background:rgba(37,99,235,.2); color:#2563eb; font-size:12px; font-weight:600; }
 #dashboardSidebar .dashboard-reference-user-copy { min-width:0; flex-direction:column; text-align:left; }
+#dashboardSidebar .dashboard-profile-free-badge[hidden] { display:none!important; }
+#dashboardSidebar .reference-footer-button > .dashboard-profile-free-badge { flex:none; margin-left:auto; padding:4px 7px; border:1px solid #e2e8f0; border-radius:999px; background:#f1f5f9; color:#64748b; font-size:9px; font-weight:700; line-height:1; }
 #dashboardSidebar:hover .dashboard-reference-user-copy { display:flex; }
 #dashboardSidebar .dashboard-reference-user-copy strong,#dashboardSidebar .dashboard-reference-user-copy span { display:block; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #dashboardSidebar .dashboard-reference-user-copy strong { color:#1e293b; font-size:12px; font-weight:600; }
@@ -1485,9 +1487,9 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #profileMenu .dashboard-avatar-identity-copy { min-width:0; flex:1 1 auto; }
 #profileMenu .dashboard-avatar-identity strong { display:block; color:#1e293b; font-size:12px; font-weight:600; }
 #profileMenu .dashboard-avatar-identity-copy > span:not(.dashboard-reference-plan) { display:block; overflow:hidden; color:#64748b; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
-#profileMenu .dashboard-avatar-sync-button { width:56px; height:56px; flex:0 0 56px; display:grid; place-items:center; padding:0; border:1px solid #e2e8f0; border-radius:50%; background:#f1f5f9; color:#64748b; box-shadow:none; cursor:pointer; }
+#profileMenu .dashboard-avatar-sync-button { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; padding:0; border:1px solid #e2e8f0; border-radius:50%; background:#f1f5f9; color:#64748b; box-shadow:none; cursor:pointer; }
 #profileMenu .dashboard-avatar-sync-button:hover { background:#e8eef6; color:#475569; filter:none; }
-#profileMenu .dashboard-avatar-sync-button svg { width:29px; height:29px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#profileMenu .dashboard-avatar-sync-button svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 #profileMenu .dashboard-reference-plan { display:inline-block; margin-top:4px; padding:2px 8px; border:1px solid rgba(59,130,246,.2); border-radius:4px; background:rgba(59,130,246,.1); color:#2563eb; font-size:10px; font-weight:500; }
 #profileMenu .dashboard-avatar-options { display:grid; gap:2px; }
 #profileMenu .dashboard-avatar-item { display:flex; width:100%; min-height:32px; align-items:center; gap:10px; padding:8px 12px; border:0; border-radius:8px; background:transparent; color:#334155; font:400 12px/1.2 var(--lhn-app-font-family); text-align:left; text-decoration:none; cursor:pointer; }
@@ -1507,6 +1509,7 @@ html.dark #dashboardSidebar .dashboard-reference-header,html.dark #dashboardSide
 html.dark #dashboardSidebar .dashboard-reference-brand-copy strong { color:#fff; }
 html.dark #dashboardSidebar .dashboard-reference-brand-copy span,html.dark #dashboardSidebar .dashboard-reference-user-copy span { color:#9ca3af; }
 html.dark #dashboardSidebar .dashboard-reference-user-copy strong { color:#e5e7eb; }
+html.dark #dashboardSidebar .dashboard-profile-free-badge { border-color:#334155; background:#1e293b; color:#aab6ca; }
 html.dark #dashboardSidebar .dashboard-reference-pin { color:#9ca3af; }
 html.dark #dashboardSidebar .dashboard-reference-pin:hover,html.dark #dashboardSidebar .reference-footer-button:hover { background:#1e293b; color:#f3f4f6; }
 html.dark #dashboardSidebar .reference-nav-item { color:#9ca3af; }

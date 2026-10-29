@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.739; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.740; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Overview mở mặc định và dùng annotations/index Dictation cục bộ; Listening vẫn placeholder, Library và Grammar giữ route hiện có.
 - Lưu ý: Overview không giả lập số liệu; CTA vẫn presentation-only. Index Dictation bổ sung, giữ nguyên `dictation:<videoId>`; Cloud sync và thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: JavaScript 47/47 `node --check`; 5/5 test hiện có; HTML 323 ID duy nhất và trạng thái menu khách được audit; CSS parser dashboard 1404 rules/Overview 210 rules, 0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử UI trên trình duyệt thật.
+- Kiểm tra gần nhất: JavaScript 47/47 `node --check`; 5/5 test hiện có; HTML 324 ID duy nhất và guest layout/action được audit; CSS parser dashboard 1407 rules/Overview 210 rules, 0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử UI trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe vẫn là placeholder; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.740 | Arena sửa:**
+
+- Chỉnh lại guest profile theo xác nhận: chữ “Bạn” và “Đăng nhập để đồng bộ” ở trái, nút cloud-off nhỏ ở phải trên đầu popover; huy hiệu “Miễn phí” đặt bên phải nút hồ sơ ở sidebar.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `css/dashboard/dashboard.css`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.740.zip`.
+- Kiểm tra: `node --check` toàn bộ 47 file JavaScript; 5/5 test hiện có; HTML 324 ID duy nhất và guest layout/action được audit; CSS parser dashboard 1407 rules/Overview 210 rules, 0 lỗi; manifest JSON và `git diff --check` đạt. Chưa kiểm thử trình duyệt thật.
 
 **2026-10-29 | v3.4.739 | Arena sửa:**
 
