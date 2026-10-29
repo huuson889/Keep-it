@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.744; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.745; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Overview mở mặc định; Listening có UI preview tĩnh gắn nhãn dữ liệu mẫu, chưa tích hợp; Library và Grammar giữ route hiện có.
 - Lưu ý: Listening không đọc session index, search provider hay chạy action; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: `node --check` toàn bộ JavaScript; 5/5 tests; HTML 326 ID duy nhất và 44 key Listening có đủ bản dịch en/vi/ko; CSS parser 0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử trình duyệt thật.
+- Kiểm tra gần nhất: Listening CSS parser 0 lỗi; manifest v3.4.745; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -106,6 +106,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe hiển thị preview tĩnh với dữ liệu mẫu, chưa nối dữ liệu/handler; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.745 | Arena sửa:**
+
+- Tăng riêng cỡ chữ nhỏ trong Listening để khớp bản demo cuối; không đổi cấu trúc, chức năng, dữ liệu mẫu hoặc các Dashboard view khác.
+- File: `css/dashboard/overview.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.745.zip`.
+- Kiểm tra: CSS parser 0 lỗi; manifest v3.4.745; 5/5 tests; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.744 | Arena sửa:**
 
