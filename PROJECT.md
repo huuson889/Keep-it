@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.752; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.753; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ nguyên route; “Luyện đề LR” hiển thị nội dung demo Library trong iframe, bỏ sidebar trùng lặp và đồng bộ dark mode theo Dashboard; dữ liệu mẫu/logic demo vẫn tách biệt.
 - Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: cú pháp toàn bộ JavaScript đạt; CSS Dashboard parse 0 lỗi; 5/5 tests; HTML Dashboard/demo không trùng ID, local iframe/script refs hợp lệ; menu demo trùng đã bỏ, theme bridge dùng class parent; manifest v3.4.752; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Kiểm tra gần nhất: cú pháp toàn bộ JavaScript đạt; LR embedded CSS parse 0 lỗi; 5/5 tests; HTML Dashboard/demo không trùng ID, local iframe/script refs hợp lệ; menu demo trùng đã bỏ, theme bridge dùng class parent; manifest v3.4.753; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -107,6 +107,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển năm route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`; Luyện đề LR tải bản sao nguyên UI `demos/library-tab-demo.html` trong iframe, với script demo tự chứa, không nối API/storage hoặc handler của Dashboard. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.753 | Arena.ai Agent sửa:**
+
+- Tinh chỉnh dark mode riêng cho UI LR để khớp Overview: hero indigo trầm, toolbar/control surface tối, viền và trạng thái filter dùng cùng palette nền/surface/brand của Dashboard. Light mode giữ nguyên.
+- File: `pages/lr-practice-demo.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: cú pháp toàn bộ JS; 5/5 tests; LR embedded CSS parse 0 lỗi; HTML IDs/local refs hợp lệ; manifest v3.4.753; `git diff --check` đạt. Chưa xác nhận trực quan trên trình duyệt.
 
 **2026-10-30 | v3.4.752 | Arena.ai Agent sửa:**
 
