@@ -210,13 +210,9 @@ function handleCardAction(button,event){
  if(button.dataset.action==='jump'){sendParent('jump-to-highlight',{itemId:note.id});return}
  if(button.dataset.action==='speak'){sendParent('speak-highlight',{itemId:note.id});return}
 }
-let sharedTopbarCompact=false;
-function updateSharedTopbarCompact(){const topbar=document.getElementById('dashboardSharedTopbar');if(!topbar){sharedTopbarCompact=false;return}const next=topbar.getBoundingClientRect().top<=1;if(next===sharedTopbarCompact)return;sharedTopbarCompact=next;topbar.classList.toggle('is-compact',sharedTopbarCompact)}
-document.addEventListener('scroll',updateSharedTopbarCompact,{passive:true,capture:true});window.addEventListener('scroll',updateSharedTopbarCompact,{passive:true});window.addEventListener('resize',updateSharedTopbarCompact,{passive:true});
 function onParentMessage(event){
  if(event.source!==window.parent||event.origin!==window.location.origin||!event.data||typeof event.data!=='object')return;
  const message=event.data;
- if(message.type==='KEEPIT_SHARED_TOPBAR_MOUNTED'){sharedTopbarCompact=false;updateSharedTopbarCompact();return}
  if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_DATA'){applyData(message);return}
  if(message.type==='KEEPIT_HIGHLIGHTS_NOTES_RESULT'){if(message.message)showToast(String(message.message));else if(message.ok===false)showToast(text('genericError'))}
 }
@@ -238,5 +234,7 @@ document.querySelector('.old-stats-close').addEventListener('click',()=>showToas
 document.querySelectorAll('[data-demo-dist]').forEach(button=>button.addEventListener('click',()=>{distMode=button.dataset.demoDist;document.querySelectorAll('[data-demo-dist]').forEach(item=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-selected',String(active))});drawDemoDistribution()}));
 window.addEventListener('message',onParentMessage);
 window.parent.postMessage({type:'HIGHLIGHTS_NOTES_READY',version:1},window.location.origin);
+const demoTopbar=document.querySelector('.demo-topbar.ov-topbar');
+if(demoTopbar){let compact=false;const update=()=>{const top=demoTopbar.getBoundingClientRect().top;const next=compact?top<=24:top<=1;if(next===compact)return;compact=next;demoTopbar.classList.toggle('is-compact',compact)};document.addEventListener('scroll',update,{passive:true,capture:true});window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update,{passive:true});update()}
 refresh();
 })();

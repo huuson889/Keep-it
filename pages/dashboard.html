@@ -109,13 +109,9 @@
   </div>
 </aside>
 
-<div id="dashboardSharedTopbarPortal" hidden></div>
 <main id="dashboardOverviewView" class="dashboard-overview-view" aria-label="Tổng quan" data-i18n-aria-label="ovNavOverview">
 <div class="ov-content">
-  <div id="dashboardSharedTopbar" class="ov-topbar">
-  <div class="ov-crumb" id="dashboardSharedTopbarCrumb"><strong>Keepit Smart Learner</strong><span id="dashboardSharedTopbarSlash">/</span><span id="dashboardSharedTopbarLabel">Tổng quan</span></div>
-  <div class="dashboard-shared-topbar-right"><div id="dashboardSharedTopbarStatus" class="ov-demo">✨ <span id="dashboardSharedTopbarStatusText">Dữ liệu cục bộ</span></div><div id="dashboardSharedTopbarActionsSlot" hidden></div></div>
-</div>
+  <div class="ov-topbar"><div class="ov-crumb"><strong>Keepit Smart Learner</strong><span>/</span>Tổng quan</div><div class="ov-demo">✨ <span data-i18n="ovPreview">Dữ liệu cục bộ</span></div></div>
   <section class="ov-intro-row" aria-label="Chào mừng và bắt đầu nhanh" data-i18n-aria-label="ovIntroAria">
     <div class="ov-welcome"><div class="ov-welcome-copy"><div class="ov-kicker"><span class="ov-spark">✦</span> <span data-i18n="ovWelcomeKicker">Chào mừng trở lại</span></div><h1><span data-i18n="ovGreeting">Chào mừng trở lại!</span> <span class="ov-heart" aria-hidden="true">💗</span></h1><p data-i18n="ovWelcomeBody">Chúc bạn có một buổi học tập vui vẻ và hiệu quả cùng Keepit!</p><div class="ov-pills"><span>📚 <b id="overviewPillPages">0</b> <span data-i18n="ovSourcePages">trang nguồn</span></span><span>✨ <b id="overviewPillHighlights">0</b> <span data-i18n="ovHighlights">highlights</span></span><span>🗒️ <b id="overviewPillNotes">0</b> <span data-i18n="ovNotes">ghi chú</span></span></div></div><aside class="ov-today-card"><div class="ov-mascot" aria-hidden="true">🐱</div><div><div class="ov-today-label" data-i18n="ovTodayLabel">Thẻ đã ôn hôm nay</div><div class="ov-today-value" id="overviewTodayReviewCount">0</div><div class="ov-today-meter" aria-hidden="true"><span id="overviewTodayReviewMeter"></span></div></div></aside></div>
     <article class="ov-panel ov-quick-panel"><div class="ov-section-head"><h2 data-i18n="ovQuickStart">Bắt đầu nhanh</h2><span class="ov-demo-note" data-i18n="ovUiOnly">LOCAL</span></div><div class="ov-quick-list"><button class="ov-quick-item" type="button"><span class="ov-quick-icon" style="background:#f1eeff">🃏</span><span><span class="ov-quick-title" data-i18n="ovQuickFlashcards">Ôn Flashcards</span><span class="ov-quick-sub" id="overviewQuickDue">0</span></span><span class="ov-arrow">›</span></button><button class="ov-quick-item" type="button"><span class="ov-quick-icon" style="background:#edf5ff">🎧</span><span><span class="ov-quick-title" data-i18n="ovQuickDictation">Dictation Video</span><span class="ov-quick-sub" data-i18n="ovQuickDictationSub">Luyện nghe chép câu</span></span><span class="ov-arrow">›</span></button><button class="ov-quick-item" type="button" data-dashboard-action="highlights-notes"><span class="ov-quick-icon" style="background:#eaf8f3">📚</span><span><span class="ov-quick-title" data-i18n="ovMenuHighlightsNotes">Tô sáng &amp; Ghi chú</span><span class="ov-quick-sub" data-i18n="ovQuickLibrarySub">Trang, highlights, notes</span></span><span class="ov-arrow">›</span></button></div></article>
@@ -151,6 +147,10 @@
 <symbol id="listenDemo-i-trend" viewbox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></symbol>
 <symbol id="listenDemo-i-bookmark" viewbox="0 0 24 24"><path d="M19 21 12 17l-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></symbol>
 </svg><div class="content">
+<div class="topbar ov-topbar">
+<div class="crumb"><strong>Keepit Smart Learner</strong><span class="slash">/</span><span data-i18n="ovNavListening">Luyện nghe</span></div>
+<div class="demo-badge"><span class="demo-dot"></span><span data-i18n="listenDemoBadge">DỮ LIỆU DEMO</span></div>
+</div>
 <div class="listen-hero-row"><section aria-labelledby="listenDemoPageTitle" class="hero">
 <div class="hero-copy">
 <div class="eyebrow"><svg class="icon"><use href="#listenDemo-i-spark"></use></svg><span data-i18n="listenKicker">Góc luyện nghe</span></div>

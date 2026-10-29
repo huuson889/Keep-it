@@ -25,14 +25,13 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 3. `setDashboardView()` chỉ chuyển Overview, Listening và `highlights-notes`; sidebar không còn mục Grammar/Library. Lối tắt Highlights & Notes trên Overview cũng mở route Highlights & Notes này.
 4. iframe Highlights & Notes nhận annotations, page favorites, note favorites và ngôn ngữ qua same-origin `postMessage`; iframe dựng danh sách và tính bộ lọc/thống kê cục bộ. Favicon của trang đang chọn và site badge cạnh tên miền đều thử `/favicon.ico`, rồi Google S2; nếu cả hai lỗi thì hiện icon dự phòng. Ảnh xem trước bài viết ở thumbnail không bị thay thế.
 5. Edit/delete/favorite/export/study/jump/speak từ Highlights & Notes quay về các handler parent hiện có; parent lưu CRUD/review qua Background và favorites qua `browser.storage.local`.
-6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng. Một node `#dashboardSharedTopbar` được di chuyển vào scroll root của Overview/Listening hoặc vào document iframe theo route; chỉ đổi nhãn, giữ action export. Thanh sticky tại mép 0, thu nhỏ chiều cao khi chạm đỉnh và mở lại khi rời vị trí đó.
+6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng. Cả ba topbar sticky sát mép trên viewport và chỉ thu gọn khi cạnh trên của thanh chạm viewport; ngưỡng hồi vị tránh bật/tắt do vài pixel reflow. Parent lắng nghe scroll root riêng và cập nhật khi route hiện; iframe bắt scroll capture trong document của nó.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Ba route Dashboard còn lại là Overview, Listening và Highlights & Notes; action Flashcards trên sidebar gọi `startStudySession({ allSources:true })` và không tạo route mới.
 - “Tô sáng & Ghi chú” là giao diện duy nhất để xem và quản lý highlights/notes. Không khôi phục hai route nháp, không thêm API/backend hay nguồn lưu annotation thứ hai.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ `dashboardHighlightsNotesFrame.contentWindow` cùng `location.origin`; protocol version là `1`.
-- Giữ đúng một node `#dashboardSharedTopbar`; parent chuyển node qua các route và sang iframe cùng origin. Menu export vẫn nằm trong document iframe khi route Highlights & Notes active để delegated click handlers hiện có tiếp tục hoạt động.
 - `KEEPIT_HIGHLIGHTS_NOTES_DATA` chỉ là bản sao trong bộ nhớ iframe. IndexedDB/Background tiếp tục là nguồn annotation duy nhất; thao tác ghi phải quay lại parent handler.
 - Giữ đồng bộ annotations, page favorites và note favorites sau `load()`, CRUD và storage changes để iframe không dùng snapshot cũ.
 - Export toàn thư viện và import JSON, edit/delete, page/note favorite, review flashcard và thao tác mở/đọc highlight tiếp tục dùng dữ liệu cục bộ và handler hiện có.
