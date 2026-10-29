@@ -366,8 +366,6 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
   background:#f8fafc !important;
   color:#1e293b !important;
   box-shadow:-12px 0 30px rgba(15,23,42,.08) !important;
-  scrollbar-color:auto;
-  scrollbar-width:auto;
 }
 #lhn-sidebar .lhn-sidebar-top{ background:rgba(248,250,252,.96) !important; border-bottom-color:rgba(226,232,240,.9) !important; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
 #lhn-sidebar .lhn-sidebar-brand{ color:#1e293b !important; }
@@ -377,11 +375,10 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
 #lhn-sidebar .lhn-sidebar-search-wrap:focus-within{ border-color:#8b5cf6 !important; background:#fff !important; box-shadow:0 0 0 3px rgba(139,92,246,.16) !important; }
 #lhn-sidebar .lhn-sidebar-search{ color:#334155 !important; }
 #lhn-sidebar .lhn-sidebar-search::placeholder{ color:#94a3b8 !important; }
-#lhn-sidebar .lhn-sidebar-filters{ scrollbar-width:auto; }
 #lhn-sidebar .lhn-side-filter{ border-color:rgba(226,232,240,.9) !important; border-radius:9px !important; background:#fff !important; color:#475569 !important; box-shadow:0 2px 4px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9) !important; transition:background-color 130ms ease,border-color 130ms ease,color 130ms ease,box-shadow 130ms ease !important; }
 #lhn-sidebar .lhn-side-filter:hover{ border-color:#cbd5e1 !important; background:#f8fafc !important; }
 #lhn-sidebar .lhn-side-filter.is-active{ border-color:rgba(139,92,246,.38) !important; background:#f5f3ff !important; color:#7c3aed !important; box-shadow:0 2px 4px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9) !important; }
-#lhn-sidebar .lhn-sidebar-list{ background:rgba(226,232,240,.58) !important; scrollbar-color:auto; scrollbar-width:auto; }
+#lhn-sidebar .lhn-sidebar-list{ background:rgba(226,232,240,.58) !important; }
 #lhn-sidebar .lhn-sidebar-card{ border-color:rgba(255,255,255,.9) !important; border-radius:12px !important; background:#fff !important; box-shadow:0 4px 12px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.8) !important; transition:transform 180ms ease,box-shadow 180ms ease,border-color 180ms ease !important; }
 #lhn-sidebar .lhn-sidebar-card:hover{ transform:translateY(-1px) !important; border-color:#e2e8f0 !important; background:#fff !important; box-shadow:0 10px 22px rgba(15,23,42,.09),0 2px 5px rgba(15,23,42,.04),inset 0 1px 0 rgba(255,255,255,.8) !important; }
 #lhn-sidebar .lhn-sidebar-swatch{ border:1px solid #0002 !important; border-radius:5px !important;  }
@@ -473,7 +470,7 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
     color-scheme:dark;
   }
 }
-#lhn-sidebar{ background:var(--lhn-sb-outer) !important; border-color:var(--lhn-sb-border) !important; color:var(--lhn-sb-text) !important; scrollbar-color:auto; }
+#lhn-sidebar{ background:var(--lhn-sb-outer) !important; border-color:var(--lhn-sb-border) !important; color:var(--lhn-sb-text) !important; }
 #lhn-sidebar .lhn-sidebar-top{ background:var(--lhn-sb-top) !important; border-bottom-color:var(--lhn-sb-border) !important; }
 #lhn-sidebar .lhn-sidebar-brand{ color:var(--lhn-sb-strong) !important; }
 #lhn-sidebar .lhn-sidebar-title{ color:var(--lhn-sb-strong) !important; }
@@ -487,7 +484,7 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
 #lhn-sidebar .lhn-side-filter{ border-color:var(--lhn-sb-border) !important; background:var(--lhn-sb-panel) !important; color:var(--lhn-sb-text) !important; }
 #lhn-sidebar .lhn-side-filter:hover{ border-color:var(--lhn-sb-soft) !important; background:var(--lhn-sb-input) !important; }
 #lhn-sidebar .lhn-side-filter.is-active{ border-color:var(--lhn-sb-active-border) !important; background:var(--lhn-sb-active) !important; color:var(--lhn-sb-brand) !important; }
-#lhn-sidebar .lhn-sidebar-list{ background:var(--lhn-sb-list) !important; scrollbar-color:auto; }
+#lhn-sidebar .lhn-sidebar-list{ background:var(--lhn-sb-list) !important; }
 #lhn-sidebar .lhn-sidebar-card, #lhn-sidebar .lhn-sidebar-card:hover{ border-color:var(--lhn-sb-card-border) !important; background:var(--lhn-sb-panel) !important; box-shadow:var(--lhn-sb-card-shadow) !important; }
 #lhn-sidebar .lhn-sidebar-quote{ color:var(--lhn-sb-text) !important; }
 #lhn-sidebar .lhn-sidebar-quote[role="button"]:hover{ color:var(--lhn-sb-brand) !important; }
@@ -692,12 +689,11 @@ html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none
 
 
 /* Keepit scrollports: 3px WebKit scrollbars, Firefox's narrowest supported size. */
-#lhn-sidebar, #lhn-sidebar .lhn-sidebar-url, #lhn-sidebar .lhn-sidebar-list, #lhn-sidebar .lhn-sidebar-filters, #lhn-sidebar-edit-dialog .lhn-edit-quote {
-  scrollbar-width:auto!important;
-  scrollbar-color:var(--lhn-sb-scrollbar,#cbd5e1) transparent!important;
-}
 @-moz-document url-prefix() {
-  #lhn-sidebar, #lhn-sidebar .lhn-sidebar-url, #lhn-sidebar .lhn-sidebar-list, #lhn-sidebar .lhn-sidebar-filters, #lhn-sidebar-edit-dialog .lhn-edit-quote { scrollbar-width:thin!important; }
+  #lhn-sidebar, #lhn-sidebar .lhn-sidebar-url, #lhn-sidebar .lhn-sidebar-list, #lhn-sidebar .lhn-sidebar-filters, #lhn-sidebar-edit-dialog .lhn-edit-quote {
+    scrollbar-width:thin!important;
+    scrollbar-color:var(--lhn-sb-scrollbar,#cbd5e1) transparent!important;
+  }
 }
 [id^="lhn-"] ::-webkit-scrollbar, [id^="lhn-"]::-webkit-scrollbar, #lhn-sidebar-edit-dialog .lhn-edit-quote::-webkit-scrollbar {
   width:var(--lhn-scrollbar-width,3px)!important;

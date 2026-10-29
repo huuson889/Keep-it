@@ -645,7 +645,7 @@ main {
 /* Match the attached account sidebar layout and keep all dashboard filters on one row. */
 main { max-width:none; margin:0; padding-left:8px; padding-right:8px; grid-template-columns:minmax(0,.8fr) minmax(0,3fr); }
 body > header { padding-left:8px; padding-right:8px; }
-.toolbar { flex-wrap:nowrap!important; overflow-x:auto; overflow-y:hidden; scrollbar-width:auto; gap:5px; padding-bottom:4px; }
+.toolbar { flex-wrap:nowrap!important; overflow-x:auto; overflow-y:hidden; gap:5px; padding-bottom:4px; }
 .toolbar select { flex:0 1 132px; width:auto; min-width:76px; max-width:145px; height:34px; padding:0 20px 0 7px; font-size:11px; }
 .toolbar .clear-filters-button { flex:0 0 34px; width:34px; height:34px; min-width:34px; }
 .toolbar .favorite-filter { flex:0 0 auto; min-height:34px; padding:6px 7px; font-size:11px; }
@@ -1621,19 +1621,19 @@ body.dashboard-sidebar-pinned > #dashboardLRPracticeView { margin-left:0!importa
 /* Dashboard scrollbars: 3px on Chromium (both axes), thin on engines without pixel sizing. */
 :root { --lhn-scrollbar-thumb:#cbd5e1; }
 html.dark { --lhn-scrollbar-thumb:#475569; }
-html, body, body * {
-  scrollbar-width:auto!important;
-  scrollbar-color:var(--lhn-scrollbar-thumb) transparent!important;
-}
-/* Firefox only exposes auto/thin; use its narrowest supported size. */
+/* Firefox only exposes auto/thin; Chromium uses the exact WebKit pixel dimensions below. */
 @-moz-document url-prefix() {
-  html, body, body * { scrollbar-width:thin!important; }
+  html, body, body * {
+    scrollbar-width:thin!important;
+    scrollbar-color:var(--lhn-scrollbar-thumb) transparent!important;
+  }
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
-body *::-webkit-scrollbar {
-  width:var(--lhn-scrollbar-width,3px)!important;
-  height:var(--lhn-scrollbar-width,3px)!important;
+body *::-webkit-scrollbar,
+#dashboardSidebar .dashboard-reference-nav::-webkit-scrollbar {
+  width:3px!important;
+  height:3px!important;
 }
 html::-webkit-scrollbar-track,
 body::-webkit-scrollbar-track,
