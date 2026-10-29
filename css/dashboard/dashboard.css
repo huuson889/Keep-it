@@ -1626,6 +1626,14 @@ html.dashboard-theme-pending body {
 }
 html.dashboard-theme-pending { color-scheme:dark; }
 html.dashboard-theme-pending body { visibility:hidden!important; }
+html.dashboard-theme-pending #dashboardSidebar,
+html.dashboard-theme-pending #dashboardSidebar *,
+html.dashboard-theme-pending #dashboardSidebar *::before,
+html.dashboard-theme-pending #dashboardSidebar *::after,
+html.dashboard-theme-pending #dashboardOverviewView .ov-quick-item,
+html.dashboard-theme-pending #dashboardOverviewView .ov-quick-item * {
+  transition:none!important;
+}
 
 /* Dashboard scrollbars: 3px on Chromium (both axes), thin on engines without pixel sizing. */
 :root { --lhn-scrollbar-thumb:#cbd5e1; }
