@@ -1,16 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.732; Manifest V3. Bản đồ mã nguồn nằm ở mục 4.
+- Version hiện tại: v3.4.733; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Trang chủ hiển thị thư viện; Luyện ngữ pháp hiển thị `#profileSidebar`. Các mục sidebar khác chưa có điều hướng; hover/ghim/theme vẫn dùng chung.
 - Lưu ý: `--lhn-ui-shadow` đang giữ nguyên chuỗi `++rgb++(...)` theo yêu cầu; giá trị này có thể làm các `box-shadow` dùng biến không hợp lệ. Cloud sync và thanh toán chưa được tích hợp.
-- Kiểm tra gần nhất: chọn caption track Auto đã qua `node --check` và mô phỏng 4/4 trường hợp metadata; UI trên YouTube thật chưa kiểm thử.
+- Kiểm tra gần nhất: docs module 10/10 đúng khung/liên kết; `node --check` đạt 45/45 JavaScript. UI không được kiểm thử lại trong đợt đóng gói docs.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard (Chrome/Firefox, desktop và màn hình hẹp): kiểm tra chuyển view, workspace, sidebar hover/ghim/theme và shadow; chưa chạy UI thật.
 - Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
-- Lỗi Auto chọn sai ngôn ngữ: thử lại video `oTAv7A4khP0` và `QbfxZcNNxm8` trong Dual Sub/Dictation; xác nhận lấy track khớp audio mặc định (English, không phải Arabic). Chưa kiểm thử browser.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch và Firefox MV3; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
@@ -62,6 +61,9 @@ Keepit - Test/
 │   └── fonts/                     # Font cục bộ
 ├── vendor/readability/            # Mozilla Readability cho Alt+R/Alt+A
 ├── licenses/                      # Văn bản giấy phép bên thứ ba
+├── docs/
+│   ├── INDEX.md                   # Mục lục tài liệu kỹ thuật nội bộ
+│   └── modules/                   # Hướng dẫn cho từng module first-party cấp cao nhất trong js/
 ├── supabase-schema.sql            # Schema Supabase (cloud chưa nối)
 └── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, SUPABASE_SYNC.md, THIRD_PARTY_NOTICES.md
 ```
@@ -105,631 +107,728 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-- **2026-10-29 | v3.4.732 | Arena sửa:**
-  - Sửa chọn phụ đề nguồn khi để Auto: trước đây ưu tiên `isDefault`/track thủ công đầu tiên, có thể chọn Arabic dù audio gốc tiếng Anh. Nay ưu tiên caption track được liên kết với audio track mặc định từ player metadata (`audioTracks`, `defaultAudioTrackIndex`, `audioTrackId`/`captionTrackIndices`), rồi mới dùng fallback cũ. Áp dụng cho cả Player API và watch-page fallback; Dual Sub và Dictation dùng chung kết quả.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JavaScript; mô phỏng tracklist synthetic 4/4 trường hợp (English gốc thắng Arabic `isDefault`, chọn đúng audio mặc định không hardcode English, explicit language override, fallback legacy); manifest JSON và `git diff --check` — đạt. Chưa kiểm thử trên hai video trong trình duyệt thật.
-
-- **2026-10-29 | v3.4.731 | Arena sửa:**
-  - Cụ thể hóa quy tắc cho mọi agent: mục 1 là snapshot 3–5 gạch đầu dòng; mục 2 chỉ giữ việc đang mở, có trạng thái rõ; mục 5 là nhật ký thay đổi, không chép lặp lịch sử vào snapshot/open tasks.
-  - File: `AGENTS.md`, `PROJECT.md`, `manifest.json`.
-  - Kiểm tra: `git diff --check`, manifest JSON và kiểm tra cấu trúc mục 1/2 cùng version — đạt; không đổi mã ứng dụng.
-
-- **2026-10-29 | v3.4.730 | Arena sửa:**
-  - Rút gọn mục 1 thành snapshot hiện tại; gom các việc còn mở ở mục 2 theo nhóm kiểm thử và triển khai, giữ chi tiết lịch sử trong nhật ký mục 5.
-  - File: `PROJECT.md`, `manifest.json`.
-  - Kiểm tra: `git diff --check` và xác nhận cấu trúc Markdown/version; không đổi mã ứng dụng.
-
-- **2026-10-29 | v3.4.729 | Arena sửa:**
-  - Điều chỉnh `#dashboardHomeView` về `row-gap: 6px` và `padding: 8px 10px 8px 8px`; cập nhật `--lhn-ui-shadow` đúng chuỗi người dùng chỉ định trong theme sáng/tối. Các phần khác giữ nguyên.
-  - File: `css/dashboard/dashboard.css`, `css/shared/ui-tokens.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
-  - Lưu ý: `++rgb++(...)` không hợp lệ cho `box-shadow`; có thể khiến các bóng dùng biến này không hiển thị.
-
-- **2026-10-29 | v3.4.728 | Arena sửa:**
-  - Tách Dashboard thành view Trang chủ mặc định (toolbar + workspace mở rộng toàn chiều ngang) và view Luyện ngữ pháp chứa nguyên `#profileSidebar`; hai mục tương ứng chuyển view và cập nhật trạng thái đang chọn, các mục khác giữ nguyên.
-  - File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JavaScript; HTML/CSS static audit — 278 ID duy nhất, view Trang chủ mặc định, view Luyện ngữ pháp ẩn lúc đầu và chứa `#profileSidebar`, 2 mục điều hướng, không inline handlers; `tinycss2` parse 1.390 rule, 0 lỗi; mô phỏng logic chuyển view/active state/`aria-current` đạt; `git diff --check` đạt. UI/runtime trên trình duyệt thật chưa kiểm thử.
-
-- **2026-10-29 | v3.4.727 | Arena sửa:**
-  - `main`: bỏ padding-left 70px, padding-right còn 14px. Sidebar hover mở rộng dạng overlay, không đổi vị trí Dashboard; click nút ghim mới giữ sidebar 220px trong flow và đẩy Dashboard; unpin trả lại overlay. Footer theme toggle và menu theme nối cùng setting light/dark đang được lưu bởi app, đồng bộ nhãn/icon.
-  - File: `css/dashboard/dashboard.css`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JS; HTML/CSS/JS static audit — 276 ID duy nhất, 14 link, 0 lỗi parse CSS (1.379 rule), xác nhận selector hover-overlay/pin-push/theme delegation; `git diff --check` đạt. UI/runtime trình duyệt thật chưa kiểm thử.
-
-- **2026-10-29 | v3.4.726 | Arena sửa:**
-  - Sửa đúng phần icon người dùng phản ánh: thay 24 SVG vẽ gần đúng bằng path Lucide theo các tên icon trong file HTML mẫu. Không đổi kích thước, nhãn, vị trí hay hành vi sidebar/popover; SVG vẫn inline cục bộ, không thêm CDN.
-  - File: `pages/dashboard.html`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: đối chiếu hình học tag/attribute của 24 SVG với Lucide — 24/24 khớp; không có inline event handlers hoặc URL ngoài trong sidebar; UI/runtime trên trình duyệt thật chưa kiểm thử.
-
-- **2026-10-29 | v3.4.725 | Arena sửa:**
-  - Làm lại từ nền mã v3.4.723 theo yêu cầu mới nhất: bỏ top header, thêm UI sidebar trái đúng cấu trúc/thứ tự/nhãn và popover avatar theo file tham chiếu; không gán hành vi cho các mục, pin hay đổi theme; giữ cơ chế mở/đóng popover avatar sẵn có và nội dung Dashboard chính. Tài nguyên icon là SVG cục bộ, không thêm CDN/inline handlers.
-  - Đưa `js/dashboard/dashboard.js` và `js/core/languages.js` về bản v3.4.723 để bỏ phần wiring/bản dịch của corrective pass trước; các chỉnh sửa dashboard v3.4.724 không còn là nền của bản này.
-  - File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JS; HTML audit — top header không còn, 14 nhãn + 7 mục popover đúng thứ tự, 273 ID duy nhất, không inline handlers/URL ngoài; nội dung `<main>` trùng baseline v3.4.723; 136 ID được bind listener còn tồn tại; CSS parse 1.362 rule, 0 lỗi; manifest JSON v3.4.725; `git diff --check` đạt. UI/runtime trên trình duyệt thật: Chưa kiểm thử.
-
-- **2026-10-29 | v3.4.724 | Arena sửa:**
-  - Bỏ top header Dashboard; thêm sidebar trái theo mẫu, mặc định thu gọn 56px và mở rộng 220px khi rê chuột, có nút ghim. Giữ 14 mục mẫu dạng bấm được nhưng không điều hướng; theme, gói Free và menu hồ sơ (Settings/export/import/đăng xuất) được giữ trong footer. Nội dung `#profileSidebar` và thư viện không đổi.
-  - File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JavaScript; `tinycss2` parse 1.358 CSS rules, 0 lỗi; kiểm tra HTML 278 ID duy nhất, 14 mục visual-only và giữ các ID profile/library/settings/export/import/đăng xuất; 27 đường dẫn tài nguyên cục bộ hợp lệ; 17 khóa sidebar có đủ en/vi/ko; manifest JSON v3.4.724; `git diff --check` — đạt. UI/runtime trên trình duyệt thật: Chưa kiểm thử.
-
-- **2026-10-28 | v3.4.723 | Arena sửa:**
-  - Chuyển nút ẩn Notes xuống bên trái `te-dict-note-footer`, bỏ nhãn `te-dict-autosave`; thêm footer ngang cuối cột Sentences và đặt nút ẩn cột ở bên phải. Giữ nguyên các handler ẩn/hiện cột.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 353 CSS rules, 0 lỗi; assertions xác nhận footer cột 1/3, vị trí chevron, bỏ nhãn autosave và giữ các lookup/listener nút; manifest JSON v3.4.723; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.722 | Arena sửa:**
-  - Bỏ hai chevron hover ở splitter; giữ nguyên tay nắm. Thêm border mặc định cùng màu icon cho nút ẩn cột tại Sentences và Notes; nhóm chevron Sentences sát tiêu đề.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules, 0 lỗi; assertions xác nhận bỏ chevron splitter, viền nút collapse luôn cùng màu icon, nhóm heading Sentences sát nhau; kiểm tra DOM markup và manifest JSON v3.4.722; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.721 | Arena sửa:**
-  - Đặt chevron hover cách tay nắm 2px, không đè lên grip: splitter cột 1 đưa chevron sang trái; splitter cột 3 đưa chevron sang phải. Chevron vẫn nhận pointer/click để ẩn cột.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js` đạt; `tinycss2` parse 356 CSS rules, 0 lỗi; assertions xác nhận chevron cột 1/cột 3 đúng hướng, đúng khe hở 2px và nhận pointer; manifest JSON v3.4.721; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.720 | Arena sửa:**
-  - Sửa splitter theo yêu cầu: bỏ viền focus trắng và sọc vàng mảnh; giữ nguyên tay nắm giữa; hover hiện chevron chỉ hướng cột sẽ ẩn; click chevron ẩn cột, còn kéo qua ngưỡng 4px vẫn resize. Bảo toàn double-click reset; Enter/Space cũng ẩn cột.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 355 CSS rules, 0 lỗi; assertions xác nhận outline/sọc dài đã bỏ, chevron trái/phải, tay nắm giữ nguyên, click-collapse, ngưỡng kéo, click suppression và double-click reset; manifest JSON v3.4.720; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.719 | Arena sửa:**
-  - Sửa viền focus splitter: bỏ viền vàng dài hai bên; chỉ hiện một sọc vàng 1px khi đang kéo và tự mất khi kết thúc kéo. Tay nắm giữa giữ nguyên trạng thái hover/focus/kéo.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules, 0 lỗi; assertions xác nhận bỏ viền đôi, sọc 1px chỉ khi kéo, tay nắm giữ nguyên và class kéo được dọn khi thả; manifest JSON v3.4.719; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.718 | Arena sửa:**
-  - Chỉ khôi phục hiệu ứng chuyển Video ↔ thanh Audio về v3.4.713: chiều cao video animate .6s theo cubic-bezier; video fade .4s; thanh Audio fade .4s và scale .6s. Giữ nguyên bố cục, icon, kích thước và các tính năng khác của v3.4.717.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules/at-rules/declarations với 0 lỗi; assertions xác nhận các giá trị transition khớp v3.4.713, `toggleCompactVideo`/height handler khớp đúng v3.4.713 và listener được dọn; manifest JSON v3.4.718; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.717 | Arena sửa:**
-  - Giữ Ambient khi cột câu ẩn: thêm lớp che riêng ở ô cột Dictation (z-index 2), video host phía dưới (1), Ambient phủ toàn overlay nằm trên lớp che (3), nội dung Dictation/Ghi chú ở trên Ambient (4). Cột giữa trở lại trong suốt khi Ambient bật; hiệu ứng vẫn lan qua các cột như v3.4.715 trong khi video thật không lộ qua nền.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; CSS parse và assertions cho lớp mask/video/Ambient/content, theme sáng/tối, DOM thêm/dọn mask; parse `manifest.json`; `git diff --check` — đạt. ZIP phát hành: 83 file tracked, `unzip -t` CRC đạt, manifest 3.4.717 và nội dung khớp working tree. Chưa kiểm thử UI/video runtime trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.716 | Arena sửa:**
-  - Sửa ẩn cột câu: không còn `display:none` khung trái đang chứa video YouTube thật. Giữ player hoạt động ở lớp dưới trải dưới cột giữa; cột Dictation có nền đục và z-index cao hơn (kể cả Ambient), video vẫn có vùng render khác 0 và giữ vòng đời; dải mở lại nằm trên cùng.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; CSS parse và assertions cho host không bị display:none, span dưới cột giữa, nền đục khi Ambient; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử video runtime trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.715 | Arena sửa:**
-  - Thêm splitter kéo cho ba cột Dictation: cột câu thu tối đa 1/3 độ rộng mặc định hoặc ẩn; cột Ghi chú nới tối đa 1/2 hoặc ẩn; cột Dictation giữa tự dùng phần còn lại, giữ ngưỡng tối thiểu thích ứng. Khi ẩn, dải 24px mở lại cột; splitter hỗ trợ chuột, phím mũi tên/Home/End, nhấp đúp đặt lại; bố cục lưu cục bộ và được giữ khi mở lại. Nhãn truy cập dịch EN/VI/KO.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận giới hạn cột/trung tâm, kéo chuột, bàn phím, ẩn/hiện, đặt lại, lưu/đọc prefs ở nhiều độ rộng; localization EN/VI/KO; CSS parse 338 rules; `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.714 | Arena sửa:**
-  - Làm mượt chuyển video ↔ audio compact: bỏ nội suy chiều cao video để tránh layout/video resize lặp; đổi layout một lần, animate phần nội dung phía dưới bằng transform 340ms, crossfade video/audio nhanh hơn; hỗ trợ prefers-reduced-motion và dọn animation khi đóng/đổi trạng thái.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận thu/phóng, transform hai chiều và dọn trạng thái; CSS/static assertions cho không animate height, crossfade và reduced motion; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.713 | Arena sửa:**
-  - Bóng đèn không đổi nền khi bật: luôn trong suốt, màu icon trắng khi bật và nhạt khi tắt. Nút video/thanh âm thanh đổi icon theo chế độ: icon video khi video hiện, icon mic khi thanh âm thanh compact hiện.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận video icon ở chế độ video và mic ở chế độ thanh âm thanh; CSS assertions cho nền bóng đèn trong suốt ở cả hai trạng thái, màu icon bật/tắt và kích thước; manifest JSON; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.712 | Arena sửa:**
-  - Thay chữ của công tắc gợi ý bằng icon bóng đèn đã cung cấp; nút 36×36px và SVG 18×18px khớp nút thu phóng video. Khi bật icon trắng trên nền tương phản, khi tắt icon nhạt; giữ aria-label/title đã dịch và toàn bộ logic gợi ý.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho công tắc aria-pressed/active và luồng gợi ý; static assertions cho icon 18px, nút 36px, màu bật/tắt và nhãn truy cập EN/VI/KO; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.711 | Arena sửa:**
-  - Bỏ checkbox “Tự phát khi chuyển câu”, thay bằng “Hiện gợi ý” (mặc định bật, dịch EN/VI/KO). Khi tắt, lần phân tích đầu ẩn từ vàng bằng mặt nạ; Enter kế tiếp chỉ hiện gợi ý cho cùng kết quả, không chấm lại/chuyển câu. Tắt/bật công tắc cũng cập nhật phân tích đang mở; hành vi phát tự động hiện có không đổi.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho gợi ý mặc định bật, tắt thì mặt nạ vàng và Enter kế tiếp chỉ hiện gợi ý cùng kết quả, công tắc cập nhật phân tích đang mở; parse `manifest.json`; kiểm tra nhãn EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.710 | Arena sửa:**
-  - Ô “Ghi chú / ngữ pháp”: Enter gọi lưu ngay, hiển thị thông báo “Đã lưu” hiện có rồi bỏ focus; Shift+Enter giữ hành vi xuống dòng; tiếp tục tự lưu khi gõ.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho Enter lưu/hiện “Đã lưu”/blur sau khi lưu, Shift+Enter không chặn xuống dòng và Enter trong IME không bị bắt; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.709 | Arena sửa:**
-  - Đặt padding trái/phải vùng tiêu đề, bộ lọc và danh sách thống kê về 0; để Chrome/Edge dùng `--lhn-scrollbar-width` (3px) bằng `scrollbar-width: auto`, còn Firefox dùng native `thin` như các vùng Dictation khác.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: CSS assertions cho padding ngang 0, scrollbar auto + biến 3px và Firefox-only thin, dark/light colors; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.708 | Arena sửa:**
-  - Chỉ chỉnh khung thống kê: bỏ border ngoài, giảm lề ngang header/bộ lọc/danh sách để nội dung gần mép chứa hơn; thanh cuộn dùng chung biến chiều rộng và màu thumb/track với các vùng cuộn Dictation.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: CSS assertions cho border ngoài bằng 0, padding ngang 4px, width biến dùng chung và màu thumb light/dark; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.707 | Arena sửa:**
-  - Chỉ sửa hàng biến thể thống kê: canh `+N` nằm ngang bên trái chevron xuống và giảm đúng 1px cỡ chữ số; khi mở chỉ hiện chevron lên. Các chip, kể cả biến thể bổ sung, dùng chung một flex-wrap list để chảy liên tục và tự xuống hàng.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: DOM/CSS assertions cho cấu trúc một list, trạng thái đóng/mở, `+N`/chevron cùng hàng, chỉ cỡ chữ `+N` 9px; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.706 | Arena sửa:**
-  - Chỉ chỉnh khung thống kê theo ảnh mẫu: thêm huy hiệu tổng số từ sai bên phải tiêu đề; nút biến thể giữ vị trí, đóng hiển thị `+N` kèm chevron xuống, mở chỉ còn chevron lên; nút chỉ tạo khi có biến thể ẩn.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; Node DOM assertions cho badge, `+N`/icon hai trạng thái, điều kiện overflow và vùng mở rộng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.705 | Arena sửa:**
-  - Chỉ chỉnh khung thống kê: nút xổ/thu theo mẫu được đặt sát mép phải và chỉ tạo khi có biến thể ẩn; nền card, header, ô tìm và các hàng trong dark mode chuyển sang tông trung tính đồng bộ nền Ghi chú `#121212`.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS/DOM assertions cho vị trí nút, điều kiện chỉ tạo khi có biến thể dư và màu nền dark; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.704 | Arena sửa:**
-  - Kết nối khung thống kê Dictation với kết quả chấm thật: đếm từng lỗi/từ sai và biến thể (chuẩn hóa hoa thường/dấu câu theo scorer), ghi nhận sửa đúng một lần cho từng vị trí sau lỗi; cập nhật trạng thái gần nhất, xếp hạng, tỷ lệ sửa, tìm kiếm và bộ lọc. Lưu thống kê trong record cục bộ theo video; thay số mẫu bằng trạng thái rỗng/thông báo không có kết quả; dịch nhãn sửa đúng/tỷ lệ sửa và trạng thái trống EN/VI/KO.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: kiểm tra Node cho lỗi lặp/biến thể, chuẩn hóa hoa thường-dấu câu, sửa đúng một lần mỗi đợt, reset chuỗi sai, đúng lần đầu, từ thiếu/trùng/thừa, lưu/khôi phục, render danh sách, xếp hạng, tìm kiếm và bộ lọc — đạt; `node --check` 47/47 JavaScript; parse `manifest.json`; assertion UI/localization/persistence EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI/runtime trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.703 | Arena sửa:**
-  - Tích hợp UI thống kê từ sai vào cột Ghi chú Dictation theo HTML tham chiếu; bỏ trường Từ vựng khỏi giao diện, giữ ô ghi chú cá nhân. Có tìm kiếm/bộ lọc dạng tĩnh và mẫu 7 từ được gắn nhãn **Dữ liệu minh họa**; chưa kết nối thuật toán. Các dạng lỗi mở rộng bằng `<details>`; danh sách cuộn trong khung cao 50vh.
-  - Giữ tương thích dữ liệu ghi chú cũ: khi lưu vẫn bảo toàn thuộc tính vocab cũ trong storage nhưng không hiển thị trường đó.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse manifest; assertion UI (không còn vocab control, 7 mẫu, 3 nút xổ, scroll 50vh), lưu schema cũ và khóa dịch EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.702 | Arena sửa:**
-  - Thêm icon Keepit, dấu gạch ngang và chữ Keepit ở góc trái trên video; thêm tiền tố `Keepit - ` trước tiêu đề trên thanh audio. Kích cỡ nhãn 13px, icon 20px, lề 12px; ẩn nhãn video khi chuyển sang compact audio.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; assertion icon/lockup, vị trí & cỡ logo, tiền tố audio, ẩn logo ở compact mode và dọn DOM; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.701 | Arena sửa:**
-  - Tăng cỡ chữ hàng hint Dictation từ 11px lên 12px; giữ nguyên 4 cột đều nhau và cách căn mép.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion cỡ chữ 12px, 4 cột đều, không padding ngang, nhãn ngoài sát mép; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.700 | Arena sửa:**
-  - Bỏ padding ngang của hàng hint Dictation; giữ 4 cột đều nhau, nhãn đầu căn trái sát mép, cuối căn phải sát mép, hai nhãn giữa căn giữa.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion 4 cột đều, padding ngang 0, nhãn ngoài căn trái/phải, hai nhãn giữa căn giữa; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.699 | Arena sửa:**
-  - Đổi hàng hint Dictation thành bốn nhãn phím tắt chia đều một hàng: `(Enter) Chấm điểm`, `(Esc) Đáp án/Làm lại`, ``(`) Phát/Tạm dừng``, `(Ctrl) Nghe lại`; chỉ đổi chữ/bố cục hint, không đổi hành vi phím.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; assertion bốn nhãn, `grid-template-columns: repeat(4, minmax(0, 1fr))`, nội dung EN/VI/KO và separator; `git diff --check` — đạt. Không đổi shortcut handlers; chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.698 | Arena sửa:**
-  - Khôi phục video Dictation rộng toàn khung như v3.4.696; chỉ thanh audio compact được inset 12px hai bên theo sentence area.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertions xác nhận video `width: 100%`/`margin-inline: 0`, audio compact `inset: 0 12px` và có card styling riêng, CSS cân bằng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.697 | Arena sửa:**
-  - Chỉnh lề ngang của video slot Dictation thành 12px mỗi bên, bằng `te-dict-sentence-area`; thanh audio compact phủ đúng video slot nên hai mép thẳng hàng.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion xác nhận video `margin-inline: 12px`, sentence area `padding: 10px 12px`, audio card phủ cùng slot, CSS cân bằng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.696 | Arena sửa:**
-  - Thêm nút thu/khôi phục video bên trái Auto-play trong Dictation; trạng thái compact thay hình video bằng thanh audio cùng chiều rộng, cao 1/3 với hiệu ứng theo mẫu; danh sách câu mở rộng để dùng phần chiều cao dư, giữ compact khi chuyển câu và khôi phục khi đóng Dictation.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; CSS cân bằng và xác nhận trạng thái compact, audio card, transition, sentence list flex; mock chiều cao xác nhận mở rộng → 1/3 → giữ tỉ lệ 1/3 khi resize → khôi phục khi tắt compact; kiểm tra cleanup khi đóng Dictation; xác nhận 4 nhãn EN/VI/KO — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.695 | Arena sửa:**
-  - Chỉ trong Dictation: thêm ` tương đương Space để phát/tạm dừng audio/video; thay Alt+X bằng Esc hai lượt trong ô đáp án (lượt 1 điền toàn câu chưa chấm, lượt 2 xóa).
-  - File: `js/dictation/dictation.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; DOM/state mock xác nhận Esc lần đầu điền nguyên câu mà không chấm, lần hai gọi reset, backtick play/pause, auto-repeat không toggle liên tục, Alt+X không còn xóa, shortcut ngừng hoạt động khi Dictation đóng; hint EN/VI/KO — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.694 | Arena sửa:**
-  - Dựa trên v3.4.692, chỉ tách từng mask thành phần tử riêng trong cùng luồng chip/từ để chúng wrap tự nhiên theo chiều rộng; không gom mọi mask thành một phần tử bị đẩy cả khối xuống hàng.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; DOM mock xác nhận mỗi từ thiếu được tạo thành phần tử mask riêng với độ dài đúng; CSS assertion xác nhận `flex-wrap: wrap`, mask là flex item độc lập và không còn cuộn ngang — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.693 | Arena sửa:**
-  - Chỉ đổi hàng phản hồi Dictation để chip và mask tự xuống dòng khi không đủ chiều rộng, thay cho một hàng cuộn ngang; không đổi logic nhập, căn chỉnh, chấm điểm hay màu sắc.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation-style.js`, `node --check js/dictation/dictation.js`, parse `manifest.json`, assertion CSS cân bằng và xác nhận feedback `flex-wrap: wrap`, bỏ cuộn ngang, mask được wrap, `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.692 | Arena sửa:**
-  - Lấy v3.4.689 làm nền, chỉ sửa Dictation input/feedback: gõ không hiện phản hồi; Enter chuẩn hóa từ khớp, giữ từ sai, xử lý tiền tố đúng và gợi ý màu; lỗi dừng gợi ý ở từ sai đầu tiên, mask phần sau trên cùng dòng; không thêm dấu câu cuối nếu từ cuối transcript chưa khớp; trạng thái đúng 100% giữ nguyên.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 47/47 JavaScript; `python3 -m json.tool manifest.json`; `git diff --check`; 11 ca Node tổng quát về case/dấu câu/từ sai-thiếu-thừa và không thêm dấu kết thúc khi từ cuối transcript chưa khớp; mock Enter/DOM xác nhận tiền tố đúng không chấm điểm, màu xanh/vàng/mask, lỗi đầu tiên + mask cùng dòng, gạch đỏ trong ô nhập và phản hồi không hiện khi đang gõ — đạt. Chưa kiểm thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.691 | Arena sửa:**
-  - Dictation input/feedback: logic dùng transcript và căn chỉnh từ, không hardcode câu ví dụ. Enter trên tiền tố đúng chuẩn hóa chữ hoa, thêm dấu cách và hiện từ kế tiếp cùng các từ còn thiếu được mask theo độ dài trên cùng một dòng. Với câu có từ sai/thiếu/thừa, chuẩn hóa chữ hoa/dấu câu ở từ khớp theo transcript, giữ nguyên từ sai/thừa; gạch chân lỗi chỉ sau Enter/Check.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/scorer; mô phỏng Enter `welcome` xác nhận `Welcome ` và gợi ý một dòng `Welcome to __ _______`; `welcome taa my english` xác nhận `Welcome taa my English.`; 8 ca tổng quát với transcript khác nhau bao gồm từ sai, thiếu, thừa và dấu câu — đạt; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.690 | Arena sửa:**
-  - Dictation input: Enter khi đúng áp dụng chữ hoa và dấu câu theo transcript; tiền tố đúng nhưng chưa hết câu tự nối dấu cách khi Enter; sau khi chấm sai gạch chân đỏ đậm từ sai trong textarea; các từ thiếu được che bằng dấu gạch dưới theo độ dài và cách bằng dấu cách.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js`, `node --check js/dictation/dictation-score.js`, `git diff --check`; source assertions; Node logic tests cho case/punctuation, prefix đúng, mask đúng độ dài/khoảng trắng và căn chỉnh từ sai — đạt. Chưa thử UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.689 | Arena sửa:**
-  - Khắc phục race: khi Alt+F mở overlay trong lúc phụ đề chưa sẵn sàng, giữ yêu cầu và mở Dictation theo sự kiện `lhn-dual-captions-updated`; lần bấm lại hủy yêu cầu đang chờ, còn khi Dictation đã mở thì đóng.
-  - File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho 6 file JavaScript; `git diff --check`; assertions tĩnh cho version, pending caption event và trạng thái Dictation; Node simulation xác nhận chờ cue, tự mở khi sẵn sàng, toggle đóng khi đang mở và hủy khi bấm lại — đạt. Chưa chạy UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.688 | Arena sửa:**
-  - Thêm shortcut Alt+F có thể chỉnh/reset trong Dashboard > Shortcut; content script phát event theo mẫu Alt+E, YouTube handler mở overlay nếu cần rồi gọi Dictation toggle.
-  - Thêm nhãn dịch en/vi/ko và nối luồng Dashboard setting → content keydown → event → Dual Sub/Dictation API.
-  - File: `js/core/defaults.js`, `js/core/languages.js`, `js/content/content.js`, `js/dashboard/dashboard.js`, `pages/dashboard.html`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho 6 file JavaScript; `git diff --check`; assertions tĩnh cho manifest/default, Dashboard capture/reset, keydown/event YouTube, overlay và API toggle, nhãn en/vi/ko, script paths; Node simulation xác nhận Alt+F khi overlay đóng mở overlay rồi toggle Dictation, khi overlay mở gọi toggle trực tiếp — đạt. Chưa chạy UI trên trình duyệt thật.
-
-- **2026-10-28 | v3.4.687 | Arena sửa:**
-  - Nút Play/Pause video cập nhật icon lạc quan ngay khi bấm; sự kiện media play/pause chỉ reconcile với trạng thái thật, không khởi chạy pulse lần hai; nếu lệnh play bị từ chối, icon được đồng bộ lại.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions cho optimistic icon, đồng bộ lại nếu `play()` thất bại, event media chỉ reconcile và không pulse lần hai; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.686 | Arena sửa:**
-  - Luồng transcript: hover row `.yt-dual-item` dừng video; rời row thì resume chỉ nếu trước đó đang phát; click timestamp seek/play; click/double-click content không kích hoạt thao tác; selection-to-translate và Full Dictation giữ nguyên.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions xác nhận hover row pause/resume, timestamp-only seek/play, bỏ handler click/double-click trên content và giữ selection guard; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.685 | Arena sửa:**
-  - Trong `yt-dual-item`, chỉ click `.yt-dual-timestamp` mới gọi seek/play; `.yt-dual-content` không kích hoạt seek, còn double-click pause cũng giới hạn trong timestamp.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions xác nhận chỉ timestamp xử lý seek/play, content không kích hoạt click, double-click pause chỉ áp dụng timestamp; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.684 | Arena sửa:**
-  - Ảnh cho thấy nút mũi tên là `#lhn-sidebar-edge-toggle` của sidebar chính Keepit, nằm ngoài Shadow DOM video overlay. Trong lúc overlay mở, ẩn edge toggle khi sidebar chính đóng; khi nút tròn được bấm, gọi edge toggle hiện có để mở sidebar chính (panel phủ lên nút); edge toggle hiện khi sidebar chính mở và ẩn lại khi đóng. Giữ nguyên markup/style/icon gốc v3.4.680 của nút tròn; không đổi trạng thái sidebar phụ đề video.
-  - File: `css/content/content.css`, `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` hai JS; parse Overlay CSS (241 quy tắc), Dictation CSS (190), content CSS (534), 0 lỗi; manifest JSON/version và resource paths; assertion markup/style nút tròn khớp v3.4.680, handler gọi `#lhn-sidebar-edge-toggle`, edge toggle chỉ ẩn khi overlay mở và sidebar chính đóng; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.683 | Arena sửa:**
-  - Khôi phục icon gốc v3.4.680 cho nút tròn tím; nút luôn hiện ở dưới lớp sidebar trong video overlay thường, sidebar phủ lên nút khi mở. Mỗi lần mở overlay sidebar ở trạng thái ẩn; nút Bố cục hiện khi sidebar mở và ẩn khi sidebar đóng.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` hai JS; parse Overlay CSS (244 quy tắc, 0 lỗi); manifest JSON/version; assertion so icon SVG v3.4.680 và logic trạng thái/sidebar/z-index; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.682 | Arena sửa:**
-  - Rà soát thanh cuộn trong toàn bộ Shadow DOM video/Dictation: quy tắc WebKit gắn trực tiếp với overlay root; truyền giá trị `--lhn-scrollbar-width` chung từ document lên Shadow host; bổ sung selector rõ ràng cho center body, note body và textarea Dictation bên cạnh danh sách/ô nhập.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba JS; parse Overlay CSS (244 quy tắc) và Dictation CSS (190 quy tắc), 0 lỗi; source assertions cho các vùng cuộn và biến chung; parse manifest; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.681 | Arena sửa:**
-  - Video overlay: khi sidebar mở, giữ nút `Bố cục` để đóng; khi sidebar ẩn, ẩn nút đó và hiện `te-floating-btn` cố định góc dưới phải để mở lại. Đưa nút tím ra ngoài DOM sidebar để không bị `display:none` của panel che; giữ vị trí hiển thị.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` hai JS; parse Overlay CSS (244 quy tắc, 0 lỗi); assertions cấu trúc/nút và state logic; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.680 | Arena sửa:**
-  - Dictation: đổi thumb scrollbar dark mode sang xám sáng; giữ màu light mode. Khai báo riêng chiều rộng dọc và chiều cao ngang bằng `--lhn-scrollbar-width` cho cả ô nhập và danh sách câu.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation style; parse CSS (190 quy tắc, 0 lỗi); assertions cho màu thumb và kích thước dọc/ngang theo biến chung; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.679 | Arena sửa:**
-  - Dictation Ambient: giữ nguyên lớp Ambient phủ grid ba cột; khi hiệu ứng bật, nền của panel giữa và ghi chú bên phải trong suốt để ánh sáng không bị che. Khi Ambient tắt, màu nền light/dark cũ giữ nguyên.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation style; parse CSS (188 quy tắc, 0 lỗi); source assertions xác nhận hai panel chỉ trong suốt khi Dictation và Ambient cùng bật; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.678 | Arena sửa:**
-  - Dictation: hint được tách thành ba mục từ bản dịch hiện có và xếp lần lượt trái/giữa/phải bằng flex; giữ nguyên câu chữ và bản dịch.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/CSS; assertions ba phần hint ở EN/VI/KO và căn lề CSS; parse CSS Dictation (187 quy tắc, 0 lỗi); parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.677 | Arena sửa:**
-  - Dictation: làm rõ scrollbar của ô nhập và `#te-dict-sentences`: giữ width từ `--lhn-scrollbar-width`, thêm thumb/track nhìn thấy được ở light/dark mode; Firefox dùng native `thin` scrollbar.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation CSS/JS; parse CSS Dictation (183 quy tắc, 0 lỗi); assertions xác nhận hai target dùng chung width và có thumb colors cho cả theme; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.676 | Arena sửa:**
-  - Dictation: ô nhập và `#te-dict-sentences` cùng reset `scrollbar-width`/`scrollbar-color` về `auto` và đặt chiều rộng/cao WebKit bằng `var(--lhn-scrollbar-width)`; ô nhập cuộn dọc khi nội dung tràn.
-  - File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho Dictation CSS/JS; parse CSS Dictation (179 quy tắc, 0 lỗi); source assertions xác nhận cả hai scrollbar dùng cùng biến và textarea có `overflow-y:auto`; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-28 | v3.4.675 | Arena sửa:**
-  - YouTube: khi mở video overlay, ẩn scrollbar dọc trang bằng cách lưu/khôi phục inline `overflow-y` của `html` và `body`; khi overlay đóng sẽ khôi phục cả trạng thái trước đó. Dictation vẫn được đóng trước khi khôi phục style của overlay.
-  - Dictation: scrollbar textarea dùng chung `--lhn-scrollbar-width` thay vì dựa vào mặc định trình duyệt; reset `scrollbar-width`/`scrollbar-color` để quy tắc WebKit theo biến chung có hiệu lực.
-  - File: `js/video/dual-subtitles.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` JS liên quan; parse CSS Dictation (178 quy tắc, 0 lỗi); source assertions cho vòng đời ẩn/khôi phục và biến chung; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.674 | Arena sửa:**
-  - Dictation: sửa nguyên nhân thực tế khiến ↑/↓ bị chặn. Ô nhập nằm trong Shadow DOM, vì vậy listener capture bên ngoài thấy `event.target` là host; các listener Reader/voice picker nay kiểm tra `composedPath()` để không lấy mất phím mũi tên từ textarea.
-  - File: `js/content/content.js`, `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho `content.js`, `bilingual-reader.js`, `dictation.js`; mock `composedPath` xác nhận ↑/↓ từ textarea được bỏ qua, Enter và mũi tên ngoài ô nhập không đổi; kiểm tra source assertions; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.673 | Arena sửa:**
-  - Dictation: ArrowUp/ArrowDown trong textarea được trả về xử lý mặc định của trình duyệt bằng cách bỏ qua `stopPropagation()` tại listener riêng; xử lý Enter và phím khác giữ nguyên.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js`; mock handler xác nhận ArrowUp/Down không bị chặn và Enter/phím khác giữ luồng; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.672 | Arena sửa:**
-  - Dictation: lưu trạng thái đã chấm trước khi nhập; chỉ gọi `updateRows(false)` nếu người dùng bắt đầu sửa một đáp án đã chấm đúng. Gõ thông thường không còn duyệt/cập nhật lại danh sách câu theo từng phím.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js`; mock handler xác nhận không refresh khi gõ thường và refresh đúng một lần sau đáp án đã chấm; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.671 | Arena sửa:**
-  - Khi có đáp án sai, ô nhập giữ nguyên vị trí: input và gợi ý được giữ trong cùng một flex stack, còn `te-dict-error` được đặt tuyệt đối bên dưới stack để không làm thay đổi chiều cao đang được căn giữa. Trạng thái khác giữ luồng bố cục hiện có.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/CSS; CSS Dictation (177 quy tắc, 0 lỗi); assertion thứ tự DOM, error absolute bên dưới stack và gỡ trạng thái khi rời nhánh sai; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.670 | Arena sửa:**
-  - Dựa trên phần Dictation của v3.4.668; đặt pháo hoa vào lớp absolute riêng, tách khỏi các item grid của overlay để không làm thanh `.te-control-bar` dịch chuyển.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/CSS; CSS parse (175 quy tắc), xác nhận lớp pháo hoa absolute/contained; mock test xác nhận 90 mảnh nằm trong một lớp và được dọn sau 1.5 giây; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.669 | Arena sửa:**
-  - Chỉ tối ưu pháo hoa Dictation để giảm khựng: giảm số mảnh từ 90 xuống 60, gom vào một `DocumentFragment` để thêm vào DOM một lần và dùng một timer để dọn cả nhóm.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js`; mock test xác nhận 60 mảnh/1 lần append/1 timer và xóa đủ mảnh; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.668 | Arena sửa:**
-  - Dictation: sau khi chấm đúng toàn bộ từ, tự bổ sung dấu câu còn thiếu theo câu mẫu; giữ nguyên ký tự chữ người dùng đã nhập. Chỉ chạy trong nhánh trả lời đúng, không tác động câu có từ sai.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js`; 6 trường hợp hoàn thiện dấu câu và 2 kiểm tra điều kiện chấm đúng/sai; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.667 | Arena sửa:**
-  - Dictation: trạng thái blur/khóa của câu hiện tại dựa trên lần chấm đúng trong phiên hiện tại, không dựa vào kết quả lưu cũ; câu hiện tại và phía dưới ẩn dịch/blur, các câu phía trên không blur và hiện dịch. Mở/chuyển câu luôn phát audio; repeatCount là số lượt thêm (tổng n+1). Khi đúng, giữ toàn bộ câu trong `te-dict-error-words` dưới dạng từ màu xanh.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/CSS/scorer; parse manifest JSON; CSS Dictation 174 quy tắc, 0 lỗi; assertion blur/dịch, khóa khi mở lại, repeat count và câu đúng; `git diff --check` — đạt. Đã fetch branch GitHub, cây mã nguồn trùng baseline. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.666 | Arena sửa:**
-  - Dictation: bắt buộc mọi chữ trong `te-dict-error-words` cỡ 14px; khi chấm đúng, câu hiện tại được mở (không blur), `te-dict-error` chuyển nền/viền xanh như success, tiêu đề `Câu đúng` có icon tick xanh; gợi ý từ thiếu không có dấu mũi tên.
-  - Khi mở Dictation tự phát câu hiện tại (câu đầu hoặc câu tiếp tục từ tiến độ) theo repeat setting, kể cả Auto-play đang tắt; 0x vẫn phát một lần. Ẩn scrollbar dọc trang YouTube trong khi Dictation mở và khôi phục style cũ khi đóng.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các JS Dictation/localization; CSS Dictation (174 quy tắc, 0 lỗi); localization EN/VI/KO; assertion tính năng; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.665 | Arena sửa:**
-  - Dựa trên mã nguồn v3.4.663; dùng `checkedCurrent` để giữ đúng luồng: gõ không đổi màu/chưa chấm, Enter mới chấm; chỉ kết quả đúng 100% mới bật hiệu ứng/lời chúc/bản dịch, lúc đó Chấm điểm mất vàng và Câu tiếp vàng. Enter tiếp theo bấm Câu tiếp; không tự chuyển câu cùng lúc chấm.
-  - Bản 3.4.664 bị người dùng từ chối; giữ ZIP đó nguyên vẹn và phát hành bản sửa này ở version mới.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba tệp Dictation JS; CSS Dictation (170 quy tắc, 0 lỗi); `python3 -m json.tool manifest.json`; assertion trạng thái gõ/chấm/hiệu ứng/màu nút/Enter; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.663 | Arena sửa:**
-  - Dictation: khi chưa có câu nào đã giải thì mở từ câu đầu; nếu đã có kết quả thì lưu/khôi phục đúng câu đang học, với các câu phía trên có thể mở và không blur. Kết quả cũ không có chỉ số hiện tại sẽ quay về câu chưa giải đầu tiên sau chuỗi đã giải.
-  - `te-dict-translation` chỉ hiện sau khi câu hiện tại được chấm đúng 100%, ẩn khi sửa đáp án sai hoặc chuyển câu; ẩn `te-dict-error` khi gõ/phát sinh input. Enter sau câu đã đạt 100% bấm trực tiếp Câu tiếp.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba tệp Dictation JS; CSS Dictation (170 quy tắc, 0 lỗi); parse manifest; assertion các hành vi tiến độ/blur/dịch/lỗi/Enter/↑↓; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
-
-- **2026-10-27 | v3.4.662 | Arena sửa:**
-  - Dictation: ẩn nghĩa VI ở các câu blur/khóa trong danh sách kể cả khi bản dịch đã lưu; Enter với đáp án chưa đúng 100% kích hoạt nút Chấm điểm; khi đạt 100%, nút Chấm điểm dùng cùng kiểu màu nền với Nghe chậm và cập nhật lại khi sửa đáp án. Giữ xử lý ↑/↓ trong ô nhập/ghi chú như văn bản thông thường vốn có ở bản 3.4.661.
-  - Chỉ sửa trong module Dictation ngoài việc bump version và cập nhật nhật ký/trạng thái; không thay đổi tính năng ngoài phạm vi. Kiểm thử UI trên trình duyệt thật: Chưa chạy.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` Dictation JS/scorer; CSS Dictation (169 quy tắc, 0 lỗi); assertion hành vi cho blur/bản dịch, Enter, màu nút và ↑/↓; `git diff --check` — đạt. UI runtime: Chưa chạy.
-
-- **2026-10-27 | v3.4.661 | Claude sửa:**
-  - Dictation (7): ↑/↓ trong ô nhập và ô ghi chú không còn bị chặn; con trỏ di chuyển như văn bản thường. ↑/↓ ngoài ô nhập vẫn bị chặn.
-  - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dictation/dictation.js` — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: làm rõ mục 2 (phạm vi blur câu dịch) và mục 6 (hành vi Enter sau khi đúng 100%).
-
-
-- **2026-10-27 | v3.4.660 | Claude sửa:**
-  - Dictation: (2) danh sách câu từ câu đang nhập trở xuống luôn blur và không bấm được; (3) ghi chú khóa khi vào mỗi câu, chỉ mở sau khi đúng 100%; (4) lỗi theo vị trí: đúng xanh, sai gạch đỏ + gợi ý vàng, dừng ở lỗi đầu tiên, từ thừa báo "thừa", bỏ chip +N; (5) lặp mặc định 3, kể cả nghe chậm; (6) Enter sau khi đúng 100% chuyển focus sang Câu tiếp (vàng), nút Chấm điểm xám, Enter tiếp theo sang câu kế; (7) ↑/↓ trong ô nhập chỉ di chuyển con trỏ; (10) ↑/↓ ngoài ô nhập bị chặn; (11) danh sách cuộn giữa câu hiện tại; (12) thông báo thành công nằm trên ô nhập.
-  - Phím tốc độ overlay (8, 9): đổi ↑/↓ thành Shift+> (tăng) và Shift+< (giảm), bước 0.05; khi đang gõ trong ô nhập thì nhập ký tự bình thường.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-27 | v3.4.659 | Claude sửa:**
-  - Dictation v1 đổi UI khu giữa theo file mẫu: tiêu đề + huy hiệu độ chính xác, thẻ âm thanh video kèm "Tự phát khi chuyển câu", ô nhập lớn viền hổ phách, phân tích lỗi từng từ (đúng/sai gạch + từ sửa/thừa; từ thiếu gộp thành chip +N, không lộ đáp án), banner thành công, thẻ dịch, hàng Lặp 0x–3x và 5 nút Câu trước/Phát lại/Chấm điểm/Nghe chậm/Câu tiếp. Hàng câu dùng chip số + icon; ghi chú có nút lưu ở tiêu đề, dòng tự lưu ở chân; thanh điều khiển có vòng độ chính xác. Giữ nguyên các điểm đã chốt: thanh điều khiển full-width, "Câu tiếp" khóa đến khi gõ đúng, `#18181b` chỉ ở dark mode, chưa làm Nói.
-  - Âm thanh Web Audio đúng (4 nốt) và sai (sawtooth) như file mẫu; pháo giấy cục bộ 90 mảnh, không dùng CDN.
-  - Phát đúng một câu: mở Dictation thì tạm dừng và tua về đầu câu; mọi lần phát (Ctrl, nút, click video, Space) bị giới hạn trong câu hiện tại và dừng bằng requestAnimationFrame (không dùng timeupdate vì trôi sang câu sau); không tự nhảy câu; tạm tắt vòng lặp câu của Dual Sub khi mở và khôi phục khi đóng; Nghe chậm 0.6x tự khôi phục tốc độ.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/dictation/dictation-score.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho 3 file Dictation và `languages.js`; manifest parse được; 40 khóa `dictation*` có đủ EN/VI/KO; kịch bản Chromium headless (Playwright) trên CSS/HTML overlay thật với video giả lập có đồng hồ: 30/30 mục đạt, không lỗi trang. Chưa chạy trên YouTube thật (Chrome/Edge/Firefox).
-  - Lưu ý: chưa làm dòng IPA dưới ô nhập (file mẫu có) và chế độ Nói (v2); README và OPT-ARENA.md chưa cập nhật.
-
-- **2026-10-27 | v3.4.658 | Arena sửa:**
-  - Hoàn thiện Dictation v1 ngay trong YouTube overlay Dual Sub hiện có: video YouTube thật, danh sách câu tiếng Anh nạp dần quanh câu đang phát, chấm theo căn chỉnh từ, dịch Việt sau khi giải đúng, ghi chú/tiến độ lưu cục bộ theo video và câu; tái sử dụng thanh điều khiển và giữ X/AI keepit để đóng chế độ.
-  - Khóa cạnh tranh khi nạp tiến độ/dịch theo video và phiên hiện hành; chuyển câu xóa trạng thái đúng cũ; tải phụ đề thất bại phát sự kiện để không giữ nội dung cũ. Chỉ có chế độ Đánh máy trong v1, không xin quyền micro.
-  - Chuỗi giao diện mới có EN/VI/KO; README, OPT-ARENA §8.1.2 và bản đồ kiến trúc được cập nhật.
-  - File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/video/dual-subtitles.js`, `js/core/languages.js`, `manifest.json`, `README.md`, `OPT-ARENA.md`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 45/45 JS; `python3 -m json.tool manifest.json`; CSS Dictation (97 quy tắc, 0 lỗi); 44 đường dẫn cục bộ trong manifest; chuỗi EN/VI/KO đủ; 3 ca scorer (hoa thường/dấu câu/nháy cong, căn chỉnh, từ thừa); kiểm tra scope v1/load order; `git diff --check` — đạt. Kiểm thử UI trên trình duyệt thật: Chưa chạy (môi trường không có trình duyệt/Playwright).
-
-- **2026-10-26 | v3.4.656 | Claude sửa:**
-  - Chỉ sửa ô tìm Settings của Dashboard: (1) cao 40px; (2) thêm icon tìm kiếm bên trái trong ô (bộ path `search` của app); (3) ô dính ở đầu khi cuộn (`position: sticky`, nền trùng nền Settings, bù padding của vùng nội dung ở các mức ≤700px và ≤520px); (4) tô sáng kết quả bằng `mark.lhn-search-match` (nền `#fff2ad` như Dashboard/sidebar), chỉ trong nhãn, mô tả và tiêu đề của hàng/nhóm đang hiện, khớp không phân biệt hoa thường và dấu; gỡ sạch mark khi xóa ô tìm.
-  - Thêm một quy tắc dark mode giới hạn trong Settings: chữ trong mark đổi sang `#111827` để đọc được trên nền vàng. Không đổi highlight ở Dashboard/sidebar.
-  - Lưu ý: chuẩn hóa dùng chung chưa gộp chữ `đ` thành `d` nên gõ "toc do" chưa khớp "tốc độ" (gõ "toc" khớp); lọc và tô sáng cùng hành vi.
-  - File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/settings-ui.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/dashboard/settings-ui.js` và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật: ô cao đúng 40px, icon nằm trong ô và canh giữa, mark chỉ nằm trong hàng đang hiện, khớp không dấu ("toc" → "tốc"), ô dính ở top 0 sau khi cuộn hết, sau Esc DOM giống hệt ban đầu và không còn mark, dark mode có màu mark và nền ô đúng. Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
-
-- **2026-10-26 | v3.4.655 | Claude sửa:**
-  - Thêm ô tìm ở đầu Settings của Dashboard: gõ (debounce 200 ms, `LHN_INDEX_SEARCH`, không phân biệt hoa thường và dấu) để ẩn các hàng không khớp qua mọi tab, ẩn nhóm/tab trống và hiện "No settings found" khi không có kết quả; xóa ô tìm (Esc, đổi tab, đóng hộp thoại) thì về nguyên trạng. Từ khóa mỗi hàng gồm nhãn, mô tả, tiêu đề h3 gần nhất và tiêu đề tab; không làm nổi bật kết quả. Chỉ bật/tắt class tạm, không đổi `hidden`.
-  - Chuỗi mới `settingsSearchPlaceholder`, `settingsSearchNoResults` (EN/VI/KO). Nút Reset của tab Shortcut được ẩn trong lúc tìm.
-  - Chưa làm (đã chốt, xem Việc đang mở 27): làm nổi bật ẩn và điều hướng ↑/↓.
-  - File: `pages/dashboard.html`, `js/dashboard/settings-ui.js`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `css/dashboard/dashboard.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` 3 file JS đã sửa và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật + `search.js` + `settings-ui.js`: 10 ca đạt (debounce, lọc theo nhãn/mô tả/tiêu đề tab, không khớp, Esc/đổi tab/đóng hộp thoại xóa sạch class, thuộc tính `hidden` không đổi). Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
-
-- **2026-10-26 | v3.4.654 | Claude sửa:**
-  - Sửa lỗi xung đột tên: `js/shared/search.js` (v3.4.652–653) ghi đè `globalThis.LHN_SEARCH` của `js/translate/search.js` (có `highlightMatches`, `rank`), làm hỏng highlight ở sidebar và Dashboard. Đổi tên module mới thành `LHN_INDEX_SEARCH` và cập nhật các nơi gọi (bilingual-reader, popup, settings-ui).
-  - File: `js/shared/search.js`, `js/reader/bilingual-reader.js`, `js/popup/popup.js`, `js/dashboard/settings-ui.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.653 | Claude sửa:**
-  - Áp dụng `LHN_SEARCH` (bỏ dấu, không phân biệt hoa thường) cho ô chọn ngôn ngữ của popup (`js/popup/popup.js`) và Settings Dashboard (`js/dashboard/settings-ui.js`); nạp `js/shared/search.js` trong `pages/popup.html` và `pages/dashboard.html`.
-  - Không đổi: ô tìm Dashboard (đã có debounce riêng); `js/translate/search.js` (tìm chữ trong trang, không phải lọc danh sách).
-  - File: `js/popup/popup.js`, `js/dashboard/settings-ui.js`, `pages/popup.html`, `pages/dashboard.html`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.652 | Claude sửa:**
-  - Thêm module tìm kiếm dùng chung `js/shared/search.js` (`LHN_SEARCH`: normalize, createIndex, search, debounce 200 ms). Áp dụng thử cho ô tìm giọng trình duyệt: chỉ mục tính một lần và cache theo danh sách giọng; gõ được debounce 200 ms; bỏ qua khi truy vấn chuẩn hóa không đổi.
-  - Chưa áp dụng cho Dashboard, sidebar, flashcard (chờ kết quả thử nghiệm ở chọn giọng).
-  - File: `js/shared/search.js` (mới), `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho `search.js` và `bilingual-reader.js` — đạt. Thử nghiệm module trong Node với 600 giọng giả: 0 sai khác so với lọc thủ công trên 1000 truy vấn; tìm trung bình ~0,05 ms; 3 lần gõ nhanh chỉ gọi 1 lần. Trên Edge: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.651 | Claude sửa:**
-  - Ô tìm kiếm giọng trình duyệt: tìm theo tên giọng, mã vùng, mã ngôn ngữ, và tên quốc gia/ngôn ngữ bằng ngôn ngữ hiển thị lẫn tiếng Anh; không phân biệt hoa thường và dấu (chuẩn hóa NFD). Chưa hỗ trợ viết tắt không chuẩn như "UAE" (chỉ mã AE).
-  - File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.650 | Claude sửa:**
-  - Danh sách giọng trình duyệt (Select Voice): hiển thị 2 dòng — dòng 1 tên quốc gia, dòng 2 tên giọng ngắn · ngôn ngữ; tooltip giữ tên đầy đủ và mã ngôn ngữ. Tên lấy từ `Intl.DisplayNames` theo ngôn ngữ hiển thị. Danh sách Google TTS giữ nguyên.
-  - File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
-  - Việc đang mở: chưa thêm từ khóa tìm kiếm ẩn (đề xuất trước đó, chờ quyết định).
-
-
-- **2026-10-26 | v3.4.649 | Claude sửa:**
-  - Thêm cờ cho các giọng Edge còn thiếu (từ danh sách console): AE, BH, DZ, EG, IQ, JO, KW, LB, LY, MA, OM, QA, SY, TN, YE, AZ, BG, BA, KE, NG, SG, TZ, BO, CR, CU, DO, EC, GQ, GT, HN, NI, PA, PE, PR, PY, SV, UY, VE, EE, HR, IS (flag-icons 1x1, MIT). Ánh xạ thêm CANS → cờ Canada cho giọng Inuktitut.
-  - File: `js/reader/bilingual-flags.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-flags.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.648 | Claude sửa:**
-  - Debug: khi mở danh sách giọng đọc trình duyệt, log ra console (`console.info`) mỗi vùng chưa có cờ, kèm tên giọng và mã ngôn ngữ, để lập danh sách cờ còn thiếu. Không đổi UI.
-  - File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.647 | Claude sửa:**
-  - Thêm cờ còn thiếu cho các giọng Edge không có cờ: AU, CA, IE, ZA, NZ, MX, AR, CO, CL, AT, CH, PT, NL, BE, SE, NO, DK, FI, CZ, GR, HU, MY, IL, KZ (từ flag-icons 1x1, MIT, đã rút gọn SVG). Ánh xạ vùng trong `FLAG_REGION_KEYS`.
-  - File: `js/reader/bilingual-flags.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-flags.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.646 | Claude sửa:**
-  - Thanh đọc `#lhn-bilingual-reading-bar` chỉ ẩn khi bấm nút đóng (`data-close`) hoặc bật/tắt bằng Alt+R. Bỏ các trường hợp tự ẩn: reader không hoạt động, website bị tắt. Hàm `closeReadingBar()` dùng cho cả hai đường đóng hợp lệ.
-  - File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.645 | Claude sửa:**
-  - Phím ↑/↓ tăng/giảm tốc độ video 0.05 khi overlay đang mở (bỏ gán cũ cho "Audio"); bỏ qua khi đang gõ trong ô nhập.
-  - Hiện mức tốc độ hiện tại (`te-speed-label`) bên phải nút "Tốc độ", cỡ chữ 18px như giá trị trong popup (giả định, chờ xác nhận).
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.644 | Claude sửa:**
-  - Popup tốc độ hiện căn giữa phía trên nút "Tốc độ" (thay cho vị trí cố định góc phải dưới). Vị trí tính từ hình chữ nhật của nút và kích thước thực của popup; sát mép thì kéo vào trong.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.643 | Claude sửa:**
-  - Nút "Tốc độ" trên thanh điều khiển video mở popup tốc độ (từ speed_control_component): 8 mức (0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0), thanh trượt 0.5–2.0 bước 0.05, nút −/+. Hai mode sáng/tối theo theme overlay. Thay cho chuyển tốc độ tuần tự trước đây.
-  - Logic: đặt `video.playbackRate`, đồng bộ mức đang dùng; bấm ra ngoài popup thì đóng.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: nhãn "Bình thường" (nút 1.0) chưa dịch đủ ngôn ngữ (theo yêu cầu tạm thời).
-
-
-- **2026-10-26 | v3.4.642 | Claude sửa:**
-  - Full dict popup: bỏ lần vẽ sớm (chỉ có nghĩa chính). Popup giữ khung tải và chỉ vẽ một lần khi đã có đủ nghĩa, từ liên quan và IPA. Nhánh mở từ ghi chú không đổi.
-  - File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/content/content.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.641 | Claude sửa:**
-  - Hoàn tác v3.4.640 (gom nhóm Cài đặt video): mã nguồn trở về đúng nội dung v3.4.639, theo yêu cầu. Đánh số 3.4.641 vì gói 3.4.639 đã xuất và không ghi đè được.
-  - File: toàn bộ mã nguồn được khôi phục từ gói 3.4.639 (`js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`).
-  - Kiểm tra: so sánh nội dung với gói 3.4.639 — khớp. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.640 | Claude sửa:**
-  - Cài đặt video gom thành 4 nhóm có tiêu đề: Hiển thị (Chế độ xem, Chủ đề, Ambient mode, Ẩn thanh điều khiển); Phụ đề (Ngôn ngữ phụ đề, Tùy chọn phụ đề, Kết hợp câu, Ẩn bản dịch); Học tập và tương tác (Hiện popup dịch trực tiếp, Nhấp để phát âm, Đánh dấu từ); Dữ liệu và công cụ (Bộ dịch, Bộ sưu tập, Xuất phụ đề).
-  - Công tắc có `data-setting` (popup, speak, combine, hidevi, hidectrl) và `sw(key)` thay cho chỉ số `mainSw[i]` để đổi thứ tự không làm lệch.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: các tiêu đề nhóm (Hiển thị, Phụ đề, Học tập và tương tác, Dữ liệu và công cụ) chưa dịch đủ ngôn ngữ (theo yêu cầu tạm thời).
-
-
-- **2026-10-26 | v3.4.639 | Claude sửa:**
-  - Gỡ đề xuất Ambient 3 của v3.4.638 (sáng hơn, mờ dần): Ambient 3 trở về như v3.4.637.
-  - Đổi thứ tự và nhãn: Ambient 1 = cạnh viền lan 50% (trước là 2); Ambient 2 = cạnh viền lan 100% (trước là 3); Ambient 3 = radial (trước là 1). Menu Tắt | Ambient 1 | Ambient 2 | Ambient 3.
-  - Khóa lưu đổi từ `ambientMode` sang `ambientStyle`, mặc định Ambient 3 (radial). Các lựa chọn đã lưu trước đó sẽ về mặc định.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: nhãn "Ambient 1–3" và "Tắt" chưa dịch (theo yêu cầu tạm thời).
-
-
-- **2026-10-26 | v3.4.638 | Claude sửa:**
-  - Ambient 3 khác Ambient 2: sáng hơn (opacity 0.85 so với 0.6) và mờ dần về phía mép khung 100% bằng mặt nạ radial (class `te-ambient-mode-3`).
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.637 | Claude sửa:**
-  - Ambient 3: phạm vi lan tăng từ 80% lên 100% khoảng trống còn lại theo từng hướng.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-26 | v3.4.636 | Claude sửa:**
-  - Ambient 3: cùng cách hiển thị cạnh viền 16:9 như Ambient 2, nhưng ánh sáng lan tối đa 80% khoảng trống còn lại (Ambient 2 là 50%). Bỏ khóa nút Ambient 3 trong menu.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: nhãn "Ambient 3" chưa dịch (theo yêu cầu tạm thời).
-
-
-- **2026-10-26 | v3.4.635 | Claude sửa:**
-  - Ambient mode: bỏ công tắc; hàng "Ambient mode" mở menu con (giống Tùy chọn phụ đề) với nhóm nút Tắt | Ambient 1 | Ambient 2 | Ambient 3. Ambient 1 = radial hiện tại; Ambient 2 = mới, lấy màu viền khung video, khung 16:9 lan tối đa 50% khoảng trống trên màn hình theo từng hướng; Ambient 3 làm mờ, không bấm được.
-  - Lưu `ambientMode` (mặc định '1') trong `js/core/defaults.js`; `ambient` giữ đồng bộ để tương thích.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-  - Việc đang mở: nhãn "Ambient mode", "Tắt", "Ambient 1–3" chưa dịch đủ ngôn ngữ hiển thị (theo yêu cầu tạm thời).
-
-
-- **2026-10-26 | v3.4.634 | Claude sửa:**
-  - Overlay video, theo yêu cầu của người dùng: (1) Ambient mode làm lại theo ảnh YouTube: lớp `te-ambient-layer` ở cấp overlay (z-index -1), canvas vuông 48x48 đặt tâm ở giữa `te-video-slot` (JS `placeAmbient` + `ResizeObserver`), kích thước 2,1 lần cạnh lớn nhất của video, mặt nạ `radial-gradient` tròn mờ dần, `blur(40px) saturate(1.8)`, opacity 0,5; khi bật, `te-left-section`/`te-control-bar`/`yt-dual-right-sidebar` trong suốt và nền gốc đặt ở root (#ffffff/#121212) nên màu nền sáng/tối không đổi; thêm công tắc "Ambient mode" ở Cài đặt video (công tắc thứ 6, sau "Ẩn thanh điều khiển"), mặc định bật, lưu ở `lhnYouTubeSettings.ambient` (thêm `ambient: true` vào `LHN_DEFAULTS.youtube`); gỡ các chỉnh sửa ambient cũ trong `te-left-section`; (2) tiêu đề video chạy vòng tròn nối đuôi: khi hover chữ bị cắt, JS thêm bản sao `te-title-dup` cách 32px và chạy đúng một vòng (tốc độ 40px/s, tuyến tính, lặp vô hạn), rời chuột thì gỡ bản sao; (3) header sidebar căn giữa dọc: dấu × đổi từ ký tự `&times;` sang SVG căn giữa, chữ tiêu đề canh theo chiều cao chữ hoa (`text-box: trim-both cap alphabetic`, trình duyệt chưa hỗ trợ thì nhích lên 1,5px).
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho 3 file JS — đạt; dựng overlay bằng Chromium 141 (Playwright) và chụp ảnh ambient bật/tắt theme sáng/tối, nền root #ffffff khi bật và 3 vùng trong suốt — đạt; đo header: tâm chiều cao chữ hoa 23,5px = tâm header 23,5px, logo và × lệch 0,5px (header 47px lẻ) — đạt; marquee: bản sao cách đúng 524px bằng một vòng, tốc độ đều, rời chuột reset, tiêu đề ngắn không chạy — đạt; mô phỏng Node 10 ca ambient (bật, không vẽ lại khi không đổi khung, seek xa, công tắc tắt, reduced-motion, lỗi đọc hình, tab ẩn, mặc định) — đạt. Trên YouTube thật, Firefox và font Segoe UI: Chưa chạy.
-  - Lưu ý: toàn bộ nhãn menu Cài đặt video hiện là tiếng Việt cố định, chưa có cơ chế dịch; nhãn mới dùng "Ambient mode" (từ mượn, giữ nguyên ở mọi ngôn ngữ). Kích thước logo sidebar 26px là giá trị trong zip của người dùng, giữ nguyên. Không có git trong môi trường làm việc, chưa commit.
-
-- **2026-10-26 | v3.4.633 | Claude sửa:**
-  - Overlay video, theo yêu cầu của người dùng: (1) `te-video-title-label` thành khung cắt riêng, chữ chạy nằm trong `te-video-title-text`, icon YouTube đứng yên và chữ bị cắt ở mép icon (trước đó chữ trượt đè lên icon rồi biến mất ở mép `te-yt-logo-box`); (2) nền vùng trống khi ẩn phụ đề/thanh điều khiển nay là màu nền theo light/dark (`te-left-section` #ffffff/#121212), `te-sub-container` trong suốt; (3) hàng active ở sidebar bỏ `border-left` (gây xê dịch nội dung mỗi lần đổi câu), dùng `box-shadow: inset` kèm transition nền 0.3s, cuộn bằng `scrollTo` mượt khi gần và nhảy thẳng khi xa; (4) thêm Ambient mode kiểu YouTube: canvas 48x27 vẽ khung video mỗi 125 ms (pha 35% với khung trước), làm mờ `blur(48px) saturate(1.8)` opacity 0.45 phía sau video/phụ đề; chỉ vẽ khi tab hiện và khung đổi, tự tắt nếu video không cho đọc hình, tắt khi `prefers-reduced-motion`.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho hai file JS — đạt; kiểm tra chuỗi trên template (nền light/dark, canvas, khung tiêu đề, sidebar) — đạt; mô phỏng bằng Node: logic ambient (bật, không vẽ lại khi không đổi khung, seek xa, lỗi đọc hình thì tắt, tab ẩn, reduced-motion) và đo marquee (400px chạy 260px/8.4s, 90px không chạy) — đạt. Trên trình duyệt: Chưa chạy.
-  - Lưu ý: Ambient không có công tắc vì nhãn menu "Cài đặt video" hiện chỉ có tiếng Việt, thêm công tắc phải dịch đủ ngôn ngữ; ambient làm sub-container hiển thị màu video phía sau nên cần kiểm tra độ dễ đọc. Mục (1) và (2) là cách hiểu yêu cầu của người dùng, cần xác nhận. Không có git trong môi trường làm việc, chưa commit.
-
-- **2026-10-26 | v3.4.632 | Claude sửa:**
-  - Overlay video, theo yêu cầu của người dùng: (1) thêm logo SVG Keepit bên trái chữ "Keepit - Video Song Ngữ" ở `yt-dual-sidebar-header` (SVG inline từ `icon.svg`, bỏ bộ lọc đổ bóng, 20px); (2) `te-video-title-label` chạy qua lại khi hover nếu tiêu đề bị cắt (CSS keyframes + JS đo độ dài bị cắt lúc `mouseenter`, tôn trọng `prefers-reduced-motion`); (3) sửa lỗi bật "ẩn thanh điều khiển" thì hover không hiện lại: nguyên nhân là `display:none` nên phần tử không nhận hover; đổi sang `opacity:0` và hiện lại bằng `:hover`/`:focus-within`.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho hai file JS — đạt; kiểm tra chuỗi trên template (logo, CSS ẩn thanh điều khiển, keyframes) — đạt; mô phỏng hàm đo marquee bằng Node (tiêu đề 400px: chạy, dịch 260px/8.4s; tiêu đề 90px: không chạy; rời chuột: gỡ class) — đạt. Trên trình duyệt: Chưa chạy.
-  - Lưu ý: khi thanh ẩn, vùng đáy 70px vẫn nhận chuột (trong suốt) nên click vào vùng đó không còn đến video; không có git trong môi trường làm việc, chưa commit.
-
-- **2026-10-25 | v3.4.631 | Claude sửa:**
-  - Tối ưu hiệu năng overlay video (không đổi UI): (2) cache nút transcript khi còn kết nối; (3) throttle sự kiện cuộn danh sách bằng requestAnimationFrame; (5) bỏ qua cập nhật phụ đề khi dòng đang hiển thị không đổi; (6) cache tham chiếu `ui()` còn kết nối.
-  - Chưa làm: (1) dựng danh sách theo cửa sổ ảo; (4) gộp hai bộ đếm thời gian; (7) chuyển inline style sang class; (8) gộp selector theme trùng. Lý do: cần kiểm thử thủ công và xác nhận hiển thị trước.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.630 | Claude sửa:**
-  - Xóa ảnh placeholder cứng (SVG chữ "They want a better future…") khỏi `.te-video-slot` của overlay video. Vùng trống khi video chờ tải hoặc 4:3 nay là nền `#111` ở cả dark và light mode.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.629 | Claude sửa:**
-  - Gỡ thử nghiệm bo 4 góc popup trên Chromium (v3.4.628): không đạt và giới hạn khung cửa sổ thuộc trình duyệt. Popup trở về như v3.4.627.
-  - File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.628 | Claude sửa:**
-  - Popup toolbar trên Chromium (Edge) không bo 4 góc như Firefox. Thêm class `is-chromium` (popup.js, chỉ khi không phải Firefox) và bo góc nội dung 14px chỉ cho class này. Firefox không đổi.
-  - Giới hạn: khung cửa sổ popup của Chromium là hình chữ nhật; CSS chỉ bo nội dung, góc có thể vẫn thấy nền trình duyệt. Chưa xác nhận trên Edge.
-  - File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.627 | Claude sửa:**
-  - Popup toolbar (Edge/Chromium): thanh cuộn vẫn hiện kiểu mặc định dù đã có biến 3px. Đặt `scrollbar-width`/`scrollbar-color` về `auto` và áp `::-webkit-scrollbar` rõ ràng cho `html`, `body`, `.popup-main` theo `--lhn-scrollbar-width`. Chưa xác nhận nguyên nhân gốc.
-  - File: `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: không có JS thay đổi. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.626 | Claude sửa:**
-  - Toàn app: thanh cuộn rộng/cao theo một biến duy nhất `--lhn-scrollbar-width: 3px` (`css/shared/ui-tokens.css`). Áp cho popup, dashboard, UI Keepit (`[id^="lhn-"]`), khung Cài đặt video và overlay phụ đề. Không áp cho thanh cuộn của website.
-  - Các thanh cuộn dùng `scrollbar-color`/`scrollbar-width` (sidebar, popup dark, toolbar dashboard) chuyển về `auto` để quy tắc WebKit có tác dụng; màu thumb giữ như cũ.
-  - Giới hạn: Firefox không đặt được độ rộng bằng px; thanh vẫn theo kiểu `thin` của trình duyệt.
-  - File: `css/shared/ui-tokens.css`, `css/content/content.css`, `css/popup/popup.css`, `css/dashboard/dashboard.css`, `js/reader/bilingual-reader.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.625 | Claude sửa:**
-  - Thanh cuộn Cài đặt video (`.te-modal-body`) cố định 3px, bỏ đổi kích thước khi rê chuột (bỏ hai quy tắc `:hover`).
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.624 | Claude sửa:**
-  - Thanh cuộn Cài đặt video (`.te-modal-body`) vẫn hiện dày và xám dù đã có quy tắc WebKit. Giả thuyết: Chromium bỏ qua `::-webkit-scrollbar` khi `scrollbar-color`/`scrollbar-width` được kế thừa không phải `auto`. Đặt lại hai thuộc tính này về `auto` cho `.te-modal-body`, để quy tắc 2px/4px có hiệu lực.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy (giả thuyết chưa xác nhận).
-
-
-- **2026-10-25 | v3.4.623 | Claude sửa:**
-  - Làm lại từ v3.4.622: hoàn tác thử nghiệm trên danh sách phụ đề (v3.4.623 cũ). Thanh cuộn của khung Cài đặt video (`.te-modal-body`) nay rộng 2px khi không rê chuột, 4px khi rê vào khung. Không tạo thanh tự vẽ.
-  - Giới hạn: CSS không đo được rê riêng lên thanh, nên 4px kích hoạt khi rê vào khung Cài đặt. Firefox không đổi được độ rộng thanh cuộn bằng CSS, giữ nguyên.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.624 | Claude sửa:**
-  - Sửa thử nghiệm thanh cuộn mảnh: v3.4.623 áp nhầm vùng (`.te-transcript-scroll`). Thanh cuộn của khung Cài đặt video là `.te-modal-body`; nay áp cùng kiểu mảnh/tím cho vùng này. Không đổi bố cục.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.623 | Claude sửa:**
-  - Thử nghiệm thanh cuộn mảnh trên overlay video (Dual Sub): áp CSS thuần cho `.te-transcript-scroll` (scrollbar-width thin cho Firefox; ::-webkit-scrollbar 4px cho Chromium, nở khi rê). Không thêm DOM, không đổi bố cục.
-  - Giới hạn: Firefox không có hiệu ứng nở khi rê và không tự ẩn; chưa có thanh tự vẽ bằng JS như scrollbar-demo.html.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
+**2026-10-29 | v3.4.733 | Arena phát hành:**
 
+- Đưa tài liệu kỹ thuật nội bộ vào source app và gói phát hành: mục lục `docs/INDEX.md` cùng hướng dẫn của 10 module first-party; tăng patch version theo yêu cầu.
+- File: `manifest.json`, `PROJECT.md` (các file docs đã được thêm ở v3.4.732).
+- Kiểm tra: `node --check` 45/45 JavaScript; manifest JSON/version v3.4.733 hợp lệ; docs 10/10 đúng khung và liên kết; `git diff --check` — đạt. ZIP được xác minh sau khi đóng gói.
+
+**2026-10-29 | v3.4.732 | Arena cập nhật tài liệu:**
+
+- Thêm `docs/INDEX.md` và hướng dẫn cho 10/10 module first-party cấp cao nhất trong `js/`; mỗi trang theo cùng khung kỹ thuật 5 mục.
+- Bổ sung quy tắc tạo, đọc, cập nhật và kiểm tra tài liệu module vào `AGENTS.md`; thêm vị trí `docs/` vào bản đồ kiến trúc.
+- File: `docs/INDEX.md`, `docs/modules/*.md`, `AGENTS.md`, `PROJECT.md`.
+- Kiểm tra: 10/10 trang đúng tiêu đề/mục, 300–700 từ, link nội bộ hợp lệ; `node --check` 45/45 JavaScript; manifest JSON và `git diff --check` đạt. Không đổi mã ứng dụng; không kiểm thử UI trình duyệt.
+
+**2026-10-29 | v3.4.732 | Arena cập nhật tài liệu:**
+
+- Chuẩn hóa toàn bộ tiêu đề nhật ký theo dạng tiêu đề in đậm đứng riêng; các chi tiết là bullet cùng cấp, tách biệt rõ giữa các bản ghi.
+- Bổ sung quy tắc bắt buộc và ví dụ định dạng tương ứng trong `AGENTS.md`.
+- File: `PROJECT.md`, `AGENTS.md`.
+- Kiểm tra: xác nhận tiêu đề không còn dấu bullet/thụt lề, không dính vào bullet trước; nội dung lịch sử và tác giả được giữ nguyên.
+
+**2026-10-29 | v3.4.732 | Arena sửa:**
+
+- Sửa chọn phụ đề nguồn khi để Auto: trước đây ưu tiên `isDefault`/track thủ công đầu tiên, có thể chọn Arabic dù audio gốc tiếng Anh. Nay ưu tiên caption track được liên kết với audio track mặc định từ player metadata (`audioTracks`, `defaultAudioTrackIndex`, `audioTrackId`/`captionTrackIndices`), rồi mới dùng fallback cũ. Áp dụng cho cả Player API và watch-page fallback; Dual Sub và Dictation dùng chung kết quả.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JavaScript; mô phỏng tracklist synthetic 4/4 trường hợp (English gốc thắng Arabic `isDefault`, chọn đúng audio mặc định không hardcode English, explicit language override, fallback legacy); manifest JSON và `git diff --check` — đạt. Sau phát hành, người dùng xác nhận lỗi chọn sai đã được khắc phục.
+
+**2026-10-29 | v3.4.731 | Arena sửa:**
+
+- Cụ thể hóa quy tắc cho mọi agent: mục 1 là snapshot 3–5 gạch đầu dòng; mục 2 chỉ giữ việc đang mở, có trạng thái rõ; mục 5 là nhật ký thay đổi, không chép lặp lịch sử vào snapshot/open tasks.
+- File: `AGENTS.md`, `PROJECT.md`, `manifest.json`.
+- Kiểm tra: `git diff --check`, manifest JSON và kiểm tra cấu trúc mục 1/2 cùng version — đạt; không đổi mã ứng dụng.
+
+**2026-10-29 | v3.4.730 | Arena sửa:**
+
+- Rút gọn mục 1 thành snapshot hiện tại; gom các việc còn mở ở mục 2 theo nhóm kiểm thử và triển khai, giữ chi tiết lịch sử trong nhật ký mục 5.
+- File: `PROJECT.md`, `manifest.json`.
+- Kiểm tra: `git diff --check` và xác nhận cấu trúc Markdown/version; không đổi mã ứng dụng.
+
+**2026-10-29 | v3.4.729 | Arena sửa:**
+
+- Điều chỉnh `#dashboardHomeView` về `row-gap: 6px` và `padding: 8px 10px 8px 8px`; cập nhật `--lhn-ui-shadow` đúng chuỗi người dùng chỉ định trong theme sáng/tối. Các phần khác giữ nguyên.
+- File: `css/dashboard/dashboard.css`, `css/shared/ui-tokens.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chưa chạy.
+- Lưu ý: `++rgb++(...)` không hợp lệ cho `box-shadow`; có thể khiến các bóng dùng biến này không hiển thị.
+
+**2026-10-29 | v3.4.728 | Arena sửa:**
+
+- Tách Dashboard thành view Trang chủ mặc định (toolbar + workspace mở rộng toàn chiều ngang) và view Luyện ngữ pháp chứa nguyên `#profileSidebar`; hai mục tương ứng chuyển view và cập nhật trạng thái đang chọn, các mục khác giữ nguyên.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JavaScript; HTML/CSS static audit — 278 ID duy nhất, view Trang chủ mặc định, view Luyện ngữ pháp ẩn lúc đầu và chứa `#profileSidebar`, 2 mục điều hướng, không inline handlers; `tinycss2` parse 1.390 rule, 0 lỗi; mô phỏng logic chuyển view/active state/`aria-current` đạt; `git diff --check` đạt. UI/runtime trên trình duyệt thật chưa kiểm thử.
+
+**2026-10-29 | v3.4.727 | Arena sửa:**
+
+- `main`: bỏ padding-left 70px, padding-right còn 14px. Sidebar hover mở rộng dạng overlay, không đổi vị trí Dashboard; click nút ghim mới giữ sidebar 220px trong flow và đẩy Dashboard; unpin trả lại overlay. Footer theme toggle và menu theme nối cùng setting light/dark đang được lưu bởi app, đồng bộ nhãn/icon.
+- File: `css/dashboard/dashboard.css`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JS; HTML/CSS/JS static audit — 276 ID duy nhất, 14 link, 0 lỗi parse CSS (1.379 rule), xác nhận selector hover-overlay/pin-push/theme delegation; `git diff --check` đạt. UI/runtime trình duyệt thật chưa kiểm thử.
+
+**2026-10-29 | v3.4.726 | Arena sửa:**
+
+- Sửa đúng phần icon người dùng phản ánh: thay 24 SVG vẽ gần đúng bằng path Lucide theo các tên icon trong file HTML mẫu. Không đổi kích thước, nhãn, vị trí hay hành vi sidebar/popover; SVG vẫn inline cục bộ, không thêm CDN.
+- File: `pages/dashboard.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: đối chiếu hình học tag/attribute của 24 SVG với Lucide — 24/24 khớp; không có inline event handlers hoặc URL ngoài trong sidebar; UI/runtime trên trình duyệt thật chưa kiểm thử.
+
+**2026-10-29 | v3.4.725 | Arena sửa:**
+
+- Làm lại từ nền mã v3.4.723 theo yêu cầu mới nhất: bỏ top header, thêm UI sidebar trái đúng cấu trúc/thứ tự/nhãn và popover avatar theo file tham chiếu; không gán hành vi cho các mục, pin hay đổi theme; giữ cơ chế mở/đóng popover avatar sẵn có và nội dung Dashboard chính. Tài nguyên icon là SVG cục bộ, không thêm CDN/inline handlers.
+- Đưa `js/dashboard/dashboard.js` và `js/core/languages.js` về bản v3.4.723 để bỏ phần wiring/bản dịch của corrective pass trước; các chỉnh sửa dashboard v3.4.724 không còn là nền của bản này.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JS; HTML audit — top header không còn, 14 nhãn + 7 mục popover đúng thứ tự, 273 ID duy nhất, không inline handlers/URL ngoài; nội dung `<main>` trùng baseline v3.4.723; 136 ID được bind listener còn tồn tại; CSS parse 1.362 rule, 0 lỗi; manifest JSON v3.4.725; `git diff --check` đạt. UI/runtime trên trình duyệt thật: Chưa kiểm thử.
+
+**2026-10-29 | v3.4.724 | Arena sửa:**
+
+- Bỏ top header Dashboard; thêm sidebar trái theo mẫu, mặc định thu gọn 56px và mở rộng 220px khi rê chuột, có nút ghim. Giữ 14 mục mẫu dạng bấm được nhưng không điều hướng; theme, gói Free và menu hồ sơ (Settings/export/import/đăng xuất) được giữ trong footer. Nội dung `#profileSidebar` và thư viện không đổi.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JavaScript; `tinycss2` parse 1.358 CSS rules, 0 lỗi; kiểm tra HTML 278 ID duy nhất, 14 mục visual-only và giữ các ID profile/library/settings/export/import/đăng xuất; 27 đường dẫn tài nguyên cục bộ hợp lệ; 17 khóa sidebar có đủ en/vi/ko; manifest JSON v3.4.724; `git diff --check` — đạt. UI/runtime trên trình duyệt thật: Chưa kiểm thử.
+
+**2026-10-28 | v3.4.723 | Arena sửa:**
+
+- Chuyển nút ẩn Notes xuống bên trái `te-dict-note-footer`, bỏ nhãn `te-dict-autosave`; thêm footer ngang cuối cột Sentences và đặt nút ẩn cột ở bên phải. Giữ nguyên các handler ẩn/hiện cột.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 353 CSS rules, 0 lỗi; assertions xác nhận footer cột 1/3, vị trí chevron, bỏ nhãn autosave và giữ các lookup/listener nút; manifest JSON v3.4.723; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.722 | Arena sửa:**
+
+- Bỏ hai chevron hover ở splitter; giữ nguyên tay nắm. Thêm border mặc định cùng màu icon cho nút ẩn cột tại Sentences và Notes; nhóm chevron Sentences sát tiêu đề.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules, 0 lỗi; assertions xác nhận bỏ chevron splitter, viền nút collapse luôn cùng màu icon, nhóm heading Sentences sát nhau; kiểm tra DOM markup và manifest JSON v3.4.722; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.721 | Arena sửa:**
+
+- Đặt chevron hover cách tay nắm 2px, không đè lên grip: splitter cột 1 đưa chevron sang trái; splitter cột 3 đưa chevron sang phải. Chevron vẫn nhận pointer/click để ẩn cột.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js` đạt; `tinycss2` parse 356 CSS rules, 0 lỗi; assertions xác nhận chevron cột 1/cột 3 đúng hướng, đúng khe hở 2px và nhận pointer; manifest JSON v3.4.721; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.720 | Arena sửa:**
+
+- Sửa splitter theo yêu cầu: bỏ viền focus trắng và sọc vàng mảnh; giữ nguyên tay nắm giữa; hover hiện chevron chỉ hướng cột sẽ ẩn; click chevron ẩn cột, còn kéo qua ngưỡng 4px vẫn resize. Bảo toàn double-click reset; Enter/Space cũng ẩn cột.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 355 CSS rules, 0 lỗi; assertions xác nhận outline/sọc dài đã bỏ, chevron trái/phải, tay nắm giữ nguyên, click-collapse, ngưỡng kéo, click suppression và double-click reset; manifest JSON v3.4.720; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.719 | Arena sửa:**
+
+- Sửa viền focus splitter: bỏ viền vàng dài hai bên; chỉ hiện một sọc vàng 1px khi đang kéo và tự mất khi kết thúc kéo. Tay nắm giữa giữ nguyên trạng thái hover/focus/kéo.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules, 0 lỗi; assertions xác nhận bỏ viền đôi, sọc 1px chỉ khi kéo, tay nắm giữ nguyên và class kéo được dọn khi thả; manifest JSON v3.4.719; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.718 | Arena sửa:**
+
+- Chỉ khôi phục hiệu ứng chuyển Video ↔ thanh Audio về v3.4.713: chiều cao video animate .6s theo cubic-bezier; video fade .4s; thanh Audio fade .4s và scale .6s. Giữ nguyên bố cục, icon, kích thước và các tính năng khác của v3.4.717.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `tinycss2` parse 354 CSS rules/at-rules/declarations với 0 lỗi; assertions xác nhận các giá trị transition khớp v3.4.713, `toggleCompactVideo`/height handler khớp đúng v3.4.713 và listener được dọn; manifest JSON v3.4.718; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.717 | Arena sửa:**
+
+- Giữ Ambient khi cột câu ẩn: thêm lớp che riêng ở ô cột Dictation (z-index 2), video host phía dưới (1), Ambient phủ toàn overlay nằm trên lớp che (3), nội dung Dictation/Ghi chú ở trên Ambient (4). Cột giữa trở lại trong suốt khi Ambient bật; hiệu ứng vẫn lan qua các cột như v3.4.715 trong khi video thật không lộ qua nền.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; CSS parse và assertions cho lớp mask/video/Ambient/content, theme sáng/tối, DOM thêm/dọn mask; parse `manifest.json`; `git diff --check` — đạt. ZIP phát hành: 83 file tracked, `unzip -t` CRC đạt, manifest 3.4.717 và nội dung khớp working tree. Chưa kiểm thử UI/video runtime trên trình duyệt thật.
+
+**2026-10-28 | v3.4.716 | Arena sửa:**
+
+- Sửa ẩn cột câu: không còn `display:none` khung trái đang chứa video YouTube thật. Giữ player hoạt động ở lớp dưới trải dưới cột giữa; cột Dictation có nền đục và z-index cao hơn (kể cả Ambient), video vẫn có vùng render khác 0 và giữ vòng đời; dải mở lại nằm trên cùng.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; CSS parse và assertions cho host không bị display:none, span dưới cột giữa, nền đục khi Ambient; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử video runtime trên trình duyệt thật.
+
+**2026-10-28 | v3.4.715 | Arena sửa:**
+
+- Thêm splitter kéo cho ba cột Dictation: cột câu thu tối đa 1/3 độ rộng mặc định hoặc ẩn; cột Ghi chú nới tối đa 1/2 hoặc ẩn; cột Dictation giữa tự dùng phần còn lại, giữ ngưỡng tối thiểu thích ứng. Khi ẩn, dải 24px mở lại cột; splitter hỗ trợ chuột, phím mũi tên/Home/End, nhấp đúp đặt lại; bố cục lưu cục bộ và được giữ khi mở lại. Nhãn truy cập dịch EN/VI/KO.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận giới hạn cột/trung tâm, kéo chuột, bàn phím, ẩn/hiện, đặt lại, lưu/đọc prefs ở nhiều độ rộng; localization EN/VI/KO; CSS parse 338 rules; `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.714 | Arena sửa:**
+
+- Làm mượt chuyển video ↔ audio compact: bỏ nội suy chiều cao video để tránh layout/video resize lặp; đổi layout một lần, animate phần nội dung phía dưới bằng transform 340ms, crossfade video/audio nhanh hơn; hỗ trợ prefers-reduced-motion và dọn animation khi đóng/đổi trạng thái.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận thu/phóng, transform hai chiều và dọn trạng thái; CSS/static assertions cho không animate height, crossfade và reduced motion; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.713 | Arena sửa:**
+
+- Bóng đèn không đổi nền khi bật: luôn trong suốt, màu icon trắng khi bật và nhạt khi tắt. Nút video/thanh âm thanh đổi icon theo chế độ: icon video khi video hiện, icon mic khi thanh âm thanh compact hiện.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM xác nhận video icon ở chế độ video và mic ở chế độ thanh âm thanh; CSS assertions cho nền bóng đèn trong suốt ở cả hai trạng thái, màu icon bật/tắt và kích thước; manifest JSON; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.712 | Arena sửa:**
+
+- Thay chữ của công tắc gợi ý bằng icon bóng đèn đã cung cấp; nút 36×36px và SVG 18×18px khớp nút thu phóng video. Khi bật icon trắng trên nền tương phản, khi tắt icon nhạt; giữ aria-label/title đã dịch và toàn bộ logic gợi ý.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho công tắc aria-pressed/active và luồng gợi ý; static assertions cho icon 18px, nút 36px, màu bật/tắt và nhãn truy cập EN/VI/KO; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.711 | Arena sửa:**
+
+- Bỏ checkbox “Tự phát khi chuyển câu”, thay bằng “Hiện gợi ý” (mặc định bật, dịch EN/VI/KO). Khi tắt, lần phân tích đầu ẩn từ vàng bằng mặt nạ; Enter kế tiếp chỉ hiện gợi ý cho cùng kết quả, không chấm lại/chuyển câu. Tắt/bật công tắc cũng cập nhật phân tích đang mở; hành vi phát tự động hiện có không đổi.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho gợi ý mặc định bật, tắt thì mặt nạ vàng và Enter kế tiếp chỉ hiện gợi ý cùng kết quả, công tắc cập nhật phân tích đang mở; parse `manifest.json`; kiểm tra nhãn EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.710 | Arena sửa:**
+
+- Ô “Ghi chú / ngữ pháp”: Enter gọi lưu ngay, hiển thị thông báo “Đã lưu” hiện có rồi bỏ focus; Shift+Enter giữ hành vi xuống dòng; tiếp tục tự lưu khi gõ.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; Node VM assertions cho Enter lưu/hiện “Đã lưu”/blur sau khi lưu, Shift+Enter không chặn xuống dòng và Enter trong IME không bị bắt; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.709 | Arena sửa:**
+
+- Đặt padding trái/phải vùng tiêu đề, bộ lọc và danh sách thống kê về 0; để Chrome/Edge dùng `--lhn-scrollbar-width` (3px) bằng `scrollbar-width: auto`, còn Firefox dùng native `thin` như các vùng Dictation khác.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: CSS assertions cho padding ngang 0, scrollbar auto + biến 3px và Firefox-only thin, dark/light colors; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.708 | Arena sửa:**
+
+- Chỉ chỉnh khung thống kê: bỏ border ngoài, giảm lề ngang header/bộ lọc/danh sách để nội dung gần mép chứa hơn; thanh cuộn dùng chung biến chiều rộng và màu thumb/track với các vùng cuộn Dictation.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: CSS assertions cho border ngoài bằng 0, padding ngang 4px, width biến dùng chung và màu thumb light/dark; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.707 | Arena sửa:**
+
+- Chỉ sửa hàng biến thể thống kê: canh `+N` nằm ngang bên trái chevron xuống và giảm đúng 1px cỡ chữ số; khi mở chỉ hiện chevron lên. Các chip, kể cả biến thể bổ sung, dùng chung một flex-wrap list để chảy liên tục và tự xuống hàng.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: DOM/CSS assertions cho cấu trúc một list, trạng thái đóng/mở, `+N`/chevron cùng hàng, chỉ cỡ chữ `+N` 9px; `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.706 | Arena sửa:**
+
+- Chỉ chỉnh khung thống kê theo ảnh mẫu: thêm huy hiệu tổng số từ sai bên phải tiêu đề; nút biến thể giữ vị trí, đóng hiển thị `+N` kèm chevron xuống, mở chỉ còn chevron lên; nút chỉ tạo khi có biến thể ẩn.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; Node DOM assertions cho badge, `+N`/icon hai trạng thái, điều kiện overflow và vùng mở rộng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.705 | Arena sửa:**
+
+- Chỉ chỉnh khung thống kê: nút xổ/thu theo mẫu được đặt sát mép phải và chỉ tạo khi có biến thể ẩn; nền card, header, ô tìm và các hàng trong dark mode chuyển sang tông trung tính đồng bộ nền Ghi chú `#121212`.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS/DOM assertions cho vị trí nút, điều kiện chỉ tạo khi có biến thể dư và màu nền dark; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.704 | Arena sửa:**
+
+- Kết nối khung thống kê Dictation với kết quả chấm thật: đếm từng lỗi/từ sai và biến thể (chuẩn hóa hoa thường/dấu câu theo scorer), ghi nhận sửa đúng một lần cho từng vị trí sau lỗi; cập nhật trạng thái gần nhất, xếp hạng, tỷ lệ sửa, tìm kiếm và bộ lọc. Lưu thống kê trong record cục bộ theo video; thay số mẫu bằng trạng thái rỗng/thông báo không có kết quả; dịch nhãn sửa đúng/tỷ lệ sửa và trạng thái trống EN/VI/KO.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: kiểm tra Node cho lỗi lặp/biến thể, chuẩn hóa hoa thường-dấu câu, sửa đúng một lần mỗi đợt, reset chuỗi sai, đúng lần đầu, từ thiếu/trùng/thừa, lưu/khôi phục, render danh sách, xếp hạng, tìm kiếm và bộ lọc — đạt; `node --check` 47/47 JavaScript; parse `manifest.json`; assertion UI/localization/persistence EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI/runtime trên trình duyệt thật.
+
+**2026-10-28 | v3.4.703 | Arena sửa:**
+
+- Tích hợp UI thống kê từ sai vào cột Ghi chú Dictation theo HTML tham chiếu; bỏ trường Từ vựng khỏi giao diện, giữ ô ghi chú cá nhân. Có tìm kiếm/bộ lọc dạng tĩnh và mẫu 7 từ được gắn nhãn **Dữ liệu minh họa**; chưa kết nối thuật toán. Các dạng lỗi mở rộng bằng `<details>`; danh sách cuộn trong khung cao 50vh.
+- Giữ tương thích dữ liệu ghi chú cũ: khi lưu vẫn bảo toàn thuộc tính vocab cũ trong storage nhưng không hiển thị trường đó.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse manifest; assertion UI (không còn vocab control, 7 mẫu, 3 nút xổ, scroll 50vh), lưu schema cũ và khóa dịch EN/VI/KO; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.702 | Arena sửa:**
+
+- Thêm icon Keepit, dấu gạch ngang và chữ Keepit ở góc trái trên video; thêm tiền tố `Keepit - ` trước tiêu đề trên thanh audio. Kích cỡ nhãn 13px, icon 20px, lề 12px; ẩn nhãn video khi chuyển sang compact audio.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; assertion icon/lockup, vị trí & cỡ logo, tiền tố audio, ẩn logo ở compact mode và dọn DOM; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.701 | Arena sửa:**
+
+- Tăng cỡ chữ hàng hint Dictation từ 11px lên 12px; giữ nguyên 4 cột đều nhau và cách căn mép.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion cỡ chữ 12px, 4 cột đều, không padding ngang, nhãn ngoài sát mép; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.700 | Arena sửa:**
+
+- Bỏ padding ngang của hàng hint Dictation; giữ 4 cột đều nhau, nhãn đầu căn trái sát mép, cuối căn phải sát mép, hai nhãn giữa căn giữa.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion 4 cột đều, padding ngang 0, nhãn ngoài căn trái/phải, hai nhãn giữa căn giữa; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.699 | Arena sửa:**
+
+- Đổi hàng hint Dictation thành bốn nhãn phím tắt chia đều một hàng: `(Enter) Chấm điểm`, `(Esc) Đáp án/Làm lại`, ``(`) Phát/Tạm dừng``, `(Ctrl) Nghe lại`; chỉ đổi chữ/bố cục hint, không đổi hành vi phím.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; assertion bốn nhãn, `grid-template-columns: repeat(4, minmax(0, 1fr))`, nội dung EN/VI/KO và separator; `git diff --check` — đạt. Không đổi shortcut handlers; chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.698 | Arena sửa:**
+
+- Khôi phục video Dictation rộng toàn khung như v3.4.696; chỉ thanh audio compact được inset 12px hai bên theo sentence area.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertions xác nhận video `width: 100%`/`margin-inline: 0`, audio compact `inset: 0 12px` và có card styling riêng, CSS cân bằng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.697 | Arena sửa:**
+
+- Chỉnh lề ngang của video slot Dictation thành 12px mỗi bên, bằng `te-dict-sentence-area`; thanh audio compact phủ đúng video slot nên hai mép thẳng hàng.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; CSS assertion xác nhận video `margin-inline: 12px`, sentence area `padding: 10px 12px`, audio card phủ cùng slot, CSS cân bằng; `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.696 | Arena sửa:**
+
+- Thêm nút thu/khôi phục video bên trái Auto-play trong Dictation; trạng thái compact thay hình video bằng thanh audio cùng chiều rộng, cao 1/3 với hiệu ứng theo mẫu; danh sách câu mở rộng để dùng phần chiều cao dư, giữ compact khi chuyển câu và khôi phục khi đóng Dictation.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; CSS cân bằng và xác nhận trạng thái compact, audio card, transition, sentence list flex; mock chiều cao xác nhận mở rộng → 1/3 → giữ tỉ lệ 1/3 khi resize → khôi phục khi tắt compact; kiểm tra cleanup khi đóng Dictation; xác nhận 4 nhãn EN/VI/KO — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.695 | Arena sửa:**
+
+- Chỉ trong Dictation: thêm ` tương đương Space để phát/tạm dừng audio/video; thay Alt+X bằng Esc hai lượt trong ô đáp án (lượt 1 điền toàn câu chưa chấm, lượt 2 xóa).
+- File: `js/dictation/dictation.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; DOM/state mock xác nhận Esc lần đầu điền nguyên câu mà không chấm, lần hai gọi reset, backtick play/pause, auto-repeat không toggle liên tục, Alt+X không còn xóa, shortcut ngừng hoạt động khi Dictation đóng; hint EN/VI/KO — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.694 | Arena sửa:**
+
+- Dựa trên v3.4.692, chỉ tách từng mask thành phần tử riêng trong cùng luồng chip/từ để chúng wrap tự nhiên theo chiều rộng; không gom mọi mask thành một phần tử bị đẩy cả khối xuống hàng.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; parse `manifest.json`; `git diff --check`; DOM mock xác nhận mỗi từ thiếu được tạo thành phần tử mask riêng với độ dài đúng; CSS assertion xác nhận `flex-wrap: wrap`, mask là flex item độc lập và không còn cuộn ngang — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.693 | Arena sửa:**
+
+- Chỉ đổi hàng phản hồi Dictation để chip và mask tự xuống dòng khi không đủ chiều rộng, thay cho một hàng cuộn ngang; không đổi logic nhập, căn chỉnh, chấm điểm hay màu sắc.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation-style.js`, `node --check js/dictation/dictation.js`, parse `manifest.json`, assertion CSS cân bằng và xác nhận feedback `flex-wrap: wrap`, bỏ cuộn ngang, mask được wrap, `git diff --check` — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.692 | Arena sửa:**
+
+- Lấy v3.4.689 làm nền, chỉ sửa Dictation input/feedback: gõ không hiện phản hồi; Enter chuẩn hóa từ khớp, giữ từ sai, xử lý tiền tố đúng và gợi ý màu; lỗi dừng gợi ý ở từ sai đầu tiên, mask phần sau trên cùng dòng; không thêm dấu câu cuối nếu từ cuối transcript chưa khớp; trạng thái đúng 100% giữ nguyên.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 47/47 JavaScript; `python3 -m json.tool manifest.json`; `git diff --check`; 11 ca Node tổng quát về case/dấu câu/từ sai-thiếu-thừa và không thêm dấu kết thúc khi từ cuối transcript chưa khớp; mock Enter/DOM xác nhận tiền tố đúng không chấm điểm, màu xanh/vàng/mask, lỗi đầu tiên + mask cùng dòng, gạch đỏ trong ô nhập và phản hồi không hiện khi đang gõ — đạt. Chưa kiểm thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.691 | Arena sửa:**
+
+- Dictation input/feedback: logic dùng transcript và căn chỉnh từ, không hardcode câu ví dụ. Enter trên tiền tố đúng chuẩn hóa chữ hoa, thêm dấu cách và hiện từ kế tiếp cùng các từ còn thiếu được mask theo độ dài trên cùng một dòng. Với câu có từ sai/thiếu/thừa, chuẩn hóa chữ hoa/dấu câu ở từ khớp theo transcript, giữ nguyên từ sai/thừa; gạch chân lỗi chỉ sau Enter/Check.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/scorer; mô phỏng Enter `welcome` xác nhận `Welcome ` và gợi ý một dòng `Welcome to __ _______`; `welcome taa my english` xác nhận `Welcome taa my English.`; 8 ca tổng quát với transcript khác nhau bao gồm từ sai, thiếu, thừa và dấu câu — đạt; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.690 | Arena sửa:**
+
+- Dictation input: Enter khi đúng áp dụng chữ hoa và dấu câu theo transcript; tiền tố đúng nhưng chưa hết câu tự nối dấu cách khi Enter; sau khi chấm sai gạch chân đỏ đậm từ sai trong textarea; các từ thiếu được che bằng dấu gạch dưới theo độ dài và cách bằng dấu cách.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js`, `node --check js/dictation/dictation-score.js`, `git diff --check`; source assertions; Node logic tests cho case/punctuation, prefix đúng, mask đúng độ dài/khoảng trắng và căn chỉnh từ sai — đạt. Chưa thử UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.689 | Arena sửa:**
+
+- Khắc phục race: khi Alt+F mở overlay trong lúc phụ đề chưa sẵn sàng, giữ yêu cầu và mở Dictation theo sự kiện `lhn-dual-captions-updated`; lần bấm lại hủy yêu cầu đang chờ, còn khi Dictation đã mở thì đóng.
+- File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho 6 file JavaScript; `git diff --check`; assertions tĩnh cho version, pending caption event và trạng thái Dictation; Node simulation xác nhận chờ cue, tự mở khi sẵn sàng, toggle đóng khi đang mở và hủy khi bấm lại — đạt. Chưa chạy UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.688 | Arena sửa:**
+
+- Thêm shortcut Alt+F có thể chỉnh/reset trong Dashboard > Shortcut; content script phát event theo mẫu Alt+E, YouTube handler mở overlay nếu cần rồi gọi Dictation toggle.
+- Thêm nhãn dịch en/vi/ko và nối luồng Dashboard setting → content keydown → event → Dual Sub/Dictation API.
+- File: `js/core/defaults.js`, `js/core/languages.js`, `js/content/content.js`, `js/dashboard/dashboard.js`, `pages/dashboard.html`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho 6 file JavaScript; `git diff --check`; assertions tĩnh cho manifest/default, Dashboard capture/reset, keydown/event YouTube, overlay và API toggle, nhãn en/vi/ko, script paths; Node simulation xác nhận Alt+F khi overlay đóng mở overlay rồi toggle Dictation, khi overlay mở gọi toggle trực tiếp — đạt. Chưa chạy UI trên trình duyệt thật.
+
+**2026-10-28 | v3.4.687 | Arena sửa:**
+
+- Nút Play/Pause video cập nhật icon lạc quan ngay khi bấm; sự kiện media play/pause chỉ reconcile với trạng thái thật, không khởi chạy pulse lần hai; nếu lệnh play bị từ chối, icon được đồng bộ lại.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions cho optimistic icon, đồng bộ lại nếu `play()` thất bại, event media chỉ reconcile và không pulse lần hai; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.686 | Arena sửa:**
+
+- Luồng transcript: hover row `.yt-dual-item` dừng video; rời row thì resume chỉ nếu trước đó đang phát; click timestamp seek/play; click/double-click content không kích hoạt thao tác; selection-to-translate và Full Dictation giữ nguyên.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions xác nhận hover row pause/resume, timestamp-only seek/play, bỏ handler click/double-click trên content và giữ selection guard; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.685 | Arena sửa:**
+
+- Trong `yt-dual-item`, chỉ click `.yt-dual-timestamp` mới gọi seek/play; `.yt-dual-content` không kích hoạt seek, còn double-click pause cũng giới hạn trong timestamp.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js`; manifest JSON/version; source assertions xác nhận chỉ timestamp xử lý seek/play, content không kích hoạt click, double-click pause chỉ áp dụng timestamp; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.684 | Arena sửa:**
+
+- Ảnh cho thấy nút mũi tên là `#lhn-sidebar-edge-toggle` của sidebar chính Keepit, nằm ngoài Shadow DOM video overlay. Trong lúc overlay mở, ẩn edge toggle khi sidebar chính đóng; khi nút tròn được bấm, gọi edge toggle hiện có để mở sidebar chính (panel phủ lên nút); edge toggle hiện khi sidebar chính mở và ẩn lại khi đóng. Giữ nguyên markup/style/icon gốc v3.4.680 của nút tròn; không đổi trạng thái sidebar phụ đề video.
+- File: `css/content/content.css`, `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai JS; parse Overlay CSS (241 quy tắc), Dictation CSS (190), content CSS (534), 0 lỗi; manifest JSON/version và resource paths; assertion markup/style nút tròn khớp v3.4.680, handler gọi `#lhn-sidebar-edge-toggle`, edge toggle chỉ ẩn khi overlay mở và sidebar chính đóng; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.683 | Arena sửa:**
+
+- Khôi phục icon gốc v3.4.680 cho nút tròn tím; nút luôn hiện ở dưới lớp sidebar trong video overlay thường, sidebar phủ lên nút khi mở. Mỗi lần mở overlay sidebar ở trạng thái ẩn; nút Bố cục hiện khi sidebar mở và ẩn khi sidebar đóng.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai JS; parse Overlay CSS (244 quy tắc, 0 lỗi); manifest JSON/version; assertion so icon SVG v3.4.680 và logic trạng thái/sidebar/z-index; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.682 | Arena sửa:**
+
+- Rà soát thanh cuộn trong toàn bộ Shadow DOM video/Dictation: quy tắc WebKit gắn trực tiếp với overlay root; truyền giá trị `--lhn-scrollbar-width` chung từ document lên Shadow host; bổ sung selector rõ ràng cho center body, note body và textarea Dictation bên cạnh danh sách/ô nhập.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` ba JS; parse Overlay CSS (244 quy tắc) và Dictation CSS (190 quy tắc), 0 lỗi; source assertions cho các vùng cuộn và biến chung; parse manifest; `git diff --check` — đạt. UI Chrome/Edge thật: Chưa chạy.
+
+**2026-10-28 | v3.4.681 | Arena sửa:**
+
+- Video overlay: khi sidebar mở, giữ nút `Bố cục` để đóng; khi sidebar ẩn, ẩn nút đó và hiện `te-floating-btn` cố định góc dưới phải để mở lại. Đưa nút tím ra ngoài DOM sidebar để không bị `display:none` của panel che; giữ vị trí hiển thị.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai JS; parse Overlay CSS (244 quy tắc, 0 lỗi); assertions cấu trúc/nút và state logic; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.680 | Arena sửa:**
+
+- Dictation: đổi thumb scrollbar dark mode sang xám sáng; giữ màu light mode. Khai báo riêng chiều rộng dọc và chiều cao ngang bằng `--lhn-scrollbar-width` cho cả ô nhập và danh sách câu.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation style; parse CSS (190 quy tắc, 0 lỗi); assertions cho màu thumb và kích thước dọc/ngang theo biến chung; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.679 | Arena sửa:**
+
+- Dictation Ambient: giữ nguyên lớp Ambient phủ grid ba cột; khi hiệu ứng bật, nền của panel giữa và ghi chú bên phải trong suốt để ánh sáng không bị che. Khi Ambient tắt, màu nền light/dark cũ giữ nguyên.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation style; parse CSS (188 quy tắc, 0 lỗi); source assertions xác nhận hai panel chỉ trong suốt khi Dictation và Ambient cùng bật; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.678 | Arena sửa:**
+
+- Dictation: hint được tách thành ba mục từ bản dịch hiện có và xếp lần lượt trái/giữa/phải bằng flex; giữ nguyên câu chữ và bản dịch.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/CSS; assertions ba phần hint ở EN/VI/KO và căn lề CSS; parse CSS Dictation (187 quy tắc, 0 lỗi); parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.677 | Arena sửa:**
+
+- Dictation: làm rõ scrollbar của ô nhập và `#te-dict-sentences`: giữ width từ `--lhn-scrollbar-width`, thêm thumb/track nhìn thấy được ở light/dark mode; Firefox dùng native `thin` scrollbar.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation CSS/JS; parse CSS Dictation (183 quy tắc, 0 lỗi); assertions xác nhận hai target dùng chung width và có thumb colors cho cả theme; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.676 | Arena sửa:**
+
+- Dictation: ô nhập và `#te-dict-sentences` cùng reset `scrollbar-width`/`scrollbar-color` về `auto` và đặt chiều rộng/cao WebKit bằng `var(--lhn-scrollbar-width)`; ô nhập cuộn dọc khi nội dung tràn.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho Dictation CSS/JS; parse CSS Dictation (179 quy tắc, 0 lỗi); source assertions xác nhận cả hai scrollbar dùng cùng biến và textarea có `overflow-y:auto`; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-28 | v3.4.675 | Arena sửa:**
+
+- YouTube: khi mở video overlay, ẩn scrollbar dọc trang bằng cách lưu/khôi phục inline `overflow-y` của `html` và `body`; khi overlay đóng sẽ khôi phục cả trạng thái trước đó. Dictation vẫn được đóng trước khi khôi phục style của overlay.
+- Dictation: scrollbar textarea dùng chung `--lhn-scrollbar-width` thay vì dựa vào mặc định trình duyệt; reset `scrollbar-width`/`scrollbar-color` để quy tắc WebKit theo biến chung có hiệu lực.
+- File: `js/video/dual-subtitles.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` JS liên quan; parse CSS Dictation (178 quy tắc, 0 lỗi); source assertions cho vòng đời ẩn/khôi phục và biến chung; parse manifest; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.674 | Arena sửa:**
+
+- Dictation: sửa nguyên nhân thực tế khiến ↑/↓ bị chặn. Ô nhập nằm trong Shadow DOM, vì vậy listener capture bên ngoài thấy `event.target` là host; các listener Reader/voice picker nay kiểm tra `composedPath()` để không lấy mất phím mũi tên từ textarea.
+- File: `js/content/content.js`, `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho `content.js`, `bilingual-reader.js`, `dictation.js`; mock `composedPath` xác nhận ↑/↓ từ textarea được bỏ qua, Enter và mũi tên ngoài ô nhập không đổi; kiểm tra source assertions; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.673 | Arena sửa:**
+
+- Dictation: ArrowUp/ArrowDown trong textarea được trả về xử lý mặc định của trình duyệt bằng cách bỏ qua `stopPropagation()` tại listener riêng; xử lý Enter và phím khác giữ nguyên.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js`; mock handler xác nhận ArrowUp/Down không bị chặn và Enter/phím khác giữ luồng; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.672 | Arena sửa:**
+
+- Dictation: lưu trạng thái đã chấm trước khi nhập; chỉ gọi `updateRows(false)` nếu người dùng bắt đầu sửa một đáp án đã chấm đúng. Gõ thông thường không còn duyệt/cập nhật lại danh sách câu theo từng phím.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js`; mock handler xác nhận không refresh khi gõ thường và refresh đúng một lần sau đáp án đã chấm; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.671 | Arena sửa:**
+
+- Khi có đáp án sai, ô nhập giữ nguyên vị trí: input và gợi ý được giữ trong cùng một flex stack, còn `te-dict-error` được đặt tuyệt đối bên dưới stack để không làm thay đổi chiều cao đang được căn giữa. Trạng thái khác giữ luồng bố cục hiện có.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/CSS; CSS Dictation (177 quy tắc, 0 lỗi); assertion thứ tự DOM, error absolute bên dưới stack và gỡ trạng thái khi rời nhánh sai; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.670 | Arena sửa:**
+
+- Dựa trên phần Dictation của v3.4.668; đặt pháo hoa vào lớp absolute riêng, tách khỏi các item grid của overlay để không làm thanh `.te-control-bar` dịch chuyển.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/CSS; CSS parse (175 quy tắc), xác nhận lớp pháo hoa absolute/contained; mock test xác nhận 90 mảnh nằm trong một lớp và được dọn sau 1.5 giây; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.669 | Arena sửa:**
+
+- Chỉ tối ưu pháo hoa Dictation để giảm khựng: giảm số mảnh từ 90 xuống 60, gom vào một `DocumentFragment` để thêm vào DOM một lần và dùng một timer để dọn cả nhóm.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js`; mock test xác nhận 60 mảnh/1 lần append/1 timer và xóa đủ mảnh; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.668 | Arena sửa:**
+
+- Dictation: sau khi chấm đúng toàn bộ từ, tự bổ sung dấu câu còn thiếu theo câu mẫu; giữ nguyên ký tự chữ người dùng đã nhập. Chỉ chạy trong nhánh trả lời đúng, không tác động câu có từ sai.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js`; 6 trường hợp hoàn thiện dấu câu và 2 kiểm tra điều kiện chấm đúng/sai; parse manifest JSON; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.667 | Arena sửa:**
+
+- Dictation: trạng thái blur/khóa của câu hiện tại dựa trên lần chấm đúng trong phiên hiện tại, không dựa vào kết quả lưu cũ; câu hiện tại và phía dưới ẩn dịch/blur, các câu phía trên không blur và hiện dịch. Mở/chuyển câu luôn phát audio; repeatCount là số lượt thêm (tổng n+1). Khi đúng, giữ toàn bộ câu trong `te-dict-error-words` dưới dạng từ màu xanh.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/CSS/scorer; parse manifest JSON; CSS Dictation 174 quy tắc, 0 lỗi; assertion blur/dịch, khóa khi mở lại, repeat count và câu đúng; `git diff --check` — đạt. Đã fetch branch GitHub, cây mã nguồn trùng baseline. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.666 | Arena sửa:**
+
+- Dictation: bắt buộc mọi chữ trong `te-dict-error-words` cỡ 14px; khi chấm đúng, câu hiện tại được mở (không blur), `te-dict-error` chuyển nền/viền xanh như success, tiêu đề `Câu đúng` có icon tick xanh; gợi ý từ thiếu không có dấu mũi tên.
+- Khi mở Dictation tự phát câu hiện tại (câu đầu hoặc câu tiếp tục từ tiến độ) theo repeat setting, kể cả Auto-play đang tắt; 0x vẫn phát một lần. Ẩn scrollbar dọc trang YouTube trong khi Dictation mở và khôi phục style cũ khi đóng.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các JS Dictation/localization; CSS Dictation (174 quy tắc, 0 lỗi); localization EN/VI/KO; assertion tính năng; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.665 | Arena sửa:**
+
+- Dựa trên mã nguồn v3.4.663; dùng `checkedCurrent` để giữ đúng luồng: gõ không đổi màu/chưa chấm, Enter mới chấm; chỉ kết quả đúng 100% mới bật hiệu ứng/lời chúc/bản dịch, lúc đó Chấm điểm mất vàng và Câu tiếp vàng. Enter tiếp theo bấm Câu tiếp; không tự chuyển câu cùng lúc chấm.
+- Bản 3.4.664 bị người dùng từ chối; giữ ZIP đó nguyên vẹn và phát hành bản sửa này ở version mới.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` ba tệp Dictation JS; CSS Dictation (170 quy tắc, 0 lỗi); `python3 -m json.tool manifest.json`; assertion trạng thái gõ/chấm/hiệu ứng/màu nút/Enter; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.663 | Arena sửa:**
+
+- Dictation: khi chưa có câu nào đã giải thì mở từ câu đầu; nếu đã có kết quả thì lưu/khôi phục đúng câu đang học, với các câu phía trên có thể mở và không blur. Kết quả cũ không có chỉ số hiện tại sẽ quay về câu chưa giải đầu tiên sau chuỗi đã giải.
+- `te-dict-translation` chỉ hiện sau khi câu hiện tại được chấm đúng 100%, ẩn khi sửa đáp án sai hoặc chuyển câu; ẩn `te-dict-error` khi gõ/phát sinh input. Enter sau câu đã đạt 100% bấm trực tiếp Câu tiếp.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` ba tệp Dictation JS; CSS Dictation (170 quy tắc, 0 lỗi); parse manifest; assertion các hành vi tiến độ/blur/dịch/lỗi/Enter/↑↓; `git diff --check` — đạt. UI trình duyệt thật: Chưa chạy.
+
+**2026-10-27 | v3.4.662 | Arena sửa:**
+
+- Dictation: ẩn nghĩa VI ở các câu blur/khóa trong danh sách kể cả khi bản dịch đã lưu; Enter với đáp án chưa đúng 100% kích hoạt nút Chấm điểm; khi đạt 100%, nút Chấm điểm dùng cùng kiểu màu nền với Nghe chậm và cập nhật lại khi sửa đáp án. Giữ xử lý ↑/↓ trong ô nhập/ghi chú như văn bản thông thường vốn có ở bản 3.4.661.
+- Chỉ sửa trong module Dictation ngoài việc bump version và cập nhật nhật ký/trạng thái; không thay đổi tính năng ngoài phạm vi. Kiểm thử UI trên trình duyệt thật: Chưa chạy.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` Dictation JS/scorer; CSS Dictation (169 quy tắc, 0 lỗi); assertion hành vi cho blur/bản dịch, Enter, màu nút và ↑/↓; `git diff --check` — đạt. UI runtime: Chưa chạy.
+
+**2026-10-27 | v3.4.661 | Claude sửa:**
+
+- Dictation (7): ↑/↓ trong ô nhập và ô ghi chú không còn bị chặn; con trỏ di chuyển như văn bản thường. ↑/↓ ngoài ô nhập vẫn bị chặn.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dictation/dictation.js` — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: làm rõ mục 2 (phạm vi blur câu dịch) và mục 6 (hành vi Enter sau khi đúng 100%).
+
+**2026-10-27 | v3.4.660 | Claude sửa:**
+
+- Dictation: (2) danh sách câu từ câu đang nhập trở xuống luôn blur và không bấm được; (3) ghi chú khóa khi vào mỗi câu, chỉ mở sau khi đúng 100%; (4) lỗi theo vị trí: đúng xanh, sai gạch đỏ + gợi ý vàng, dừng ở lỗi đầu tiên, từ thừa báo "thừa", bỏ chip +N; (5) lặp mặc định 3, kể cả nghe chậm; (6) Enter sau khi đúng 100% chuyển focus sang Câu tiếp (vàng), nút Chấm điểm xám, Enter tiếp theo sang câu kế; (7) ↑/↓ trong ô nhập chỉ di chuyển con trỏ; (10) ↑/↓ ngoài ô nhập bị chặn; (11) danh sách cuộn giữa câu hiện tại; (12) thông báo thành công nằm trên ô nhập.
+- Phím tốc độ overlay (8, 9): đổi ↑/↓ thành Shift+> (tăng) và Shift+< (giảm), bước 0.05; khi đang gõ trong ô nhập thì nhập ký tự bình thường.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-27 | v3.4.659 | Claude sửa:**
+
+- Dictation v1 đổi UI khu giữa theo file mẫu: tiêu đề + huy hiệu độ chính xác, thẻ âm thanh video kèm "Tự phát khi chuyển câu", ô nhập lớn viền hổ phách, phân tích lỗi từng từ (đúng/sai gạch + từ sửa/thừa; từ thiếu gộp thành chip +N, không lộ đáp án), banner thành công, thẻ dịch, hàng Lặp 0x–3x và 5 nút Câu trước/Phát lại/Chấm điểm/Nghe chậm/Câu tiếp. Hàng câu dùng chip số + icon; ghi chú có nút lưu ở tiêu đề, dòng tự lưu ở chân; thanh điều khiển có vòng độ chính xác. Giữ nguyên các điểm đã chốt: thanh điều khiển full-width, "Câu tiếp" khóa đến khi gõ đúng, `#18181b` chỉ ở dark mode, chưa làm Nói.
+- Âm thanh Web Audio đúng (4 nốt) và sai (sawtooth) như file mẫu; pháo giấy cục bộ 90 mảnh, không dùng CDN.
+- Phát đúng một câu: mở Dictation thì tạm dừng và tua về đầu câu; mọi lần phát (Ctrl, nút, click video, Space) bị giới hạn trong câu hiện tại và dừng bằng requestAnimationFrame (không dùng timeupdate vì trôi sang câu sau); không tự nhảy câu; tạm tắt vòng lặp câu của Dual Sub khi mở và khôi phục khi đóng; Nghe chậm 0.6x tự khôi phục tốc độ.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/dictation/dictation-score.js`, `js/core/languages.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho 3 file Dictation và `languages.js`; manifest parse được; 40 khóa `dictation*` có đủ EN/VI/KO; kịch bản Chromium headless (Playwright) trên CSS/HTML overlay thật với video giả lập có đồng hồ: 30/30 mục đạt, không lỗi trang. Chưa chạy trên YouTube thật (Chrome/Edge/Firefox).
+- Lưu ý: chưa làm dòng IPA dưới ô nhập (file mẫu có) và chế độ Nói (v2); README và OPT-ARENA.md chưa cập nhật.
+
+**2026-10-27 | v3.4.658 | Arena sửa:**
+
+- Hoàn thiện Dictation v1 ngay trong YouTube overlay Dual Sub hiện có: video YouTube thật, danh sách câu tiếng Anh nạp dần quanh câu đang phát, chấm theo căn chỉnh từ, dịch Việt sau khi giải đúng, ghi chú/tiến độ lưu cục bộ theo video và câu; tái sử dụng thanh điều khiển và giữ X/AI keepit để đóng chế độ.
+- Khóa cạnh tranh khi nạp tiến độ/dịch theo video và phiên hiện hành; chuyển câu xóa trạng thái đúng cũ; tải phụ đề thất bại phát sự kiện để không giữ nội dung cũ. Chỉ có chế độ Đánh máy trong v1, không xin quyền micro.
+- Chuỗi giao diện mới có EN/VI/KO; README, OPT-ARENA §8.1.2 và bản đồ kiến trúc được cập nhật.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/video/dual-subtitles.js`, `js/core/languages.js`, `manifest.json`, `README.md`, `OPT-ARENA.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` 45/45 JS; `python3 -m json.tool manifest.json`; CSS Dictation (97 quy tắc, 0 lỗi); 44 đường dẫn cục bộ trong manifest; chuỗi EN/VI/KO đủ; 3 ca scorer (hoa thường/dấu câu/nháy cong, căn chỉnh, từ thừa); kiểm tra scope v1/load order; `git diff --check` — đạt. Kiểm thử UI trên trình duyệt thật: Chưa chạy (môi trường không có trình duyệt/Playwright).
+
+**2026-10-26 | v3.4.656 | Claude sửa:**
+
+- Chỉ sửa ô tìm Settings của Dashboard: (1) cao 40px; (2) thêm icon tìm kiếm bên trái trong ô (bộ path `search` của app); (3) ô dính ở đầu khi cuộn (`position: sticky`, nền trùng nền Settings, bù padding của vùng nội dung ở các mức ≤700px và ≤520px); (4) tô sáng kết quả bằng `mark.lhn-search-match` (nền `#fff2ad` như Dashboard/sidebar), chỉ trong nhãn, mô tả và tiêu đề của hàng/nhóm đang hiện, khớp không phân biệt hoa thường và dấu; gỡ sạch mark khi xóa ô tìm.
+- Thêm một quy tắc dark mode giới hạn trong Settings: chữ trong mark đổi sang `#111827` để đọc được trên nền vàng. Không đổi highlight ở Dashboard/sidebar.
+- Lưu ý: chuẩn hóa dùng chung chưa gộp chữ `đ` thành `d` nên gõ "toc do" chưa khớp "tốc độ" (gõ "toc" khớp); lọc và tô sáng cùng hành vi.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/dashboard/settings-ui.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dashboard/settings-ui.js` và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật: ô cao đúng 40px, icon nằm trong ô và canh giữa, mark chỉ nằm trong hàng đang hiện, khớp không dấu ("toc" → "tốc"), ô dính ở top 0 sau khi cuộn hết, sau Esc DOM giống hệt ban đầu và không còn mark, dark mode có màu mark và nền ô đúng. Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
+
+**2026-10-26 | v3.4.655 | Claude sửa:**
+
+- Thêm ô tìm ở đầu Settings của Dashboard: gõ (debounce 200 ms, `LHN_INDEX_SEARCH`, không phân biệt hoa thường và dấu) để ẩn các hàng không khớp qua mọi tab, ẩn nhóm/tab trống và hiện "No settings found" khi không có kết quả; xóa ô tìm (Esc, đổi tab, đóng hộp thoại) thì về nguyên trạng. Từ khóa mỗi hàng gồm nhãn, mô tả, tiêu đề h3 gần nhất và tiêu đề tab; không làm nổi bật kết quả. Chỉ bật/tắt class tạm, không đổi `hidden`.
+- Chuỗi mới `settingsSearchPlaceholder`, `settingsSearchNoResults` (EN/VI/KO). Nút Reset của tab Shortcut được ẩn trong lúc tìm.
+- Chưa làm (đã chốt, xem Việc đang mở 27): làm nổi bật ẩn và điều hướng ↑/↓.
+- File: `pages/dashboard.html`, `js/dashboard/settings-ui.js`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `css/dashboard/dashboard.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 3 file JS đã sửa và parse `manifest.json` — đạt. Chromium headless (Playwright) trên markup/CSS Settings thật + `search.js` + `settings-ui.js`: 10 ca đạt (debounce, lọc theo nhãn/mô tả/tiêu đề tab, không khớp, Esc/đổi tab/đóng hộp thoại xóa sạch class, thuộc tính `hidden` không đổi). Trên extension chạy thật (Chrome/Edge/Firefox): Chưa chạy.
+
+**2026-10-26 | v3.4.654 | Claude sửa:**
+
+- Sửa lỗi xung đột tên: `js/shared/search.js` (v3.4.652–653) ghi đè `globalThis.LHN_SEARCH` của `js/translate/search.js` (có `highlightMatches`, `rank`), làm hỏng highlight ở sidebar và Dashboard. Đổi tên module mới thành `LHN_INDEX_SEARCH` và cập nhật các nơi gọi (bilingual-reader, popup, settings-ui).
+- File: `js/shared/search.js`, `js/reader/bilingual-reader.js`, `js/popup/popup.js`, `js/dashboard/settings-ui.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.653 | Claude sửa:**
+
+- Áp dụng `LHN_SEARCH` (bỏ dấu, không phân biệt hoa thường) cho ô chọn ngôn ngữ của popup (`js/popup/popup.js`) và Settings Dashboard (`js/dashboard/settings-ui.js`); nạp `js/shared/search.js` trong `pages/popup.html` và `pages/dashboard.html`.
+- Không đổi: ô tìm Dashboard (đã có debounce riêng); `js/translate/search.js` (tìm chữ trong trang, không phải lọc danh sách).
+- File: `js/popup/popup.js`, `js/dashboard/settings-ui.js`, `pages/popup.html`, `pages/dashboard.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.652 | Claude sửa:**
+
+- Thêm module tìm kiếm dùng chung `js/shared/search.js` (`LHN_SEARCH`: normalize, createIndex, search, debounce 200 ms). Áp dụng thử cho ô tìm giọng trình duyệt: chỉ mục tính một lần và cache theo danh sách giọng; gõ được debounce 200 ms; bỏ qua khi truy vấn chuẩn hóa không đổi.
+- Chưa áp dụng cho Dashboard, sidebar, flashcard (chờ kết quả thử nghiệm ở chọn giọng).
+- File: `js/shared/search.js` (mới), `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho `search.js` và `bilingual-reader.js` — đạt. Thử nghiệm module trong Node với 600 giọng giả: 0 sai khác so với lọc thủ công trên 1000 truy vấn; tìm trung bình ~0,05 ms; 3 lần gõ nhanh chỉ gọi 1 lần. Trên Edge: Chưa chạy.
+
+**2026-10-26 | v3.4.651 | Claude sửa:**
+
+- Ô tìm kiếm giọng trình duyệt: tìm theo tên giọng, mã vùng, mã ngôn ngữ, và tên quốc gia/ngôn ngữ bằng ngôn ngữ hiển thị lẫn tiếng Anh; không phân biệt hoa thường và dấu (chuẩn hóa NFD). Chưa hỗ trợ viết tắt không chuẩn như "UAE" (chỉ mã AE).
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-26 | v3.4.650 | Claude sửa:**
+
+- Danh sách giọng trình duyệt (Select Voice): hiển thị 2 dòng — dòng 1 tên quốc gia, dòng 2 tên giọng ngắn · ngôn ngữ; tooltip giữ tên đầy đủ và mã ngôn ngữ. Tên lấy từ `Intl.DisplayNames` theo ngôn ngữ hiển thị. Danh sách Google TTS giữ nguyên.
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
+- Việc đang mở: chưa thêm từ khóa tìm kiếm ẩn (đề xuất trước đó, chờ quyết định).
+
+**2026-10-26 | v3.4.649 | Claude sửa:**
+
+- Thêm cờ cho các giọng Edge còn thiếu (từ danh sách console): AE, BH, DZ, EG, IQ, JO, KW, LB, LY, MA, OM, QA, SY, TN, YE, AZ, BG, BA, KE, NG, SG, TZ, BO, CR, CU, DO, EC, GQ, GT, HN, NI, PA, PE, PR, PY, SV, UY, VE, EE, HR, IS (flag-icons 1x1, MIT). Ánh xạ thêm CANS → cờ Canada cho giọng Inuktitut.
+- File: `js/reader/bilingual-flags.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-flags.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-26 | v3.4.648 | Claude sửa:**
+
+- Debug: khi mở danh sách giọng đọc trình duyệt, log ra console (`console.info`) mỗi vùng chưa có cờ, kèm tên giọng và mã ngôn ngữ, để lập danh sách cờ còn thiếu. Không đổi UI.
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-26 | v3.4.647 | Claude sửa:**
+
+- Thêm cờ còn thiếu cho các giọng Edge không có cờ: AU, CA, IE, ZA, NZ, MX, AR, CO, CL, AT, CH, PT, NL, BE, SE, NO, DK, FI, CZ, GR, HU, MY, IL, KZ (từ flag-icons 1x1, MIT, đã rút gọn SVG). Ánh xạ vùng trong `FLAG_REGION_KEYS`.
+- File: `js/reader/bilingual-flags.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-flags.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-26 | v3.4.646 | Claude sửa:**
+
+- Thanh đọc `#lhn-bilingual-reading-bar` chỉ ẩn khi bấm nút đóng (`data-close`) hoặc bật/tắt bằng Alt+R. Bỏ các trường hợp tự ẩn: reader không hoạt động, website bị tắt. Hàm `closeReadingBar()` dùng cho cả hai đường đóng hợp lệ.
+- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/reader/bilingual-reader.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.645 | Claude sửa:**
+
+- Phím ↑/↓ tăng/giảm tốc độ video 0.05 khi overlay đang mở (bỏ gán cũ cho "Audio"); bỏ qua khi đang gõ trong ô nhập.
+- Hiện mức tốc độ hiện tại (`te-speed-label`) bên phải nút "Tốc độ", cỡ chữ 18px như giá trị trong popup (giả định, chờ xác nhận).
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.644 | Claude sửa:**
+
+- Popup tốc độ hiện căn giữa phía trên nút "Tốc độ" (thay cho vị trí cố định góc phải dưới). Vị trí tính từ hình chữ nhật của nút và kích thước thực của popup; sát mép thì kéo vào trong.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.643 | Claude sửa:**
+
+- Nút "Tốc độ" trên thanh điều khiển video mở popup tốc độ (từ speed_control_component): 8 mức (0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 2.0), thanh trượt 0.5–2.0 bước 0.05, nút −/+. Hai mode sáng/tối theo theme overlay. Thay cho chuyển tốc độ tuần tự trước đây.
+- Logic: đặt `video.playbackRate`, đồng bộ mức đang dùng; bấm ra ngoài popup thì đóng.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: nhãn "Bình thường" (nút 1.0) chưa dịch đủ ngôn ngữ (theo yêu cầu tạm thời).
+
+**2026-10-26 | v3.4.642 | Claude sửa:**
+
+- Full dict popup: bỏ lần vẽ sớm (chỉ có nghĩa chính). Popup giữ khung tải và chỉ vẽ một lần khi đã có đủ nghĩa, từ liên quan và IPA. Nhánh mở từ ghi chú không đổi.
+- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/content/content.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.641 | Claude sửa:**
+
+- Hoàn tác v3.4.640 (gom nhóm Cài đặt video): mã nguồn trở về đúng nội dung v3.4.639, theo yêu cầu. Đánh số 3.4.641 vì gói 3.4.639 đã xuất và không ghi đè được.
+- File: toàn bộ mã nguồn được khôi phục từ gói 3.4.639 (`js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`).
+- Kiểm tra: so sánh nội dung với gói 3.4.639 — khớp. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.640 | Claude sửa:**
+
+- Cài đặt video gom thành 4 nhóm có tiêu đề: Hiển thị (Chế độ xem, Chủ đề, Ambient mode, Ẩn thanh điều khiển); Phụ đề (Ngôn ngữ phụ đề, Tùy chọn phụ đề, Kết hợp câu, Ẩn bản dịch); Học tập và tương tác (Hiện popup dịch trực tiếp, Nhấp để phát âm, Đánh dấu từ); Dữ liệu và công cụ (Bộ dịch, Bộ sưu tập, Xuất phụ đề).
+- Công tắc có `data-setting` (popup, speak, combine, hidevi, hidectrl) và `sw(key)` thay cho chỉ số `mainSw[i]` để đổi thứ tự không làm lệch.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: các tiêu đề nhóm (Hiển thị, Phụ đề, Học tập và tương tác, Dữ liệu và công cụ) chưa dịch đủ ngôn ngữ (theo yêu cầu tạm thời).
+
+**2026-10-26 | v3.4.639 | Claude sửa:**
+
+- Gỡ đề xuất Ambient 3 của v3.4.638 (sáng hơn, mờ dần): Ambient 3 trở về như v3.4.637.
+- Đổi thứ tự và nhãn: Ambient 1 = cạnh viền lan 50% (trước là 2); Ambient 2 = cạnh viền lan 100% (trước là 3); Ambient 3 = radial (trước là 1). Menu Tắt | Ambient 1 | Ambient 2 | Ambient 3.
+- Khóa lưu đổi từ `ambientMode` sang `ambientStyle`, mặc định Ambient 3 (radial). Các lựa chọn đã lưu trước đó sẽ về mặc định.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: nhãn "Ambient 1–3" và "Tắt" chưa dịch (theo yêu cầu tạm thời).
+
+**2026-10-26 | v3.4.638 | Claude sửa:**
+
+- Ambient 3 khác Ambient 2: sáng hơn (opacity 0.85 so với 0.6) và mờ dần về phía mép khung 100% bằng mặt nạ radial (class `te-ambient-mode-3`).
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.637 | Claude sửa:**
+
+- Ambient 3: phạm vi lan tăng từ 80% lên 100% khoảng trống còn lại theo từng hướng.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-26 | v3.4.636 | Claude sửa:**
+
+- Ambient 3: cùng cách hiển thị cạnh viền 16:9 như Ambient 2, nhưng ánh sáng lan tối đa 80% khoảng trống còn lại (Ambient 2 là 50%). Bỏ khóa nút Ambient 3 trong menu.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: nhãn "Ambient 3" chưa dịch (theo yêu cầu tạm thời).
+
+**2026-10-26 | v3.4.635 | Claude sửa:**
+
+- Ambient mode: bỏ công tắc; hàng "Ambient mode" mở menu con (giống Tùy chọn phụ đề) với nhóm nút Tắt | Ambient 1 | Ambient 2 | Ambient 3. Ambient 1 = radial hiện tại; Ambient 2 = mới, lấy màu viền khung video, khung 16:9 lan tối đa 50% khoảng trống trên màn hình theo từng hướng; Ambient 3 làm mờ, không bấm được.
+- Lưu `ambientMode` (mặc định '1') trong `js/core/defaults.js`; `ambient` giữ đồng bộ để tương thích.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+- Việc đang mở: nhãn "Ambient mode", "Tắt", "Ambient 1–3" chưa dịch đủ ngôn ngữ hiển thị (theo yêu cầu tạm thời).
+
+**2026-10-26 | v3.4.634 | Claude sửa:**
+
+- Overlay video, theo yêu cầu của người dùng: (1) Ambient mode làm lại theo ảnh YouTube: lớp `te-ambient-layer` ở cấp overlay (z-index -1), canvas vuông 48x48 đặt tâm ở giữa `te-video-slot` (JS `placeAmbient` + `ResizeObserver`), kích thước 2,1 lần cạnh lớn nhất của video, mặt nạ `radial-gradient` tròn mờ dần, `blur(40px) saturate(1.8)`, opacity 0,5; khi bật, `te-left-section`/`te-control-bar`/`yt-dual-right-sidebar` trong suốt và nền gốc đặt ở root (#ffffff/#121212) nên màu nền sáng/tối không đổi; thêm công tắc "Ambient mode" ở Cài đặt video (công tắc thứ 6, sau "Ẩn thanh điều khiển"), mặc định bật, lưu ở `lhnYouTubeSettings.ambient` (thêm `ambient: true` vào `LHN_DEFAULTS.youtube`); gỡ các chỉnh sửa ambient cũ trong `te-left-section`; (2) tiêu đề video chạy vòng tròn nối đuôi: khi hover chữ bị cắt, JS thêm bản sao `te-title-dup` cách 32px và chạy đúng một vòng (tốc độ 40px/s, tuyến tính, lặp vô hạn), rời chuột thì gỡ bản sao; (3) header sidebar căn giữa dọc: dấu × đổi từ ký tự `&times;` sang SVG căn giữa, chữ tiêu đề canh theo chiều cao chữ hoa (`text-box: trim-both cap alphabetic`, trình duyệt chưa hỗ trợ thì nhích lên 1,5px).
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/core/defaults.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho 3 file JS — đạt; dựng overlay bằng Chromium 141 (Playwright) và chụp ảnh ambient bật/tắt theme sáng/tối, nền root #ffffff khi bật và 3 vùng trong suốt — đạt; đo header: tâm chiều cao chữ hoa 23,5px = tâm header 23,5px, logo và × lệch 0,5px (header 47px lẻ) — đạt; marquee: bản sao cách đúng 524px bằng một vòng, tốc độ đều, rời chuột reset, tiêu đề ngắn không chạy — đạt; mô phỏng Node 10 ca ambient (bật, không vẽ lại khi không đổi khung, seek xa, công tắc tắt, reduced-motion, lỗi đọc hình, tab ẩn, mặc định) — đạt. Trên YouTube thật, Firefox và font Segoe UI: Chưa chạy.
+- Lưu ý: toàn bộ nhãn menu Cài đặt video hiện là tiếng Việt cố định, chưa có cơ chế dịch; nhãn mới dùng "Ambient mode" (từ mượn, giữ nguyên ở mọi ngôn ngữ). Kích thước logo sidebar 26px là giá trị trong zip của người dùng, giữ nguyên. Không có git trong môi trường làm việc, chưa commit.
+
+**2026-10-26 | v3.4.633 | Claude sửa:**
+
+- Overlay video, theo yêu cầu của người dùng: (1) `te-video-title-label` thành khung cắt riêng, chữ chạy nằm trong `te-video-title-text`, icon YouTube đứng yên và chữ bị cắt ở mép icon (trước đó chữ trượt đè lên icon rồi biến mất ở mép `te-yt-logo-box`); (2) nền vùng trống khi ẩn phụ đề/thanh điều khiển nay là màu nền theo light/dark (`te-left-section` #ffffff/#121212), `te-sub-container` trong suốt; (3) hàng active ở sidebar bỏ `border-left` (gây xê dịch nội dung mỗi lần đổi câu), dùng `box-shadow: inset` kèm transition nền 0.3s, cuộn bằng `scrollTo` mượt khi gần và nhảy thẳng khi xa; (4) thêm Ambient mode kiểu YouTube: canvas 48x27 vẽ khung video mỗi 125 ms (pha 35% với khung trước), làm mờ `blur(48px) saturate(1.8)` opacity 0.45 phía sau video/phụ đề; chỉ vẽ khi tab hiện và khung đổi, tự tắt nếu video không cho đọc hình, tắt khi `prefers-reduced-motion`.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho hai file JS — đạt; kiểm tra chuỗi trên template (nền light/dark, canvas, khung tiêu đề, sidebar) — đạt; mô phỏng bằng Node: logic ambient (bật, không vẽ lại khi không đổi khung, seek xa, lỗi đọc hình thì tắt, tab ẩn, reduced-motion) và đo marquee (400px chạy 260px/8.4s, 90px không chạy) — đạt. Trên trình duyệt: Chưa chạy.
+- Lưu ý: Ambient không có công tắc vì nhãn menu "Cài đặt video" hiện chỉ có tiếng Việt, thêm công tắc phải dịch đủ ngôn ngữ; ambient làm sub-container hiển thị màu video phía sau nên cần kiểm tra độ dễ đọc. Mục (1) và (2) là cách hiểu yêu cầu của người dùng, cần xác nhận. Không có git trong môi trường làm việc, chưa commit.
+
+**2026-10-26 | v3.4.632 | Claude sửa:**
+
+- Overlay video, theo yêu cầu của người dùng: (1) thêm logo SVG Keepit bên trái chữ "Keepit - Video Song Ngữ" ở `yt-dual-sidebar-header` (SVG inline từ `icon.svg`, bỏ bộ lọc đổ bóng, 20px); (2) `te-video-title-label` chạy qua lại khi hover nếu tiêu đề bị cắt (CSS keyframes + JS đo độ dài bị cắt lúc `mouseenter`, tôn trọng `prefers-reduced-motion`); (3) sửa lỗi bật "ẩn thanh điều khiển" thì hover không hiện lại: nguyên nhân là `display:none` nên phần tử không nhận hover; đổi sang `opacity:0` và hiện lại bằng `:hover`/`:focus-within`.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho hai file JS — đạt; kiểm tra chuỗi trên template (logo, CSS ẩn thanh điều khiển, keyframes) — đạt; mô phỏng hàm đo marquee bằng Node (tiêu đề 400px: chạy, dịch 260px/8.4s; tiêu đề 90px: không chạy; rời chuột: gỡ class) — đạt. Trên trình duyệt: Chưa chạy.
+- Lưu ý: khi thanh ẩn, vùng đáy 70px vẫn nhận chuột (trong suốt) nên click vào vùng đó không còn đến video; không có git trong môi trường làm việc, chưa commit.
+
+**2026-10-25 | v3.4.631 | Claude sửa:**
+
+- Tối ưu hiệu năng overlay video (không đổi UI): (2) cache nút transcript khi còn kết nối; (3) throttle sự kiện cuộn danh sách bằng requestAnimationFrame; (5) bỏ qua cập nhật phụ đề khi dòng đang hiển thị không đổi; (6) cache tham chiếu `ui()` còn kết nối.
+- Chưa làm: (1) dựng danh sách theo cửa sổ ảo; (4) gộp hai bộ đếm thời gian; (7) chuyển inline style sang class; (8) gộp selector theme trùng. Lý do: cần kiểm thử thủ công và xác nhận hiển thị trước.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.630 | Claude sửa:**
+
+- Xóa ảnh placeholder cứng (SVG chữ "They want a better future…") khỏi `.te-video-slot` của overlay video. Vùng trống khi video chờ tải hoặc 4:3 nay là nền `#111` ở cả dark và light mode.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.629 | Claude sửa:**
+
+- Gỡ thử nghiệm bo 4 góc popup trên Chromium (v3.4.628): không đạt và giới hạn khung cửa sổ thuộc trình duyệt. Popup trở về như v3.4.627.
+- File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-25 | v3.4.628 | Claude sửa:**
+
+- Popup toolbar trên Chromium (Edge) không bo 4 góc như Firefox. Thêm class `is-chromium` (popup.js, chỉ khi không phải Firefox) và bo góc nội dung 14px chỉ cho class này. Firefox không đổi.
+- Giới hạn: khung cửa sổ popup của Chromium là hình chữ nhật; CSS chỉ bo nội dung, góc có thể vẫn thấy nền trình duyệt. Chưa xác nhận trên Edge.
+- File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
+
+**2026-10-25 | v3.4.627 | Claude sửa:**
+
+- Popup toolbar (Edge/Chromium): thanh cuộn vẫn hiện kiểu mặc định dù đã có biến 3px. Đặt `scrollbar-width`/`scrollbar-color` về `auto` và áp `::-webkit-scrollbar` rõ ràng cho `html`, `body`, `.popup-main` theo `--lhn-scrollbar-width`. Chưa xác nhận nguyên nhân gốc.
+- File: `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: không có JS thay đổi. Trên Edge: Chưa chạy.
+
+**2026-10-25 | v3.4.626 | Claude sửa:**
+
+- Toàn app: thanh cuộn rộng/cao theo một biến duy nhất `--lhn-scrollbar-width: 3px` (`css/shared/ui-tokens.css`). Áp cho popup, dashboard, UI Keepit (`[id^="lhn-"]`), khung Cài đặt video và overlay phụ đề. Không áp cho thanh cuộn của website.
+- Các thanh cuộn dùng `scrollbar-color`/`scrollbar-width` (sidebar, popup dark, toolbar dashboard) chuyển về `auto` để quy tắc WebKit có tác dụng; màu thumb giữ như cũ.
+- Giới hạn: Firefox không đặt được độ rộng bằng px; thanh vẫn theo kiểu `thin` của trình duyệt.
+- File: `css/shared/ui-tokens.css`, `css/content/content.css`, `css/popup/popup.css`, `css/dashboard/dashboard.css`, `js/reader/bilingual-reader.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.625 | Claude sửa:**
+
+- Thanh cuộn Cài đặt video (`.te-modal-body`) cố định 3px, bỏ đổi kích thước khi rê chuột (bỏ hai quy tắc `:hover`).
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.624 | Claude sửa:**
+
+- Thanh cuộn Cài đặt video (`.te-modal-body`) vẫn hiện dày và xám dù đã có quy tắc WebKit. Giả thuyết: Chromium bỏ qua `::-webkit-scrollbar` khi `scrollbar-color`/`scrollbar-width` được kế thừa không phải `auto`. Đặt lại hai thuộc tính này về `auto` cho `.te-modal-body`, để quy tắc 2px/4px có hiệu lực.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy (giả thuyết chưa xác nhận).
+
+**2026-10-25 | v3.4.623 | Claude sửa:**
+
+- Làm lại từ v3.4.622: hoàn tác thử nghiệm trên danh sách phụ đề (v3.4.623 cũ). Thanh cuộn của khung Cài đặt video (`.te-modal-body`) nay rộng 2px khi không rê chuột, 4px khi rê vào khung. Không tạo thanh tự vẽ.
+- Giới hạn: CSS không đo được rê riêng lên thanh, nên 4px kích hoạt khi rê vào khung Cài đặt. Firefox không đổi được độ rộng thanh cuộn bằng CSS, giữ nguyên.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.624 | Claude sửa:**
+
+- Sửa thử nghiệm thanh cuộn mảnh: v3.4.623 áp nhầm vùng (`.te-transcript-scroll`). Thanh cuộn của khung Cài đặt video là `.te-modal-body`; nay áp cùng kiểu mảnh/tím cho vùng này. Không đổi bố cục.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.623 | Claude sửa:**
+
+- Thử nghiệm thanh cuộn mảnh trên overlay video (Dual Sub): áp CSS thuần cho `.te-transcript-scroll` (scrollbar-width thin cho Firefox; ::-webkit-scrollbar 4px cho Chromium, nở khi rê). Không thêm DOM, không đổi bố cục.
+- Giới hạn: Firefox không có hiệu ứng nở khi rê và không tự ẩn; chưa có thanh tự vẽ bằng JS như scrollbar-demo.html.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
 
 **2026-10-25 | v3.4.622 | Codex sửa:**
 
@@ -773,107 +872,124 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: Chưa chạy.
 
-- **2026-10-25 | v3.4.615 | Codex sửa:**
-  - Khi bật **Kết hợp câu**, ghép các mảnh phụ đề của cả dòng chính và dòng dịch; giữ bản dịch track riêng tương ứng với câu được gộp.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: fixture Node xác nhận hai mảnh nguồn và hai mảnh dịch được ghép đồng bộ thành một câu; `node --check` cho ba file JavaScript, parse manifest/version và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
+**2026-10-25 | v3.4.615 | Codex sửa:**
 
-- **2026-10-25 | v3.4.614 | Codex sửa:**
-  - Sửa nguyên nhân Auto đích cứ thành English: `CONFIG` không có trong phạm vi `dual-subtitles.js`, nên đọc `lhnSettings.language` lỗi và rơi về dự phòng; listener thay đổi Dashboard cũng không chạy đúng. Đọc khóa qua `globalThis.LHN_CONFIG` và giữ nguyên thiết lập ngôn ngữ dùng chung.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho `dual-subtitles.js`, `overlay-template.js`, `dashboard.js`; parse manifest/version, không còn tham chiếu `CONFIG` ngoài phạm vi và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
+- Khi bật **Kết hợp câu**, ghép các mảnh phụ đề của cả dòng chính và dòng dịch; giữ bản dịch track riêng tương ứng với câu được gộp.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: fixture Node xác nhận hai mảnh nguồn và hai mảnh dịch được ghép đồng bộ thành một câu; `node --check` cho ba file JavaScript, parse manifest/version và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
 
-- **2026-10-25 | v3.4.613 | Codex sửa:**
-  - Gộp xử lý chọn ngôn ngữ Dual Sub còn một hàm lưu, bỏ lỗi khai báo trùng khiến script hỏng. Chọn ngôn ngữ cập nhật phụ đề ngay và lưu vào đúng `lhnStudyTranslationSettings` đang dùng bởi Dashboard; Auto đích theo ngôn ngữ giao diện.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JavaScript liên quan, parse manifest và `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
+**2026-10-25 | v3.4.614 | Codex sửa:**
 
-- **2026-10-25 | v3.4.611 | Codex sửa:**
-  - Sửa Auto của phụ đề dịch để lấy chính xác mã `language` đã lưu trong `lhnSettings` (có chuẩn hóa mã vùng), thay vì fallback không khớp tùy chọn ngôn ngữ Dashboard. Tăng độ tin cậy khi chọn ở Dual Sub: xử lý `input` và `change`, tuần tự hóa thao tác lưu hai trường, và cho menu lựa chọn thoát khỏi vùng bị cắt của modal.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba file JavaScript, parse `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
+- Sửa nguyên nhân Auto đích cứ thành English: `CONFIG` không có trong phạm vi `dual-subtitles.js`, nên đọc `lhnSettings.language` lỗi và rơi về dự phòng; listener thay đổi Dashboard cũng không chạy đúng. Đọc khóa qua `globalThis.LHN_CONFIG` và giữ nguyên thiết lập ngôn ngữ dùng chung.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho `dual-subtitles.js`, `overlay-template.js`, `dashboard.js`; parse manifest/version, không còn tham chiếu `CONFIG` ngoài phạm vi và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Dual Sub giờ có thể chỉnh Ngôn ngữ phụ đề chính và dịch ngay trong menu; hai bộ chọn ghi thẳng vào thiết lập dịch dùng chung với Dashboard, đổi ở Dashboard cũng cập nhật Dual Sub. Auto đích lấy ngôn ngữ hiển thị đã chọn trong Dashboard, tránh rơi về English khi giao diện đang là tiếng Việt/Hàn. Các lựa chọn khớp Dashboard.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/dashboard/dashboard.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
+**2026-10-25 | v3.4.613 | Codex sửa:**
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Sửa mapping phụ đề: dòng chính dùng Ngôn ngữ nguồn, dòng dịch dùng Ngôn ngữ đích. Tìm track riêng cho từng ngôn ngữ; nếu thiếu track thì lấy track gốc/mặc định và dịch riêng sang ngôn ngữ cần hiển thị. Cache transcript tách theo cả hai ngôn ngữ.
-  - File: `js/video/dual-subtitles.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js` và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
+- Gộp xử lý chọn ngôn ngữ Dual Sub còn một hàm lưu, bỏ lỗi khai báo trùng khiến script hỏng. Chọn ngôn ngữ cập nhật phụ đề ngay và lưu vào đúng `lhnStudyTranslationSettings` đang dùng bởi Dashboard; Auto đích theo ngôn ngữ giao diện.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho các file JavaScript liên quan, parse manifest và `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Kết nối Ngôn ngữ phụ đề với Dashboard > Dịch > Ngôn ngữ nguồn. Cả hai dòng phụ đề dùng ngôn ngữ nguồn; ưu tiên transcript track khớp, nếu thiếu dùng track gốc/mặc định và dịch sang ngôn ngữ nguồn. Đổi thiết lập sẽ tải lại track hoặc dịch lại theo ngôn ngữ mới; cache được tách theo ngôn ngữ.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` hai file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
+**2026-10-25 | v3.4.611 | Codex sửa:**
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Chỉ hover pause/nền xanh nhạt trên phụ đề gốc tiếng Anh, không áp dụng câu dịch; Full Dict từ Dual Sub đọc theo thiết lập Auto speak; double-click sidebar hủy click đơn nên video không seek/đổi focus cue, đồng thời vẫn tạm dừng video.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
+- Sửa Auto của phụ đề dịch để lấy chính xác mã `language` đã lưu trong `lhnSettings` (có chuẩn hóa mã vùng), thay vì fallback không khớp tùy chọn ngôn ngữ Dashboard. Tăng độ tin cậy khi chọn ở Dual Sub: xử lý `input` và `change`, tuần tự hóa thao tác lưu hai trường, và cho menu lựa chọn thoát khỏi vùng bị cắt của modal.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` ba file JavaScript, parse `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Dual Sub: neo Full Dict phía trên từ được chọn trong phụ đề dưới video; hover phụ đề chính hoặc chữ trong sidebar để pause/resume; hover từng từ có nền xanh nhạt; mở popup Full Dict, dịch hoặc note sẽ pause video cho đến khi đóng.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Chỉ trong Dual Sub: hover vùng phụ đề chính sẽ pause video và rời vùng sẽ tiếp tục; chọn từ tiếng Anh ở phụ đề dưới video sẽ mở Full Dict neo theo chữ đã chọn; double-click phụ đề bên sidebar sẽ pause video.
-  - File: `js/video/dual-subtitles.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js`, `node --check js/content/content.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
+- Dual Sub giờ có thể chỉnh Ngôn ngữ phụ đề chính và dịch ngay trong menu; hai bộ chọn ghi thẳng vào thiết lập dịch dùng chung với Dashboard, đổi ở Dashboard cũng cập nhật Dual Sub. Auto đích lấy ngôn ngữ hiển thị đã chọn trong Dashboard, tránh rơi về English khi giao diện đang là tiếng Việt/Hàn. Các lựa chọn khớp Dashboard.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/dashboard/dashboard.js`, `PROJECT.md`.
+- Kiểm tra: `node --check` ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Đổi tên thư mục module từ `js/youtube/` thành `js/video/` và CSS từ `youtube.css` thành `video.css`; cập nhật đường dẫn nạp trong manifest. Giữ nguyên tên file, nội dung và hành vi.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `css/content/video.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Thêm shortcut mặc định `Alt+C` để bật/tắt dual subtitles, cho phép đổi trong Dashboard > Shortcut; `Escape` đóng dual subtitles, không thêm trường cài đặt riêng.
-  - File: `js/core/defaults.js`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `js/content/content.js`, `js/youtube/dual-subtitles.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` năm file JavaScript, xác thực JSON `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trong trình duyệt.
+- Sửa mapping phụ đề: dòng chính dùng Ngôn ngữ nguồn, dòng dịch dùng Ngôn ngữ đích. Tìm track riêng cho từng ngôn ngữ; nếu thiếu track thì lấy track gốc/mặc định và dịch riêng sang ngôn ngữ cần hiển thị. Cache transcript tách theo cả hai ngôn ngữ.
+- File: `js/video/dual-subtitles.js`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js` và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem vừa; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
-  - File: `js/core/defaults.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/core/defaults.js` và `git diff --check` — đạt.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Khắc phục chữ và khoảng cách full dict bị thu nhỏ trên một số trang: các đơn vị `rem` trong riêng popup phụ thuộc cỡ chữ gốc trang (YouTube có thể đặt root nhỏ hơn). Đổi sang kích thước `px` tương đương ở nền 16px. Đối chiếu CSS với v3.5.3 cho thấy stylesheet giống hệt; khác biệt là cỡ chữ root của trang nơi popup được mở.
-  - File: `css/content/content.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `git diff --check` đạt; chưa kiểm thử trên trình duyệt.
+- Kết nối Ngôn ngữ phụ đề với Dashboard > Dịch > Ngôn ngữ nguồn. Cả hai dòng phụ đề dùng ngôn ngữ nguồn; ưu tiên transcript track khớp, nếu thiếu dùng track gốc/mặc định và dịch sang ngôn ngữ nguồn. Đổi thiết lập sẽ tải lại track hoặc dịch lại theo ngôn ngữ mới; cache được tách theo ngôn ngữ.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
 
-- **2026-10-25 | v3.4.609 | Codex sửa:**
-  - Sửa chọn chữ trong phụ đề YouTube song ngữ: ngoài listener trên `document`, gắn listener `mouseup` trực tiếp vào shadow root `#trancy-host` khi host xuất hiện. Dùng `WeakSet` chống xử lý trùng khi sự kiện đồng thời nổi lên `document`; popup dịch và full dict tiếp tục dùng chung luồng chọn chữ hiện có.
-  - File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/content/content.js`, `node --check js/youtube/dual-subtitles.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
-- **2026-10-25 | v3.4.608 | Codex sửa:**
-  - Đối chiếu nguồn phụ đề YouTube trong `dual-subtitles.js` và làm rõ `PROJECT.md`: mô tả v3.4.600 là cách triển khai ban đầu; trạng thái hiện hành là player API ANDROID + XML, DOM transcript, watch-page timedtext và live caption dự phòng. `get_transcript` trong nhật ký v3.4.605 là thay đổi lịch sử, không còn được gọi trong code hiện tại.
-  - File: `PROJECT.md`.
-  - Kiểm tra: đối chiếu code bằng `rg` và đọc các luồng lấy transcript; `git diff --check` chạy sau chỉnh sửa. Không sửa code.
+- Chỉ hover pause/nền xanh nhạt trên phụ đề gốc tiếng Anh, không áp dụng câu dịch; Full Dict từ Dual Sub đọc theo thiết lập Auto speak; double-click sidebar hủy click đơn nên video không seek/đổi focus cue, đồng thời vẫn tạm dừng video.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
+- Kiểm tra: `node --check` cho ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
 
-- **2026-10-25 | v3.4.608 | Claude sửa:**
-  - Sửa lỗi popup dịch và full dict không hiện khi chọn chữ trong phụ đề YouTube (overlay nằm trong shadow root `#trancy-host`). Trình nghe chọn chữ (`js/content/content.js`) nay lấy vùng chọn từ shadow root trước (`ShadowRoot.getSelection()`), nếu không có thì dùng `document` như cũ.
-  - Ngoài YouTube và Firefox (không có API shadow selection) hành vi giữ nguyên.
-  - File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/content/content.js` — đạt. Trên trình duyệt: Chưa chạy.
-  - Tiếp theo: kiểm tra trên Chromium (bôi đen phụ đề khi bật dual sub) và kiểm tra Firefox xem `ShadowRoot.getSelection` có tồn tại không.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
+- Dual Sub: neo Full Dict phía trên từ được chọn trong phụ đề dưới video; hover phụ đề chính hoặc chữ trong sidebar để pause/resume; hover từng từ có nền xanh nhạt; mở popup Full Dict, dịch hoặc note sẽ pause video cho đến khi đóng.
+- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
+- Kiểm tra: Chưa chạy.
 
-- **2026-10-25 | v3.4.607 | Claude sửa:**
-  - Hoàn tác (5) của v3.4.606: chọn caption track luôn ưu tiên tiếng Anh (manual trước, rồi tự động), vì nguồn của phụ đề song ngữ Anh–Việt phải là tiếng Anh. Không dùng ngôn ngữ gốc của video để chọn track (video thử nghiệm đã chọn nhầm tiếng Albania).
-  - Giữ (1) gate tab, (3) cache lỗi 10 phút, (7) khôi phục CC.
-  - File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
+**2026-10-25 | v3.4.610 | Codex sửa:**
 
+- Chỉ trong Dual Sub: hover vùng phụ đề chính sẽ pause video và rời vùng sẽ tiếp tục; chọn từ tiếng Anh ở phụ đề dưới video sẽ mở Full Dict neo theo chữ đã chọn; double-click phụ đề bên sidebar sẽ pause video.
+- File: `js/video/dual-subtitles.js`, `js/content/content.js`, `PROJECT.md`.
+- Kiểm tra: `node --check js/video/dual-subtitles.js`, `node --check js/content/content.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
 
-- **2026-10-25 | v3.4.606 | Claude sửa:**
-  - YouTube song ngữ: (1) chỉ prefetch khi tab đang hiển thị; (3) cache lỗi prefetch 10 phút theo videoId; (5) chọn caption track theo ngôn ngữ gốc của audio track mặc định của video, không có thì ưu tiên `en`; (7) khi dừng caption trực tiếp, đưa CC về trạng thái trước nếu Keepit là bên bật.
-  - Chưa làm: (4) cache khoá theo ngôn ngữ (cần biết ngôn ngữ track trước khi fetch); (6) panel ngầm (không đổi UI, chờ quyết định).
-  - File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-  - Lưu ý: khôi phục CC chạy khi `stopLiveCaptionCapture` được gọi; khi bắt đầu lại caption trực tiếp có thể CC tắt rồi bật lại.
+**2026-10-25 | v3.4.610 | Codex sửa:**
+
+- Đổi tên thư mục module từ `js/youtube/` thành `js/video/` và CSS từ `youtube.css` thành `video.css`; cập nhật đường dẫn nạp trong manifest. Giữ nguyên tên file, nội dung và hành vi.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `css/content/video.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chưa chạy.
+
+**2026-10-25 | v3.4.610 | Codex sửa:**
+
+- Thêm shortcut mặc định `Alt+C` để bật/tắt dual subtitles, cho phép đổi trong Dashboard > Shortcut; `Escape` đóng dual subtitles, không thêm trường cài đặt riêng.
+- File: `js/core/defaults.js`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `js/content/content.js`, `js/youtube/dual-subtitles.js`, `PROJECT.md`.
+- Kiểm tra: `node --check` năm file JavaScript, xác thực JSON `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trong trình duyệt.
+
+**2026-10-25 | v3.4.610 | Codex sửa:**
+
+- Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem vừa; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
+- File: `js/core/defaults.js`, `PROJECT.md`.
+- Kiểm tra: `node --check js/core/defaults.js` và `git diff --check` — đạt.
+
+**2026-10-25 | v3.4.610 | Codex sửa:**
+
+- Khắc phục chữ và khoảng cách full dict bị thu nhỏ trên một số trang: các đơn vị `rem` trong riêng popup phụ thuộc cỡ chữ gốc trang (YouTube có thể đặt root nhỏ hơn). Đổi sang kích thước `px` tương đương ở nền 16px. Đối chiếu CSS với v3.5.3 cho thấy stylesheet giống hệt; khác biệt là cỡ chữ root của trang nơi popup được mở.
+- File: `css/content/content.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `git diff --check` đạt; chưa kiểm thử trên trình duyệt.
+
+**2026-10-25 | v3.4.609 | Codex sửa:**
+
+- Sửa chọn chữ trong phụ đề YouTube song ngữ: ngoài listener trên `document`, gắn listener `mouseup` trực tiếp vào shadow root `#trancy-host` khi host xuất hiện. Dùng `WeakSet` chống xử lý trùng khi sự kiện đồng thời nổi lên `document`; popup dịch và full dict tiếp tục dùng chung luồng chọn chữ hiện có.
+- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/content/content.js`, `node --check js/youtube/dual-subtitles.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
+
+**2026-10-25 | v3.4.608 | Codex sửa:**
+
+- Đối chiếu nguồn phụ đề YouTube trong `dual-subtitles.js` và làm rõ `PROJECT.md`: mô tả v3.4.600 là cách triển khai ban đầu; trạng thái hiện hành là player API ANDROID + XML, DOM transcript, watch-page timedtext và live caption dự phòng. `get_transcript` trong nhật ký v3.4.605 là thay đổi lịch sử, không còn được gọi trong code hiện tại.
+- File: `PROJECT.md`.
+- Kiểm tra: đối chiếu code bằng `rg` và đọc các luồng lấy transcript; `git diff --check` chạy sau chỉnh sửa. Không sửa code.
+
+**2026-10-25 | v3.4.608 | Claude sửa:**
+
+- Sửa lỗi popup dịch và full dict không hiện khi chọn chữ trong phụ đề YouTube (overlay nằm trong shadow root `#trancy-host`). Trình nghe chọn chữ (`js/content/content.js`) nay lấy vùng chọn từ shadow root trước (`ShadowRoot.getSelection()`), nếu không có thì dùng `document` như cũ.
+- Ngoài YouTube và Firefox (không có API shadow selection) hành vi giữ nguyên.
+- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/content/content.js` — đạt. Trên trình duyệt: Chưa chạy.
+- Tiếp theo: kiểm tra trên Chromium (bôi đen phụ đề khi bật dual sub) và kiểm tra Firefox xem `ShadowRoot.getSelection` có tồn tại không.
+
+**2026-10-25 | v3.4.607 | Claude sửa:**
+
+- Hoàn tác (5) của v3.4.606: chọn caption track luôn ưu tiên tiếng Anh (manual trước, rồi tự động), vì nguồn của phụ đề song ngữ Anh–Việt phải là tiếng Anh. Không dùng ngôn ngữ gốc của video để chọn track (video thử nghiệm đã chọn nhầm tiếng Albania).
+- Giữ (1) gate tab, (3) cache lỗi 10 phút, (7) khôi phục CC.
+- File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
+
+**2026-10-25 | v3.4.606 | Claude sửa:**
+
+- YouTube song ngữ: (1) chỉ prefetch khi tab đang hiển thị; (3) cache lỗi prefetch 10 phút theo videoId; (5) chọn caption track theo ngôn ngữ gốc của audio track mặc định của video, không có thì ưu tiên `en`; (7) khi dừng caption trực tiếp, đưa CC về trạng thái trước nếu Keepit là bên bật.
+- Chưa làm: (4) cache khoá theo ngôn ngữ (cần biết ngôn ngữ track trước khi fetch); (6) panel ngầm (không đổi UI, chờ quyết định).
+- File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
+- Lưu ý: khôi phục CC chạy khi `stopLiveCaptionCapture` được gọi; khi bắt đầu lại caption trực tiếp có thể CC tắt rồi bật lại.
 
 **2026-10-25 | v3.4.605 | DeepSeek sửa:**
 
@@ -1202,6 +1318,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: page-layout.js, content.js, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 28/28 JS; script paths hợp lệ; mock thu hẹp/khôi phục trang đạt; `git diff --check` đạt; ZIP 65 mục có manifest gốc và page-layout.js. Chưa kiểm thử Chrome/Firefox.
 - Tiếp theo: Icons, Shortcuts và các module Bước 4.
+
 **2026-10-24 | v3.4.574 | Codex sửa:**
 
 - Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
@@ -1229,42 +1346,49 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: search.js, dashboard.js, content.js, dashboard.html, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script hợp lệ; mock Search rank đạt; `git diff --check` đạt; ZIP 61 mục, manifest gốc, version 3.4.571 và search.js. Chưa kiểm thử trình duyệt.
 - Tiếp theo: Bước 3 Annotations, Highlighter, SentenceNote và Note Composer.
+
 **2026-10-24 | v3.4.570 | Codex sửa:**
 
 - Bước 2 — Dictionary: tách kiểm tra từ tiếng Anh, cache/migration, dịch Google→MyMemory, IPA, synonyms/antonyms, forms và collocations sang `dictionary.js` (`LHN_DICTIONARY`); content giữ phần popup/rendering và gọi API module.
 - File: dictionary.js, content.js, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 25/25 JS; đường dẫn script hợp lệ; mock Dictionary provider/dedupe/cache đạt; ZIP 60 mục, manifest gốc, version 3.4.570 và dictionary.js. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Search và tiếp tục Bước 3–4.
+
 **2026-10-24 | v3.4.569 | Codex sửa:**
 
 - Bước 2 — Translate: tách provider pipeline Bilingual Reader và nhận diện ngôn ngữ từ `background.js` sang `translate.js` (`LHN_TRANSLATE`); giữ nguyên thứ tự engine/fallback, timeout, Promise dedupe, cache API và message contract.
 - File: translate.js, background.js, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 59 mục có manifest gốc, translate.js và version 3.4.569. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Dictionary và Search, rồi các module nghiệp vụ theo Bước 3–4.
+
 **2026-10-24 | v3.4.568 | Codex sửa:**
 
 - Bước 1 — Cache/lưu trữ: tách cache bản dịch Bilingual Reader khỏi `background.js` vào `cache.js` (`LHN_CACHE`), giữ nguyên key, TTL 7 ngày, touch 6 giờ, dọn 24 giờ, giới hạn 500/LRU và không cache fallback.
 - File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 23/23 JS; manifest/HTML script paths tồn tại; mock Cache prepare/hit/fallback miss/clear đạt; `git diff --check` đạt; ZIP 58 mục có manifest gốc, cache.js và version 3.4.568. Chưa kiểm thử trình duyệt.
 - Tiếp theo: rà Settings/Cache còn lại, rồi Bước 2 Translate/Dictionary/Search.
+
 **2026-10-24 | v3.4.567 | Codex sửa:**
 
 - Bước 1 — Settings: nối dashboard vào `LHN_SETTINGS.save` để thống nhất lưu cài đặt nền cùng popup/content; sửa helper để giữ nguyên chính xác cấu trúc object mà caller lưu, tránh tự thêm default vào dữ liệu hiện có.
 - File: settings.js, dashboard.js, manifest.json, PROJECT.md.
 - Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; Messaging calls tập trung; mock Settings resolve/get/save/subscribe đạt và xác nhận cấu trúc lưu không đổi; `git diff --check` đạt; ZIP 57 mục có manifest gốc, ba module nền tảng và version 3.4.567. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Cache/lưu trữ trong Bước 1.
+
 **2026-10-24 | v3.4.566 | Codex sửa:**
 
 - Bước 1 — Settings: thêm module `LHN_SETTINGS` cho resolve defaults, đọc/ghi cấu hình chung và đăng ký lắng nghe thay đổi; nối popup và content script vào helper mà không đổi UI hay tên storage key.
 - File: settings.js, manifest.json, background.js, popup.html, dashboard.html, popup.js, content.js, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; mock Settings get/save/resolve/subscribe đạt; `git diff --check` đạt; ZIP 57 mục có manifest gốc, `settings.js` và version 3.4.566. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Cache/lưu trữ trong Bước 1, sau đó tiếp tục các dịch vụ theo thứ tự OPT.
+
 **2026-10-24 | v3.4.565 | Codex sửa:**
 
 - Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
 - File: messaging.js, manifest.json, background.js, content.js, dashboard.js, popup.js, error-logger.js, tts-engine.js, study-translation.js, bilingual-reader.js, popup.html, dashboard.html, README.md, PROJECT.md.
 - Kiểm tra: `node --check` 21/21 JS; manifest/HTML script paths tồn tại; Messaging được nạp trước consumer; `git diff --check` đạt; ZIP 56 mục có manifest gốc, `messaging.js` và version 3.4.565. Chưa kiểm thử trình duyệt.
 - Tiếp theo: tách Settings và Cache/lưu trữ trong Bước 1.
+
 **2026-10-24 | v3.4.564 | Codex sửa:**
 
 - Bước 1 — Languages: đổi tên module `i18n.js` thành `languages.js`, chuyển global nội bộ sang `LHN_LANGUAGES` và cập nhật các entry point/consumer; giữ nguyên bộ EN/VI/KO và chuỗi hiển thị.

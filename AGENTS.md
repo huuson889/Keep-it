@@ -8,6 +8,7 @@
 - `AGENTS.md`: quy trình và quy tắc dành cho AI/contributor.
 - `PROJECT.md`: handoff hiện tại; mục 1 là snapshot ngắn, mục 2 chỉ giữ việc đang mở, mục 4 là bản đồ kiến trúc, mục 5 là nhật ký thay đổi duy nhất.
 - `README.md`: hướng dẫn/tính năng/giới hạn hướng tới người dùng; không dùng làm nơi giữ trạng thái nội bộ.
+- `docs/INDEX.md` và `docs/modules/*.md`: mục lục và hướng dẫn kỹ thuật nội bộ; không phải tài liệu người dùng hay nguồn sự thật thay cho code.
 - `OPT-ARENA.md`: thiết kế đã chốt, sơ đồ text, mục tiêu/phạm vi và quy trình tối ưu; không ghi trạng thái từng bước hoặc nhật ký hoàn thành.
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
 
@@ -41,15 +42,36 @@
   - Khi rút gọn mục 1/2, **không tự bỏ hoặc đánh dấu xong việc chưa xác nhận**. Gộp các kiểm thử cùng nhóm nhưng giữ điều kiện chấp nhận tối thiểu; nếu checklist chi tiết quá dài, đặt ở tài liệu QA liên quan và dẫn link từ mục 2. `PROJECT.md` vẫn là nguồn duy nhất về trạng thái và danh sách việc đang mở.
   - **Mục 5 — Nhật ký:** lưu lịch sử thay đổi theo version. Ghi thay đổi, file và kiểm tra thực tế; không lặp lại toàn bộ chi tiết lịch sử trong mục 1/2. Việc hiện tại và bước tiếp theo có thể được nhắc ngắn ở mục 1/2 khi cần cho bàn giao.
   - `OPT-ARENA.md` chỉ giữ thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; `README.md` mô tả cho người dùng.
-  - Mỗi mục nhật ký phải theo cùng mẫu, với tiêu đề in đậm và các thông tin bên dưới thành bullet:
-    - **YYYY-MM-DD | vX.Y.Z | <Tên AI/người thực sự sửa> sửa:**
-    - Tóm tắt ngắn gọn thay đổi.
-    - File: danh sách file đã sửa.
-    - Kiểm tra: lệnh/kết quả đã thực sự chạy; nếu chưa chạy, ghi rõ "Chưa chạy". Không tuyên bố kiểm thử chưa thực hiện.
-    - Có thể thêm "Tiếp theo" hoặc "Lưu ý" khi cần.
+  - **Quy tắc định dạng nhật ký (bắt buộc):**
+    - Tiêu đề mỗi bản ghi phải là một dòng in đậm đứng riêng ở đầu dòng, đúng mẫu `**YYYY-MM-DD | vX.Y.Z | <Tên AI/người thực sự sửa> sửa:**`; không thêm dấu bullet, không thụt lề và không gộp tiêu đề vào nội dung của bản ghi trước.
+    - Để một dòng trống sau tiêu đề; mọi thông tin chi tiết là các bullet cấp cao nhất, bắt đầu bằng `- ` ở đầu dòng (không thụt lề thêm một cấp dưới tiêu đề). Dùng các bullet riêng cho tóm tắt, `File:`, `Kiểm tra:` và `Tiếp theo:`/`Lưu ý:` nếu có.
+    - Để một dòng trống giữa các bản ghi. Kết thúc bullet cuối của bản ghi trước rồi mới xuống dòng trống và viết tiêu đề tiếp theo; tuyệt đối không để tiêu đề mới nằm trên cùng dòng hoặc bị Markdown hiểu là phần tiếp nối của bullet trước.
+    - **Mẫu chuẩn (không có bullet trước tiêu đề):**
+
+      ```md
+      **YYYY-MM-DD | vX.Y.Z | Tên tác nhân sửa:**
+
+      - Tóm tắt ngắn gọn thay đổi.
+      - File: danh sách file đã sửa.
+      - Kiểm tra: lệnh/kết quả thực sự chạy; nếu chưa chạy, ghi rõ "Chưa chạy".
+      ```
   - Ghi đúng tên bất kỳ tác nhân thực hiện từng thay đổi (ví dụ: Arena, Claude, Codex,....; "Huuson" nếu Huuson trực tiếp sửa). Không mặc định ghi Codex/Arena thay cho AI khác. Nếu nhiều tác nhân sửa, tách thành các mục riêng; lịch sử không xác định tác giả thì ghi rõ "người sửa không xác định", không tự gán.
   - Giữ nguyên các bản ghi lịch sử và tác giả đã có; không xóa hoặc gán lại nhật ký cũ trừ khi người dùng yêu cầu.
   - Sau mỗi thay đổi, sửa đè mục 1 và 2 theo các quy tắc snapshot/open-items bên trên; việc đã xác nhận hoàn tất thì gỡ khỏi mục 2. Giữ mục 5 theo thứ tự mới nhất → cũ nhất.
+
+**5.2.1. Tài liệu kỹ thuật nội bộ (`docs/`)**
+  - Phạm vi module là các thư mục first-party cấp cao nhất hiện có dưới `js/`: `background`, `content`, `core`, `dashboard`, `dictation`, `popup`, `reader`, `shared`, `translate`, `video`. Mỗi module có một trang `docs/modules/<slug>.md`; module mới phải thêm trang tương ứng và cập nhật `docs/INDEX.md`. Không tạo tài liệu riêng cho từng file mã nguồn hoặc cho `vendor/`.
+  - `docs/INDEX.md` là mục lục duy nhất, dùng bảng đúng 3 cột: `Tài liệu | Phạm vi | Đọc khi`; chỉ đọc trang có liên quan tới yêu cầu, không nạp toàn bộ docs mặc định.
+  - Mọi trang module phải có đúng một H1 theo mẫu `# <Tên module> — Hướng dẫn kỹ thuật`, tiếp theo đúng năm H2, cùng tên và thứ tự sau; không thêm H2 khác:
+    - `## 1. Mục đích và phạm vi`
+    - `## 2. File chính và điểm vào`
+    - `## 3. Luồng chính`
+    - `## 4. Hợp đồng và quy tắc cần giữ`
+    - `## 5. Kiểm tra và xác minh`
+  - Mỗi trang mục tiêu 300–600 từ, tối đa 700 từ. Không thêm chữ chỉ để đạt mức tối thiểu; trang ngắn hơn được chấp nhận nếu module đơn giản. Nếu vượt 700 từ, rút gọn hoặc tách tài liệu theo luồng và cập nhật mục lục.
+  - Mục 1: 1–3 câu nêu trách nhiệm và ranh giới module. Mục 2: bảng 3–10 dòng, cột `File | Điểm vào/symbol | Vai trò`, chỉ liệt kê file chính. Mục 3: 3–8 bước theo thứ tự từ điểm vào đến kết quả. Mục 4: 3–10 bullet về contract, dữ liệu, invariant, fallback hoặc rủi ro thực tế. Mục 5: lệnh static/mock và các bước kiểm thử cần thiết; phân biệt rõ kiểm tra đã chạy với bước đề xuất.
+  - Viết tiếng Việt; dẫn source bằng link Markdown tương đối và tên symbol trong backticks. Không dùng số dòng, không chép đoạn code dài, không lặp changelog hoặc trạng thái công việc của `PROJECT.md`. Mọi hành vi cụ thể phải được đối chiếu source; code là nguồn sự thật khi docs mâu thuẫn.
+  - Trước khi sửa code, chỉ đọc trang module liên quan. Cập nhật docs cùng thay đổi nếu đổi ranh giới/trách nhiệm module, điểm vào, luồng, contract, storage/message, invariant hoặc cách kiểm tra; không cần sửa docs cho thay đổi nội bộ không tác động các điểm đó. Cập nhật mục lục khi thêm, xóa hoặc đổi tên trang.
 
 **5.3. Commit**
   - Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".
