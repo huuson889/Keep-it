@@ -2208,16 +2208,18 @@ html.lr-demo-embedded.dark .demo-quick-filters button.active {
 }
 
 /* Shared sticky/shrinking topbar for the iframe scroll surface. */
-.demo-topbar.ov-topbar{position:sticky;top:0;z-index:30;box-sizing:border-box;height:56px;min-height:56px;align-self:start;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease}
-.demo-topbar.ov-topbar.is-compact{height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;box-shadow:0 7px 18px rgba(49,43,92,.10)}
-@media(max-width:560px){.demo-topbar.ov-topbar{height:48px;min-height:48px}.demo-topbar.ov-topbar.is-compact{height:42px;min-height:42px}}
-@media(prefers-reduced-motion:reduce){.demo-topbar.ov-topbar{transition:none}}
+#dashboardSharedTopbar.demo-topbar{position:sticky;top:0;z-index:30;box-sizing:border-box;height:56px;min-height:56px;align-self:start;padding:0 19px;border-radius:30px;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease}
+#dashboardSharedTopbar .dashboard-shared-topbar-right{min-width:0;display:flex;align-items:center;gap:9px}
+#dashboardSharedTopbarActionsSlot:not([hidden]){min-width:0;display:flex;align-items:center}
+#dashboardSharedTopbar.demo-topbar.is-compact{height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;margin-bottom:10px;box-shadow:0 7px 18px rgba(49,43,92,.10)}
+@media(max-width:560px){#dashboardSharedTopbar.demo-topbar{height:48px;min-height:48px}#dashboardSharedTopbar.demo-topbar.is-compact{height:42px;min-height:42px;margin-bottom:6px}}
+@media(prefers-reduced-motion:reduce){#dashboardSharedTopbar.demo-topbar{transition:none}}
 </style>
 </head>
 <body class="dashboard-overview-active">
 
 <main id="dashboardHomeView" class="dashboard-home-view">
-<div class="demo-topbar ov-topbar"><div class="demo-crumb"><strong>Keepit Smart Learner</strong><span class="demo-slash">/</span><span>Tô sáng &amp; Ghi chú</span></div><div class="demo-topbar-actions"><div class="menu-wrap"><button id="exportAllDemoBtn" type="button" class="demo-export-all" aria-label="Xuất toàn bộ dữ liệu" title="Xuất toàn bộ dữ liệu" aria-haspopup="true" aria-expanded="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span id="exportAllText">Xuất toàn bộ</span></button><div id="exportAllDemoMenu" class="export-menu align-right" hidden></div></div><span class="demo-badge"><i></i><span id="lrDataBadge">DỮ LIỆU KEEPIT</span></span></div></div>
+<div id="dashboardSharedTopbarActionsSource" hidden><div class="demo-topbar-actions" id="dashboardSharedTopbarActions"><div class="menu-wrap"><button id="exportAllDemoBtn" type="button" class="demo-export-all" aria-label="Xuất toàn bộ dữ liệu" title="Xuất toàn bộ dữ liệu" aria-haspopup="true" aria-expanded="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span id="exportAllText">Xuất toàn bộ</span></button><div id="exportAllDemoMenu" class="export-menu align-right" hidden></div></div><span class="demo-badge"><i></i><span id="lrDataBadge">DỮ LIỆU KEEPIT</span></span></div></div>
 <section class="demo-hero" aria-label="Thư viện của bạn"><div class="demo-hero-copy"><div class="demo-eyebrow"><span>✦</span> THƯ VIỆN CỦA BẠN</div><h1>Trang, highlights và ghi chú đã lưu</h1><p>Tìm lại những nội dung bạn đã đánh dấu, xem ghi chú và quản lý nguồn học tập trong cùng một nơi.</p><div class="demo-hero-tags"><span>▤ Lưu cục bộ trên thiết bị</span><span>✦ Tìm kiếm và lọc nhanh</span></div></div><div class="demo-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20M8 7h8M8 11h8"/></svg></div></section>
 
   <section class="library-demo-stats" aria-label="Thống kê thư viện">
