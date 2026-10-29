@@ -217,6 +217,34 @@
     dictationHideSentencesColumn: "문장 열 숨기기", dictationShowSentencesColumn: "문장 열 표시", dictationHideNotesColumn: "노트 열 숨기기", dictationShowNotesColumn: "노트 열 표시", dictationResizeSentencesColumn: "문장 열 너비 조절", dictationResizeNotesColumn: "노트 열 너비 조절", dictationResizeColumnHelp: "드래그하거나 화살표 키로 너비를 조절하고 두 번 클릭해 초기화하세요."
   });
 
+  Object.assign(MESSAGES.en, {
+    listenKicker:"Listening hub", listenTitle:"Dictation, at your pace", listenBody:"Pick up a session, find something new, or revisit words you want to practice.", listenTagAudio:"🎧 Active listening", listenTagLocal:"▣ Saved on this device",
+    listenSearchPlaceholder:"Search saved Dictation sessions…", listenSearchHelp:"Preview search · not connected to saved sessions.", listenSearchNew:"Find new content:", listenSearchYoutube:"Search YouTube", listenSearchGoogle:"Search Google",
+    listenContinueLabel:"Continue listening", listenContinueDescription:"YouTube video · Paused at sentence 16.", listenSentences:"sentences", listenContinueAction:"Continue Dictation", listenOpenVideo:"Open video",
+    listenLibraryTitle:"Dictation history", listenLibrarySubtitle:"Practice sessions saved on this device.", listenDemoCount:"6 sample sessions", listenFilterAll:"All · 06", listenFilterYouTube:"YouTube · 05", listenFilterWeb:"Web · 01", listenSortRecent:"Most recent", listenProgress:"Progress",
+    listenTwoDaysAgo:"2 days ago", listenFourDaysAgo:"4 days ago", listenSixDaysAgo:"6 days ago", listenWeekAgo:"1 week ago", listenComplete:"✓ Completed", listenResume:"Resume →", listenViewCard:"View card →", listenWebDemo:"Web · Demo", listenDemoOnly:"Sample",
+    listenStatsWords:"Distinct misspelled words", listenStatsFixRate:"Correction rate", listenStatsDemo:"Illustrative data", listenMostMistakes:"Often misspelled", listenViewStats:"View detailed stats", listenStatsNote:"The live version will use saved attempts; these values are only samples.",
+    listenFindNewTitle:"Find new content", listenFindNewHelp:"Type a query above, then choose where to search.", listenFindYouTube:"Find videos on YouTube", listenFindGoogle:"Find articles on Google", listenGoogleNote:"Google opens web results only; direct Dictation from articles is not supported. The Web card is sample data.", listenFooterNote:"All sessions and numbers here are demo content; not connected to real data."
+  });
+  Object.assign(MESSAGES.vi, {
+    listenKicker:"Góc luyện nghe", listenTitle:"Dictation, theo nhịp của bạn", listenBody:"Tiếp tục bài đang luyện, tìm nội dung mới hoặc xem lại những từ bạn muốn luyện thêm.", listenTagAudio:"🎧 Luyện nghe chủ động", listenTagLocal:"▣ Lưu trên thiết bị",
+    listenSearchPlaceholder:"Tìm trong các bài Dictation đã lưu…", listenSearchHelp:"Ô tìm kiếm bản xem trước · chưa kết nối với dữ liệu.", listenSearchNew:"Tìm nội dung mới:", listenSearchYoutube:"Tìm trên YouTube", listenSearchGoogle:"Tìm trên Google",
+    listenContinueLabel:"Tiếp tục luyện", listenContinueDescription:"Video YouTube · Dừng ở câu 16.", listenSentences:"câu", listenContinueAction:"Tiếp tục Dictation", listenOpenVideo:"Mở video",
+    listenLibraryTitle:"Bài đã Dictation", listenLibrarySubtitle:"Các phiên luyện đã lưu trên thiết bị này.", listenDemoCount:"6 bài mẫu", listenFilterAll:"Tất cả · 06", listenFilterYouTube:"YouTube · 05", listenFilterWeb:"Web · 01", listenSortRecent:"Gần đây nhất", listenProgress:"Tiến độ",
+    listenTwoDaysAgo:"2 ngày trước", listenFourDaysAgo:"4 ngày trước", listenSixDaysAgo:"6 ngày trước", listenWeekAgo:"1 tuần trước", listenComplete:"✓ Hoàn thành", listenResume:"Tiếp tục →", listenViewCard:"Xem thẻ →", listenWebDemo:"Web · Demo", listenDemoOnly:"Minh họa",
+    listenStatsWords:"Từ khác nhau từng gõ sai", listenStatsFixRate:"Tỷ lệ sửa đúng", listenStatsDemo:"Số liệu minh họa", listenMostMistakes:"Từ hay gõ sai", listenViewStats:"Xem thống kê chi tiết", listenStatsNote:"Bản thật sẽ dùng lỗi đã lưu; hiện đây chỉ là mẫu giao diện.",
+    listenFindNewTitle:"Tìm nội dung mới", listenFindNewHelp:"Nhập từ khóa ở ô tìm kiếm phía trên, rồi chọn nơi bạn muốn tìm.", listenFindYouTube:"Tìm video trên YouTube", listenFindGoogle:"Tìm bài viết trên Google", listenGoogleNote:"Google chỉ mở kết quả web; Dictation từ bài viết chưa được hỗ trợ. Thẻ Web là dữ liệu mẫu.", listenFooterNote:"Các bài và số liệu trên trang này chỉ là dữ liệu demo, chưa kết nối dữ liệu thật."
+  });
+  Object.assign(MESSAGES.ko, {
+    listenKicker:"듣기 연습", listenTitle:"나만의 속도로 Dictation", listenBody:"연습을 이어가고, 새 콘텐츠를 찾거나 다시 연습할 단어를 확인하세요.", listenTagAudio:"🎧 집중해서 듣기", listenTagLocal:"▣ 이 기기에 저장",
+    listenSearchPlaceholder:"저장된 Dictation 세션 검색…", listenSearchHelp:"미리보기 검색 · 저장 데이터와 연결되지 않음.", listenSearchNew:"새 콘텐츠 검색:", listenSearchYoutube:"YouTube 검색", listenSearchGoogle:"Google 검색",
+    listenContinueLabel:"듣기 이어하기", listenContinueDescription:"YouTube 동영상 · 16번 문장에서 멈춤.", listenSentences:"문장", listenContinueAction:"Dictation 이어하기", listenOpenVideo:"동영상 열기",
+    listenLibraryTitle:"Dictation 기록", listenLibrarySubtitle:"이 기기에 저장된 연습 세션입니다.", listenDemoCount:"예시 세션 6개", listenFilterAll:"전체 · 06", listenFilterYouTube:"YouTube · 05", listenFilterWeb:"웹 · 01", listenSortRecent:"최근 순", listenProgress:"진행률",
+    listenTwoDaysAgo:"2일 전", listenFourDaysAgo:"4일 전", listenSixDaysAgo:"6일 전", listenWeekAgo:"1주 전", listenComplete:"✓ 완료", listenResume:"이어하기 →", listenViewCard:"카드 보기 →", listenWebDemo:"웹 · 예시", listenDemoOnly:"예시",
+    listenStatsWords:"오타가 기록된 단어 수", listenStatsFixRate:"수정률", listenStatsDemo:"예시 데이터", listenMostMistakes:"자주 틀리는 단어", listenViewStats:"통계 자세히 보기", listenStatsNote:"실제 버전은 저장된 입력 기록을 사용합니다. 현재 수치는 예시입니다.",
+    listenFindNewTitle:"새 콘텐츠 찾기", listenFindNewHelp:"위에 검색어를 입력한 다음 검색 위치를 선택하세요.", listenFindYouTube:"YouTube 동영상 찾기", listenFindGoogle:"Google에서 기사 찾기", listenGoogleNote:"Google은 웹 검색 결과만 엽니다. 웹 문서 Dictation은 아직 지원되지 않으며 웹 카드는 예시입니다.", listenFooterNote:"세션과 수치는 모두 디자인용 예시이며 실제 데이터와 연결되지 않았습니다."
+  });
+
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {

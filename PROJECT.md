@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.743; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard: Overview mở mặc định và dùng annotations/index Dictation cục bộ; Listening vẫn placeholder, Library và Grammar giữ route hiện có.
-- Lưu ý: Overview không giả lập số liệu; CTA vẫn presentation-only. Index Dictation bổ sung, giữ nguyên `dictation:<videoId>`; Cloud sync và thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: JavaScript 47/47 `node --check`; 5/5 test hiện có; HTML 324 ID duy nhất và chuyển cloud icon theo trạng thái được audit; CSS dashboard 1408 rules/0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử UI trên trình duyệt thật.
+- Version hiện tại: v3.4.744; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard: Overview mở mặc định; Listening có UI preview tĩnh gắn nhãn dữ liệu mẫu, chưa tích hợp; Library và Grammar giữ route hiện có.
+- Lưu ý: Listening không đọc session index, search provider hay chạy action; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
+- Kiểm tra gần nhất: `node --check` toàn bộ JavaScript; 5/5 tests; HTML 326 ID duy nhất và 44 key Listening có đủ bản dịch en/vi/ko; CSS parser 0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -103,9 +103,15 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe vẫn là placeholder; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển bốn route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe hiển thị preview tĩnh với dữ liệu mẫu, chưa nối dữ liệu/handler; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-29 | v3.4.744 | Arena sửa:**
+
+- Thay Listening placeholder bằng giao diện Dictation hub theo phong cách Overview: ô tìm kiếm, thẻ bài, thống kê từ sai và tìm nội dung mới. Chỉ là UI tĩnh, số liệu được gắn nhãn demo; không nối session index, search, storage hoặc CTA.
+- File: `pages/dashboard.html`, `css/dashboard/overview.css`, `js/core/languages.js`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `demos/listening-dictation-demo.html`, `Keepit - Optimize Test-v3.4.744.zip`.
+- Kiểm tra: `node --check` toàn bộ JavaScript; 5/5 tests; HTML 326 ID duy nhất; 44 key Listening đã kiểm tra đủ en/vi/ko; CSS parser 0 lỗi; manifest và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.743 | Arena sửa:**
 
