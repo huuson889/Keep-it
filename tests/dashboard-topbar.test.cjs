@@ -30,6 +30,12 @@ test("All three routes share the single Overview topbar node and change its labe
 
 test("The shared topbar sticks at the viewport edge, shrinks by height, and retains iframe export controls", () => {
   assert.match(overviewCss, /#dashboardOverviewView \.ov-topbar[\s\S]*?position:\s*sticky[\s\S]*?top:\s*0/);
+  assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{[^}]*padding:0 clamp\(/);
+  assert.match(overviewCss, /#dashboardOverviewView \.ov-content\{padding-top:22px\}/);
+  assert.match(overviewCss, /#dashboardListeningView\{[^}]*padding:0 24px 24px!important/);
+  assert.match(overviewCss, /#dashboardListeningView::before\{content:"";display:block;height:24px\}/);
+  assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{padding:0 14px 30px!important\}/);
+  assert.match(overviewCss, /@media\(max-width:620px\)\{#dashboardListeningView\{padding:0 15px 15px!important\}/);
   assert.match(overviewCss, /\.ov-topbar\.is-compact[\s\S]*?height:\s*46px/);
   assert.match(overviewCss, /\.ov-topbar\.is-compact[\s\S]*?margin-bottom:\s*30px/);
   assert.doesNotMatch(overviewCss, /\.ov-topbar\.is-compact[^}]*transform\s*:/);
