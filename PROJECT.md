@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.751; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ nguyên route; “Luyện đề LR” hiển thị bản sao cô lập của demo Library mới nhất trong iframe, dùng dữ liệu demo và không kết nối app.
+- Version hiện tại: v3.4.752; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ nguyên route; “Luyện đề LR” hiển thị nội dung demo Library trong iframe, bỏ sidebar trùng lặp và đồng bộ dark mode theo Dashboard; dữ liệu mẫu/logic demo vẫn tách biệt.
 - Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: cú pháp toàn bộ JavaScript đạt; CSS Dashboard parse 0 lỗi; 5/5 tests; HTML Dashboard/demo không trùng ID, local iframe/script refs hợp lệ và markup demo trùng nguồn (chỉ tách script); manifest v3.4.751; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Kiểm tra gần nhất: cú pháp toàn bộ JavaScript đạt; CSS Dashboard parse 0 lỗi; 5/5 tests; HTML Dashboard/demo không trùng ID, local iframe/script refs hợp lệ; menu demo trùng đã bỏ, theme bridge dùng class parent; manifest v3.4.752; `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -45,7 +45,7 @@ Keepit - Test/
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry; điều hướng Overview/Listening/Library/Grammar/LR), overview.css, overview-data, settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags, lr-practice-demo.js (sample cục bộ, không tích hợp app)
+│   ├── dashboard/                 # dashboard.js (entry; điều hướng Overview/Listening/Library/Grammar/LR), overview.css, overview-data, settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags, lr-practice-demo.js và lr-practice-theme-sync.js (demo cục bộ, sync theme host)
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
@@ -107,6 +107,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chuyển năm route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc cục bộ sáu thẻ mẫu và chỉ có action demo; chưa nối session index/search provider/storage/API; Thư viện dùng lại `#dashboardHomeView` (toolbar + workspace); Luyện ngữ pháp giữ `#profileSidebar`; Luyện đề LR tải bản sao nguyên UI `demos/library-tab-demo.html` trong iframe, với script demo tự chứa, không nối API/storage hoặc handler của Dashboard. Các mục sidebar khác không có hành vi điều hướng mới.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.752 | Arena.ai Agent sửa:**
+
+- Bỏ sidebar bên trong demo để không trùng menu trái của Dashboard; căn lại demo content lấp vùng iframe và đồng bộ sáng/tối theo theme Dashboard bằng bảng màu tối cùng palette app. Không nối dữ liệu/logic app.
+- File: `pages/lr-practice-demo.html`, `js/dashboard/lr-practice-demo.js`, `js/dashboard/lr-practice-theme-sync.js`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`.
+- Kiểm tra: cú pháp toàn bộ JS; 5/5 tests; embedded CSS parse 0 lỗi; HTML IDs và refs hợp lệ; sidebar demo vắng mặt, main demo giữ nguyên byte-for-byte; không có app storage/API hooks; `git diff --check` đạt. Chưa xác nhận trực quan trên trình duyệt.
 
 **2026-10-29 | v3.4.751 | Arena.ai Agent sửa:**
 
