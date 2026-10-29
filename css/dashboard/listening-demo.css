@@ -269,20 +269,8 @@
 @media(max-width:850px){#dashboardListeningView.dashboard-listening-view{padding:16px 18px 28px!important}}
 @media(max-width:620px){#dashboardListeningView.dashboard-listening-view{padding:12px 11px 25px!important}}
 
-/* Put the full title and the unchanged white continue card in one horizontal heading row. */
-#dashboardListeningView .hero{display:block}
-#dashboardListeningView .hero-copy{width:100%;flex:initial;align-self:auto}
-#dashboardListeningView .hero-heading-row{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:20px;align-items:center;margin-top:7px}
-#dashboardListeningView .hero-heading-row h1{min-width:0;margin:0}
-#dashboardListeningView .hero-heading-row>.continue-card{min-width:0;margin:0}
-#dashboardListeningView .hero-copy>p{margin-top:13px}
-@media(max-width:850px){
-  #dashboardListeningView .hero-heading-row{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:14px}
-  #dashboardListeningView .hero-heading-row>.continue-card{grid-template-columns:minmax(0,1fr) 115px;gap:10px;padding:13px}
-  #dashboardListeningView .hero-heading-row .continue-art{height:84px}
-}
-@media(max-width:620px){
-  #dashboardListeningView .hero-heading-row{grid-template-columns:1fr;gap:14px}
-  #dashboardListeningView .hero-heading-row>.continue-card{width:100%;grid-template-columns:minmax(0,1fr) 102px}
-  #dashboardListeningView .hero-heading-row .continue-art{height:82px}
-}
+/* Separate top-row panels: the purple hero and white continue card are siblings. */
+#dashboardListeningView .listen-hero-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+#dashboardListeningView .listen-hero-row>.hero,#dashboardListeningView .listen-hero-row>.continue-card{min-width:0;margin:0}
+@media(max-width:1050px){#dashboardListeningView .listen-hero-row>.continue-card{grid-template-columns:minmax(0,1fr) 145px;gap:12px;padding:15px}}
+@media(max-width:850px){#dashboardListeningView .listen-hero-row{grid-template-columns:1fr}}

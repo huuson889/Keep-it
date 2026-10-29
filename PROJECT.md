@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.748; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.749; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
 - Dashboard: Overview mở mặc định; Listening khớp markup/CSS demo cuối, với tìm kiếm/lọc cục bộ trên sáu thẻ mẫu và thao tác demo-only; không kết nối dữ liệu, API hay backend. Library và Grammar giữ route hiện có.
 - Lưu ý: Listening không đọc session index/search provider; nút tìm YouTube/Google chỉ hiển thị thông báo demo. Thống kê Listening được ghi rõ là minh họa; Dictation thật vẫn ở YouTube overlay. Overview tiếp tục dùng số liệu cục bộ thật; sync cloud/thanh toán chưa tích hợp.
-- Kiểm tra gần nhất: JavaScript syntax đạt; Listening CSS parser 0 lỗi; 59 key UI đủ en/vi/ko; không trùng HTML ID; manifest v3.4.748; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
+- Kiểm tra gần nhất: JavaScript syntax đạt; Listening CSS parser 0 lỗi; 59 key UI đủ en/vi/ko; không trùng HTML ID; manifest v3.4.749; 5/5 tests và `git diff --check` đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -107,17 +107,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-29 | v3.4.748 | Arena sửa:**
+**2026-10-29 | v3.4.749 | Arena sửa:**
 
-- Đặt `listenDemoPageTitle` và nguyên `continue-card` làm hai cột trong cùng hàng heading; giữ nguyên tiêu đề, khung trắng và nội dung card. Màn hẹp xếp dọc.
-- File: `pages/dashboard.html`, `css/dashboard/listening-demo.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.748.zip`.
+- Dựa lại trên v3.4.746: đặt khung tím `.hero` và khung trắng `.continue-card` thành hai panel riêng, ngang hàng trên desktop; không lồng card trắng vào hero. Giữ nguyên tiêu đề, nội dung card và hero-art; màn hẹp xếp dọc.
+- File: `pages/dashboard.html`, `css/dashboard/listening-demo.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.749.zip`.
 - Kiểm tra: 5/5 tests; JavaScript syntax đạt; CSS parser 0 lỗi; HTML ID duy nhất; `git diff --check` và ZIP integrity đạt. Chưa kiểm thử trình duyệt thật.
-
-**2026-10-29 | v3.4.747 | Arena sửa:**
-
-- Đưa `continue-card` vào hàng hero cạnh `listenDemoPageTitle`; giữ nội dung/CTA, search row, thư viện, panel thống kê và hành vi demo-only như cũ. Responsive sẽ xếp dọc trên màn hẹp.
-- File: `pages/dashboard.html`, `css/dashboard/listening-demo.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.747.zip`.
-- Kiểm tra: 5/5 tests; JavaScript syntax đạt; CSS parser 0 lỗi; HTML IDs duy nhất; `git diff --check` và ZIP integrity đạt. Chưa kiểm thử giao diện trên trình duyệt thật.
 
 **2026-10-29 | v3.4.746 | Arena sửa:**
 
