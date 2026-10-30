@@ -2555,6 +2555,10 @@ function resetDashboardPanelEntranceEffects(view) {
     dashboardSharedTopbar.style.removeProperty("--ov-reveal-delay");
   }
   const targets = [...[dashboardSharedTopbar].filter(Boolean), ...routeTargets];
+  const alwaysRevealTargets = view === "highlights-notes"
+    ? routeTargets.filter(target => target.matches(".notes-panel"))
+    : [];
+  const observedTargets = targets.filter(target => !alwaysRevealTargets.includes(target));
   for (const target of routeTargets) {
     target.classList.remove("dashboard-revealed");
     target.style.removeProperty("--ov-reveal-delay");
@@ -2572,7 +2576,9 @@ function resetDashboardPanelEntranceEffects(view) {
     targets.forEach((target, index) => reveal(target, 100 + index * 80));
     return;
   }
-  const targetOrder = new Map(targets.map((target, index) => [target, index]));
+  alwaysRevealTargets.forEach((target, index) => reveal(target, 100 + index * 80));
+  if (!observedTargets.length) return;
+  const targetOrder = new Map(observedTargets.map((target, index) => [target, index]));
   dashboardPanelRevealObserver = new IntersectionObserver(entries => {
     const visibleTargets = entries.filter(entry => entry.isIntersecting && !(entry.target === dashboardSharedTopbar ? entry.target.classList.contains("ov-revealed") : entry.target.classList.contains("dashboard-revealed")))
       .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
@@ -2584,7 +2590,7 @@ function resetDashboardPanelEntranceEffects(view) {
       dashboardPanelRevealObserver?.unobserve(target);
     });
   }, { root:dashboardScroller, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
-  targets.forEach(target => dashboardPanelRevealObserver.observe(target));
+  observedTargets.forEach(target => dashboardPanelRevealObserver.observe(target));
 }
 function savedDashboardView() {
   try { const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY); return ["overview", "listening", "highlights-notes"].includes(saved) ? saved : "overview"; }
@@ -2637,6 +2643,7 @@ function setDashboardView(view) {
   const switchCycle = ++dashboardViewSwitchCycle;
   mountSharedTopbarInParent(view);
   restoreDashboardViewAndReveal(view, switchCycle);
+  if (showHighlightsNotes) syncHighlightsNotesView();
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
     link.classList.toggle("is-active", active);

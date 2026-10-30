@@ -187,7 +187,10 @@ function populateFilters(){
  const colorSelect=$('colorFilter'),previous=colorSelect.value;colorSelect.innerHTML='<option value="">Màu: Tất cả</option>'+validColors.map(color=>`<option value="${color}">${colorNames[color]}</option>`).join('');if(validColors.includes(previous))colorSelect.value=previous;
 }
 function applyData(data){
- const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);selected=pages.find(page=>page.key===previousKey)||pages[0]||null;populateFilters();refresh();
+ const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);populateFilters();
+ selected=pages.find(page=>page.key===previousKey)||null;
+ if(!selected)selected=allFiltered()[0]||pages[0]||null;
+ refresh();
 }
 function sendParent(action,payload={}){const requestId=`lr-${Date.now()}-${++requestSequence}`;window.dispatchEvent(new CustomEvent('keepit:highlights-notes-action',{detail:{type:'HIGHLIGHTS_NOTES_ACTION',version:1,action,requestId,...payload}}));return requestId}
 function exportMenuMarkup(scopeName){return ['txt','csv','md','json'].map(format=>`<button class="export-option" type="button" data-export="${format}" data-scope="${scopeName}"><span class="file-icon ${format}">${format.toUpperCase()}</span><span>${text(scopeName==='page'?'exportPage':'exportAll')} (.${format})</span></button>`).join('')}

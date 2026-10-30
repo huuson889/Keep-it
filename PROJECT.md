@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.812; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.814; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
-- Bản 3.4.812 sửa lần reset reveal trên route đã từng mở: commit trạng thái ẩn với transition tắt trước khi quan sát để trình duyệt có baseline chạy reveal lại. Giữ nguyên data-ready của Overview, scroll riêng từng tab và cycle guard.
-- Kiểm tra v3.4.812: full suite 48/48; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test (môi trường hiện tại không có browser).
+- Bản 3.4.814 khôi phục layout hai cột/padding H&N theo v3.4.807; notes-panel được reveal trực tiếp khi mở route và dữ liệu tự chọn source đầu tiên.
+- Kiểm tra v3.4.814: đang chạy; chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -112,6 +112,22 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation vẫn giữ markup/CSS theo demo và dữ liệu mẫu/action hiện tại. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.814 | Arena.ai Agent sửa:**
+
+- Khôi phục layout hai cột nguồn/notes và khoảng đệm H&N theo hình tham chiếu v3.4.807; giữ một cột ở viewport hẹp.
+- Reveal trực tiếp notes-panel sau khi reset để không bị ẩn bởi IntersectionObserver; khi mở route gửi snapshot mới nhất và tự chọn source đầu tiên để hiển thị notes sau lần mở/reload.
+- Thêm regression tests cho padding, desktop/mobile grid, panel reveal và chọn source mặc định. Chưa browser-test.
+- File: `js/dashboard/dashboard.js`, `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.814.zip`.
+- Kiểm tra: đang chạy.
+
+**2026-10-31 | v3.4.813 | Arena.ai Agent sửa:**
+
+- Khôi phục padding ngoài cho route Highlights & Notes trong shared scroller bằng selector trực tiếp trên route root; active tab tiếp tục phản ánh route đang mở.
+- Khi vào route H&N, phát lại snapshot dữ liệu mới nhất; nếu không còn source đang chọn, tự chọn source đầu tiên theo danh sách đang hiển thị và render notes-panel ngay, bao gồm sau reload.
+- Thêm regression tests cho route inset, active state, data refresh và chọn source mặc định. Chưa browser-test.
+- File: `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.813.zip`.
+- Kiểm tra: full suite 49/49; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-31 | v3.4.812 | Arena.ai Agent sửa tiếp:**
 
