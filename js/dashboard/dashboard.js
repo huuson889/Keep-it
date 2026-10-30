@@ -971,11 +971,83 @@ let overviewSummaryCache = null;
 let overviewSummaryCacheRevision = -1;
 function invalidateAnnotationCaches() { annotationDataRevision++; }
 
+const overviewCounterFormatters = new WeakMap();
+let overviewEffectsObserver = null;
+let overviewEffectCycle = 0;
 function overviewSetText(id, value) {
   const node = $(id);
   if (node) node.textContent = String(value ?? "");
 }
 function overviewFormatCount(value) { return Math.max(0, Number(value) || 0).toLocaleString(currentLang); }
+function overviewPrefersReducedMotion() { return !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; }
+function overviewCounterText(node, value) {
+  return (overviewCounterFormatters.get(node) || overviewFormatCount)(value);
+}
+function animateOverviewCounter(node) {
+  if (!node?.isConnected) return;
+  const target = Number(node.dataset.ovCounterTarget) || 0;
+  const finalText = node.dataset.ovCounterFinal || overviewCounterText(node, target);
+  const frameId = Number(node.dataset.ovAnimationFrame);
+  if (frameId) cancelAnimationFrame(frameId);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    node.textContent = finalText;
+    node.dataset.ovDisplayed = String(target);
+    node.dataset.ovCounterCycle = String(overviewEffectCycle);
+    delete node.dataset.ovAnimationFrame;
+    return;
+  }
+  const cycle = overviewEffectCycle;
+  const startValue = Math.max(0, Number(node.dataset.ovDisplayed) || 0);
+  const startedAt = performance.now();
+  const duration = 1050;
+  const tick = now => {
+    if (cycle !== overviewEffectCycle || activeDashboardView !== "overview" || !node.isConnected) return;
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    const value = Math.round(startValue + (target - startValue) * eased);
+    node.textContent = progress >= 1 ? finalText : overviewCounterText(node, value);
+    node.dataset.ovDisplayed = String(progress >= 1 ? target : value);
+    if (progress < 1) node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
+    else delete node.dataset.ovAnimationFrame;
+  };
+  node.dataset.ovCounterCycle = String(cycle);
+  node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
+}
+function overviewSetCounterNode(node, value, formatter = overviewFormatCount) {
+  if (!node) return;
+  const numeric = Number(value);
+  const target = Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+  const previousTarget = node.dataset.ovCounterTarget;
+  const targetString = String(target);
+  const finalText = formatter(target);
+  overviewCounterFormatters.set(node, formatter);
+  node.dataset.ovCounterTarget = targetString;
+  node.dataset.ovCounterFinal = finalText;
+  node.setAttribute("aria-label", finalText);
+  const reveal = node.closest(".ov-reveal");
+  const overviewActive = activeDashboardView === "overview" && document.body.classList.contains("dashboard-overview-active");
+  if (!overviewActive) {
+    node.textContent = finalText;
+    node.dataset.ovDisplayed = targetString;
+    return;
+  }
+  if (reveal?.classList.contains("ov-revealed")) {
+    if (node.dataset.ovCounterCycle !== String(overviewEffectCycle) || previousTarget !== targetString) animateOverviewCounter(node);
+  } else {
+    node.textContent = formatter(0);
+    node.dataset.ovDisplayed = "0";
+    node.dataset.ovCounterCycle = String(overviewEffectCycle);
+  }
+}
+function overviewSetCounter(id, value, formatter = overviewFormatCount) {
+  overviewSetCounterNode($(id), value, formatter);
+}
+function overviewAnimateCountersWithin(element) {
+  const counters = [];
+  if (element.matches?.("[data-ov-counter-target]")) counters.push(element);
+  counters.push(...element.querySelectorAll("[data-ov-counter-target]"));
+  for (const counter of counters) animateOverviewCounter(counter);
+}
 function overviewSetMeter(id, ratio) {
   const node = $(id);
   if (!node) return;
@@ -1007,6 +1079,7 @@ function renderOverviewActivityCalendar(model) {
     }
     const cell = document.createElement("span");
     cell.className = "ov-heat-cell";
+    cell.style.setProperty("--ov-cell-delay", `${index % 52 * 4}ms`);
     cell.dataset.level = String(Math.min(4, count));
     cell.setAttribute("aria-hidden", "true");
     cell.title = `${formatter.format(day)} ${day.getDate()}, ${day.getFullYear()}: ${t("ovHeatActivityCount", { count })}`;
@@ -1019,9 +1092,9 @@ function renderOverviewActivityCalendar(model) {
     return label;
   }));
   monthHost.style.gridTemplateColumns = `repeat(${Math.max(1, months.length)}, minmax(0, 1fr))`;
-  overviewSetText("overviewActiveDays", t("ovActiveDays", { count:overviewFormatCount(windowActiveDays.size) }));
-  overviewSetText("overviewTotalDays", overviewFormatCount(windowActiveDays.size));
-  overviewSetText("overviewTotalWeeks", overviewFormatCount(windowActiveWeeks.size));
+  overviewSetCounter("overviewActiveDays", windowActiveDays.size, count => t("ovActiveDays", { count:overviewFormatCount(count) }));
+  overviewSetCounter("overviewTotalDays", windowActiveDays.size);
+  overviewSetCounter("overviewTotalWeeks", windowActiveWeeks.size);
 }
 function renderOverviewTags(model) {
   const host = $("overviewTopTags");
@@ -1036,9 +1109,10 @@ function renderOverviewTags(model) {
     return;
   }
   const maxCount = tags[0][1] || 1;
-  for (const [name, count] of tags) {
+  for (const [index, [name, count]] of tags.entries()) {
     const row = document.createElement("div");
     row.className = "ov-dist-row";
+    row.style.setProperty("--ov-row-delay", `${index * 65}ms`);
     const label = document.createElement("span");
     label.className = "ov-dist-label";
     label.textContent = name;
@@ -1046,12 +1120,13 @@ function renderOverviewTags(model) {
     track.className = "ov-dist-track";
     const fill = document.createElement("span");
     fill.style.width = `${Math.max(3, Math.round(count / maxCount * 100))}%`;
+    fill.style.setProperty("--ov-row-delay", `${index * 65}ms`);
     track.appendChild(fill);
     const value = document.createElement("span");
     value.className = "ov-dist-count";
-    value.textContent = overviewFormatCount(count);
     row.append(label, track, value);
     host.appendChild(row);
+    overviewSetCounterNode(value, count);
   }
 }
 function renderOverviewRecentItems(model) {
@@ -1195,19 +1270,19 @@ function renderDashboardOverview() {
     overviewSummaryCacheRevision = annotationDataRevision;
   }
   const model = overviewSummaryCache;
-  overviewSetText("overviewPillPages", overviewFormatCount(model.sourcePageCount));
-  overviewSetText("overviewPillHighlights", overviewFormatCount(model.highlightCount));
-  overviewSetText("overviewPillNotes", overviewFormatCount(model.notesCount));
-  overviewSetText("overviewSourcePageCount", overviewFormatCount(model.sourcePageCount));
-  overviewSetText("overviewHighlightCount", overviewFormatCount(model.highlightCount));
-  overviewSetText("overviewDueCount", overviewFormatCount(model.dueCount));
-  overviewSetText("overviewNoteCount", overviewFormatCount(model.notesCount));
+  overviewSetCounter("overviewPillPages", model.sourcePageCount);
+  overviewSetCounter("overviewPillHighlights", model.highlightCount);
+  overviewSetCounter("overviewPillNotes", model.notesCount);
+  overviewSetCounter("overviewSourcePageCount", model.sourcePageCount);
+  overviewSetCounter("overviewHighlightCount", model.highlightCount);
+  overviewSetCounter("overviewDueCount", model.dueCount);
+  overviewSetCounter("overviewNoteCount", model.notesCount);
   overviewSetText("overviewQuickDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
   overviewSetText("overviewModeDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
   overviewSetText("overviewLibraryCardTotal", t("ovSavedAnnotationsCount", { count:overviewFormatCount(model.highlightCount) }));
-  overviewSetText("overviewTodayReviewCount", t("ovTodayReviewValue", { count:overviewFormatCount(model.reviewedToday) }));
-  overviewSetText("overviewModeReviewedToday", overviewFormatCount(model.reviewedToday));
-  overviewSetText("overviewReviewedCards", overviewFormatCount(model.reviewedCardCount));
+  overviewSetCounter("overviewTodayReviewCount", model.reviewedToday, count => t("ovTodayReviewValue", { count:overviewFormatCount(count) }));
+  overviewSetCounter("overviewModeReviewedToday", model.reviewedToday);
+  overviewSetCounter("overviewReviewedCards", model.reviewedCardCount);
   overviewSetMeter("overviewTodayReviewMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
   overviewSetMeter("overviewFlashcardMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
   renderOverviewActivityCalendar(model);
@@ -2250,6 +2325,61 @@ function updateParentTopbarCompact() {
   dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);
 }
 window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
+function overviewRevealTargets() {
+  return [...dashboardOverviewView.querySelectorAll([
+    ".ov-intro-row > .ov-welcome",
+    ".ov-intro-row > .ov-quick-panel",
+    ".ov-stats > .ov-stat",
+    ".ov-resume-progress > .ov-resume",
+    ".ov-resume-progress > .ov-progress",
+    ".ov-section",
+    ".ov-lower > .ov-panel",
+    ".ov-footer"
+  ].join(","))];
+}
+function overviewRevealTarget(target) {
+  target.classList.add("ov-revealed");
+  if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) target.classList.add("ov-chart-running");
+  overviewAnimateCountersWithin(target);
+}
+function resetOverviewEntranceEffects() {
+  overviewEffectsObserver?.disconnect();
+  overviewEffectsObserver = null;
+  overviewEffectCycle++;
+  for (const node of dashboardOverviewView.querySelectorAll("[data-ov-counter-target]")) {
+    const frameId = Number(node.dataset.ovAnimationFrame);
+    if (frameId) cancelAnimationFrame(frameId);
+    node.textContent = overviewCounterText(node, 0);
+    node.dataset.ovDisplayed = "0";
+    delete node.dataset.ovAnimationFrame;
+    delete node.dataset.ovCounterCycle;
+  }
+  const targets = overviewRevealTargets();
+  for (const target of dashboardOverviewView.querySelectorAll(".ov-reveal")) {
+    target.classList.remove("ov-reveal", "ov-revealed", "ov-chart-running");
+    target.style.removeProperty("--ov-reveal-delay");
+  }
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach(target => {
+      target.classList.add("ov-reveal", "ov-revealed");
+      if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) target.classList.add("ov-chart-running");
+      overviewAnimateCountersWithin(target);
+    });
+    return;
+  }
+  targets.forEach((target, index) => {
+    target.classList.add("ov-reveal");
+    target.style.setProperty("--ov-reveal-delay", `${index % 4 * 55}ms`);
+  });
+  overviewEffectsObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      overviewRevealTarget(entry.target);
+      overviewEffectsObserver?.unobserve(entry.target);
+    }
+  }, { root:dashboardOverviewView, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
+  targets.forEach(target => overviewEffectsObserver.observe(target));
+}
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
@@ -2259,6 +2389,8 @@ function setDashboardView(view) {
   dashboardListeningView.hidden = !showListening;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
+  if (showOverview) resetOverviewEntranceEffects();
+  else { overviewEffectsObserver?.disconnect(); overviewEffectsObserver = null; }
   if (showHighlightsNotes) mountSharedTopbarInIframe(); else mountSharedTopbarInParent(view);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;

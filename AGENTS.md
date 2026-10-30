@@ -24,6 +24,7 @@
 - Chỉ đọc, sửa và kiểm tra những phần liên quan. Thay đổi tối thiểu, tái sử dụng code hiện có, không refactor ngoài phạm vi.
 - Giữ nguyên tính năng, UI và hành vi hiện tại. **Claude không được sửa UI nếu chưa được cho phép.** Agent khác cũng không tự ý thay đổi UI ngoài yêu cầu.
 - UI mới phải thống nhất với thiết kế hiện có. Label mới phải ngắn gọn, phù hợp UI/UX và được dịch sang mọi ngôn ngữ ứng dụng hỗ trợ.
+- Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
 - Các AI phải sử dụng skill phù hợp đã được quy định trước.
 - Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
 - Phản hồi ngắn gọn, luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
