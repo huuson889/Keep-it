@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.808; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dashboard → Overview reveal từng khung theo thứ tự trái→phải, trên→dưới với nhịp 80ms; initial load/reload chờ dữ liệu và scroll restore rồi dùng cùng nhịp như tab re-entry. Dữ liệu, logic, counter width, reduced motion và giữ ScrollTop không đổi.
-- Reader speaker placement, popup Dictation v14, và resolver/cache favicon chung không đổi trong bản này.
-- Kiểm tra: full suite 47/47; 52 JS + 12 test-script syntax checks, 11 CSS parse sạch, manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Version hiện tại: v3.4.809; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
+- Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
+- Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
+- Kiểm tra: full suite 47/47; JavaScript syntax, CSS parse, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive/theme, favicon resolver/cache dùng chung và Overview reveal trái→phải/trên→dưới cùng nhịp ở first load/reload/tab re-entry; counter không đổi dòng/chiều cao, chart replay, giữ vị trí sau reload (gồm reduced-motion). Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; counter/chart Overview sau reload và tab re-entry. Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -107,9 +108,17 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation vẫn giữ markup/CSS theo demo và dữ liệu mẫu/action hiện tại. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.809 | Arena.ai Agent sửa:**
+
+- Chuẩn hóa Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, nền sáng/tối chung và một topbar; lưu vị trí cuộn riêng từng tab và khôi phục route đang hoạt động sau reload.
+- Tích hợp markup Highlights & Notes vào `pages/dashboard.html`, thay iframe `postMessage` bằng custom-event bus trong cùng document. Giữ nguyên hành động/dữ liệu nghiệp vụ và block appearance; scope CSS vào đúng route.
+- Áp dụng nhịp reveal hiện có cho các panel cấp cao của Dictation/Highlights & Notes; giữ nguyên chuỗi data-ready/reveal của Overview và không reveal từng source/annotation/video lặp lại.
+- File: `pages/dashboard.html`, `css/dashboard/dashboard.css`, `css/dashboard/overview.css`, CSS mới `css/dashboard/highlights-notes-embedded.css`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, tests, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.809.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 47/47; JavaScript/CSS/manifest và `git diff --check` đạt. Chưa xác minh trên trình duyệt.
 
 **2026-10-30 | v3.4.808 | Arena.ai Agent sửa:**
 

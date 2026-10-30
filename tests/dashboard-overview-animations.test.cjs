@@ -8,9 +8,9 @@ const overviewCss = fs.readFileSync(new URL("../css/dashboard/overview.css", `fi
 
 test("Overview reveals individual frames in visual reading order with reference stagger timing", () => {
   assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?visibleTargets = entries[\s\S]*?\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)[\s\S]*?overviewRevealSequenceEnd \+ 80[\s\S]*?overviewRevealTarget\(target, Math\.round\(revealAt - now\)\)/);
-  assert.match(dashboardJs, /\{ root:dashboardOverviewView, threshold:0\.12, rootMargin:/);
+  assert.match(dashboardJs, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
   assert.match(dashboardJs, /if \(showOverview\) \{ if \(overviewInitialDataReady\) resetOverviewEntranceEffects\(\); \}/);
-  assert.match(dashboardJs, /"\.ov-topbar"[\s\S]*?"\.ov-welcome"[\s\S]*?"\.ov-quick-panel"[\s\S]*?"\.ov-stats > \.ov-stat"[\s\S]*?"\.ov-resume"[\s\S]*?"\.ov-progress"[\s\S]*?"\.ov-mode-grid > \.ov-mode"[\s\S]*?"\.ov-lower > \.ov-panel"/);
+  assert.match(dashboardJs, /return \[dashboardSharedTopbar, \.\.\.dashboardOverviewView\.querySelectorAll\([\s\S]*?"\.ov-welcome"[\s\S]*?"\.ov-quick-panel"[\s\S]*?"\.ov-stats > \.ov-stat"[\s\S]*?"\.ov-resume"[\s\S]*?"\.ov-progress"[\s\S]*?"\.ov-mode-grid > \.ov-mode"[\s\S]*?"\.ov-lower > \.ov-panel"/);
   assert.match(dashboardJs, /function overviewRevealTarget\(target, revealDelay = 100\)/);
   assert.match(dashboardJs, /const revealAt = Math\.max\(now \+ 100, overviewRevealSequenceEnd \+ 80\)/);
   assert.match(dashboardJs, /target\.style\.setProperty\("--ov-reveal-delay", `\$\{revealDelay\}ms`\)/);
@@ -31,7 +31,7 @@ test("Overview reveals individual frames in visual reading order with reference 
 test("fresh Dashboard load waits for Overview data readiness before replaying the entrance", () => {
   assert.ok((dashboardHtml.match(/class="[^"]*\bov-reveal\b/g) || []).length >= 17);
   assert.match(dashboardJs, /const reveal = node\.closest\("\.ov-reveal"\);[\s\S]*?if \(reveal\?\.classList\.contains\("ov-revealed"\)\)[\s\S]*?node\.textContent = formatter\(0\)/);
-  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?dashboardOverviewView\.scrollTop = savedOverviewScrollTop[\s\S]*?overviewInitialDataReady = true;[\s\S]*?resetOverviewEntranceEffects\(\)/);
+  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?readDashboardScrollPosition\(activeDashboardView\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?overviewInitialDataReady = true;[\s\S]*?resetOverviewEntranceEffects\(\)/);
   assert.match(dashboardJs, /for \(const timer of overviewRevealTimers\.values\(\)\) clearTimeout\(timer\);[\s\S]*?overviewRevealTimers\.clear\(\)/);
 });
 
@@ -67,10 +67,14 @@ test("counter widths are reserved before animation to prevent line wrapping and 
   assert.match(overviewCss, /grid-template-columns:85px minmax\(0,1fr\) minmax\(25px,max-content\)/);
 });
 
-test("Overview scroll position is saved per tab session and restored after data layout on reload", () => {
-  assert.match(dashboardJs, /const OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
-  assert.match(dashboardJs, /dashboardOverviewView\.addEventListener\("scroll"/);
-  assert.match(dashboardJs, /window\.addEventListener\("pagehide", saveOverviewScrollPosition\)/);
-  assert.match(dashboardJs, /sessionStorage\.setItem\(OVERVIEW_SCROLL_POSITION_KEY/);
-  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?readOverviewScrollPosition\(\)[\s\S]*?dashboardOverviewView\.scrollTop = savedOverviewScrollTop[\s\S]*?overviewInitialDataReady = true/);
+test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
+  assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
+  assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
+  assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
+  assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
+  assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScroller\.scrollTop\)/);
+  assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_SCROLL_POSITIONS_KEY, JSON\.stringify\(positions\)\)/);
+  assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_ACTIVE_VIEW_KEY, view\)/);
+  assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?\? saved : "overview"/);
+  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?readDashboardScrollPosition\(activeDashboardView\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?overviewInitialDataReady = true/);
 });

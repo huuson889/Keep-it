@@ -1012,7 +1012,8 @@ html.dark .bilingual-preview{border-color:#374151;background:#111827}html.dark .
 /* Dashboard reference sidebar UI (v3.4.725) */
 html,body { height:100%; }
 body { height:100vh!important; overflow:hidden!important; display:flex!important; flex-direction:row!important; align-items:stretch; }
-body > main { width:auto!important; max-width:none!important; min-width:0!important; height:100vh!important; flex:1 1 0!important; margin:0!important; padding-left:0!important; padding-right:14px!important; }
+#dashboardScroller { width:auto!important; max-width:none!important; min-width:0!important; height:100vh!important; min-height:0!important; flex:1 1 0!important; margin:0!important; padding:0!important; }
+#dashboardScroller > main { width:100%!important; max-width:none!important; min-width:0!important; height:auto!important; min-height:0!important; flex:0 0 auto!important; margin:0!important; }
 #dashboardSidebar.dashboard-reference-sidebar { position:relative; z-index:50; top:auto; bottom:auto; left:auto; display:flex; width:56px; height:100vh; min-height:0; flex:0 0 56px; flex-direction:column; overflow:visible; border-right:1px solid #e2e8f0; background:#fff; color:#475569; font-family:var(--lhn-app-font-family); transition:width .22s cubic-bezier(.4,0,.2,1),flex-basis .22s cubic-bezier(.4,0,.2,1),background-color .2s ease,border-color .2s ease; }
 #dashboardSidebar.dashboard-reference-sidebar.sidebar-pinned { width:220px; flex:0 0 220px; }
 body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { width:220px; flex:0 0 220px; }
@@ -1124,29 +1125,16 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { po
 #dashboardSidebar.sidebar-pinned .nav-label { display:inline-block; max-width:150px; opacity:1; }
 #dashboardSidebar.sidebar-pinned .dashboard-reference-brand-copy { display:flex; }
 #dashboardSidebar.sidebar-pinned .dashboard-reference-user-copy { display:flex; }
-body > main { margin-left:0!important; padding-left:0!important; padding-right:14px!important; }
-body.dashboard-sidebar-pinned > main { margin-left:0!important; }
+#dashboardScroller { margin-left:0!important; padding-left:0!important; padding-right:0!important; }
 #dashboardSidebar .dashboard-theme-sun { display:none; }
 html:not(.dark) #dashboardSidebar .dashboard-theme-moon { display:none; }
 html:not(.dark) #dashboardSidebar .dashboard-theme-sun { display:block; }
 html.dark #dashboardSidebar .dashboard-theme-moon { display:block; }
 html.dark #dashboardSidebar .dashboard-theme-sun { display:none; }
 
-/* Highlights & Notes iframe route. */
-#dashboardHighlightsNotesView {
-  display:block;
-  flex:1 1 0;
-  min-width:0;
-  height:100vh;
-  margin:0!important;
-  padding:0!important;
-  overflow:hidden;
-}
+/* All active Dashboard views share one page-level scroll root. */
+#dashboardHighlightsNotesView { display:block; width:auto; min-width:0; height:auto; min-height:0; flex:0 0 auto; margin:0!important; padding:0!important; overflow:visible; background:transparent; }
 #dashboardHighlightsNotesView[hidden] { display:none!important; }
-body.dashboard-sidebar-pinned > #dashboardHighlightsNotesView { margin-left:0!important; }
-#dashboardHighlightsNotesFrame { display:block; width:100%; height:100%; border:0; background:#f5f7fb; }
-html.dark #dashboardHighlightsNotesFrame { background:var(--lhn-ui-page,#0b1120); }
-
 /* Hold the initial canvas dark and hide content until the saved theme is restored. */
 html.dashboard-theme-pending,
 html.dashboard-theme-pending body {

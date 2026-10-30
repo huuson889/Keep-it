@@ -816,7 +816,7 @@ async function load() {
   annotationPositionById.clear();
   annotations.forEach((item, index) => { if (item?.id) { annotationById.set(item.id, item); annotationPositionById.set(item.id, index); } });
   render();
-  syncHighlightsNotesFrame();
+  syncHighlightsNotesView();
   if (!overviewSessionsReady) void loadOverviewDictationSessions();
   if ($("dashboardSettingsDialog")?.open) refreshDashboardSettings();
 }
@@ -862,22 +862,19 @@ function applyAnnotationChange(change, renderNow = true) {
   } else return false;
   invalidateAnnotationCaches();
   if (renderNow) render();
-  syncHighlightsNotesFrame();
+  syncHighlightsNotesView();
   return true;
 }
-let highlightsNotesFrameReady = false;
-function syncHighlightsNotesFrame() {
-  const frame = $("dashboardHighlightsNotesFrame");
-  if (!frame?.contentWindow || !highlightsNotesFrameReady) return;
-  try { frame.contentWindow.postMessage({ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteNoteIds:[...favoriteNoteIds] }, location.origin); }
-  catch (error) { console.warn("Could not sync local annotations to Highlights & Notes view", error); }
+let highlightsNotesViewReady = false;
+function syncHighlightsNotesView() {
+  if (!highlightsNotesViewReady || !dashboardHighlightsNotesView) return;
+  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-data", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteNoteIds:[...favoriteNoteIds] } }));
 }
-function replyToHighlightsNotes(event, requestId, ok, message = "") {
-  if (!event.source || typeof requestId !== "string") return;
-  try { event.source.postMessage({ type:"KEEPIT_HIGHLIGHTS_NOTES_RESULT", requestId, ok:!!ok, message }, location.origin); }
-  catch (error) { console.warn("Could not reply to Highlights & Notes action", error); }
+function replyToHighlightsNotes(requestId, ok, message = "") {
+  if (typeof requestId !== "string") return;
+  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-result", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_RESULT", requestId, ok:!!ok, message } }));
 }
-async function handleHighlightsNotesAction(event, data) {
+async function handleHighlightsNotesAction(data) {
   const requestId = typeof data.requestId === "string" ? data.requestId : "";
   const item = typeof data.itemId === "string" ? annotationById.get(data.itemId) || annotations.find(annotation => annotation.id === data.itemId) : null;
   const key = typeof data.pageKey === "string" ? data.pageKey : "";
@@ -885,20 +882,20 @@ async function handleHighlightsNotesAction(event, data) {
     switch (data.action) {
       case "edit-note":
         if (!item) throw new Error("Highlight not found");
-        openEditDialog(item); replyToHighlightsNotes(event, requestId, true); return;
+        openEditDialog(item); replyToHighlightsNotes(requestId, true); return;
       case "delete-note":
         if (!item) throw new Error("Highlight not found");
-        if (!confirm(t("deleteAnnotationConfirm"))) { replyToHighlightsNotes(event, requestId, true); return; }
+        if (!confirm(t("deleteAnnotationConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
         await LHN_MESSAGING.sendMessage({ type:"DELETE", id:item.id, origin:DASHBOARD_INSTANCE_ID });
         applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted"));
-        replyToHighlightsNotes(event, requestId, true); return;
+        replyToHighlightsNotes(requestId, true); return;
       case "toggle-note-favorite": {
         if (!item) throw new Error("Highlight not found");
         const wasFavorite = favoriteNoteIds.has(item.id);
         if (wasFavorite) favoriteNoteIds.delete(item.id); else favoriteNoteIds.add(item.id);
         try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] }); }
         catch (error) { if (wasFavorite) favoriteNoteIds.add(item.id); else favoriteNoteIds.delete(item.id); throw error; }
-        render(); syncHighlightsNotesFrame(); replyToHighlightsNotes(event, requestId, true); return;
+        render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
       }
       case "toggle-page-favorite": {
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
@@ -906,13 +903,13 @@ async function handleHighlightsNotesAction(event, data) {
         favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];
         try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites }); }
         catch (error) { favorites = wasFavorite ? [...favorites, key] : favorites.filter(value => value !== key); throw error; }
-        render(); syncHighlightsNotesFrame(); replyToHighlightsNotes(event, requestId, true); return;
+        render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
       }
       case "delete-page": {
         if (!key) throw new Error("Source page not found");
         const pageItems = annotations.filter(annotation => pageKey(annotation) === key);
         if (!pageItems.length) throw new Error("Source page not found");
-        if (!confirm(t("deletePageConfirm"))) { replyToHighlightsNotes(event, requestId, true); return; }
+        if (!confirm(t("deletePageConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
         const result = await LHN_MESSAGING.sendMessage({ type:"DELETE_PAGE", url:key, origin:DASHBOARD_INSTANCE_ID });
         applyAnnotationChange({ type:"deletePage", url:key });
         try {
@@ -920,7 +917,7 @@ async function handleHighlightsNotesAction(event, data) {
           await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type:"REMOVE_HIGHLIGHT_PAGE", url:key }).catch(() => null)));
         } catch (error) { console.warn("Could not remove visible page highlights", error); }
         toast(t("deletePageDone", { count:result?.deletedCount ?? pageItems.length }));
-        replyToHighlightsNotes(event, requestId, true); return;
+        replyToHighlightsNotes(requestId, true); return;
       }
       case "export": {
         const format = ["txt","csv","md","json"].includes(data.format) ? data.format : null;
@@ -929,40 +926,39 @@ async function handleHighlightsNotesAction(event, data) {
         if (data.scope === "page" && (!pageUrl || !annotations.some(annotation => pageKey(annotation) === pageUrl))) throw new Error("Source page not found");
         const exportItems = pageUrl ? annotations.filter(annotation => pageKey(annotation) === pageUrl) : annotations;
         if (format === "json") await downloadJsonExport(pageUrl); else downloadExport(format, exportItems);
-        replyToHighlightsNotes(event, requestId, true); return;
+        replyToHighlightsNotes(requestId, true); return;
       }
       case "study": {
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
         const previousUrl = selectedUrl; selectedUrl = key;
         try { startStudySession(); } finally { selectedUrl = previousUrl; }
-        replyToHighlightsNotes(event, requestId, true); return;
+        replyToHighlightsNotes(requestId, true); return;
       }
       case "jump-to-highlight": {
         if (!item) throw new Error("Highlight not found");
         const result = await LHN_MESSAGING.sendMessage({ type:"OPEN_HIGHLIGHT", url:item.url, id:item.id });
-        replyToHighlightsNotes(event, requestId, !!result?.found, result?.found ? "" : t("highlightNotFound")); return;
+        replyToHighlightsNotes(requestId, !!result?.found, result?.found ? "" : t("highlightNotFound")); return;
       }
       case "speak-highlight":
         if (!item?.quote) throw new Error("Highlight not found");
         speakText(item.quote, detectLanguage(item.quote, item.url));
-        replyToHighlightsNotes(event, requestId, true); return;
+        replyToHighlightsNotes(requestId, true); return;
       default: throw new Error("Unsupported Highlights & Notes action");
     }
   } catch (error) {
     console.warn("Highlights & Notes action failed", data.action, error);
-    syncHighlightsNotesFrame();
-    replyToHighlightsNotes(event, requestId, false);
+    syncHighlightsNotesView();
+    replyToHighlightsNotes(requestId, false);
   }
 }
-const highlightsNotesFrame = $("dashboardHighlightsNotesFrame");
-if (highlightsNotesFrame) {
-  highlightsNotesFrame.addEventListener("load", () => { highlightsNotesFrameReady = true; syncHighlightsNotesFrame(); if (activeDashboardView === "highlights-notes") mountSharedTopbarInIframe(); });
-  try { if (highlightsNotesFrame.contentDocument?.readyState === "complete") highlightsNotesFrameReady = true; } catch { /* same-origin load event will synchronize later */ }
-}
-window.addEventListener("message", event => {
-  if (!highlightsNotesFrame || event.source !== highlightsNotesFrame.contentWindow || event.origin !== location.origin || !event.data || typeof event.data !== "object") return;
-  if (event.data.type === "HIGHLIGHTS_NOTES_READY") { highlightsNotesFrameReady = true; syncHighlightsNotesFrame(); if (activeDashboardView === "highlights-notes") mountSharedTopbarInIframe(); return; }
-  if (event.data.type === "HIGHLIGHTS_NOTES_ACTION" && event.data.version === 1) void handleHighlightsNotesAction(event, event.data);
+window.addEventListener("keepit:highlights-notes-ready", () => {
+  highlightsNotesViewReady = true;
+  syncHighlightsNotesView();
+});
+window.addEventListener("keepit:highlights-notes-action", event => {
+  const data = event.detail;
+  if (!data || data.type !== "HIGHLIGHTS_NOTES_ACTION" || data.version !== 1) return;
+  void handleHighlightsNotesAction(data);
 });
 const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
 const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
@@ -2345,29 +2341,52 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
-const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
-const OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1";
-let overviewScrollSaveTimer = null, overviewScrollRestoring = true;
-function readOverviewScrollPosition() {
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
+const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
+const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1";
+const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1";
+let dashboardScrollSaveTimer = null, dashboardScrollRestoring = true;
+function readDashboardScrollPositions() {
   try {
-    const value = Number(sessionStorage.getItem(OVERVIEW_SCROLL_POSITION_KEY));
-    return Number.isFinite(value) && value > 0 ? value : 0;
-  } catch { return 0; }
+    const value = JSON.parse(sessionStorage.getItem(DASHBOARD_SCROLL_POSITIONS_KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch { return {}; }
 }
-function saveOverviewScrollPosition() {
-  if (overviewScrollRestoring || !dashboardOverviewView) return;
-  try { sessionStorage.setItem(OVERVIEW_SCROLL_POSITION_KEY, String(Math.max(0, dashboardOverviewView.scrollTop))); } catch { /* session storage may be unavailable */ }
+function readDashboardScrollPosition(view) {
+  const positions = readDashboardScrollPositions();
+  const value = Number(positions[view]);
+  if (Number.isFinite(value) && value > 0) return value;
+  if (view === "overview") {
+    try { const legacy = Number(sessionStorage.getItem(LEGACY_OVERVIEW_SCROLL_POSITION_KEY)); return Number.isFinite(legacy) && legacy > 0 ? legacy : 0; }
+    catch { return 0; }
+  }
+  return 0;
 }
-dashboardOverviewView.addEventListener("scroll", () => {
-  if (overviewScrollRestoring) return;
-  if (overviewScrollSaveTimer !== null) clearTimeout(overviewScrollSaveTimer);
-  overviewScrollSaveTimer = window.setTimeout(() => { overviewScrollSaveTimer = null; saveOverviewScrollPosition(); }, 100);
+function saveDashboardScrollPosition(view = activeDashboardView) {
+  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "listening", "highlights-notes"].includes(view)) return;
+  const positions = readDashboardScrollPositions();
+  positions[view] = Math.max(0, dashboardScroller.scrollTop);
+  try {
+    sessionStorage.setItem(DASHBOARD_SCROLL_POSITIONS_KEY, JSON.stringify(positions));
+    if (view === "overview") sessionStorage.setItem(LEGACY_OVERVIEW_SCROLL_POSITION_KEY, String(positions[view]));
+  } catch { /* session storage may be unavailable */ }
+}
+function saveDashboardScrollState() {
+  if (activeDashboardView) {
+    saveDashboardScrollPosition(activeDashboardView);
+    try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, activeDashboardView); } catch { /* session storage may be unavailable */ }
+  }
+}
+dashboardScroller.addEventListener("scroll", () => {
+  if (dashboardScrollRestoring) return;
+  if (dashboardScrollSaveTimer !== null) clearTimeout(dashboardScrollSaveTimer);
+  dashboardScrollSaveTimer = window.setTimeout(() => { dashboardScrollSaveTimer = null; saveDashboardScrollPosition(); }, 100);
 }, { passive:true });
-window.addEventListener("pagehide", saveOverviewScrollPosition);
-window.addEventListener("beforeunload", saveOverviewScrollPosition);
+window.addEventListener("pagehide", saveDashboardScrollState);
+window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
-let activeDashboardView = "overview", parentTopbarCompact = false, parentTopbarScrollTarget = null;
+let activeDashboardView = null, parentTopbarCompact = false, parentTopbarScrollTarget = null;
 function updateSharedTopbarContent(view) {
   const fallbackKey = view === "listening" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
   const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
@@ -2378,6 +2397,10 @@ function updateSharedTopbarContent(view) {
   if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
   if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "listening" ? "listenDemoBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
+  if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
+    const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
+    if (actions && actions.parentElement !== dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.append(actions);
+  }
 }
 function closeSharedTopbarExportMenu() {
   const menu = dashboardSharedTopbar?.querySelector("#exportAllDemoMenu");
@@ -2385,62 +2408,27 @@ function closeSharedTopbarExportMenu() {
   if (menu) menu.hidden = true;
   if (button) button.setAttribute("aria-expanded", "false");
 }
-function findSharedTopbarScrollTarget(topbar) {
-  let node = topbar?.parentElement;
-  while (node && node !== document.body && node !== document.documentElement) {
-    const style = getComputedStyle(node);
-    if (/(auto|scroll|overlay)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
-    node = node.parentElement;
-  }
-  return document.scrollingElement || document.documentElement;
-}
 function unbindParentTopbarScrollTarget() {
   parentTopbarScrollTarget?.removeEventListener("scroll", updateParentTopbarCompact);
   parentTopbarScrollTarget = null;
 }
 function bindParentTopbarScrollTarget() {
   unbindParentTopbarScrollTarget();
-  if (!dashboardSharedTopbar || activeDashboardView === "highlights-notes" || dashboardSharedTopbar.ownerDocument !== document) return;
-  parentTopbarScrollTarget = activeDashboardView === "listening"
-    ? dashboardListeningView
-    : findSharedTopbarScrollTarget(dashboardSharedTopbar);
-  parentTopbarScrollTarget?.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
+  if (!dashboardSharedTopbar || !dashboardScroller) return;
+  parentTopbarScrollTarget = dashboardScroller;
+  parentTopbarScrollTarget.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
   updateParentTopbarCompact();
-}
-function mountSharedTopbarInIframe() {
-  const frame = highlightsNotesFrame;
-  const frameDocument = frame?.contentDocument;
-  const home = frameDocument?.getElementById("dashboardHomeView");
-  unbindParentTopbarScrollTarget();
-  if (!highlightsNotesFrameReady || !frameDocument || !home) {
-    dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
-    return;
-  }
-  closeSharedTopbarExportMenu();
-  parentTopbarCompact = false;
-  dashboardSharedTopbar?.classList.remove("is-compact");
-  updateSharedTopbarContent("highlights-notes");
-  const actions = frameDocument.getElementById("dashboardSharedTopbarActions");
-  const previousActions = dashboardSharedTopbar?.querySelector("#dashboardSharedTopbarActions");
-  if (actions && previousActions && actions !== previousActions) previousActions.remove();
-  home.prepend(dashboardSharedTopbar);
-  const actionSlot = dashboardSharedTopbar?.querySelector("#dashboardSharedTopbarActionsSlot");
-  if (actions && actionSlot && actions.parentElement !== actionSlot) actionSlot.append(actions);
-  frameDocument.getElementById("dashboardSharedTopbarActionsSource")?.remove();
-  frame.contentWindow.postMessage({ type:"KEEPIT_SHARED_TOPBAR_MOUNTED", version:1 }, location.origin);
 }
 function mountSharedTopbarInParent(view) {
   closeSharedTopbarExportMenu();
-  unbindParentTopbarScrollTarget();
   dashboardSharedTopbar?.classList.remove("is-compact");
   parentTopbarCompact = false;
   updateSharedTopbarContent(view);
-  const host = view === "listening" ? dashboardListeningView : dashboardOverviewView?.querySelector(".ov-content");
-  if (host && dashboardSharedTopbar) host.prepend(dashboardSharedTopbar);
+  if (dashboardSharedTopbar && dashboardSharedTopbar.parentElement !== dashboardSharedTopbarPortal) dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
   bindParentTopbarScrollTarget();
 }
 function updateParentTopbarCompact() {
-  if (!dashboardSharedTopbar || activeDashboardView === "highlights-notes" || dashboardSharedTopbar.ownerDocument !== document) return;
+  if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
   const next = dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
   parentTopbarCompact = next;
@@ -2448,8 +2436,7 @@ function updateParentTopbarCompact() {
 }
 window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
 function overviewRevealTargets() {
-  return [...dashboardOverviewView.querySelectorAll([
-    ".ov-topbar",
+  return [dashboardSharedTopbar, ...dashboardOverviewView.querySelectorAll([
     ".ov-welcome",
     ".ov-quick-panel",
     ".ov-stats > .ov-stat",
@@ -2460,7 +2447,7 @@ function overviewRevealTargets() {
     ".ov-mode-grid > .ov-mode",
     ".ov-lower > .ov-panel",
     ".ov-footer"
-  ].join(","))];
+  ].join(","))].filter(Boolean);
 }
 function overviewRevealTarget(target, revealDelay = 100) {
   target.style.setProperty("--ov-reveal-delay", `${revealDelay}ms`);
@@ -2506,7 +2493,7 @@ function resetOverviewEntranceEffects() {
       chart.style.removeProperty("--ov-chart-scale");
     } else chart.style.transform = "scaleX(0)";
   }
-  for (const target of dashboardOverviewView.querySelectorAll(".ov-reveal")) {
+  for (const target of [...dashboardOverviewView.querySelectorAll(".ov-reveal"), dashboardSharedTopbar].filter(Boolean)) {
     target.classList.remove("ov-reveal", "ov-revealed", "ov-chart-running");
     target.style.removeProperty("--ov-reveal-delay");
   }
@@ -2528,28 +2515,97 @@ function resetOverviewEntranceEffects() {
       overviewRevealTarget(target, Math.round(revealAt - now));
       overviewEffectsObserver?.unobserve(target);
     });
-  }, { root:dashboardOverviewView, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
+  }, { root:dashboardScroller, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
   targets.forEach(target => overviewEffectsObserver.observe(target));
+}
+let dashboardPanelRevealObserver = null;
+let dashboardPanelRevealTimers = new Map();
+let dashboardPanelRevealSequenceEnd = 0;
+function dashboardPanelRevealTargets(view) {
+  if (view === "listening") return [...dashboardListeningView.querySelectorAll([
+    ".listen-hero-row", ".search-panel", ".library-section", ".layout > .aside"
+  ].join(","))];
+  if (view === "highlights-notes") return [...dashboardHighlightsNotesView.querySelectorAll(".dashboard-reveal")];
+  return [];
+}
+function resetDashboardPanelEntranceEffects(view) {
+  dashboardPanelRevealObserver?.disconnect();
+  dashboardPanelRevealObserver = null;
+  for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
+  dashboardPanelRevealTimers.clear();
+  dashboardPanelRevealSequenceEnd = 0;
+  const routeTargets = dashboardPanelRevealTargets(view);
+  const targets = [...(!dashboardSharedTopbar?.classList.contains("ov-revealed") ? [dashboardSharedTopbar].filter(Boolean) : []), ...routeTargets];
+  for (const target of routeTargets) {
+    target.classList.remove("dashboard-revealed");
+    target.style.removeProperty("--ov-reveal-delay");
+  }
+  if (!targets.length) return;
+  const reveal = (target, delay) => {
+    target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
+    if (target === dashboardSharedTopbar) target.classList.add("ov-revealed");
+    else target.classList.add("dashboard-revealed");
+    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); }, delay + 850);
+    dashboardPanelRevealTimers.set(target, timer);
+  };
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach((target, index) => reveal(target, 100 + index * 80));
+    return;
+  }
+  const targetOrder = new Map(targets.map((target, index) => [target, index]));
+  dashboardPanelRevealObserver = new IntersectionObserver(entries => {
+    const visibleTargets = entries.filter(entry => entry.isIntersecting && !(entry.target === dashboardSharedTopbar ? entry.target.classList.contains("ov-revealed") : entry.target.classList.contains("dashboard-revealed")))
+      .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
+    visibleTargets.forEach(target => {
+      const now = performance.now();
+      const revealAt = Math.max(now + 100, dashboardPanelRevealSequenceEnd + 80);
+      dashboardPanelRevealSequenceEnd = revealAt;
+      reveal(target, Math.round(revealAt - now));
+      dashboardPanelRevealObserver?.unobserve(target);
+    });
+  }, { root:dashboardScroller, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
+  targets.forEach(target => dashboardPanelRevealObserver.observe(target));
+}
+function savedDashboardView() {
+  try { const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY); return ["overview", "listening", "highlights-notes"].includes(saved) ? saved : "overview"; }
+  catch { return "overview"; }
 }
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
+  const previousView = activeDashboardView;
+  if (previousView && previousView !== view && !dashboardScrollRestoring) {
+    if (dashboardScrollSaveTimer !== null) { clearTimeout(dashboardScrollSaveTimer); dashboardScrollSaveTimer = null; }
+    saveDashboardScrollPosition(previousView);
+  }
   activeDashboardView = view;
   const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
   dashboardListeningView.hidden = !showListening;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
-  if (showOverview && !overviewInitialDataReady) dashboardOverviewView.scrollTop = readOverviewScrollPosition();
+  try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }
+  dashboardScrollRestoring = true;
+  const savedScrollTop = readDashboardScrollPosition(view);
+  dashboardScroller.scrollTop = savedScrollTop;
+  requestAnimationFrame(() => {
+    dashboardScroller.scrollTop = savedScrollTop;
+    requestAnimationFrame(() => { dashboardScrollRestoring = false; });
+  });
   if (showOverview) { if (overviewInitialDataReady) resetOverviewEntranceEffects(); }
   else {
     overviewEffectsObserver?.disconnect();
     overviewEffectsObserver = null;
     for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
     overviewRevealTimers.clear();
+    dashboardPanelRevealObserver?.disconnect();
+    dashboardPanelRevealObserver = null;
+    for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
+    dashboardPanelRevealTimers.clear();
+    if (overviewInitialDataReady) resetDashboardPanelEntranceEffects(view);
   }
-  if (showHighlightsNotes) mountSharedTopbarInIframe(); else mountSharedTopbarInParent(view);
-  dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
+  mountSharedTopbarInParent(view);
+dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
     link.classList.toggle("is-active", active);
     if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
@@ -2561,7 +2617,7 @@ dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEvent
   event.preventDefault();
   startStudySession({ allSources:true });
 });
-setDashboardView("overview");
+setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenu").addEventListener("click", async event => {
   const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;
@@ -3026,12 +3082,12 @@ browser.storage.onChanged.addListener((changes, area) => {
     syncDashboardTheme();
     if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
     else refreshDashboardSettings();
-    syncHighlightsNotesFrame();
+    syncHighlightsNotesView();
   }
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
     render();
-    syncHighlightsNotesFrame();
+    syncHighlightsNotesView();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
     const saved = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue || {};
@@ -3046,7 +3102,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
     render();
-    syncHighlightsNotesFrame();
+    syncHighlightsNotesView();
   }
   if (changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY]) {
     const index = normalizeOverviewSessionIndex(changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY].newValue);
@@ -3092,13 +3148,15 @@ $("exportErrorLog")?.addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
-  const savedOverviewScrollTop = readOverviewScrollPosition();
-  dashboardOverviewView.scrollTop = savedOverviewScrollTop;
+  const savedScrollTop = readDashboardScrollPosition(activeDashboardView);
+  dashboardScrollRestoring = true;
+  dashboardScroller.scrollTop = savedScrollTop;
   requestAnimationFrame(() => {
-    dashboardOverviewView.scrollTop = savedOverviewScrollTop;
+    dashboardScroller.scrollTop = savedScrollTop;
     overviewInitialDataReady = true;
     if (activeDashboardView === "overview") resetOverviewEntranceEffects();
-    requestAnimationFrame(() => { overviewScrollRestoring = false; });
+    else resetDashboardPanelEntranceEffects(activeDashboardView);
+    requestAnimationFrame(() => { dashboardScrollRestoring = false; });
   });
   initListeningPreview();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }

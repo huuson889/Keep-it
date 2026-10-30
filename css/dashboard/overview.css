@@ -570,3 +570,115 @@ html.dark #dashboardOverviewView .ov-mode:not(.ov-mode-shadow):hover {
     grid-template-columns:85px minmax(0,1fr) minmax(25px,max-content);
   }
 }
+
+
+/* Shared Dashboard shell: one page-level scroll root for every active view. */
+body { height:100vh!important;min-height:0!important;overflow:hidden!important; }
+#dashboardScroller {
+  box-sizing:border-box;display:block;width:auto;height:100vh;min-width:0;min-height:0;flex:1 1 0;
+  overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
+  background:#f5f5ff;color:#252640;scrollbar-gutter:stable;
+}
+html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(--lhn-ui-text,#d7deeb); }
+#dashboardScroller > main {
+  display:block!important;width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;
+  min-height:0!important;flex:0 0 auto!important;overflow:visible!important;margin:0!important;box-sizing:border-box;
+}
+#dashboardScroller > #dashboardOverviewView {
+  padding:0 clamp(16px,3vw,42px) 42px!important;background:transparent!important;color:inherit;
+}
+#dashboardOverviewView .ov-content { padding-top:0!important; }
+#dashboardScroller > #dashboardListeningView {
+  padding:0 clamp(16px,3vw,42px) 34px!important;background:transparent!important;color:inherit;
+}
+#dashboardScroller > #dashboardListeningView::before { display:none!important;height:0!important; }
+#dashboardScroller > #dashboardHighlightsNotesView { background:transparent!important; }
+#dashboardScroller > main[hidden] { display:none!important; }
+
+/* One sticky topbar is mounted once above all three routes. */
+#dashboardSharedTopbarPortal {
+  position:sticky;top:-22px;z-index:30;box-sizing:border-box;width:100%;max-width:1404px;margin:0 auto;padding:22px clamp(16px,3vw,42px) 0;
+}
+#dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
+  position:relative;top:auto;z-index:30;box-sizing:border-box;width:100%;height:56px;min-height:56px;
+  display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 auto 20px;padding:0 19px;
+  border:1px solid #eeedf7;border-radius:30px;background:#fff;box-shadow:0 4px 14px #6156a30a;
+  transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease;
+}
+#dashboardSharedTopbar .ov-crumb { color:#8d93a6;font-size:13px; }
+#dashboardSharedTopbar .ov-crumb strong { color:#695bd6;font-size:14px;font-weight:800; }
+#dashboardSharedTopbar .ov-crumb span { padding:0 8px;color:#c3c6d2; }
+#dashboardSharedTopbar .ov-demo { display:flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #eee9ff;border-radius:24px;background:#faf8ff;color:#7566bf;font-size:13px;font-weight:700; }
+#dashboardSharedTopbar .ov-demo svg { width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+#dashboardSharedTopbar.is-compact { height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;margin-bottom:30px;box-shadow:0 7px 18px rgba(49,43,92,.10); }
+#dashboardSharedTopbar .dashboard-shared-topbar-right { min-width:0;display:flex;align-items:center;gap:9px; }
+#dashboardSharedTopbarActionsSlot:not([hidden]) { min-width:0;display:flex;align-items:center; }
+#dashboardSharedTopbarActionsSlot .demo-topbar-actions { display:flex;align-items:center;gap:9px; }
+#dashboardSharedTopbarActionsSlot .demo-badge { display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #eee9ff;border-radius:24px;background:#faf8ff;color:#7566bf;font-size:11px;font-weight:800;letter-spacing:.25px;white-space:nowrap; }
+#dashboardSharedTopbarActionsSlot .demo-badge i { width:7px;height:7px;border-radius:50%;background:#927fe9;box-shadow:0 0 0 3px #eeeaff; }
+#dashboardSharedTopbarActionsSlot .demo-export-all { display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e5e2fa;border-radius:22px;background:#fff;color:#665ac9;font-size:11px;font-weight:750; }
+#dashboardSharedTopbarActionsSlot .demo-export-all .lucide { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+#dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#f8f6ff;filter:none; }
+html.dark #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:var(--lhn-ui-border,#2b3a52);background:var(--lhn-ui-surface,#111a2b);box-shadow:0 4px 14px rgba(0,0,0,.18); }
+html.dark #dashboardSharedTopbar .ov-crumb { color:var(--lhn-ui-muted,#a4b0c3); }
+html.dark #dashboardSharedTopbar .ov-crumb strong { color:var(--lhn-ui-brand,#a5a9ff); }
+html.dark #dashboardSharedTopbar .ov-crumb span { color:#64748b; }
+html.dark #dashboardSharedTopbar .ov-demo { border-color:#413e6b;background:#252443;color:#c4b5fd; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-badge { border-color:#39365e;background:#252443;color:#c0c2ff; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-export-all { border-color:#39365e;background:#252443;color:#c0c2ff; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#302d54; }
+
+/* Overview's established reveal cadence now uses the common scroller as its observer root. */
+#dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar.ov-reveal {
+  opacity:0;transform:translateY(24px) scale(.98);will-change:opacity,transform;
+  transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1);
+  transition-delay:var(--ov-reveal-delay,100ms);
+}
+#dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar.ov-reveal.ov-revealed { opacity:1;transform:translateY(0) scale(1); }
+#dashboardScroller > main .dashboard-reveal {
+  opacity:0;transform:translateY(24px) scale(.98);will-change:opacity,transform;
+  transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1),box-shadow .25s ease,border-color .25s ease;
+  transition-delay:var(--ov-reveal-delay,100ms);
+}
+#dashboardScroller > main .dashboard-reveal.dashboard-revealed { opacity:1;transform:translateY(0) scale(1); }
+@media(prefers-reduced-motion:reduce) {
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar.ov-reveal,
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar.ov-reveal.ov-revealed,
+  #dashboardScroller > main .dashboard-reveal,
+  #dashboardScroller > main .dashboard-reveal.dashboard-revealed { transition:none!important;will-change:auto;transform:none!important;opacity:1!important; }
+}
+@media(max-width:760px) {
+  #dashboardScroller > #dashboardOverviewView { padding:0 14px 30px!important; }
+  #dashboardScroller > #dashboardListeningView { padding:0 18px 28px!important; }
+}
+@media(max-width:560px) {
+  #dashboardScroller > #dashboardListeningView { padding:0 11px 25px!important; }
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { height:48px;min-height:48px;padding-left:12px;padding-right:12px; }
+  #dashboardSharedTopbar.is-compact { height:42px;min-height:42px;margin-bottom:26px; }
+  #dashboardSharedTopbar .ov-crumb { font-size:11px; }
+  #dashboardSharedTopbar .ov-crumb strong { font-size:12px; }
+  #dashboardSharedTopbarActionsSlot .demo-badge { padding:6px 8px;font-size:9px; }
+  #dashboardSharedTopbarActionsSlot .demo-topbar-actions { gap:5px; }
+  #dashboardSharedTopbarActionsSlot .demo-export-all { padding:7px; }
+  #dashboardSharedTopbarActionsSlot .demo-export-all span { display:none; }
+}
+@media(max-width:480px) { #dashboardScroller > #dashboardOverviewView { padding:0 14px 30px!important; } }
+
+
+/* H&N export controls are portaled into the shared topbar, outside the route-local stylesheet scope. */
+#dashboardSharedTopbarActionsSlot .demo-topbar-actions .menu-wrap { position:relative; }
+#dashboardSharedTopbarActionsSlot .export-menu { position:absolute;z-index:1000;top:calc(100% + 7px);left:auto;right:0;min-width:190px;padding:5px;border:1px solid var(--lhn-ui-border,#e2e8f0);border-radius:10px;background:var(--lhn-ui-surface,#fff);color:var(--lhn-ui-text,#334155);box-shadow:0 12px 32px rgba(26,43,69,.12); }
+#dashboardSharedTopbarActionsSlot .export-menu[hidden] { display:none!important; }
+#dashboardSharedTopbarActionsSlot .export-option { display:flex;width:100%;align-items:center;gap:10px;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--lhn-ui-text,#334155);text-align:left;font-size:13px;font-weight:400;cursor:pointer; }
+#dashboardSharedTopbarActionsSlot .export-option:hover { background:var(--lhn-ui-subtle,#f1f5f9);filter:none; }
+#dashboardSharedTopbarActionsSlot .file-icon { width:29px;height:32px;flex:0 0 29px;display:grid;place-items:center;border:1px solid var(--lhn-ui-border,#dce3ed);border-radius:6px;background:var(--lhn-ui-raised,#f8fafc);color:var(--lhn-ui-text,#42516a);font-size:10px;font-weight:800; }
+#dashboardSharedTopbarActionsSlot .file-icon.txt { color:#3972c6; }
+#dashboardSharedTopbarActionsSlot .file-icon.csv { color:#16845c; }
+#dashboardSharedTopbarActionsSlot .file-icon.md { color:#7757b7; }
+#dashboardSharedTopbarActionsSlot .file-icon.json { color:#b17b19; }
+#dashboardSharedTopbarActionsSlot .export-option > span:last-child { flex:1 1 auto;min-width:0;text-align:left; }
+#dashboardSharedTopbarActionsSlot .demo-export-all { box-shadow:none;cursor:pointer;white-space:nowrap; }
+html.dark #dashboardSharedTopbarActionsSlot .export-menu { border-color:var(--lhn-ui-border,#2b3a52);background:var(--lhn-ui-surface,#111a2b);color:var(--lhn-ui-text,#d7deeb);box-shadow:0 12px 32px rgba(0,0,0,.38); }
+html.dark #dashboardSharedTopbarActionsSlot .export-option { color:var(--lhn-ui-text,#d7deeb); }
+html.dark #dashboardSharedTopbarActionsSlot .export-option:hover { background:var(--lhn-ui-subtle,#1e2b41); }
+html.dark #dashboardSharedTopbarActionsSlot .file-icon { border-color:var(--lhn-ui-border,#334155);background:var(--lhn-ui-raised,#172338);color:var(--lhn-ui-text,#d7deeb); }

@@ -4,15 +4,16 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng settings/study/backup. `dashboard.js` điều phối route; parent quản lý dữ liệu và actions cho iframe Highlights & Notes.
+Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng settings/study/backup. Ba view dùng chung `#dashboardScroller`, nền/theme và một topbar; nội dung và logic từng view vẫn độc lập. Highlights & Notes chạy trong cùng document, không dùng iframe.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardHighlightsNotesFrame` | Route Dashboard và giao diện Highlights & Notes. |
-| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `setDashboardView`, `syncHighlightsNotesFrame` | Nạp dữ liệu, chuyển route, đồng bộ iframe. |
-| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Render danh sách; gửi actions. |
+| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardScroller`, `#dashboardHighlightsNotesView` | Shell route và nguồn markup ban đầu của Highlights & Notes. Dashboard render H&N trong cùng document. |
+| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `setDashboardView`, `syncHighlightsNotesView` | Nạp dữ liệu, chuyển route, đồng bộ H&N qua custom events; lưu route/scroll theo tab. |
+| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Render danh sách; gửi/nhận actions qua same-document event bus. |
+| [`css/dashboard/highlights-notes-embedded.css`](../../css/dashboard/highlights-notes-embedded.css) | `#dashboardHighlightsNotesView` | CSS H&N được scope vào route; nội bộ không tạo scroll root thứ hai. |
 | [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js), [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_ANNOTATION_UTILS`, `LHN_DASHBOARD_OVERVIEW_DATA` | Chuẩn hóa và tổng hợp annotations. |
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
 | [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Render thống kê Dictation cục bộ. |
@@ -23,20 +24,21 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 ## 3. Luồng chính
 
 1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ thứ tự script.
-2. `load()` lấy settings, favorites và annotations; cập nhật Overview rồi gửi snapshot sang iframe.
+2. `load()` lấy settings, favorites và annotations; cập nhật Overview và gửi snapshot H&N qua `keepit:highlights-notes-data`.
 3. `setDashboardView()` chuyển giữa Overview, Listening và Highlights & Notes. Listening vẫn là trang demo; Flashcards là action, không phải route.
-4. Iframe nhận annotations, favorites và ngôn ngữ qua same-origin `postMessage`; CRUD, favorite, export, review, jump và speak quay về handler parent hiện có.
-5. Một node `#dashboardSharedTopbar` chuyển giữa route; scrollport `#dashboardListeningView` điều khiển sticky/compact state. Giữ export trong iframe.
+4. H&N cùng document nhận annotations, favorites và ngôn ngữ qua custom event; CRUD, favorite, export, review, jump và speak quay về handler trong `dashboard.js`.
+5. Một node `#dashboardSharedTopbar` nằm cố định trong shared shell; `#dashboardScroller` điều khiển sticky/compact state và là scroll root duy nhất cho ba view. Export H&N dùng action slot trên topbar.
 6. Nút thống kê chi tiết mở iframe cùng origin. Parent quét `dictation:<videoId>` records trực tiếp; session index chỉ bổ sung tiêu đề/URL khi có. Khi popup mở, `storage.onChanged` gửi snapshot mới để cập nhật tại chỗ. Popup render ba góc nhìn Global, Critical và Theo web theo UI demo v14; tìm kiếm/metric bám lựa chọn hiện tại.
 7. Popup stats và Highlights & Notes gọi `LHN_SITE_ICONS.load` cho favicon. Resolver ưu tiên icon của tab cùng origin, dùng cache `browser.storage.local` chung, fallback đồng nhất và không lưu path/query trang.
 8. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ ba route, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới.
-- Hiệu ứng Overview chỉ tác động trình bày: `IntersectionObserver` dùng `#dashboardOverviewView` làm scroll root; từng khung reveal theo thứ tự DOM/đọc trực quan từ trái sang phải, trên xuống dưới, giãn 80ms và chỉ khi vào vùng nhìn. Markup gắn `ov-reveal` sẵn để trang mới/reload không flash nội dung trước khi `load()` hoàn tất; sau khi khôi phục scroll và dữ liệu, `resetOverviewEntranceEffects()` chạy cùng nhịp với lần quay lại tab. Counter đặt trước bề rộng theo giá trị hoàn chỉnh để không wrap/reflow; dữ liệu vẫn lấy từ summary local và tôn trọng `prefers-reduced-motion`. `sessionStorage` giữ `scrollTop` qua page reload.
-- Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; iframe chỉ giữ bản sao trong bộ nhớ.
-- Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
+- Giữ ba route, một `#dashboardScroller`, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới. `sessionStorage` lưu riêng `overview`, `listening`, `highlights-notes` và route cuối; khi chưa có route đã lưu, mặc định Overview. Sau reload, scroll được đặt lại sau khi dữ liệu/layout sẵn sàng.
+- Hiệu ứng Overview chỉ tác động trình bày: `IntersectionObserver` dùng `#dashboardScroller` làm root; từng khung reveal theo thứ tự DOM/đọc trực quan từ trái sang phải, trên xuống dưới, giãn 80ms và chỉ khi vào vùng nhìn. Markup gắn `ov-reveal` sẵn để không flash trước khi `load()` hoàn tất; sau khi khôi phục route/scroll và dữ liệu, `resetOverviewEntranceEffects()` chạy cùng nhịp với lần quay lại tab. Counter đặt trước bề rộng theo giá trị hoàn chỉnh để không wrap/reflow; dữ liệu vẫn lấy từ summary local và tôn trọng `prefers-reduced-motion`.
+- Dictation và Highlights & Notes chỉ reveal khung cấp cao; không gắn reveal lên từng source, annotation, note hoặc video record.
+- Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; view nhận snapshot trong bộ nhớ qua `keepit:highlights-notes-*` custom events. Không có iframe hay nguồn annotation thứ hai.
+- Event bus nội bộ giữ protocol version `1`; sync sau load/CRUD/storage changes, replies trả về component H&N trong cùng document.
 - Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent refresh khi local Dictation record/index đổi; tên nguồn chọn bản mới hơn giữa record title (đã lấy từ thanh audio) và session index theo timestamp, bỏ giá trị chỉ là videoId trước khi fallback. Nếu record/index cũ thiếu title, bridge thử lấy title từ tab YouTube đang mở khớp videoId. Tên nguồn/context và tiêu đề video trong tab theo video là liên kết HTTPS tới clip YouTube; khi index thiếu URL, tạo URL từ videoId. Iframe không đọc storage trực tiếp.
 - Popup thống kê khớp stylesheet demo v14. Header không subtitle/footer; toolbar compact gom tab, filter, sort và tìm kiếm; metrics nằm cột trái 146px. Smart-card có 5 cột và summary ba dòng. Tab Theo web dùng cùng card trong accordion; chỉ title là link và chevron SVG 22px. Animation dùng grid rows, tôn trọng `prefers-reduced-motion`; scrollbar WebKit là 3px.
 - Favicon trong popup và Highlights & Notes phải gọi helper `LHN_SITE_ICONS` dùng chung; không tự tạo URL favicon/fallback riêng ở từng consumer. Cache chung được phân vùng theo origin, có TTL/giới hạn; không lưu full page URL.
@@ -47,6 +49,6 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate; `dashboard-overview-animations.test.cjs` kiểm tra thông số hiệu ứng theo mẫu, scroll-root/re-entry, khôi phục scroll position, counter/chart và reduced-motion.
-- Mock: kiểm tra metadata/page key, Overview và Highlights & Notes data/action bridge.
-- Browser cần xác nhận routes, iframe CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox; với Overview, cuộn từng vùng, rời/quay lại tab và kiểm tra reduced-motion ở light/dark theme. Static/mock không thay cho kiểm tra extension thật.
+- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/custom-event contract và `git diff --check`. Test popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate; Overview test giữ reveal cadence, data-ready, shared scroll root/per-tab restore, counter/chart và reduced-motion.
+- Mock: kiểm tra metadata/page key, Overview summary và Highlights & Notes same-document data/action bus.
+- Browser cần xác nhận shared shell, per-tab scroll/reload restore, H&N CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox; với reveal, cuộn từng vùng, rời/quay lại tab và kiểm tra reduced-motion ở light/dark theme. Static/mock không thay cho kiểm tra extension thật.

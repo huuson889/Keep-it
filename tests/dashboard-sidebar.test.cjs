@@ -25,7 +25,7 @@ test("Dashboard sidebar starts expanded and pin toggles the in-flow width smooth
   assert.match(js, /dashboardSidebar\.classList\.toggle\("sidebar-pinned", pinned\)/);
   assert.match(js, /document\.body\.classList\.toggle\("dashboard-sidebar-pinned", pinned\)/);
   assert.match(js, /dashboardSidebarPin\.setAttribute\("aria-pressed", String\(pinned\)\)/);
-  assert.match(dashboardCss, /body > main \{[^}]*margin:0!important/);
+  assert.match(dashboardCss, /#dashboardScroller \{[^}]*margin:0!important/);
   assert.match(dashboardCss, /#dashboardSidebar\.dashboard-reference-sidebar \{[^}]*flex:0 0 56px[^}]*transition:[^}]*flex-basis/);
   assert.match(dashboardCss, /#dashboardSidebar\.dashboard-reference-sidebar\.sidebar-pinned \{ width:220px; flex:0 0 220px; \}/);
   assert.match(dashboardCss, /#dashboardSidebar\.dashboard-reference-sidebar:not\(\.sidebar-pinned\) \{[^}]*width:56px; flex:0 0 56px; \}/);
