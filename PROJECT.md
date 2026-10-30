@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.790; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Popup stats quét trực tiếp local records schema v3, gán nhãn heuristic cho từng lượt sai mới, lưu loại + ví dụ ngữ cảnh, hỗ trợ lọc theo nhóm và live refresh. Migration chỉ reset `wrongWordStats` v1/v2; notes/progress/translations được giữ.
-- Popup đã được port theo UI demo; dữ liệu/nhãn lấy từ local records, không dùng dữ liệu mẫu hay cloud. Dashboard giữ ba route và một shared topbar; Reader glyph vẫn 54px trong vòng tròn 40×40px.
-- Kiểm tra gần nhất: 29/29 tests; 53 JavaScript syntax checks; CSS/HTML/manifest và `git diff --check` đạt. Chưa browser-test.
+- Version hiện tại: v3.4.791; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Popup stats tiếp tục đọc local records schema v3, live-update nhãn nguồn khi tiêu đề YouTube/session index đổi; popup cao cố định ở max-height hiện tại và chỉ body cuộn với scrollbar 3px trên Chromium.
+- Bộ phân loại cục bộ, UI demo, categories/filter và live refresh giữ nguyên; migration stats v1/v2 chỉ áp dụng từ v3.4.790, giữ notes/progress/translations.
+- Kiểm tra gần nhất: 30/30 tests; 53 JavaScript syntax checks; manifest v3.4.791/44 asset paths, 4 HTML/52 local refs/402 IDs, 11 CSS/2,610 top-level rules sạch; `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -90,6 +90,7 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> demo-matched global / critical / per-video views
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
@@ -108,6 +109,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.791 | Arena.ai Agent sửa:**
+
+- Cố định chiều cao popup ở `min(900px, calc(100vh - 40px))`; header/footer đứng yên, body cuộn nội dung và scrollbar Chromium rộng 3px theo Dashboard.
+- Theo dõi thay đổi tiêu đề YouTube khi Dictation đang mở; lưu session index có debounce để popup đang mở cập nhật `context-source` tức thì qua storage listener.
+- File: `manifest.json`, `css/dashboard/dictation-stats-popup.css`, `js/dictation/dictation.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `docs/modules/dictation.md`, `PROJECT.md`.
+- Kiểm tra: 30/30 tests; 53 JavaScript syntax checks; manifest v3.4.791/44 asset paths; 4 HTML/52 local refs/402 IDs; 11 CSS/2,610 top-level rules và inline/embedded CSS parse sạch; `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.790 | Arena.ai Agent sửa:**
 

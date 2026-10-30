@@ -22,6 +22,9 @@
   let ctrlAlone = false;
   let escapeFilledAnswer = false;
   let panelGeneration = 0;
+  let videoTitleObserver = null;
+  let videoTitleSaveTimer = 0;
+  let indexedVideoTitle = "";
   let saveTimer = 0;
   let toastTimer = 0;
   let rafId = 0;
@@ -55,6 +58,37 @@
       if (heading) return heading.slice(0, 240);
       return String(document.title || "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
     } catch { return ""; }
+  }
+
+  function queueVideoTitleIndexUpdate() {
+    if (!active || !videoId) return;
+    const title = getCurrentVideoTitle();
+    if (!title || title === indexedVideoTitle) return;
+    indexedVideoTitle = title;
+    clearTimeout(videoTitleSaveTimer);
+    videoTitleSaveTimer = setTimeout(() => {
+      videoTitleSaveTimer = 0;
+      if (active && videoId) void saveRecord();
+    }, 80);
+  }
+
+  function observeVideoTitle() {
+    videoTitleObserver?.disconnect();
+    videoTitleObserver = null;
+    indexedVideoTitle = getCurrentVideoTitle();
+    if (typeof MutationObserver !== "function") return;
+    const observer = new MutationObserver(queueVideoTitleIndexUpdate);
+    const titleNodes = [document.querySelector("h1.ytd-watch-metadata"), document.querySelector("head title")].filter(Boolean);
+    for (const node of titleNodes) observer.observe(node, { childList:true, characterData:true, subtree:true });
+    videoTitleObserver = observer;
+  }
+
+  function stopObservingVideoTitle() {
+    videoTitleObserver?.disconnect();
+    videoTitleObserver = null;
+    clearTimeout(videoTitleSaveTimer);
+    videoTitleSaveTimer = 0;
+    indexedVideoTitle = "";
   }
 
   async function saveDictationSessionIndex(session) {
@@ -847,12 +881,14 @@
     const sessionId = `youtube:${videoId}`;
     const totalCount = sentenceCues.length;
     const solvedCount = solved.size;
+    const title = getCurrentVideoTitle();
+    if (title) indexedVideoTitle = title;
     const session = {
       version: 1,
       sessionId,
       sourceType: "youtube",
       sourceId: videoId,
-      title: getCurrentVideoTitle(),
+      title,
       url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
       currentIndex: Math.max(0, Math.floor(Number(current) || 0)),
       totalCount: Math.max(0, Math.floor(Number(totalCount) || 0)),
@@ -2183,6 +2219,7 @@
     sentenceCues = getCues();
     if (!sentenceCues.length) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
+    observeVideoTitle();
     openingPanel = false;
     checkedCurrent = false;
     hideYouTubeScrollbar();
@@ -2239,6 +2276,7 @@
     restoreYouTubeScrollbar();
     flushNotes();
     active = false;
+    stopObservingVideoTitle();
     hintResult = null;
     panelGeneration++;
     document.removeEventListener("keydown", onGlobalKeyDown, true);

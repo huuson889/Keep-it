@@ -37,6 +37,10 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.ok(fs.existsSync(path.join(root, "assets/fonts/PlusJakartaSans-latin.woff2")));
   assert.ok(fs.existsSync(path.join(root, "assets/fonts/PlusJakartaSans-vietnamese.woff2")));
   assert.match(css, /\.modal\.is-expanded/);
+  assert.match(css, /height:\s*min\(900px,\s*calc\(100vh - 40px\)\)/);
+  assert.match(css, /\.modal-body[^}]*overflow-y:\s*auto/);
+  assert.match(css, /\.modal-body::-webkit-scrollbar\s*\{\s*width:\s*3px/);
+  assert.match(ui, /item\.errorContext\?\.source/);
 
   assert.match(bridge, /browser\?\.storage\?\.local/);
   assert.match(bridge, /storage\?\.onChanged/);
@@ -60,6 +64,15 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   for (const key of ["dictationStatsPopupTitle", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsEligibleOnly", "dictationStatsStatusNeedsPractice", "dictationStatsStatusCorrected", "dictationProperNounHint"]) {
     assert.ok(languages.includes(`${key}:`), `localized key ${key} exists`);
   }
+});
+
+test("YouTube title mutations re-index the active Dictation session for live popup updates", () => {
+  const dictation = read("js/dictation/dictation.js");
+  assert.match(dictation, /function observeVideoTitle\(\)/);
+  assert.match(dictation, /new MutationObserver\(queueVideoTitleIndexUpdate\)/);
+  assert.match(dictation, /if \(active && videoId\) void saveRecord\(\)/);
+  assert.match(dictation, /function stopObservingVideoTitle\(\)/);
+  assert.match(dictation, /stopObservingVideoTitle\(\);/);
 });
 
 test("popup bridge refreshes its local stats snapshot live and rejects legacy/short-word entries", async () => {
@@ -145,6 +158,14 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   assert.equal(messages.length, 2);
   assert.equal(messages[1].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
   assert.equal(messages[1].data.stats.globalWords.find(item => item.word === "environment").errors, 8, "live popup snapshot reflects the updated local attempt");
+
+  localData[indexKey].sessions[0].title = "Lesson A — Updated title";
+  storageChanged({ [indexKey]:{ newValue:localData[indexKey] } }, "local");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 3, "session index title changes refresh an open popup");
+  const updatedEnvironment = messages[2].data.stats.globalWords.find(item => item.word === "environment");
+  assert.equal(updatedEnvironment.errorContext.source, "Lesson A — Updated title");
+  assert.equal(updatedEnvironment.errorExamples.rule.source, "Lesson A — Updated title");
 });
 
 test("category filters isolate classified wrong attempts, fixes, variants, and their example context", () => {

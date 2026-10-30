@@ -34,7 +34,8 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 - Giữ ba route, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới.
 - Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; iframe chỉ giữ bản sao trong bộ nhớ.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
-- Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent chỉ refresh khi local Dictation record/index đổi; iframe không đọc storage trực tiếp. Snapshot chỉ gồm thống kê gộp, nhãn loại lỗi heuristic và câu ngữ cảnh của từng từ sai.
+- Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent chỉ refresh khi local Dictation record/index đổi; tiêu đề YouTube mới trong session index được render lại tại chỗ. Iframe không đọc storage trực tiếp; snapshot chỉ gồm thống kê, nhãn heuristic và câu ngữ cảnh của từng từ sai.
+- Popup có chiều cao cố định theo `min(900px, 100vh - 40px)`; phần header/footer giữ nguyên, chỉ `.modal-body` cuộn với scrollbar Chromium 3px (Firefox dùng `thin`).
 - Báo cáo chỉ gồm mục hợp lệ: bỏ `missing`, target 1–3 chữ cái, proper nouns và dấu câu; cùng điều kiện áp dụng cho errors/fixes. Rate là `errors / (errors + fixes)`; critical cần rate ≥70% và ít nhất 3 eligible errors.
 - Font popup dùng subset Latin/Việt cục bộ; không tải Google Fonts. Bảng theo video chỉ trình bày tiêu đề và dữ liệu stats đã lưu.
 
