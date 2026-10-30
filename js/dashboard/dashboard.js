@@ -842,7 +842,7 @@ function applyTranslations() {
   document.title = `${t("appName")} — ${currentLang === "vi" ? "Bảng quản lý" : currentLang === "ko" ? "대시보드" : "Dashboard"}`;
   refreshFlashcardTranslateSettingsUI();
   renderExportMenus();
-  refreshListeningPreview();
+  refreshDictationView();
   if (typeof activeDashboardView !== "undefined") updateSharedTopbarContent(activeDashboardView);
 }
 async function load() {

@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.828; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.829; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ và thống kê lỗi đã lưu; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.828: full suite `node --test tests/*.test.cjs` đạt 54/54; `node --check` cho JS đã sửa đạt. Chưa browser-test Chrome/Firefox; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.829: full suite `node --test tests/*.test.cjs` đạt 54/54; `node --check` cho JS đã sửa đạt. Chưa browser-test Chrome/Firefox; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -113,6 +113,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+
+**2026-10-31 | v3.4.829 | Arena.ai Agent:**
+
+- Sửa lỗi khởi tạo làm mọi route Dashboard trắng: `applyTranslations()` còn gọi tên hàm cũ `refreshListeningPreview()` sau khi route được đổi tên; chuyển sang `refreshDictationView()`. Thêm assertion để ngăn sót tham chiếu hàm cũ.
+- File: `js/dashboard/dashboard.js`, `tests/dashboard-dictation-view.test.cjs`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 54/54; ZIP CRC và manifest version 3.4.829 đã xác minh.
 
 **2026-10-31 | v3.4.828 | Arena.ai Agent:**
 

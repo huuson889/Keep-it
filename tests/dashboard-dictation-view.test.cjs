@@ -23,6 +23,8 @@ test("Dictation route uses its visible name and displays sessions from the local
   assert.doesNotMatch(html, /<article class="session-card"/);
   assert.match(js, /escapeHtml\(title\)/);
   assert.match(js, /browser\.tabs\.create\(\{ url \}\)/);
+  assert.match(js, /function applyTranslations\(\)[\s\S]*?refreshDictationView\(\)/);
+  assert.doesNotMatch(js, /refreshListeningPreview|initListeningPreview/);
 });
 
 test("Empty Dictation and error-stat states are truthful and contain no fabricated records", () => {
