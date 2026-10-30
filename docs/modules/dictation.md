@@ -33,12 +33,13 @@ Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do 
 - Không tạo video/overlay thứ hai; giữ cue English, `LHN_OVERLAY_API` và các event hiện có.
 - Chỉ thêm allowlist contraction chuẩn có straight/curly apostrophe, ví dụ `I'm` ↔ `I am`, `don't` ↔ `do not`. Không nhận slang như `gonna`/`wanna` hoặc dạng không apostrophe; các dạng mơ hồ chỉ theo expansion đã liệt kê.
 - Scoring và reporting là hai tầng: scoring chỉ đổi để hỗ trợ contraction; báo cáo bỏ `missing`, target 1–3 chữ cái, proper nouns và punctuation-only differences. Áp dụng eligibility cho cả errors và fixes; fix chỉ ghi khi sửa đúng lỗi eligible đã theo dõi.
-- `wrongWordStats` dùng `version:2`. Upgrade chỉ reset stats cũ, giữ notes/progress/translations và fields khác.
-- Proper-noun detector là heuristic cục bộ dùng casing/context của transcript, cụm viết hoa, titles và danh sách tên/ngày thường gặp ở đầu câu. Một từ viết hoa đầu câu riêng lẻ không đủ; khi chưa chắc thì coi là từ thường. Hint dùng chung detector, giữ original case, thứ tự xuất hiện, loại trùng và ẩn khi không có tên.
+- `wrongWordStats` giữ `version:2`; quy tắc từ đầu câu chỉ áp dụng cho các lượt ghi mới, không xóa/rebuild stats đã lưu. Migration cũ chỉ reset schema lỗi legacy và giữ notes/progress/translations.
+- Proper-noun detector là heuristic cục bộ theo casing/context. Từ vựng đầu tiên sau mỗi ranh giới câu luôn được coi là từ thường, bất kể viết hoa; dấu câu/ký hiệu dẫn đầu như `>>` bị bỏ qua khi xác định vị trí này. Các token viết hoa phía sau vẫn dùng detector chung cho hint và báo cáo.
+- Hint giữ original case, thứ tự xuất hiện, loại trùng và ẩn nếu không có tên. Toàn bộ khung dùng chữ 15px, cả nhãn và tên đều đậm; khung ẩn khi banner thành công hiện ra.
 - Error rate là `errors / (errors + fixes)`; critical chỉ khi rate ≥70% và có ít nhất 3 errors eligible. Không suy đoán nguyên nhân hoặc truyền transcript sang popup.
 - Session index có key `dictation:session-index:v1`, envelope version 1 và danh sách session provider-neutral gồm source/title/URL, vị trí, tổng/đã giải, timestamp và status. `currentIndex` zero-based; lỗi index được cô lập khỏi record gốc.
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --test tests/dictation-learning-rules.test.cjs tests/dashboard-dictation-stats-popup.test.cjs`; kiểm tra script order và `git diff --check`. Tests bao gồm contraction/slang, hint/dedup, eligibility 3/4 chữ cái, correction và migration.
+- Static/mock: `node --test tests/dictation-learning-rules.test.cjs tests/dashboard-dictation-stats-popup.test.cjs`; kiểm tra script order và `git diff --check`. Tests bao gồm contraction/slang, hint/dedup, từ đầu câu/prefix `>>`, eligibility 3/4 chữ cái, correction và migration.
 - Browser cần xác nhận overlay/shortcut, caption English/loading, hint, scoring/progress, replay, lưu notes/translations, stats popup và cleanup khi đổi video/đóng trên Chrome/Edge/Firefox. Chưa chạy browser-test trong release này.

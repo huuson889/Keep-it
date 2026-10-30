@@ -5,16 +5,6 @@
   const SENTENCE_END = /[.!?。！？]/gu;
   const PRONOUN_I = new Set(["i", "i'm", "i’ve", "i've", "i’ll", "i'll", "i’d", "i'd"]);
   const TITLES = new Set(["mr", "mrs", "ms", "miss", "dr", "prof", "professor", "president", "sir", "lady", "lord", "capt", "captain"]);
-  const KNOWN_SENTENCE_INITIAL_NAMES = new Set([
-    "aaron", "abigail", "adam", "alex", "alice", "amelia", "amy", "andrew", "anna", "anthony", "ava",
-    "ben", "benjamin", "brian", "charles", "charlotte", "chris", "daniel", "david", "emma", "ethan",
-    "george", "grace", "hannah", "henry", "jake", "james", "jane", "jason", "jennifer", "john", "joseph",
-    "julia", "kate", "kevin", "laura", "liam", "lily", "lucas", "luke", "maria", "mary", "matthew",
-    "michael", "nancy", "nicholas", "olivia", "paul", "peter", "rachel", "richard", "robert", "sam",
-    "sarah", "sophie", "steven", "susan", "thomas", "william", "zack",
-    "january", "february", "march", "april", "june", "july", "august", "september", "october", "november", "december",
-    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
-  ]);
   const UPPERCASE_STYLE_THRESHOLD = 0.75;
 
   function getWords(text) {
@@ -34,7 +24,7 @@
       if (match.index >= token.start) break;
       boundary = match.index;
     }
-    return /^[\s\p{Ps}\p{Pi}"'“‘]*$/u.test(source.slice(boundary + 1, token.start));
+    return /^[\s\p{P}\p{S}]*$/u.test(source.slice(boundary + 1, token.start));
   }
   function getProperNounIndexes(text) {
     const source = String(text ?? "");
@@ -51,16 +41,17 @@
       const sentenceStart = isAtSentenceStart(source, token);
       const previous = tokens[index - 1];
       const previousIsTitle = previous && TITLES.has(previous.raw.replace(/\p{P}/gu, "").toLocaleLowerCase());
+      // Capitalization alone is not enough at the first lexical word, even after subtitle punctuation such as ">>".
+      if (sentenceStart && !previousIsTitle) continue;
       const next = tokens[index + 1];
       const capitalized = isCapitalized(token.raw);
       const allCapsName = !allCapsStyle && isUppercaseAcronym(token.raw);
       const partOfCapitalizedName = capitalized && (
         (previous && isCapitalized(previous.raw)) || (next && isCapitalized(next.raw))
       );
-      const initialName = sentenceStart && KNOWN_SENTENCE_INITIAL_NAMES.has(lower);
       const apostropheName = /^[\p{Lu}][\p{Ll}]*['’][\p{Lu}][\p{Ll}]+$/u.test(token.raw);
-      if (previousIsTitle || allCapsName || partOfCapitalizedName || initialName || apostropheName
-        || (capitalized && !sentenceStart && !PRONOUN_I.has(lower))) indexes.add(index);
+      if (previousIsTitle || allCapsName || partOfCapitalizedName || apostropheName
+        || (capitalized && !PRONOUN_I.has(lower))) indexes.add(index);
     }
     return indexes;
   }

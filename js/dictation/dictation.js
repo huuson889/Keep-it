@@ -1178,6 +1178,7 @@
     hintResult = null;
     clearInputWrongMarks();
     const wasChecked = checkedCurrent;
+    const wasSuccessVisible = !ui.success.hidden;
     checkedCurrent = false;
     ui.input.classList.remove("correct");
     ui.check.classList.add("te-dict-act-primary");
@@ -1187,6 +1188,7 @@
     ui.error.hidden = true;
     ui.work?.classList.remove("te-dict-has-error");
     ui.success.hidden = true;
+    if (wasSuccessVisible) renderProperNounHint(sentenceCues[current]?.en || "");
     ui.translation.hidden = true;
     ui.translation.textContent = "";
     if (wasChecked) updateRows(false);
@@ -1777,6 +1779,7 @@
     escapeFilledAnswer = false;
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
+    const wasSuccessVisible = !ui.success.hidden;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
     const statsUpdated = recordWrongWordSubmission(wrongWordStats, current, result, cue.en);
     if (statsUpdated) renderWrongWordStats();
@@ -1794,6 +1797,7 @@
       renderCorrectWords();
       ui.error.hidden = false;
       ui.success.hidden = false;
+      if (ui.properNounHint) ui.properNounHint.hidden = true;
       setNotesLocked(false);
       ui.btnNext?.classList.add("te-dict-ready");
       updateRows();
@@ -1809,6 +1813,7 @@
     checkedCurrent = false;
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
+    if (wasSuccessVisible) renderProperNounHint(cue.en);
     ui.translation.hidden = true;
     ui.translation.textContent = "";
     updateRows(false);
@@ -2062,6 +2067,7 @@
 
   function resetAnswer() {
     if (!ui) return;
+    const wasSuccessVisible = !ui.success.hidden;
     hintResult = null;
     escapeFilledAnswer = false;
     checkedCurrent = false;
@@ -2075,6 +2081,7 @@
     ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
+    if (wasSuccessVisible) renderProperNounHint(sentenceCues[current]?.en || "");
     ui.translation.hidden = true;
     ui.translation.textContent = "";
     updateRows(false);
