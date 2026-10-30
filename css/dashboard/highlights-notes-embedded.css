@@ -2755,3 +2755,6 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
     overflow:hidden!important;
   }
 }
+
+/* Keep the hidden H&N route out of the shared scroller's layout. */
+#dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }
