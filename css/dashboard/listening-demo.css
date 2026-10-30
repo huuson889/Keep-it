@@ -390,3 +390,6 @@ html.dark #dashboardListeningView .engine-arrow { color:#8492a8!important; }
 html.dark #dashboardListeningView .search-elsewhere { border-color:#413e6b!important; background:linear-gradient(145deg,#111a2b,#191a32)!important; }
 html.dark #dashboardListeningView .search-elsewhere p { color:#a4b0c3!important; }
 html.dark #dashboardListeningView .toast { border-color:#2b3a52!important; background:#172338!important; color:#f1f5fb!important; box-shadow:0 10px 30px rgba(0,0,0,.35)!important; }
+/* Detailed Dictation popup is isolated in its own CSP-safe extension page. */
+#dictationStatsPopupFrame{position:fixed;inset:0;z-index:2400;width:100vw;height:100vh;height:100dvh;border:0;background:transparent}
+#dictationStatsPopupFrame[hidden]{display:none!important}

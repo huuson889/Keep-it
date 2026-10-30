@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.782; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard giữ ba route: Overview (mở mặc định), Listening demo và “Tô sáng & Ghi chú”. Highlights & Notes là bề mặt duy nhất cho highlights/notes; chi tiết route/bridge ở mục 4. Sidebar thu gọn có tooltip nhãn theo theme, không bung sidebar.
+- Version hiện tại: v3.4.783; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
+- Dashboard giữ ba route: Overview (mở mặc định), Chép chính tả và “Tô sáng & Ghi chú”. Popup thống kê chi tiết trong Chép chính tả hiện là UI mẫu, chưa nối dữ liệu thật; Highlights & Notes là bề mặt duy nhất cho highlights/notes. Chi tiết ở mục 4.
 - Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ với glyph 54px trong vòng tròn 40×40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
 - Dọn khỏi gói các demo không chạy trong app, hai ảnh icon không được tham chiếu và license flag-icons đã hết dùng; giữ nguyên icon mà manifest yêu cầu và các trang runtime.
-- Kiểm tra gần nhất: 48 JS syntax checks, 18/18 tests; 10 CSS + 2 inline styles parse; manifest/resource paths hợp lệ, 318 HTML IDs duy nhất, `git diff --check` và ZIP 104 file/CRC đạt. Tooltip chưa browser-test.
+- Kiểm tra gần nhất: 50 JS syntax checks, 19/19 tests; 11 CSS + 2 inline styles parse; popup resource paths hợp lệ, 320 Dashboard IDs duy nhất, `git diff --check` và ZIP 112 entries/CRC đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -107,6 +107,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.783 | Arena.ai Agent sửa:**
+
+- Thêm popup thống kê chi tiết theo UI HTML tham chiếu vào nút “Xem thống kê chi tiết”; thêm nút phóng to/thu nhỏ bên trái nút X. Đóng gói Plus Jakarta Sans cục bộ để giữ kiểu chữ mà không gọi mạng. Giữ dữ liệu mẫu, không nối storage hay bộ phân loại lỗi.
+- File: `pages/dashboard.html`, `pages/dictation-stats-popup.html`, `css/dashboard/listening-demo.css`, `css/dashboard/dictation-stats-popup.css`, `js/dashboard/dictation-stats-popup.js`, `js/dashboard/dictation-stats-popup-bridge.js`, `js/core/languages.js`, `assets/fonts/PlusJakartaSans-latin.woff2`, `assets/fonts/PlusJakartaSans-vietnamese.woff2`, `assets/fonts/PlusJakartaSans-OFL.txt`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.783.zip`.
+- Kiểm tra: 50 JS syntax checks; 19/19 tests; 11 CSS + 2 inline HTML styles parse; popup resource paths, 320 unique Dashboard IDs, manifest 3.4.783, `git diff --check` và ZIP 112 file entries/CRC đạt. Chưa kiểm thử browser thật.
 
 **2026-10-30 | v3.4.782 | Arena.ai Agent sửa:**
 

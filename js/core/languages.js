@@ -218,6 +218,43 @@
   });
 
   Object.assign(MESSAGES.en, {
+    dictationStatsPopupEyebrow:"In-depth analytics", dictationStatsPopupTitle:"Spelling Error Analytics 🎯", dictationStatsPopupSubtitle:"Explore spelling patterns from global, critical, and per-video views.", dictationStatsPopupClose:"Close", dictationStatsPopupExpand:"Expand popup", dictationStatsPopupRestore:"Restore popup",
+    dictationStatsViewTabsLabel:"Analytics views", dictationStatsFiltersLabel:"Error type filters", dictationStatsSortLabel:"Sort error records", dictationStatsViewGlobal:"🌟 Global vocabulary", dictationStatsViewCritical:"🚨 Critical watchlist (>70% error rate)", dictationStatsViewSessions:"📂 By video",
+    dictationStatsMetricWords:"📖 Misspelled words", dictationStatsMetricErrors:"⚠️ Wrong attempts", dictationStatsMetricFixes:"🎉 Corrected", dictationStatsMetricRecovery:"📈 Recovery rate",
+    dictationStatsUnitWords:"words", dictationStatsUnitErrors:"attempts", dictationStatsUnitFixes:"times", dictationStatsUnitRecovery:"recovery",
+    dictationStatsFilterAll:"All causes", dictationStatsFilterPhonetic:"🎧 Phonetic errors", dictationStatsFilterRule:"📜 Spelling rules", dictationStatsFilterTypo:"⚡ Typing slips",
+    dictationStatsSortErrors:"Most errors", dictationStatsSortRecent:"Most recent", dictationStatsSortTitle:"Title A–Z",
+    dictationStatsTypePhonetic:"🎧 Phonetic / misheard", dictationStatsTypeRule:"📜 Spelling rule", dictationStatsTypeTypo:"⚡ Typo / mechanical slip",
+    dictationStatsContextLabel:"Context:", dictationStatsSourceLabel:"📺 Source:", dictationStatsVariantsLabel:"Typed variants:", dictationStatsErrorSummary:"Wrong: {errors} times (Rate: {rate}%)",
+    dictationStatsSessionSource:"📺 Source: {source}", dictationStatsSessionWord:"• Word: {word}", dictationStatsEmpty:"No sample words match this view.",
+    dictationStatsPopupFooter:"⚡ DOM rendering tuned for a responsive popup.", dictationStatsPopupDone:"Done ✨", dictationStatsPopupReopen:"Reopen analytics 📊", dictationStatsAudioLabel:"Play pronunciation of {word}"
+  });
+  Object.assign(MESSAGES.vi, {
+    dictationStatsPopupEyebrow:"Trung tâm phân tích chuyên sâu", dictationStatsPopupTitle:"Thống kê & Phân loại Lỗi Chính tả 🎯", dictationStatsPopupSubtitle:"Đã tối ưu hiệu năng mượt mà, tích hợp 3 góc nhìn toàn cục, báo động đỏ và video.", dictationStatsPopupClose:"Đóng", dictationStatsPopupExpand:"Phóng to popup", dictationStatsPopupRestore:"Thu nhỏ popup",
+    dictationStatsViewTabsLabel:"Các góc nhìn thống kê", dictationStatsFiltersLabel:"Lọc theo nguyên nhân lỗi", dictationStatsSortLabel:"Sắp xếp lỗi", dictationStatsViewGlobal:"🌟 Top từ vựng toàn cục (Global)", dictationStatsViewCritical:"🚨 Danh sách báo động đỏ (>70% sai)", dictationStatsViewSessions:"📂 Chi tiết theo từng Video",
+    dictationStatsMetricWords:"📖 Tổng từ sai", dictationStatsMetricErrors:"⚠️ Tổng lượt gõ nhầm", dictationStatsMetricFixes:"🎉 Đã sửa đúng", dictationStatsMetricRecovery:"📈 Tỷ lệ khắc phục",
+    dictationStatsUnitWords:"từ", dictationStatsUnitErrors:"lượt", dictationStatsUnitFixes:"lần", dictationStatsUnitRecovery:"hiệu suất",
+    dictationStatsFilterAll:"Tất cả nguyên nhân", dictationStatsFilterPhonetic:"🎧 Lỗi âm vị", dictationStatsFilterRule:"📜 Lỗi quy tắc", dictationStatsFilterTypo:"⚡ Lỗi gõ nhanh",
+    dictationStatsSortErrors:"Sai nhiều nhất", dictationStatsSortRecent:"Mới nhất", dictationStatsSortTitle:"Tiêu đề A–Z",
+    dictationStatsTypePhonetic:"🎧 Lỗi âm vị / Nghe nhầm", dictationStatsTypeRule:"📜 Lỗi quy tắc chính tả", dictationStatsTypeTypo:"⚡ Lỗi gõ nhanh (Typo)",
+    dictationStatsContextLabel:"Ngữ cảnh:", dictationStatsSourceLabel:"📺 Nguồn:", dictationStatsVariantsLabel:"Biến thể gõ:", dictationStatsErrorSummary:"Sai: {errors} lần (Tỷ lệ: {rate}%)",
+    dictationStatsSessionSource:"📺 Nguồn: {source}", dictationStatsSessionWord:"• Từ: {word}", dictationStatsEmpty:"Không có từ mẫu phù hợp với góc nhìn này.",
+    dictationStatsPopupFooter:"⚡ Đã tinh chỉnh DOM rendering, loại bỏ hiệu ứng nặng giúp popup siêu mượt.", dictationStatsPopupDone:"Xong rồi ✨", dictationStatsPopupReopen:"Mở lại Phân tích 📊", dictationStatsAudioLabel:"Phát âm từ {word}"
+  });
+  Object.assign(MESSAGES.ko, {
+    dictationStatsPopupEyebrow:"심층 분석 센터", dictationStatsPopupTitle:"맞춤법 오류 분석 🎯", dictationStatsPopupSubtitle:"전체, 주의, 동영상별 보기로 맞춤법 패턴을 확인하세요.", dictationStatsPopupClose:"닫기", dictationStatsPopupExpand:"팝업 확대", dictationStatsPopupRestore:"팝업 복원",
+    dictationStatsViewTabsLabel:"통계 보기", dictationStatsFiltersLabel:"오류 유형 필터", dictationStatsSortLabel:"오류 정렬", dictationStatsViewGlobal:"🌟 전체 어휘", dictationStatsViewCritical:"🚨 주의 목록 (오류율 >70%)", dictationStatsViewSessions:"📂 동영상별 상세",
+    dictationStatsMetricWords:"📖 오타 단어", dictationStatsMetricErrors:"⚠️ 오답 입력", dictationStatsMetricFixes:"🎉 수정 성공", dictationStatsMetricRecovery:"📈 수정률",
+    dictationStatsUnitWords:"단어", dictationStatsUnitErrors:"회", dictationStatsUnitFixes:"회", dictationStatsUnitRecovery:"수정률",
+    dictationStatsFilterAll:"모든 원인", dictationStatsFilterPhonetic:"🎧 음운 오류", dictationStatsFilterRule:"📜 맞춤법 규칙", dictationStatsFilterTypo:"⚡ 타이핑 실수",
+    dictationStatsSortErrors:"오답 많은 순", dictationStatsSortRecent:"최근 순", dictationStatsSortTitle:"제목순 A–Z",
+    dictationStatsTypePhonetic:"🎧 음운 오류 / 잘못 들음", dictationStatsTypeRule:"📜 맞춤법 규칙 오류", dictationStatsTypeTypo:"⚡ 타이핑 실수",
+    dictationStatsContextLabel:"문맥:", dictationStatsSourceLabel:"📺 출처:", dictationStatsVariantsLabel:"입력한 형태:", dictationStatsErrorSummary:"오답: {errors}회 (비율: {rate}%)",
+    dictationStatsSessionSource:"📺 출처: {source}", dictationStatsSessionWord:"• 단어: {word}", dictationStatsEmpty:"이 보기와 일치하는 예시 단어가 없습니다.",
+    dictationStatsPopupFooter:"⚡ 팝업 성능을 위해 DOM 렌더링을 최적화했습니다.", dictationStatsPopupDone:"완료 ✨", dictationStatsPopupReopen:"분석 다시 열기 📊", dictationStatsAudioLabel:"{word} 발음 재생"
+  });
+
+  Object.assign(MESSAGES.en, {
     listenKicker:"Listening hub", listenTitle:"Dictation, at your pace", listenBody:"Pick up a session, find something new, or revisit words you want to practice.", listenTagAudio:"Active listening", listenTagLocal:"Saved on this device",
     listenSearchPlaceholder:"Search saved Dictation sessions…", listenSearchHelp:"Preview search · not connected to saved sessions.", listenSearchNew:"Find new content:", listenSearchYoutube:"Search YouTube", listenSearchGoogle:"Search Google",
     listenContinueLabel:"Continue listening", listenContinueDescription:"YouTube video · Paused at sentence 16.", listenSentences:"sentences", listenContinueAction:"Continue Dictation", listenOpenVideo:"Open video",
