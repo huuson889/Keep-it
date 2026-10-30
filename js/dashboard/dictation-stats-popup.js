@@ -224,8 +224,12 @@
     expandButton.title = label;
   });
   window.addEventListener("message", event => {
-    if (event.source !== window.parent || event.origin !== location.origin || event.data?.type !== "KEEPIT_DICTATION_STATS_OPEN") return;
-    openModal(event.data.lang, event.data.stats);
+    if (event.source !== window.parent || event.origin !== location.origin) return;
+    if (event.data?.type === "KEEPIT_DICTATION_STATS_OPEN") {
+      openModal(event.data.lang, event.data.stats);
+      return;
+    }
+    if (event.data?.type === "KEEPIT_DICTATION_STATS_UPDATE") setStatsSnapshot(event.data.stats);
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && !backdrop.classList.contains("closed")) { event.preventDefault(); closeModal(); }

@@ -35,9 +35,13 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(css, /\.modal\.is-expanded/);
 
   assert.match(bridge, /browser\?\.storage\?\.local/);
+  assert.match(bridge, /storage\?\.onChanged/);
   assert.match(bridge, /dictation:session-index:v1/);
   assert.match(bridge, /stats\.version !== 2/);
   assert.match(bridge, /KEEPIT_DICTATION_STATS_OPEN/);
+  assert.match(bridge, /KEEPIT_DICTATION_STATS_UPDATE/);
+  assert.match(ui, /KEEPIT_DICTATION_STATS_UPDATE/);
+  assert.match(ui, /setStatsSnapshot\(event\.data\.stats\)/);
   assert.match(bridge, /stats,/);
   assert.match(ui, /function setStatsSnapshot\(snapshot\)/);
   assert.match(ui, /currentView === "critical"/);
@@ -51,7 +55,7 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   }
 });
 
-test("popup bridge aggregates current local session stats and rejects legacy/short-word entries", async () => {
+test("popup bridge refreshes its local stats snapshot live and rejects legacy/short-word entries", async () => {
   const bridge = read("js/dashboard/dictation-stats-popup-bridge.js");
   const handlers = {};
   const messages = [];
@@ -64,6 +68,7 @@ test("popup bridge aggregates current local session stats and rejects legacy/sho
     addEventListener(type, handler) { handlers[`frame:${type}`] = handler; },
   };
   const indexKey = "dictation:session-index:v1";
+  let storageChanged;
   const record = { wrongWordStats:{ version:2, words:{
     "w:environment":{ word:"environment", errors:7, corrections:3, lastAt:123, lastResult:"wrong", variants:{ "v:enviroment":{ text:"enviroment", count:7 } } },
     "w:cat":{ word:"cat", errors:9, corrections:0, variants:{} },
@@ -81,8 +86,10 @@ test("popup bridge aggregates current local session stats and rejects legacy/sho
     document:{ getElementById(id) { return id === "listenDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en" }, activeElement:null },
     window:{ addEventListener() {} },
     location:{ origin:"https://keepit.test" },
-    browser:{ storage:{ local:storage } },
+    browser:{ storage:{ local:storage, onChanged:{ addListener(listener) { storageChanged = listener; } } } },
     requestAnimationFrame(callback) { callback(); },
+    setTimeout,
+    clearTimeout,
     console,
   };
   context.globalThis = context;
@@ -91,6 +98,7 @@ test("popup bridge aggregates current local session stats and rejects legacy/sho
   await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(messages.length, 1);
   assert.equal(messages[0].origin, "https://keepit.test");
+  assert.equal(messages[0].data.type, "KEEPIT_DICTATION_STATS_OPEN");
   const stats = messages[0].data.stats;
   assert.equal(stats.sessions.length, 1);
   assert.equal(stats.sessions[0].title, "Lesson A");
@@ -99,6 +107,17 @@ test("popup bridge aggregates current local session stats and rejects legacy/sho
   assert.equal(stats.globalWords[0].errors, 7);
   assert.equal(stats.globalWords[0].fixes, 3);
   assert.deepEqual(Array.from(stats.globalWords[0].sources), ["Lesson A"]);
+
+  storageChanged({ settings:{ newValue:{ theme:"dark" } } }, "local");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 1, "unrelated local storage changes do not trigger a stats refresh");
+  record.wrongWordStats.words["w:environment"].errors = 8;
+  record.wrongWordStats.words["w:environment"].variants["v:enviroment"].count = 8;
+  storageChanged({ "dictation:abcdefghijk":{ newValue:record } }, "local");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 2);
+  assert.equal(messages[1].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
+  assert.equal(messages[1].data.stats.globalWords[0].errors, 8, "live popup snapshot reflects the updated local attempt");
 });
 
 test("Error rate follows wrong/(wrong + fixes), with exact 70% and minimum-three red-alert thresholds", () => {

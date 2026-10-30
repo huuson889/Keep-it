@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.787; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dictation giữ quy tắc contraction và thống kê eligible schema v2; từ đầu câu luôn coi là từ thường, kể cả sau dấu câu/ký hiệu mở đầu. Hint proper noun dùng detector chung, 15px, đậm và ẩn khi thành công. Không reset stats đã lưu.
+- Version hiện tại: v3.4.788; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dictation giữ quy tắc contraction/eligibility; từ đầu câu luôn thường, kể cả sau dấu mở đầu. Hint proper noun 15px, đậm và ẩn khi thành công. Popup stats cập nhật trực tiếp khi local Dictation data đổi; không reset stats đã lưu.
 - Dashboard giữ ba route và một shared topbar; popup chỉ trình bày lỗi đã lưu, không có classifier/ngữ cảnh bịa. Reader glyph vẫn 54px trong vòng tròn 40×40px; không đổi SVG UI icons.
 - Kiểm tra gần nhất: 28/28 tests; JavaScript syntax, CSS parse, HTML asset links, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
@@ -108,6 +108,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.788 | Arena.ai Agent sửa:**
+
+- Popup thống kê chi tiết tự nạp snapshot mới khi local `dictation:<videoId>` hoặc session index thay đổi, chỉ khi popup đang mở; iframe cập nhật tại chỗ, không mở lại modal. Bỏ qua storage changes không liên quan.
+- File: `manifest.json`, `js/dashboard/dictation-stats-popup-bridge.js`, `js/dashboard/dictation-stats-popup.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.788.zip`.
+- Kiểm tra: 28/28 tests; 53 JavaScript syntax checks; 11 CSS + 19 inline styles và embedded Dictation CSS (351 rules) parse; 4 HTML/47 local refs, 402 IDs, manifest v3.4.788/47 assets; `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.787 | Arena.ai Agent sửa:**
 

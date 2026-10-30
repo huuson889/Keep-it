@@ -6,6 +6,10 @@
   const storage = globalThis.browser?.storage?.local;
   const INDEX_KEY = "dictation:session-index:v1";
   let openSequence = 0;
+  let snapshotRequest = 0;
+  let popupReadySequence = 0;
+  let refreshPending = false;
+  let refreshTimer = 0;
   let returnFocus = null;
 
   function safeCount(value) {
@@ -93,22 +97,42 @@
       return { sessions:[], globalWords:[] };
     }
   }
-  async function postOpen(sequence) {
+  async function postSnapshot(sequence, type) {
     if (frame.hidden || sequence !== openSequence) return;
+    const request = ++snapshotRequest;
     const stats = await loadStatsSnapshot();
-    if (frame.hidden || sequence !== openSequence) return;
+    if (frame.hidden || sequence !== openSequence || request !== snapshotRequest) return;
     frame.contentWindow?.postMessage({
-      type:"KEEPIT_DICTATION_STATS_OPEN",
-      lang:document.documentElement.lang || "vi",
+      type,
+      ...(type === "KEEPIT_DICTATION_STATS_OPEN" ? { lang:document.documentElement.lang || "vi" } : {}),
       stats,
     }, location.origin);
+    if (type === "KEEPIT_DICTATION_STATS_OPEN") {
+      popupReadySequence = sequence;
+      if (refreshPending) {
+        refreshPending = false;
+        scheduleStatsRefresh();
+      }
+    }
+  }
+  function scheduleStatsRefresh() {
+    if (frame.hidden) return;
+    if (popupReadySequence !== openSequence) { refreshPending = true; return; }
+    const sequence = openSequence;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      refreshTimer = 0;
+      void postSnapshot(sequence, "KEEPIT_DICTATION_STATS_UPDATE");
+    }, 40);
   }
   function openPopup() {
     returnFocus = document.activeElement;
     const sequence = ++openSequence;
+    popupReadySequence = 0;
+    refreshPending = false;
     frame.hidden = false;
     frame.setAttribute("aria-hidden", "false");
-    const send = () => requestAnimationFrame(() => { void postOpen(sequence); });
+    const send = () => requestAnimationFrame(() => { void postSnapshot(sequence, "KEEPIT_DICTATION_STATS_OPEN"); });
     try {
       if (frame.contentDocument?.readyState === "complete") send();
       else frame.addEventListener("load", send, { once:true });
@@ -118,12 +142,22 @@
   window.addEventListener("message", event => {
     if (event.source !== frame.contentWindow || event.origin !== location.origin || event.data?.type !== "KEEPIT_DICTATION_STATS_CLOSE") return;
     openSequence++;
+    snapshotRequest++;
+    popupReadySequence = 0;
+    refreshPending = false;
+    clearTimeout(refreshTimer);
+    refreshTimer = 0;
     frame.hidden = true;
     frame.setAttribute("aria-hidden", "true");
     returnFocus?.focus?.();
     returnFocus = null;
   });
   frame.addEventListener("load", () => {
-    if (!frame.hidden) void postOpen(openSequence);
+    if (!frame.hidden) void postSnapshot(openSequence, "KEEPIT_DICTATION_STATS_OPEN");
+  });
+  globalThis.browser?.storage?.onChanged?.addListener((changes, areaName) => {
+    if (areaName !== "local" || frame.hidden) return;
+    const relevant = Object.keys(changes || {}).some(key => key === INDEX_KEY || /^dictation:[A-Za-z0-9_-]{6,}$/.test(key));
+    if (relevant) scheduleStatsRefresh();
   });
 })();

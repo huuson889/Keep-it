@@ -26,7 +26,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 3. `setDashboardView()` chuyển giữa Overview, Listening và Highlights & Notes. Listening vẫn là trang demo; Flashcards là action, không phải route.
 4. Iframe nhận annotations, favorites và ngôn ngữ qua same-origin `postMessage`; CRUD, favorite, export, review, jump và speak quay về handler parent hiện có.
 5. Một node `#dashboardSharedTopbar` chuyển giữa route; scrollport `#dashboardListeningView` điều khiển sticky/compact state. Giữ export trong iframe.
-6. Nút thống kê chi tiết mở iframe cùng origin. Parent đọc `dictation:session-index:v1` và records cục bộ; popup chỉ nhận stats schema v2 đã lọc, rồi hiển thị global, critical và theo video.
+6. Nút thống kê chi tiết mở iframe cùng origin. Parent đọc `dictation:session-index:v1` và records cục bộ; khi popup đang mở, `storage.onChanged` gửi snapshot mới để iframe cập nhật tại chỗ. Các góc nhìn global, critical và theo video giữ nguyên.
 7. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -34,12 +34,12 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 - Giữ ba route, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới.
 - Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; iframe chỉ giữ bản sao trong bộ nhớ.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
-- Popup nhận `KEEPIT_DICTATION_STATS_OPEN` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Không đọc storage trực tiếp, không truyền transcript/câu chứa lỗi, không bịa context hoặc nguyên nhân lỗi.
+- Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent chỉ refresh khi local Dictation record/index đổi; iframe không đọc storage trực tiếp hay nhận transcript/context/nguyên nhân lỗi.
 - Báo cáo chỉ gồm mục hợp lệ: bỏ `missing`, target 1–3 chữ cái, proper nouns và dấu câu; cùng điều kiện áp dụng cho errors/fixes. Rate là `errors / (errors + fixes)`; critical cần rate ≥70% và ít nhất 3 eligible errors.
 - Font popup dùng subset Latin/Việt cục bộ; không tải Google Fonts. Bảng theo video chỉ trình bày tiêu đề và dữ liệu stats đã lưu.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận bridge cục bộ, lọc schema/short words, migration và ngưỡng rate.
+- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate.
 - Mock: kiểm tra metadata/page key, Overview và Highlights & Notes data/action bridge.
 - Browser cần xác nhận routes, iframe CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox. Static/mock không thay cho kiểm tra extension thật.
