@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.800; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.801; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
 - Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
-- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; fallback trang đang chọn được giữ trong lúc dò icon và chỉ chuyển khi ảnh mới tải thành công. CSS ẩn placeholder đúng trạng thái dù icon Lucide có display riêng; không thêm override theo domain.
+- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; header trang đang chọn dùng cùng cách overlay ảnh tuyệt đối, `no-referrer` và fallback như source-site-icon. Fallback còn hiện lúc dò icon hoặc khi lỗi.
 - Kiểm tra: 38/38 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -111,6 +111,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.801 | Arena.ai Agent sửa:**
+
+- Sửa đúng hiển thị favicon ở header trang đang chọn: dùng overlay `position:absolute`/`z-index` giống source-site-icon; ảnh vẫn qua resolver/cache chung với `no-referrer`, fallback giữ nguyên cho tới khi icon tải thành công. Không thêm URL đặc biệt theo website.
+- File: `pages/lr-practice-demo.html`, `tests/dashboard-selected-favicon.test.cjs`, `tests/shared-site-icons.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.801.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 38/38; `node --check` đạt 52 JavaScript files; tinycss2 parse CSS đạt; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.800 | Arena.ai Agent sửa:**
 

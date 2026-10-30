@@ -97,6 +97,7 @@ test("resolver prioritizes browser/vector/large icons, requests a high-resolutio
   assert.match(helper, /area\.set\.bind\(area\)/);
   assert.match(helper, /api\?\.storage\?\.onChanged\?\.addListener/);
   assert.match(helper, /current\.api\.tabs\.query/);
+  assert.match(helper, /image\.referrerPolicy = "no-referrer"/);
 });
 
 test("site icon choice is persisted and reused by another Keepit context", async () => {

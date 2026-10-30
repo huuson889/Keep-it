@@ -130,7 +130,9 @@ main { width: 100%; flex: 1 1 auto; min-height: 0; display: flex; flex-direction
 .source-count-icon .lucide { width: 16px; height: 16px; stroke-width: 1.8; }
 .source-count-number { font-size: 12.5px; font-weight: 600; color: #4a5568; }
 .source-count { display: none; }
+.selected-favicon { position: relative; }
 .selected-favicon .lucide { width: 22px; height: 22px; stroke-width: 1.6; }
+.selected-favicon img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: contain; padding: 5px; }
 .selected-favicon .lucide[hidden], .selected-favicon img[hidden] { display: none; }
 .note-color-filters { display: flex; align-items: center; flex: 0 0 auto; gap: 5px; padding: 9px 12px; border-bottom: 1px solid #edf0f5; flex-wrap: wrap; background: #fff; }
 .note-color-filters[hidden] { display: none; }
