@@ -145,3 +145,17 @@ test("an open matching site tab contributes its browser-selected favicon before 
   assert.equal(requests[0], tabIcon, "the browser-selected high-resolution icon is tried first");
   assert.deepEqual(JSON.parse(JSON.stringify(queries)), [{ url:`${origin}/*` }]);
 });
+
+test("Tuoi Tre’s declared 192px CDN favicon bypasses a stale negative cache entry", async () => {
+  const storage = createStorage();
+  const origin = "https://news.tuoitre.vn";
+  const icon = "https://static-tuoitre.tuoitre.vn/tuoitre/images/tto-favicon.png";
+  const requests = [];
+  const resolver = createContext(storage, new Set([icon]), requests);
+  storage.values[resolver.cacheKey] = {
+    [origin]:{ url:"", expiresAt:Date.now() + 60_000, usedAt:Date.now() },
+  };
+  const image = new (createImageClass(new Set([icon]), requests))();
+  assert.equal(await resolver.load(image, `${origin}/in-vietnams-flooded-fields`), icon);
+  assert.equal(requests[0], icon, "the site-specific 192px icon is attempted before the generic root-path fallbacks");
+});

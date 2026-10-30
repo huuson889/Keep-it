@@ -21,7 +21,7 @@
 1. Manifest hoặc HTML entry nạp shared helper trước consumer tương ứng.
 2. Custom-font đọc cài đặt và cập nhật khi storage đổi; chỉ áp dụng trên trang web phù hợp.
 3. Consumer gọi `LHN_ICONS.render(name, className)` để tạo SVG, `LHN_INDEX_SEARCH.createIndex/search` để tái sử dụng dữ liệu đã normalize, hoặc `LHN_SITE_ICONS.load(image, pageUrl, options)` để gắn favicon.
-4. Site-icon resolver chuẩn hóa website về HTTP(S) origin, ưu tiên `favIconUrl` do browser cung cấp cho tab cùng origin, rồi thử favicon SVG/Apple touch icon và fallback Google S2 128px; chỉ lưu ứng viên sau khi ảnh tải thành công.
+4. Site-icon resolver chuẩn hóa website về HTTP(S) origin, ưu tiên `favIconUrl` do browser cung cấp cho tab cùng origin, rồi thử các override CDN theo origin, favicon SVG/Apple touch icon và fallback Google S2 128px; chỉ lưu ứng viên sau khi ảnh tải thành công.
 5. Resolver dùng `browser.storage.local` làm cache chung giữa extension pages, TTL 30 ngày (6 giờ nếu không tìm thấy), tối đa 256 website; cache chỉ lưu origin và URL icon, không lưu path/query của trang. `storage.onChanged` đồng bộ cache giữa các context.
 6. Mỗi consumer vẫn quyết định DOM/fallback/aria; shared chỉ quản lý nguồn ảnh, fallback và cache.
 
@@ -29,8 +29,8 @@
 
 - Giữ tên và shape các global API (`LHN_ICONS`, `LHN_INDEX_SEARCH`); manifest/HTML phải nạp file trước consumer.
 - `LHN_INDEX_SEARCH` là tiện ích index/normalize/debounce; không trộn `rank`/`highlightMatches` của `LHN_SEARCH` vào đây nếu chưa rà consumer.
-- `LHN_SITE_ICONS.load` chỉ nhận HTTP(S), chỉ tạo ứng viên từ origin đã chuẩn hóa và Google S2 với `domain_url` chỉ chứa origin. Không gửi path/query trang tới dịch vụ ngoài.
-- Cache site icons dùng riêng `keepit:site-icon-cache:v1`, kiểm tra lại URL đã lưu theo danh sách ứng viên, giới hạn số origin/TTL và fallback khi icon lỗi; không mở rộng host permissions.
+- `LHN_SITE_ICONS.load` chỉ nhận HTTP(S), chỉ tạo ứng viên từ origin đã chuẩn hóa, override khai báo trong resolver và Google S2 với `domain_url` chỉ chứa origin. Không gửi path/query trang tới dịch vụ ngoài.
+- Cache site icons dùng riêng `keepit:site-icon-cache:v1`, xác thực URL đã lưu, so sánh signature danh sách ứng viên để bỏ cache cũ sau khi thêm icon override, giới hạn số origin/TTL và fallback khi icon lỗi; không mở rộng host permissions.
 - Icon name có fallback theo `LHN_CONFIG.ACTION_ICON_PATHS`/icon mặc định; không trả SVG với nội dung không được kiểm soát từ input người dùng.
 - Custom font cần tôn trọng theme/font settings hiện có và không áp dụng lên trang không hỗ trợ.
 - Các tiện ích phải giữ độc lập khỏi Dashboard/Content DOM để có thể dùng chéo context.

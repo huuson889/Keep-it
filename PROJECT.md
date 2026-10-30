@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.798; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.799; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
 - Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
-- Website favicon đã gom vào `js/shared/site-icons.js`; popup và Highlights & Notes dùng resolver/cache `browser.storage.local` chung, ưu tiên icon tab cùng origin, rồi SVG/icon lớn và fallback 128px; cache theo origin có TTL/giới hạn. UI không đổi.
-- Kiểm tra: 37/37 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; thêm nguồn CDN 192px cho `news.tuoitre.vn` và signature để tự bỏ cache âm cũ. Popup và Highlights & Notes đồng bộ qua `browser.storage.local`; UI không đổi.
+- Kiểm tra: 38/38 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -111,6 +111,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.799 | Arena.ai Agent sửa:**
+
+- Sửa favicon Tuoi Tre: trang khai báo icon 192×192 từ `static-tuoitre.tuoitre.vn`, không phải `/favicon.ico`. Thêm đúng CDN URL vào resolver dùng chung và signature candidate để cache âm cũ tự bị bỏ; không đổi UI hoặc quyền host.
+- File: `js/shared/site-icons.js`, `tests/shared-site-icons.test.cjs`, `docs/modules/shared.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.799.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 38/38; `node --check` đạt 52 JavaScript files; tinycss2 parse 11 CSS files; manifest JSON và `git diff --check` đạt. Đã xác nhận nguồn asset trả HTTP 200, PNG 192×192; chưa browser-test.
 
 **2026-10-30 | v3.4.798 | Arena.ai Agent sửa:**
 
