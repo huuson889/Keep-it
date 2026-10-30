@@ -24,4 +24,13 @@ test("Dashboard sidebar starts expanded and pin toggles the in-flow width smooth
   assert.match(dashboardCss, /#dashboardHighlightsNotesView \{[\s\S]*?margin:0!important/);
   assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{[^}]*margin:0!important/);
   assert.match(overviewCss, /#dashboardListeningView\{[^}]*margin:0!important/);
+  assert.match(html, /id="dashboardSidebarTooltip" class="dashboard-sidebar-tooltip" aria-hidden="true"/);
+  assert.match(html, /data-i18n-aria-label="ovNavOverview"/);
+  assert.match(js, /function scheduleDashboardSidebarTooltip\(item, delay = 140\)/);
+  assert.match(js, /dashboardSidebar\.classList\.contains\("sidebar-pinned"\)/);
+  assert.match(js, /addEventListener\("pointerover"/);
+  assert.match(js, /addEventListener\("focusin"/);
+  assert.match(dashboardCss, /#dashboardSidebar \.dashboard-sidebar-tooltip::before/);
+  assert.match(dashboardCss, /html\.dark #dashboardSidebar \.dashboard-sidebar-tooltip/);
+  assert.match(dashboardCss, /prefers-reduced-motion:reduce/);
 });

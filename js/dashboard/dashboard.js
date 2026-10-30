@@ -2104,7 +2104,58 @@ $("profileAuthForm").addEventListener("submit", async event => {
 });
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
 document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
-const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin");
+const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin"), dashboardSidebarTooltip = $("dashboardSidebarTooltip");
+let dashboardSidebarTooltipTimer = 0, dashboardSidebarTooltipTarget = null;
+function dashboardSidebarTooltipItem(target) { return target?.closest?.(".reference-nav-item, .reference-footer-button") || null; }
+function dashboardSidebarTooltipLabel(item) {
+  if (item?.classList.contains("reference-nav-item")) return item.querySelector(".nav-label")?.textContent.trim() || item.getAttribute("aria-label") || item.title || "";
+  if (item?.id === "dashboardSidebarThemeToggle") return item.querySelector("#dashboardSidebarThemeText")?.textContent.trim() || item.getAttribute("aria-label") || "";
+  return item?.getAttribute("aria-label") || item?.title || item?.querySelector(".nav-label")?.textContent.trim() || "";
+}
+function hideDashboardSidebarTooltip() {
+  window.clearTimeout(dashboardSidebarTooltipTimer);
+  dashboardSidebarTooltipTimer = 0;
+  dashboardSidebarTooltipTarget = null;
+  dashboardSidebarTooltip?.classList.remove("is-visible");
+}
+function scheduleDashboardSidebarTooltip(item, delay = 140) {
+  if (!item || dashboardSidebar.classList.contains("sidebar-pinned")) { hideDashboardSidebarTooltip(); return; }
+  const label = dashboardSidebarTooltipLabel(item);
+  if (!label) { hideDashboardSidebarTooltip(); return; }
+  if (dashboardSidebarTooltipTarget === item && dashboardSidebarTooltip.classList.contains("is-visible")) return;
+  window.clearTimeout(dashboardSidebarTooltipTimer);
+  dashboardSidebarTooltipTarget = item;
+  dashboardSidebarTooltip.classList.remove("is-visible");
+  dashboardSidebarTooltip.textContent = label;
+  dashboardSidebarTooltipTimer = window.setTimeout(() => {
+    if (dashboardSidebarTooltipTarget !== item || dashboardSidebar.classList.contains("sidebar-pinned")) { hideDashboardSidebarTooltip(); return; }
+    const itemRect = item.getBoundingClientRect(), sidebarRect = dashboardSidebar.getBoundingClientRect();
+    dashboardSidebarTooltip.style.top = `${itemRect.top - sidebarRect.top + itemRect.height / 2}px`;
+    dashboardSidebarTooltip.classList.add("is-visible");
+  }, delay);
+}
+dashboardSidebar.addEventListener("pointerover", event => {
+  if (event.pointerType === "touch") return;
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (!item || (event.relatedTarget && item.contains(event.relatedTarget))) return;
+  scheduleDashboardSidebarTooltip(item);
+});
+dashboardSidebar.addEventListener("pointerout", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (!item || (event.relatedTarget && item.contains(event.relatedTarget))) return;
+  if (dashboardSidebarTooltipTarget === item) hideDashboardSidebarTooltip();
+});
+dashboardSidebar.addEventListener("focusin", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (item?.matches(":focus-visible")) scheduleDashboardSidebarTooltip(item, 0);
+});
+dashboardSidebar.addEventListener("focusout", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (item && !(event.relatedTarget && item.contains(event.relatedTarget)) && dashboardSidebarTooltipTarget === item) hideDashboardSidebarTooltip();
+});
+dashboardSidebar.addEventListener("click", hideDashboardSidebarTooltip);
+dashboardSidebar.querySelector(".dashboard-reference-nav")?.addEventListener("scroll", hideDashboardSidebarTooltip, { passive:true });
+window.addEventListener("resize", hideDashboardSidebarTooltip, { passive:true });
 function togglePin() {
   const pinned = !dashboardSidebar.classList.contains("sidebar-pinned");
   dashboardSidebar.classList.toggle("sidebar-pinned", pinned);
@@ -2200,6 +2251,7 @@ function updateParentTopbarCompact() {
 }
 window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
 function setDashboardView(view) {
+  hideDashboardSidebarTooltip();
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
   activeDashboardView = view;
   const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";

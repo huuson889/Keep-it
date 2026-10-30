@@ -31,7 +31,7 @@ Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, c�
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Ba route Dashboard còn lại là Overview, Listening và Highlights & Notes; action Flashcards trên sidebar gọi `startStudySession({ allSources:true })` và không tạo route mới.
-- Sidebar mặc định mở rộng; `dashboardSidebarPin` toggle trạng thái 220px/56px, cập nhật `aria-pressed`/`aria-expanded` và không dùng hover để bung lại trạng thái đã thu gọn. Giữ sidebar trong flex flow để các route bên phải chuyển động cùng nó.
+- Sidebar mặc định mở rộng; `dashboardSidebarPin` toggle trạng thái 220px/56px, cập nhật `aria-pressed`/`aria-expanded` và không dùng hover để bung lại trạng thái đã thu gọn. Khi sidebar thu gọn, hover hoặc keyboard-focus vào icon hiện tooltip có mũi nhọn, màu theo theme; tooltip được định vị ngoài nav scrollport và không đổi chiều rộng/sidebar state. Giữ sidebar trong flex flow để các route bên phải chuyển động cùng nó.
 - “Tô sáng & Ghi chú” là giao diện duy nhất để xem và quản lý highlights/notes. Không khôi phục hai route nháp, không thêm API/backend hay nguồn lưu annotation thứ hai.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ `dashboardHighlightsNotesFrame.contentWindow` cùng `location.origin`; protocol version là `1`.
 - Giữ đúng một node `#dashboardSharedTopbar`; parent chuyển node qua các route và sang iframe cùng origin. Menu export vẫn nằm trong document iframe khi route Highlights & Notes active để delegated click handlers hiện có tiếp tục hoạt động.
