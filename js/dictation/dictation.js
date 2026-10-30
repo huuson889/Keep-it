@@ -16,7 +16,7 @@
   let solved = new Set();
   let notes = {};
   let translations = {};
-  let wrongWordStats = { version: 2, words: {} };
+  let wrongWordStats = { version: 3, words: {} };
   let stopAt = -1;
   let attachedVideo = null;
   let ctrlAlone = false;
@@ -892,8 +892,8 @@
   }
 
   function normalizeWrongWordStats(value) {
-    const normalized = { version: 2, words: {} };
-    if (!value || value.version !== 2 || !value.words || typeof value.words !== "object") return normalized;
+    const normalized = { version: 3, words: {} };
+    if (!value || value.version !== 3 || !value.words || typeof value.words !== "object") return normalized;
     const safeCount = (candidate) => {
       const number = Number(candidate);
       return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
@@ -908,20 +908,44 @@
       const sourceVariants = item.variants && typeof item.variants === "object" ? item.variants : {};
       for (const [key, variant] of Object.entries(sourceVariants)) {
         if (!key.startsWith("v:") || key === "v:__missing__" || !variant || typeof variant !== "object") continue;
-        variants[key] = { text: typeof variant.text === "string" ? variant.text : "", count: safeCount(variant.count) };
+        const typeCounts = {};
+        for (const type of ["phonetic", "rule", "typo"]) typeCounts[type] = safeCount(variant.typeCounts?.[type]);
+        variants[key] = { text: typeof variant.text === "string" ? variant.text : "", count: safeCount(variant.count), typeCounts };
       }
       const occurrences = {};
       const sourceOccurrences = item.occurrences && typeof item.occurrences === "object" ? item.occurrences : {};
       for (const [key, occurrence] of Object.entries(sourceOccurrences)) {
         if (!key.startsWith("o:") || !occurrence || typeof occurrence !== "object") continue;
-        occurrences[key] = { pending: !!occurrence.pending, wrongStreak: safeCount(occurrence.wrongStreak) };
+        occurrences[key] = {
+          pending:!!occurrence.pending, wrongStreak:safeCount(occurrence.wrongStreak),
+          errorType:["phonetic", "rule", "typo"].includes(occurrence.errorType) ? occurrence.errorType : "rule",
+        };
       }
+      const typeCounts = {}, typeFixes = {}, errorExamples = {};
+      for (const type of ["phonetic", "rule", "typo"]) {
+        typeCounts[type] = safeCount(item.typeCounts?.[type]);
+        typeFixes[type] = safeCount(item.typeFixes?.[type]);
+        const example = item.errorExamples?.[type];
+        if (example && typeof example === "object" && typeof example.typed === "string") {
+          errorExamples[type] = {
+            before:String(example.before || ""), typed:example.typed, after:String(example.after || ""), lastAt:safeCount(example.lastAt),
+          };
+        }
+      }
+      const errorContext = item.errorContext && typeof item.errorContext === "object"
+        ? { before:String(item.errorContext.before || ""), typed:String(item.errorContext.typed || ""), after:String(item.errorContext.after || "") }
+        : null;
       normalized.words[storageKey] = {
         word,
         errors,
         corrections: safeCount(item.corrections),
         variants,
         occurrences,
+        typeCounts,
+        typeFixes,
+        errorExamples,
+        lastErrorType: ["phonetic", "rule", "typo"].includes(item.lastErrorType) ? item.lastErrorType : "rule",
+        errorContext,
         lastResult: item.lastResult === "wrong" ? "wrong" : "correct",
         lastAt: safeCount(item.lastAt),
       };
@@ -2169,7 +2193,7 @@
     solved = new Set();
     notes = {};
     translations = {};
-    wrongWordStats = { version: 2, words: {} };
+    wrongWordStats = { version: 3, words: {} };
     ui.root.classList.add("te-dictation-active");
     applyDictationColumnLayout();
     if (typeof ResizeObserver === "function") {

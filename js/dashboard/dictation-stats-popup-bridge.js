@@ -21,20 +21,39 @@
     return word && (word.match(/\p{L}/gu) || []).length >= 4 ? word : "";
   }
   function normalizeSessionWords(stats) {
-    if (!stats || stats.version !== 2 || !stats.words || typeof stats.words !== "object") return [];
+    if (!stats || stats.version !== 3 || !stats.words || typeof stats.words !== "object") return [];
     return Object.values(stats.words).flatMap(item => {
       if (!item || typeof item !== "object") return [];
       const word = safeWord(item.word);
       const errors = safeCount(item.errors);
       if (!word || !errors) return [];
       const variants = Object.values(item.variants && typeof item.variants === "object" ? item.variants : {})
-        .map(variant => ({ text:String(variant?.text || "").trim(), count:safeCount(variant?.count) }))
-        .filter(variant => variant.text && variant.count);
+        .map(variant => ({
+          text:String(variant?.text || "").trim(), count:safeCount(variant?.count),
+          typeCounts:Object.fromEntries(["phonetic", "rule", "typo"].map(type => [type, safeCount(variant?.typeCounts?.[type])])),
+        })).filter(variant => variant.text && variant.count);
+      const typeCounts = {}, typeFixes = {}, errorExamples = {};
+      for (const type of ["phonetic", "rule", "typo"]) {
+        typeCounts[type] = safeCount(item.typeCounts?.[type]);
+        typeFixes[type] = safeCount(item.typeFixes?.[type]);
+        const example = item.errorExamples?.[type];
+        if (example && typeof example === "object" && typeof example.typed === "string") errorExamples[type] = {
+          before:String(example.before || ""), typed:example.typed, after:String(example.after || ""), lastAt:safeCount(example.lastAt),
+        };
+      }
+      const errorContext = item.errorContext && typeof item.errorContext === "object" ? {
+        before:String(item.errorContext.before || ""), typed:String(item.errorContext.typed || ""), after:String(item.errorContext.after || ""),
+      } : null;
       return [{
         word,
         errors,
         fixes:safeCount(item.corrections),
         variants,
+        typeCounts,
+        typeFixes,
+        errorExamples,
+        lastErrorType:["phonetic", "rule", "typo"].includes(item.lastErrorType) ? item.lastErrorType : "rule",
+        errorContext,
         lastAt:safeCount(item.lastAt),
         status:item.lastResult === "wrong" ? "wrong" : "correct",
       }];
@@ -46,21 +65,30 @@
       const key = item.word.toLocaleLowerCase();
       let global = grouped.get(key);
       if (!global) {
-        global = { word:item.word, errors:0, fixes:0, variants:new Map(), sources:new Set(), lastAt:0, status:"correct" };
+        global = { word:item.word, errors:0, fixes:0, variants:new Map(), sources:new Set(), typeCounts:{ phonetic:0, rule:0, typo:0 }, typeFixes:{ phonetic:0, rule:0, typo:0 }, errorExamples:{}, errorContext:null, lastAt:0, status:"correct" };
         grouped.set(key, global);
       }
       global.errors += item.errors;
       global.fixes += item.fixes;
       global.sources.add(session.title);
+      for (const type of ["phonetic", "rule", "typo"]) {
+        global.typeCounts[type] += safeCount(item.typeCounts?.[type]);
+        global.typeFixes[type] += safeCount(item.typeFixes?.[type]);
+        const example = item.errorExamples?.[type];
+        if (example && (!global.errorExamples[type] || safeCount(example.lastAt) > safeCount(global.errorExamples[type].lastAt))) global.errorExamples[type] = { ...example, source:session.title };
+      }
       if (item.lastAt >= global.lastAt) {
         global.lastAt = item.lastAt;
         global.status = item.status;
+        global.errorContext = item.errorContext ? { ...item.errorContext, source:session.title } : null;
       }
       for (const variant of item.variants) {
         const variantKey = variant.text.toLocaleLowerCase();
         const previous = global.variants.get(variantKey);
-        if (previous) previous.count += variant.count;
-        else global.variants.set(variantKey, { ...variant });
+        if (previous) {
+          previous.count += variant.count;
+          for (const type of ["phonetic", "rule", "typo"]) previous.typeCounts[type] += safeCount(variant.typeCounts?.[type]);
+        } else global.variants.set(variantKey, { ...variant, typeCounts:{ ...variant.typeCounts } });
       }
     }
     return [...grouped.values()].map(item => ({

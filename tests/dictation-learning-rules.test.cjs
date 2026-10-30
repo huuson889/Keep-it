@@ -74,14 +74,22 @@ test("only eligible wrong words enter local stats; missing, short words, proper 
   assert.equal(record("word", "ward", 1, 200), true, "four-letter target is eligible");
   assert.equal(stats.words["w:word"].errors, 1);
   assert.equal(stats.words["w:word"].variants["v:ward"].count, 1);
+  assert.equal(stats.words["w:word"].typeCounts.typo, 1, "every newly logged wrong attempt is classified");
+  assert.equal(stats.words["w:word"].lastErrorType, "typo");
+  assert.deepEqual(JSON.parse(JSON.stringify(stats.words["w:word"].errorContext)), { before:"", typed:"ward", after:"" });
   assert.equal(record("word", "word", 1, 300), true, "a correction of an eligible tracked word is logged");
   assert.equal(stats.words["w:word"].corrections, 1);
+  assert.equal(stats.words["w:word"].typeFixes.typo, 1, "corrections retain the category of the error they fix");
+  assert.equal(stats.words["w:word"].variants["v:ward"].typeCounts.typo, 1);
   assert.equal(stats.words["w:word"].lastResult, "correct");
 });
 
 test("new stats schema starts clean and does not accept the legacy schema", () => {
   const { rules } = loadRules();
-  assert.equal(rules.STATS_VERSION, 2);
-  const legacy = { version: 1, words: { "w:environment": { errors: 3 } } };
+  assert.equal(rules.STATS_VERSION, 3);
+  const legacy = { version: 2, words: { "w:environment": { errors: 3 } } };
   assert.notEqual(legacy.version, rules.STATS_VERSION);
+  assert.equal(rules.classifyError("phone", "fone"), "phonetic");
+  assert.equal(rules.classifyError("receive", "recieve"), "rule");
+  assert.equal(rules.classifyError("planet", "planer"), "typo");
 });

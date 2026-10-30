@@ -13,8 +13,8 @@ async function resetLegacyDictationWrongWordStats() {
     for (const [key, record] of Object.entries(allData || {})) {
       if (!/^dictation:[A-Za-z0-9_-]{6,}$/.test(key)) continue;
       const stats = record?.wrongWordStats;
-      if (!record || !stats || Number(stats.version) >= 2) continue;
-      updates[key] = { ...record, wrongWordStats: { version: 2, words: {} } };
+      if (!record || !stats || Number(stats.version) >= 3) continue;
+      updates[key] = { ...record, wrongWordStats: { version: 3, words: {} } };
     }
     if (Object.keys(updates).length) await storage.set(updates);
   } catch (error) {
