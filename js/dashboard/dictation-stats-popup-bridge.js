@@ -21,12 +21,36 @@
     return word && (word.match(/\p{L}/gu) || []).length >= 4 ? word : "";
   }
   function sessionTitle(record, metadata, sourceId) {
-    const recordTitle = String(record?.title || "").trim();
-    const indexTitle = String(metadata?.title || "").trim();
+    const usableTitle = value => {
+      const title = String(value || "").trim();
+      return title && title !== sourceId && !/^(youtube|keepit|dictation)$/i.test(title) ? title : "";
+    };
+    const recordTitle = usableTitle(record?.title);
+    const indexTitle = usableTitle(metadata?.title);
     const recordTitleAt = safeCount(record?.titleUpdatedAt);
     const indexTitleAt = safeCount(metadata?.updatedAt);
     if (recordTitle && recordTitleAt > indexTitleAt) return recordTitle;
     return indexTitle || recordTitle || sourceId;
+  }
+  async function openYouTubeTitles(sourceIds) {
+    const titles = new Map();
+    const wanted = new Set(sourceIds);
+    if (!wanted.size || !globalThis.browser?.tabs?.query) return titles;
+    try {
+      const tabs = await globalThis.browser.tabs.query({ url:["*://*.youtube.com/*", "*://youtube.com/*", "*://youtu.be/*"] });
+      for (const tab of Array.isArray(tabs) ? tabs : []) {
+        try {
+          const url = new URL(String(tab?.url || ""));
+          const host = url.hostname.toLocaleLowerCase();
+          if (!(host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com"))) continue;
+          const sourceId = host === "youtu.be" ? url.pathname.split("/").filter(Boolean)[0] : url.searchParams.get("v");
+          if (!wanted.has(sourceId)) continue;
+          const title = String(tab?.title || "").replace(/^\s*Keepit\s*-\s*/i, "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
+          if (title && title !== sourceId && !/^(youtube|keepit|dictation)$/i.test(title)) titles.set(sourceId, title);
+        } catch {}
+      }
+    } catch {}
+    return titles;
   }
   function normalizeSessionWords(stats) {
     if (!stats || stats.version !== 3 || !stats.words || typeof stats.words !== "object") return [];
@@ -131,6 +155,12 @@
           words,
         }];
       });
+      const unresolvedIds = normalizedSessions.filter(session => session.title === session.sourceId).map(session => session.sourceId);
+      const liveTitles = await openYouTubeTitles(unresolvedIds);
+      for (const session of normalizedSessions) {
+        const liveTitle = liveTitles.get(session.sourceId);
+        if (liveTitle) session.title = liveTitle;
+      }
       return { sessions:normalizedSessions, globalWords:buildGlobalWords(normalizedSessions) };
     } catch (error) {
       console.warn("Could not load local Dictation error statistics", error);

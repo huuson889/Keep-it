@@ -1,10 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.793; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Tiêu đề `context-source` lấy từ `ui.miniTitle`, lưu trong record và session index; bridge chọn nguồn mới hơn, chỉ fallback videoId khi không có tên. Tên video ở context và mục theo video là liên kết mở video YouTube.
+- Version hiện tại: v3.4.795; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Tiêu đề `context-source` lấy từ `ui.miniTitle`, lưu trong record và session index; bridge chọn nguồn mới hơn, bỏ title chỉ là videoId, thử dùng title của tab YouTube đang mở nếu dữ liệu cũ thiếu tên, rồi mới fallback ID. Tên video ở context và mục theo video là liên kết mở video YouTube.
+- Smart-card ở tab toàn cục/báo động dùng 4 cột; phần tóm tắt lỗi đứng bên phải cột biến thể gõ. Chi tiết theo video bỏ title ID cũ nếu record có title thật.
 - Popup giữ UI demo, phân loại cục bộ, filter và live refresh; chiều cao cố định theo max hiện tại, body scroll 3px Chromium. Migration stats v1/v2 giữ notes/progress/translations.
-- Kiểm tra gần nhất: 31/31 tests; 53 JavaScript syntax checks; manifest v3.4.793/44 assets; 4 HTML/52 local refs/402 IDs; CSS parse sạch; `git diff --check` đạt. Chưa browser-test.
+- Kiểm tra gần nhất: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.795/44 assets; 4 HTML/52 local refs/402 IDs; 11 CSS/2,614 rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -109,6 +110,19 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.795 | Arena.ai Agent sửa:**
+
+- Với record/index cũ đều thiếu title hoặc chỉ chứa videoId, bridge thử đối chiếu các tab YouTube đang mở theo videoId và dùng tab title cho snapshot hiển thị. Không ghi thêm metadata/tab title vào storage; videoId vẫn là fallback nếu không tìm được tên.
+- File: `manifest.json`, `js/dashboard/dictation-stats-popup-bridge.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.795/44 asset paths; 11 CSS/2,614 top-level rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
+
+**2026-10-30 | v3.4.794 | Arena.ai Agent sửa:**
+
+- Smart-card ở tab tổng quát/báo động thành 4 cột: từ + nhóm lỗi, ngữ cảnh, biến thể gõ, tóm tắt lỗi ở cột ngoài cùng bên phải; màn hẹp vẫn xếp dọc.
+- Sửa tên trong tab theo video: bỏ session-index title trùng videoId để không che title hợp lệ trong record; chỉ fallback ID khi record/index không có tên thật.
+- File: `manifest.json`, `js/dashboard/dictation-stats-popup.js`, `js/dashboard/dictation-stats-popup-bridge.js`, `css/dashboard/dictation-stats-popup.css`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.794/44 asset paths; 11 CSS/2,614 top-level rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.793 | Arena.ai Agent sửa:**
 

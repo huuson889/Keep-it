@@ -191,7 +191,7 @@
     const target = el("div", "word-target");
     target.append(document.createTextNode(item.word), createAudioButton(item.word));
     targetBox.append(target, createTypeTag(item));
-    targetBox.append(el("div", "word-error-summary", tr("dictationStatsErrorSummary", { errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item) })));
+    const errorSummary = el("div", "word-error-summary", tr("dictationStatsErrorSummary", { errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item) }));
 
     const contextBox = el("div", "context-box");
     contextBox.append(el("div", "context-label", tr("dictationStatsContextLabel")));
@@ -202,7 +202,7 @@
     const source = item.errorContext?.source || item.sources[0] || "—";
     const sourceUrl = item.errorContext?.url || item.errorExamples?.[primaryType(item)]?.url || item.sourceUrls?.[0] || "";
     contextBox.append(createSourceLink(source, sourceUrl));
-    card.append(targetBox, contextBox, createVariants(item));
+    card.append(targetBox, contextBox, createVariants(item), errorSummary);
     return card;
   }
   function renderSessionView() {
