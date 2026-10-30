@@ -2352,6 +2352,9 @@ function readDashboardScrollPositions() {
     return value && typeof value === "object" && !Array.isArray(value) ? value : {};
   } catch { return {}; }
 }
+function dashboardScrollTargetForView(view) {
+  return view === "listening" ? dashboardListeningView : dashboardScroller;
+}
 function readDashboardScrollPosition(view) {
   const positions = readDashboardScrollPositions();
   const value = Number(positions[view]);
@@ -2365,7 +2368,7 @@ function readDashboardScrollPosition(view) {
 function saveDashboardScrollPosition(view = activeDashboardView) {
   if (dashboardScrollRestoring || !dashboardScroller || !["overview", "listening", "highlights-notes"].includes(view)) return;
   const positions = readDashboardScrollPositions();
-  positions[view] = Math.max(0, dashboardScroller.scrollTop);
+  positions[view] = Math.max(0, dashboardScrollTargetForView(view).scrollTop);
   try {
     sessionStorage.setItem(DASHBOARD_SCROLL_POSITIONS_KEY, JSON.stringify(positions));
     if (view === "overview") sessionStorage.setItem(LEGACY_OVERVIEW_SCROLL_POSITION_KEY, String(positions[view]));
@@ -2377,11 +2380,13 @@ function saveDashboardScrollState() {
     try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, activeDashboardView); } catch { /* session storage may be unavailable */ }
   }
 }
-dashboardScroller.addEventListener("scroll", () => {
+function scheduleDashboardScrollPositionSave() {
   if (dashboardScrollRestoring) return;
   if (dashboardScrollSaveTimer !== null) clearTimeout(dashboardScrollSaveTimer);
   dashboardScrollSaveTimer = window.setTimeout(() => { dashboardScrollSaveTimer = null; saveDashboardScrollPosition(); }, 100);
-}, { passive:true });
+}
+dashboardScroller.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+dashboardListeningView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
@@ -2415,7 +2420,7 @@ function unbindParentTopbarScrollTarget() {
 function bindParentTopbarScrollTarget() {
   unbindParentTopbarScrollTarget();
   if (!dashboardSharedTopbar || !dashboardScroller) return;
-  parentTopbarScrollTarget = dashboardScroller;
+  parentTopbarScrollTarget = activeDashboardView === "listening" ? dashboardListeningView : dashboardScroller;
   parentTopbarScrollTarget.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
   updateParentTopbarCompact();
 }
@@ -2429,7 +2434,7 @@ function mountSharedTopbarInParent(view) {
 }
 function updateParentTopbarCompact() {
   if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
-  const next = dashboardSharedTopbar.getBoundingClientRect().top <= 1;
+  const next = activeDashboardView === "listening" ? dashboardListeningView.scrollTop > 1 : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
   parentTopbarCompact = next;
   dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);
@@ -2611,10 +2616,13 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
   const restoreCycle = ++dashboardRestoreCycle;
   dashboardScrollRestoring = true;
   const savedScrollTop = readDashboardScrollPosition(view);
-  dashboardScroller.scrollTop = savedScrollTop;
+  const scrollTarget = dashboardScrollTargetForView(view);
+  dashboardScroller.scrollTop = view === "listening" ? 0 : savedScrollTop;
+  scrollTarget.scrollTop = savedScrollTop;
   requestAnimationFrame(() => {
     if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
-    dashboardScroller.scrollTop = savedScrollTop;
+    dashboardScroller.scrollTop = view === "listening" ? 0 : savedScrollTop;
+    scrollTarget.scrollTop = savedScrollTop;
     requestAnimationFrame(() => {
       if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
       dashboardScrollRestoring = false;

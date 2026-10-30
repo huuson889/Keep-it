@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.821; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
+- Version hiện tại: v3.4.822; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.821: full suite 50/50; `node --check` 54 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON, `git diff --check` đạt; ZIP 158 entries/CRC sạch. Browser verification chưa thực hiện.
+- Kiểm tra v3.4.822: focused Dashboard tests 11/11; CSS, manifest và ZIP đã kiểm tra. Full suite và browser verification chưa chạy trong release này.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -112,6 +112,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation vẫn giữ markup/CSS theo demo và dữ liệu mẫu/action hiện tại. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.822 | Arena.ai Agent sửa:**
+
+- Giới hạn Dictation theo chiều cao viewport dưới topbar dùng chung (`calc(100vh - 98px)`); nội dung cuộn bên trong, giữ riêng vị trí cuộn theo tab.
+- File: `css/dashboard/overview.css`, `js/dashboard/dashboard.js`, Dashboard scroll tests, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`, `Keepit - Optimize Test-v3.4.822.zip`.
+- Kiểm tra: focused Dashboard tests 11/11; CSS/manifest/ZIP kiểm tra. Full suite và browser verification chưa chạy.
 
 **2026-10-31 | v3.4.821 | Arena.ai Agent sửa:**
 

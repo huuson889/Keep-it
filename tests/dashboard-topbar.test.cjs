@@ -11,7 +11,7 @@ const dashboardCss = fs.readFileSync(path.join(root, "css/dashboard/dashboard.cs
 const notesCss = fs.readFileSync(path.join(root, "css/dashboard/highlights-notes-embedded.css"), "utf8");
 const notesJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
 
-test("All three Dashboard views share one topbar and one page-level scroll root", () => {
+test("All three Dashboard views share one topbar and preserve independent scroll roots", () => {
   assert.equal((dashboardHtml.match(/id="dashboardSharedTopbar"/g) || []).length, 1);
   assert.match(dashboardHtml, /id="dashboardScroller" class="dashboard-scroller"/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarPortal" class="dashboard-shared-topbar-host"/);
@@ -26,7 +26,7 @@ test("All three Dashboard views share one topbar and one page-level scroll root"
   assert.ok(overviewIndex < listeningIndex && listeningIndex < notesIndex && notesIndex < scrollerEnd);
   assert.doesNotMatch(dashboardHtml, /dashboardHighlightsNotesFrame/);
   assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
-  assert.match(dashboardJs, /parentTopbarScrollTarget = dashboardScroller/);
+  assert.match(dashboardJs, /parentTopbarScrollTarget = activeDashboardView === "listening" \? dashboardListeningView : dashboardScroller/);
   assert.match(dashboardJs, /dashboardSharedTopbarLabel\.textContent\s*=\s*t\(labelKey\)/);
   for (const key of ["ovNavOverview", "ovMenuDictation", "ovMenuHighlightsNotes"]) assert.ok(dashboardJs.includes(key));
   assert.match(dashboardCss, /#dashboardScroller/);
@@ -42,7 +42,7 @@ test("The shared topbar sticks, compacts, and receives the Highlights & Notes ex
   assert.match(overviewCss, /#dashboardSharedTopbarActionsSlot:not\(\[hidden\]\)/);
   assert.match(overviewCss, /#dashboardSharedTopbarActionsSlot \.demo-export-all/);
   assert.match(dashboardJs, /dashboardSharedTopbarActionsSlot\.append\(actions\)/);
-  assert.match(dashboardJs, /parentTopbarScrollTarget = dashboardScroller/);
+  assert.match(dashboardJs, /parentTopbarScrollTarget = activeDashboardView === "listening" \? dashboardListeningView : dashboardScroller/);
   assert.doesNotMatch(dashboardJs, /mountSharedTopbarInIframe|KEEPIT_SHARED_TOPBAR_MOUNTED/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarActionsSource" hidden/);
   assert.match(dashboardHtml, /id="exportAllDemoBtn"/);

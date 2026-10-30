@@ -589,6 +589,7 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardOverviewView .ov-content { padding-top:0!important; }
 #dashboardScroller > #dashboardListeningView {
+  height:calc(100vh - 98px)!important;overflow-y:auto!important;
   padding:0 clamp(16px,3vw,42px) 34px!important;background:transparent!important;color:inherit;
 }
 #dashboardScroller > #dashboardListeningView::before { display:none!important;height:0!important; }

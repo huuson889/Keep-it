@@ -76,15 +76,17 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 });
 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
+  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
   assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
   assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
   assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
   assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
-  assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScroller\.scrollTop\)/);
+  assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScrollTargetForView\(view\)\.scrollTop\)/);
+  assert.match(dashboardJs, /dashboardListeningView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_SCROLL_POSITIONS_KEY, JSON\.stringify\(positions\)\)/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_ACTIVE_VIEW_KEY, view\)/);
   assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?\? saved : "overview"/);
-  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?const savedScrollTop = readDashboardScrollPosition\(view\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\([\s\S]*?if \(switchCycle !== dashboardViewSwitchCycle \|\| restoreCycle !== dashboardRestoreCycle\)/);
+  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?const savedScrollTop = readDashboardScrollPosition\(view\)[\s\S]*?const scrollTarget = dashboardScrollTargetForView\(view\)[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\([\s\S]*?if \(switchCycle !== dashboardViewSwitchCycle \|\| restoreCycle !== dashboardRestoreCycle\)/);
 });
 
 test("Tab re-entry commits the hidden reveal state before observing panels", () => {
@@ -93,5 +95,5 @@ test("Tab re-entry commits the hidden reveal state before observing panels", () 
   assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\][\s\S]*?primeDashboardRevealTargets\(targets\);[\s\S]*?new IntersectionObserver/);
   assert.match(dashboardJs, /target\.classList\.remove\("dashboard-revealed"\)/);
   assert.match(dashboardJs, /function setDashboardView\(view\)[\s\S]*?cancelDashboardEntranceEffects\(\)[\s\S]*?mountSharedTopbarInParent\(view\);[\s\S]*?restoreDashboardViewAndReveal\(view, switchCycle\)/);
-  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?resetOverviewEntranceEffects\(\)/);
+  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?resetOverviewEntranceEffects\(\)/);
 });
