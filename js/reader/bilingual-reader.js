@@ -55,17 +55,11 @@
       font-display:swap;
       unicode-range:U+1F1E6-1F1FF,U+1F3F4,U+E0062-E0063,U+E0065,U+E0067,U+E006C,U+E006E,U+E0073-E0074,U+E0077,U+E007F;
     }
-    .lhn-bilingual-speaker{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;color:#868e96;cursor:pointer;font-size:.8em;vertical-align:middle;user-select:none}
-    .lhn-bilingual-speaker[data-reader-scope="false"]{display:none!important}
-    .lhn-bilingual-speaker[data-reader-scope="false"][data-visibility="always"]{display:inline-flex!important;visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
-    :hover>.lhn-bilingual-speaker[data-reader-scope="false"][data-visibility="always"]{visibility:visible;opacity:1;pointer-events:auto}
+    .lhn-bilingual-speaker{position:absolute!important;display:inline-flex!important;align-items:center;justify-content:center;width:18px!important;height:18px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;z-index:2;color:#868e96;cursor:pointer;font-size:.8em;line-height:1;user-select:none;vertical-align:middle}
     .lhn-bilingual-speaker:hover{color:var(--lhn-br-accent);transform:scale(1.2)}
-    .lhn-bilingual-speaker[data-visibility="hover"]{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
-    :hover>.lhn-bilingual-speaker[data-visibility="hover"]{visibility:visible;opacity:1;pointer-events:auto}
-    .lhn-bilingual-speaker[data-visibility="reading"]{display:none}
-    .lhn-bilingual-speaker[data-visibility="reading"][data-reading="true"]{display:inline-flex}
-    :hover>.lhn-bilingual-speaker[data-visibility="reading"]{display:inline-flex;visibility:visible;opacity:1;pointer-events:auto}
-    :hover>.lhn-bilingual-speaker[data-reader-scope="false"]{display:inline-flex!important;visibility:visible;opacity:1;pointer-events:auto}
+    .lhn-bilingual-speaker[data-visibility="hover"],.lhn-bilingual-speaker[data-visibility="reading"]{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
+    :hover>.lhn-bilingual-speaker[data-visibility="hover"],:hover>.lhn-bilingual-speaker[data-visibility="reading"]{visibility:visible;opacity:1;pointer-events:auto}
+    .lhn-bilingual-speaker[data-visibility="reading"][data-reading="true"]{visibility:visible;opacity:1;pointer-events:auto}
     .lhn-bilingual-card{display:block;margin:8px 0;padding:10px 14px;border-left:4px solid var(--lhn-br-accent);background:rgba(var(--lhn-br-accent-rgb),.04);border-radius:0 8px 8px 0;font-family:var(--lhn-br-font);font-size:max(16px,var(--translation-scale,80%))!important;line-height:1.6;color:var(--lhn-br-translation-color,#2d3748);font-weight:var(--lhn-br-translation-weight,400);box-shadow:0 1px 3px rgba(0,0,0,.02);animation:lhnBrFade .25s ease-in-out}
     .lhn-bilingual-web-font{font-family:var(--lhn-br-web-font)!important}
     .lhn-bilingual-reading{outline:2px solid var(--lhn-br-accent)!important;outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08)!important;border-radius:6px}
@@ -453,7 +447,7 @@
     document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, card.parentElement));
     applyWebFont();
     const readerActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
-    if (!readerActive) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); }
+    if (!readerActive) { stopReading(); removeAllReaderSpeakers(); }
     else { if (!wasReaderActive) mainBlocksDirty = true; updateSpeakers(); }
   }
   function isReaderDisabledOnThisWebsite() {
@@ -815,17 +809,96 @@
     // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
     return visibleReaderText(block);
   }
+  function lastReaderCharacterRect(block) {
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let anchor = null;
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.textContent.trim() || node.parentElement?.closest(readerIgnoredText)) continue;
+      let visible = true;
+      for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+        const computed = getComputedStyle(parent);
+        if (computed.display === "none" || computed.visibility === "hidden" || computed.visibility === "collapse" || computed.contentVisibility === "hidden" || Number(computed.opacity) === 0) { visible = false; break; }
+        if (parent === block) break;
+      }
+      if (!visible) continue;
+      const characters = Array.from(node.textContent);
+      let endOffset = node.textContent.length;
+      while (characters.length && /^\s+$/u.test(characters[characters.length - 1])) endOffset -= characters.pop().length;
+      if (!characters.length) continue;
+      const startOffset = endOffset - characters[characters.length - 1].length;
+      const range = document.createRange();
+      range.setStart(node, startOffset); range.setEnd(node, endOffset);
+      const rect = range.getBoundingClientRect();
+      if (rect.width || rect.height) anchor = { rect, direction:getComputedStyle(node.parentElement || block).direction };
+    }
+    return anchor;
+  }
+  function positionSpeakerAfterText(block, speaker, anchor = lastReaderCharacterRect(block)) {
+    if (!anchor) return;
+    const textRect = anchor.rect, blockRect = block.getBoundingClientRect();
+    const iconWidth = speaker.offsetWidth || 18, iconHeight = speaker.offsetHeight || 18, gap = 3;
+    const rtl = anchor.direction === "rtl";
+    let x = rtl ? textRect.left - iconWidth - gap : textRect.right + gap;
+    const minX = blockRect.left + 1, maxX = Math.max(minX, blockRect.right - iconWidth - 1);
+    x = Math.min(maxX, Math.max(minX, x));
+    let y = textRect.top + (textRect.height - iconHeight) / 2;
+    const minY = blockRect.top, maxY = Math.max(minY, blockRect.bottom - iconHeight);
+    y = Math.min(maxY, Math.max(minY, y));
+    const containingBlock = speaker.offsetParent || document.documentElement;
+    const parentRect = containingBlock.getBoundingClientRect();
+    const left = x - parentRect.left + containingBlock.scrollLeft - containingBlock.clientLeft;
+    const top = y - parentRect.top + containingBlock.scrollTop - containingBlock.clientTop;
+    speaker.style.setProperty("left", `${left}px`, "important");
+    speaker.style.setProperty("top", `${top}px`, "important");
+  }
+  const speakerPositionObserver = typeof ResizeObserver === "function" ? new ResizeObserver(entries => {
+    entries.forEach(entry => {
+      const speaker = entry.target.querySelector(":scope > .lhn-bilingual-speaker");
+      if (speaker) positionSpeakerAfterText(entry.target, speaker);
+    });
+  }) : null;
+  function repositionReaderSpeakers() {
+    document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
+      const block = speaker.parentElement;
+      if (block) positionSpeakerAfterText(block, speaker);
+    });
+  }
+  let speakerRepositionFrame = 0;
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(speakerRepositionFrame);
+    speakerRepositionFrame = requestAnimationFrame(() => { speakerRepositionFrame = 0; repositionReaderSpeakers(); });
+  }, { passive:true });
+  function removeAllReaderSpeakers() {
+    document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
+      if (speaker.parentElement) speakerPositionObserver?.unobserve(speaker.parentElement);
+      speaker.remove();
+    });
+  }
   function updateSpeakers() {
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
-    const readableBlocks = new Set(readerBlocks());
-    const allBlocks = blocks(), blockSet = new Set(allBlocks);
+    const readableBlocks = readerBlocks();
+    const blockSet = new Set(readableBlocks);
+    document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
+      if (blockSet.has(speaker.parentElement)) return;
+      if (speaker.parentElement) speakerPositionObserver?.unobserve(speaker.parentElement);
+      speaker.remove();
+    });
     const isNestedBlock = block => { for (let parent = block.parentElement; parent; parent = parent.parentElement) if (blockSet.has(parent)) return true; return false; };
-    allBlocks.forEach((block, index) => {
+    readableBlocks.forEach((block, index) => {
       block.dataset.lhnBilingualIndex = String(index);
-      // Đoạn nằm trong một đoạn khác (ví dụ <a> block trong <h2>) chỉ nhận icon ở đoạn ngoài cùng,
-      // tránh 2 icon loa cho cùng một tiêu đề.
-      if (isNestedBlock(block)) { block.querySelectorAll(":scope > .lhn-bilingual-speaker").forEach(el => el.remove()); return; }
+      // Chỉ khối trong vùng Reader mới có nút; khối điều hướng/widget của trang không bị chèn thêm.
+      if (isNestedBlock(block)) {
+        const nestedSpeaker = block.querySelector(":scope > .lhn-bilingual-speaker");
+        if (nestedSpeaker) { speakerPositionObserver?.unobserve(block); nestedSpeaker.remove(); }
+        return;
+      }
+      const anchor = lastReaderCharacterRect(block);
       let speaker = block.querySelector(":scope > .lhn-bilingual-speaker");
+      if (!anchor) {
+        if (speaker) { speakerPositionObserver?.unobserve(block); speaker.remove(); }
+        return;
+      }
       if (!speaker) {
         speaker = document.createElement("span"); speaker.className = "lhn-bilingual-speaker"; speaker.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
         speaker.title = "Read this paragraph; click to start reading here"; speaker.setAttribute("role", "button"); speaker.tabIndex = 0;
@@ -833,9 +906,10 @@
         speaker.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); startReading(block, true); } });
         const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.before(speaker) : block.appendChild(speaker);
       }
-      speaker.dataset.readerScope = String(readableBlocks.has(block));
-      speaker.dataset.visibility = readableBlocks.has(block) ? settings.speakerIconVisibility : "always";
+      speaker.dataset.visibility = settings.speakerIconVisibility;
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
+      positionSpeakerAfterText(block, speaker, anchor);
+      speakerPositionObserver?.observe(block);
     });
   }
   // Thông báo một lần mỗi lần tải trang khi bỏ qua đoạn cùng ngôn ngữ (dùng style toast có sẵn)
@@ -1132,7 +1206,8 @@
     websiteDisabled = Boolean(event.detail);
     if (websiteDisabled) {
       lazyObserver?.disconnect(); stopReading();
-      document.querySelectorAll(".lhn-bilingual-card,.lhn-bilingual-speaker").forEach(node => node.remove());
+      document.querySelectorAll(".lhn-bilingual-card").forEach(node => node.remove());
+      removeAllReaderSpeakers();
       document.querySelectorAll(".lhn-bilingual-web-font").forEach(node => node.classList.remove("lhn-bilingual-web-font"));
     } else {
       mainBlocksDirty = true;

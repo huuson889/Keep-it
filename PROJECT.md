@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.802; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Popup Dictation production đã port UI demo v14: header gọn không subtitle, toolbar compact, metrics sidebar, search và results viewport; giữ ba view, cards 5 cột, filter/sort Global-Critical độc lập và scrollbar 3px WebKit.
-- Snapshot vẫn lấy từ records schema v3 qua same-origin bridge; title/fallback, ngưỡng Critical và migration stats v1/v2 giữ nguyên. Metrics/search áp dụng theo view và filter hiện tại.
-- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; header trang đang chọn dùng overlay ảnh tuyệt đối, `no-referrer` và fallback như source-site-icon.
-- Kiểm tra: full suite 39/39; 52 JavaScript và test-script syntax checks, 11 CSS files parse sạch; parity CSS v14, manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Version hiện tại: v3.4.803; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Reader chỉ gắn speaker vào block thuộc vùng đọc; icon được đặt tuyệt đối sát ký tự cuối và bám theo reflow, không chiếm chỗ dòng hay chèn vào navigation/widget.
+- Popup Dictation giữ UI demo v14; bridge/schema local, title/fallback, ngưỡng Critical và các UI khác không đổi.
+- Website favicon vẫn dùng resolver/cache chung `js/shared/site-icons.js`.
+- Kiểm tra: full suite 41/41; JavaScript/test syntax, 11 CSS và Reader injected CSS parse sạch; manifest JSON, `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -111,6 +111,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.803 | Arena.ai Agent sửa:**
+
+- Sửa Reader: speaker icon chỉ được thêm vào block thuộc vùng đọc, định vị absolute sát ký tự cuối đang hiển thị và cập nhật theo resize/reflow; navigation/widget ngoài bài không còn bị chèn icon hoặc đổi layout.
+- Giữ hành vi phát TTS và thiết lập hiển thị; không thay đổi popup Dictation hay UI khác.
+- File: `js/reader/bilingual-reader.js`, `tests/reader-speaker-placement.test.cjs`, `docs/modules/reader.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.803.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 41/41; JavaScript/test-script syntax checks; 11 CSS files và Reader injected CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.802 | Arena.ai Agent sửa:**
 
