@@ -20,6 +20,14 @@
     const word = String(value || "").trim();
     return word && (word.match(/\p{L}/gu) || []).length >= 4 ? word : "";
   }
+  function sessionTitle(record, metadata, sourceId) {
+    const recordTitle = String(record?.title || "").trim();
+    const indexTitle = String(metadata?.title || "").trim();
+    const recordTitleAt = safeCount(record?.titleUpdatedAt);
+    const indexTitleAt = safeCount(metadata?.updatedAt);
+    if (recordTitle && recordTitleAt > indexTitleAt) return recordTitle;
+    return indexTitle || recordTitle || sourceId;
+  }
   function normalizeSessionWords(stats) {
     if (!stats || stats.version !== 3 || !stats.words || typeof stats.words !== "object") return [];
     return Object.values(stats.words).flatMap(item => {
@@ -65,22 +73,23 @@
       const key = item.word.toLocaleLowerCase();
       let global = grouped.get(key);
       if (!global) {
-        global = { word:item.word, errors:0, fixes:0, variants:new Map(), sources:new Set(), typeCounts:{ phonetic:0, rule:0, typo:0 }, typeFixes:{ phonetic:0, rule:0, typo:0 }, errorExamples:{}, errorContext:null, lastAt:0, status:"correct" };
+        global = { word:item.word, errors:0, fixes:0, variants:new Map(), sources:new Set(), sourceUrls:new Set(), typeCounts:{ phonetic:0, rule:0, typo:0 }, typeFixes:{ phonetic:0, rule:0, typo:0 }, errorExamples:{}, errorContext:null, lastAt:0, status:"correct" };
         grouped.set(key, global);
       }
       global.errors += item.errors;
       global.fixes += item.fixes;
       global.sources.add(session.title);
+      if (session.url) global.sourceUrls.add(session.url);
       for (const type of ["phonetic", "rule", "typo"]) {
         global.typeCounts[type] += safeCount(item.typeCounts?.[type]);
         global.typeFixes[type] += safeCount(item.typeFixes?.[type]);
         const example = item.errorExamples?.[type];
-        if (example && (!global.errorExamples[type] || safeCount(example.lastAt) > safeCount(global.errorExamples[type].lastAt))) global.errorExamples[type] = { ...example, source:session.title };
+        if (example && (!global.errorExamples[type] || safeCount(example.lastAt) > safeCount(global.errorExamples[type].lastAt))) global.errorExamples[type] = { ...example, source:session.title, url:session.url };
       }
       if (item.lastAt >= global.lastAt) {
         global.lastAt = item.lastAt;
         global.status = item.status;
-        global.errorContext = item.errorContext ? { ...item.errorContext, source:session.title } : null;
+        global.errorContext = item.errorContext ? { ...item.errorContext, source:session.title, url:session.url } : null;
       }
       for (const variant of item.variants) {
         const variantKey = variant.text.toLocaleLowerCase();
@@ -94,6 +103,7 @@
     return [...grouped.values()].map(item => ({
       ...item,
       sources:[...item.sources],
+      sourceUrls:[...item.sourceUrls],
       variants:[...item.variants.values()].sort((a, b) => b.count - a.count || a.text.localeCompare(b.text)),
     }));
   }
@@ -116,8 +126,8 @@
         return [{
           id:`youtube:${sourceId}`,
           sourceId,
-          title:String(metadata?.title || sourceId),
-          url:String(metadata?.url || ""),
+          title:sessionTitle(record, metadata, sourceId),
+          url:String(metadata?.url || `https://www.youtube.com/watch?v=${encodeURIComponent(sourceId)}`),
           words,
         }];
       });

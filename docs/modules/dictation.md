@@ -25,7 +25,7 @@ Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do 
 2. Panel đọc video ID và `getDictationCues()`. Chỉ dùng cue English; caption tải muộn được đồng bộ qua `lhn-dual-captions-updated`.
 3. `LHN_DICTATION_SCORE` giữ quy tắc case/punctuation hiện hành và bổ sung các contraction chuẩn có apostrophe theo allowlist; expansion tương ứng được coi như contraction.
 4. `LHN_DICTATION_RULES` dùng transcript gốc để nhận diện tên, render hint ngay phía trên ô nhập và ghi lỗi từ đủ điều kiện; mỗi lượt sai được gán nhóm âm vị, quy tắc hoặc typo bằng heuristic cục bộ, kèm biến thể gõ và mảnh ngữ cảnh.
-5. Progress, solved, notes, translations và `wrongWordStats` schema v3 lưu trong `dictation:<videoId>`. Session metadata bổ sung vào `dictation:session-index:v1`; lỗi index không chặn lưu record.
+5. Progress, solved, notes, translations, tiêu đề video hiện trên thanh audio và `wrongWordStats` schema v3 lưu trong `dictation:<videoId>`. Session index bổ sung metadata; lỗi index không chặn lưu tiêu đề trong record.
 6. Khi close/đổi video, flush dữ liệu cần thiết và gỡ listener/timer để không cập nhật UI cũ.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -34,7 +34,7 @@ Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do 
 - Chỉ thêm allowlist contraction chuẩn có straight/curly apostrophe, ví dụ `I'm` ↔ `I am`, `don't` ↔ `do not`. Không nhận slang như `gonna`/`wanna` hoặc dạng không apostrophe; các dạng mơ hồ chỉ theo expansion đã liệt kê.
 - Scoring và reporting là hai tầng: scoring chỉ đổi để hỗ trợ contraction; báo cáo bỏ `missing`, target 1–3 chữ cái, proper nouns và punctuation-only differences. Áp dụng eligibility cho cả errors và fixes; fix chỉ ghi khi sửa đúng lỗi eligible đã theo dõi.
 - `wrongWordStats` dùng `version:3`, lưu `typeCounts`, nhóm lỗi cuối và ngữ cảnh cục bộ. Heuristic luôn gán một trong ba nhóm âm vị/quy tắc/typo dựa trên dạng chữ; đây là gợi ý mẫu lỗi, không khẳng định ý định của người học. Migration reset riêng stats schema cũ v1/v2 để từ các lượt sau mọi lỗi có phân loại; notes/progress/translations được giữ nguyên.
-- Khi Dictation đang mở, `MutationObserver` theo dõi tiêu đề YouTube; tiêu đề đổi thì debounce lưu record/session index, để popup mở sẵn nhận tên mới qua `storage.onChanged`. Observer/timer được dọn khi đóng panel.
+- `getCurrentVideoTitle()` ưu tiên text của `ui.miniTitle` đang hiện trên thanh audio, rồi đến heading/document title. `saveRecord()` lưu tên và `titleUpdatedAt` vào chính record lẫn session index; bridge so timestamp và dùng record title khi index thiếu/cũ. Khi Dictation mở, `MutationObserver` debounce cập nhật cả hai; observer/timer được dọn khi đóng.
 - Proper-noun detector là heuristic cục bộ theo casing/context. Từ vựng đầu tiên sau mỗi ranh giới câu luôn được coi là từ thường, bất kể viết hoa; dấu câu/ký hiệu dẫn đầu như `>>` bị bỏ qua khi xác định vị trí này. Các token viết hoa phía sau vẫn dùng detector chung cho hint và báo cáo.
 - Hint giữ original case, thứ tự xuất hiện, loại trùng và ẩn nếu không có tên. Toàn bộ khung dùng chữ 15px, cả nhãn và tên đều đậm; khung ẩn khi banner thành công hiện ra.
 - Error rate là `errors / (errors + fixes)`; critical chỉ khi rate ≥70% và có ít nhất 3 errors eligible. Popup nhận mảnh câu chứa biến thể sai và nhãn nhóm heuristic, không nhận transcript đầy đủ hoặc dữ liệu cloud.

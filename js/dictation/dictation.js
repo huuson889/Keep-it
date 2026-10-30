@@ -52,16 +52,28 @@
   const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
   const dictationLayoutStorageKey = "dictation:layout:v1";
 
+  function cleanVideoTitle(value) {
+    return String(value || "").replace(/^\s*Keepit\s*-\s*/i, "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
+  }
+
   function getCurrentVideoTitle() {
     try {
-      const heading = document.querySelector("h1.ytd-watch-metadata")?.textContent?.trim();
-      if (heading) return heading.slice(0, 240);
-      return String(document.title || "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
+      const visibleOverlayTitle = cleanVideoTitle(ui?.miniTitle?.textContent);
+      const genericTitle = String(tr("dictationTitle") || "").trim().toLocaleLowerCase();
+      if (visibleOverlayTitle && !/^(youtube|keepit|dictation)$/i.test(visibleOverlayTitle)
+        && visibleOverlayTitle.toLocaleLowerCase() !== genericTitle) return visibleOverlayTitle;
+      const heading = cleanVideoTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent);
+      if (heading && !/^(youtube|keepit|dictation)$/i.test(heading)) return heading;
+      const pageTitle = cleanVideoTitle(document.title);
+      if (pageTitle && !/^(youtube|keepit|dictation)$/i.test(pageTitle)
+        && pageTitle.toLocaleLowerCase() !== genericTitle) return pageTitle;
+      return "";
     } catch { return ""; }
   }
 
   function queueVideoTitleIndexUpdate() {
     if (!active || !videoId) return;
+    updateCompactAudioInfo();
     const title = getCurrentVideoTitle();
     if (!title || title === indexedVideoTitle) return;
     indexedVideoTitle = title;
@@ -95,7 +107,9 @@
     try {
       const stored = await ext.storage.local.get(dictationSessionIndexKey);
       const previous = dictationSessionIndex.normalizeIndex(stored?.[dictationSessionIndexKey]);
-      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, session);
+      const previousSession = previous.sessions.find(item => item.sessionId === session.sessionId);
+      const sessionWithTitle = { ...session, title:session.title || previousSession?.title || "" };
+      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, sessionWithTitle);
       await ext.storage.local.set({
         [dictationSessionIndexKey]: {
           version: dictationSessionIndex.VERSION,
@@ -772,7 +786,7 @@
 
   function updateCompactAudioInfo() {
     if (!ui) return;
-    const title = (document.title || "").replace(/\s*-\s*YouTube$/i, "").trim();
+    const title = cleanVideoTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent) || cleanVideoTitle(document.title);
     ui.miniTitle.textContent = `Keepit - ${title || tr("dictationTitle")}`;
     ui.miniSource.textContent = tr("dictationAudioSource");
     const id = String(A?.state?.videoId || "");
@@ -868,6 +882,8 @@
       record = (await ext.storage.local.get(key))[key] || {};
     } catch {}
     if (!active || videoId !== requestVideoId || panelGeneration !== generation) return null;
+    const storedTitle = cleanVideoTitle(record.title);
+    if (storedTitle && !getCurrentVideoTitle()) indexedVideoTitle = storedTitle;
     solved = new Set(Array.isArray(record.solved) ? record.solved.map(Number).filter(Number.isInteger) : []);
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
@@ -877,12 +893,13 @@
 
   function saveRecord() {
     if (!videoId || !ext?.storage?.local) return Promise.resolve();
-    const record = { version: 1, current, solved: [...solved], notes, translations, wrongWordStats };
     const sessionId = `youtube:${videoId}`;
     const totalCount = sentenceCues.length;
     const solvedCount = solved.size;
-    const title = getCurrentVideoTitle();
+    const title = getCurrentVideoTitle() || indexedVideoTitle;
+    const titleUpdatedAt = title ? Date.now() : 0;
     if (title) indexedVideoTitle = title;
+    const record = { version:1, current, solved:[...solved], notes, translations, wrongWordStats, title, titleUpdatedAt };
     const session = {
       version: 1,
       sessionId,
@@ -893,7 +910,7 @@
       currentIndex: Math.max(0, Math.floor(Number(current) || 0)),
       totalCount: Math.max(0, Math.floor(Number(totalCount) || 0)),
       solvedCount: Math.max(0, Math.floor(Number(solvedCount) || 0)),
-      updatedAt: Date.now(),
+      updatedAt: titleUpdatedAt || Date.now(),
       status: totalCount > 0 && solvedCount >= totalCount ? "complete" : "in_progress",
     };
     return ext.storage.local.set({ [storageKey()]: record })

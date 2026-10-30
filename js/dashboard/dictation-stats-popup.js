@@ -49,12 +49,20 @@
     const number = Number(value);
     return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
   }
+  function safeVideoUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+      const host = url.hostname.toLocaleLowerCase();
+      if (url.protocol !== "https:" || !(host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com"))) return "";
+      return url.href;
+    } catch { return ""; }
+  }
   function countLetters(word) { return (String(word || "").match(/\p{L}/gu) || []).length; }
   function normalizeContext(value) {
     if (!value || typeof value !== "object") return null;
     const typed = String(value.typed || "");
     if (!typed) return null;
-    return { before:String(value.before || ""), typed, after:String(value.after || ""), source:String(value.source || "") };
+    return { before:String(value.before || ""), typed, after:String(value.after || ""), source:String(value.source || ""), url:safeVideoUrl(value.url) };
   }
   function normalizeItem(value) {
     const word = String(value?.word || "").trim();
@@ -74,13 +82,14 @@
       errorContext:normalizeContext(value?.errorContext), lastAt:safeCount(value?.lastAt),
       status:value?.status === "wrong" ? "wrong" : "correct",
       sources:Array.isArray(value?.sources) ? value.sources.map(String).filter(Boolean) : [],
+      sourceUrls:Array.isArray(value?.sourceUrls) ? value.sourceUrls.map(safeVideoUrl).filter(Boolean) : [],
     };
   }
   function setStatsSnapshot(snapshot) {
     globalWords = (Array.isArray(snapshot?.globalWords) ? snapshot.globalWords : []).map(normalizeItem).filter(Boolean);
     sessions = (Array.isArray(snapshot?.sessions) ? snapshot.sessions : []).map(session => ({
       id:String(session?.id || ""), title:String(session?.title || session?.sourceId || ""),
-      url:String(session?.url || ""), words:(Array.isArray(session?.words) ? session.words : []).map(normalizeItem).filter(Boolean),
+      url:safeVideoUrl(session?.url), words:(Array.isArray(session?.words) ? session.words : []).map(normalizeItem).filter(Boolean),
     })).filter(session => session.words.length);
     render();
   }
@@ -164,6 +173,18 @@
     });
     return audio;
   }
+  function createSourceLink(source, url, className = "context-source") {
+    const label = tr("dictationStatsSourceLabel", { source });
+    const href = safeVideoUrl(url);
+    if (!href) return el("div", className, label);
+    const link = el("a", className, label);
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = `Open YouTube video: ${source}`;
+    link.setAttribute("aria-label", link.title);
+    return link;
+  }
   function createGlobalCard(item) {
     const card = el("article", "smart-card");
     const targetBox = el("div", "word-target-box");
@@ -179,16 +200,23 @@
     else sentence.textContent = "—";
     contextBox.append(sentence);
     const source = item.errorContext?.source || item.sources[0] || "—";
-    contextBox.append(el("div", "context-source", tr("dictationStatsSourceLabel", { source })));
+    const sourceUrl = item.errorContext?.url || item.errorExamples?.[primaryType(item)]?.url || item.sourceUrls?.[0] || "";
+    contextBox.append(createSourceLink(source, sourceUrl));
     card.append(targetBox, contextBox, createVariants(item));
     return card;
   }
   function renderSessionView() {
     sessions.forEach(session => {
       const group = el("section", "session-group");
-      const head = el("button", "session-head");
-      head.type = "button";
-      head.append(el("span", "session-source", `📺 ${session.title}`), el("span", "session-caret", "▼"));
+      const head = el("div", "session-head");
+      const titleLink = createSourceLink(session.title, session.url, "session-source");
+      const toggle = el("button", "session-toggle");
+      toggle.type = "button";
+      toggle.setAttribute("aria-label", `Toggle statistics for ${session.title}`);
+      const caret = el("span", "session-caret", "▼");
+      caret.setAttribute("aria-hidden", "true");
+      toggle.append(caret);
+      head.append(titleLink, toggle);
       const body = el("div", "session-body");
       const words = [...session.words].sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
       words.forEach(item => {
@@ -204,10 +232,10 @@
         }
         body.append(row);
       });
-      head.setAttribute("aria-expanded", "true");
-      head.addEventListener("click", () => {
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.addEventListener("click", () => {
         const collapsed = body.classList.toggle("collapsed");
-        head.setAttribute("aria-expanded", String(!collapsed));
+        toggle.setAttribute("aria-expanded", String(!collapsed));
       });
       group.append(head, body);
       content.append(group);

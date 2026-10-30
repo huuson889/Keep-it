@@ -69,6 +69,8 @@ test("Detailed Dictation stats popup receives filtered local session data throug
 test("YouTube title mutations re-index the active Dictation session for live popup updates", () => {
   const dictation = read("js/dictation/dictation.js");
   assert.match(dictation, /function observeVideoTitle\(\)/);
+  assert.match(dictation, /cleanVideoTitle\(ui\?\.miniTitle\?\.textContent\)/, "the visible Dictation audio-bar title is the first title source");
+  assert.match(dictation, /wrongWordStats, title, titleUpdatedAt/);
   assert.match(dictation, /new MutationObserver\(queueVideoTitleIndexUpdate\)/);
   assert.match(dictation, /if \(active && videoId\) void saveRecord\(\)/);
   assert.match(dictation, /function stopObservingVideoTitle\(\)/);
@@ -97,14 +99,18 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   const unindexedRecord = { wrongWordStats:{ version:3, words:{
     "w:occasionally":{ word:"occasionally", errors:2, corrections:0, typeCounts:{ phonetic:0, rule:0, typo:2 }, typeFixes:{}, lastErrorType:"typo", errorContext:{ before:"", typed:"occasionaly", after:"" }, errorExamples:{ typo:{ before:"", typed:"occasionaly", after:"", lastAt:12 } }, variants:{ "v:occasionaly":{ text:"occasionaly", count:2, typeCounts:{ phonetic:0, rule:0, typo:2 } } } },
   } } };
+  const overlayTitleRecord = { title:"Title from the Dictation overlay", titleUpdatedAt:200, wrongWordStats:{ version:3, words:{
+    "w:dialogue":{ word:"dialogue", errors:1, corrections:0, lastAt:200, typeCounts:{ phonetic:1 }, lastErrorType:"phonetic", errorContext:{ before:"", typed:"dialog", after:"" }, errorExamples:{ phonetic:{ before:"", typed:"dialog", after:"", lastAt:200 } }, variants:{ "v:dialog":{ text:"dialog", count:1, typeCounts:{ phonetic:1 } } },
+  } } } };
   const localData = {
     [indexKey]:{ sessions:[
-      { sourceType:"youtube", sourceId:"abcdefghijk", title:"Lesson A", url:"https://youtube.test/watch" },
-      { sourceType:"youtube", sourceId:"lmnopqrstuv", title:"Legacy B", url:"https://youtube.test/watch" },
+      { sourceType:"youtube", sourceId:"abcdefghijk", title:"Lesson A", url:"https://www.youtube.com/watch?v=abcdefghijk" },
+      { sourceType:"youtube", sourceId:"lmnopqrstuv", title:"Legacy B", url:"https://www.youtube.com/watch?v=abcdefghijk" },
     ] },
     "dictation:abcdefghijk":record,
     "dictation:lmnopqrstuv":legacyRecord,
     "dictation:zyxwvutsrqpon":unindexedRecord,
+    "dictation:abcdefghijklmn":overlayTitleRecord,
     "dictation:layout:v1":{ wrongWordStats:{ version:3, words:{ "w:shouldnotappear":{ word:"shouldnotappear", errors:99, corrections:0, variants:{} } } } },
   };
   const storage = { async get(keys) { return keys === null ? localData : {}; } };
@@ -126,10 +132,12 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   assert.equal(messages[0].origin, "https://keepit.test");
   assert.equal(messages[0].data.type, "KEEPIT_DICTATION_STATS_OPEN");
   const stats = messages[0].data.stats;
-  assert.equal(stats.sessions.length, 2, "valid saved records are found even when their video is missing from the session index");
+  assert.equal(stats.sessions.length, 3, "valid saved records are found even when their video is missing from the session index");
   const indexedSession = stats.sessions.find(session => session.sourceId === "abcdefghijk");
   const unindexedSession = stats.sessions.find(session => session.sourceId === "zyxwvutsrqpon");
+  const overlayTitleSession = stats.sessions.find(session => session.sourceId === "abcdefghijklmn");
   assert.equal(indexedSession.title, "Lesson A");
+  assert.equal(indexedSession.url, "https://www.youtube.com/watch?v=abcdefghijk");
   assert.equal(indexedSession.words.length, 1);
   assert.equal(indexedSession.words[0].word, "environment");
   assert.equal(indexedSession.words[0].typeCounts.rule, 4);
@@ -137,14 +145,19 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   assert.equal(indexedSession.words[0].variants[0].typeCounts.rule, 4);
   assert.deepEqual(JSON.parse(JSON.stringify(indexedSession.words[0].errorContext)), { before:"protect our natural ", typed:"enviroment", after:"." });
   assert.equal(indexedSession.words[0].errorExamples.rule.lastAt, 123);
-  assert.equal(unindexedSession.title, "zyxwvutsrqpon", "without index metadata the video ID is used instead of dropping real data");
+  assert.equal(unindexedSession.title, "zyxwvutsrqpon", "video ID remains a last fallback only when neither source has a title");
+  assert.equal(unindexedSession.url, "https://www.youtube.com/watch?v=zyxwvutsrqpon", "the video link is constructible even without session-index metadata");
   assert.equal(unindexedSession.words[0].word, "occasionally");
+  assert.equal(overlayTitleSession.title, "Title from the Dictation overlay", "stored overlay title is used even without session-index metadata");
+  assert.equal(stats.globalWords.find(item => item.word === "dialogue").errorContext.source, "Title from the Dictation overlay");
   const environment = stats.globalWords.find(item => item.word === "environment");
   assert.equal(environment.errors, 7);
   assert.equal(environment.fixes, 3);
   assert.deepEqual(Array.from(environment.sources), ["Lesson A"]);
   assert.equal(environment.errorExamples.rule.source, "Lesson A");
   assert.equal(environment.errorContext.source, "Lesson A");
+  assert.equal(environment.errorContext.url, "https://www.youtube.com/watch?v=abcdefghijk");
+  assert.deepEqual(Array.from(environment.sourceUrls), ["https://www.youtube.com/watch?v=abcdefghijk"]);
   assert.equal(environment.typeFixes.rule, 1);
   assert.equal(stats.globalWords.some(item => item.word === "shouldnotappear"), false, "layout and non-video keys are ignored");
 
@@ -166,6 +179,21 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   const updatedEnvironment = messages[2].data.stats.globalWords.find(item => item.word === "environment");
   assert.equal(updatedEnvironment.errorContext.source, "Lesson A — Updated title");
   assert.equal(updatedEnvironment.errorExamples.rule.source, "Lesson A — Updated title");
+});
+
+
+test("video source titles link to safe YouTube video URLs", () => {
+  const ui = read("js/dashboard/dictation-stats-popup.js");
+  const helper = ui.match(/function safeVideoUrl\(value\) \{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(helper, "popup validates video URLs before making them clickable");
+  const safeVideoUrl = vm.runInNewContext(`(() => { ${helper}; return safeVideoUrl; })()`, { URL });
+  assert.equal(safeVideoUrl("https://www.youtube.com/watch?v=abc123"), "https://www.youtube.com/watch?v=abc123");
+  assert.equal(safeVideoUrl("javascript:alert(1)"), "");
+  assert.equal(safeVideoUrl("https://youtube.com.evil.test/watch?v=abc123"), "");
+  assert.match(ui, /link\.target = "_blank"/);
+  assert.match(ui, /link\.rel = "noopener noreferrer"/);
+  assert.match(ui, /createSourceLink\(session\.title, session\.url, "session-source"\)/);
+  assert.match(ui, /createSourceLink\(source, sourceUrl\)/);
 });
 
 test("category filters isolate classified wrong attempts, fixes, variants, and their example context", () => {
