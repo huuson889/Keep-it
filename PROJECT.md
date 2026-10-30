@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.827; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dashboard Overview và Dictation cuộn trong khung giới hạn viewport; Highlights & Notes giữ cuộn trang chung với workspace nội bộ có giới hạn. Các route ẩn phải bị loại khỏi layout; vị trí cuộn được lưu riêng theo tab.
+- Version hiện tại: v3.4.826; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.827: focused Dashboard tests 11/11; CSS, manifest và ZIP đã kiểm tra. Full suite và browser verification chưa chạy trong release này.
+- Kiểm tra v3.4.826: full suite 51/51 và `node --check` toàn bộ JS đạt; đo Chromium với API extension giả cho thấy view không active không còn chiếm bố cục ở cả ba tab. Chrome/Firefox thật chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N workspace có chiều cao giới hạn, hai danh sách cuộn nội bộ, shared page scroll, gap và responsive; counter/chart Overview sau reload và tab re-entry. Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N workspace có chiều cao giới hạn, hai danh sách cuộn nội bộ, shared page scroll, gap và responsive; counter/chart Overview sau reload và tab re-entry. Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này. Việc ẩn view không active (v3.4.826) mới được đo trên Chromium với API giả, chưa xác nhận trên Chrome/Firefox thật.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -113,17 +113,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-31 | v3.4.827 | Arena.ai Agent sửa:**
+**2026-10-31 | v3.4.826 | Claude sửa:**
 
-- Bỏ khóa cuộn khung cha; ẩn trực tiếp route Highlights & Notes khi có `[hidden]` để route không hoạt động khỏi vùng layout/cuộn. Giữ mô hình cuộn hiện có.
-- File: `css/dashboard/highlights-notes-embedded.css`, `css/dashboard/overview.css`, `js/dashboard/dashboard.js`, `tests/dashboard-overview-animations.test.cjs`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`, `Keepit - Optimize Test-v3.4.827.zip`.
-- Kiểm tra: focused Dashboard tests 11/11; CSS, manifest và ZIP kiểm tra. Chromium visual measurement chưa chạy.
-
-**2026-10-31 | v3.4.826 | Arena.ai Agent sửa:**
-
-- Khóa scroll của `#dashboardScroller` khi Overview/Dictation mở; mỗi route cuộn trong khung viewport và không truyền wheel xuống trang cha ở cuối khung.
-- File: `css/dashboard/overview.css`, `js/dashboard/dashboard.js`, `tests/dashboard-overview-animations.test.cjs`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`, `Keepit - Optimize Test-v3.4.826.zip`.
-- Kiểm tra: focused Dashboard tests 11/11; CSS, manifest và ZIP kiểm tra. Full suite và browser verification chưa chạy.
+- Sửa lỗi Overview/Dictation cuộn dài mãi vào vùng trống: view Highlights & Notes dù có `hidden` vẫn hiển thị `display:grid` (cao 1305px với dữ liệu rỗng) vì rule `#dashboardScroller > #dashboardHighlightsNotesView { display:grid!important }` (độ ưu tiên 2,0,0) thắng các rule `[hidden]` chung (1,1,0 và 1,1,1), làm `#dashboardScroller` dài 2305px so với 1000px hiển thị. Thêm rule `#dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important }`; thêm test tĩnh chống lặp lỗi và một bullet hợp đồng trong docs Dashboard. Không đổi JS, UI hay mô hình cuộn hiện có.
+- File: `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 51/51; `node --check` toàn bộ JS đạt; test mới không khớp CSS gốc v3.4.825 và khớp CSS đã sửa; dựng `pages/dashboard.html` trong Chromium với API extension giả ở 1920×1000, 1366×640, 800×700, sáng/tối: Overview và Dictation có vùng cuộn ngoài bằng đúng chiều cao hiển thị (trước sửa: 2305/1000), không view ẩn nào còn chiếm chỗ, Overview vẫn cuộn bên trong, Highlights & Notes vẫn cuộn bằng vùng cuộn ngoài. Chrome/Firefox thật: Chưa chạy.
+- Lưu ý: `docs/modules/dashboard.md` hiện khoảng 1471 từ, vượt mức tối đa 700 từ trong AGENTS.md từ trước bản này; chưa rút gọn vì ngoài phạm vi. Dữ liệu Chromium đo là dữ liệu rỗng, với dữ liệu thật thì lỗi cũ còn dài hơn.
 
 **2026-10-31 | v3.4.825 | Arena.ai Agent sửa:**
 

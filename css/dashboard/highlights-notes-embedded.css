@@ -2697,6 +2697,8 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   overflow:visible!important;
   padding:16px clamp(18px,2.2vw,34px) 20px!important;
 }
+/* An inactive route must not take layout space: the display:grid!important rule above outranks the generic [hidden] rules. */
+#dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }
 #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
   display:grid!important;
   grid-template-columns:minmax(440px,530px) minmax(0,1fr)!important;
@@ -2755,6 +2757,3 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
     overflow:hidden!important;
   }
 }
-
-/* Keep the hidden H&N route out of the shared scroller's layout. */
-#dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }

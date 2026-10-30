@@ -70,3 +70,8 @@ test("Highlights & Notes keeps its data/action API through a same-document event
   }
   assert.doesNotMatch(notes, /window\.parent|postMessage|addEventListener\(['"]message/);
 });
+
+test("A hidden Highlights & Notes route cannot be re-displayed by its scroller rule", () => {
+  assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\s*\{[^}]*display:\s*grid\s*!important/);
+  assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
+});

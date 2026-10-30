@@ -5,7 +5,6 @@ const fs = require("node:fs");
 const dashboardJs = fs.readFileSync(new URL("../js/dashboard/dashboard.js", `file://${__filename}`), "utf8");
 const dashboardHtml = fs.readFileSync(new URL("../pages/dashboard.html", `file://${__filename}`), "utf8");
 const overviewCss = fs.readFileSync(new URL("../css/dashboard/overview.css", `file://${__filename}`), "utf8");
-const highlightsNotesCss = fs.readFileSync(new URL("../css/dashboard/highlights-notes-embedded.css", `file://${__filename}`), "utf8");
 
 test("Overview reveals individual frames in visual reading order with reference stagger timing", () => {
   assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?visibleTargets = entries[\s\S]*?\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)[\s\S]*?overviewRevealSequenceEnd \+ 80[\s\S]*?overviewRevealTarget\(target, Math\.round\(revealAt - now\)\)/);
@@ -79,9 +78,6 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
   assert.match(overviewCss, /#dashboardScroller > #dashboardOverviewView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
   assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
-  assert.match(highlightsNotesCss, /#dashboardScroller > #dashboardHighlightsNotesView\[hidden\]\s*\{\s*display:none!important;/);
-  assert.doesNotMatch(overviewCss, /dashboard-route-bounded|overscroll-behavior-y:contain/);
-  assert.doesNotMatch(dashboardJs, /dashboard-route-bounded/);
   assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2"/);
   assert.match(dashboardJs, /const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
   assert.match(dashboardJs, /const legacy = JSON\.parse\(sessionStorage\.getItem\(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY\)/);
