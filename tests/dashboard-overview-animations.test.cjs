@@ -3,20 +3,36 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
 const dashboardJs = fs.readFileSync(new URL("../js/dashboard/dashboard.js", `file://${__filename}`), "utf8");
+const dashboardHtml = fs.readFileSync(new URL("../pages/dashboard.html", `file://${__filename}`), "utf8");
 const overviewCss = fs.readFileSync(new URL("../css/dashboard/overview.css", `file://${__filename}`), "utf8");
 
-test("Overview uses reference reveal timing and the user-requested per-scroll replay", () => {
-  assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?if \(!entry\.isIntersecting\) continue;[\s\S]*?overviewRevealTarget\(entry\.target\)/);
+test("Overview reveals individual frames in visual reading order with reference stagger timing", () => {
+  assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?visibleTargets = entries[\s\S]*?\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)[\s\S]*?overviewRevealSequenceEnd \+ 80[\s\S]*?overviewRevealTarget\(target, Math\.round\(revealAt - now\)\)/);
   assert.match(dashboardJs, /\{ root:dashboardOverviewView, threshold:0\.12, rootMargin:/);
   assert.match(dashboardJs, /if \(showOverview\) \{ if \(overviewInitialDataReady\) resetOverviewEntranceEffects\(\); \}/);
-  assert.match(dashboardJs, /"\.ov-intro-row"[\s\S]*?"\.ov-stats"[\s\S]*?"\.ov-resume-progress"[\s\S]*?"\.ov-lower"/);
-  assert.match(dashboardJs, /target\.style\.setProperty\("--ov-reveal-delay", "100ms"\)/);
-  assert.doesNotMatch(dashboardJs, /index \* 80/);
+  assert.match(dashboardJs, /"\.ov-topbar"[\s\S]*?"\.ov-welcome"[\s\S]*?"\.ov-quick-panel"[\s\S]*?"\.ov-stats > \.ov-stat"[\s\S]*?"\.ov-resume"[\s\S]*?"\.ov-progress"[\s\S]*?"\.ov-mode-grid > \.ov-mode"[\s\S]*?"\.ov-lower > \.ov-panel"/);
+  assert.match(dashboardJs, /function overviewRevealTarget\(target, revealDelay = 100\)/);
+  assert.match(dashboardJs, /const revealAt = Math\.max\(now \+ 100, overviewRevealSequenceEnd \+ 80\)/);
+  assert.match(dashboardJs, /target\.style\.setProperty\("--ov-reveal-delay", `\$\{revealDelay\}ms`\)/);
+  assert.match(dashboardJs, /targets\.forEach\(\(target, index\) => overviewRevealTarget\(target, 100 \+ index \* 80\)\)/);
+  assert.match(dashboardHtml, /class="ov-topbar ov-reveal"/);
+  assert.match(dashboardHtml, /class="ov-welcome ov-reveal"/);
+  assert.match(dashboardHtml, /class="ov-stat ov-reveal"/);
+  assert.match(dashboardHtml, /class="ov-mode ov-reveal"/);
   assert.match(overviewCss, /transform:translateY\(24px\) scale\(\.98\)/);
   assert.match(overviewCss, /transition:opacity \.8s cubic-bezier\(\.16,1,\.3,1\),transform \.8s cubic-bezier\(\.16,1,\.3,1\)/);
+  assert.match(overviewCss, /transition-delay:var\(--ov-reveal-delay,100ms\),var\(--ov-reveal-delay,100ms\),0ms,0ms,0ms/);
+  assert.match(overviewCss, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?#dashboardOverviewView \.ov-reveal\.ov-stat[\s\S]*?transition:none/);
   assert.match(overviewCss, /transform:translateY\(0\) scale\(1\)/);
   assert.match(overviewCss, /transition:all \.4s cubic-bezier\(\.16,1,\.3,1\)/);
   assert.match(overviewCss, /transform:translateY\(-4px\)/);
+});
+
+test("fresh Dashboard load waits for Overview data readiness before replaying the entrance", () => {
+  assert.ok((dashboardHtml.match(/class="[^"]*\bov-reveal\b/g) || []).length >= 17);
+  assert.match(dashboardJs, /const reveal = node\.closest\("\.ov-reveal"\);[\s\S]*?if \(reveal\?\.classList\.contains\("ov-revealed"\)\)[\s\S]*?node\.textContent = formatter\(0\)/);
+  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?dashboardOverviewView\.scrollTop = savedOverviewScrollTop[\s\S]*?overviewInitialDataReady = true;[\s\S]*?resetOverviewEntranceEffects\(\)/);
+  assert.match(dashboardJs, /for \(const timer of overviewRevealTimers\.values\(\)\) clearTimeout\(timer\);[\s\S]*?overviewRevealTimers\.clear\(\)/);
 });
 
 test("Overview count-ups match the sample's 2-second 60-FPS easeOutExpo while retaining local data", () => {

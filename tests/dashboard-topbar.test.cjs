@@ -15,7 +15,7 @@ const themeSyncJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-th
 
 test("All three routes share the single Overview topbar node and change its label", () => {
   assert.equal((dashboardHtml.match(/id="dashboardSharedTopbar"/g) || []).length, 1);
-  assert.match(dashboardHtml, /id="dashboardSharedTopbar" class="ov-topbar"/);
+  assert.match(dashboardHtml, /id="dashboardSharedTopbar" class="ov-topbar ov-reveal"/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarLabel"/);
   assert.doesNotMatch(dashboardHtml, /class="topbar ov-topbar"/);
   assert.doesNotMatch(notesHtml, /class="[^"]*(?:^|\s)(?:ov-topbar|demo-topbar)(?:\s|")/);

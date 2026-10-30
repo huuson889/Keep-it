@@ -973,6 +973,8 @@ function invalidateAnnotationCaches() { annotationDataRevision++; }
 
 const overviewCounterFormatters = new WeakMap();
 const overviewChartAnimationFrames = new WeakMap();
+const overviewRevealTimers = new Map();
+let overviewRevealSequenceEnd = 0;
 let overviewEffectsObserver = null;
 let overviewEffectCycle = 0;
 let overviewInitialDataReady = false;
@@ -2447,25 +2449,39 @@ function updateParentTopbarCompact() {
 window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
 function overviewRevealTargets() {
   return [...dashboardOverviewView.querySelectorAll([
-    ".ov-intro-row",
-    ".ov-stats",
-    ".ov-resume-progress",
-    ".ov-section",
-    ".ov-lower",
+    ".ov-topbar",
+    ".ov-welcome",
+    ".ov-quick-panel",
+    ".ov-stats > .ov-stat",
+    ".ov-resume",
+    ".ov-progress",
+    ".ov-section > .ov-section-title",
+    ".ov-section > .ov-section-sub",
+    ".ov-mode-grid > .ov-mode",
+    ".ov-lower > .ov-panel",
     ".ov-footer"
   ].join(","))];
 }
-function overviewRevealTarget(target) {
+function overviewRevealTarget(target, revealDelay = 100) {
+  target.style.setProperty("--ov-reveal-delay", `${revealDelay}ms`);
   target.classList.add("ov-revealed");
-  if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
-    target.classList.add("ov-chart-running");
-    overviewAnimateChartsWithin(target);
-  }
-  overviewAnimateCountersWithin(target);
+  const timer = setTimeout(() => {
+    overviewRevealTimers.delete(target);
+    if (!target.classList.contains("ov-revealed") || activeDashboardView !== "overview") return;
+    if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
+      target.classList.add("ov-chart-running");
+      overviewAnimateChartsWithin(target);
+    }
+    overviewAnimateCountersWithin(target);
+  }, revealDelay);
+  overviewRevealTimers.set(target, timer);
 }
 function resetOverviewEntranceEffects() {
   overviewEffectsObserver?.disconnect();
   overviewEffectsObserver = null;
+  for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
+  overviewRevealTimers.clear();
+  overviewRevealSequenceEnd = 0;
   overviewEffectCycle++;
   for (const node of dashboardOverviewView.querySelectorAll("[data-ov-counter-target]")) {
     const frameId = Number(node.dataset.ovAnimationFrame);
@@ -2494,27 +2510,24 @@ function resetOverviewEntranceEffects() {
     target.classList.remove("ov-reveal", "ov-revealed", "ov-chart-running");
     target.style.removeProperty("--ov-reveal-delay");
   }
+  targets.forEach(target => target.classList.add("ov-reveal"));
   if (!("IntersectionObserver" in window)) {
-    targets.forEach(target => {
-      target.classList.add("ov-reveal", "ov-revealed");
-      if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
-        target.classList.add("ov-chart-running");
-        overviewAnimateChartsWithin(target);
-      }
-      overviewAnimateCountersWithin(target);
-    });
+    targets.forEach((target, index) => overviewRevealTarget(target, 100 + index * 80));
     return;
   }
-  targets.forEach(target => {
-    target.classList.add("ov-reveal");
-    target.style.setProperty("--ov-reveal-delay", "100ms");
-  });
+  const targetOrder = new Map(targets.map((target, index) => [target, index]));
   overviewEffectsObserver = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      overviewRevealTarget(entry.target);
-      overviewEffectsObserver?.unobserve(entry.target);
-    }
+    const visibleTargets = entries
+      .filter(entry => entry.isIntersecting && !entry.target.classList.contains("ov-revealed"))
+      .map(entry => entry.target)
+      .sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
+    visibleTargets.forEach(target => {
+      const now = performance.now();
+      const revealAt = Math.max(now + 100, overviewRevealSequenceEnd + 80);
+      overviewRevealSequenceEnd = revealAt;
+      overviewRevealTarget(target, Math.round(revealAt - now));
+      overviewEffectsObserver?.unobserve(target);
+    });
   }, { root:dashboardOverviewView, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
   targets.forEach(target => overviewEffectsObserver.observe(target));
 }
@@ -2529,7 +2542,12 @@ function setDashboardView(view) {
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   if (showOverview && !overviewInitialDataReady) dashboardOverviewView.scrollTop = readOverviewScrollPosition();
   if (showOverview) { if (overviewInitialDataReady) resetOverviewEntranceEffects(); }
-  else { overviewEffectsObserver?.disconnect(); overviewEffectsObserver = null; }
+  else {
+    overviewEffectsObserver?.disconnect();
+    overviewEffectsObserver = null;
+    for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
+    overviewRevealTimers.clear();
+  }
   if (showHighlightsNotes) mountSharedTopbarInIframe(); else mountSharedTopbarInParent(view);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
