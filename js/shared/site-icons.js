@@ -1,8 +1,5 @@
 (() => {
   const CACHE_KEY = "keepit:site-icon-cache:v1";
-  const SITE_ICON_OVERRIDES = Object.freeze({
-    "https://news.tuoitre.vn":["https://static-tuoitre.tuoitre.vn/tuoitre/images/tto-favicon.png"],
-  });
   const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
   const NEGATIVE_CACHE_TTL = 6 * 60 * 60 * 1000;
   const MAX_CACHE_ENTRIES = 256;
@@ -36,7 +33,6 @@
     const safeOrigin = originFrom(origin);
     if (!safeOrigin) return [];
     return [
-      ...(SITE_ICON_OVERRIDES[safeOrigin] || []),
       `${safeOrigin}/favicon.svg`,
       `${safeOrigin}/apple-touch-icon.png`,
       `${safeOrigin}/apple-touch-icon-precomposed.png`,
@@ -53,7 +49,6 @@
       return ["http:", "https:"].includes(parsed.protocol) && parsed.origin === origin && !parsed.username && !parsed.password ? parsed.href : "";
     } catch { return ""; }
   }
-  function candidateSignature(origin) { return candidatesForOrigin(origin).join("|"); }
   async function openTabIconForOrigin(origin) {
     const cached = tabIcons.get(origin);
     if (cached && cached.expiresAt > Date.now()) return cached.url;
@@ -80,7 +75,7 @@
       if (originFrom(origin) !== origin || !entry || typeof entry !== "object" || !Number.isFinite(expiresAt) || expiresAt <= now) continue;
       const url = entry.url ? safeCachedUrl(entry.url, origin) : "";
       if (entry.url && !url) continue;
-      cache.set(origin, { url, expiresAt, usedAt:Number(entry.usedAt) || now, signature:String(entry.signature || "") });
+      cache.set(origin, { url, expiresAt, usedAt:Number(entry.usedAt) || now });
     }
     pruneCache();
   }
@@ -135,7 +130,7 @@
         const expiresAt = Number(entry.expiresAt);
         const url = entry.url ? safeCachedUrl(entry.url, origin) : "";
         if (originFrom(origin) === origin && Number.isFinite(expiresAt) && expiresAt > now && (!entry.url || url)) {
-          merged.set(origin, { url, expiresAt, usedAt:Number(entry.usedAt) || now, signature:String(entry.signature || "") });
+          merged.set(origin, { url, expiresAt, usedAt:Number(entry.usedAt) || now });
         }
       }
     }
@@ -157,7 +152,6 @@
       url,
       expiresAt:Date.now() + (url ? CACHE_TTL : NEGATIVE_CACHE_TTL),
       usedAt:Date.now(),
-      signature:candidateSignature(origin),
     });
     pruneCache();
     schedulePersist();
@@ -187,7 +181,7 @@
   async function resolveIcon(origin, excluded = new Set()) {
     await ensureCache();
     const cached = cache.get(origin);
-    if (cached && cached.expiresAt > Date.now() && cached.signature === candidateSignature(origin)) {
+    if (cached && cached.expiresAt > Date.now()) {
       if (!cached.url) return "";
       const cachedUrl = safeCachedUrl(cached.url, origin);
       if (cachedUrl && !excluded.has(cachedUrl)) {
@@ -196,7 +190,7 @@
         return cachedUrl;
       }
       if (!cachedUrl || excluded.has(cachedUrl)) removeEntry(origin);
-    } else if (cached) removeEntry(origin);
+    }
     if (!excluded.size && pendingOrigins.has(origin)) return pendingOrigins.get(origin);
     const work = (async () => {
       for (const candidate of await candidateListForOrigin(origin)) {

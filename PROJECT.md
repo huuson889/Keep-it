@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.799; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.800; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
 - Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
-- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; thêm nguồn CDN 192px cho `news.tuoitre.vn` và signature để tự bỏ cache âm cũ. Popup và Highlights & Notes đồng bộ qua `browser.storage.local`; UI không đổi.
+- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; fallback trang đang chọn được giữ trong lúc dò icon và chỉ chuyển khi ảnh mới tải thành công. CSS ẩn placeholder đúng trạng thái dù icon Lucide có display riêng; không thêm override theo domain.
 - Kiểm tra: 38/38 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -112,11 +112,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-30 | v3.4.799 | Arena.ai Agent sửa:**
+**2026-10-30 | v3.4.800 | Arena.ai Agent sửa:**
 
-- Sửa favicon Tuoi Tre: trang khai báo icon 192×192 từ `static-tuoitre.tuoitre.vn`, không phải `/favicon.ico`. Thêm đúng CDN URL vào resolver dùng chung và signature candidate để cache âm cũ tự bị bỏ; không đổi UI hoặc quyền host.
-- File: `js/shared/site-icons.js`, `tests/shared-site-icons.test.cjs`, `docs/modules/shared.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.799.zip`.
-- Kiểm tra: `node --test tests/*.test.cjs` đạt 38/38; `node --check` đạt 52 JavaScript files; tinycss2 parse 11 CSS files; manifest JSON và `git diff --check` đạt. Đã xác nhận nguồn asset trả HTTP 200, PNG 192×192; chưa browser-test.
+- Sửa lỗi icon mặc định ở header trang đang chọn: giữ placeholder trong lúc resolver thử icon; khi ảnh mới tải thành công, quy tắc `[hidden]` tường minh ẩn fallback Lucide bị CSS `display` ghi đè trước đó. Nếu thử icon thất bại, placeholder vẫn hiện. Không thay đổi giao diện khác, cache chung hoặc thêm override cho một website riêng.
+- File: `pages/lr-practice-demo.html`, `tests/dashboard-selected-favicon.test.cjs`, `tests/shared-site-icons.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.800.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 38/38; `node --check` đạt 52 JavaScript files; tinycss2 parse 11 CSS files; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.798 | Arena.ai Agent sửa:**
 

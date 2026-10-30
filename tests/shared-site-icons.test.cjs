@@ -129,6 +129,18 @@ test("site icon choice is persisted and reused by another Keepit context", async
   assert.equal(storage.reads, 3, "each extension context reads the shared persistent cache once; persisting a new result reads once to merge concurrent entries");
 });
 
+test("a failed favicon lookup leaves the caller’s default icon visible", async () => {
+  const storage = createStorage();
+  const requests = [];
+  const resolver = createContext(storage, new Set(), requests);
+  const image = new (createImageClass(new Set(), requests))();
+  const fallback = { hidden:false };
+  assert.equal(await resolver.load(image, "https://missing-icon.test/article", { fallbackElement:fallback }), "");
+  assert.equal(image.hidden, true);
+  assert.equal(fallback.hidden, false);
+  assert.ok(requests.length > 0);
+});
+
 test("an open matching site tab contributes its browser-selected favicon before network fallbacks", async () => {
   const storage = createStorage();
   const origin = "https://open-site.test";
@@ -144,18 +156,4 @@ test("an open matching site tab contributes its browser-selected favicon before 
   assert.equal(await resolver.load(image, `${origin}/article?private=not-cached`), tabIcon);
   assert.equal(requests[0], tabIcon, "the browser-selected high-resolution icon is tried first");
   assert.deepEqual(JSON.parse(JSON.stringify(queries)), [{ url:`${origin}/*` }]);
-});
-
-test("Tuoi Tre’s declared 192px CDN favicon bypasses a stale negative cache entry", async () => {
-  const storage = createStorage();
-  const origin = "https://news.tuoitre.vn";
-  const icon = "https://static-tuoitre.tuoitre.vn/tuoitre/images/tto-favicon.png";
-  const requests = [];
-  const resolver = createContext(storage, new Set([icon]), requests);
-  storage.values[resolver.cacheKey] = {
-    [origin]:{ url:"", expiresAt:Date.now() + 60_000, usedAt:Date.now() },
-  };
-  const image = new (createImageClass(new Set([icon]), requests))();
-  assert.equal(await resolver.load(image, `${origin}/in-vietnams-flooded-fields`), icon);
-  assert.equal(requests[0], icon, "the site-specific 192px icon is attempted before the generic root-path fallbacks");
 });
