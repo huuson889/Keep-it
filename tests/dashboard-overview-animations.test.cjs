@@ -79,8 +79,10 @@ test("Each active tab keeps an independent scroll position and the last route re
   assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?const savedScrollTop = readDashboardScrollPosition\(view\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\([\s\S]*?if \(switchCycle !== dashboardViewSwitchCycle \|\| restoreCycle !== dashboardRestoreCycle\)/);
 });
 
-test("Tab re-entry resets high-level panels and reveals after the route scroll position settles", () => {
-  assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\]/);
+test("Tab re-entry commits the hidden reveal state before observing panels", () => {
+  assert.match(dashboardJs, /function primeDashboardRevealTargets\(targets\)[\s\S]*?setProperty\("transition", "none", "important"\)[\s\S]*?void dashboardScroller\.offsetHeight[\s\S]*?removeProperty\("transition"\)/);
+  assert.match(dashboardJs, /function resetOverviewEntranceEffects\(\)[\s\S]*?targets\.forEach\(target => target\.classList\.add\("ov-reveal"\)\);\s*primeDashboardRevealTargets\(targets\);[\s\S]*?new IntersectionObserver/);
+  assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\][\s\S]*?primeDashboardRevealTargets\(targets\);[\s\S]*?new IntersectionObserver/);
   assert.match(dashboardJs, /target\.classList\.remove\("dashboard-revealed"\)/);
   assert.match(dashboardJs, /function setDashboardView\(view\)[\s\S]*?cancelDashboardEntranceEffects\(\)[\s\S]*?mountSharedTopbarInParent\(view\);[\s\S]*?restoreDashboardViewAndReveal\(view, switchCycle\)/);
   assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?resetOverviewEntranceEffects\(\)/);

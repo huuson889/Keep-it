@@ -2463,6 +2463,19 @@ function overviewRevealTarget(target, revealDelay = 100) {
   }, revealDelay);
   overviewRevealTimers.set(target, timer);
 }
+function primeDashboardRevealTargets(targets) {
+  const inlineTransitions = targets.map(target => ({
+    value:target.style.getPropertyValue("transition"),
+    priority:target.style.getPropertyPriority("transition")
+  }));
+  targets.forEach(target => target.style.setProperty("transition", "none", "important"));
+  void dashboardScroller.offsetHeight;
+  targets.forEach((target, index) => {
+    const { value, priority } = inlineTransitions[index];
+    if (value) target.style.setProperty("transition", value, priority);
+    else target.style.removeProperty("transition");
+  });
+}
 function resetOverviewEntranceEffects() {
   overviewEffectsObserver?.disconnect();
   overviewEffectsObserver = null;
@@ -2498,6 +2511,7 @@ function resetOverviewEntranceEffects() {
     target.style.removeProperty("--ov-reveal-delay");
   }
   targets.forEach(target => target.classList.add("ov-reveal"));
+  primeDashboardRevealTargets(targets);
   if (!("IntersectionObserver" in window)) {
     targets.forEach((target, index) => overviewRevealTarget(target, 100 + index * 80));
     return;
@@ -2545,6 +2559,7 @@ function resetDashboardPanelEntranceEffects(view) {
     target.classList.remove("dashboard-revealed");
     target.style.removeProperty("--ov-reveal-delay");
   }
+  primeDashboardRevealTargets(targets);
   if (!targets.length) return;
   const reveal = (target, delay) => {
     target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
