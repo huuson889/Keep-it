@@ -76,13 +76,16 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 });
 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
-  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:100vh!important;overflow-y:auto!important;/);
+  assert.match(overviewCss, /#dashboardScroller > #dashboardOverviewView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
+  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
   assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
   assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
   assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
   assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
   assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScrollTargetForView\(view\)\.scrollTop\)/);
+  assert.match(dashboardJs, /dashboardOverviewView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
   assert.match(dashboardJs, /dashboardListeningView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
+  assert.match(dashboardJs, /if \(view === "overview"\) return dashboardOverviewView/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_SCROLL_POSITIONS_KEY, JSON\.stringify\(positions\)\)/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_ACTIVE_VIEW_KEY, view\)/);
   assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?\? saved : "overview"/);

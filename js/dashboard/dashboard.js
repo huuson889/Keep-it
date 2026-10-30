@@ -2353,6 +2353,7 @@ function readDashboardScrollPositions() {
   } catch { return {}; }
 }
 function dashboardScrollTargetForView(view) {
+  if (view === "overview") return dashboardOverviewView;
   return view === "listening" ? dashboardListeningView : dashboardScroller;
 }
 function readDashboardScrollPosition(view) {
@@ -2386,6 +2387,7 @@ function scheduleDashboardScrollPositionSave() {
   dashboardScrollSaveTimer = window.setTimeout(() => { dashboardScrollSaveTimer = null; saveDashboardScrollPosition(); }, 100);
 }
 dashboardScroller.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+dashboardOverviewView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
 dashboardListeningView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
@@ -2420,7 +2422,7 @@ function unbindParentTopbarScrollTarget() {
 function bindParentTopbarScrollTarget() {
   unbindParentTopbarScrollTarget();
   if (!dashboardSharedTopbar || !dashboardScroller) return;
-  parentTopbarScrollTarget = activeDashboardView === "listening" ? dashboardListeningView : dashboardScroller;
+  parentTopbarScrollTarget = ["overview", "listening"].includes(activeDashboardView) ? dashboardScrollTargetForView(activeDashboardView) : dashboardScroller;
   parentTopbarScrollTarget.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
   updateParentTopbarCompact();
 }
@@ -2434,7 +2436,9 @@ function mountSharedTopbarInParent(view) {
 }
 function updateParentTopbarCompact() {
   if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
-  const next = activeDashboardView === "listening" ? dashboardListeningView.scrollTop > 1 : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
+  const next = ["overview", "listening"].includes(activeDashboardView)
+    ? dashboardScrollTargetForView(activeDashboardView).scrollTop > 1
+    : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
   parentTopbarCompact = next;
   dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);
@@ -2617,11 +2621,11 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
   dashboardScrollRestoring = true;
   const savedScrollTop = readDashboardScrollPosition(view);
   const scrollTarget = dashboardScrollTargetForView(view);
-  dashboardScroller.scrollTop = view === "listening" ? 0 : savedScrollTop;
+  dashboardScroller.scrollTop = ["overview", "listening"].includes(view) ? 0 : savedScrollTop;
   scrollTarget.scrollTop = savedScrollTop;
   requestAnimationFrame(() => {
     if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
-    dashboardScroller.scrollTop = view === "listening" ? 0 : savedScrollTop;
+    dashboardScroller.scrollTop = ["overview", "listening"].includes(view) ? 0 : savedScrollTop;
     scrollTarget.scrollTop = savedScrollTop;
     requestAnimationFrame(() => {
       if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
