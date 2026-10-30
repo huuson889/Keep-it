@@ -2686,7 +2686,15 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
 
 /* Keep the embedded Highlights & Notes route inset inside the shared Dashboard scroller. */
 #dashboardScroller > #dashboardHighlightsNotesView {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto minmax(0,1fr)!important;
+  row-gap:10px!important;
   box-sizing:border-box;
+  height:calc(100vh - 98px)!important;
+  min-height:0!important;
+  max-height:calc(100vh - 98px)!important;
+  overflow:hidden!important;
   padding:16px clamp(18px,2.2vw,34px) 20px!important;
 }
 #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
@@ -2708,8 +2716,35 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   }
 }
 @media(max-width:680px) {
+  #dashboardScroller > #dashboardHighlightsNotesView {
+    height:auto!important;min-height:calc(100vh - 98px)!important;max-height:none!important;
+    grid-template-rows:auto auto auto auto!important;overflow:visible!important;
+  }
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
-    grid-template-columns:minmax(0,1fr)!important;
-    gap:12px!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    grid-template-columns:minmax(0,1fr)!important;gap:12px!important;
+  }
+}
+#dashboardScroller > #dashboardHighlightsNotesView > .workspace {
+  height:100%!important;min-height:0!important;max-height:100%!important;
+}
+#dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel,
+#dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel {
+  height:100%!important;min-height:0!important;max-height:none!important;overflow:hidden!important;
+}
+#dashboardScroller > #dashboardHighlightsNotesView #sourceList,
+#dashboardScroller > #dashboardHighlightsNotesView #notesList {
+  flex:1 1 auto!important;min-height:0!important;height:auto!important;max-height:none!important;
+  overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;
+}
+@media(max-width:680px) {
+  #dashboardScroller > #dashboardHighlightsNotesView > .workspace { height:auto!important;max-height:none!important; }
+  #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel,
+  #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel {
+    height:auto!important;min-height:300px!important;max-height:none!important;overflow:visible!important;
+  }
+  #dashboardScroller > #dashboardHighlightsNotesView #sourceList,
+  #dashboardScroller > #dashboardHighlightsNotesView #notesList {
+    height:auto!important;min-height:0!important;max-height:none!important;flex:none!important;overflow:visible!important;
   }
 }
