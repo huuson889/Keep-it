@@ -33,8 +33,9 @@ test("Highlights & Notes is integrated into the Dashboard document and shared sc
 });
 
 test("Highlights & Notes restores the padded two-panel layout and opens the first source notes by default", () => {
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView\s*\{[^}]*display:grid!important;[^}]*grid-template-rows:auto auto auto minmax\(300px,1fr\)!important;[^}]*row-gap:10px!important;[^}]*height:calc\(100vh - 98px\)!important;[^}]*max-height:calc\(100vh - 98px\)!important;[^}]*overflow:visible!important;[^}]*padding:16px clamp\(18px,2\.2vw,34px\) 20px!important/);
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important;[^}]*height:100%!important;\s*min-height:0!important;\s*max-height:100%!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView\s*\{[^}]*display:grid!important;[^}]*grid-template-rows:auto auto auto auto!important;[^}]*row-gap:10px!important;[^}]*height:auto!important;[^}]*min-height:calc\(100vh - 98px\)!important;[^}]*max-height:none!important;[^}]*overflow:visible!important;[^}]*padding:16px clamp\(18px,2\.2vw,34px\) 20px!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important;[^}]*height:max\(300px,calc\(100vh - 472px\)\)!important;[^}]*min-height:300px!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace > \.notes-panel\s*\{[^}]*height:100%!important;[^}]*overflow:hidden!important/);
   assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView #sourceList,[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView #notesList\s*\{[^}]*flex:1 1 auto!important;[^}]*overflow-x:hidden!important;\s*overflow-y:auto!important/);
   assert.match(shellCss, /#dashboardScroller\s*\{[^}]*overflow-y:auto!important/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)!important/);

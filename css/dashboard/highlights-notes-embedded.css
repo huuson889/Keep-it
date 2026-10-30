@@ -2684,16 +2684,16 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
 #dashboardHighlightsNotesView #sourceList,
 #dashboardHighlightsNotesView #notesList { height:auto!important;min-height:0!important;max-height:none!important;flex:none!important;overflow:visible!important;overscroll-behavior:auto!important; }
 
-/* Bound the H&N workspace to the viewport remainder while leaving the shared page scrollable. */
+/* Keep the page in the shared scroll flow; bound only the workspace below the upper panels. */
 #dashboardScroller > #dashboardHighlightsNotesView {
   display:grid!important;
   grid-template-columns:minmax(0,1fr)!important;
-  grid-template-rows:auto auto auto minmax(300px,1fr)!important;
+  grid-template-rows:auto auto auto auto!important;
   row-gap:10px!important;
   box-sizing:border-box;
-  height:calc(100vh - 98px)!important;
-  min-height:0!important;
-  max-height:calc(100vh - 98px)!important;
+  height:auto!important;
+  min-height:calc(100vh - 98px)!important;
+  max-height:none!important;
   overflow:visible!important;
   padding:16px clamp(18px,2.2vw,34px) 20px!important;
 }
@@ -2702,9 +2702,9 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   grid-template-columns:minmax(440px,530px) minmax(0,1fr)!important;
   gap:15px!important;
   align-items:stretch!important;
-  height:100%!important;
-  min-height:0!important;
-  max-height:100%!important;
+  height:max(300px,calc(100vh - 472px))!important;
+  min-height:300px!important;
+  max-height:none!important;
   overflow:visible!important;
 }
 #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel,
@@ -2738,11 +2738,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
 }
 @media(max-width:680px) {
   #dashboardScroller > #dashboardHighlightsNotesView {
-    height:auto!important;
-    min-height:calc(100vh - 98px)!important;
-    max-height:none!important;
     grid-template-rows:auto auto auto auto!important;
-    overflow:visible!important;
   }
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
     height:auto!important;
