@@ -8,6 +8,7 @@ const html = fs.readFileSync(path.join(root, "pages/dashboard.html"), "utf8");
 const dashboard = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js"), "utf8");
 const notes = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css/dashboard/highlights-notes-embedded.css"), "utf8");
+const shellCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
 
 test("Highlights & Notes is integrated into the Dashboard document and shared scroll root", () => {
   const routes = [...html.matchAll(/data-dashboard-view="([^"]+)"/g)].map(match => match[1]);
@@ -32,12 +33,12 @@ test("Highlights & Notes is integrated into the Dashboard document and shared sc
 });
 
 test("Highlights & Notes restores the padded two-panel layout and opens the first source notes by default", () => {
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView\s*\{[^}]*display:grid!important;[^}]*grid-template-rows:auto auto auto minmax\(0,1fr\)!important;[^}]*row-gap:10px!important;[^}]*height:calc\(100vh - 98px\)!important;[^}]*padding:16px clamp\(18px,2\.2vw,34px\) 20px!important/);
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important/);
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*height:100%!important;min-height:0!important;max-height:100%!important/);
-  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView #sourceList,[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView #notesList\s*\{[^}]*overflow-y:auto!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView\s*\{[^}]*display:grid!important;[^}]*grid-template-rows:auto auto auto auto!important;[^}]*row-gap:10px!important;[^}]*height:auto!important;[^}]*min-height:calc\(100vh - 98px\)!important;[^}]*max-height:none!important;[^}]*overflow:visible!important;[^}]*padding:16px clamp\(18px,2\.2vw,34px\) 20px!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important;[^}]*height:auto!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView #sourceList,[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView #notesList\s*\{[^}]*flex:0 0 auto!important;[^}]*overflow:visible!important/);
+  assert.match(shellCss, /#dashboardScroller\s*\{[^}]*overflow-y:auto!important/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)!important/);
-  assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace > \.notes-panel\s*\{[^}]*height:auto!important;min-height:300px!important/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace > \.notes-panel\s*\{[^}]*min-height:300px!important;[^}]*overflow:hidden!important/);
   assert.match(dashboard, /function setDashboardView\(view\)[\s\S]*?if \(showHighlightsNotes\) syncHighlightsNotesView\(\)/);
   assert.match(dashboard, /const alwaysRevealTargets = view === "highlights-notes"[\s\S]*?routeTargets\.filter\(target => target\.matches\("\.sources-panel, \.notes-panel"\)\)/);
   assert.match(dashboard, /alwaysRevealTargets\.forEach\(\(target, index\) => reveal\(target, 100 \+ index \* 80\)\)/);

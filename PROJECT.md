@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.816; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.817; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
-- Highlights & Notes fit viewport dưới topbar với khoảng cách giữa các khung; hai danh sách cuộn trong panel trên desktop, còn màn hình hẹp dùng một cột tự nhiên.
-- Kiểm tra v3.4.816: full suite 49/49; `node --check` 54 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt; ZIP 158 entries/CRC sạch. Browser verification chưa chạy.
+- Highlights & Notes dùng shared `#dashboardScroller` để cuộn nội dung tự nhiên; giữ gap giữa các khung và bố cục desktop/mobile.
+- Kiểm tra v3.4.817: full suite 49/49; `node --check` 54 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON, `git diff --check` đạt; ZIP 158 entries, version đúng và CRC sạch. Browser verification chưa thực hiện.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N viewport-fit/gap cùng internal scroll hai danh sách khi có dữ liệu dài; counter/chart Overview sau reload và tab re-entry. Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N shared page scroll với dữ liệu dài, khoảng cách giữa các khung và hai breakpoint bố cục; counter/chart Overview sau reload và tab re-entry. Sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -112,6 +112,14 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation vẫn giữ markup/CSS theo demo và dữ liệu mẫu/action hiện tại. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.817 | Arena.ai Agent sửa:**
+
+- Khôi phục cuộn trang Highlights & Notes trong shared `#dashboardScroller`; bỏ fixed height/max-height và `overflow:hidden` đã khóa/cắt nội dung ở v3.4.816.
+- Nội dung danh sách dài mở rộng theo trang thay vì bị giữ trong các scroll pane lồng; giữ khoảng cách giữa các khung, hai cột desktop, một cột mobile và padding.
+- Regression tests xác nhận route không khóa overflow, shared scroller vẫn cuộn và responsive layout còn nguyên. Browser verification chưa chạy.
+- File: `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.817.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` 49/49; `node --check` 54 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON, `git diff --check` đạt; ZIP 158 entries, manifest v3.4.817 ở gốc, không có `.git`, CRC sạch. Browser verification chưa chạy.
 
 **2026-10-31 | v3.4.816 | Arena.ai Agent sửa:**
 
