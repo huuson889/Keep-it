@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.806; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dashboard → Overview khớp timing/easing reveal, stagger, count-up, hover và chart với file mẫu; vẫn reveal theo vùng cuộn, giữ dữ liệu thật, nhớ scrollTop qua reload và tôn trọng reduced motion.
+- Version hiện tại: v3.4.807; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dashboard → Overview reveal đồng bộ theo từng hàng khi cuộn tới; slot số được chừa theo giá trị cuối để không wrap/đổi chiều cao giữa count-up. ScrollTop vẫn được giữ qua reload; dữ liệu thật và reduced motion được giữ.
 - Reader speaker placement, popup Dictation v14, và resolver/cache favicon chung không đổi trong bản này.
-- Kiểm tra: full suite 45/45; 52 JS + 12 test-script syntax checks, 11 CSS parse sạch, manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Kiểm tra: full suite 46/46; 52 JS + 12 test-script syntax checks, 11 CSS parse sạch, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive/theme, favicon resolver/cache dùng chung và Overview scroll-reveal/counter/chart replay, thông số mẫu và giữ vị trí sau reload (gồm reduced-motion); sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive/theme, favicon resolver/cache dùng chung và Overview row-sync reveal, counter không đổi dòng/chiều cao, chart replay và giữ vị trí sau reload (gồm reduced-motion); sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -110,6 +110,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.807 | Arena.ai Agent sửa:**
+
+- Đồng bộ reveal theo từng hàng/nhóm: các card cùng vùng bắt đầu và kết thúc cùng thời điểm khi vùng vào viewport; bỏ stagger lệch giữa các card cùng hàng, vẫn chỉ chạy theo cuộn.
+- Chừa trước bề rộng cho mọi counter theo nội dung đích, giữ pill/count/tag trên một dòng và nới cột đếm theo max-content để tránh đổi dòng/chiều cao trong khi count-up 1→nhiều chữ số.
+- File: `css/dashboard/overview.css`, `js/dashboard/dashboard.js`, `tests/dashboard-overview-animations.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.807.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 46/46; `node --check` 52 JS và 12 test scripts đạt; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.806 | Arena.ai Agent sửa:**
 

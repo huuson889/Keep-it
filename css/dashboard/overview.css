@@ -531,3 +531,30 @@ html.dark #dashboardOverviewView .ov-mode:not(.ov-mode-shadow):hover {
   #dashboardOverviewView .ov-reveal { transition:none; will-change:auto; }
   #dashboardOverviewView .ov-chart-running .ov-heat-cell { opacity:1; scale:1; }
 }
+
+/* Keep counter-driven pills and labels on their final line layout before numbers animate. */
+#dashboardOverviewView .ov-pills > span {
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+#dashboardOverviewView .ov-pills b {
+  min-width:5ch;
+  flex:0 0 5ch;
+  text-align:center;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+#dashboardOverviewView .ov-stat-value,
+#dashboardOverviewView .ov-today-value,
+#dashboardOverviewView .ov-total strong,
+#dashboardOverviewView .ov-dist-count,
+#dashboardOverviewView .ov-mode-value strong,
+#dashboardOverviewView .ov-active-days { white-space:nowrap; }
+#dashboardOverviewView .ov-dist-row {
+  grid-template-columns:105px minmax(0,1fr) minmax(30px,max-content);
+}
+@media(max-width:480px) {
+  #dashboardOverviewView .ov-dist-row {
+    grid-template-columns:85px minmax(0,1fr) minmax(25px,max-content);
+  }
+}

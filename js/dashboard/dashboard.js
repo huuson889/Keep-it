@@ -981,6 +981,28 @@ function overviewSetText(id, value) {
   if (node) node.textContent = String(value ?? "");
 }
 function overviewFormatCount(value) { return Math.max(0, Number(value) || 0).toLocaleString(currentLang); }
+let overviewCounterMeasureContext = null;
+function overviewReserveCounterSpace(node, finalText) {
+  const text = String(finalText ?? "");
+  const numeric = /^[\d.,\u00a0\u202f]+$/.test(text.trim());
+  node.style.whiteSpace = "nowrap";
+  node.style.fontVariantNumeric = "tabular-nums";
+  if (numeric) {
+    node.style.minWidth = `${Math.max(5, Array.from(text).length)}ch`;
+    node.style.flexShrink = "0";
+    return;
+  }
+  try {
+    const style = getComputedStyle(node);
+    overviewCounterMeasureContext ||= document.createElement("canvas").getContext("2d");
+    if (overviewCounterMeasureContext) {
+      overviewCounterMeasureContext.font = style.font;
+      node.style.minWidth = `${Math.ceil(overviewCounterMeasureContext.measureText(text).width + 6)}px`;
+      return;
+    }
+  } catch { /* use the character-width fallback below */ }
+  node.style.minWidth = `${Math.max(1, Array.from(text).length)}ch`;
+}
 function overviewPrefersReducedMotion() { return !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; }
 function overviewCounterText(node, value) {
   return (overviewCounterFormatters.get(node) || overviewFormatCount)(value);
@@ -1099,6 +1121,7 @@ function overviewSetCounterNode(node, value, formatter = overviewFormatCount) {
   const targetString = String(target);
   const finalText = formatter(target);
   overviewCounterFormatters.set(node, formatter);
+  overviewReserveCounterSpace(node, finalText);
   node.dataset.ovCounterTarget = targetString;
   node.dataset.ovCounterFinal = finalText;
   node.setAttribute("aria-label", finalText);
@@ -2424,13 +2447,11 @@ function updateParentTopbarCompact() {
 window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
 function overviewRevealTargets() {
   return [...dashboardOverviewView.querySelectorAll([
-    ".ov-intro-row > .ov-welcome",
-    ".ov-intro-row > .ov-quick-panel",
-    ".ov-stats > .ov-stat",
-    ".ov-resume-progress > .ov-resume",
-    ".ov-resume-progress > .ov-progress",
+    ".ov-intro-row",
+    ".ov-stats",
+    ".ov-resume-progress",
     ".ov-section",
-    ".ov-lower > .ov-panel",
+    ".ov-lower",
     ".ov-footer"
   ].join(","))];
 }
@@ -2484,9 +2505,9 @@ function resetOverviewEntranceEffects() {
     });
     return;
   }
-  targets.forEach((target, index) => {
+  targets.forEach(target => {
     target.classList.add("ov-reveal");
-    target.style.setProperty("--ov-reveal-delay", `${100 + index * 80}ms`);
+    target.style.setProperty("--ov-reveal-delay", "100ms");
   });
   overviewEffectsObserver = new IntersectionObserver(entries => {
     for (const entry of entries) {
