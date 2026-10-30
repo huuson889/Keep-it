@@ -2650,6 +2650,7 @@ function setDashboardView(view) {
   }
   activeDashboardView = view;
   const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
+  dashboardScroller.classList.toggle("dashboard-route-bounded", showOverview || showListening);
   dashboardOverviewView.hidden = !showOverview;
   dashboardListeningView.hidden = !showListening;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;

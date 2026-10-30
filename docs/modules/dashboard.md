@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng settings/study/backup. Ba view dùng chung shell, nền/theme và một topbar; Overview và Dictation có khung cuộn riêng giới hạn theo viewport, còn Highlights & Notes giữ cuộn trang chung và giới hạn riêng workspace. Highlights & Notes chạy trong cùng document, không dùng iframe.
+Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng settings/study/backup. Ba view dùng chung shell, nền/theme và một topbar; Overview và Dictation có khung cuộn riêng giới hạn theo viewport, khóa cuộn cha và chặn truyền cuộn ở biên; Highlights & Notes giữ cuộn trang chung và giới hạn riêng workspace. Highlights & Notes chạy trong cùng document, không dùng iframe.
 
 ## 2. File chính và điểm vào
 
