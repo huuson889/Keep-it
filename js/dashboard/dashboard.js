@@ -2556,7 +2556,7 @@ function resetDashboardPanelEntranceEffects(view) {
   }
   const targets = [...[dashboardSharedTopbar].filter(Boolean), ...routeTargets];
   const alwaysRevealTargets = view === "highlights-notes"
-    ? routeTargets.filter(target => target.matches(".notes-panel"))
+    ? routeTargets.filter(target => target.matches(".sources-panel, .notes-panel"))
     : [];
   const observedTargets = targets.filter(target => !alwaysRevealTargets.includes(target));
   for (const target of routeTargets) {

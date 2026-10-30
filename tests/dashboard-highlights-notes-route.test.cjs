@@ -36,7 +36,7 @@ test("Highlights & Notes restores the padded two-panel layout and opens the firs
   assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important/);
   assert.match(css, /@media\(max-width:680px\)\s*\{\s*#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)!important/);
   assert.match(dashboard, /function setDashboardView\(view\)[\s\S]*?if \(showHighlightsNotes\) syncHighlightsNotesView\(\)/);
-  assert.match(dashboard, /const alwaysRevealTargets = view === "highlights-notes"[\s\S]*?routeTargets\.filter\(target => target\.matches\("\.notes-panel"\)\)/);
+  assert.match(dashboard, /const alwaysRevealTargets = view === "highlights-notes"[\s\S]*?routeTargets\.filter\(target => target\.matches\("\.sources-panel, \.notes-panel"\)\)/);
   assert.match(dashboard, /alwaysRevealTargets\.forEach\(\(target, index\) => reveal\(target, 100 \+ index \* 80\)\)/);
   assert.match(dashboard, /observedTargets\.forEach\(target => dashboardPanelRevealObserver\.observe\(target\)\)/);
   assert.match(dashboard, /const active = link\.dataset\.dashboardView === view;[\s\S]*?link\.classList\.toggle\("is-active", active\)[\s\S]*?if \(active\) link\.setAttribute\("aria-current", "page"\)/);

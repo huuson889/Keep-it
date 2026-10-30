@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.814; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.815; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
 - Bản 3.4.814 khôi phục layout hai cột/padding H&N theo v3.4.807; notes-panel được reveal trực tiếp khi mở route và dữ liệu tự chọn source đầu tiên.
-- Kiểm tra v3.4.814: đang chạy; chưa browser-test.
+- Kiểm tra v3.4.815: full suite 49/49; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -113,13 +113,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-10-31 | v3.4.815 | Arena.ai Agent sửa tiếp:**
+
+- Sửa đúng lỗi trong ảnh: cả `sources-panel` lẫn `notes-panel` được reveal trực tiếp sau khi vào Highlights & Notes, không để cột trái bị ẩn bởi IntersectionObserver. Giữ lưới hai cột, padding và gap theo tham chiếu v3.4.807; một cột ở màn hình hẹp.
+- Regression test xác nhận hai panel nằm trong nhóm reveal bắt buộc và grid/padding không đổi. Chưa browser-test.
+- File: `js/dashboard/dashboard.js`, `tests/dashboard-highlights-notes-route.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.815.zip`.
+- Kiểm tra: full suite 49/49; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
+
 **2026-10-31 | v3.4.814 | Arena.ai Agent sửa:**
 
 - Khôi phục layout hai cột nguồn/notes và khoảng đệm H&N theo hình tham chiếu v3.4.807; giữ một cột ở viewport hẹp.
 - Reveal trực tiếp notes-panel sau khi reset để không bị ẩn bởi IntersectionObserver; khi mở route gửi snapshot mới nhất và tự chọn source đầu tiên để hiển thị notes sau lần mở/reload.
 - Thêm regression tests cho padding, desktop/mobile grid, panel reveal và chọn source mặc định. Chưa browser-test.
 - File: `js/dashboard/dashboard.js`, `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.814.zip`.
-- Kiểm tra: đang chạy.
+- Kiểm tra: full suite 49/49; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-31 | v3.4.813 | Arena.ai Agent sửa:**
 
