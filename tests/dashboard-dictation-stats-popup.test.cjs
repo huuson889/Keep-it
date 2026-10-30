@@ -214,12 +214,17 @@ test("video source titles link to safe YouTube video URLs", () => {
 test("global and critical smart cards render four columns with the error summary after typed variants", () => {
   const ui = read("js/dashboard/dictation-stats-popup.js");
   const css = read("css/dashboard/dictation-stats-popup.css");
-  const card = ui.match(/function createGlobalCard\(item\) \{[\s\S]*?\n  \}/)?.[0];
-  assert.ok(card, "global/critical smart-card renderer exists");
+  const card = ui.match(/function createSmartCard\(item, \{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(card, "shared global/session smart-card renderer exists");
   assert.match(card, /card\.append\(targetBox, contextBox, createVariants\(item\), errorSummary\)/);
+  assert.match(ui, /bodyInner\.append\(createSmartCard\(item, \{/);
+  assert.match(ui, /className:"smart-card session-smart-card"/);
   assert.match(css, /grid-template-columns:\s*200px minmax\(0,\s*1fr\) minmax\(150px,\s*180px\) minmax\(112px,\s*140px\)/);
   assert.match(css, /\.word-error-summary\s*\{[^}]*justify-self:\s*end/);
   assert.match(css, /@media \(max-width:760px\)[\s\S]*?\.smart-card \{ grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(css, /\.session-body\s*\{[^}]*transition:[^}]*grid-template-rows/);
+  assert.match(css, /\.session-body\.collapsed\s*\{[^}]*grid-template-rows:\s*0fr/);
+  assert.doesNotMatch(css, /\.session-body\.collapsed\s*\{\s*display:\s*none/);
 });
 
 test("category filters isolate classified wrong attempts, fixes, variants, and their example context", () => {

@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.795; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.796; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Tiêu đề `context-source` lấy từ `ui.miniTitle`, lưu trong record và session index; bridge chọn nguồn mới hơn, bỏ title chỉ là videoId, thử dùng title của tab YouTube đang mở nếu dữ liệu cũ thiếu tên, rồi mới fallback ID. Tên video ở context và mục theo video là liên kết mở video YouTube.
-- Smart-card ở tab toàn cục/báo động dùng 4 cột; phần tóm tắt lỗi đứng bên phải cột biến thể gõ. Chi tiết theo video bỏ title ID cũ nếu record có title thật.
+- Smart-card ở tab toàn cục/báo động dùng 4 cột; phần tóm tắt lỗi đứng bên phải cột biến thể gõ. Từng từ trong Chi tiết theo video tái sử dụng cùng smart-card; session accordion đóng/mở mượt bằng animation chiều cao.
 - Popup giữ UI demo, phân loại cục bộ, filter và live refresh; chiều cao cố định theo max hiện tại, body scroll 3px Chromium. Migration stats v1/v2 giữ notes/progress/translations.
-- Kiểm tra gần nhất: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.795/44 assets; 4 HTML/52 local refs/402 IDs; 11 CSS/2,614 rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
+- Kiểm tra gần nhất: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.796/44 assets; 4 HTML/52 local refs/402 IDs; 11 CSS/2,612 rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -110,6 +110,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.796 | Arena.ai Agent sửa:**
+
+- Tab Chi tiết theo từng Video dùng chung smart-card 4 cột cho mỗi từ: từ/nhóm lỗi, ngữ cảnh, biến thể gõ và tóm tắt lỗi; giữ tiêu đề/link video và accordion.
+- Đổi expand/collapse session sang CSS grid-row transition, giữ thao tác bàn phím/ARIA và tôn trọng `prefers-reduced-motion`.
+- File: `manifest.json`, `js/dashboard/dictation-stats-popup.js`, `css/dashboard/dictation-stats-popup.css`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.796/44 asset paths; 11 CSS/2,612 top-level rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.795 | Arena.ai Agent sửa:**
 

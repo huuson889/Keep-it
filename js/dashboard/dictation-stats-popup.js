@@ -185,8 +185,8 @@
     link.setAttribute("aria-label", link.title);
     return link;
   }
-  function createGlobalCard(item) {
-    const card = el("article", "smart-card");
+  function createSmartCard(item, { sourceOverride = "", sourceUrlOverride = "", className = "smart-card" } = {}) {
+    const card = el("article", className);
     const targetBox = el("div", "word-target-box");
     const target = el("div", "word-target");
     target.append(document.createTextNode(item.word), createAudioButton(item.word));
@@ -199,12 +199,13 @@
     if (item.errorContext) appendContext(sentence, item.errorContext);
     else sentence.textContent = "—";
     contextBox.append(sentence);
-    const source = item.errorContext?.source || item.sources[0] || "—";
-    const sourceUrl = item.errorContext?.url || item.errorExamples?.[primaryType(item)]?.url || item.sourceUrls?.[0] || "";
+    const source = sourceOverride || item.errorContext?.source || item.sources[0] || "—";
+    const sourceUrl = sourceUrlOverride || item.errorContext?.url || item.errorExamples?.[primaryType(item)]?.url || item.sourceUrls?.[0] || "";
     contextBox.append(createSourceLink(source, sourceUrl));
     card.append(targetBox, contextBox, createVariants(item), errorSummary);
     return card;
   }
+  function createGlobalCard(item) { return createSmartCard(item); }
   function renderSessionView() {
     sessions.forEach(session => {
       const group = el("section", "session-group");
@@ -218,24 +219,22 @@
       toggle.append(caret);
       head.append(titleLink, toggle);
       const body = el("div", "session-body");
+      const bodyInner = el("div", "session-body-inner");
       const words = [...session.words].sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
-      words.forEach(item => {
-        const row = el("article", "session-word-row");
-        const info = el("div", "session-word-info");
-        info.append(el("strong", "session-word-label", item.word), createTypeTag(item));
-        const detail = el("div", "session-word-summary", tr("dictationStatsErrorSummary", { errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item) }));
-        row.append(info, detail, createVariants(item));
-        if (item.errorContext) {
-          const context = el("div", "context-sentence");
-          appendContext(context, item.errorContext);
-          row.append(context);
-        }
-        body.append(row);
-      });
+      words.forEach(item => bodyInner.append(createSmartCard(item, {
+        sourceOverride:session.title,
+        sourceUrlOverride:session.url,
+        className:"smart-card session-smart-card",
+      })));
+      body.append(bodyInner);
       toggle.setAttribute("aria-expanded", "true");
+      toggle.setAttribute("aria-controls", `session-body-${session.id.replace(/[^A-Za-z0-9_-]/g, "-")}`);
+      body.id = toggle.getAttribute("aria-controls");
       toggle.addEventListener("click", () => {
         const collapsed = body.classList.toggle("collapsed");
         toggle.setAttribute("aria-expanded", String(!collapsed));
+        body.setAttribute("aria-hidden", String(collapsed));
+        body.inert = collapsed;
       });
       group.append(head, body);
       content.append(group);
