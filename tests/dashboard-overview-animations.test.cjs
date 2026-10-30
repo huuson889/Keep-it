@@ -76,7 +76,7 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 });
 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
-  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
+  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:100vh!important;overflow-y:auto!important;/);
   assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
   assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
   assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
