@@ -972,8 +972,10 @@ let overviewSummaryCacheRevision = -1;
 function invalidateAnnotationCaches() { annotationDataRevision++; }
 
 const overviewCounterFormatters = new WeakMap();
+const overviewChartAnimationFrames = new WeakMap();
 let overviewEffectsObserver = null;
 let overviewEffectCycle = 0;
+let overviewInitialDataReady = false;
 function overviewSetText(id, value) {
   const node = $(id);
   if (node) node.textContent = String(value ?? "");
@@ -982,6 +984,21 @@ function overviewFormatCount(value) { return Math.max(0, Number(value) || 0).toL
 function overviewPrefersReducedMotion() { return !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; }
 function overviewCounterText(node, value) {
   return (overviewCounterFormatters.get(node) || overviewFormatCount)(value);
+}
+function queueOverviewCounter(node) {
+  const cycle = overviewEffectCycle;
+  const pendingCycle = node.dataset.ovCounterPendingCycle;
+  if (pendingCycle === String(cycle)) return;
+  const pendingId = Number(node.dataset.ovCounterDelayId);
+  if (pendingId) clearTimeout(pendingId);
+  if (overviewPrefersReducedMotion()) { animateOverviewCounter(node); return; }
+  node.dataset.ovCounterPendingCycle = String(cycle);
+  node.dataset.ovCounterDelayId = String(window.setTimeout(() => {
+    delete node.dataset.ovCounterDelayId;
+    delete node.dataset.ovCounterPendingCycle;
+    if (cycle !== overviewEffectCycle || activeDashboardView !== "overview") return;
+    animateOverviewCounter(node);
+  }, 300));
 }
 function animateOverviewCounter(node) {
   if (!node?.isConnected) return;
@@ -998,21 +1015,82 @@ function animateOverviewCounter(node) {
   }
   const cycle = overviewEffectCycle;
   const startValue = Math.max(0, Number(node.dataset.ovDisplayed) || 0);
-  const startedAt = performance.now();
-  const duration = 1050;
-  const tick = now => {
+  const frameDuration = 1000 / 60;
+  const totalFrames = Math.round(2000 / frameDuration);
+  let frame = 0;
+  const tick = () => {
     if (cycle !== overviewEffectCycle || activeDashboardView !== "overview" || !node.isConnected) return;
-    const progress = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - progress, 4);
+    frame++;
+    const progress = Math.min(1, frame / totalFrames);
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
     const value = Math.round(startValue + (target - startValue) * eased);
     node.textContent = progress >= 1 ? finalText : overviewCounterText(node, value);
     node.dataset.ovDisplayed = String(progress >= 1 ? target : value);
-    if (progress < 1) node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
+    if (frame < totalFrames) node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
     else delete node.dataset.ovAnimationFrame;
   };
   node.dataset.ovCounterCycle = String(cycle);
   node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
 }
+function animateOverviewChartFill(node) {
+  if (!node?.isConnected) return;
+  if (activeDashboardView !== "overview") { node.style.transform = "scaleX(1)"; return; }
+  const previousFrame = overviewChartAnimationFrames.get(node);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    node.style.transform = "scaleX(1)";
+    return;
+  }
+  const startedAt = performance.now();
+  const tick = now => {
+    const progress = Math.min(1, (now - startedAt) / 2000);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    node.style.transform = `scaleX(${eased})`;
+    if (progress < 1) overviewChartAnimationFrames.set(node, requestAnimationFrame(tick));
+    else overviewChartAnimationFrames.delete(node);
+  };
+  node.style.transform = "scaleX(0)";
+  overviewChartAnimationFrames.set(node, requestAnimationFrame(tick));
+}
+function animateOverviewHeatmap(heatmap) {
+  if (!heatmap?.isConnected) return;
+  if (activeDashboardView !== "overview") {
+    heatmap.style.setProperty("--ov-chart-progress", "1");
+    heatmap.style.setProperty("--ov-chart-opacity", "1");
+    heatmap.style.setProperty("--ov-chart-scale", "1");
+    return;
+  }
+  const previousFrame = overviewChartAnimationFrames.get(heatmap);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  const setHeatmapProgress = value => {
+    heatmap.style.setProperty("--ov-chart-progress", String(value));
+    heatmap.style.setProperty("--ov-chart-opacity", String(.3 + .7 * value));
+    heatmap.style.setProperty("--ov-chart-scale", String(.55 + .45 * value));
+  };
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    setHeatmapProgress(1);
+    return;
+  }
+  const startedAt = performance.now();
+  const tick = now => {
+    const progress = Math.min(1, (now - startedAt) / 1800);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    setHeatmapProgress(eased);
+    if (progress < 1) overviewChartAnimationFrames.set(heatmap, requestAnimationFrame(tick));
+    else overviewChartAnimationFrames.delete(heatmap);
+  };
+  setHeatmapProgress(0);
+  overviewChartAnimationFrames.set(heatmap, requestAnimationFrame(tick));
+}
+function overviewAnimateChartsWithin(element) {
+  const heatmap = element.matches?.(".ov-heatmap") ? element : element.querySelector(".ov-heatmap");
+  if (heatmap) animateOverviewHeatmap(heatmap);
+  const bars = [];
+  if (element.matches?.(".ov-today-meter span, .ov-meter span, .ov-dist-track span")) bars.push(element);
+  bars.push(...element.querySelectorAll(".ov-today-meter span, .ov-meter span, .ov-dist-track span"));
+  bars.forEach(animateOverviewChartFill);
+}
+
 function overviewSetCounterNode(node, value, formatter = overviewFormatCount) {
   if (!node) return;
   const numeric = Number(value);
@@ -1032,7 +1110,7 @@ function overviewSetCounterNode(node, value, formatter = overviewFormatCount) {
     return;
   }
   if (reveal?.classList.contains("ov-revealed")) {
-    if (node.dataset.ovCounterCycle !== String(overviewEffectCycle) || previousTarget !== targetString) animateOverviewCounter(node);
+    if (node.dataset.ovCounterCycle !== String(overviewEffectCycle) || previousTarget !== targetString) queueOverviewCounter(node);
   } else {
     node.textContent = formatter(0);
     node.dataset.ovDisplayed = "0";
@@ -1046,12 +1124,13 @@ function overviewAnimateCountersWithin(element) {
   const counters = [];
   if (element.matches?.("[data-ov-counter-target]")) counters.push(element);
   counters.push(...element.querySelectorAll("[data-ov-counter-target]"));
-  for (const counter of counters) animateOverviewCounter(counter);
+  for (const counter of counters) queueOverviewCounter(counter);
 }
 function overviewSetMeter(id, ratio) {
   const node = $(id);
   if (!node) return;
   node.style.width = `${Math.min(100, Math.max(0, Number(ratio) || 0))}%`;
+  if (node.closest(".ov-chart-running")) animateOverviewChartFill(node);
 }
 function renderOverviewActivityCalendar(model) {
   const heatmap = $("overviewHeatmap"), monthHost = $("overviewMonthLabels");
@@ -1079,13 +1158,13 @@ function renderOverviewActivityCalendar(model) {
     }
     const cell = document.createElement("span");
     cell.className = "ov-heat-cell";
-    cell.style.setProperty("--ov-cell-delay", `${index % 52 * 4}ms`);
     cell.dataset.level = String(Math.min(4, count));
     cell.setAttribute("aria-hidden", "true");
     cell.title = `${formatter.format(day)} ${day.getDate()}, ${day.getFullYear()}: ${t("ovHeatActivityCount", { count })}`;
     cells.appendChild(cell);
   }
   heatmap.replaceChildren(cells);
+  if (heatmap.closest(".ov-chart-running")) animateOverviewHeatmap(heatmap);
   monthHost.replaceChildren(...months.map(date => {
     const label = document.createElement("span");
     label.textContent = formatter.format(date);
@@ -1109,10 +1188,9 @@ function renderOverviewTags(model) {
     return;
   }
   const maxCount = tags[0][1] || 1;
-  for (const [index, [name, count]] of tags.entries()) {
+  for (const [name, count] of tags) {
     const row = document.createElement("div");
     row.className = "ov-dist-row";
-    row.style.setProperty("--ov-row-delay", `${index * 65}ms`);
     const label = document.createElement("span");
     label.className = "ov-dist-label";
     label.textContent = name;
@@ -1120,13 +1198,13 @@ function renderOverviewTags(model) {
     track.className = "ov-dist-track";
     const fill = document.createElement("span");
     fill.style.width = `${Math.max(3, Math.round(count / maxCount * 100))}%`;
-    fill.style.setProperty("--ov-row-delay", `${index * 65}ms`);
     track.appendChild(fill);
     const value = document.createElement("span");
     value.className = "ov-dist-count";
     row.append(label, track, value);
     host.appendChild(row);
     overviewSetCounterNode(value, count);
+    if (host.closest(".ov-chart-running")) animateOverviewChartFill(fill);
   }
 }
 function renderOverviewRecentItems(model) {
@@ -2243,6 +2321,25 @@ function togglePin() {
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView");
+const OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1";
+let overviewScrollSaveTimer = null, overviewScrollRestoring = true;
+function readOverviewScrollPosition() {
+  try {
+    const value = Number(sessionStorage.getItem(OVERVIEW_SCROLL_POSITION_KEY));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch { return 0; }
+}
+function saveOverviewScrollPosition() {
+  if (overviewScrollRestoring || !dashboardOverviewView) return;
+  try { sessionStorage.setItem(OVERVIEW_SCROLL_POSITION_KEY, String(Math.max(0, dashboardOverviewView.scrollTop))); } catch { /* session storage may be unavailable */ }
+}
+dashboardOverviewView.addEventListener("scroll", () => {
+  if (overviewScrollRestoring) return;
+  if (overviewScrollSaveTimer !== null) clearTimeout(overviewScrollSaveTimer);
+  overviewScrollSaveTimer = window.setTimeout(() => { overviewScrollSaveTimer = null; saveOverviewScrollPosition(); }, 100);
+}, { passive:true });
+window.addEventListener("pagehide", saveOverviewScrollPosition);
+window.addEventListener("beforeunload", saveOverviewScrollPosition);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = "overview", parentTopbarCompact = false, parentTopbarScrollTarget = null;
@@ -2339,7 +2436,10 @@ function overviewRevealTargets() {
 }
 function overviewRevealTarget(target) {
   target.classList.add("ov-revealed");
-  if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) target.classList.add("ov-chart-running");
+  if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
+    target.classList.add("ov-chart-running");
+    overviewAnimateChartsWithin(target);
+  }
   overviewAnimateCountersWithin(target);
 }
 function resetOverviewEntranceEffects() {
@@ -2348,13 +2448,27 @@ function resetOverviewEntranceEffects() {
   overviewEffectCycle++;
   for (const node of dashboardOverviewView.querySelectorAll("[data-ov-counter-target]")) {
     const frameId = Number(node.dataset.ovAnimationFrame);
+    const delayId = Number(node.dataset.ovCounterDelayId);
     if (frameId) cancelAnimationFrame(frameId);
+    if (delayId) clearTimeout(delayId);
     node.textContent = overviewCounterText(node, 0);
+    delete node.dataset.ovCounterDelayId;
+    delete node.dataset.ovCounterPendingCycle;
     node.dataset.ovDisplayed = "0";
     delete node.dataset.ovAnimationFrame;
     delete node.dataset.ovCounterCycle;
   }
   const targets = overviewRevealTargets();
+  for (const chart of dashboardOverviewView.querySelectorAll(".ov-heatmap, .ov-today-meter span, .ov-meter span, .ov-dist-track span")) {
+    const chartFrame = overviewChartAnimationFrames.get(chart);
+    if (chartFrame) cancelAnimationFrame(chartFrame);
+    overviewChartAnimationFrames.delete(chart);
+    if (chart.matches(".ov-heatmap")) {
+      chart.style.removeProperty("--ov-chart-progress");
+      chart.style.removeProperty("--ov-chart-opacity");
+      chart.style.removeProperty("--ov-chart-scale");
+    } else chart.style.transform = "scaleX(0)";
+  }
   for (const target of dashboardOverviewView.querySelectorAll(".ov-reveal")) {
     target.classList.remove("ov-reveal", "ov-revealed", "ov-chart-running");
     target.style.removeProperty("--ov-reveal-delay");
@@ -2362,14 +2476,17 @@ function resetOverviewEntranceEffects() {
   if (!("IntersectionObserver" in window)) {
     targets.forEach(target => {
       target.classList.add("ov-reveal", "ov-revealed");
-      if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) target.classList.add("ov-chart-running");
+      if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
+        target.classList.add("ov-chart-running");
+        overviewAnimateChartsWithin(target);
+      }
       overviewAnimateCountersWithin(target);
     });
     return;
   }
   targets.forEach((target, index) => {
     target.classList.add("ov-reveal");
-    target.style.setProperty("--ov-reveal-delay", `${index % 4 * 55}ms`);
+    target.style.setProperty("--ov-reveal-delay", `${100 + index * 80}ms`);
   });
   overviewEffectsObserver = new IntersectionObserver(entries => {
     for (const entry of entries) {
@@ -2389,7 +2506,8 @@ function setDashboardView(view) {
   dashboardListeningView.hidden = !showListening;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
-  if (showOverview) resetOverviewEntranceEffects();
+  if (showOverview && !overviewInitialDataReady) dashboardOverviewView.scrollTop = readOverviewScrollPosition();
+  if (showOverview) { if (overviewInitialDataReady) resetOverviewEntranceEffects(); }
   else { overviewEffectsObserver?.disconnect(); overviewEffectsObserver = null; }
   if (showHighlightsNotes) mountSharedTopbarInIframe(); else mountSharedTopbarInParent(view);
   dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
@@ -2935,6 +3053,14 @@ $("exportErrorLog")?.addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
+  const savedOverviewScrollTop = readOverviewScrollPosition();
+  dashboardOverviewView.scrollTop = savedOverviewScrollTop;
+  requestAnimationFrame(() => {
+    dashboardOverviewView.scrollTop = savedOverviewScrollTop;
+    overviewInitialDataReady = true;
+    if (activeDashboardView === "overview") resetOverviewEntranceEffects();
+    requestAnimationFrame(() => { overviewScrollRestoring = false; });
+  });
   initListeningPreview();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });

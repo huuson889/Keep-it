@@ -34,7 +34,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Giữ ba route, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới.
-- Hiệu ứng Overview chỉ tác động trình bày: `IntersectionObserver` dùng `#dashboardOverviewView` làm scroll root để reveal từng card/biểu đồ khi vào vùng nhìn; tab re-entry reset tiến trình hiệu ứng, còn counter/chart lấy giá trị từ summary local hiện có và tôn trọng `prefers-reduced-motion`.
+- Hiệu ứng Overview chỉ tác động trình bày: `IntersectionObserver` dùng `#dashboardOverviewView` làm scroll root để reveal từng card/biểu đồ khi vào vùng nhìn; thông số reveal/stagger/count-up/hover bám file mẫu, counter/chart lấy giá trị summary local và tôn trọng `prefers-reduced-motion`. Tab re-entry reset hiệu ứng; `sessionStorage` giữ `scrollTop` qua page reload.
 - Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; iframe chỉ giữ bản sao trong bộ nhớ.
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
 - Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent refresh khi local Dictation record/index đổi; tên nguồn chọn bản mới hơn giữa record title (đã lấy từ thanh audio) và session index theo timestamp, bỏ giá trị chỉ là videoId trước khi fallback. Nếu record/index cũ thiếu title, bridge thử lấy title từ tab YouTube đang mở khớp videoId. Tên nguồn/context và tiêu đề video trong tab theo video là liên kết HTTPS tới clip YouTube; khi index thiếu URL, tạo URL từ videoId. Iframe không đọc storage trực tiếp.
@@ -47,6 +47,6 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate; `dashboard-overview-animations.test.cjs` kiểm tra scroll-root/re-entry, counter và chart activation/reduced-motion.
+- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate; `dashboard-overview-animations.test.cjs` kiểm tra thông số hiệu ứng theo mẫu, scroll-root/re-entry, khôi phục scroll position, counter/chart và reduced-motion.
 - Mock: kiểm tra metadata/page key, Overview và Highlights & Notes data/action bridge.
 - Browser cần xác nhận routes, iframe CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox; với Overview, cuộn từng vùng, rời/quay lại tab và kiểm tra reduced-motion ở light/dark theme. Static/mock không thay cho kiểm tra extension thật.
