@@ -72,22 +72,24 @@
   async function loadStatsSnapshot() {
     if (!storage?.get) return { sessions:[], globalWords:[] };
     try {
-      const indexResult = await storage.get(INDEX_KEY);
-      const index = indexResult?.[INDEX_KEY];
-      const sourceSessions = Array.isArray(index?.sessions) ? index.sessions : [];
-      const sessions = sourceSessions.filter(session => session?.sourceType === "youtube"
-        && /^[A-Za-z0-9_-]{6,}$/.test(String(session.sourceId || "")));
-      const keys = [...new Set(sessions.map(session => `dictation:${session.sourceId}`))];
-      if (!keys.length) return { sessions:[], globalWords:[] };
-      const records = await storage.get(keys);
-      const normalizedSessions = sessions.flatMap(session => {
-        const words = normalizeSessionWords(records?.[`dictation:${session.sourceId}`]?.wrongWordStats);
+      const localData = await storage.get(null);
+      const index = localData?.[INDEX_KEY];
+      const indexedSessions = Array.isArray(index?.sessions) ? index.sessions : [];
+      const metadataBySourceId = new Map(indexedSessions
+        .filter(session => session?.sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(String(session.sourceId || "")))
+        .map(session => [String(session.sourceId), session]));
+      const normalizedSessions = Object.entries(localData || {}).flatMap(([key, record]) => {
+        const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
+        if (!match) return [];
+        const sourceId = match[1];
+        const metadata = metadataBySourceId.get(sourceId);
+        const words = normalizeSessionWords(record?.wrongWordStats);
         if (!words.length) return [];
         return [{
-          id:`youtube:${session.sourceId}`,
-          sourceId:session.sourceId,
-          title:String(session.title || session.sourceId),
-          url:String(session.url || ""),
+          id:`youtube:${sourceId}`,
+          sourceId,
+          title:String(metadata?.title || sourceId),
+          url:String(metadata?.url || ""),
           words,
         }];
       });

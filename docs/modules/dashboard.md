@@ -16,7 +16,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 | [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js), [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_ANNOTATION_UTILS`, `LHN_DASHBOARD_OVERVIEW_DATA` | Chuẩn hóa và tổng hợp annotations. |
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
 | [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Render thống kê Dictation cục bộ. |
-| [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/CLOSE` | Lấy schema v2, lọc và gửi snapshot cùng origin. |
+| [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/UPDATE/CLOSE` | Quét stats schema v2 trong local records; index chỉ bổ sung metadata. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
 
 ## 3. Luồng chính
@@ -26,7 +26,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 3. `setDashboardView()` chuyển giữa Overview, Listening và Highlights & Notes. Listening vẫn là trang demo; Flashcards là action, không phải route.
 4. Iframe nhận annotations, favorites và ngôn ngữ qua same-origin `postMessage`; CRUD, favorite, export, review, jump và speak quay về handler parent hiện có.
 5. Một node `#dashboardSharedTopbar` chuyển giữa route; scrollport `#dashboardListeningView` điều khiển sticky/compact state. Giữ export trong iframe.
-6. Nút thống kê chi tiết mở iframe cùng origin. Parent đọc `dictation:session-index:v1` và records cục bộ; khi popup đang mở, `storage.onChanged` gửi snapshot mới để iframe cập nhật tại chỗ. Các góc nhìn global, critical và theo video giữ nguyên.
+6. Nút thống kê chi tiết mở iframe cùng origin. Parent quét `dictation:<videoId>` records trực tiếp; session index chỉ bổ sung tiêu đề/URL khi có. Khi popup mở, `storage.onChanged` gửi snapshot mới để cập nhật tại chỗ.
 7. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
 
 ## 4. Hợp đồng và quy tắc cần giữ

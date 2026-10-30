@@ -36,6 +36,7 @@ test("Detailed Dictation stats popup receives filtered local session data throug
 
   assert.match(bridge, /browser\?\.storage\?\.local/);
   assert.match(bridge, /storage\?\.onChanged/);
+  assert.match(bridge, /storage\.get\(null\)/, "popup scans actual local records and does not require an index entry");
   assert.match(bridge, /dictation:session-index:v1/);
   assert.match(bridge, /stats\.version !== 2/);
   assert.match(bridge, /KEEPIT_DICTATION_STATS_OPEN/);
@@ -74,14 +75,20 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
     "w:cat":{ word:"cat", errors:9, corrections:0, variants:{} },
   } } };
   const legacyRecord = { wrongWordStats:{ version:1, words:{ "w:legacy":{ word:"legacy", errors:8, corrections:0, variants:{} } } } };
-  const storage = { async get(keys) {
-    if (keys === indexKey) return { [indexKey]:{ sessions:[
+  const unindexedRecord = { wrongWordStats:{ version:2, words:{
+    "w:occasionally":{ word:"occasionally", errors:2, corrections:0, variants:{ "v:occasionaly":{ text:"occasionaly", count:2 } } },
+  } } };
+  const localData = {
+    [indexKey]:{ sessions:[
       { sourceType:"youtube", sourceId:"abcdefghijk", title:"Lesson A", url:"https://youtube.test/watch" },
       { sourceType:"youtube", sourceId:"lmnopqrstuv", title:"Legacy B", url:"https://youtube.test/watch" },
-    ] } };
-    if (Array.isArray(keys)) return Object.fromEntries(keys.map(key => [key, key.endsWith("abcdefghijk") ? record : legacyRecord]));
-    return {};
-  } };
+    ] },
+    "dictation:abcdefghijk":record,
+    "dictation:lmnopqrstuv":legacyRecord,
+    "dictation:zyxwvutsrqpon":unindexedRecord,
+    "dictation:layout:v1":{ wrongWordStats:{ version:2, words:{ "w:shouldnotappear":{ word:"shouldnotappear", errors:99, corrections:0, variants:{} } } } },
+  };
+  const storage = { async get(keys) { return keys === null ? localData : {}; } };
   const context = {
     document:{ getElementById(id) { return id === "listenDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en" }, activeElement:null },
     window:{ addEventListener() {} },
@@ -100,13 +107,19 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   assert.equal(messages[0].origin, "https://keepit.test");
   assert.equal(messages[0].data.type, "KEEPIT_DICTATION_STATS_OPEN");
   const stats = messages[0].data.stats;
-  assert.equal(stats.sessions.length, 1);
-  assert.equal(stats.sessions[0].title, "Lesson A");
-  assert.equal(stats.sessions[0].words.length, 1);
-  assert.equal(stats.sessions[0].words[0].word, "environment");
-  assert.equal(stats.globalWords[0].errors, 7);
-  assert.equal(stats.globalWords[0].fixes, 3);
-  assert.deepEqual(Array.from(stats.globalWords[0].sources), ["Lesson A"]);
+  assert.equal(stats.sessions.length, 2, "valid saved records are found even when their video is missing from the session index");
+  const indexedSession = stats.sessions.find(session => session.sourceId === "abcdefghijk");
+  const unindexedSession = stats.sessions.find(session => session.sourceId === "zyxwvutsrqpon");
+  assert.equal(indexedSession.title, "Lesson A");
+  assert.equal(indexedSession.words.length, 1);
+  assert.equal(indexedSession.words[0].word, "environment");
+  assert.equal(unindexedSession.title, "zyxwvutsrqpon", "without index metadata the video ID is used instead of dropping real data");
+  assert.equal(unindexedSession.words[0].word, "occasionally");
+  const environment = stats.globalWords.find(item => item.word === "environment");
+  assert.equal(environment.errors, 7);
+  assert.equal(environment.fixes, 3);
+  assert.deepEqual(Array.from(environment.sources), ["Lesson A"]);
+  assert.equal(stats.globalWords.some(item => item.word === "shouldnotappear"), false, "layout and non-video keys are ignored");
 
   storageChanged({ settings:{ newValue:{ theme:"dark" } } }, "local");
   await new Promise(resolve => setTimeout(resolve, 80));
@@ -117,7 +130,7 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   await new Promise(resolve => setTimeout(resolve, 80));
   assert.equal(messages.length, 2);
   assert.equal(messages[1].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
-  assert.equal(messages[1].data.stats.globalWords[0].errors, 8, "live popup snapshot reflects the updated local attempt");
+  assert.equal(messages[1].data.stats.globalWords.find(item => item.word === "environment").errors, 8, "live popup snapshot reflects the updated local attempt");
 });
 
 test("Error rate follows wrong/(wrong + fixes), with exact 70% and minimum-three red-alert thresholds", () => {
