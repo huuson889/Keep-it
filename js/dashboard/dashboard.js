@@ -2537,7 +2537,7 @@ let dashboardPanelRevealTimers = new Map();
 let dashboardPanelRevealSequenceEnd = 0;
 function dashboardPanelRevealTargets(view) {
   if (view === "listening") return [...dashboardListeningView.querySelectorAll([
-    ".listen-hero-row", ".search-panel", ".library-section", ".layout > .aside"
+    ".listen-hero-row > .hero", ".listen-hero-row > .continue-card", ".search-panel", ".library-section", ".layout > .aside"
   ].join(","))];
   if (view === "highlights-notes") return [...dashboardHighlightsNotesView.querySelectorAll(".dashboard-reveal")];
   return [];

@@ -28,6 +28,14 @@ test("Overview reveals individual frames in visual reading order with reference 
   assert.match(overviewCss, /transform:translateY\(-4px\)/);
 });
 
+test("Dictation reveals the hero and continue card separately in visual row order", () => {
+  assert.match(dashboardJs, /if \(view === "listening"\) return \[\.\.\.dashboardListeningView\.querySelectorAll\(\[[\s\S]*?"\.listen-hero-row > \.hero", "\.listen-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
+  assert.match(dashboardHtml, /class="listen-hero-row"><section[^>]*class="hero dashboard-reveal"/);
+  assert.match(dashboardHtml, /class="continue-card dashboard-reveal"/);
+  assert.doesNotMatch(dashboardHtml, /class="listen-hero-row dashboard-reveal"/);
+  assert.match(dashboardJs, /dashboardPanelRevealSequenceEnd \+ 80/);
+});
+
 test("fresh Dashboard load waits for Overview data readiness before replaying the entrance", () => {
   assert.ok((dashboardHtml.match(/class="[^"]*\bov-reveal\b/g) || []).length >= 17);
   assert.match(dashboardJs, /const reveal = node\.closest\("\.ov-reveal"\);[\s\S]*?if \(reveal\?\.classList\.contains\("ov-revealed"\)\)[\s\S]*?node\.textContent = formatter\(0\)/);

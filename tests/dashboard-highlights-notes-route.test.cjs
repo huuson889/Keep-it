@@ -19,7 +19,7 @@ test("Highlights & Notes is integrated into the Dashboard document and shared sc
   assert.match(html, /class="sources-panel dashboard-reveal"/);
   assert.match(html, /class="notes-panel dashboard-reveal"/);
   assert.match(dashboard, /function dashboardPanelRevealTargets\(view\)/);
-  assert.match(dashboard, /"\.listen-hero-row", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
+  assert.match(dashboard, /"\.listen-hero-row > \.hero", "\.listen-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
   assert.match(dashboard, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
   assert.doesNotMatch(html, /dashboardHighlightsNotesFrame|src="lr-practice-demo\.html"/);
   assert.doesNotMatch(html, /<iframe[^>]+lr-practice-demo\.html/);
