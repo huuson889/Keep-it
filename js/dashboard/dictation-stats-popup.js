@@ -1,10 +1,13 @@
 (() => {
   const $ = selector => document.querySelector(selector);
   const modal = $(".modal"), backdrop = $("#backdrop");
-  const closeX = $("#closeX"), closeDone = $("#closeDone"), reopen = $("#reopen"), expandBtn = $("#expandBtn");
+  const closeX = $("#closeX"), reopen = $("#reopen"), expandBtn = $("#expandBtn");
+  const searchInput = $("#searchInput");
   if (!modal || !backdrop) return;
 
   const TYPES = ["phonetic", "rule", "typo"];
+  const CHEVRON_RIGHT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>';
+  const CHEVRON_DOWN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
   const EXPAND_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
   const SHRINK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M15 21v-4a2 2 0 0 1 2-2h4M3 15h4a2 2 0 0 1 2 2v4"/></svg>';
   let globalWords = [];
@@ -12,7 +15,14 @@
   let currentView = "global";
   let globalType = "all", criticalType = "all";
   let globalSort = "rate", criticalSort = "rate";
+  let searchTerm = "";
   const fallback = {
+    dictationStatsSearchPlaceholder:"Search saved Dictation errors…",
+    dictationStatsSearchLabel:"Search saved Dictation errors",
+    dictationStatsMetricWords:"Misspelled words",
+    dictationStatsMetricErrors:"Wrong attempts",
+    dictationStatsMetricFixes:"Corrected",
+    dictationStatsMetricRecovery:"Recovery",
     dictationStatsErrorCountLine:"Wrong {errors} times",
     dictationStatsErrorFixesLine:"Fixed {fixes}",
     dictationStatsErrorRateLine:"Rate {rate}%",
@@ -57,6 +67,7 @@
       node.setAttribute("aria-label", value);
       if (node.id === "closeX" || node.id === "expandBtn") node.title = value;
     });
+    if (searchInput) searchInput.placeholder = tr("dictationStatsSearchPlaceholder");
     document.querySelectorAll(".view-pane[data-pane]").forEach(pane => {
       const labels = { global:"dictationStatsViewGlobal", critical:"dictationStatsViewCritical", sessions:"dictationStatsViewSessions" };
       pane.setAttribute("aria-label", tr(labels[pane.dataset.pane] || "dictationStatsViewGlobal"));
@@ -155,13 +166,39 @@
       lastErrorType:type, errorContext,
     };
   }
-  function renderMetrics() {
-    const errors = globalWords.reduce((sum, item) => sum + safeCount(item.errors), 0);
-    const fixes = globalWords.reduce((sum, item) => sum + safeCount(item.fixes), 0);
-    $("#statsWordCount").textContent = String(globalWords.length);
+  function renderMetrics(items = currentMetricItems()) {
+    const errors = items.reduce((sum, item) => sum + safeCount(item.errors), 0);
+    const fixes = items.reduce((sum, item) => sum + safeCount(item.fixes), 0);
+    $("#statsWordCount").textContent = String(items.length);
     $("#statsErrorCount").textContent = String(errors);
     $("#statsFixCount").textContent = String(fixes);
     $("#statsRecoveryRate").textContent = `${Math.round(calculateRecoveryRate(errors, fixes))}%`;
+  }
+  function normalizeSearch(value) {
+    return String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase();
+  }
+  function matchesSearch(item, ...sourceDetails) {
+    const query = normalizeSearch(searchTerm);
+    if (!query) return true;
+    const context = item.errorContext || {};
+    const variants = (Array.isArray(item.variants) ? item.variants : []).map(variant => variant.text);
+    const haystack = normalizeSearch([
+      item.word, typeLabel(primaryType(item)), context.before, context.typed, context.after, context.source,
+      ...(Array.isArray(item.sources) ? item.sources : []), ...(Array.isArray(item.sourceUrls) ? item.sourceUrls : []),
+      ...variants, ...sourceDetails,
+    ].join(" "));
+    return haystack.includes(query);
+  }
+  function currentMetricItems() {
+    if (currentView === "critical") {
+      return globalWords.map(item => viewForType(item, criticalType)).filter(Boolean).filter(isCritical).filter(item => matchesSearch(item));
+    }
+    if (currentView === "sessions") {
+      return sessions.flatMap(session => session.words
+        .map(item => viewForType(item, globalType)).filter(Boolean)
+        .filter(item => matchesSearch(item, session.title, session.url)));
+    }
+    return globalWords.map(item => viewForType(item, globalType)).filter(Boolean).filter(item => matchesSearch(item));
   }
   function typeLabel(type) { return tr(`dictationStatsTypeName${type[0].toLocaleUpperCase()}${type.slice(1)}`); }
   function createTypeTag(item) {
@@ -283,11 +320,11 @@
     return list;
   }
   function renderGlobal() {
-    const items = globalWords.map(item => viewForType(item, globalType)).filter(Boolean);
+    const items = globalWords.map(item => viewForType(item, globalType)).filter(Boolean).filter(item => matchesSearch(item));
     renderGlobalList(sortedItems(items, globalSort), $("#globalList"));
   }
   function renderCritical() {
-    const items = globalWords.map(item => viewForType(item, criticalType)).filter(Boolean).filter(isCritical);
+    const items = globalWords.map(item => viewForType(item, criticalType)).filter(Boolean).filter(isCritical).filter(item => matchesSearch(item));
     renderGlobalList(sortedItems(items, criticalSort), $("#criticalList"));
   }
   function updateAccordion(body, toggle, title) {
@@ -297,16 +334,21 @@
     body.setAttribute("aria-hidden", String(collapsed));
     body.inert = collapsed;
     const chevron = toggle.querySelector(".chevron");
-    if (chevron) chevron.textContent = collapsed ? "▸" : "▾";
+    if (chevron) chevron.innerHTML = collapsed ? CHEVRON_RIGHT_SVG : CHEVRON_DOWN_SVG;
   }
   function renderSessions() {
     const list = $("#sessionList");
     list.replaceChildren();
-    if (!sessions.length) {
+    const visibleSessions = sessions.map(session => ({
+      session,
+      words:session.words.map(item => viewForType(item, globalType)).filter(Boolean)
+        .filter(item => matchesSearch(item, session.title, session.url)),
+    })).filter(entry => entry.words.length);
+    if (!visibleSessions.length) {
       list.append(el("div", "empty", `🌸 ${tr("dictationStatsEmpty")}`));
       return;
     }
-    sessions.forEach((session, index) => {
+    visibleSessions.forEach(({ session, words }, index) => {
       const group = el("section", "video-group");
       const head = el("div", "web-head");
       const titleGroup = el("div", "web-title-group");
@@ -326,7 +368,8 @@
       toggle.type = "button";
       toggle.setAttribute("aria-expanded", "true");
       toggle.setAttribute("aria-label", tr("dictationStatsCollapseVideo", { title:session.title }));
-      const chevron = el("span", "chevron", "▾");
+      const chevron = el("span", "chevron");
+      chevron.innerHTML = CHEVRON_DOWN_SVG;
       chevron.setAttribute("aria-hidden", "true");
       toggle.append(chevron);
       head.append(titleGroup, toggle);
@@ -337,7 +380,7 @@
       toggle.setAttribute("aria-controls", bodyId);
       const inner = el("div", "video-body-inner");
       inner.append(createSmartCardLabels());
-      sortedItems(session.words, "errors").forEach(item => inner.append(makeCard(item, {
+      sortedItems(words, "errors").forEach(item => inner.append(makeCard(item, {
         sourceOverride:session.title,
         sourceUrlOverride:session.url,
       })));
@@ -348,8 +391,15 @@
       list.append(group);
     });
   }
+  function syncToolbar() {
+    const critical = currentView === "critical";
+    $("#globalFilterPills").hidden = critical;
+    $("#criticalFilterPills").hidden = !critical;
+    $("#sortSelect").hidden = critical;
+    $("#criticalSortSelect").hidden = !critical;
+    $("#criticalThreshold").hidden = !critical;
+  }
   function render() {
-    renderMetrics();
     renderGlobal();
     renderCritical();
     renderSessions();
@@ -359,6 +409,8 @@
       tab.classList.toggle("active", active);
       tab.setAttribute("aria-pressed", String(active));
     });
+    syncToolbar();
+    renderMetrics();
   }
   document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
     currentView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
@@ -371,7 +423,7 @@
       filter.classList.toggle("active", active);
       filter.setAttribute("aria-pressed", String(active));
     });
-    renderGlobal();
+    render();
   }));
   document.querySelectorAll("#criticalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
     criticalType = button.dataset.criticalType || "all";
@@ -380,11 +432,12 @@
       filter.classList.toggle("active", active);
       filter.setAttribute("aria-pressed", String(active));
     });
-    renderCritical();
+    render();
   }));
   const globalSortSelect = $("#sortSelect"), criticalSortSelect = $("#criticalSortSelect");
   globalSortSelect?.addEventListener("change", () => { globalSort = globalSortSelect.value || "rate"; renderGlobal(); });
   criticalSortSelect?.addEventListener("change", () => { criticalSort = criticalSortSelect.value || "rate"; renderCritical(); });
+  searchInput?.addEventListener("input", () => { searchTerm = searchInput.value; render(); });
 
   function closeModal() {
     backdrop.classList.add("closed");
@@ -408,7 +461,6 @@
     closeX?.focus();
   }
   closeX?.addEventListener("click", closeModal);
-  closeDone?.addEventListener("click", closeModal);
   reopen?.addEventListener("click", () => openModal(document.documentElement.lang));
   expandBtn?.addEventListener("click", () => {
     const expanded = modal.classList.toggle("is-expanded");

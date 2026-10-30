@@ -219,6 +219,7 @@
 
   Object.assign(MESSAGES.en, {
     dictationStatsPopupTitle:"Dictation Spelling Error Analysis 🎯", dictationStatsPopupSubtitle:"Review common mistakes, context, and correction progress from your videos.", dictationStatsPopupClose:"Close", dictationStatsPopupExpand:"Expand popup", dictationStatsPopupRestore:"Restore popup",
+    dictationStatsSearchLabel:"Search saved Dictation errors", dictationStatsSearchPlaceholder:"Search saved Dictation errors…",
     dictationStatsViewTabsLabel:"Analytics views", dictationStatsViewGlobal:"🌟 Global", dictationStatsViewCritical:"🚨 Needs practice", dictationStatsViewSessions:"📂 By website",
     dictationStatsMetricWords:"Misspelled words", dictationStatsMetricErrors:"Wrong attempts", dictationStatsMetricFixes:"Corrected", dictationStatsMetricRecovery:"Recovery", dictationStatsUnitWords:"words", dictationStatsUnitErrors:"attempts", dictationStatsUnitFixes:"times", dictationStatsUnitRecovery:"effectiveness",
     dictationStatsFilterLabel:"Filter error types", dictationStatsTypeAll:"All error types", dictationStatsTypePhonetic:"🎧 Phonetic", dictationStatsTypeRule:"📜 Spelling rules", dictationStatsTypeTypo:"⚡ Typing", dictationStatsTypeNamePhonetic:"🎧 Phonetic / misheard", dictationStatsTypeNameRule:"📜 Spelling rule", dictationStatsTypeNameTypo:"⚡ Typing typo",
@@ -229,8 +230,9 @@
   });
   Object.assign(MESSAGES.vi, {
     dictationStatsPopupTitle:"Phân tích lỗi sai chép chính tả", dictationStatsPopupSubtitle:"Nhìn lại lỗi thường gặp, ngữ cảnh và tiến độ sửa đúng theo video.", dictationStatsPopupClose:"Đóng", dictationStatsPopupExpand:"Phóng to popup", dictationStatsPopupRestore:"Thu nhỏ popup",
+    dictationStatsSearchLabel:"Tìm lỗi chính tả", dictationStatsSearchPlaceholder:"Tìm trong các lỗi đã lưu…",
     dictationStatsViewTabsLabel:"Các góc nhìn thống kê", dictationStatsViewGlobal:"🌟 Toàn cục", dictationStatsViewCritical:"🚨 Cần luyện thêm", dictationStatsViewSessions:"📂 Theo web",
-    dictationStatsMetricWords:"Từ sai", dictationStatsMetricErrors:"Lượt gõ nhầm", dictationStatsMetricFixes:"Đã sửa đúng", dictationStatsMetricRecovery:"Khắc phục", dictationStatsUnitWords:"từ", dictationStatsUnitErrors:"lượt", dictationStatsUnitFixes:"lần", dictationStatsUnitRecovery:"hiệu suất",
+    dictationStatsMetricWords:"Từ sai", dictationStatsMetricErrors:"Gõ nhầm", dictationStatsMetricFixes:"Sửa đúng", dictationStatsMetricRecovery:"Khắc phục", dictationStatsUnitWords:"từ", dictationStatsUnitErrors:"lượt", dictationStatsUnitFixes:"lần", dictationStatsUnitRecovery:"hiệu suất",
     dictationStatsFilterLabel:"Lọc theo nhóm lỗi", dictationStatsTypeAll:"Tất cả nguyên nhân", dictationStatsTypePhonetic:"🎧 Âm vị", dictationStatsTypeRule:"📜 Quy tắc", dictationStatsTypeTypo:"⚡ Gõ nhanh", dictationStatsTypeNamePhonetic:"🎧 Âm vị / nghe nhầm", dictationStatsTypeNameRule:"📜 Lỗi quy tắc chính tả", dictationStatsTypeNameTypo:"⚡ Lỗi gõ nhanh (Typo)",
     dictationStatsWordColumn:"Từ sai", dictationStatsContextColumn:"Ngữ cảnh", dictationStatsVariantsColumn:"Biến thể gõ", dictationStatsTypeColumn:"Loại lỗi", dictationStatsSummaryColumn:"Tổng quan lỗi", dictationStatsContextLabel:"Ngữ cảnh", dictationStatsSourceLabel:"📺 {source}", dictationStatsVariantsLabel:"Biến thể gõ", dictationStatsNoVariants:"Chưa có biến thể nhập sai.",
     dictationStatsSortLabel:"Sắp xếp lỗi", dictationStatsSortRate:"Tỷ lệ lỗi cao nhất", dictationStatsSortErrors:"Sai nhiều nhất", dictationStatsSortRecent:"Mới nhất", dictationStatsCriticalThreshold:"≥ 70% lỗi",
@@ -239,6 +241,7 @@
   });
   Object.assign(MESSAGES.ko, {
     dictationStatsPopupTitle:"받아쓰기 맞춤법 오류 분석 🎯", dictationStatsPopupSubtitle:"동영상에서 자주 틀리는 단어와 문맥, 수정 진행 상황을 확인하세요.", dictationStatsPopupClose:"닫기", dictationStatsPopupExpand:"팝업 확대", dictationStatsPopupRestore:"팝업 복원",
+    dictationStatsSearchLabel:"저장된 받아쓰기 오류 검색", dictationStatsSearchPlaceholder:"저장된 받아쓰기 오류 검색…",
     dictationStatsViewTabsLabel:"분석 보기", dictationStatsViewGlobal:"🌟 전체", dictationStatsViewCritical:"🚨 연습 필요", dictationStatsViewSessions:"📂 웹별",
     dictationStatsMetricWords:"틀린 단어", dictationStatsMetricErrors:"오답 입력", dictationStatsMetricFixes:"수정 성공", dictationStatsMetricRecovery:"회복률", dictationStatsUnitWords:"단어", dictationStatsUnitErrors:"회", dictationStatsUnitFixes:"회", dictationStatsUnitRecovery:"효율",
     dictationStatsFilterLabel:"오류 유형 필터", dictationStatsTypeAll:"모든 오류 유형", dictationStatsTypePhonetic:"🎧 발음", dictationStatsTypeRule:"📜 철자 규칙", dictationStatsTypeTypo:"⚡ 입력 오타", dictationStatsTypeNamePhonetic:"🎧 발음 / 잘못 들음", dictationStatsTypeNameRule:"📜 철자 규칙 오류", dictationStatsTypeNameTypo:"⚡ 입력 오타",

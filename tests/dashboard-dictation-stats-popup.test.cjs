@@ -28,7 +28,11 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(popup, /id="globalFilterPills"/);
   assert.match(popup, /id="criticalFilterPills"/);
   assert.match(popup, /id="criticalSortSelect"/);
+  assert.match(popup, /class="workspace-topbar"/);
+  assert.match(popup, /class="stats-sidebar"/);
+  assert.match(popup, /id="searchInput"/);
   assert.match(popup, /value="rate"/);
+  assert.doesNotMatch(popup, /class="footer"|id="closeDone"|id="modalSubtitle"/, "v14 header has no subtitle or footer");
   assert.match(languages, /dictationStatsTypeNamePhonetic:/);
   assert.match(languages, /dictationStatsTypeNameRule:/);
   assert.match(languages, /dictationStatsTypeNameTypo:/);
@@ -36,16 +40,17 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(popup, /dictation-stats-popup\.js/);
   assert.match(popup, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/dictation-stats-popup\.js"><\/script>/);
   assert.doesNotMatch(popup, /<script>([\s\S]*?)<\/script>/);
-  const demo = read("docs/dictation-error-popup-overview-demo-v7.html");
+  const demo = read("docs/dictation-error-popup-overview-demo-v14.html");
   const demoCss = demo.match(/<style>([\s\S]*?)<\/style>/)?.[1];
-  const productionV7Css = css.split("/* Production popup visibility")[0];
-  assert.ok(demoCss, "approved v7 demo stylesheet exists");
-  assert.equal(productionV7Css.trimEnd(), demoCss.trimEnd(), "production styling matches the approved demo v7 stylesheet verbatim");
+  const productionV14Css = css.split("/* Production popup visibility")[0];
+  assert.ok(demoCss, "v14 demo stylesheet exists");
+  assert.equal(productionV14Css.trimEnd(), demoCss.trimEnd(), "production styling matches the v14 demo stylesheet verbatim");
   assert.match(css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Inter/);
   assert.match(css, /\.modal\.is-expanded/);
   assert.match(css, /height:min\(900px,calc\(100vh - 40px\)\)/);
-  assert.match(css, /\.modal-body\{[^}]*overflow:auto/);
-  assert.match(css, /\.modal-body::-webkit-scrollbar\{width:3px/);
+  assert.match(css, /\.modal-body\{[^}]*overflow:hidden/);
+  assert.match(css, /\.results-scroll::-webkit-scrollbar\{width:3px!important;height:3px!important\}/);
+  assert.match(css, /grid-template-columns:minmax\(140px,146px\) minmax\(0,1fr\)/);
   assert.match(ui, /item\.errorContext\?\.source/);
   assert.match(ui, /LHN_SITE_ICONS\.load\(image, session\.url, \{ fallbackElement:fallbackIcon \}\)/);
   assert.doesNotMatch(ui, /google\.com\/s2\/favicons|\/favicon\.ico/);
@@ -64,13 +69,17 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(bridge, /stats,/);
   assert.match(ui, /function setStatsSnapshot\(snapshot\)/);
   assert.match(ui, /function renderCritical\(\)/);
+  assert.match(ui, /function matchesSearch\(item, \.\.\.sourceDetails\)/);
+  assert.match(ui, /function currentMetricItems\(\)/);
+  assert.match(ui, /searchInput\?\.addEventListener\("input"/);
+  assert.match(ui, /CHEVRON_RIGHT_SVG = .*width="22"/);
   assert.match(ui, /currentView = \["global", "critical", "sessions"\]/);
   assert.match(ui, /safeCount\(item\.errors\) >= 3 && calculateErrorRate\(item\.errors, item\.fixes\) >= 70/);
   assert.match(ui, /statsRecoveryRate/);
   assert.doesNotMatch(ui, /const errorDatabase\s*=\s*\[/, "popup uses real local stats rather than sample rows");
   assert.doesNotMatch(ui, /item\.rate >= 70/);
   assert.doesNotMatch(ui, /browser\.storage|chrome\.storage/);
-  for (const key of ["dictationStatsPopupTitle", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsSortRate", "dictationStatsErrorCountLine", "dictationStatsWordColumn", "dictationStatsCollapseVideo", "dictationProperNounHint"]) {
+  for (const key of ["dictationStatsPopupTitle", "dictationStatsSearchLabel", "dictationStatsSearchPlaceholder", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsSortRate", "dictationStatsErrorCountLine", "dictationStatsWordColumn", "dictationStatsCollapseVideo", "dictationProperNounHint"]) {
     assert.ok(languages.includes(`${key}:`), `localized key ${key} exists`);
   }
 });
@@ -222,7 +231,7 @@ test("video source titles link to safe YouTube video URLs", () => {
   assert.match(ui, /createSourceLink\(source, sourceUrl\)/);
 });
 
-test("global, critical, and per-web smart cards render five v7 columns with type and three-line error summary", () => {
+test("global, critical, and per-web smart cards render five columns with type and three-line error summary", () => {
   const ui = read("js/dashboard/dictation-stats-popup.js");
   const css = read("css/dashboard/dictation-stats-popup.css");
   const card = ui.match(/function createSmartCard\(item, \{[\s\S]*?\n  \}/)?.[0];
@@ -231,7 +240,7 @@ test("global, critical, and per-web smart cards render five v7 columns with type
   assert.match(ui, /inner\.append\(createSmartCardLabels\(\)\)/);
   assert.match(ui, /typeBox\.append\(createTypeTag\(item\)\)/);
   assert.match(ui, /summary\.append\([\s\S]*dictationStatsErrorRateLine/);
-  assert.match(css, /--smart-card-columns:var\(--smart-word-width\) minmax\(0,1fr\) minmax\(135px,165px\) minmax\(135px,155px\) minmax\(130px,155px\)/);
+  assert.match(css, /--smart-card-columns:130px minmax\(290px,1\.8fr\) minmax\(150px,1fr\) minmax\(125px,\.7fr\) minmax\(100px,\.55fr\)/);
   assert.match(css, /\.smart-card\{display:grid;grid-template-columns:var\(--smart-card-columns\)/);
   assert.match(css, /\.video-body\s*\{[^}]*transition:grid-template-rows/);
   assert.match(css, /\.video-body\.collapsed\{grid-template-rows:0fr/);
@@ -241,7 +250,7 @@ test("global, critical, and per-web smart cards render five v7 columns with type
 test("category filters isolate classified wrong attempts, fixes, variants, and their example context", () => {
   const ui = read("js/dashboard/dictation-stats-popup.js");
   const helperStart = ui.indexOf("  function primaryType(item) {");
-  const helperEnd = ui.indexOf("  function renderMetrics()", helperStart);
+  const helperEnd = ui.indexOf("  function renderMetrics(", helperStart);
   const helpers = helperStart >= 0 && helperEnd > helperStart ? ui.slice(helperStart, helperEnd) : "";
   assert.ok(helpers, "category view helpers exist");
   const view = vm.runInNewContext(`(() => {
@@ -268,6 +277,33 @@ test("category filters isolate classified wrong attempts, fixes, variants, and t
   assert.equal(view.primaryType(phonetic), "phonetic");
   assert.deepEqual(JSON.parse(JSON.stringify(phonetic.errorContext)), { before:"You can ", typed:"recieve", after:" it." });
   assert.equal(view.viewForType(item, "all").errors, 6);
+});
+
+test("v14 search filters saved words, typed variants, context, and source titles without Vietnamese diacritics", () => {
+  const ui = read("js/dashboard/dictation-stats-popup.js");
+  const start = ui.indexOf("  function normalizeSearch(value) {");
+  const end = ui.indexOf("  function currentMetricItems()", start);
+  const helpers = start >= 0 && end > start ? ui.slice(start, end) : "";
+  assert.ok(helpers, "search normalization and matching helpers exist");
+  const search = vm.runInNewContext(`(() => {
+    let searchTerm = "";
+    const primaryType = item => item.lastErrorType || "rule";
+    const typeLabel = type => type;
+    ${helpers}
+    return { matchesSearch, setQuery(value) { searchTerm = value; } };
+  })()`);
+  const item = {
+    word:"environment", lastErrorType:"rule", errorContext:{ before:"Ngữ cảnh tự nhiên ", typed:"enviroment", after:"." },
+    variants:[{ text:"enviroment" }], sources:["Lesson A"], sourceUrls:["https://www.youtube.com/watch?v=abcdefghijk"],
+  };
+  search.setQuery("ngu canh");
+  assert.equal(search.matchesSearch(item), true, "accent-insensitive context search works");
+  search.setQuery("enviroment");
+  assert.equal(search.matchesSearch(item), true, "search covers the incorrect typed form");
+  search.setQuery("lesson a");
+  assert.equal(search.matchesSearch(item, "Lesson A", "https://www.youtube.com/watch?v=abcdefghijk"), true, "session title is searchable in the per-web view");
+  search.setQuery("unrelated");
+  assert.equal(search.matchesSearch(item), false);
 });
 
 test("Error rate follows wrong/(wrong + fixes), with exact 70% and minimum-three red-alert thresholds", () => {

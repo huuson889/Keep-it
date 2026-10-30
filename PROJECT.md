@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.801; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
-- Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
-- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; header trang đang chọn dùng cùng cách overlay ảnh tuyệt đối, `no-referrer` và fallback như source-site-icon. Fallback còn hiện lúc dò icon hoặc khi lỗi.
-- Kiểm tra: 38/38 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Version hiện tại: v3.4.802; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Popup Dictation production đã port UI demo v14: header gọn không subtitle, toolbar compact, metrics sidebar, search và results viewport; giữ ba view, cards 5 cột, filter/sort Global-Critical độc lập và scrollbar 3px WebKit.
+- Snapshot vẫn lấy từ records schema v3 qua same-origin bridge; title/fallback, ngưỡng Critical và migration stats v1/v2 giữ nguyên. Metrics/search áp dụng theo view và filter hiện tại.
+- Website favicon dùng resolver/cache chung `js/shared/site-icons.js`; header trang đang chọn dùng overlay ảnh tuyệt đối, `no-referrer` và fallback như source-site-icon.
+- Kiểm tra: full suite 39/39; 52 JavaScript và test-script syntax checks, 11 CSS files parse sạch; parity CSS v14, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -111,6 +111,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.802 | Arena.ai Agent sửa:**
+
+- Áp dụng UI demo v14 vào đúng popup Dictation production: header gọn, toolbar compact, metrics sidebar, search theo view/filter, không footer; scrollbar WebKit giữ 3px. Giữ nguyên bridge, records local, title/fallback, Critical threshold và UI khác.
+- Đồng bộ metric labels/search translations, regression tests và tài liệu kỹ thuật; lưu các demo v2–v14 để giữ lịch sử thiết kế.
+- File: `pages/dictation-stats-popup.html`, `css/dashboard/dictation-stats-popup.css`, `js/dashboard/dictation-stats-popup.js`, `js/core/languages.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `docs/dictation-error-popup-overview-demo-v2.html`–`v14.html`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.802.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 39/39; 52 JavaScript và test-script syntax checks; 11 CSS files parse sạch; stylesheet production khớp demo v14, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.801 | Arena.ai Agent sửa:**
 
