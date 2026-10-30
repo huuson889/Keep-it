@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.810; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.811; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung `#dashboardScroller`, nền/theme và topbar; mỗi route giữ nội dung/logic riêng và lưu vị trí cuộn theo tab. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
 - Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
-- Bản 3.4.810 sửa specificity khiến topbar giữ nền trắng trong dark mode; thêm assertion regression cho override tối.
-- Kiểm tra: full suite 47/47; JavaScript syntax, CSS parse, manifest JSON và `git diff --check` đạt. Chưa browser-test.
+- Bản 3.4.811 khôi phục reveal của các khung cấp cao khi chuyển giữa các tab, sau khi scroll được phục hồi; giữ data-ready của Overview và ngăn callback route cũ bằng cycle guard.
+- Kiểm tra v3.4.811: full suite 48/48; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -113,14 +113,21 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-31 | v3.4.810 | Arena.ai Agent hotfix:**
+**2026-10-31 | v3.4.811 | Arena.ai Agent sửa:**
+
+- Khôi phục reveal khi chuyển giữa Overview, Dictation và Highlights & Notes; reveal chạy sau khi vị trí cuộn route được khôi phục, topbar dùng chung cũng tham gia chu kỳ. Giữ nguyên sequencing data-ready/scroll-restoration của lần tải đầu Overview.
+- Cycle guard loại callback reveal/scroll cũ khi người dùng chuyển tab liên tiếp; regression test bao phủ route re-entry, topbar và scroll sequencing.
+- File: `js/dashboard/dashboard.js`, `tests/dashboard-overview-animations.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.811.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 48/48; `node --check` 52 JS và 12 test scripts; 12 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
+
+**2026-10-30 | v3.4.810 | Arena.ai Agent hotfix:**
 
 - Sửa dark topbar trong shared shell: selector nền tối trước đó có specificity thấp hơn selector nền trắng của shared topbar. Nâng selector để nền, border và shadow tối thực sự áp dụng trong theme tối.
 - Thêm regression assertion cho selector dark mode của topbar.
 - File: `css/dashboard/overview.css`, `tests/dashboard-topbar.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.810.zip`.
 - Kiểm tra: full suite 47/47; CSS parse, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
-**2026-10-31 | v3.4.809 | Arena.ai Agent sửa:**
+**2026-10-30 | v3.4.809 | Arena.ai Agent sửa:**
 
 - Chuẩn hóa Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, nền sáng/tối chung và một topbar; lưu vị trí cuộn riêng từng tab và khôi phục route đang hoạt động sau reload.
 - Tích hợp markup Highlights & Notes vào `pages/dashboard.html`, thay iframe `postMessage` bằng custom-event bus trong cùng document. Giữ nguyên hành động/dữ liệu nghiệp vụ và block appearance; scope CSS vào đúng route.

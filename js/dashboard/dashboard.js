@@ -2535,7 +2535,12 @@ function resetDashboardPanelEntranceEffects(view) {
   dashboardPanelRevealTimers.clear();
   dashboardPanelRevealSequenceEnd = 0;
   const routeTargets = dashboardPanelRevealTargets(view);
-  const targets = [...(!dashboardSharedTopbar?.classList.contains("ov-revealed") ? [dashboardSharedTopbar].filter(Boolean) : []), ...routeTargets];
+  if (dashboardSharedTopbar) {
+    dashboardSharedTopbar.classList.add("ov-reveal");
+    dashboardSharedTopbar.classList.remove("ov-revealed");
+    dashboardSharedTopbar.style.removeProperty("--ov-reveal-delay");
+  }
+  const targets = [...[dashboardSharedTopbar].filter(Boolean), ...routeTargets];
   for (const target of routeTargets) {
     target.classList.remove("dashboard-revealed");
     target.style.removeProperty("--ov-reveal-delay");
@@ -2570,6 +2575,34 @@ function savedDashboardView() {
   try { const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY); return ["overview", "listening", "highlights-notes"].includes(saved) ? saved : "overview"; }
   catch { return "overview"; }
 }
+let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
+function cancelDashboardEntranceEffects() {
+  overviewEffectsObserver?.disconnect();
+  overviewEffectsObserver = null;
+  for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
+  overviewRevealTimers.clear();
+  dashboardPanelRevealObserver?.disconnect();
+  dashboardPanelRevealObserver = null;
+  for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
+  dashboardPanelRevealTimers.clear();
+}
+function restoreDashboardViewAndReveal(view, switchCycle) {
+  const restoreCycle = ++dashboardRestoreCycle;
+  dashboardScrollRestoring = true;
+  const savedScrollTop = readDashboardScrollPosition(view);
+  dashboardScroller.scrollTop = savedScrollTop;
+  requestAnimationFrame(() => {
+    if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
+    dashboardScroller.scrollTop = savedScrollTop;
+    requestAnimationFrame(() => {
+      if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
+      dashboardScrollRestoring = false;
+      if (!overviewInitialDataReady) return;
+      if (view === "overview") resetOverviewEntranceEffects();
+      else resetDashboardPanelEntranceEffects(view);
+    });
+  });
+}
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
   if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
@@ -2585,27 +2618,11 @@ function setDashboardView(view) {
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }
-  dashboardScrollRestoring = true;
-  const savedScrollTop = readDashboardScrollPosition(view);
-  dashboardScroller.scrollTop = savedScrollTop;
-  requestAnimationFrame(() => {
-    dashboardScroller.scrollTop = savedScrollTop;
-    requestAnimationFrame(() => { dashboardScrollRestoring = false; });
-  });
-  if (showOverview) { if (overviewInitialDataReady) resetOverviewEntranceEffects(); }
-  else {
-    overviewEffectsObserver?.disconnect();
-    overviewEffectsObserver = null;
-    for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
-    overviewRevealTimers.clear();
-    dashboardPanelRevealObserver?.disconnect();
-    dashboardPanelRevealObserver = null;
-    for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
-    dashboardPanelRevealTimers.clear();
-    if (overviewInitialDataReady) resetDashboardPanelEntranceEffects(view);
-  }
+  cancelDashboardEntranceEffects();
+  const switchCycle = ++dashboardViewSwitchCycle;
   mountSharedTopbarInParent(view);
-dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
+  restoreDashboardViewAndReveal(view, switchCycle);
+  dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
     const active = link.dataset.dashboardView === view;
     link.classList.toggle("is-active", active);
     if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
@@ -3148,16 +3165,10 @@ $("exportErrorLog")?.addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
-  const savedScrollTop = readDashboardScrollPosition(activeDashboardView);
-  dashboardScrollRestoring = true;
-  dashboardScroller.scrollTop = savedScrollTop;
-  requestAnimationFrame(() => {
-    dashboardScroller.scrollTop = savedScrollTop;
-    overviewInitialDataReady = true;
-    if (activeDashboardView === "overview") resetOverviewEntranceEffects();
-    else resetDashboardPanelEntranceEffects(activeDashboardView);
-    requestAnimationFrame(() => { dashboardScrollRestoring = false; });
-  });
+  overviewInitialDataReady = true;
+  const loadedView = activeDashboardView;
+  const loadCycle = dashboardViewSwitchCycle;
+  restoreDashboardViewAndReveal(loadedView, loadCycle);
   initListeningPreview();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });

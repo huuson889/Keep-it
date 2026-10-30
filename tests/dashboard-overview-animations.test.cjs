@@ -9,7 +9,7 @@ const overviewCss = fs.readFileSync(new URL("../css/dashboard/overview.css", `fi
 test("Overview reveals individual frames in visual reading order with reference stagger timing", () => {
   assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?visibleTargets = entries[\s\S]*?\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)[\s\S]*?overviewRevealSequenceEnd \+ 80[\s\S]*?overviewRevealTarget\(target, Math\.round\(revealAt - now\)\)/);
   assert.match(dashboardJs, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
-  assert.match(dashboardJs, /if \(showOverview\) \{ if \(overviewInitialDataReady\) resetOverviewEntranceEffects\(\); \}/);
+  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?dashboardScrollRestoring = false;[\s\S]*?if \(view === "overview"\) resetOverviewEntranceEffects\(\);[\s\S]*?else resetDashboardPanelEntranceEffects\(view\)/);
   assert.match(dashboardJs, /return \[dashboardSharedTopbar, \.\.\.dashboardOverviewView\.querySelectorAll\([\s\S]*?"\.ov-welcome"[\s\S]*?"\.ov-quick-panel"[\s\S]*?"\.ov-stats > \.ov-stat"[\s\S]*?"\.ov-resume"[\s\S]*?"\.ov-progress"[\s\S]*?"\.ov-mode-grid > \.ov-mode"[\s\S]*?"\.ov-lower > \.ov-panel"/);
   assert.match(dashboardJs, /function overviewRevealTarget\(target, revealDelay = 100\)/);
   assert.match(dashboardJs, /const revealAt = Math\.max\(now \+ 100, overviewRevealSequenceEnd \+ 80\)/);
@@ -31,7 +31,7 @@ test("Overview reveals individual frames in visual reading order with reference 
 test("fresh Dashboard load waits for Overview data readiness before replaying the entrance", () => {
   assert.ok((dashboardHtml.match(/class="[^"]*\bov-reveal\b/g) || []).length >= 17);
   assert.match(dashboardJs, /const reveal = node\.closest\("\.ov-reveal"\);[\s\S]*?if \(reveal\?\.classList\.contains\("ov-revealed"\)\)[\s\S]*?node\.textContent = formatter\(0\)/);
-  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?readDashboardScrollPosition\(activeDashboardView\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?overviewInitialDataReady = true;[\s\S]*?resetOverviewEntranceEffects\(\)/);
+  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{\s*overviewInitialDataReady = true;[\s\S]*?const loadedView = activeDashboardView;[\s\S]*?restoreDashboardViewAndReveal\(loadedView, loadCycle\)/);
   assert.match(dashboardJs, /for \(const timer of overviewRevealTimers\.values\(\)\) clearTimeout\(timer\);[\s\S]*?overviewRevealTimers\.clear\(\)/);
 });
 
@@ -76,5 +76,12 @@ test("Each active tab keeps an independent scroll position and the last route re
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_SCROLL_POSITIONS_KEY, JSON\.stringify\(positions\)\)/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_ACTIVE_VIEW_KEY, view\)/);
   assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?\? saved : "overview"/);
-  assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{[\s\S]*?readDashboardScrollPosition\(activeDashboardView\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?overviewInitialDataReady = true/);
+  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?const savedScrollTop = readDashboardScrollPosition\(view\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\([\s\S]*?if \(switchCycle !== dashboardViewSwitchCycle \|\| restoreCycle !== dashboardRestoreCycle\)/);
+});
+
+test("Tab re-entry resets high-level panels and reveals after the route scroll position settles", () => {
+  assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\]/);
+  assert.match(dashboardJs, /target\.classList\.remove\("dashboard-revealed"\)/);
+  assert.match(dashboardJs, /function setDashboardView\(view\)[\s\S]*?cancelDashboardEntranceEffects\(\)[\s\S]*?mountSharedTopbarInParent\(view\);[\s\S]*?restoreDashboardViewAndReveal\(view, switchCycle\)/);
+  assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?dashboardScroller\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?resetOverviewEntranceEffects\(\)/);
 });
