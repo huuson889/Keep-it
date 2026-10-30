@@ -2702,7 +2702,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   grid-template-columns:minmax(440px,530px) minmax(0,1fr)!important;
   gap:15px!important;
   align-items:stretch!important;
-  height:max(300px,calc(100vh - 472px))!important;
+  height: max(650px, calc(100vh - 472px)) !important;
   min-height:300px!important;
   max-height:none!important;
   overflow:visible!important;
