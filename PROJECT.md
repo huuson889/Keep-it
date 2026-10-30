@@ -1,11 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.796; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Tiêu đề `context-source` lấy từ `ui.miniTitle`, lưu trong record và session index; bridge chọn nguồn mới hơn, bỏ title chỉ là videoId, thử dùng title của tab YouTube đang mở nếu dữ liệu cũ thiếu tên, rồi mới fallback ID. Tên video ở context và mục theo video là liên kết mở video YouTube.
-- Smart-card ở tab toàn cục/báo động dùng 4 cột; phần tóm tắt lỗi đứng bên phải cột biến thể gõ. Từng từ trong Chi tiết theo video tái sử dụng cùng smart-card; session accordion đóng/mở mượt bằng animation chiều cao.
-- Popup giữ UI demo, phân loại cục bộ, filter và live refresh; chiều cao cố định theo max hiện tại, body scroll 3px Chromium. Migration stats v1/v2 giữ notes/progress/translations.
-- Kiểm tra gần nhất: 32/32 tests; 53 JavaScript syntax checks; manifest v3.4.796/44 assets; 4 HTML/52 local refs/402 IDs; 11 CSS/2,612 rules, 2 embedded blocks và 17 inline styles parse sạch; `git diff --check` đạt. Chưa browser-test.
+- Version hiện tại: v3.4.797; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
+- Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
+- Kiểm tra mới nhất: cập nhật production popup và regression tests theo v7; chưa browser-test. Kết quả full test/static ghi trong nhật ký mục 5 khi hoàn tất.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -92,7 +91,7 @@ Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
-Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> demo-matched global / critical / per-video views
+Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
@@ -110,6 +109,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.797 | Arena.ai Agent sửa:**
+
+- Áp dụng nguyên stylesheet demo v7 đã duyệt vào popup production; chuyển render sang 5 cột, ba dòng tổng quan lỗi, góc nhìn theo web và filter/sort độc lập ở Global/Critical. Giữ nguyên bridge dữ liệu local, logic title/URL và fallback YouTube.
+- File: `pages/dictation-stats-popup.html`, `css/dashboard/dictation-stats-popup.css`, `js/dashboard/dictation-stats-popup.js`, `js/core/languages.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `docs/dictation-error-popup-overview-demo-v7.html`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.797.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 33/33; `node --check` đạt 51 JavaScript files; tinycss2 parse 11 CSS files; manifest JSON, CSS-v7 parity regression và `git diff --check` đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.796 | Arena.ai Agent sửa:**
 

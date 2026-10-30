@@ -23,23 +23,28 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(popup, /data-view="critical"/);
   assert.match(popup, /data-view="sessions"/);
   for (const type of ["phonetic", "rule", "typo"]) assert.match(popup, new RegExp(`data-type="${type}"`));
-  assert.match(popup, /Thống kê &amp; Phân loại Lỗi Chính tả/);
+  assert.match(popup, /Phân tích lỗi sai chép chính tả/);
   assert.match(popup, /id="statsRecoveryRate"/);
+  assert.match(popup, /id="globalFilterPills"/);
+  assert.match(popup, /id="criticalFilterPills"/);
+  assert.match(popup, /id="criticalSortSelect"/);
+  assert.match(popup, /value="rate"/);
   assert.match(languages, /dictationStatsTypeNamePhonetic:/);
   assert.match(languages, /dictationStatsTypeNameRule:/);
   assert.match(languages, /dictationStatsTypeNameTypo:/);
   assert.match(popup, /dictation-stats-popup\.css/);
   assert.match(popup, /dictation-stats-popup\.js/);
   assert.doesNotMatch(popup, /<script>([\s\S]*?)<\/script>/);
-  assert.doesNotMatch(css, /@import\s+url\(['"]?https?:/i);
-  assert.match(css, /PlusJakartaSans-latin\.woff2/);
-  assert.match(css, /PlusJakartaSans-vietnamese\.woff2/);
-  assert.ok(fs.existsSync(path.join(root, "assets/fonts/PlusJakartaSans-latin.woff2")));
-  assert.ok(fs.existsSync(path.join(root, "assets/fonts/PlusJakartaSans-vietnamese.woff2")));
+  const demo = read("docs/dictation-error-popup-overview-demo-v7.html");
+  const demoCss = demo.match(/<style>([\s\S]*?)<\/style>/)?.[1];
+  const productionV7Css = css.split("/* Production popup visibility")[0];
+  assert.ok(demoCss, "approved v7 demo stylesheet exists");
+  assert.equal(productionV7Css.trimEnd(), demoCss.trimEnd(), "production styling matches the approved demo v7 stylesheet verbatim");
+  assert.match(css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Inter/);
   assert.match(css, /\.modal\.is-expanded/);
-  assert.match(css, /height:\s*min\(900px,\s*calc\(100vh - 40px\)\)/);
-  assert.match(css, /\.modal-body[^}]*overflow-y:\s*auto/);
-  assert.match(css, /\.modal-body::-webkit-scrollbar\s*\{\s*width:\s*3px/);
+  assert.match(css, /height:min\(900px,calc\(100vh - 40px\)\)/);
+  assert.match(css, /\.modal-body\{[^}]*overflow:auto/);
+  assert.match(css, /\.modal-body::-webkit-scrollbar\{width:3px/);
   assert.match(ui, /item\.errorContext\?\.source/);
 
   assert.match(bridge, /browser\?\.storage\?\.local/);
@@ -55,13 +60,14 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(ui, /setStatsSnapshot\(event\.data\.stats\)/);
   assert.match(bridge, /stats,/);
   assert.match(ui, /function setStatsSnapshot\(snapshot\)/);
-  assert.match(ui, /currentView === "critical"/);
+  assert.match(ui, /function renderCritical\(\)/);
+  assert.match(ui, /currentView = \["global", "critical", "sessions"\]/);
   assert.match(ui, /safeCount\(item\.errors\) >= 3 && calculateErrorRate\(item\.errors, item\.fixes\) >= 70/);
   assert.match(ui, /statsRecoveryRate/);
   assert.doesNotMatch(ui, /const errorDatabase\s*=\s*\[/, "popup uses real local stats rather than sample rows");
   assert.doesNotMatch(ui, /item\.rate >= 70/);
   assert.doesNotMatch(ui, /browser\.storage|chrome\.storage/);
-  for (const key of ["dictationStatsPopupTitle", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsEligibleOnly", "dictationStatsStatusNeedsPractice", "dictationStatsStatusCorrected", "dictationProperNounHint"]) {
+  for (const key of ["dictationStatsPopupTitle", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsSortRate", "dictationStatsErrorCountLine", "dictationStatsWordColumn", "dictationStatsCollapseVideo", "dictationProperNounHint"]) {
     assert.ok(languages.includes(`${key}:`), `localized key ${key} exists`);
   }
 });
@@ -207,24 +213,26 @@ test("video source titles link to safe YouTube video URLs", () => {
   assert.equal(safeVideoUrl("https://youtube.com.evil.test/watch?v=abc123"), "");
   assert.match(ui, /link\.target = "_blank"/);
   assert.match(ui, /link\.rel = "noopener noreferrer"/);
-  assert.match(ui, /createSourceLink\(session\.title, session\.url, "session-source"\)/);
+  assert.match(ui, /const title = el\("a", "video-title", session\.title\)/);
+  assert.match(ui, /title\.href = href/);
+  assert.match(ui, /event\.target\.closest\("\.video-title"\)/);
   assert.match(ui, /createSourceLink\(source, sourceUrl\)/);
 });
 
-test("global and critical smart cards render four columns with the error summary after typed variants", () => {
+test("global, critical, and per-web smart cards render five v7 columns with type and three-line error summary", () => {
   const ui = read("js/dashboard/dictation-stats-popup.js");
   const css = read("css/dashboard/dictation-stats-popup.css");
   const card = ui.match(/function createSmartCard\(item, \{[\s\S]*?\n  \}/)?.[0];
   assert.ok(card, "shared global/session smart-card renderer exists");
-  assert.match(card, /card\.append\(targetBox, contextBox, createVariants\(item\), errorSummary\)/);
-  assert.match(ui, /bodyInner\.append\(createSmartCard\(item, \{/);
-  assert.match(ui, /className:"smart-card session-smart-card"/);
-  assert.match(css, /grid-template-columns:\s*200px minmax\(0,\s*1fr\) minmax\(150px,\s*180px\) minmax\(112px,\s*140px\)/);
-  assert.match(css, /\.word-error-summary\s*\{[^}]*justify-self:\s*end/);
-  assert.match(css, /@media \(max-width:760px\)[\s\S]*?\.smart-card \{ grid-template-columns:minmax\(0,1fr\)/);
-  assert.match(css, /\.session-body\s*\{[^}]*transition:[^}]*grid-template-rows/);
-  assert.match(css, /\.session-body\.collapsed\s*\{[^}]*grid-template-rows:\s*0fr/);
-  assert.doesNotMatch(css, /\.session-body\.collapsed\s*\{\s*display:\s*none/);
+  assert.match(card, /card\.append\(wordBox, contextBox, createVariants\(item\), typeBox, summary\)/);
+  assert.match(ui, /inner\.append\(createSmartCardLabels\(\)\)/);
+  assert.match(ui, /typeBox\.append\(createTypeTag\(item\)\)/);
+  assert.match(ui, /summary\.append\([\s\S]*dictationStatsErrorRateLine/);
+  assert.match(css, /--smart-card-columns:var\(--smart-word-width\) minmax\(0,1fr\) minmax\(135px,165px\) minmax\(135px,155px\) minmax\(130px,155px\)/);
+  assert.match(css, /\.smart-card\{display:grid;grid-template-columns:var\(--smart-card-columns\)/);
+  assert.match(css, /\.video-body\s*\{[^}]*transition:grid-template-rows/);
+  assert.match(css, /\.video-body\.collapsed\{grid-template-rows:0fr/);
+  assert.doesNotMatch(css, /\.video-body\.collapsed\{\s*display:\s*none/);
 });
 
 test("category filters isolate classified wrong attempts, fixes, variants, and their example context", () => {
@@ -306,4 +314,29 @@ test("legacy migration clears only old wrong-word stats and preserves other sess
   assert.equal(state["dictation:mnopqrstuvwxy"].wrongWordStats.words["w:new"].typeCounts.rule, 1, "already classified schema v3 is preserved");
   assert.equal(state["dictation:mnopqrstuvwxy"].notes.c, "keep newest");
   assert.equal(state["dictation:layout:v1"].wrongWordStats.version, 1);
+});
+
+test("Global and Critical keep independent filters and sort by rate, error count, or recency", () => {
+  const ui = read("js/dashboard/dictation-stats-popup.js");
+  assert.match(ui, /let globalType = "all", criticalType = "all"/);
+  assert.match(ui, /let globalSort = "rate", criticalSort = "rate"/);
+  assert.match(ui, /globalType = button\.dataset\.type/);
+  assert.match(ui, /criticalType = button\.dataset\.criticalType/);
+  const start = ui.indexOf("  function sortedItems(items, order) {");
+  const end = ui.indexOf("  function renderGlobal()", start);
+  assert.ok(start >= 0 && end > start, "sort helper exists");
+  const helper = ui.slice(start, end);
+  const sort = vm.runInNewContext(`(() => {
+    const calculateErrorRate = (errors, fixes) => errors + fixes ? errors / (errors + fixes) * 100 : 0;
+    ${helper}
+    return sortedItems;
+  })()`);
+  const items = [
+    { word:"hard", errors:8, fixes:2, lastAt:10 },
+    { word:"many", errors:9, fixes:6, lastAt:20 },
+    { word:"recent", errors:2, fixes:0, lastAt:30 },
+  ];
+  assert.deepEqual(Array.from(sort(items, "rate"), item => item.word), ["recent", "hard", "many"]);
+  assert.deepEqual(Array.from(sort(items, "errors"), item => item.word), ["many", "hard", "recent"]);
+  assert.deepEqual(Array.from(sort(items, "recent"), item => item.word), ["recent", "many", "hard"]);
 });

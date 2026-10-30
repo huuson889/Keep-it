@@ -1,24 +1,43 @@
 (() => {
   const $ = selector => document.querySelector(selector);
-  const modal = $(".modal"), backdrop = $("#backdrop"), content = $("#contentContainer");
-  const closeX = $("#closeX"), closeDone = $("#closeDone"), reopen = $("#reopen");
-  if (!modal || !backdrop || !content) return;
+  const modal = $(".modal"), backdrop = $("#backdrop");
+  const closeX = $("#closeX"), closeDone = $("#closeDone"), reopen = $("#reopen"), expandBtn = $("#expandBtn");
+  if (!modal || !backdrop) return;
 
   const TYPES = ["phonetic", "rule", "typo"];
+  const EXPAND_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+  const SHRINK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M15 21v-4a2 2 0 0 1 2-2h4M3 15h4a2 2 0 0 1 2 2v4"/></svg>';
   let globalWords = [];
   let sessions = [];
-  let currentView = "global", currentType = "all", currentSort = "errors";
+  let currentView = "global";
+  let globalType = "all", criticalType = "all";
+  let globalSort = "rate", criticalSort = "rate";
   const fallback = {
+    dictationStatsErrorCountLine:"Wrong {errors} times",
+    dictationStatsErrorFixesLine:"Fixed {fixes}",
+    dictationStatsErrorRateLine:"Rate {rate}%",
+    dictationStatsWordColumn:"Misspelled word",
+    dictationStatsContextColumn:"Context",
+    dictationStatsVariantsColumn:"Typed variants",
+    dictationStatsTypeColumn:"Error type",
+    dictationStatsSummaryColumn:"Error overview",
     dictationStatsErrorSummary:"Wrong: {errors} · error rate: {rate}%",
     dictationStatsTypeNamePhonetic:"🎧 Phonetic / misheard",
     dictationStatsTypeNameRule:"📜 Spelling rule",
     dictationStatsTypeNameTypo:"⚡ Typing typo",
-    dictationStatsContextLabel:"Context:",
+    dictationStatsContextLabel:"Context",
     dictationStatsSourceLabel:"📺 {source}",
-    dictationStatsVariantsLabel:"Typed variants:",
+    dictationStatsVariantsLabel:"Typed variants",
     dictationStatsNoVariants:"No wrong variants recorded.",
     dictationStatsEmpty:"No eligible saved error attempts yet.",
     dictationStatsAudioLabel:"Play pronunciation of {word}",
+    dictationStatsSortRate:"Highest error rate",
+    dictationStatsSortErrors:"Most errors",
+    dictationStatsSortRecent:"Most recent",
+    dictationStatsPopupExpand:"Expand popup",
+    dictationStatsPopupRestore:"Restore popup",
+    dictationStatsCollapseVideo:"Collapse {title}",
+    dictationStatsExpandVideo:"Expand {title}",
   };
   function tr(key, vars = {}) {
     const lang = document.documentElement.lang || "vi";
@@ -36,7 +55,11 @@
     document.querySelectorAll("[data-dstats-aria]").forEach(node => {
       const value = tr(node.dataset.dstatsAria);
       node.setAttribute("aria-label", value);
-      if (node.id === "closeX") node.title = value;
+      if (node.id === "closeX" || node.id === "expandBtn") node.title = value;
+    });
+    document.querySelectorAll(".view-pane[data-pane]").forEach(pane => {
+      const labels = { global:"dictationStatsViewGlobal", critical:"dictationStatsViewCritical", sessions:"dictationStatsViewSessions" };
+      pane.setAttribute("aria-label", tr(labels[pane.dataset.pane] || "dictationStatsViewGlobal"));
     });
   }
   function el(tag, className = "", text = "") {
@@ -143,25 +166,31 @@
   function typeLabel(type) { return tr(`dictationStatsTypeName${type[0].toLocaleUpperCase()}${type.slice(1)}`); }
   function createTypeTag(item) {
     const type = primaryType(item);
-    return el("span", `error-type-tag ${type}`, typeLabel(type));
+    return el("span", `type-tag ${type}`, typeLabel(type));
   }
   function appendContext(sentence, context) {
     sentence.append(document.createTextNode(`“${context.before}`));
     sentence.append(el("span", "wrong-token", context.typed));
     sentence.append(document.createTextNode(`${context.after}”`));
   }
+  function createSmartCardLabels() {
+    const row = el("div", "smart-card-labels");
+    ["dictationStatsWordColumn", "dictationStatsContextColumn", "dictationStatsVariantsColumn", "dictationStatsTypeColumn", "dictationStatsSummaryColumn"]
+      .forEach(key => row.append(el("div", "context-label", tr(key))));
+    return row;
+  }
   function createVariants(item) {
-    const box = el("div", "variants-tag-box");
-    box.append(el("div", "variants-label", tr("dictationStatsVariantsLabel")));
-    const variants = el("div", "bad-variants");
-    if (!item.variants.length) variants.append(el("span", "variant-empty", tr("dictationStatsNoVariants")));
-    item.variants.forEach(variant => variants.append(el("span", "bad-chip", `${variant.text} (×${variant.count})`)));
+    const box = el("div", "variants-box");
+    const variants = el("div", "variant-list");
+    if (!item.variants.length) variants.append(el("span", "no-variants", tr("dictationStatsNoVariants")));
+    item.variants.forEach(variant => variants.append(el("span", "variant", `${variant.text} ×${variant.count}`)));
     box.append(variants);
     return box;
   }
   function createAudioButton(word) {
-    const audio = el("button", "audio-btn", "🔊");
+    const audio = el("button", "audio-btn");
     audio.type = "button";
+    audio.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>';
     audio.setAttribute("aria-label", tr("dictationStatsAudioLabel", { word }));
     audio.title = audio.getAttribute("aria-label");
     audio.addEventListener("click", () => {
@@ -173,7 +202,7 @@
     });
     return audio;
   }
-  function createSourceLink(source, url, className = "context-source") {
+  function createSourceLink(source, url, className = "source-link") {
     const label = tr("dictationStatsSourceLabel", { source });
     const href = safeVideoUrl(url);
     if (!href) return el("div", className, label);
@@ -187,14 +216,12 @@
   }
   function createSmartCard(item, { sourceOverride = "", sourceUrlOverride = "", className = "smart-card" } = {}) {
     const card = el("article", className);
-    const targetBox = el("div", "word-target-box");
-    const target = el("div", "word-target");
-    target.append(document.createTextNode(item.word), createAudioButton(item.word));
-    targetBox.append(target, createTypeTag(item));
-    const errorSummary = el("div", "word-error-summary", tr("dictationStatsErrorSummary", { errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item) }));
+    const wordBox = el("div", "word-box");
+    const wordTitle = el("div", "word-title");
+    wordTitle.append(el("span", "word-label", item.word), createAudioButton(item.word));
+    wordBox.append(wordTitle);
 
     const contextBox = el("div", "context-box");
-    contextBox.append(el("div", "context-label", tr("dictationStatsContextLabel")));
     const sentence = el("div", "context-sentence");
     if (item.errorContext) appendContext(sentence, item.errorContext);
     else sentence.textContent = "—";
@@ -202,86 +229,194 @@
     const source = sourceOverride || item.errorContext?.source || item.sources[0] || "—";
     const sourceUrl = sourceUrlOverride || item.errorContext?.url || item.errorExamples?.[primaryType(item)]?.url || item.sourceUrls?.[0] || "";
     contextBox.append(createSourceLink(source, sourceUrl));
-    card.append(targetBox, contextBox, createVariants(item), errorSummary);
+
+    const summary = el("div", "error-summary");
+    summary.append(
+      el("strong", "", tr("dictationStatsErrorCountLine", { errors:item.errors })),
+      el("span", "error-fix", tr("dictationStatsErrorFixesLine", { fixes:item.fixes })),
+      el("span", "error-rate", tr("dictationStatsErrorRateLine", { rate:displayedErrorRate(item) })),
+    );
+    const typeBox = el("div", "error-type-box");
+    typeBox.append(createTypeTag(item));
+    card.append(wordBox, contextBox, createVariants(item), typeBox, summary);
     return card;
   }
-  function createGlobalCard(item) { return createSmartCard(item); }
-  function renderSessionView() {
-    sessions.forEach(session => {
-      const group = el("section", "session-group");
-      const head = el("div", "session-head");
-      const titleLink = createSourceLink(session.title, session.url, "session-source");
-      const toggle = el("button", "session-toggle");
+  function makeCard(item, options) {
+    const card = createSmartCard(item, options);
+    const type = primaryType(item);
+    card.dataset.type = type;
+    card.dataset.errors = String(item.errors);
+    card.dataset.recent = String(item.lastAt);
+    card.dataset.rate = String(displayedErrorRate(item));
+    return card;
+  }
+  function createVideoFavicon(session) {
+    const host = el("span", "video-favicon");
+    host.setAttribute("aria-hidden", "true");
+    const image = document.createElement("img");
+    image.alt = "";
+    image.hidden = true;
+    image.referrerPolicy = "no-referrer";
+    const fallbackIcon = el("span", "video-favicon-fallback", "?");
+    let pageUrl, origin = "", hostname = "";
+    try {
+      const parsed = new URL(session.url);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
+      pageUrl = parsed.href;
+      origin = parsed.origin;
+      hostname = parsed.hostname;
+    } catch {
+      host.append(fallbackIcon);
+      return host;
+    }
+    const isYoutube = /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(hostname);
+    fallbackIcon.textContent = isYoutube ? "▶" : hostname.replace(/^www\./i, "").charAt(0).toLocaleUpperCase();
+    if (isYoutube) host.classList.add("is-youtube");
+    image.addEventListener("load", () => { image.hidden = false; fallbackIcon.hidden = true; });
+    image.addEventListener("error", () => {
+      if (!image.dataset.fallbackUsed) {
+        image.dataset.fallbackUsed = "1";
+        image.src = `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=32`;
+      } else {
+        image.hidden = true;
+        fallbackIcon.hidden = false;
+      }
+    });
+    host.append(image, fallbackIcon);
+    image.src = `${origin}/favicon.ico`;
+    return host;
+  }
+  function renderGlobalList(items, listNode) {
+    listNode.replaceChildren(createSmartCardLabels());
+    if (!items.length) {
+      listNode.append(el("div", "empty", `🌸 ${tr("dictationStatsEmpty")}`));
+      return;
+    }
+    items.forEach(item => listNode.append(makeCard(item)));
+  }
+  function sortedItems(items, order) {
+    const list = [...items];
+    if (order === "errors") list.sort((a, b) => b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
+    else if (order === "recent") list.sort((a, b) => b.lastAt - a.lastAt || b.errors - a.errors || a.word.localeCompare(b.word));
+    else list.sort((a, b) => calculateErrorRate(b.errors, b.fixes) - calculateErrorRate(a.errors, a.fixes) || b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
+    return list;
+  }
+  function renderGlobal() {
+    const items = globalWords.map(item => viewForType(item, globalType)).filter(Boolean);
+    renderGlobalList(sortedItems(items, globalSort), $("#globalList"));
+  }
+  function renderCritical() {
+    const items = globalWords.map(item => viewForType(item, criticalType)).filter(Boolean).filter(isCritical);
+    renderGlobalList(sortedItems(items, criticalSort), $("#criticalList"));
+  }
+  function updateAccordion(body, toggle, title) {
+    const collapsed = body.classList.toggle("collapsed");
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+    toggle.setAttribute("aria-label", tr(collapsed ? "dictationStatsExpandVideo" : "dictationStatsCollapseVideo", { title }));
+    body.setAttribute("aria-hidden", String(collapsed));
+    body.inert = collapsed;
+    const chevron = toggle.querySelector(".chevron");
+    if (chevron) chevron.textContent = collapsed ? "▸" : "▾";
+  }
+  function renderSessions() {
+    const list = $("#sessionList");
+    list.replaceChildren();
+    if (!sessions.length) {
+      list.append(el("div", "empty", `🌸 ${tr("dictationStatsEmpty")}`));
+      return;
+    }
+    sessions.forEach((session, index) => {
+      const group = el("section", "video-group");
+      const head = el("div", "web-head");
+      const titleGroup = el("div", "web-title-group");
+      titleGroup.append(createVideoFavicon(session));
+      const href = safeVideoUrl(session.url);
+      if (href) {
+        const title = el("a", "video-title", session.title);
+        title.href = href;
+        title.target = "_blank";
+        title.rel = "noopener noreferrer";
+        title.title = session.title;
+        titleGroup.append(title);
+      } else {
+        titleGroup.append(el("span", "video-title video-title-text", session.title));
+      }
+      const toggle = el("button", "video-toggle");
       toggle.type = "button";
-      toggle.setAttribute("aria-label", `Toggle statistics for ${session.title}`);
-      const caret = el("span", "session-caret", "▼");
-      caret.setAttribute("aria-hidden", "true");
-      toggle.append(caret);
-      head.append(titleLink, toggle);
-      const body = el("div", "session-body");
-      const bodyInner = el("div", "session-body-inner");
-      const words = [...session.words].sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
-      words.forEach(item => bodyInner.append(createSmartCard(item, {
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.setAttribute("aria-label", tr("dictationStatsCollapseVideo", { title:session.title }));
+      const chevron = el("span", "chevron", "▾");
+      chevron.setAttribute("aria-hidden", "true");
+      toggle.append(chevron);
+      head.append(titleGroup, toggle);
+
+      const body = el("div", "video-body");
+      const bodyId = `video-body-${(session.id || `session-${index}`).replace(/[^A-Za-z0-9_-]/g, "-")}`;
+      body.id = bodyId;
+      toggle.setAttribute("aria-controls", bodyId);
+      const inner = el("div", "video-body-inner");
+      inner.append(createSmartCardLabels());
+      sortedItems(session.words, "errors").forEach(item => inner.append(makeCard(item, {
         sourceOverride:session.title,
         sourceUrlOverride:session.url,
-        className:"smart-card session-smart-card",
       })));
-      body.append(bodyInner);
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.setAttribute("aria-controls", `session-body-${session.id.replace(/[^A-Za-z0-9_-]/g, "-")}`);
-      body.id = toggle.getAttribute("aria-controls");
-      toggle.addEventListener("click", () => {
-        const collapsed = body.classList.toggle("collapsed");
-        toggle.setAttribute("aria-expanded", String(!collapsed));
-        body.setAttribute("aria-hidden", String(collapsed));
-        body.inert = collapsed;
-      });
+      body.append(inner);
+      toggle.addEventListener("click", event => { event.stopPropagation(); updateAccordion(body, toggle, session.title); });
+      head.addEventListener("click", event => { if (event.target.closest(".video-title")) return; updateAccordion(body, toggle, session.title); });
       group.append(head, body);
-      content.append(group);
+      list.append(group);
     });
   }
   function render() {
     renderMetrics();
-    content.replaceChildren();
-    const toolbar = $("#toolbarCard");
-    if (toolbar) toolbar.style.display = currentView === "sessions" ? "none" : "flex";
-    if (currentView === "sessions") {
-      if (!sessions.length) { content.append(el("div", "empty-state", `🌸 ${tr("dictationStatsEmpty")}`)); return; }
-      renderSessionView();
-      return;
-    }
-    let list = globalWords.map(item => viewForType(item, currentType)).filter(Boolean);
-    if (currentView === "critical") list = list.filter(isCritical);
-    if (currentSort === "errors") list.sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
-    else list.sort((a, b) => b.lastAt - a.lastAt || a.word.localeCompare(b.word));
-    if (!list.length) { content.append(el("div", "empty-state", `🌸 ${tr("dictationStatsEmpty")}`)); return; }
-    list.forEach(item => content.append(createGlobalCard(item)));
-  }
-  document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
+    renderGlobal();
+    renderCritical();
+    renderSessions();
+    document.querySelectorAll(".view-pane[data-pane]").forEach(pane => { pane.hidden = pane.dataset.pane !== currentView; });
     document.querySelectorAll(".view-tab").forEach(tab => {
-      const active = tab === button;
+      const active = tab.dataset.view === currentView;
       tab.classList.toggle("active", active);
       tab.setAttribute("aria-pressed", String(active));
     });
-    currentView = button.dataset.view || "global";
+  }
+  document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
+    currentView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
     render();
   }));
-  document.querySelectorAll(".pill").forEach(button => button.addEventListener("click", () => {
-    document.querySelectorAll(".pill").forEach(pill => {
-      const active = pill === button;
-      pill.classList.toggle("active", active);
-      pill.setAttribute("aria-pressed", String(active));
+  document.querySelectorAll("#globalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
+    globalType = button.dataset.type || "all";
+    document.querySelectorAll("#globalFilterPills .filter").forEach(filter => {
+      const active = filter === button;
+      filter.classList.toggle("active", active);
+      filter.setAttribute("aria-pressed", String(active));
     });
-    currentType = button.dataset.type || "all";
-    render();
+    renderGlobal();
   }));
-  const sortSelect = $("#sortSelect");
-  sortSelect?.addEventListener("change", () => { currentSort = sortSelect.value || "errors"; render(); });
+  document.querySelectorAll("#criticalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
+    criticalType = button.dataset.criticalType || "all";
+    document.querySelectorAll("#criticalFilterPills .filter").forEach(filter => {
+      const active = filter === button;
+      filter.classList.toggle("active", active);
+      filter.setAttribute("aria-pressed", String(active));
+    });
+    renderCritical();
+  }));
+  const globalSortSelect = $("#sortSelect"), criticalSortSelect = $("#criticalSortSelect");
+  globalSortSelect?.addEventListener("change", () => { globalSort = globalSortSelect.value || "rate"; renderGlobal(); });
+  criticalSortSelect?.addEventListener("change", () => { criticalSort = criticalSortSelect.value || "rate"; renderCritical(); });
 
   function closeModal() {
     backdrop.classList.add("closed");
     reopen?.classList.add("visible");
     window.parent?.postMessage({ type:"KEEPIT_DICTATION_STATS_CLOSE" }, location.origin);
+  }
+  function updateExpandButton(expanded) {
+    if (!expandBtn) return;
+    const label = tr(expanded ? "dictationStatsPopupRestore" : "dictationStatsPopupExpand");
+    expandBtn.setAttribute("aria-pressed", String(expanded));
+    expandBtn.setAttribute("aria-label", label);
+    expandBtn.title = label;
+    expandBtn.innerHTML = expanded ? SHRINK_ICON : EXPAND_ICON;
   }
   function openModal(lang, snapshot) {
     applyTranslations(lang);
@@ -294,6 +429,10 @@
   closeX?.addEventListener("click", closeModal);
   closeDone?.addEventListener("click", closeModal);
   reopen?.addEventListener("click", () => openModal(document.documentElement.lang));
+  expandBtn?.addEventListener("click", () => {
+    const expanded = modal.classList.toggle("is-expanded");
+    updateExpandButton(expanded);
+  });
   backdrop.addEventListener("click", event => { if (event.target === backdrop) closeModal(); });
   window.addEventListener("message", event => {
     if (event.source !== window.parent || event.origin !== location.origin) return;
@@ -314,5 +453,6 @@
     }
   });
   applyTranslations();
+  updateExpandButton(false);
   render();
 })();
