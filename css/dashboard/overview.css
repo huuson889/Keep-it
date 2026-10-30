@@ -619,7 +619,7 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 #dashboardSharedTopbarActionsSlot .demo-export-all { display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e5e2fa;border-radius:22px;background:#fff;color:#665ac9;font-size:11px;font-weight:750; }
 #dashboardSharedTopbarActionsSlot .demo-export-all .lucide { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
 #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#f8f6ff;filter:none; }
-html.dark #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:var(--lhn-ui-border,#2b3a52);background:var(--lhn-ui-surface,#111a2b);box-shadow:0 4px 14px rgba(0,0,0,.18); }
+html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:var(--lhn-ui-border,#2b3a52);background:var(--lhn-ui-surface,#111a2b);box-shadow:0 4px 14px rgba(0,0,0,.18); }
 html.dark #dashboardSharedTopbar .ov-crumb { color:var(--lhn-ui-muted,#a4b0c3); }
 html.dark #dashboardSharedTopbar .ov-crumb strong { color:var(--lhn-ui-brand,#a5a9ff); }
 html.dark #dashboardSharedTopbar .ov-crumb span { color:#64748b; }

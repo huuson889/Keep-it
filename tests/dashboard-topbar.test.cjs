@@ -32,6 +32,7 @@ test("All three Dashboard views share one topbar and one page-level scroll root"
   assert.match(dashboardCss, /#dashboardScroller/);
   assert.match(overviewCss, /#dashboardScroller \{[\s\S]*?overflow-y:auto!important[\s\S]*?background:#f5f5ff/);
   assert.match(overviewCss, /html\.dark #dashboardScroller \{ background:var\(--lhn-ui-page,#0b1120\)/);
+  assert.match(overviewCss, /html\.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar \{[^}]*background:var\(--lhn-ui-surface,#111a2b\)/);
 });
 
 test("The shared topbar sticks, compacts, and receives the Highlights & Notes export actions", () => {
