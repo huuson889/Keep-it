@@ -16,9 +16,9 @@
       <div class="head-main">
         <div class="head-icon">📊</div>
         <div>
-          <div class="eyebrow"><span data-dstats-i18n="dictationStatsPopupEyebrow">Trung tâm phân tích chuyên sâu</span> <span class="demo-badge">OPTIMIZED</span></div>
-          <h1 id="modalTitle" data-dstats-i18n="dictationStatsPopupTitle">Thống kê & Phân loại Lỗi Chính tả 🎯</h1>
-          <p class="subtitle" id="modalSubtitle" data-dstats-i18n="dictationStatsPopupSubtitle">Đã tối ưu hiệu năng mượt mà, tích hợp 3 góc nhìn toàn cục, báo động đỏ và video.</p>
+          <div class="eyebrow"><span data-dstats-i18n="dictationStatsPopupEyebrow">Thống kê Dictation</span> <span class="demo-badge">LOCAL</span></div>
+          <h1 id="modalTitle" data-dstats-i18n="dictationStatsPopupTitle">Thống kê lỗi Dictation 🎯</h1>
+          <p class="subtitle" id="modalSubtitle" data-dstats-i18n="dictationStatsPopupSubtitle">Xem các lỗi đủ điều kiện ghi nhận trong những video đã lưu.</p>
         </div>
       </div>
       <div class="head-actions">
@@ -33,7 +33,7 @@
       <!-- 3 CÁCH XEM (MULTI-VIEW TABS) -->
       <div class="view-mode-tabs" role="group" data-dstats-aria="dictationStatsViewTabsLabel">
         <button class="view-tab active" data-view="global" type="button" aria-pressed="true"><span data-dstats-i18n="dictationStatsViewGlobal">🌟 Top từ vựng toàn cục (Global)</span></button>
-        <button class="view-tab" data-view="critical" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsViewCritical">🚨 Danh sách báo động đỏ (&gt;70% sai)</span></button>
+        <button class="view-tab" data-view="critical" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsViewCritical">🚨 Báo động đỏ (≥70%, ít nhất 3 lỗi)</span></button>
         <button class="view-tab" data-view="sessions" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsViewSessions">📂 Chi tiết theo từng Video</span></button>
       </div>
 
@@ -41,33 +41,29 @@
       <div class="metrics">
         <div class="metric">
           <div class="metric-top"><span aria-hidden="true">📖</span><span data-dstats-i18n="dictationStatsMetricWords">Tổng từ sai</span></div>
-          <div class="metric-value"><span class="stat-primary">5</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitWords">từ</span></div>
+          <div class="metric-value"><span class="stat-primary" id="statsWordCount">0</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitWords">từ</span></div>
         </div>
         <div class="metric">
           <div class="metric-top"><span aria-hidden="true">⚠️</span><span data-dstats-i18n="dictationStatsMetricErrors">Tổng lượt gõ nhầm</span></div>
-          <div class="metric-value"><span class="stat-amber">18</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitErrors">lượt</span></div>
+          <div class="metric-value"><span class="stat-amber" id="statsErrorCount">0</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitErrors">lượt</span></div>
         </div>
         <div class="metric">
           <div class="metric-top"><span aria-hidden="true">🎉</span><span data-dstats-i18n="dictationStatsMetricFixes">Đã sửa đúng</span></div>
-          <div class="metric-value"><span class="stat-green">8</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitFixes">lần</span></div>
+          <div class="metric-value"><span class="stat-green" id="statsFixCount">0</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitFixes">lần</span></div>
         </div>
         <div class="metric">
-          <div class="metric-top"><span aria-hidden="true">📈</span><span data-dstats-i18n="dictationStatsMetricRecovery">Tỷ lệ khắc phục</span></div>
-          <div class="metric-value"><span class="stat-pink">44%</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitRecovery">hiệu suất</span></div>
+          <div class="metric-top"><span aria-hidden="true">📈</span><span data-dstats-i18n="dictationStatsMetricErrorRate">Tỷ lệ lỗi</span></div>
+          <div class="metric-value"><span class="stat-pink" id="statsErrorRate">0%</span><span class="metric-hint" data-dstats-i18n="dictationStatsUnitErrorRate">tỷ lệ lỗi</span></div>
         </div>
       </div>
 
       <!-- TOOLBAR -->
       <div class="toolbar-card" id="toolbarCard">
-        <div class="filter-pills" id="errorTypePills" role="group" data-dstats-aria="dictationStatsFiltersLabel">
-          <button class="pill active" data-type="all" type="button" aria-pressed="true"><span data-dstats-i18n="dictationStatsFilterAll">Tất cả nguyên nhân</span></button>
-          <button class="pill" data-type="phonetic" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsFilterPhonetic">🎧 Lỗi âm vị</span></button>
-          <button class="pill" data-type="rule" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsFilterRule">📜 Lỗi quy tắc</span></button>
-          <button class="pill" data-type="typo" type="button" aria-pressed="false"><span data-dstats-i18n="dictationStatsFilterTypo">⚡ Lỗi gõ nhanh</span></button>
-        </div>
+        <div class="eligible-note" data-dstats-i18n="dictationStatsEligibleOnly">Chỉ hiện lỗi từ đủ điều kiện ghi nhận.</div>
         <select class="sort-select" id="sortSelect" data-dstats-aria="dictationStatsSortLabel">
           <option value="errors" data-dstats-i18n="dictationStatsSortErrors">Sai nhiều nhất</option>
           <option value="recent" data-dstats-i18n="dictationStatsSortRecent">Mới nhất</option>
+          <option value="title" data-dstats-i18n="dictationStatsSortTitle">Từ A–Z</option>
         </select>
       </div>
 
@@ -78,7 +74,7 @@
 
     <!-- FOOTER -->
     <footer class="modal-foot">
-      <div class="optimized-note" data-dstats-i18n="dictationStatsPopupFooter">⚡ Đã tinh chỉnh DOM rendering, loại bỏ hiệu ứng nặng giúp popup siêu mượt.</div>
+      <div class="optimized-note" data-dstats-i18n="dictationStatsPopupFooter">Dữ liệu cục bộ · Bỏ qua missing, từ dưới 4 chữ cái, tên riêng và dấu câu.</div>
       <button class="done-btn" id="closeDone" type="button" data-dstats-i18n="dictationStatsPopupDone">Xong rồi ✨</button>
     </footer>
 
@@ -88,7 +84,7 @@
 <button class="reopen" id="reopen" type="button" data-dstats-i18n="dictationStatsPopupReopen">Mở lại Phân tích 📊</button>
 
 <script src="../js/dashboard/dictation-stats-popup.js"></script>
-<!-- demo interaction code is kept in a CSP-safe local script -->
+<!-- Popup behavior is isolated in a CSP-safe local script. -->
 
 </body>
 </html>

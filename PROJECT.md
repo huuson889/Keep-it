@@ -1,17 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.783; Manifest V3. Bản đồ mã nguồn nằm ở mục 4; tài liệu kỹ thuật module có mục lục tại `docs/INDEX.md`.
-- Dashboard giữ ba route: Overview (mở mặc định), Chép chính tả và “Tô sáng & Ghi chú”. Popup thống kê chi tiết trong Chép chính tả hiện là UI mẫu, chưa nối dữ liệu thật; Highlights & Notes là bề mặt duy nhất cho highlights/notes. Chi tiết ở mục 4.
-- Reader dùng emoji cờ qua font TwemojiCountryFlags cục bộ với glyph 54px trong vòng tròn 40×40px; các biểu tượng SVG UI không đổi. Các route khác đã kiểm tra không còn SVG cờ.
-- Dọn khỏi gói các demo không chạy trong app, hai ảnh icon không được tham chiếu và license flag-icons đã hết dùng; giữ nguyên icon mà manifest yêu cầu và các trang runtime.
-- Kiểm tra gần nhất: 50 JS syntax checks, 19/19 tests; 11 CSS + 2 inline styles parse; popup resource paths hợp lệ, 320 Dashboard IDs duy nhất, `git diff --check` và ZIP 112 entries/CRC đạt. Chưa browser-test.
+- Version hiện tại: v3.4.786; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dictation chấm contraction chuẩn theo allowlist; báo cáo chỉ ghi lỗi đủ điều kiện, còn popup chi tiết dùng dữ liệu cục bộ schema v2 theo video. Migration chỉ reset `wrongWordStats` cũ; giữ notes/progress/translations.
+- Dashboard giữ ba route và một shared topbar; popup chỉ trình bày lỗi đã lưu, không có classifier/ngữ cảnh bịa. Reader glyph vẫn 54px trong vòng tròn 40×40px; không đổi SVG UI icons.
+- Kiểm tra gần nhất: 28/28 tests; JavaScript syntax, CSS parse, HTML asset links, manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): sidebar `.776` đã được người dùng xác nhận trông tốt; topbar sticky/compact đã được xác nhận trên Chrome ở v3.4.775. Còn kiểm tra label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và xác nhận trực quan trên browser cho nền track iframe dark mode đã sửa ở `.778`; hiện mới có hồi quy static.
-- Dictation v1, YouTube overlay và Dual Sub (Chrome/Edge/Firefox, YouTube thật): kiểm tra phụ đề/phát lại, chấm điểm/tiến độ, layout/scroll, shortcut và tương tác overlay; chưa xác nhận end-to-end trên trình duyệt thật.
-- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): còn kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và hiển thị cờ Twemoji 54px trên trang thật; một số đã kiểm tra headless nhưng chưa xác nhận trong extension.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và theme; sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
+- Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
 - Dictation v2 “Nói”: chốt quyền và disclosure microphone; dự kiến SpeechRecognition trên Chromium, ghi âm/phát lại trên Firefox.
@@ -36,6 +35,7 @@ Keepit - Test/
 ├── pages/
 │   ├── dashboard.html             # Giao diện Dashboard (Overview/Listening/Highlights & Notes, sidebar và ô tìm Settings)
 │   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Tô sáng & Ghi chú
+│   ├── dictation-stats-popup.html # Popup thống kê Dictation trong iframe cục bộ
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
@@ -46,10 +46,10 @@ Keepit - Test/
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry; route highlights-notes và bridge), overview.css/data, annotation-utils, settings-ui, study/backup/account helpers, iframe UI và theme sync
+│   ├── dashboard/                 # dashboard.js (entry; routes + bridges), overview, annotation-utils, settings-ui, study/backup/account, popup thống kê Dictation
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
-│   ├── dictation/                 # session-index.js (hợp đồng tóm tắt provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh từ + diff từng từ), dictation-style.js (CSS cục bộ)
+│   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility), dictation-style.js
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
 ├── css/
@@ -90,6 +90,7 @@ TTS engine ── tải audio Google TTS ─────────────
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
 Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v2 ──> global / critical / per-video views (eligible records only)
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
@@ -107,6 +108,24 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.786 | Arena.ai Agent sửa:**
+
+- Hoàn thiện Dictation rules: allowlist contraction chuẩn có dấu nháy, detector proper nouns dùng chung cho hint/báo cáo, lọc `missing`/từ ngắn/tên riêng khỏi cả errors và fixes; scoring ngoài contraction vẫn giữ nguyên. Nối popup thống kê chi tiết với dữ liệu Dictation cục bộ theo video, không tạo transcript hay phân loại nguyên nhân. Migration chỉ reset `wrongWordStats` cũ.
+- File: `manifest.json`, `js/dictation/dictation-score.js`, `js/dictation/dictation-learning-rules.js`, `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/core/languages.js`, `js/background/background.js`, `js/dashboard/dictation-stats-popup-bridge.js`, `js/dashboard/dictation-stats-popup.js`, `pages/dictation-stats-popup.html`, `css/dashboard/dictation-stats-popup.css`, `tests/dictation-learning-rules.test.cjs`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dictation.md`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.786.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 28/28; `node --check` toàn bộ JavaScript; CSS parse, HTML asset-link checks, manifest JSON và `git diff --check` đạt. Chưa browser-test.
+
+**2026-10-30 | v3.4.785 | Arena.ai Agent sửa:**
+
+- Bổ sung tính `errorRate = errors / (errors + fixes)` cho từng hàng và tổng báo cáo; báo đỏ khi tỷ lệ ≥70% và số lỗi ≥3. Giữ dữ liệu mẫu; không nối storage, không đổi schema hay phân loại nguyên nhân.
+- File: `pages/dictation-stats-popup.html`, `css/dashboard/dictation-stats-popup.css`, `js/dashboard/dictation-stats-popup.js`, `js/core/languages.js`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.785.zip`.
+- Kiểm tra: 50 JS syntax checks; 21/21 tests; 11 CSS + 2 inline HTML styles parse; manifest 3.4.785/resource paths hợp lệ, 320 unique Dashboard IDs, `git diff --check` và ZIP 112 entries/CRC đạt. Chưa browser-test.
+
+**2026-10-30 | v3.4.784 | Arena.ai Agent sửa:**
+
+- Thay riêng symbol `listenDemo-i-settings` bằng Lucide Settings SVG do người dùng cung cấp; đồng bộ icon Cài đặt trong file demo độc lập. Không thay các SVG Settings khác.
+- File: `pages/dashboard.html`, `tests/dashboard-sidebar.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.784.zip`.
+- Kiểm tra: 50 JS syntax checks; 20/20 tests; 11 CSS + 2 inline HTML styles parse; manifest 3.4.784 và resource paths hợp lệ, 320 unique Dashboard IDs, `git diff --check` và ZIP 112 entries/CRC đạt. Chưa browser-test.
 
 **2026-10-30 | v3.4.783 | Arena.ai Agent sửa:**
 

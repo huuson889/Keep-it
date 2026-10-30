@@ -169,7 +169,7 @@
     dictationCaptionsLoading: "English subtitles are still loading. Try again shortly.",
     dictationEnglishOnly: "Dictation is available only for videos with English subtitles.",
     dictationAudioTitle: "Audio from the video", dictationAudioSource: "YouTube", dictationAudioHelp: "Press play to hear the current sentence",
-    dictationShowHints: "Show hints", dictationCompactVideo: "Shrink video", dictationExpandVideo: "Expand video", dictationMiniPlay: "Play video audio", dictationMiniPause: "Pause video audio", dictationErrorTitle: "Error analysis:", dictationCorrectSentence: "Correct sentence", dictationSuccess: "Excellent! You typed it 100% correctly",
+    dictationProperNounHint: "Hint", dictationShowHints: "Show hints", dictationCompactVideo: "Shrink video", dictationExpandVideo: "Expand video", dictationMiniPlay: "Play video audio", dictationMiniPause: "Pause video audio", dictationErrorTitle: "Error analysis:", dictationCorrectSentence: "Correct sentence", dictationSuccess: "Excellent! You typed it 100% correctly",
     dictationEmptyAnswer: "(Nothing typed yet)", dictationExtra: "(extra)", dictationRepeat: "Repeat:", dictationPrev: "Previous",
     dictationReplay: "Replay", dictationSlow: "Slow", dictationNext: "Next", dictationAutosave: "Notes are saved automatically on this device",
     dictationHideSentencesColumn: "Hide sentences column", dictationShowSentencesColumn: "Show sentences column", dictationHideNotesColumn: "Hide notes column", dictationShowNotesColumn: "Show notes column", dictationResizeSentencesColumn: "Resize sentences column", dictationResizeNotesColumn: "Resize notes column", dictationResizeColumnHelp: "Drag or use arrow keys to resize; double-click to reset."
@@ -190,7 +190,7 @@
     dictationCaptionsLoading: "Phụ đề tiếng Anh đang tải. Vui lòng thử lại sau.",
     dictationEnglishOnly: "Chỉ dùng Dictation với video có phụ đề tiếng Anh.",
     dictationAudioTitle: "Âm thanh từ video", dictationAudioSource: "YouTube", dictationAudioHelp: "Nhấn nút phát để nghe câu hiện tại",
-    dictationShowHints: "Hiện gợi ý", dictationCompactVideo: "Thu nhỏ video", dictationExpandVideo: "Phóng to video", dictationMiniPlay: "Phát âm thanh video", dictationMiniPause: "Tạm dừng âm thanh video", dictationErrorTitle: "Phân tích lỗi sai:", dictationCorrectSentence: "Câu đúng", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
+    dictationProperNounHint: "Gợi ý", dictationShowHints: "Hiện gợi ý", dictationCompactVideo: "Thu nhỏ video", dictationExpandVideo: "Phóng to video", dictationMiniPlay: "Phát âm thanh video", dictationMiniPause: "Tạm dừng âm thanh video", dictationErrorTitle: "Phân tích lỗi sai:", dictationCorrectSentence: "Câu đúng", dictationSuccess: "Xuất sắc! Bạn đã gõ chính xác 100%",
     dictationEmptyAnswer: "(Chưa nhập câu)", dictationExtra: "(thừa)", dictationRepeat: "Lặp:", dictationPrev: "Câu trước",
     dictationReplay: "Phát lại", dictationSlow: "Nghe chậm", dictationNext: "Câu tiếp", dictationAutosave: "Ghi chú được tự động lưu trên thiết bị này",
     dictationHideSentencesColumn: "Ẩn cột câu", dictationShowSentencesColumn: "Hiện cột câu", dictationHideNotesColumn: "Ẩn cột ghi chú", dictationShowNotesColumn: "Hiện cột ghi chú", dictationResizeSentencesColumn: "Điều chỉnh độ rộng cột câu", dictationResizeNotesColumn: "Điều chỉnh độ rộng cột ghi chú", dictationResizeColumnHelp: "Kéo hoặc dùng phím mũi tên để đổi độ rộng; nhấp đúp để đặt lại."
@@ -211,47 +211,38 @@
     dictationCaptionsLoading: "영어 자막을 불러오는 중입니다. 잠시 후 다시 시도하세요.",
     dictationEnglishOnly: "받아쓰기는 영어 자막이 있는 영상에서만 사용할 수 있습니다.",
     dictationAudioTitle: "영상 오디오", dictationAudioSource: "YouTube", dictationAudioHelp: "재생 버튼을 눌러 현재 문장을 들어보세요",
-    dictationShowHints: "힌트 표시", dictationCompactVideo: "영상 축소", dictationExpandVideo: "영상 확대", dictationMiniPlay: "영상 오디오 재생", dictationMiniPause: "영상 오디오 일시정지", dictationErrorTitle: "오류 분석:", dictationCorrectSentence: "정답 문장", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
+    dictationProperNounHint: "힌트", dictationShowHints: "힌트 표시", dictationCompactVideo: "영상 축소", dictationExpandVideo: "영상 확대", dictationMiniPlay: "영상 오디오 재생", dictationMiniPause: "영상 오디오 일시정지", dictationErrorTitle: "오류 분석:", dictationCorrectSentence: "정답 문장", dictationSuccess: "훌륭해요! 100% 정확하게 입력했습니다",
     dictationEmptyAnswer: "(입력 없음)", dictationExtra: "(불필요)", dictationRepeat: "반복:", dictationPrev: "이전",
     dictationReplay: "다시 듣기", dictationSlow: "느리게", dictationNext: "다음", dictationAutosave: "노트는 이 기기에 자동 저장됩니다",
     dictationHideSentencesColumn: "문장 열 숨기기", dictationShowSentencesColumn: "문장 열 표시", dictationHideNotesColumn: "노트 열 숨기기", dictationShowNotesColumn: "노트 열 표시", dictationResizeSentencesColumn: "문장 열 너비 조절", dictationResizeNotesColumn: "노트 열 너비 조절", dictationResizeColumnHelp: "드래그하거나 화살표 키로 너비를 조절하고 두 번 클릭해 초기화하세요."
   });
 
   Object.assign(MESSAGES.en, {
-    dictationStatsPopupEyebrow:"In-depth analytics", dictationStatsPopupTitle:"Spelling Error Analytics 🎯", dictationStatsPopupSubtitle:"Explore spelling patterns from global, critical, and per-video views.", dictationStatsPopupClose:"Close", dictationStatsPopupExpand:"Expand popup", dictationStatsPopupRestore:"Restore popup",
-    dictationStatsViewTabsLabel:"Analytics views", dictationStatsFiltersLabel:"Error type filters", dictationStatsSortLabel:"Sort error records", dictationStatsViewGlobal:"🌟 Global vocabulary", dictationStatsViewCritical:"🚨 Critical watchlist (>70% error rate)", dictationStatsViewSessions:"📂 By video",
-    dictationStatsMetricWords:"📖 Misspelled words", dictationStatsMetricErrors:"⚠️ Wrong attempts", dictationStatsMetricFixes:"🎉 Corrected", dictationStatsMetricRecovery:"📈 Recovery rate",
-    dictationStatsUnitWords:"words", dictationStatsUnitErrors:"attempts", dictationStatsUnitFixes:"times", dictationStatsUnitRecovery:"recovery",
-    dictationStatsFilterAll:"All causes", dictationStatsFilterPhonetic:"🎧 Phonetic errors", dictationStatsFilterRule:"📜 Spelling rules", dictationStatsFilterTypo:"⚡ Typing slips",
-    dictationStatsSortErrors:"Most errors", dictationStatsSortRecent:"Most recent", dictationStatsSortTitle:"Title A–Z",
-    dictationStatsTypePhonetic:"🎧 Phonetic / misheard", dictationStatsTypeRule:"📜 Spelling rule", dictationStatsTypeTypo:"⚡ Typo / mechanical slip",
-    dictationStatsContextLabel:"Context:", dictationStatsSourceLabel:"📺 Source:", dictationStatsVariantsLabel:"Typed variants:", dictationStatsErrorSummary:"Wrong: {errors} times (Rate: {rate}%)",
-    dictationStatsSessionSource:"📺 Source: {source}", dictationStatsSessionWord:"• Word: {word}", dictationStatsEmpty:"No sample words match this view.",
-    dictationStatsPopupFooter:"⚡ DOM rendering tuned for a responsive popup.", dictationStatsPopupDone:"Done ✨", dictationStatsPopupReopen:"Reopen analytics 📊", dictationStatsAudioLabel:"Play pronunciation of {word}"
+    dictationStatsPopupEyebrow:"In-depth analytics", dictationStatsPopupTitle:"Dictation Error Statistics 🎯", dictationStatsPopupSubtitle:"Review eligible word errors across saved videos.", dictationStatsEligibleOnly:"Only eligible word errors are shown.", dictationStatsPopupClose:"Close", dictationStatsPopupExpand:"Expand popup", dictationStatsPopupRestore:"Restore popup",
+    dictationStatsViewTabsLabel:"Analytics views", dictationStatsSortLabel:"Sort error records", dictationStatsViewGlobal:"🌟 Global vocabulary", dictationStatsViewCritical:"🚨 Critical watchlist (≥70%, 3+ errors)", dictationStatsViewSessions:"📂 By video",
+    dictationStatsMetricWords:"📖 Misspelled words", dictationStatsMetricErrors:"⚠️ Wrong attempts", dictationStatsMetricFixes:"🎉 Corrected", dictationStatsMetricErrorRate:"📈 Error rate",
+    dictationStatsUnitWords:"words", dictationStatsUnitErrors:"attempts", dictationStatsUnitFixes:"times", dictationStatsUnitErrorRate:"of total attempts",
+    dictationStatsSortErrors:"Most errors", dictationStatsSortRecent:"Most recent", dictationStatsSortTitle:"Title A–Z", dictationStatsVariantsLabel:"Typed variants:", dictationStatsSourcesLabel:"Videos:", dictationStatsNoVariants:"No wrong variants recorded.", dictationStatsStatusNeedsPractice:"Needs practice", dictationStatsStatusCorrected:"Last tracked attempt corrected", dictationStatsErrorSummary:"Wrong: {errors} · fixed: {fixes} · error rate: {rate}%", dictationStatsCriticalAlert:"🚨 Critical",
+    dictationStatsSessionSource:"📺 Source: {source}", dictationStatsSessionWord:"• Word: {word}", dictationStatsEmpty:"No eligible saved error attempts yet.",
+    dictationStatsPopupFooter:"Local only · Missing entries, short words, proper nouns, and punctuation are excluded.", dictationStatsPopupDone:"Done ✨", dictationStatsPopupReopen:"Reopen analytics 📊", dictationStatsAudioLabel:"Play pronunciation of {word}"
   });
   Object.assign(MESSAGES.vi, {
-    dictationStatsPopupEyebrow:"Trung tâm phân tích chuyên sâu", dictationStatsPopupTitle:"Thống kê & Phân loại Lỗi Chính tả 🎯", dictationStatsPopupSubtitle:"Đã tối ưu hiệu năng mượt mà, tích hợp 3 góc nhìn toàn cục, báo động đỏ và video.", dictationStatsPopupClose:"Đóng", dictationStatsPopupExpand:"Phóng to popup", dictationStatsPopupRestore:"Thu nhỏ popup",
-    dictationStatsViewTabsLabel:"Các góc nhìn thống kê", dictationStatsFiltersLabel:"Lọc theo nguyên nhân lỗi", dictationStatsSortLabel:"Sắp xếp lỗi", dictationStatsViewGlobal:"🌟 Top từ vựng toàn cục (Global)", dictationStatsViewCritical:"🚨 Danh sách báo động đỏ (>70% sai)", dictationStatsViewSessions:"📂 Chi tiết theo từng Video",
-    dictationStatsMetricWords:"📖 Tổng từ sai", dictationStatsMetricErrors:"⚠️ Tổng lượt gõ nhầm", dictationStatsMetricFixes:"🎉 Đã sửa đúng", dictationStatsMetricRecovery:"📈 Tỷ lệ khắc phục",
-    dictationStatsUnitWords:"từ", dictationStatsUnitErrors:"lượt", dictationStatsUnitFixes:"lần", dictationStatsUnitRecovery:"hiệu suất",
-    dictationStatsFilterAll:"Tất cả nguyên nhân", dictationStatsFilterPhonetic:"🎧 Lỗi âm vị", dictationStatsFilterRule:"📜 Lỗi quy tắc", dictationStatsFilterTypo:"⚡ Lỗi gõ nhanh",
-    dictationStatsSortErrors:"Sai nhiều nhất", dictationStatsSortRecent:"Mới nhất", dictationStatsSortTitle:"Tiêu đề A–Z",
-    dictationStatsTypePhonetic:"🎧 Lỗi âm vị / Nghe nhầm", dictationStatsTypeRule:"📜 Lỗi quy tắc chính tả", dictationStatsTypeTypo:"⚡ Lỗi gõ nhanh (Typo)",
-    dictationStatsContextLabel:"Ngữ cảnh:", dictationStatsSourceLabel:"📺 Nguồn:", dictationStatsVariantsLabel:"Biến thể gõ:", dictationStatsErrorSummary:"Sai: {errors} lần (Tỷ lệ: {rate}%)",
-    dictationStatsSessionSource:"📺 Nguồn: {source}", dictationStatsSessionWord:"• Từ: {word}", dictationStatsEmpty:"Không có từ mẫu phù hợp với góc nhìn này.",
-    dictationStatsPopupFooter:"⚡ Đã tinh chỉnh DOM rendering, loại bỏ hiệu ứng nặng giúp popup siêu mượt.", dictationStatsPopupDone:"Xong rồi ✨", dictationStatsPopupReopen:"Mở lại Phân tích 📊", dictationStatsAudioLabel:"Phát âm từ {word}"
+    dictationStatsPopupEyebrow:"Thống kê Dictation", dictationStatsPopupTitle:"Thống kê lỗi Dictation 🎯", dictationStatsPopupSubtitle:"Xem các lỗi đủ điều kiện ghi nhận trong những video đã lưu.", dictationStatsEligibleOnly:"Chỉ hiện lỗi từ đủ điều kiện ghi nhận.", dictationStatsPopupClose:"Đóng", dictationStatsPopupExpand:"Phóng to popup", dictationStatsPopupRestore:"Thu nhỏ popup",
+    dictationStatsViewTabsLabel:"Các góc nhìn thống kê", dictationStatsSortLabel:"Sắp xếp lỗi", dictationStatsViewGlobal:"🌟 Top từ vựng toàn cục (Global)", dictationStatsViewCritical:"🚨 Báo động đỏ (≥70%, ít nhất 3 lỗi)", dictationStatsViewSessions:"📂 Chi tiết theo từng Video",
+    dictationStatsMetricWords:"📖 Tổng từ sai", dictationStatsMetricErrors:"⚠️ Tổng lượt gõ nhầm", dictationStatsMetricFixes:"🎉 Đã sửa đúng", dictationStatsMetricErrorRate:"📈 Tỷ lệ lỗi",
+    dictationStatsUnitWords:"từ", dictationStatsUnitErrors:"lượt", dictationStatsUnitFixes:"lần", dictationStatsUnitErrorRate:"trên tổng lượt",
+    dictationStatsSortErrors:"Sai nhiều nhất", dictationStatsSortRecent:"Mới nhất", dictationStatsSortTitle:"Tiêu đề A–Z", dictationStatsVariantsLabel:"Biến thể gõ:", dictationStatsSourcesLabel:"Video:", dictationStatsNoVariants:"Chưa có biến thể nhập sai.", dictationStatsStatusNeedsPractice:"Cần luyện thêm", dictationStatsStatusCorrected:"Lượt được ghi nhận gần nhất đã sửa đúng", dictationStatsErrorSummary:"Sai {errors} · sửa đúng {fixes} · tỷ lệ lỗi {rate}%", dictationStatsCriticalAlert:"🚨 Báo động đỏ",
+    dictationStatsSessionSource:"📺 Nguồn: {source}", dictationStatsSessionWord:"• Từ: {word}", dictationStatsEmpty:"Chưa có lượt lỗi đủ điều kiện nào được lưu.",
+    dictationStatsPopupFooter:"Dữ liệu cục bộ · Bỏ qua missing, từ dưới 4 chữ cái, tên riêng và dấu câu.", dictationStatsPopupDone:"Xong rồi ✨", dictationStatsPopupReopen:"Mở lại Phân tích 📊", dictationStatsAudioLabel:"Phát âm từ {word}"
   });
   Object.assign(MESSAGES.ko, {
-    dictationStatsPopupEyebrow:"심층 분석 센터", dictationStatsPopupTitle:"맞춤법 오류 분석 🎯", dictationStatsPopupSubtitle:"전체, 주의, 동영상별 보기로 맞춤법 패턴을 확인하세요.", dictationStatsPopupClose:"닫기", dictationStatsPopupExpand:"팝업 확대", dictationStatsPopupRestore:"팝업 복원",
-    dictationStatsViewTabsLabel:"통계 보기", dictationStatsFiltersLabel:"오류 유형 필터", dictationStatsSortLabel:"오류 정렬", dictationStatsViewGlobal:"🌟 전체 어휘", dictationStatsViewCritical:"🚨 주의 목록 (오류율 >70%)", dictationStatsViewSessions:"📂 동영상별 상세",
-    dictationStatsMetricWords:"📖 오타 단어", dictationStatsMetricErrors:"⚠️ 오답 입력", dictationStatsMetricFixes:"🎉 수정 성공", dictationStatsMetricRecovery:"📈 수정률",
-    dictationStatsUnitWords:"단어", dictationStatsUnitErrors:"회", dictationStatsUnitFixes:"회", dictationStatsUnitRecovery:"수정률",
-    dictationStatsFilterAll:"모든 원인", dictationStatsFilterPhonetic:"🎧 음운 오류", dictationStatsFilterRule:"📜 맞춤법 규칙", dictationStatsFilterTypo:"⚡ 타이핑 실수",
-    dictationStatsSortErrors:"오답 많은 순", dictationStatsSortRecent:"최근 순", dictationStatsSortTitle:"제목순 A–Z",
-    dictationStatsTypePhonetic:"🎧 음운 오류 / 잘못 들음", dictationStatsTypeRule:"📜 맞춤법 규칙 오류", dictationStatsTypeTypo:"⚡ 타이핑 실수",
-    dictationStatsContextLabel:"문맥:", dictationStatsSourceLabel:"📺 출처:", dictationStatsVariantsLabel:"입력한 형태:", dictationStatsErrorSummary:"오답: {errors}회 (비율: {rate}%)",
-    dictationStatsSessionSource:"📺 출처: {source}", dictationStatsSessionWord:"• 단어: {word}", dictationStatsEmpty:"이 보기와 일치하는 예시 단어가 없습니다.",
-    dictationStatsPopupFooter:"⚡ 팝업 성능을 위해 DOM 렌더링을 최적화했습니다.", dictationStatsPopupDone:"완료 ✨", dictationStatsPopupReopen:"분석 다시 열기 📊", dictationStatsAudioLabel:"{word} 발음 재생"
+    dictationStatsPopupEyebrow:"받아쓰기 통계", dictationStatsPopupTitle:"받아쓰기 오류 통계 🎯", dictationStatsPopupSubtitle:"저장된 동영상에서 집계 조건을 충족한 오류를 확인하세요.", dictationStatsEligibleOnly:"집계 조건을 충족한 단어 오류만 표시합니다.", dictationStatsPopupClose:"닫기", dictationStatsPopupExpand:"팝업 확대", dictationStatsPopupRestore:"팝업 복원",
+    dictationStatsViewTabsLabel:"통계 보기", dictationStatsSortLabel:"오류 정렬", dictationStatsViewGlobal:"🌟 전체 어휘", dictationStatsViewCritical:"🚨 주의 목록 (오류율 ≥70%, 3회 이상)", dictationStatsViewSessions:"📂 동영상별 상세",
+    dictationStatsMetricWords:"📖 오타 단어", dictationStatsMetricErrors:"⚠️ 오답 입력", dictationStatsMetricFixes:"🎉 수정 성공", dictationStatsMetricErrorRate:"📈 오류율",
+    dictationStatsUnitWords:"단어", dictationStatsUnitErrors:"회", dictationStatsUnitFixes:"회", dictationStatsUnitErrorRate:"전체 시도 중",
+    dictationStatsSortErrors:"오답 많은 순", dictationStatsSortRecent:"최근 순", dictationStatsSortTitle:"제목순 A–Z", dictationStatsVariantsLabel:"입력한 형태:", dictationStatsSourcesLabel:"동영상:", dictationStatsNoVariants:"기록된 오답 입력이 없습니다.", dictationStatsStatusNeedsPractice:"추가 연습 필요", dictationStatsStatusCorrected:"최근 집계된 시도에서 수정됨", dictationStatsErrorSummary:"오답 {errors}회 · 수정 {fixes}회 · 오류율 {rate}%", dictationStatsCriticalAlert:"🚨 주의",
+    dictationStatsSessionSource:"📺 출처: {source}", dictationStatsSessionWord:"• 단어: {word}", dictationStatsEmpty:"집계 조건을 충족해 저장된 오류가 아직 없습니다.",
+    dictationStatsPopupFooter:"로컬 데이터만 사용 · 누락, 4글자 미만, 고유명사, 문장부호는 제외됩니다.", dictationStatsPopupDone:"완료 ✨", dictationStatsPopupReopen:"분석 다시 열기 📊", dictationStatsAudioLabel:"{word} 발음 재생"
   });
 
   Object.assign(MESSAGES.en, {

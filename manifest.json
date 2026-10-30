@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.4.783",
+  "version": "3.4.786",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -76,6 +76,7 @@
         "js/video/overlay-template.js",
         "js/video/dual-subtitles.js",
         "js/dictation/dictation-score.js",
+        "js/dictation/dictation-learning-rules.js",
         "js/dictation/dictation-style.js",
         "js/dictation/session-index.js",
         "js/dictation/dictation.js"

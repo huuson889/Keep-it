@@ -1,51 +1,45 @@
 # Dashboard — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code được dẫn là nguồn sự thật.
+> Source code là nguồn sự thật; trang này tóm tắt ranh giới và contract cần giữ.
 
 ## 1. Mục đích và phạm vi
 
-Dashboard cung cấp Overview, Listening demo và “Tô sáng & Ghi chú”, cùng các luồng Flashcards, cài đặt, profile và backup. `dashboard.js` điều phối điều hướng và dữ liệu; iframe Highlights & Notes là giao diện duy nhất để duyệt và quản lý highlights/notes, còn parent vẫn là nơi đọc dữ liệu cục bộ và thực thi actions.
+Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng settings/study/backup. `dashboard.js` điều phối route; parent quản lý dữ liệu và actions cho iframe Highlights & Notes.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardHighlightsNotesFrame` | Ba route còn lại và UI Highlights & Notes trong iframe. |
-| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `render`, `setDashboardView`, `syncHighlightsNotesFrame` | Nạp annotations cục bộ, chuyển route và làm cầu dữ liệu/actions cho Highlights & Notes. |
-| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Nhóm, lọc, thống kê và hiển thị annotations; gửi actions về parent. |
-| [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js) | `LHN_ANNOTATION_UTILS.create`, `pageKey` | Chuẩn hóa site, tags và page key; API instance cũng cung cấp `pageKey` cho Overview và Highlights & Notes bridge. |
-| [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_DASHBOARD_OVERVIEW_DATA` | Tổng hợp Overview từ annotations cục bộ. |
-| [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Render flashcards và tiện ích thuật toán. |
-| [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`css/dashboard/dictation-stats-popup.css`](../../css/dashboard/dictation-stats-popup.css), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Popup thống kê mẫu theo UI tham chiếu; giai đoạn này chỉ dùng số liệu demo. |
-| [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/CLOSE` | Mở/đóng popup bằng thông điệp cùng origin và trả focus về nút gọi. |
-| [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Import/export và profile cục bộ. |
+| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardHighlightsNotesFrame` | Route Dashboard và giao diện Highlights & Notes. |
+| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `setDashboardView`, `syncHighlightsNotesFrame` | Nạp dữ liệu, chuyển route, đồng bộ iframe. |
+| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Render danh sách; gửi actions. |
+| [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js), [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_ANNOTATION_UTILS`, `LHN_DASHBOARD_OVERVIEW_DATA` | Chuẩn hóa và tổng hợp annotations. |
+| [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
+| [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Render thống kê Dictation cục bộ. |
+| [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/CLOSE` | Lấy schema v2, lọc và gửi snapshot cùng origin. |
+| [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
 
 ## 3. Luồng chính
 
-1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ đúng thứ tự script.
-2. `load()` đọc settings, favorites và annotations theo batch qua `LHN_MESSAGING`, sau đó cập nhật Overview và gửi snapshot sang iframe Highlights & Notes.
-3. `setDashboardView()` chỉ chuyển Overview, Listening và `highlights-notes`; sidebar không còn mục Grammar/Library. Lối tắt Highlights & Notes trên Overview cũng mở route Highlights & Notes này.
-4. iframe Highlights & Notes nhận annotations, page favorites, note favorites và ngôn ngữ qua same-origin `postMessage`; iframe dựng danh sách và tính bộ lọc/thống kê cục bộ. Favicon của trang đang chọn và site badge cạnh tên miền đều thử `/favicon.ico`, rồi Google S2; nếu cả hai lỗi thì hiện icon dự phòng. Ảnh xem trước bài viết ở thumbnail không bị thay thế.
-5. Edit/delete/favorite/export/study/jump/speak từ Highlights & Notes quay về các handler parent hiện có; parent lưu CRUD/review qua Background và favorites qua `browser.storage.local`.
-6. Overview lấy thống kê từ annotations và Dictation session index; Listening tiếp tục là demo riêng. Một node `#dashboardSharedTopbar` luôn giữ class/style `ov-topbar`; nó được mount trong `.ov-content` của Overview, làm con trực tiếp của scrollport `#dashboardListeningView` khi mở Chép chính tả, hoặc trong iframe theo route. Listening bind scroll handler trực tiếp vào scrollport này để topbar chạm mép trên và co chiều cao thật; cuộn lên thì mở lại. Vì `listening-demo.css` nạp sau `overview.css`, rule trên `#dashboardListeningView.dashboard-listening-view` phải giữ `padding-top:0`; khoảng đệm ban đầu chỉ đặt bằng `::before`, không đặt padding trên scrollport. Nhãn lấy `data-i18n` của menu trái đang chọn (Listening dùng `ovMenuDictation` → “Chép chính tả”). Iframe chỉ dùng `html` làm scrollport; `body` để `overflow:visible` để sticky bám đúng vùng. Giữ export.
-7. Nút “Xem thống kê chi tiết” trong Listening mở trang popup cục bộ trong iframe cùng origin. Popup tái hiện ba góc nhìn/filter từ file tham chiếu, có nút phóng to và chỉ dùng số liệu mẫu; chưa đọc `browser.storage` hoặc phân loại lỗi thật.
-8. Sidebar trái khởi động ở trạng thái mở rộng. `dashboardSidebarPin` đổi state giữa 220px và 56px; sidebar luôn ở flex row, nên các vùng bên phải dịch theo `flex-basis` có transition. Ở trạng thái thu gọn, hover không tự bung menu lại.
+1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ thứ tự script.
+2. `load()` lấy settings, favorites và annotations; cập nhật Overview rồi gửi snapshot sang iframe.
+3. `setDashboardView()` chuyển giữa Overview, Listening và Highlights & Notes. Listening vẫn là trang demo; Flashcards là action, không phải route.
+4. Iframe nhận annotations, favorites và ngôn ngữ qua same-origin `postMessage`; CRUD, favorite, export, review, jump và speak quay về handler parent hiện có.
+5. Một node `#dashboardSharedTopbar` chuyển giữa route; scrollport `#dashboardListeningView` điều khiển sticky/compact state. Giữ export trong iframe.
+6. Nút thống kê chi tiết mở iframe cùng origin. Parent đọc `dictation:session-index:v1` và records cục bộ; popup chỉ nhận stats schema v2 đã lọc, rồi hiển thị global, critical và theo video.
+7. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Ba route Dashboard còn lại là Overview, Listening và Highlights & Notes; action Flashcards trên sidebar gọi `startStudySession({ allSources:true })` và không tạo route mới.
-- Sidebar mặc định mở rộng; `dashboardSidebarPin` toggle trạng thái 220px/56px, cập nhật `aria-pressed`/`aria-expanded` và không dùng hover để bung lại trạng thái đã thu gọn. Khi sidebar thu gọn, hover hoặc keyboard-focus vào icon hiện tooltip có mũi nhọn, màu theo theme; tooltip được định vị ngoài nav scrollport và không đổi chiều rộng/sidebar state. Giữ sidebar trong flex flow để các route bên phải chuyển động cùng nó.
-- “Tô sáng & Ghi chú” là giao diện duy nhất để xem và quản lý highlights/notes. Không khôi phục hai route nháp, không thêm API/backend hay nguồn lưu annotation thứ hai.
-- Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ `dashboardHighlightsNotesFrame.contentWindow` cùng `location.origin`; protocol version là `1`.
-- Giữ đúng một node `#dashboardSharedTopbar`; parent chuyển node qua các route và sang iframe cùng origin. Menu export vẫn nằm trong document iframe khi route Highlights & Notes active để delegated click handlers hiện có tiếp tục hoạt động.
-- Popup thống kê Dictation dùng iframe cục bộ và chỉ nhận `KEEPIT_DICTATION_STATS_OPEN` từ parent cùng origin; khi đóng gửi `KEEPIT_DICTATION_STATS_CLOSE`. Không truyền nội dung trang hoặc dữ liệu Dictation qua bridge. Font Plus Jakarta Sans dùng các subset Latin/Việt cục bộ trong `assets/fonts/`, không tải Google Fonts từ mạng.
-- Iframe Highlights & Notes dùng `html.lr-demo-embedded` làm scrollport; CSS scrollbar WebKit phải nhắm cả root `html` lẫn vùng cuộn con. Track trong suốt sẽ lộ nền của host `<iframe>`, nên `#dashboardHighlightsNotesFrame` phải dùng `--lhn-ui-page` theo theme cha (dark: `#0b1120`); thumb dùng `--lr-scrollbar-thumb`. `lr-practice-theme-sync.js` đồng bộ class `dark` từ Dashboard.
-- `KEEPIT_HIGHLIGHTS_NOTES_DATA` chỉ là bản sao trong bộ nhớ iframe. IndexedDB/Background tiếp tục là nguồn annotation duy nhất; thao tác ghi phải quay lại parent handler.
-- Giữ đồng bộ annotations, page favorites và note favorites sau `load()`, CRUD và storage changes để iframe không dùng snapshot cũ.
-- Export toàn thư viện và import JSON, edit/delete, page/note favorite, review flashcard và thao tác mở/đọc highlight tiếp tục dùng dữ liệu cục bộ và handler hiện có.
+- Giữ ba route, một shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới.
+- Highlights & Notes là UI duy nhất để duyệt/quản lý annotations. IndexedDB/Background vẫn là nguồn dữ liệu; iframe chỉ giữ bản sao trong bộ nhớ.
+- Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
+- Popup nhận `KEEPIT_DICTATION_STATS_OPEN` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Không đọc storage trực tiếp, không truyền transcript/câu chứa lỗi, không bịa context hoặc nguyên nhân lỗi.
+- Báo cáo chỉ gồm mục hợp lệ: bỏ `missing`, target 1–3 chữ cái, proper nouns và dấu câu; cùng điều kiện áp dụng cho errors/fixes. Rate là `errors / (errors + fixes)`; critical cần rate ≥70% và ít nhất 3 eligible errors.
+- Font popup dùng subset Latin/Việt cục bộ; không tải Google Fonts. Bảng theo video chỉ trình bày tiêu đề và dữ liệu stats đã lưu.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/dashboard/*.js; do node --check "$f" || exit; done`; `node --test tests/*.test.cjs`; parse `manifest.json`; kiểm tra route/ID/script refs và message contract. `tests/dashboard-dictation-stats-popup.test.cjs` xác nhận nút mở, iframe, ba góc nhìn, điều khiển mở rộng/đóng và giới hạn UI-only.
-- Mock: kiểm tra metadata/page key, Overview cache invalidation và Highlights & Notes data/action bridge.
-- Trình duyệt: kiểm tra ba route còn lại, Highlights & Notes rỗng/có dữ liệu, favorites, CRUD, export/import, study actions và responsive/theme. Mock/static không thay cho Chrome/Firefox thật; chỉ ghi nhận browser verification sau khi chạy trực tiếp.
+- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/message contract và `git diff --check`. Test popup xác nhận bridge cục bộ, lọc schema/short words, migration và ngưỡng rate.
+- Mock: kiểm tra metadata/page key, Overview và Highlights & Notes data/action bridge.
+- Browser cần xác nhận routes, iframe CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox. Static/mock không thay cho kiểm tra extension thật.

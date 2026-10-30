@@ -4,21 +4,22 @@
   const expandButton = $("#expandPopup"), closeX = $("#closeX"), closeDone = $("#closeDone"), reopen = $("#reopen");
   if (!modal || !backdrop || !content) return;
 
-  // Static sample content matches the supplied UI prototype. This popup is UI-only for this release.
-  const errorDatabase = [
-    { word:"environment", type:"rule", errors:6, rate:75, context:"protect our natural enviroment.", wrong:"enviroment", source:"How to Build Better Habits", variants:["enviroment (×4)"], recent:5 },
-    { word:"receive", type:"phonetic", errors:4, rate:80, context:"You will recieve an email.", wrong:"recieve", source:"The Science of Sleep", variants:["recieve (×3)"], recent:4 },
-    { word:"necessary", type:"rule", errors:3, rate:60, context:"Sleep is neccessary for memory.", wrong:"neccessary", source:"The Science of Sleep", variants:["neccessary (×2)"], recent:3 },
-    { word:"definitely", type:"typo", errors:3, rate:45, context:"I will definatly join.", wrong:"definatly", source:"Everyday Habits", variants:["definatly (×3)"], recent:2 },
-    { word:"successful", type:"phonetic", errors:2, rate:30, context:"A sucessful transition.", wrong:"sucessful", source:"How to Build Better Habits", variants:["sucessful (×2)"], recent:1 }
-  ];
-  const typeKeys = { phonetic:"dictationStatsTypePhonetic", rule:"dictationStatsTypeRule", typo:"dictationStatsTypeTypo" };
-  let currentView = "global", currentType = "all", currentSort = "errors";
-  let lastFocus = null;
+  let globalWords = [];
+  let sessions = [];
+  let currentView = "global", currentSort = "errors";
   const fallback = {
-    dictationStatsContextLabel:"Ngữ cảnh:", dictationStatsSourceLabel:"📺 Nguồn:", dictationStatsVariantsLabel:"Biến thể gõ:",
-    dictationStatsErrorSummary:"Sai: {errors} lần (Tỷ lệ: {rate}%)", dictationStatsSessionSource:"📺 Nguồn: {source}",
-    dictationStatsSessionWord:"• Từ: {word}", dictationStatsAudioLabel:"Phát âm từ {word}"
+    dictationStatsErrorSummary:"Wrong: {errors} · fixed: {fixes} · error rate: {rate}%",
+    dictationStatsCriticalAlert:"🚨 Critical",
+    dictationStatsSessionSource:"📺 Source: {source}",
+    dictationStatsSessionWord:"• Word: {word}",
+    dictationStatsAudioLabel:"Play pronunciation of {word}",
+    dictationStatsSourcesLabel:"Videos:",
+    dictationStatsVariantsLabel:"Typed variants:",
+    dictationStatsNoVariants:"No wrong variants recorded.",
+    dictationStatsStatusNeedsPractice:"Needs practice",
+    dictationStatsStatusCorrected:"Last tracked attempt corrected",
+    dictationStatsEligibleOnly:"Only eligible word errors are shown.",
+    dictationStatsEmpty:"No eligible saved error attempts yet.",
   };
   function tr(key, vars = {}) {
     const lang = document.documentElement.lang || "vi";
@@ -45,18 +46,67 @@
     if (text !== "") node.textContent = text;
     return node;
   }
-  function typeLabel(type) { return tr(typeKeys[type] || "dictationStatsFilterAll"); }
-  function appendHighlightedContext(node, sentence, wrong) {
-    const lower = sentence.toLocaleLowerCase();
-    const index = lower.indexOf(wrong.toLocaleLowerCase());
-    if (index < 0) { node.textContent = `“${sentence}”`; return; }
-    node.append(document.createTextNode(`“${sentence.slice(0, index)}`));
-    const mark = el("span", "", sentence.slice(index, index + wrong.length));
-    node.append(mark, document.createTextNode(`${sentence.slice(index + wrong.length)}”`));
+  function safeCount(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+  }
+  function countLetters(word) { return (String(word || "").match(/\p{L}/gu) || []).length; }
+  function normalizeItem(value) {
+    const word = String(value?.word || "").trim();
+    const errors = safeCount(value?.errors), fixes = safeCount(value?.fixes);
+    if (!word || countLetters(word) < 4 || errors < 1) return null;
+    const variants = (Array.isArray(value.variants) ? value.variants : []).map(variant => ({
+      text:String(variant?.text || "").trim(), count:safeCount(variant?.count),
+    })).filter(variant => variant.text && variant.count);
+    return {
+      word, errors, fixes, variants, lastAt:safeCount(value?.lastAt),
+      status:value?.status === "wrong" ? "wrong" : "correct",
+      sources:Array.isArray(value?.sources) ? value.sources.map(String).filter(Boolean) : [],
+    };
+  }
+  function setStatsSnapshot(snapshot) {
+    const rawGlobals = Array.isArray(snapshot?.globalWords) ? snapshot.globalWords : [];
+    globalWords = rawGlobals.map(normalizeItem).filter(Boolean);
+    sessions = (Array.isArray(snapshot?.sessions) ? snapshot.sessions : []).map(session => ({
+      id:String(session?.id || ""), title:String(session?.title || session?.sourceId || ""),
+      url:String(session?.url || ""), words:(Array.isArray(session?.words) ? session.words : []).map(normalizeItem).filter(Boolean),
+    })).filter(session => session.words.length);
+    render();
+  }
+  function calculateErrorRate(errors, fixes) {
+    const wrongCount = safeCount(errors), fixedCount = safeCount(fixes);
+    const total = wrongCount + fixedCount;
+    return total ? wrongCount / total * 100 : 0;
+  }
+  function isCritical(item) {
+    return safeCount(item.errors) >= 3 && calculateErrorRate(item.errors, item.fixes) >= 70;
+  }
+  function displayedErrorRate(item) { return Math.round(calculateErrorRate(item.errors, item.fixes)); }
+  function renderMetrics() {
+    const errors = globalWords.reduce((sum, item) => sum + safeCount(item.errors), 0);
+    const fixes = globalWords.reduce((sum, item) => sum + safeCount(item.fixes), 0);
+    $("#statsWordCount").textContent = String(globalWords.length);
+    $("#statsErrorCount").textContent = String(errors);
+    $("#statsFixCount").textContent = String(fixes);
+    $("#statsErrorRate").textContent = `${Math.round(calculateErrorRate(errors, fixes))}%`;
+  }
+  function createVariants(item) {
+    const box = el("div", "variants-tag-box");
+    const label = el("div", "variants-label", tr("dictationStatsVariantsLabel"));
+    const variants = el("div", "bad-variants");
+    if (!item.variants.length) variants.append(el("span", "variant-empty", tr("dictationStatsNoVariants")));
+    item.variants.forEach(variant => variants.append(el("span", "bad-chip", `${variant.text} ×${variant.count}`)));
+    box.append(label, variants);
+    return box;
+  }
+  function createStatus(item) {
+    return el("span", `error-status ${item.status === "wrong" ? "needs-practice" : "corrected"}`,
+      tr(item.status === "wrong" ? "dictationStatsStatusNeedsPractice" : "dictationStatsStatusCorrected"));
   }
   function createGlobalCard(item) {
     const card = el("article", "smart-card");
-    const targetBox = el("div", "word-target-box"), target = el("div", "word-target");
+    const targetBox = el("div", "word-target-box");
+    const target = el("div", "word-target");
     target.append(document.createTextNode(item.word));
     const audio = el("button", "audio-btn", "🔊");
     audio.type = "button";
@@ -70,41 +120,43 @@
       window.speechSynthesis.speak(utterance);
     });
     target.append(audio);
-    const type = el("span", `error-type-tag ${item.type}`, typeLabel(item.type));
-    const counts = el("div", "sample-error-summary", tr("dictationStatsErrorSummary", { errors:item.errors, rate:item.rate }));
-    targetBox.append(target, type, counts);
+    const critical = isCritical(item);
+    targetBox.append(target, createStatus(item));
+    if (critical) targetBox.append(el("span", "critical-alert", tr("dictationStatsCriticalAlert")));
+    targetBox.append(el("div", `sample-error-summary${critical ? " is-critical" : ""}`,
+      tr("dictationStatsErrorSummary", { errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item) })));
 
-    const sourceBox = el("div", "source-box"), contextLabel = el("div", "source-label", tr("dictationStatsContextLabel"));
-    const context = el("div", "context-sentence");
-    appendHighlightedContext(context, item.context, item.wrong);
-    const source = el("div", "sample-source", tr("dictationStatsSourceLabel") + " " + item.source);
-    sourceBox.append(contextLabel, context, source);
-
-    const variantBox = el("div", "variants-tag-box"), variantLabel = el("div", "variants-label", tr("dictationStatsVariantsLabel")), variants = el("div", "bad-variants");
-    item.variants.forEach(variant => variants.append(el("span", "bad-chip", variant)));
-    variantBox.append(variantLabel, variants);
-    card.append(targetBox, sourceBox, variantBox);
+    const sourceBox = el("div", "source-box");
+    sourceBox.append(el("div", "source-label", tr("dictationStatsSourcesLabel")));
+    const sources = el("div", "sample-source", item.sources.join(" · ") || "—");
+    sourceBox.append(sources);
+    card.append(targetBox, sourceBox, createVariants(item));
     return card;
   }
+  function createSessionWordRow(item) {
+    const row = el("article", `session-word-row${isCritical(item) ? " is-critical" : ""}`);
+    const info = el("div", "session-word-info");
+    info.append(el("strong", "session-word-label", tr("dictationStatsSessionWord", { word:item.word })), createStatus(item));
+    const variants = el("div", "session-word-variants");
+    if (item.variants.length) {
+      item.variants.forEach(variant => variants.append(el("span", "bad-chip", `${variant.text} ×${variant.count}`)));
+    } else variants.append(el("span", "variant-empty", tr("dictationStatsNoVariants")));
+    const summary = el("div", "session-word-summary", tr("dictationStatsErrorSummary", {
+      errors:item.errors, fixes:item.fixes, rate:displayedErrorRate(item),
+    }));
+    row.append(info, summary, variants);
+    if (isCritical(item)) row.append(el("span", "critical-alert", tr("dictationStatsCriticalAlert")));
+    return row;
+  }
   function renderSessionView() {
-    const sessions = new Map();
-    errorDatabase.forEach(item => {
-      if (!sessions.has(item.source)) sessions.set(item.source, []);
-      sessions.get(item.source).push(item);
-    });
-    for (const [source, words] of sessions) {
-      const group = el("section", "session-group"), head = el("button", "session-head"), label = el("span", "session-source");
+    sessions.forEach(session => {
+      const group = el("section", "session-group");
+      const head = el("button", "session-head");
       head.type = "button";
-      label.textContent = tr("dictationStatsSessionSource", { source });
-      const caret = el("span", "session-caret", "▼");
-      head.append(label, caret);
+      head.append(el("span", "session-source", tr("dictationStatsSessionSource", { source:session.title })), el("span", "session-caret", "▼"));
       const body = el("div", "session-body");
-      words.forEach(item => {
-        const row = el("div", "session-word-row", tr("dictationStatsSessionWord", { word:item.word }));
-        const badge = el("span", `error-type-tag ${item.type}`, typeLabel(item.type));
-        row.append(badge);
-        body.append(row);
-      });
+      const words = [...session.words].sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
+      words.forEach(item => body.append(createSessionWordRow(item)));
       head.setAttribute("aria-expanded", "true");
       head.addEventListener("click", () => {
         const collapsed = body.classList.toggle("collapsed");
@@ -112,21 +164,24 @@
       });
       group.append(head, body);
       content.append(group);
-    }
+    });
   }
   function render() {
+    renderMetrics();
     content.replaceChildren();
     const toolbar = $("#toolbarCard");
     if (toolbar) toolbar.style.display = currentView === "sessions" ? "none" : "flex";
-    if (currentView === "sessions") { renderSessionView(); return; }
-    let list = errorDatabase.filter(item => {
-      if (currentView === "critical" && !(item.rate >= 70 && item.errors >= 3)) return false;
-      return currentType === "all" || item.type === currentType;
-    });
-    if (currentSort === "errors") list = [...list].sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
-    else if (currentSort === "recent") list = [...list].sort((a, b) => b.recent - a.recent);
-    else list = [...list].sort((a, b) => a.word.localeCompare(b.word));
-    if (!list.length) { content.append(el("div", "empty-state", "🌸 " + tr("dictationStatsEmpty"))); return; }
+    if (currentView === "sessions") {
+      if (!sessions.length) { content.append(el("div", "empty-state", `🌸 ${tr("dictationStatsEmpty")}`)); return; }
+      renderSessionView();
+      return;
+    }
+    let list = [...globalWords];
+    if (currentView === "critical") list = list.filter(isCritical);
+    if (currentSort === "errors") list.sort((a, b) => b.errors - a.errors || a.word.localeCompare(b.word));
+    else if (currentSort === "recent") list.sort((a, b) => b.lastAt - a.lastAt || a.word.localeCompare(b.word));
+    else list.sort((a, b) => a.word.localeCompare(b.word));
+    if (!list.length) { content.append(el("div", "empty-state", `🌸 ${tr("dictationStatsEmpty")}`)); return; }
     list.forEach(item => content.append(createGlobalCard(item)));
   }
   document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
@@ -138,15 +193,6 @@
     currentView = button.dataset.view || "global";
     render();
   }));
-  document.querySelectorAll(".pill").forEach(button => button.addEventListener("click", () => {
-    document.querySelectorAll(".pill").forEach(pill => {
-      const active = pill === button;
-      pill.classList.toggle("active", active);
-      pill.setAttribute("aria-pressed", String(active));
-    });
-    currentType = button.dataset.type || "all";
-    render();
-  }));
   const sortSelect = $("#sortSelect");
   sortSelect?.addEventListener("change", () => { currentSort = sortSelect.value || "errors"; render(); });
 
@@ -155,17 +201,17 @@
     reopen?.classList.add("visible");
     window.parent?.postMessage({ type:"KEEPIT_DICTATION_STATS_CLOSE" }, location.origin);
   }
-  function openModal(lang) {
+  function openModal(lang, snapshot) {
     applyTranslations(lang);
+    if (snapshot) setStatsSnapshot(snapshot);
     document.body.classList.add("embedded");
     backdrop.classList.remove("closed");
     reopen?.classList.remove("visible");
-    lastFocus = document.activeElement;
     closeX?.focus();
   }
   closeX?.addEventListener("click", closeModal);
   closeDone?.addEventListener("click", closeModal);
-  reopen?.addEventListener("click", () => openModal());
+  reopen?.addEventListener("click", () => openModal(document.documentElement.lang));
   backdrop.addEventListener("click", event => { if (event.target === backdrop) closeModal(); });
   expandButton?.addEventListener("click", () => {
     const expanded = modal.classList.toggle("is-expanded");
@@ -179,7 +225,7 @@
   });
   window.addEventListener("message", event => {
     if (event.source !== window.parent || event.origin !== location.origin || event.data?.type !== "KEEPIT_DICTATION_STATS_OPEN") return;
-    openModal(event.data.lang);
+    openModal(event.data.lang, event.data.stats);
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && !backdrop.classList.contains("closed")) { event.preventDefault(); closeModal(); }

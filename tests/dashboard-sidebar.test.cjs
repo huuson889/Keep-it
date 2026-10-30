@@ -9,6 +9,15 @@ const js = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js"), "utf8")
 const dashboardCss = fs.readFileSync(path.join(root, "css/dashboard/dashboard.css"), "utf8");
 const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
 
+test("Dictation settings symbol matches the requested Lucide settings icon", () => {
+  const symbol = html.match(/<symbol id="listenDemo-i-settings"[^>]*>[\s\S]*?<\/symbol>/)?.[0];
+  assert.ok(symbol, "listenDemo-i-settings symbol exists");
+  assert.match(symbol, /stroke-width="2"/);
+  assert.match(symbol, /M9\.671 4\.136a2\.34 2\.34 0 0 1 4\.659 0/);
+  assert.match(symbol, /<circle cx="12" cy="12" r="3"/);
+  assert.doesNotMatch(symbol, /M19\.4 15/);
+});
+
 test("Dashboard sidebar starts expanded and pin toggles the in-flow width smoothly", () => {
   assert.match(html, /<body class="dashboard-overview-active dashboard-sidebar-pinned">/);
   assert.match(html, /id="dashboardSidebar" class="dashboard-reference-sidebar sidebar-pinned"/);

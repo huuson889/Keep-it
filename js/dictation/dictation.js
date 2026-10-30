@@ -16,7 +16,7 @@
   let solved = new Set();
   let notes = {};
   let translations = {};
-  let wrongWordStats = { version: 1, words: {} };
+  let wrongWordStats = { version: 2, words: {} };
   let stopAt = -1;
   let attachedVideo = null;
   let ctrlAlone = false;
@@ -475,6 +475,7 @@
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
           <div class="te-dict-answer-stack">
+            <div class="te-dict-proper-noun-hint" id="te-dict-proper-noun-hint" role="note" aria-live="polite" hidden></div>
             <div class="te-dict-input-wrap">
               <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
               <div class="te-dict-input-markup" id="te-dict-input-markup" aria-hidden="true" hidden><div class="te-dict-input-markup-content" id="te-dict-input-markup-content"></div></div>
@@ -618,6 +619,7 @@
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
+      properNounHint: center.querySelector("#te-dict-proper-noun-hint"),
       inputMarkup: center.querySelector("#te-dict-input-markup"),
       inputMarkupContent: center.querySelector("#te-dict-input-markup-content"),
       work: center.querySelector(".te-dict-work"),
@@ -890,19 +892,22 @@
   }
 
   function normalizeWrongWordStats(value) {
-    const normalized = { version: 1, words: {} };
-    const source = value && typeof value === "object" && value.words && typeof value.words === "object"
-      ? value.words : {};
+    const normalized = { version: 2, words: {} };
+    if (!value || value.version !== 2 || !value.words || typeof value.words !== "object") return normalized;
     const safeCount = (candidate) => {
       const number = Number(candidate);
       return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
     };
-    for (const [storageKey, item] of Object.entries(source)) {
+    for (const [storageKey, item] of Object.entries(value.words)) {
       if (!storageKey.startsWith("w:") || !item || typeof item !== "object") continue;
+      const word = typeof item.word === "string" ? item.word : storageKey.slice(2);
+      if (!word || globalThis.LHN_DICTATION_RULES.countLetters(word) < 4) continue;
+      const errors = safeCount(item.errors);
+      if (errors < 1) continue;
       const variants = {};
       const sourceVariants = item.variants && typeof item.variants === "object" ? item.variants : {};
       for (const [key, variant] of Object.entries(sourceVariants)) {
-        if (!key.startsWith("v:") || !variant || typeof variant !== "object") continue;
+        if (!key.startsWith("v:") || key === "v:__missing__" || !variant || typeof variant !== "object") continue;
         variants[key] = { text: typeof variant.text === "string" ? variant.text : "", count: safeCount(variant.count) };
       }
       const occurrences = {};
@@ -911,9 +916,6 @@
         if (!key.startsWith("o:") || !occurrence || typeof occurrence !== "object") continue;
         occurrences[key] = { pending: !!occurrence.pending, wrongStreak: safeCount(occurrence.wrongStreak) };
       }
-      const word = typeof item.word === "string" ? item.word : storageKey.slice(2);
-      const errors = safeCount(item.errors);
-      if (!word || errors < 1) continue;
       normalized.words[storageKey] = {
         word,
         errors,
@@ -927,59 +929,8 @@
     return normalized;
   }
 
-  function recordWrongWordSubmission(stats, cueIndex, result, timestamp = Date.now()) {
-    if (!stats || !stats.words || !Array.isArray(result?.ops)) return false;
-    const tokenFor = (value) => globalThis.LHN_DICTATION_SCORE.tokenize(value)[0] || "";
-    const byWord = new Map();
-    let expectedIndex = 0;
-    for (const operation of result.ops) {
-      if (!operation || operation.type === "extra") continue;
-      const tokenIndex = expectedIndex++;
-      const target = String(operation.expected || "");
-      const normalizedTarget = tokenFor(target);
-      if (!normalizedTarget) continue;
-      if (!byWord.has(normalizedTarget)) byWord.set(normalizedTarget, []);
-      byWord.get(normalizedTarget).push({ operation, tokenIndex, target });
-    }
-
-    let changed = false;
-    for (const [normalizedTarget, events] of byWord) {
-      const storageKey = `w:${normalizedTarget}`;
-      const hasError = events.some(({ operation }) => operation.type === "wrong" || operation.type === "missing");
-      let item = stats.words[storageKey];
-      if (!item && !hasError) continue; // first-try-correct words do not enter wrong-word stats
-      if (!item) {
-        item = { word: events[0].target, errors: 0, corrections: 0, variants: {}, occurrences: {}, lastResult: "wrong", lastAt: 0 };
-        stats.words[storageKey] = item;
-      }
-      item.variants ||= {};
-      item.occurrences ||= {};
-      for (const { operation, tokenIndex, target } of events) {
-        const occurrenceKey = `o:${cueIndex}:${tokenIndex}:${normalizedTarget}`;
-        const isError = operation.type === "wrong" || operation.type === "missing";
-        let occurrence = item.occurrences[occurrenceKey];
-        if (isError) {
-          occurrence ||= { pending: false, wrongStreak: 0 };
-          item.errors++;
-          occurrence.pending = true;
-          occurrence.wrongStreak++;
-          const typed = operation.type === "missing" ? "" : String(operation.typed || "");
-          const normalizedVariant = tokenFor(typed) || "__missing__";
-          const variantKey = `v:${normalizedVariant}`;
-          const variant = item.variants[variantKey] || (item.variants[variantKey] = { text: typed, count: 0 });
-          variant.count++;
-          item.occurrences[occurrenceKey] = occurrence;
-        } else if (operation.type === "ok" && occurrence?.pending) {
-          item.corrections++;
-          occurrence.pending = false;
-          occurrence.wrongStreak = 0;
-        }
-      }
-      item.lastResult = hasError ? "wrong" : "correct";
-      item.lastAt = timestamp;
-      changed = true;
-    }
-    return changed;
+  function recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp = Date.now()) {
+    return globalThis.LHN_DICTATION_RULES.recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp);
   }
 
   function wrongWordStreak(item) {
@@ -1196,10 +1147,13 @@
     let typedIndex = 0;
     for (const operation of operations) {
       if (operation.type === "missing") continue;
-      const match = typedWords[typedIndex++];
+      const indices = operation.typedIndices || [];
+      const startIndex = indices.length ? indices[0] : typedIndex;
+      const match = typedWords[startIndex];
       if (match && (operation.type === "wrong" || operation.type === "extra")) {
         ranges.push({ start: match.index, end: match.index + match[0].length });
       }
+      typedIndex = indices.length ? Math.max(typedIndex, ...indices) + 1 : typedIndex + 1;
     }
     if (!ranges.length) { clearInputWrongMarks(); return; }
     const fragment = document.createDocumentFragment();
@@ -1336,6 +1290,19 @@
     ui.save.disabled = locked;
   }
 
+  function renderProperNounHint(sentence) {
+    if (!ui?.properNounHint) return;
+    const names = globalThis.LHN_DICTATION_RULES.getProperNounHints(sentence);
+    ui.properNounHint.replaceChildren();
+    ui.properNounHint.hidden = names.length === 0;
+    if (!names.length) return;
+    const label = document.createElement("strong");
+    label.textContent = `${tr("dictationProperNounHint")}:`;
+    const values = document.createElement("span");
+    values.textContent = names.join(", ");
+    ui.properNounHint.append(label, values);
+  }
+
   function renderCurrent() {
     if (!ui || !active) return;
     checkedCurrent = false;
@@ -1355,6 +1322,7 @@
     ui.saved.textContent = "";
     escapeFilledAnswer = false;
     ui.input.value = "";
+    renderProperNounHint(sentenceCues[current]?.en || "");
     clearInputWrongMarks();
     ui.input.classList.remove("correct");
     ui.error.hidden = true;
@@ -1425,20 +1393,7 @@
 
   // So theo vị trí: từng từ gõ so với từ cùng vị trí của câu gốc. Dừng ở lỗi (sai/thiếu) đầu tiên.
   function positionalOps(refText, typedText) {
-    const toWords = (text) => (String(text ?? "").match(/[\p{L}\p{N}’‘`´']+/gu) || [])
-      .map((raw) => ({ raw: raw.replace(/^[’‘`´']+|[’‘`´']+$/g, ""), norm: globalThis.LHN_DICTATION_SCORE.tokenize(raw)[0] || "" }))
-      .filter((w) => w.norm);
-    const ref = toWords(refText), typed = toWords(typedText);
-    const ops = [];
-    const n = Math.max(ref.length, typed.length);
-    for (let k = 0; k < n; k++) {
-      const r = ref[k], t = typed[k];
-      if (r && t && r.norm === t.norm) { ops.push({ type: "ok", typed: t.raw }); continue; }
-      if (r && t) { ops.push({ type: "wrong", typed: t.raw, expected: r.raw }); break; }
-      if (r && !t) { ops.push({ type: "missing", expected: r.raw }); break; }
-      ops.push({ type: "extra", typed: t.raw });
-    }
-    return ops;
+    return globalThis.LHN_DICTATION_SCORE.positionalDiff(refText, typedText);
   }
 
   function setErrorPanelSuccess(success) {
@@ -1475,8 +1430,12 @@
 
   function renderPrefixSuggestion(reference, answer) {
     setErrorPanelSuccess(false);
-    const words = getTranscriptWordTokens(reference);
-    const enteredCount = globalThis.LHN_DICTATION_SCORE.tokenize(answer).length;
+    const progress = globalThis.LHN_DICTATION_SCORE.getPrefixProgress(reference, answer);
+    const words = progress.expectedUnits.map((unit) => ({
+      display: unit.display,
+      norm: globalThis.LHN_DICTATION_SCORE.tokenize(unit.display).join("") || unit.norm,
+    }));
+    const enteredCount = progress.matchedUnits;
     const showHint = shouldShowHints("prefix", answer);
     const visibleCount = Math.min(words.length, enteredCount + (showHint ? 1 : 0));
     ui.errorWords.replaceChildren();
@@ -1502,7 +1461,7 @@
     const showHints = shouldShowHints("error", answer);
     const words = getTranscriptWordTokens(cue?.en || "");
     const operations = globalThis.LHN_DICTATION_SCORE.diff(cue?.en || "", answer);
-    const displayOperations = positionalOps(cue?.en, answer);
+    const displayOperations = positionalOps(cue?.en || "", answer);
     ui.errorWords.replaceChildren();
     const chip = (className, text) => {
       const node = document.createElement("span");
@@ -1514,33 +1473,45 @@
       ui.errorWords.appendChild(chip("te-dict-empty", tr("dictationEmptyAnswer")));
     } else {
       let expectedIndex = 0;
+      const expectedStart = (operation) => operation.expectedIndices?.length ? operation.expectedIndices[0]
+        : Number.isInteger(operation.expectedIndex) ? operation.expectedIndex : expectedIndex;
+      const advanceExpected = (operation) => {
+        const indices = operation.expectedIndices || [];
+        expectedIndex = indices.length ? Math.max(expectedIndex, ...indices) + 1 : expectedIndex + 1;
+      };
+      const expectedDisplay = (operation) => {
+        const indices = operation.expectedIndices || [];
+        if (indices.length > 1) {
+          const first = words[indices[0]], last = words[indices[indices.length - 1]];
+          if (first && last) return cue.en.slice(first.start, last.end);
+        }
+        return words[expectedStart(operation)]?.display || operation.expected || "";
+      };
       for (const operation of displayOperations) {
         if (operation.type === "ok") {
           const group = document.createElement("span");
           group.className = "te-dict-wg";
-          group.appendChild(chip("te-dict-w ok", words[expectedIndex]?.display || operation.typed));
+          group.appendChild(chip("te-dict-w ok", expectedDisplay(operation) || operation.typed));
           ui.errorWords.appendChild(group);
-          expectedIndex++;
+          advanceExpected(operation);
           continue;
         }
         if (operation.type === "wrong") {
           const group = document.createElement("span");
           group.className = "te-dict-wg";
           group.appendChild(chip("te-dict-w bad", operation.typed));
-          if (showHints) {
-            group.appendChild(chip("te-dict-w fix", `→ ${words[expectedIndex]?.display || operation.expected}`));
-          }
+          if (showHints) group.appendChild(chip("te-dict-w fix", `→ ${expectedDisplay(operation)}`));
           ui.errorWords.appendChild(group);
           if (!showHints) {
-            const expected = words[expectedIndex] || { norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "" };
+            const expected = words[expectedStart(operation)] || { norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "" };
             appendMissingMasks([expected]);
           }
-          expectedIndex++;
+          advanceExpected(operation);
           appendMissingMasks(words.slice(expectedIndex));
           break;
         }
         if (operation.type === "missing") {
-          appendMissingMasks(words.slice(expectedIndex));
+          appendMissingMasks(words.slice(expectedStart(operation)));
           break;
         }
         if (operation.type === "extra") {
@@ -1696,18 +1667,13 @@
     const typedWords = getTranscriptWordTokens(answer);
     const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
     const replacements = [];
-    let expectedIndex = 0;
-    let typedIndex = 0;
     for (const operation of operations) {
-      if (operation.type === "missing") { expectedIndex++; continue; }
-      if (operation.type === "extra") { typedIndex++; continue; }
-      const expected = expectedWords[expectedIndex];
-      const typed = typedWords[typedIndex];
-      if (operation.type === "ok" && expected && typed && expected.raw !== typed.raw) {
-        replacements.push({ start: typed.start, end: typed.end, text: expected.raw });
-      }
-      expectedIndex++;
-      typedIndex++;
+      const expectedIndices = operation.expectedIndices || [];
+      const typedIndices = operation.typedIndices || [];
+      if (operation.type !== "ok" || expectedIndices.length !== 1 || typedIndices.length !== 1) continue;
+      const expected = expectedWords[expectedIndices[0]];
+      const typed = typedWords[typedIndices[0]];
+      if (expected && typed && expected.raw !== typed.raw) replacements.push({ start: typed.start, end: typed.end, text: expected.raw });
     }
     let result = String(answer);
     for (const replacement of replacements.reverse()) {
@@ -1722,13 +1688,17 @@
     const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
     const expectedToTyped = new Array(expectedWords.length).fill(-1);
     const expectedStatus = new Array(expectedWords.length).fill("missing");
-    let expectedIndex = 0;
-    let typedIndex = 0;
     for (const operation of operations) {
-      if (operation.type === "missing") { expectedIndex++; continue; }
-      if (operation.type === "extra") { typedIndex++; continue; }
-      expectedToTyped[expectedIndex] = typedIndex++;
-      expectedStatus[expectedIndex++] = operation.type;
+      if (operation.type === "missing" || operation.type === "extra") continue;
+      const expectedIndices = operation.expectedIndices || [];
+      const typedIndices = operation.typedIndices || [];
+      // A contraction may align one target phrase to a different number of typed tokens.
+      // In that case keep the learner's text unchanged rather than misplacing punctuation.
+      if (expectedIndices.length !== typedIndices.length) return answer;
+      for (let index = 0; index < expectedIndices.length; index++) {
+        expectedToTyped[expectedIndices[index]] = typedIndices[index];
+        expectedStatus[expectedIndices[index]] = operation.type;
+      }
     }
 
     const source = String(reference);
@@ -1808,7 +1778,7 @@
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
-    const statsUpdated = recordWrongWordSubmission(wrongWordStats, current, result);
+    const statsUpdated = recordWrongWordSubmission(wrongWordStats, current, result, cue.en);
     if (statsUpdated) renderWrongWordStats();
     setScore(result.percent);
     updateCheckButtonStyle(result.perfect);
@@ -1986,10 +1956,7 @@
   }
 
   function isCorrectIncompletePrefix(reference, answer) {
-    const expected = globalThis.LHN_DICTATION_SCORE.tokenize(reference);
-    const entered = globalThis.LHN_DICTATION_SCORE.tokenize(answer);
-    return entered.length > 0 && entered.length < expected.length
-      && entered.every((word, index) => word === expected[index]);
+    return globalThis.LHN_DICTATION_SCORE.isCorrectIncompletePrefix(reference, answer);
   }
 
   function handleAnswerEscape() {
@@ -2195,7 +2162,7 @@
     solved = new Set();
     notes = {};
     translations = {};
-    wrongWordStats = { version: 1, words: {} };
+    wrongWordStats = { version: 2, words: {} };
     ui.root.classList.add("te-dictation-active");
     applyDictationColumnLayout();
     if (typeof ResizeObserver === "function") {

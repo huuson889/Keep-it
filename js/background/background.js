@@ -3,7 +3,29 @@ if (typeof importScripts === "function") {
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
-browser.runtime.onInstalled.addListener(() => USAGE_LIMITS.initialize().catch(error => console.warn("Could not initialize local usage trial", error)));
+async function resetLegacyDictationWrongWordStats() {
+  const storage = browser?.storage?.local;
+  if (!storage) return;
+  try {
+    // One-time upgrade migration: clear only the old error aggregates, preserving each session's notes/progress.
+    const allData = await storage.get(null);
+    const updates = {};
+    for (const [key, record] of Object.entries(allData || {})) {
+      if (!/^dictation:[A-Za-z0-9_-]{6,}$/.test(key)) continue;
+      const stats = record?.wrongWordStats;
+      if (!record || !stats || Number(stats.version) >= 2) continue;
+      updates[key] = { ...record, wrongWordStats: { version: 2, words: {} } };
+    }
+    if (Object.keys(updates).length) await storage.set(updates);
+  } catch (error) {
+    console.warn("Could not reset legacy Dictation error statistics", error);
+  }
+}
+browser.runtime.onInstalled.addListener(async () => {
+  try { await USAGE_LIMITS.initialize(); }
+  catch (error) { console.warn("Could not initialize local usage trial", error); }
+  await resetLegacyDictationWrongWordStats();
+});
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
 const ttsAudioRequests = new Map();
 async function fetchTtsAudio(message) {

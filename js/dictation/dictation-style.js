@@ -529,6 +529,10 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-work { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 12px; }
 #keepit-exact-overlay .te-dict-answer-stack { position: relative; display: flex; flex-direction: column; gap: 12px; }
 #keepit-exact-overlay .te-dict-work.te-dict-has-error .te-dict-answer-stack > .te-dict-error { position: absolute; top: calc(100% + 12px); left: 0; right: 0; z-index: 1; }
+#keepit-exact-overlay .te-dict-proper-noun-hint { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; padding: 8px 12px; border: 1px solid rgba(245, 158, 11, .22); border-radius: 9px; background: rgba(245, 158, 11, .08); color: #92400e; font-size: 13px; line-height: 1.45; }
+#keepit-exact-overlay .te-dict-proper-noun-hint[hidden] { display: none !important; }
+#keepit-exact-overlay .te-dict-proper-noun-hint strong { font-weight: 750; }
+#keepit-exact-overlay.theme-dark .te-dict-proper-noun-hint { border-color: rgba(251, 191, 36, .24); background: rgba(245, 158, 11, .12); color: #fcd34d; }
 #keepit-exact-overlay .te-dict-input-wrap { position: relative; width: 100%; min-height: 110px; }
 #keepit-exact-overlay .te-dict-input { position: relative; z-index: 1;
   display: block;
