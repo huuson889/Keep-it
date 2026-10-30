@@ -647,60 +647,188 @@ function refreshFlashcardTranslateSettingsUI() {
     row.classList.toggle("is-disabled", sharedSpeech);
   });
 }
-let listeningPreviewFilter = "all", listeningPreviewInitialized = false;
-function refreshListeningPreview() {
-  const input = $("listenSessionSearch");
+let dictationSourceFilter = "all", dictationViewInitialized = false, dictationSortMode = "recent";
+function dictationSourceLabel(session) {
+  if (session?.sourceType === "youtube") return "YouTube";
+  if (session?.sourceType === "web") return t("ovSourceWeb");
+  return String(session?.sourceType || "");
+}
+function dictationSessionUrl(session) {
+  try {
+    const url = new URL(String(session?.url || ""));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch { return ""; }
+}
+function dictationSessionTitle(session) {
+  return String(session?.title || "").trim() || String(session?.sourceId || "").trim() || t("dictationUntitledSession");
+}
+function sortedDictationSessions() {
+  const sessions = [...(overviewSessionEntries || [])];
+  if (dictationSortMode === "title") sessions.sort((a,b) => dictationSessionTitle(a).localeCompare(dictationSessionTitle(b), currentLang));
+  else if (dictationSortMode === "progress") sessions.sort((a,b) => {
+    const progress = x => x.totalCount > 0 ? x.solvedCount / x.totalCount : x.solvedCount;
+    return progress(b) - progress(a) || b.updatedAt - a.updatedAt;
+  });
+  else sessions.sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId));
+  return sessions;
+}
+function renderDictationSessionCards() {
+  const grid = $("dictationSessionGrid");
+  if (!grid) return;
+  const sessions = sortedDictationSessions();
+  grid.innerHTML = sessions.map(session => {
+    const title = dictationSessionTitle(session), source = dictationSourceLabel(session);
+    const url = dictationSessionUrl(session), domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return session.sourceId || source; } })();
+    const total = Math.max(0, Number(session.totalCount) || 0), solved = Math.max(0, Number(session.solvedCount) || 0);
+    const progress = total ? Math.min(100, Math.round(solved / total * 100)) : 0;
+    const progressText = total ? `${overviewFormatCount(solved)} / ${overviewFormatCount(total)}` : overviewFormatCount(solved);
+    const sourceType = String(session.sourceType || "").toLowerCase();
+    const artClass = sourceType === "web" ? "article" : "habits";
+    const isComplete = session.status === "complete";
+    const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
+    return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
+      <div class="thumb ${artClass}"><span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+    </article>`;
+  }).join("");
+  refreshDictationView();
+}
+function renderDictationContinueCard() {
+  const session = [...(overviewSessionEntries || [])]
+    .filter(item => item.status !== "complete")
+    .sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId))[0] || null;
+  const title = $("dictationContinueTitle"), description = $("dictationContinueDescription"), meta = $("dictationContinueMeta");
+  const actions = $("dictationContinueActions"), continueButton = $("dictationContinueButton"), sourceButton = $("dictationOpenSourceButton");
+  if (!title || !description || !meta || !actions) return;
+  if (!session) {
+    title.textContent = t("dictationContinueEmptyTitle");
+    description.textContent = t("dictationContinueEmptyDescription");
+    meta.replaceChildren(); actions.hidden = true;
+    continueButton?.removeAttribute("data-dictation-open"); sourceButton?.removeAttribute("data-dictation-open");
+    return;
+  }
+  const current = Math.max(1, (Number(session.currentIndex) || 0) + 1);
+  title.textContent = dictationSessionTitle(session);
+  description.textContent = session.totalCount > 0
+    ? t("dictationContinuePosition", { current:overviewFormatCount(current), total:overviewFormatCount(session.totalCount) })
+    : t("dictationContinueCurrent", { current:overviewFormatCount(current) });
+  const metaParts = [dictationSourceLabel(session), t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }), session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown")];
+  meta.innerHTML = metaParts.map(value => `<span class="meta-pill">${escapeHtml(value)}</span>`).join("");
+  for (const button of [continueButton, sourceButton]) if (button) button.dataset.dictationOpen = session.sessionId;
+  actions.hidden = false;
+}
+function refreshDictationView() {
+  const input = $("dictationSessionSearch");
   if (!input) return;
   const query = input.value.trim(), normalizedQuery = query.toLocaleLowerCase(currentLang);
-  const cards = [...document.querySelectorAll("#dashboardListeningView .session-card")];
+  const cards = [...document.querySelectorAll("#dashboardDictationView .session-card")];
   let visible = 0;
   cards.forEach(card => {
-    const matchesSource = listeningPreviewFilter === "all" || card.dataset.source === listeningPreviewFilter;
+    const matchesSource = dictationSourceFilter === "all" || card.dataset.source === dictationSourceFilter;
     const cardText = `${card.dataset.search || ""} ${card.textContent}`.toLocaleLowerCase(currentLang);
     const matchesText = !normalizedQuery || cardText.includes(normalizedQuery);
     card.hidden = !(matchesSource && matchesText);
     if (!card.hidden) visible++;
   });
-  const status = $("listenSearchStatus"), actions = $("listenExternalActions"), noResults = $("listenNoResults"), count = $("listenVisibleCount");
-  if (status) status.textContent = query ? t("listenSearchResults", { count:visible, query }) : t("listenSearchEmpty");
+  const status = $("dictationSearchStatus"), actions = $("dictationExternalActions"), noResults = $("dictationNoResults"), count = $("dictationVisibleCount"), empty = $("dictationEmptyState");
+  const hasSessions = cards.length > 0;
+  if (status) status.textContent = query ? t("dictationSearchResults", { count:visible, query }) : t("dictationSearchEmpty");
   actions?.classList.toggle("visible", Boolean(query));
-  const youtubeText = $("listenYoutubeSearchText"), googleText = $("listenGoogleSearchText");
-  if (youtubeText) youtubeText.textContent = query ? t("listenSearchYoutubeQuery", { query }) : t("listenSearchYoutube");
-  if (googleText) googleText.textContent = query ? t("listenSearchGoogleQuery", { query }) : t("listenSearchGoogle");
-  if (count) count.textContent = t("listenVisibleCount", { count:visible });
-  if (noResults) { noResults.hidden = visible > 0; noResults.classList.toggle("visible", visible === 0); }
+  const youtubeText = $("dictationYoutubeSearchText"), googleText = $("dictationGoogleSearchText");
+  if (youtubeText) youtubeText.textContent = query ? t("dictationSearchYoutubeQuery", { query }) : t("dictationSearchYoutube");
+  if (googleText) googleText.textContent = query ? t("dictationSearchGoogleQuery", { query }) : t("dictationSearchGoogle");
+  if (count) count.textContent = t("dictationVisibleCount", { count:visible });
+  const filterCounts = {
+    all:cards.length,
+    youtube:cards.filter(card => card.dataset.source === "youtube").length,
+    web:cards.filter(card => card.dataset.source === "web").length,
+  };
+  for (const [source, id] of [["all","dictationFilterAllCount"],["youtube","dictationFilterYoutubeCount"],["web","dictationFilterWebCount"]]) {
+    const node = $(id); if (node) node.textContent = String(filterCounts[source]);
+  }
+  if (empty) {
+    if (!overviewSessionsReady) empty.textContent = t("dictationSessionsLoading");
+    else if (!hasSessions) empty.textContent = t("dictationEmptyState");
+    empty.hidden = hasSessions;
+    empty.classList.toggle("visible", !hasSessions);
+  }
+  if (noResults) { noResults.hidden = !hasSessions || visible > 0; noResults.classList.toggle("visible", hasSessions && visible === 0); }
 }
-function initListeningPreview() {
-  if (listeningPreviewInitialized) return;
-  const input = $("listenSessionSearch");
+function initDictationView() {
+  if (dictationViewInitialized) return;
+  const input = $("dictationSessionSearch");
   if (!input) return;
-  listeningPreviewInitialized = true;
-  input.addEventListener("input", refreshListeningPreview);
-  document.querySelectorAll("#dashboardListeningView .filters [data-filter]").forEach(button => button.addEventListener("click", () => {
-    listeningPreviewFilter = button.dataset.filter || "all";
-    document.querySelectorAll("#dashboardListeningView .filters [data-filter]").forEach(filter => {
+  dictationViewInitialized = true;
+  input.addEventListener("input", refreshDictationView);
+  $("dictationSortSelect")?.addEventListener("change", event => { dictationSortMode = event.target.value || "recent"; renderDictationSessionCards(); });
+  document.querySelectorAll("#dashboardDictationView .filters [data-filter]").forEach(button => button.addEventListener("click", () => {
+    dictationSourceFilter = button.dataset.filter || "all";
+    document.querySelectorAll("#dashboardDictationView .filters [data-filter]").forEach(filter => {
       const active = filter === button;
       filter.classList.toggle("active", active);
       filter.setAttribute("aria-pressed", String(active));
     });
-    refreshListeningPreview();
+    refreshDictationView();
   }));
-  document.querySelectorAll("#dashboardListeningView [data-engine]").forEach(button => button.addEventListener("click", () => {
+  document.querySelectorAll("#dashboardDictationView [data-engine]").forEach(button => button.addEventListener("click", async () => {
     const query = input.value.trim();
-    if (!query) { input.focus(); toast(t("listenEnterSearch")); return; }
-    toast(t("listenExternalToast", { query, engine:button.dataset.engine }));
+    if (!query) { input.focus(); toast(t("dictationEnterSearch")); return; }
+    const url = button.dataset.engine === "YouTube"
+      ? `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
+      : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open Dictation search", error); }
   }));
-  document.querySelectorAll("#dashboardListeningView .demo-action").forEach(button => button.addEventListener("click", () => toast(t("listenPreviewActionToast"))));
-  document.querySelectorAll("#dashboardListeningView .mistake-filter button").forEach(button => button.addEventListener("click", () => {
-    button.parentElement.querySelectorAll("button").forEach(filter => filter.classList.toggle("active", filter === button));
-    toast(t("listenMistakeFilterToast", { filter:button.textContent.trim() }));
-  }));
-  document.addEventListener("keydown", event => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dashboardListeningView").hidden) { event.preventDefault(); input.focus(); }
-    if (event.key === "Escape" && document.activeElement === input) { input.value = ""; refreshListeningPreview(); input.blur(); }
+  const openSession = async sessionId => {
+    const session = overviewSessionEntries.find(item => item.sessionId === sessionId);
+    const url = dictationSessionUrl(session);
+    if (!url) { toast(t("dictationSourceUnavailable")); return; }
+    try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
+  };
+  $("dashboardDictationView").addEventListener("click", event => {
+    const button = event.target.closest("[data-dictation-open]");
+    if (button?.dataset.dictationOpen) void openSession(button.dataset.dictationOpen);
   });
-  refreshListeningPreview();
+  document.addEventListener("keydown", event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dashboardDictationView").hidden) { event.preventDefault(); input.focus(); }
+    if (event.key === "Escape" && document.activeElement === input) { input.value = ""; refreshDictationView(); input.blur(); }
+  });
+  refreshDictationView();
 }
+function dictationSafeCount(value) { const number = Number(value); return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0; }
+async function renderDictationErrorSummary() {
+  const wordCount = $("dictationWrongWordsCount"), recoveryRate = $("dictationRecoveryRate"), list = $("dictationMistakeList"), empty = $("dictationStatsEmpty");
+  if (!wordCount || !recoveryRate || !list || !empty) return;
+  try {
+    const data = await browser.storage.local.get(null);
+    const titleBySource = new Map((overviewSessionEntries || []).map(session => [session.sourceId, dictationSessionTitle(session)]));
+    const grouped = new Map();
+    for (const [storageKey, record] of Object.entries(data || {})) {
+      const match = storageKey.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
+      if (!match || record?.wrongWordStats?.version !== 3 || !record.wrongWordStats.words || typeof record.wrongWordStats.words !== "object") continue;
+      const sourceId = match[1], sourceTitle = titleBySource.get(sourceId) || sourceId;
+      for (const item of Object.values(record.wrongWordStats.words)) {
+        const word = String(item?.word || "").trim(), errors = dictationSafeCount(item?.errors), fixes = dictationSafeCount(item?.corrections);
+        if (!word || !errors) continue;
+        const key = word.toLocaleLowerCase();
+        let aggregate = grouped.get(key);
+        if (!aggregate) { aggregate = { word, errors:0, fixes:0, sources:new Set(), lastAt:0 }; grouped.set(key, aggregate); }
+        aggregate.errors += errors; aggregate.fixes += fixes; aggregate.sources.add(sourceTitle);
+        aggregate.lastAt = Math.max(aggregate.lastAt, dictationSafeCount(item?.lastAt));
+      }
+    }
+    const words = [...grouped.values()].sort((a,b) => b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
+    const totalErrors = words.reduce((sum, item) => sum + item.errors, 0), totalFixes = words.reduce((sum, item) => sum + item.fixes, 0);
+    wordCount.textContent = overviewFormatCount(words.length);
+    recoveryRate.textContent = totalErrors ? String(Math.round(totalFixes / totalErrors * 100)) : "—";
+    list.innerHTML = words.slice(0, 3).map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count">${overviewFormatCount(item.errors)} <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
+    empty.hidden = words.length > 0;
+  } catch (error) {
+    wordCount.textContent = "—"; recoveryRate.textContent = "—"; list.replaceChildren();
+    empty.hidden = false;
+    console.warn("Could not load saved Dictation error summary", error);
+  }
+}
+
 function applyTranslations() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -1315,6 +1443,7 @@ async function loadOverviewDictationSessions() {
     overviewSessionsReady = true;
   }
   renderOverviewDictationSessions();
+  renderDictationErrorSummary();
 }
 function chooseOverviewDictationSession() {
   const sessions = overviewSessionEntries;
@@ -1360,6 +1489,8 @@ function renderOverviewDictationSessions() {
     overviewSetText("overviewModeDictationSource", "");
     overviewSetMeter("overviewDictationMeter", 0);
   }
+  renderDictationSessionCards();
+  renderDictationContinueCard();
 }
 function renderDashboardOverview() {
   const overview = globalThis.LHN_DASHBOARD_OVERVIEW_DATA;
@@ -2341,7 +2472,7 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
-const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardDictationView = $("dashboardDictationView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
 const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2";
 const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
 const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1";
@@ -2350,15 +2481,22 @@ let dashboardScrollSaveTimer = null, dashboardScrollRestoring = true;
 function readDashboardScrollPositions() {
   try {
     const value = JSON.parse(sessionStorage.getItem(DASHBOARD_SCROLL_POSITIONS_KEY) || "null");
-    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      if (!Object.hasOwn(value, "dictation") && Object.hasOwn(value, "listening")) value.dictation = value.listening;
+      return value;
+    }
     const legacy = JSON.parse(sessionStorage.getItem(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY) || "{}");
     const notesScroll = Number(legacy?.["highlights-notes"]);
-    return Number.isFinite(notesScroll) && notesScroll > 0 ? { "highlights-notes":notesScroll } : {};
+    const dictationScroll = Number(legacy?.dictation ?? legacy?.listening);
+    return {
+      ...(Number.isFinite(notesScroll) && notesScroll > 0 ? { "highlights-notes":notesScroll } : {}),
+      ...(Number.isFinite(dictationScroll) && dictationScroll > 0 ? { dictation:dictationScroll } : {}),
+    };
   } catch { return {}; }
 }
 function dashboardScrollTargetForView(view) {
   if (view === "overview") return dashboardOverviewView;
-  return view === "listening" ? dashboardListeningView : dashboardScroller;
+  return view === "dictation" ? dashboardDictationView : dashboardScroller;
 }
 function readDashboardScrollPosition(view) {
   const positions = readDashboardScrollPositions();
@@ -2371,7 +2509,7 @@ function readDashboardScrollPosition(view) {
   return 0;
 }
 function saveDashboardScrollPosition(view = activeDashboardView) {
-  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "listening", "highlights-notes"].includes(view)) return;
+  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "dictation", "highlights-notes"].includes(view)) return;
   const positions = readDashboardScrollPositions();
   positions[view] = Math.max(0, dashboardScrollTargetForView(view).scrollTop);
   try {
@@ -2392,21 +2530,21 @@ function scheduleDashboardScrollPositionSave() {
 }
 dashboardScroller.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
 dashboardOverviewView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
-dashboardListeningView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+dashboardDictationView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = null, parentTopbarCompact = false, parentTopbarScrollTarget = null;
 function updateSharedTopbarContent(view) {
-  const fallbackKey = view === "listening" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
+  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
   const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
   const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
   const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
   const inHighlightsNotes = view === "highlights-notes";
   if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
-  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "listening" ? "listenDemoBadge" : "ovPreview");
+  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
   if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
     const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
@@ -2426,7 +2564,7 @@ function unbindParentTopbarScrollTarget() {
 function bindParentTopbarScrollTarget() {
   unbindParentTopbarScrollTarget();
   if (!dashboardSharedTopbar || !dashboardScroller) return;
-  parentTopbarScrollTarget = ["overview", "listening"].includes(activeDashboardView) ? dashboardScrollTargetForView(activeDashboardView) : dashboardScroller;
+  parentTopbarScrollTarget = ["overview", "dictation"].includes(activeDashboardView) ? dashboardScrollTargetForView(activeDashboardView) : dashboardScroller;
   parentTopbarScrollTarget.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
   updateParentTopbarCompact();
 }
@@ -2440,7 +2578,7 @@ function mountSharedTopbarInParent(view) {
 }
 function updateParentTopbarCompact() {
   if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
-  const next = ["overview", "listening"].includes(activeDashboardView)
+  const next = ["overview", "dictation"].includes(activeDashboardView)
     ? dashboardScrollTargetForView(activeDashboardView).scrollTop > 1
     : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
@@ -2549,8 +2687,8 @@ let dashboardPanelRevealObserver = null;
 let dashboardPanelRevealTimers = new Map();
 let dashboardPanelRevealSequenceEnd = 0;
 function dashboardPanelRevealTargets(view) {
-  if (view === "listening") return [...dashboardListeningView.querySelectorAll([
-    ".listen-hero-row > .hero", ".listen-hero-row > .continue-card", ".search-panel", ".library-section", ".layout > .aside"
+  if (view === "dictation") return [...dashboardDictationView.querySelectorAll([
+    ".dictation-hero-row > .hero", ".dictation-hero-row > .continue-card", ".search-panel", ".library-section", ".layout > .aside"
   ].join(","))];
   if (view === "highlights-notes") return [...dashboardHighlightsNotesView.querySelectorAll(".dashboard-reveal")];
   return [];
@@ -2606,8 +2744,11 @@ function resetDashboardPanelEntranceEffects(view) {
   observedTargets.forEach(target => dashboardPanelRevealObserver.observe(target));
 }
 function savedDashboardView() {
-  try { const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY); return ["overview", "listening", "highlights-notes"].includes(saved) ? saved : "overview"; }
-  catch { return "overview"; }
+  try {
+    const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY);
+    const migrated = saved === "listening" ? "dictation" : saved;
+    return ["overview", "dictation", "highlights-notes"].includes(migrated) ? migrated : "overview";
+  } catch { return "overview"; }
 }
 let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
 function cancelDashboardEntranceEffects() {
@@ -2625,11 +2766,11 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
   dashboardScrollRestoring = true;
   const savedScrollTop = readDashboardScrollPosition(view);
   const scrollTarget = dashboardScrollTargetForView(view);
-  dashboardScroller.scrollTop = ["overview", "listening"].includes(view) ? 0 : savedScrollTop;
+  dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
   scrollTarget.scrollTop = savedScrollTop;
   requestAnimationFrame(() => {
     if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
-    dashboardScroller.scrollTop = ["overview", "listening"].includes(view) ? 0 : savedScrollTop;
+    dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
     scrollTarget.scrollTop = savedScrollTop;
     requestAnimationFrame(() => {
       if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
@@ -2642,16 +2783,16 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
 }
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
-  if (!["overview", "listening", "highlights-notes"].includes(view)) view = "overview";
+  if (!["overview", "dictation", "highlights-notes"].includes(view)) view = "overview";
   const previousView = activeDashboardView;
   if (previousView && previousView !== view && !dashboardScrollRestoring) {
     if (dashboardScrollSaveTimer !== null) { clearTimeout(dashboardScrollSaveTimer); dashboardScrollSaveTimer = null; }
     saveDashboardScrollPosition(previousView);
   }
   activeDashboardView = view;
-  const showOverview = view === "overview", showListening = view === "listening", showHighlightsNotes = view === "highlights-notes";
+  const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
-  dashboardListeningView.hidden = !showListening;
+  dashboardDictationView.hidden = !showDictation;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }
@@ -3135,7 +3276,7 @@ browser.storage.onChanged.addListener((changes, area) => {
     dashboardSettings = changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {};
     currentLang = LANGUAGES.languageFor(dashboardSettings);
     syncDashboardTheme();
-    if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
+    if (currentLang !== previousLanguage) { applyTranslations(); render(); void renderDictationErrorSummary(); syncBilingualPreview(); }
     else refreshDashboardSettings();
     syncHighlightsNotesView();
   }
@@ -3164,7 +3305,9 @@ browser.storage.onChanged.addListener((changes, area) => {
     overviewSessionEntries = mergeOverviewSessions(index.sessions);
     overviewSessionsReady = true;
     renderOverviewDictationSessions();
+    void renderDictationErrorSummary();
   }
+  if (Object.keys(changes).some(key => /^dictation:[A-Za-z0-9_-]{6,}$/.test(key))) void renderDictationErrorSummary();
   if (changes[CONFIG.STORAGE_KEYS.ANNOTATIONS]) {
     if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
     load();
@@ -3207,7 +3350,7 @@ load().then(() => {
   const loadedView = activeDashboardView;
   const loadCycle = dashboardViewSwitchCycle;
   restoreDashboardViewAndReveal(loadedView, loadCycle);
-  initListeningPreview();
+  initDictationView();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

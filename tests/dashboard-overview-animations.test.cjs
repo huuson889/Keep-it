@@ -29,10 +29,10 @@ test("Overview reveals individual frames in visual reading order with reference 
 });
 
 test("Dictation reveals the hero and continue card separately in visual row order", () => {
-  assert.match(dashboardJs, /if \(view === "listening"\) return \[\.\.\.dashboardListeningView\.querySelectorAll\(\[[\s\S]*?"\.listen-hero-row > \.hero", "\.listen-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
-  assert.match(dashboardHtml, /class="listen-hero-row"><section[^>]*class="hero dashboard-reveal"/);
+  assert.match(dashboardJs, /if \(view === "dictation"\) return \[\.\.\.dashboardDictationView\.querySelectorAll\(\[[\s\S]*?"\.dictation-hero-row > \.hero", "\.dictation-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
+  assert.match(dashboardHtml, /class="dictation-hero-row"><section[^>]*class="hero dashboard-reveal"/);
   assert.match(dashboardHtml, /class="continue-card dashboard-reveal"/);
-  assert.doesNotMatch(dashboardHtml, /class="listen-hero-row dashboard-reveal"/);
+  assert.doesNotMatch(dashboardHtml, /class="dictation-hero-row dashboard-reveal"/);
   assert.match(dashboardJs, /dashboardPanelRevealSequenceEnd \+ 80/);
 });
 
@@ -77,21 +77,21 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
   assert.match(overviewCss, /#dashboardScroller > #dashboardOverviewView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
-  assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
+  assert.match(overviewCss, /#dashboardScroller > #dashboardDictationView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
   assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2"/);
   assert.match(dashboardJs, /const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
   assert.match(dashboardJs, /const legacy = JSON\.parse\(sessionStorage\.getItem\(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY\)/);
-  assert.match(dashboardJs, /return Number\.isFinite\(notesScroll\) && notesScroll > 0 \? \{ "highlights-notes":notesScroll \} : \{\}/);
+  assert.match(dashboardJs, /Number\.isFinite\(dictationScroll\) && dictationScroll > 0 \? \{ dictation:dictationScroll \} : \{\}/);
   assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
   assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV2"/);
   assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
   assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScrollTargetForView\(view\)\.scrollTop\)/);
   assert.match(dashboardJs, /dashboardOverviewView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
-  assert.match(dashboardJs, /dashboardListeningView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
+  assert.match(dashboardJs, /dashboardDictationView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
   assert.match(dashboardJs, /if \(view === "overview"\) return dashboardOverviewView/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_SCROLL_POSITIONS_KEY, JSON\.stringify\(positions\)\)/);
   assert.match(dashboardJs, /sessionStorage\.setItem\(DASHBOARD_ACTIVE_VIEW_KEY, view\)/);
-  assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?\? saved : "overview"/);
+  assert.match(dashboardJs, /function savedDashboardView\(\)[\s\S]*?saved === "listening" \? "dictation" : saved[\s\S]*?"overview"/);
   assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?const savedScrollTop = readDashboardScrollPosition\(view\)[\s\S]*?const scrollTarget = dashboardScrollTargetForView\(view\)[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\([\s\S]*?if \(switchCycle !== dashboardViewSwitchCycle \|\| restoreCycle !== dashboardRestoreCycle\)/);
 });
 

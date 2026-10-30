@@ -1,5 +1,5 @@
 (() => {
-  const trigger = document.getElementById("listenDetailedStatsBtn");
+  const trigger = document.getElementById("dictationDetailedStatsBtn");
   const frame = document.getElementById("dictationStatsPopupFrame");
   if (!trigger || !frame) return;
 

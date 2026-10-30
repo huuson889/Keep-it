@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.826; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.828; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
-- Bảo toàn logic annotations, hành động, dữ liệu Dictation, counter/chart và sequence Overview; iframe thống kê Dictation riêng vẫn giữ nguyên.
+- Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ và thống kê lỗi đã lưu; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.826: full suite 51/51 và `node --check` toàn bộ JS đạt; đo Chromium với API extension giả cho thấy view không active không còn chiếm bố cục ở cả ba tab. Chrome/Firefox thật chưa chạy.
+- Kiểm tra v3.4.828: full suite `node --test tests/*.test.cjs` đạt 54/54; `node --check` cho JS đã sửa đạt. Chưa browser-test Chrome/Firefox; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -35,7 +35,7 @@
 Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
 ├── pages/
-│   ├── dashboard.html             # Giao diện Dashboard (Overview/Listening/Highlights & Notes, sidebar và ô tìm Settings)
+│   ├── dashboard.html             # Giao diện Dashboard (Overview/Dictation/Highlights & Notes, sidebar và ô tìm Settings)
 │   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Tô sáng & Ghi chú
 │   ├── dictation-stats-popup.html # Popup thống kê Dictation trong iframe cục bộ
 │   └── popup.html                 # Popup toolbar
@@ -56,7 +56,7 @@ Keepit - Test/
 │   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS + persistent cache), search.js
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` port giao diện Listening
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
@@ -91,9 +91,9 @@ TTS engine ── tải audio Google TTS ─────────────
 
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
-Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
-Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
+Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
@@ -109,9 +109,18 @@ YouTube Dual Sub (`state.allCues`, track language, live video)
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation vẫn giữ markup/CSS theo demo và dữ liệu mẫu/action hiện tại. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+
+**2026-10-31 | v3.4.828 | Arena.ai Agent:**
+
+- Đổi route nội bộ `listening` thành `dictation` và tên stylesheet/component cho khớp tab hiển thị; migrate route cùng scroll key cũ để giữ khôi phục vị trí.
+- Thay card, tiếp tục luyện và thống kê mẫu bằng phiên thật từ local Dictation session index và `wrongWordStats` schema v3; thêm empty state rõ ràng, giữ search/filter/sort và mở nguồn phiên thực. Dọn copy demo/sample khỏi tab Dictation.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/dashboard/dictation-stats-popup-bridge.js`, `js/core/languages.js`, `css/dashboard/dictation.css` (đổi tên từ `listening-demo.css`), `css/dashboard/overview.css`, `tests/dashboard-dictation-view.test.cjs`, các test Dashboard đã cập nhật, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 54/54; `node --check` các JavaScript đã sửa đạt; chưa browser-test Chrome/Firefox.
+
 
 **2026-10-31 | v3.4.826 | Claude sửa:**
 

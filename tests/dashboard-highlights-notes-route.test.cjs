@@ -12,14 +12,14 @@ const shellCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), 
 
 test("Highlights & Notes is integrated into the Dashboard document and shared scroll root", () => {
   const routes = [...html.matchAll(/data-dashboard-view="([^"]+)"/g)].map(match => match[1]);
-  assert.deepEqual(routes.sort(), ["highlights-notes", "listening", "overview"]);
+  assert.deepEqual(routes.sort(), ["dictation", "highlights-notes", "overview"]);
   assert.match(html, /id="dashboardScroller"/);
   assert.match(html, /id="dashboardHighlightsNotesView"/);
   assert.match(html, /id="dashboardHighlightsNotesView"[\s\S]*class="demo-hero dashboard-reveal"/);
   assert.match(html, /class="sources-panel dashboard-reveal"/);
   assert.match(html, /class="notes-panel dashboard-reveal"/);
   assert.match(dashboard, /function dashboardPanelRevealTargets\(view\)/);
-  assert.match(dashboard, /"\.listen-hero-row > \.hero", "\.listen-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
+  assert.match(dashboard, /"\.dictation-hero-row > \.hero", "\.dictation-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
   assert.match(dashboard, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
   assert.doesNotMatch(html, /dashboardHighlightsNotesFrame|src="lr-practice-demo\.html"/);
   assert.doesNotMatch(html, /<iframe[^>]+lr-practice-demo\.html/);

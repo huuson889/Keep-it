@@ -10,12 +10,12 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   const dashboard = read("pages/dashboard.html");
   const popup = read("pages/dictation-stats-popup.html");
   const css = read("css/dashboard/dictation-stats-popup.css");
-  const frameCss = read("css/dashboard/listening-demo.css");
+  const frameCss = read("css/dashboard/dictation.css");
   const bridge = read("js/dashboard/dictation-stats-popup-bridge.js");
   const ui = read("js/dashboard/dictation-stats-popup.js");
   const languages = read("js/core/languages.js");
 
-  assert.match(dashboard, /id="listenDetailedStatsBtn" class="all-mistakes"/);
+  assert.match(dashboard, /id="dictationDetailedStatsBtn" class="all-mistakes"/);
   assert.match(dashboard, /<iframe id="dictationStatsPopupFrame" src="dictation-stats-popup\.html"[^>]*hidden/);
   assert.match(dashboard, /dictation-stats-popup-bridge\.js/);
   assert.match(frameCss, /#dictationStatsPopupFrame\[hidden\]/);
@@ -139,7 +139,7 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   const storage = { async get(keys) { return keys === null ? localData : {}; } };
   let openTabs = [];
   const context = {
-    document:{ getElementById(id) { return id === "listenDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en" }, activeElement:null },
+    document:{ getElementById(id) { return id === "dictationDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en" }, activeElement:null },
     window:{ addEventListener() {} },
     location:{ origin:"https://keepit.test" },
     browser:{ storage:{ local:storage, onChanged:{ addListener(listener) { storageChanged = listener; } } }, tabs:{ async query() { return openTabs; } } },

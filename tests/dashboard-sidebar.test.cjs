@@ -10,8 +10,8 @@ const dashboardCss = fs.readFileSync(path.join(root, "css/dashboard/dashboard.cs
 const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
 
 test("Dictation settings symbol matches the requested Lucide settings icon", () => {
-  const symbol = html.match(/<symbol id="listenDemo-i-settings"[^>]*>[\s\S]*?<\/symbol>/)?.[0];
-  assert.ok(symbol, "listenDemo-i-settings symbol exists");
+  const symbol = html.match(/<symbol id="dictation-i-settings"[^>]*>[\s\S]*?<\/symbol>/)?.[0];
+  assert.ok(symbol, "dictation-i-settings symbol exists");
   assert.match(symbol, /stroke-width="2"/);
   assert.match(symbol, /M9\.671 4\.136a2\.34 2\.34 0 0 1 4\.659 0/);
   assert.match(symbol, /<circle cx="12" cy="12" r="3"/);
@@ -32,7 +32,7 @@ test("Dashboard sidebar starts expanded and pin toggles the in-flow width smooth
   assert.doesNotMatch(dashboardCss, /#dashboardSidebar\.dashboard-reference-sidebar:not\(\.sidebar-pinned\):hover \{ width:220px; \}/);
   assert.match(dashboardCss, /#dashboardHighlightsNotesView \{[\s\S]*?margin:0!important/);
   assert.match(overviewCss, /body\.dashboard-overview-active>main#dashboardOverviewView\{[^}]*margin:0!important/);
-  assert.match(overviewCss, /#dashboardListeningView\{[^}]*margin:0!important/);
+  assert.match(overviewCss, /#dashboardDictationView\{[^}]*margin:0!important/);
   assert.match(html, /id="dashboardSidebarTooltip" class="dashboard-sidebar-tooltip" aria-hidden="true"/);
   assert.match(html, /data-i18n-aria-label="ovNavOverview"/);
   assert.match(js, /function scheduleDashboardSidebarTooltip\(item, delay = 140\)/);
