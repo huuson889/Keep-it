@@ -2342,14 +2342,18 @@ function togglePin() {
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardListeningView = $("dashboardListeningView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
-const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
+const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2";
+const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
 const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1";
-const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1";
+const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV2";
 let dashboardScrollSaveTimer = null, dashboardScrollRestoring = true;
 function readDashboardScrollPositions() {
   try {
-    const value = JSON.parse(sessionStorage.getItem(DASHBOARD_SCROLL_POSITIONS_KEY) || "{}");
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    const value = JSON.parse(sessionStorage.getItem(DASHBOARD_SCROLL_POSITIONS_KEY) || "null");
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    const legacy = JSON.parse(sessionStorage.getItem(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY) || "{}");
+    const notesScroll = Number(legacy?.["highlights-notes"]);
+    return Number.isFinite(notesScroll) && notesScroll > 0 ? { "highlights-notes":notesScroll } : {};
   } catch { return {}; }
 }
 function dashboardScrollTargetForView(view) {

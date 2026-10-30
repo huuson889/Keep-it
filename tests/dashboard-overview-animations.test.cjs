@@ -78,9 +78,12 @@ test("counter widths are reserved before animation to prevent line wrapping and 
 test("Each active tab keeps an independent scroll position and the last route restores after data layout", () => {
   assert.match(overviewCss, /#dashboardScroller > #dashboardOverviewView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
   assert.match(overviewCss, /#dashboardScroller > #dashboardListeningView\s*\{\s*height:calc\(100vh - 98px\)!important;overflow-y:auto!important;/);
-  assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
+  assert.match(dashboardJs, /const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2"/);
+  assert.match(dashboardJs, /const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1"/);
+  assert.match(dashboardJs, /const legacy = JSON\.parse\(sessionStorage\.getItem\(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY\)/);
+  assert.match(dashboardJs, /return Number\.isFinite\(notesScroll\) && notesScroll > 0 \? \{ "highlights-notes":notesScroll \} : \{\}/);
   assert.match(dashboardJs, /const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1"/);
-  assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV1"/);
+  assert.match(dashboardJs, /const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV2"/);
   assert.match(dashboardJs, /dashboardScroller\.addEventListener\("scroll"/);
   assert.match(dashboardJs, /positions\[view\] = Math\.max\(0, dashboardScrollTargetForView\(view\)\.scrollTop\)/);
   assert.match(dashboardJs, /dashboardOverviewView\.addEventListener\("scroll", scheduleDashboardScrollPositionSave/);
