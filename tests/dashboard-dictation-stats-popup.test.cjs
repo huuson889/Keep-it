@@ -34,6 +34,7 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(languages, /dictationStatsTypeNameTypo:/);
   assert.match(popup, /dictation-stats-popup\.css/);
   assert.match(popup, /dictation-stats-popup\.js/);
+  assert.match(popup, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/dictation-stats-popup\.js"><\/script>/);
   assert.doesNotMatch(popup, /<script>([\s\S]*?)<\/script>/);
   const demo = read("docs/dictation-error-popup-overview-demo-v7.html");
   const demoCss = demo.match(/<style>([\s\S]*?)<\/style>/)?.[1];
@@ -46,6 +47,8 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(css, /\.modal-body\{[^}]*overflow:auto/);
   assert.match(css, /\.modal-body::-webkit-scrollbar\{width:3px/);
   assert.match(ui, /item\.errorContext\?\.source/);
+  assert.match(ui, /LHN_SITE_ICONS\.load\(image, session\.url, \{ fallbackElement:fallbackIcon \}\)/);
+  assert.doesNotMatch(ui, /google\.com\/s2\/favicons|\/favicon\.ico/);
 
   assert.match(bridge, /browser\?\.storage\?\.local/);
   assert.match(bridge, /storage\?\.onChanged/);

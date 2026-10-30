@@ -11,6 +11,6 @@
 | [Dictation](modules/dictation.md) | Luyện nghe/gõ, scoring, persistence | Sửa Dictation, cue sync, chấm điểm hoặc tiến độ. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
-| [Shared](modules/shared.md) | Fonts, icons, search index | Sửa helper dùng chung hoặc xác định đúng search API. |
+| [Shared](modules/shared.md) | Fonts, UI icons, site favicon resolver/cache, search index | Sửa helper dùng chung, cache favicon hoặc xác định đúng search API. |
 | [Translate](modules/translate.md) | Translation, dictionary, study translation, search | Sửa provider, cache, từ điển hoặc ranking/highlight. |
 | [Video](modules/video.md) | YouTube overlay và Dual Subtitles | Sửa player, caption, track selection hoặc tích hợp Dictation. |

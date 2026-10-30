@@ -3,21 +3,25 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const source = fs.readFileSync(path.join(__dirname, "../js/dashboard/lr-practice-demo.js"), "utf8");
+const root = path.resolve(__dirname, "..");
+const read = file => fs.readFileSync(path.join(root, file), "utf8");
+const source = read("js/dashboard/lr-practice-demo.js");
+const page = read("pages/lr-practice-demo.html");
 
-test("selected source page loads its site favicon with the existing fallback chain", () => {
+test("selected source page delegates its site icon to the shared resolver with a local fallback", () => {
   assert.match(source, /function setSelectedFavicon\(pageUrl\)/);
-  assert.match(source, /new URL\(pageUrl\)\.origin/);
-  assert.match(source, /\$\{origin\}\/favicon\.ico/);
-  assert.match(source, /https:\/\/www\.google\.com\/s2\/favicons\?domain_url=/);
-  assert.match(source, /img\.dataset\.fallbackUsed/);
+  assert.match(source, /host\.innerHTML=icon\('file'\)/);
+  assert.match(source, /window\.LHN_SITE_ICONS\.load\(img,pageUrl,\{fallbackElement:fallback\}\)/);
   assert.match(source, /setSelectedFavicon\(selected\.url\)/);
+  assert.doesNotMatch(source, /google\.com\/s2\/favicons|\$\{origin\}\/favicon\.ico/);
+  assert.match(page, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script><script src="\.\.\/js\/dashboard\/lr-practice-demo\.js"><\/script>/);
 });
 
-test("source cards show site favicons beside host names without replacing article thumbnails", () => {
+test("generic source badges use the same resolver without changing article thumbnails or branded badges", () => {
   assert.match(source, /function siteBadge\(page\)[\s\S]*?site-favicon/);
   assert.match(source, /function loadSiteBadgeFavicon\(host,pageUrl\)/);
+  assert.match(source, /LHN_SITE_ICONS\.load\(image,pageUrl,\{fallbackElement:fallback\}\)/);
   assert.match(source, /loadSiteBadgeFavicon\(siteIcon,page\.url\)/);
   assert.match(source, /row\.querySelector\('\.source-thumb img'\)/);
-  assert.match(source, /function loadSiteBadgeFavicon[\s\S]*?favicon\.ico[\s\S]*?favicons\?domain_url=/);
+  assert.doesNotMatch(source, /google\.com\/s2\/favicons|\$\{origin\}\/favicon\.ico/);
 });

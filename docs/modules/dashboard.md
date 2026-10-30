@@ -17,6 +17,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
 | [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Render thống kê Dictation cục bộ. |
 | [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/UPDATE/CLOSE` | Quét stats schema v3, gồm nhóm lỗi và mảnh ngữ cảnh; index chỉ bổ sung metadata. |
+| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Resolve favicon và cache URL dùng chung cho popup/Highlights & Notes. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
 
 ## 3. Luồng chính
@@ -27,7 +28,8 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 4. Iframe nhận annotations, favorites và ngôn ngữ qua same-origin `postMessage`; CRUD, favorite, export, review, jump và speak quay về handler parent hiện có.
 5. Một node `#dashboardSharedTopbar` chuyển giữa route; scrollport `#dashboardListeningView` điều khiển sticky/compact state. Giữ export trong iframe.
 6. Nút thống kê chi tiết mở iframe cùng origin. Parent quét `dictation:<videoId>` records trực tiếp; session index chỉ bổ sung tiêu đề/URL khi có. Khi popup mở, `storage.onChanged` gửi snapshot mới để cập nhật tại chỗ. Popup render ba góc nhìn Global, Critical và Theo web bằng UI v7 đã duyệt.
-7. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
+7. Popup stats và Highlights & Notes gọi `LHN_SITE_ICONS.load` cho favicon. Resolver ưu tiên icon của tab cùng origin, dùng cache `browser.storage.local` chung, fallback đồng nhất và không lưu path/query trang.
+8. Sidebar bắt đầu mở rộng; `dashboardSidebarPin` đổi 220px/56px trong flex flow. Thu gọn không tự bung khi hover; tooltip icon vẫn hỗ trợ hover/focus.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -36,6 +38,7 @@ Dashboard cung cấp Overview, Listening, Highlights & Notes và luồng setting
 - Chỉ nhận `HIGHLIGHTS_NOTES_READY`/`HIGHLIGHTS_NOTES_ACTION` từ iframe đã biết, cùng `location.origin`, protocol version `1`; đồng bộ lại sau load, CRUD và storage changes.
 - Popup nhận `KEEPIT_DICTATION_STATS_OPEN`/`KEEPIT_DICTATION_STATS_UPDATE` từ parent cùng origin và gửi `KEEPIT_DICTATION_STATS_CLOSE` khi đóng. Parent refresh khi local Dictation record/index đổi; tên nguồn chọn bản mới hơn giữa record title (đã lấy từ thanh audio) và session index theo timestamp, bỏ giá trị chỉ là videoId trước khi fallback. Nếu record/index cũ thiếu title, bridge thử lấy title từ tab YouTube đang mở khớp videoId. Tên nguồn/context và tiêu đề video trong tab theo video là liên kết HTTPS tới clip YouTube; khi index thiếu URL, tạo URL từ videoId. Iframe không đọc storage trực tiếp.
 - Popup thống kê giữ nguyên CSS của demo v7 đã duyệt. Smart-card có 5 cột: từ sai, ngữ cảnh, biến thể gõ, loại lỗi, tổng quan ba dòng. Tab theo web tái sử dụng cùng card trong accordion; chỉ tiêu đề là liên kết video, favicon/nút và phần trống của header đóng/mở nhóm. Animation dùng grid rows và tôn trọng `prefers-reduced-motion`.
+- Favicon trong popup và Highlights & Notes phải gọi helper `LHN_SITE_ICONS` dùng chung; không tự tạo URL favicon/fallback riêng ở từng consumer. Cache chung được phân vùng theo origin, có TTL/giới hạn; không lưu full page URL.
 - Global và Critical có state lọc nhóm lỗi và sắp xếp riêng; mỗi tab hỗ trợ tỷ lệ lỗi, số lỗi và thời gian gần nhất. Critical giữ điều kiện rate ≥70% và ít nhất 3 lỗi.
 - Popup có chiều cao cố định theo `min(900px, 100vh - 40px)`; phần header/footer giữ nguyên, chỉ `.modal-body` cuộn với scrollbar Chromium 3px (Firefox dùng `thin`).
 - Báo cáo chỉ gồm mục hợp lệ: bỏ `missing`, target 1–3 chữ cái, proper nouns và dấu câu; cùng điều kiện áp dụng cho errors/fixes. Rate là `errors / (errors + fixes)`.

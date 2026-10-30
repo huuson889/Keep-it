@@ -45,12 +45,9 @@ function normalizedColor(value){return validColors.includes(String(value||'').to
 function safeThumbnailUrl(value){if(typeof value!=='string'||!value)return '';try{const url=new URL(value,window.location.href);return ['http:','https:','data:'].includes(url.protocol)?url.href:''}catch{return ''}}
 function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:'#'}catch{return '#'}}
 function setSelectedFavicon(pageUrl){
- const host=$('selectedFavicon');let origin='';
- try{origin=new URL(pageUrl).origin}catch{host.innerHTML=icon('file');return}
- const img=document.createElement('img'),direct=`${origin}/favicon.ico`,fallback=`https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=64`;
- img.alt='';img.referrerPolicy='no-referrer';
- img.addEventListener('error',()=>{if(!img.dataset.fallbackUsed){img.dataset.fallbackUsed='1';img.src=fallback}else host.innerHTML=icon('file')});
- host.replaceChildren(img);img.src=direct;
+ const host=$('selectedFavicon');host.innerHTML=icon('file');
+ const fallback=host.firstElementChild,img=document.createElement('img');img.alt='';img.hidden=true;host.append(img);
+ if(window.LHN_SITE_ICONS)void window.LHN_SITE_ICONS.load(img,pageUrl,{fallbackElement:fallback});
 }
 function tagsOf(item){const raw=Array.isArray(item.__keepitTags)?item.__keepitTags:Array.isArray(item.tags)?item.tags:typeof item.tags==='string'?item.tags.split(','):[];const seen=new Set();return raw.map(value=>String(value||'').trim()).filter(value=>{const key=value.toLocaleLowerCase();if(!key||seen.has(key))return false;seen.add(key);return true})}
 function hashText(text){let hash=0;for(const char of String(text||''))hash=(hash*31+char.charCodeAt(0))|0;return Math.abs(hash)}
@@ -92,13 +89,9 @@ function sourceDescription(page){const quote=page.notes.find(note=>note.quote)?.
 function sourceDate(page){if(!page.date)return 'Không rõ ngày';const today=dateKey(new Date()),yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(page.date===today)return 'Hôm nay';if(page.date===dateKey(yesterday))return 'Hôm qua';const time=dateMs(page.date+'T12:00:00');return Number.isFinite(time)?dateLabel(time):'Không rõ ngày'}
 function siteBadge(page){const site=page.site.toLocaleLowerCase();if(/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(site))return '<span class="source-site-icon youtube" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/></svg></span>';if(site==='medium.com')return '<span class="source-site-icon medium" aria-hidden="true">M</span>';if(site==='bbc.co.uk')return '<span class="source-site-icon bbc" aria-hidden="true">BBC</span>';if(site==='nationalgeographic.com')return '<span class="source-site-icon natgeo" aria-hidden="true"><i></i></span>';return `<span class="source-site-icon site-favicon" aria-hidden="true"><img alt="" hidden><span class="site-favicon-fallback">${esc(page.site.slice(0,1).toUpperCase())}</span></span>`}
 function loadSiteBadgeFavicon(host,pageUrl){
- const image=host.querySelector('img'),fallback=host.querySelector('.site-favicon-fallback');let origin='';
- try{const url=new URL(pageUrl);if(!['http:','https:'].includes(url.protocol))return;origin=url.origin}catch{return}
- const direct=`${origin}/favicon.ico`,google=`https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=32`;
- image.referrerPolicy='no-referrer';
- image.addEventListener('load',()=>{image.hidden=false;fallback.hidden=true});
- image.addEventListener('error',()=>{if(!image.dataset.fallbackUsed){image.dataset.fallbackUsed='1';image.src=google}else{image.hidden=true;fallback.hidden=false}});
- image.src=direct;
+ const image=host.querySelector('img'),fallback=host.querySelector('.site-favicon-fallback');
+ if(!image||!fallback||!window.LHN_SITE_ICONS)return;
+ void window.LHN_SITE_ICONS.load(image,pageUrl,{fallbackElement:fallback});
 }
 function filteredRecords(){
  const q=$('search').value.trim().toLocaleLowerCase('vi'),site=$('siteFilter').value,color=$('colorFilter').value,tag=$('tagFilter').value,date=$('dateFilter').value,now=Date.now();

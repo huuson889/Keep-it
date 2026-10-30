@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.797; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.798; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Popup thống kê Dictation production đã áp dụng UI demo v7 được duyệt: ba góc nhìn Global/Critical/Theo web, smart-card 5 cột, filter/sort độc lập Global và Critical (tỷ lệ lỗi/số lỗi/gần nhất). Dữ liệu vẫn đến từ records schema v3 trong `browser.storage.local` qua same-origin bridge; không đổi title/fallback hay nguồn dữ liệu.
 - Popup giữ chiều cao cố định, body cuộn scrollbar 3px; các góc nhìn cập nhật snapshot local khi storage thay đổi. Migration stats v1/v2 giữ notes/progress/translations.
-- Kiểm tra mới nhất: cập nhật production popup và regression tests theo v7; chưa browser-test. Kết quả full test/static ghi trong nhật ký mục 5 khi hoàn tất.
+- Website favicon đã gom vào `js/shared/site-icons.js`; popup và Highlights & Notes dùng resolver/cache `browser.storage.local` chung, ưu tiên icon tab cùng origin, rồi SVG/icon lớn và fallback 128px; cache theo origin có TTL/giới hạn. UI không đổi.
+- Kiểm tra: 37/37 tests; 52 JavaScript syntax checks; 11 CSS parse sạch; manifest JSON và `git diff --check` đạt. Chưa browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive và theme; sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận label/export theo route, iframe bridge, annotations, favorites, CRUD, filters, flashcard actions, responsive/theme và favicon resolver/cache dùng chung (tab icon, fallback, storage persistence); sidebar `.776` đã xác nhận, topbar sticky/compact đã xác nhận trên Chrome ở v3.4.775. Các bước còn lại chưa được browser-test trong chu kỳ này.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -51,7 +52,7 @@ Keepit - Test/
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # helpers như custom-font, icons và search.js (LHN_INDEX_SEARCH: normalize, createIndex, search, debounce)
+│   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS + persistent cache), search.js
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `listening-demo.css` port giao diện Listening
@@ -92,6 +93,7 @@ Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên t
 Dashboard ── Overview / Listening / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Listening detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
+Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
@@ -109,6 +111,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` chỉ chuyển ba route nội bộ: Tổng quan lấy thống kê từ annotations cục bộ và session-index Dictation; Luyện nghe dùng markup/CSS theo demo, lọc sáu thẻ mẫu và chỉ có action demo; “Tô sáng & Ghi chú” giữ UI trong iframe Highlights & Notes và nhận bản sao annotations/favorites từ Dashboard qua same-origin `postMessage`. Highlights & Notes là giao diện duy nhất để duyệt/quản lý highlights/notes; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-30 | v3.4.798 | Arena.ai Agent sửa:**
+
+- Tạo resolver favicon dùng chung cho popup thống kê và Highlights & Notes; ưu tiên `favIconUrl` do browser báo cho tab cùng origin, rồi SVG/Apple touch icon, Google S2 128px và favicon chuẩn. Cache URL icon dùng chung trong `browser.storage.local`, theo origin, TTL 30 ngày/6 giờ khi không tìm thấy, tối đa 256 website; không lưu full URL trang hoặc thêm host permission.
+- File: `js/shared/site-icons.js`, `js/dashboard/dictation-stats-popup.js`, `js/dashboard/lr-practice-demo.js`, `pages/dictation-stats-popup.html`, `pages/lr-practice-demo.html`, `tests/shared-site-icons.test.cjs`, `tests/dashboard-selected-favicon.test.cjs`, `tests/dashboard-dictation-stats-popup.test.cjs`, `docs/modules/shared.md`, `docs/modules/dashboard.md`, `docs/INDEX.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.798.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 37/37; `node --check` đạt 52 JavaScript files; tinycss2 parse 11 CSS files; manifest JSON và `git diff --check` đạt. Mock xác nhận browser-tab favicon được ưu tiên và cache persistent được reuse cross-context. Chưa browser-test.
 
 **2026-10-30 | v3.4.797 | Arena.ai Agent sửa:**
 

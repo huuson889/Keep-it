@@ -258,32 +258,13 @@
     image.hidden = true;
     image.referrerPolicy = "no-referrer";
     const fallbackIcon = el("span", "video-favicon-fallback", "?");
-    let pageUrl, origin = "", hostname = "";
-    try {
-      const parsed = new URL(session.url);
-      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
-      pageUrl = parsed.href;
-      origin = parsed.origin;
-      hostname = parsed.hostname;
-    } catch {
-      host.append(fallbackIcon);
-      return host;
-    }
+    let hostname = "";
+    try { hostname = new URL(session.url).hostname; } catch {}
     const isYoutube = /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(hostname);
-    fallbackIcon.textContent = isYoutube ? "▶" : hostname.replace(/^www\./i, "").charAt(0).toLocaleUpperCase();
+    fallbackIcon.textContent = isYoutube ? "▶" : "?";
     if (isYoutube) host.classList.add("is-youtube");
-    image.addEventListener("load", () => { image.hidden = false; fallbackIcon.hidden = true; });
-    image.addEventListener("error", () => {
-      if (!image.dataset.fallbackUsed) {
-        image.dataset.fallbackUsed = "1";
-        image.src = `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=32`;
-      } else {
-        image.hidden = true;
-        fallbackIcon.hidden = false;
-      }
-    });
     host.append(image, fallbackIcon);
-    image.src = `${origin}/favicon.ico`;
+    if (window.LHN_SITE_ICONS) void window.LHN_SITE_ICONS.load(image, session.url, { fallbackElement:fallbackIcon });
     return host;
   }
   function renderGlobalList(items, listNode) {
