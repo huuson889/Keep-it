@@ -128,7 +128,7 @@
 .dictation-root .thumb-symbol{width:61px;height:61px;display:grid;place-items:center;border:1px solid #ffffff66;border-radius:22px;background:#ffffff2e;color:#fff;backdrop-filter:blur(3px);transform:rotate(-7deg);box-shadow:0 10px 25px #17223a24}
 .dictation-root .thumb-symbol .icon{width:27px;height:27px;stroke-width:1.7}
 .dictation-root .thumb-word{position:absolute;z-index:4;right:11px;top:11px;color:#ffffffb5;font-size:11px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase}
-.dictation-root .thumb-title{position:relative;z-index:5;max-width:90%;color:#fff;font-size:13px;font-weight:800;line-height:1.35;text-shadow:0 1px 4px #1b233b65}
+.dictation-root .thumb-title{display:none;position:relative;z-index:5;max-width:90%;color:#fff;font-size:13px;font-weight:800;line-height:1.35;text-shadow:0 1px 4px #1b233b65}
 .dictation-root .source-chip{position:absolute;z-index:6;left:9px;top:9px;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #ffffff8c;border-radius:12px;background:#ffffffdf;color:#42445a;font-size:11px;font-weight:800;backdrop-filter:blur(6px)}
 .dictation-root .source-dot{width:6px;height:6px;border-radius:50%;background:#f0444c}
 .dictation-root .source-chip.web .source-dot{background:#34a37c}
