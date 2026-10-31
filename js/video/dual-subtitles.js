@@ -62,8 +62,8 @@ const state = {
 // Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
 const PRELOAD_SECONDS = 300;
 const LOOKAHEAD_SECONDS = 600;
-const TRANSCRIPT_CACHE_LIMIT = 3;
-const transcriptCache = new Map(); // videoId -> cue[] đã làm sạch
+const TRANSCRIPT_CACHE_LIMIT = 20;
+const transcriptCache = new Map(); // video + ngôn ngữ -> cue[] đã làm sạch, LRU trong trang
 const transcriptTrackLanguageCache = new Map();
 const failedUntil = new Map(); // videoId -> thời điểm hết hạn cache lỗi
 const FAILED_CACHE_MS = 10 * 60 * 1000;
@@ -1740,24 +1740,104 @@ function extendLoadedWindow() {
   applyLoadedWindow();
 }
 
-function storeTranscript(videoId, cues) {
+function transcriptVariantKey() {
+  return `${state.sourceLanguageSetting}:${state.targetLanguage}`;
+}
+
+function transcriptMemoryKey(videoId) {
+  return `${videoId}:${transcriptVariantKey()}`;
+}
+
+function promoteTranscriptVideoInMemory(videoId) {
+  const prefix = `${videoId}:`;
+  for (const [key, cues] of [...transcriptCache]) {
+    if (!key.startsWith(prefix)) continue;
+    const trackLanguage = transcriptTrackLanguageCache.get(key) || '';
+    transcriptCache.delete(key);
+    transcriptTrackLanguageCache.delete(key);
+    transcriptCache.set(key, cues);
+    transcriptTrackLanguageCache.set(key, trackLanguage);
+  }
+}
+
+function trimTranscriptMemoryCache() {
+  const videoIds = [];
+  for (const key of transcriptCache.keys()) {
+    const videoId = key.slice(0, key.indexOf(':'));
+    if (videoId && !videoIds.includes(videoId)) videoIds.push(videoId);
+  }
+  while (videoIds.length > TRANSCRIPT_CACHE_LIMIT) {
+    const expiredVideoId = videoIds.shift();
+    const prefix = `${expiredVideoId}:`;
+    for (const key of [...transcriptCache.keys()]) {
+      if (!key.startsWith(prefix)) continue;
+      transcriptCache.delete(key);
+      transcriptTrackLanguageCache.delete(key);
+    }
+  }
+}
+
+async function storeTranscript(videoId, cues) {
   if (!videoId || !cues.length) return;
-  const key = `${videoId}:${state.sourceLanguageSetting}:${state.targetLanguage}`;
+  const variantKey = transcriptVariantKey();
+  const key = `${videoId}:${variantKey}`;
+  transcriptCache.delete(key);
+  transcriptTrackLanguageCache.delete(key);
   transcriptCache.set(key, cues);
   transcriptTrackLanguageCache.set(key, state.captionTrackLanguage);
-  while (transcriptCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptCache.delete(transcriptCache.keys().next().value);
-  while (transcriptTrackLanguageCache.size > TRANSCRIPT_CACHE_LIMIT) transcriptTrackLanguageCache.delete(transcriptTrackLanguageCache.keys().next().value);
+  promoteTranscriptVideoInMemory(videoId);
+  trimTranscriptMemoryCache();
+
+  try {
+    await globalThis.LHN_MESSAGING.sendMessage({
+      type: 'YOUTUBE_TRANSCRIPT_CACHE_SAVE',
+      videoId,
+      variantKey,
+      transcript: { cues, captionTrackLanguage: state.captionTrackLanguage },
+    });
+  } catch (error) {
+    console.warn('[keepit] Could not save video transcript cache:', error);
+  }
 }
 
 function takeCachedTranscript(videoId) {
-  const key = `${videoId}:${state.sourceLanguageSetting}:${state.targetLanguage}`;
+  const key = transcriptMemoryKey(videoId);
   const cached = transcriptCache.get(key);
   state.captionTrackLanguage = transcriptTrackLanguageCache.get(key) || '';
   state.primaryNeedsTranslation = !!cached?.[0]?.mainNeedsTranslation;
   state.secondaryNeedsTranslation = !!cached?.[0]?.secondaryNeedsTranslation;
   state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : state.sourceLanguageSetting;
   if (!cached?.length) return null;
+  promoteTranscriptVideoInMemory(videoId);
   return cached;
+}
+
+async function getCachedTranscript(videoId) {
+  const variantKey = transcriptVariantKey();
+  const key = `${videoId}:${variantKey}`;
+  const cached = takeCachedTranscript(videoId);
+  if (cached) {
+    try {
+      void globalThis.LHN_MESSAGING.sendMessage({ type:'YOUTUBE_TRANSCRIPT_CACHE_TOUCH', videoId, variantKey })
+        .catch(error => console.warn('[keepit] Could not touch video transcript cache:', error));
+    } catch (error) {
+      console.warn('[keepit] Could not touch video transcript cache:', error);
+    }
+    return cached;
+  }
+
+  try {
+    const persisted = await globalThis.LHN_MESSAGING.sendMessage({ type:'YOUTUBE_TRANSCRIPT_CACHE_GET', videoId, variantKey });
+    if (!Array.isArray(persisted?.cues) || !persisted.cues.length || key !== transcriptMemoryKey(videoId)) return null;
+    transcriptCache.set(key, persisted.cues);
+    transcriptTrackLanguageCache.set(key, persisted.captionTrackLanguage || '');
+    promoteTranscriptVideoInMemory(videoId);
+    trimTranscriptMemoryCache();
+    return takeCachedTranscript(videoId);
+  } catch (error) {
+    console.warn('[keepit] Could not read video transcript cache:', error);
+    return null;
+  }
 }
 
 function schedulePrefetch(videoId) {
@@ -1772,7 +1852,9 @@ async function prefetchTranscript(videoId) {
   if (document.visibilityState !== 'visible') return; // (1) chỉ prefetch khi tab đang hiển thị
   if ((failedUntil.get(videoId) || 0) > Date.now()) return; // (3) đang trong thời hạn cache lỗi
   if (state.videoId !== videoId) return;
-  const cached = takeCachedTranscript(videoId);
+  const token = prefetchToken;
+  const cached = await getCachedTranscript(videoId);
+  if (token !== prefetchToken || state.videoId !== videoId) return;
   if (cached) {
     state.allCues = cached;
     loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
@@ -1781,7 +1863,6 @@ async function prefetchTranscript(videoId) {
   }
   const video = document.querySelector('video');
   if (video?.duration === Infinity) return; // livestream: không có transcript
-  const token = prefetchToken;
   const reasons = [];
   const cues = await transcriptFromPlayerApi(videoId, reasons);
   if (token !== prefetchToken || state.videoId !== videoId) return;
@@ -1791,7 +1872,8 @@ async function prefetchTranscript(videoId) {
     console.info('[keepit] Prefetch chưa lấy được phụ đề, sẽ thử lại khi mở panel:', reasons.join(' | ') || 'không rõ lý do');
     return;
   }
-  storeTranscript(videoId, cleaned);
+  void storeTranscript(videoId, cleaned);
+  if (token !== prefetchToken || state.videoId !== videoId) return;
   state.allCues = cleaned;
   loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
   applyLoadedWindow();
@@ -1954,8 +2036,11 @@ async function loadCaptions() {
   const videoId = state.videoId;
   if (!videoId) return;
 
-  // Đã prefetch xong cho video này: hiện ngay, không gọi mạng lại.
-  const cached = takeCachedTranscript(videoId);
+  const token = ++state.loadToken;
+  state.loadingFor = videoId;
+  // Prefetch hoặc persistent cache trong background: hiện ngay nếu đã có.
+  const cached = await getCachedTranscript(videoId);
+  if (token !== state.loadToken || state.videoId !== videoId) return;
   if (cached) {
     state.allCues = cached;
     loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
@@ -1963,9 +2048,6 @@ async function loadCaptions() {
     applyLoadedWindow();
     return;
   }
-
-  const token = ++state.loadToken;
-  state.loadingFor = videoId;
   state.captionTrackLanguage = '';
   state.primaryNeedsTranslation = false;
   state.secondaryNeedsTranslation = false;
@@ -2020,7 +2102,7 @@ async function loadCaptions() {
       startLiveCaptionCapture([...reasons, 'danh sách cue rỗng sau khi làm sạch']);
       return;
     }
-    storeTranscript(videoId, cleaned);
+    void storeTranscript(videoId, cleaned);
     state.allCues = cleaned;
     loadedUntil = Math.max(loadedUntil, Math.min(PRELOAD_SECONDS, cleaned[cleaned.length - 1].end || PRELOAD_SECONDS));
     console.info('[keepit] Nguồn phụ đề đã dùng:', cleaned.length, 'cue |', reasons.length ? reasons.join(' | ') : 'player API');

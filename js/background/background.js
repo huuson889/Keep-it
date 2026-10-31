@@ -111,6 +111,9 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "DETECT_READ_LANGUAGE") return LHN_TRANSLATE.detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return LHN_TRANSLATE.translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_GET") return LHN_CACHE.getVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_SAVE") return LHN_CACHE.saveVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""), message.transcript);
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_TOUCH") return LHN_CACHE.touchVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
   if (message.type === "YOUTUBE_FETCH_TEXT") {
     const url = String(message.url || "");
     const allowed = /^https:\/\/(?:www\.)?youtube\.com\//.test(url) || /^https:\/\/translate\.googleapis\.com\//.test(url);
