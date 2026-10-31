@@ -1,4 +1,4 @@
-/* Nút mở keepit trên trang YouTube (giao diện overlay nằm trong Shadow DOM) */
+/* Nút mở Keepit: chèn vào thanh điều khiển gốc của YouTube, ngay sau nút toàn màn hình. */
 #yt-keepit-launcher {
   position: fixed;
   right: 24px;
@@ -17,3 +17,25 @@
   z-index: 999997;
 }
 #yt-keepit-launcher svg { width: 22px; height: 22px; fill: currentColor; }
+
+/* Match YouTube's player controls; JS places the launcher directly after fullscreen. */
+.ytp-right-controls > #yt-keepit-launcher,
+#ytp-right-controls > #yt-keepit-launcher {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  display: inline-flex !important;
+  float: left;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  margin: 6px 8px;
+  padding: 0;
+  z-index: 1;
+}

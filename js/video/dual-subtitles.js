@@ -1009,13 +1009,33 @@ function buildOverlay() {
 }
 
 function ensureLauncher() {
-  if (document.getElementById(LAUNCHER_ID)) return;
-  const btn = document.createElement('button');
-  btn.id = LAUNCHER_ID;
-  btn.title = 'Mở keepit';
-  btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>';
-  btn.addEventListener('click', openOverlay);
-  document.body.appendChild(btn);
+  let btn = document.getElementById(LAUNCHER_ID);
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = LAUNCHER_ID;
+    btn.type = 'button';
+    btn.className = 'ytp-button lhn-ytp-launcher';
+    btn.title = 'Mở keepit';
+    btn.setAttribute('aria-label', 'Mở keepit');
+    btn.style.display = 'none';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>';
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openOverlay();
+    });
+  }
+
+  const controls = document.querySelector('.ytp-right-controls, #ytp-right-controls');
+  if (controls) {
+    const fullscreen = controls.querySelector('.ytp-fullscreen-button, #ytp-fullscreen-button');
+    if (fullscreen && fullscreen.nextElementSibling !== btn) fullscreen.insertAdjacentElement('afterend', btn);
+    else if (btn.parentElement !== controls) controls.appendChild(btn);
+  } else if (btn.parentElement !== document.body) {
+    // Wait for YouTube to build its player controls; do not show a viewport-fixed fallback.
+    document.body.appendChild(btn);
+  }
+  return btn;
 }
 
 function hideOverlayPageScrollbar() {
@@ -2115,11 +2135,6 @@ function bindUI() {
   const modalExport = $('te-modal-export');
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
-  const floatingBtnAnchor = floatingBtn?.parentElement;
-  const floatingBtnAnchorHome = floatingBtnAnchor?.parentElement;
-  const floatingBtnAnchorMarker = document.createComment('te-floating-btn-home');
-  floatingBtnAnchorHome?.insertBefore(floatingBtnAnchorMarker, floatingBtnAnchor?.nextSibling || null);
-  const readingVideoSlot = ui('.te-video-slot');
 
   const mainSubtitleText = ui('.te-sub-en');
   mainSubtitleText.addEventListener('pointerover', (event) => {
@@ -2338,11 +2353,6 @@ function bindUI() {
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ đọc').addEventListener('click', (e) => {
     const enabled = root.classList.toggle('te-reading-mode');
-    if (enabled && floatingBtnAnchor && readingVideoSlot) {
-      readingVideoSlot.appendChild(floatingBtnAnchor);
-    } else if (!enabled && floatingBtnAnchor) {
-      floatingBtnAnchorMarker.parentNode?.insertBefore(floatingBtnAnchor, floatingBtnAnchorMarker);
-    }
     e.currentTarget.classList.toggle('te-active', enabled);
     e.currentTarget.setAttribute('aria-pressed', String(enabled));
   });
@@ -2492,9 +2502,9 @@ async function refreshKeepitGate() {
 function tick() {
   if (keepitSiteDisabled) return;
   const isWatch = location.pathname === '/watch';
-  ensureLauncher();
-  const launcher = document.getElementById(LAUNCHER_ID);
-  if (launcher) launcher.style.display = isWatch ? '' : 'none';
+  const launcher = ensureLauncher();
+  const launcherInPlayerControls = launcher?.parentElement?.matches('.ytp-right-controls, #ytp-right-controls');
+  if (launcher) launcher.style.display = isWatch && launcherInPlayerControls ? '' : 'none';
 
   const videoId = isWatch ? new URLSearchParams(location.search).get('v') : null;
   if (videoId === state.videoId) return;
