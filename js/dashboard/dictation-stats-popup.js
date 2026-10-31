@@ -420,13 +420,26 @@
     syncToolbar();
     renderMetrics();
   }
+  function visibleCurrentResultTargets() {
+    const viewport = $("#resultsScroll"), pane = document.querySelector(`.view-pane[data-pane="${currentView}"]`);
+    if (!viewport || !pane) return [];
+    const bounds = viewport.getBoundingClientRect();
+    const selector = currentView === "sessions" ? ".video-group" : ".smart-card";
+    return [...pane.querySelectorAll(selector)].filter(target => {
+      const rect = target.getBoundingClientRect();
+      return rect.bottom > bounds.top && rect.top < bounds.bottom;
+    });
+  }
+  function runPopupContentReveal() {
+    runPopupReveal([...popupContentRevealTargets, ...visibleCurrentResultTargets()]);
+  }
   document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
     const nextView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
     if (nextView === currentView) return;
     clearSearchRevealTimer();
     currentView = nextView;
     render();
-    runPopupReveal(popupContentRevealTargets);
+    runPopupContentReveal();
   }));
   document.querySelectorAll("#globalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
     const nextType = button.dataset.type || "all";
@@ -439,7 +452,7 @@
       filter.setAttribute("aria-pressed", String(active));
     });
     render();
-    runPopupReveal(popupContentRevealTargets);
+    runPopupContentReveal();
   }));
   document.querySelectorAll("#criticalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
     const nextType = button.dataset.criticalType || "all";
@@ -452,18 +465,20 @@
       filter.setAttribute("aria-pressed", String(active));
     });
     render();
-    runPopupReveal(popupContentRevealTargets);
+    runPopupContentReveal();
   }));
   const globalSortSelect = $("#sortSelect"), criticalSortSelect = $("#criticalSortSelect");
   globalSortSelect?.addEventListener("change", () => { globalSort = globalSortSelect.value || "rate"; renderGlobal(); });
   criticalSortSelect?.addEventListener("change", () => { criticalSort = criticalSortSelect.value || "rate"; renderCritical(); });
   searchInput?.addEventListener("input", () => {
-    searchTerm = searchInput.value;
+    const nextSearchTerm = searchInput.value;
+    if (nextSearchTerm === searchTerm) return;
+    searchTerm = nextSearchTerm;
     render();
     clearSearchRevealTimer();
     searchRevealTimer = setTimeout(() => {
       searchRevealTimer = 0;
-      if (!backdrop.classList.contains("closed")) runPopupReveal(popupContentRevealTargets);
+      if (!backdrop.classList.contains("closed")) runPopupContentReveal();
     }, 180);
   });
 
@@ -483,8 +498,12 @@
   function runPopupReveal(targets) {
     const revealTargets = [...new Set(targets || [])].filter(target => target?.isConnected);
     if (!revealTargets.length) return;
+    const previousTargets = [...activePopupRevealTargets];
     popupRevealScope?.cancel();
-    activePopupRevealTargets.forEach(target => target.style.removeProperty("--dictation-popup-reveal-delay"));
+    previousTargets.forEach(target => {
+      target.style.removeProperty("--dictation-popup-reveal-delay");
+      if (target.isConnected && !revealTargets.includes(target)) target.classList.add("dictation-popup-revealed");
+    });
     activePopupRevealTargets = new Set(revealTargets);
     revealTargets.forEach(target => {
       target.classList.add("dictation-popup-reveal");
@@ -502,9 +521,7 @@
       lead:100,
       onTarget:(target, delay) => {
         const delayMs = Math.max(0, Math.round(delay));
-        target.style.setProperty("--dictation-popup-reveal-delay", `${delayMs}ms`);
-        target.classList.add("dictation-popup-revealed");
-        popupRevealScope.schedule(delayMs + 850, () => target.style.removeProperty("--dictation-popup-reveal-delay"), () => target.isConnected, target);
+        popupRevealScope.schedule(delayMs, () => target.classList.add("dictation-popup-revealed"), () => target.isConnected, target);
       },
     });
   }
@@ -526,7 +543,7 @@
     document.body.classList.add("embedded");
     backdrop.classList.remove("closed");
     reopen?.classList.remove("visible");
-    runPopupReveal(popupOpenRevealTargets);
+    runPopupReveal([...popupOpenRevealTargets, ...visibleCurrentResultTargets()]);
     closeX?.focus();
   }
   closeX?.addEventListener("click", closeModal);

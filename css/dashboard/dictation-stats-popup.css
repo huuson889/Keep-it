@@ -332,12 +332,12 @@ html.dark .results-scroll::-webkit-scrollbar-thumb:hover { background:#64748b; }
   html.dark .filters { scrollbar-width:thin; scrollbar-color:#475569 transparent; }
 }
 
-/* Staggered popup entrance follows the Dashboard's panel reveal cadence. */
+/* Staggered popup entrance: JavaScript schedules each visible target's reveal state. */
 .dictation-popup-reveal {
   opacity:0;
   transform:translateY(24px) scale(.98);
   transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1),box-shadow .25s ease,border-color .25s ease;
-  transition-delay:var(--dictation-popup-reveal-delay,100ms);
+  transition-delay:0ms;
   will-change:opacity,transform;
 }
 .dictation-popup-revealed { opacity:1; transform:translateY(0) scale(1); }
