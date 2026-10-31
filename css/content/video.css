@@ -16,7 +16,13 @@
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
   z-index: 999997;
 }
-#yt-keepit-launcher svg { width: 22px; height: 22px; fill: none; stroke: currentColor; }
+#yt-keepit-launcher > svg {
+  display: block;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  overflow: visible;
+}
 
 /* Inserted immediately after fullscreen inside the same auto-hide control group. */
 .ytp-right-controls #yt-keepit-launcher,
@@ -41,15 +47,4 @@
   background: transparent;
   box-shadow: none;
   z-index: auto;
-}
-.ytp-right-controls #yt-keepit-launcher .lhn-launcher-badge,
-#ytp-right-controls #yt-keepit-launcher .lhn-launcher-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
