@@ -1032,12 +1032,25 @@ function applySettings() {
 }
 
 // ---------- Overlay: tạo, mở, đóng ----------
+function setVideoLearningMode(enabled) {
+  const root = overlayEl();
+  if (!root) return false;
+  const active = Boolean(enabled);
+  root.classList.toggle('te-reading-mode', active);
+  updateSidebarTranscriptFontSize(root);
+  const button = ctrl('Chế độ đọc');
+  button?.classList.toggle('te-active', active);
+  button?.setAttribute('aria-pressed', String(active));
+  return active;
+}
+
 function createDictationOverlayApi() {
   if (globalThis.LHN_OVERLAY_API) return globalThis.LHN_OVERLAY_API;
   const api = Object.freeze({
     state,
     overlayEl,
     ctrl,
+    setLearningMode: setVideoLearningMode,
     lang: () => state.displayLanguage,
     getDictationCues: () => {
       if (state.captionTrackLanguage !== 'en' || !state.allCues.length) return [];
@@ -2553,11 +2566,10 @@ function bindUI() {
     ui('#te-speed-popup')?.classList.add('hidden');
   });
   ctrl('Audio').addEventListener('click', toggleMute);
-  ctrl('Chế độ đọc').addEventListener('click', (e) => {
-    const enabled = root.classList.toggle('te-reading-mode');
-    updateSidebarTranscriptFontSize(root);
-    e.currentTarget.classList.toggle('te-active', enabled);
-    e.currentTarget.setAttribute('aria-pressed', String(enabled));
+  ctrl('Chế độ đọc').addEventListener('click', () => {
+    const enabled = !root.classList.contains('te-reading-mode');
+    if (enabled) globalThis.LHN_DICTATION?.close?.();
+    setVideoLearningMode(enabled);
   });
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');

@@ -7,6 +7,7 @@
   let ui = null;
   let active = false;
   let openingPanel = false;
+  let openingGeneration = 0;
   let current = 0;
   let checkedCurrent = false;
   let savedPageScrollStyles = null;
@@ -2243,20 +2244,24 @@
     if (active || openingPanel) return;
     if (!isEnglishReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
     openingPanel = true;
+    const requestGeneration = ++openingGeneration;
     build();
     if (!ui) { openingPanel = false; return; }
+    A?.setLearningMode?.(false);
     const layoutPrefsPromise = loadDictationLayoutPrefs();
     if (waitForCaptions) {
       void layoutPrefsPromise.then(() => { if (active && ui) applyDictationColumnLayout(); });
     } else {
       await layoutPrefsPromise;
     }
+    if (requestGeneration !== openingGeneration) return;
     if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
     videoId = currentVideoId();
     if (!videoId) { openingPanel = false; showToastBeforeOpen(); return; }
     sentenceCues = getCues();
     if (!sentenceCues.length && !waitForCaptions) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
+    setDictationButtonActive(true);
     progressReady = false;
     pendingCaptionStart = waitForCaptions && !sentenceCues.length;
     pendingResumeIndex = 0;
@@ -2328,11 +2333,25 @@
     ui.input.focus({ preventScroll: true });
   }
 
+  function setDictationButtonActive(enabled) {
+    const button = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
+    button?.classList.toggle("te-active", Boolean(enabled));
+    button?.setAttribute("aria-pressed", String(Boolean(enabled)));
+  }
+
   function close() {
-    if (!active || !ui) return;
+    if (openingPanel) {
+      openingPanel = false;
+      openingGeneration++;
+    }
+    if (!active || !ui) {
+      setDictationButtonActive(false);
+      return;
+    }
     restoreYouTubeScrollbar();
     flushNotes();
     active = false;
+    setDictationButtonActive(false);
     progressReady = false;
     pendingCaptionStart = false;
     pendingResumeIndex = 0;
@@ -2386,7 +2405,7 @@
     ctrlAlone = false;
   }
 
-  function toggle() { active ? close() : void openPanel(); }
+  function toggle() { (active || openingPanel) ? close() : void openPanel(); }
 
   function onCaptionsUpdated() {
     if (!active) return;
@@ -2465,5 +2484,5 @@
     attachControls();
   });
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
-  globalThis.LHN_DICTATION = Object.freeze({ toggle, open: openPanel, close, isOpen: () => active });
+  globalThis.LHN_DICTATION = Object.freeze({ toggle, open: openPanel, close, isOpen: () => active || openingPanel });
 })();
