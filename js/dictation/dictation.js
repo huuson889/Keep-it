@@ -2466,7 +2466,7 @@
   function onToggleClick(event) {
     event.preventDefault();
     event.stopPropagation();
-    toggle();
+    document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
   }
 
   function attachControls() {
