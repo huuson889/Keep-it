@@ -6,7 +6,7 @@ const path = require("node:path");
 const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "pages/dashboard.html"), "utf8");
 const dashboard = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js"), "utf8");
-const notes = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
+const notes = fs.readFileSync(path.join(root, "js/dashboard/highlights-notes.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css/dashboard/highlights-notes-embedded.css"), "utf8");
 const shellCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
 
@@ -21,10 +21,10 @@ test("Highlights & Notes is integrated into the Dashboard document and shared sc
   assert.match(dashboard, /function dashboardPanelRevealTargets\(view\)/);
   assert.match(dashboard, /"\.dictation-hero-row > \.hero", "\.dictation-hero-row > \.continue-card", "\.search-panel", "\.library-section", "\.layout > \.aside"/);
   assert.match(dashboard, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
-  assert.doesNotMatch(html, /dashboardHighlightsNotesFrame|src="lr-practice-demo\.html"/);
-  assert.doesNotMatch(html, /<iframe[^>]+lr-practice-demo\.html/);
+  assert.doesNotMatch(html, /dashboardHighlightsNotesFrame|src="highlights-notes\.html"/);
+  assert.doesNotMatch(html, /<iframe[^>]+highlights-notes\.html/);
   assert.match(html, /href="\.\.\/css\/dashboard\/highlights-notes-embedded\.css"/);
-  assert.match(html, /src="\.\.\/js\/dashboard\/lr-practice-demo\.js"/);
+  assert.match(html, /src="\.\.\/js\/dashboard\/highlights-notes\.js"/);
   assert.match(css, /#dashboardHighlightsNotesView \.workspace/);
   assert.match(css, /#dashboardHighlightsNotesView \.source-list[^}]*overflow:visible!important/);
   assert.match(css, /html\.dark #dashboardHighlightsNotesView \.demo-hero/);

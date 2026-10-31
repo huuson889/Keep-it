@@ -63,13 +63,13 @@ test("YouTube, Dashboard and Highlights & Notes consumers load the shared helper
   assert.ok(content.indexOf("js/shared/thumbnails.js") < content.indexOf("js/dictation/dictation.js"));
   const dashboard = read("pages/dashboard.html");
   assert.ok(dashboard.indexOf("../js/shared/thumbnails.js") < dashboard.indexOf("../js/dashboard/dashboard.js"));
-  const highlights = read("pages/lr-practice-demo.html");
-  assert.ok(highlights.indexOf("../js/shared/thumbnails.js") < highlights.indexOf("../js/dashboard/lr-practice-demo.js"));
+  const highlights = read("pages/highlights-notes.html");
+  assert.ok(highlights.indexOf("../js/shared/thumbnails.js") < highlights.indexOf("../js/dashboard/highlights-notes.js"));
   assert.match(read("js/dictation/dictation.js"), /thumbnails\.loadYouTube\(ui\.miniThumb/);
   assert.match(read("js/dashboard/dashboard.js"), /LHN_THUMBNAILS\?\.loadYouTube/);
-  assert.match(read("js/dashboard/lr-practice-demo.js"), /LHN_THUMBNAILS\?\.loadSource/);
+  assert.match(read("js/dashboard/highlights-notes.js"), /LHN_THUMBNAILS\?\.loadSource/);
   assert.match(read("js/content/content.js"), /LHN_THUMBNAILS\?\.fromPageMetadata/);
-  for (const file of ["js/dictation/dictation.js", "js/dashboard/dashboard.js", "js/dashboard/lr-practice-demo.js", "js/content/content.js"]) {
+  for (const file of ["js/dictation/dictation.js", "js/dashboard/dashboard.js", "js/dashboard/highlights-notes.js", "js/content/content.js"]) {
     assert.doesNotMatch(read(file), /i\.ytimg\.com|hqdefault\.jpg/, `${file} should delegate thumbnail URLs to the shared helper`);
   }
 });

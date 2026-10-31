@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.836; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.837; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
-- Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal, source/note items bắt đầu sau panel ngoài và stagger theo thứ tự hàng. Các ngoại lệ reveal từng item/card chỉ giới hạn ở H&N và Dictation theo yêu cầu.
+- Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal, source/note items bắt đầu sau panel ngoài và stagger theo thứ tự hàng. Các ngoại lệ reveal từng item/card chỉ giới hạn ở H&N và Dictation theo yêu cầu.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.836: full suite `node --test tests/*.test.cjs` đạt 66/66; H&N/Overview targeted 13/13; `node --check` JS, CSS parse, manifest JSON và `git diff --check` đạt; ZIP 135 entries, manifest 3.4.836 ở gốc, CRC/integrity sạch, không có `.git`. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium. H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.837: full suite `node --test tests/*.test.cjs` đạt 66/66; rename-path regression tests đạt 20/20; `node --check` JS, manifest JSON, tìm kiếm không còn legacy path trong pages/tests/docs và `git diff --check` đạt. ZIP 135 entries, manifest 3.4.837 ở gốc, CRC sạch, hai file mới có mặt, file cũ không còn, `.git` vắng mặt. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -22,6 +22,7 @@
 
 ## 3. Ràng buộc & quyết định
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
+- Khi phát hiện tên file/đường dẫn sai hoặc không nhất quán, báo người dùng và nêu rõ phạm vi trước khi sửa; nếu chỉ yêu cầu đổi tên, giữ nguyên logic bên trong.
 - Mọi API dùng browser.* (đã có polyfill).
 - Không có sidebar_action; popup và dashboard mở trong tab/popup.
 - Thư mục nguồn là nguồn duy nhất; zip do Arena đóng gói vào D:\Keepit.
@@ -36,7 +37,7 @@ Keepit - Test/
 ├── manifest.json                  # Quyền và entry points của extension
 ├── pages/
 │   ├── dashboard.html             # Giao diện Dashboard (Overview/Dictation/Highlights & Notes, sidebar và ô tìm Settings)
-│   ├── lr-practice-demo.html      # Bản sao UI demo độc lập được nhúng trong route Tô sáng & Ghi chú
+│   ├── highlights-notes.html      # Bản HTML độc lập của giao diện Highlights & Notes
 │   ├── dictation-stats-popup.html # Popup thống kê Dictation trong iframe cục bộ
 │   └── popup.html                 # Popup toolbar
 ├── js/
@@ -113,6 +114,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.837 | Arena.ai Agent sửa:**
+
+- Đổi tên `js/dashboard/lr-practice-demo.js` thành `js/dashboard/highlights-notes.js` và `pages/lr-practice-demo.html` thành `pages/highlights-notes.html`; cập nhật đường dẫn chạy, regression tests và tài liệu hiện hành, không đổi logic.
+- Giữ nguyên nhật ký các bản phát hành trước; tên cũ trong các entry lịch sử mô tả chính xác bản lúc đó.
+- File: `js/dashboard/highlights-notes.js`, `pages/highlights-notes.html`, `pages/dashboard.html`, tests liên quan, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.837.zip`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 66/66; rename-path regression tests đạt 20/20; `node --check`, manifest JSON, không còn legacy path trong pages/tests/docs và `git diff --check` đạt; ZIP 135 entries, manifest 3.4.837 tại gốc, CRC sạch, file mới có mặt/file cũ vắng mặt, `.git` không có. Browser-test chưa chạy do không có Chrome/Firefox/Chromium trong môi trường.
 
 **2026-10-31 | v3.4.836 | Arena.ai Agent sửa:**
 

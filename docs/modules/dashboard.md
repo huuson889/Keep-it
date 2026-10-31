@@ -10,9 +10,9 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardScroller`, `#dashboardDictationView`, `#dashboardHighlightsNotesView` | Shell route; Dictation dùng local session index và fallback record, H&N render trong cùng document. |
+| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/highlights-notes.html`](../../pages/highlights-notes.html) | `#dashboardScroller`, `#dashboardDictationView`, `#dashboardHighlightsNotesView` | Shell route; Dictation dùng local session index và fallback record, H&N render trong cùng document. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `setDashboardView`, `renderDictationSessionCards`, `syncHighlightsNotesView` | Nạp dữ liệu, render Dictation từ phiên đã lưu, chuyển route, đồng bộ H&N; lưu route/scroll theo tab. |
-| [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Render danh sách; gửi/nhận actions qua same-document event bus. |
+| [`js/dashboard/highlights-notes.js`](../../js/dashboard/highlights-notes.js) | `applyData`, `handleCardAction` | Render danh sách; gửi/nhận actions qua same-document event bus. |
 | [`css/dashboard/highlights-notes-embedded.css`](../../css/dashboard/highlights-notes-embedded.css) | `#dashboardHighlightsNotesView` | CSS H&N được scope vào route; `#dashboardScroller` là scroll root cấp trang, chỉ workspace được giới hạn chiều cao còn hai danh sách cuộn nội bộ. |
 | [`js/dashboard/annotation-utils.js`](../../js/dashboard/annotation-utils.js), [`js/dashboard/overview-data.js`](../../js/dashboard/overview-data.js) | `LHN_ANNOTATION_UTILS`, `LHN_DASHBOARD_OVERVIEW_DATA` | Chuẩn hóa và tổng hợp annotations. |
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |

@@ -72,11 +72,11 @@ function createContext(storage, allowedUrls, requests) {
 
 test("one shared site-icon resolver is used by popup and Highlights & Notes surfaces", () => {
   const popup = read("pages/dictation-stats-popup.html");
-  const lr = read("pages/lr-practice-demo.html");
+  const lr = read("pages/highlights-notes.html");
   const popupUi = read("js/dashboard/dictation-stats-popup.js");
-  const lrUi = read("js/dashboard/lr-practice-demo.js");
+  const lrUi = read("js/dashboard/highlights-notes.js");
   assert.match(popup, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/dictation-stats-popup\.js"><\/script>/);
-  assert.match(lr, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script><script src="\.\.\/js\/shared\/thumbnails\.js"><\/script><script src="\.\.\/js\/dashboard\/lr-practice-demo\.js"><\/script>/);
+  assert.match(lr, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script><script src="\.\.\/js\/shared\/thumbnails\.js"><\/script><script src="\.\.\/js\/dashboard\/highlights-notes\.js"><\/script>/);
   assert.match(popupUi, /LHN_SITE_ICONS\.load\(image, session\.url, \{ fallbackElement:fallbackIcon \}\)/);
   assert.match(lrUi, /LHN_SITE_ICONS\.load\(img,pageUrl,\{fallbackElement:fallback\}\)/);
   assert.match(lrUi, /LHN_SITE_ICONS\.load\(image,pageUrl,\{fallbackElement:fallback\}\)/);

@@ -9,7 +9,7 @@ const dashboardJs = fs.readFileSync(path.join(root, "js/dashboard/dashboard.js")
 const overviewCss = fs.readFileSync(path.join(root, "css/dashboard/overview.css"), "utf8");
 const dashboardCss = fs.readFileSync(path.join(root, "css/dashboard/dashboard.css"), "utf8");
 const notesCss = fs.readFileSync(path.join(root, "css/dashboard/highlights-notes-embedded.css"), "utf8");
-const notesJs = fs.readFileSync(path.join(root, "js/dashboard/lr-practice-demo.js"), "utf8");
+const notesJs = fs.readFileSync(path.join(root, "js/dashboard/highlights-notes.js"), "utf8");
 
 test("All three Dashboard views share one topbar and preserve independent scroll roots", () => {
   assert.equal((dashboardHtml.match(/id="dashboardSharedTopbar"/g) || []).length, 1);
@@ -58,5 +58,5 @@ test("Highlights & Notes styles are scoped locally while inheriting the shared t
   assert.match(notesCss, /#dashboardHighlightsNotesView \.source-list/);
   assert.doesNotMatch(notesCss, /(^|[,\s])body\s*\{/m);
   assert.doesNotMatch(dashboardCss, /#dashboardHighlightsNotesFrame/);
-  assert.doesNotMatch(dashboardHtml, /src="lr-practice-demo\.html"/);
+  assert.doesNotMatch(dashboardHtml, /src="highlights-notes\.html"/);
 });
