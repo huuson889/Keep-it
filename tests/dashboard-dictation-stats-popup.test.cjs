@@ -90,6 +90,12 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(ui, /popupRevealApi\?\.prefersReducedMotion/);
   assert.match(ui, /const popupOpenRevealTargets/);
   assert.match(ui, /const popupContentRevealTargets/);
+  const popupOpenTargets = ui.match(/const popupOpenRevealTargets = (.*)/)?.[1];
+  const popupContentTargets = ui.match(/const popupContentRevealTargets = (.*)/)?.[1];
+  assert.ok(popupOpenTargets && popupContentTargets);
+  assert.doesNotMatch(popupOpenTargets, /results-panel/, "the outer results panel does not reveal on open");
+  assert.doesNotMatch(popupContentTargets, /results-panel/, "the outer results panel does not reveal on content changes");
+  assert.match(ui, /currentView === "sessions" \? "\.video-group" : "\.smart-card"/);
   assert.match(ui, /function runPopupReveal\(targets\)/);
   assert.match(ui, /function visibleCurrentResultTargets\(\)/);
   assert.match(ui, /function runPopupContentReveal\(\)[\s\S]*?visibleCurrentResultTargets\(\)/);

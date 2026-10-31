@@ -8,8 +8,8 @@
   const popupRevealApi = globalThis.KeepitDashboardReveal;
   const popupRevealScope = popupRevealApi?.createScope?.();
   const popupMetricRevealTargets = [...document.querySelectorAll(".stats-sidebar .metric")];
-  const popupOpenRevealTargets = [$(".modal-head"), $(".workspace-topbar"), ...popupMetricRevealTargets, $(".results-panel")].filter(Boolean);
-  const popupContentRevealTargets = [...popupMetricRevealTargets, $(".results-panel")].filter(Boolean);
+  const popupOpenRevealTargets = [$(".modal-head"), $(".workspace-topbar"), ...popupMetricRevealTargets].filter(Boolean);
+  const popupContentRevealTargets = [...popupMetricRevealTargets];
   let activePopupRevealTargets = new Set();
 
   const TYPES = ["phonetic", "rule", "typo"];
