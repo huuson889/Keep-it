@@ -788,7 +788,7 @@ const OVERLAY_CSS = `
       width: 100%;
       box-sizing: border-box;
     }
-    #keepit-exact-overlay.te-reading-mode .te-floating-btn { display: none !important; }
+    #keepit-exact-overlay .te-floating-btn { display: none !important; }
     @media (max-width: 900px) {
       #keepit-exact-overlay.te-reading-mode .te-left-section {
         flex-basis: 34vw;

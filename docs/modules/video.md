@@ -28,12 +28,12 @@ Mô tả overlay Dual Subtitles trên YouTube: gắn player hiện có vào over
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Giữ thứ tự nạp trong manifest: template → Dual Sub → các script Dictation.
-- Giới hạn logic overlay ở YouTube; `#yt-keepit-launcher` được chèn ngay sau `.ytp-fullscreen-button` bên trong `.ytp-right-controls`, để có kích thước/vị trí tự nhiên và ẩn/hiện cùng nhóm controls. `MutationObserver` và `tick()` gắn lại nút nếu YouTube dựng lại nhóm này; launcher bị ẩn ngay khi overlay mở và hiện lại sau khi overlay đóng.
+- Giới hạn logic overlay ở YouTube; `#yt-keepit-launcher` được chèn ngay sau `.ytp-fullscreen-button` bên trong `.ytp-right-controls`, để có kích thước/vị trí tự nhiên và ẩn/hiện cùng nhóm controls. `MutationObserver` và `tick()` gắn lại nút nếu YouTube dựng lại nhóm này. Không đổi trạng thái hiển thị launcher theo `state.open`.
 - Video thật được chuyển tạm vào overlay; đường đóng/đổi video phải dọn listener và khôi phục video qua `detachVideo()`.
 - Không dùng `isDefault` hoặc ngôn ngữ English hardcode làm tiêu chí duy nhất cho source Auto. Ưu tiên mapping audio-caption; fallback chỉ dùng khi metadata không đủ.
 - Giữ hợp đồng `LHN_OVERLAY_API`, `lhn-overlay-ready`, `lhn-dual-captions-updated` và `LHN_DICTATION`; thay đổi các tên/shape này ảnh hưởng tích hợp Dictation.
 - Thiết lập ngôn ngữ lấy từ `lhnStudyTranslationSettings`; cài đặt chung lấy từ `lhnSettings` trong `browser.storage.local`.
-- Nút `Chế độ đọc` (icon Lucide `file-minus`) trong control bar chỉ bật/tắt class `te-reading-mode`: CSS thu video về cột trái, đưa transcript vào vùng giữa và giữ control bar toàn chiều rộng phía dưới. Nút nằm ngay trước `Chế độ phụ đề`; nút tím cài đặt bên trong overlay bị ẩn khi reading mode bật. Launcher trang YouTube là nút riêng, nằm trong `.ytp-right-controls` ngay sau nút fullscreen; khi tắt mode, bố cục cũ được khôi phục. Toggle không sửa caption state, API Dictation hoặc các thiết lập hiện có.
+- Nút `Chế độ đọc` (icon Lucide `file-minus`) trong control bar chỉ bật/tắt class `te-reading-mode`: CSS thu video về cột trái, đưa transcript vào vùng giữa và giữ control bar toàn chiều rộng phía dưới. Nút nằm ngay trước `Chế độ phụ đề`; nút tím cài đặt bên trong overlay (`.te-floating-btn`) được ẩn. Launcher trang YouTube là nút riêng, nằm trong `.ytp-right-controls` ngay sau nút fullscreen. Toggle không sửa caption state, API Dictation hoặc các thiết lập hiện có.
 
 ## 5. Kiểm tra và xác minh
 

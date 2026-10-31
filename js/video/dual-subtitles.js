@@ -1047,19 +1047,15 @@ function launcherIsInPlayerControls(btn) {
   return Boolean(controls && btn && controls.contains(btn));
 }
 
-function updateLauncherVisibility(launcher = document.getElementById(LAUNCHER_ID)) {
-  if (!launcher) return;
-  const shouldShow = !keepitSiteDisabled && !state.open && location.pathname === '/watch'
-    && launcherIsInPlayerControls(launcher);
-  launcher.style.display = shouldShow ? '' : 'none';
-}
-
 function scheduleLauncherRefresh() {
   if (launcherRefreshQueued) return;
   launcherRefreshQueued = true;
   requestAnimationFrame(() => {
     launcherRefreshQueued = false;
-    updateLauncherVisibility(ensureLauncher());
+    const launcher = ensureLauncher();
+    const attachedToControls = launcherIsInPlayerControls(launcher);
+    const shouldShow = !keepitSiteDisabled && location.pathname === '/watch' && attachedToControls;
+    if (launcher) launcher.style.display = shouldShow ? '' : 'none';
   });
 }
 
@@ -1117,7 +1113,6 @@ function openOverlay() {
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
-  updateLauncherVisibility();
   void enableTemporaryTranslationPopup();
   attachVideo(video, slot);
   onTimeUpdate();
@@ -1144,7 +1139,6 @@ function closeOverlay() {
   syncAppPopupPause();
   stopLiveCaptionCapture();
   detachVideo();
-  updateLauncherVisibility();
 }
 
 function toggleDictationFromShortcut() {
@@ -2546,7 +2540,8 @@ function tick() {
   if (keepitSiteDisabled) return;
   const isWatch = location.pathname === '/watch';
   const launcher = ensureLauncher();
-  updateLauncherVisibility(launcher);
+  const launcherAttached = launcherIsInPlayerControls(launcher);
+  if (launcher) launcher.style.display = isWatch && launcherAttached ? '' : 'none';
 
   const videoId = isWatch ? new URLSearchParams(location.search).get('v') : null;
   if (videoId === state.videoId) return;
