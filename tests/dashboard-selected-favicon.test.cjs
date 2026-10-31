@@ -14,7 +14,7 @@ test("selected source page delegates its site icon to the shared resolver with a
   assert.match(source, /window\.LHN_SITE_ICONS\.load\(img,pageUrl,\{fallbackElement:fallback\}\)/);
   assert.match(source, /setSelectedFavicon\(selected\.url\)/);
   assert.doesNotMatch(source, /google\.com\/s2\/favicons|\$\{origin\}\/favicon\.ico/);
-  assert.match(page, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script><script src="\.\.\/js\/shared\/thumbnails\.js"><\/script><script src="\.\.\/js\/dashboard\/highlights-notes\.js"><\/script>/);
+  assert.match(page, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script><script src="\.\.\/js\/shared\/thumbnails\.js"><\/script><script src="\.\.\/js\/dashboard\/reveal-effects\.js"><\/script><script src="\.\.\/js\/dashboard\/highlights-notes\.js"><\/script>/);
   assert.match(page, /\.selected-favicon img\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*z-index:\s*1;/);
   assert.match(page, /\.selected-favicon \.lucide\[hidden\], \.selected-favicon img\[hidden\]\s*\{\s*display:\s*none;\s*\}/);
 });

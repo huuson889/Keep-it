@@ -1,4 +1,5 @@
 const $ = id => document.getElementById(id);
+const dashboardRevealEffects = globalThis.KeepitDashboardReveal;
 const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
@@ -1132,9 +1133,8 @@ const dictationCounterDelayTimers = new Map();
 let dictationCounterCycle = 0;
 let dictationCounterEntranceActive = false;
 const overviewChartAnimationFrames = new WeakMap();
-const overviewRevealTimers = new Map();
-let overviewRevealSequenceEnd = 0;
-let overviewEffectsObserver = null;
+const overviewRevealScope = dashboardRevealEffects.createScope();
+let overviewEffectsWatch = null;
 let overviewEffectCycle = 0;
 let overviewInitialDataReady = false;
 function overviewSetText(id, value) {
@@ -1164,7 +1164,7 @@ function overviewReserveCounterSpace(node, finalText) {
   } catch { /* use the character-width fallback below */ }
   node.style.minWidth = `${Math.max(1, Array.from(text).length)}ch`;
 }
-function overviewPrefersReducedMotion() { return !!window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; }
+function overviewPrefersReducedMotion() { return dashboardRevealEffects.prefersReducedMotion(); }
 function overviewCounterText(node, value) {
   return (overviewCounterFormatters.get(node) || overviewFormatCount)(value);
 }
@@ -2751,16 +2751,15 @@ function overviewRevealTargets() {
 function overviewRevealTarget(target, revealDelay = 100) {
   target.style.setProperty("--ov-reveal-delay", `${revealDelay}ms`);
   target.classList.add("ov-revealed");
-  const timer = setTimeout(() => {
-    overviewRevealTimers.delete(target);
+  overviewRevealScope.schedule(revealDelay, () => {
+    target.style.removeProperty("--ov-reveal-delay");
     if (!target.classList.contains("ov-revealed") || activeDashboardView !== "overview") return;
     if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
       target.classList.add("ov-chart-running");
       overviewAnimateChartsWithin(target);
     }
     overviewAnimateCountersWithin(target);
-  }, revealDelay);
-  overviewRevealTimers.set(target, timer);
+  }, () => target.isConnected && activeDashboardView === "overview", target);
 }
 function primeDashboardRevealTargets(targets) {
   const inlineTransitions = targets.map(target => ({
@@ -2776,11 +2775,8 @@ function primeDashboardRevealTargets(targets) {
   });
 }
 function resetOverviewEntranceEffects() {
-  overviewEffectsObserver?.disconnect();
-  overviewEffectsObserver = null;
-  for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
-  overviewRevealTimers.clear();
-  overviewRevealSequenceEnd = 0;
+  overviewRevealScope.cancel();
+  overviewEffectsWatch = null;
   overviewEffectCycle++;
   for (const node of dashboardOverviewView.querySelectorAll("[data-ov-counter-target]")) {
     const frameId = Number(node.dataset.ovAnimationFrame);
@@ -2811,64 +2807,43 @@ function resetOverviewEntranceEffects() {
   }
   targets.forEach(target => target.classList.add("ov-reveal"));
   primeDashboardRevealTargets(targets);
-  if (!("IntersectionObserver" in window)) {
-    targets.forEach((target, index) => overviewRevealTarget(target, 100 + index * 80));
-    return;
-  }
-  const targetOrder = new Map(targets.map((target, index) => [target, index]));
-  overviewEffectsObserver = new IntersectionObserver(entries => {
-    const visibleTargets = entries
-      .filter(entry => entry.isIntersecting && !entry.target.classList.contains("ov-revealed"))
-      .map(entry => entry.target)
-      .sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
-    visibleTargets.forEach(target => {
-      const now = performance.now();
-      const revealAt = Math.max(now + 100, overviewRevealSequenceEnd + 80);
-      overviewRevealSequenceEnd = revealAt;
-      overviewRevealTarget(target, Math.round(revealAt - now));
-      overviewEffectsObserver?.unobserve(target);
-    });
-  }, { root:dashboardScroller, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
-  targets.forEach(target => overviewEffectsObserver.observe(target));
+  overviewEffectsWatch = overviewRevealScope.observe({
+    root:dashboardScroller, targets, threshold:0.12, rootMargin:"0px 0px -5% 0px",
+    key:"overview-panels", step:80, lead:100,
+    isEligible:target => !target.classList.contains("ov-revealed"),
+    onTarget:overviewRevealTarget
+  });
 }
-let dashboardPanelRevealObserver = null;
-let dashboardPanelRevealTimers = new Map();
-let dashboardPanelRevealSequenceEnd = 0;
-let dictationSessionCardRevealObserver = null;
-let dictationSessionCardRevealSequenceEnd = 0;
+const dashboardPanelRevealScope = dashboardRevealEffects.createScope();
+let dashboardPanelRevealWatch = null;
+const dictationSessionCardRevealScope = dashboardRevealEffects.createScope();
+let dictationSessionCardRevealWatch = null;
 const DICTATION_SESSION_CARD_AFTER_PANEL_DELAY = 250;
 let dictationSessionCardRevealIds = new Set();
-const dictationSessionCardRevealFrames = new Set();
-function cancelDictationSessionCardRevealObserver() {
-  dictationSessionCardRevealObserver?.disconnect();
-  dictationSessionCardRevealObserver = null;
-  for (const frame of dictationSessionCardRevealFrames) cancelAnimationFrame(frame);
-  dictationSessionCardRevealFrames.clear();
+function cancelDictationSessionCardRevealObserver({ reset = false } = {}) {
+  dictationSessionCardRevealWatch?.disconnect();
+  dictationSessionCardRevealWatch = null;
+  if (reset) dictationSessionCardRevealScope.cancel();
 }
 function revealDictationSessionCard(card, sessionId, delay) {
   dictationSessionCardRevealIds.add(sessionId);
   card.style.setProperty("--dictation-card-reveal-delay", `${delay}ms`);
-  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
-    card.classList.add("dictation-session-revealed");
-    return;
-  }
-  const frame = requestAnimationFrame(() => {
-    dictationSessionCardRevealFrames.delete(frame);
+  dictationSessionCardRevealScope.frame(() => {
     if (activeDashboardView === "dictation" && card.isConnected) card.classList.add("dictation-session-revealed");
-  });
-  dictationSessionCardRevealFrames.add(frame);
+  }, () => activeDashboardView === "dictation" && card.isConnected);
 }
 function observeDictationSessionCards({ reset = false } = {}) {
   if (reset) {
-    cancelDictationSessionCardRevealObserver();
-    dictationSessionCardRevealSequenceEnd = 0;
+    cancelDictationSessionCardRevealObserver({ reset:true });
     dictationSessionCardRevealIds.clear();
-  } else cancelDictationSessionCardRevealObserver();
+  } else {
+    dictationSessionCardRevealWatch?.disconnect();
+    dictationSessionCardRevealWatch = null;
+  }
   if (activeDashboardView !== "dictation") return;
   const librarySection = dashboardDictationView.querySelector(".library-section");
   if (!librarySection?.classList.contains("dashboard-revealed")) return;
   const libraryPanelRevealAt = Number(librarySection.dataset.dictationLibraryRevealAt) || 0;
-  const cardRevealStartDelay = Math.max(0, libraryPanelRevealAt + DICTATION_SESSION_CARD_AFTER_PANEL_DELAY - performance.now());
   const cards = [...dashboardDictationView.querySelectorAll(".session-grid .session-card")];
   const pending = [];
   cards.forEach((card, index) => {
@@ -2878,33 +2853,21 @@ function observeDictationSessionCards({ reset = false } = {}) {
     if (dictationSessionCardRevealIds.has(sessionId)) card.classList.add("dictation-session-revealed");
     else {
       card.classList.remove("dictation-session-revealed");
-      pending.push({ card, sessionId, index });
+      pending.push(card);
     }
   });
   if (!pending.length) return;
-  if (overviewPrefersReducedMotion()) {
-    pending.forEach(({ card, sessionId }) => revealDictationSessionCard(card, sessionId, 0));
+  if (dashboardRevealEffects.prefersReducedMotion()) {
+    pending.forEach((card,index) => revealDictationSessionCard(card,card.dataset.sessionId||`dictation-card-${index}`,0));
     return;
   }
-  if (!("IntersectionObserver" in window)) {
-    pending.forEach(({ card, sessionId }, index) => revealDictationSessionCard(card, sessionId, cardRevealStartDelay + index * 80));
-    return;
-  }
-  const targetOrder = new Map(pending.map(({ card, index }) => [card, index]));
-  dictationSessionCardRevealObserver = new IntersectionObserver(entries => {
-    const visibleCards = entries.filter(entry => entry.isIntersecting && !entry.target.classList.contains("dictation-session-revealed"))
-      .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
-    visibleCards.forEach(card => {
-      const now = performance.now();
-      // Let the primary-column panel begin first, then stagger its cards in reading order.
-      const revealAt = Math.max(now + cardRevealStartDelay, dictationSessionCardRevealSequenceEnd + 80);
-      dictationSessionCardRevealSequenceEnd = revealAt;
-      const sessionId = card.dataset.sessionId || `dictation-card-${targetOrder.get(card)}`;
-      revealDictationSessionCard(card, sessionId, Math.round(revealAt - now));
-      dictationSessionCardRevealObserver?.unobserve(card);
-    });
-  }, { root:dashboardDictationView, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
-  pending.forEach(({ card }) => dictationSessionCardRevealObserver.observe(card));
+  dictationSessionCardRevealWatch=dictationSessionCardRevealScope.observe({
+    root:dashboardDictationView,targets:pending,threshold:0.12,rootMargin:"0px 0px -5% 0px",
+    key:"dictation-session-cards",step:80,lead:0,
+    startAt:()=>libraryPanelRevealAt+DICTATION_SESSION_CARD_AFTER_PANEL_DELAY,
+    isEligible:(card,index)=>!dictationSessionCardRevealIds.has(card.dataset.sessionId||`dictation-card-${index}`),
+    onTarget:(card,delay,index)=>revealDictationSessionCard(card,card.dataset.sessionId||`dictation-card-${index}`,Math.round(delay))
+  });
 }
 function resetDictationSessionCardEntranceEffects() {
   observeDictationSessionCards({ reset:true });
@@ -2917,11 +2880,8 @@ function dashboardPanelRevealTargets(view) {
   return [];
 }
 function resetDashboardPanelEntranceEffects(view) {
-  dashboardPanelRevealObserver?.disconnect();
-  dashboardPanelRevealObserver = null;
-  for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
-  dashboardPanelRevealTimers.clear();
-  dashboardPanelRevealSequenceEnd = 0;
+  dashboardPanelRevealScope.cancel();
+  dashboardPanelRevealWatch = null;
   const routeTargets = dashboardPanelRevealTargets(view);
   if (view === "highlights-notes") window.dispatchEvent(new CustomEvent("keepit:highlights-notes-entrance-reset"));
   if (dashboardSharedTopbar) {
@@ -2946,10 +2906,9 @@ function resetDashboardPanelEntranceEffects(view) {
   }
   primeDashboardRevealTargets(targets);
   if (!targets.length) return;
-  const reveal = (target, delay) => {
+  const reveal = (target, delay, index, revealAt = performance.now() + delay) => {
     target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
-    if (view === "dictation" && target.matches(".library-section")) target.dataset.dictationLibraryRevealAt = String(performance.now() + delay);
-    const revealAt = performance.now() + delay;
+    if (view === "dictation" && target.matches(".library-section")) target.dataset.dictationLibraryRevealAt = String(revealAt);
     if (view === "highlights-notes") {
       target.dataset.lhnPanelRevealAt = String(revealAt);
       window.dispatchEvent(new CustomEvent("keepit:highlights-notes-panel-reveal", { detail:{ target, revealAt } }));
@@ -2957,28 +2916,24 @@ function resetDashboardPanelEntranceEffects(view) {
     if (target === dashboardSharedTopbar) target.classList.add("ov-revealed");
     else target.classList.add("dashboard-revealed");
     if (view === "dictation" && target.matches(".library-section")) observeDictationSessionCards();
-    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); delete target.dataset.dictationLibraryRevealAt; delete target.dataset.lhnPanelRevealAt; }, delay + 850);
-    dashboardPanelRevealTimers.set(target, timer);
+    dashboardPanelRevealScope.schedule(delay + 850, () => {
+      target.style.removeProperty("--ov-reveal-delay");
+      delete target.dataset.dictationLibraryRevealAt;
+      delete target.dataset.lhnPanelRevealAt;
+    }, () => target.isConnected, target);
   };
   if (!("IntersectionObserver" in window)) {
-    targets.forEach((target, index) => reveal(target, 100 + index * 80));
+    dashboardPanelRevealScope.sequence(targets, { key:`panel-fallback:${view}`, step:80, lead:100, onTarget:reveal });
     return;
   }
-  alwaysRevealTargets.forEach((target, index) => reveal(target, 100 + index * 80));
+  dashboardPanelRevealScope.sequence(alwaysRevealTargets, { key:`panel-always:${view}`, step:80, lead:100, onTarget:reveal });
   if (!observedTargets.length) return;
-  const targetOrder = new Map(observedTargets.map((target, index) => [target, index]));
-  dashboardPanelRevealObserver = new IntersectionObserver(entries => {
-    const visibleTargets = entries.filter(entry => entry.isIntersecting && !(entry.target === dashboardSharedTopbar ? entry.target.classList.contains("ov-revealed") : entry.target.classList.contains("dashboard-revealed")))
-      .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
-    visibleTargets.forEach(target => {
-      const now = performance.now();
-      const revealAt = Math.max(now + 100, dashboardPanelRevealSequenceEnd + 80);
-      dashboardPanelRevealSequenceEnd = revealAt;
-      reveal(target, Math.round(revealAt - now));
-      dashboardPanelRevealObserver?.unobserve(target);
-    });
-  }, { root:dashboardScroller, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
-  observedTargets.forEach(target => dashboardPanelRevealObserver.observe(target));
+  dashboardPanelRevealWatch = dashboardPanelRevealScope.observe({
+    root:dashboardScroller,targets:observedTargets,threshold:0.12,rootMargin:"0px 0px -5% 0px",
+    key:`dashboard-panels:${view}`,step:80,lead:100,
+    isEligible:target=>!(target===dashboardSharedTopbar?target.classList.contains("ov-revealed"):target.classList.contains("dashboard-revealed")),
+    onTarget:reveal
+  });
 }
 function savedDashboardView() {
   try {
@@ -2990,15 +2945,9 @@ function savedDashboardView() {
 let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
 function cancelDashboardEntranceEffects() {
   cancelDictationCounterEntranceEffects();
-  cancelDictationSessionCardRevealObserver();
-  overviewEffectsObserver?.disconnect();
-  overviewEffectsObserver = null;
-  for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
-  overviewRevealTimers.clear();
-  dashboardPanelRevealObserver?.disconnect();
-  dashboardPanelRevealObserver = null;
-  for (const timer of dashboardPanelRevealTimers.values()) clearTimeout(timer);
-  dashboardPanelRevealTimers.clear();
+  cancelDictationSessionCardRevealObserver({ reset:true });
+  overviewRevealScope.cancel();overviewEffectsWatch=null;
+  dashboardPanelRevealScope.cancel();dashboardPanelRevealWatch=null;
 }
 function restoreDashboardViewAndReveal(view, switchCycle) {
   const restoreCycle = ++dashboardRestoreCycle;

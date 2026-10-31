@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.840; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.841; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
-- Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. H&N source và note items chỉ bắt đầu reveal khi đi vào vùng nhìn của danh sách cuộn tương ứng; item đầu chờ 350ms từ lúc panel bắt đầu reveal, các item đang hiện cách nhau 180ms theo thứ tự trên xuống. Cuộn tiếp thì item mới mới được quan sát và reveal; Sources/Notes có observers/nhịp riêng. Các ngoại lệ reveal từng item/card chỉ giới hạn ở H&N và Dictation theo yêu cầu.
+- Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards và H&N source/note lists khai báo riêng target/cấu hình/callback. H&N item chỉ reveal khi vào viewport của list cuộn, item đầu chờ 350ms sau panel và cadence 180ms; cuộn tiếp kích hoạt item tiếp. CSS và callback count-up/chart vẫn chuyên biệt theo view. Các ngoại lệ reveal từng item/card chỉ giới hạn ở H&N và Dictation theo yêu cầu.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.840: H&N/site-icon/thumbnail targeted tests đạt 17/17; full suite `node --test tests/*.test.cjs` đạt 66/66; `node --check` JS, manifest JSON và `git diff --check` đạt. ZIP sẽ xác minh sau đóng gói. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.841 sẽ cập nhật sau targeted/full suite và xác minh archive. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -49,7 +49,7 @@ Keepit - Test/
 │   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry; routes + bridges), overview, annotation-utils, settings-ui, study/backup/account, popup thống kê Dictation
+│   ├── dashboard/                 # dashboard.js (entry), reveal-effects.js (shared reveal orchestration), overview, annotation-utils, settings-ui, study/backup/account, popup thống kê Dictation
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
@@ -114,6 +114,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.841 | Arena.ai Agent sửa:**
+
+- Gom reveal orchestration dùng chung vào `js/dashboard/reveal-effects.js`: sequence theo thứ tự/cadence, IntersectionObserver, delay scheduling, frame scheduling, lifecycle cancellation/cycle guard và reduced-motion query.
+- Overview panels, Dashboard route panels, Dictation session cards và H&N source/note items dùng chung module; mỗi view chỉ giữ selector, CSS class, timing/config và callback chuyên biệt. Giữ nguyên cadence/delay/viewport behavior hiện hành, count-up/chart/data logic không đổi.
+- File: `js/dashboard/reveal-effects.js`, `js/dashboard/dashboard.js`, `js/dashboard/highlights-notes.js`, `pages/dashboard.html`, `pages/highlights-notes.html`, tests reveal liên quan, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.841.zip`.
+- Kiểm tra: reveal-related targeted tests đạt 23/23; full suite `node --test tests/*.test.cjs` đạt 68/68; syntax toàn bộ JS, manifest JSON và `git diff --check` đạt. ZIP 137 files, manifest 3.4.841 ở gốc, CRC sạch, `.git` bị loại trừ. Browser-test chưa chạy do không có Chrome/Firefox/Chromium.
 
 **2026-10-31 | v3.4.840 | Arena.ai Agent sửa:**
 

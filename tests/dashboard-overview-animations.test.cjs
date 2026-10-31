@@ -7,14 +7,14 @@ const dashboardHtml = fs.readFileSync(new URL("../pages/dashboard.html", `file:/
 const overviewCss = fs.readFileSync(new URL("../css/dashboard/overview.css", `file://${__filename}`), "utf8");
 
 test("Overview reveals individual frames in visual reading order with reference stagger timing", () => {
-  assert.match(dashboardJs, /new IntersectionObserver\(entries =>[\s\S]*?visibleTargets = entries[\s\S]*?\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)[\s\S]*?overviewRevealSequenceEnd \+ 80[\s\S]*?overviewRevealTarget\(target, Math\.round\(revealAt - now\)\)/);
-  assert.match(dashboardJs, /\{ root:dashboardScroller, threshold:0\.12, rootMargin:/);
+  assert.match(dashboardJs, /const overviewRevealScope = dashboardRevealEffects\.createScope\(\)/);
+  assert.match(dashboardJs, /overviewEffectsWatch = overviewRevealScope\.observe\(\{[\s\S]*?root:dashboardScroller, targets, threshold:0\.12, rootMargin:[\s\S]*?key:"overview-panels", step:80, lead:100[\s\S]*?onTarget:overviewRevealTarget/);
+  assert.match(dashboardJs, /overviewRevealScope\.schedule\(revealDelay/);
+  assert.doesNotMatch(dashboardJs, /new IntersectionObserver/);
   assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?dashboardScrollRestoring = false;[\s\S]*?if \(view === "overview"\) resetOverviewEntranceEffects\(\);[\s\S]*?else resetDashboardPanelEntranceEffects\(view\)/);
   assert.match(dashboardJs, /return \[dashboardSharedTopbar, \.\.\.dashboardOverviewView\.querySelectorAll\([\s\S]*?"\.ov-welcome"[\s\S]*?"\.ov-quick-panel"[\s\S]*?"\.ov-stats > \.ov-stat"[\s\S]*?"\.ov-resume"[\s\S]*?"\.ov-progress"[\s\S]*?"\.ov-mode-grid > \.ov-mode"[\s\S]*?"\.ov-lower > \.ov-panel"/);
   assert.match(dashboardJs, /function overviewRevealTarget\(target, revealDelay = 100\)/);
-  assert.match(dashboardJs, /const revealAt = Math\.max\(now \+ 100, overviewRevealSequenceEnd \+ 80\)/);
   assert.match(dashboardJs, /target\.style\.setProperty\("--ov-reveal-delay", `\$\{revealDelay\}ms`\)/);
-  assert.match(dashboardJs, /targets\.forEach\(\(target, index\) => overviewRevealTarget\(target, 100 \+ index \* 80\)\)/);
   assert.match(dashboardHtml, /class="ov-topbar ov-reveal"/);
   assert.match(dashboardHtml, /class="ov-welcome ov-reveal"/);
   assert.match(dashboardHtml, /class="ov-stat ov-reveal"/);
@@ -33,14 +33,14 @@ test("Dictation reveals the hero and continue card separately in visual row orde
   assert.match(dashboardHtml, /class="dictation-hero-row"><section[^>]*class="hero dashboard-reveal"/);
   assert.match(dashboardHtml, /class="continue-card dashboard-reveal"/);
   assert.doesNotMatch(dashboardHtml, /class="dictation-hero-row dashboard-reveal"/);
-  assert.match(dashboardJs, /dashboardPanelRevealSequenceEnd \+ 80/);
+  assert.match(dashboardJs, /dictationSessionCardRevealScope\.observe\(\{[\s\S]*?key:"dictation-session-cards",step:80,lead:0,[\s\S]*?startAt:\(\)=>libraryPanelRevealAt\+DICTATION_SESSION_CARD_AFTER_PANEL_DELAY/);
 });
 
 test("fresh Dashboard load waits for Overview data readiness before replaying the entrance", () => {
   assert.ok((dashboardHtml.match(/class="[^"]*\bov-reveal\b/g) || []).length >= 17);
   assert.match(dashboardJs, /const reveal = node\.closest\("\.ov-reveal"\);[\s\S]*?if \(reveal\?\.classList\.contains\("ov-revealed"\)\)[\s\S]*?node\.textContent = formatter\(0\)/);
   assert.match(dashboardJs, /load\(\)\.then\(\(\) => \{\s*overviewInitialDataReady = true;[\s\S]*?const loadedView = activeDashboardView;[\s\S]*?restoreDashboardViewAndReveal\(loadedView, loadCycle\)/);
-  assert.match(dashboardJs, /for \(const timer of overviewRevealTimers\.values\(\)\) clearTimeout\(timer\);[\s\S]*?overviewRevealTimers\.clear\(\)/);
+  assert.match(dashboardJs, /overviewRevealScope\.cancel\(\)/);
 });
 
 test("Overview count-ups match the sample's 2-second 60-FPS easeOutExpo while retaining local data", () => {
@@ -97,8 +97,8 @@ test("Each active tab keeps an independent scroll position and the last route re
 
 test("Tab re-entry commits the hidden reveal state before observing panels", () => {
   assert.match(dashboardJs, /function primeDashboardRevealTargets\(targets\)[\s\S]*?setProperty\("transition", "none", "important"\)[\s\S]*?void dashboardScroller\.offsetHeight[\s\S]*?removeProperty\("transition"\)/);
-  assert.match(dashboardJs, /function resetOverviewEntranceEffects\(\)[\s\S]*?targets\.forEach\(target => target\.classList\.add\("ov-reveal"\)\);\s*primeDashboardRevealTargets\(targets\);[\s\S]*?new IntersectionObserver/);
-  assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\][\s\S]*?primeDashboardRevealTargets\(targets\);[\s\S]*?new IntersectionObserver/);
+  assert.match(dashboardJs, /function resetOverviewEntranceEffects\(\)[\s\S]*?targets\.forEach\(target => target\.classList\.add\("ov-reveal"\)\);\s*primeDashboardRevealTargets\(targets\);[\s\S]*?overviewRevealScope\.observe/);
+  assert.match(dashboardJs, /function resetDashboardPanelEntranceEffects\(view\)[\s\S]*?dashboardSharedTopbar\.classList\.remove\("ov-revealed"\)[\s\S]*?const targets = \[\.\.\.\[dashboardSharedTopbar\][\s\S]*?primeDashboardRevealTargets\(targets\);[\s\S]*?dashboardPanelRevealScope\.observe/);
   assert.match(dashboardJs, /target\.classList\.remove\("dashboard-revealed"\)/);
   assert.match(dashboardJs, /function setDashboardView\(view\)[\s\S]*?cancelDashboardEntranceEffects\(\)[\s\S]*?mountSharedTopbarInParent\(view\);[\s\S]*?restoreDashboardViewAndReveal\(view, switchCycle\)/);
   assert.match(dashboardJs, /function restoreDashboardViewAndReveal\(view, switchCycle\)[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?scrollTarget\.scrollTop = savedScrollTop[\s\S]*?requestAnimationFrame\(\(\) => \{[\s\S]*?resetOverviewEntranceEffects\(\)/);
