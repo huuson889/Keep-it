@@ -694,7 +694,7 @@ function renderDictationSessionCards() {
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
       <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
-      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
@@ -734,7 +734,8 @@ function renderDictationContinueCard() {
     title.textContent = t("dictationContinueEmptyTitle");
     description.textContent = t("dictationContinueEmptyDescription");
     meta.replaceChildren(); actions.hidden = true;
-    continueButton?.removeAttribute("data-dictation-open"); sourceButton?.removeAttribute("data-dictation-open");
+    continueButton?.removeAttribute("data-dictation-open"); continueButton?.removeAttribute("data-dictation-auto-open");
+    sourceButton?.removeAttribute("data-dictation-open"); sourceButton?.removeAttribute("data-dictation-auto-open");
     return;
   }
   const current = Math.max(1, (Number(session.currentIndex) || 0) + 1);
@@ -745,6 +746,8 @@ function renderDictationContinueCard() {
   const metaParts = [dictationSourceLabel(session), t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }), session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown")];
   meta.innerHTML = metaParts.map(value => `<span class="meta-pill">${escapeHtml(value)}</span>`).join("");
   for (const button of [continueButton, sourceButton]) if (button) button.dataset.dictationOpen = session.sessionId;
+  if (continueButton) continueButton.dataset.dictationAutoOpen = "true";
+  sourceButton?.removeAttribute("data-dictation-auto-open");
   actions.hidden = false;
 }
 function syncDictationSessionSelection() {
@@ -833,17 +836,29 @@ function initDictationView() {
       : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open Dictation search", error); }
   }));
-  const openSession = async sessionId => {
+  const openSession = async (sessionId, { autoOpenDictation = false } = {}) => {
     const session = overviewSessionEntries.find(item => item.sessionId === sessionId);
     const url = dictationSessionUrl(session);
     if (!url) { toast(t("dictationSourceUnavailable")); return; }
-    try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
+    let targetUrl = url;
+    const sourceType = String(session?.sourceType || "").toLowerCase();
+    const videoId = String(session?.sourceId || "");
+    if (autoOpenDictation && sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)) {
+      const youtubeUrl = new URL("https://www.youtube.com/watch");
+      youtubeUrl.searchParams.set("v", videoId);
+      youtubeUrl.searchParams.set("lhn_open_dictation", "1");
+      targetUrl = youtubeUrl.href;
+    }
+    try { await browser.tabs.create({ url:targetUrl, active:true }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
   };
   const dictationView = $("dashboardDictationView");
   dictationView.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target : null;
     const button = target?.closest("[data-dictation-open]");
-    if (button?.dataset.dictationOpen) { void openSession(button.dataset.dictationOpen); return; }
+    if (button?.dataset.dictationOpen) {
+      void openSession(button.dataset.dictationOpen, { autoOpenDictation:button.dataset.dictationAutoOpen === "true" });
+      return;
+    }
     const card = target?.closest("#dictationSessionGrid .session-card");
     if (!card || card.hidden) return;
     dictationSelectedSessionId = card.dataset.sessionId || "";

@@ -1116,6 +1116,20 @@ function openPendingDictationShortcut() {
   globalThis.LHN_DICTATION?.open?.();
 }
 
+async function openDictationFromDashboardIntent() {
+  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) return;
+  let targetUrl;
+  try { targetUrl = new URL(location.href); } catch { return; }
+  if (targetUrl.pathname !== "/watch" || targetUrl.searchParams.get("lhn_open_dictation") !== "1") return;
+  targetUrl.searchParams.delete("lhn_open_dictation");
+  history.replaceState(history.state, "", `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
+  await refreshKeepitGate();
+  if (keepitSiteDisabled) return;
+  pendingDictationShortcut = true;
+  openOverlay();
+  openPendingDictationShortcut();
+}
+
 // Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
 function syncVideoAspect(video) {
   const root = overlayEl();
@@ -2510,6 +2524,7 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     if (overlayEl()) applySettings();
     setInterval(tick, 1000);
     tick();
+    void openDictationFromDashboardIntent();
   });
   void refreshKeepitGate();
   void refreshTranslationPopupSetting();

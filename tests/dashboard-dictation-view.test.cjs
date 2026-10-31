@@ -28,6 +28,21 @@ test("Dictation route uses its visible name and displays sessions from the local
   assert.doesNotMatch(js, /refreshListeningPreview|initListeningPreview/);
 });
 
+test("Continue and Resume/Open share the YouTube auto-launch path; web and Open source retain normal navigation", () => {
+  const videoScript = read("js/video/dual-subtitles.js");
+  assert.match(js, /data-dictation-auto-open="true"/);
+  assert.match(js, /continueButton\.dataset\.dictationAutoOpen = "true"/);
+  assert.match(js, /sourceButton\?\.removeAttribute\("data-dictation-auto-open"\)/);
+  const openSession = js.match(/const openSession = async \(sessionId, \{ autoOpenDictation = false \} = \{\}\) => \{[\s\S]*?\n  \};/)?.[0];
+  assert.ok(openSession);
+  assert.match(openSession, /autoOpenDictation && sourceType === "youtube"/);
+  assert.match(openSession, /youtubeUrl\.searchParams\.set\("lhn_open_dictation", "1"\)/);
+  assert.match(openSession, /browser\.tabs\.create\(\{ url:targetUrl, active:true \}\)/);
+  assert.match(js, /autoOpenDictation:button\.dataset\.dictationAutoOpen === "true"/);
+  assert.match(videoScript, /async function openDictationFromDashboardIntent\(\)[\s\S]*?searchParams\.get\("lhn_open_dictation"\)[\s\S]*?history\.replaceState[\s\S]*?await refreshKeepitGate\(\)[\s\S]*?pendingDictationShortcut = true;[\s\S]*?openOverlay\(\);[\s\S]*?openPendingDictationShortcut\(\)/);
+  assert.match(videoScript, /tick\(\);\s*void openDictationFromDashboardIntent\(\)/);
+});
+
 test("Dictation session list recovers and live-syncs real per-video records when the index is stale", () => {
   assert.match(js, /const allData = await browser\.storage\.local\.get\(null\);[\s\S]*?migrateLegacyDictationRecords\(allData, index\.sessions\)/);
   assert.ok(js.includes("const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);"));
