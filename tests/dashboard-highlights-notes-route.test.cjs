@@ -75,3 +75,24 @@ test("A hidden Highlights & Notes route cannot be re-displayed by its scroller r
   assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\s*\{[^}]*display:\s*grid\s*!important/);
   assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
 });
+
+test("Highlights & Notes counters animate with their panels and source/note items stagger row-major afterward", () => {
+  assert.match(dashboard, /keepit:highlights-notes-entrance-reset/);
+  assert.match(dashboard, /keepit:highlights-notes-panel-reveal/);
+  assert.match(notes, /function setLhnCounter\(node,value,formatter=formatLhnNumber\)/);
+  assert.match(notes, /lhnReducedMotion\(\)\|\|!window\.requestAnimationFrame/);
+  assert.match(notes, /const totalFrames=120/);
+  assert.match(notes, /1-Math\.pow\(2,-10\*progress\)/);
+  for (const id of ["demoMetricPages", "demoMetricHighlights", "demoMetricNotes", "demoActiveDays", "demoTotalDays", "demoActiveWeeks", "demoActiveItems"]) {
+    assert.ok(notes.includes(`$('${id}')`), `counter ${id} is not registered`);
+  }
+  assert.match(notes, /setLhnCounter\(row\.querySelector\('\.source-count-number'\),page\.highlights\)/);
+  assert.match(notes, /host\.querySelectorAll\('\.lhn-count-value'\)/);
+  assert.match(notes, /if\(window\.matchMedia\?\.\('\(max-width: 680px\)'\)\.matches\)return \[\.\.\.sources,\.\.\.notes\]/);
+  assert.match(notes, /for\(let index=0;index<Math\.max\(sources\.length,notes\.length\);index\+\+\)\{if\(sources\[index\]\)items\.push\(sources\[index\]\);if\(notes\[index\]\)items\.push\(notes\[index\]\)\}/);
+  assert.match(notes, /Math\.max\(sourceAt,notesAt\)\+250/);
+  assert.match(notes, /const step=80/);
+  assert.match(css, /\.source-item\.lhn-item-reveal[\s\S]*?opacity:0!important/);
+  assert.match(css, /\.lhn-sidebar-card\.lhn-item-reveal[\s\S]*?transform:translateY\(18px\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?lhn-item-reveal[\s\S]*?transition:none!important/);
+});

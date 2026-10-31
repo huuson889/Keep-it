@@ -20,6 +20,62 @@ function applyNewLabels(){ document.documentElement.lang=currentLanguage;$('lrDa
 let pages=[], annotationRecords=[], favorites=[], favoriteNoteIds=new Set(), selected=null, noteColor='all', scope='filtered', period='365', distMode='tags', quickFilter='all', favoriteNotes=false, viewMode='grid', toastTimer, requestSequence=0, currentLanguage='vi';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const validColors=['yellow','green','purple','red','blue','orange'];
+const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnItemRevealTimers=new Map(),lhnItemRevealFrames=new Set(),lhnPanelRevealTimes=new Map(),lhnRevealedItemKeys=new Set();
+let lhnCounterCycle=0,lhnItemRevealCycle=0,lhnItemsEntranceQueued=false,lhnItemsEntranceReady=false,lhnDynamicItemsQueued=false;
+const lhnReducedMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+function formatLhnNumber(value){return Math.max(0,Math.floor(Number(value)||0)).toLocaleString(({vi:'vi-VN',en:'en-US',ko:'ko-KR'})[currentLanguage]||'vi-VN')}
+function setLhnCounter(node,value,formatter=formatLhnNumber){
+ if(!node)return;const numeric=Number(value),target=Number.isFinite(numeric)?Math.max(0,Math.floor(numeric)):0,finalText=formatter(target);
+ const frame=lhnCounterFrames.get(node),timer=lhnCounterTimers.get(node);if(frame)cancelAnimationFrame(frame);if(timer)clearTimeout(timer);lhnCounterFrames.delete(node);lhnCounterTimers.delete(node);
+ lhnCounterFormatters.set(node,formatter);node.dataset.lhnCountTarget=String(target);node.dataset.lhnCountFinal=finalText;node.style.fontVariantNumeric='tabular-nums';node.textContent=finalText;node.setAttribute('aria-label',finalText);
+}
+function animateLhnCounter(node,delay=0){
+ if(!node?.isConnected)return;const target=Math.max(0,Number(node.dataset.lhnCountTarget)||0),finalText=node.dataset.lhnCountFinal||formatLhnNumber(target),formatter=lhnCounterFormatters.get(node)||formatLhnNumber;
+ const previousFrame=lhnCounterFrames.get(node),previousTimer=lhnCounterTimers.get(node);if(previousFrame)cancelAnimationFrame(previousFrame);if(previousTimer)clearTimeout(previousTimer);lhnCounterFrames.delete(node);lhnCounterTimers.delete(node);
+ const cycle=lhnCounterCycle,finish=()=>{node.textContent=finalText;};
+ if(lhnReducedMotion()||!window.requestAnimationFrame){finish();return}
+ node.textContent=formatter(0);
+ const run=()=>{lhnCounterTimers.delete(node);if(cycle!==lhnCounterCycle||!node.isConnected)return;let frame=0;const totalFrames=120,tick=()=>{if(cycle!==lhnCounterCycle||!node.isConnected){lhnCounterFrames.delete(node);return}frame++;const progress=Math.min(1,frame/totalFrames),eased=progress===1?1:1-Math.pow(2,-10*progress),value=Math.round(target*eased);node.textContent=progress>=1?finalText:formatter(value);if(frame<totalFrames)lhnCounterFrames.set(node,requestAnimationFrame(tick));else lhnCounterFrames.delete(node)};lhnCounterFrames.set(node,requestAnimationFrame(tick))};
+ if(delay>0)lhnCounterTimers.set(node,window.setTimeout(run,delay));else run();
+}
+function animateLhnCountersWithin(target,delay=0,excludeItems=false){
+ const nodes=[];if(target.matches?.('[data-lhn-count-target]'))nodes.push(target);nodes.push(...target.querySelectorAll('[data-lhn-count-target]'));
+ nodes.forEach(node=>{if(excludeItems&&node.closest('.source-item,.lhn-sidebar-card'))return;animateLhnCounter(node,delay)});
+}
+function lhnItemKey(node,index){return node.classList.contains('source-item')?`source:${node.dataset.url||index}`:`note:${node.dataset.noteId||index}`}
+function collectLhnItems(){
+ const sources=[...sourceList.querySelectorAll(':scope > .source-item')],notes=[...notesList.querySelectorAll(':scope > .lhn-sidebar-card')],items=[];
+ if(window.matchMedia?.('(max-width: 680px)').matches)return [...sources,...notes];
+ for(let index=0;index<Math.max(sources.length,notes.length);index++){if(sources[index])items.push(sources[index]);if(notes[index])items.push(notes[index])}
+ return items;
+}
+function cancelLhnItemReveal(){lhnItemRevealCycle++;for(const frame of lhnItemRevealFrames)cancelAnimationFrame(frame);lhnItemRevealFrames.clear();for(const timer of lhnItemRevealTimers.values())clearTimeout(timer);lhnItemRevealTimers.clear()}
+function scheduleLhnItemReveal(items,startAt){
+ const cycle=lhnItemRevealCycle,now=performance.now(),pending=items.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));
+ if(!pending.length)return;
+ const step=80;
+ pending.forEach((node,index)=>{const delay=Math.max(0,startAt+index*step-now);node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');node.style.setProperty('--lhn-item-reveal-delay',`${delay}ms`);lhnRevealedItemKeys.add(lhnItemKey(node,index));const timer=window.setTimeout(()=>{lhnItemRevealTimers.delete(node);if(node.isConnected)node.style.removeProperty('--lhn-item-reveal-delay')},delay+850);lhnItemRevealTimers.set(node,timer)});
+ if(lhnReducedMotion()||!window.requestAnimationFrame){pending.forEach(node=>node.classList.add('lhn-item-revealed'));pending.forEach(node=>animateLhnCountersWithin(node));return}
+ const frame=requestAnimationFrame(()=>{lhnItemRevealFrames.delete(frame);if(cycle!==lhnItemRevealCycle)return;pending.forEach(node=>{if(node.isConnected)node.classList.add('lhn-item-revealed');animateLhnCountersWithin(node,Math.max(0,startAt+pending.indexOf(node)*step-performance.now()))})});lhnItemRevealFrames.add(frame);
+}
+function queueInitialLhnItems(){
+ if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;scheduleLhnItemReveal(collectLhnItems(),Math.max(sourceAt,notesAt)+250)});
+}
+function queueNewLhnItems(){
+ if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const items=collectLhnItems().filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));if(!items.length)return;const sourceAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .sources-panel'))||0,notesAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .notes-panel'))||0;scheduleLhnItemReveal(items,Math.max(performance.now()+120,Math.max(sourceAt,notesAt)+250))});
+}
+function handleLhnPanelReveal(event){
+ const {target,revealAt}=event.detail||{};if(!target||!Number.isFinite(revealAt))return;lhnPanelRevealTimes.set(target,revealAt);animateLhnCountersWithin(target,Math.max(0,revealAt-performance.now()),true);
+ if(target.matches('.sources-panel,.notes-panel'))queueInitialLhnItems();
+}
+function resetLhnEntranceEffects(){
+ lhnCounterCycle++;for(const frame of lhnCounterFrames.values())cancelAnimationFrame(frame);lhnCounterFrames.clear();for(const timer of lhnCounterTimers.values())clearTimeout(timer);lhnCounterTimers.clear();
+ document.querySelectorAll('#dashboardHighlightsNotesView [data-lhn-count-target]').forEach(node=>{node.textContent=node.dataset.lhnCountFinal||'0'});
+ cancelLhnItemReveal();lhnPanelRevealTimes.clear();lhnItemsEntranceQueued=false;lhnItemsEntranceReady=false;lhnDynamicItemsQueued=false;lhnRevealedItemKeys.clear();
+ collectLhnItems().forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');node.style.removeProperty('--lhn-item-reveal-delay')});
+}
+window.addEventListener('keepit:highlights-notes-entrance-reset',resetLhnEntranceEffects);
+window.addEventListener('keepit:highlights-notes-panel-reveal',handleLhnPanelReveal);
 const colorPalette=[['#9fd8c2','#4e9b80'],['#273c75','#876bd6'],['#f5c2a4','#be7ca7'],['#9ed4e7','#5d89c9'],['#a8a8ed','#655fa6'],['#a9d8c7','#508f9e']];
 function playToolbarActionEffect(button,event,color,particleShape){
  if(!button||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
@@ -106,19 +162,20 @@ function renderSources(){
  const visible=allFiltered(),order=$('sortBy').value,previousKey=selected?.key;
  visible.sort((a,b)=>order==='count'?b.highlights-a.highlights:order==='edited'?b.editedAtMs-a.editedAtMs:b.createdAtMs-a.createdAtMs);
  selected=visible.find(page=>page.key===previousKey)||visible[0]||null;
- pageCount.textContent=`${visible.length} trang`;
- count.textContent=`${visible.reduce((sum,page)=>sum+page.highlights,0)} ghi chú`;
+ setLhnCounter(pageCount,visible.length,value=>`${formatLhnNumber(value)} trang`);
+ setLhnCounter(count,visible.reduce((sum,page)=>sum+page.highlights,0),value=>`${formatLhnNumber(value)} ghi chú`);
  sourceList.replaceChildren();
  visible.forEach(page=>{
   const row=document.createElement('article');row.className='source-item'+(page===selected?' active':'');row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',page.title);row.dataset.url=page.key;
   const colors=page.colors.map(color=>`<span class="color-dot ${color}" title="${colorNames[color]||color}"></span>`).join('');
   const tags=page.tags.map(tag=>`<span class="tag-chip">${esc(tag)}</span>`).join('');
   row.innerHTML=`<div class="source-thumb"><img alt="" loading="lazy"><span class="thumb-fallback" aria-hidden="true">${icon('file')}</span><span class="source-thumb-badge"><i class="${thumbnailSiteLabel(page)==='YouTube'?'video':'article'}"></i>${thumbnailSiteLabel(page)}</span><span class="source-thumb-label">${esc(thumbnailCategoryLabel(page))}</span></div><div class="source-info"><div class="source-title">${esc(page.title)}</div><div class="source-host">${siteBadge(page)}<span class="source-host-text">${esc(page.site)}</span></div><div class="source-description">${esc(sourceDescription(page))}</div><div class="source-tags tag-list">${tags}</div><div class="source-meta"><span class="source-date">${esc(sourceDate(page))}</span><span class="source-meta-count">${colors}<span class="source-count-number">${page.highlights}</span><span class="source-count-icon">${icon('square')}</span></span></div></div>`;
+  setLhnCounter(row.querySelector('.source-count-number'),page.highlights);
   const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
   const image=row.querySelector('.source-thumb img');globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),onError:()=>image.remove()});
   const choose=()=>{selected=page;noteColor='all';renderSources();renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
  });
- updateStats(visible);
+ updateStats(visible);queueNewLhnItems();
 }
 function renderSelected(){
  const header=$('notesHeader'),favoriteButton=$('favoritePageBtn'),exportButton=$('exportPageBtn'),deleteButton=$('deletePageBtn');
@@ -143,11 +200,12 @@ function renderSelected(){
   notesList.append(card);
  });
  if(!items.length&&selected.notes.length){const empty=document.createElement('div');empty.className='empty color-filter-empty';empty.textContent=text('noColorMatches');notesList.append(empty)}
- updateViewModeButton();
+ updateViewModeButton();queueNewLhnItems();
 }
 function renderColorFilters(){
  const host=$('noteColorFilters'),colors=['all',...validColors],counts=Object.fromEntries(validColors.map(color=>[color,selected.notes.filter(note=>note.color===color).length]));
- host.innerHTML=colors.map(color=>`<button type="button" class="note-color-filter${noteColor===color?' is-active':''}" data-filter="${color}" aria-pressed="${noteColor===color}">${color==='all'?'':`<span class="lhn-filter-swatch lhn-swatch-${color}"></span>`}<span>${color==='all'?'Tất cả':colorNames[color]}</span><span class="filter-count">${color==='all'?selected.notes.length:`${counts[color]||0}/${selected.notes.length}`}</span></button>`).join('')+`<button type="button" class="note-color-filter favorite-notes-filter${favoriteNotes?' is-active':''}" data-favorite-notes-filter aria-pressed="${favoriteNotes}"><span aria-hidden="true">♥</span><span>${text('favoriteNotes')}</span><span class="filter-count">${selected.notes.filter(note=>note.favorite).length}</span></button>`;
+ host.innerHTML=colors.map(color=>`<button type="button" class="note-color-filter${noteColor===color?' is-active':''}" data-filter="${color}" aria-pressed="${noteColor===color}">${color==='all'?'':`<span class="lhn-filter-swatch lhn-swatch-${color}"></span>`}<span>${color==='all'?'Tất cả':colorNames[color]}</span><span class="filter-count">${color==='all'?`<span class="lhn-count-value">${selected.notes.length}</span>`:`<span class="lhn-count-value">${counts[color]||0}</span>/<span class="lhn-count-value">${selected.notes.length}</span>`}</span></button>`).join('')+`<button type="button" class="note-color-filter favorite-notes-filter${favoriteNotes?' is-active':''}" data-favorite-notes-filter aria-pressed="${favoriteNotes}"><span aria-hidden="true">♥</span><span>${text('favoriteNotes')}</span><span class="filter-count"><span class="lhn-count-value">${selected.notes.filter(note=>note.favorite).length}</span></span></button>`;
+ host.querySelectorAll('.lhn-count-value').forEach(node=>setLhnCounter(node,Number(node.textContent)||0));
 }
 function updateViewModeButton(){const button=$('viewModeBtn'),grid=viewMode==='grid';button.innerHTML=icon(grid?'grid':'list');button.setAttribute('aria-pressed',String(grid));button.title=grid?'Chuyển sang dạng danh sách':'Chuyển sang dạng lưới';button.setAttribute('aria-label',button.title);notesList.classList.toggle('is-grid-view',grid)}
 function activityWindowDays(selectedPages){
@@ -159,7 +217,7 @@ function activityWindowDays(selectedPages){
 function weekKey(date){const day=new Date(date);day.setHours(0,0,0,0);day.setDate(day.getDate()-((day.getDay()+6)%7));return dateKey(day)}
 function updateStats(visible=allFiltered()){
  const selectedPages=scope==='all'?pages:visible,allNotes=selectedPages.flatMap(page=>page.notes),highlightTotal=allNotes.length,noteTotal=allNotes.filter(note=>note.note.trim()).length;
- $('demoMetricPages').textContent=selectedPages.length;$('demoMetricHighlights').textContent=highlightTotal;$('demoMetricNotes').textContent=noteTotal;$('demoActiveItems').textContent=highlightTotal;
+ setLhnCounter($('demoMetricPages'),selectedPages.length);setLhnCounter($('demoMetricHighlights'),highlightTotal);setLhnCounter($('demoMetricNotes'),noteTotal);setLhnCounter($('demoActiveItems'),highlightTotal);
  $('statsSubtitleOld').textContent=text(scope==='all'?'statsAll':'statsFiltered');drawDemoHeatmap(selectedPages);
 }
 function drawDemoHeatmap(selectedPages){
@@ -168,14 +226,14 @@ function drawDemoHeatmap(selectedPages){
  const first=new Date(today);first.setDate(first.getDate()-days+1);const rows=[];let maxCount=0,activeDays=0,totalItems=0;const activeWeeks=new Set();
  for(let i=0;i<days;i++){const date=new Date(first);date.setDate(first.getDate()+i);const key=dateKey(date),amount=perDay.get(key)||0;rows.push({date,key,amount});maxCount=Math.max(maxCount,amount);if(amount){activeDays++;totalItems+=amount;activeWeeks.add(weekKey(date))}}
  rows.forEach(({date,amount})=>{const cell=document.createElement('span'),level=amount?Math.max(1,Math.ceil(amount/Math.max(1,maxCount)*4)):0;cell.className='old-heat-cell';cell.dataset.level=level;cell.title=`${date.toLocaleDateString('vi-VN')} · ${amount?amount+' hoạt động':'Không có hoạt động'}`;host.append(cell)});
- $('demoActiveDays').textContent=`${activeDays} ngày`;$('demoTotalDays').textContent=activeDays;$('demoActiveWeeks').textContent=activeWeeks.size;$('demoActiveItems').textContent=totalItems;
+ setLhnCounter($('demoActiveDays'),activeDays,value=>`${formatLhnNumber(value)} ngày`);setLhnCounter($('demoTotalDays'),activeDays);setLhnCounter($('demoActiveWeeks'),activeWeeks.size);setLhnCounter($('demoActiveItems'),totalItems);
 }
 function drawDemoDistribution(){
  const totals=new Map(),target=scope==='all'?pages:allFiltered();
  target.forEach(page=>{if(distMode==='tags'){page.notes.forEach(note=>note.tags.forEach(tag=>totals.set('#'+tag,(totals.get('#'+tag)||0)+1)))}else totals.set(page.site,(totals.get(page.site)||0)+page.highlights)});
  const rows=[...totals].sort((a,b)=>b[1]-a[1]).slice(0,4),max=Math.max(1,...rows.map(row=>row[1])),host=$('demoDistribution');host.replaceChildren();
  if(!rows.length){const empty=document.createElement('div');empty.className='old-dist-note';empty.textContent=text(distMode==='tags'?'noTags':'noSources');host.append(empty);return}
- rows.forEach(([label,value])=>{const row=document.createElement('div');row.className='old-dist-row';row.innerHTML='<span class="old-dist-label"></span><span class="old-dist-count"></span><div class="old-dist-track"><div class="old-dist-fill"></div></div>';row.querySelector('.old-dist-label').textContent=label;row.querySelector('.old-dist-count').textContent=value;row.querySelector('.old-dist-fill').style.width=`${Math.max(8,value/max*100)}%`;host.append(row)});
+ rows.forEach(([label,value])=>{const row=document.createElement('div');row.className='old-dist-row';row.innerHTML='<span class="old-dist-label"></span><span class="old-dist-count"></span><div class="old-dist-track"><div class="old-dist-fill"></div></div>';row.querySelector('.old-dist-label').textContent=label;setLhnCounter(row.querySelector('.old-dist-count'),value);row.querySelector('.old-dist-fill').style.width=`${Math.max(8,value/max*100)}%`;host.append(row)});
 }
 function refresh(){renderSources();renderSelected();drawDemoDistribution()}
 function rebuildSelect(select,values,firstLabel){const previous=select.value,options=[...new Set(values)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'vi'));select.replaceChildren(new Option(firstLabel,''),...options.map(value=>new Option(value,value)));if(options.includes(previous))select.value=previous}

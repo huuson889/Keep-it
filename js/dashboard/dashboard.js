@@ -2923,6 +2923,7 @@ function resetDashboardPanelEntranceEffects(view) {
   dashboardPanelRevealTimers.clear();
   dashboardPanelRevealSequenceEnd = 0;
   const routeTargets = dashboardPanelRevealTargets(view);
+  if (view === "highlights-notes") window.dispatchEvent(new CustomEvent("keepit:highlights-notes-entrance-reset"));
   if (dashboardSharedTopbar) {
     dashboardSharedTopbar.classList.add("ov-reveal");
     dashboardSharedTopbar.classList.remove("ov-revealed");
@@ -2937,6 +2938,7 @@ function resetDashboardPanelEntranceEffects(view) {
     target.classList.remove("dashboard-revealed");
     target.style.removeProperty("--ov-reveal-delay");
     delete target.dataset.dictationLibraryRevealAt;
+    delete target.dataset.lhnPanelRevealAt;
   }
   if (view === "dictation") {
     resetDictationCounterEntranceEffects();
@@ -2947,10 +2949,15 @@ function resetDashboardPanelEntranceEffects(view) {
   const reveal = (target, delay) => {
     target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
     if (view === "dictation" && target.matches(".library-section")) target.dataset.dictationLibraryRevealAt = String(performance.now() + delay);
+    const revealAt = performance.now() + delay;
+    if (view === "highlights-notes") {
+      target.dataset.lhnPanelRevealAt = String(revealAt);
+      window.dispatchEvent(new CustomEvent("keepit:highlights-notes-panel-reveal", { detail:{ target, revealAt } }));
+    }
     if (target === dashboardSharedTopbar) target.classList.add("ov-revealed");
     else target.classList.add("dashboard-revealed");
     if (view === "dictation" && target.matches(".library-section")) observeDictationSessionCards();
-    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); delete target.dataset.dictationLibraryRevealAt; }, delay + 850);
+    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); delete target.dataset.dictationLibraryRevealAt; delete target.dataset.lhnPanelRevealAt; }, delay + 850);
     dashboardPanelRevealTimers.set(target, timer);
   };
   if (!("IntersectionObserver" in window)) {
