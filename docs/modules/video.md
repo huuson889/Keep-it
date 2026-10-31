@@ -19,7 +19,7 @@ Mô tả overlay Dual Subtitles trên YouTube: gắn player hiện có vào over
 
 ## 3. Luồng chính
 
-1. Trên `document_idle`, manifest nạp `overlay-template.js` trước `dual-subtitles.js`. `content.js` phát event shortcut; Dual Sub chỉ xử lý trên `youtube.com`.
+1. Trên `document_idle`, manifest nạp `overlay-template.js` trước `dual-subtitles.js`. `content.js` phát event shortcut; Dual Sub chỉ xử lý trên `youtube.com`. Alt+E bật/tắt overlay video như cũ; Alt+F mở Dictation trực tiếp (nếu overlay đã mở thì mở Dictation tại chỗ, nếu chưa thì khởi tạo host và Dictation cùng lượt, không hiển thị màn overlay video thường trước).
 2. `openOverlay()` dựng Shadow DOM từ template, tìm video YouTube hiện có và gắn video vào slot. Khi đóng, `detachVideo()` đưa video về vị trí cũ.
 3. `loadCaptions()` thử cache trước; nếu chưa có thì lần lượt lấy từ Player API/timedtext, panel transcript trên trang, tracklist của watch page, rồi cuối cùng thu caption đang hiển thị trên video.
 4. Với source Auto, ưu tiên caption liên kết với audio track mặc định qua `audioTracks`, `defaultAudioTrackIndex`, `audioTrackId` và `captionTrackIndices`; metadata thiếu thì dùng fallback cũ. Cue được làm sạch, hiển thị theo cửa sổ quanh thời điểm phát và dịch qua `LHN_MESSAGING` (`BILINGUAL_TRANSLATE`).

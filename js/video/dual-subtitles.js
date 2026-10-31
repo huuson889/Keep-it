@@ -30,6 +30,7 @@ const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-
 
 let pendingDictationShortcut = false;
 let pendingDictationOpenImmediately = false;
+let dictationShortcutOpenedOverlay = false;
 
 const state = {
   open: false,
@@ -1067,6 +1068,7 @@ function openOverlay() {
 function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
+  dictationShortcutOpenedOverlay = false;
   globalThis.LHN_DICTATION?.close?.();
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
@@ -1086,27 +1088,40 @@ function toggleDictationFromShortcut() {
   if (keepitSiteDisabled) return;
   const dictation = globalThis.LHN_DICTATION;
   if (dictation?.isOpen?.()) {
+    const closeOwnedOverlay = dictationShortcutOpenedOverlay;
+    dictationShortcutOpenedOverlay = false;
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
     dictation.close();
+    if (closeOwnedOverlay) closeOverlay();
     return;
   }
   if (pendingDictationShortcut) {
+    const closeOwnedOverlay = dictationShortcutOpenedOverlay;
+    dictationShortcutOpenedOverlay = false;
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
+    if (closeOwnedOverlay) closeOverlay();
     return;
   }
-  if (!state.open) openOverlay();
-  if (!state.open) return;
-  if (globalThis.LHN_OVERLAY_API?.getDictationCues?.().length) {
-    dictation?.open?.();
+  if (state.open) {
+    dictation?.open?.({ waitForCaptions:true });
     return;
   }
-  if (state.videoId && state.loadingFor === state.videoId) {
-    pendingDictationShortcut = true;
+
+  // Alt+F enters Dictation in the same event turn, so the plain video overlay
+  // is not painted as an intermediate screen while captions continue loading.
+  pendingDictationShortcut = true;
+  pendingDictationOpenImmediately = true;
+  dictationShortcutOpenedOverlay = true;
+  openOverlay();
+  if (!state.open) {
+    pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
+    dictationShortcutOpenedOverlay = false;
     return;
   }
-  dictation?.open?.();
+  openPendingDictationShortcut();
 }
 
 function openPendingDictationShortcut() {
