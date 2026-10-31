@@ -16,8 +16,7 @@ const OVERLAY_CSS = `
       height: 100vh;
       width: 100vw;
       overflow: hidden;
-      z-index: 2147483647;
-      isolation: isolate;
+      z-index: 999998;
     }
 
     /* Main Container */
