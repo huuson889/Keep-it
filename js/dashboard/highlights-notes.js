@@ -15,13 +15,13 @@ const iconPaths={
 };
 const icon=name=>`<svg class="lucide" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name]||''}</svg>`;
 const $=id=>document.getElementById(id), sourceList=$('sourceList'), notesList=$('notesList'), pageCount=$('pageCount'), count=$('count'), toast=$('libraryDemoToast');
-const lhnRevealEffects=globalThis.KeepitDashboardReveal,lhnRevealScope=lhnRevealEffects.createScope();
+const lhnRevealEffects=globalThis.KeepitDashboardReveal,lhnSourceRevealScope=lhnRevealEffects.createScope(),lhnNotesRevealScope=lhnRevealEffects.createScope(),lhnChartRevealScope=lhnRevealEffects.createScope();
 const text=key=>(labels[currentLanguage]||labels.vi)[key]||labels.vi[key]||key;
 function applyNewLabels(){ document.documentElement.lang=currentLanguage;$('lrDataBadge').textContent=text('dataBadge');$('exportAllText').textContent=text('exportAll');$('exportAllDemoBtn').setAttribute('aria-label',text('exportAll'));$('exportAllDemoBtn').title=text('exportAll');$('statsDataCaption').textContent=text('statsCaption'); }
 let pages=[], annotationRecords=[], favorites=[], favoriteNoteIds=new Set(), selected=null, noteColor='all', scope='filtered', period='365', distMode='tags', quickFilter='all', favoriteNotes=false, viewMode='grid', toastTimer, requestSequence=0, currentLanguage='vi';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const validColors=['yellow','green','purple','red','blue','orange'];
-const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnPanelRevealTimes=new Map();
+const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnChartFrames=new Map(),lhnPanelRevealTimes=new Map();
 let lhnSourceRevealWatch=null,lhnNotesRevealWatch=null,lhnCounterCycle=0,lhnItemsEntranceQueued=false,lhnItemsEntranceReady=false,lhnDynamicItemsQueued=false;
 const lhnReducedMotion=()=>lhnRevealEffects.prefersReducedMotion();
 function formatLhnNumber(value){return Math.max(0,Math.floor(Number(value)||0)).toLocaleString(({vi:'vi-VN',en:'en-US',ko:'ko-KR'})[currentLanguage]||'vi-VN')}
@@ -50,21 +50,25 @@ function collectLhnItemGroups(){
  };
 }
 function collectLhnItems(){const {sources,notes}=collectLhnItemGroups();return [...sources,...notes]}
-function cancelLhnItemReveal(){
- lhnRevealScope.cancel();lhnSourceRevealWatch=null;lhnNotesRevealWatch=null;
+function cancelLhnItemReveal({sources=true,notes=true}={}){
+ if(sources){lhnSourceRevealScope.cancel();lhnSourceRevealWatch=null}
+ if(notes){lhnNotesRevealScope.cancel();lhnNotesRevealWatch=null}
 }
-function restartLhnItemRevealCycle(){
+function restartLhnItemRevealCycle({sources=true,notes=true}={}){
  if(!lhnItemsEntranceReady)return;
- cancelLhnItemReveal();
- collectLhnItems().forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed')});
+ cancelLhnItemReveal({sources,notes});
+ const groups=collectLhnItemGroups();
+ if(sources)groups.sources.forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed')});
+ if(notes)groups.notes.forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed')});
 }
 function watchLhnItemGroup(items,root,panel,type){
+ const revealScope=type==='sources'?lhnSourceRevealScope:lhnNotesRevealScope;
  let watch=type==='sources'?lhnSourceRevealWatch:lhnNotesRevealWatch;
  if(!watch&&!items.length)return;
  const panelAt=()=>lhnPanelRevealTimes.get(panel)||performance.now();
- const isEligible=node=>!lhnRevealScope.hasScheduled(node);
- items.forEach((node,index)=>{
-  if(!isEligible(node,index))return;
+ const isEligible=node=>!node.classList.contains('lhn-item-revealed')&&!revealScope.hasScheduled(node);
+ items.forEach(node=>{
+  if(!isEligible(node))return;
   node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');
  });
  if(lhnReducedMotion()){
@@ -72,8 +76,8 @@ function watchLhnItemGroup(items,root,panel,type){
   return;
  }
  if(!watch){
-  watch=lhnRevealScope.observe({root,targets:[],threshold:.08,rootMargin:'0px 0px -4% 0px',key:root,step:180,lead:80,startAt:()=>panelAt()+350,isEligible,onTarget:(node,delay,index)=>{
-   lhnRevealScope.schedule(delay,()=>{if(!node.isConnected)return;node.classList.add('lhn-item-revealed');animateLhnCountersWithin(node)},()=>node.isConnected,node);
+  watch=revealScope.observe({root,targets:[],threshold:.08,rootMargin:'0px 0px -4% 0px',key:root,step:180,lead:80,startAt:()=>panelAt()+350,isEligible,onTarget:(node,delay,index)=>{
+   revealScope.schedule(delay,()=>{if(!node.isConnected)return;node.classList.add('lhn-item-revealed');animateLhnCountersWithin(node)},()=>node.isConnected,node);
   }});
   if(type==='sources')lhnSourceRevealWatch=watch;else lhnNotesRevealWatch=watch;
  }
@@ -90,12 +94,29 @@ function handleLhnPanelReveal(event){
  const delay=Math.max(0,revealAt-performance.now());
  if(target.matches('.library-demo-stats'))target.querySelectorAll('[data-lhn-count-target]').forEach(node=>{if(!node.closest('.old-stats-section'))animateLhnCounter(node,delay)});
  else animateLhnCountersWithin(target,delay,true);
- if(target.matches('.old-activity,.old-distribution'))runLhnStatsChart(target,true);
+ if(target.matches('.old-activity,.old-distribution'))lhnChartRevealScope.schedule(delay,()=>runLhnStatsChart(target,true),()=>target.isConnected&&target.classList.contains('dashboard-revealed')&&!target.classList.contains('ov-chart-running'),target);
  if(target.matches('.sources-panel,.notes-panel'))queueInitialLhnItems();
 }
+function cancelLhnStatsChartAnimation(section){
+ const frame=lhnChartFrames.get(section);if(frame)cancelAnimationFrame(frame);lhnChartFrames.delete(section);
+}
+function animateLhnDistributionBars(section){
+ cancelLhnStatsChartAnimation(section);
+ const fills=[...section.querySelectorAll('.old-dist-fill')];if(!fills.length)return;
+ if(lhnReducedMotion()||!window.requestAnimationFrame){fills.forEach(fill=>fill.style.transform='scaleX(1)');return}
+ fills.forEach(fill=>fill.style.transform='scaleX(0)');
+ const startedAt=performance.now(),tick=now=>{
+  if(!section.isConnected||!section.classList.contains('ov-chart-running')){lhnChartFrames.delete(section);return}
+  const progress=Math.max(0,Math.min(1,(now-startedAt)/2000)),eased=1-Math.pow(1-progress,4);
+  fills.forEach(fill=>{if(fill.isConnected)fill.style.transform=`scaleX(${eased})`});
+  if(progress<1)lhnChartFrames.set(section,requestAnimationFrame(tick));else lhnChartFrames.delete(section);
+ };
+ lhnChartFrames.set(section,requestAnimationFrame(tick));
+}
 function resetLhnEntranceEffects(){
- lhnCounterCycle++;for(const frame of lhnCounterFrames.values())cancelAnimationFrame(frame);lhnCounterFrames.clear();for(const timer of lhnCounterTimers.values())clearTimeout(timer);lhnCounterTimers.clear();
+ lhnCounterCycle++;for(const frame of lhnCounterFrames.values())cancelAnimationFrame(frame);lhnCounterFrames.clear();for(const timer of lhnCounterTimers.values())clearTimeout(timer);lhnCounterTimers.clear();lhnChartRevealScope.cancel();
  document.querySelectorAll('#dashboardHighlightsNotesView [data-lhn-count-target]').forEach(node=>{node.textContent=node.dataset.lhnCountFinal||'0'});
+ document.querySelectorAll('#dashboardHighlightsNotesView .old-stats-section').forEach(section=>{cancelLhnStatsChartAnimation(section);section.classList.remove('ov-chart-running');section.querySelectorAll('.old-dist-fill').forEach(fill=>fill.style.removeProperty('transform'))});
  cancelLhnItemReveal();lhnPanelRevealTimes.clear();lhnItemsEntranceQueued=false;lhnItemsEntranceReady=false;lhnDynamicItemsQueued=false;
  collectLhnItems().forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');});
 }
@@ -198,7 +219,7 @@ function renderSources(){
   setLhnCounter(row.querySelector('.source-count-number'),page.highlights);
   const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
   const image=row.querySelector('.source-thumb img');globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),onError:()=>image.remove()});
-  const choose=()=>{restartLhnItemRevealCycle();selected=page;noteColor='all';renderSources();renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
+  const choose=()=>{restartLhnItemRevealCycle({sources:false,notes:true});selected=page;noteColor='all';sourceList.querySelectorAll(':scope > .source-item').forEach(item=>item.classList.toggle('active',item.dataset.url===page.key));renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
  });
  updateStats(visible);queueNewLhnItems();
 }
@@ -264,10 +285,12 @@ function drawDemoDistribution(){
 }
 function runLhnStatsChart(section,force=false){
  if(!section)return;
- const entries=[...section.querySelectorAll('.old-heat-cell,.old-dist-fill')],last=Math.max(1,entries.length-1);
- entries.forEach((node,index)=>node.style.setProperty('--lhn-chart-delay',`${Math.round(index/last*1400)}ms`));
+ const cells=[...section.querySelectorAll('.old-heat-cell')],last=Math.max(1,cells.length-1);
+ cells.forEach((node,index)=>node.style.setProperty('--lhn-chart-delay',`${Math.round(index/last*1400)}ms`));
  if(!force&&!section.classList.contains('dashboard-revealed'))return;
+ cancelLhnStatsChartAnimation(section);
  section.classList.remove('ov-chart-running');void section.offsetWidth;section.classList.add('ov-chart-running');
+ if(section.matches('.old-distribution'))animateLhnDistributionBars(section);
 }
 function refresh(){restartLhnItemRevealCycle();renderSources();renderSelected();drawDemoDistribution()}
 function rebuildSelect(select,values,firstLabel){const previous=select.value,options=[...new Set(values)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'vi'));select.replaceChildren(new Option(firstLabel,''),...options.map(value=>new Option(value,value)));if(options.includes(previous))select.value=previous}
