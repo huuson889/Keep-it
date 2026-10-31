@@ -1021,7 +1021,7 @@ function ensureLauncher() {
     btn.title = 'Mở keepit';
     btn.setAttribute('aria-label', 'Mở keepit');
     btn.style.display = 'none';
-    btn.innerHTML = '<span class="lhn-launcher-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg></span>';
+    btn.innerHTML = '<span class="lhn-launcher-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></span>';
     btn.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
