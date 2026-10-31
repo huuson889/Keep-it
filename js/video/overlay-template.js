@@ -734,6 +734,80 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.size-m .yt-dual-right-sidebar { width: max(400px, 35vw); }
     #keepit-exact-overlay.size-m .te-left-section { width: calc(100vw - max(400px, 35vw)); }
     #keepit-exact-overlay.te-sidebar-hidden .te-left-section { width: 100vw; }
+
+    /* Reading mode: compact video at left, full transcript in the center, controls across the bottom. */
+    #keepit-exact-overlay.te-reading-mode .te-left-section {
+      flex: 0 0 27vw;
+      width: 27vw !important;
+      min-width: 0;
+      box-sizing: border-box;
+      position: static;
+      padding: 14px 28px 78px 16px;
+    }
+    #keepit-exact-overlay.te-reading-mode .te-video-slot {
+      width: 100%;
+      max-height: calc(100vh - 220px);
+      border-radius: 10px;
+    }
+    #keepit-exact-overlay.te-reading-mode .te-sub-container { display: none !important; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-right-sidebar {
+      display: flex !important;
+      flex: 0 0 46vw;
+      width: 46vw !important;
+      height: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      border-left: 0;
+      background: transparent;
+    }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-sidebar-header {
+      position: fixed;
+      z-index: 20;
+      top: 8px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      box-sizing: border-box;
+      padding: 0;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+    }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-sidebar-header > span { display: none; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-actions { justify-content: center; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list {
+      min-height: 0;
+      padding: 34px 20px 82px;
+      scrollbar-gutter: stable;
+    }
+    #keepit-exact-overlay.te-reading-mode .te-control-bar {
+      position: absolute;
+      z-index: 15;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #keepit-exact-overlay.te-reading-mode .te-floating-btn {
+      position: fixed;
+      z-index: 21;
+      right: 24px;
+      bottom: 28px;
+    }
+    @media (max-width: 900px) {
+      #keepit-exact-overlay.te-reading-mode .te-left-section {
+        flex-basis: 34vw;
+        width: 34vw !important;
+        padding-right: 14px;
+        padding-left: 12px;
+      }
+      #keepit-exact-overlay.te-reading-mode .yt-dual-right-sidebar {
+        flex-basis: 66vw;
+        width: 66vw !important;
+      }
+      #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
+    }
+
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
     #keepit-exact-overlay .te-video-slot {
@@ -850,6 +924,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <div class="te-ctrl-group">
           <button class="te-icon-btn" title="Audio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <button class="te-icon-btn" title="AI keepit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+          <button class="te-icon-btn" id="te-reading-mode-btn" title="Chế độ đọc" aria-label="Chế độ đọc" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13"/></svg></button>
           <button class="te-icon-btn" title="Chế độ phụ đề"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg></button>
           <button class="te-icon-btn" title="Bố cục"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
           <button class="te-icon-btn" title="Toàn màn hình"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>

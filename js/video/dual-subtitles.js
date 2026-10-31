@@ -2331,6 +2331,11 @@ function bindUI() {
     ui('#te-speed-popup')?.classList.add('hidden');
   });
   ctrl('Audio').addEventListener('click', toggleMute);
+  ctrl('Chế độ đọc').addEventListener('click', (e) => {
+    const enabled = root.classList.toggle('te-reading-mode');
+    e.currentTarget.classList.toggle('te-active', enabled);
+    e.currentTarget.setAttribute('aria-pressed', String(enabled));
+  });
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
     e.currentTarget.classList.toggle('te-active', root.classList.contains('te-subs-hidden'));
