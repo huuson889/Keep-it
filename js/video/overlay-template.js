@@ -726,13 +726,13 @@ const OVERLAY_CSS = `
 
 
     /* ===== Kích thước video: Nhỏ / Vừa / Lớn ===== */
-    /* Tỉ lệ chiều rộng: Nhỏ video 60% / sidebar 40%, Vừa 65% / 35%, Lớn 70% / 30% (sidebar tối thiểu 400px) */
-    #keepit-exact-overlay .yt-dual-right-sidebar { width: max(400px, 30vw); flex-shrink: 0; }
-    #keepit-exact-overlay .te-left-section { flex: none; width: calc(100vw - max(400px, 30vw)); }
-    #keepit-exact-overlay.size-s .yt-dual-right-sidebar { width: max(400px, 40vw); }
-    #keepit-exact-overlay.size-s .te-left-section { width: calc(100vw - max(400px, 40vw)); }
-    #keepit-exact-overlay.size-m .yt-dual-right-sidebar { width: max(400px, 35vw); }
-    #keepit-exact-overlay.size-m .te-left-section { width: calc(100vw - max(400px, 35vw)); }
+    /* Sidebar transcript: Lớn 30%, Vừa 40%, Nhỏ 50% chiều rộng overlay. */
+    #keepit-exact-overlay .yt-dual-right-sidebar { width: 30vw; flex-shrink: 0; }
+    #keepit-exact-overlay .te-left-section { flex: none; width: 70vw; }
+    #keepit-exact-overlay.size-s .yt-dual-right-sidebar { width: 50vw; }
+    #keepit-exact-overlay.size-s .te-left-section { width: 50vw; }
+    #keepit-exact-overlay.size-m .yt-dual-right-sidebar { width: 40vw; }
+    #keepit-exact-overlay.size-m .te-left-section { width: 60vw; }
     #keepit-exact-overlay.te-sidebar-hidden .te-left-section { width: 100vw; }
 
     /* Reading mode: compact video at left, full transcript in the center, controls across the bottom. */
@@ -851,8 +851,8 @@ const OVERLAY_CSS = `
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
     .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 14px; font-weight: 200; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
-    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 16px); color: var(--te-side-en-color, #e5e7eb); }
-    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 14px); color: var(--te-side-vi-color, #9ca3af); }
+    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 18px); color: var(--te-side-en-color, #e5e7eb); }
+    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 16.2px); color: var(--te-side-vi-color, #9ca3af); }
 
     /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }

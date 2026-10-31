@@ -894,8 +894,9 @@ function applySettings() {
   root.classList.toggle('size-s', settings.size === 'S');
   root.classList.toggle('size-m', settings.size === 'M');
   root.classList.toggle('size-l', settings.size !== 'S' && settings.size !== 'M');
-  root.style.setProperty('--te-side-en', (16 * settings.side.en.pct / 100) + 'px');
-  root.style.setProperty('--te-side-vi', (16 * settings.side.vi.pct / 100) + 'px');
+  const sideFontBase = settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
+  root.style.setProperty('--te-side-en', (sideFontBase * settings.side.en.pct / 100) + 'px');
+  root.style.setProperty('--te-side-vi', (sideFontBase * settings.side.vi.pct / 100) + 'px');
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
   setOrRemove(root, '--te-side-vi-color', settings.side.vi.color);
 
