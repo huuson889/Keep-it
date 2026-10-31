@@ -36,7 +36,8 @@ test("All three Dashboard views share one topbar and preserve independent scroll
 });
 
 test("The shared topbar sticks, compacts, and receives the Highlights & Notes export actions", () => {
-  assert.match(overviewCss, /#dashboardSharedTopbarPortal\s*\{[^}]*position:sticky;top:-22px/);
+  assert.match(overviewCss, /#dashboardSharedTopbarPortal\s*\{[^}]*position:sticky;top:0;[^}]*padding:0 clamp\(16px,3vw,42px\)/);
+  assert.doesNotMatch(overviewCss, /#dashboardSharedTopbarPortal\s*\{[^}]*top:-22px|padding:22px clamp\(16px,3vw,42px\) 0/);
   assert.match(overviewCss, /#dashboardSharedTopbar\.is-compact\s*\{[^}]*height:46px/);
   assert.match(overviewCss, /#dashboardSharedTopbar\.is-compact\s*\{[^}]*margin-bottom:30px/);
   assert.match(overviewCss, /#dashboardSharedTopbarActionsSlot:not\(\[hidden\]\)/);

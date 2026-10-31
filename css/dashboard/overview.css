@@ -599,7 +599,7 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 
 /* One sticky topbar is mounted once above all three routes. */
 #dashboardSharedTopbarPortal {
-  position:sticky;top:-22px;z-index:30;box-sizing:border-box;width:100%;max-width:1404px;margin:0 auto;padding:22px clamp(16px,3vw,42px) 0;
+  position:sticky;top:0;z-index:30;box-sizing:border-box;width:100%;max-width:1404px;margin:0 auto;padding:0 clamp(16px,3vw,42px);
 }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
   position:relative;top:auto;z-index:30;box-sizing:border-box;width:100%;height:56px;min-height:56px;
