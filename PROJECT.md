@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.882; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.883; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; topbar portal không có inset dọc, giữ cùng cao độ trong cả outer/inner scroll routes. Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards, H&N chart panels và source/note lists khai báo riêng target/cấu hình/callback. H&N activity/distribution charts có reveal riêng; các thanh phân bố khởi động đúng lúc panel hiện, chạy đồng bộ 2 giây/easeOutQuart như Overview. Source item reveal theo viewport và giữ trạng thái nếu chỉ chọn qua lại source; notes của source mới reveal lại. Bộ lọc/render lại hủy chuỗi cũ và reset cả hai danh sách; delay/cadence/viewport hiện hành vẫn giữ. CSS và callback count-up/chart vẫn chuyên biệt theo view.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
@@ -9,8 +9,8 @@
 - Reading mode trong video overlay: nút icon file-minus ở trước nút chế độ phụ đề; bố cục video nhỏ bên trái, transcript giữa và thanh điều khiển toàn chiều rộng bên dưới. Launcher YouTube sau fullscreen dùng logo SVG Keepit 24×24 trong nút cao 100% thanh controls (vùng ngang 48px), canh theo native buttons và ẩn/hiện cùng controls. Nút tím cài đặt bên trong overlay (`te-floating-btn`) bị ẩn.
 - Kích thước sidebar transcript: Lớn 30%, Vừa 40%, Nhỏ 50% chiều rộng overlay; ngoài `te-reading-mode`, font gốc 100% lần lượt 16px/18px/20px; trong learning mode video, 100% = 18px. Cỡ chữ scale theo cài đặt riêng EN/VI.
 - Cache transcript video dùng `transcriptCache` Map hiện có trong trang và persistent storage qua `js/core/cache.js`: tối đa 20 video theo LRU, TTL 7 ngày tính từ lần dùng gần nhất và cập nhật `lastUsedAt` khi đọc. Bản dịch video tiếp tục dùng cache dịch bền hiện có.
-- `resegmentBySentence()` xóa mọi đoạn `[...]` và `>>` trước khi tách, chuẩn hóa khoảng trắng/dấu câu, bỏ cue rỗng; giữ nguyên cách ước tính timestamp hiện có.
-- Kiểm tra v3.4.882: cú pháp JS, manifest JSON, mock TTL/LRU, mock resegment và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
+- `resegmentBySentence()` xóa mọi đoạn `[...]` và `>>`, rồi ghép các dòng dưới 5 từ với câu kế/hoặc câu trước ở cuối nếu tổng độ dài không vượt 30 từ/12 giây; giữ nguyên thuật toán timestamp.
+- Kiểm tra v3.4.883: cú pháp JS, manifest JSON, mock TTL/LRU, mock ghép câu ngắn và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -118,6 +118,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-01 | v3.4.883 | Arena.ai Agent sửa:**
+
+- Chỉ bổ sung hậu xử lý trong `resegmentBySentence()`: dòng dưới 5 từ được ghép tới ngưỡng 5 nếu không vượt 30 từ/12 giây; dòng cuối ngắn thử ghép lùi. Không đổi cách chia câu theo dấu câu hoặc thuật toán timestamp.
+- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`, `docs/modules/video.md`.
+- Kiểm tra cú pháp, manifest, mock ghép câu ngắn và `git diff --check`; chưa browser-test.
 
 **2026-11-01 | v3.4.882 | Arena.ai Agent sửa:**
 

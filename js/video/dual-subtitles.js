@@ -160,6 +160,7 @@ const SENTENCE_END_RE = /[.!?…]["'”’)\]]*$/;
 const ABBREVIATION_RE = /\b(mr|mrs|ms|dr|vs|etc|e\.g|i\.e|st|no)\.$/i;
 const MAX_SENTENCE_SEC = 12;
 const MAX_SENTENCE_WORDS = 30;
+const MIN_TRANSCRIPT_LINE_WORDS = 5;
 const TRANSCRIPT_LABEL = /show transcript|hiển thị bản ghi|bản ghi/i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -527,6 +528,64 @@ function cleanSentenceSegmentText(text) {
     .trim();
 }
 
+function transcriptLineWordCount(cue) {
+  const text = String(cue?.en || '').trim();
+  return text ? text.split(/\s+/u).length : 0;
+}
+
+function canMergeTranscriptLines(left, right) {
+  const wordCount = transcriptLineWordCount(left) + transcriptLineWordCount(right);
+  const duration = Math.max(left.end, right.end) - Math.min(left.start, right.start);
+  return wordCount <= MAX_SENTENCE_WORDS && duration <= MAX_SENTENCE_SEC;
+}
+
+function mergeTranscriptLines(left, right) {
+  const en = `${left.en} ${right.en}`.replace(/\s+/gu, ' ').trim();
+  const mainNeedsTranslation = !!left.mainNeedsTranslation || !!right.mainNeedsTranslation;
+  const secondaryNeedsTranslation = !!left.secondaryNeedsTranslation || !!right.secondaryNeedsTranslation;
+  const translatedParts = [left.vi, right.vi]
+    .filter((text) => text && text !== PENDING)
+    .map((text) => String(text).trim())
+    .filter(Boolean);
+  const mainInputs = [left.mainTranslationInput, right.mainTranslationInput].filter(Boolean);
+  const secondaryInputs = [left.secondaryTranslationInput, right.secondaryTranslationInput].filter(Boolean);
+
+  return {
+    ...left,
+    end: Math.max(left.end, right.end),
+    en,
+    mainNeedsTranslation,
+    secondaryNeedsTranslation,
+    mainTranslationInput: mainNeedsTranslation ? en : mainInputs.join(' ') || en,
+    secondaryTranslationInput: secondaryNeedsTranslation ? en : secondaryInputs.join(' ') || en,
+    mainText: mainNeedsTranslation ? PENDING : en,
+    vi: secondaryNeedsTranslation ? PENDING : (translatedParts.join(' ') || en),
+  };
+}
+
+function mergeShortTranscriptLines(cues) {
+  const merged = [];
+  for (let i = 0; i < cues.length; i++) {
+    let current = cues[i];
+    while (transcriptLineWordCount(current) < MIN_TRANSCRIPT_LINE_WORDS && i + 1 < cues.length) {
+      const next = cues[i + 1];
+      if (!canMergeTranscriptLines(current, next)) break;
+      current = mergeTranscriptLines(current, next);
+      i++;
+    }
+    merged.push(current);
+  }
+
+  // If the final short line cannot merge forward, try to attach it to preceding lines.
+  while (merged.length > 1 && transcriptLineWordCount(merged[merged.length - 1]) < MIN_TRANSCRIPT_LINE_WORDS) {
+    const lastIndex = merged.length - 1;
+    if (!canMergeTranscriptLines(merged[lastIndex - 1], merged[lastIndex])) break;
+    merged[lastIndex - 1] = mergeTranscriptLines(merged[lastIndex - 1], merged[lastIndex]);
+    merged.pop();
+  }
+  return merged.map((cue, index) => ({ ...cue, id:index }));
+}
+
 function resegmentBySentence(cues) {
   const sentences = [];
   let buf = null;
@@ -566,7 +625,7 @@ function resegmentBySentence(cues) {
   }
   if (buf && buf.text) sentences.push(buf);
 
-  return sentences.map((s, i) => ({
+  const segmented = sentences.map((s, i) => ({
     ...s,
     id: i,
     start: s.start,
@@ -577,6 +636,7 @@ function resegmentBySentence(cues) {
     mainText: s.mainNeedsTranslation ? PENDING : s.text,
     vi: s.secondaryNeedsTranslation ? PENDING : (s.translatedText || s.vi || s.text),
   }));
+  return mergeShortTranscriptLines(segmented);
 }
 
 function parseCaptions(events) {
