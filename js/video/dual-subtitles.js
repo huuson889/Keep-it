@@ -71,6 +71,12 @@ let prefetchToken = 0;
 let prefetchTimer = 0;
 let savedOverlayPageScrollStyles = null;
 let overlayIsolationObserver = null;
+let overlayBodyIsolationObserver = null;
+let overlayIsolationObservedBody = null;
+const overlayBodyIsolationSnapshots = new Map();
+const OVERLAY_BODY_ISOLATION_STYLES = [
+  ['visibility', 'hidden'], ['opacity', '0'], ['pointer-events', 'none'], ['transition', 'none'], ['animation', 'none'],
+];
 
 let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
@@ -1043,22 +1049,59 @@ function restoreOverlayPageScrollbar() {
   savedOverlayPageScrollStyles = null;
 }
 
+function enforceOverlayBodyIsolation(body = document.body) {
+  if (!body) return;
+  if (!overlayBodyIsolationSnapshots.has(body)) {
+    overlayBodyIsolationSnapshots.set(body, new Map(OVERLAY_BODY_ISOLATION_STYLES.map(([property]) => [property, {
+      value:body.style.getPropertyValue(property),
+      priority:body.style.getPropertyPriority(property),
+    }])));
+  }
+  for (const [property, value] of OVERLAY_BODY_ISOLATION_STYLES) {
+    if (body.style.getPropertyValue(property) !== value || body.style.getPropertyPriority(property) !== 'important') {
+      body.style.setProperty(property, value, 'important');
+    }
+  }
+  if (overlayBodyIsolationObservedBody !== body) {
+    overlayBodyIsolationObserver?.disconnect();
+    overlayBodyIsolationObserver = null;
+    overlayBodyIsolationObservedBody = body;
+    if (typeof MutationObserver === 'function') {
+      overlayBodyIsolationObserver = new MutationObserver(() => {
+        if (state.open && document.body === body) enforceOverlayBodyIsolation(body);
+      });
+      overlayBodyIsolationObserver.observe(body, { attributes:true, attributeFilter:['style'] });
+    }
+  }
+}
+
 function beginOverlayIsolation() {
   const root = document.documentElement;
   root.classList.add('lhn-video-overlay-open');
+  enforceOverlayBodyIsolation();
   if (overlayIsolationObserver || typeof MutationObserver !== 'function') return;
   overlayIsolationObserver = new MutationObserver(() => {
-    if (state.open && !root.classList.contains('lhn-video-overlay-open')) {
-      root.classList.add('lhn-video-overlay-open');
-    }
+    if (!state.open) return;
+    if (!root.classList.contains('lhn-video-overlay-open')) root.classList.add('lhn-video-overlay-open');
+    enforceOverlayBodyIsolation();
   });
-  overlayIsolationObserver.observe(root, { attributes:true, attributeFilter:['class'] });
+  overlayIsolationObserver.observe(root, { attributes:true, attributeFilter:['class'], childList:true });
 }
 
 function endOverlayIsolation() {
   overlayIsolationObserver?.disconnect();
   overlayIsolationObserver = null;
+  overlayBodyIsolationObserver?.disconnect();
+  overlayBodyIsolationObserver = null;
+  overlayIsolationObservedBody = null;
   document.documentElement.classList.remove('lhn-video-overlay-open');
+  for (const [body, snapshots] of overlayBodyIsolationSnapshots) {
+    for (const [property, snapshot] of snapshots) {
+      if (snapshot.value) body.style.setProperty(property, snapshot.value, snapshot.priority);
+      else body.style.removeProperty(property);
+    }
+  }
+  overlayBodyIsolationSnapshots.clear();
 }
 
 function openOverlay() {
@@ -1087,8 +1130,6 @@ function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
   globalThis.LHN_DICTATION?.close?.();
-  endOverlayIsolation();
-  restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
   overlayEl()?.classList.add('te-hidden');
@@ -1099,6 +1140,8 @@ function closeOverlay() {
   syncAppPopupPause();
   stopLiveCaptionCapture();
   detachVideo();
+  endOverlayIsolation();
+  restoreOverlayPageScrollbar();
 }
 
 function toggleDictationFromShortcut() {

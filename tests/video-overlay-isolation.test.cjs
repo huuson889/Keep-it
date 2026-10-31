@@ -5,7 +5,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
-test("the YouTube overlay stays above the page and prevents a visible body frame", () => {
+test("YouTube stays hidden while the top-level video host is open, including page/body mutations", () => {
   const css = read("css/content/content.css");
   const template = read("js/video/overlay-template.js");
   const video = read("js/video/dual-subtitles.js");
@@ -18,13 +18,26 @@ test("the YouTube overlay stays above the page and prevents a visible body frame
   assert.match(template, /:host\s*\{[^}]*z-index:\s*2147483647;[^}]*isolation:\s*isolate/s);
   assert.match(video, /document\.documentElement\.appendChild\(host\)/);
 
+  const enforceIsolation = video.match(/function enforceOverlayBodyIsolation\([^)]*\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(enforceIsolation);
+  assert.match(enforceIsolation, /body\.style\.setProperty\(property, value, 'important'\)/);
+  assert.match(enforceIsolation, /new MutationObserver/);
+  assert.match(enforceIsolation, /attributeFilter:\['style'\]/);
   const beginIsolation = video.match(/function beginOverlayIsolation\(\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(beginIsolation);
-  assert.match(beginIsolation, /new MutationObserver/);
   assert.match(beginIsolation, /root\.classList\.add\('lhn-video-overlay-open'\)/);
+  assert.match(beginIsolation, /childList:true/);
+  assert.match(beginIsolation, /enforceOverlayBodyIsolation\(\)/);
+  const endIsolation = video.match(/function endOverlayIsolation\(\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(endIsolation);
+  assert.match(endIsolation, /overlayBodyIsolationSnapshots\.clear\(\)/);
+
   const openOverlay = video.match(/function openOverlay\(\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(openOverlay);
   assert.ok(openOverlay.indexOf("beginOverlayIsolation()") < openOverlay.indexOf("classList.remove('te-hidden')"));
   assert.ok(openOverlay.indexOf("classList.remove('te-hidden')") < openOverlay.indexOf("attachVideo(video, slot)"));
-  assert.match(video, /function closeOverlay\(\) \{[\s\S]*?endOverlayIsolation\(\)[\s\S]*?classList\.add\('te-hidden'\)/);
+  const closeOverlay = video.match(/function closeOverlay\(\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(closeOverlay);
+  assert.ok(closeOverlay.indexOf("shadow.host.style.display = 'none'") < closeOverlay.indexOf("detachVideo()"));
+  assert.ok(closeOverlay.indexOf("detachVideo()") < closeOverlay.indexOf("endOverlayIsolation()"));
 });

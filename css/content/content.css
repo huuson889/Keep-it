@@ -287,7 +287,7 @@
 #lhn-sidebar-edge-toggle.is-site-disabled{ background:linear-gradient(145deg,rgba(100,116,139,.78),rgba(71,85,105,.78)) !important; box-shadow:0 3px 10px rgba(71,85,105,.22) !important; }
 #lhn-sidebar-edge-toggle.lhn-hidden-by-setting{ display:none !important; }
 html.lhn-video-overlay-open #lhn-sidebar-edge-toggle:not(.is-open){ display:none !important; }
-/* Hide and freeze the entire YouTube document body while the player is hosted above it. The video element is moved into #keepit-host first; no fade/transition may reveal page chrome for a frame. */
+/* Hide the YouTube body without a fade while the player is moved into #keepit-host during the same synchronous open call. */
 html.lhn-video-overlay-open body{ visibility:hidden !important; opacity:0 !important; pointer-events:none !important; transition:none !important; animation:none !important; }
 #keepit-host{ z-index:2147483647 !important; }
 #lhn-sidebar-edge-toggle:hover{ opacity:1 !important; filter:brightness(1.06) !important; box-shadow:0 4px 13px rgba(79,70,229,.3) !important; }
