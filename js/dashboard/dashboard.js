@@ -684,13 +684,20 @@ function renderDictationSessionCards() {
     const progressText = total ? `${overviewFormatCount(solved)} / ${overviewFormatCount(total)}` : overviewFormatCount(solved);
     const sourceType = String(session.sourceType || "").toLowerCase();
     const artClass = sourceType === "web" ? "article" : "habits";
+    const videoId = String(session.sourceId || "");
+    const thumbnail = sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)
+      ? `<img class="dictation-thumb-image" src="https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg" alt="" loading="lazy" decoding="async">`
+      : "";
     const isComplete = session.status === "complete";
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
-      <div class="thumb ${artClass}"><span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
+      <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
       <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
     </article>`;
   }).join("");
+  grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
+    image.addEventListener("error", () => image.remove(), { once:true });
+  });
   refreshDictationView();
 }
 function renderDictationContinueCard() {

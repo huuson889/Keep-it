@@ -37,6 +37,14 @@ test("Dictation session list recovers and live-syncs real per-video records when
   assert.doesNotMatch(js, /if \(!index\.legacyMigrationComplete\) \{\s*const allData/);
 });
 
+test("YouTube session cards reuse the Dictation audio thumbnail and retain the default art on failure", () => {
+  assert.ok(js.includes('sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)'));
+  assert.ok(js.includes('src="https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg"'));
+  assert.match(js, /image\.addEventListener\("error", \(\) => image\.remove\(\)/);
+  assert.match(css, /\.thumb\.habits\{background:linear-gradient\(/);
+  assert.match(css, /\.dictation-thumb-image\{position:absolute;z-index:0;[\s\S]*?object-fit:cover/);
+});
+
 test("Empty Dictation and error-stat states are truthful and contain no fabricated records", () => {
   assert.match(html, /id="dictationEmptyState" data-i18n="dictationSessionsLoading"/);
   assert.match(js, /empty\.textContent = t\("dictationEmptyState"\)/);

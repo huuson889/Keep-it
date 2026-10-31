@@ -112,20 +112,21 @@
 .dictation-root .thumb{position:relative;height:112px;overflow:hidden;display:flex;align-items:flex-end;padding:10px;background:#dbe9f5}
 .dictation-root .thumb:before,
 .dictation-root .thumb:after{content:"";position:absolute;pointer-events:none}
-.dictation-root .thumb:before{width:108px;height:108px;right:18px;top:-31px;border-radius:50%;background:#ffffff42}
-.dictation-root .thumb:after{inset:0;background:linear-gradient(180deg,transparent 38%,#14233d78 100%)}
+.dictation-root .thumb:before{z-index:1;width:108px;height:108px;right:18px;top:-31px;border-radius:50%;background:#ffffff42}
+.dictation-root .thumb:after{z-index:2;inset:0;background:linear-gradient(180deg,transparent 38%,#14233d78 100%)}
+.dictation-root .dictation-thumb-image{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
 .dictation-root .thumb.habits{background:linear-gradient(135deg,#f1b995,#c36f72 48%,#483c70)}
 .dictation-root .thumb.sleep{background:linear-gradient(135deg,#283967,#5b6ca7 53%,#d08eae)}
 .dictation-root .thumb.ocean{background:linear-gradient(135deg,#8fd4db,#358eac 47%,#153c6a)}
 .dictation-root .thumb.dreams{background:linear-gradient(135deg,#c7b6fb,#8373d6 50%,#39265f)}
 .dictation-root .thumb.article{background:linear-gradient(135deg,#cde8d7,#6bb39a 49%,#356a83)}
 .dictation-root .thumb.climate{background:linear-gradient(135deg,#ffe0a4,#df9e63 45%,#66886d)}
-.dictation-root .thumb-art{position:absolute;inset:0;display:grid;place-items:center;z-index:0}
+.dictation-root .thumb-art{position:absolute;inset:0;display:grid;place-items:center;z-index:3}
 .dictation-root .thumb-symbol{width:61px;height:61px;display:grid;place-items:center;border:1px solid #ffffff66;border-radius:22px;background:#ffffff2e;color:#fff;backdrop-filter:blur(3px);transform:rotate(-7deg);box-shadow:0 10px 25px #17223a24}
 .dictation-root .thumb-symbol .icon{width:27px;height:27px;stroke-width:1.7}
-.dictation-root .thumb-word{position:absolute;z-index:1;right:11px;top:11px;color:#ffffffb5;font-size:11px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase}
-.dictation-root .thumb-title{position:relative;z-index:2;max-width:90%;color:#fff;font-size:13px;font-weight:800;line-height:1.35;text-shadow:0 1px 4px #1b233b65}
-.dictation-root .source-chip{position:absolute;z-index:3;left:9px;top:9px;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #ffffff8c;border-radius:12px;background:#ffffffdf;color:#42445a;font-size:11px;font-weight:800;backdrop-filter:blur(6px)}
+.dictation-root .thumb-word{position:absolute;z-index:4;right:11px;top:11px;color:#ffffffb5;font-size:11px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase}
+.dictation-root .thumb-title{position:relative;z-index:5;max-width:90%;color:#fff;font-size:13px;font-weight:800;line-height:1.35;text-shadow:0 1px 4px #1b233b65}
+.dictation-root .source-chip{position:absolute;z-index:6;left:9px;top:9px;display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #ffffff8c;border-radius:12px;background:#ffffffdf;color:#42445a;font-size:11px;font-weight:800;backdrop-filter:blur(6px)}
 .dictation-root .source-dot{width:6px;height:6px;border-radius:50%;background:#f0444c}
 .dictation-root .source-chip.web .source-dot{background:#34a37c}
 .dictation-root .card-body{padding:11px 12px 12px}
