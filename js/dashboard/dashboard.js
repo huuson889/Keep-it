@@ -2690,10 +2690,11 @@ function updateSharedTopbarContent(view) {
   const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
   const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
-  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = false;
-  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t("ovPreview");
-  if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = false;
-  if (dashboardSharedTopbarActionsSlot) {
+  const inHighlightsNotes = view === "highlights-notes";
+  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
+  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
+  if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
+  if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
     const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
     if (actions && actions.parentElement !== dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.append(actions);
   }
@@ -2725,7 +2726,9 @@ function mountSharedTopbarInParent(view) {
 }
 function updateParentTopbarCompact() {
   if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
-  const next = dashboardScrollTargetForView(activeDashboardView).scrollTop > 1;
+  const next = ["overview", "dictation"].includes(activeDashboardView)
+    ? dashboardScrollTargetForView(activeDashboardView).scrollTop > 1
+    : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
   if (next === parentTopbarCompact) return;
   parentTopbarCompact = next;
   dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);

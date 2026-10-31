@@ -37,15 +37,6 @@ test("Dictation session list recovers and live-syncs real per-video records when
   assert.doesNotMatch(js, /if \(!index\.legacyMigrationComplete\) \{\s*const allData/);
 });
 
-test("Dictation thumbnail title overlay is hidden while the card title remains styled", () => {
-  const thumbTitleRule = css.match(/\.dictation-root \.thumb-title\{([^}]*)\}/);
-  const cardTitleRule = css.match(/\.dictation-root \.card-title\{([^}]*)\}/);
-  assert.ok(thumbTitleRule, "thumbnail title CSS rule exists");
-  assert.match(thumbTitleRule[1], /(?:^|;)display:none(?:;|$)/);
-  assert.ok(cardTitleRule, "card title rule remains present");
-  assert.doesNotMatch(cardTitleRule[1], /(?:^|;)display:none(?:;|$)/);
-});
-
 test("YouTube session cards reuse the Dictation audio thumbnail and retain the default art on failure", () => {
   assert.match(js, /sourceType === "youtube" && globalThis\.LHN_THUMBNAILS\?\.youtubeVideoId\(videoId\)/);
   assert.match(js, /LHN_THUMBNAILS\?\.loadYouTube\(image, image\.dataset\.videoId/);

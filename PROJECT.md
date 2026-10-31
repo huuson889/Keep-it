@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.849; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
-- Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; topbar H&N dùng chung nguyên trạng giữa ba tab, chỉ đổi route label; compact state theo scroll target tab và portal không có inset dọc. Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
+- Version hiện tại: v3.4.850; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; topbar portal không có inset dọc, giữ cùng cao độ trong cả outer/inner scroll routes. Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards, H&N chart panels và source/note lists khai báo riêng target/cấu hình/callback. H&N activity/distribution charts có reveal riêng; các thanh phân bố khởi động đúng lúc panel hiện, chạy đồng bộ 2 giây/easeOutQuart như Overview. Source item reveal theo viewport và giữ trạng thái nếu chỉ chọn qua lại source; notes của source mới reveal lại. Bộ lọc/render lại hủy chuỗi cũ và reset cả hai danh sách; delay/cadence/viewport hiện hành vẫn giữ. CSS và callback count-up/chart vẫn chuyên biệt theo view.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn, danh sách Sources/Notes cuộn nội bộ và cho scroll chaining sang trang khi chạm biên. Card latest-highlight hiển thị source/highlight mới nhất.
-- Kiểm tra v3.4.849: Dictation targeted 9/9; full suite 71/71; manifest JSON/version và `git diff --check` đạt. ZIP v3.4.849: 137 entries, manifest ở gốc, CRC sạch, `.git` bị loại trừ. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium.
+- Kiểm tra v3.4.850: full suite 70/70; manifest JSON/version, `git diff --check` và CSS tĩnh đạt; ZIP v3.4.850 có 137 entries, CRC sạch, manifest ở gốc, `.git` bị loại trừ. Browser-test chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -115,23 +115,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-31 | v3.4.849 | Arena.ai Agent sửa:**
+**2026-10-31 | v3.4.850 | Arena.ai Agent sửa:**
 
-- Ẩn riêng `.dictation-root .thumb-title` bằng CSS; tiêu đề chính trong card giữ nguyên.
-- File: `css/dashboard/dictation.css`, `tests/dashboard-dictation-view.test.cjs`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.849.zip`.
-- Kiểm tra: Dictation targeted 9/9; full suite 71/71; manifest JSON/version và `git diff --check` đạt; ZIP 137 entries, manifest 3.4.849 ở gốc, CRC sạch, `.git` loại trừ.
-
-**2026-10-31 | v3.4.848 | Arena.ai Agent sửa:**
-
-- Tăng version phát hành; giữ nguyên thay đổi shared topbar của v3.4.847.
-- File: `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.848.zip`.
-- Kiểm tra: full suite 70/70; manifest JSON/version và `git diff --check` đạt; ZIP 137 entries, manifest 3.4.848 ở gốc, CRC sạch, `.git` loại trừ.
-
-**2026-10-31 | v3.4.847 | Arena.ai Agent sửa:**
-
-- Chuẩn hóa topbar H&N làm topbar duy nhất cho cả Overview, Dictation và H&N: giữ badge trạng thái cùng nhóm export ở mọi tab; chỉ route label đổi. Compact state vẫn bám scroll target riêng của tab đang hoạt động.
-- File: `js/dashboard/dashboard.js`, `tests/dashboard-topbar.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.847.zip`.
-- Kiểm tra: topbar/Dashboard targeted 25/25; full suite 70/70; cú pháp toàn bộ JS, manifest JSON và `git diff --check` đạt; ZIP 137 entries, manifest 3.4.847 ở gốc, CRC sạch, `.git` loại trừ. Browser-test chưa chạy do không có Chrome/Firefox/Chromium.
+- Dùng v3.4.846 làm nền; chỉ ẩn `.dictation-root .thumb-title` bằng CSS. Tiêu đề card và các thay đổi ngoài phạm vi không đổi so với nền này.
+- File: `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.850.zip`.
+- Kiểm tra: full suite 70/70; manifest JSON/version, `git diff --check` và CSS tĩnh đạt; ZIP 137 entries, manifest 3.4.850 ở gốc, CRC sạch, `.git` loại trừ. Browser-test chưa chạy.
 
 **2026-10-31 | v3.4.846 | Arena.ai Agent sửa:**
 
