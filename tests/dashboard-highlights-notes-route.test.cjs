@@ -47,7 +47,7 @@ test("Highlights & Notes restores the padded two-panel layout and opens the firs
   assert.match(dashboard, /const active = link\.dataset\.dashboardView === view;[\s\S]*?link\.classList\.toggle\("is-active", active\)[\s\S]*?if \(active\) link\.setAttribute\("aria-current", "page"\)/);
   assert.match(notes, /function applyData\(data\)[\s\S]*?selected=pages\.find\(page=>page\.key===previousKey\)\|\|null;\s*if\(!selected\)selected=allFiltered\(\)\[0\]\|\|pages\[0\]\|\|null;\s*refresh\(\);/);
   assert.match(notes, /function renderSources\(\)[\s\S]*?selected=visible\.find\(page=>page\.key===previousKey\)\|\|visible\[0\]\|\|null/);
-  assert.match(notes, /function refresh\(\)\{renderSources\(\);renderSelected\(\);/);
+  assert.match(notes, /function refresh\(\)\{restartLhnItemRevealCycle\(\);renderSources\(\);renderSelected\(\);/);
 });
 
 test("Highlights & Notes keeps its data/action API through a same-document event bus", () => {
@@ -93,7 +93,12 @@ test("Highlights & Notes counters animate with panels and source and note reveal
   assert.match(notes, /lhnRevealScope\.observe\(\{root,targets:\[\],threshold:\.08,rootMargin:'0px 0px -4% 0px',key:root,step:180,lead:80,startAt:\(\)=>panelAt\(\)\+350/);
   assert.match(notes, /watch\.observe\(items\)/);
   assert.match(notes, /lhnRevealScope\.schedule\(delay/);
-  assert.match(notes, /lhnRevealedItemKeys\.add\(key\)/);
+  assert.match(notes, /function restartLhnItemRevealCycle\(\)[\s\S]*?cancelLhnItemReveal\(\)[\s\S]*?classList\.add\('lhn-item-reveal'\)[\s\S]*?classList\.remove\('lhn-item-revealed'\)/);
+  assert.match(notes, /function refresh\(\)\{restartLhnItemRevealCycle\(\);renderSources\(\);renderSelected\(\)/);
+  assert.match(notes, /const choose=\(\)=>\{restartLhnItemRevealCycle\(\);selected=page;noteColor='all';renderSources\(\);renderSelected\(\)\}/);
+  assert.match(notes, /noteColor=button\.dataset\.filter;refresh\(\)/);
+  assert.match(notes, /const isEligible=node=>!lhnRevealScope\.hasScheduled\(node\)/);
+  assert.doesNotMatch(notes, /lhnRevealedItemKeys|lhnItemKey\(/);
   assert.doesNotMatch(notes, /new IntersectionObserver|lhn-item-reveal-delay/);
   assert.match(css, /transition:opacity \.56s cubic-bezier\(\.16,1,\.3,1\),transform \.56s cubic-bezier\(\.16,1,\.3,1\)/);
   assert.match(css, /\.source-item\.lhn-item-reveal[\s\S]*?opacity:0!important/);

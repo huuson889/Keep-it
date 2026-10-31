@@ -78,3 +78,17 @@ test("Shared observer applies DOM order, panel start time, and one cadence acros
   assert.equal(observerInstance.targets.size,0);
   scope.cancel();
 });
+
+test("Highlights & Notes chart cards use the shared reveal lifecycle and run their chart fills", () => {
+  const embeddedCss = fs.readFileSync(path.join(root, "css/dashboard/highlights-notes-embedded.css"), "utf8");
+  assert.match(dashboardHtml, /class="old-stats-section old-activity dashboard-reveal"/);
+  assert.match(dashboardHtml, /class="old-stats-section old-distribution dashboard-reveal"/);
+  assert.match(dashboard, /dashboardHighlightsNotesView\.querySelectorAll\("\.dashboard-reveal"\)/);
+  assert.match(highlightsNotes, /if\(target\.matches\('\.old-activity,\.old-distribution'\)\)runLhnStatsChart\(target,true\)/);
+  assert.match(highlightsNotes, /function runLhnStatsChart\(section,force=false\)[\s\S]*?section\.classList\.remove\('ov-chart-running'\)[\s\S]*?section\.classList\.add\('ov-chart-running'\)/);
+  assert.match(highlightsNotes, /runLhnStatsChart\(host\.closest\('\.old-activity'\)\)/);
+  assert.match(highlightsNotes, /runLhnStatsChart\(host\.closest\('\.old-distribution'\)\)/);
+  assert.match(embeddedCss, /\.old-activity\.ov-chart-running \.old-heat-cell \{ opacity:1;scale:1 \}/);
+  assert.match(embeddedCss, /\.old-distribution\.ov-chart-running \.old-dist-fill \{ transform:scaleX\(1\) \}/);
+  assert.match(embeddedCss, /prefers-reduced-motion:reduce[\s\S]*?\.old-activity \.old-heat-cell \{ transition:none!important;opacity:1!important;scale:1!important; \}[\s\S]*?\.old-distribution \.old-dist-fill \{ transition:none!important;transform:scaleX\(1\)!important; \}/);
+});
