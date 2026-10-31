@@ -70,6 +70,7 @@ let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
 let prefetchToken = 0;
 let prefetchTimer = 0;
 let savedOverlayPageScrollStyles = null;
+let overlayIsolationObserver = null;
 
 let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
 const $ = (id) => (shadow ? shadow.getElementById(id) : null);
@@ -982,7 +983,7 @@ function buildOverlay() {
   host.style.display = 'none';
   const sharedScrollbarWidth = getComputedStyle(document.documentElement).getPropertyValue('--lhn-scrollbar-width').trim() || '3px';
   host.style.setProperty('--lhn-scrollbar-width', sharedScrollbarWidth);
-  document.body.appendChild(host);
+  document.documentElement.appendChild(host);
   shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
   overlayEl().classList.add('te-hidden');
@@ -1042,6 +1043,24 @@ function restoreOverlayPageScrollbar() {
   savedOverlayPageScrollStyles = null;
 }
 
+function beginOverlayIsolation() {
+  const root = document.documentElement;
+  root.classList.add('lhn-video-overlay-open');
+  if (overlayIsolationObserver || typeof MutationObserver !== 'function') return;
+  overlayIsolationObserver = new MutationObserver(() => {
+    if (state.open && !root.classList.contains('lhn-video-overlay-open')) {
+      root.classList.add('lhn-video-overlay-open');
+    }
+  });
+  overlayIsolationObserver.observe(root, { attributes:true, attributeFilter:['class'] });
+}
+
+function endOverlayIsolation() {
+  overlayIsolationObserver?.disconnect();
+  overlayIsolationObserver = null;
+  document.documentElement.classList.remove('lhn-video-overlay-open');
+}
+
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
   const video = document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video');
@@ -1050,7 +1069,7 @@ function openOverlay() {
     alert('Không tìm thấy video trên trang.');
     return;
   }
-  document.documentElement.classList.add('lhn-video-overlay-open');
+  beginOverlayIsolation();
   hideOverlayPageScrollbar();
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
@@ -1068,7 +1087,7 @@ function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
   globalThis.LHN_DICTATION?.close?.();
-  document.documentElement.classList.remove('lhn-video-overlay-open');
+  endOverlayIsolation();
   restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
   resumeVideoFor('subtitle-sidebar-hover');
