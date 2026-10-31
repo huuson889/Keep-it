@@ -2783,3 +2783,57 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
     opacity:1!important;transform:none!important;transition:none!important;will-change:auto;
   }
 }
+
+/* Recent H&N highlight card shares the Dashboard's continue-card layout rhythm. */
+#dashboardHighlightsNotesView > .lhn-intro-row {
+  grid-column:1!important;grid-row:1!important;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.9fr);gap:10px;align-items:stretch;min-width:0;
+}
+#dashboardHighlightsNotesView > .lhn-intro-row > .demo-hero,
+#dashboardHighlightsNotesView > .lhn-intro-row > .lhn-latest-card { grid-column:auto!important;grid-row:auto!important;height:100%;min-width:0;margin:0; }
+#dashboardHighlightsNotesView > .library-demo-stats { grid-column:1!important;grid-row:2!important; }
+#dashboardHighlightsNotesView > .demo-library-toolbar { grid-column:1!important;grid-row:3!important; }
+#dashboardHighlightsNotesView > .workspace { grid-column:1!important;grid-row:4!important; }
+#dashboardHighlightsNotesView .lhn-latest-card {
+  position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) 126px;gap:12px;align-items:center;min-height:154px;padding:17px 18px;
+  border:1px solid #e8e3ff;border-radius:21px;background:linear-gradient(110deg,#fff 0%,#fff 64%,#faf8ff 100%);box-shadow:0 9px 25px rgba(68,61,133,.065);
+}
+#dashboardHighlightsNotesView .lhn-latest-card:after { content:"";position:absolute;right:83px;top:-106px;width:210px;height:210px;border-radius:50%;background:#f3efff;pointer-events:none; }
+#dashboardHighlightsNotesView .lhn-latest-copy,
+#dashboardHighlightsNotesView .lhn-latest-art { position:relative;z-index:1;min-width:0; }
+#dashboardHighlightsNotesView .lhn-latest-eyebrow { display:flex;align-items:center;gap:6px;color:#d77794;font-size:11px;font-weight:800;letter-spacing:.65px;text-transform:uppercase; }
+#dashboardHighlightsNotesView .lhn-latest-eyebrow .lucide { width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+#dashboardHighlightsNotesView .lhn-latest-copy h2 { margin:8px 0 5px;color:#252640;font-size:17px;line-height:1.25;letter-spacing:-.35px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+#dashboardHighlightsNotesView .lhn-latest-copy p { margin:0;color:#7f899b;font-size:12px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+#dashboardHighlightsNotesView .lhn-latest-meta { display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px; }
+#dashboardHighlightsNotesView .lhn-latest-meta-pill { display:inline-flex;align-items:center;max-width:100%;padding:4px 7px;border-radius:14px;background:#f6f5fb;color:#758096;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+#dashboardHighlightsNotesView .lhn-latest-actions { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px; }
+#dashboardHighlightsNotesView .lhn-latest-primary { min-height:30px;padding:0 10px;border:0;border-radius:9px;background:linear-gradient(100deg,#7968e8,#6657d7);color:#fff;font-size:11px;font-weight:800;box-shadow:0 5px 12px #7462dc32; }
+#dashboardHighlightsNotesView .lhn-latest-primary:hover { filter:brightness(1.05); }
+#dashboardHighlightsNotesView .lhn-latest-open-source { display:inline-flex;align-items:center;gap:4px;color:#6c5bd5;font-size:11px;font-weight:700;text-decoration:none; }
+#dashboardHighlightsNotesView .lhn-latest-open-source:hover { text-decoration:underline; }
+#dashboardHighlightsNotesView .lhn-latest-art { width:100%;height:104px;overflow:hidden;display:flex;align-items:flex-end;padding:9px;border:1px solid #e9e6f4;border-radius:15px;background:linear-gradient(145deg,#d8eff5,#b5d3e0 47%,#7aa3b0);box-shadow:inset 0 0 0 1px #ffffff54; }
+#dashboardHighlightsNotesView .lhn-latest-art:before { content:"";position:absolute;right:12px;top:11px;width:38px;height:38px;border-radius:50%;background:#fff8c5;box-shadow:0 0 22px #fff5b9; }
+#dashboardHighlightsNotesView .lhn-latest-art img { position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover;object-position:center; }
+#dashboardHighlightsNotesView .lhn-latest-mountain { position:absolute;bottom:0;left:0;width:100%;height:52%;background:linear-gradient(145deg,#789a93,#416e72);clip-path:polygon(0 100%,0 58%,20% 12%,40% 60%,62% 24%,100% 75%,100% 100%); }
+#dashboardHighlightsNotesView .lhn-latest-art-label { position:relative;z-index:2;max-width:100%;overflow:hidden;padding:5px 7px;border:1px solid #ffffff6e;border-radius:7px;background:#203b4cb8;color:#fff;font-size:9px;font-weight:700;letter-spacing:.25px;text-overflow:ellipsis;white-space:nowrap; }
+#dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail:before,
+#dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail .lhn-latest-mountain { display:none; }
+#dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail:after { content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(180deg,transparent 35%,#14233d78 100%);pointer-events:none; }
+html.dark #dashboardHighlightsNotesView .lhn-latest-card { border-color:#413e6b;background:linear-gradient(115deg,#111a2b 0%,#111a2b 65%,#191a32 100%);box-shadow:0 9px 25px rgba(0,0,0,.2); }
+html.dark #dashboardHighlightsNotesView .lhn-latest-card:after { background:#252443; }
+html.dark #dashboardHighlightsNotesView .lhn-latest-copy h2 { color:#f1f5fb; }
+html.dark #dashboardHighlightsNotesView .lhn-latest-copy p { color:#a4b0c3; }
+html.dark #dashboardHighlightsNotesView .lhn-latest-meta-pill { background:#1e2b41;color:#a4b0c3; }
+@media(max-width:900px) {
+  #dashboardHighlightsNotesView > .lhn-intro-row { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:560px) {
+  #dashboardHighlightsNotesView .lhn-latest-card { grid-template-columns:minmax(0,1fr) 88px;gap:8px;min-height:0;padding:13px; }
+  #dashboardHighlightsNotesView .lhn-latest-copy h2 { font-size:15px; }
+  #dashboardHighlightsNotesView .lhn-latest-copy p { font-size:11px; }
+  #dashboardHighlightsNotesView .lhn-latest-art { height:82px;padding:6px; }
+  #dashboardHighlightsNotesView .lhn-latest-art:before { width:31px;height:31px;right:8px;top:9px; }
+  #dashboardHighlightsNotesView .lhn-latest-actions { gap:6px;margin-top:7px; }
+  #dashboardHighlightsNotesView .lhn-latest-primary,
+  #dashboardHighlightsNotesView .lhn-latest-open-source { font-size:10px; }
+}

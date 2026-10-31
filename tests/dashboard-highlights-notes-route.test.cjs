@@ -96,7 +96,8 @@ test("Highlights & Notes counters animate with panels and source and note reveal
   assert.match(notes, /revealScope\.schedule\(delay/);
   assert.match(notes, /function restartLhnItemRevealCycle\(\{sources=true,notes=true\}=\{\}\)[\s\S]*?cancelLhnItemReveal\(\{sources,notes\}\)[\s\S]*?if\(sources\)groups\.sources[\s\S]*?if\(notes\)groups\.notes/);
   assert.match(notes, /function refresh\(\)\{restartLhnItemRevealCycle\(\);renderSources\(\);renderSelected\(\)/);
-  assert.match(notes, /const choose=\(\)=>\{restartLhnItemRevealCycle\(\{sources:false,notes:true\}\);selected=page;noteColor='all';sourceList\.querySelectorAll\(':scope > \.source-item'\)\.forEach\(item=>item\.classList\.toggle\('active',item\.dataset\.url===page\.key\)\);renderSelected\(\)\}/);
+  assert.match(notes, /const choose=\(\)=>selectLhnSource\(page\)/);
+  assert.match(notes, /function selectLhnSource\(page\)[\s\S]*?restartLhnItemRevealCycle\(\{sources:false,notes:true\}\);selected=page;noteColor='all';[\s\S]*?renderSelected\(\)/);
   assert.match(notes, /noteColor=button\.dataset\.filter;refresh\(\)/);
   assert.match(notes, /const isEligible=node=>!node\.classList\.contains\('lhn-item-revealed'\)&&!revealScope\.hasScheduled\(node\)/);
   assert.doesNotMatch(notes, /lhnRevealedItemKeys|lhnItemKey\(/);
@@ -105,4 +106,24 @@ test("Highlights & Notes counters animate with panels and source and note reveal
   assert.match(css, /\.source-item\.lhn-item-reveal[\s\S]*?opacity:0!important/);
   assert.match(css, /\.lhn-sidebar-card\.lhn-item-reveal[\s\S]*?transform:translateY\(18px\)/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?lhn-item-reveal[\s\S]*?transition:none!important/);
+});
+
+test("Highlights & Notes features the newest highlighted source in a continue-card-style panel", () => {
+  assert.match(html, /<div class="lhn-intro-row">[\s\S]*class="demo-hero dashboard-reveal"[\s\S]*class="lhn-latest-card dashboard-reveal"[\s\S]*id="lhnLatestHighlightHeading"[\s\S]*id="lhnLatestHighlightThumb"[\s\S]*class="library-demo-stats dashboard-reveal"/);
+  for (const id of ["lhnLatestHighlightLabel", "lhnLatestHighlightHeading", "lhnLatestHighlightDescription", "lhnLatestHighlightMeta", "lhnLatestOpenNotes", "lhnLatestOpenSource", "lhnLatestHighlightThumb"]) {
+    assert.ok(html.includes(`id="${id}"`), `missing latest-highlight element ${id}`);
+  }
+  assert.match(notes, /function latestHighlightRecord\(\)[\s\S]*?pages\.forEach\(page=>page\.notes\.forEach\(note=>\{[\s\S]*?timestamp=dateMs\(note\.createdAt\)[\s\S]*?timestamp>latest\.timestamp/);
+  assert.match(notes, /function renderLatestHighlightCard\(\)[\s\S]*?title\.textContent=page\.title\|\|page\.site/);
+  assert.match(notes, /const \{page,note,timestamp\}=latest,summary=String\(note\.quote\|\|note\.note\|\|page\.url/);
+  assert.match(notes, /LHN_THUMBNAILS\?\.loadSource\(image,page/);
+  assert.match(notes, /function openLatestHighlightNotes\(\)[\s\S]*?selectLhnSource\(page\)[\s\S]*?scrollIntoView/);
+  assert.match(notes, /function refresh\(\)\{restartLhnItemRevealCycle\(\);renderSources\(\);renderSelected\(\);drawDemoDistribution\(\);renderLatestHighlightCard\(\)\}/);
+  for (const key of ["latestHighlightLabel", "latestHighlightEmptyTitle", "latestHighlightEmptyDescription", "latestHighlightOpenNotes", "latestHighlightOpenSource"]) {
+    assert.match(notes, new RegExp(`(?:en|vi|ko):\\{[^}]*${key}:`));
+  }
+  assert.match(css, /\.lhn-latest-card \{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 126px[\s\S]*?border-radius:21px/);
+  assert.match(css, /\.lhn-latest-art img \{[^}]*object-fit:cover/);
+  assert.match(css, /html\.dark #dashboardHighlightsNotesView \.lhn-latest-card/);
+  assert.match(css, /@media\(max-width:900px\)[\s\S]*?\.lhn-intro-row \{ grid-template-columns:minmax\(0,1fr\)/);
 });

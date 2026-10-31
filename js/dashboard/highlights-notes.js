@@ -1,6 +1,6 @@
 (()=>{
 const colorNames={yellow:'Vàng',green:'Xanh lá',purple:'Tím',red:'Đỏ',blue:'Xanh dương',orange:'Cam'};
-const labels={en:{dataBadge:'KEEPIT DATA',exportAll:'Export all',exportPage:'Export this page',favoriteNotes:'Favorites',emptyFilteredTitle:'No matching sources',emptyFilteredText:'Try adjusting or clearing the filters to see saved annotations.',emptyDataTitle:'No highlights yet',emptyDataText:'Highlights you save in Keepit will appear here.',noColorMatches:'No highlights match these filters.',noTags:'No tags in this selection.',noSources:'No source pages in this selection.',clearFilters:'Filters cleared.',chooseSource:'Select a source page first.',pageFavoriteAdded:'Page added to favorites.',pageFavoriteRemoved:'Page removed from favorites.',noteFavoriteAdded:'Note added to favorites.',noteFavoriteRemoved:'Note removed from favorites.',statsAll:'Based on your entire local library',statsFiltered:'Based on the filtered results',statsCaption:'LOCAL ANNOTATION SUMMARY',genericError:'Could not complete the action. Please try again.'},vi:{dataBadge:'DỮ LIỆU KEEPIT',exportAll:'Xuất toàn bộ',exportPage:'Xuất trang này',favoriteNotes:'Yêu thích',emptyFilteredTitle:'Không có trang phù hợp',emptyFilteredText:'Thử điều chỉnh bộ lọc hoặc xóa bộ lọc để xem các ghi chú đã lưu.',emptyDataTitle:'Chưa có highlight nào',emptyDataText:'Khi bạn lưu highlight trong Keepit, các ghi chú sẽ xuất hiện ở đây.',noColorMatches:'Không có highlight phù hợp bộ lọc.',noTags:'Chưa có thẻ trên dữ liệu đang chọn.',noSources:'Chưa có trang nguồn trong dữ liệu đang chọn.',clearFilters:'Đã xóa bộ lọc.',chooseSource:'Chọn trang nguồn trước.',pageFavoriteAdded:'Đã thêm trang vào yêu thích.',pageFavoriteRemoved:'Đã bỏ yêu thích trang.',noteFavoriteAdded:'Đã yêu thích ghi chú.',noteFavoriteRemoved:'Đã bỏ yêu thích ghi chú.',statsAll:'Tính trên toàn bộ thư viện cục bộ',statsFiltered:'Tính trên tập đang lọc',statsCaption:'TỔNG HỢP TỪ ANNOTATION CỤC BỘ',genericError:'Không thể hoàn tất thao tác. Vui lòng thử lại.'},ko:{dataBadge:'KEEPIT 데이터',exportAll:'모두 내보내기',exportPage:'이 페이지 내보내기',favoriteNotes:'즐겨찾기',emptyFilteredTitle:'일치하는 페이지가 없습니다',emptyFilteredText:'필터를 조정하거나 지워 저장된 주석을 확인하세요.',emptyDataTitle:'하이라이트가 없습니다',emptyDataText:'Keepit에 저장한 하이라이트가 여기에 표시됩니다.',noColorMatches:'필터와 일치하는 하이라이트가 없습니다.',noTags:'선택한 데이터에 태그가 없습니다.',noSources:'선택한 데이터에 소스 페이지가 없습니다.',clearFilters:'필터를 지웠습니다.',chooseSource:'먼저 소스 페이지를 선택하세요.',pageFavoriteAdded:'페이지를 즐겨찾기에 추가했습니다.',pageFavoriteRemoved:'페이지를 즐겨찾기에서 삭제했습니다.',noteFavoriteAdded:'메모를 즐겨찾기에 추가했습니다.',noteFavoriteRemoved:'메모를 즐겨찾기에서 삭제했습니다.',statsAll:'전체 로컬 라이브러리 기준',statsFiltered:'필터링된 결과 기준',statsCaption:'로컬 주석 데이터 요약',genericError:'작업을 완료할 수 없습니다. 다시 시도해 주세요.'}};
+const labels={en:{dataBadge:'KEEPIT DATA',latestHighlightLabel:'LATEST HIGHLIGHT',latestHighlightEmptyTitle:'No highlights yet',latestHighlightEmptyDescription:'Your most recently highlighted article will appear here.',latestHighlightOpenNotes:'View highlights',latestHighlightOpenSource:'Open page',exportAll:'Export all',exportPage:'Export this page',favoriteNotes:'Favorites',emptyFilteredTitle:'No matching sources',emptyFilteredText:'Try adjusting or clearing the filters to see saved annotations.',emptyDataTitle:'No highlights yet',emptyDataText:'Highlights you save in Keepit will appear here.',noColorMatches:'No highlights match these filters.',noTags:'No tags in this selection.',noSources:'No source pages in this selection.',clearFilters:'Filters cleared.',chooseSource:'Select a source page first.',pageFavoriteAdded:'Page added to favorites.',pageFavoriteRemoved:'Page removed from favorites.',noteFavoriteAdded:'Note added to favorites.',noteFavoriteRemoved:'Note removed from favorites.',statsAll:'Based on your entire local library',statsFiltered:'Based on the filtered results',statsCaption:'LOCAL ANNOTATION SUMMARY',genericError:'Could not complete the action. Please try again.'},vi:{dataBadge:'DỮ LIỆU KEEPIT',latestHighlightLabel:'MỚI HIGHLIGHT',latestHighlightEmptyTitle:'Chưa có highlight nào',latestHighlightEmptyDescription:'Bài bạn vừa highlight sẽ xuất hiện ở đây.',latestHighlightOpenNotes:'Xem ghi chú',latestHighlightOpenSource:'Mở bài viết',exportAll:'Xuất toàn bộ',exportPage:'Xuất trang này',favoriteNotes:'Yêu thích',emptyFilteredTitle:'Không có trang phù hợp',emptyFilteredText:'Thử điều chỉnh bộ lọc hoặc xóa bộ lọc để xem các ghi chú đã lưu.',emptyDataTitle:'Chưa có highlight nào',emptyDataText:'Khi bạn lưu highlight trong Keepit, các ghi chú sẽ xuất hiện ở đây.',noColorMatches:'Không có highlight phù hợp bộ lọc.',noTags:'Chưa có thẻ trên dữ liệu đang chọn.',noSources:'Chưa có trang nguồn trong dữ liệu đang chọn.',clearFilters:'Đã xóa bộ lọc.',chooseSource:'Chọn trang nguồn trước.',pageFavoriteAdded:'Đã thêm trang vào yêu thích.',pageFavoriteRemoved:'Đã bỏ yêu thích trang.',noteFavoriteAdded:'Đã yêu thích ghi chú.',noteFavoriteRemoved:'Đã bỏ yêu thích ghi chú.',statsAll:'Tính trên toàn bộ thư viện cục bộ',statsFiltered:'Tính trên tập đang lọc',statsCaption:'TỔNG HỢP TỪ ANNOTATION CỤC BỘ',genericError:'Không thể hoàn tất thao tác. Vui lòng thử lại.'},ko:{dataBadge:'KEEPIT 데이터',latestHighlightLabel:'최근 하이라이트',latestHighlightEmptyTitle:'하이라이트가 없습니다',latestHighlightEmptyDescription:'가장 최근에 하이라이트한 페이지가 여기에 표시됩니다.',latestHighlightOpenNotes:'하이라이트 보기',latestHighlightOpenSource:'페이지 열기',exportAll:'모두 내보내기',exportPage:'이 페이지 내보내기',favoriteNotes:'즐겨찾기',emptyFilteredTitle:'일치하는 페이지가 없습니다',emptyFilteredText:'필터를 조정하거나 지워 저장된 주석을 확인하세요.',emptyDataTitle:'하이라이트가 없습니다',emptyDataText:'Keepit에 저장한 하이라이트가 여기에 표시됩니다.',noColorMatches:'필터와 일치하는 하이라이트가 없습니다.',noTags:'선택한 데이터에 태그가 없습니다.',noSources:'선택한 데이터에 소스 페이지가 없습니다.',clearFilters:'필터를 지웠습니다.',chooseSource:'먼저 소스 페이지를 선택하세요.',pageFavoriteAdded:'페이지를 즐겨찾기에 추가했습니다.',pageFavoriteRemoved:'페이지를 즐겨찾기에서 삭제했습니다.',noteFavoriteAdded:'메모를 즐겨찾기에 추가했습니다.',noteFavoriteRemoved:'메모를 즐겨찾기에서 삭제했습니다.',statsAll:'전체 로컬 라이브러리 기준',statsFiltered:'필터링된 결과 기준',statsCaption:'로컬 주석 데이터 요약',genericError:'작업을 완료할 수 없습니다. 다시 시도해 주세요.'}};
 const iconPaths={
  file:'<path d="M5 3.5h9l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20z"/><path d="M14 3.5V9h5M8 13h8M8 16.5h8"/>',
  square:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
@@ -219,7 +219,7 @@ function renderSources(){
   setLhnCounter(row.querySelector('.source-count-number'),page.highlights);
   const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
   const image=row.querySelector('.source-thumb img');globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),onError:()=>image.remove()});
-  const choose=()=>{restartLhnItemRevealCycle({sources:false,notes:true});selected=page;noteColor='all';sourceList.querySelectorAll(':scope > .source-item').forEach(item=>item.classList.toggle('active',item.dataset.url===page.key));renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
+  const choose=()=>selectLhnSource(page);row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
  });
  updateStats(visible);queueNewLhnItems();
 }
@@ -292,7 +292,45 @@ function runLhnStatsChart(section,force=false){
  section.classList.remove('ov-chart-running');void section.offsetWidth;section.classList.add('ov-chart-running');
  if(section.matches('.old-distribution'))animateLhnDistributionBars(section);
 }
-function refresh(){restartLhnItemRevealCycle();renderSources();renderSelected();drawDemoDistribution()}
+function latestHighlightRecord(){
+ let latest=null,fallback=null;
+ pages.forEach(page=>page.notes.forEach(note=>{
+  const timestamp=dateMs(note.createdAt),entry={page,note,timestamp};
+  if(!fallback)fallback=entry;
+  if(Number.isFinite(timestamp)&&(!latest||timestamp>latest.timestamp))latest=entry;
+ }));
+ return latest||fallback;
+}
+function latestHighlightMeta(page,timestamp){
+ const locale=currentLanguage==='en'?'en-US':currentLanguage==='ko'?'ko-KR':'vi-VN';
+ const date=Number.isFinite(timestamp)?new Date(timestamp).toLocaleDateString(locale,{year:'numeric',month:'short',day:'numeric'}):'';
+ const highlights=formatLhnNumber(page.highlights),notes=formatLhnNumber(page.noteCount);
+ const counts=currentLanguage==='en'?`${highlights} highlights · ${notes} notes`:currentLanguage==='ko'?`하이라이트 ${highlights}개 · 메모 ${notes}개`:`${highlights} highlights · ${notes} ghi chú`;
+ return [page.site,date,counts].filter(Boolean);
+}
+function renderLatestHighlightCard(){
+ const card=$('lhnLatestHighlightCard');if(!card)return;
+ const title=$('lhnLatestHighlightHeading'),description=$('lhnLatestHighlightDescription'),meta=$('lhnLatestHighlightMeta'),actions=$('lhnLatestHighlightActions'),openNotes=$('lhnLatestOpenNotes'),openSource=$('lhnLatestOpenSource'),image=$('lhnLatestHighlightThumb'),art=$('lhnLatestHighlightArt');
+ $('lhnLatestHighlightLabel').textContent=text('latestHighlightLabel');openNotes.textContent=text('latestHighlightOpenNotes');openSource.firstChild.textContent=text('latestHighlightOpenSource')+' ';
+ const latest=latestHighlightRecord();
+ if(!latest){title.textContent=text('latestHighlightEmptyTitle');description.textContent=text('latestHighlightEmptyDescription');meta.replaceChildren();actions.hidden=true;delete openNotes.dataset.pageKey;openSource.hidden=true;image.hidden=true;globalThis.LHN_THUMBNAILS?.clear(image);art.classList.remove('has-thumbnail');$('lhnLatestHighlightArtLabel').textContent='KEEPIT';return}
+ const {page,note,timestamp}=latest,summary=String(note.quote||note.note||page.url||'').trim();
+ title.textContent=page.title||page.site;description.textContent=summary.length>170?`${summary.slice(0,167)}…`:summary;
+ meta.replaceChildren(...latestHighlightMeta(page,timestamp).map(value=>{const pill=document.createElement('span');pill.className='lhn-latest-meta-pill';pill.textContent=value;return pill}));
+ openNotes.dataset.pageKey=page.key;const href=safePageHref(page.url);openSource.href=href;openSource.hidden=href==='#';openSource.firstChild.textContent=text('latestHighlightOpenSource')+' ';
+ actions.hidden=false;$('lhnLatestHighlightArtLabel').textContent=page.site||'KEEPIT';
+ image.hidden=true;art.classList.remove('has-thumbnail');
+ globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>{image.hidden=false;art.classList.add('has-thumbnail')},onError:()=>{image.hidden=true;art.classList.remove('has-thumbnail')}});
+}
+function selectLhnSource(page){
+ restartLhnItemRevealCycle({sources:false,notes:true});selected=page;noteColor='all';
+ sourceList.querySelectorAll(':scope > .source-item').forEach(item=>item.classList.toggle('active',item.dataset.url===page.key));renderSelected();
+}
+function openLatestHighlightNotes(){
+ const page=pages.find(item=>item.key===$('lhnLatestOpenNotes').dataset.pageKey);if(!page)return;
+ selectLhnSource(page);$('notesHeader').scrollIntoView({behavior:lhnReducedMotion()?'auto':'smooth',block:'start'});
+}
+function refresh(){restartLhnItemRevealCycle();renderSources();renderSelected();drawDemoDistribution();renderLatestHighlightCard()}
 function rebuildSelect(select,values,firstLabel){const previous=select.value,options=[...new Set(values)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'vi'));select.replaceChildren(new Option(firstLabel,''),...options.map(value=>new Option(value,value)));if(options.includes(previous))select.value=previous}
 function populateFilters(){
  rebuildSelect($('siteFilter'),pages.map(page=>page.site),'Nguồn: Tất cả');rebuildSelect($('tagFilter'),pages.flatMap(page=>page.tags),'Thẻ: Tất cả');
@@ -333,7 +371,7 @@ $('studyModeBtn').addEventListener('click',()=>selected?sendParent('study',{page
 $('exportPageBtn').addEventListener('click',event=>{event.stopPropagation();toggleMenu($('exportPageMenu'),event.currentTarget)});
 $('exportAllDemoBtn').addEventListener('click',event=>{event.stopPropagation();toggleMenu($('exportAllDemoMenu'),event.currentTarget)});
 document.addEventListener('click',event=>{const option=event.target.closest('button[data-export][data-scope]');if(option){requestExport(option,option.dataset.export,option.dataset.scope);return}if(!event.target.closest('.menu-wrap'))closeExportMenus()});
-$('deletePageBtn').addEventListener('click',()=>{if(selected)sendParent('delete-page',{pageKey:selected.key})});$('notesList').addEventListener('click',event=>{const button=event.target.closest('[data-action]');if(button)handleCardAction(button,event)});
+$('deletePageBtn').addEventListener('click',()=>{if(selected)sendParent('delete-page',{pageKey:selected.key})});$('lhnLatestOpenNotes')?.addEventListener('click',openLatestHighlightNotes);$('notesList').addEventListener('click',event=>{const button=event.target.closest('[data-action]');if(button)handleCardAction(button,event)});
 $('dashboardHighlightsNotesView').querySelectorAll('[data-stats-scope]').forEach(button=>button.addEventListener('click',()=>{scope=button.dataset.statsScope;$('dashboardHighlightsNotesView').querySelectorAll('[data-stats-scope]').forEach(item=>item.classList.toggle('active',item===button));updateStats();drawDemoDistribution()}));
 $('dashboardHighlightsNotesView').querySelectorAll('[data-heat-period]').forEach(button=>button.addEventListener('click',()=>{period=button.dataset.heatPeriod;$('dashboardHighlightsNotesView').querySelectorAll('[data-heat-period]').forEach(item=>item.classList.toggle('active',item===button));updateStats()}));
 $('dashboardHighlightsNotesView').querySelector('.old-stats-close').addEventListener('click',()=>showToast('Thống kê được giữ mở.'));

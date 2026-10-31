@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.843; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.844; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards, H&N chart panels và source/note lists khai báo riêng target/cấu hình/callback. H&N activity/distribution charts có reveal riêng; các thanh phân bố khởi động đúng lúc panel hiện, chạy đồng bộ 2 giây/easeOutQuart như Overview. Source item reveal theo viewport và giữ trạng thái nếu chỉ chọn qua lại source; notes của source mới reveal lại. Bộ lọc/render lại hủy chuỗi cũ và reset cả hai danh sách; delay/cadence/viewport hiện hành vẫn giữ. CSS và callback count-up/chart vẫn chuyên biệt theo view.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
-- Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.843: targeted Dashboard reveal tests 24/24; full suite 69/69; syntax toàn bộ JS, manifest JSON và `git diff --check` đạt. ZIP 137 entries, manifest 3.4.843 ở gốc, CRC sạch, `.git` bị loại trừ. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
+- Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong. Card mới hiển thị source của highlight mới nhất, CTA mở notes của source và thumbnail dùng helper dùng chung.
+- Kiểm tra v3.4.844: H&N/card + reveal targeted tests 9/9; full suite 70/70; cú pháp toàn bộ JS, manifest JSON và `git diff --check` đạt. ZIP có 137 entries, manifest 3.4.844 ở gốc, CRC sạch, `.git` bị loại trừ. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -114,6 +114,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.844 | Arena.ai Agent sửa:**
+
+- Thêm latest-highlight card trong H&N cạnh hero: xác định note mới nhất theo `createdAt`, hiển thị title/trích đoạn/ngày/site/counts, ảnh qua `LHN_THUMBNAILS.loadSource`; CTA chọn source và cuộn tới notes, link phụ mở nguồn. Empty state, responsive, dark mode và label EN/VI/KO.
+- File: `pages/dashboard.html`, `css/dashboard/highlights-notes-embedded.css`, `js/dashboard/highlights-notes.js`, `tests/dashboard-highlights-notes-route.test.cjs`, `docs/modules/dashboard.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.844.zip`.
+- Kiểm tra: targeted H&N/reveal suite 9/9; full suite 70/70; toàn bộ JS syntax, manifest JSON và `git diff --check` đạt; ZIP 137 entries, manifest 3.4.844, CRC sạch, `.git` loại trừ. Browser-test chưa chạy vì Chrome/Firefox/Chromium không khả dụng.
 
 **2026-10-31 | v3.4.843 | Arena.ai Agent sửa:**
 

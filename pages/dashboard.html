@@ -251,7 +251,24 @@
 <main id="dashboardHighlightsNotesView" class="dashboard-highlights-notes-view" data-i18n-aria-label="ovMenuHighlightsNotes" aria-label="Tô sáng &amp; Ghi chú" hidden>
 
 <div id="dashboardSharedTopbarActionsSource" hidden><div class="demo-topbar-actions" id="dashboardSharedTopbarActions"><div class="menu-wrap"><button id="exportAllDemoBtn" type="button" class="demo-export-all" aria-label="Xuất toàn bộ dữ liệu" title="Xuất toàn bộ dữ liệu" aria-haspopup="true" aria-expanded="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span id="exportAllText">Xuất toàn bộ</span></button><div id="exportAllDemoMenu" class="export-menu align-right" hidden></div></div><span class="demo-badge"><i></i><span id="lrDataBadge">DỮ LIỆU KEEPIT</span></span></div></div>
-<section class="demo-hero dashboard-reveal" aria-label="Thư viện của bạn"><div class="demo-hero-copy"><div class="demo-eyebrow"><span>✦</span> THƯ VIỆN CỦA BẠN</div><h1>Trang, highlights và ghi chú đã lưu</h1><p>Tìm lại những nội dung bạn đã đánh dấu, xem ghi chú và quản lý nguồn học tập trong cùng một nơi.</p><div class="demo-hero-tags"><span>▤ Lưu cục bộ trên thiết bị</span><span>✦ Tìm kiếm và lọc nhanh</span></div></div><div class="demo-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20M8 7h8M8 11h8"/></svg></div></section>
+<div class="lhn-intro-row"><section class="demo-hero dashboard-reveal" aria-label="Thư viện của bạn"><div class="demo-hero-copy"><div class="demo-eyebrow"><span>✦</span> THƯ VIỆN CỦA BẠN</div><h1>Trang, highlights và ghi chú đã lưu</h1><p>Tìm lại những nội dung bạn đã đánh dấu, xem ghi chú và quản lý nguồn học tập trong cùng một nơi.</p><div class="demo-hero-tags"><span>▤ Lưu cục bộ trên thiết bị</span><span>✦ Tìm kiếm và lọc nhanh</span></div></div><div class="demo-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20M8 7h8M8 11h8"/></svg></div></section>
+<article class="lhn-latest-card dashboard-reveal" id="lhnLatestHighlightCard" aria-labelledby="lhnLatestHighlightHeading">
+  <div class="lhn-latest-copy">
+    <div class="lhn-latest-eyebrow"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h9l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20z"/><path d="M14 3.5V9h5M8 13h8M8 16.5h8"/></svg><span id="lhnLatestHighlightLabel">Mới highlight</span></div>
+    <h2 id="lhnLatestHighlightHeading">Chưa có highlight nào</h2>
+    <p id="lhnLatestHighlightDescription">Bài bạn vừa highlight sẽ xuất hiện ở đây.</p>
+    <div class="lhn-latest-meta" id="lhnLatestHighlightMeta"></div>
+    <div class="lhn-latest-actions" id="lhnLatestHighlightActions" hidden>
+      <button class="lhn-latest-primary" id="lhnLatestOpenNotes" type="button">Xem ghi chú</button>
+      <a class="lhn-latest-open-source" id="lhnLatestOpenSource" href="#" target="_blank" rel="noreferrer">Mở bài viết <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+  <div class="lhn-latest-art" id="lhnLatestHighlightArt" aria-hidden="true">
+    <img id="lhnLatestHighlightThumb" alt="" hidden>
+    <div class="lhn-latest-mountain"></div>
+    <span class="lhn-latest-art-label" id="lhnLatestHighlightArtLabel">KEEPIT</span>
+  </div>
+</article></div>
 
   <section class="library-demo-stats dashboard-reveal" aria-label="Thống kê thư viện">
   <div class="old-stats-header"><div><div class="old-stats-title"><h2>Thống kê</h2><span aria-hidden="true">📊</span></div><p id="statsSubtitleOld">Tính trên tập đang lọc</p></div><button class="old-stats-close" type="button" aria-label="Thu gọn bảng thống kê" title="Thu gọn">×</button></div>
