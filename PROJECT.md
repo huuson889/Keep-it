@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.886; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.887; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; topbar portal không có inset dọc, giữ cùng cao độ trong cả outer/inner scroll routes. Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards, H&N chart panels và source/note lists khai báo riêng target/cấu hình/callback. H&N activity/distribution charts có reveal riêng; các thanh phân bố khởi động đúng lúc panel hiện, chạy đồng bộ 2 giây/easeOutQuart như Overview. Source item reveal theo viewport và giữ trạng thái nếu chỉ chọn qua lại source; notes của source mới reveal lại. Bộ lọc/render lại hủy chuỗi cũ và reset cả hai danh sách; delay/cadence/viewport hiện hành vẫn giữ. CSS và callback count-up/chart vẫn chuyên biệt theo view.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
@@ -11,7 +11,7 @@
 - Cache transcript video dùng `transcriptCache` Map hiện có trong trang và persistent storage qua `js/core/cache.js`: tối đa 20 video theo LRU, TTL 7 ngày tính từ lần dùng gần nhất và cập nhật `lastUsedAt` khi đọc. Bản dịch video tiếp tục dùng cache dịch bền hiện có.
 - `resegmentBySentence()` xóa mọi đoạn `[...]` và `>>`, rồi ghép các dòng dưới 5 từ với câu kế/hoặc câu trước ở cuối nếu tổng độ dài không vượt 30 từ/12 giây; giữ nguyên thuật toán timestamp.
 - Dictation video ba cột: mặc định câu 25% / vùng Dictation 45% / ghi chú 30%; câu kéo được 15–30%, ghi chú 20–35%, vùng giữa tự chiếm phần còn lại (35–65%).
-- Kiểm tra v3.4.886: cú pháp JS, manifest JSON, kiểm tra đường click→shortcut và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
+- Kiểm tra v3.4.887: cú pháp JS, manifest JSON, mock gắn click handler bằng id và click→Alt+F event, cùng `git diff --check` đạt. Chưa chạy browser-test.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -120,11 +120,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-01 | v3.4.887 | Arena.ai Agent sửa:**
+
+- Sửa nguyên nhân icon không hoạt động: `attachControls()` vẫn tìm title cũ `AI keepit`, nên click listener không được gắn sau khi đổi nhãn. Nay gắn theo `#te-dictation-mode-btn` (có fallback theo nhãn `Chép chính tả`); click phát cùng event Alt+F.
+- File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra cú pháp, manifest, mock gắn listener/click event và `git diff --check`; chưa browser-test.
+
 **2026-11-01 | v3.4.886 | Arena.ai Agent sửa:**
 
-- Sửa icon `Chép chính tả` để phát đúng custom event `lhn-youtube-dictation-toggle`, dùng chung luồng với Alt+F (bao gồm mở overlay, chờ phụ đề và bật/tắt phiên).
+- Đổi handler click sang phát event `lhn-youtube-dictation-toggle`, nhưng selector cũ `AI keepit` còn sót khiến listener không gắn vào nút đã đổi nhãn. Thay đổi này chưa khắc phục được thao tác bấm icon; đã sửa selector ở v3.4.887.
 - File: `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra cú pháp, manifest, kiểm tra đường click→shortcut và `git diff --check`; chưa browser-test.
+- Kiểm tra cú pháp/event mock chưa phát hiện selector stale; browser-test chưa chạy.
 
 **2026-11-01 | v3.4.885 | Arena.ai Agent sửa:**
 

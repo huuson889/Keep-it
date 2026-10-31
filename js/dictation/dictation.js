@@ -2470,7 +2470,7 @@
   }
 
   function attachControls() {
-    const button = A?.ctrl?.("AI keepit");
+    const button = A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn") || A?.ctrl?.("Chép chính tả");
     if (button && button !== attachControls.button) {
       if (attachControls.button) attachControls.button.removeEventListener("click", onToggleClick);
       button.addEventListener("click", onToggleClick);
