@@ -30,7 +30,8 @@ const OVERLAY_CSS = `
       z-index: 999998;
       scrollbar-width: auto;
       scrollbar-color: auto;
-      transition: background-color 0.2s, color 0.2s;
+      background-color: #0b0b0b;
+      transition: none;
     }
 
     /* --- LIGHT THEME (DEFAULT) --- */
