@@ -43,26 +43,27 @@ function animateLhnCountersWithin(target,delay=0,excludeItems=false){
  nodes.forEach(node=>{if(excludeItems&&node.closest('.source-item,.lhn-sidebar-card'))return;animateLhnCounter(node,delay)});
 }
 function lhnItemKey(node,index){return node.classList.contains('source-item')?`source:${node.dataset.url||index}`:`note:${node.dataset.noteId||index}`}
-function collectLhnItems(){
- const sources=[...sourceList.querySelectorAll(':scope > .source-item')],notes=[...notesList.querySelectorAll(':scope > .lhn-sidebar-card')],items=[];
- if(window.matchMedia?.('(max-width: 680px)').matches)return [...sources,...notes];
- for(let index=0;index<Math.max(sources.length,notes.length);index++){if(sources[index])items.push(sources[index]);if(notes[index])items.push(notes[index])}
- return items;
+function collectLhnItemGroups(){
+ return {
+  sources:[...sourceList.querySelectorAll(':scope > .source-item')],
+  notes:[...notesList.querySelectorAll(':scope > .lhn-sidebar-card')]
+ };
 }
+function collectLhnItems(){const {sources,notes}=collectLhnItemGroups();return [...sources,...notes]}
 function cancelLhnItemReveal(){lhnItemRevealCycle++;for(const frame of lhnItemRevealFrames)cancelAnimationFrame(frame);lhnItemRevealFrames.clear();for(const timer of lhnItemRevealTimers.values())clearTimeout(timer);lhnItemRevealTimers.clear()}
 function scheduleLhnItemReveal(items,startAt){
  const cycle=lhnItemRevealCycle,now=performance.now(),pending=items.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));
  if(!pending.length)return;
- const step=80;
+ const step=180;
  pending.forEach((node,index)=>{const delay=Math.max(0,startAt+index*step-now);node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');node.style.setProperty('--lhn-item-reveal-delay',`${delay}ms`);lhnRevealedItemKeys.add(lhnItemKey(node,index));const timer=window.setTimeout(()=>{lhnItemRevealTimers.delete(node);if(node.isConnected)node.style.removeProperty('--lhn-item-reveal-delay')},delay+850);lhnItemRevealTimers.set(node,timer)});
  if(lhnReducedMotion()||!window.requestAnimationFrame){pending.forEach(node=>node.classList.add('lhn-item-revealed'));pending.forEach(node=>animateLhnCountersWithin(node));return}
  const frame=requestAnimationFrame(()=>{lhnItemRevealFrames.delete(frame);if(cycle!==lhnItemRevealCycle)return;pending.forEach(node=>{if(node.isConnected)node.classList.add('lhn-item-revealed');animateLhnCountersWithin(node,Math.max(0,startAt+pending.indexOf(node)*step-performance.now()))})});lhnItemRevealFrames.add(frame);
 }
 function queueInitialLhnItems(){
- if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;scheduleLhnItemReveal(collectLhnItems(),Math.max(sourceAt,notesAt)+250)});
+ if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;const {sources,notes}=collectLhnItemGroups();scheduleLhnItemReveal(sources,sourceAt+350);scheduleLhnItemReveal(notes,notesAt+350)});
 }
 function queueNewLhnItems(){
- if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const items=collectLhnItems().filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));if(!items.length)return;const sourceAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .sources-panel'))||0,notesAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .notes-panel'))||0;scheduleLhnItemReveal(items,Math.max(performance.now()+120,Math.max(sourceAt,notesAt)+250))});
+ if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const {sources,notes}=collectLhnItemGroups(),sourceAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .sources-panel'))||0,notesAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .notes-panel'))||0,now=performance.now(),pendingSources=sources.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index))),pendingNotes=notes.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));if(pendingSources.length)scheduleLhnItemReveal(pendingSources,Math.max(now+120,sourceAt+350));if(pendingNotes.length)scheduleLhnItemReveal(pendingNotes,Math.max(now+120,notesAt+350))});
 }
 function handleLhnPanelReveal(event){
  const {target,revealAt}=event.detail||{};if(!target||!Number.isFinite(revealAt))return;lhnPanelRevealTimes.set(target,revealAt);animateLhnCountersWithin(target,Math.max(0,revealAt-performance.now()),true);
