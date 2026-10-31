@@ -1008,13 +1008,35 @@ function buildOverlay() {
   document.dispatchEvent(new CustomEvent('lhn-overlay-ready', { detail: dictationApi }));
 }
 
+let launcherMutationObserver = null;
+let launcherRefreshQueued = false;
+
+function positionLauncherInPlayer(btn, player) {
+  const fullscreen = player.querySelector('.ytp-fullscreen-button, #ytp-fullscreen-button');
+  if (!fullscreen) return;
+  const playerRect = player.getBoundingClientRect();
+  const fullscreenRect = fullscreen.getBoundingClientRect();
+  if (playerRect.width <= 0 || playerRect.height <= 0 || fullscreenRect.width <= 0 || fullscreenRect.height <= 0) return;
+
+  // Anchor outside YouTube's auto-hidden controls, but use the fullscreen button's
+  // live geometry so the launcher stays beside it as the player resizes.
+  const launcherSize = 36;
+  const maxLeft = Math.max(0, playerRect.width - launcherSize);
+  const maxTop = Math.max(0, playerRect.height - launcherSize);
+  const left = Math.min(maxLeft, Math.max(0, fullscreenRect.right - playerRect.left + 8));
+  const top = Math.min(maxTop, Math.max(0, fullscreenRect.top - playerRect.top + (fullscreenRect.height - launcherSize) / 2));
+  btn.style.left = `${left}px`;
+  btn.style.top = `${top}px`;
+  btn.dataset.lhnPositioned = 'true';
+}
+
 function ensureLauncher() {
   let btn = document.getElementById(LAUNCHER_ID);
   if (!btn) {
     btn = document.createElement('button');
     btn.id = LAUNCHER_ID;
     btn.type = 'button';
-    btn.className = 'ytp-button lhn-ytp-launcher';
+    btn.className = 'lhn-player-launcher';
     btn.title = 'Mở keepit';
     btn.setAttribute('aria-label', 'Mở keepit');
     btn.style.display = 'none';
@@ -1026,16 +1048,43 @@ function ensureLauncher() {
     });
   }
 
-  const controls = document.querySelector('.ytp-right-controls, #ytp-right-controls');
-  if (controls) {
-    const fullscreen = controls.querySelector('.ytp-fullscreen-button, #ytp-fullscreen-button');
-    if (fullscreen && fullscreen.nextElementSibling !== btn) fullscreen.insertAdjacentElement('afterend', btn);
-    else if (btn.parentElement !== controls) controls.appendChild(btn);
+  const player = document.querySelector('#movie_player');
+  if (player) {
+    if (btn.parentElement !== player) player.appendChild(btn);
+    positionLauncherInPlayer(btn, player);
   } else if (btn.parentElement !== document.body) {
-    // Wait for YouTube to build its player controls; do not show a viewport-fixed fallback.
     document.body.appendChild(btn);
   }
   return btn;
+}
+
+function scheduleLauncherRefresh() {
+  if (launcherRefreshQueued) return;
+  launcherRefreshQueued = true;
+  requestAnimationFrame(() => {
+    launcherRefreshQueued = false;
+    const launcher = ensureLauncher();
+    const attachedToPlayer = launcher?.parentElement?.id === 'movie_player';
+    const shouldShow = !keepitSiteDisabled && location.pathname === '/watch'
+      && attachedToPlayer && launcher.dataset.lhnPositioned === 'true';
+    if (launcher) launcher.style.display = shouldShow ? '' : 'none';
+  });
+}
+
+function observeLauncherChanges() {
+  if (launcherMutationObserver || !document.body) return;
+  const isInsidePlayer = (node) => node?.nodeType === Node.ELEMENT_NODE
+    && (node.id === 'movie_player' || Boolean(node.closest?.('#movie_player')));
+  const containsPlayer = (node) => node?.nodeType === Node.ELEMENT_NODE
+    && (node.id === 'movie_player' || Boolean(node.querySelector?.('#movie_player')));
+  launcherMutationObserver = new MutationObserver((records) => {
+    const relevant = records.some((record) => isInsidePlayer(record.target)
+      || [...record.addedNodes, ...record.removedNodes].some(containsPlayer));
+    if (relevant) scheduleLauncherRefresh();
+  });
+  launcherMutationObserver.observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('resize', scheduleLauncherRefresh, { passive: true });
+  document.addEventListener('fullscreenchange', scheduleLauncherRefresh);
 }
 
 function hideOverlayPageScrollbar() {
@@ -2503,8 +2552,9 @@ function tick() {
   if (keepitSiteDisabled) return;
   const isWatch = location.pathname === '/watch';
   const launcher = ensureLauncher();
-  const launcherInPlayerControls = launcher?.parentElement?.matches('.ytp-right-controls, #ytp-right-controls');
-  if (launcher) launcher.style.display = isWatch && launcherInPlayerControls ? '' : 'none';
+  const launcherAttached = launcher?.parentElement?.id === 'movie_player'
+    && launcher.dataset.lhnPositioned === 'true';
+  if (launcher) launcher.style.display = isWatch && launcherAttached ? '' : 'none';
 
   const videoId = isWatch ? new URLSearchParams(location.search).get('v') : null;
   if (videoId === state.videoId) return;
@@ -2534,6 +2584,7 @@ function tick() {
 
 // Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
+  observeLauncherChanges();
   document.addEventListener('lhn-youtube-dual-subtitles-toggle', () => {
     if (keepitSiteDisabled) return;
     if (state.open) closeOverlay();

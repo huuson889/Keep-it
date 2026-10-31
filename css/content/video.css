@@ -1,4 +1,4 @@
-/* Nút mở Keepit: chèn vào thanh điều khiển gốc của YouTube, ngay sau nút toàn màn hình. */
+/* Nút mở Keepit nằm sát nút toàn màn hình của player YouTube. */
 #yt-keepit-launcher {
   position: fixed;
   right: 24px;
@@ -18,24 +18,20 @@
 }
 #yt-keepit-launcher svg { width: 22px; height: 22px; fill: currentColor; }
 
-/* Match YouTube's player controls; JS places the launcher directly after fullscreen. */
-.ytp-right-controls > #yt-keepit-launcher,
-#ytp-right-controls > #yt-keepit-launcher {
-  position: relative !important;
-  top: auto !important;
+/* The launcher is a sibling of YouTube's auto-hidden controls, so it won't
+   blink out with the control bar. JS positions it from the fullscreen button. */
+#movie_player { position: relative; }
+#movie_player > #yt-keepit-launcher {
+  position: absolute !important;
+  top: 0;
+  left: 0;
   right: auto !important;
   bottom: auto !important;
-  left: auto !important;
-  display: inline-flex !important;
-  float: left;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
   width: 36px;
   min-width: 36px;
   height: 36px;
-  margin: 6px 8px;
+  margin: 0;
   padding: 0;
-  z-index: 1;
+  z-index: 70;
+  pointer-events: auto;
 }
