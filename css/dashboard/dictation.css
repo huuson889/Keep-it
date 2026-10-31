@@ -109,7 +109,8 @@
 .dictation-root .filter.active{background:#fff;color:#6454d0;box-shadow:0 1px 4px #33305b17}
 .dictation-root .sort-select{height:31px;max-width:132px;padding:0 9px;border:1px solid #e8e6ef;border-radius:9px;background:#fff;color:#687187;font-size:12px;outline:none}
 .dictation-root .session-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
-.dictation-root .session-card{min-width:0;overflow:hidden;border:1px solid #edecf4;border-radius:16px;background:#fff;box-shadow:0 5px 15px rgba(68,61,133,.045);transition:transform .2s,border-color .2s,box-shadow .2s}
+.dictation-root .session-card{min-width:0;overflow:hidden;border:1px solid #edecf4;border-radius:16px;background:#fff;box-shadow:0 5px 15px rgba(68,61,133,.045);cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s}
+.dictation-root .session-card.is-selected{outline:2px solid #7665df;outline-offset:1px}
 .dictation-root .session-card:hover{transform:translateY(-3px);border-color:#dcd6ff;box-shadow:var(--shadow-hover)}
 .dictation-root .session-card[hidden]{display:none!important}
 .dictation-root .thumb{position:relative;height:112px;overflow:hidden;display:flex;align-items:flex-end;padding:10px;background:#dbe9f5}
@@ -167,10 +168,16 @@
 .dictation-root .stats-divider{height:1px;margin:14px 0 11px;background:#f0eff6}
 .dictation-root .mistake-head{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:8px}
 .dictation-root .mistake-head h3{margin:0;color:#42465d;font-size:13px}
+.dictation-root .stats-panel.has-session-selection #dictationMistakeCount{display:none}
+.dictation-root .mistake-all-sessions{flex:none;padding:4px 7px;border:1px solid #ebe8fa;border-radius:7px;background:#fbfaff;color:#6959d4;font-size:10px;font-weight:800;white-space:nowrap;cursor:pointer}
+.dictation-root .mistake-all-sessions:hover{background:#f3f0ff}
 .dictation-root .mistake-filter{display:flex;gap:2px;padding:2px;border-radius:7px;background:#f3f2f8}
 .dictation-root .mistake-filter button{padding:4px 6px;border:0;border-radius:5px;background:transparent;color:#898fa1;font-size:10px;font-weight:700}
 .dictation-root .mistake-filter button.active{background:#fff;color:#6959d4;box-shadow:0 1px 3px #28204416}
-.dictation-root .mistake-list{display:grid}
+.dictation-root .mistake-list{display:grid;max-height:168px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:var(--lhn-scrollbar-thumb,#cbd5e1) transparent}
+.dictation-root .mistake-list::-webkit-scrollbar{width:var(--lhn-scrollbar-width,3px)!important;height:var(--lhn-scrollbar-width,3px)!important}
+.dictation-root .mistake-list::-webkit-scrollbar-track{background:transparent!important}
+.dictation-root .mistake-list::-webkit-scrollbar-thumb{border-radius:999px!important;background:var(--lhn-scrollbar-thumb,#cbd5e1)!important}
 .dictation-root .mistake-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f1f0f6}
 .dictation-root .mistake-row:last-child{border-bottom:0}
 .dictation-root .word-pair{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap}
@@ -394,8 +401,10 @@ html.dark #dashboardDictationView .mistake-filter button.active { background:#25
 html.dark #dashboardDictationView .wrong-word { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .mistake-count { color:#c4b5fd!important; }
 html.dark #dashboardDictationView .all-mistakes,
+html.dark #dashboardDictationView .mistake-all-sessions,
 html.dark #dashboardDictationView .engine-link { border-color:#2b3a52!important; background:#172338!important; color:#d7deeb!important; }
-html.dark #dashboardDictationView .all-mistakes:hover { background:#1e2b41!important; }
+html.dark #dashboardDictationView .all-mistakes:hover,
+html.dark #dashboardDictationView .mistake-all-sessions:hover { background:#1e2b41!important; }
 html.dark #dashboardDictationView .engine-icon { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .engine-icon.web { background:#173226!important; color:#6ee7b7!important; }
 html.dark #dashboardDictationView .engine-arrow { color:#8492a8!important; }

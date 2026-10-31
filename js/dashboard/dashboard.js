@@ -649,6 +649,7 @@ function refreshFlashcardTranslateSettingsUI() {
   });
 }
 let dictationSourceFilter = "all", dictationViewInitialized = false, dictationSortMode = "recent";
+let dictationSelectedSessionId = "", dictationErrorSummarySequence = 0;
 function dictationSourceLabel(session) {
   if (session?.sourceType === "youtube") return "YouTube";
   if (session?.sourceType === "web") return t("ovSourceWeb");
@@ -691,7 +692,7 @@ function renderDictationSessionCards() {
       : "";
     const isComplete = session.status === "complete";
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
-    return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
+    return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
       <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
       <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
     </article>`;
@@ -746,6 +747,29 @@ function renderDictationContinueCard() {
   for (const button of [continueButton, sourceButton]) if (button) button.dataset.dictationOpen = session.sessionId;
   actions.hidden = false;
 }
+function syncDictationSessionSelection() {
+  const cards = [...document.querySelectorAll("#dashboardDictationView #dictationSessionGrid .session-card")];
+  const selectedCard = dictationSelectedSessionId
+    ? cards.find(card => card.dataset.sessionId === dictationSelectedSessionId && !card.hidden) || null
+    : null;
+  if (dictationSelectedSessionId && !selectedCard) dictationSelectedSessionId = "";
+  for (const card of cards) {
+    const selected = card === selectedCard;
+    card.classList.toggle("is-selected", selected);
+    if (selected) card.setAttribute("aria-current", "true");
+    else card.removeAttribute("aria-current");
+  }
+  document.querySelector("#dashboardDictationView .stats-panel")?.classList.toggle("has-session-selection", Boolean(selectedCard));
+  const showAll = $("dictationShowAllSessions");
+  if (showAll) showAll.hidden = !selectedCard;
+  return selectedCard;
+}
+function clearDictationSessionSelection() {
+  if (!dictationSelectedSessionId) return;
+  dictationSelectedSessionId = "";
+  syncDictationSessionSelection();
+  void renderDictationErrorSummary();
+}
 function refreshDictationView({ animateCounters = false } = {}) {
   const input = $("dictationSessionSearch");
   if (!input) return;
@@ -782,6 +806,8 @@ function refreshDictationView({ animateCounters = false } = {}) {
     empty.classList.toggle("visible", !hasSessions);
   }
   if (noResults) { noResults.hidden = !hasSessions || visible > 0; noResults.classList.toggle("visible", hasSessions && visible === 0); }
+  syncDictationSessionSelection();
+  void renderDictationErrorSummary();
 }
 function initDictationView() {
   if (dictationViewInitialized) return;
@@ -813,9 +839,22 @@ function initDictationView() {
     if (!url) { toast(t("dictationSourceUnavailable")); return; }
     try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
   };
-  $("dashboardDictationView").addEventListener("click", event => {
-    const button = event.target.closest("[data-dictation-open]");
-    if (button?.dataset.dictationOpen) void openSession(button.dataset.dictationOpen);
+  const dictationView = $("dashboardDictationView");
+  dictationView.addEventListener("click", event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest("[data-dictation-open]");
+    if (button?.dataset.dictationOpen) { void openSession(button.dataset.dictationOpen); return; }
+    const card = target?.closest("#dictationSessionGrid .session-card");
+    if (!card || card.hidden) return;
+    dictationSelectedSessionId = card.dataset.sessionId || "";
+    syncDictationSessionSelection();
+    void renderDictationErrorSummary();
+  });
+  document.addEventListener("click", event => {
+    if (!dictationSelectedSessionId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("#dashboardDictationView #dictationSessionGrid .session-card:not([hidden])")) return;
+    clearDictationSessionSelection();
   });
   document.addEventListener("keydown", event => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dashboardDictationView").hidden) { event.preventDefault(); input.focus(); }
@@ -825,15 +864,21 @@ function initDictationView() {
 }
 function dictationSafeCount(value) { const number = Number(value); return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0; }
 async function renderDictationErrorSummary() {
+  const renderSequence = ++dictationErrorSummarySequence;
   const wordCount = $("dictationWrongWordsCount"), recoveryRate = $("dictationRecoveryRate"), list = $("dictationMistakeList"), empty = $("dictationStatsEmpty");
   if (!wordCount || !recoveryRate || !list || !empty) return;
   try {
-    const data = await browser.storage.local.get(null);
+    const cards = [...document.querySelectorAll("#dashboardDictationView #dictationSessionGrid .session-card")].filter(card => !card.hidden);
+    const selectedCard = syncDictationSessionSelection();
+    const scopedCards = selectedCard ? [selectedCard] : cards;
+    const sourceIds = new Set(scopedCards.map(card => String(card.dataset.sourceId || "")).filter(Boolean));
     const titleBySource = new Map((overviewSessionEntries || []).map(session => [session.sourceId, dictationSessionTitle(session)]));
+    const data = await browser.storage.local.get(null);
+    if (renderSequence !== dictationErrorSummarySequence) return;
     const grouped = new Map();
     for (const [storageKey, record] of Object.entries(data || {})) {
       const match = storageKey.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
-      if (!match || record?.wrongWordStats?.version !== 3 || !record.wrongWordStats.words || typeof record.wrongWordStats.words !== "object") continue;
+      if (!match || !sourceIds.has(match[1]) || record?.wrongWordStats?.version !== 3 || !record.wrongWordStats.words || typeof record.wrongWordStats.words !== "object") continue;
       const sourceId = match[1], sourceTitle = titleBySource.get(sourceId) || sourceId;
       for (const item of Object.values(record.wrongWordStats.words)) {
         const word = String(item?.word || "").trim(), errors = dictationSafeCount(item?.errors), fixes = dictationSafeCount(item?.corrections);
@@ -845,15 +890,20 @@ async function renderDictationErrorSummary() {
         aggregate.lastAt = Math.max(aggregate.lastAt, dictationSafeCount(item?.lastAt));
       }
     }
+    if (renderSequence !== dictationErrorSummarySequence) return;
     const words = [...grouped.values()].sort((a,b) => b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
     const totalErrors = words.reduce((sum, item) => sum + item.errors, 0), totalFixes = words.reduce((sum, item) => sum + item.fixes, 0);
     setDictationCounter(wordCount, words.length);
     if (totalErrors) setDictationCounter(recoveryRate, Math.round(totalFixes / totalErrors * 100));
     else clearDictationCounter(recoveryRate, "—");
-    list.innerHTML = words.slice(0, 3).map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count"><span class="mistake-count-number">${overviewFormatCount(item.errors)}</span> <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
-    list.querySelectorAll(".mistake-count-number").forEach((node, index) => setDictationCounter(node, words[index].errors));
+    list.innerHTML = words.map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count"><span class="mistake-count-number">${overviewFormatCount(item.errors)}</span> <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
+    list.querySelectorAll(".mistake-count-number").forEach((node, index) => {
+      if (index < 3) setDictationCounter(node, words[index].errors);
+      else node.textContent = overviewFormatCount(words[index].errors);
+    });
     empty.hidden = words.length > 0;
   } catch (error) {
+    if (renderSequence !== dictationErrorSummarySequence) return;
     clearDictationCounter(wordCount, "—"); clearDictationCounter(recoveryRate, "—"); list.replaceChildren();
     empty.hidden = false;
     console.warn("Could not load saved Dictation error summary", error);

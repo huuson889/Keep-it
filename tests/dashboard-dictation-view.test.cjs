@@ -37,6 +37,34 @@ test("Dictation session list recovers and live-syncs real per-video records when
   assert.doesNotMatch(js, /if \(!index\.legacyMigrationComplete\) \{\s*const allData/);
 });
 
+test("Session cards select one error summary, clear on outside clicks, and retain Resume/Open", () => {
+  assert.match(js, /let dictationSelectedSessionId = ""/);
+  assert.match(js, /data-session-id=\"\$\{escapeHtml\(sessionId\)\}\"[^>]*data-source-id=\"\$\{escapeHtml\(videoId\)\}/);
+  assert.match(js, /const button = target\?\.closest\(\"\[data-dictation-open\]\"\);[\s\S]*?return;[\s\S]*?const card = target\?\.closest\(\"#dictationSessionGrid \.session-card\"\)/);
+  assert.match(js, /dictationSelectedSessionId = card\.dataset\.sessionId/);
+  assert.match(js, /document\.addEventListener\(\"click\", event => \{[\s\S]*?clearDictationSessionSelection\(\)/);
+  assert.match(js, /syncDictationSessionSelection\(\);[\s\S]*?void renderDictationErrorSummary\(\)/);
+  assert.match(html, /id=\"dictationShowAllSessions\"[^>]*data-i18n=\"dictationShowAllSessions\"[^>]*hidden/);
+  assert.match(css, /\.dictation-root \.session-card\{[^}]*cursor:pointer/);
+  assert.match(css, /\.dictation-root \.session-card\.is-selected\{outline:/);
+  for (const locale of ["en", "vi", "ko"]) assert.match(languages, new RegExp(`Object\\.assign\\(MESSAGES\\.${locale}, \\{[\\s\\S]*?dictationShowAllSessions:`));
+});
+
+test("Error summary scopes to the selected card or all currently visible cards and renders the full list", () => {
+  assert.match(js, /const cards = \[\.\.\.document\.querySelectorAll\(\"#dashboardDictationView #dictationSessionGrid \.session-card\"\)\]\.filter\(card => !card\.hidden\)/);
+  assert.match(js, /const scopedCards = selectedCard \? \[selectedCard\] : cards/);
+  assert.match(js, /const sourceIds = new Set\(scopedCards\.map\(card => String\(card\.dataset\.sourceId/);
+  assert.match(js, /!sourceIds\.has\(match\[1\]\)/);
+  assert.match(js, /list\.innerHTML = words\.map\(item =>/);
+  assert.doesNotMatch(js, /words\.slice\(0, 3\)/);
+  assert.match(html, /id=\"dictationShowAllSessions\"/);
+});
+
+test("The Dictation error list scrolls within its capped height using the app scrollbar", () => {
+  assert.match(css, /\.dictation-root \.mistake-list\{[^}]*max-height:168px[^}]*overflow-y:auto[^}]*overscroll-behavior-y:contain/);
+  assert.match(css, /\.mistake-list::-webkit-scrollbar\{width:var\(--lhn-scrollbar-width,3px\)!important;height:var\(--lhn-scrollbar-width,3px\)!important\}/);
+});
+
 test("YouTube session cards reuse the Dictation audio thumbnail and retain the default art on failure", () => {
   assert.match(js, /sourceType === "youtube" && globalThis\.LHN_THUMBNAILS\?\.youtubeVideoId\(videoId\)/);
   assert.match(js, /LHN_THUMBNAILS\?\.loadYouTube\(image, image\.dataset\.videoId/);
