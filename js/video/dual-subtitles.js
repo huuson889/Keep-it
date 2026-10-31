@@ -1011,36 +1011,17 @@ function buildOverlay() {
 let launcherMutationObserver = null;
 let launcherRefreshQueued = false;
 
-function positionLauncherInPlayer(btn, player) {
-  const fullscreen = player.querySelector('.ytp-fullscreen-button, #ytp-fullscreen-button');
-  if (!fullscreen) return;
-  const playerRect = player.getBoundingClientRect();
-  const fullscreenRect = fullscreen.getBoundingClientRect();
-  if (playerRect.width <= 0 || playerRect.height <= 0 || fullscreenRect.width <= 0 || fullscreenRect.height <= 0) return;
-
-  // Anchor outside YouTube's auto-hidden controls, but use the fullscreen button's
-  // live geometry so the launcher stays beside it as the player resizes.
-  const launcherSize = 36;
-  const maxLeft = Math.max(0, playerRect.width - launcherSize);
-  const maxTop = Math.max(0, playerRect.height - launcherSize);
-  const left = Math.min(maxLeft, Math.max(0, fullscreenRect.right - playerRect.left + 8));
-  const top = Math.min(maxTop, Math.max(0, fullscreenRect.top - playerRect.top + (fullscreenRect.height - launcherSize) / 2));
-  btn.style.left = `${left}px`;
-  btn.style.top = `${top}px`;
-  btn.dataset.lhnPositioned = 'true';
-}
-
 function ensureLauncher() {
   let btn = document.getElementById(LAUNCHER_ID);
   if (!btn) {
     btn = document.createElement('button');
     btn.id = LAUNCHER_ID;
     btn.type = 'button';
-    btn.className = 'lhn-player-launcher';
+    btn.className = 'ytp-button lhn-player-launcher';
     btn.title = 'Mở keepit';
     btn.setAttribute('aria-label', 'Mở keepit');
     btn.style.display = 'none';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>';
+    btn.innerHTML = '<span class="lhn-launcher-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg></span>';
     btn.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1049,13 +1030,21 @@ function ensureLauncher() {
   }
 
   const player = document.querySelector('#movie_player');
-  if (player) {
-    if (btn.parentElement !== player) player.appendChild(btn);
-    positionLauncherInPlayer(btn, player);
+  const controls = player?.querySelector('.ytp-right-controls, #ytp-right-controls');
+  if (controls) {
+    const fullscreen = controls.querySelector('.ytp-fullscreen-button, #ytp-fullscreen-button');
+    if (fullscreen && fullscreen.nextElementSibling !== btn) fullscreen.insertAdjacentElement('afterend', btn);
+    else if (!controls.contains(btn)) controls.appendChild(btn);
   } else if (btn.parentElement !== document.body) {
+    // Wait outside the player until YouTube has built its native control group.
     document.body.appendChild(btn);
   }
   return btn;
+}
+
+function launcherIsInPlayerControls(btn) {
+  const controls = document.querySelector('#movie_player .ytp-right-controls, #movie_player #ytp-right-controls');
+  return Boolean(controls && btn && controls.contains(btn));
 }
 
 function scheduleLauncherRefresh() {
@@ -1064,9 +1053,8 @@ function scheduleLauncherRefresh() {
   requestAnimationFrame(() => {
     launcherRefreshQueued = false;
     const launcher = ensureLauncher();
-    const attachedToPlayer = launcher?.parentElement?.id === 'movie_player';
-    const shouldShow = !keepitSiteDisabled && location.pathname === '/watch'
-      && attachedToPlayer && launcher.dataset.lhnPositioned === 'true';
+    const attachedToControls = launcherIsInPlayerControls(launcher);
+    const shouldShow = !keepitSiteDisabled && location.pathname === '/watch' && attachedToControls;
     if (launcher) launcher.style.display = shouldShow ? '' : 'none';
   });
 }
@@ -2552,8 +2540,7 @@ function tick() {
   if (keepitSiteDisabled) return;
   const isWatch = location.pathname === '/watch';
   const launcher = ensureLauncher();
-  const launcherAttached = launcher?.parentElement?.id === 'movie_player'
-    && launcher.dataset.lhnPositioned === 'true';
+  const launcherAttached = launcherIsInPlayerControls(launcher);
   if (launcher) launcher.style.display = isWatch && launcherAttached ? '' : 'none';
 
   const videoId = isWatch ? new URLSearchParams(location.search).get('v') : null;

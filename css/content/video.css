@@ -1,4 +1,4 @@
-/* Nút mở Keepit nằm sát nút toàn màn hình của player YouTube. */
+/* Keepit launcher styled to match a compact YouTube player control. */
 #yt-keepit-launcher {
   position: fixed;
   right: 24px;
@@ -18,20 +18,38 @@
 }
 #yt-keepit-launcher svg { width: 22px; height: 22px; fill: currentColor; }
 
-/* The launcher is a sibling of YouTube's auto-hidden controls, so it won't
-   blink out with the control bar. JS positions it from the fullscreen button. */
-#movie_player { position: relative; }
-#movie_player > #yt-keepit-launcher {
-  position: absolute !important;
-  top: 0;
-  left: 0;
+/* Inserted immediately after fullscreen inside the same auto-hide control group. */
+.ytp-right-controls #yt-keepit-launcher,
+#ytp-right-controls #yt-keepit-launcher {
+  position: static !important;
+  top: auto !important;
   right: auto !important;
   bottom: auto !important;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
+  left: auto !important;
+  display: flex;
+  float: left;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
   margin: 0;
   padding: 0;
-  z-index: 70;
-  pointer-events: auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  z-index: auto;
+}
+.ytp-right-controls #yt-keepit-launcher .lhn-launcher-badge,
+#ytp-right-controls #yt-keepit-launcher .lhn-launcher-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
