@@ -89,16 +89,24 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(css, /\.dictation-popup-reveal \{[\s\S]*?opacity:0;[\s\S]*?transition-delay:0ms;/);
   assert.match(ui, /popupRevealApi\?\.prefersReducedMotion/);
   assert.match(ui, /const popupOpenRevealTargets/);
-  assert.match(ui, /const popupContentRevealTargets/);
   const popupOpenTargets = ui.match(/const popupOpenRevealTargets = (.*)/)?.[1];
-  const popupContentTargets = ui.match(/const popupContentRevealTargets = (.*)/)?.[1];
-  assert.ok(popupOpenTargets && popupContentTargets);
-  assert.doesNotMatch(popupOpenTargets, /results-panel/, "the outer results panel does not reveal on open");
-  assert.doesNotMatch(popupContentTargets, /results-panel/, "the outer results panel does not reveal on content changes");
+  assert.ok(popupOpenTargets);
+  assert.match(popupOpenTargets, /\.results-panel/, "the initial popup reveal includes the full results panel");
   assert.match(ui, /currentView === "sessions" \? "\.video-group" : "\.smart-card"/);
   assert.match(ui, /function runPopupReveal\(targets\)/);
   assert.match(ui, /function visibleCurrentResultTargets\(\)/);
-  assert.match(ui, /function runPopupContentReveal\(\)[\s\S]*?visibleCurrentResultTargets\(\)/);
+  assert.match(ui, /function runPopupContentReveal\(\) \{\s*runPopupReveal\(visibleCurrentResultTargets\(\)\);\s*\}/, "later tab/filter/search actions reveal result items only");
+  assert.doesNotMatch(ui, /popupContentRevealTargets/, "later actions do not replay the outer panel or metric-card reveals");
+  assert.match(ui, /function setMetricValue\(node, value\)[\s\S]*?window\.requestAnimationFrame/);
+  const setMetricValue = ui.match(/function setMetricValue\(node, value\) \{[\s\S]*?\n  \}/)?.[0];
+  const renderMetrics = ui.match(/function renderMetrics\(items = currentMetricItems\(\)\) \{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(setMetricValue && renderMetrics);
+  assert.match(setMetricValue, /backdrop\.classList\.contains\("closed"\)/);
+  assert.match(setMetricValue, /prefersReducedMotion/);
+  assert.match(renderMetrics, /setMetricValue\(\$\("#statsWordCount"\)/);
+  assert.match(renderMetrics, /setMetricValue\(\$\("#statsErrorCount"\)/);
+  assert.match(renderMetrics, /setMetricValue\(\$\("#statsFixCount"\)/);
+  assert.match(renderMetrics, /setMetricValue\(\$\("#statsRecoveryRate"\)/);
   assert.match(ui, /function openModal\(lang, snapshot, dark\)[\s\S]*?backdrop\.classList\.remove\("closed"\)[\s\S]*?runPopupReveal\(\[[\s\S]*?popupOpenRevealTargets[\s\S]*?visibleCurrentResultTargets\(\)\]\)/);
   assert.match(ui, /const nextView[\s\S]*?render\(\);\s*runPopupContentReveal\(\)/);
   assert.match(ui, /const nextType = button\.dataset\.type[\s\S]*?render\(\);\s*runPopupContentReveal\(\)/);
@@ -128,6 +136,52 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   for (const key of ["dictationStatsPopupTitle", "dictationStatsSearchLabel", "dictationStatsSearchPlaceholder", "dictationStatsViewGlobal", "dictationStatsViewCritical", "dictationStatsViewSessions", "dictationStatsSortRate", "dictationStatsErrorCountLine", "dictationStatsWordColumn", "dictationStatsCollapseVideo", "dictationProperNounHint"]) {
     assert.ok(languages.includes(`${key}:`), `localized key ${key} exists`);
   }
+});
+
+test("popup metrics count up only while open and honor reduced motion", () => {
+  const ui = read("js/dashboard/dictation-stats-popup.js");
+  const helper = ui.match(/function setMetricValue\(node, value\) \{[\s\S]*?\n  \}/)?.[0];
+  assert.ok(helper);
+  const pending = new Map();
+  let nextFrame = 1;
+  const backdrop = { classList:{ contains:() => false } };
+  const context = {
+    metricCountUpFrames:new WeakMap(), backdrop,
+    popupRevealApi:{ prefersReducedMotion:() => false },
+    window:{
+      requestAnimationFrame(callback) { const id = nextFrame++; pending.set(id, callback); return id; },
+      cancelAnimationFrame(id) { pending.delete(id); },
+    },
+  };
+  vm.runInNewContext(`${helper}; globalThis.setMetricValue = setMetricValue;`, context);
+  function tick(timestamp) {
+    const [id, callback] = pending.entries().next().value || [];
+    assert.ok(callback, "a counter frame is queued");
+    pending.delete(id);
+    callback(timestamp);
+  }
+
+  const value = { textContent:"10" };
+  context.setMetricValue(value, 20);
+  assert.equal(value.textContent, "10");
+  tick(0);
+  tick(260);
+  assert.equal(value.textContent, "19");
+  tick(520);
+  assert.equal(value.textContent, "20");
+
+  backdrop.classList.contains = () => true;
+  const hiddenValue = { textContent:"3" };
+  context.setMetricValue(hiddenValue, 8);
+  assert.equal(hiddenValue.textContent, "8", "hidden popup values update without a background count-up");
+  assert.equal(pending.size, 0);
+
+  backdrop.classList.contains = () => false;
+  context.popupRevealApi.prefersReducedMotion = () => true;
+  const reducedValue = { textContent:"8%" };
+  context.setMetricValue(reducedValue, "35%");
+  assert.equal(reducedValue.textContent, "35%");
+  assert.equal(pending.size, 0);
 });
 
 test("YouTube title mutations re-index the active Dictation session for live popup updates", () => {

@@ -8,8 +8,7 @@
   const popupRevealApi = globalThis.KeepitDashboardReveal;
   const popupRevealScope = popupRevealApi?.createScope?.();
   const popupMetricRevealTargets = [...document.querySelectorAll(".stats-sidebar .metric")];
-  const popupOpenRevealTargets = [$(".modal-head"), $(".workspace-topbar"), ...popupMetricRevealTargets].filter(Boolean);
-  const popupContentRevealTargets = [...popupMetricRevealTargets];
+  const popupOpenRevealTargets = [$(".modal-head"), $(".workspace-topbar"), ...popupMetricRevealTargets, $(".results-panel")].filter(Boolean);
   let activePopupRevealTargets = new Set();
 
   const TYPES = ["phonetic", "rule", "typo"];
@@ -24,6 +23,7 @@
   let globalSort = "rate", criticalSort = "rate";
   let searchTerm = "";
   let searchRevealTimer = 0;
+  const metricCountUpFrames = new WeakMap();
   const fallback = {
     dictationStatsSearchPlaceholder:"Search saved Dictation errors…",
     dictationStatsSearchLabel:"Search saved Dictation errors",
@@ -174,13 +174,47 @@
       lastErrorType:type, errorContext,
     };
   }
+  function setMetricValue(node, value) {
+    if (!node) return;
+    const targetText = String(value);
+    const previousFrame = metricCountUpFrames.get(node);
+    if (previousFrame != null) window.cancelAnimationFrame?.(previousFrame);
+    metricCountUpFrames.delete(node);
+    const currentText = node.textContent.trim();
+    if (currentText === targetText) return;
+    const currentValue = Number(currentText.replace(/%$/, ""));
+    const targetValue = Number(targetText.replace(/%$/, ""));
+    const suffix = targetText.endsWith("%") ? "%" : "";
+    const canAnimate = Number.isFinite(currentValue) && Number.isFinite(targetValue)
+      && !backdrop.classList.contains("closed")
+      && !popupRevealApi?.prefersReducedMotion?.()
+      && typeof window.requestAnimationFrame === "function";
+    if (!canAnimate) {
+      node.textContent = targetText;
+      metricCountUpFrames.delete(node);
+      return;
+    }
+    let startTime = null;
+    const frame = timestamp => {
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min(1, (timestamp - startTime) / 520);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      node.textContent = `${Math.round(currentValue + (targetValue - currentValue) * eased)}${suffix}`;
+      if (progress < 1) metricCountUpFrames.set(node, window.requestAnimationFrame(frame));
+      else {
+        node.textContent = targetText;
+        metricCountUpFrames.delete(node);
+      }
+    };
+    metricCountUpFrames.set(node, window.requestAnimationFrame(frame));
+  }
   function renderMetrics(items = currentMetricItems()) {
     const errors = items.reduce((sum, item) => sum + safeCount(item.errors), 0);
     const fixes = items.reduce((sum, item) => sum + safeCount(item.fixes), 0);
-    $("#statsWordCount").textContent = String(items.length);
-    $("#statsErrorCount").textContent = String(errors);
-    $("#statsFixCount").textContent = String(fixes);
-    $("#statsRecoveryRate").textContent = `${Math.round(calculateRecoveryRate(errors, fixes))}%`;
+    setMetricValue($("#statsWordCount"), items.length);
+    setMetricValue($("#statsErrorCount"), errors);
+    setMetricValue($("#statsFixCount"), fixes);
+    setMetricValue($("#statsRecoveryRate"), `${Math.round(calculateRecoveryRate(errors, fixes))}%`);
   }
   function normalizeSearch(value) {
     return String(value || "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase();
@@ -431,7 +465,7 @@
     });
   }
   function runPopupContentReveal() {
-    runPopupReveal([...popupContentRevealTargets, ...visibleCurrentResultTargets()]);
+    runPopupReveal(visibleCurrentResultTargets());
   }
   document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
     const nextView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
