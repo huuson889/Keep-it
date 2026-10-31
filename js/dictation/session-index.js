@@ -60,6 +60,39 @@
       legacy:true
     });
   }
+  function reconcileYouTubeRecord(sourceId, record, indexed = null, { title = "" } = {}) {
+    const legacy = fromLegacyYouTubeRecord(sourceId, record, { title });
+    if (!legacy) return null;
+    const previous = normalizeSession(indexed);
+    const id = legacy.sourceId;
+    const usableTitle = value => {
+      const candidate = String(value || "").trim();
+      return candidate && candidate !== id && !/^(youtube|keepit|dictation)$/i.test(candidate) ? candidate : "";
+    };
+    const recordTitle = usableTitle(record.title);
+    const indexedTitle = usableTitle(previous?.title);
+    const recordTitleAt = safeTimestamp(record.titleUpdatedAt);
+    const indexedUpdatedAt = safeTimestamp(previous?.updatedAt);
+    const sessionTitle = recordTitle && recordTitleAt > indexedUpdatedAt
+      ? recordTitle
+      : indexedTitle || recordTitle || usableTitle(title) || "";
+    const solvedCount = Array.isArray(record.solved)
+      ? new Set(record.solved.map(Number).filter(Number.isInteger)).size
+      : safeCount(previous?.solvedCount);
+    const currentIndex = Number.isFinite(Number(record.current)) ? safeCount(record.current) : safeCount(previous?.currentIndex);
+    const totalCount = safeCount(previous?.totalCount);
+    return normalizeSession({
+      ...legacy,
+      ...(previous || {}),
+      sourceType:"youtube", sourceId:id, sessionId:`youtube:${id}`,
+      title:sessionTitle,
+      url:previous?.url || record.url || legacy.url,
+      currentIndex, totalCount, solvedCount,
+      status:previous?.status === "complete" || (totalCount > 0 && solvedCount >= totalCount) ? "complete" : "in_progress",
+      updatedAt:Math.max(indexedUpdatedAt, recordTitleAt, safeTimestamp(record.updatedAt)),
+      legacy:previous?.legacy === true || !previous,
+    });
+  }
   function mergeSessions(...groups) {
     const merged = new Map();
     for (const group of groups) for (const value of group || []) {
@@ -73,5 +106,5 @@
       .slice(0, MAX_SESSIONS);
   }
 
-  globalThis.LHN_DICTATION_SESSION_INDEX = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord });
+  globalThis.LHN_DICTATION_SESSION_INDEX = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord });
 })();

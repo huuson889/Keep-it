@@ -1395,55 +1395,60 @@ function renderOverviewRecentItems(model) {
 function normalizeOverviewSessionIndex(value) { return DICTATION_SESSION_INDEX.normalizeIndex(value); }
 function mergeOverviewSessions(...groups) { return DICTATION_SESSION_INDEX.mergeSessions(...groups); }
 function migrateLegacyDictationRecords(storageData, existingSessions) {
-  const known = new Set((existingSessions || []).map(session => session.sessionId));
+  const indexedById = new Map((existingSessions || []).map(session => [session.sessionId, session]));
   const titleByVideoId = new Map();
   for (const item of annotations) {
     const id = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.youtubeVideoId(item?.url);
     if (id && !titleByVideoId.has(id) && item?.title) titleByVideoId.set(id, String(item.title));
   }
-  const legacy = [];
+  const reconciled = [];
   for (const [key, record] of Object.entries(storageData || {})) {
-    if (!key.startsWith("dictation:")) continue;
-    const sourceId = key.slice("dictation:".length);
-    const sessionId = `youtube:${sourceId}`;
-    if (known.has(sessionId)) continue;
-    const session = DICTATION_SESSION_INDEX.fromLegacyYouTubeRecord(sourceId, record, { title:titleByVideoId.get(sourceId) || "" });
-    if (session) legacy.push(session);
+    const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
+    if (!match || !record || typeof record !== "object") continue;
+    const sourceId = match[1];
+    const session = DICTATION_SESSION_INDEX.reconcileYouTubeRecord(
+      sourceId, record, indexedById.get(`youtube:${sourceId}`), { title:titleByVideoId.get(sourceId) || "" }
+    );
+    if (session) reconciled.push(session);
   }
-  return legacy.filter(Boolean);
+  return reconciled;
+}
+function overviewSessionsNeedReconciliation(indexedSessions, reconciledSessions) {
+  const indexedById = new Map((indexedSessions || []).map(session => [session.sessionId, session]));
+  return (reconciledSessions || []).some(session => {
+    const previous = indexedById.get(session.sessionId);
+    if (!previous) return true;
+    return ["title", "url", "currentIndex", "totalCount", "solvedCount", "status"].some(key => previous[key] !== session[key]);
+  });
 }
 async function loadOverviewDictationSessions() {
   if (overviewSessionsReady || overviewSessionsLoading) return;
   overviewSessionsLoading = true;
   try {
-    const saved = await browser.storage.local.get(OVERVIEW_DICTATION_SESSION_INDEX_KEY);
-    let index = normalizeOverviewSessionIndex(saved?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
-    let sessions = index.sessions;
-    if (!index.legacyMigrationComplete) {
-      const allData = await browser.storage.local.get(null);
-      const latestIndex = normalizeOverviewSessionIndex(allData?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
-      sessions = mergeOverviewSessions(latestIndex.sessions, migrateLegacyDictationRecords(allData, latestIndex.sessions));
-      const migrated = { version:1, updatedAt:Date.now(), legacyMigrationComplete:true, sessions };
+    const allData = await browser.storage.local.get(null);
+    const index = normalizeOverviewSessionIndex(allData?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+    const reconciledSessions = migrateLegacyDictationRecords(allData, index.sessions);
+    const sessions = mergeOverviewSessions(index.sessions, reconciledSessions);
+    overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, sessions);
+    if (!index.legacyMigrationComplete || overviewSessionsNeedReconciliation(index.sessions, reconciledSessions)) {
+      const migrated = { version:1, updatedAt:Date.now(), legacyMigrationComplete:true, sessions:overviewSessionEntries };
       try {
         const recheck = await browser.storage.local.get(OVERVIEW_DICTATION_SESSION_INDEX_KEY);
         const concurrent = normalizeOverviewSessionIndex(recheck?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
-        if (concurrent.sessions.length) migrated.sessions = mergeOverviewSessions(concurrent.sessions, sessions);
+        migrated.sessions = mergeOverviewSessions(concurrent.sessions, overviewSessionEntries);
         await browser.storage.local.set({ [OVERVIEW_DICTATION_SESSION_INDEX_KEY]:migrated });
       } catch (error) {
-        console.warn("Could not persist Dictation session index migration", error);
+        console.warn("Could not persist Dictation session index reconciliation", error);
       }
-      index = migrated;
     }
-    overviewSessionEntries = mergeOverviewSessions(sessions);
   } catch (error) {
-    overviewSessionEntries = [];
-    console.warn("Could not load local Dictation session index", error);
+    console.warn("Could not load local Dictation session index or records", error);
   } finally {
     overviewSessionsLoading = false;
     overviewSessionsReady = true;
   }
   renderOverviewDictationSessions();
-  renderDictationErrorSummary();
+  void renderDictationErrorSummary();
 }
 function chooseOverviewDictationSession() {
   const sessions = overviewSessionEntries;
@@ -3302,12 +3307,20 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   if (changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY]) {
     const index = normalizeOverviewSessionIndex(changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY].newValue);
-    overviewSessionEntries = mergeOverviewSessions(index.sessions);
+    overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, index.sessions);
     overviewSessionsReady = true;
     renderOverviewDictationSessions();
     void renderDictationErrorSummary();
   }
-  if (Object.keys(changes).some(key => /^dictation:[A-Za-z0-9_-]{6,}$/.test(key))) void renderDictationErrorSummary();
+  const changedDictationRecords = Object.entries(changes).filter(([key, change]) => /^dictation:[A-Za-z0-9_-]{6,}$/.test(key) && change?.newValue && typeof change.newValue === "object");
+  if (changedDictationRecords.length) {
+    const reconciled = migrateLegacyDictationRecords(Object.fromEntries(changedDictationRecords.map(([key, change]) => [key, change.newValue])), overviewSessionEntries);
+    if (reconciled.length) {
+      overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, reconciled);
+      renderOverviewDictationSessions();
+    }
+    void renderDictationErrorSummary();
+  }
   if (changes[CONFIG.STORAGE_KEYS.ANNOTATIONS]) {
     if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
     load();

@@ -10,7 +10,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardScroller`, `#dashboardDictationView`, `#dashboardHighlightsNotesView` | Shell route; Dictation dùng local session index, H&N render trong cùng document. |
+| [`pages/dashboard.html`](../../pages/dashboard.html), [`pages/lr-practice-demo.html`](../../pages/lr-practice-demo.html) | `#dashboardScroller`, `#dashboardDictationView`, `#dashboardHighlightsNotesView` | Shell route; Dictation dùng local session index và fallback record, H&N render trong cùng document. |
 | [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js) | `load`, `setDashboardView`, `renderDictationSessionCards`, `syncHighlightsNotesView` | Nạp dữ liệu, render Dictation từ phiên đã lưu, chuyển route, đồng bộ H&N; lưu route/scroll theo tab. |
 | [`js/dashboard/lr-practice-demo.js`](../../js/dashboard/lr-practice-demo.js) | `applyData`, `handleCardAction` | Render danh sách; gửi/nhận actions qua same-document event bus. |
 | [`css/dashboard/highlights-notes-embedded.css`](../../css/dashboard/highlights-notes-embedded.css) | `#dashboardHighlightsNotesView` | CSS H&N được scope vào route; `#dashboardScroller` là scroll root cấp trang, chỉ workspace được giới hạn chiều cao còn hai danh sách cuộn nội bộ. |
@@ -18,7 +18,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
 | [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `#dictationStatsPopupFrame` | Render thống kê Dictation cục bộ. |
 | [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/UPDATE/CLOSE` | Quét stats schema v3, gồm nhóm lỗi và mảnh ngữ cảnh; index chỉ bổ sung metadata. |
-| [`js/dictation/session-index.js`](../../js/dictation/session-index.js), [`css/dashboard/dictation.css`](../../css/dashboard/dictation.css) | `dictation:session-index:v1`, `#dashboardDictationView` | Contract phiên cục bộ và stylesheet của route Dictation. |
+| [`js/dictation/session-index.js`](../../js/dictation/session-index.js), [`css/dashboard/dictation.css`](../../css/dashboard/dictation.css) | `dictation:session-index:v1`, `reconcileYouTubeRecord()` | Chuẩn hóa/đối soát phiên cục bộ với record Dictation theo video và stylesheet của route. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Resolve favicon và cache URL dùng chung cho popup/Highlights & Notes. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
 
@@ -26,7 +26,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 
 1. `dashboard.html` nạp core/helpers trước `dashboard.js`; giữ thứ tự script.
 2. `load()` lấy settings, favorites và annotations; cập nhật Overview và gửi snapshot H&N qua `keepit:highlights-notes-data`.
-3. `setDashboardView()` chuyển giữa Overview, Dictation và Highlights & Notes. Dictation đọc phiên đã lưu từ `dictation:session-index:v1`, render cards/tiến độ theo dữ liệu thật và hiển thị empty state khi chưa có phiên; Flashcards là action, không phải route.
+3. `setDashboardView()` chuyển giữa Overview, Dictation và Highlights & Notes. Dictation đọc `dictation:session-index:v1`, đồng thời đối soát các record `dictation:<videoId>` để khôi phục phiên nếu index cũ thiếu/stale, render cards/tiến độ theo dữ liệu thật và hiển thị empty state khi chưa có phiên; Flashcards là action, không phải route.
 4. H&N cùng document nhận annotations, favorites và ngôn ngữ qua custom event; CRUD, favorite, export, review, jump và speak quay về handler trong `dashboard.js`.
 5. Một node `#dashboardSharedTopbar` nằm cố định trong shared shell; Overview và Dictation dùng route làm scroll target để giữ sticky/compact state và phục hồi vị trí theo tab; `#dashboardScroller` tiếp tục điều khiển Highlights & Notes. Export H&N dùng action slot trên topbar.
 6. Nút thống kê chi tiết mở iframe cùng origin. Parent quét `dictation:<videoId>` records trực tiếp; session index chỉ bổ sung tiêu đề/URL khi có. Khi popup mở, `storage.onChanged` gửi snapshot mới để cập nhật tại chỗ. Popup render ba góc nhìn Global, Critical và Theo web theo UI tham chiếu v14; tìm kiếm/metric bám lựa chọn hiện tại.
@@ -51,6 +51,6 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/custom-event contract và `git diff --check`. Test Dictation xác nhận route mới, migration route/scroll cũ, render từ local session index, empty state không dữ liệu mẫu và stats chỉ từ schema v3; popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate. Overview test giữ reveal cadence, data-ready, shared scroll root/per-tab restore, counter/chart và reduced-motion.
+- Static: `node --test tests/*.test.cjs`, `node --check` cho JS, parse `manifest.json`, kiểm tra HTML refs/custom-event contract và `git diff --check`. Test Dictation xác nhận route mới, migration route/scroll cũ, render từ local session index và đối soát/live refresh record cục bộ, empty state không dữ liệu mẫu và stats chỉ từ schema v3; popup xác nhận live refresh, lọc schema/short words, migration và ngưỡng rate. Overview test giữ reveal cadence, data-ready, shared scroll root/per-tab restore, counter/chart và reduced-motion.
 - Mock: kiểm tra metadata/page key, Overview summary và Highlights & Notes same-document data/action bus.
 - Browser cần xác nhận shared shell, per-tab scroll/reload restore, H&N CRUD/favorites/export/import, study actions, responsive/theme và popup trên Chrome/Firefox; với reveal, cuộn từng vùng, rời/quay lại tab và kiểm tra reduced-motion ở light/dark theme. Riêng H&N, kiểm tra chiều cao workspace, hai danh sách cuộn nội bộ, shared page scroll, khoảng cách giữa các khung và mobile một cột. Static/mock không thay cho kiểm tra extension thật.

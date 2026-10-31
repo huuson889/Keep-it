@@ -18,13 +18,23 @@ test("Dictation route uses its visible name and displays sessions from the local
   assert.match(js, /const sessions = sortedDictationSessions\(\)/);
   assert.match(js, /overviewSessionEntries \|\| \[\]/);
   assert.match(js, /function loadOverviewDictationSessions\(\)/);
-  assert.match(js, /overviewSessionEntries = mergeOverviewSessions\(sessions\)/);
+  assert.match(js, /overviewSessionEntries = mergeOverviewSessions\(overviewSessionEntries, sessions\)/);
   assert.match(html, /<div class="session-grid" id="dictationSessionGrid"[^>]*><\/div>/);
   assert.doesNotMatch(html, /<article class="session-card"/);
   assert.match(js, /escapeHtml\(title\)/);
   assert.match(js, /browser\.tabs\.create\(\{ url \}\)/);
   assert.match(js, /function applyTranslations\(\)[\s\S]*?refreshDictationView\(\)/);
   assert.doesNotMatch(js, /refreshListeningPreview|initListeningPreview/);
+});
+
+test("Dictation session list recovers and live-syncs real per-video records when the index is stale", () => {
+  assert.match(js, /const allData = await browser\.storage\.local\.get\(null\);[\s\S]*?migrateLegacyDictationRecords\(allData, index\.sessions\)/);
+  assert.ok(js.includes("const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);"));
+  assert.match(js, /DICTATION_SESSION_INDEX\.reconcileYouTubeRecord\(/);
+  assert.match(js, /overviewSessionsNeedReconciliation\(index\.sessions, reconciledSessions\)/);
+  assert.match(js, /const changedDictationRecords = Object\.entries\(changes\)\.filter/);
+  assert.match(js, /overviewSessionEntries = mergeOverviewSessions\(overviewSessionEntries, reconciled\)/);
+  assert.doesNotMatch(js, /if \(!index\.legacyMigrationComplete\) \{\s*const allData/);
 });
 
 test("Empty Dictation and error-stat states are truthful and contain no fabricated records", () => {

@@ -111,6 +111,37 @@ test("normalizes and merges provider-neutral Dictation sessions", () => {
   assert.equal(sessionIndex.fromLegacyYouTubeRecord("layout:v1", {}), null);
 });
 
+test("reconciles saved YouTube Dictation records with missing or stale index summaries", () => {
+  const videoId = "video_repair_1";
+  const record = {
+    current:5,
+    solved:[1, "2", "2", "bad"],
+    title:"Fresh saved title",
+    titleUpdatedAt:dateAt(2026, 10, 29, 14),
+    wrongWordStats:{ version:3, words:{ question:{ word:"question", errors:2 } } }
+  };
+  const staleIndexEntry = sessionIndex.normalizeSession({
+    sourceType:"youtube", sourceId:videoId, title:"Old title",
+    url:`https://www.youtube.com/watch?v=${videoId}`,
+    currentIndex:2, totalCount:12, solvedCount:1,
+    updatedAt:dateAt(2026, 10, 29, 10), status:"in_progress"
+  });
+  const repaired = sessionIndex.reconcileYouTubeRecord(videoId, record, staleIndexEntry);
+  assert.equal(repaired.sessionId, `youtube:${videoId}`);
+  assert.equal(repaired.title, "Fresh saved title");
+  assert.equal(repaired.currentIndex, 5);
+  assert.equal(repaired.totalCount, 12, "keep session metadata unavailable in the raw progress record");
+  assert.equal(repaired.solvedCount, 2);
+  assert.equal(repaired.url, `https://www.youtube.com/watch?v=${videoId}`);
+  assert.equal(repaired.updatedAt, record.titleUpdatedAt);
+
+  const recovered = sessionIndex.reconcileYouTubeRecord(videoId, record);
+  assert.equal(recovered.title, "Fresh saved title");
+  assert.equal(recovered.currentIndex, 5);
+  assert.equal(recovered.totalCount, 0, "do not invent unavailable cue totals");
+  assert.equal(recovered.legacy, true);
+});
+
 test("extracts supported YouTube URL forms without matching unrelated hosts", () => {
   assert.equal(overview.youtubeVideoId("https://www.youtube.com/watch?v=abc_123-xyZ"), "abc_123-xyZ");
   assert.equal(overview.youtubeVideoId("https://youtu.be/short_id"), "short_id");
