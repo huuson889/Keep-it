@@ -38,9 +38,9 @@ test("Dictation session list recovers and live-syncs real per-video records when
 });
 
 test("YouTube session cards reuse the Dictation audio thumbnail and retain the default art on failure", () => {
-  assert.ok(js.includes('sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)'));
-  assert.ok(js.includes('src="https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg"'));
-  assert.match(js, /image\.addEventListener\("error", \(\) => image\.remove\(\)/);
+  assert.match(js, /sourceType === "youtube" && globalThis\.LHN_THUMBNAILS\?\.youtubeVideoId\(videoId\)/);
+  assert.match(js, /LHN_THUMBNAILS\?\.loadYouTube\(image, image\.dataset\.videoId/);
+  assert.match(js, /onError:\(\) => image\.remove\(\)/);
   assert.match(css, /\.thumb\.habits\{background:linear-gradient\(/);
   assert.match(css, /\.dictation-thumb-image\{position:absolute;z-index:0;[\s\S]*?object-fit:cover/);
 });
@@ -49,9 +49,10 @@ test("Continue art uses the selected YouTube session thumbnail and restores its 
   assert.ok(html.includes('class="continue-art"'));
   assert.ok(html.includes('class="dictation-continue-thumb" hidden'));
   assert.ok(js.includes('const art = document.querySelector("#dashboardDictationView .continue-art")'));
-  assert.ok(js.includes('`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`'));
-  assert.match(js, /image\.onload = \(\) =>[\s\S]*?art\.classList\.add\("has-thumbnail"\)/);
-  assert.match(js, /image\.onerror = \(\) => \{[\s\S]*?image\.hidden = true;[\s\S]*?image\.removeAttribute\("src"\)/);
+  assert.match(js, /thumbnails\.loadYouTube\(image, videoId, \{/);
+  assert.match(js, /onLoad:\(\) => art\.classList\.add\("has-thumbnail"\)/);
+  assert.match(js, /onError:\(\) => \{ image\.hidden = true; art\.classList\.remove\("has-thumbnail"\); \}/);
+  assert.match(js, /thumbnails\?\.clear\(image\)/);
   assert.match(css, /\.continue-art\.has-thumbnail:before,[\s\S]*?\.continue-art\.has-thumbnail \.mountain\{display:none\}/);
   assert.match(css, /\.dictation-root \.continue-art\{[^}]*background:linear-gradient\(145deg,#d8eff5,#b5d3e0 47%,#7aa3b0\)/);
 });

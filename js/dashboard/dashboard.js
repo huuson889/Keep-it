@@ -685,8 +685,8 @@ function renderDictationSessionCards() {
     const sourceType = String(session.sourceType || "").toLowerCase();
     const artClass = sourceType === "web" ? "article" : "habits";
     const videoId = String(session.sourceId || "");
-    const thumbnail = sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)
-      ? `<img class="dictation-thumb-image" src="https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg" alt="" loading="lazy" decoding="async">`
+    const thumbnail = sourceType === "youtube" && globalThis.LHN_THUMBNAILS?.youtubeVideoId(videoId)
+      ? `<img class="dictation-thumb-image" data-video-id="${escapeHtml(videoId)}" alt="" loading="lazy" decoding="async">`
       : "";
     const isComplete = session.status === "complete";
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
@@ -696,38 +696,28 @@ function renderDictationSessionCards() {
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
-    image.addEventListener("error", () => image.remove(), { once:true });
+    globalThis.LHN_THUMBNAILS?.loadYouTube(image, image.dataset.videoId, { onError:() => image.remove() });
   });
   refreshDictationView();
 }
 function updateDictationContinueThumbnail(session) {
   const art = document.querySelector("#dashboardDictationView .continue-art");
   const image = art?.querySelector(".dictation-continue-thumb");
+  const thumbnails = globalThis.LHN_THUMBNAILS;
   if (!art || !image) return;
   const videoId = String(session?.sourceType === "youtube" ? session.sourceId || "" : "");
-  const src = /^[A-Za-z0-9_-]{6,}$/.test(videoId)
-    ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`
-    : "";
-  if (!src) {
+  if (!thumbnails?.youtubeVideoId(videoId)) {
     image.hidden = true;
-    image.removeAttribute("src");
+    thumbnails?.clear(image);
     art.classList.remove("has-thumbnail");
     return;
   }
-  image.onload = () => { if (image.getAttribute("src") === src) art.classList.add("has-thumbnail"); };
-  image.onerror = () => {
-    if (image.getAttribute("src") !== src) return;
-    art.classList.remove("has-thumbnail");
-    image.hidden = true;
-    image.removeAttribute("src");
-  };
   image.hidden = false;
-  if (image.getAttribute("src") !== src) {
-    art.classList.remove("has-thumbnail");
-    image.src = src;
-  } else if (image.complete && image.naturalWidth > 0) {
-    art.classList.add("has-thumbnail");
-  }
+  if (image.getAttribute("src") !== thumbnails.youtubeUrl(videoId)) art.classList.remove("has-thumbnail");
+  thumbnails.loadYouTube(image, videoId, {
+    onLoad:() => art.classList.add("has-thumbnail"),
+    onError:() => { image.hidden = true; art.classList.remove("has-thumbnail"); },
+  });
 }
 function renderDictationContinueCard() {
   const session = [...(overviewSessionEntries || [])]

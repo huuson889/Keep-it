@@ -42,7 +42,6 @@ function dateLabel(value){const time=dateMs(value);if(!Number.isFinite(time))ret
 function hostnameOf(url,fallback=''){let host='';try{host=new URL(url).hostname}catch{host=String(fallback||'nguồn không rõ')}return host?host[0].toLocaleUpperCase()+host.slice(1):'nguồn không rõ'}
 function pageKeyOf(item){return String(item.__keepitPageKey||item.url||item.hostname||item.title||'unknown')}
 function normalizedColor(value){return validColors.includes(String(value||'').toLowerCase())?String(value).toLowerCase():'yellow'}
-function safeThumbnailUrl(value){if(typeof value!=='string'||!value)return '';try{const url=new URL(value,window.location.href);return ['http:','https:','data:'].includes(url.protocol)?url.href:''}catch{return ''}}
 function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:'#'}catch{return '#'}}
 function setSelectedFavicon(pageUrl){
  const host=$('selectedFavicon');host.innerHTML=icon('file');
@@ -57,9 +56,9 @@ function buildPages(items){
   if(!item||typeof item!=='object')continue;
   const key=String(item.__keepitPageKey||item.url||item.hostname||item.title||'unknown');
   let page=grouped.get(key);
-  if(!page){const site=String(item.__keepitSite||hostnameOf(item.url,item.hostname||''));page={key,url:String(item.url||key),title:String(item.title||site||'Trang không có tiêu đề'),site,thumbnailUrl:safeThumbnailUrl(item.thumbnailUrl),notes:[],colors:[],tags:[],favorite:favorites.includes(key),createdAtMs:Infinity,editedAtMs:0,created:'',edited:'',date:'',thumb:null,highlights:0,noteCount:0};grouped.set(key,page)}
+  if(!page){const site=String(item.__keepitSite||hostnameOf(item.url,item.hostname||''));page={key,url:String(item.url||key),title:String(item.title||site||'Trang không có tiêu đề'),site,thumbnailUrl:globalThis.LHN_THUMBNAILS?.safeUrl(item.thumbnailUrl,item.url)||'',notes:[],colors:[],tags:[],favorite:favorites.includes(key),createdAtMs:Infinity,editedAtMs:0,created:'',edited:'',date:'',thumb:null,highlights:0,noteCount:0};grouped.set(key,page)}
   if((!page.title||page.title===page.site)&&item.title)page.title=String(item.title);
-  if(!page.thumbnailUrl&&item.thumbnailUrl)page.thumbnailUrl=safeThumbnailUrl(item.thumbnailUrl);
+  if(!page.thumbnailUrl&&item.thumbnailUrl)page.thumbnailUrl=globalThis.LHN_THUMBNAILS?.safeUrl(item.thumbnailUrl,item.url)||'';
   const createdAt=dateMs(item.createdAt),updatedAt=dateMs(item.updatedAt);
   if(Number.isFinite(createdAt))page.createdAtMs=Math.min(page.createdAtMs,createdAt);
   if(Number.isFinite(updatedAt))page.editedAtMs=Math.max(page.editedAtMs,updatedAt);
@@ -81,8 +80,6 @@ function buildPages(items){
  }
  return [...grouped.values()].sort((a,b)=>b.editedAtMs-a.editedAtMs||a.title.localeCompare(b.title));
 }
-function thumbSvg(page){const [a,b]=page.thumb||colorPalette[0];return `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="150" viewBox="0 0 280 150"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="280" height="150" fill="url(#g)"/><circle cx="221" cy="37" r="23" fill="#fff3cc" opacity=".9"/><path d="M0 117 64 62l49 46 54-57 113 92v7H0z" fill="#213c55" opacity=".55"/><path d="M0 134q55-28 110 0t170 0v16H0z" fill="#152c40" opacity=".55"/><rect x="24" y="25" width="64" height="72" rx="6" fill="#fff7e6" opacity=".92"/><path d="M35 43h41M35 54h35M35 65h39" stroke="#607187" stroke-width="4" stroke-linecap="round" opacity=".7"/></svg>`}
-function thumbUrl(page){return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(thumbSvg(page))}
 function thumbnailSiteLabel(page){return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(page.site)?'YouTube':'Bài viết'}
 function thumbnailCategoryLabel(page){return (page.tags.length?page.tags.slice(0,3).join(' · '):page.site).toUpperCase()}
 function sourceDescription(page){const quote=page.notes.find(note=>note.quote)?.quote||'';return quote.length>112?`${quote.slice(0,109)}…`:quote}
@@ -118,7 +115,7 @@ function renderSources(){
   const tags=page.tags.map(tag=>`<span class="tag-chip">${esc(tag)}</span>`).join('');
   row.innerHTML=`<div class="source-thumb"><img alt="" loading="lazy"><span class="thumb-fallback" aria-hidden="true">${icon('file')}</span><span class="source-thumb-badge"><i class="${thumbnailSiteLabel(page)==='YouTube'?'video':'article'}"></i>${thumbnailSiteLabel(page)}</span><span class="source-thumb-label">${esc(thumbnailCategoryLabel(page))}</span></div><div class="source-info"><div class="source-title">${esc(page.title)}</div><div class="source-host">${siteBadge(page)}<span class="source-host-text">${esc(page.site)}</span></div><div class="source-description">${esc(sourceDescription(page))}</div><div class="source-tags tag-list">${tags}</div><div class="source-meta"><span class="source-date">${esc(sourceDate(page))}</span><span class="source-meta-count">${colors}<span class="source-count-number">${page.highlights}</span><span class="source-count-icon">${icon('square')}</span></span></div></div>`;
   const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
-  const image=row.querySelector('.source-thumb img');image.src=page.thumbnailUrl||thumbUrl(page);image.addEventListener('load',()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),{once:true});image.addEventListener('error',()=>image.remove(),{once:true});if(image.complete&&image.naturalWidth>0)row.querySelector('.thumb-fallback')?.setAttribute('hidden','');
+  const image=row.querySelector('.source-thumb img');globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),onError:()=>image.remove()});
   const choose=()=>{selected=page;noteColor='all';renderSources();renderSelected()};row.addEventListener('click',choose);row.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose()}});sourceList.append(row);
  });
  updateStats(visible);

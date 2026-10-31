@@ -32,12 +32,7 @@
   const pageTitle = () => document.title || displayWebsiteName(location.hostname);
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   const isWebsiteDisabledIn = value => Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey());
-  const pageThumbnailUrl = () => {
-    const meta = document.querySelector('meta[property="og:image"], meta[name="twitter:image"], meta[property="twitter:image"], meta[itemprop="image"]');
-    const raw = meta?.content?.trim();
-    if (!raw) return "";
-    try { const resolved = new URL(raw, location.href); return /^https?:$/.test(resolved.protocol) ? resolved.href : ""; } catch { return ""; }
-  };
+  const pageThumbnailUrl = () => globalThis.LHN_THUMBNAILS?.fromPageMetadata(document, location.href) || "";
   const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
   const MAP = {
     'o͝o': 'ʊ', 'o͞o': 'u', 'T͟H': 'ð', 'âr': 'ɛr', 'ûr': 'ɜr', 'îr': 'ɪr',

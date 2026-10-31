@@ -2,6 +2,7 @@
 // It transforms the existing overlay in place; it does not create a second overlay.
 (() => {
   const ext = globalThis.browser || globalThis.chrome;
+  const thumbnails = globalThis.LHN_THUMBNAILS;
   let A = null;
   let ui = null;
   let active = false;
@@ -790,15 +791,13 @@
     ui.miniTitle.textContent = `Keepit - ${title || tr("dictationTitle")}`;
     ui.miniSource.textContent = tr("dictationAudioSource");
     const id = String(A?.state?.videoId || "");
-    if (/^[A-Za-z0-9_-]+$/.test(id)) {
+    if (thumbnails?.youtubeVideoId(id)) {
       ui.miniThumb.hidden = false;
-      ui.miniThumb.src = `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+      thumbnails.loadYouTube(ui.miniThumb, id, { onError:() => { ui.miniThumb.hidden = true; } });
     } else {
       ui.miniThumb.hidden = true;
-      ui.miniThumb.removeAttribute("src");
+      thumbnails?.clear(ui.miniThumb);
     }
-    const thumbnail = ui.miniThumb;
-    thumbnail.onerror = () => { thumbnail.hidden = true; };
     const compact = ui.root.classList.contains("te-dict-video-compact");
     const label = tr(compact ? "dictationExpandVideo" : "dictationCompactVideo");
     ui.videoCompactToggle.title = label;

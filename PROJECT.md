@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.832; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.833; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp.
-- Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; thẻ YouTube và `continue-art` dùng thumbnail như thanh audio, giữ artwork mặc định nếu ảnh không tải được; thống kê lỗi lấy từ dữ liệu đã lưu; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
+- Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; Dictation YouTube, Dashboard và Highlights & Notes gọi chung `js/shared/thumbnails.js` để lấy thumbnail/fallback; thống kê lỗi lấy từ dữ liệu đã lưu; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.832: full suite `node --test tests/*.test.cjs` đạt 58/58; `node --check js/dashboard/dashboard.js`, `git diff --check`, manifest version 3.4.832 và ZIP integrity đạt. Chưa browser-test Chrome/Firefox thật. Chưa browser-test Chrome/Firefox; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.833: full suite `node --test tests/*.test.cjs` đạt 63/63; `node --check` các JS đã sửa, `git diff --check`, manifest version 3.4.833 và ZIP integrity đạt. Chưa browser-test Chrome/Firefox thật; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -53,7 +53,7 @@ Keepit - Test/
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
 │   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS + persistent cache), search.js
+│   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS), thumbnails.js (LHN_THUMBNAILS), search.js
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation
@@ -95,6 +95,7 @@ Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Flashcards / S
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
+Dictation YouTube + Dashboard Dictation + Highlights & Notes sources ──> shared/thumbnails.js (LHN_THUMBNAILS) ──> shared URL/fallback/load logic
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
@@ -113,6 +114,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+
+**2026-10-31 | v3.4.833 | Arena.ai Agent:**
+
+- Gom việc lấy và nạp thumbnail vào `js/shared/thumbnails.js` (`LHN_THUMBNAILS`): URL YouTube `hqdefault`, trích `og:image`/Twitter image, kiểm tra URL, SVG fallback nguồn bài viết và load/error retry.
+- Chuyển Dictation YouTube overlay, card/continue-art Dashboard và Highlights & Notes source sang helper chung; giữ fallback UI hiện có, không đổi dữ liệu annotation hay business logic.
+- Thêm kiểm thử helper, fallback và thứ tự nạp trong Manifest/HTML; kiểm tra không còn consumer tự ghép URL `i.ytimg.com`.
+- File: `js/shared/thumbnails.js`, `js/content/content.js`, `js/dictation/dictation.js`, `js/dashboard/dashboard.js`, `js/dashboard/lr-practice-demo.js`, `manifest.json`, `pages/dashboard.html`, `pages/lr-practice-demo.html`, `tests/shared-thumbnails.test.cjs`, `docs/modules/shared.md`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: `node --test tests/*.test.cjs` đạt 63/63; `node --check` các JS đã sửa, `git diff --check`, manifest version 3.4.833 và ZIP CRC/nội dung đã xác minh. Chưa browser-test Chrome/Firefox thật.
 
 **2026-10-31 | v3.4.832 | Arena.ai Agent:**
 
