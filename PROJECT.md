@@ -1,12 +1,12 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.838; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.839; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. H&N source items bắt đầu 350ms sau Sources panel và chạy riêng từ trên xuống, cách nhau 180ms; Notes có nhịp độc lập để không chen vào Sources. Các ngoại lệ reveal từng item/card chỉ giới hạn ở H&N và Dictation theo yêu cầu.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.838: H&N/site-icon/thumbnail targeted tests đạt 17/17; full suite `node --test tests/*.test.cjs` đạt 66/66; `node --check` JS, manifest JSON, tham chiếu hiện hành và `git diff --check` đạt. ZIP 135 entries, manifest 3.4.838 ở gốc, CRC sạch, file mới có mặt/file cũ vắng mặt, `.git` không có. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.839: H&N/site-icon/thumbnail targeted tests đạt 17/17; full suite `node --test tests/*.test.cjs` đạt 66/66; `node --check` JS, manifest JSON và `git diff --check` đạt. ZIP sẽ xác minh sau đóng gói. Browser-test chưa chạy vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -114,6 +114,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.839 | Arena.ai Agent sửa:**
+
+- Sửa source-item reveal để mỗi item được mở bằng timer riêng đúng thứ tự, không phụ thuộc CSS transition-delay hay một lần bật class chung. Chỉ đánh dấu item đã reveal khi timer thực sự chạy và node còn trong DOM, tránh render lại snapshot làm mất sequence.
+- Giữ nhịp đã chốt: bắt đầu 350ms sau Sources panel, 180ms giữa các source từ trên xuống; Notes có sequence riêng; transition 560ms và tôn trọng `prefers-reduced-motion`.
+- File: `js/dashboard/highlights-notes.js`, `css/dashboard/highlights-notes-embedded.css`, `tests/dashboard-highlights-notes-route.test.cjs`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.839.zip`.
+- Kiểm tra: H&N/site-icon/thumbnail targeted tests đạt 17/17; full suite đạt 66/66; `node --check`, manifest JSON và `git diff --check` đạt; ZIP 135 entries, manifest 3.4.839 ở gốc, CRC sạch, file cũ H&N vắng mặt, `.git` không có. Browser-test chưa chạy do không có Chrome/Firefox/Chromium.
 
 **2026-10-31 | v3.4.838 | Arena.ai Agent sửa:**
 

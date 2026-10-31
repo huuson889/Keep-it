@@ -76,7 +76,7 @@ test("A hidden Highlights & Notes route cannot be re-displayed by its scroller r
   assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
 });
 
-test("Highlights & Notes counters animate with panels and source/note lists reveal independently top-down afterward", () => {
+test("Highlights & Notes counters animate with panels and source and note reveals use independent per-item timers after their panels", () => {
   assert.match(dashboard, /keepit:highlights-notes-entrance-reset/);
   assert.match(dashboard, /keepit:highlights-notes-panel-reveal/);
   assert.match(notes, /function setLhnCounter\(node,value,formatter=formatLhnNumber\)/);
@@ -92,6 +92,9 @@ test("Highlights & Notes counters animate with panels and source/note lists reve
   assert.match(notes, /scheduleLhnItemReveal\(sources,sourceAt\+350\);scheduleLhnItemReveal\(notes,notesAt\+350\)/);
   assert.match(notes, /scheduleLhnItemReveal\(pendingSources,Math\.max\(now\+120,sourceAt\+350\)\);if\(pendingNotes\.length\)scheduleLhnItemReveal\(pendingNotes,Math\.max\(now\+120,notesAt\+350\)\)/);
   assert.match(notes, /const step=180/);
+  assert.match(notes, /!lhnRevealedItemKeys\.has\(lhnItemKey\(node,index\)\)&&!lhnItemRevealTimers\.has\(node\)/);
+  assert.match(notes, /const timer=window\.setTimeout\(\(\)=>\{lhnItemRevealTimers\.delete\(node\);if\(cycle!==lhnItemRevealCycle\|\|!node\.isConnected\)return;node\.classList\.add\('lhn-item-revealed'\);lhnRevealedItemKeys\.add\(key\)/);
+  assert.doesNotMatch(notes, /lhn-item-reveal-delay/);
   assert.match(css, /transition:opacity \.56s cubic-bezier\(\.16,1,\.3,1\),transform \.56s cubic-bezier\(\.16,1,\.3,1\)/);
   assert.match(css, /\.source-item\.lhn-item-reveal[\s\S]*?opacity:0!important/);
   assert.match(css, /\.lhn-sidebar-card\.lhn-item-reveal[\s\S]*?transform:translateY\(18px\)/);
