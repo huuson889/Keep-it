@@ -1598,7 +1598,7 @@ function onTimeUpdate() {
 function scrollTranscriptRowToPosition(row, shiftUpPx = 0) {
   const list = $('te-transcript-list');
   if (!row || !list) return;
-  const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2 - shiftUpPx;
+  const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2 + shiftUpPx;
   // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
   list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
 }
