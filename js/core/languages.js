@@ -285,6 +285,49 @@
     dictationFindNewTitle:"새 콘텐츠 찾기", dictationFindNewHelp:"위에 검색어를 입력한 다음 검색 위치를 선택하세요.", dictationFindYouTube:"YouTube 동영상 찾기", dictationFindGoogle:"Google에서 기사 찾기", dictationGoogleNote:"Google은 웹 검색 결과를 엽니다. 웹 문서에서 바로 받아쓰기는 아직 지원되지 않습니다.", dictationFooterTitle:"Keepit · Dictation", dictationFooterNote:"세션과 진행 상황은 이 기기에 저장됩니다."
   });
 
+  Object.assign(MESSAGES.en, {
+    dictationSpeak:"Speak", dictationSpeakTitle:"Shadowing at your pace", dictationModeGroup:"Dictation mode",
+    dictationSpeakHelp:"Tap the microphone and repeat the sentence you hear.",
+    dictationSpeakPrivacy:"The browser's speech-recognition service may process your audio.",
+    dictationSpeakResult:"Speech recognition result", dictationSpeakListening:"Listening…",
+    dictationSpeakProcessing:"Checking what you said…", dictationSpeakSuccess:"Excellent! You said it 100% correctly.",
+    dictationSpeakRetry:"Not quite. Tap the microphone to try again.", dictationSpeakNoSpeech:"No speech detected. Tap the microphone and try again.",
+    dictationSpeakDenied:"Microphone or speech-recognition permission was denied. Allow access in your browser settings.",
+    dictationSpeakUnsupported:"Speech recognition is not available in this browser. Try Chrome or Edge, or switch to Type.",
+    dictationSpeakNetwork:"Speech recognition could not connect. Check your connection and try again.",
+    dictationSpeakError:"Could not start speech recognition. Please try again.",
+    dictationSpeakStart:"Start speaking practice", dictationSpeakStop:"Stop and check speech",
+    dictationSpeechShortcutHint:"(Enter) Check · (Esc) Reveal/Reset · (`) Play/Pause · (Ctrl) Replay"
+  });
+  Object.assign(MESSAGES.vi, {
+    dictationSpeak:"Luyện nói", dictationSpeakTitle:"Luyện nói theo nhịp của bạn", dictationModeGroup:"Chế độ luyện tập",
+    dictationSpeakHelp:"Nhấn micro và nhắc lại câu bạn nghe được.",
+    dictationSpeakPrivacy:"Dịch vụ nhận diện giọng nói của trình duyệt có thể xử lý âm thanh của bạn.",
+    dictationSpeakResult:"Kết quả nhận diện giọng nói", dictationSpeakListening:"Đang nghe…",
+    dictationSpeakProcessing:"Đang kiểm tra câu bạn vừa nói…", dictationSpeakSuccess:"Xuất sắc! Bạn đã nói chính xác 100%.",
+    dictationSpeakRetry:"Chưa chính xác. Nhấn micro để thử lại.", dictationSpeakNoSpeech:"Chưa nhận được giọng nói. Nhấn micro và thử lại.",
+    dictationSpeakDenied:"Quyền micro hoặc nhận diện giọng nói bị từ chối. Hãy cho phép trong cài đặt trình duyệt.",
+    dictationSpeakUnsupported:"Trình duyệt này chưa hỗ trợ nhận diện giọng nói. Hãy thử Chrome/Edge hoặc chuyển sang Đánh máy.",
+    dictationSpeakNetwork:"Không kết nối được dịch vụ nhận diện giọng nói. Hãy kiểm tra mạng và thử lại.",
+    dictationSpeakError:"Không thể bắt đầu nhận diện giọng nói. Vui lòng thử lại.",
+    dictationSpeakStart:"Bắt đầu luyện nói", dictationSpeakStop:"Dừng và chấm câu nói",
+    dictationSpeechShortcutHint:"(Enter) Chấm điểm · (Esc) Đáp án/Làm lại · (`) Phát/Tạm dừng · (Ctrl) Nghe lại"
+  });
+  Object.assign(MESSAGES.ko, {
+    dictationSpeak:"말하기", dictationSpeakTitle:"나만의 속도로 따라 말하기", dictationModeGroup:"받아쓰기 모드",
+    dictationSpeakHelp:"마이크를 누르고 들은 문장을 따라 말하세요.",
+    dictationSpeakPrivacy:"브라우저 음성 인식 서비스가 음성을 처리할 수 있습니다.",
+    dictationSpeakResult:"음성 인식 결과", dictationSpeakListening:"듣는 중…",
+    dictationSpeakProcessing:"말한 내용을 확인하는 중…", dictationSpeakSuccess:"잘했어요! 100% 정확하게 말했습니다.",
+    dictationSpeakRetry:"아직 정확하지 않아요. 마이크를 눌러 다시 시도하세요.", dictationSpeakNoSpeech:"음성이 감지되지 않았습니다. 마이크를 누르고 다시 말하세요.",
+    dictationSpeakDenied:"마이크 또는 음성 인식 권한이 거부되었습니다. 브라우저 설정에서 허용하세요.",
+    dictationSpeakUnsupported:"이 브라우저에서는 음성 인식을 지원하지 않습니다. Chrome/Edge를 사용하거나 타이핑으로 전환하세요.",
+    dictationSpeakNetwork:"음성 인식 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
+    dictationSpeakError:"음성 인식을 시작할 수 없습니다. 다시 시도하세요.",
+    dictationSpeakStart:"말하기 연습 시작", dictationSpeakStop:"말하기를 멈추고 확인",
+    dictationSpeechShortcutHint:"(Enter) 채점 · (Esc) 답 보기/초기화 · (`) 재생/일시정지 · (Ctrl) 다시 듣기"
+  });
+
   Object.assign(MESSAGES.en, { ovMenuDictation:"Dictation", ovMenuHighlightsNotes:"Highlights & Notes" });
   Object.assign(MESSAGES.vi, { ovMenuDictation:"Chép chính tả", ovMenuHighlightsNotes:"Tô sáng & Ghi chú" });
   Object.assign(MESSAGES.ko, { ovMenuDictation:"받아쓰기", ovMenuHighlightsNotes:"하이라이트 및 메모" });

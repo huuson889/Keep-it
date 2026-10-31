@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do module Video quản lý.
+Dictation luyện caption tiếng Anh từ YouTube qua overlay/player do module Video quản lý. Có hai mode trong cùng panel: `Đánh máy` (cũ) và `Luyện nói` (SpeechRecognition trong browser hỗ trợ).
 
 ## 2. File chính và điểm vào
 
@@ -26,7 +26,9 @@ Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do 
 3. `LHN_DICTATION_SCORE` giữ quy tắc case/punctuation hiện hành và bổ sung các contraction chuẩn có apostrophe theo allowlist; expansion tương ứng được coi như contraction.
 4. `LHN_DICTATION_RULES` dùng transcript gốc để nhận diện tên, render hint ngay phía trên ô nhập và ghi lỗi từ đủ điều kiện; mỗi lượt sai được gán nhóm âm vị, quy tắc hoặc typo bằng heuristic cục bộ, kèm biến thể gõ và mảnh ngữ cảnh.
 5. Progress, solved, notes, translations, tiêu đề video hiện trên thanh audio và `wrongWordStats` schema v3 lưu trong `dictation:<videoId>`. Session index bổ sung metadata; lỗi index không chặn lưu tiêu đề trong record.
-6. Khi close/đổi video, flush dữ liệu cần thiết và gỡ listener/timer để không cập nhật UI cũ.
+6. `Luyện nói` gọi `SpeechRecognition`/`webkitSpeechRecognition` sau thao tác nhấn mic của người dùng. Transcript nhận dạng được chấm bằng `LHN_DICTATION_SCORE.score()`; token-level feedback hiển thị trong practice view và kết quả đúng cập nhật cùng progress/translation/success flow như typing. Lỗi permission/network/no-speech/unsupported có thông báo riêng; mode unsupported có thể chuyển về `Đánh máy`.
+7. Hiển thị disclosure rằng speech-recognition service của browser có thể xử lý audio. Module không tự ghi/lưu file audio; chỉ transcript nhận dạng được đưa vào scorer. Đóng panel/đổi câu/chuyển về typing hủy recognition đang chạy.
+8. Khi close/đổi video, flush dữ liệu cần thiết và gỡ listener/timer để không cập nhật UI cũ.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -43,5 +45,5 @@ Dictation v1 luyện gõ caption tiếng Anh từ YouTube qua overlay/player do 
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --test tests/dictation-learning-rules.test.cjs tests/dashboard-dictation-stats-popup.test.cjs`; kiểm tra script order và `git diff --check`. Tests bao gồm contraction/slang, hint/dedup, từ đầu câu/prefix `>>`, eligibility 3/4 chữ cái, correction và migration.
-- Browser cần xác nhận overlay/shortcut, caption English/loading, hint, scoring/progress, replay, lưu notes/translations, stats popup và cleanup khi đổi video/đóng trên Chrome/Edge/Firefox. Chưa chạy browser-test trong release này.
+- Static: `node --check` cho controller/style/languages, manifest JSON, kiểm tra icon mic 18×18 và thứ tự trong control bar; xác nhận các khóa locale và `git diff --check`. Trước đây test rules/popup có thể chạy bằng `node --test tests/dictation-learning-rules.test.cjs tests/dashboard-dictation-stats-popup.test.cjs` khi thư mục tests có trong checkout.
+- Browser cần xác nhận overlay/shortcut, caption English/loading, hint, scoring/progress, replay, lưu notes/translations, stats popup và cleanup khi đổi video/đóng trên Chrome/Edge/Firefox. Thử nhận diện giọng nói/permission/result trên Chromium, và thông báo unsupported trên Firefox. Chưa chạy browser-test trong release này.

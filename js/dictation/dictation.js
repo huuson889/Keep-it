@@ -8,6 +8,9 @@
   let active = false;
   let openingPanel = false;
   let openingGeneration = 0;
+  let dictationMode = "typing";
+  let speechRecognition = null;
+  let speechRecognitionError = "";
   let current = 0;
   let checkedCurrent = false;
   let savedPageScrollStyles = null;
@@ -527,6 +530,21 @@
         </div>
         <div class="te-dict-work">
           <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
+          <div class="te-dict-speech-practice" id="te-dict-speech-practice" hidden>
+            <div class="te-dict-speech-target" id="te-dict-speech-target"></div>
+            <div class="te-dict-translation" id="te-dict-translation" hidden></div>
+            <div class="te-dict-speech-shortcuts" data-dict-label="dictationSpeechShortcutHint"></div>
+            <div class="te-dict-speech-result-wrap" id="te-dict-speech-result-wrap" hidden>
+              <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
+              <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
+            </div>
+            <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
+              ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
+            </button>
+            <p class="te-dict-speech-help" id="te-dict-speech-help" data-dict-label="dictationSpeakHelp"></p>
+            <p class="te-dict-speech-privacy" data-dict-label="dictationSpeakPrivacy"></p>
+            <div class="te-dict-speech-status" id="te-dict-speech-status" role="status" aria-live="polite"></div>
+          </div>
           <div class="te-dict-answer-stack">
             <div class="te-dict-proper-noun-hint" id="te-dict-proper-noun-hint" role="note" aria-live="polite" hidden></div>
             <div class="te-dict-input-wrap">
@@ -539,7 +557,7 @@
               <div class="te-dict-error-words" id="te-dict-error-words"></div>
             </div>
           </div>
-          <div class="te-dict-translation" id="te-dict-translation" hidden></div>
+          <div class="te-dict-translation-slot" id="te-dict-translation-slot"></div>
         </div>
       </div>
       <div class="te-dict-footer">
@@ -642,10 +660,16 @@
     const tools = document.createElement("div");
     tools.className = "te-dict-toolbar-tools";
     tools.innerHTML = `
-      <button class="te-dict-type-control" id="te-dict-type-control" type="button">
-        ${makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>')}
-        <span data-dict-label="dictationType"></span>
-      </button>
+      <div class="te-dict-mode-switch" role="group" aria-label="${tr("dictationModeGroup")}">
+        <button class="te-dict-mode-control" id="te-dict-speak-control" type="button" aria-pressed="false">
+          ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
+          <span data-dict-label="dictationSpeak"></span>
+        </button>
+        <button class="te-dict-mode-control active" id="te-dict-type-control" type="button" aria-pressed="true">
+          ${makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>')}
+          <span data-dict-label="dictationType"></span>
+        </button>
+      </div>
       <span class="te-dict-toolbar-accuracy">
         <svg class="te-dict-ring" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle class="te-dict-ring-bg" cx="12" cy="12" r="9"/><circle class="te-dict-ring-fg" id="te-dict-ring-fg" cx="12" cy="12" r="9" transform="rotate(-90 12 12)"/></svg>
         <span class="te-dict-acc-col"><span data-dict-label="dictationAccuracy"></span><strong id="te-dict-toolbar-score">0%</strong></span>
@@ -685,6 +709,7 @@
       errorWords: center.querySelector("#te-dict-error-words"),
       success: center.querySelector("#te-dict-success"),
       translation: center.querySelector("#te-dict-translation"),
+      translationSlot: center.querySelector("#te-dict-translation-slot"),
       check: center.querySelector("#te-dict-check"),
       audioBtn: center.querySelector("#te-dict-audio-btn"),
       showHints: center.querySelector("#te-dict-show-hints"),
@@ -693,7 +718,17 @@
       btnReplay: center.querySelector("#te-dict-btn-replay"),
       btnSlow: center.querySelector("#te-dict-btn-slow"),
       btnNext: center.querySelector("#te-dict-btn-next"),
+      modeSwitch: tools.querySelector(".te-dict-mode-switch"),
+      speakControl: tools.querySelector("#te-dict-speak-control"),
       typeControl: tools.querySelector("#te-dict-type-control"),
+      speechPractice: center.querySelector("#te-dict-speech-practice"),
+      speechTarget: center.querySelector("#te-dict-speech-target"),
+      speechResultWrap: center.querySelector("#te-dict-speech-result-wrap"),
+      speechResult: center.querySelector("#te-dict-speech-result"),
+      speechMic: center.querySelector("#te-dict-speech-mic"),
+      speechHelp: center.querySelector("#te-dict-speech-help"),
+      speechStatus: center.querySelector("#te-dict-speech-status"),
+      heading: center.querySelector(".te-dict-panel-head .te-dict-heading span"),
       toolbarScore: tools.querySelector("#te-dict-toolbar-score"),
       ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
@@ -756,7 +791,9 @@
     ui.showHints.addEventListener("click", onShowHintsToggle);
     ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
-    ui.typeControl.addEventListener("click", () => ui?.input.focus());
+    ui.speakControl.addEventListener("click", () => setDictationMode("speaking"));
+    ui.typeControl.addEventListener("click", () => { setDictationMode("typing"); focusInputIfTyping(); });
+    ui.speechMic.addEventListener("click", toggleSpeechRecognition);
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
     ui.input.addEventListener("input", onAnswerInput);
@@ -783,7 +820,187 @@
     ui.bar.addEventListener("click", onControlClick, true);
   }
 
-  function refocus() { ui?.input.focus({ preventScroll: true }); }
+  function syncVideoModeButtons() {
+    const typingButton = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
+    const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
+    const typingActive = active && dictationMode === "typing";
+    const speakingActive = active && dictationMode === "speaking";
+    typingButton?.classList.toggle("te-active", typingActive);
+    typingButton?.setAttribute("aria-pressed", String(typingActive));
+    speakingButton?.classList.toggle("te-active", speakingActive);
+    speakingButton?.setAttribute("aria-pressed", String(speakingActive));
+  }
+
+  function focusInputIfTyping() {
+    if (dictationMode === "typing") ui?.input.focus({ preventScroll: true });
+  }
+
+  function setDictationMode(mode) {
+    if (mode !== "typing" && mode !== "speaking") return;
+    const changed = mode !== dictationMode;
+    if (changed && mode !== "speaking") stopSpeechRecognition(true);
+    dictationMode = mode;
+    if (ui) {
+      if (changed) onAnswerInput();
+      const speaking = mode === "speaking";
+      ui.root.classList.toggle("te-dict-speaking-mode", speaking);
+      ui.speechPractice.hidden = !speaking;
+      if (speaking) ui.speechPractice.insertBefore(ui.translation, ui.speechPractice.querySelector(".te-dict-speech-shortcuts"));
+      else ui.translationSlot.appendChild(ui.translation);
+      ui.speakControl.classList.toggle("active", speaking);
+      ui.typeControl.classList.toggle("active", !speaking);
+      ui.speakControl.setAttribute("aria-pressed", String(speaking));
+      ui.typeControl.setAttribute("aria-pressed", String(!speaking));
+      ui.heading.textContent = tr(speaking ? "dictationSpeakTitle" : "dictationTitle");
+      ui.speechTarget.textContent = sentenceCues[current]?.en || "";
+      ui.speechMic.disabled = !sentenceCues[current];
+      if (changed && speaking) {
+        ui.speechStatus.textContent = "";
+        ui.speechResult.replaceChildren();
+        ui.speechResultWrap.hidden = true;
+      }
+    }
+    syncVideoModeButtons();
+  }
+
+  function updateSpeechMicState(listening) {
+    if (!ui?.speechMic) return;
+    ui.speechMic.classList.toggle("listening", listening);
+    ui.speechMic.setAttribute("aria-pressed", String(listening));
+    ui.speechMic.setAttribute("aria-label", tr(listening ? "dictationSpeakStop" : "dictationSpeakStart"));
+    ui.speechMic.title = tr(listening ? "dictationSpeakStop" : "dictationSpeakStart");
+  }
+
+  function stopSpeechRecognition(abort = true) {
+    const recognition = speechRecognition;
+    speechRecognition = null;
+    if (recognition) {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try { abort ? recognition.abort() : recognition.stop(); } catch {}
+    }
+    updateSpeechMicState(false);
+  }
+
+  function renderSpeechResult(text) {
+    if (!ui?.speechResult) return;
+    const transcript = String(text || "").trim();
+    ui.speechResult.replaceChildren();
+    ui.speechResultWrap.hidden = !transcript;
+    if (!transcript) return;
+    const reference = sentenceCues[current]?.en || "";
+    const operations = globalThis.LHN_DICTATION_SCORE.score(reference, transcript).ops;
+    const typedTokens = getTranscriptWordTokens(transcript);
+    const expectedTokens = getTranscriptWordTokens(reference);
+    const displayTokens = (tokens, indices, fallback) => {
+      if (!indices?.length) return fallback || "";
+      return tokens.slice(indices[0], indices[indices.length - 1] + 1).map((item) => item.display).join(" ");
+    };
+    for (const operation of operations) {
+      const typedDisplay = displayTokens(typedTokens, operation.typedIndices, operation.typed);
+      const expectedDisplay = displayTokens(expectedTokens, operation.expectedIndices, operation.expected);
+      if (operation.type === "wrong") {
+        const token = document.createElement("span");
+        token.className = "te-dict-speech-word wrong";
+        token.textContent = typedDisplay;
+        ui.speechResult.appendChild(token);
+        const correction = document.createElement("span");
+        correction.className = "te-dict-speech-word fix";
+        correction.textContent = `→ ${expectedDisplay}`;
+        ui.speechResult.appendChild(correction);
+      } else {
+        const token = document.createElement("span");
+        token.className = `te-dict-speech-word ${operation.type}`;
+        token.textContent = operation.type === "missing" ? expectedDisplay : typedDisplay;
+        ui.speechResult.appendChild(token);
+      }
+    }
+  }
+
+  function toggleSpeechRecognition() {
+    if (dictationMode !== "speaking") setDictationMode("speaking");
+    if (speechRecognition) {
+      ui.speechStatus.textContent = tr("dictationSpeakProcessing");
+      try { speechRecognition.stop(); }
+      catch { stopSpeechRecognition(true); }
+      return;
+    }
+    const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition
+      || globalThis.window?.SpeechRecognition || globalThis.window?.webkitSpeechRecognition;
+    if (typeof Recognition !== "function") {
+      ui.speechStatus.textContent = tr("dictationSpeakUnsupported");
+      return;
+    }
+    const cue = sentenceCues[current];
+    if (!cue?.en) {
+      ui.speechStatus.textContent = tr("dictationWaitingForCaptions");
+      return;
+    }
+    let recognition;
+    try { recognition = new Recognition(); }
+    catch { ui.speechStatus.textContent = tr("dictationSpeakError"); return; }
+    let finalText = "";
+    let interimText = "";
+    speechRecognitionError = "";
+    speechRecognition = recognition;
+    ui.input.value = "";
+    onAnswerInput();
+    ui.speechResult.replaceChildren();
+    ui.speechResultWrap.hidden = true;
+    ui.speechStatus.textContent = tr("dictationSpeakListening");
+    updateSpeechMicState(true);
+    recognition.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
+      ? A.state.captionTrackLanguage : "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const finals = [];
+      const interims = [];
+      for (let index = 0; index < event.results.length; index++) {
+        const result = event.results[index];
+        const text = String(result?.[0]?.transcript || "").trim();
+        if (!text) continue;
+        (result.isFinal ? finals : interims).push(text);
+      }
+      finalText = finals.join(" ").trim();
+      interimText = interims.join(" ").trim();
+      renderSpeechResult([finalText, interimText].filter(Boolean).join(" "));
+    };
+    recognition.onerror = (event) => {
+      const code = String(event?.error || "");
+      speechRecognitionError = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
+        ? "dictationSpeakDenied"
+        : code === "network" ? "dictationSpeakNetwork"
+          : code === "no-speech" ? "dictationSpeakNoSpeech"
+            : code === "aborted" ? "" : "dictationSpeakError";
+      if (speechRecognitionError && ui) ui.speechStatus.textContent = tr(speechRecognitionError);
+    };
+    recognition.onend = () => {
+      if (speechRecognition !== recognition) return;
+      speechRecognition = null;
+      updateSpeechMicState(false);
+      const transcript = (finalText || interimText).trim();
+      if (!active || dictationMode !== "speaking") return;
+      if (!transcript) {
+        if (!speechRecognitionError) ui.speechStatus.textContent = tr("dictationSpeakNoSpeech");
+        return;
+      }
+      ui.input.value = transcript;
+      renderSpeechResult(transcript);
+      ui.speechStatus.textContent = "";
+      submit();
+    };
+    try { recognition.start(); }
+    catch {
+      speechRecognition = null;
+      updateSpeechMicState(false);
+      ui.speechStatus.textContent = tr("dictationSpeakError");
+    }
+  }
+
+  function refocus() { focusInputIfTyping(); }
 
   function setRepeat(count) {
     repeatCount = Math.max(0, Math.min(3, count | 0));
@@ -1400,6 +1617,7 @@
 
   function renderCurrent() {
     if (!ui || !active) return;
+    stopSpeechRecognition(true);
     checkedCurrent = false;
     hintResult = null;
     while (current < listStart && listStart > 0) renderPrevious();
@@ -1417,6 +1635,11 @@
     ui.saved.textContent = "";
     escapeFilledAnswer = false;
     ui.input.value = "";
+    ui.speechTarget.textContent = sentenceCues[current]?.en || "";
+    ui.speechMic.disabled = !sentenceCues[current];
+    ui.speechResult.replaceChildren();
+    ui.speechResultWrap.hidden = true;
+    ui.speechStatus.textContent = "";
     renderProperNounHint(sentenceCues[current]?.en || "");
     clearInputWrongMarks();
     ui.input.classList.remove("correct");
@@ -1437,7 +1660,7 @@
     void saveRecord();
     prepareCue();
     playSentence(index, { count: repeatCount + 1 });
-    ui?.input.focus({ preventScroll: true });
+    focusInputIfTyping();
   }
 
   function updateTranslationViews(index) {
@@ -1874,13 +2097,22 @@
     if (!cue || !ui) return;
     const wasSuccessVisible = !ui.success.hidden;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
-    const statsUpdated = recordWrongWordSubmission(wrongWordStats, current, result, cue.en);
+    const statsUpdated = dictationMode === "typing"
+      ? recordWrongWordSubmission(wrongWordStats, current, result, cue.en)
+      : false;
     if (statsUpdated) renderWrongWordStats();
+    if (dictationMode === "speaking") {
+      renderSpeechResult(ui.input.value);
+      ui.speechStatus.textContent = result.perfect ? "" : tr("dictationSpeakRetry");
+    }
+    const successLabel = ui.success.querySelector("[data-dict-label]");
+    if (successLabel) successLabel.textContent = tr(dictationMode === "speaking" ? "dictationSpeakSuccess" : "dictationSuccess");
     setScore(result.percent);
     updateCheckButtonStyle(result.perfect);
     if (result.perfect) {
       const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
       if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
+      if (dictationMode === "speaking") renderSpeechResult(ui.input.value);
       clearInputWrongMarks();
       ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
@@ -2179,7 +2411,7 @@
     ui.translation.textContent = "";
     updateRows(false);
     setScore(solved.has(current) ? 100 : null);
-    ui.input.focus({ preventScroll: true });
+    focusInputIfTyping();
   }
 
   function onGlobalKeyDown(event) {
@@ -2240,13 +2472,17 @@
     attachedVideo = null;
   }
 
-  async function openPanel({ waitForCaptions = false } = {}) {
-    if (active || openingPanel) return;
+  async function openPanel({ waitForCaptions = false, mode = "typing" } = {}) {
+    if (active || openingPanel) {
+      setDictationMode(mode);
+      return;
+    }
     if (!isEnglishReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
     openingPanel = true;
     const requestGeneration = ++openingGeneration;
     build();
     if (!ui) { openingPanel = false; return; }
+    setDictationMode(mode);
     A?.setLearningMode?.(false);
     const layoutPrefsPromise = loadDictationLayoutPrefs();
     if (waitForCaptions) {
@@ -2261,7 +2497,7 @@
     sentenceCues = getCues();
     if (!sentenceCues.length && !waitForCaptions) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
-    setDictationButtonActive(true);
+    syncVideoModeButtons();
     progressReady = false;
     pendingCaptionStart = waitForCaptions && !sentenceCues.length;
     pendingResumeIndex = 0;
@@ -2330,13 +2566,19 @@
     setCaptionStatus("");
     playSentence(current, { count: repeatCount + 1 });
     void saveRecord();
-    ui.input.focus({ preventScroll: true });
+    focusInputIfTyping();
   }
 
   function setDictationButtonActive(enabled) {
-    const button = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
-    button?.classList.toggle("te-active", Boolean(enabled));
-    button?.setAttribute("aria-pressed", String(Boolean(enabled)));
+    if (enabled) syncVideoModeButtons();
+    else {
+      const typingButton = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
+      const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
+      for (const button of [typingButton, speakingButton]) {
+        button?.classList.remove("te-active");
+        button?.setAttribute("aria-pressed", "false");
+      }
+    }
   }
 
   function close() {
@@ -2344,14 +2586,19 @@
       openingPanel = false;
       openingGeneration++;
     }
+    stopSpeechRecognition(true);
     if (!active || !ui) {
       setDictationButtonActive(false);
+      ui?.root.classList.remove("te-dict-speaking-mode");
+      if (ui?.speechPractice) ui.speechPractice.hidden = true;
+      dictationMode = "typing";
       return;
     }
     restoreYouTubeScrollbar();
     flushNotes();
     active = false;
     setDictationButtonActive(false);
+    dictationMode = "typing";
     progressReady = false;
     pendingCaptionStart = false;
     pendingResumeIndex = 0;
@@ -2381,7 +2628,7 @@
       if (original.aria === null) button.removeAttribute("aria-disabled");
       else button.setAttribute("aria-disabled", original.aria);
     }
-    ui.root.classList.remove("te-dictation-active", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
+    ui.root.classList.remove("te-dictation-active", "te-dict-speaking-mode", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
     for (const property of ["--te-dict-left-track", "--te-dict-right-track", "--te-dict-left-splitter", "--te-dict-right-splitter", "--te-dict-center-min"]) {
       ui.root.style.removeProperty(property);
     }
@@ -2450,7 +2697,7 @@
       setCaptionStatus("");
       playSentence(current, { count:repeatCount + 1 });
       void saveRecord();
-      ui.input.focus({ preventScroll:true });
+      focusInputIfTyping();
       return;
     }
     const matchingIndex = sentenceCues.findIndex(cue => Math.abs(cue.start - oldStart) < 0.5);
@@ -2469,12 +2716,24 @@
     document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
   }
 
+  function onSpeakingClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    void openPanel({ waitForCaptions: true, mode: "speaking" });
+  }
+
   function attachControls() {
-    const button = A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn") || A?.ctrl?.("Chép chính tả");
-    if (button && button !== attachControls.button) {
-      if (attachControls.button) attachControls.button.removeEventListener("click", onToggleClick);
-      button.addEventListener("click", onToggleClick);
-      attachControls.button = button;
+    const dictationButton = A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn") || A?.ctrl?.("Chép chính tả");
+    if (dictationButton && dictationButton !== attachControls.dictationButton) {
+      if (attachControls.dictationButton) attachControls.dictationButton.removeEventListener("click", onToggleClick);
+      dictationButton.addEventListener("click", onToggleClick);
+      attachControls.dictationButton = dictationButton;
+    }
+    const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
+    if (speakingButton && speakingButton !== attachControls.speakingButton) {
+      if (attachControls.speakingButton) attachControls.speakingButton.removeEventListener("click", onSpeakingClick);
+      speakingButton.addEventListener("click", onSpeakingClick);
+      attachControls.speakingButton = speakingButton;
     }
   }
 
