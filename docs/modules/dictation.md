@@ -33,6 +33,7 @@ Dictation luyện caption tiếng Anh từ YouTube qua overlay/player do module 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không tạo video/overlay thứ hai; giữ cue English, `LHN_OVERLAY_API` và các event hiện có.
+- Keyboard shortcut trong mode `Luyện nói` dùng lưới bốn cột/căn lề giống hint của `Đánh máy`; mode control inactive phải theo theme (nền tối/chữ sáng trong dark mode, nền sáng/chữ tối trong light mode), active dùng màu vàng.
 - Layout Dictation video dùng ba cột theo phần không gồm hai splitter: mặc định câu 25%, vùng Dictation 45%, ghi chú 30%. Cột câu kéo được 15–30%, ghi chú 20–35%; vùng giữa tự chiếm phần còn lại. Giữ splitter 8px và lưu lại tỉ lệ kéo trong `dictation:layout:v1`.
 - Chỉ thêm allowlist contraction chuẩn có straight/curly apostrophe, ví dụ `I'm` ↔ `I am`, `don't` ↔ `do not`. Không nhận slang như `gonna`/`wanna` hoặc dạng không apostrophe; các dạng mơ hồ chỉ theo expansion đã liệt kê.
 - Scoring và reporting là hai tầng: scoring chỉ đổi để hỗ trợ contraction; báo cáo bỏ `missing`, target 1–3 chữ cái, proper nouns và punctuation-only differences. Áp dụng eligibility cho cả errors và fixes; fix chỉ ghi khi sửa đúng lỗi eligible đã theo dõi.

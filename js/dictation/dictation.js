@@ -533,7 +533,7 @@
           <div class="te-dict-speech-practice" id="te-dict-speech-practice" hidden>
             <div class="te-dict-speech-target" id="te-dict-speech-target"></div>
             <div class="te-dict-translation" id="te-dict-translation" hidden></div>
-            <div class="te-dict-speech-shortcuts" data-dict-label="dictationSpeechShortcutHint"></div>
+            <div class="te-dict-speech-shortcuts" id="te-dict-speech-shortcuts" data-dict-label="dictationSpeechShortcutHint"></div>
             <div class="te-dict-speech-result-wrap" id="te-dict-speech-result-wrap" hidden>
               <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
               <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
@@ -727,6 +727,7 @@
       speechResult: center.querySelector("#te-dict-speech-result"),
       speechMic: center.querySelector("#te-dict-speech-mic"),
       speechHelp: center.querySelector("#te-dict-speech-help"),
+      speechShortcuts: center.querySelector("#te-dict-speech-shortcuts"),
       speechStatus: center.querySelector("#te-dict-speech-status"),
       heading: center.querySelector(".te-dict-panel-head .te-dict-heading span"),
       toolbarScore: tools.querySelector("#te-dict-toolbar-score"),
@@ -766,6 +767,12 @@
     }));
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
+    ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
+      const item = document.createElement("span");
+      item.textContent = text;
+      return item;
+    }));
     installDictationColumnControls();
     ui.miniSource.textContent = tr("dictationAudioSource");
     updateCompactAudioInfo();
