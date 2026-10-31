@@ -160,9 +160,9 @@
 .dictation-root .panel-icon{width:31px;height:31px;display:grid;place-items:center;border-radius:11px;background:#fff0f5;color:#c96b8d}
 .dictation-root .panel-icon .icon{width:16px;height:16px}
 .dictation-root .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.dictation-root .mini-stat{padding:10px;border:1px solid #f0eff6;border-radius:12px;background:#fcfbff}
+.dictation-root .mini-stat{padding:10px;border:1px solid #f0eff6;border-radius:12px;background:#fcfbff;text-align:center}
 .dictation-root .mini-label{display:block;color:#8b91a4;font-size:11px;font-weight:700;line-height:1.3}
-.dictation-root .mini-value{display:flex;align-items:baseline;gap:4px;margin-top:6px;color:#252640;font-size:20px;font-weight:850;letter-spacing:-.6px}
+.dictation-root .mini-value{display:block;margin-top:6px;color:#252640;font-size:20px;font-weight:850;letter-spacing:-.6px;text-align:center}
 .dictation-root .mini-unit{color:#9298a9;font-size:11px;font-weight:600;letter-spacing:0}
 .dictation-root .mini-foot{margin-top:4px;color:#a0a5b3;font-size:11px}
 .dictation-root .stats-divider{height:1px;margin:14px 0 11px;background:#f0eff6}
@@ -174,10 +174,7 @@
 .dictation-root .mistake-filter{display:flex;gap:2px;padding:2px;border-radius:7px;background:#f3f2f8}
 .dictation-root .mistake-filter button{padding:4px 6px;border:0;border-radius:5px;background:transparent;color:#898fa1;font-size:10px;font-weight:700}
 .dictation-root .mistake-filter button.active{background:#fff;color:#6959d4;box-shadow:0 1px 3px #28204416}
-.dictation-root .mistake-list{display:grid;max-height:168px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:var(--lhn-scrollbar-thumb,#cbd5e1) transparent}
-.dictation-root .mistake-list::-webkit-scrollbar{width:var(--lhn-scrollbar-width,3px)!important;height:var(--lhn-scrollbar-width,3px)!important}
-.dictation-root .mistake-list::-webkit-scrollbar-track{background:transparent!important}
-.dictation-root .mistake-list::-webkit-scrollbar-thumb{border-radius:999px!important;background:var(--lhn-scrollbar-thumb,#cbd5e1)!important}
+.dictation-root .mistake-list{display:grid;max-height:400px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain}
 .dictation-root .mistake-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f1f0f6}
 .dictation-root .mistake-row:last-child{border-bottom:0}
 .dictation-root .word-pair{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap}

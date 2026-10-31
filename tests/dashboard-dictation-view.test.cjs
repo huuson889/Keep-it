@@ -8,6 +8,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 const html = read("pages/dashboard.html");
 const js = read("js/dashboard/dashboard.js");
 const css = read("css/dashboard/dictation.css");
+const dashboardCss = read("css/dashboard/dashboard.css");
 const languages = read("js/core/languages.js");
 
 test("Dictation route uses its visible name and displays sessions from the local index", () => {
@@ -41,10 +42,13 @@ test("Dictation stats labels are concise and saved-attempt notes are hidden", ()
   assert.match(languages, /dictationStatsWords:"Wrong words"/);
   assert.match(languages, /dictationStatsWords:"Từ sai"/);
   assert.match(languages, /dictationStatsWords:"오답 단어"/);
-  assert.match(languages, /dictationMostMistakes:"Most errors"/);
-  assert.match(languages, /dictationMostMistakes:"Sai nhiều nhất"/);
-  assert.match(languages, /dictationMostMistakes:"오답이 가장 많은 단어"/);
+  assert.match(languages, /dictationMostMistakes:"Most missed words"/);
+  assert.match(languages, /dictationMostMistakes:"Từ sai nhiều nhất"/);
+  assert.match(languages, /dictationMostMistakes:"가장 많이 틀린 단어"/);
   assert.match(css, /\.dictation-root \[data-i18n="dictationSavedStatsLabel"\],\s*\.dictation-root \.stats-note\{display:none!important\}/);
+  assert.match(css, /\.dictation-root \.mini-stat\{[^}]*text-align:center/);
+  assert.match(css, /\.dictation-root \.mini-value\{display:block;[^}]*text-align:center/);
+  assert.match(html, /<span id="dictationWrongWordsCount">0<\/span> <span class="mini-unit"/);
 });
 
 test("Session cards select one error summary, clear on outside clicks, and retain Resume/Open", () => {
@@ -70,9 +74,11 @@ test("Error summary scopes to the selected card or all currently visible cards a
   assert.match(html, /id=\"dictationShowAllSessions\"/);
 });
 
-test("The Dictation error list scrolls within its capped height using the app scrollbar", () => {
-  assert.match(css, /\.dictation-root \.mistake-list\{[^}]*max-height:168px[^}]*overflow-y:auto[^}]*overscroll-behavior-y:contain/);
-  assert.match(css, /\.mistake-list::-webkit-scrollbar\{width:var\(--lhn-scrollbar-width,3px\)!important;height:var\(--lhn-scrollbar-width,3px\)!important\}/);
+test("The Dictation error list uses the app-wide scrollbar and a 400px scroll limit", () => {
+  assert.match(css, /\.dictation-root \.mistake-list\{[^}]*max-height:400px[^}]*overflow-y:auto[^}]*overscroll-behavior-y:contain/);
+  assert.doesNotMatch(css, /\.mistake-list::-webkit-scrollbar/);
+  assert.match(dashboardCss, /body \*::-webkit-scrollbar \{[\s\S]*?width:3px!important/);
+  assert.match(dashboardCss, /scrollbar-width:thin!important/);
 });
 
 test("YouTube session cards reuse the Dictation audio thumbnail and retain the default art on failure", () => {
