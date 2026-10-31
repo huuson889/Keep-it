@@ -95,6 +95,14 @@ test("Dictation session cards reveal in DOM reading order and remain static for 
   assert.match(js, /const cards = \[\.\.\.dashboardDictationView\.querySelectorAll\("\.session-grid \.session-card"\)\]/);
   assert.match(js, /const targetOrder = new Map\(pending\.map\(\(\{ card, index \}\) => \[card, index\]\)\)/);
   assert.match(js, /\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)/);
+  assert.match(js, /const DICTATION_SESSION_CARD_AFTER_PANEL_DELAY = 250/);
+  assert.match(js, /librarySection\?\.classList\.contains\("dashboard-revealed"\)/);
+  assert.match(js, /target\.matches\("\.library-section"\)\) observeDictationSessionCards\(\)/);
+  assert.match(js, /const libraryPanelRevealAt = Number\(librarySection\.dataset\.dictationLibraryRevealAt\) \|\| 0/);
+  assert.match(js, /const cardRevealStartDelay = Math\.max\(0, libraryPanelRevealAt \+ DICTATION_SESSION_CARD_AFTER_PANEL_DELAY - performance\.now\(\)\)/);
+  assert.match(js, /target\.dataset\.dictationLibraryRevealAt = String\(performance\.now\(\) \+ delay\)/);
+  assert.match(js, /now \+ cardRevealStartDelay/);
+  assert.match(js, /cardRevealStartDelay \+ index \* 80/);
   assert.match(js, /dictationSessionCardRevealSequenceEnd \+ 80/);
   assert.match(js, /root:dashboardDictationView, threshold:0\.12/);
   assert.match(css, /\.session-card\.dictation-session-reveal\{opacity:0;transform:translateY\(24px\) scale\(\.98\)/);

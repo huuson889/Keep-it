@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.834; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.835; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Reveal dùng chung nhịp Overview cho khung cấp cao; không áp dụng lên record lặp. Ngoại lệ được yêu cầu: session cards của Dictation reveal theo thứ tự hàng.
-- Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; thống kê lỗi lấy từ dữ liệu đã lưu. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
+- Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn và Sources/Notes cuộn bên trong.
-- Kiểm tra v3.4.834: full suite `node --test tests/*.test.cjs` đạt 65/65; `node --check` JS đã sửa, CSS parse, manifest JSON, `git diff --check` đạt; ZIP 135 entries, manifest 3.4.834 ở gốc, CRC/integrity sạch, không có `.git`. Chưa browser-test vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
+- Kiểm tra v3.4.835: full suite `node --test tests/*.test.cjs` đạt 65/65; targeted Dictation/Overview 16/16; `node --check` JS đã sửa, manifest JSON và `git diff --check` đạt; ZIP 135 entries, manifest 3.4.835 ở gốc, CRC/integrity sạch, không có `.git`. Chưa browser-test vì môi trường không có Chrome/Firefox/Chromium; H&N hidden-route CSS fix tiếp tục kế thừa baseline v3.4.826.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
-- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N workspace có chiều cao giới hạn, hai danh sách cuộn nội bộ, shared page scroll, gap và responsive; counter/chart Overview sau reload/tab re-entry; Dictation count-up và thứ tự reveal session-card trái-sang-phải, trên-xuống dưới, gồm `prefers-reduced-motion`. Browser chưa được cài/khả dụng trong môi trường hiện tại nên kiểm tra mới chỉ static/mock; việc ẩn view không active (v3.4.826) cũng chưa xác nhận trên Chrome/Firefox thật.
+- Dashboard (Chrome/Firefox, desktop và màn hình hẹp): xác nhận shared `dashboardScroller`/topbar, per-tab scroll restore, H&N same-document event bus, annotations/favorites/CRUD/export/study actions, responsive/theme, favicon resolver/cache và high-level reveal/reduced-motion; H&N workspace có chiều cao giới hạn, hai danh sách cuộn nội bộ, shared page scroll, gap và responsive; counter/chart Overview sau reload/tab re-entry; Dictation count-up, session-card reveal trễ 250ms sau panel library và thứ tự trái-sang-phải/trên-xuống dưới, gồm `prefers-reduced-motion`. Browser chưa được cài/khả dụng trong môi trường hiện tại nên kiểm tra mới chỉ static/mock; việc ẩn view không active (v3.4.826) cũng chưa xác nhận trên Chrome/Firefox thật.
 - Dictation rules/popup và v1 overlay (Chrome/Edge/Firefox, YouTube thật): xác nhận hint proper nouns, contraction scoring, chấm điểm/tiến độ, thống kê eligible theo video, phát lại, layout/scroll, shortcut, cleanup khi đổi video/đóng và dữ liệu sau reload. Chưa chạy browser-test.
 - Reader/TTS/Settings/voice (Chrome/Firefox/Edge): xác nhận cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, Settings search/Menu Language và bàn phím, IPA, thông báo mạng, độ trễ dịch, Firefox MV3 và Twemoji 54px trên trang thật; một số đã headless-test nhưng chưa xác nhận trong extension.
 
@@ -113,6 +113,13 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-10-31 | v3.4.835 | Arena.ai Agent sửa:**
+
+- Điều chỉnh nhịp session-card Dictation: bắt đầu trễ hơn thời điểm panel library chính bắt đầu 250ms, cộng delay riêng của panel; giữ stagger trái-sang-phải/trên-xuống-dưới và reduced-motion.
+- Thêm regression test khóa độ trễ so với panel; giữ nguyên dữ liệu, route/scroll restore và filter nguồn.
+- File: `js/dashboard/dashboard.js`, `tests/dashboard-dictation-view.test.cjs`, `manifest.json`, `docs/modules/dashboard.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.835.zip`.
+- Kiểm tra: targeted Dictation/Overview đạt 16/16; full suite đạt 65/65; `node --check`, manifest JSON và `git diff --check` đạt; ZIP 135 entries, manifest 3.4.835 tại gốc, CRC/nội dung sạch, không có `.git`. Browser-test chưa chạy do không có Chrome/Firefox/Chromium trong môi trường.
 
 **2026-10-31 | v3.4.834 | Arena.ai Agent sửa:**
 

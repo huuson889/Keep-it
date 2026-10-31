@@ -2836,6 +2836,7 @@ let dashboardPanelRevealTimers = new Map();
 let dashboardPanelRevealSequenceEnd = 0;
 let dictationSessionCardRevealObserver = null;
 let dictationSessionCardRevealSequenceEnd = 0;
+const DICTATION_SESSION_CARD_AFTER_PANEL_DELAY = 250;
 let dictationSessionCardRevealIds = new Set();
 const dictationSessionCardRevealFrames = new Set();
 function cancelDictationSessionCardRevealObserver() {
@@ -2864,6 +2865,10 @@ function observeDictationSessionCards({ reset = false } = {}) {
     dictationSessionCardRevealIds.clear();
   } else cancelDictationSessionCardRevealObserver();
   if (activeDashboardView !== "dictation") return;
+  const librarySection = dashboardDictationView.querySelector(".library-section");
+  if (!librarySection?.classList.contains("dashboard-revealed")) return;
+  const libraryPanelRevealAt = Number(librarySection.dataset.dictationLibraryRevealAt) || 0;
+  const cardRevealStartDelay = Math.max(0, libraryPanelRevealAt + DICTATION_SESSION_CARD_AFTER_PANEL_DELAY - performance.now());
   const cards = [...dashboardDictationView.querySelectorAll(".session-grid .session-card")];
   const pending = [];
   cards.forEach((card, index) => {
@@ -2882,7 +2887,7 @@ function observeDictationSessionCards({ reset = false } = {}) {
     return;
   }
   if (!("IntersectionObserver" in window)) {
-    pending.forEach(({ card, sessionId }, index) => revealDictationSessionCard(card, sessionId, 100 + index * 80));
+    pending.forEach(({ card, sessionId }, index) => revealDictationSessionCard(card, sessionId, cardRevealStartDelay + index * 80));
     return;
   }
   const targetOrder = new Map(pending.map(({ card, index }) => [card, index]));
@@ -2891,7 +2896,8 @@ function observeDictationSessionCards({ reset = false } = {}) {
       .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
     visibleCards.forEach(card => {
       const now = performance.now();
-      const revealAt = Math.max(now + 100, dictationSessionCardRevealSequenceEnd + 80);
+      // Let the primary-column panel begin first, then stagger its cards in reading order.
+      const revealAt = Math.max(now + cardRevealStartDelay, dictationSessionCardRevealSequenceEnd + 80);
       dictationSessionCardRevealSequenceEnd = revealAt;
       const sessionId = card.dataset.sessionId || `dictation-card-${targetOrder.get(card)}`;
       revealDictationSessionCard(card, sessionId, Math.round(revealAt - now));
@@ -2917,10 +2923,6 @@ function resetDashboardPanelEntranceEffects(view) {
   dashboardPanelRevealTimers.clear();
   dashboardPanelRevealSequenceEnd = 0;
   const routeTargets = dashboardPanelRevealTargets(view);
-  if (view === "dictation") {
-    resetDictationCounterEntranceEffects();
-    resetDictationSessionCardEntranceEffects();
-  }
   if (dashboardSharedTopbar) {
     dashboardSharedTopbar.classList.add("ov-reveal");
     dashboardSharedTopbar.classList.remove("ov-revealed");
@@ -2934,14 +2936,21 @@ function resetDashboardPanelEntranceEffects(view) {
   for (const target of routeTargets) {
     target.classList.remove("dashboard-revealed");
     target.style.removeProperty("--ov-reveal-delay");
+    delete target.dataset.dictationLibraryRevealAt;
+  }
+  if (view === "dictation") {
+    resetDictationCounterEntranceEffects();
+    resetDictationSessionCardEntranceEffects();
   }
   primeDashboardRevealTargets(targets);
   if (!targets.length) return;
   const reveal = (target, delay) => {
     target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
+    if (view === "dictation" && target.matches(".library-section")) target.dataset.dictationLibraryRevealAt = String(performance.now() + delay);
     if (target === dashboardSharedTopbar) target.classList.add("ov-revealed");
     else target.classList.add("dashboard-revealed");
-    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); }, delay + 850);
+    if (view === "dictation" && target.matches(".library-section")) observeDictationSessionCards();
+    const timer = setTimeout(() => { dashboardPanelRevealTimers.delete(target); target.style.removeProperty("--ov-reveal-delay"); delete target.dataset.dictationLibraryRevealAt; }, delay + 850);
     dashboardPanelRevealTimers.set(target, timer);
   };
   if (!("IntersectionObserver" in window)) {
