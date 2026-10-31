@@ -33,7 +33,7 @@ Mô tả overlay Dual Subtitles trên YouTube: gắn player hiện có vào over
 - Không dùng `isDefault` hoặc ngôn ngữ English hardcode làm tiêu chí duy nhất cho source Auto. Ưu tiên mapping audio-caption; fallback chỉ dùng khi metadata không đủ.
 - Giữ hợp đồng `LHN_OVERLAY_API`, `lhn-overlay-ready`, `lhn-dual-captions-updated` và `LHN_DICTATION`; thay đổi các tên/shape này ảnh hưởng tích hợp Dictation.
 - Thiết lập ngôn ngữ lấy từ `lhnStudyTranslationSettings`; cài đặt chung lấy từ `lhnSettings` trong `browser.storage.local`.
-- Nút `Chế độ đọc` (icon Lucide `file-minus`) trong control bar chỉ bật/tắt class `te-reading-mode`: CSS thu video về cột trái, đưa transcript vào vùng giữa và giữ control bar toàn chiều rộng phía dưới. Nút nằm ngay trước `Chế độ phụ đề`; khi bật, nút tím nổi bên phải bị ẩn và hiện lại khi tắt. Toggle không sửa caption state, API Dictation hoặc các thiết lập hiện có, và tắt mode trả về bố cục trước đó.
+- Nút `Chế độ đọc` (icon Lucide `file-minus`) trong control bar chỉ bật/tắt class `te-reading-mode`: CSS thu video về cột trái, đưa transcript vào vùng giữa và giữ control bar toàn chiều rộng phía dưới. Nút nằm ngay trước `Chế độ phụ đề`; khi bật, nút tím nổi được chuyển vào góc dưới bên phải của video nhỏ, rồi trả về vị trí sidebar khi tắt. Toggle không sửa caption state, API Dictation hoặc các thiết lập hiện có, và tắt mode trả về bố cục trước đó.
 
 ## 5. Kiểm tra và xác minh
 

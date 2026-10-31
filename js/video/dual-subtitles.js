@@ -2115,6 +2115,11 @@ function bindUI() {
   const modalExport = $('te-modal-export');
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
+  const floatingBtnAnchor = floatingBtn?.parentElement;
+  const floatingBtnAnchorHome = floatingBtnAnchor?.parentElement;
+  const floatingBtnAnchorMarker = document.createComment('te-floating-btn-home');
+  floatingBtnAnchorHome?.insertBefore(floatingBtnAnchorMarker, floatingBtnAnchor?.nextSibling || null);
+  const readingVideoSlot = ui('.te-video-slot');
 
   const mainSubtitleText = ui('.te-sub-en');
   mainSubtitleText.addEventListener('pointerover', (event) => {
@@ -2333,6 +2338,11 @@ function bindUI() {
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ đọc').addEventListener('click', (e) => {
     const enabled = root.classList.toggle('te-reading-mode');
+    if (enabled && floatingBtnAnchor && readingVideoSlot) {
+      readingVideoSlot.appendChild(floatingBtnAnchor);
+    } else if (!enabled && floatingBtnAnchor) {
+      floatingBtnAnchorMarker.parentNode?.insertBefore(floatingBtnAnchor, floatingBtnAnchorMarker);
+    }
     e.currentTarget.classList.toggle('te-active', enabled);
     e.currentTarget.setAttribute('aria-pressed', String(enabled));
   });

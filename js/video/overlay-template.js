@@ -788,8 +788,21 @@ const OVERLAY_CSS = `
       width: 100%;
       box-sizing: border-box;
     }
-    #keepit-exact-overlay.te-reading-mode .te-floating-btn {
-      display: none !important;
+    #keepit-exact-overlay.te-reading-mode .te-video-slot > .te-floating-btn-anchor {
+      position: absolute !important;
+      inset: 0;
+      width: auto;
+      height: auto !important;
+      z-index: 12;
+      pointer-events: none;
+    }
+    #keepit-exact-overlay.te-reading-mode .te-video-slot .te-floating-btn {
+      display: flex !important;
+      position: absolute;
+      z-index: 13;
+      right: 16px;
+      bottom: 16px;
+      pointer-events: auto;
     }
     @media (max-width: 900px) {
       #keepit-exact-overlay.te-reading-mode .te-left-section {
@@ -941,7 +954,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       <div class="yt-dual-transcript-list" id="te-transcript-list"></div>
 
       <!-- Floating button inside transcript bottom right -->
-      <div style="position: relative; height: 0;">
+      <div class="te-floating-btn-anchor" style="position: relative; height: 0;">
         <button class="te-floating-btn" id="te-floating-btn" title="Mở cài đặt">
           <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
         </button>
