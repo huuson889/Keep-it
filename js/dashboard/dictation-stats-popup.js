@@ -7,13 +7,10 @@
 
   const popupRevealApi = globalThis.KeepitDashboardReveal;
   const popupRevealScope = popupRevealApi?.createScope?.();
-  const popupRevealTargets = [
-    $(".modal-head"),
-    $(".workspace-topbar"),
-    ...document.querySelectorAll(".stats-sidebar .metric"),
-    $(".results-panel"),
-  ].filter(Boolean);
-  popupRevealTargets.forEach(target => target.classList.add("dictation-popup-reveal"));
+  const popupMetricRevealTargets = [...document.querySelectorAll(".stats-sidebar .metric")];
+  const popupOpenRevealTargets = [$(".modal-head"), $(".workspace-topbar"), ...popupMetricRevealTargets, $(".results-panel")].filter(Boolean);
+  const popupContentRevealTargets = [...popupMetricRevealTargets, $(".results-panel")].filter(Boolean);
+  let activePopupRevealTargets = new Set();
 
   const TYPES = ["phonetic", "rule", "typo"];
   const CHEVRON_RIGHT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>';
@@ -26,6 +23,7 @@
   let globalType = "all", criticalType = "all";
   let globalSort = "rate", criticalSort = "rate";
   let searchTerm = "";
+  let searchRevealTimer = 0;
   const fallback = {
     dictationStatsSearchPlaceholder:"Search saved Dictation errors…",
     dictationStatsSearchLabel:"Search saved Dictation errors",
@@ -423,51 +421,82 @@
     renderMetrics();
   }
   document.querySelectorAll(".view-tab").forEach(button => button.addEventListener("click", () => {
-    currentView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
+    const nextView = ["global", "critical", "sessions"].includes(button.dataset.view) ? button.dataset.view : "global";
+    if (nextView === currentView) return;
+    clearSearchRevealTimer();
+    currentView = nextView;
     render();
+    runPopupReveal(popupContentRevealTargets);
   }));
   document.querySelectorAll("#globalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
-    globalType = button.dataset.type || "all";
+    const nextType = button.dataset.type || "all";
+    if (nextType === globalType) return;
+    clearSearchRevealTimer();
+    globalType = nextType;
     document.querySelectorAll("#globalFilterPills .filter").forEach(filter => {
       const active = filter === button;
       filter.classList.toggle("active", active);
       filter.setAttribute("aria-pressed", String(active));
     });
     render();
+    runPopupReveal(popupContentRevealTargets);
   }));
   document.querySelectorAll("#criticalFilterPills .filter").forEach(button => button.addEventListener("click", () => {
-    criticalType = button.dataset.criticalType || "all";
+    const nextType = button.dataset.criticalType || "all";
+    if (nextType === criticalType) return;
+    clearSearchRevealTimer();
+    criticalType = nextType;
     document.querySelectorAll("#criticalFilterPills .filter").forEach(filter => {
       const active = filter === button;
       filter.classList.toggle("active", active);
       filter.setAttribute("aria-pressed", String(active));
     });
     render();
+    runPopupReveal(popupContentRevealTargets);
   }));
   const globalSortSelect = $("#sortSelect"), criticalSortSelect = $("#criticalSortSelect");
   globalSortSelect?.addEventListener("change", () => { globalSort = globalSortSelect.value || "rate"; renderGlobal(); });
   criticalSortSelect?.addEventListener("change", () => { criticalSort = criticalSortSelect.value || "rate"; renderCritical(); });
-  searchInput?.addEventListener("input", () => { searchTerm = searchInput.value; render(); });
+  searchInput?.addEventListener("input", () => {
+    searchTerm = searchInput.value;
+    render();
+    clearSearchRevealTimer();
+    searchRevealTimer = setTimeout(() => {
+      searchRevealTimer = 0;
+      if (!backdrop.classList.contains("closed")) runPopupReveal(popupContentRevealTargets);
+    }, 180);
+  });
 
+  function clearSearchRevealTimer() {
+    if (searchRevealTimer) clearTimeout(searchRevealTimer);
+    searchRevealTimer = 0;
+  }
   function closeModal() {
+    clearSearchRevealTimer();
     popupRevealScope?.cancel();
+    activePopupRevealTargets.forEach(target => target.style.removeProperty("--dictation-popup-reveal-delay"));
+    activePopupRevealTargets.clear();
     backdrop.classList.add("closed");
     reopen?.classList.add("visible");
     window.parent?.postMessage({ type:"KEEPIT_DICTATION_STATS_CLOSE" }, location.origin);
   }
-  function runPopupReveal() {
+  function runPopupReveal(targets) {
+    const revealTargets = [...new Set(targets || [])].filter(target => target?.isConnected);
+    if (!revealTargets.length) return;
     popupRevealScope?.cancel();
-    popupRevealTargets.forEach(target => {
+    activePopupRevealTargets.forEach(target => target.style.removeProperty("--dictation-popup-reveal-delay"));
+    activePopupRevealTargets = new Set(revealTargets);
+    revealTargets.forEach(target => {
+      target.classList.add("dictation-popup-reveal");
       target.classList.remove("dictation-popup-revealed");
       target.style.removeProperty("--dictation-popup-reveal-delay");
     });
-    if (!popupRevealTargets.length) return;
     if (!popupRevealScope || popupRevealApi?.prefersReducedMotion?.()) {
-      popupRevealTargets.forEach(target => target.classList.add("dictation-popup-revealed"));
+      revealTargets.forEach(target => target.classList.add("dictation-popup-revealed"));
       return;
     }
     void modal.offsetHeight;
-    popupRevealScope.sequence(popupRevealTargets, {
+    popupRevealScope.sequence(revealTargets, {
       key:"dictation-stats-popup",
       step:80,
       lead:100,
@@ -494,10 +523,10 @@
     applyPopupTheme(dark);
     applyTranslations(lang);
     if (snapshot) setStatsSnapshot(snapshot);
-    runPopupReveal();
     document.body.classList.add("embedded");
     backdrop.classList.remove("closed");
     reopen?.classList.remove("visible");
+    runPopupReveal(popupOpenRevealTargets);
     closeX?.focus();
   }
   closeX?.addEventListener("click", closeModal);
@@ -531,5 +560,4 @@
   applyTranslations();
   updateExpandButton(false);
   render();
-  runPopupReveal();
 })();
