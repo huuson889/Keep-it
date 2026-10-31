@@ -2728,7 +2728,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   max-height:none!important;
   overflow-x:hidden!important;
   overflow-y:auto!important;
-  overscroll-behavior-y:contain!important;
+  overscroll-behavior-y:auto!important;
 }
 @media(max-width:1100px) {
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace {

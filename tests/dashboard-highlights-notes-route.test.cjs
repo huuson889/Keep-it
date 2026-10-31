@@ -37,6 +37,7 @@ test("Highlights & Notes restores the padded two-panel layout and opens the firs
   assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(440px,530px\) minmax\(0,1fr\)!important;[^}]*align-items:stretch!important;[^}]*height:\s*max\(650px,\s*calc\(100vh - 472px\)\)\s*!important;[^}]*min-height:300px!important/);
   assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView > \.workspace > \.notes-panel\s*\{[^}]*height:100%!important;[^}]*overflow:hidden!important/);
   assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView #sourceList,[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView #notesList\s*\{[^}]*flex:1 1 auto!important;[^}]*overflow-x:hidden!important;\s*overflow-y:auto!important/);
+  assert.match(css, /#dashboardScroller > #dashboardHighlightsNotesView #sourceList,[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView #notesList\s*\{[^}]*overscroll-behavior-y:auto!important/);
   assert.match(shellCss, /#dashboardScroller\s*\{[^}]*overflow-y:auto!important/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)!important/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*?#dashboardScroller > #dashboardHighlightsNotesView > \.workspace > \.notes-panel\s*\{[^}]*height:clamp\(300px,65vh,420px\)!important;[^}]*min-height:300px!important;[^}]*max-height:420px!important/);
