@@ -883,13 +883,13 @@ function saveSettings() {
   try { browser.storage.local.set({ [SETTINGS_KEY]: settings }); } catch {}
 }
 
-function updateSidebarTranscriptFontSize(root = overlayEl()) {
+function updateSidebarTranscriptFontSize(root) {
   if (!root) return;
-  const base = root.classList.contains('te-reading-mode')
+  const sideFontBase = root.classList.contains('te-reading-mode')
     ? 18
     : settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
-  root.style.setProperty('--te-side-en', (base * settings.side.en.pct / 100) + 'px');
-  root.style.setProperty('--te-side-vi', (base * settings.side.vi.pct / 100) + 'px');
+  root.style.setProperty('--te-side-en', (sideFontBase * settings.side.en.pct / 100) + 'px');
+  root.style.setProperty('--te-side-vi', (sideFontBase * settings.side.vi.pct / 100) + 'px');
 }
 
 function applySettings() {
@@ -1600,29 +1600,6 @@ function onTimeUpdate() {
   if (state.open) extendLoadedWindow();
 }
 
-function scrollTranscriptRow(row, shiftUpPx = 0, afterModeToggle = false) {
-  const list = $('te-transcript-list');
-  if (!row || !list) return;
-
-  let target;
-  if (shiftUpPx || afterModeToggle) {
-    // Measure the row against the visible list after the mode/layout change.
-    // This avoids stale offsetTop values and keeps the target inside the scroll range.
-    const listRect = list.getBoundingClientRect();
-    const rowRect = row.getBoundingClientRect();
-    const listContentTop = listRect.top + list.clientTop;
-    const desiredCenter = listContentTop + list.clientHeight / 2 - shiftUpPx;
-    target = list.scrollTop + rowRect.top + rowRect.height / 2 - desiredCenter;
-    target = Math.max(0, Math.min(list.scrollHeight - list.clientHeight, target));
-  } else {
-    // Keep the exact v3.4.876 positioning behavior outside learning mode.
-    target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
-  }
-
-  // Smooth for nearby focus changes; avoid a long, laggy animation after a distant seek.
-  list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
-}
-
 function setActiveCaption(idx) {
   const prevIdx = state.activeIdx;
   state.activeIdx = idx;
@@ -1638,8 +1615,9 @@ function setActiveCaption(idx) {
   const row = list.querySelector(`.yt-dual-item[data-idx="${idx}"]`);
   if (row) {
     row.classList.add('active');
-    const shiftUpPx = overlayEl()?.classList.contains('te-reading-mode') ? 80 : 0;
-    scrollTranscriptRow(row, shiftUpPx);
+    const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
+    // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
+    list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
   }
 }
 
@@ -2423,13 +2401,6 @@ function bindUI() {
     updateSidebarTranscriptFontSize(root);
     e.currentTarget.classList.toggle('te-active', enabled);
     e.currentTarget.setAttribute('aria-pressed', String(enabled));
-
-    // Wait one paint so font reflow and the reading layout are reflected in measurements.
-    requestAnimationFrame(() => {
-      if (root.classList.contains('te-reading-mode') !== enabled) return;
-      const activeRow = ui('#te-transcript-list .yt-dual-item.active');
-      scrollTranscriptRow(activeRow, enabled ? 80 : 0, true);
-    });
   });
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
