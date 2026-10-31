@@ -798,7 +798,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark .te-dict-mode-control:not(.active) {
   border-color: #3f3f46;
   background: #18181b;
-  color: #f3f4f6;
+  color: #a1a1aa;
 }
 #keepit-exact-overlay.theme-dark .te-dict-mode-control.active {
   border-color: #f59e0b;
@@ -812,11 +812,16 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-result-wrap[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-speech-target {
   display: flex; width: 100%; min-height: 72px; align-items: center; justify-content: center;
-  padding: 14px 18px; border: 1px solid rgba(16,185,129,.42); border-radius: 14px;
-  background: rgba(16,185,129,.08); color: #059669; font-size: clamp(18px,1.55vw,24px);
+  padding: 14px 18px; border: 1px solid rgba(245,158,11,.48); border-radius: 14px;
+  background: rgba(245,158,11,.08); color: #b45309; font-size: clamp(18px,1.55vw,24px);
   font-weight: 800; line-height: 1.4; text-align: center;
+  transition: border-color .18s ease, background-color .18s ease, color .18s ease;
 }
-#keepit-exact-overlay.theme-dark .te-dict-speech-target { background: rgba(16,185,129,.09); color: #34d399; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-target { background: rgba(245,158,11,.1); color: #fbbf24; }
+#keepit-exact-overlay .te-dict-speech-target.state-wrong { border-color: rgba(239,68,68,.55); background: rgba(239,68,68,.09); color: #dc2626; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-target.state-wrong { background: rgba(239,68,68,.12); color: #f87171; }
+#keepit-exact-overlay .te-dict-speech-target.state-correct { border-color: rgba(16,185,129,.48); background: rgba(16,185,129,.08); color: #059669; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-target.state-correct { background: rgba(16,185,129,.09); color: #34d399; }
 #keepit-exact-overlay .te-dict-speech-shortcuts { width: 100%; }
 #keepit-exact-overlay .te-dict-speech-result-wrap { width: 100%; padding: 10px 12px; border: 1px solid rgba(16,185,129,.28); border-radius: 12px; background: rgba(16,185,129,.07); }
 #keepit-exact-overlay .te-dict-speech-result-title { margin-bottom: 8px; color: #059669; font-size: 12px; font-weight: 800; }

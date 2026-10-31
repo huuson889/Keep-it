@@ -860,6 +860,7 @@
       ui.typeControl.setAttribute("aria-pressed", String(!speaking));
       ui.heading.textContent = tr(speaking ? "dictationSpeakTitle" : "dictationTitle");
       ui.speechTarget.textContent = sentenceCues[current]?.en || "";
+      setSpeechTargetState("practice");
       ui.speechMic.disabled = !sentenceCues[current];
       if (changed && speaking) {
         ui.speechStatus.textContent = "";
@@ -868,6 +869,13 @@
       }
     }
     syncVideoModeButtons();
+  }
+
+  function setSpeechTargetState(state = "practice") {
+    if (!ui?.speechTarget) return;
+    for (const name of ["practice", "wrong", "correct"]) {
+      ui.speechTarget.classList.toggle(`state-${name}`, state === name);
+    }
   }
 
   function updateSpeechMicState(listening) {
@@ -952,6 +960,7 @@
     speechRecognitionError = "";
     speechRecognition = recognition;
     ui.input.value = "";
+    setSpeechTargetState("practice");
     onAnswerInput();
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
@@ -1643,6 +1652,7 @@
     escapeFilledAnswer = false;
     ui.input.value = "";
     ui.speechTarget.textContent = sentenceCues[current]?.en || "";
+    setSpeechTargetState("practice");
     ui.speechMic.disabled = !sentenceCues[current];
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
@@ -2109,6 +2119,7 @@
       : false;
     if (statsUpdated) renderWrongWordStats();
     if (dictationMode === "speaking") {
+      setSpeechTargetState(result.perfect ? "correct" : "wrong");
       renderSpeechResult(ui.input.value);
       ui.speechStatus.textContent = result.perfect ? "" : tr("dictationSpeakRetry");
     }
