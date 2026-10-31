@@ -2737,6 +2737,11 @@
   function onSpeakingClick(event) {
     event.preventDefault();
     event.stopPropagation();
+    if (active || openingPanel) {
+      if (dictationMode === "speaking") close();
+      else void openPanel({ waitForCaptions: true, mode: "speaking" });
+      return;
+    }
     void openPanel({ waitForCaptions: true, mode: "speaking" });
   }
 
@@ -2761,5 +2766,9 @@
     attachControls();
   });
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
-  globalThis.LHN_DICTATION = Object.freeze({ toggle, open: openPanel, close, isOpen: () => active || openingPanel });
+  globalThis.LHN_DICTATION = Object.freeze({
+    toggle, open: openPanel, close,
+    isOpen: () => active || openingPanel,
+    getMode: () => (active || openingPanel) ? dictationMode : null,
+  });
 })();

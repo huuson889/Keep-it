@@ -30,7 +30,6 @@ const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-
 
 let pendingDictationShortcut = false;
 let pendingDictationOpenImmediately = false;
-let dictationShortcutOpenedOverlay = false;
 
 const state = {
   open: false,
@@ -1036,6 +1035,16 @@ function setVideoLearningMode(enabled) {
   const root = overlayEl();
   if (!root) return false;
   const active = Boolean(enabled);
+  pendingDictationShortcut = false;
+  pendingDictationOpenImmediately = false;
+  if (active) {
+    globalThis.LHN_DICTATION?.close?.();
+    for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
+      const button = root.querySelector(selector);
+      button?.classList.remove('te-active');
+      button?.setAttribute('aria-pressed', 'false');
+    }
+  }
   root.classList.toggle('te-reading-mode', active);
   updateSidebarTranscriptFontSize(root);
   const button = ctrl('Chế độ đọc');
@@ -1221,8 +1230,8 @@ function openOverlay() {
 function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
-  dictationShortcutOpenedOverlay = false;
   globalThis.LHN_DICTATION?.close?.();
+  setVideoLearningMode(false);
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
@@ -1241,37 +1250,33 @@ function toggleDictationFromShortcut() {
   if (keepitSiteDisabled) return;
   const dictation = globalThis.LHN_DICTATION;
   if (dictation?.isOpen?.()) {
-    const closeOwnedOverlay = dictationShortcutOpenedOverlay;
-    dictationShortcutOpenedOverlay = false;
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
-    dictation.close();
-    if (closeOwnedOverlay) closeOverlay();
+    if (dictation.getMode?.() === 'speaking') {
+      dictation.open?.({ waitForCaptions:true, mode:'typing' });
+    } else {
+      // Turning off the active Dictation mode returns to the plain video overlay.
+      dictation.close?.();
+    }
     return;
   }
   if (pendingDictationShortcut) {
-    const closeOwnedOverlay = dictationShortcutOpenedOverlay;
-    dictationShortcutOpenedOverlay = false;
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
-    if (closeOwnedOverlay) closeOverlay();
     return;
   }
   if (state.open) {
-    dictation?.open?.({ waitForCaptions:true });
+    dictation?.open?.({ waitForCaptions:true, mode:'typing' });
     return;
   }
 
-  // Alt+F enters Dictation in the same event turn, so the plain video overlay
-  // is not painted as an intermediate screen while captions continue loading.
+  // Alt+F enters typing mode directly, without showing an intermediate overlay.
   pendingDictationShortcut = true;
   pendingDictationOpenImmediately = true;
-  dictationShortcutOpenedOverlay = true;
   openOverlay();
   if (!state.open) {
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
-    dictationShortcutOpenedOverlay = false;
     return;
   }
   openPendingDictationShortcut();
@@ -2568,7 +2573,6 @@ function bindUI() {
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ đọc').addEventListener('click', () => {
     const enabled = !root.classList.contains('te-reading-mode');
-    if (enabled) globalThis.LHN_DICTATION?.close?.();
     setVideoLearningMode(enabled);
   });
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
