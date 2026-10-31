@@ -894,7 +894,9 @@ function applySettings() {
   root.classList.toggle('size-s', settings.size === 'S');
   root.classList.toggle('size-m', settings.size === 'M');
   root.classList.toggle('size-l', settings.size !== 'S' && settings.size !== 'M');
-  const sideFontBase = settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
+  const sideFontBase = root.classList.contains('te-reading-mode')
+    ? 18
+    : settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
   root.style.setProperty('--te-side-en', (sideFontBase * settings.side.en.pct / 100) + 'px');
   root.style.setProperty('--te-side-vi', (sideFontBase * settings.side.vi.pct / 100) + 'px');
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
@@ -1593,6 +1595,14 @@ function onTimeUpdate() {
   if (state.open) extendLoadedWindow();
 }
 
+function scrollTranscriptRowToPosition(row, shiftUpPx = 0) {
+  const list = $('te-transcript-list');
+  if (!row || !list) return;
+  const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2 - shiftUpPx;
+  // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
+  list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
+}
+
 function setActiveCaption(idx) {
   const prevIdx = state.activeIdx;
   state.activeIdx = idx;
@@ -1608,9 +1618,8 @@ function setActiveCaption(idx) {
   const row = list.querySelector(`.yt-dual-item[data-idx="${idx}"]`);
   if (row) {
     row.classList.add('active');
-    const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
-    // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
-    list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
+    const shiftUp = overlayEl()?.classList.contains('te-reading-mode') ? 40 : 0;
+    scrollTranscriptRowToPosition(row, shiftUp);
   }
 }
 
@@ -2391,6 +2400,9 @@ function bindUI() {
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ đọc').addEventListener('click', (e) => {
     const enabled = root.classList.toggle('te-reading-mode');
+    applySettings();
+    const activeRow = ui('.yt-dual-item.active');
+    scrollTranscriptRowToPosition(activeRow, enabled ? 40 : 0);
     e.currentTarget.classList.toggle('te-active', enabled);
     e.currentTarget.setAttribute('aria-pressed', String(enabled));
   });
