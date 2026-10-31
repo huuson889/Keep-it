@@ -452,7 +452,11 @@
     expandBtn.title = label;
     expandBtn.innerHTML = expanded ? SHRINK_ICON : EXPAND_ICON;
   }
-  function openModal(lang, snapshot) {
+  function applyPopupTheme(dark) {
+    if (typeof dark === "boolean") document.documentElement.classList.toggle("dark", dark);
+  }
+  function openModal(lang, snapshot, dark) {
+    applyPopupTheme(dark);
     applyTranslations(lang);
     if (snapshot) setStatsSnapshot(snapshot);
     document.body.classList.add("embedded");
@@ -470,10 +474,13 @@
   window.addEventListener("message", event => {
     if (event.source !== window.parent || event.origin !== location.origin) return;
     if (event.data?.type === "KEEPIT_DICTATION_STATS_OPEN") {
-      openModal(event.data.lang, event.data.stats);
+      openModal(event.data.lang, event.data.stats, event.data.dark);
       return;
     }
-    if (event.data?.type === "KEEPIT_DICTATION_STATS_UPDATE") setStatsSnapshot(event.data.stats);
+    if (event.data?.type === "KEEPIT_DICTATION_STATS_UPDATE") {
+      applyPopupTheme(event.data.dark);
+      setStatsSnapshot(event.data.stats);
+    }
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && !backdrop.classList.contains("closed")) { event.preventDefault(); closeModal(); }

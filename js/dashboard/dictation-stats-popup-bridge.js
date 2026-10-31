@@ -11,6 +11,7 @@
   let refreshPending = false;
   let refreshTimer = 0;
   let returnFocus = null;
+  let lastReportedDark = document.documentElement.classList.contains("dark");
 
   function safeCount(value) {
     const number = Number(value);
@@ -172,11 +173,14 @@
     const request = ++snapshotRequest;
     const stats = await loadStatsSnapshot();
     if (frame.hidden || sequence !== openSequence || request !== snapshotRequest) return;
+    const dark = document.documentElement.classList.contains("dark");
     frame.contentWindow?.postMessage({
       type,
       ...(type === "KEEPIT_DICTATION_STATS_OPEN" ? { lang:document.documentElement.lang || "vi" } : {}),
+      dark,
       stats,
     }, location.origin);
+    lastReportedDark = dark;
     if (type === "KEEPIT_DICTATION_STATS_OPEN") {
       popupReadySequence = sequence;
       if (refreshPending) {
@@ -200,6 +204,7 @@
     const sequence = ++openSequence;
     popupReadySequence = 0;
     refreshPending = false;
+    try { frame.contentDocument?.documentElement?.classList.toggle("dark", document.documentElement.classList.contains("dark")); } catch {}
     frame.hidden = false;
     frame.setAttribute("aria-hidden", "false");
     const send = () => requestAnimationFrame(() => { void postSnapshot(sequence, "KEEPIT_DICTATION_STATS_OPEN"); });
@@ -227,7 +232,14 @@
   });
   globalThis.browser?.storage?.onChanged?.addListener((changes, areaName) => {
     if (areaName !== "local" || frame.hidden) return;
-    const relevant = Object.keys(changes || {}).some(key => key === INDEX_KEY || /^dictation:[A-Za-z0-9_-]{6,}$/.test(key));
-    if (relevant) scheduleStatsRefresh();
+    const changedKeys = Object.keys(changes || {});
+    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS;
+    const statsChanged = changedKeys.some(key => key === INDEX_KEY || /^dictation:[A-Za-z0-9_-]{6,}$/.test(key));
+    const themeChanged = Boolean(settingsKey && changes?.[settingsKey]) && document.documentElement.classList.contains("dark") !== lastReportedDark;
+    if (statsChanged || themeChanged) scheduleStatsRefresh();
+  });
+  const systemTheme = window.matchMedia?.("(prefers-color-scheme: dark)");
+  systemTheme?.addEventListener?.("change", () => {
+    if (!frame.hidden && document.documentElement.classList.contains("dark") !== lastReportedDark) scheduleStatsRefresh();
   });
 })();

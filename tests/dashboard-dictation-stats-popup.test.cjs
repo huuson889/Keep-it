@@ -47,6 +47,9 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.equal(productionV14Css.trimEnd(), demoCss.trimEnd(), "production styling matches the v14 demo stylesheet verbatim");
   assert.match(css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Inter/);
   assert.match(css, /\.modal\.is-expanded/);
+  assert.match(css, /html\.dark \{/);
+  assert.match(css, /html\.dark \.modal/);
+  assert.match(css, /--ink:#f1f5fb/);
   assert.match(css, /height:min\(900px,calc\(100vh - 40px\)\)/);
   assert.match(css, /\.modal-body\{[^}]*overflow:hidden/);
   assert.match(css, /\.results-scroll::-webkit-scrollbar\{width:3px!important;height:3px!important\}/);
@@ -64,7 +67,13 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(bridge, /errorContext/);
   assert.match(bridge, /KEEPIT_DICTATION_STATS_OPEN/);
   assert.match(bridge, /KEEPIT_DICTATION_STATS_UPDATE/);
+  assert.match(bridge, /const dark = document\.documentElement\.classList\.contains\("dark"\)/);
+  assert.match(bridge, /globalThis\.LHN_CONFIG\?\.STORAGE_KEYS\?\.SETTINGS/);
+  assert.match(bridge, /systemTheme\?\.addEventListener\?\.\("change"/);
   assert.match(ui, /KEEPIT_DICTATION_STATS_UPDATE/);
+  assert.match(ui, /function applyPopupTheme\(dark\)/);
+  assert.match(ui, /document\.documentElement\.classList\.toggle\("dark", dark\)/);
+  assert.match(ui, /applyPopupTheme\(event\.data\.dark\)/);
   assert.match(ui, /setStatsSnapshot\(event\.data\.stats\)/);
   assert.match(bridge, /stats,/);
   assert.match(ui, /function setStatsSnapshot\(snapshot\)/);
@@ -99,15 +108,17 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   const bridge = read("js/dashboard/dictation-stats-popup-bridge.js");
   const handlers = {};
   const messages = [];
+  const popupClasses = new Set();
   const trigger = { addEventListener(type, handler) { handlers[`trigger:${type}`] = handler; } };
   const frame = {
     hidden:true,
-    contentDocument:{ readyState:"complete" },
+    contentDocument:{ readyState:"complete", documentElement:{ classList:{ toggle(name, force) { if (force) popupClasses.add(name); else popupClasses.delete(name); } } } },
     contentWindow:{ postMessage(data, origin) { messages.push({ data, origin }); } },
     setAttribute() {},
     addEventListener(type, handler) { handlers[`frame:${type}`] = handler; },
   };
   const indexKey = "dictation:session-index:v1";
+  const rootClasses = new Set();
   let storageChanged;
   const record = { wrongWordStats:{ version:3, words:{
     "w:environment":{ word:"environment", errors:7, corrections:3, lastAt:123, lastResult:"wrong", typeCounts:{ phonetic:2, rule:4, typo:1 }, typeFixes:{ phonetic:1, rule:1, typo:1 }, lastErrorType:"rule", errorContext:{ before:"protect our natural ", typed:"enviroment", after:"." }, errorExamples:{ rule:{ before:"protect our natural ", typed:"enviroment", after:".", lastAt:123 } }, variants:{ "v:enviroment":{ text:"enviroment", count:7, typeCounts:{ phonetic:2, rule:4, typo:1 } } } },
@@ -139,8 +150,9 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   const storage = { async get(keys) { return keys === null ? localData : {}; } };
   let openTabs = [];
   const context = {
-    document:{ getElementById(id) { return id === "dictationDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en" }, activeElement:null },
-    window:{ addEventListener() {} },
+    document:{ getElementById(id) { return id === "dictationDetailedStatsBtn" ? trigger : id === "dictationStatsPopupFrame" ? frame : null; }, documentElement:{ lang:"en", classList:{ contains(name) { return rootClasses.has(name); } } }, activeElement:null },
+    LHN_CONFIG:{ STORAGE_KEYS:{ SETTINGS:"lhnSettings" } },
+    window:{ addEventListener() {}, matchMedia() { return { addEventListener(type, handler) { handlers[`system-theme:${type}`] = handler; } }; } },
     location:{ origin:"https://keepit.test" },
     browser:{ storage:{ local:storage, onChanged:{ addListener(listener) { storageChanged = listener; } } }, tabs:{ async query() { return openTabs; } } },
     requestAnimationFrame(callback) { callback(); },
@@ -152,10 +164,12 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   context.globalThis = context;
   vm.runInNewContext(bridge, context);
   handlers["trigger:click"]();
+  assert.equal(popupClasses.has("dark"), false, "frame receives the current theme before it becomes visible");
   await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(messages.length, 1);
   assert.equal(messages[0].origin, "https://keepit.test");
   assert.equal(messages[0].data.type, "KEEPIT_DICTATION_STATS_OPEN");
+  assert.equal(messages[0].data.dark, false, "popup opens with the Dashboard's current light theme");
   const stats = messages[0].data.stats;
   assert.equal(stats.sessions.length, 4, "valid saved records are found even when their video is missing from the session index");
   const indexedSession = stats.sessions.find(session => session.sourceId === "abcdefghijk");
@@ -191,27 +205,41 @@ test("popup bridge refreshes its local stats snapshot live and rejects legacy/sh
   storageChanged({ settings:{ newValue:{ theme:"dark" } } }, "local");
   await new Promise(resolve => setTimeout(resolve, 80));
   assert.equal(messages.length, 1, "unrelated local storage changes do not trigger a stats refresh");
+  storageChanged({ lhnSettings:{ newValue:{ sidebarTheme:"light", unrelatedSetting:true } } }, "local");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 1, "unrelated Dashboard settings do not rescan statistics");
+  rootClasses.add("dark");
+  storageChanged({ lhnSettings:{ newValue:{ sidebarTheme:"dark" } } }, "local");
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 2, "Dashboard theme changes refresh the open popup");
+  assert.equal(messages[1].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
+  assert.equal(messages[1].data.dark, true, "update carries the effective dark theme to the popup");
+  rootClasses.delete("dark");
+  handlers["system-theme:change"]();
+  await new Promise(resolve => setTimeout(resolve, 80));
+  assert.equal(messages.length, 3, "system color-scheme changes also refresh the open popup");
+  assert.equal(messages[2].data.dark, false, "popup returns to light mode when Dashboard follows a light system theme");
   record.wrongWordStats.words["w:environment"].errors = 8;
   record.wrongWordStats.words["w:environment"].variants["v:enviroment"].count = 8;
   storageChanged({ "dictation:abcdefghijk":{ newValue:record } }, "local");
   await new Promise(resolve => setTimeout(resolve, 80));
-  assert.equal(messages.length, 2);
-  assert.equal(messages[1].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
-  assert.equal(messages[1].data.stats.globalWords.find(item => item.word === "environment").errors, 8, "live popup snapshot reflects the updated local attempt");
+  assert.equal(messages.length, 4);
+  assert.equal(messages[3].data.type, "KEEPIT_DICTATION_STATS_UPDATE");
+  assert.equal(messages[3].data.stats.globalWords.find(item => item.word === "environment").errors, 8, "live popup snapshot reflects the updated local attempt");
 
   localData[indexKey].sessions[0].title = "Lesson A — Updated title";
   storageChanged({ [indexKey]:{ newValue:localData[indexKey] } }, "local");
   await new Promise(resolve => setTimeout(resolve, 80));
-  assert.equal(messages.length, 3, "session index title changes refresh an open popup");
-  const updatedEnvironment = messages[2].data.stats.globalWords.find(item => item.word === "environment");
+  assert.equal(messages.length, 5, "session index title changes refresh an open popup");
+  const updatedEnvironment = messages[4].data.stats.globalWords.find(item => item.word === "environment");
   assert.equal(updatedEnvironment.errorContext.source, "Lesson A — Updated title");
   assert.equal(updatedEnvironment.errorExamples.rule.source, "Lesson A — Updated title");
 
   openTabs = [{ url:"https://www.youtube.com/watch?v=zyxwvutsrqpon", title:"Recovered title from open YouTube tab - YouTube" }];
   storageChanged({ "dictation:zyxwvutsrqpon":{ newValue:unindexedRecord } }, "local");
   await new Promise(resolve => setTimeout(resolve, 80));
-  assert.equal(messages.length, 4);
-  assert.equal(messages[3].data.stats.sessions.find(session => session.sourceId === "zyxwvutsrqpon").title, "Recovered title from open YouTube tab", "an open matching YouTube tab can display the real title for older title-less records");
+  assert.equal(messages.length, 6);
+  assert.equal(messages[5].data.stats.sessions.find(session => session.sourceId === "zyxwvutsrqpon").title, "Recovered title from open YouTube tab", "an open matching YouTube tab can display the real title for older title-less records");
 });
 
 
