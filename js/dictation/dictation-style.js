@@ -2,7 +2,7 @@
 globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.te-dictation-active {
   display: grid !important;
-  grid-template-columns: var(--te-dict-left-track, 32fr) var(--te-dict-left-splitter, 8px) minmax(var(--te-dict-center-min, 380px), 1fr) var(--te-dict-right-splitter, 8px) var(--te-dict-right-track, 23fr);
+  grid-template-columns: var(--te-dict-left-track, 25fr) var(--te-dict-left-splitter, 8px) minmax(var(--te-dict-center-min, 35%), 45fr) var(--te-dict-right-splitter, 8px) var(--te-dict-right-track, 30fr);
   grid-template-rows: minmax(0, 1fr) 70px;
   overflow: hidden;
 }

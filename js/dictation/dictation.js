@@ -127,6 +127,15 @@
       console.warn("Could not update Dictation session summary", error);
     }
   }
+  const DICTATION_COLUMN_RATIOS = Object.freeze({
+    leftMin: 0.15,
+    leftDefault: 0.25,
+    leftMax: 0.30,
+    centerMin: 0.35,
+    rightMin: 0.20,
+    rightDefault: 0.30,
+    rightMax: 0.35,
+  });
   const dictationLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
   let dictationLayoutLoadPromise = null;
 
@@ -143,8 +152,8 @@
           if (!stored || typeof stored !== "object") return;
           const leftScale = Number(stored.leftScale);
           const rightScale = Number(stored.rightScale);
-          if (Number.isFinite(leftScale)) dictationLayoutPrefs.leftScale = clampDictationColumn(leftScale, 2 / 3, 1);
-          if (Number.isFinite(rightScale)) dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, 1, 1.5);
+          if (Number.isFinite(leftScale)) dictationLayoutPrefs.leftScale = clampDictationColumn(leftScale, DICTATION_COLUMN_RATIOS.leftMin / DICTATION_COLUMN_RATIOS.leftDefault, DICTATION_COLUMN_RATIOS.leftMax / DICTATION_COLUMN_RATIOS.leftDefault);
+          if (Number.isFinite(rightScale)) dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
           dictationLayoutPrefs.leftHidden = stored.leftHidden === true;
           dictationLayoutPrefs.rightHidden = stored.rightHidden === true;
         } catch (error) {
@@ -169,24 +178,14 @@
   function getDictationColumnMetrics() {
     const width = Math.max(0, ui?.root?.clientWidth || ui?.root?.getBoundingClientRect?.().width || 0);
     const available = Math.max(0, width - 16);
-    const scale = Math.min(1, available / 880);
-    const minLeft = 220 * scale;
-    const minCenter = 380 * scale;
-    const minRight = 280 * scale;
-    let baseLeft = Math.max(minLeft, available * .32);
-    let baseRight = Math.max(minRight, available * .23);
-    const sideBudget = Math.max(0, available - minCenter);
-    const excess = Math.max(0, baseLeft + baseRight - sideBudget);
-    if (excess > 0) {
-      const leftRoom = Math.max(0, baseLeft - minLeft);
-      const rightRoom = Math.max(0, baseRight - minRight);
-      const totalRoom = leftRoom + rightRoom;
-      if (totalRoom > 0) {
-        baseLeft -= Math.min(leftRoom, excess * leftRoom / totalRoom);
-        baseRight -= Math.min(rightRoom, excess * rightRoom / totalRoom);
-      }
-    }
-    return { width, minLeft, minCenter, minRight, baseLeft, baseRight };
+    const minLeft = available * DICTATION_COLUMN_RATIOS.leftMin;
+    const baseLeft = available * DICTATION_COLUMN_RATIOS.leftDefault;
+    const maxLeft = available * DICTATION_COLUMN_RATIOS.leftMax;
+    const minCenter = available * DICTATION_COLUMN_RATIOS.centerMin;
+    const minRight = available * DICTATION_COLUMN_RATIOS.rightMin;
+    const baseRight = available * DICTATION_COLUMN_RATIOS.rightDefault;
+    const maxRight = available * DICTATION_COLUMN_RATIOS.rightMax;
+    return { width, available, minLeft, baseLeft, maxLeft, minCenter, minRight, baseRight, maxRight };
   }
 
   function getDictationColumnState() {
@@ -197,13 +196,13 @@
     const rightRailWidth = dictationLayoutPrefs.rightHidden ? 24 : 0;
     const panelBudget = Math.max(0, metrics.width - leftSplitterWidth - rightSplitterWidth - leftRailWidth - rightRailWidth);
     const leftWidth = dictationLayoutPrefs.leftHidden ? 0 : clampDictationColumn(
-      metrics.baseLeft * dictationLayoutPrefs.leftScale, Math.max(metrics.minLeft, metrics.baseLeft * 2 / 3), metrics.baseLeft
+      metrics.baseLeft * dictationLayoutPrefs.leftScale, metrics.minLeft, metrics.maxLeft
     );
-    const rightMaximum = Math.max(metrics.baseRight, Math.min(
-      metrics.baseRight * 1.5, panelBudget - leftWidth - metrics.minCenter
+    const rightMaximum = Math.max(metrics.minRight, Math.min(
+      metrics.maxRight, panelBudget - leftWidth - metrics.minCenter
     ));
     const rightWidth = dictationLayoutPrefs.rightHidden ? 0 : clampDictationColumn(
-      metrics.baseRight * dictationLayoutPrefs.rightScale, metrics.baseRight, rightMaximum
+      metrics.baseRight * dictationLayoutPrefs.rightScale, metrics.minRight, rightMaximum
     );
     return {
       ...metrics,
@@ -219,15 +218,15 @@
   }
 
   function getDictationColumnBounds(side, state = getDictationColumnState()) {
+    const panelBudget = state.width - state.leftSplitterWidth - state.rightSplitterWidth -
+      (state.leftHidden ? 24 : 0) - (state.rightHidden ? 24 : 0);
     if (side === "left") {
-      const minimum = Math.max(state.minLeft, state.baseLeft * 2 / 3);
-      const maximum = Math.min(state.baseLeft,
-        state.width - state.leftSplitterWidth - state.rightSplitterWidth - state.rightTrackWidth - state.minCenter);
+      const minimum = state.minLeft;
+      const maximum = Math.min(state.maxLeft, panelBudget - state.rightTrackWidth - state.minCenter);
       return { minimum, maximum: Math.max(minimum, maximum) };
     }
-    const minimum = state.baseRight;
-    const maximum = Math.min(state.baseRight * 1.5,
-      state.width - state.leftTrackWidth - state.leftSplitterWidth - state.rightSplitterWidth - state.minCenter);
+    const minimum = state.minRight;
+    const maximum = Math.min(state.maxRight, panelBudget - state.leftTrackWidth - state.minCenter);
     return { minimum, maximum: Math.max(minimum, maximum) };
   }
 
@@ -281,8 +280,8 @@
     const state = getDictationColumnState();
     const bounds = getDictationColumnBounds(side, state);
     const width = clampDictationColumn(requestedWidth, bounds.minimum, bounds.maximum);
-    if (side === "left" && state.baseLeft > 0) dictationLayoutPrefs.leftScale = clampDictationColumn(width / state.baseLeft, 2 / 3, 1);
-    if (side === "right" && state.baseRight > 0) dictationLayoutPrefs.rightScale = clampDictationColumn(width / state.baseRight, 1, 1.5);
+    if (side === "left" && state.baseLeft > 0) dictationLayoutPrefs.leftScale = clampDictationColumn(width / state.baseLeft, DICTATION_COLUMN_RATIOS.leftMin / DICTATION_COLUMN_RATIOS.leftDefault, DICTATION_COLUMN_RATIOS.leftMax / DICTATION_COLUMN_RATIOS.leftDefault);
+    if (side === "right" && state.baseRight > 0) dictationLayoutPrefs.rightScale = clampDictationColumn(width / state.baseRight, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
     applyDictationColumnLayout();
     if (persist) persistDictationLayoutPrefs();
   }
