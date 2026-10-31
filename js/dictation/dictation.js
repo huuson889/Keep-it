@@ -2790,6 +2790,7 @@
       ui?.root.classList.remove("te-dict-speaking-mode");
       if (ui?.speechPractice) ui.speechPractice.hidden = true;
       dictationMode = "typing";
+      A?.restorePreferredReadingMode?.();
       return;
     }
     restoreYouTubeScrollbar();
@@ -2848,6 +2849,7 @@
     ui.primaryGroup.classList.remove("te-dict-primary-group");
     ui = null;
     ctrlAlone = false;
+    A?.restorePreferredReadingMode?.();
   }
 
   function toggle() { (active || openingPanel) ? close() : void openPanel(); }

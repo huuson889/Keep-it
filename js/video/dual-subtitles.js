@@ -1031,14 +1031,18 @@ function applySettings() {
 }
 
 // ---------- Overlay: tạo, mở, đóng ----------
-function setVideoLearningMode(enabled) {
+function setVideoLearningMode(enabled, { persist = false } = {}) {
   const root = overlayEl();
   if (!root) return false;
   const active = Boolean(enabled);
+  if (persist) {
+    settings.readingMode = active;
+    saveSettings();
+  }
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
   if (active) {
-    globalThis.LHN_DICTATION?.close?.();
+    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.();
     for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
       const button = root.querySelector(selector);
       button?.classList.remove('te-active');
@@ -1053,6 +1057,12 @@ function setVideoLearningMode(enabled) {
   return active;
 }
 
+function restorePreferredReadingMode() {
+  if (!state.open || pendingDictationShortcut || pendingDictationOpenImmediately
+    || settings.readingMode !== true || globalThis.LHN_DICTATION?.isOpen?.()) return false;
+  return setVideoLearningMode(true);
+}
+
 function createDictationOverlayApi() {
   if (globalThis.LHN_OVERLAY_API) return globalThis.LHN_OVERLAY_API;
   const api = Object.freeze({
@@ -1060,6 +1070,7 @@ function createDictationOverlayApi() {
     overlayEl,
     ctrl,
     setLearningMode: setVideoLearningMode,
+    restorePreferredReadingMode,
     lang: () => state.displayLanguage,
     getDictationCues: () => {
       if (state.captionTrackLanguage !== 'en' || !state.allCues.length) return [];
@@ -1218,6 +1229,7 @@ function openOverlay() {
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
+  restorePreferredReadingMode();
   void enableTemporaryTranslationPopup();
   attachVideo(video, slot);
   onTimeUpdate();
@@ -2573,7 +2585,7 @@ function bindUI() {
   ctrl('Audio').addEventListener('click', toggleMute);
   ctrl('Chế độ đọc').addEventListener('click', () => {
     const enabled = !root.classList.contains('te-reading-mode');
-    setVideoLearningMode(enabled);
+    setVideoLearningMode(enabled, { persist: true });
   });
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
@@ -2792,6 +2804,7 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   void Promise.all([restoreSettings(), refreshSubtitleLanguageSettings()]).then(([loaded]) => {
     settings = loaded;
     if (overlayEl()) applySettings();
+    if (state.open) restorePreferredReadingMode();
     setInterval(tick, 1000);
     tick();
     void openDictationFromDashboardIntent();
