@@ -190,6 +190,8 @@
 .dictation-root .all-mistakes:hover{background:#f3f0ff}
 .dictation-root .all-mistakes .icon{width:12px;height:12px}
 .dictation-root .stats-note{display:flex;align-items:flex-start;gap:7px;margin-top:11px;padding:9px;border-radius:9px;background:#f8f6ff;color:#77729b;font-size:11px;line-height:1.5}
+.dictation-root [data-i18n="dictationSavedStatsLabel"],
+.dictation-root .stats-note{display:none!important}
 .dictation-root .stats-note .icon{width:12px;height:12px;margin-top:1px;color:#8c7be0}
 .dictation-root .search-elsewhere{padding:15px;border:1px solid #e5defe;border-radius:17px;background:linear-gradient(145deg,#fff,#faf8ff)}
 .dictation-root .search-elsewhere h2{margin:0;color:#35334e;font-size:14px}

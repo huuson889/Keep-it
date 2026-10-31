@@ -37,6 +37,16 @@ test("Dictation session list recovers and live-syncs real per-video records when
   assert.doesNotMatch(js, /if \(!index\.legacyMigrationComplete\) \{\s*const allData/);
 });
 
+test("Dictation stats labels are concise and saved-attempt notes are hidden", () => {
+  assert.match(languages, /dictationStatsWords:"Wrong words"/);
+  assert.match(languages, /dictationStatsWords:"Từ sai"/);
+  assert.match(languages, /dictationStatsWords:"오답 단어"/);
+  assert.match(languages, /dictationMostMistakes:"Most errors"/);
+  assert.match(languages, /dictationMostMistakes:"Sai nhiều nhất"/);
+  assert.match(languages, /dictationMostMistakes:"오답이 가장 많은 단어"/);
+  assert.match(css, /\.dictation-root \[data-i18n="dictationSavedStatsLabel"\],\s*\.dictation-root \.stats-note\{display:none!important\}/);
+});
+
 test("Session cards select one error summary, clear on outside clicks, and retain Resume/Open", () => {
   assert.match(js, /let dictationSelectedSessionId = ""/);
   assert.match(js, /data-session-id=\"\$\{escapeHtml\(sessionId\)\}\"[^>]*data-source-id=\"\$\{escapeHtml\(videoId\)\}/);
