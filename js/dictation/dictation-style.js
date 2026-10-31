@@ -772,6 +772,16 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-toolbar-tools { display: none; align-items: center; gap: 8px; }
 #keepit-exact-overlay.te-dictation-active .te-dict-toolbar-tools { display: flex; }
 #keepit-exact-overlay .te-dict-mode-switch { display: inline-flex; align-items: center; gap: 8px; }
+#keepit-exact-overlay .te-dict-sync-control {
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  padding: 6px; border: 1px solid transparent; border-radius: 7px; background: transparent;
+  color: #fff; cursor: pointer; transition: color .15s ease, background-color .15s ease;
+}
+#keepit-exact-overlay .te-dict-sync-control svg { display: block; width: 18px; height: 18px; }
+#keepit-exact-overlay .te-dict-sync-control.te-active { color: #8b5cf6; }
+#keepit-exact-overlay .te-dict-sync-control:hover { background: rgba(139,92,246,.1); }
+#keepit-exact-overlay .te-dict-sync-control:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
+#keepit-exact-overlay .te-dict-sync-control:disabled { opacity: .45; cursor: not-allowed; }
 #keepit-exact-overlay .te-dict-mode-control {
   display: inline-flex;
   align-items: center;

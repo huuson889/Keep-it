@@ -22,6 +22,8 @@
   let pendingCaptionStart = false;
   let pendingResumeIndex = 0;
   let solved = new Set();
+  let progressSyncEnabled = true;
+  let progressByMode = { typing: { current: 0, solved: [] }, speaking: { current: 0, solved: [] } };
   let notes = {};
   let translations = {};
   let wrongWordStats = { version: 3, words: {} };
@@ -59,6 +61,131 @@
   };
   const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
   const dictationLayoutStorageKey = "dictation:layout:v1";
+  const progressSyncStorageKey = "dictation:progress-sync:v1";
+  let progressSyncPreferenceWrite = Promise.resolve();
+
+  function progressModeKey(mode = dictationMode) {
+    return mode === "speaking" ? "speaking" : "typing";
+  }
+
+  function normalizeProgressSnapshot(value, fallback = { current: 0, solved: [] }) {
+    const candidate = Number(value?.current);
+    const fallbackCurrent = Number(fallback?.current);
+    const saved = Array.isArray(value?.solved) ? value.solved : fallback?.solved;
+    return {
+      current: Number.isInteger(candidate) && candidate >= 0
+        ? candidate
+        : Number.isInteger(fallbackCurrent) && fallbackCurrent >= 0 ? fallbackCurrent : 0,
+      solved: [...new Set((Array.isArray(saved) ? saved : []).map(Number).filter((index) => Number.isInteger(index) && index >= 0))].sort((a, b) => a - b),
+    };
+  }
+
+  function currentProgressSnapshot() {
+    return normalizeProgressSnapshot({ current, solved: [...solved] });
+  }
+
+  function cloneProgressSnapshot(snapshot) {
+    return { current: snapshot.current, solved: [...snapshot.solved] };
+  }
+
+  function storeActiveModeProgress(mode = dictationMode) {
+    progressByMode[progressModeKey(mode)] = currentProgressSnapshot();
+  }
+
+  function applyModeProgress(mode = dictationMode) {
+    const snapshot = normalizeProgressSnapshot(progressByMode[progressModeKey(mode)]);
+    current = snapshot.current;
+    solved = new Set(snapshot.solved);
+  }
+
+  function findNextUnsolvedIndex(solvedSet, preferredIndex = current) {
+    const total = sentenceCues.length;
+    if (!total) return Math.max(0, Number(preferredIndex) || 0);
+    const preferred = Math.max(0, Math.min(total - 1, Number(preferredIndex) || 0));
+    for (let index = preferred; index < total; index++) if (!solvedSet.has(index)) return index;
+    for (let index = 0; index < preferred; index++) if (!solvedSet.has(index)) return index;
+    return preferred;
+  }
+
+  async function loadProgressSyncPreference() {
+    try {
+      await progressSyncPreferenceWrite;
+      const stored = await ext.storage.local.get(progressSyncStorageKey);
+      if (typeof stored?.[progressSyncStorageKey] === "boolean") progressSyncEnabled = stored[progressSyncStorageKey];
+    } catch {}
+    updateProgressSyncControl();
+    return progressSyncEnabled;
+  }
+
+  function updateProgressSyncControl() {
+    const button = ui?.syncProgressControl;
+    if (!button) return;
+    const label = tr(progressSyncEnabled ? "dictationProgressSyncOn" : "dictationProgressSyncOff");
+    button.classList.toggle("te-active", progressSyncEnabled);
+    button.setAttribute("aria-pressed", String(progressSyncEnabled));
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.disabled = !progressReady;
+    button.setAttribute("aria-disabled", String(!progressReady));
+  }
+
+  function persistProgressSyncPreference() {
+    if (!ext?.storage?.local) return Promise.resolve();
+    const preference = progressSyncEnabled;
+    progressSyncPreferenceWrite = progressSyncPreferenceWrite
+      .catch(() => {})
+      .then(() => ext.storage.local.set({ [progressSyncStorageKey]: preference }))
+      .catch(() => {});
+    return progressSyncPreferenceWrite;
+  }
+
+  function toggleProgressSync() {
+    if (!active || !progressReady || !ui) return;
+    captureNoteDraft();
+    const wasEnabled = progressSyncEnabled;
+    const previousCurrent = current;
+    const previousSolved = new Set(solved);
+    storeActiveModeProgress();
+
+    if (wasEnabled) {
+      const shared = currentProgressSnapshot();
+      progressByMode = { typing: cloneProgressSnapshot(shared), speaking: cloneProgressSnapshot(shared) };
+      progressSyncEnabled = false;
+    } else {
+      const typing = normalizeProgressSnapshot(progressByMode.typing, currentProgressSnapshot());
+      const speaking = normalizeProgressSnapshot(progressByMode.speaking, currentProgressSnapshot());
+      const mergedSolved = new Set([...typing.solved, ...speaking.solved]);
+      const activeTrackHadCurrentSolved = previousSolved.has(previousCurrent);
+      current = !activeTrackHadCurrentSolved && mergedSolved.has(previousCurrent)
+        ? findNextUnsolvedIndex(mergedSolved, previousCurrent)
+        : previousCurrent;
+      solved = mergedSolved;
+      const shared = currentProgressSnapshot();
+      progressByMode = { typing: cloneProgressSnapshot(shared), speaking: cloneProgressSnapshot(shared) };
+      progressSyncEnabled = true;
+    }
+
+    pendingResumeIndex = current;
+    persistProgressSyncPreference();
+    updateProgressSyncControl();
+
+    if (!wasEnabled) {
+      const currentBecameSolved = !previousSolved.has(previousCurrent) && solved.has(current);
+      if (current !== previousCurrent || currentBecameSolved) {
+        listStart = 0;
+        listEnd = 0;
+        renderInitialRows();
+        renderCurrent();
+        if (sentenceCues[current]) playSentence(current, { count: repeatCount + 1 });
+      } else {
+        updateCounter();
+        updateRows();
+        updateProgressControls();
+        setScore(solved.has(current) ? 100 : null);
+      }
+    }
+    void saveRecord();
+  }
 
   function cleanVideoTitle(value) {
     return String(value || "").replace(/^\s*Keepit\s*-\s*/i, "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
@@ -669,6 +796,9 @@
           ${makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>')}
           <span data-dict-label="dictationType"></span>
         </button>
+        <button class="te-dict-sync-control te-active" id="te-dict-sync-progress" type="button" aria-pressed="true" aria-label="${tr("dictationProgressSyncOn")}" title="${tr("dictationProgressSyncOn")}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </button>
       </div>
       <span class="te-dict-toolbar-accuracy">
         <svg class="te-dict-ring" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle class="te-dict-ring-bg" cx="12" cy="12" r="9"/><circle class="te-dict-ring-fg" id="te-dict-ring-fg" cx="12" cy="12" r="9" transform="rotate(-90 12 12)"/></svg>
@@ -721,6 +851,7 @@
       modeSwitch: tools.querySelector(".te-dict-mode-switch"),
       speakControl: tools.querySelector("#te-dict-speak-control"),
       typeControl: tools.querySelector("#te-dict-type-control"),
+      syncProgressControl: tools.querySelector("#te-dict-sync-progress"),
       speechPractice: center.querySelector("#te-dict-speech-practice"),
       speechTarget: center.querySelector("#te-dict-speech-target"),
       speechResultWrap: center.querySelector("#te-dict-speech-result-wrap"),
@@ -773,6 +904,7 @@
       item.textContent = text;
       return item;
     }));
+    updateProgressSyncControl();
     installDictationColumnControls();
     ui.miniSource.textContent = tr("dictationAudioSource");
     updateCompactAudioInfo();
@@ -800,6 +932,7 @@
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
     ui.speakControl.addEventListener("click", () => setDictationMode("speaking"));
     ui.typeControl.addEventListener("click", () => { setDictationMode("typing"); focusInputIfTyping(); });
+    ui.syncProgressControl.addEventListener("click", toggleProgressSync);
     ui.speechMic.addEventListener("click", toggleSpeechRecognition);
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
@@ -845,8 +978,14 @@
   function setDictationMode(mode) {
     if (mode !== "typing" && mode !== "speaking") return;
     const changed = mode !== dictationMode;
+    const swapProgress = changed && active && progressReady && !progressSyncEnabled;
+    if (swapProgress) {
+      captureNoteDraft();
+      storeActiveModeProgress(dictationMode);
+    }
     if (changed && mode !== "speaking") stopSpeechRecognition(true);
     dictationMode = mode;
+    if (swapProgress) applyModeProgress(mode);
     if (ui) {
       if (changed) onAnswerInput();
       const speaking = mode === "speaking";
@@ -869,6 +1008,15 @@
       }
     }
     syncVideoModeButtons();
+    if (swapProgress) {
+      pendingResumeIndex = current;
+      listStart = 0;
+      listEnd = 0;
+      renderInitialRows();
+      renderCurrent();
+      if (sentenceCues[current]) playSentence(current, { count: repeatCount + 1 });
+      void saveRecord();
+    }
   }
 
   function setSpeechTargetState(state = "practice") {
@@ -1121,7 +1269,25 @@
     if (!active || videoId !== requestVideoId || panelGeneration !== generation) return null;
     const storedTitle = cleanVideoTitle(record.title);
     if (storedTitle && !getCurrentVideoTitle()) indexedVideoTitle = storedTitle;
-    solved = new Set(Array.isArray(record.solved) ? record.solved.map(Number).filter(Number.isInteger) : []);
+    const sharedProgress = normalizeProgressSnapshot({ current: record.current, solved: record.solved });
+    const storedByMode = record.progressByMode && typeof record.progressByMode === "object" ? record.progressByMode : {};
+    progressByMode = {
+      typing: normalizeProgressSnapshot(storedByMode.typing, sharedProgress),
+      speaking: normalizeProgressSnapshot(storedByMode.speaking, sharedProgress),
+    };
+    if (progressSyncEnabled) {
+      const mergedSolved = new Set([...progressByMode.typing.solved, ...progressByMode.speaking.solved]);
+      const currentWasSolvedInSharedRecord = sharedProgress.solved.includes(sharedProgress.current);
+      const currentSolvedInOtherTrack = !currentWasSolvedInSharedRecord && mergedSolved.has(sharedProgress.current);
+      current = currentSolvedInOtherTrack
+        ? findNextUnsolvedIndex(mergedSolved, sharedProgress.current)
+        : sharedProgress.current;
+      solved = mergedSolved;
+      const synchronized = currentProgressSnapshot();
+      progressByMode = { typing: cloneProgressSnapshot(synchronized), speaking: cloneProgressSnapshot(synchronized) };
+    } else {
+      applyModeProgress(dictationMode);
+    }
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
     wrongWordStats = normalizeWrongWordStats(record.wrongWordStats);
@@ -1129,14 +1295,23 @@
   }
 
   function saveRecord() {
-    if (!videoId || !ext?.storage?.local) return Promise.resolve();
+    if (!videoId || !ext?.storage?.local || !progressReady) return Promise.resolve();
     const sessionId = `youtube:${videoId}`;
     const totalCount = sentenceCues.length;
     const solvedCount = solved.size;
     const title = getCurrentVideoTitle() || indexedVideoTitle;
     const titleUpdatedAt = title ? Date.now() : 0;
     if (title) indexedVideoTitle = title;
-    const record = { version:1, current, solved:[...solved], notes, translations, wrongWordStats, title, titleUpdatedAt };
+    const activeProgress = currentProgressSnapshot();
+    if (progressSyncEnabled) {
+      progressByMode = { typing: cloneProgressSnapshot(activeProgress), speaking: cloneProgressSnapshot(activeProgress) };
+    } else {
+      progressByMode[progressModeKey()] = cloneProgressSnapshot(activeProgress);
+    }
+    const record = {
+      version:1, current, solved:[...solved], progressByMode,
+      notes, translations, wrongWordStats, title, titleUpdatedAt,
+    };
     const session = {
       version: 1,
       sessionId,
@@ -1174,11 +1349,15 @@
     });
   }
 
-  function flushNotes() {
-    if (!active || !ui || !solved.has(current)) return;
+  function captureNoteDraft() {
+    if (!active || !ui || !solved.has(current)) return false;
     clearTimeout(saveTimer);
     notes[String(current)] = { ...(notes[String(current)] || {}), note: ui.note.value };
-    void saveRecord();
+    return true;
+  }
+
+  function flushNotes() {
+    if (captureNoteDraft()) void saveRecord();
   }
 
   function normalizeWrongWordStats(value) {
@@ -2509,6 +2688,8 @@
       await layoutPrefsPromise;
     }
     if (requestGeneration !== openingGeneration) return;
+    await loadProgressSyncPreference();
+    if (requestGeneration !== openingGeneration) return;
     if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
     videoId = currentVideoId();
     if (!videoId) { openingPanel = false; showToastBeforeOpen(); return; }
@@ -2517,6 +2698,7 @@
     active = true;
     syncVideoModeButtons();
     progressReady = false;
+    updateProgressSyncControl();
     pendingCaptionStart = waitForCaptions && !sentenceCues.length;
     pendingResumeIndex = 0;
     observeVideoTitle();
@@ -2551,10 +2733,10 @@
     const record = await loadProgress(videoId, generation);
     if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
     progressReady = true;
+    updateProgressSyncControl();
     renderWrongWordStats();
     if (!sentenceCues.length) {
-      const savedCurrent = Number(record.current);
-      pendingResumeIndex = Number.isInteger(savedCurrent) && savedCurrent >= 0 ? savedCurrent : 0;
+      pendingResumeIndex = Math.max(0, Number(current) || 0);
       current = 0;
       listStart = 0;
       listEnd = 0;
@@ -2565,15 +2747,13 @@
       return;
     }
     pendingCaptionStart = false;
-    if (solved.size) {
-      const savedCurrent = Number(record.current);
-      if (Number.isInteger(savedCurrent) && savedCurrent >= 0 && savedCurrent < sentenceCues.length) {
-        current = savedCurrent;
-      } else {
-        let nextUnsolved = 0;
-        while (nextUnsolved < sentenceCues.length && solved.has(nextUnsolved)) nextUnsolved++;
-        current = Math.min(nextUnsolved, sentenceCues.length - 1);
-      }
+    const savedCurrent = Number(current);
+    if (Number.isInteger(savedCurrent) && savedCurrent >= 0 && savedCurrent < sentenceCues.length) {
+      current = savedCurrent;
+    } else if (solved.size) {
+      let nextUnsolved = 0;
+      while (nextUnsolved < sentenceCues.length && solved.has(nextUnsolved)) nextUnsolved++;
+      current = Math.min(nextUnsolved, sentenceCues.length - 1);
     } else {
       current = 0;
     }

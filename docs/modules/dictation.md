@@ -33,6 +33,7 @@ Dictation luyện caption tiếng Anh từ YouTube qua overlay/player do module 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không tạo video/overlay thứ hai; giữ cue English, `LHN_OVERLAY_API` và các event hiện có.
+- Nút đồng bộ tiến độ là toggle 18×18 ngay bên phải `Đánh máy`, tím khi bật và trắng khi tắt. Mặc định bật; trạng thái lưu toàn cục bằng `dictation:progress-sync:v1` trong `browser.storage.local`. Khi bật, Speaking/Typing dùng chung `current`/`solved`; khi tắt, record từng video giữ snapshot riêng tại `progressByMode.speaking` và `progressByMode.typing`, còn notes/translations/wrong-word stats vẫn dùng chung. Bật lại lấy hợp của hai tập câu đã giải; nếu câu hiện tại của track đang hoạt động vừa được giải ở track kia thì chuyển tới câu chưa giải tiếp theo. Khi preference được bật ở video khác, record có hai track đã phân kỳ cũng được hợp nhất lúc mở.
 - Keyboard shortcut trong mode `Luyện nói` dùng lưới bốn cột/căn lề giống hint của `Đánh máy`; mode control inactive theo theme (nền tối/chữ xám nhạt trong dark mode, nền sáng/chữ tối trong light mode), active dùng màu vàng. Speech target vàng khi đang tập, đỏ khi câu nhận diện sai, xanh khi đúng.
 - Layout Dictation video dùng ba cột theo phần không gồm hai splitter: mặc định câu 25%, vùng Dictation 45%, ghi chú 30%. Cột câu kéo được 15–30%, ghi chú 20–35%; vùng giữa tự chiếm phần còn lại. Giữ splitter 8px và lưu lại tỉ lệ kéo trong `dictation:layout:v1`.
 - Chỉ thêm allowlist contraction chuẩn có straight/curly apostrophe, ví dụ `I'm` ↔ `I am`, `don't` ↔ `do not`. Không nhận slang như `gonna`/`wanna` hoặc dạng không apostrophe; các dạng mơ hồ chỉ theo expansion đã liệt kê.
@@ -46,5 +47,5 @@ Dictation luyện caption tiếng Anh từ YouTube qua overlay/player do module 
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --check` cho controller/style/languages, manifest JSON, kiểm tra icon mic 18×18 và thứ tự trong control bar; xác nhận các khóa locale và `git diff --check`. Trước đây test rules/popup có thể chạy bằng `node --test tests/dictation-learning-rules.test.cjs tests/dashboard-dictation-stats-popup.test.cjs` khi thư mục tests có trong checkout.
+- Static: `node --check` toàn bộ JavaScript, manifest JSON, icon sync 18×18/đúng vị trí, màu on/off, khóa locale và `git diff --check`. Behavioral mock xác nhận default-on/global preference, hai track độc lập khi off, lưu khi đổi mode, union khi bật lại trong cùng video và khi preference được bật ở video khác. Bộ tests rules/popup cũ không còn trong checkout.
 - Browser cần xác nhận overlay/shortcut, caption English/loading, hint, scoring/progress, replay, lưu notes/translations, stats popup và cleanup khi đổi video/đóng trên Chrome/Edge/Firefox. Thử nhận diện giọng nói/permission/result trên Chromium, và thông báo unsupported trên Firefox. Chưa chạy browser-test trong release này.
