@@ -30,6 +30,8 @@ test("Dictation route uses its visible name and displays sessions from the local
 
 test("Continue and Resume/Open share the YouTube auto-launch path; web and Open source retain normal navigation", () => {
   const videoScript = read("js/video/dual-subtitles.js");
+  const dictationScript = read("js/dictation/dictation.js");
+  const dictationStyles = read("js/dictation/dictation-style.js");
   assert.match(js, /data-dictation-auto-open="true"/);
   assert.match(js, /continueButton\.dataset\.dictationAutoOpen = "true"/);
   assert.match(js, /sourceButton\?\.removeAttribute\("data-dictation-auto-open"\)/);
@@ -39,8 +41,16 @@ test("Continue and Resume/Open share the YouTube auto-launch path; web and Open 
   assert.match(openSession, /youtubeUrl\.searchParams\.set\("lhn_open_dictation", "1"\)/);
   assert.match(openSession, /browser\.tabs\.create\(\{ url:targetUrl, active:true \}\)/);
   assert.match(js, /autoOpenDictation:button\.dataset\.dictationAutoOpen === "true"/);
-  assert.match(videoScript, /async function openDictationFromDashboardIntent\(\)[\s\S]*?searchParams\.get\("lhn_open_dictation"\)[\s\S]*?history\.replaceState[\s\S]*?await refreshKeepitGate\(\)[\s\S]*?pendingDictationShortcut = true;[\s\S]*?openOverlay\(\);[\s\S]*?openPendingDictationShortcut\(\)/);
+  assert.match(videoScript, /async function openDictationFromDashboardIntent\(\)[\s\S]*?searchParams\.get\("lhn_open_dictation"\)[\s\S]*?history\.replaceState[\s\S]*?await refreshKeepitGate\(\)[\s\S]*?pendingDictationShortcut = true;[\s\S]*?pendingDictationOpenImmediately = true;[\s\S]*?openOverlay\(\);[\s\S]*?openPendingDictationShortcut\(\)/);
+  assert.match(videoScript, /if \(openWhileLoading\) globalThis\.LHN_DICTATION\?\.open\?\.\(\{ waitForCaptions:true \}\)/);
   assert.match(videoScript, /tick\(\);\s*void openDictationFromDashboardIntent\(\)/);
+  assert.match(dictationScript, /async function openPanel\(\{ waitForCaptions = false \} = \{\}\)/);
+  assert.match(dictationScript, /if \(waitForCaptions\) \{\s*void layoutPrefsPromise\.then/);
+  assert.match(dictationScript, /if \(!isEnglishReady\(\) && !waitForCaptions\)/);
+  assert.match(dictationScript, /id="te-dict-loading"/);
+  assert.match(dictationScript, /const disabled = keepControlsDisabled \|\| !sentenceCues\.length;[\s\S]*?ui\.input\.disabled = disabled;[\s\S]*?ui\.check\.disabled = disabled;[\s\S]*?ui\.btnPrev, ui\.btnReplay/);
+  assert.match(dictationScript, /if \(pendingCaptionStart\)[\s\S]*?playSentence\(current, \{ count:repeatCount \+ 1 \}\)/);
+  assert.match(dictationStyles, /\.te-dict-loading \{/);
 });
 
 test("Dictation session list recovers and live-syncs real per-video records when the index is stale", () => {

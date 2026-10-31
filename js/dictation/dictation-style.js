@@ -278,6 +278,8 @@ globalThis.LHN_DICTATION_CSS = `
   border-bottom: 1px solid #e5e7eb;
 }
 #keepit-exact-overlay #te-dict-sentence-head { padding: 0 0 8px; border: 0; }
+#keepit-exact-overlay .te-dict-loading { flex: none; margin: 10px 0; padding: 11px 13px; border: 1px solid rgba(245,158,11,.28); border-radius: 12px; color: #92400e; background: rgba(245,158,11,.08); font-size: 13px; font-weight: 650; text-align: center; }
+#keepit-exact-overlay.theme-dark .te-dict-loading { color: #fbbf24; background: rgba(245,158,11,.09); }
 #keepit-exact-overlay .te-dict-heading {
   display: flex;
   align-items: center;

@@ -14,6 +14,9 @@
   let listEnd = 0;
   let sentenceCues = [];
   let videoId = "";
+  let progressReady = false;
+  let pendingCaptionStart = false;
+  let pendingResumeIndex = 0;
   let solved = new Set();
   let notes = {};
   let translations = {};
@@ -495,6 +498,7 @@
         <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
         <span class="te-dict-counter" id="te-dict-counter" aria-live="polite">0/0</span>
       </div>
+      <div class="te-dict-loading" id="te-dict-loading" role="status" hidden></div>
       <div id="te-dict-sentences" role="list"></div>
       <div class="te-dict-sentence-footer">
         <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
@@ -666,6 +670,7 @@
       hideLeftColumn: sentenceArea.querySelector("#te-dict-hide-sentences"),
       hideRightColumn: notesPanel.querySelector("#te-dict-hide-notes"),
       sentences: sentenceArea.querySelector("#te-dict-sentences"),
+      loadingStatus: sentenceArea.querySelector("#te-dict-loading"),
       counter: sentenceArea.querySelector("#te-dict-counter"),
       input: center.querySelector("#te-dict-input"),
       properNounHint: center.querySelector("#te-dict-proper-noun-hint"),
@@ -706,7 +711,7 @@
       playPause: bar.querySelector('button[title="Phát/Tạm dừng"]'),
       originalButtonState: new Map(),
     };
-    for (const button of [ui.previous, ui.next]) {
+    for (const button of [ui.previous, ui.next, ui.replay]) {
       if (button) ui.originalButtonState.set(button, { disabled: button.disabled, aria: button.getAttribute("aria-disabled") });
     }
     ui.close.setAttribute("aria-label", tr("dictationClose"));
@@ -1368,6 +1373,18 @@
     ui.save.disabled = locked;
   }
 
+  function setCaptionStatus(message = "", keepControlsDisabled = false) {
+    if (!ui) return;
+    ui.loadingStatus.textContent = message;
+    ui.loadingStatus.hidden = !message;
+    const disabled = keepControlsDisabled || !sentenceCues.length;
+    ui.input.disabled = disabled;
+    ui.check.disabled = disabled;
+    for (const button of [ui.btnPrev, ui.btnReplay, ui.btnSlow, ui.btnNext, ui.previous, ui.next, ui.replay]) {
+      if (button) button.disabled = disabled;
+    }
+  }
+
   function renderProperNounHint(sentence) {
     if (!ui?.properNounHint) return;
     const names = globalThis.LHN_DICTATION_RULES.getProperNounHints(sentence);
@@ -1390,7 +1407,7 @@
     updateCounter();
     updateRows();
     updateProgressControls();
-    const wasSolved = solved.has(current);
+    const wasSolved = sentenceCues.length > 0 && solved.has(current);
     setNotesLocked(true);
     ui.btnNext?.classList.remove("te-dict-ready");
     ui.check?.classList.add("te-dict-act-primary");
@@ -2223,18 +2240,27 @@
     attachedVideo = null;
   }
 
-  async function openPanel() {
+  async function openPanel({ waitForCaptions = false } = {}) {
     if (active || openingPanel) return;
-    if (!isEnglishReady()) { showToastBeforeOpen(); return; }
+    if (!isEnglishReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
     openingPanel = true;
     build();
     if (!ui) { openingPanel = false; return; }
-    await loadDictationLayoutPrefs();
-    if (!ui || !isEnglishReady()) { openingPanel = false; return; }
+    const layoutPrefsPromise = loadDictationLayoutPrefs();
+    if (waitForCaptions) {
+      void layoutPrefsPromise.then(() => { if (active && ui) applyDictationColumnLayout(); });
+    } else {
+      await layoutPrefsPromise;
+    }
+    if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
     videoId = currentVideoId();
+    if (!videoId) { openingPanel = false; showToastBeforeOpen(); return; }
     sentenceCues = getCues();
-    if (!sentenceCues.length) { openingPanel = false; showToastBeforeOpen(); return; }
+    if (!sentenceCues.length && !waitForCaptions) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
+    progressReady = false;
+    pendingCaptionStart = waitForCaptions && !sentenceCues.length;
+    pendingResumeIndex = 0;
     observeVideoTitle();
     openingPanel = false;
     checkedCurrent = false;
@@ -2262,10 +2288,25 @@
     attachVideoEvents();
     renderInitialRows();
     setNotesLocked(true);
+    setCaptionStatus(sentenceCues.length ? "" : tr("dictationWaitingForCaptions"));
     setScore(null);
     const record = await loadProgress(videoId, generation);
     if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
+    progressReady = true;
     renderWrongWordStats();
+    if (!sentenceCues.length) {
+      const savedCurrent = Number(record.current);
+      pendingResumeIndex = Number.isInteger(savedCurrent) && savedCurrent >= 0 ? savedCurrent : 0;
+      current = 0;
+      listStart = 0;
+      listEnd = 0;
+      renderInitialRows();
+      renderCurrent();
+      const captionsStillLoading = A?.state?.loadingFor === videoId;
+      setCaptionStatus(tr(captionsStillLoading ? "dictationWaitingForCaptions" : "dictationEnglishOnly"), true);
+      return;
+    }
+    pendingCaptionStart = false;
     if (solved.size) {
       const savedCurrent = Number(record.current);
       if (Number.isInteger(savedCurrent) && savedCurrent >= 0 && savedCurrent < sentenceCues.length) {
@@ -2282,6 +2323,7 @@
     listEnd = 0;
     renderInitialRows();
     renderCurrent();
+    setCaptionStatus("");
     playSentence(current, { count: repeatCount + 1 });
     void saveRecord();
     ui.input.focus({ preventScroll: true });
@@ -2292,6 +2334,9 @@
     restoreYouTubeScrollbar();
     flushNotes();
     active = false;
+    progressReady = false;
+    pendingCaptionStart = false;
+    pendingResumeIndex = 0;
     stopObservingVideoTitle();
     hintResult = null;
     panelGeneration++;
@@ -2349,7 +2394,14 @@
     if (currentVideoId() !== videoId) { close(); return; }
     const updated = getCues();
     if (A?.state?.captionTrackLanguage !== "en" || !updated.length) {
-      if (A?.state?.loadingFor === A?.state?.videoId) return;
+      if (A?.state?.loadingFor === A?.state?.videoId) {
+        if (pendingCaptionStart) setCaptionStatus(tr("dictationWaitingForCaptions"), true);
+        return;
+      }
+      if (pendingCaptionStart) {
+        setCaptionStatus(tr("dictationEnglishOnly"), true);
+        return;
+      }
       close();
       showToast(tr("dictationEnglishOnly"));
       return;
@@ -2361,10 +2413,35 @@
     flushNotes();
     const oldStart = sentenceCues[current]?.start;
     sentenceCues = updated;
-    const matchingIndex = sentenceCues.findIndex((cue) => Math.abs(cue.start - oldStart) < 0.5);
+    if (!progressReady) {
+      current = 0;
+      listStart = 0;
+      listEnd = 0;
+      renderInitialRows();
+      renderCurrent();
+      setCaptionStatus(tr("dictationWaitingForCaptions"), true);
+      return;
+    }
+    if (pendingCaptionStart) {
+      current = Math.min(pendingResumeIndex, sentenceCues.length - 1);
+      pendingCaptionStart = false;
+      listStart = 0;
+      listEnd = 0;
+      renderInitialRows();
+      renderCurrent();
+      setCaptionStatus("");
+      playSentence(current, { count:repeatCount + 1 });
+      void saveRecord();
+      ui.input.focus({ preventScroll:true });
+      return;
+    }
+    const matchingIndex = sentenceCues.findIndex(cue => Math.abs(cue.start - oldStart) < 0.5);
     current = matchingIndex >= 0 ? matchingIndex : 0;
+    listStart = 0;
+    listEnd = 0;
     renderInitialRows();
     renderCurrent();
+    setCaptionStatus("");
     void saveRecord();
   }
 

@@ -29,6 +29,7 @@ const PAUSE_PATH = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 
 let pendingDictationShortcut = false;
+let pendingDictationOpenImmediately = false;
 
 const state = {
   open: false,
@@ -1065,6 +1066,7 @@ function openOverlay() {
 
 function closeOverlay() {
   pendingDictationShortcut = false;
+  pendingDictationOpenImmediately = false;
   globalThis.LHN_DICTATION?.close?.();
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
@@ -1085,11 +1087,13 @@ function toggleDictationFromShortcut() {
   const dictation = globalThis.LHN_DICTATION;
   if (dictation?.isOpen?.()) {
     pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
     dictation.close();
     return;
   }
   if (pendingDictationShortcut) {
     pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
     return;
   }
   if (!state.open) openOverlay();
@@ -1109,11 +1113,16 @@ function openPendingDictationShortcut() {
   if (!pendingDictationShortcut) return;
   if (!state.open) {
     pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
     return;
   }
-  if (!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length && state.loadingFor === state.videoId) return;
+  const hasCues = !!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length;
+  if (!hasCues && state.loadingFor === state.videoId && !pendingDictationOpenImmediately) return;
   pendingDictationShortcut = false;
-  globalThis.LHN_DICTATION?.open?.();
+  const openWhileLoading = pendingDictationOpenImmediately;
+  pendingDictationOpenImmediately = false;
+  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions:true });
+  else globalThis.LHN_DICTATION?.open?.();
 }
 
 async function openDictationFromDashboardIntent() {
@@ -1126,6 +1135,7 @@ async function openDictationFromDashboardIntent() {
   await refreshKeepitGate();
   if (keepitSiteDisabled) return;
   pendingDictationShortcut = true;
+  pendingDictationOpenImmediately = true;
   openOverlay();
   openPendingDictationShortcut();
 }
