@@ -5,6 +5,16 @@
   const searchInput = $("#searchInput");
   if (!modal || !backdrop) return;
 
+  const popupRevealApi = globalThis.KeepitDashboardReveal;
+  const popupRevealScope = popupRevealApi?.createScope?.();
+  const popupRevealTargets = [
+    $(".modal-head"),
+    $(".workspace-topbar"),
+    ...document.querySelectorAll(".stats-sidebar .metric"),
+    $(".results-panel"),
+  ].filter(Boolean);
+  popupRevealTargets.forEach(target => target.classList.add("dictation-popup-reveal"));
+
   const TYPES = ["phonetic", "rule", "typo"];
   const CHEVRON_RIGHT_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>';
   const CHEVRON_DOWN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
@@ -440,9 +450,34 @@
   searchInput?.addEventListener("input", () => { searchTerm = searchInput.value; render(); });
 
   function closeModal() {
+    popupRevealScope?.cancel();
     backdrop.classList.add("closed");
     reopen?.classList.add("visible");
     window.parent?.postMessage({ type:"KEEPIT_DICTATION_STATS_CLOSE" }, location.origin);
+  }
+  function runPopupReveal() {
+    popupRevealScope?.cancel();
+    popupRevealTargets.forEach(target => {
+      target.classList.remove("dictation-popup-revealed");
+      target.style.removeProperty("--dictation-popup-reveal-delay");
+    });
+    if (!popupRevealTargets.length) return;
+    if (!popupRevealScope || popupRevealApi?.prefersReducedMotion?.()) {
+      popupRevealTargets.forEach(target => target.classList.add("dictation-popup-revealed"));
+      return;
+    }
+    void modal.offsetHeight;
+    popupRevealScope.sequence(popupRevealTargets, {
+      key:"dictation-stats-popup",
+      step:80,
+      lead:100,
+      onTarget:(target, delay) => {
+        const delayMs = Math.max(0, Math.round(delay));
+        target.style.setProperty("--dictation-popup-reveal-delay", `${delayMs}ms`);
+        target.classList.add("dictation-popup-revealed");
+        popupRevealScope.schedule(delayMs + 850, () => target.style.removeProperty("--dictation-popup-reveal-delay"), () => target.isConnected, target);
+      },
+    });
   }
   function updateExpandButton(expanded) {
     if (!expandBtn) return;
@@ -459,6 +494,7 @@
     applyPopupTheme(dark);
     applyTranslations(lang);
     if (snapshot) setStatsSnapshot(snapshot);
+    runPopupReveal();
     document.body.classList.add("embedded");
     backdrop.classList.remove("closed");
     reopen?.classList.remove("visible");
@@ -495,4 +531,5 @@
   applyTranslations();
   updateExpandButton(false);
   render();
+  runPopupReveal();
 })();

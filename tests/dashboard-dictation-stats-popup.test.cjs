@@ -38,7 +38,8 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(languages, /dictationStatsTypeNameTypo:/);
   assert.match(popup, /dictation-stats-popup\.css/);
   assert.match(popup, /dictation-stats-popup\.js/);
-  assert.match(popup, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/dictation-stats-popup\.js"><\/script>/);
+  assert.match(popup, /reveal-effects\.js/);
+  assert.match(popup, /<script src="\.\.\/js\/shared\/site-icons\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/reveal-effects\.js"><\/script>\s*<script src="\.\.\/js\/dashboard\/dictation-stats-popup\.js"><\/script>/);
   assert.doesNotMatch(popup, /<script>([\s\S]*?)<\/script>/);
   const demo = read("docs/dictation-error-popup-overview-demo-v14.html");
   const demoCss = demo.match(/<style>([\s\S]*?)<\/style>/)?.[1];
@@ -53,6 +54,12 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(css, /height:min\(900px,calc\(100vh - 40px\)\)/);
   assert.match(css, /\.modal-body\{[^}]*overflow:hidden/);
   assert.match(css, /\.results-scroll::-webkit-scrollbar\{width:3px!important;height:3px!important\}/);
+  assert.match(css, /html\.dark \.results-scroll::-webkit-scrollbar,[\s\S]*?width:3px!important; height:3px!important/);
+  assert.match(css, /html\.dark \.modal-body,\s*html\.dark \.results-scroll,\s*html\.dark \.filters \{ scrollbar-width:auto; scrollbar-color:auto/);
+  assert.match(css, /@supports \(-moz-appearance:none\)[\s\S]*?html\.dark \.results-scroll,\s*html\.dark \.filters \{ scrollbar-width:thin/);
+  assert.match(css, /\.dictation-popup-reveal \{[\s\S]*?translateY\(24px\) scale\(\.98\)/);
+  assert.match(css, /\.dictation-popup-revealed \{ opacity:1; transform:translateY\(0\) scale\(1\); \}/);
+  assert.match(css, /prefers-reduced-motion:reduce[\s\S]*?\.dictation-popup-reveal\.dictation-popup-revealed/);
   assert.match(css, /grid-template-columns:minmax\(140px,146px\) minmax\(0,1fr\)/);
   assert.match(ui, /item\.errorContext\?\.source/);
   assert.match(ui, /LHN_SITE_ICONS\.load\(image, session\.url, \{ fallbackElement:fallbackIcon \}\)/);
@@ -74,6 +81,11 @@ test("Detailed Dictation stats popup receives filtered local session data throug
   assert.match(ui, /function applyPopupTheme\(dark\)/);
   assert.match(ui, /document\.documentElement\.classList\.toggle\("dark", dark\)/);
   assert.match(ui, /applyPopupTheme\(event\.data\.dark\)/);
+  assert.match(ui, /KeepitDashboardReveal/);
+  assert.match(ui, /popupRevealScope\.sequence\(popupRevealTargets/);
+  assert.match(ui, /popupRevealApi\?\.prefersReducedMotion/);
+  assert.match(ui, /function runPopupReveal\(\)/);
+  assert.match(ui, /runPopupReveal\(\);/);
   assert.match(ui, /setStatsSnapshot\(event\.data\.stats\)/);
   assert.match(bridge, /stats,/);
   assert.match(ui, /function setStatsSnapshot\(snapshot\)/);
