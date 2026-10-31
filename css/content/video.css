@@ -19,8 +19,8 @@
 #yt-keepit-launcher > svg {
   display: block;
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   overflow: visible;
 }
 
@@ -40,8 +40,9 @@
   box-sizing: border-box;
   width: 48px;
   min-width: 48px;
-  height: 48px;
+  height: 100%;
   margin: 0;
+  vertical-align: top;
   padding: 0;
   border-radius: 0;
   background: transparent;
