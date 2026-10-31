@@ -76,11 +76,11 @@ test("A hidden Highlights & Notes route cannot be re-displayed by its scroller r
   assert.match(css, /#dashboardScroller\s*>\s*#dashboardHighlightsNotesView\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
 });
 
-test("Highlights & Notes counters animate with panels and source and note reveals use independent per-item timers after their panels", () => {
+test("Highlights & Notes counters animate with panels and source and note reveals are viewport-triggered in separate lists after their panels", () => {
   assert.match(dashboard, /keepit:highlights-notes-entrance-reset/);
   assert.match(dashboard, /keepit:highlights-notes-panel-reveal/);
   assert.match(notes, /function setLhnCounter\(node,value,formatter=formatLhnNumber\)/);
-  assert.match(notes, /lhnReducedMotion\(\)\|\|!window\.requestAnimationFrame/);
+  assert.match(notes, /if\(lhnReducedMotion\(\)\)/);
   assert.match(notes, /const totalFrames=120/);
   assert.match(notes, /1-Math\.pow\(2,-10\*progress\)/);
   for (const id of ["demoMetricPages", "demoMetricHighlights", "demoMetricNotes", "demoActiveDays", "demoTotalDays", "demoActiveWeeks", "demoActiveItems"]) {
@@ -89,11 +89,13 @@ test("Highlights & Notes counters animate with panels and source and note reveal
   assert.match(notes, /setLhnCounter\(row\.querySelector\('\.source-count-number'\),page\.highlights\)/);
   assert.match(notes, /host\.querySelectorAll\('\.lhn-count-value'\)/);
   assert.match(notes, /function collectLhnItemGroups\(\)[\s\S]*?sources:\[\.\.\.sourceList\.querySelectorAll\(':scope > \.source-item'\)\][\s\S]*?notes:\[\.\.\.notesList\.querySelectorAll\(':scope > \.lhn-sidebar-card'\)\]/);
-  assert.match(notes, /scheduleLhnItemReveal\(sources,sourceAt\+350\);scheduleLhnItemReveal\(notes,notesAt\+350\)/);
-  assert.match(notes, /scheduleLhnItemReveal\(pendingSources,Math\.max\(now\+120,sourceAt\+350\)\);if\(pendingNotes\.length\)scheduleLhnItemReveal\(pendingNotes,Math\.max\(now\+120,notesAt\+350\)\)/);
-  assert.match(notes, /const step=180/);
-  assert.match(notes, /!lhnRevealedItemKeys\.has\(lhnItemKey\(node,index\)\)&&!lhnItemRevealTimers\.has\(node\)/);
-  assert.match(notes, /const timer=window\.setTimeout\(\(\)=>\{lhnItemRevealTimers\.delete\(node\);if\(cycle!==lhnItemRevealCycle\|\|!node\.isConnected\)return;node\.classList\.add\('lhn-item-revealed'\);lhnRevealedItemKeys\.add\(key\)/);
+  assert.match(notes, /observeLhnItemGroup\(sources,sourceList,sourceAt\);observeLhnItemGroup\(notes,notesList,notesAt\)/);
+  assert.match(notes, /state\.startAt=panelRevealAt\+350/);
+  assert.match(notes, /new IntersectionObserver\(entries=>[\s\S]*?entry\.isIntersecting[\s\S]*?\.sort\(\(a,b\)=>\(state\.order\.get\(a\.target\)\|\|0\)-\(state\.order\.get\(b\.target\)\|\|0\)\)/);
+  assert.match(notes, /\{root,threshold:\.08,rootMargin:'0px 0px -4% 0px'\}/);
+  assert.match(notes, /step=180/);
+  assert.match(notes, /Math\.max\(now\+80,state\.startAt,lhnItemRevealSequenceEnd\.get\(root\)\|\|0\)/);
+  assert.match(notes, /node\.classList\.add\('lhn-item-revealed'\);lhnRevealedItemKeys\.add\(key\)/);
   assert.doesNotMatch(notes, /lhn-item-reveal-delay/);
   assert.match(css, /transition:opacity \.56s cubic-bezier\(\.16,1,\.3,1\),transform \.56s cubic-bezier\(\.16,1,\.3,1\)/);
   assert.match(css, /\.source-item\.lhn-item-reveal[\s\S]*?opacity:0!important/);

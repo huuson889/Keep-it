@@ -20,7 +20,7 @@ function applyNewLabels(){ document.documentElement.lang=currentLanguage;$('lrDa
 let pages=[], annotationRecords=[], favorites=[], favoriteNoteIds=new Set(), selected=null, noteColor='all', scope='filtered', period='365', distMode='tags', quickFilter='all', favoriteNotes=false, viewMode='grid', toastTimer, requestSequence=0, currentLanguage='vi';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const validColors=['yellow','green','purple','red','blue','orange'];
-const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnItemRevealTimers=new Map(),lhnPanelRevealTimes=new Map(),lhnRevealedItemKeys=new Set();
+const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnItemRevealTimers=new Map(),lhnItemRevealObservers=new Map(),lhnItemRevealSequenceEnd=new Map(),lhnPanelRevealTimes=new Map(),lhnRevealedItemKeys=new Set();
 let lhnCounterCycle=0,lhnItemRevealCycle=0,lhnItemsEntranceQueued=false,lhnItemsEntranceReady=false,lhnDynamicItemsQueued=false;
 const lhnReducedMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 function formatLhnNumber(value){return Math.max(0,Math.floor(Number(value)||0)).toLocaleString(({vi:'vi-VN',en:'en-US',ko:'ko-KR'})[currentLanguage]||'vi-VN')}
@@ -50,24 +50,64 @@ function collectLhnItemGroups(){
  };
 }
 function collectLhnItems(){const {sources,notes}=collectLhnItemGroups();return [...sources,...notes]}
-function cancelLhnItemReveal(){lhnItemRevealCycle++;for(const timer of lhnItemRevealTimers.values())clearTimeout(timer);lhnItemRevealTimers.clear()}
-function scheduleLhnItemReveal(items,startAt){
- const cycle=lhnItemRevealCycle,now=performance.now(),pending=items.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index))&&!lhnItemRevealTimers.has(node));
+function cancelLhnItemReveal(){
+ lhnItemRevealCycle++;
+ for(const timer of lhnItemRevealTimers.values())clearTimeout(timer);
+ lhnItemRevealTimers.clear();
+ for(const state of lhnItemRevealObservers.values())state.observer.disconnect();
+ lhnItemRevealObservers.clear();lhnItemRevealSequenceEnd.clear();
+}
+function scheduleLhnItemReveal(node,revealAt,key,cycle){
+ if(lhnItemRevealTimers.has(node))return;
+ const delay=Math.max(0,revealAt-performance.now());
+ const timer=window.setTimeout(()=>{
+  lhnItemRevealTimers.delete(node);
+  if(cycle!==lhnItemRevealCycle||!node.isConnected)return;
+  node.classList.add('lhn-item-revealed');lhnRevealedItemKeys.add(key);animateLhnCountersWithin(node);
+ },delay);
+ lhnItemRevealTimers.set(node,timer);
+}
+function observeLhnItemGroup(items,root,panelRevealAt){
+ if(!items.length)return;
+ const cycle=lhnItemRevealCycle,step=180,pending=items.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index))&&!lhnItemRevealTimers.has(node));
  if(!pending.length)return;
- const step=180;
- if(lhnReducedMotion()||!window.requestAnimationFrame){pending.forEach((node,index)=>{node.classList.add('lhn-item-reveal','lhn-item-revealed');lhnRevealedItemKeys.add(lhnItemKey(node,index));animateLhnCountersWithin(node)});return}
- pending.forEach((node,index)=>{
-  const key=lhnItemKey(node,index),delay=Math.max(0,startAt+index*step-now);
-  node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed');
-  const timer=window.setTimeout(()=>{lhnItemRevealTimers.delete(node);if(cycle!==lhnItemRevealCycle||!node.isConnected)return;node.classList.add('lhn-item-revealed');lhnRevealedItemKeys.add(key);animateLhnCountersWithin(node)},delay);
-  lhnItemRevealTimers.set(node,timer);
+ pending.forEach(node=>{node.classList.add('lhn-item-reveal');node.classList.remove('lhn-item-revealed')});
+ if(lhnReducedMotion()){
+  pending.forEach((node,index)=>{node.classList.add('lhn-item-revealed');lhnRevealedItemKeys.add(lhnItemKey(node,index));animateLhnCountersWithin(node)});return;
+ }
+ if(!('IntersectionObserver' in window)){
+  let revealAt=Math.max(performance.now()+80,panelRevealAt+350,lhnItemRevealSequenceEnd.get(root)||0);
+  pending.forEach((node,index)=>{const key=lhnItemKey(node,index);scheduleLhnItemReveal(node,revealAt,key,cycle);revealAt+=step});
+  lhnItemRevealSequenceEnd.set(root,revealAt);return;
+ }
+ let state=lhnItemRevealObservers.get(root);
+ if(!state){
+  state={order:new Map(),observed:new Set(),startAt:panelRevealAt+350,observer:null};
+  state.observer=new IntersectionObserver(entries=>{
+   if(cycle!==lhnItemRevealCycle)return;
+   const visible=entries.filter(entry=>entry.isIntersecting&&!lhnRevealedItemKeys.has(lhnItemKey(entry.target,state.order.get(entry.target)||0))&&!lhnItemRevealTimers.has(entry.target)).sort((a,b)=>(state.order.get(a.target)||0)-(state.order.get(b.target)||0));
+   visible.forEach(entry=>{
+    const node=entry.target;state.observer.unobserve(node);state.observed.delete(node);
+    const key=lhnItemKey(node,state.order.get(node)||0),now=performance.now(),revealAt=Math.max(now+80,state.startAt,lhnItemRevealSequenceEnd.get(root)||0);
+    lhnItemRevealSequenceEnd.set(root,revealAt+step);scheduleLhnItemReveal(node,revealAt,key,cycle);
+   });
+  },{root,threshold:.08,rootMargin:'0px 0px -4% 0px'});
+  lhnItemRevealObservers.set(root,state);
+ }
+ state.startAt=panelRevealAt+350;state.order=new Map(items.map((node,index)=>[node,index]));
+ const current=new Set(items);
+ for(const node of state.observed)if(!current.has(node)){state.observer.unobserve(node);state.observed.delete(node)}
+ items.forEach((node,index)=>{
+  const key=lhnItemKey(node,index);
+  if(lhnRevealedItemKeys.has(key)||lhnItemRevealTimers.has(node)||state.observed.has(node))return;
+  state.observer.observe(node);state.observed.add(node);
  });
 }
 function queueInitialLhnItems(){
- if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;const {sources,notes}=collectLhnItemGroups();scheduleLhnItemReveal(sources,sourceAt+350);scheduleLhnItemReveal(notes,notesAt+350)});
+ if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;queueNewLhnItems()});
 }
 function queueNewLhnItems(){
- if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const {sources,notes}=collectLhnItemGroups(),sourceAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .sources-panel'))||0,notesAt=lhnPanelRevealTimes.get(document.querySelector('#dashboardHighlightsNotesView .notes-panel'))||0,now=performance.now(),pendingSources=sources.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index))),pendingNotes=notes.filter((node,index)=>!lhnRevealedItemKeys.has(lhnItemKey(node,index)));if(pendingSources.length)scheduleLhnItemReveal(pendingSources,Math.max(now+120,sourceAt+350));if(pendingNotes.length)scheduleLhnItemReveal(pendingNotes,Math.max(now+120,notesAt+350))});
+ if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const {sources,notes}=collectLhnItemGroups(),sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel)||performance.now(),notesAt=lhnPanelRevealTimes.get(notesPanel)||performance.now();observeLhnItemGroup(sources,sourceList,sourceAt);observeLhnItemGroup(notes,notesList,notesAt)});
 }
 function handleLhnPanelReveal(event){
  const {target,revealAt}=event.detail||{};if(!target||!Number.isFinite(revealAt))return;lhnPanelRevealTimes.set(target,revealAt);animateLhnCountersWithin(target,Math.max(0,revealAt-performance.now()),true);
