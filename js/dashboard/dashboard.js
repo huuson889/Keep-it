@@ -700,10 +700,40 @@ function renderDictationSessionCards() {
   });
   refreshDictationView();
 }
+function updateDictationContinueThumbnail(session) {
+  const art = document.querySelector("#dashboardDictationView .continue-art");
+  const image = art?.querySelector(".dictation-continue-thumb");
+  if (!art || !image) return;
+  const videoId = String(session?.sourceType === "youtube" ? session.sourceId || "" : "");
+  const src = /^[A-Za-z0-9_-]{6,}$/.test(videoId)
+    ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`
+    : "";
+  if (!src) {
+    image.hidden = true;
+    image.removeAttribute("src");
+    art.classList.remove("has-thumbnail");
+    return;
+  }
+  image.onload = () => { if (image.getAttribute("src") === src) art.classList.add("has-thumbnail"); };
+  image.onerror = () => {
+    if (image.getAttribute("src") !== src) return;
+    art.classList.remove("has-thumbnail");
+    image.hidden = true;
+    image.removeAttribute("src");
+  };
+  image.hidden = false;
+  if (image.getAttribute("src") !== src) {
+    art.classList.remove("has-thumbnail");
+    image.src = src;
+  } else if (image.complete && image.naturalWidth > 0) {
+    art.classList.add("has-thumbnail");
+  }
+}
 function renderDictationContinueCard() {
   const session = [...(overviewSessionEntries || [])]
     .filter(item => item.status !== "complete")
     .sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId))[0] || null;
+  updateDictationContinueThumbnail(session);
   const title = $("dictationContinueTitle"), description = $("dictationContinueDescription"), meta = $("dictationContinueMeta");
   const actions = $("dictationContinueActions"), continueButton = $("dictationContinueButton"), sourceButton = $("dictationOpenSourceButton");
   if (!title || !description || !meta || !actions) return;

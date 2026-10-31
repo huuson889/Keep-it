@@ -45,6 +45,17 @@ test("YouTube session cards reuse the Dictation audio thumbnail and retain the d
   assert.match(css, /\.dictation-thumb-image\{position:absolute;z-index:0;[\s\S]*?object-fit:cover/);
 });
 
+test("Continue art uses the selected YouTube session thumbnail and restores its default scene on failure", () => {
+  assert.ok(html.includes('class="continue-art"'));
+  assert.ok(html.includes('class="dictation-continue-thumb" hidden'));
+  assert.ok(js.includes('const art = document.querySelector("#dashboardDictationView .continue-art")'));
+  assert.ok(js.includes('`https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`'));
+  assert.match(js, /image\.onload = \(\) =>[\s\S]*?art\.classList\.add\("has-thumbnail"\)/);
+  assert.match(js, /image\.onerror = \(\) => \{[\s\S]*?image\.hidden = true;[\s\S]*?image\.removeAttribute\("src"\)/);
+  assert.match(css, /\.continue-art\.has-thumbnail:before,[\s\S]*?\.continue-art\.has-thumbnail \.mountain\{display:none\}/);
+  assert.match(css, /\.dictation-root \.continue-art\{[^}]*background:linear-gradient\(145deg,#d8eff5,#b5d3e0 47%,#7aa3b0\)/);
+});
+
 test("Empty Dictation and error-stat states are truthful and contain no fabricated records", () => {
   assert.match(html, /id="dictationEmptyState" data-i18n="dictationSessionsLoading"/);
   assert.match(js, /empty\.textContent = t\("dictationEmptyState"\)/);
