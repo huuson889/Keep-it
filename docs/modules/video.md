@@ -28,7 +28,7 @@ Mô tả overlay Dual Subtitles trên YouTube: gắn player hiện có vào over
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Giữ thứ tự nạp trong manifest: template → Dual Sub → các script Dictation.
-- Giới hạn logic overlay ở YouTube; `#yt-keepit-launcher` được chèn ngay sau `.ytp-fullscreen-button` bên trong `.ytp-right-controls`, để có kích thước/vị trí tự nhiên và ẩn/hiện cùng nhóm controls. `MutationObserver` và `tick()` gắn lại nút nếu YouTube dựng lại nhóm này.
+- Giới hạn logic overlay ở YouTube; `#yt-keepit-launcher` được chèn ngay sau `.ytp-fullscreen-button` bên trong `.ytp-right-controls`, để có kích thước/vị trí tự nhiên và ẩn/hiện cùng nhóm controls. `MutationObserver` và `tick()` gắn lại nút nếu YouTube dựng lại nhóm này; launcher bị ẩn ngay khi overlay mở và hiện lại sau khi overlay đóng.
 - Video thật được chuyển tạm vào overlay; đường đóng/đổi video phải dọn listener và khôi phục video qua `detachVideo()`.
 - Không dùng `isDefault` hoặc ngôn ngữ English hardcode làm tiêu chí duy nhất cho source Auto. Ưu tiên mapping audio-caption; fallback chỉ dùng khi metadata không đủ.
 - Giữ hợp đồng `LHN_OVERLAY_API`, `lhn-overlay-ready`, `lhn-dual-captions-updated` và `LHN_DICTATION`; thay đổi các tên/shape này ảnh hưởng tích hợp Dictation.
