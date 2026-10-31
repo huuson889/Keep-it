@@ -78,3 +78,26 @@ test("Saved listening route and scroll positions migrate without losing per-tab 
   assert.match(css, /#dashboardDictationView\.dashboard-dictation-view/);
   assert.match(css, /\.dictation-root \[hidden\]\{display:none!important\}/);
 });
+
+test("Dictation statistics count up with Overview timing and respect reduced motion", () => {
+  assert.match(js, /function setDictationCounter\(node, value, formatter = overviewFormatCount/);
+  assert.match(js, /const totalFrames = Math\.round\(2000 \/ \(1000 \/ 60\)\)/);
+  assert.match(js, /1 - Math\.pow\(2, -10 \* progress\)/);
+  assert.match(js, /overviewPrefersReducedMotion\(\)/);
+  assert.match(html, /id="dictationVisibleCount"[\s\S]*?id="dictationFilterAllCount"[\s\S]*?id="dictationWrongWordsCount"[\s\S]*?id="dictationRecoveryRate"/);
+  assert.match(js, /setDictationCounter\(count, visible[\s\S]*?filterCounts\[source\]/);
+  assert.match(js, /setDictationCounter\(wordCount, words\.length\)/);
+  assert.match(js, /setDictationCounter\(recoveryRate, Math\.round\(totalFixes \/ totalErrors \* 100\)\)/);
+  assert.match(js, /resetDictationCounterEntranceEffects\(\);[\s\S]*?resetDictationSessionCardEntranceEffects\(\)/);
+});
+
+test("Dictation session cards reveal in DOM reading order and remain static for reduced motion", () => {
+  assert.match(js, /const cards = \[\.\.\.dashboardDictationView\.querySelectorAll\("\.session-grid \.session-card"\)\]/);
+  assert.match(js, /const targetOrder = new Map\(pending\.map\(\(\{ card, index \}\) => \[card, index\]\)\)/);
+  assert.match(js, /\.sort\(\(a, b\) => targetOrder\.get\(a\) - targetOrder\.get\(b\)\)/);
+  assert.match(js, /dictationSessionCardRevealSequenceEnd \+ 80/);
+  assert.match(js, /root:dashboardDictationView, threshold:0\.12/);
+  assert.match(css, /\.session-card\.dictation-session-reveal\{opacity:0;transform:translateY\(24px\) scale\(\.98\)/);
+  assert.match(css, /\.dictation-session-revealed\{opacity:1;transform:translateY\(0\) scale\(1\)\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)[\s\S]*?dictation-session-reveal[\s\S]*?transition:none!important/);
+});

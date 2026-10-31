@@ -698,7 +698,8 @@ function renderDictationSessionCards() {
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
     globalThis.LHN_THUMBNAILS?.loadYouTube(image, image.dataset.videoId, { onError:() => image.remove() });
   });
-  refreshDictationView();
+  refreshDictationView({ animateCounters:true });
+  observeDictationSessionCards();
 }
 function updateDictationContinueThumbnail(session) {
   const art = document.querySelector("#dashboardDictationView .continue-art");
@@ -744,7 +745,7 @@ function renderDictationContinueCard() {
   for (const button of [continueButton, sourceButton]) if (button) button.dataset.dictationOpen = session.sessionId;
   actions.hidden = false;
 }
-function refreshDictationView() {
+function refreshDictationView({ animateCounters = false } = {}) {
   const input = $("dictationSessionSearch");
   if (!input) return;
   const query = input.value.trim(), normalizedQuery = query.toLocaleLowerCase(currentLang);
@@ -764,14 +765,14 @@ function refreshDictationView() {
   const youtubeText = $("dictationYoutubeSearchText"), googleText = $("dictationGoogleSearchText");
   if (youtubeText) youtubeText.textContent = query ? t("dictationSearchYoutubeQuery", { query }) : t("dictationSearchYoutube");
   if (googleText) googleText.textContent = query ? t("dictationSearchGoogleQuery", { query }) : t("dictationSearchGoogle");
-  if (count) count.textContent = t("dictationVisibleCount", { count:visible });
+  if (count) setDictationCounter(count, visible, value => t("dictationVisibleCount", { count:overviewFormatCount(value) }), { animate:animateCounters });
   const filterCounts = {
     all:cards.length,
     youtube:cards.filter(card => card.dataset.source === "youtube").length,
     web:cards.filter(card => card.dataset.source === "web").length,
   };
   for (const [source, id] of [["all","dictationFilterAllCount"],["youtube","dictationFilterYoutubeCount"],["web","dictationFilterWebCount"]]) {
-    const node = $(id); if (node) node.textContent = String(filterCounts[source]);
+    const node = $(id); if (node) setDictationCounter(node, filterCounts[source], overviewFormatCount, { animate:animateCounters });
   }
   if (empty) {
     if (!overviewSessionsReady) empty.textContent = t("dictationSessionsLoading");
@@ -845,12 +846,14 @@ async function renderDictationErrorSummary() {
     }
     const words = [...grouped.values()].sort((a,b) => b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
     const totalErrors = words.reduce((sum, item) => sum + item.errors, 0), totalFixes = words.reduce((sum, item) => sum + item.fixes, 0);
-    wordCount.textContent = overviewFormatCount(words.length);
-    recoveryRate.textContent = totalErrors ? String(Math.round(totalFixes / totalErrors * 100)) : "—";
-    list.innerHTML = words.slice(0, 3).map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count">${overviewFormatCount(item.errors)} <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
+    setDictationCounter(wordCount, words.length);
+    if (totalErrors) setDictationCounter(recoveryRate, Math.round(totalFixes / totalErrors * 100));
+    else clearDictationCounter(recoveryRate, "—");
+    list.innerHTML = words.slice(0, 3).map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count"><span class="mistake-count-number">${overviewFormatCount(item.errors)}</span> <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
+    list.querySelectorAll(".mistake-count-number").forEach((node, index) => setDictationCounter(node, words[index].errors));
     empty.hidden = words.length > 0;
   } catch (error) {
-    wordCount.textContent = "—"; recoveryRate.textContent = "—"; list.replaceChildren();
+    clearDictationCounter(wordCount, "—"); clearDictationCounter(recoveryRate, "—"); list.replaceChildren();
     empty.hidden = false;
     console.warn("Could not load saved Dictation error summary", error);
   }
@@ -1123,6 +1126,11 @@ let overviewSummaryCacheRevision = -1;
 function invalidateAnnotationCaches() { annotationDataRevision++; }
 
 const overviewCounterFormatters = new WeakMap();
+const dictationCounterFormatters = new WeakMap();
+const dictationCounterFrames = new Map();
+const dictationCounterDelayTimers = new Map();
+let dictationCounterCycle = 0;
+let dictationCounterEntranceActive = false;
 const overviewChartAnimationFrames = new WeakMap();
 const overviewRevealTimers = new Map();
 let overviewRevealSequenceEnd = 0;
@@ -1301,6 +1309,114 @@ function overviewAnimateCountersWithin(element) {
   if (element.matches?.("[data-ov-counter-target]")) counters.push(element);
   counters.push(...element.querySelectorAll("[data-ov-counter-target]"));
   for (const counter of counters) queueOverviewCounter(counter);
+}
+function cancelDictationCounterEntranceEffects() {
+  dictationCounterCycle++;
+  for (const frame of dictationCounterFrames.values()) cancelAnimationFrame(frame);
+  dictationCounterFrames.clear();
+  for (const timer of dictationCounterDelayTimers.values()) clearTimeout(timer);
+  dictationCounterDelayTimers.clear();
+  dictationCounterEntranceActive = false;
+}
+function animateDictationCounter(node) {
+  if (!node?.isConnected) return;
+  const target = Math.max(0, Number(node.dataset.dictationCounterTarget) || 0);
+  const finalText = node.dataset.dictationCounterFinal || overviewFormatCount(target);
+  const formatter = dictationCounterFormatters.get(node) || overviewFormatCount;
+  const previousFrame = dictationCounterFrames.get(node);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame || activeDashboardView !== "dictation") {
+    node.textContent = finalText;
+    node.dataset.dictationCounterDisplayed = String(target);
+    dictationCounterFrames.delete(node);
+    return;
+  }
+  const cycle = dictationCounterCycle;
+  const startValue = Math.max(0, Number(node.dataset.dictationCounterDisplayed) || 0);
+  const totalFrames = Math.round(2000 / (1000 / 60));
+  let frame = 0;
+  const tick = () => {
+    if (cycle !== dictationCounterCycle || activeDashboardView !== "dictation" || !node.isConnected) {
+      dictationCounterFrames.delete(node);
+      return;
+    }
+    frame++;
+    const progress = Math.min(1, frame / totalFrames);
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+    const value = Math.round(startValue + (target - startValue) * eased);
+    node.textContent = progress >= 1 ? finalText : formatter(value);
+    node.dataset.dictationCounterDisplayed = String(progress >= 1 ? target : value);
+    if (frame < totalFrames) dictationCounterFrames.set(node, requestAnimationFrame(tick));
+    else dictationCounterFrames.delete(node);
+  };
+  dictationCounterFrames.set(node, requestAnimationFrame(tick));
+}
+function queueDictationCounter(node, delay = 300) {
+  const previousTimer = dictationCounterDelayTimers.get(node);
+  if (previousTimer) clearTimeout(previousTimer);
+  if (overviewPrefersReducedMotion()) { animateDictationCounter(node); return; }
+  const cycle = dictationCounterCycle;
+  const timer = window.setTimeout(() => {
+    dictationCounterDelayTimers.delete(node);
+    if (cycle !== dictationCounterCycle || !dictationCounterEntranceActive || activeDashboardView !== "dictation") return;
+    animateDictationCounter(node);
+  }, delay);
+  dictationCounterDelayTimers.set(node, timer);
+}
+function setDictationCounter(node, value, formatter = overviewFormatCount, { animate = true } = {}) {
+  if (!node) return;
+  const numeric = Number(value);
+  const target = Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+  const previousTarget = node.dataset.dictationCounterTarget;
+  const targetString = String(target), finalText = formatter(target);
+  dictationCounterFormatters.set(node, formatter);
+  node.style.fontVariantNumeric = "tabular-nums";
+  overviewReserveCounterSpace(node, finalText);
+  node.dataset.dictationCounterTarget = targetString;
+  node.dataset.dictationCounterFinal = finalText;
+  node.setAttribute("aria-label", finalText);
+  if (animate && dictationCounterEntranceActive && activeDashboardView === "dictation") {
+    if (previousTarget === targetString && (dictationCounterFrames.has(node) || dictationCounterDelayTimers.has(node) || Number(node.dataset.dictationCounterDisplayed) === target)) return;
+    const previousTimer = dictationCounterDelayTimers.get(node);
+    if (previousTimer) clearTimeout(previousTimer);
+    dictationCounterDelayTimers.delete(node);
+    animateDictationCounter(node);
+  } else {
+    const previousFrame = dictationCounterFrames.get(node);
+    if (previousFrame) cancelAnimationFrame(previousFrame);
+    dictationCounterFrames.delete(node);
+    const previousTimer = dictationCounterDelayTimers.get(node);
+    if (previousTimer) clearTimeout(previousTimer);
+    dictationCounterDelayTimers.delete(node);
+    node.textContent = finalText;
+    node.dataset.dictationCounterDisplayed = targetString;
+  }
+}
+function clearDictationCounter(node, value = "—") {
+  if (!node) return;
+  const frame = dictationCounterFrames.get(node), timer = dictationCounterDelayTimers.get(node);
+  if (frame) cancelAnimationFrame(frame);
+  if (timer) clearTimeout(timer);
+  dictationCounterFrames.delete(node);
+  dictationCounterDelayTimers.delete(node);
+  delete node.dataset.dictationCounterTarget;
+  delete node.dataset.dictationCounterFinal;
+  delete node.dataset.dictationCounterDisplayed;
+  dictationCounterFormatters.delete(node);
+  node.textContent = value;
+  node.removeAttribute("aria-label");
+}
+function resetDictationCounterEntranceEffects() {
+  cancelDictationCounterEntranceEffects();
+  dictationCounterEntranceActive = activeDashboardView === "dictation";
+  if (!dictationCounterEntranceActive) return;
+  const counters = dashboardDictationView.querySelectorAll("[data-dictation-counter-target]");
+  for (const node of counters) {
+    const formatter = dictationCounterFormatters.get(node) || overviewFormatCount;
+    node.textContent = formatter(0);
+    node.dataset.dictationCounterDisplayed = "0";
+    queueDictationCounter(node);
+  }
 }
 function overviewSetMeter(id, ratio) {
   const node = $(id);
@@ -2718,6 +2834,75 @@ function resetOverviewEntranceEffects() {
 let dashboardPanelRevealObserver = null;
 let dashboardPanelRevealTimers = new Map();
 let dashboardPanelRevealSequenceEnd = 0;
+let dictationSessionCardRevealObserver = null;
+let dictationSessionCardRevealSequenceEnd = 0;
+let dictationSessionCardRevealIds = new Set();
+const dictationSessionCardRevealFrames = new Set();
+function cancelDictationSessionCardRevealObserver() {
+  dictationSessionCardRevealObserver?.disconnect();
+  dictationSessionCardRevealObserver = null;
+  for (const frame of dictationSessionCardRevealFrames) cancelAnimationFrame(frame);
+  dictationSessionCardRevealFrames.clear();
+}
+function revealDictationSessionCard(card, sessionId, delay) {
+  dictationSessionCardRevealIds.add(sessionId);
+  card.style.setProperty("--dictation-card-reveal-delay", `${delay}ms`);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    card.classList.add("dictation-session-revealed");
+    return;
+  }
+  const frame = requestAnimationFrame(() => {
+    dictationSessionCardRevealFrames.delete(frame);
+    if (activeDashboardView === "dictation" && card.isConnected) card.classList.add("dictation-session-revealed");
+  });
+  dictationSessionCardRevealFrames.add(frame);
+}
+function observeDictationSessionCards({ reset = false } = {}) {
+  if (reset) {
+    cancelDictationSessionCardRevealObserver();
+    dictationSessionCardRevealSequenceEnd = 0;
+    dictationSessionCardRevealIds.clear();
+  } else cancelDictationSessionCardRevealObserver();
+  if (activeDashboardView !== "dictation") return;
+  const cards = [...dashboardDictationView.querySelectorAll(".session-grid .session-card")];
+  const pending = [];
+  cards.forEach((card, index) => {
+    const sessionId = card.dataset.sessionId || `dictation-card-${index}`;
+    card.classList.add("dictation-session-reveal");
+    card.style.removeProperty("--dictation-card-reveal-delay");
+    if (dictationSessionCardRevealIds.has(sessionId)) card.classList.add("dictation-session-revealed");
+    else {
+      card.classList.remove("dictation-session-revealed");
+      pending.push({ card, sessionId, index });
+    }
+  });
+  if (!pending.length) return;
+  if (overviewPrefersReducedMotion()) {
+    pending.forEach(({ card, sessionId }) => revealDictationSessionCard(card, sessionId, 0));
+    return;
+  }
+  if (!("IntersectionObserver" in window)) {
+    pending.forEach(({ card, sessionId }, index) => revealDictationSessionCard(card, sessionId, 100 + index * 80));
+    return;
+  }
+  const targetOrder = new Map(pending.map(({ card, index }) => [card, index]));
+  dictationSessionCardRevealObserver = new IntersectionObserver(entries => {
+    const visibleCards = entries.filter(entry => entry.isIntersecting && !entry.target.classList.contains("dictation-session-revealed"))
+      .map(entry => entry.target).sort((a, b) => targetOrder.get(a) - targetOrder.get(b));
+    visibleCards.forEach(card => {
+      const now = performance.now();
+      const revealAt = Math.max(now + 100, dictationSessionCardRevealSequenceEnd + 80);
+      dictationSessionCardRevealSequenceEnd = revealAt;
+      const sessionId = card.dataset.sessionId || `dictation-card-${targetOrder.get(card)}`;
+      revealDictationSessionCard(card, sessionId, Math.round(revealAt - now));
+      dictationSessionCardRevealObserver?.unobserve(card);
+    });
+  }, { root:dashboardDictationView, threshold:0.12, rootMargin:"0px 0px -5% 0px" });
+  pending.forEach(({ card }) => dictationSessionCardRevealObserver.observe(card));
+}
+function resetDictationSessionCardEntranceEffects() {
+  observeDictationSessionCards({ reset:true });
+}
 function dashboardPanelRevealTargets(view) {
   if (view === "dictation") return [...dashboardDictationView.querySelectorAll([
     ".dictation-hero-row > .hero", ".dictation-hero-row > .continue-card", ".search-panel", ".library-section", ".layout > .aside"
@@ -2732,6 +2917,10 @@ function resetDashboardPanelEntranceEffects(view) {
   dashboardPanelRevealTimers.clear();
   dashboardPanelRevealSequenceEnd = 0;
   const routeTargets = dashboardPanelRevealTargets(view);
+  if (view === "dictation") {
+    resetDictationCounterEntranceEffects();
+    resetDictationSessionCardEntranceEffects();
+  }
   if (dashboardSharedTopbar) {
     dashboardSharedTopbar.classList.add("ov-reveal");
     dashboardSharedTopbar.classList.remove("ov-revealed");
@@ -2784,6 +2973,8 @@ function savedDashboardView() {
 }
 let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
 function cancelDashboardEntranceEffects() {
+  cancelDictationCounterEntranceEffects();
+  cancelDictationSessionCardRevealObserver();
   overviewEffectsObserver?.disconnect();
   overviewEffectsObserver = null;
   for (const timer of overviewRevealTimers.values()) clearTimeout(timer);
