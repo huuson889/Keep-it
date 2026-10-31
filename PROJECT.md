@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.878; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.879; Manifest V3. Video transcript learning-mode change is based on v3.4.876. Bản đồ mã nguồn ở mục 4; tài liệu kỹ thuật module tại `docs/INDEX.md`.
 - Dashboard Overview, Dictation và Highlights & Notes dùng chung shell, nền/theme và topbar; topbar portal không có inset dọc, giữ cùng cao độ trong cả outer/inner scroll routes. Dictation giới hạn chiều cao theo viewport và cuộn bên trong, còn mỗi tab vẫn lưu/khôi phục vị trí cuộn riêng. Reload mở lại route/vị trí cuối; mặc định Overview nếu chưa lưu route.
 - Highlights & Notes đã được tích hợp vào cùng document qua event bus nội bộ, không còn iframe. Source files thống nhất tên `js/dashboard/highlights-notes.js` và `pages/highlights-notes.html`; các đường dẫn hiện hành đã cập nhật, nhật ký phát hành cũ giữ nguyên. Reveal khung cấp cao dùng chung nhịp Overview; counters chạy theo reveal. Mọi trigger/sequence/cancel của Dashboard reveal dùng một module `js/dashboard/reveal-effects.js`; Overview panels, Dashboard panels, Dictation session cards, H&N chart panels và source/note lists khai báo riêng target/cấu hình/callback. H&N activity/distribution charts có reveal riêng; các thanh phân bố khởi động đúng lúc panel hiện, chạy đồng bộ 2 giây/easeOutQuart như Overview. Source item reveal theo viewport và giữ trạng thái nếu chỉ chọn qua lại source; notes của source mới reveal lại. Bộ lọc/render lại hủy chuỗi cũ và reset cả hai danh sách; delay/cadence/viewport hiện hành vẫn giữ. CSS và callback count-up/chart vẫn chuyên biệt theo view.
 - Dictation Dashboard dùng route nội bộ `dictation`, render phiên/tiến độ từ session index cục bộ đồng thời đối soát/khôi phục từ record `dictation:<videoId>` khi index cũ thiếu phiên; số liệu count-up theo nhịp Overview; session card bắt đầu reveal trễ hơn panel library chính 250ms (cộng delay riêng của panel), vẫn theo thứ tự hàng. Thumbnail dùng chung `js/shared/thumbnails.js`; trạng thái trống không sinh nội dung mẫu. Route/scroll sessionStorage cũ `listening` được migrate; logic annotations, H&N, counter/chart và sequence Overview được giữ nguyên.
 - Highlights & Notes page giữ luồng cuộn tự nhiên; workspace có chiều cao giới hạn, danh sách Sources/Notes cuộn nội bộ và cho scroll chaining sang trang khi chạm biên. Card latest-highlight hiển thị source/highlight mới nhất.
 - Reading mode trong video overlay: nút icon file-minus ở trước nút chế độ phụ đề; bố cục video nhỏ bên trái, transcript giữa và thanh điều khiển toàn chiều rộng bên dưới. Launcher YouTube sau fullscreen dùng logo SVG Keepit 24×24 trong nút cao 100% thanh controls (vùng ngang 48px), canh theo native buttons và ẩn/hiện cùng controls. Nút tím cài đặt bên trong overlay (`te-floating-btn`) bị ẩn.
-- Kích thước sidebar transcript: Lớn 30%, Vừa 40%, Nhỏ 50% chiều rộng overlay; ngoài Chế độ học, font gốc 100% tương ứng 16px/18px/20px. Khi bật Chế độ học, font gốc 100% là 18px; câu transcript active được canh cao hơn 40px. Cỡ chữ được scale theo cài đặt riêng EN/VI.
-- Kiểm tra v3.4.878: `node --check` JS video, manifest JSON và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
+- Kích thước sidebar transcript: Lớn 30%, Vừa 40%, Nhỏ 50% chiều rộng overlay. Ngoài learning mode, font transcript 100% giữ theo v3.4.876 (16px/18px/20px); trong video `te-reading-mode`, 100% = 18px cho mọi size. Cỡ chữ scale theo cài đặt EN/VI riêng.
+- Trong video learning mode, active transcript row nhắm vị trí cao hơn tâm danh sách 80px; bật/tắt mode căn lại focus sau layout reflow bằng cuộn mượt, giới hạn trong vùng scroll. Ngoài mode, giữ cách focus/scroll của v3.4.876.
+- Kiểm tra v3.4.879: cú pháp JS video, manifest JSON và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -117,17 +118,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-10-31 | v3.4.878 | Arena.ai Agent sửa:**
+**2026-11-01 | v3.4.879 | Arena.ai Agent sửa:**
 
-- Sửa chiều cuộn của câu transcript active: tăng `scrollTop` 40px để câu nằm cao hơn tâm danh sách đúng 40px khi Chế độ học bật; khi tắt mode, căn giữa trở lại.
-- File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` JS video, manifest JSON và `git diff --check` đạt; chưa browser-test.
-
-**2026-10-31 | v3.4.877 | Arena.ai Agent sửa:**
-
-- Chỉ trong Chế độ học (`te-reading-mode`), 100% cỡ chữ sidebar transcript là 18px; câu active được canh lên 40px so với tâm danh sách. Tắt mode trả về cỡ chữ theo preset thường và căn giữa câu active.
+- Dựa chính xác trên v3.4.876. Chỉ trong video learning mode (`te-reading-mode`), font transcript 100% cố định 18px và active row nằm 80px trên tâm danh sách; khi bật/tắt mode căn lại focus nhẹ nhàng sau layout update, giới hạn vị trí cuộn để không văng khỏi danh sách. Ngoài mode giữ nguyên cỡ chữ và focus của v3.4.876.
 - File: `js/video/dual-subtitles.js`, `manifest.json`, `docs/modules/video.md`, `PROJECT.md`.
-- Kiểm tra: `node --check` JS video, manifest JSON và `git diff --check` đạt; chưa browser-test.
+- Kiểm tra static; chưa chạy browser-test.
 
 **2026-10-31 | v3.4.876 | Arena.ai Agent sửa:**
 
