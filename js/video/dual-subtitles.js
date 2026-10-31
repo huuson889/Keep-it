@@ -518,19 +518,34 @@ function splitCueText(cue, sourceText = cue.en) {
   });
 }
 
+function cleanSentenceSegmentText(text) {
+  return String(text ?? '')
+    .replace(/\[[^\]]*\]/gu, ' ')
+    .replace(/>>/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .replace(/\s+([,.;:!?…])/gu, '$1')
+    .trim();
+}
+
 function resegmentBySentence(cues) {
   const sentences = [];
   let buf = null;
 
   for (const cue of cues) {
-    const sourcePieces = splitCueText(cue);
-    const translatedText = String(cue.vi || '').trim();
+    const sourceText = cleanSentenceSegmentText(cue.en);
+    if (!sourceText) continue;
+    const cleanedCue = { ...cue, en:sourceText };
+    const sourcePieces = splitCueText(cleanedCue, sourceText);
+    const originalTranslation = String(cue.vi || '').trim();
+    const translatedText = originalTranslation === PENDING
+      ? PENDING
+      : cleanSentenceSegmentText(originalTranslation);
     const translatedPieces = translatedText && translatedText !== PENDING
-      ? splitCueText(cue, translatedText)
+      ? splitCueText(cleanedCue, translatedText)
       : [];
     for (let pieceIndex = 0; pieceIndex < sourcePieces.length; pieceIndex++) {
       const piece = sourcePieces[pieceIndex];
-      if (!buf) buf = { ...cue, start: piece.start, end: piece.end, text: '', translatedText: '', lastTranslatedPiece: '' };
+      if (!buf) buf = { ...cleanedCue, vi:translatedText, start:piece.start, end:piece.end, text:'', translatedText:'', lastTranslatedPiece:'' };
       buf.text = (buf.text + ' ' + piece.text).trim();
       buf.end = piece.end;
       const translatedPiece = translatedPieces.length === sourcePieces.length
