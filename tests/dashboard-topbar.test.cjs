@@ -16,6 +16,7 @@ test("All three Dashboard views share one topbar and preserve independent scroll
   assert.match(dashboardHtml, /id="dashboardScroller" class="dashboard-scroller"/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarPortal" class="dashboard-shared-topbar-host"/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbar" class="ov-topbar ov-reveal"/);
+  assert.equal((dashboardHtml.match(/class="ov-topbar/g) || []).length, 1, "there must be no per-route topbar markup");
   const scrollerStart = dashboardHtml.indexOf('id="dashboardScroller"');
   const topbarIndex = dashboardHtml.indexOf('id="dashboardSharedTopbar"');
   const overviewIndex = dashboardHtml.indexOf('id="dashboardOverviewView"');
@@ -44,6 +45,11 @@ test("The shared topbar sticks, compacts, and receives the Highlights & Notes ex
   assert.match(overviewCss, /#dashboardSharedTopbarActionsSlot \.demo-export-all/);
   assert.match(dashboardJs, /dashboardSharedTopbarActionsSlot\.append\(actions\)/);
   assert.match(dashboardJs, /parentTopbarScrollTarget = \["overview", "dictation"\]\.includes\(activeDashboardView\) \? dashboardScrollTargetForView\(activeDashboardView\) : dashboardScroller/);
+  assert.match(dashboardJs, /dashboardSharedTopbarStatus\.hidden = false/);
+  assert.match(dashboardJs, /dashboardSharedTopbarStatusText\.textContent = t\("ovPreview"\)/);
+  assert.match(dashboardJs, /dashboardSharedTopbarActionsSlot\.hidden = false/);
+  assert.match(dashboardJs, /const next = dashboardScrollTargetForView\(activeDashboardView\)\.scrollTop > 1/);
+  assert.doesNotMatch(dashboardJs, /if \(inHighlightsNotes\)|view === "dictation" \? "dictationBadge"/);
   assert.doesNotMatch(dashboardJs, /mountSharedTopbarInIframe|KEEPIT_SHARED_TOPBAR_MOUNTED/);
   assert.match(dashboardHtml, /id="dashboardSharedTopbarActionsSource" hidden/);
   assert.match(dashboardHtml, /id="exportAllDemoBtn"/);
