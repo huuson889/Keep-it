@@ -1642,10 +1642,15 @@
     }
   }
 
+  function updateAnswerStackOffset() {
+    if (!ui?.root) return;
+    ui.root.classList.toggle("te-dict-answer-stack-pending", !checkedCurrent);
+  }
+
   function setScore(percent) {
     if (!ui) return;
     const has = Number.isFinite(percent);
-    ui.root.classList.toggle("te-dict-answer-stack-pending", !has || percent < 100);
+    updateAnswerStackOffset();
     ui.score.textContent = has ? `${percent}%` : "---";
     ui.toolbarScore.textContent = `${has ? percent : 0}%`;
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
@@ -2373,6 +2378,7 @@
       clearInputWrongMarks();
       ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
+      updateAnswerStackOffset();
       solved.add(current);
       ui.input.classList.add("correct");
       setErrorPanelSuccess(true);
@@ -2393,6 +2399,7 @@
       return;
     }
     checkedCurrent = false;
+    updateAnswerStackOffset();
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
     if (wasSuccessVisible) renderProperNounHint(cue.en);
