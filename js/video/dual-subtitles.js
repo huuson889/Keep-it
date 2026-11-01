@@ -78,6 +78,11 @@ const state = {
   loadingFor: null,
   loop: false,
   pauseReasons: new Set(),
+  hoverPauseReasons: new Set(),
+  hoverPointer: null,
+  hoverPointerRevision: 0,
+  hoverPausePreserveRevision: null,
+  hoverPauseSyncFrame: null,
   managedPauseVideo: null,
   popupObserver: null,
 };
@@ -207,6 +212,86 @@ function resumeVideoFor(reason) {
   const video = state.managedPauseVideo;
   state.managedPauseVideo = null;
   if (video?.paused) video.play().catch(() => {});
+}
+
+const HOVER_PAUSE_ZONES = [
+  { reason: 'subtitle-main-hover', selector: '.te-sub-en' },
+  { reason: 'subtitle-sidebar-hover', selector: '.yt-dual-item' },
+];
+
+function activateHoverPause(reason) {
+  if (state.hoverPauseReasons.has(reason)) return;
+  state.hoverPauseReasons.add(reason);
+  pauseVideoFor(reason);
+}
+
+function releaseHoverPause(reason) {
+  if (!state.hoverPauseReasons.delete(reason)) return;
+  resumeVideoFor(reason);
+}
+
+function rememberHoverPointer(event) {
+  if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return false;
+  const moved = !state.hoverPointer
+    || state.hoverPointer.x !== event.clientX
+    || state.hoverPointer.y !== event.clientY;
+  state.hoverPointer = { x: event.clientX, y: event.clientY };
+  if (moved) {
+    state.hoverPointerRevision += 1;
+    scheduleHoverPauseSync({ pointerMoved: true });
+  }
+  return moved;
+}
+
+function getHoverPauseReasonsAtPointer() {
+  const pointer = state.hoverPointer;
+  if (!state.open || !pointer || typeof shadow?.elementFromPoint !== 'function') return new Set();
+  const target = shadow.elementFromPoint(pointer.x, pointer.y);
+  if (!target || typeof target.closest !== 'function') return new Set();
+  return new Set(HOVER_PAUSE_ZONES
+    .filter(({ selector }) => target.closest(selector))
+    .map(({ reason }) => reason));
+}
+
+function syncHoverPauseAtPointer(preserveActive) {
+  const nextReasons = getHoverPauseReasonsAtPointer();
+  // Activate the next zone first so crossing between pause zones never resumes the video briefly.
+  for (const reason of nextReasons) activateHoverPause(reason);
+  // A mode change alone must not release a pause while the pointer has not moved.
+  if (preserveActive) return;
+  for (const reason of [...state.hoverPauseReasons]) {
+    if (!nextReasons.has(reason)) releaseHoverPause(reason);
+  }
+}
+
+function scheduleHoverPauseSync({ preserveActive = false, pointerMoved = false } = {}) {
+  if (!state.open) return;
+  if (pointerMoved) state.hoverPausePreserveRevision = false;
+  else if (preserveActive && state.hoverPausePreserveRevision !== false) {
+    state.hoverPausePreserveRevision = state.hoverPointerRevision;
+  }
+  if (state.hoverPauseSyncFrame !== null) return;
+  state.hoverPauseSyncFrame = requestAnimationFrame(() => {
+    state.hoverPauseSyncFrame = null;
+    const preserveActive = typeof state.hoverPausePreserveRevision === 'number'
+      && state.hoverPausePreserveRevision === state.hoverPointerRevision;
+    state.hoverPausePreserveRevision = null;
+    syncHoverPauseAtPointer(preserveActive);
+  });
+}
+
+function clearHoverPauseState() {
+  if (state.hoverPauseSyncFrame !== null) {
+    cancelAnimationFrame(state.hoverPauseSyncFrame);
+    state.hoverPauseSyncFrame = null;
+  }
+  state.hoverPointer = null;
+  state.hoverPointerRevision = 0;
+  state.hoverPausePreserveRevision = null;
+  for (const { reason } of HOVER_PAUSE_ZONES) {
+    state.hoverPauseReasons.delete(reason);
+    resumeVideoFor(reason);
+  }
 }
 
 function enforceVideoPause(video) {
@@ -991,6 +1076,7 @@ function setVideoSidebarHidden(hidden) {
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
+  scheduleHoverPauseSync({ preserveActive: true });
   return sidebarHidden;
 }
 
@@ -1325,6 +1411,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
+  scheduleHoverPauseSync({ preserveActive: true });
   return active;
 }
 
@@ -1533,8 +1620,7 @@ function closeOverlay() {
   overlayEl()?.classList.remove('te-learning-entry-pending');
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
-  resumeVideoFor('subtitle-main-hover');
-  resumeVideoFor('subtitle-sidebar-hover');
+  clearHoverPauseState();
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
@@ -1854,6 +1940,7 @@ function setReadingAudioCompact(compact) {
   if (!root || !isReadingModeActive()) return false;
   root.classList.toggle('te-reading-audio-compact', Boolean(compact));
   syncReadingAudioControls();
+  scheduleHoverPauseSync({ preserveActive: true });
   return Boolean(compact);
 }
 
@@ -2745,13 +2832,16 @@ function bindUI() {
   const modalExport = $('te-modal-export');
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
+  root?.addEventListener('pointermove', rememberHoverPointer, true);
 
   const mainSubtitleText = ui('.te-sub-en');
   mainSubtitleText.addEventListener('pointerover', (event) => {
-    if (!mainSubtitleText.contains(event.relatedTarget)) pauseVideoFor('subtitle-main-hover');
+    rememberHoverPointer(event);
+    if (!mainSubtitleText.contains(event.relatedTarget)) activateHoverPause('subtitle-main-hover');
   });
   mainSubtitleText.addEventListener('pointerout', (event) => {
-    if (!mainSubtitleText.contains(event.relatedTarget)) resumeVideoFor('subtitle-main-hover');
+    rememberHoverPointer(event);
+    if (!mainSubtitleText.contains(event.relatedTarget)) scheduleHoverPauseSync();
   });
 
   // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
@@ -3045,14 +3135,16 @@ function bindUI() {
     transcriptClickTimer = setTimeout(() => onTranscriptClick({ target: timestamp }), 260);
   });
   transcriptList.addEventListener('pointerover', (e) => {
+    rememberHoverPointer(e);
     const item = e.target.closest('.yt-dual-item');
     const previousItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
-    if (item && !previousItem) pauseVideoFor('subtitle-sidebar-hover');
+    if (item && !previousItem) activateHoverPause('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('pointerout', (e) => {
+    rememberHoverPointer(e);
     const item = e.target.closest('.yt-dual-item');
     const nextItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
-    if (item && !nextItem) resumeVideoFor('subtitle-sidebar-hover');
+    if (item && !nextItem) scheduleHoverPauseSync();
   });
   // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
   let scrollRaf = 0;
