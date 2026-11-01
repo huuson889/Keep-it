@@ -17,6 +17,7 @@
 - Thư mục zip: D:\Keepit\Keepit - Optimize Test
 
 ## 4. Quy tắc làm việc - Phải luôn tuân thủ tuyệt đối
+
 **4.1. Cách thức làm**
 - Đầu mỗi phiên, đọc `AGENTS.md`; ưu tiên mục 1–4 và nhật ký mới trong `PROJECT.md`. Chỉ đọc phần liên quan trong `README.md` và `OPT-ARENA.md`.
 - Phải tuân thủ tuyệt đối yêu cầu, không được làm khác.
