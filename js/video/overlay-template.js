@@ -905,6 +905,56 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
     #keepit-exact-overlay.te-ambient-on .yt-dual-right-sidebar { background-color: transparent; }
+
+    /* Subtitle display selector and four-mode menu. */
+    .te-subtitle-mode-selector { position: relative; display: flex; align-items: center; }
+    .te-subtitle-mode-menu {
+      position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 1000004;
+      display: grid; gap: 2px; width: min(204px, calc(100vw - 24px)); padding: 6px;
+      border: 1px solid #3f3f3f; border-radius: 12px; background: #1f1f1f;
+      color: #f3f4f6; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    }
+    .te-subtitle-mode-menu[hidden] { display: none !important; }
+    #keepit-exact-overlay.theme-light .te-subtitle-mode-menu {
+      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+    .te-subtitle-mode-option {
+      display: flex; width: 100%; min-height: 40px; align-items: center; gap: 10px;
+      padding: 7px 9px; border: 0; border-radius: 8px; background: transparent;
+      color: inherit; font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+    }
+    .te-subtitle-mode-option:hover { background: rgba(128,128,128,.16); }
+    .te-subtitle-mode-option.is-selected { background: rgba(128,128,128,.12); }
+    .te-subtitle-mode-option .te-subtitle-mode-check { flex: none; width: 16px; height: 16px; visibility: hidden; }
+    .te-subtitle-mode-option.is-selected .te-subtitle-mode-check { visibility: visible; color: #fbbf24; }
+    #keepit-exact-overlay.theme-light .te-subtitle-mode-option.is-selected .te-subtitle-mode-check { color: #b45309; }
+    .te-subtitle-mode-option .te-subtitle-mode-label { flex: 1; }
+    .te-subtitle-mode-option kbd {
+      min-width: 20px; padding: 2px 5px; border: 1px solid #525252; border-radius: 5px;
+      background: rgba(255,255,255,.06); color: #d4d4d4; font: inherit; font-size: 11px; line-height: 1.3; text-align: center;
+    }
+    #keepit-exact-overlay.theme-light .te-subtitle-mode-option kbd {
+      border-color: #d1d5db; background: #f9fafb; color: #6b7280;
+    }
+
+    /* Each selection applies to both the player subtitles and sidebar transcript. */
+    #keepit-exact-overlay.te-subtitle-mode-bilingual .te-sub-en,
+    #keepit-exact-overlay.te-subtitle-mode-bilingual .te-sub-vi,
+    #keepit-exact-overlay.te-subtitle-mode-bilingual .yt-dual-item-en,
+    #keepit-exact-overlay.te-subtitle-mode-bilingual .yt-dual-item-vi { display: block !important; }
+    #keepit-exact-overlay.te-subtitle-mode-primary .te-sub-vi,
+    #keepit-exact-overlay.te-subtitle-mode-primary .yt-dual-item-vi,
+    #keepit-exact-overlay.te-subtitle-mode-translation .te-sub-en,
+    #keepit-exact-overlay.te-subtitle-mode-translation .yt-dual-item-en,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-en,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-vi,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item-en,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item-vi { display: none !important; }
+    #keepit-exact-overlay.te-subtitle-mode-primary .te-sub-en,
+    #keepit-exact-overlay.te-subtitle-mode-primary .yt-dual-item-en,
+    #keepit-exact-overlay.te-subtitle-mode-translation .te-sub-vi,
+    #keepit-exact-overlay.te-subtitle-mode-translation .yt-dual-item-vi { display: block !important; }
+    #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-container { display: none !important; }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
@@ -944,7 +994,29 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <div class="te-ctrl-group">
           <button class="te-icon-btn" id="te-speaking-mode-btn" title="Luyện nói" aria-label="Luyện nói" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic preview-icon" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></button>
           <button class="te-icon-btn" id="te-dictation-mode-btn" title="Chép chính tả" aria-label="Chép chính tả" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap preview-icon" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></button>
-          <button class="te-icon-btn" title="Chế độ phụ đề"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg></button>
+          <div class="te-subtitle-mode-selector">
+            <button class="te-icon-btn" id="te-subtitle-mode-trigger" type="button" title="Chế độ phụ đề" aria-label="Chế độ phụ đề: Song ngữ" aria-haspopup="menu" aria-expanded="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg>
+            </button>
+            <div class="te-subtitle-mode-menu" id="te-subtitle-mode-menu" role="menu" hidden>
+              <button class="te-subtitle-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-subtitle-mode="bilingual">
+                <svg class="te-subtitle-mode-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                <span class="te-subtitle-mode-label">Song ngữ</span><kbd>1</kbd>
+              </button>
+              <button class="te-subtitle-mode-option" type="button" role="menuitemradio" aria-checked="false" data-subtitle-mode="primary">
+                <svg class="te-subtitle-mode-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                <span class="te-subtitle-mode-label">Chính</span><kbd>2</kbd>
+              </button>
+              <button class="te-subtitle-mode-option" type="button" role="menuitemradio" aria-checked="false" data-subtitle-mode="translation">
+                <svg class="te-subtitle-mode-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                <span class="te-subtitle-mode-label">Dịch</span><kbd>3</kbd>
+              </button>
+              <button class="te-subtitle-mode-option" type="button" role="menuitemradio" aria-checked="false" data-subtitle-mode="hidden">
+                <svg class="te-subtitle-mode-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                <span class="te-subtitle-mode-label">Ẩn</span><kbd>4</kbd>
+              </button>
+            </div>
+          </div>
           <div class="te-video-mode-selector">
             <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="combined" title="Chế độ hiển thị" aria-label="Chế độ hiển thị" aria-haspopup="menu" aria-expanded="false">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>

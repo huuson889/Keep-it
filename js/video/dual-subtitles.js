@@ -774,6 +774,7 @@ function updateSubtitleLanguageLabels() {
   fill($('te-lang-source-picker'), $('te-lang-source-value'), $('te-lang-source-options'), state.sourceLanguageSetting, 'sourceLanguage');
   fill($('te-lang-target-picker'), $('te-lang-target-value'), $('te-lang-target-options'), state.targetLanguageSetting, 'targetLanguage');
   updateVideoDisplayModeLabels();
+  updateSubtitleDisplayModeLabels();
 }
 
 function updateVideoDisplayModeLabels() {
@@ -813,6 +814,64 @@ function setVideoDisplayModeSelection(mode) {
 function setVideoDisplayModeMenuOpen(open) {
   const menu = $('te-video-mode-menu');
   const trigger = $('te-video-mode-trigger');
+  if (!menu || !trigger) return;
+  menu.hidden = !open;
+  trigger.setAttribute('aria-expanded', String(open));
+}
+
+function updateSubtitleDisplayModeLabels() {
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  if (!menu || !trigger) return;
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const keys = {
+    bilingual: 'videoSubtitleBilingual',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
+  };
+  menu.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
+    const label = option.querySelector('.te-subtitle-mode-label');
+    if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
+  });
+  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
+}
+
+function setSubtitleDisplayMode(mode) {
+  const root = overlayEl();
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  const modes = ['bilingual', 'primary', 'translation', 'hidden'];
+  if (!root || !menu || !trigger || !modes.includes(mode)) return false;
+  modes.forEach((name) => root.classList.remove(`te-subtitle-mode-${name}`));
+  root.classList.add(`te-subtitle-mode-${mode}`);
+  root.classList.toggle('te-subs-hidden', mode === 'hidden');
+  const option = menu.querySelector(`[data-subtitle-mode="${mode}"]`);
+  menu.querySelectorAll('[data-subtitle-mode]').forEach((item) => {
+    const selected = item === option;
+    item.classList.toggle('is-selected', selected);
+    item.setAttribute('aria-checked', String(selected));
+  });
+  const keys = {
+    bilingual: 'videoSubtitleBilingual',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
+  };
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const label = t(keys[mode]);
+  const selectorLabel = t('videoSubtitleMode');
+  trigger.dataset.subtitleMode = mode;
+  trigger.title = `${selectorLabel}: ${label}`;
+  trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
+  return true;
+}
+
+function setSubtitleModeMenuOpen(open) {
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
   if (!menu || !trigger) return;
   menu.hidden = !open;
   trigger.setAttribute('aria-expanded', String(open));
@@ -1310,6 +1369,7 @@ function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
   setVideoDisplayModeMenuOpen(false);
+  setSubtitleModeMenuOpen(false);
   globalThis.LHN_DICTATION?.close?.();
   setVideoLearningMode(false);
   document.documentElement.classList.remove('lhn-video-overlay-open');
@@ -2654,10 +2714,15 @@ function bindUI() {
   const videoModeSelector = $('te-video-mode-trigger')?.parentElement;
   const videoModeTrigger = $('te-video-mode-trigger');
   const videoModeMenu = $('te-video-mode-menu');
+  const subtitleModeSelector = $('te-subtitle-mode-trigger')?.parentElement;
+  const subtitleModeTrigger = $('te-subtitle-mode-trigger');
+  const subtitleModeMenu = $('te-subtitle-mode-menu');
   updateVideoDisplayModeLabels();
+  updateSubtitleDisplayModeLabels();
   videoModeTrigger?.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
+    setSubtitleModeMenuOpen(false);
     setVideoDisplayModeMenuOpen(videoModeMenu.hidden);
   });
   videoModeMenu?.querySelectorAll('[data-video-mode]').forEach((option) => {
@@ -2675,13 +2740,32 @@ function bindUI() {
     setVideoDisplayModeMenuOpen(false);
     videoModeTrigger?.focus();
   });
+  subtitleModeTrigger?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setVideoDisplayModeMenuOpen(false);
+    setSubtitleModeMenuOpen(subtitleModeMenu.hidden);
+  });
+  subtitleModeMenu?.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
+    option.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setSubtitleDisplayMode(option.dataset.subtitleMode);
+      setSubtitleModeMenuOpen(false);
+      subtitleModeTrigger?.focus();
+    });
+  });
+  subtitleModeSelector?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !subtitleModeMenu || subtitleModeMenu.hidden) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setSubtitleModeMenuOpen(false);
+    subtitleModeTrigger?.focus();
+  });
   overlayEl().addEventListener('click', (event) => {
     if (!event.target.closest('.te-video-mode-selector')) setVideoDisplayModeMenuOpen(false);
+    if (!event.target.closest('.te-subtitle-mode-selector')) setSubtitleModeMenuOpen(false);
   }, true);
-  ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
-    root.classList.toggle('te-subs-hidden');
-    e.currentTarget.classList.toggle('te-active', root.classList.contains('te-subs-hidden'));
-  });
   ctrl('Toàn màn hình').addEventListener('click', toggleFullscreen);
   ui('.te-progress-track').addEventListener('click', seekByTrack);
   ui('.yt-dual-close-btn').addEventListener('click', closeOverlay);
@@ -2860,6 +2944,20 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   });
   document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
+  // 1–4 chọn trực tiếp kiểu phụ đề, trừ khi focus đang ở vùng nhập văn bản.
+  window.addEventListener('keydown', (event) => {
+    const modes = { '1': 'bilingual', '2': 'primary', '3': 'translation', '4': 'hidden' };
+    const mode = modes[event.key];
+    if (!state.open || !mode || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
+    const realTarget = event.composedPath?.()[0] || event.target;
+    if (realTarget?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]') || realTarget?.isContentEditable) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const menuWasOpen = $('te-subtitle-mode-menu')?.hidden === false;
+    setSubtitleDisplayMode(mode);
+    setSubtitleModeMenuOpen(false);
+    if (menuWasOpen) $('te-subtitle-mode-trigger')?.focus();
+  }, true);
   // ↑/↓: tăng/giảm tốc độ 0.05 (chặn trước YouTube để không đổi âm lượng khi overlay đang mở)
   window.addEventListener('keydown', (event) => {
     if (!state.open || (event.key !== '>' && event.key !== '<')) return;

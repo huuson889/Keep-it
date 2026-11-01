@@ -316,13 +316,16 @@
     dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt"
   });
   Object.assign(MESSAGES.en, {
-    videoModeSelector:"Video display mode", videoModeTheater:"Theater mode", videoModeReading:"Reading mode", videoModeCombined:"Combined mode"
+    videoModeSelector:"Video display mode", videoModeTheater:"Theater mode", videoModeReading:"Reading mode", videoModeCombined:"Combined mode",
+    videoSubtitleMode:"Subtitle mode", videoSubtitleBilingual:"Bilingual", videoSubtitlePrimary:"Original", videoSubtitleTranslation:"Translation", videoSubtitleHidden:"Hide all"
   });
   Object.assign(MESSAGES.vi, {
-    videoModeSelector:"Chế độ hiển thị", videoModeTheater:"Chế độ rạp", videoModeReading:"Chế độ đọc", videoModeCombined:"Chế độ kết hợp"
+    videoModeSelector:"Chế độ hiển thị", videoModeTheater:"Chế độ rạp", videoModeReading:"Chế độ đọc", videoModeCombined:"Chế độ kết hợp",
+    videoSubtitleMode:"Chế độ phụ đề", videoSubtitleBilingual:"Song ngữ", videoSubtitlePrimary:"Chính", videoSubtitleTranslation:"Dịch", videoSubtitleHidden:"Ẩn"
   });
   Object.assign(MESSAGES.ko, {
-    videoModeSelector:"동영상 표시 모드", videoModeTheater:"극장 모드", videoModeReading:"읽기 모드", videoModeCombined:"결합 모드"
+    videoModeSelector:"동영상 표시 모드", videoModeTheater:"극장 모드", videoModeReading:"읽기 모드", videoModeCombined:"결합 모드",
+    videoSubtitleMode:"자막 모드", videoSubtitleBilingual:"이중 언어", videoSubtitlePrimary:"원문", videoSubtitleTranslation:"번역", videoSubtitleHidden:"숨기기"
   });
 
   Object.assign(MESSAGES.ko, {
