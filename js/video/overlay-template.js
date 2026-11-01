@@ -594,6 +594,7 @@ const OVERLAY_CSS = `
   
     /* ===== Bổ sung tối thiểu cho chức năng (không đổi bố cục mặc định) ===== */
     #keepit-exact-overlay.te-hidden { display: none !important; }
+    #keepit-exact-overlay.te-learning-entry-pending { visibility: hidden !important; }
     #keepit-exact-overlay.te-controls-hidden .te-control-bar { opacity: 0; transition: opacity 0.2s; }
     #keepit-exact-overlay.te-controls-hidden .te-control-bar:hover,
     #keepit-exact-overlay.te-controls-hidden .te-control-bar:focus-within { opacity: 1; }

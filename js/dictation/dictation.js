@@ -985,6 +985,7 @@
     }
     if (changed && mode !== "speaking") stopSpeechRecognition(true);
     dictationMode = mode;
+    A?.setPreferredLearningMode?.(mode);
     if (swapProgress) applyModeProgress(mode);
     if (ui) {
       if (changed) onAnswerInput();
@@ -2678,7 +2679,7 @@
     openingPanel = true;
     const requestGeneration = ++openingGeneration;
     build();
-    if (!ui) { openingPanel = false; return; }
+    if (!ui) { openingPanel = false; A?.revealLearningEntry?.(); return; }
     setDictationMode(mode);
     A?.setLearningMode?.(false);
     const layoutPrefsPromise = loadDictationLayoutPrefs();
@@ -2692,7 +2693,7 @@
     if (requestGeneration !== openingGeneration) return;
     if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
     videoId = currentVideoId();
-    if (!videoId) { openingPanel = false; showToastBeforeOpen(); return; }
+    if (!videoId) { openingPanel = false; A?.revealLearningEntry?.(); showToastBeforeOpen(); return; }
     sentenceCues = getCues();
     if (!sentenceCues.length && !waitForCaptions) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
@@ -2714,6 +2715,7 @@
     translations = {};
     wrongWordStats = { version: 3, words: {} };
     ui.root.classList.add("te-dictation-active");
+    A?.revealLearningEntry?.();
     applyDictationColumnLayout();
     if (typeof ResizeObserver === "function") {
       ui.columnLayoutResizeObserver = new ResizeObserver(applyDictationColumnLayout);
@@ -2779,7 +2781,7 @@
     }
   }
 
-  function close() {
+  function close({ restoreView = true } = {}) {
     if (openingPanel) {
       openingPanel = false;
       openingGeneration++;
@@ -2790,7 +2792,7 @@
       ui?.root.classList.remove("te-dict-speaking-mode");
       if (ui?.speechPractice) ui.speechPractice.hidden = true;
       dictationMode = "typing";
-      A?.restorePreferredReadingMode?.();
+      if (restoreView) A?.restorePreferredReadingMode?.();
       return;
     }
     restoreYouTubeScrollbar();
@@ -2849,7 +2851,7 @@
     ui.primaryGroup.classList.remove("te-dict-primary-group");
     ui = null;
     ctrlAlone = false;
-    A?.restorePreferredReadingMode?.();
+    if (restoreView) A?.restorePreferredReadingMode?.();
   }
 
   function toggle() { (active || openingPanel) ? close() : void openPanel(); }
@@ -2913,7 +2915,7 @@
   function onToggleClick(event) {
     event.preventDefault();
     event.stopPropagation();
-    document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
+    document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle", { detail: { source: "typing-control" } }));
   }
 
   function onSpeakingClick(event) {

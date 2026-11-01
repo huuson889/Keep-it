@@ -37,6 +37,14 @@ function isReadingModeActive() {
 function activeVideoSubtitleSettings() {
   return isReadingModeActive() ? settings.readingSubtitle : settings.sub;
 }
+function preferredVideoMode() {
+  return ['theater', 'reading', 'combined'].includes(settings?.preferredVideoMode)
+    ? settings.preferredVideoMode
+    : settings?.readingMode === true ? 'reading' : 'combined';
+}
+function preferredLearningMode() {
+  return settings?.preferredLearningMode === 'speaking' ? 'speaking' : 'typing';
+}
 function defaultColorFor(group) {
   const theme = settings?.theme === 'dark' ? 'dark' : 'light';
   const defaultGroup = !group.startsWith('side-') && isReadingModeActive() ? `side-${group}` : group;
@@ -45,6 +53,7 @@ function defaultColorFor(group) {
 
 let pendingDictationShortcut = false;
 let pendingDictationOpenImmediately = false;
+let pendingDictationMode = 'typing';
 
 const state = {
   open: false,
@@ -905,12 +914,16 @@ function setVideoSidebarHidden(hidden) {
 
 function applyVideoDisplayMode(mode) {
   if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
+  overlayEl().classList.remove('te-learning-entry-pending');
+  settings.preferredVideoMode = mode;
+  settings.readingMode = mode === 'reading';
+  saveSettings();
+  if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
   if (mode === 'reading') {
     setVideoSidebarHidden(false);
-    setVideoLearningMode(true, { persist: true });
+    setVideoLearningMode(true);
   } else {
-    setVideoLearningMode(false, { persist: true });
-    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.();
+    setVideoLearningMode(false);
     setVideoSidebarHidden(mode === 'theater');
   }
   setVideoDisplayModeSelection(mode);
@@ -1213,7 +1226,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   pendingDictationOpenImmediately = false;
   if (active) {
     setVideoSidebarHidden(false);
-    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.();
+    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
     for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
       const button = root.querySelector(selector);
       button?.classList.remove('te-active');
@@ -1228,8 +1241,8 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
 
 function restorePreferredReadingMode() {
   if (!state.open || pendingDictationShortcut || pendingDictationOpenImmediately
-    || settings.readingMode !== true || globalThis.LHN_DICTATION?.isOpen?.()) return false;
-  return setVideoLearningMode(true);
+    || globalThis.LHN_DICTATION?.isOpen?.()) return false;
+  return applyVideoDisplayMode(preferredVideoMode());
 }
 
 function createDictationOverlayApi() {
@@ -1240,6 +1253,14 @@ function createDictationOverlayApi() {
     ctrl,
     setLearningMode: setVideoLearningMode,
     restorePreferredReadingMode,
+    getPreferredLearningMode: preferredLearningMode,
+    revealLearningEntry() { overlayEl()?.classList.remove('te-learning-entry-pending'); },
+    setPreferredLearningMode(mode) {
+      if (!['typing', 'speaking'].includes(mode)) return false;
+      settings.preferredLearningMode = mode;
+      saveSettings();
+      return true;
+    },
     lang: () => state.displayLanguage,
     getDictationCues: () => {
       if (state.captionTrackLanguage !== 'en' || !state.allCues.length) return [];
@@ -1395,6 +1416,7 @@ function openOverlay() {
   }
   document.documentElement.classList.add('lhn-video-overlay-open');
   hideOverlayPageScrollbar();
+  overlayEl().classList.toggle('te-learning-entry-pending', pendingDictationShortcut);
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
   state.open = true;
@@ -1411,10 +1433,12 @@ function openOverlay() {
 function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
+  pendingDictationMode = 'typing';
   setVideoDisplayModeMenuOpen(false);
   setSubtitleModeMenuOpen(false);
-  globalThis.LHN_DICTATION?.close?.();
+  globalThis.LHN_DICTATION?.close?.({ restoreView: false });
   setVideoLearningMode(false);
+  overlayEl()?.classList.remove('te-learning-entry-pending');
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
   resumeVideoFor('subtitle-main-hover');
@@ -1429,40 +1453,68 @@ function closeOverlay() {
   detachVideo();
 }
 
-function toggleDictationFromShortcut() {
-  if (keepitSiteDisabled) return;
-  const dictation = globalThis.LHN_DICTATION;
-  if (dictation?.isOpen?.()) {
-    pendingDictationShortcut = false;
-    pendingDictationOpenImmediately = false;
-    if (dictation.getMode?.() === 'speaking') {
-      dictation.open?.({ waitForCaptions:true, mode:'typing' });
-    } else {
-      // Turning off the active Dictation mode returns to the plain video overlay.
-      dictation.close?.();
-    }
-    return;
-  }
-  if (pendingDictationShortcut) {
-    pendingDictationShortcut = false;
-    pendingDictationOpenImmediately = false;
-    return;
-  }
+function beginDictationMode(mode) {
+  const selectedMode = mode === 'speaking' ? 'speaking' : 'typing';
   if (state.open) {
-    dictation?.open?.({ waitForCaptions:true, mode:'typing' });
+    if (!globalThis.LHN_DICTATION?.open) return;
+    overlayEl()?.classList.add('te-learning-entry-pending');
+    globalThis.LHN_DICTATION.open({ waitForCaptions: true, mode: selectedMode });
     return;
   }
-
-  // Alt+F enters typing mode directly, without showing an intermediate overlay.
   pendingDictationShortcut = true;
   pendingDictationOpenImmediately = true;
+  pendingDictationMode = selectedMode;
   openOverlay();
   if (!state.open) {
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
+    pendingDictationMode = 'typing';
     return;
   }
   openPendingDictationShortcut();
+}
+
+function toggleDictationTypingControl() {
+  if (keepitSiteDisabled) return;
+  const dictation = globalThis.LHN_DICTATION;
+  if (dictation?.isOpen?.()) {
+    if (dictation.getMode?.() !== 'typing') dictation.open?.({ waitForCaptions: true, mode: 'typing' });
+    else dictation.close?.();
+    return;
+  }
+  beginDictationMode('typing');
+}
+
+function toggleDictationFromShortcut(event) {
+  if (keepitSiteDisabled) return;
+  if (event?.detail?.source === 'typing-control') {
+    toggleDictationTypingControl();
+    return;
+  }
+  const dictation = globalThis.LHN_DICTATION;
+  if (pendingDictationShortcut || dictation?.isOpen?.()) {
+    closeOverlay();
+    return;
+  }
+  beginDictationMode(preferredLearningMode());
+}
+
+function toggleVideoViewFromShortcut() {
+  if (keepitSiteDisabled) return;
+  const dictation = globalThis.LHN_DICTATION;
+  if (!state.open) {
+    openOverlay();
+    return;
+  }
+  if (pendingDictationShortcut || dictation?.isOpen?.()) {
+    pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
+    dictation?.close?.({ restoreView: false });
+    pendingDictationMode = 'typing';
+    applyVideoDisplayMode(preferredVideoMode());
+    return;
+  }
+  closeOverlay();
 }
 
 function openPendingDictationShortcut() {
@@ -1470,15 +1522,18 @@ function openPendingDictationShortcut() {
   if (!state.open) {
     pendingDictationShortcut = false;
     pendingDictationOpenImmediately = false;
+    pendingDictationMode = 'typing';
     return;
   }
   const hasCues = !!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length;
   if (!hasCues && state.loadingFor === state.videoId && !pendingDictationOpenImmediately) return;
   pendingDictationShortcut = false;
   const openWhileLoading = pendingDictationOpenImmediately;
+  const mode = pendingDictationMode;
   pendingDictationOpenImmediately = false;
-  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions:true });
-  else globalThis.LHN_DICTATION?.open?.();
+  pendingDictationMode = 'typing';
+  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions: true, mode });
+  else globalThis.LHN_DICTATION?.open?.({ mode });
 }
 
 async function openDictationFromDashboardIntent() {
@@ -1492,6 +1547,7 @@ async function openDictationFromDashboardIntent() {
   if (keepitSiteDisabled) return;
   pendingDictationShortcut = true;
   pendingDictationOpenImmediately = true;
+  pendingDictationMode = preferredLearningMode();
   openOverlay();
   openPendingDictationShortcut();
 }
@@ -2981,11 +3037,7 @@ function tick() {
 // Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   observeLauncherChanges();
-  document.addEventListener('lhn-youtube-dual-subtitles-toggle', () => {
-    if (keepitSiteDisabled) return;
-    if (state.open) closeOverlay();
-    else openOverlay();
-  });
+  document.addEventListener('lhn-youtube-dual-subtitles-toggle', toggleVideoViewFromShortcut);
   document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
   // Alt+1–3 chuyển chế độ xem theo thứ tự menu, trừ khi focus đang ở vùng nhập văn bản.
