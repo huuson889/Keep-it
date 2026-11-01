@@ -1181,6 +1181,25 @@
     if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = "";
   }
 
+  function getVietnameseSpeechCopy(percent) {
+    const score = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+    if (score <= 9) return { title: "Khởi động lại nào!", description: "Chưa sao cả, cứ mạnh dạn nói tiếp. Mỗi lần thử là một bước gần hơn đến phát âm chuẩn!" };
+    if (score <= 19) return { title: "Đã bắt đầu rồi!", description: "Bạn đã có những âm thanh đầu tiên. Chậm lại một chút, nghe kỹ và thử lại nhé!" };
+    if (score <= 29) return { title: "Có tín hiệu rồi đấy!", description: "Một vài từ đã bắt đầu đúng hướng. Cứ kiên trì, miệng bạn đang dần quen với tiếng Anh!" };
+    if (score <= 39) return { title: "Sắp bắt nhịp rồi!", description: "Bạn đã tiến gần hơn đến mục tiêu. Chỉnh thêm một chút phát âm và ngữ điệu nhé!" };
+    if (score <= 49) return { title: "Khởi sắc rồi!", description: "Bạn đã nói được kha khá đấy. Tiếp tục luyện từng âm để câu nói rõ ràng hơn nhé!" };
+    if (score <= 59) return { title: "Đang vào guồng!", description: "Một nửa chặng đường đã nằm trong tay bạn. Cố thêm chút nữa để lời nói tự nhiên hơn!" };
+    if (score <= 64) return { title: "Tiến bộ đáng kể!", description: "Bạn đã nắm được phần lớn cách phát âm. Chú ý thêm những âm còn thiếu để bứt phá nhé!" };
+    if (score <= 69) return { title: "Chỉ còn một bước nữa!", description: "Bạn đang rất gần mức tốt rồi. Thêm một chút tập trung là có thể chạm đích!" };
+    if (score <= 74) return { title: "Đạt yêu cầu, tiếp tục phát huy!", description: "Bạn đã đạt ngưỡng luyện nói. Luyện thêm để phát âm tự nhiên hơn nhé!" };
+    if (score <= 79) return { title: "Nói khá chuẩn rồi!", description: "Bạn đang làm rất tốt. Chỉnh thêm vài chi tiết nhỏ để câu nói mượt mà hơn nhé!" };
+    if (score <= 84) return { title: "Rất tốt, cứ thế nhé!", description: "Phát âm của bạn đã khá vững vàng. Tiếp tục duy trì phong độ và chinh phục những câu khó hơn!" };
+    if (score <= 89) return { title: "Gần như hoàn hảo!", description: "Bạn đã nói rất rõ ràng và chính xác. Giờ hãy thêm chút ngữ điệu để nghe thật cuốn hút!" };
+    if (score <= 94) return { title: "Xuất sắc!", description: "Bạn đang làm chủ cách phát âm rất tốt. Nghe thôi đã thấy trình độ lên một tầm mới!" };
+    if (score <= 99) return { title: "Đỉnh cao phát âm!", description: "Gần như không có gì để bắt bẻ! Bạn đang tiến sát đến sự hoàn hảo rồi!" };
+    return { title: "Perfect! Quá đỉnh!", description: "Không thể tin được, bạn đã chinh phục câu nói này! Giữ vững phong độ và tiếp tục tỏa sáng!" };
+  }
+
   function setSpeechFeedback(tier, percent, sentence, perfect) {
     if (!ui?.success) return;
     const state = ["pass", "warn", "fail"].includes(tier) ? tier : "fail";
@@ -1195,11 +1214,7 @@
     if (ui.successIcon) ui.successIcon.innerHTML = iconPaths[state];
     if (language() === "vi") {
       if (ui.center && ui.success.parentNode !== ui.center) ui.center.appendChild(ui.success);
-      const copy = {
-        pass: { title: "Đạt yêu cầu, tiếp tục phát huy", description: "Bạn đã đạt ngưỡng luyện nói. Luyện thêm để phát âm tự nhiên hơn." },
-        warn: { title: "Cần luyện thêm", description: "Hãy chú ý nối âm, trọng âm và các âm cuối để cải thiện độ chính xác." },
-        fail: { title: "Chưa chính xác lắm", description: "Hãy nghe lại bản mẫu và phát âm rõ trọng âm hơn." }
-      }[state];
+      const copy = getVietnameseSpeechCopy(percent);
       ui.success.classList.add("te-dict-speech-toast");
       if (ui.successMessage) {
         ui.successMessage.removeAttribute("data-dict-label");
