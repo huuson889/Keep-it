@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.922; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.923; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
 - Speaking Practice: 70–100% đạt, bật Next nhưng không tự chuyển; 40–69% vàng/thử lại; 0–39% đỏ/thử lại. Typing dùng cùng ngưỡng màu nhưng chỉ 100% mới đạt. Nút Hiện bản dịch mặc định tắt, bật thì luôn hiện bản dịch câu hiện tại; trong typing, answer stack giữ offset -50px cho tới khi lần gõ hiện tại được kiểm tra đạt 100% (không dựa vào điểm đã lưu/đang hiển thị); nhập/sửa/reset/chuyển câu chưa kiểm tra thì offset bật lại. Khung dịch đứng trước kết quả kiểm tra. Privacy note vẫn ẩn; nhóm mic/help giữ vị trí source v3.4.914.
-- Dictation video giữ bố cục ba cột, transcript và tiến độ cục bộ; các mode overlay/Reading và cache hiện hành không nằm trong phạm vi thay đổi lần này.
-- Static checks v3.4.922 đạt: toàn bộ 56 JS `node --check`, manifest JSON/version, CSS assertion `-50px` typing-only, `checkedCurrent`, flex/gap 12px, error anchor, CSS brace balance, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
+- Dictation video giữ bố cục ba cột, transcript và tiến độ cục bộ; `te-dict-stats-host` typography tăng theo quy tắc ≤10px +2px, >10px +1px. Các mode overlay/Reading và cache hiện hành không nằm trong phạm vi thay đổi lần này.
+- Static checks v3.4.923 đạt: toàn bộ 56 JS `node --check`, manifest JSON/version, assertion 15 khai báo font trong selector stats theo ngưỡng, không đổi CSS ngoài phạm vi, CSS brace balance, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
-- Dictation, Reading và YouTube overlay: kiểm tra typing colors 70/40/0 với chỉ 100% đạt, nút Hiện bản dịch on/off/tải, typing answer stack lệch -50px khi lần gõ hiện tại chưa pass (kể cả input trống với điểm lưu/hiển thị 100%), về 0px chỉ sau khi pass 100%, bật lại khi sửa/reset/chuyển câu; vị trí trên kết quả spelling, Speaking tiers 70/40/0 và Next không tự chuyển, speech recognition/permission/result, progress, mode transitions, layout/scroll, cleanup và reload trên Chromium/Firefox/Edge. Chưa browser-test.
+- Dictation, Reading và YouTube overlay: kiểm tra typing colors 70/40/0 với chỉ 100% đạt, nút Hiện bản dịch on/off/tải, `te-dict-stats-host` font sizes theo ngưỡng ≤10px +2px/>10px +1px, typing answer stack lệch -50px khi lần gõ hiện tại chưa pass (kể cả input trống với điểm lưu/hiển thị 100%), về 0px chỉ sau khi pass 100%, bật lại khi sửa/reset/chuyển câu; vị trí trên kết quả spelling, Speaking tiers 70/40/0 và Next không tự chuyển, speech recognition/permission/result, progress, mode transitions, layout/scroll, cleanup và reload trên Chromium/Firefox/Edge. Chưa browser-test.
 - Reader/TTS/Settings/voice: kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, search/menu language/keyboard, IPA, network messaging, translation latency, Firefox MV3 và Twemoji trên trang thật; một số chỉ headless-test, chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
@@ -112,6 +112,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-01 | v3.4.923 | Arena.ai Agent sửa:**
+
+- Tăng các cỡ chữ trong `te-dict-stats-host`: cỡ ≤10px tăng 2px; cỡ >10px tăng 1px. Không thay đổi style ngoài host.
+- File: `js/dictation/dictation-style.js`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.923.zip`.
+- Kiểm tra: 56 JS `node --check`, manifest JSON/version, assertion 15 khai báo font trong selector stats theo ngưỡng, không đổi CSS ngoài phạm vi, CSS brace balance và `git diff --check` đạt; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
 
 **2026-11-01 | v3.4.922 | Arena.ai Agent sửa:**
 
