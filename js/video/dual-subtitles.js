@@ -805,7 +805,7 @@ function setVideoDisplayModeSelection(mode) {
   const icon = option.querySelector('svg');
   if (icon) trigger.replaceChildren(icon.cloneNode(true));
   const label = option.querySelector('.te-video-mode-label')?.textContent || '';
-  const selectorLabel = globalThis.LHN_LANGUAGES?.t?.('videoModeSelector', {}, state.displayLanguage) || 'Video display mode';
+  const selectorLabel = globalThis.LHN_LANGUAGES?.t?.('videoModeSelector', {}, state.displayLanguage) || 'View mode';
   trigger.dataset.videoMode = mode;
   trigger.title = `${selectorLabel}: ${label}`;
   trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);

@@ -245,14 +245,15 @@ const OVERLAY_CSS = `
 
     .te-video-mode-selector { position: relative; display: flex; align-items: center; }
     .te-video-mode-menu {
-      position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 1000003;
+      position: absolute; left: 50%; right: auto; bottom: calc(100% + 10px); z-index: 1000003;
+      transform: translateX(-50%);
       display: grid; gap: 0; width: min(278px, calc(100vw - 24px)); padding: 6px;
-      border: 1px solid #3f3f3f; border-radius: 12px; background: #1f1f1f;
-      color: #f3f4f6; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+      border: 1px solid #27272a; border-radius: 12px; background: #18181b;
+      color: #f3f4f6; box-shadow: 0 20px 35px rgba(0,0,0,.7);
     }
     .te-video-mode-menu[hidden] { display: none !important; }
     #keepit-exact-overlay.theme-light .te-video-mode-menu {
-      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,.15);
     }
     .te-video-mode-option {
       display: flex; width: 100%; min-height: 46px; align-items: center; gap: 12px;
@@ -909,14 +910,15 @@ const OVERLAY_CSS = `
     /* Subtitle display selector and four-mode menu. */
     .te-subtitle-mode-selector { position: relative; display: flex; align-items: center; }
     .te-subtitle-mode-menu {
-      position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 1000004;
+      position: absolute; left: 50%; right: auto; bottom: calc(100% + 10px); z-index: 1000004;
+      transform: translateX(-50%);
       display: grid; gap: 2px; width: min(204px, calc(100vw - 24px)); padding: 6px;
-      border: 1px solid #3f3f3f; border-radius: 12px; background: #1f1f1f;
-      color: #f3f4f6; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+      border: 1px solid #27272a; border-radius: 12px; background: #18181b;
+      color: #f3f4f6; box-shadow: 0 20px 35px rgba(0,0,0,.7);
     }
     .te-subtitle-mode-menu[hidden] { display: none !important; }
     #keepit-exact-overlay.theme-light .te-subtitle-mode-menu {
-      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,.15);
     }
     .te-subtitle-mode-option {
       display: flex; width: 100%; min-height: 40px; align-items: center; gap: 10px;
@@ -949,7 +951,9 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-en,
     #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-vi,
     #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item-en,
-    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item-vi { display: none !important; }
+    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item-vi,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-timestamp,
+    #keepit-exact-overlay.te-subtitle-mode-hidden .yt-dual-item { display: none !important; }
     #keepit-exact-overlay.te-subtitle-mode-primary .te-sub-en,
     #keepit-exact-overlay.te-subtitle-mode-primary .yt-dual-item-en,
     #keepit-exact-overlay.te-subtitle-mode-translation .te-sub-vi,
@@ -1018,7 +1022,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
           <div class="te-video-mode-selector">
-            <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="combined" title="Chế độ hiển thị" aria-label="Chế độ hiển thị" aria-haspopup="menu" aria-expanded="false">
+            <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="combined" title="Chế độ xem" aria-label="Chế độ xem" aria-haspopup="menu" aria-expanded="false">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
             </button>
             <div class="te-video-mode-menu" id="te-video-mode-menu" role="menu" hidden>
