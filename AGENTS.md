@@ -31,6 +31,7 @@
 - Chạy kiểm tra liên quan và báo đúng kết quả; tuyệt đối không tuyên bố đã test nếu chưa chạy.
 - Nếu thay đổi module, cấu trúc file hay luồng tương tác các module thì phải cập nhật vào mục 4. Cấu trúc và kiến trúc dự án file project.md
 - Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
+
 **4.2. Cách thức trả lời trên khung chat**
 - Các phản hồi phải ngắn gọn, đúng vấn đề, không được nói khi không làm.
 - Trước khi sửa, nêu version hiện tại lên khung chat, (mục tiêu, kết quả mong đợi và cách làm) mỗi đầu mục in đậm và gạch đầu dòng ngắn gọn tương ứng.
