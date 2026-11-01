@@ -625,6 +625,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-repeat-btn:hover { color: #f59e0b; }
 #keepit-exact-overlay .te-dict-repeat-btn.active { border-color: rgba(245, 158, 11, .4); background: rgba(245, 158, 11, .2); color: #d97706; font-weight: 700; }
 #keepit-exact-overlay .te-dict-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+#keepit-exact-overlay.te-dict-speaking-mode .te-dict-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
 #keepit-exact-overlay .te-dict-act { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; padding: 10px 6px; border: 1px solid #d1d5db; border-radius: 8px; background: #f3f4f6; color: #1f2937; font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color .15s ease, opacity .15s ease; }
 #keepit-exact-overlay .te-dict-act:hover:not(:disabled) { background: #e5e7eb; }
 #keepit-exact-overlay .te-dict-act svg { flex: none; width: 14px; height: 14px; }
