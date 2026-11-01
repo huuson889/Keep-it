@@ -1,48 +1,45 @@
 # Dictation — Hướng dẫn kỹ thuật
 
-> Source code là nguồn sự thật; trang này mô tả overlay, scoring, stats và persistence.
+> Source code là nguồn sự thật; trang này mô tả overlay, scoring, thống kê và persistence.
 
 ## 1. Mục đích và phạm vi
 
-Dictation luyện caption tiếng Anh từ YouTube trong overlay/player hiện có. Có hai mode: `Đánh máy` và `Luyện nói` (SpeechRecognition của browser); tiến độ, ghi chú và dữ liệu lỗi được lưu cục bộ.
+Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, với hai mode `Đánh máy` và `Luyện nói` (SpeechRecognition của browser). Tiến độ, ghi chú và thống kê lỗi được lưu cục bộ.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION`, `openPanel` | Panel, cue/state, progress, speech và notes. |
-| [`js/dictation/dictation-score.js`](../../js/dictation/dictation-score.js) | `LHN_DICTATION_SCORE` | Tokenize, scoring, word-level diff và contraction allowlist. |
+| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION`, `openPanel` | Panel, cue, progress, speech và notes. |
+| [`js/dictation/dictation-score.js`](../../js/dictation/dictation-score.js) | `LHN_DICTATION_SCORE` | Tokenize, scoring và word-level diff. |
 | [`js/dictation/dictation-learning-rules.js`](../../js/dictation/dictation-learning-rules.js) | `LHN_DICTATION_RULES` | Proper-noun hint, eligibility và phân loại lỗi. |
-| [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | CSS của panel trong Shadow DOM. |
-| [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES` | Nhãn và thông báo EN/VI/KO. |
+| [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | Style panel trong Shadow DOM. |
 | [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Metadata session provider-neutral. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Player, captions và overlay provider. |
+| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Player, caption và overlay provider. |
+| [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `t` | UI strings EN/VI/KO. |
 
 ## 3. Luồng chính
 
-1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; `LHN_DICTATION` mở/đóng panel và lấy English cues từ video.
-2. Caption đến muộn đồng bộ qua `lhn-dual-captions-updated`; scorer hiện hành xử lý case, punctuation và contraction allowlist.
-3. Typing chỉ đạt khi `result.perfect`. Badge điểm và accuracy ring ở cả hai mode cùng màu xanh 70–100%, vàng 40–69%, đỏ 0–39%; màu xanh dưới 100% không đánh dấu typing đã giải.
-4. Speaking chấm transcript bằng cùng scorer: từ 70% đạt, ghi câu đã giải và bật Next nhưng không tự chuyển; 40–69% vàng, 0–39% đỏ và phải thử lại. Speech target/result frame theo tier; pass dưới 100% không tuyên bố “100% chính xác”.
-5. Nút `Hiện bản dịch` mặc định tắt và giữ cách hiện hiện tại; bật sẽ luôn hiện bản dịch câu đang luyện, đồng thời tải nếu chưa có.
-6. Progress, notes, translations, video title và `wrongWordStats` lưu trong `dictation:<videoId>`; session index chỉ bổ sung metadata.
-7. SpeechRecognition bắt đầu sau thao tác mic; permission/network/no-speech/unsupported có thông báo riêng. Đóng panel, đổi câu/mode hoặc video sẽ dừng recognition và dọn listener/timer.
+1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation lấy English cues và dùng cùng player. Caption đến muộn đồng bộ qua `lhn-dual-captions-updated`.
+2. Typing chỉ hoàn thành khi `result.perfect`; Speaking đạt từ 70%, bật Next nhưng không tự chuyển. Các tier 70–100%, 40–69%, 0–39% dùng xanh, vàng, đỏ.
+3. Bản dịch mặc định ẩn; nút hiện dịch giữ bản dịch câu hiện tại và yêu cầu dịch nếu chưa có.
+4. Progress, notes, translations, title và `wrongWordStats` lưu trong `dictation:<videoId>`; session index chỉ bổ sung metadata.
+5. Nút mic khởi động SpeechRecognition sau thao tác người dùng. Đóng panel, đổi câu/mode hoặc video dừng recognition và dọn listener/timer.
+6. Đổi `lhnSettings.language` cập nhật các nhãn, placeholder, trợ năng và trạng thái đang hiển thị ngay trong panel đã mở, không dựng lại panel hoặc xóa câu trả lời/tiến độ.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- UI Dictation trong Shadow DOM dùng font app `--lhn-app-font-family`; chip biến thể thống kê theo font UI, không ép monospace. Font phụ đề/transcript giữ theo tùy chọn riêng của video.
-- Không tạo overlay thứ hai; giữ cue English, `LHN_OVERLAY_API`, event hiện có và typing perfect-only.
-- Score badge/ring ở cả hai mode: xanh 70–100%, vàng 40–69%, đỏ 0–39%. Typing chỉ đạt với `result.perfect` (100%); Speaking đạt từ 70%, bật Next nhưng không tự chuyển. Speech target/result frame theo tier.
-- `te-dict-translation-toggle` nằm bên phải nút video, dùng chung màu/class active với bóng đèn và nhãn EN/VI/KO. Mặc định tắt theo panel; bật luôn hiện bản dịch câu hiện tại và tải khi thiếu.
-- Thông báo pass được dịch EN/VI/KO; chỉ câu 100% mới nói “100% chính xác”. Privacy disclosure vẫn ẩn; module không lưu file audio.
-- Toggle đồng bộ progress mặc định bật và lưu `dictation:progress-sync:v1`. Khi tắt, Speaking/Typing giữ snapshot riêng trong `progressByMode`; bật lại hợp các câu đã giải. Notes, translations và error stats vẫn dùng chung.
-- Scoring contraction chỉ dùng allowlist; không mở rộng sang slang. Reporting bỏ missing, target 1–3 chữ cái, proper nouns và punctuation-only differences; errors/fixes đều phải đạt eligibility.
-- `wrongWordStats` schema v3 ghi lỗi eligible, biến thể, ngữ cảnh và nhóm heuristic (âm vị/quy tắc/typo); đây là gợi ý, không khẳng định ý định. Migration reset schema cũ nhưng giữ notes/progress/translations.
-- Proper-noun hint giữ original case/thứ tự, bỏ trùng và ẩn khi không có tên; từ đầu tiên sau ranh giới câu không bị coi là tên riêng chỉ vì viết hoa.
-- Bố cục Dictation mặc định theo video:khu vực học:ghi chú = 25:50:25, có splitter 8px và center minimum 35%; cho phép left 15–30%, right 20–35%. Tùy chỉnh cột lưu theo scale. Khi nạp preference v1, quy đổi `rightScale` khác 1 theo 30/25 để giữ bề rộng tùy chỉnh tuyệt đối khi đổi default; scale 1 nhận default mới. Lưu mới theo prefs v2.
-- Giữ title ưu tiên mini-title đang hiện. Session index lỗi hoặc cũ không được chặn/ghi đè record Dictation hợp lệ.
+- Không tạo overlay thứ hai; giữ API/events video và lọc cue tiếng Anh.
+- UI Dictation dùng `--lhn-app-font-family`; phụ đề/transcript vẫn theo tùy chọn font riêng của video.
+- Giao diện có thể đổi ngôn ngữ khi panel đang mở; refresh phải giữ nguyên input, câu hiện tại, progress, notes và mode. Các control video được tìm bằng ID ổn định, không phụ thuộc `title` đã dịch.
+- Toggle đồng bộ progress mặc định bật tại `dictation:progress-sync:v1`. Khi tắt, Typing/Speaking giữ snapshot riêng; bật lại hợp các câu đã giải. Notes, translations và error stats dùng chung.
+- Contraction chỉ qua allowlist. Bỏ missing, proper nouns, target 1–3 ký tự và khác biệt chỉ dấu câu khỏi thống kê lỗi.
+- `wrongWordStats` schema v3 ghi lỗi đủ điều kiện, biến thể, ngữ cảnh và nhóm heuristic; đây là gợi ý, không khẳng định ý định. Migration schema cũ giữ notes/progress/translations.
+- Proper-noun hint giữ nguyên case/thứ tự, bỏ trùng; từ đầu câu không thành tên riêng chỉ vì viết hoa.
+- Bố cục mặc định video:khu vực học:ghi chú = 25:50:25, splitter 8px, center minimum 35%, left 15–30%, right 20–35%. Preference v1 có `rightScale` tùy chỉnh được quy đổi để giữ bề rộng; scale mặc định nhận ratio mới; preference mới dùng v2.
+- Session index thiếu/cũ không được chặn hoặc ghi đè record Dictation hợp lệ; module không lưu audio file.
 
 ## 5. Kiểm tra và xác minh
 
-- Static v3.4.917 từ source v3.4.916: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, translation toggle on/off/loading/localization assertions và mock states, docs structure/length và `git diff --check` đạt; chưa browser-test.
-- Browser cần xác nhận typing/speaking (gồm các biên 70/40/39 và Next không tự chuyển), recognition/permission, progress/reload, overlay modes, notes, translations, stats, layout mặc định 25:50:25, giữ kích thước custom khi nạp preference cũ và cleanup trên Chrome/Edge/Firefox.
+- Static/mock: `node --check` JS Dictation, parse manifest, kiểm tra language keys đủ EN/VI/KO, refresh labels không tái tạo panel, `git diff --check` và CSS brace balance.
+- Browser: thử Typing/Speaking, recognition/permission, progress/reload, notes, translations, stats, layout, đổi ngôn ngữ khi panel đang mở và cleanup trên Chrome/Edge/Firefox. Static checks không thay thế browser test.

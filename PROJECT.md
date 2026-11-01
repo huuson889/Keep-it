@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.925; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.926; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
-- Speaking Practice: 70–100% đạt, bật Next nhưng không tự chuyển; 40–69% vàng/thử lại; 0–39% đỏ/thử lại. Typing dùng cùng ngưỡng màu nhưng chỉ 100% mới đạt. Nút Hiện bản dịch mặc định tắt, bật thì luôn hiện bản dịch câu hiện tại; trong typing, answer stack giữ offset -50px cho tới khi lần gõ hiện tại được kiểm tra đạt 100% (không dựa vào điểm đã lưu/đang hiển thị); nhập/sửa/reset/chuyển câu chưa kiểm tra thì offset bật lại. Khung dịch đứng trước kết quả kiểm tra. Privacy note vẫn ẩn; nhóm mic/help giữ vị trí source v3.4.914.
-- Dictation video giữ bố cục ba cột mặc định 25:50:25 (video:khu vực học:ghi chú), transcript và tiến độ cục bộ; `te-dict-stats-host` typography tăng theo quy tắc ≤10px +2px, >10px +1px; toàn bộ chữ UI trong overlay video dùng `--lhn-app-font-family`, còn font tùy chỉnh cho phụ đề/transcript được giữ nguyên.
-- Static checks v3.4.925 đạt: toàn bộ 56 JS `node --check`, manifest JSON/version, CSS và JS tỷ lệ 25:50:25, giới hạn cột và mô phỏng quy đổi rightScale cũ, docs, CSS brace balance, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
+- Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%. Bố cục video:khu vực học:ghi chú mặc định 25:50:25; `te-dict-stats-host` tăng font theo quy tắc ≤10px +2px, >10px +1px.
+- Video: selection chỉ từ transcript ngôn ngữ chính được mở popup dịch/Full Dict; nhãn overlay và Dictation cập nhật ngay khi đổi `lhnSettings.language`. Font UI dùng `--lhn-app-font-family`; font phụ đề/transcript tùy chỉnh giữ nguyên.
+- Static verification v3.4.926 đạt: 54 JS `node --check`, manifest/version, localization EN/VI/KO, selection/control assertions, docs, CSS braces và `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện. Ghi nhận kết quả phát hành ở nhật ký dưới đây.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
+- YouTube v3.4.926: xác nhận chỉ `.te-sub-en`/`.yt-dual-item-en` mở dịch/Full Dict, các dòng dịch/control/Dictation không mở popup, selection trang thường vẫn hoạt động; đổi EN/VI/KO cập nhật overlay/Dictation đang mở mà không mất state. Chưa browser-test.
 - Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
 - Dictation, Reading và YouTube overlay: kiểm tra typing colors 70/40/0 với chỉ 100% đạt, nút Hiện bản dịch on/off/tải, `te-dict-stats-host` font sizes theo ngưỡng ≤10px +2px/>10px +1px, font chữ UI overlay dùng token mặc định trong mọi mode còn phụ đề/transcript giữ font tùy chỉnh, bố cục học mặc định 25:50:25 và giữ kích thước cột tùy chỉnh khi nạp preference cũ, typing answer stack lệch -50px khi lần gõ hiện tại chưa pass (kể cả input trống với điểm lưu/hiển thị 100%), về 0px chỉ sau khi pass 100%, bật lại khi sửa/reset/chuyển câu; vị trí trên kết quả spelling, Speaking tiers 70/40/0 và Next không tự chuyển, speech recognition/permission/result, progress, mode transitions, layout/scroll, cleanup và reload trên Chromium/Firefox/Edge. Chưa browser-test.
 - Reader/TTS/Settings/voice: kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, search/menu language/keyboard, IPA, network messaging, translation latency, Firefox MV3 và Twemoji trên trang thật; một số chỉ headless-test, chưa xác nhận trong extension.
@@ -90,6 +91,7 @@ TTS engine ── tải audio Google TTS ─────────────
 
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
+Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
@@ -102,6 +104,7 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
                            không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
 Dashboard Settings (`dictationShortcut`, mặc định Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dictation-toggle`
   └──> YouTube Dual Sub mở overlay nếu đóng; chờ cue nếu đang tải ──> Dictation API open/close
+`lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
 YouTube Dual Sub (`state.allCues`, track language, live video)
   └── API overlay hiện có ──> Dictation v1 (3 cột trong overlay, score + phân tích lỗi + ghi chú; phát đúng một câu bằng requestAnimationFrame)
                                   ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
@@ -112,6 +115,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-01 | v3.4.926 | Arena.ai Agent sửa:**
+
+- Chỉ cho transcript ngôn ngữ chính trong Keepit video mở popup dịch/Full Dict; loại dòng dịch và UI video mà không đổi selection trang thường. Bổ sung EN/VI/KO cho nhãn video và refresh nhãn overlay/Dictation ngay khi đổi ngôn ngữ cài đặt.
+- File: `js/content/content.js`, `js/core/languages.js`, `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `docs/modules/content.md`, `docs/modules/video.md`, `docs/modules/dictation.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.926.zip`.
+- Kiểm tra: 54 JS `node --check`; manifest JSON/version; 66 video/status message keys đủ EN/VI/KO; 9 control IDs ổn định, CSS brace balance; selection-helper mock xác nhận primary được phép, translated/UI bị chặn và generic page không đổi; docs structure/length; `git diff --check` đạt. ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
 
 **2026-11-01 | v3.4.925 | Arena.ai Agent sửa:**
 

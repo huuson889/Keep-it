@@ -20,6 +20,7 @@
   let videoId = "";
   let progressReady = false;
   let pendingCaptionStart = false;
+  let captionStatusKey = "";
   let pendingResumeIndex = 0;
   let solved = new Set();
   let progressSyncEnabled = true;
@@ -589,6 +590,56 @@
     return `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
   }
 
+  function refreshLanguageLabels() {
+    if (!ui) return false;
+    ui.close.setAttribute("aria-label", tr("dictationClose"));
+    ui.close.title = tr("dictationClose");
+    ui.compactAudio.setAttribute("aria-label", tr("dictationAudioTitle"));
+    ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
+    ui.tools.querySelector(".te-dict-mode-switch")?.setAttribute("aria-label", tr("dictationModeGroup"));
+    for (const selector of [".te-dict-stats-card", ".te-dict-stats-filter-bar", ".te-dict-stats-scroll"]) {
+      ui.notesPanel.querySelector(selector)?.setAttribute("aria-label", tr("dictationWrongStatsTitle"));
+    }
+    ui.input.placeholder = tr("dictationPlaceholder");
+    ui.input.setAttribute("aria-label", tr("dictationAnswer"));
+    ui.statsSearch.placeholder = tr("dictationWrongStatsSearch");
+    ui.note.placeholder = tr("dictationNotesPlaceholder");
+    ui.save.textContent = tr("dictationSaveNote");
+    ui.showHints.setAttribute("aria-label", tr("dictationShowHints"));
+    ui.showHints.title = tr("dictationShowHints");
+    const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 4);
+    ui.hint.replaceChildren(...hintTexts.map((text) => {
+      const item = document.createElement("span");
+      item.textContent = text;
+      return item;
+    }));
+    ui.labels = [...ui.root.querySelectorAll("[data-dict-label]")];
+    ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    setTranslationToggleState(translationAlwaysVisible());
+    const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
+    ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
+      const item = document.createElement("span");
+      item.textContent = text;
+      return item;
+    }));
+    ui.miniSource.textContent = tr("dictationAudioSource");
+    ui.heading.textContent = tr(dictationMode === "speaking" ? "dictationSpeakTitle" : "dictationTitle");
+    const compactVideo = ui.root.classList.contains("te-dict-video-compact");
+    const videoToggleLabel = tr(compactVideo ? "dictationExpandVideo" : "dictationCompactVideo");
+    ui.videoCompactToggle.title = videoToggleLabel;
+    ui.videoCompactToggle.setAttribute("aria-label", videoToggleLabel);
+    const video = attachedVideo || A?.state?.videoEl;
+    const miniPlayLabel = tr(video && !video.paused ? "dictationMiniPause" : "dictationMiniPlay");
+    ui.miniPlay.title = miniPlayLabel;
+    ui.miniPlay.setAttribute("aria-label", miniPlayLabel);
+    updateSpeechMicState(ui.speechMic.classList.contains("listening"));
+    if (captionStatusKey) ui.loadingStatus.textContent = tr(captionStatusKey);
+    if (ui.properNounHint && !ui.properNounHint.hidden) renderProperNounHint(sentenceCues[current]?.en || "");
+    updateProgressSyncControl();
+    applyDictationColumnLayout();
+    return true;
+  }
+
   function build() {
     if (ui) return;
     const root = A?.overlayEl?.();
@@ -887,42 +938,17 @@
       lock: notesPanel.querySelector("#te-dict-lock"),
       save: notesPanel.querySelector("#te-dict-save"),
       saved: notesPanel.querySelector("#te-dict-saved"),
-      previous: bar.querySelector('button[title="Câu trước"]'),
-      next: bar.querySelector('button[title="Câu tiếp theo"]'),
-      replay: bar.querySelector('button[title="Lặp lại câu"]'),
-      playPause: bar.querySelector('button[title="Phát/Tạm dừng"]'),
+      previous: bar.querySelector("#te-control-previous"),
+      next: bar.querySelector("#te-control-next"),
+      replay: bar.querySelector("#te-control-repeat"),
+      playPause: bar.querySelector("#te-control-play"),
       originalButtonState: new Map(),
     };
     for (const button of [ui.previous, ui.next, ui.replay]) {
       if (button) ui.originalButtonState.set(button, { disabled: button.disabled, aria: button.getAttribute("aria-disabled") });
     }
-    ui.close.setAttribute("aria-label", tr("dictationClose"));
-    ui.close.title = tr("dictationClose");
-    ui.input.placeholder = tr("dictationPlaceholder");
-    ui.input.setAttribute("aria-label", tr("dictationAnswer"));
-    ui.statsSearch.placeholder = tr("dictationWrongStatsSearch");
-    ui.note.placeholder = tr("dictationNotesPlaceholder");
-    ui.save.textContent = tr("dictationSaveNote");
-    ui.showHints.setAttribute("aria-label", tr("dictationShowHints"));
-    ui.showHints.title = tr("dictationShowHints");
-    const hintTexts = [tr("dictationEnterHint"), ...tr("dictationShortcutHint").split(/\s*·\s*/)].slice(0, 4);
-    ui.hint.replaceChildren(...hintTexts.map((text) => {
-      const item = document.createElement("span");
-      item.textContent = text;
-      return item;
-    }));
-    ui.labels = [...root.querySelectorAll("[data-dict-label]")];
-    ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
-    setTranslationToggleState(false);
-    const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
-    ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
-      const item = document.createElement("span");
-      item.textContent = text;
-      return item;
-    }));
-    updateProgressSyncControl();
+    refreshLanguageLabels();
     installDictationColumnControls();
-    ui.miniSource.textContent = tr("dictationAudioSource");
     updateCompactAudioInfo();
     updateCompactAudioPlaybackState();
     ui.videoCompactToggle.addEventListener("click", toggleCompactVideo);
@@ -1835,7 +1861,8 @@
     ui.save.disabled = locked;
   }
 
-  function setCaptionStatus(message = "", keepControlsDisabled = false) {
+  function setCaptionStatus(message = "", keepControlsDisabled = false, languageKey = "") {
+    captionStatusKey = languageKey;
     if (!ui) return;
     ui.loadingStatus.textContent = message;
     ui.loadingStatus.hidden = !message;
@@ -1845,6 +1872,10 @@
     for (const button of [ui.btnPrev, ui.btnReplay, ui.btnSlow, ui.btnNext, ui.previous, ui.next, ui.replay]) {
       if (button) button.disabled = disabled;
     }
+  }
+
+  function setCaptionStatusForKey(key, keepControlsDisabled = false) {
+    setCaptionStatus(key ? tr(key) : "", keepControlsDisabled, key);
   }
 
   function renderProperNounHint(sentence) {
@@ -2825,7 +2856,7 @@
     attachVideoEvents();
     renderInitialRows();
     setNotesLocked(true);
-    setCaptionStatus(sentenceCues.length ? "" : tr("dictationWaitingForCaptions"));
+    setCaptionStatusForKey(sentenceCues.length ? "" : "dictationWaitingForCaptions");
     setScore(null);
     const record = await loadProgress(videoId, generation);
     if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
@@ -2840,7 +2871,7 @@
       renderInitialRows();
       renderCurrent();
       const captionsStillLoading = A?.state?.loadingFor === videoId;
-      setCaptionStatus(tr(captionsStillLoading ? "dictationWaitingForCaptions" : "dictationEnglishOnly"), true);
+      setCaptionStatusForKey(captionsStillLoading ? "dictationWaitingForCaptions" : "dictationEnglishOnly", true);
       return;
     }
     pendingCaptionStart = false;
@@ -2957,11 +2988,11 @@
     const updated = getCues();
     if (A?.state?.captionTrackLanguage !== "en" || !updated.length) {
       if (A?.state?.loadingFor === A?.state?.videoId) {
-        if (pendingCaptionStart) setCaptionStatus(tr("dictationWaitingForCaptions"), true);
+        if (pendingCaptionStart) setCaptionStatusForKey("dictationWaitingForCaptions", true);
         return;
       }
       if (pendingCaptionStart) {
-        setCaptionStatus(tr("dictationEnglishOnly"), true);
+        setCaptionStatusForKey("dictationEnglishOnly", true);
         return;
       }
       close();
@@ -2981,7 +3012,7 @@
       listEnd = 0;
       renderInitialRows();
       renderCurrent();
-      setCaptionStatus(tr("dictationWaitingForCaptions"), true);
+      setCaptionStatusForKey("dictationWaitingForCaptions", true);
       return;
     }
     if (pendingCaptionStart) {
@@ -3046,7 +3077,7 @@
   });
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
   globalThis.LHN_DICTATION = Object.freeze({
-    toggle, open: openPanel, close,
+    toggle, open: openPanel, close, refreshLanguage: refreshLanguageLabels,
     isOpen: () => active || openingPanel,
     getMode: () => (active || openingPanel) ? dictationMode : null,
   });

@@ -33,6 +33,7 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 - `web-highlighter.js`, `annotation-restore.js`, `note-composer.js`, `page-layout.js` là các helper/factory; giữ ranh giới chức năng thay vì nhân bản logic vào controller.
 - Các thao tác chọn/chữ không được chặn nhập liệu trong input/contenteditable; giữ guard shortcut và hành vi selection khi sửa listener.
 - Khi thay đổi DOM trên trang, loại trừ vùng UI của extension khỏi khôi phục/selection để tránh tự bắt nội dung Keepit.
+- Trên giao diện video Keepit, chỉ `.te-sub-en` và `.yt-dual-item-en` được phép kích hoạt popup dịch/từ điển; dòng dịch, control và Dictation bị loại. Gate không áp lên selection thông thường ngoài giao diện video.
 - Tên custom event nối Content với Video/Reader là API nội bộ; tìm consumer trước khi đổi.
 
 ## 5. Kiểm tra và xác minh

@@ -91,6 +91,8 @@ const transcriptTrackLanguageCache = new Map();
 const failedUntil = new Map(); // videoId -> thời điểm hết hạn cache lỗi
 const FAILED_CACHE_MS = 10 * 60 * 1000;
 let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
+let activeVideoStatusKey = '';
+let activeVideoStatusVars = {};
 let prefetchToken = 0;
 let prefetchTimer = 0;
 let savedOverlayPageScrollStyles = null;
@@ -107,7 +109,87 @@ const ui = (sel) => {
   return el;
 };
 const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
-const ctrl = (title) => ui(`button[title="${title}"]`);
+const VIDEO_UI_TEXT_KEYS = Object.freeze({
+  'Thêm vào từ vựng': 'videoAddVocabulary', 'Mở thanh bên ghi chú': 'videoOpenNotesSidebar',
+  'Audio': 'videoAudio', 'Lặp lại câu': 'videoRepeatSentence', 'Câu trước': 'videoPreviousSentence',
+  'Phát/Tạm dừng': 'videoPlayPause', 'Câu tiếp theo': 'videoNextSentence', 'Tốc độ': 'videoSpeed',
+  'Luyện nói': 'videoPracticeSpeaking', 'Chép chính tả': 'videoDictation', 'Chế độ phụ đề': 'videoSubtitleMode',
+  'Song ngữ': 'videoSubtitleBilingual', 'Chính': 'videoSubtitlePrimary', 'Dịch': 'videoSubtitleTranslation', 'Ẩn': 'videoSubtitleHidden',
+  'Chế độ xem': 'videoModeSelector', 'Chế độ rạp': 'videoModeTheater', 'Chế độ đọc': 'videoModeReading', 'Chế độ kết hợp': 'videoModeCombined',
+  'Toàn màn hình': 'videoFullscreen', 'Cài đặt video': 'videoSettings', 'Đóng': 'close', 'Mở cài đặt': 'videoOpenSettings',
+  'Kích cỡ xem': 'videoViewSize', 'Hiện popup dịch trực tiếp': 'videoTranslationPopup', 'Nhấp để phát âm': 'videoClickToSpeak',
+  'Kết hợp câu': 'videoCombineSentences', 'Ẩn thanh điều khiển': 'videoHideControls', 'Ambient mode': 'videoAmbientMode',
+  'Ambient 1': 'videoAmbient1', 'Ambient 2': 'videoAmbient2', 'Ambient 3': 'videoAmbient3', 'Tắt': 'videoAmbientOff',
+  'Chủ đề': 'videoTheme', 'Light': 'lightMode', 'Dark': 'darkMode', 'Tùy chọn phụ đề': 'videoSubtitleOptions',
+  'Ngôn ngữ phụ đề': 'videoSubtitleLanguage', 'Xuất phụ đề': 'videoExportSubtitles', 'Đặt lại': 'videoReset', 'Cài đặt chung': 'videoGeneralSettings',
+  'Nhỏ': 'videoSmall', 'Vừa': 'videoMedium', 'Trung bình': 'videoMedium', 'Lớn': 'videoLarge', 'Đậm': 'videoBold', 'Phụ đề video': 'videoVideoSubtitles',
+  'Kích thước phụ đề chính': 'videoPrimarySubtitleSize', 'Màu phụ đề chính': 'videoPrimarySubtitleColor',
+  'Kích thước phụ đề dịch': 'videoTranslatedSubtitleSize', 'Màu phụ đề dịch': 'videoTranslatedSubtitleColor',
+  'Phụ đề thanh bên': 'videoSidebarSubtitles', 'Kích thước chính': 'videoPrimarySize', 'Kích thước dịch': 'videoTranslatedSize',
+  'Phụ đề chính': 'videoMainSubtitle', 'Phụ đề dịch': 'videoTranslationSubtitle', 'Xuất từ đã lưu': 'videoExportSavedWords',
+  'Hiển thị từ đánh dấu': 'videoShowHighlightedWords', 'Chỉ xuất phụ đề': 'videoExportSubtitlesOnly', 'Hiển thị thời gian': 'videoIncludeTimestamps',
+});
+const VIDEO_UI_CONTROL_IDS = Object.freeze({
+  Audio: 'te-control-audio', 'Lặp lại câu': 'te-control-repeat', 'Câu trước': 'te-control-previous',
+  'Phát/Tạm dừng': 'te-control-play', 'Câu tiếp theo': 'te-control-next', 'Tốc độ': 'te-control-speed',
+  'Luyện nói': 'te-speaking-mode-btn', 'Chép chính tả': 'te-dictation-mode-btn', 'Toàn màn hình': 'te-control-fullscreen',
+});
+const localizedVideoText = new WeakMap();
+const localizedVideoAttributes = new WeakMap();
+const videoT = (key, vars = {}) => globalThis.LHN_LANGUAGES?.t?.(key, vars, state.displayLanguage) || key;
+const ctrl = (title) => {
+  const id = VIDEO_UI_CONTROL_IDS[title];
+  return id ? ui(`#${id}`) : null;
+};
+
+function refreshVideoUiLocalization() {
+  const launcher = document.getElementById(LAUNCHER_ID);
+  launcher?.setAttribute('title', videoT('videoOpenKeepit'));
+  launcher?.setAttribute('aria-label', videoT('videoOpenKeepit'));
+  globalThis.LHN_DICTATION?.refreshLanguage?.();
+  const root = overlayEl();
+  if (!root) return false;
+  const excludedUiContent = '.te-video-title-text, .te-sub-container, #te-transcript-list, #te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .te-dict-toolbar-tools';
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.parentElement?.closest(excludedUiContent)) continue;
+    const source = localizedVideoText.has(node) ? localizedVideoText.get(node) : node.nodeValue;
+    const key = VIDEO_UI_TEXT_KEYS[source.trim()];
+    if (!key) continue;
+    if (!localizedVideoText.has(node)) localizedVideoText.set(node, source);
+    const leading = source.match(/^\s*/)?.[0] || '';
+    const trailing = source.match(/\s*$/)?.[0] || '';
+    node.nodeValue = `${leading}${videoT(key)}${trailing}`;
+  }
+  for (const element of root.querySelectorAll('[title], [aria-label]')) {
+    if (element.closest(excludedUiContent)) continue;
+    let saved = localizedVideoAttributes.get(element);
+    if (!saved) { saved = new Map(); localizedVideoAttributes.set(element, saved); }
+    for (const name of ['title', 'aria-label']) {
+      if (!element.hasAttribute(name)) continue;
+      const source = saved.has(name) ? saved.get(name) : element.getAttribute(name);
+      const key = VIDEO_UI_TEXT_KEYS[source];
+      if (!key) continue;
+      if (!saved.has(name)) saved.set(name, source);
+      element.setAttribute(name, videoT(key));
+    }
+  }
+  applySettings();
+  updateSubtitleDisplayModeLabels();
+  setVideoDisplayModeSelection($('te-video-mode-trigger')?.dataset.videoMode || 'combined');
+  const sizeKeys = ['videoSmall', 'videoMedium', 'videoLarge'];
+  uiAll('#te-view-mode-options button').forEach((button, index) => {
+    button.textContent = videoT(sizeKeys[index] || 'videoMedium');
+    button.dataset.size = ['S', 'M', 'L'][index] || 'M';
+  });
+  const exportRows = uiAll('#te-modal-export .te-card-box .te-setting-item');
+  if (exportRows[3]?.firstElementChild) exportRows[3].firstElementChild.textContent = videoT('videoIncludeSubtitles');
+  const speedNormal = ui('.te-speed-normal');
+  if (speedNormal) speedNormal.textContent = videoT('videoNormal');
+  if (activeVideoStatusKey) setStatus(videoT(activeVideoStatusKey, activeVideoStatusVars), activeVideoStatusKey, activeVideoStatusVars);
+  return true;
+}
 
 function pauseVideoFor(reason) {
   state.pauseReasons.add(reason);
@@ -206,8 +288,7 @@ async function fetchText(url) {
 }
 
 function errorText(reasons) {
-  const detail = reasons.length ? reasons.join(' | ') : 'không rõ nguyên nhân';
-  return 'Không thể tải phụ đề cho video này. Lỗi: ' + detail;
+  return { detail: reasons.length ? reasons.join(' | ') : 'không rõ nguyên nhân' };
 }
 
 function extractPlayerResponse(html) {
@@ -500,7 +581,7 @@ function commitLiveCue(text, start, nowAt) {
 function startLiveCaptionCapture(reasons) {
   stopLiveCaptionCapture();
   ensureCaptionsOn();
-  setStatus('Đang đọc phụ đề trực tiếp từ video. Hãy bật phụ đề (CC) nếu chưa thấy chữ.');
+  setStatus(videoT('videoLiveCaptionStatus'), 'videoLiveCaptionStatus');
   livePollTimer = setInterval(() => {
     const video = state.videoEl || document.querySelector('video');
     if (!video) return;
@@ -957,6 +1038,7 @@ async function refreshSubtitleLanguageSettings() {
   state.displayLanguage = displayLanguage;
   if (!sourceChanged && !targetSettingChanged && !targetChanged) {
     updateSubtitleLanguageLabels();
+    refreshVideoUiLocalization();
     return;
   }
   state.sourceLanguageSetting = sourceLanguageSetting;
@@ -966,6 +1048,7 @@ async function refreshSubtitleLanguageSettings() {
   translationSettingsRevision++;
   translateQueue = [];
   updateSubtitleLanguageLabels();
+  refreshVideoUiLocalization();
 
   if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
@@ -1166,7 +1249,7 @@ function applySettings() {
   enEl.style.color = settings.sub.en.color || '';
   viEl.style.color = settings.sub.vi.color || '';
 
-  $('te-theme-label').textContent = settings.theme === 'dark' ? 'Dark' : 'Light';
+  $('te-theme-label').textContent = videoT(settings.theme === 'dark' ? 'darkMode' : 'lightMode');
 
   // Đồng bộ công tắc trong menu cài đặt chính
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
@@ -1188,12 +1271,14 @@ function applySettings() {
   if (readingWidthHint) {
     const width = { S: 35, M: 45, L: 52 }[modalViewSize] ?? 45;
     readingWidthHint.style.display = isReadingModeActive() ? '' : 'none';
-    readingWidthHint.textContent = `Độ rộng khung phụ đề giữa: ${width}% màn hình`;
+    readingWidthHint.textContent = videoT('videoReadingWidthHint', { width });
   }
   sub.querySelector('select').value = settings.sub.font || 'Inter';
   const videoSubSettings = activeVideoSubtitleSettings();
   const videoSubtitleTitle = $('te-video-subtitle-settings-title');
-  if (videoSubtitleTitle) videoSubtitleTitle.textContent = isReadingModeActive() ? 'Phụ đề video · Chế độ đọc' : 'Phụ đề video';
+  if (videoSubtitleTitle) videoSubtitleTitle.textContent = isReadingModeActive()
+    ? `${videoT('videoVideoSubtitles')} · ${videoT('videoModeReading')}`
+    : videoT('videoVideoSubtitles');
 
   const counters = sub.querySelectorAll('.te-counter-btn');
   counters[0].nextElementSibling.textContent = videoSubSettings.en.pct + '%';
@@ -1294,7 +1379,7 @@ function buildOverlay() {
   shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
   overlayEl().classList.add('te-hidden');
   bindUI();
-  applySettings();
+  refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
 
   // Thêm các font như v1.4 (giữ nguyên các font có sẵn)
@@ -1303,10 +1388,10 @@ function buildOverlay() {
     if (![...subSel.options].some((o) => o.value === name)) subSel.add(new Option(name, name));
   });
 
-  // Nhóm "Chế độ xem" -> Nhỏ / Vừa / Lớn (kích thước video)
+  // Nhóm "Chế độ xem" -> kích thước video; nhãn theo ngôn ngữ giao diện hiện tại.
   const sizeBtns = $('te-view-mode-options').querySelectorAll('button');
-  ['Nhỏ', 'Vừa', 'Lớn'].forEach((t, i) => {
-    sizeBtns[i].textContent = t;
+  ['videoSmall', 'videoMedium', 'videoLarge'].forEach((key, i) => {
+    sizeBtns[i].textContent = videoT(key);
     sizeBtns[i].dataset.size = ['S', 'M', 'L'][i];
   });
 
@@ -1324,8 +1409,8 @@ function ensureLauncher() {
     btn.id = LAUNCHER_ID;
     btn.type = 'button';
     btn.className = 'ytp-button lhn-player-launcher';
-    btn.title = 'Mở keepit';
-    btn.setAttribute('aria-label', 'Mở keepit');
+    btn.title = videoT('videoOpenKeepit');
+    btn.setAttribute('aria-label', videoT('videoOpenKeepit'));
     btn.style.display = 'none';
     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lhn-launcher-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient><filter id="lhn-launcher-shadow" x="-25%" y="-15%" width="150%" height="155%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dy="2"/><feComponentTransfer><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect x="0" y="0" width="32" height="32" fill="url(#lhn-launcher-mark)" filter="url(#lhn-launcher-shadow)" rx="8"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="5" y="5"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>';
     btn.addEventListener('click', (event) => {
@@ -1411,7 +1496,7 @@ function openOverlay() {
   const video = document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video');
   const slot = ui('.te-video-slot');
   if (!video || !slot) {
-    alert('Không tìm thấy video trên trang.');
+    alert(videoT('videoNoVideoFound'));
     return;
   }
   document.documentElement.classList.add('lhn-video-overlay-open');
@@ -1617,6 +1702,7 @@ let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
 // Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
 // ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = cạnh viền 16:9 lan 50%, 2 = cạnh viền 16:9 lan 100%, 3 = radial
 const AMBIENT_LABELS = { off: 'Tắt', '1': 'Ambient 1', '2': 'Ambient 2', '3': 'Ambient 3' };
+const AMBIENT_LABEL_KEYS = { off: 'videoAmbientOff', '1': 'videoAmbient1', '2': 'videoAmbient2', '3': 'videoAmbient3' };
 function isEdgeAmbient() { const m = ambientMode(); return m === '1' || m === '2'; }
 function ambientMode() {
   const m = settings.ambientStyle;
@@ -1626,7 +1712,7 @@ function ambientMode() {
 function syncAmbientUi() {
   const mode = ambientMode();
   const label = $('te-ambient-label');
-  if (label) label.textContent = AMBIENT_LABELS[mode];
+  if (label) label.textContent = videoT(AMBIENT_LABEL_KEYS[mode]);
   $('te-modal-ambient')?.querySelectorAll('.te-btn-subopt').forEach((btn) => btn.classList.toggle('active', btn.dataset.ambient === mode));
 }
 function setAmbientMode(mode) {
@@ -1835,7 +1921,7 @@ function cycleSpeed() {
 function syncSpeedButton() {
   const v = state.videoEl;
   const btn = ctrl('Tốc độ');
-  if (v && btn) btn.setAttribute('aria-label', `Tốc độ ${v.playbackRate}x`);
+  if (v && btn) btn.setAttribute('aria-label', `${videoT('videoSpeed')} ${v.playbackRate}x`);
   syncSpeedLabel();
 }
 
@@ -1933,11 +2019,13 @@ function onTimeUpdate() {
 }
 
 function setActiveCaption(idx) {
+  const hadStatus = Boolean(activeVideoStatusKey);
+  activeVideoStatusKey = '';
   const prevIdx = state.activeIdx;
   state.activeIdx = idx;
   const cap = state.captions[idx];
   const enEl = $('te-sub-en-text'), viEl = $('te-sub-vi-text');
-  if (prevIdx === idx && enEl?.dataset.idx === String(idx) && viEl?.dataset.idx === String(idx)) return;
+  if (!hadStatus && prevIdx === idx && enEl?.dataset.idx === String(idx) && viEl?.dataset.idx === String(idx)) return;
   enEl.innerHTML = renderHoverWords(cap.mainText);
   viEl.innerHTML = renderHoverWords(cap.vi);
   enEl.dataset.idx = viEl.dataset.idx = String(idx);
@@ -1953,7 +2041,9 @@ function setActiveCaption(idx) {
   }
 }
 
-function setStatus(text) {
+function setStatus(text, languageKey = '', languageVars = {}) {
+  activeVideoStatusKey = languageKey;
+  activeVideoStatusVars = languageKey ? languageVars : {};
   if (!overlayEl()) return;
   $('te-sub-en-text').textContent = text;
   $('te-sub-vi-text').textContent = '';
@@ -2383,7 +2473,7 @@ async function loadCaptions() {
   state.captionTrackLanguage = '';
   state.primaryNeedsTranslation = false;
   state.secondaryNeedsTranslation = false;
-  setStatus('Đang tải phụ đề...');
+  setStatus(videoT('videoLoadingSubtitles'), 'videoLoadingSubtitles');
 
   const reasons = [];
   try {
@@ -2443,7 +2533,10 @@ async function loadCaptions() {
     translateWindow(0, token);
   } catch (err) {
     console.error('[keepit] Lỗi tải phụ đề:', err);
-    if (token === state.loadToken) setStatus(errorText([...reasons, err.message]));
+    if (token === state.loadToken) {
+      const error = errorText([...reasons, err.message]);
+      setStatus(videoT('videoCaptionLoadError', error), 'videoCaptionLoadError', error);
+    }
   } finally {
     if (token === state.loadToken) {
       state.loadingFor = null;
@@ -2515,7 +2608,7 @@ const viForExport = (c) => (c.vi === PENDING ? '' : c.vi);
 function printPdf(title, showTime, includeVi) {
   const w = window.open('', '_blank');
   if (!w) {
-    alert('Trình duyệt đang chặn cửa sổ mới. Hãy cho phép bật lên cho YouTube rồi thử lại.');
+    alert(videoT('videoPopupBlocked'));
     return;
   }
   const rows = state.captions.map((c) =>
@@ -2534,7 +2627,7 @@ function printPdf(title, showTime, includeVi) {
 
 function exportAs(format, opts) {
   if (state.captions.length === 0) {
-    alert('Chưa có phụ đề để xuất.');
+    alert(videoT('videoNoSubtitlesToExport'));
     return;
   }
   const { onlySubs, includeVi, showTime } = opts;

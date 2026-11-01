@@ -250,6 +250,7 @@
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
   async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     word = cleanText(word); if (!settings.showFullEnglishDictionary || !LHN_DICTIONARY.isEnglishWord(word)) return;
     if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
@@ -333,6 +334,7 @@
     return { translation, targetLanguage:options.targetLanguage };
   }
   function showTranslateIcon(range) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
     translateIcon?.remove();
     const button = document.createElement("button");
@@ -373,6 +375,7 @@
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
   }
   async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null } = {}) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
@@ -1266,6 +1269,30 @@
     if (shadowSel && String(shadowSel).trim()) return shadowSel;
     return getSelection();
   }
+  const VIDEO_INTERFACE_SELECTOR = "#te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .yt-dual-item, .te-sub-container";
+  const PRIMARY_VIDEO_TRANSCRIPT_SELECTOR = ".te-sub-en, .yt-dual-item-en";
+  function selectionElement(node) { return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement; }
+  function isVideoInterfaceNode(node) {
+    const root = node?.getRootNode?.();
+    if (root?.host?.id === "keepit-host") return true;
+    const element = selectionElement(node);
+    return !!element?.closest?.(VIDEO_INTERFACE_SELECTOR);
+  }
+  function isVideoInterfaceRange(range) {
+    return !!range && (isVideoInterfaceNode(range.startContainer) || isVideoInterfaceNode(range.endContainer) || isVideoInterfaceNode(range.commonAncestorContainer));
+  }
+  function isPrimaryVideoTranscriptRange(range) {
+    if (!range) return false;
+    const start = selectionElement(range.startContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
+    const end = selectionElement(range.endContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
+    if (!start || !end || start.matches(".te-sub-en") !== end.matches(".te-sub-en")) return false;
+    try {
+      const treeRoot = start.getRootNode();
+      const translatedLines = treeRoot.querySelectorAll?.(".te-sub-vi, .yt-dual-item-vi") || [];
+      if ([...translatedLines].some((line) => range.intersectsNode(line))) return false;
+    } catch { return false; }
+    return true;
+  }
   const handledSelectionMouseUps = new WeakSet();
   function handleSelectionMouseUp(e) {
     if (handledSelectionMouseUps.has(e)) return;
@@ -1273,13 +1300,17 @@
     if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
-    const isDualSubtitleSelection = e.composedPath?.().some(node => node?.classList?.contains("te-sub-en") || node?.classList?.contains("yt-dual-item-en"));
+    const eventPath = e.composedPath?.() || [];
+    const isVideoInterfaceEvent = eventPath.some(isVideoInterfaceNode);
     const selection = currentSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
     if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
     setTimeout(() => {
       const sel = currentSelection(), text = cleanText(sel?.toString());
       if (!text || !sel.rangeCount || isEditable(sel.anchorNode)) return;
       const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
+      const isVideoUiSelection = isVideoInterfaceEvent || isVideoInterfaceRange(range);
+      const isDualSubtitleSelection = isVideoUiSelection && isPrimaryVideoTranscriptRange(range);
+      if (isVideoUiSelection && !isDualSubtitleSelection) return;
       selectedRange = range.cloneRange();
       removeTranslationUI();
       loadSettings().then(cfg => {

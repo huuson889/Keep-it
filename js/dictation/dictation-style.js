@@ -769,8 +769,8 @@ globalThis.LHN_DICTATION_CSS = `
   z-index: 5;
 }
 #keepit-exact-overlay.te-dictation-active .te-dict-primary-group .te-yt-logo-box,
-#keepit-exact-overlay.te-dictation-active .te-dict-primary-group button[title="Thêm vào từ vựng"],
-#keepit-exact-overlay.te-dictation-active .te-dict-primary-group button[title="Mở bộ sưu tập"] { display: none !important; }
+#keepit-exact-overlay.te-dictation-active .te-dict-primary-group #te-control-add-vocabulary,
+#keepit-exact-overlay.te-dictation-active .te-dict-primary-group #te-notes-sidebar-toggle { display: none !important; }
 #keepit-exact-overlay .te-dict-toolbar-tools { display: none; align-items: center; gap: 8px; }
 #keepit-exact-overlay.te-dictation-active .te-dict-toolbar-tools { display: flex; }
 #keepit-exact-overlay .te-dict-mode-switch { display: inline-flex; align-items: center; gap: 8px; }
