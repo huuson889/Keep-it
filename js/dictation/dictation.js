@@ -651,6 +651,9 @@
             <p data-dict-label="dictationAudioHelp"></p>
           </div>
           <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
+          <button class="te-dict-hints-toggle te-dict-translation-toggle" id="te-dict-translation-toggle" type="button" aria-pressed="false" aria-label="" title="">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages preview-icon" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          </button>
           <button class="te-dict-hints-toggle active" id="te-dict-show-hints" type="button" aria-pressed="true" aria-label="" title="">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb preview-icon" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
           </button>
@@ -813,6 +816,7 @@
     ui = {
       root, left, videoSlot, compactAudio, brand, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
       videoCompactToggle: center.querySelector("#te-dict-video-toggle"),
+      translationToggle: center.querySelector("#te-dict-translation-toggle"),
       miniThumb: compactAudio.querySelector(".te-dict-mini-thumb"),
       miniTitle: compactAudio.querySelector(".te-dict-mini-title"),
       miniSource: compactAudio.querySelector(".te-dict-mini-source"),
@@ -901,6 +905,7 @@
     }));
     ui.labels = [...root.querySelectorAll("[data-dict-label]")];
     ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    setTranslationToggleState(false);
     const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
     ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
       const item = document.createElement("span");
@@ -913,6 +918,7 @@
     updateCompactAudioInfo();
     updateCompactAudioPlaybackState();
     ui.videoCompactToggle.addEventListener("click", toggleCompactVideo);
+    ui.translationToggle.addEventListener("click", onTranslationToggle);
     ui.miniPlay.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1713,8 +1719,7 @@
     ui.work?.classList.remove("te-dict-has-error");
     ui.success.hidden = true;
     if (wasSuccessVisible) renderProperNounHint(sentenceCues[current]?.en || "");
-    ui.translation.hidden = true;
-    ui.translation.textContent = "";
+    syncCurrentTranslationDisplay();
     if (wasChecked) updateRows(false);
   }
 
@@ -1874,8 +1879,8 @@
     ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
-    ui.translation.hidden = true;
     ui.translation.textContent = "";
+    syncCurrentTranslationDisplay(translationAlwaysVisible());
     setScore(wasSolved ? 100 : null);
   }
 
@@ -1890,6 +1895,20 @@
     focusInputIfTyping();
   }
 
+  function syncCurrentTranslationDisplay(requestIfMissing = false) {
+    if (!ui) return;
+    const shouldShow = Boolean(sentenceCues[current]) && (checkedCurrent || translationAlwaysVisible());
+    ui.translation.hidden = !shouldShow;
+    if (!shouldShow) {
+      ui.translation.textContent = "";
+      return;
+    }
+    const translated = translations[String(current)] || "";
+    if (translated) ui.translation.textContent = translated;
+    else if (!ui.translation.textContent) ui.translation.textContent = tr("dictationTranslationLoading");
+    if (requestIfMissing && !translated) void ensureVietnamese(current);
+  }
+
   function updateTranslationViews(index) {
     if (!ui) return;
     const translated = translations[String(index)] || "";
@@ -1900,8 +1919,9 @@
       row.hidden = !canShowTranslation;
     }
     if (current === index) {
-      ui.translation.textContent = translated || tr("dictationTranslationLoading");
-      ui.translation.hidden = !checkedCurrent;
+      const showCurrentTranslation = checkedCurrent || translationAlwaysVisible();
+      ui.translation.textContent = showCurrentTranslation ? (translated || tr("dictationTranslationLoading")) : "";
+      ui.translation.hidden = !showCurrentTranslation;
     }
   }
 
@@ -2375,8 +2395,7 @@
     ui.input.classList.remove("correct");
     ui.success.hidden = true;
     if (wasSuccessVisible) renderProperNounHint(cue.en);
-    ui.translation.hidden = true;
-    ui.translation.textContent = "";
+    syncCurrentTranslationDisplay();
     updateRows(false);
     renderError();
     if (statsUpdated) void saveRecord();
@@ -2600,6 +2619,29 @@
     return true;
   }
 
+  function translationAlwaysVisible() {
+    return ui?.translationToggle?.getAttribute("aria-pressed") === "true";
+  }
+
+  function setTranslationToggleState(enabled) {
+    if (!ui?.translationToggle) return;
+    const label = tr(enabled ? "dictationHideTranslation" : "dictationShowTranslation");
+    ui.translationToggle.setAttribute("aria-pressed", String(enabled));
+    ui.translationToggle.setAttribute("aria-label", label);
+    ui.translationToggle.title = label;
+    ui.translationToggle.classList.toggle("active", enabled);
+  }
+
+  function onTranslationToggle(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!ui) return;
+    const enabled = !translationAlwaysVisible();
+    setTranslationToggleState(enabled);
+    if (enabled) ui.translation.textContent = translations[String(current)] || "";
+    syncCurrentTranslationDisplay(enabled);
+  }
+
   function hintsEnabled() {
     return ui?.showHints?.getAttribute("aria-pressed") === "true";
   }
@@ -2643,8 +2685,7 @@
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
     if (wasSuccessVisible) renderProperNounHint(sentenceCues[current]?.en || "");
-    ui.translation.hidden = true;
-    ui.translation.textContent = "";
+    syncCurrentTranslationDisplay();
     updateRows(false);
     setScore(solved.has(current) ? 100 : null);
     focusInputIfTyping();

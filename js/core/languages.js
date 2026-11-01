@@ -299,7 +299,8 @@
     dictationSpeakError:"Could not start speech recognition. Please try again.",
     dictationSpeakStart:"Start speaking practice", dictationSpeakStop:"Stop and check speech",
     dictationSpeechShortcutHint:"(Enter) Check · (Esc) Reveal/Reset · (`) Play/Pause · (Ctrl) Replay",
-    dictationProgressSyncOn:"Progress sync: on", dictationProgressSyncOff:"Progress sync: off"
+    dictationProgressSyncOn:"Progress sync: on", dictationProgressSyncOff:"Progress sync: off",
+    dictationShowTranslation:"Show translation", dictationHideTranslation:"Hide translation"
   });
   Object.assign(MESSAGES.vi, {
     dictationSpeak:"Luyện nói", dictationSpeakTitle:"Luyện nói theo nhịp của bạn", dictationModeGroup:"Chế độ luyện tập",
@@ -315,7 +316,8 @@
     dictationSpeakError:"Không thể bắt đầu nhận diện giọng nói. Vui lòng thử lại.",
     dictationSpeakStart:"Bắt đầu luyện nói", dictationSpeakStop:"Dừng và chấm câu nói",
     dictationSpeechShortcutHint:"(Enter) Chấm điểm · (Esc) Đáp án/Làm lại · (`) Phát/Tạm dừng · (Ctrl) Nghe lại",
-    dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt"
+    dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt",
+    dictationShowTranslation:"Hiện bản dịch", dictationHideTranslation:"Ẩn bản dịch"
   });
   Object.assign(MESSAGES.en, {
     videoModeSelector:"View mode", videoModeTheater:"Theater mode", videoModeReading:"Reading mode", videoModeCombined:"Combined mode",
@@ -344,7 +346,8 @@
     dictationSpeakError:"음성 인식을 시작할 수 없습니다. 다시 시도하세요.",
     dictationSpeakStart:"말하기 연습 시작", dictationSpeakStop:"말하기를 멈추고 확인",
     dictationSpeechShortcutHint:"(Enter) 채점 · (Esc) 답 보기/초기화 · (`) 재생/일시정지 · (Ctrl) 다시 듣기",
-    dictationProgressSyncOn:"진행률 동기화: 켜짐", dictationProgressSyncOff:"진행률 동기화: 꺼짐"
+    dictationProgressSyncOn:"진행률 동기화: 켜짐", dictationProgressSyncOff:"진행률 동기화: 꺼짐",
+    dictationShowTranslation:"번역 표시", dictationHideTranslation:"번역 숨기기"
   });
 
   Object.assign(MESSAGES.en, { ovMenuDictation:"Dictation", ovMenuHighlightsNotes:"Highlights & Notes" });

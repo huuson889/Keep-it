@@ -23,16 +23,17 @@ Dictation luyện caption tiếng Anh từ YouTube trong overlay/player hiện c
 1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; `LHN_DICTATION` mở/đóng panel và lấy English cues từ video.
 2. Caption đến muộn đồng bộ qua `lhn-dual-captions-updated`; scorer hiện hành xử lý case, punctuation và contraction allowlist.
 3. Typing chỉ đạt khi `result.perfect`. Badge điểm và accuracy ring ở cả hai mode cùng màu xanh 70–100%, vàng 40–69%, đỏ 0–39%; màu xanh dưới 100% không đánh dấu typing đã giải.
-4. Speaking chấm transcript bằng cùng scorer: từ 70% đạt, ghi câu đã giải và bật Next nhưng không tự chuyển; 40–69% cảnh báo vàng, 0–39% đỏ, cả hai tier thấp yêu cầu thử lại. Speech target/result frame theo tier; pass dưới 100% không tuyên bố “100% chính xác”.
-5. Progress, solved, notes, translations, video title và `wrongWordStats` được lưu trong `dictation:<videoId>`; session index là metadata bổ sung, không thay record nguồn.
-6. SpeechRecognition chỉ bắt đầu sau thao tác mic. Permission/network/no-speech/unsupported có thông báo riêng; browser không hỗ trợ nhận diện có thể chuyển về `Đánh máy`.
-7. Đóng panel, đổi câu hoặc đổi mode dừng recognition và dọn listener/timer; khi close/đổi video, dữ liệu cần thiết được flush.
+4. Speaking chấm transcript bằng cùng scorer: từ 70% đạt, ghi câu đã giải và bật Next nhưng không tự chuyển; 40–69% vàng, 0–39% đỏ và phải thử lại. Speech target/result frame theo tier; pass dưới 100% không tuyên bố “100% chính xác”.
+5. Nút `Hiện bản dịch` mặc định tắt và giữ cách hiện hiện tại; bật sẽ luôn hiện bản dịch câu đang luyện, đồng thời tải nếu chưa có.
+6. Progress, notes, translations, video title và `wrongWordStats` lưu trong `dictation:<videoId>`; session index chỉ bổ sung metadata.
+7. SpeechRecognition bắt đầu sau thao tác mic; permission/network/no-speech/unsupported có thông báo riêng. Đóng panel, đổi câu/mode hoặc video sẽ dừng recognition và dọn listener/timer.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không tạo overlay thứ hai; giữ cue English, `LHN_OVERLAY_API`, event hiện có và typing perfect-only.
-- Score badge và accuracy ring ở cả Typing/Speaking dùng cùng màu: xanh 70–100%, vàng 40–69%, đỏ 0–39%. Trong Typing, chỉ `result.perfect` (100%) đánh dấu solved/mở Next; trong Speaking, pass từ 70% mở Next nhưng không điều hướng tự động. Speech target/result frame phản ánh tier Speaking.
-- Thông báo pass được dịch cho EN/VI/KO; chỉ dùng câu “100% chính xác” khi điểm thực sự hoàn hảo. Privacy disclosure tiếp tục ẩn trong UI Speaking; module không ghi/lưu file audio.
+- Score badge/ring ở cả hai mode: xanh 70–100%, vàng 40–69%, đỏ 0–39%. Typing chỉ đạt với `result.perfect` (100%); Speaking đạt từ 70%, bật Next nhưng không tự chuyển. Speech target/result frame theo tier.
+- `te-dict-translation-toggle` nằm bên phải nút video, dùng chung màu/class active với bóng đèn và nhãn EN/VI/KO. Mặc định tắt theo panel; bật luôn hiện bản dịch câu hiện tại và tải khi thiếu.
+- Thông báo pass được dịch EN/VI/KO; chỉ câu 100% mới nói “100% chính xác”. Privacy disclosure vẫn ẩn; module không lưu file audio.
 - Toggle đồng bộ progress mặc định bật và lưu `dictation:progress-sync:v1`. Khi tắt, Speaking/Typing giữ snapshot riêng trong `progressByMode`; bật lại hợp các câu đã giải. Notes, translations và error stats vẫn dùng chung.
 - Scoring contraction chỉ dùng allowlist; không mở rộng sang slang. Reporting bỏ missing, target 1–3 chữ cái, proper nouns và punctuation-only differences; errors/fixes đều phải đạt eligibility.
 - `wrongWordStats` schema v3 ghi lỗi eligible, biến thể, ngữ cảnh và nhóm heuristic (âm vị/quy tắc/typo); đây là gợi ý, không khẳng định ý định. Migration reset schema cũ nhưng giữ notes/progress/translations.
@@ -41,5 +42,5 @@ Dictation luyện caption tiếng Anh từ YouTube trong overlay/player hiện c
 
 ## 5. Kiểm tra và xác minh
 
-- Static v3.4.916 từ source v3.4.915: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, boundary color/typing/Next assertions, docs structure/length và `git diff --check` đạt; chưa browser-test.
+- Static v3.4.917 từ source v3.4.916: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, translation toggle on/off/loading/localization assertions và mock states, docs structure/length và `git diff --check` đạt; chưa browser-test.
 - Browser cần xác nhận typing/speaking (gồm các biên 70/40/39 và Next không tự chuyển), recognition/permission, progress/reload, overlay modes, notes, translations, stats và cleanup trên Chrome/Edge/Firefox. Chưa thực hiện trong lần cập nhật này.
