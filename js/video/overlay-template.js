@@ -835,6 +835,10 @@ const OVERLAY_CSS = `
       }
       #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
     }
+    /* Reading view size controls the center transcript frame; default is M = 40vw. */
+    #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { flex: 0 0 30vw; width: 30vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { flex: 0 0 40vw; width: 40vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { flex: 0 0 50vw; width: 50vw !important; }
 
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
@@ -1093,6 +1097,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
 
           <!-- Chế độ xem -->
           <div class="te-setting-section-title">Kích cỡ xem</div>
+          <div id="te-reading-width-hint" style="display: none; padding: 0 20px 8px; color: #6b7280; font-size: 12px; text-align: center;">Độ rộng khung phụ đề giữa: 40% màn hình</div>
           <div id="te-view-mode-options" style="padding: 0 20px 14px 20px;">
             <div class="te-btn-group">
               <button class="te-btn-subopt" style="padding: 10px 0;">
@@ -1278,7 +1283,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           </div>
 
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px 20px;">
-            <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề video</span>
+            <span id="te-video-subtitle-settings-title" style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề video</span>
           </div>
 
           <div class="te-card-box" style="margin-bottom: 10px;">

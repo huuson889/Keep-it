@@ -93,6 +93,8 @@
     theme: "dark",
     size: "M",
     readingMode: false,
+    readingViewSize: "M",
+    readingSubtitle: { en: { pct: 100, color: null }, vi: { pct: 90, color: null } },
     splitSentences: true,
     hideControls: false,
     ambient: true,

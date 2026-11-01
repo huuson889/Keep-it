@@ -31,9 +31,16 @@ const THEME_DEFAULT_HEX = {
   light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
   dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },
 };
+function isReadingModeActive() {
+  return Boolean(overlayEl()?.classList.contains('te-reading-mode'));
+}
+function activeVideoSubtitleSettings() {
+  return isReadingModeActive() ? settings.readingSubtitle : settings.sub;
+}
 function defaultColorFor(group) {
   const theme = settings?.theme === 'dark' ? 'dark' : 'light';
-  return THEME_DEFAULT_HEX[theme][group] || DEFAULT_HEX[group];
+  const defaultGroup = !group.startsWith('side-') && isReadingModeActive() ? `side-${group}` : group;
+  return THEME_DEFAULT_HEX[theme][defaultGroup] || DEFAULT_HEX[defaultGroup] || DEFAULT_HEX[group];
 }
 
 let pendingDictationShortcut = false;
@@ -989,6 +996,12 @@ function mergeSettings(d, s) {
       en: { ...d.side.en, ...(s.side?.en || {}) },
       vi: { ...d.side.vi, ...(s.side?.vi || {}) },
     },
+    readingSubtitle: {
+      ...d.readingSubtitle,
+      ...(s.readingSubtitle || {}),
+      en: { ...d.readingSubtitle.en, ...(s.readingSubtitle?.en || {}) },
+      vi: { ...d.readingSubtitle.vi, ...(s.readingSubtitle?.vi || {}) },
+    },
   };
 }
 
@@ -1080,7 +1093,7 @@ async function restoreTemporaryTranslationPopup() {
 
 // Trả về nhóm màu/cỡ chữ: 'en'|'vi' (phụ đề chính) hoặc 'side-en'|'side-vi' (phụ đề thanh bên)
 function groupRef(g) {
-  return g.startsWith('side-') ? settings.side[g.slice(5)] : settings.sub[g];
+  return g.startsWith('side-') ? settings.side[g.slice(5)] : activeVideoSubtitleSettings()[g];
 }
 
 function setOrRemove(el, prop, val) {
@@ -1095,9 +1108,10 @@ function saveSettings() {
 function updateSidebarTranscriptFontSize(root) {
   if (!root) return;
   if (root.classList.contains('te-reading-mode')) {
-    // Reading mode shows transcript on screen, so use the video-subtitle sizes.
-    root.style.setProperty('--te-side-en', `${24 * settings.sub.en.pct / 100}px`);
-    root.style.setProperty('--te-side-vi', `${24 * settings.sub.vi.pct / 100}px`);
+    // Preserve the v3.4.904 Reading defaults (18px / 16.2px), with shared scale and Reading-only controls.
+    const sharedScale = settings.sub.en.pct / 100;
+    root.style.setProperty('--te-side-en', (18 * sharedScale * settings.readingSubtitle.en.pct / 100) + 'px');
+    root.style.setProperty('--te-side-vi', (18 * sharedScale * settings.readingSubtitle.vi.pct / 100) + 'px');
     return;
   }
   const sideFontBase = settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
@@ -1114,9 +1128,10 @@ function applySettings() {
   root.classList.toggle('theme-light', settings.theme !== 'dark');
   root.classList.toggle('te-controls-hidden', !!settings.hideControls);
   root.classList.toggle('hide-vi', isVietnameseHidden());
-  root.classList.toggle('size-s', settings.size === 'S');
-  root.classList.toggle('size-m', settings.size === 'M');
-  root.classList.toggle('size-l', settings.size !== 'S' && settings.size !== 'M');
+  const viewSize = root.classList.contains('te-reading-mode') ? (settings.readingViewSize || 'M') : settings.size;
+  root.classList.toggle('size-s', viewSize === 'S');
+  root.classList.toggle('size-m', viewSize === 'M');
+  root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
   updateSidebarTranscriptFontSize(root);
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
   setOrRemove(root, '--te-side-vi-color', settings.side.vi.color);
@@ -1127,8 +1142,8 @@ function applySettings() {
   setOrRemove(root, '--te-subtitle-font-family', fam);
   setOrRemove(root, '--te-subtitle-en-weight', settings.sub.bold ? '700' : '');
   setOrRemove(root, '--te-subtitle-vi-weight', settings.sub.bold ? '600' : '');
-  setOrRemove(root, '--te-reading-en-color', settings.sub.en.color || defaultColorFor('en'));
-  setOrRemove(root, '--te-reading-vi-color', settings.sub.vi.color || defaultColorFor('vi'));
+  setOrRemove(root, '--te-reading-en-color', settings.readingSubtitle.en.color || defaultColorFor('side-en'));
+  setOrRemove(root, '--te-reading-vi-color', settings.readingSubtitle.vi.color || defaultColorFor('side-vi'));
   enEl.style.fontSize = settings.sub.en.pct === 100 ? '' : `calc(24px * ${settings.sub.en.pct / 100})`;
   viEl.style.fontSize = settings.sub.vi.pct === 100 ? '' : `calc(24px * ${settings.sub.vi.pct / 100})`;
   enEl.style.fontWeight = settings.sub.bold ? '700' : '';
@@ -1153,13 +1168,23 @@ function applySettings() {
   const presetIdx = PRESET_VALUES.indexOf(settings.sub.en.pct);
   groups[0].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === presetIdx));
   groups[1].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === (settings.sub.bold ? 1 : 0)));
-  const sizeIdx = { S: 0, M: 1, L: 2 }[settings.size] ?? 2;
+  const modalViewSize = isReadingModeActive() ? (settings.readingViewSize || 'M') : settings.size;
+  const sizeIdx = { S: 0, M: 1, L: 2 }[modalViewSize] ?? 1;
   $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
+  const readingWidthHint = $('te-reading-width-hint');
+  if (readingWidthHint) {
+    const width = { S: 30, M: 40, L: 50 }[modalViewSize] ?? 40;
+    readingWidthHint.style.display = isReadingModeActive() ? '' : 'none';
+    readingWidthHint.textContent = `Độ rộng khung phụ đề giữa: ${width}% màn hình`;
+  }
   sub.querySelector('select').value = settings.sub.font || 'Inter';
+  const videoSubSettings = activeVideoSubtitleSettings();
+  const videoSubtitleTitle = $('te-video-subtitle-settings-title');
+  if (videoSubtitleTitle) videoSubtitleTitle.textContent = isReadingModeActive() ? 'Phụ đề video · Chế độ đọc' : 'Phụ đề video';
 
   const counters = sub.querySelectorAll('.te-counter-btn');
-  counters[0].nextElementSibling.textContent = settings.sub.en.pct + '%';
-  counters[2].nextElementSibling.textContent = settings.sub.vi.pct + '%';
+  counters[0].nextElementSibling.textContent = videoSubSettings.en.pct + '%';
+  counters[2].nextElementSibling.textContent = videoSubSettings.vi.pct + '%';
   ['en', 'vi'].forEach((k) => {
     const minus = sub.querySelector(`.te-counter-btn[data-group="side-${k}"][data-delta="-10"]`);
     if (minus) minus.nextElementSibling.textContent = settings.side[k].pct + '%';
@@ -1196,7 +1221,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
     }
   }
   root.classList.toggle('te-reading-mode', active);
-  updateSidebarTranscriptFontSize(root);
+  applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   return active;
 }
@@ -2839,7 +2864,8 @@ function bindUI() {
 
   $('te-view-mode-options').querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
-      settings.size = b.dataset.size;
+      if (isReadingModeActive()) settings.readingViewSize = b.dataset.size;
+      else settings.size = b.dataset.size;
       saveSettings();
       applySettings();
     });
@@ -2847,7 +2873,8 @@ function bindUI() {
 
   const counters = modalSub.querySelectorAll('.te-counter-btn'); // [EN -, EN +, VI -, VI +]
   const bindCounter = (btn, g, delta) => btn.addEventListener('click', () => {
-    settings.sub[g].pct = Math.min(200, Math.max(50, settings.sub[g].pct + delta));
+    const videoSubSettings = activeVideoSubtitleSettings();
+    videoSubSettings[g].pct = Math.min(200, Math.max(50, videoSubSettings[g].pct + delta));
     saveSettings();
     applySettings();
   });
@@ -2886,8 +2913,10 @@ function bindUI() {
 
   // Đặt lại (nút ở góc phải tiêu đề menu phụ đề)
   modalSub.querySelector('.te-modal-header button:last-child').addEventListener('click', () => {
-    settings.sub = defaultSettings().sub;
-    settings.side = defaultSettings().side;
+    const defaults = defaultSettings();
+    settings.sub = defaults.sub;
+    settings.side = defaults.side;
+    settings.readingSubtitle = defaults.readingSubtitle;
     saveSettings();
     applySettings();
   });
