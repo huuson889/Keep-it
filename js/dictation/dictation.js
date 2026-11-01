@@ -1559,6 +1559,7 @@
 
     const label = (key) => {
       const node = document.createElement("span");
+      node.dataset.dictLabel = key;
       node.textContent = tr(key);
       return node;
     };

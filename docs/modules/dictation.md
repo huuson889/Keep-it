@@ -25,7 +25,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 3. Bản dịch mặc định ẩn; nút hiện dịch giữ bản dịch câu hiện tại và yêu cầu dịch nếu chưa có.
 4. Progress, notes, translations, title và `wrongWordStats` lưu trong `dictation:<videoId>`; session index chỉ bổ sung metadata.
 5. Nút mic khởi động SpeechRecognition sau thao tác người dùng. Đóng panel, đổi câu/mode hoặc video dừng recognition và dọn listener/timer.
-6. Đổi `lhnSettings.language` cập nhật các nhãn, placeholder, trợ năng và trạng thái đang hiển thị ngay trong panel đã mở, không dựng lại panel hoặc xóa câu trả lời/tiến độ.
+6. Đổi `lhnSettings.language` cập nhật nhãn, placeholder, trợ năng, nhãn trong các thẻ `.te-dict-stats-word` và trạng thái đang hiển thị ngay trong panel đã mở, không dựng lại panel hoặc xóa câu trả lời/tiến độ.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
