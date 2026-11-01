@@ -258,13 +258,15 @@
       console.warn("Could not update Dictation session summary", error);
     }
   }
+  const DICTATION_COLUMN_LAYOUT_PREFS_VERSION = 2;
+  const PREVIOUS_RIGHT_COLUMN_DEFAULT = 0.30;
   const DICTATION_COLUMN_RATIOS = Object.freeze({
     leftMin: 0.15,
     leftDefault: 0.25,
     leftMax: 0.30,
     centerMin: 0.35,
     rightMin: 0.20,
-    rightDefault: 0.30,
+    rightDefault: 0.25,
     rightMax: 0.35,
   });
   const dictationLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
@@ -282,9 +284,15 @@
           const stored = result?.[dictationLayoutStorageKey];
           if (!stored || typeof stored !== "object") return;
           const leftScale = Number(stored.leftScale);
-          const rightScale = Number(stored.rightScale);
+          let rightScale = Number(stored.rightScale);
           if (Number.isFinite(leftScale)) dictationLayoutPrefs.leftScale = clampDictationColumn(leftScale, DICTATION_COLUMN_RATIOS.leftMin / DICTATION_COLUMN_RATIOS.leftDefault, DICTATION_COLUMN_RATIOS.leftMax / DICTATION_COLUMN_RATIOS.leftDefault);
-          if (Number.isFinite(rightScale)) dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
+          if (Number.isFinite(rightScale)) {
+            const storedVersion = Number(stored.version) || 1;
+            if (storedVersion < DICTATION_COLUMN_LAYOUT_PREFS_VERSION && rightScale !== 1) {
+              rightScale *= PREVIOUS_RIGHT_COLUMN_DEFAULT / DICTATION_COLUMN_RATIOS.rightDefault;
+            }
+            dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
+          }
           dictationLayoutPrefs.leftHidden = stored.leftHidden === true;
           dictationLayoutPrefs.rightHidden = stored.rightHidden === true;
         } catch (error) {
@@ -298,7 +306,7 @@
   function persistDictationLayoutPrefs() {
     try {
       const result = ext.storage.local.set({
-        [dictationLayoutStorageKey]: { version: 1, ...dictationLayoutPrefs },
+        [dictationLayoutStorageKey]: { version: DICTATION_COLUMN_LAYOUT_PREFS_VERSION, ...dictationLayoutPrefs },
       });
       result?.catch?.((error) => console.warn("Could not save Dictation column layout", error));
     } catch (error) {

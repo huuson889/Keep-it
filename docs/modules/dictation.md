@@ -39,9 +39,10 @@ Dictation luyện caption tiếng Anh từ YouTube trong overlay/player hiện c
 - Scoring contraction chỉ dùng allowlist; không mở rộng sang slang. Reporting bỏ missing, target 1–3 chữ cái, proper nouns và punctuation-only differences; errors/fixes đều phải đạt eligibility.
 - `wrongWordStats` schema v3 ghi lỗi eligible, biến thể, ngữ cảnh và nhóm heuristic (âm vị/quy tắc/typo); đây là gợi ý, không khẳng định ý định. Migration reset schema cũ nhưng giữ notes/progress/translations.
 - Proper-noun hint giữ original case/thứ tự, bỏ trùng và ẩn khi không có tên; từ đầu tiên sau ranh giới câu không bị coi là tên riêng chỉ vì viết hoa.
-- Giữ layout 3 cột và split ratio đã lưu; title ưu tiên mini-title đang hiện. Session index lỗi hoặc cũ không được chặn/ghi đè record Dictation hợp lệ.
+- Bố cục Dictation mặc định theo video:khu vực học:ghi chú = 25:50:25, có splitter 8px và center minimum 35%; cho phép left 15–30%, right 20–35%. Tùy chỉnh cột lưu theo scale. Khi nạp preference v1, quy đổi `rightScale` khác 1 theo 30/25 để giữ bề rộng tùy chỉnh tuyệt đối khi đổi default; scale 1 nhận default mới. Lưu mới theo prefs v2.
+- Giữ title ưu tiên mini-title đang hiện. Session index lỗi hoặc cũ không được chặn/ghi đè record Dictation hợp lệ.
 
 ## 5. Kiểm tra và xác minh
 
 - Static v3.4.917 từ source v3.4.916: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, translation toggle on/off/loading/localization assertions và mock states, docs structure/length và `git diff --check` đạt; chưa browser-test.
-- Browser cần xác nhận typing/speaking (gồm các biên 70/40/39 và Next không tự chuyển), recognition/permission, progress/reload, overlay modes, notes, translations, stats và cleanup trên Chrome/Edge/Firefox. Chưa thực hiện trong lần cập nhật này.
+- Browser cần xác nhận typing/speaking (gồm các biên 70/40/39 và Next không tự chuyển), recognition/permission, progress/reload, overlay modes, notes, translations, stats, layout mặc định 25:50:25, giữ kích thước custom khi nạp preference cũ và cleanup trên Chrome/Edge/Firefox.
