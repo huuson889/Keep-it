@@ -816,9 +816,11 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay .te-dict-mode-control:hover { border-color: #f59e0b; }
 #keepit-exact-overlay.te-dict-speaking-mode .te-dict-answer-stack { display: none !important; }
-#keepit-exact-overlay .te-dict-speech-practice { display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+#keepit-exact-overlay .te-dict-speech-practice { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
 #keepit-exact-overlay .te-dict-speech-practice[hidden],
 #keepit-exact-overlay .te-dict-speech-result-wrap[hidden] { display: none !important; }
+#keepit-exact-overlay .te-dict-speech-controls-spacer { flex: 0 0 146px; width: 100%; height: 146px; }
+#keepit-exact-overlay .te-dict-speech-controls { position: absolute; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; height: 146px; }
 #keepit-exact-overlay .te-dict-speech-target {
   display: flex; width: 100%; min-height: 72px; align-items: center; justify-content: center;
   padding: 14px 18px; border: 1px solid rgba(245,158,11,.48); border-radius: 14px;
@@ -851,9 +853,9 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-mic svg { width: 24px; height: 24px; }
 #keepit-exact-overlay .te-dict-speech-mic.listening { background: #ef4444; color: #fff; box-shadow: 0 0 0 8px rgba(239,68,68,.14); animation: te-dict-mic-pulse 1.25s ease-in-out infinite; }
 #keepit-exact-overlay .te-dict-speech-mic:disabled { opacity: .5; cursor: not-allowed; }
-#keepit-exact-overlay .te-dict-speech-help { margin: 0; color: #6b7280; font-size: 12px; font-weight: 700; text-align: center; }
-#keepit-exact-overlay .te-dict-speech-privacy { max-width: 440px; margin: 0; color: #9ca3af; font-size: 10px; line-height: 1.4; text-align: center; }
-#keepit-exact-overlay .te-dict-speech-status { min-height: 16px; color: #6b7280; font-size: 11px; text-align: center; }
+#keepit-exact-overlay .te-dict-speech-help { height: 14px; margin: 0; color: #6b7280; font-size: 12px; font-weight: 700; line-height: 14px; text-align: center; }
+#keepit-exact-overlay .te-dict-speech-privacy { height: 14px; max-width: 440px; margin: 0; visibility: hidden; color: #9ca3af; font-size: 10px; line-height: 14px; text-align: center; white-space: nowrap; overflow: hidden; }
+#keepit-exact-overlay .te-dict-speech-status { flex: 0 0 16px; height: 16px; min-height: 16px; overflow: hidden; color: #6b7280; font-size: 11px; line-height: 16px; text-align: center; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-status { color: #a1a1aa; }
 @keyframes te-dict-mic-pulse { 50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); } }
 @media (prefers-reduced-motion: reduce) { #keepit-exact-overlay .te-dict-speech-mic.listening { animation: none; } }

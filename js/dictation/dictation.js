@@ -665,12 +665,15 @@
               <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
               <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
             </div>
-            <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
-              ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
-            </button>
-            <p class="te-dict-speech-help" id="te-dict-speech-help" data-dict-label="dictationSpeakHelp"></p>
-            <p class="te-dict-speech-privacy" data-dict-label="dictationSpeakPrivacy"></p>
-            <div class="te-dict-speech-status" id="te-dict-speech-status" role="status" aria-live="polite"></div>
+            <div class="te-dict-speech-controls-spacer" aria-hidden="true"></div>
+            <div class="te-dict-speech-controls">
+              <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
+                ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
+              </button>
+              <p class="te-dict-speech-help" id="te-dict-speech-help" data-dict-label="dictationSpeakHelp"></p>
+              <p class="te-dict-speech-privacy" data-dict-label="dictationSpeakPrivacy"></p>
+              <div class="te-dict-speech-status" id="te-dict-speech-status" role="status" aria-live="polite"></div>
+            </div>
           </div>
           <div class="te-dict-answer-stack">
             <div class="te-dict-proper-noun-hint" id="te-dict-proper-noun-hint" role="note" aria-live="polite" hidden></div>
