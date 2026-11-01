@@ -29,7 +29,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Không tạo overlay thứ hai; chỉ dùng cue tiếng Anh. UI dùng `--lhn-app-font-family`; phụ đề/transcript giữ font riêng.
+- Không tạo overlay thứ hai; chỉ dùng cue tiếng Anh và tái dùng player cùng `.te-dict-brand` duy nhất từ video overlay. UI dùng `--lhn-app-font-family`; phụ đề/transcript giữ font riêng.
 - Auto-record runtime, mặc định bật; start 2 giây sau cue/repeat cuối. Auto one-shot chốt tại browser `onend`, không VAD/timer im lặng. Off hoặc Enter/mic giữ manual flow; Typing không đổi.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop, tự ẩn 6s/Enter; EN/KO inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync mặc định bật tại `dictation:progress-sync:v1`; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.

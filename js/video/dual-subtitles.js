@@ -1381,6 +1381,9 @@ function buildOverlay() {
   document.body.appendChild(host);
   shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
+  const brandIcon = ui('.te-dict-brand img');
+  const runtime = globalThis.browser || globalThis.chrome;
+  if (brandIcon && runtime?.runtime?.getURL) brandIcon.src = runtime.runtime.getURL('assets/icons/icon.svg');
   overlayEl().classList.add('te-hidden');
   bindUI();
   refreshVideoUiLocalization();

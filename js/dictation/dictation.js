@@ -672,7 +672,8 @@
     const groups = bar?.querySelectorAll(".te-ctrl-group");
     const primaryGroup = groups?.[0];
     const videoSlot = left?.querySelector(".te-video-slot");
-    if (!root || !left || !bar || !primaryGroup || !videoSlot) return;
+    const brand = videoSlot?.querySelector(".te-dict-brand");
+    if (!root || !left || !bar || !primaryGroup || !videoSlot || !brand) return;
     ensureStyle(root);
 
     const compactAudio = document.createElement("div");
@@ -685,23 +686,6 @@
       <div class="te-dict-spectrum" aria-hidden="true">${Array.from({ length: 5 }, () => '<span></span>').join("")}</div>
       <button class="te-dict-mini-play" type="button"><span class="te-dict-mini-play-icon">${makeSvg('<path d="M8 5v14l11-7z"/>')}</span></button>`;
     videoSlot.appendChild(compactAudio);
-
-    const brand = document.createElement("div");
-    brand.className = "te-dict-brand";
-    brand.setAttribute("role", "img");
-    brand.setAttribute("aria-label", "Keepit");
-    const brandIcon = document.createElement("img");
-    brandIcon.src = ext.runtime.getURL("assets/icons/icon.svg");
-    brandIcon.alt = "";
-    brandIcon.setAttribute("aria-hidden", "true");
-    const brandSeparator = document.createElement("span");
-    brandSeparator.className = "te-dict-brand-separator";
-    brandSeparator.textContent = "-";
-    const brandName = document.createElement("span");
-    brandName.className = "te-dict-brand-name";
-    brandName.textContent = "Keepit";
-    brand.append(brandIcon, brandSeparator, brandName);
-    videoSlot.appendChild(brand);
 
     const sentenceArea = document.createElement("section");
     sentenceArea.id = "te-dict-sentence-area";
@@ -3531,7 +3515,6 @@
     if (originalVideoHeight.value) ui.videoSlot.style.setProperty("height", originalVideoHeight.value, originalVideoHeight.priority);
     else ui.videoSlot.style.removeProperty("height");
     ui.compactAudio.remove();
-    ui.brand.remove();
     for (const [button, original] of ui.originalButtonState) {
       button.disabled = original.disabled;
       if (original.aria === null) button.removeAttribute("aria-disabled");

@@ -23,7 +23,7 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 3. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API` cho Dictation; caption mới phát `lhn-dual-captions-updated`.
 4. Đổi `lhnSettings.language` làm mới nhãn overlay/Dictation; `lhnStudyTranslationSettings` vẫn quản lý ngôn ngữ subtitle.
 5. Selection dịch/từ điển chỉ áp dụng cho `.te-sub-en`/`.yt-dual-item-en`; dòng dịch/UI không mở popup, selection ngoài overlay giữ nguyên.
-6. Reading-only `te-dict-video-toggle` cạnh X đổi hình video thành mini audio bar; play/pause điều khiển cùng video.
+6. Reading: toggle cạnh X đổi video/mini-audio; play/pause cùng player. Một `.te-dict-brand` dùng chung cho Reading/Dictation expanded.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -33,7 +33,7 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Bốn mode subtitle (song ngữ, nguồn, dịch, ẩn) và ba mode video (rạp, đọc, kết hợp) tiếp tục dùng trạng thái hiện có; các shortcut không chạy khi focus ở input/editable.
-- Nút `te-dict-video-toggle` của video Reading chỉ bật trong `.te-reading-mode`; mini audio bar chỉ ẩn hình video, giữ nguyên player và reset trạng thái khi rời mode.
+- Reading-only toggle giữ player và reset khi rời mode. `.te-dict-brand` duy nhất được dùng chung với Dictation, không tạo/xóa bản sao.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
