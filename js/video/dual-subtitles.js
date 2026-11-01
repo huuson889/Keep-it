@@ -1714,17 +1714,10 @@ function ambientMode() {
   return settings.ambient === false || settings.ambientStyle === 'off' ? 'off' : '3';
 }
 function syncAmbientUi() {
-  const enabled = ambientMode() !== 'off';
-  const stateKey = enabled ? 'videoAmbientOn' : 'videoAmbientOff';
-  const label = $('te-ambient-label');
-  if (label) label.textContent = videoT(stateKey);
   const toggle = $('te-ambient-toggle');
-  if (toggle) {
-    toggle.checked = enabled;
-    toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
-  }
-  const toggleLabel = $('te-ambient-toggle-label');
-  if (toggleLabel) toggleLabel.textContent = videoT(stateKey);
+  if (!toggle) return;
+  toggle.checked = ambientMode() !== 'off';
+  toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
 }
 function setAmbientMode(mode) {
   if (mode !== 'off' && mode !== '3') return;
@@ -2825,7 +2818,6 @@ function bindUI() {
     });
   };
   nav('open-sub-modal', modalSub, 'back-sub');
-  nav('open-ambient-modal', $('te-modal-ambient'), 'back-ambient');
   $('te-ambient-toggle')?.addEventListener('change', (event) => setAmbientMode(event.currentTarget.checked ? '3' : 'off'));
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');

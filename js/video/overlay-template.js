@@ -1317,13 +1317,13 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
           </div>
 
-          <!-- Ambient mode -->
-          <div class="te-menu-row" id="open-ambient-modal">
+          <!-- Ambient art mode: direct on/off switch, like the control-bar visibility switch. -->
+          <div class="te-menu-row">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
               <span>Ambient mode</span>
             </div>
-            <div class="te-menu-right"><span id="te-ambient-label">Tắt</span> <span>›</span></div>
+            <label class="te-switch"><input id="te-ambient-toggle" type="checkbox" role="switch" aria-label="Ambient mode"><span class="te-slider"></span></label>
           </div>
           
           <div class="te-divider"></div>
@@ -1390,24 +1390,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <button class="te-speed-btn" type="button" data-speed="1.25">1.25x</button>
         <button class="te-speed-btn" type="button" data-speed="1.5">1.5x</button>
         <button class="te-speed-btn" type="button" data-speed="2.0">2.0x</button>
-      </div>
-    </div>
-
-    <!-- Modal: Ambient mode -->
-    <div class="te-modal-backdrop hidden" id="te-modal-ambient">
-      <div class="te-modal-box">
-        <div class="te-modal-header" style="border-bottom: none; padding-bottom: 4px;">
-          <button class="te-modal-back" id="back-ambient">
-            <span class="te-modal-back-icon">‹</span>
-            <span>Ambient mode</span>
-          </button>
-        </div>
-        <div class="te-modal-body" style="padding-top: 0;">
-          <div class="te-setting-item" style="padding: 12px 20px;">
-            <span id="te-ambient-toggle-label">Tắt</span>
-            <label class="te-switch"><input id="te-ambient-toggle" type="checkbox" role="switch" aria-label="Ambient mode"><span class="te-slider"></span></label>
-          </div>
-        </div>
       </div>
     </div>
 

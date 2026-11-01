@@ -33,12 +33,12 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Giữ bốn subtitle mode và ba video mode; Reading S/M/L dùng video/giữa = 32/35%, 26/45%, 20/60%. Nhãn VI `videoMedium` là “Vừa”; shortcut bỏ qua input/editable.
-- Reading toggle giữ player, reset khi rời mode. `.te-dict-brand` dùng chung với Dictation, scale theo rộng khung video. Ambient hiển thị “Chế độ nghệ thuật”, chỉ bật/tắt; bật dùng Ambient 3.
+- Reading toggle giữ player, reset khi rời mode. `.te-dict-brand` dùng chung Dictation, scale theo chiều rộng video. Ambient “Chế độ nghệ thuật” có switch trực tiếp trong menu; bật dùng Ambient 3.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading ratios, brand scale, ambient label/switch/Ambient 3, toggle trước X/mini play, CSS và `git diff --check`.
+- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading ratios, brand scale, ambient direct toggle/Ambient 3, toggle X/mini-play, CSS và `git diff --check`.
 - Mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection thông thường vẫn qua luồng hiện có. Kiểm tra storage change cập nhật nhãn video và Dictation mà không reset trạng thái panel.
 - Browser QA: Reading toggle cạnh X, video/audio và play/pause, responsive/theme, reset khi rời mode; mode khác, popup selection, language changes, generic page selection. Static checks không thay browser test.
