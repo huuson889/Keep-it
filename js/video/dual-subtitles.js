@@ -2625,6 +2625,11 @@ function bindUI() {
     }
   };
   settingsBtn.addEventListener('click', toggleMain);
+  $('te-notes-sidebar-toggle').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('lhn-sidebar-edge-toggle')?.click();
+  });
   floatingBtn.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
