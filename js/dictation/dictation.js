@@ -1645,6 +1645,7 @@
   function setScore(percent) {
     if (!ui) return;
     const has = Number.isFinite(percent);
+    ui.root.classList.toggle("te-dict-answer-stack-pending", !has || percent < 100);
     ui.score.textContent = has ? `${percent}%` : "---";
     ui.toolbarScore.textContent = `${has ? percent : 0}%`;
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
