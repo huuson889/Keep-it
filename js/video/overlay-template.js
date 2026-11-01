@@ -247,7 +247,7 @@ const OVERLAY_CSS = `
     .te-video-mode-menu {
       position: absolute; left: 50%; right: auto; bottom: calc(100% + 10px); z-index: 1000003;
       transform: translateX(-50%);
-      display: grid; gap: 0; width: min(278px, calc(100vw - 24px)); padding: 6px;
+      display: grid; gap: 0; width: min(214px, calc(100vw - 24px)); padding: 6px;
       border: 1px solid #27272a; border-radius: 12px; background: #18181b;
       color: #f3f4f6; box-shadow: 0 20px 35px rgba(0,0,0,.7);
     }
@@ -266,6 +266,14 @@ const OVERLAY_CSS = `
     .te-video-mode-option.is-selected { background: rgba(128,128,128,.12); }
     .te-video-mode-option.is-selected svg { color: #fbbf24; }
     #keepit-exact-overlay.theme-light .te-video-mode-option.is-selected svg { color: #b45309; }
+    .te-video-mode-option .te-video-mode-label { flex: 1; }
+    .te-video-mode-option kbd {
+      min-width: 20px; padding: 2px 5px; border: 1px solid #525252; border-radius: 5px;
+      background: rgba(255,255,255,.06); color: #d4d4d4; font: inherit; font-size: 11px; line-height: 1.3; text-align: center;
+    }
+    #keepit-exact-overlay.theme-light .te-video-mode-option kbd {
+      border-color: #d1d5db; background: #f9fafb; color: #6b7280;
+    }
     .te-video-mode-trigger svg { display: block; width: 18px; height: 18px; }
 
     .te-icon-btn.lhn-br-key-press,
@@ -912,7 +920,7 @@ const OVERLAY_CSS = `
     .te-subtitle-mode-menu {
       position: absolute; left: 50%; right: auto; bottom: calc(100% + 10px); z-index: 1000004;
       transform: translateX(-50%);
-      display: grid; gap: 2px; width: min(204px, calc(100vw - 24px)); padding: 6px;
+      display: grid; gap: 2px; width: min(170px, calc(100vw - 24px)); padding: 6px;
       border: 1px solid #27272a; border-radius: 12px; background: #18181b;
       color: #f3f4f6; box-shadow: 0 20px 35px rgba(0,0,0,.7);
     }
@@ -1000,7 +1008,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           <button class="te-icon-btn" id="te-dictation-mode-btn" title="Chép chính tả" aria-label="Chép chính tả" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap preview-icon" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></button>
           <div class="te-subtitle-mode-selector">
             <button class="te-icon-btn" id="te-subtitle-mode-trigger" type="button" title="Chế độ phụ đề" aria-label="Chế độ phụ đề: Song ngữ" aria-haspopup="menu" aria-expanded="false">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-closed-caption preview-icon" aria-hidden="true"><path d="M10 9.17a3 3 0 1 0 0 5.66"/><path d="M17 9.17a3 3 0 1 0 0 5.66"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
             </button>
             <div class="te-subtitle-mode-menu" id="te-subtitle-mode-menu" role="menu" hidden>
               <button class="te-subtitle-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-subtitle-mode="bilingual">
@@ -1028,15 +1036,15 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <div class="te-video-mode-menu" id="te-video-mode-menu" role="menu" hidden>
               <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="theater">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
-                <span class="te-video-mode-label">Chế độ rạp</span>
+                <span class="te-video-mode-label">Chế độ rạp</span><kbd>Alt+1</kbd>
               </button>
               <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="reading">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
-                <span class="te-video-mode-label">Chế độ đọc</span>
+                <span class="te-video-mode-label">Chế độ đọc</span><kbd>Alt+2</kbd>
               </button>
               <button class="te-video-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-video-mode="combined">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M12 4v16M12 9h9"/></svg>
-                <span class="te-video-mode-label">Chế độ kết hợp</span>
+                <span class="te-video-mode-label">Chế độ kết hợp</span><kbd>Alt+3</kbd>
               </button>
             </div>
           </div>

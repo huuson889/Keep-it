@@ -2731,6 +2731,7 @@ function bindUI() {
       event.stopPropagation();
       applyVideoDisplayMode(option.dataset.videoMode);
       setVideoDisplayModeMenuOpen(false);
+      videoModeTrigger?.focus();
     });
   });
   videoModeSelector?.addEventListener('keydown', (event) => {
@@ -2944,6 +2945,21 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   });
   document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
+  // Alt+1–3 chuyển chế độ xem theo thứ tự menu, trừ khi focus đang ở vùng nhập văn bản.
+  window.addEventListener('keydown', (event) => {
+    if (!state.open || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
+    const modes = { '1': 'theater', '2': 'reading', '3': 'combined' };
+    const mode = modes[event.key];
+    if (!mode) return;
+    const realTarget = event.composedPath?.()[0] || event.target;
+    if (realTarget?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]') || realTarget?.isContentEditable) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const menuWasOpen = $('te-video-mode-menu')?.hidden === false;
+    applyVideoDisplayMode(mode);
+    setVideoDisplayModeMenuOpen(false);
+    if (menuWasOpen) $('te-video-mode-trigger')?.focus();
+  }, true);
   // 1–4 chọn trực tiếp kiểu phụ đề, trừ khi focus đang ở vùng nhập văn bản.
   window.addEventListener('keydown', (event) => {
     const modes = { '1': 'bilingual', '2': 'primary', '3': 'translation', '4': 'hidden' };
