@@ -1267,20 +1267,8 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
 
-          <div class="te-setting-section-title">Chế độ rạp</div>
-          <div class="te-card-box">
-            <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-              <span style="font-size: 13.5px; color: #374151;">Màu phụ đề chính</span>
-              <span class="te-color-pill" style="background: #ccff00;"></span>
-            </div>
-            <div class="te-setting-item">
-              <span style="font-size: 13.5px; color: #374151;">Màu phụ đề dịch</span>
-              <span class="te-color-pill" style="background: #ffffff; border: 1px solid #d1d5db;"></span>
-            </div>
-          </div>
-
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px 20px;">
-            <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Chế độ Rạp chiếu phim</span>
+            <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề video</span>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
 

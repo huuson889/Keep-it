@@ -27,6 +27,14 @@ const FONT_STACKS = {
 const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
 const PAUSE_PATH = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
+const THEME_DEFAULT_HEX = {
+  light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
+  dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },
+};
+function defaultColorFor(group) {
+  const theme = settings?.theme === 'dark' ? 'dark' : 'light';
+  return THEME_DEFAULT_HEX[theme][group] || DEFAULT_HEX[group];
+}
 
 let pendingDictationShortcut = false;
 let pendingDictationOpenImmediately = false;
@@ -1150,9 +1158,10 @@ function applySettings() {
   sub.querySelectorAll('.te-color-pill').forEach((pill, i) => {
     const g = pill.dataset.group || ['en', 'vi', 'en', 'vi'][i];
     const color = groupRef(g).color;
-    pill.style.background = color || pill.dataset.defaultBg;
+    const defaultColor = defaultColorFor(g);
+    pill.style.background = color || defaultColor;
     const picker = pill.querySelector('input');
-    if (picker) picker.value = color || DEFAULT_HEX[g];
+    if (picker) picker.value = color || defaultColor;
   });
 }
 
@@ -2852,12 +2861,11 @@ function bindUI() {
   const pillGroup = ['en', 'vi', 'en', 'vi'];
   pills.forEach((pill, i) => {
     const g = pill.dataset.group || pillGroup[i];
-    pill.dataset.defaultBg = pill.style.background;
     pill.style.position = 'relative';
     const picker = document.createElement('input');
     picker.type = 'color';
     picker.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;';
-    picker.value = groupRef(g).color || DEFAULT_HEX[g];
+    picker.value = groupRef(g).color || defaultColorFor(g);
     picker.addEventListener('input', () => {
       groupRef(g).color = picker.value;
       saveSettings();
