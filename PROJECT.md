@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.928; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.929; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
-- Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%. Speaking v3.4.928: Enter bắt đầu/dừng nhận diện và ghi âm, dừng sẽ phát lại giọng người dùng rồi chấm; Enter sau pass chuyển câu; Escape hiện đáp án và phát cue video, Escape lần hai reset; audio chỉ tạm trong memory, không lưu/upload bởi Keepit. Bố cục video:khu vực học:ghi chú mặc định 25:50:25; `te-dict-stats-host` tăng font theo quy tắc ≤10px +2px, >10px +1px.
+- Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%. Speaking v3.4.929: repeat mặc định 0 lần bổ sung, video dừng trong lúc ghi/phát bản ghi, Escape phát cue đúng một lần; audio chỉ tạm trong memory. Bố cục video:khu vực học:ghi chú mặc định 25:50:25; `te-dict-stats-host` tăng font theo quy tắc ≤10px +2px, >10px +1px.
 - Video: selection chỉ từ transcript ngôn ngữ chính được mở popup dịch/Full Dict; nhãn overlay và Dictation cập nhật ngay khi đổi `lhnSettings.language`. Font UI dùng `--lhn-app-font-family`; font phụ đề/transcript tùy chỉnh giữ nguyên.
-- Static/release verification v3.4.928 đạt: 56 JS `node --check`, manifest/version, Speaking/privacy/message/docs assertions, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
+- v3.4.929 static/release checks đạt: 56 JS `node --check`, mode-specific repeat assertions, video-pause/Escape-one-play assertions, docs 643 từ/đúng cấu trúc, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
@@ -115,6 +115,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-01 | v3.4.929 | Arena.ai Agent sửa:**
+
+- Chỉ Speaking: mặc định 0 lần lặp bổ sung (cue ban đầu phát một lần), giá trị lặp tách khỏi Typing; khi thu/phát bản ghi thì video pause; Escape phát cue đúng một lần.
+- File: `js/dictation/dictation.js`, `docs/modules/dictation.md`, `README.md`, `manifest.json`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.929.zip`.
+- Kiểm tra: 56 JS `node --check`, mode-specific repeat assertions, video-pause/Escape-one-play assertions, docs 643 từ/đúng cấu trúc, `git diff --check` và ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
 
 **2026-11-01 | v3.4.928 | Arena.ai Agent sửa:**
 

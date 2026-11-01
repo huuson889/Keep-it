@@ -53,6 +53,7 @@
   let rafId = 0;
   let repeatLeft = 0;
   let repeatCount = 3;
+  let speakingRepeatCount = 0;
   let hintResult = null;
   let savedRate = null;
   let savedLoop = null;
@@ -189,7 +190,7 @@
         listEnd = 0;
         renderInitialRows();
         renderCurrent();
-        if (sentenceCues[current]) playSentence(current, { count: repeatCount + 1 });
+        if (sentenceCues[current]) playSentence(current, { count: getRepeatCount() + 1 });
       } else {
         updateCounter();
         updateRows();
@@ -1044,6 +1045,7 @@
       clearRecordedSpeech();
     }
     dictationMode = mode;
+    syncRepeatButtons();
     A?.setPreferredLearningMode?.(mode);
     if (swapProgress) applyModeProgress(mode);
     if (ui) {
@@ -1074,7 +1076,7 @@
       listEnd = 0;
       renderInitialRows();
       renderCurrent();
-      if (sentenceCues[current]) playSentence(current, { count: repeatCount + 1 });
+      if (sentenceCues[current]) playSentence(current, { count: getRepeatCount() + 1 });
       void saveRecord();
     }
   }
@@ -1211,8 +1213,15 @@
     return true;
   }
 
+  function pauseVideoForSpeech() {
+    endPlayback();
+    const video = attachedVideo || A?.state?.videoEl;
+    video?.pause();
+  }
+
   function playRecordedSpeech(url) {
     if (!url || typeof globalThis.Audio !== "function") return Promise.resolve(false);
+    pauseVideoForSpeech();
     return new Promise((resolve) => {
       let settled = false;
       let player;
@@ -1327,6 +1336,7 @@
     speechAnswerRevealed = false;
     clearRecordedSpeech();
     speechRecordingDiscard = false;
+    pauseVideoForSpeech();
     speechRecognitionError = "";
     ui.input.value = "";
     setSpeechTargetState("practice");
@@ -1456,9 +1466,20 @@
 
   function refocus() { focusInputIfTyping(); }
 
+  function getRepeatCount() {
+    return dictationMode === "speaking" ? speakingRepeatCount : repeatCount;
+  }
+
+  function syncRepeatButtons() {
+    const count = getRepeatCount();
+    ui?.repeatBtns.forEach((button) => button.classList.toggle("active", Number(button.dataset.count) === count));
+  }
+
   function setRepeat(count) {
-    repeatCount = Math.max(0, Math.min(3, count | 0));
-    ui?.repeatBtns.forEach((button) => button.classList.toggle("active", Number(button.dataset.count) === repeatCount));
+    const value = Math.max(0, Math.min(3, count | 0));
+    if (dictationMode === "speaking") speakingRepeatCount = value;
+    else repeatCount = value;
+    syncRepeatButtons();
   }
 
   function updateCompactAudioInfo() {
@@ -2158,7 +2179,7 @@
     renderCurrent();
     void saveRecord();
     prepareCue();
-    playSentence(index, { count: repeatCount + 1 });
+    playSentence(index, { count: getRepeatCount() + 1 });
     focusInputIfTyping();
   }
 
@@ -2737,7 +2758,7 @@
       renderCurrent();
       void saveRecord();
     }
-    const count = options.count ?? (repeatCount + 1);
+    const count = options.count ?? (getRepeatCount() + 1);
     if (count < 1) return;
     endPlayback();
     if (options.rate) {
@@ -2755,6 +2776,12 @@
   // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
   function onVideoPlay() {
     updateCompactAudioPlaybackState();
+    if (active && dictationMode === "speaking" && (speechStartPending || speechRecognition || speechStopRequested || speechPlaybackAudio)) {
+      endPlayback();
+      attachedVideo?.pause();
+      updateCompactAudioPlaybackState();
+      return;
+    }
     if (!active || !attachedVideo) return;
     const cue = sentenceCues[current];
     if (!cue) return;
@@ -2970,7 +2997,7 @@
       renderSpeechResult(cue.en);
       setSpeechTargetState("correct");
       ui.speechStatus.textContent = tr("dictationSpeakAnswerRevealed");
-      playSentence(current, { count: repeatCount + 1 });
+      playSentence(current, { count: 1 });
       return;
     }
     speechAnswerRevealed = false;
@@ -2995,7 +3022,7 @@
       && !event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing && event.keyCode !== 229 && !noteFocused) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (event.repeat || speechStopRequested) return;
+      if (event.repeat || speechStopRequested || speechPlaybackAudio) return;
       if (speechStartPending) {
         void toggleSpeechRecognition();
         return;
@@ -3166,7 +3193,7 @@
     renderInitialRows();
     renderCurrent();
     setCaptionStatus("");
-    playSentence(current, { count: repeatCount + 1 });
+    playSentence(current, { count: getRepeatCount() + 1 });
     void saveRecord();
     focusInputIfTyping();
   }
@@ -3299,7 +3326,7 @@
       renderInitialRows();
       renderCurrent();
       setCaptionStatus("");
-      playSentence(current, { count:repeatCount + 1 });
+      playSentence(current, { count:getRepeatCount() + 1 });
       void saveRecord();
       focusInputIfTyping();
       return;

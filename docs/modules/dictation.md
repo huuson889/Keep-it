@@ -22,7 +22,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, g
 
 1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation lấy English cues và dùng chung player. Caption đến muộn qua `lhn-dual-captions-updated`.
 2. Typing chỉ pass khi `result.perfect`; Speaking pass từ 70%, bật Next nhưng không tự chuyển. Tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
-3. Speaking: Enter hoặc mic bắt đầu nhận diện/ghi âm; Enter lần nữa dừng, phát bản ghi người dùng rồi chấm transcript. Recognition có thể tự khởi động lại sau khi browser kết thúc một phiên tạm thời. Sai thì retry; Escape phát cue video và hiện đáp án, Escape tiếp reset; Enter sau khi hiện đáp án chấm 100%, Enter kế chuyển câu.
+3. Speaking: mặc định 0 lần lặp bổ sung (cue ban đầu vẫn phát một lần), tách khỏi repeat của Typing. Enter hoặc mic bắt đầu nhận diện/ghi âm; Enter lần nữa dừng, phát bản ghi người dùng rồi chấm transcript. Video dừng khi bắt đầu thu và trong lúc phát lại bản ghi. Recognition có thể tự khởi động lại sau phiên browser tạm thời. Sai thì retry; Escape phát cue video đúng một lần và hiện đáp án, Escape tiếp reset; Enter sau khi hiện đáp án chấm 100%, Enter kế chuyển câu.
 4. `dictation:<videoId>` lưu progress, notes, translations, title và `wrongWordStats`; session index chỉ bổ sung metadata. Audio không nằm trong record.
 5. Mic access chỉ được xin sau thao tác người dùng. Browser SpeechRecognition/provider có thể xử lý audio theo cài đặt riêng. Nếu MediaRecorder/recording không khả dụng, vẫn thử SpeechRecognition và báo không thể phát lại. Đóng panel, đổi câu/mode hoặc reset dừng recognition/tracks, dọn playback và revoke Blob URL.
 6. Bản dịch mặc định ẩn; đổi `lhnSettings.language` cập nhật nhãn/placeholder/aria-label và `.te-dict-stats-word` tại chỗ, không dựng lại panel hoặc xóa state.
@@ -36,7 +36,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, g
 - Contraction chỉ qua allowlist. Không thống kê missing, proper nouns, target 1–3 ký tự hoặc lỗi chỉ khác dấu câu. `wrongWordStats` schema v3 là heuristic; migration giữ notes/progress/translations.
 - Proper-noun hint giữ case/thứ tự, bỏ trùng; viết hoa đầu câu không tự thành tên riêng.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo và migration rightScale v1 sang preference v2.
-- Chunks/Blob URL chỉ tạm thời trong runtime; giải phóng khi reset, đổi câu/mode hoặc đóng panel. Typing keyboard và scoring không đổi.
+- Chunks/Blob URL chỉ tạm thời trong runtime; giải phóng khi reset, đổi câu/mode hoặc đóng panel. Repeat count có state riêng theo mode; Typing mặc định/keyboard/scoring không đổi.
 
 ## 5. Kiểm tra và xác minh
 
