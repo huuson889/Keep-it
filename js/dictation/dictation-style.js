@@ -473,7 +473,7 @@ globalThis.LHN_DICTATION_CSS = `
   flex-direction: column;
   gap: 12px;
   overflow: auto;
-  padding: 14px clamp(12px, 2vw, 28px);
+  padding: 6px clamp(12px, 2vw, 14px);
 }
 #keepit-exact-overlay .te-dict-acc { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; font-size: 12px; }
 #keepit-exact-overlay .te-dict-acc-label::after { content: ":"; }
