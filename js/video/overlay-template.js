@@ -967,6 +967,8 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-subtitle-mode-translation .te-sub-vi,
     #keepit-exact-overlay.te-subtitle-mode-translation .yt-dual-item-vi { display: block !important; }
     #keepit-exact-overlay.te-subtitle-mode-hidden .te-sub-container { display: none !important; }
+    #keepit-exact-overlay.te-reading-mode .te-sidebar-subtitle-settings,
+    #keepit-exact-overlay.te-sidebar-hidden .te-sidebar-subtitle-settings { display: none !important; }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
@@ -1082,7 +1084,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <div class="te-modal-body">
 
           <!-- Chế độ xem -->
-          <div class="te-setting-section-title">Chế độ xem</div>
+          <div class="te-setting-section-title">Kích cỡ xem</div>
           <div id="te-view-mode-options" style="padding: 0 20px 14px 20px;">
             <div class="te-btn-group">
               <button class="te-btn-subopt" style="padding: 10px 0;">
@@ -1269,7 +1271,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
 
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px 20px;">
             <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề video</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
 
           <div class="te-card-box" style="margin-bottom: 10px;">
@@ -1302,37 +1303,39 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px 20px;">
-            <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề thanh bên</span>
-          </div>
+          <div class="te-sidebar-subtitle-settings">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px 20px;">
+              <span style="font-size: 13px; font-weight: 500; color: #6b7280;">Phụ đề thanh bên</span>
+            </div>
 
-          <div class="te-card-box" style="margin-bottom: 10px;">
-            <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-              <span style="font-size: 13.5px;">Kích thước chính</span>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="te-counter-btn" data-group="side-en" data-delta="-10">-</button>
-                <span style="font-size: 13px; font-weight: 500; min-width: 42px; text-align: center;">100%</span>
-                <button class="te-counter-btn" data-group="side-en" data-delta="10">+</button>
+            <div class="te-card-box" style="margin-bottom: 10px;">
+              <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+                <span style="font-size: 13.5px;">Kích thước chính</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button class="te-counter-btn" data-group="side-en" data-delta="-10">-</button>
+                  <span style="font-size: 13px; font-weight: 500; min-width: 42px; text-align: center;">100%</span>
+                  <button class="te-counter-btn" data-group="side-en" data-delta="10">+</button>
+                </div>
+              </div>
+              <div class="te-setting-item">
+                <span style="font-size: 13.5px;">Màu phụ đề chính</span>
+                <span class="te-color-pill" data-group="side-en" style="background: #e5e7eb;"></span>
               </div>
             </div>
-            <div class="te-setting-item">
-              <span style="font-size: 13.5px;">Màu phụ đề chính</span>
-              <span class="te-color-pill" data-group="side-en" style="background: #e5e7eb;"></span>
-            </div>
-          </div>
 
-          <div class="te-card-box">
-            <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-              <span style="font-size: 13.5px;">Kích thước dịch</span>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="te-counter-btn" data-group="side-vi" data-delta="-10">-</button>
-                <span style="font-size: 13px; font-weight: 500; min-width: 42px; text-align: center;">90%</span>
-                <button class="te-counter-btn" data-group="side-vi" data-delta="10">+</button>
+            <div class="te-card-box">
+              <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+                <span style="font-size: 13.5px;">Kích thước dịch</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button class="te-counter-btn" data-group="side-vi" data-delta="-10">-</button>
+                  <span style="font-size: 13px; font-weight: 500; min-width: 42px; text-align: center;">90%</span>
+                  <button class="te-counter-btn" data-group="side-vi" data-delta="10">+</button>
+                </div>
               </div>
-            </div>
-            <div class="te-setting-item">
-              <span style="font-size: 13.5px;">Màu phụ đề dịch</span>
-              <span class="te-color-pill" data-group="side-vi" style="background: #9ca3af;"></span>
+              <div class="te-setting-item">
+                <span style="font-size: 13.5px;">Màu phụ đề dịch</span>
+                <span class="te-color-pill" data-group="side-vi" style="background: #9ca3af;"></span>
+              </div>
             </div>
           </div>
 
