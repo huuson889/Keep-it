@@ -16,25 +16,32 @@
 - Thư mục nguồn (Git repo, nơi sửa code): D:\Keepit\Keepit - Optimize Test\Keepit - Test
 - Thư mục zip: D:\Keepit\Keepit - Optimize Test
 
-## 4. Quy tắc làm việc
+## 4. Quy tắc làm việc - Phải luôn tuân thủ tuyệt đối
+**4.1. Cách thức làm**
 - Đầu mỗi phiên, đọc `AGENTS.md`; ưu tiên mục 1–4 và nhật ký mới trong `PROJECT.md`. Chỉ đọc phần liên quan trong `README.md` và `OPT-ARENA.md`.
-- Chỉ hỏi lại khi yêu cầu chưa rõ hoặc thiếu thông tin ảnh hưởng đến kết quả. Nếu yêu cầu chưa tối ưu, cảnh báo và đề xuất phương án tốt hơn.
-- Trước khi sửa, nêu version hiện tại, (mục tiêu, kết quả mong đợi và cách làm) mỗi đầu mục in đậm và gạch đầu dòng ngắn gọn tương ứng.
-- Phải phân biệt yêu cầu thảo luận và yêu cầu thực thi, người dùng đang hỏi nghĩa là đang thảo luận, không được thực thi, chỉ trả lời.
-- Chỉ đọc, sửa và kiểm tra những phần liên quan. Thay đổi tối thiểu, tái sử dụng code hiện có, không refactor ngoài phạm vi.
-- Giữ nguyên tính năng, UI và hành vi hiện tại. **Claude không được sửa UI nếu chưa được cho phép.** Agent khác cũng không tự ý thay đổi UI ngoài yêu cầu.
+- Phải tuân thủ tuyệt đối yêu cầu, không được làm khác.
+- Đọc lại các quy tắc ở mục 4 này mỗi lần nhận 1 yêu cầu.
+- Phải lấy đúng version được chọn để sửa, tuyệt đối không lấy version khác.
+- Hỏi lại khi yêu cầu chưa rõ yêu cầu. Nếu yêu cầu chưa tối ưu, cảnh báo và đề xuất phương án tốt hơn.
+- Người dùng đang hỏi nghĩa là đang thảo luận, không được thực thi, chỉ trả lời.
+- Chỉ đọc, sửa và kiểm tra phần yêu cầu. Thay đổi tối thiểu, tái sử dụng code hiện có, không refactor ngoài phạm vi.
+- Giữ nguyên tính năng, UI và hành vi hiện tại. Không tự ý thay đổi UI nếu không cho phép.
 - UI mới phải thống nhất với thiết kế hiện có. Label mới phải ngắn gọn, phù hợp UI/UX và được dịch sang mọi ngôn ngữ ứng dụng hỗ trợ.
-- Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
-- Các AI phải sử dụng skill phù hợp đã được quy định trước.
-- Chạy kiểm tra liên quan và báo đúng kết quả; không tuyên bố đã test nếu chưa chạy.
-- Phản hồi ngắn gọn, luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
+- Phải sử dụng skill phù hợp đã được quy định trước.
+- Chạy kiểm tra liên quan và báo đúng kết quả; tuyệt đối không tuyên bố đã test nếu chưa chạy.
 - Nếu thay đổi module, cấu trúc file hay luồng tương tác các module thì phải cập nhật vào mục 4. Cấu trúc và kiến trúc dự án file project.md
+- Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
+**4.1. Cách thức trả lời trên khung chat**
+- Các phản hồi phải ngắn gọn, đúng vấn đề, không được nói khi không làm.
+- Trước khi sửa, nêu version hiện tại lên khung chat, (mục tiêu, kết quả mong đợi và cách làm) mỗi đầu mục in đậm và gạch đầu dòng ngắn gọn tương ứng.
+- Trong lúc sửa, làm bước nào ghi ra màn hình bước đó.
+- Sau khi sửa, Phải luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
 
 
 ## 5. Quy trình sau khi sửa
 
 **5.1. Version**
-  - Với thay đổi phát hành của bất kỳ tác nhân nào (ví dụ Arena, Codex, Claude,...), tăng version trong manifest.json. Với file được lưu trực tiếp trong repo, sync-watch.ps1 tự commit và cập nhật lại ZIP của đúng version hiện tại, không tăng version.
+  - Với thay đổi phát hành của bất kỳ tác nhân nào (ví dụ Arena, Codex, Claude,...), luôn tăng version trong manifest.json. Với file được lưu trực tiếp trong repo, zip lại file đúng version hiện tại.
 
 **5.2. Cập nhật PROJECT.md**
   - Thêm mục mới vào đầu **mục nhật ký duy nhất** trong `PROJECT.md`, xếp theo thời gian mới nhất đến cũ nhất; không tạo bản sao của cùng nhật ký ở nhiều mục.
