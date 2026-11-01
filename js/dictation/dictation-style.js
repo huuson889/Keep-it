@@ -523,7 +523,7 @@ globalThis.LHN_DICTATION_CSS = `
   transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
 }
 #keepit-exact-overlay .te-dict-hints-toggle svg { width: 18px; height: 18px; }
-#keepit-exact-overlay .te-dict-hints-toggle.active { background: transparent; color: #fff; }
+#keepit-exact-overlay .te-dict-hints-toggle.active { background: transparent; color: #6b7280; }
 #keepit-exact-overlay .te-dict-hints-toggle:hover { border-color: #8b5cf6; background: rgba(139, 92, 246, .1); }
 #keepit-exact-overlay .te-dict-hints-toggle:active { transform: scale(.94); }
 #keepit-exact-overlay.theme-dark .te-dict-hints-toggle { border-color: #3f3f46; color: #71717a; }
