@@ -32,13 +32,13 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Bộ dịch UI chỉ tác động nhãn/thuộc tính của overlay, không dịch tiêu đề video, nội dung trang hoặc caption. Caption/transcript vẫn theo font và màu phụ đề tùy chỉnh; chữ điều khiển Keepit dùng `--lhn-app-font-family`.
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
-- Bốn mode subtitle (song ngữ, nguồn, dịch, ẩn) và ba mode video (rạp, đọc, kết hợp) tiếp tục dùng trạng thái hiện có; các shortcut không chạy khi focus ở input/editable.
+- Giữ bốn subtitle mode và ba video mode; Reading S/M/L dùng video/giữa = 32/35%, 26/45%, 20/60%. Nhãn VI `videoMedium` là “Vừa”; shortcut bỏ qua input/editable.
 - Reading-only toggle giữ player và reset khi rời mode. `.te-dict-brand` duy nhất được dùng chung với Dictation, không tạo/xóa bản sao.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --check` JS liên quan, parse manifest; kiểm tra EN/VI/KO, toggle trước X/chỉ hiện Reading, compact và mini play/pause, CSS, `git diff --check`.
+- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading S/M/L ratios, toggle trước X/mini play, CSS và `git diff --check`.
 - Mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection thông thường vẫn qua luồng hiện có. Kiểm tra storage change cập nhật nhãn video và Dictation mà không reset trạng thái panel.
 - Browser QA: Reading toggle cạnh X, video/audio và play/pause, responsive/theme, reset khi rời mode; mode khác, popup selection, language changes, generic page selection. Static checks không thay browser test.

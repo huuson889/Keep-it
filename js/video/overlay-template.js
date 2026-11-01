@@ -771,8 +771,8 @@ const OVERLAY_CSS = `
 
     /* Reading mode: compact video at left, full transcript in the center, controls across the bottom. */
     #keepit-exact-overlay.te-reading-mode .te-left-section {
-      flex: 0 0 27vw;
-      width: 27vw !important;
+      flex: 0 0 26vw;
+      width: 26vw !important;
       min-width: 0;
       box-sizing: border-box;
       position: static;
@@ -829,14 +829,8 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .te-floating-btn { display: none !important; }
     @media (max-width: 900px) {
       #keepit-exact-overlay.te-reading-mode .te-left-section {
-        flex-basis: 34vw;
-        width: 34vw !important;
         padding-right: 14px;
         padding-left: 12px;
-      }
-      #keepit-exact-overlay.te-reading-mode .yt-dual-right-sidebar {
-        flex-basis: 66vw;
-        width: 66vw !important;
       }
       #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
     }
@@ -989,9 +983,12 @@ const OVERLAY_CSS = `
     }
 
     /* Reading view: fixed viewport widths and independent centering for the transcript frame. */
+    #keepit-exact-overlay.te-reading-mode.size-s .te-left-section { flex-basis: 32vw; width: 32vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-m .te-left-section { flex-basis: 26vw; width: 26vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-l .te-left-section { flex-basis: 20vw; width: 20vw !important; }
     #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { left: 32.5vw; flex: 0 0 35vw; width: 35vw !important; }
     #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { left: 27.5vw; flex: 0 0 45vw; width: 45vw !important; }
-    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { left: 24vw; flex: 0 0 52vw; width: 52vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { left: 20vw; flex: 0 0 60vw; width: 60vw !important; }
 
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
