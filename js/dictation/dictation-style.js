@@ -854,13 +854,16 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-mic:hover { background: #fbbf24; transform: translateY(-1px); }
 #keepit-exact-overlay .te-dict-speech-mic svg { width: 24px; height: 24px; }
 #keepit-exact-overlay .te-dict-speech-mic.listening { background: #ef4444; color: #fff; box-shadow: 0 0 0 8px rgba(239,68,68,.14); animation: te-dict-mic-pulse 1.25s ease-in-out infinite; }
+#keepit-exact-overlay .te-dict-speech-mic.playing-recording,
+#keepit-exact-overlay .te-dict-speech-mic.playing-recording:hover { background: #10b981; color: #fff; box-shadow: 0 0 0 0 rgba(16,185,129,.4); animation: te-dict-mic-playback-pulse .9s ease-out infinite; }
 #keepit-exact-overlay .te-dict-speech-mic:disabled { opacity: .5; cursor: not-allowed; }
 #keepit-exact-overlay .te-dict-speech-help { display:none; height: 14px; margin: 0; color: #6b7280; font-size: 12px; font-weight: 700; line-height: 14px; text-align: center; }
 #keepit-exact-overlay .te-dict-speech-privacy { display: none !important; }
 #keepit-exact-overlay .te-dict-speech-status { flex: 0 0 16px; height: 16px; min-height: 16px; overflow: hidden; color: #6b7280; font-size: 11px; line-height: 16px; text-align: center; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-status { color: #a1a1aa; }
 @keyframes te-dict-mic-pulse { 50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); } }
-@media (prefers-reduced-motion: reduce) { #keepit-exact-overlay .te-dict-speech-mic.listening { animation: none; } }
+@keyframes te-dict-mic-playback-pulse { 70% { box-shadow: 0 0 0 12px rgba(16,185,129,0); } }
+@media (prefers-reduced-motion: reduce) { #keepit-exact-overlay .te-dict-speech-mic.listening, #keepit-exact-overlay .te-dict-speech-mic.playing-recording { animation: none; } }
 #keepit-exact-overlay .te-dict-toolbar-accuracy { display: inline-flex; align-items: center; gap: 8px; color: #6b7280; font-size: 11px; white-space: nowrap; }
 #keepit-exact-overlay .te-dict-acc-col { display: flex; flex-direction: column; line-height: 1.2; }
 #keepit-exact-overlay .te-dict-acc-col strong { color: #b45309; font-size: 13px; font-variant-numeric: tabular-nums; }

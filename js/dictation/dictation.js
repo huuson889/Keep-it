@@ -33,6 +33,7 @@
   let progressReady = false;
   let pendingCaptionStart = false;
   let captionStatusKey = "";
+  let captionControlsDisabled = false;
   let pendingResumeIndex = 0;
   let solved = new Set();
   let progressSyncEnabled = true;
@@ -1046,6 +1047,7 @@
     }
     dictationMode = mode;
     syncRepeatButtons();
+    updateSpeechCheckDisabled();
     A?.setPreferredLearningMode?.(mode);
     if (swapProgress) applyModeProgress(mode);
     if (ui) {
@@ -1064,7 +1066,7 @@
       setSpeechTargetState("practice");
       ui.speechMic.disabled = !sentenceCues[current];
       if (changed && speaking) {
-        ui.speechStatus.textContent = "";
+        setSpeechStatus("");
         ui.speechResult.replaceChildren();
         ui.speechResultWrap.hidden = true;
       }
@@ -1114,18 +1116,59 @@
     }
   }
 
+  function setSpeechStatus(messageKey = "") {
+    if (!ui?.speechStatus) return;
+    if (messageKey) {
+      ui.speechStatus.removeAttribute("data-dict-label");
+      ui.speechStatus.textContent = tr(messageKey);
+      return;
+    }
+    ui.speechStatus.dataset.dictLabel = "dictationSpeakReady";
+    ui.speechStatus.textContent = tr("dictationSpeakReady");
+  }
+
+  function updateSpeechCheckDisabled() {
+    if (!ui?.check) return;
+    const video = attachedVideo || A?.state?.videoEl;
+    const videoCuePlaying = stopAt >= 0 && !!video && !video.paused;
+    const speakingBusy = dictationMode === "speaking" && (
+      speechStartPending || !!speechRecognition || !!speechRecorder || !!speechRecordingStream
+      || speechStopRequested || !!speechPlaybackAudio || videoCuePlaying
+    );
+    ui.check.disabled = captionControlsDisabled || speakingBusy;
+  }
+
   function updateSpeechMicState(listening) {
     if (!ui?.speechMic) return;
     ui.speechMic.classList.toggle("listening", listening);
     ui.speechMic.setAttribute("aria-pressed", String(listening));
-    ui.speechMic.setAttribute("aria-label", tr(listening ? "dictationSpeakStop" : "dictationSpeakStart"));
-    ui.speechMic.title = tr(listening ? "dictationSpeakStop" : "dictationSpeakStart");
+    const labelKey = ui.speechMic.classList.contains("playing-recording")
+      ? "dictationSpeakPlayback" : listening ? "dictationSpeakStop" : "dictationSpeakStart";
+    ui.speechMic.setAttribute("aria-label", tr(labelKey));
+    ui.speechMic.title = tr(labelKey);
+    updateSpeechCheckDisabled();
+  }
+
+  function updateSpeechMicPlaybackState(playing) {
+    if (!ui?.speechMic) return;
+    const button = ui.speechMic;
+    button.classList.toggle("playing-recording", playing);
+    button.innerHTML = playing
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-audio-lines preview-icon" aria-hidden="true"><path d="M10 3v2.341"/><path d="M12 17v4"/><path d="M14 5v.341"/><path d="M18 5v13"/><path d="M2 10v3"/><path d="M22 10v3"/><path d="M6 6v11"/><path d="M9 21h6"/><rect width="4" height="8" x="10" y="9" rx="2"/></svg>'
+      : makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>');
+    const labelKey = playing ? "dictationSpeakPlayback"
+      : button.classList.contains("listening") ? "dictationSpeakStop" : "dictationSpeakStart";
+    button.setAttribute("aria-label", tr(labelKey));
+    button.title = tr(labelKey);
+    updateSpeechCheckDisabled();
   }
 
   function clearRecordedSpeech() {
     if (speechPlaybackAudio) {
-      try { speechPlaybackAudio.pause(); } catch {}
+      const player = speechPlaybackAudio;
       speechPlaybackAudio = null;
+      try { player.pause(); } catch {}
+      updateSpeechMicPlaybackState(false);
     }
     if (speechRecordingUrl) {
       try { globalThis.URL?.revokeObjectURL?.(speechRecordingUrl); } catch {}
@@ -1154,6 +1197,7 @@
         speechRecordingChunks = [];
         speechRecordingStopPromise = null;
         resolveSpeechRecordingStop = null;
+        updateSpeechCheckDisabled();
         return Promise.resolve("");
       }
     }
@@ -1197,6 +1241,7 @@
       speechRecordingStopPromise = null;
       resolveSpeechRecordingStop = null;
       resolve?.(url);
+      updateSpeechCheckDisabled();
     };
     try { recorder.start(); }
     catch {
@@ -1228,12 +1273,16 @@
       const finish = (played) => {
         if (settled) return;
         settled = true;
-        if (player && speechPlaybackAudio === player) speechPlaybackAudio = null;
+        if (player && speechPlaybackAudio === player) {
+          speechPlaybackAudio = null;
+          updateSpeechMicPlaybackState(false);
+        }
         resolve(played);
       };
       try {
         player = new Audio(url);
         speechPlaybackAudio = player;
+        updateSpeechMicPlaybackState(true);
         player.addEventListener("ended", () => finish(true), { once: true });
         player.addEventListener("error", () => finish(false), { once: true });
         player.addEventListener("pause", () => { if (!player.ended) finish(false); }, { once: true });
@@ -1295,39 +1344,39 @@
 
   async function toggleSpeechRecognition() {
     if (dictationMode !== "speaking") setDictationMode("speaking");
-    if (speechStopRequested) return;
+    if (speechStopRequested || speechPlaybackAudio) return;
     if (speechStartPending) {
       speechStartGeneration++;
       speechStartPending = false;
       updateSpeechMicState(false);
-      ui.speechStatus.textContent = "";
+      setSpeechStatus("");
       return;
     }
     if (speechRecognition) {
       speechStopRequested = true;
-      ui.speechStatus.textContent = tr("dictationSpeakProcessing");
+      setSpeechStatus("dictationSpeakProcessing");
       try { speechRecognition.stop(); }
       catch {
         speechStopRequested = false;
         stopSpeechRecognition(true);
-        ui.speechStatus.textContent = tr("dictationSpeakError");
+        setSpeechStatus("dictationSpeakError");
       }
       return;
     }
     const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition
       || globalThis.window?.SpeechRecognition || globalThis.window?.webkitSpeechRecognition;
     if (typeof Recognition !== "function") {
-      ui.speechStatus.textContent = tr("dictationSpeakUnsupported");
+      setSpeechStatus("dictationSpeakUnsupported");
       return;
     }
     const cue = sentenceCues[current];
     if (!cue?.en) {
-      ui.speechStatus.textContent = tr("dictationWaitingForCaptions");
+      setSpeechStatus("dictationWaitingForCaptions");
       return;
     }
     let recognition;
     try { recognition = new Recognition(); }
-    catch { ui.speechStatus.textContent = tr("dictationSpeakError"); return; }
+    catch { setSpeechStatus("dictationSpeakError"); return; }
 
     const attemptCurrent = current;
     const generation = ++speechStartGeneration;
@@ -1343,7 +1392,7 @@
     onAnswerInput();
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
-    ui.speechStatus.textContent = tr("dictationSpeakListening");
+    setSpeechStatus("dictationSpeakListening");
     updateSpeechMicState(true);
 
     let recordingAvailable = false;
@@ -1371,7 +1420,7 @@
     let interimText = "";
     speechRecognition = recognition;
     speechStartPending = false;
-    ui.speechStatus.textContent = recordingAvailable ? tr("dictationSpeakListening") : tr("dictationSpeakRecordingUnavailable");
+    setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
     recognition.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
       ? A.state.captionTrackLanguage : "en-US";
     recognition.continuous = true;
@@ -1400,7 +1449,7 @@
       if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
         speechStopRequested = true;
       }
-      if (speechRecognitionError && ui) ui.speechStatus.textContent = tr(speechRecognitionError);
+      if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
     };
     recognition.onend = async () => {
       if (speechRecognition !== recognition) return;
@@ -1408,7 +1457,7 @@
         && active && dictationMode === "speaking" && attemptCurrent === current) {
         try {
           recognition.start();
-          ui.speechStatus.textContent = recordingAvailable ? tr("dictationSpeakListening") : tr("dictationSpeakRecordingUnavailable");
+          setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
           updateSpeechMicState(true);
           return;
         } catch { speechRecognitionError = "dictationSpeakError"; }
@@ -1419,6 +1468,7 @@
       if (!active || dictationMode !== "speaking" || attemptCurrent !== current) {
         await stopSpeechRecording(true);
         speechStopRequested = false;
+        updateSpeechCheckDisabled();
         return;
       }
       if (!transcript) {
@@ -1428,16 +1478,19 @@
         }
         if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
           speechStopRequested = false;
+          updateSpeechCheckDisabled();
           return;
         }
-        if (!speechRecognitionError) ui.speechStatus.textContent = tr("dictationSpeakNoSpeech");
+        if (!speechRecognitionError) setSpeechStatus("dictationSpeakNoSpeech");
         speechStopRequested = false;
+        updateSpeechCheckDisabled();
         return;
       }
       const recordingUrl = await stopSpeechRecording(false);
       if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
         clearRecordedSpeech();
         speechStopRequested = false;
+        updateSpeechCheckDisabled();
         return;
       }
       ui.input.value = transcript;
@@ -1445,13 +1498,15 @@
       const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl) : false;
       if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
         speechStopRequested = false;
+        updateSpeechCheckDisabled();
         return;
       }
       const recordingFailed = !recordingUrl || !recordingAvailable || !recordingPlayed;
       speechStopRequested = false;
-      ui.speechStatus.textContent = "";
+      updateSpeechCheckDisabled();
+      setSpeechStatus("");
       submit();
-      if (recordingFailed) ui.speechStatus.textContent = tr("dictationSpeakRecordingUnavailable");
+      if (recordingFailed) setSpeechStatus("dictationSpeakRecordingUnavailable");
     };
     try { recognition.start(); }
     catch {
@@ -1460,7 +1515,7 @@
       speechStopRequested = false;
       updateSpeechMicState(false);
       void stopSpeechRecording(true);
-      ui.speechStatus.textContent = tr("dictationSpeakError");
+      setSpeechStatus("dictationSpeakError");
     }
   }
 
@@ -2109,8 +2164,9 @@
     ui.loadingStatus.textContent = message;
     ui.loadingStatus.hidden = !message;
     const disabled = keepControlsDisabled || !sentenceCues.length;
+    captionControlsDisabled = disabled;
     ui.input.disabled = disabled;
-    ui.check.disabled = disabled;
+    updateSpeechCheckDisabled();
     for (const button of [ui.btnPrev, ui.btnReplay, ui.btnSlow, ui.btnNext, ui.previous, ui.next, ui.replay]) {
       if (button) button.disabled = disabled;
     }
@@ -2159,7 +2215,7 @@
     ui.speechMic.disabled = !sentenceCues[current];
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
-    ui.speechStatus.textContent = "";
+    setSpeechStatus("");
     renderProperNounHint(sentenceCues[current]?.en || "");
     clearInputWrongMarks();
     ui.input.classList.remove("correct");
@@ -2642,7 +2698,7 @@
     if (isSpeaking) {
       setSpeechTargetState(tier === "pass" ? "correct" : tier === "warn" ? "warn" : "wrong");
       renderSpeechResult(ui.input.value);
-      ui.speechStatus.textContent = tier === "pass" ? "" : tr("dictationSpeakRetry");
+      setSpeechStatus(tier === "pass" ? "" : "dictationSpeakRetry");
     }
     const successLabel = ui.success.querySelector("[data-dict-label]");
     const successMessage = isSpeaking
@@ -2711,6 +2767,7 @@
     stopAt = -1;
     repeatLeft = 0;
     restoreRate();
+    updateSpeechCheckDisabled();
   }
 
   function finishCue() {
@@ -2767,6 +2824,7 @@
     }
     repeatLeft = count - 1;
     stopAt = Number(cue.end) || -1;
+    updateSpeechCheckDisabled();
     try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
     watchPlayback();
     const playing = video.play();
@@ -2785,7 +2843,7 @@
     if (!active || !attachedVideo) return;
     const cue = sentenceCues[current];
     if (!cue) return;
-    if (stopAt >= 0) { if (!rafId) watchPlayback(); return; }
+    if (stopAt >= 0) { if (!rafId) watchPlayback(); updateSpeechCheckDisabled(); return; }
     const time = attachedVideo.currentTime;
     if (time < cue.start - 0.05 || time >= cue.end - 0.03) {
       try { attachedVideo.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
@@ -2793,10 +2851,12 @@
     stopAt = Number(cue.end) || -1;
     repeatLeft = 0;
     watchPlayback();
+    updateSpeechCheckDisabled();
   }
 
   function onVideoPause() {
     updateCompactAudioPlaybackState();
+    updateSpeechCheckDisabled();
   }
 
   function onVideoTimeUpdate() {
@@ -2996,7 +3056,7 @@
       ui.input.value = cue.en;
       renderSpeechResult(cue.en);
       setSpeechTargetState("correct");
-      ui.speechStatus.textContent = tr("dictationSpeakAnswerRevealed");
+      setSpeechStatus("dictationSpeakAnswerRevealed");
       playSentence(current, { count: 1 });
       return;
     }
@@ -3007,7 +3067,7 @@
     setSpeechTargetState("practice");
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
-    ui.speechStatus.textContent = "";
+    setSpeechStatus("");
     prepareCue();
   }
 
