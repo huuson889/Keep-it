@@ -172,7 +172,7 @@ globalThis.LHN_DICTATION_CSS = `
 }
 #keepit-exact-overlay .te-dict-mini-audio {
   position: absolute;
-  inset: 0 12px;
+  inset: 0 4px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -254,7 +254,8 @@ globalThis.LHN_DICTATION_CSS = `
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: 10px 12px;
+  padding: 10px;
+  padding-right: 4px;
 }
 #keepit-exact-overlay.te-dictation-active .te-dict-sentence-footer {
   display: flex;
