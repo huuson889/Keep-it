@@ -685,12 +685,12 @@
               <div class="te-dict-input-markup" id="te-dict-input-markup" aria-hidden="true" hidden><div class="te-dict-input-markup-content" id="te-dict-input-markup-content"></div></div>
             </div>
             <div class="te-dict-hint" id="te-dict-hint"></div>
+            <div class="te-dict-translation-slot" id="te-dict-translation-slot"></div>
             <div class="te-dict-error" id="te-dict-error" hidden>
               <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
               <div class="te-dict-error-words" id="te-dict-error-words"></div>
             </div>
           </div>
-          <div class="te-dict-translation-slot" id="te-dict-translation-slot"></div>
         </div>
       </div>
       <div class="te-dict-footer">
