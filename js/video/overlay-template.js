@@ -784,9 +784,13 @@ const OVERLAY_CSS = `
     }
     #keepit-exact-overlay.te-reading-mode .te-sub-container { display: none !important; }
     #keepit-exact-overlay.te-reading-mode .yt-dual-right-sidebar {
+      position: absolute;
+      top: 0;
+      left: 27.5vw;
+      z-index: 2;
       display: flex !important;
-      flex: 0 0 46vw;
-      width: 46vw !important;
+      flex: 0 0 45vw;
+      width: 45vw !important;
       height: 100%;
       min-width: 0;
       box-sizing: border-box;
@@ -835,10 +839,10 @@ const OVERLAY_CSS = `
       }
       #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
     }
-    /* Reading view size controls the center transcript frame; default is M = 40vw. */
-    #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { flex: 0 0 30vw; width: 30vw !important; }
-    #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { flex: 0 0 40vw; width: 40vw !important; }
-    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { flex: 0 0 50vw; width: 50vw !important; }
+    /* Reading view: fixed viewport widths and independent centering for the transcript frame. */
+    #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { left: 32.5vw; flex: 0 0 35vw; width: 35vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { left: 27.5vw; flex: 0 0 45vw; width: 45vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { left: 22.5vw; flex: 0 0 55vw; width: 55vw !important; }
 
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
