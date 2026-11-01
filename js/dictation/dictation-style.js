@@ -855,7 +855,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-mic svg { width: 24px; height: 24px; }
 #keepit-exact-overlay .te-dict-speech-mic.listening { background: #ef4444; color: #fff; box-shadow: 0 0 0 8px rgba(239,68,68,.14); animation: te-dict-mic-pulse 1.25s ease-in-out infinite; }
 #keepit-exact-overlay .te-dict-speech-mic:disabled { opacity: .5; cursor: not-allowed; }
-#keepit-exact-overlay .te-dict-speech-help { height: 14px; margin: 0; color: #6b7280; font-size: 12px; font-weight: 700; line-height: 14px; text-align: center; }
+#keepit-exact-overlay .te-dict-speech-help { display:none; height: 14px; margin: 0; color: #6b7280; font-size: 12px; font-weight: 700; line-height: 14px; text-align: center; }
 #keepit-exact-overlay .te-dict-speech-privacy { display: none !important; }
 #keepit-exact-overlay .te-dict-speech-status { flex: 0 0 16px; height: 16px; min-height: 16px; overflow: hidden; color: #6b7280; font-size: 11px; line-height: 16px; text-align: center; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-status { color: #a1a1aa; }
