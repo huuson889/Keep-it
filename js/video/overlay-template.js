@@ -4,7 +4,7 @@ const OVERLAY_CSS = `
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
     }
 
     :host {
@@ -857,7 +857,7 @@ const OVERLAY_CSS = `
     }
 
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
-    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: Inter, "Segoe UI", sans-serif; }
+    #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif); }
     #te-speed-popup.hidden { display: none !important; }
     #te-speed-popup .te-speed-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     #te-speed-popup .te-speed-title { font-size: 16px; font-weight: 600; color: #1f2937; }
@@ -891,7 +891,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn:hover { background: #374151; }
     #keepit-exact-overlay.theme-dark #te-speed-popup .te-speed-btn.active { background: #FACC15; color: #000000; }
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
-    .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 14px; font-weight: 200; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
+    .te-speed-label { font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif); font-size: 14px; font-weight: 200; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
     #keepit-exact-overlay .yt-dual-item-en {
       font-size: var(--te-side-en, 18px); color: var(--te-side-en-color, #e5e7eb);

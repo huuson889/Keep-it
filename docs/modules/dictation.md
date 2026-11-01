@@ -30,6 +30,7 @@ Dictation luyện caption tiếng Anh từ YouTube trong overlay/player hiện c
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- UI Dictation trong Shadow DOM dùng font app `--lhn-app-font-family`; chip biến thể thống kê theo font UI, không ép monospace. Font phụ đề/transcript giữ theo tùy chọn riêng của video.
 - Không tạo overlay thứ hai; giữ cue English, `LHN_OVERLAY_API`, event hiện có và typing perfect-only.
 - Score badge/ring ở cả hai mode: xanh 70–100%, vàng 40–69%, đỏ 0–39%. Typing chỉ đạt với `result.perfect` (100%); Speaking đạt từ 70%, bật Next nhưng không tự chuyển. Speech target/result frame theo tier.
 - `te-dict-translation-toggle` nằm bên phải nút video, dùng chung màu/class active với bóng đèn và nhãn EN/VI/KO. Mặc định tắt theo panel; bật luôn hiện bản dịch câu hiện tại và tải khi thiếu.

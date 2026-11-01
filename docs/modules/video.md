@@ -27,6 +27,7 @@ Mô tả overlay Dual Subtitles trên YouTube: gắn player hiện có vào over
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Chữ giao diện Keepit trong Shadow DOM overlay dùng `--lhn-app-font-family`, gồm popup tốc độ và learning controls; phụ đề `.te-sub-en`/`.te-sub-vi` và transcript `.yt-dual-item-en`/`.yt-dual-item-vi` tiếp tục theo font tùy chỉnh của thiết lập phụ đề.
 - Giữ thứ tự nạp trong manifest: template → Dual Sub → các script Dictation.
 - Giới hạn logic overlay ở YouTube; `#yt-keepit-launcher` được chèn ngay sau `.ytp-fullscreen-button` bên trong `.ytp-right-controls`, hiển thị toàn bộ SVG logo Keepit 24×24 trong vùng ngang 48px/cao bằng controls và ẩn/hiện cùng nhóm controls. `MutationObserver` và `tick()` gắn lại nút nếu YouTube dựng lại nhóm này. Không đổi trạng thái hiển thị launcher theo `state.open`.
 - Video thật được chuyển tạm vào overlay; đường đóng/đổi video phải dọn listener và khôi phục video qua `detachVideo()`.
