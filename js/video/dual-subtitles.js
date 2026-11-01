@@ -823,9 +823,6 @@ function setVideoSidebarHidden(hidden) {
   if (!root) return false;
   const sidebarHidden = Boolean(hidden);
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
-  const button = ctrl('Bố cục');
-  button?.classList.toggle('te-active', sidebarHidden);
-  button?.setAttribute('aria-pressed', String(sidebarHidden));
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
@@ -1123,9 +1120,6 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   }
   root.classList.toggle('te-reading-mode', active);
   updateSidebarTranscriptFontSize(root);
-  const button = ctrl('Chế độ đọc');
-  button?.classList.toggle('te-active', active);
-  button?.setAttribute('aria-pressed', String(active));
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   return active;
 }
@@ -2657,10 +2651,6 @@ function bindUI() {
     ui('#te-speed-popup')?.classList.add('hidden');
   });
   ctrl('Audio').addEventListener('click', toggleMute);
-  ctrl('Chế độ đọc').addEventListener('click', () => {
-    const enabled = !root.classList.contains('te-reading-mode');
-    setVideoLearningMode(enabled, { persist: true });
-  });
   const videoModeSelector = $('te-video-mode-trigger')?.parentElement;
   const videoModeTrigger = $('te-video-mode-trigger');
   const videoModeMenu = $('te-video-mode-menu');
@@ -2691,9 +2681,6 @@ function bindUI() {
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
     e.currentTarget.classList.toggle('te-active', root.classList.contains('te-subs-hidden'));
-  });
-  ctrl('Bố cục').addEventListener('click', () => {
-    setVideoSidebarHidden(!root.classList.contains('te-sidebar-hidden'));
   });
   ctrl('Toàn màn hình').addEventListener('click', toggleFullscreen);
   ui('.te-progress-track').addEventListener('click', seekByTrack);
