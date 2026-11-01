@@ -1008,7 +1008,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           <button class="te-icon-btn" id="te-dictation-mode-btn" title="Chép chính tả" aria-label="Chép chính tả" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap preview-icon" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></button>
           <div class="te-subtitle-mode-selector">
             <button class="te-icon-btn" id="te-subtitle-mode-trigger" type="button" title="Chế độ phụ đề" aria-label="Chế độ phụ đề: Song ngữ" aria-haspopup="menu" aria-expanded="false">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-closed-caption preview-icon" aria-hidden="true"><path d="M10 9.17a3 3 0 1 0 0 5.66"/><path d="M17 9.17a3 3 0 1 0 0 5.66"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-closed-caption preview-icon" aria-hidden="true"><path d="M10 9.17a3 3 0 1 0 0 5.66"/><path d="M17 9.17a3 3 0 1 0 0 5.66"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
             </button>
             <div class="te-subtitle-mode-menu" id="te-subtitle-mode-menu" role="menu" hidden>
               <button class="te-subtitle-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-subtitle-mode="bilingual">
@@ -1124,15 +1124,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
           </div>
 
-          <!-- Ẩn bản dịch -->
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h12M10 7v11M14 12h6M17 12v6"/></svg>
-              <span>Ẩn bản dịch</span>
-            </div>
-            <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
-          </div>
-
           <!-- Ẩn thanh điều khiển -->
           <div class="te-menu-row">
             <div class="te-item-left">
@@ -1153,15 +1144,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           
           <div class="te-divider"></div>
           
-          <!-- Đánh dấu từ -->
-          <div class="te-menu-row" id="open-mark-modal">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 18h12M12 4L7 14h10z"/></svg>
-              <span>Đánh dấu từ</span>
-            </div>
-            <div class="te-menu-right"><span>Đánh dấu</span> <span>›</span></div>
-          </div>
-
           <!-- Chủ đề -->
           <div class="te-menu-row" id="toggle-theme-btn">
             <div class="te-item-left">
@@ -1182,27 +1164,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           
           <div class="te-divider"></div>
           
-          <!-- Bộ sưu tập -->
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 9h18M3 15h18"/></svg>
-              <span>Bộ sưu tập</span>
-            </div>
-            <div class="te-menu-right"><span>›</span></div>
-          </div>
-
-          <!-- Bộ dịch -->
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>
-              <span>Bộ dịch</span>
-            </div>
-            <div class="te-menu-right">
-              <span style="background:#eef2ff; color:#6366f1; border:1px solid #c7d2fe; font-size:10px; padding:1px 6px; border-radius:4px; font-weight:600;">New</span>
-              <span>›</span>
-            </div>
-          </div>
-
           <!-- Ngôn ngữ phụ đề -->
           <div class="te-menu-row" id="open-lang-modal">
             <div class="te-item-left">
@@ -1391,29 +1352,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       </div>
     </div>
 
-    <!-- Modal 3: Đánh dấu từ -->
-    <div class="te-modal-backdrop hidden" id="te-modal-mark">
-      <div class="te-modal-box">
-        <div class="te-modal-header">
-          <button class="te-modal-back" id="back-mark">
-            <span class="te-modal-back-icon">‹</span>
-            <span>Đánh dấu từ</span>
-          </button>
-        </div>
-        <div class="te-modal-body" style="padding: 12px 20px;">
-          <div style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">Các từ đã lưu sẽ được đánh dấu trong phụ đề.</div>
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06);">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="color: #10b981; font-weight: bold;">✓</span>
-              <div style="border: 1px solid #d1d5db; padding: 6px 14px; border-radius: 6px; font-weight: 600; color: #f97316;">Hello</div>
-            </div>
-            <span style="font-size: 13.5px;">Đánh dấu</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal 4: Ngôn ngữ phụ đề -->
+    <!-- Modal 3: Ngôn ngữ phụ đề -->
     <div class="te-modal-backdrop hidden" id="te-modal-lang">
       <div class="te-modal-box">
         <div class="te-modal-header" style="border-bottom: none;">
@@ -1450,7 +1389,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       </div>
     </div>
 
-    <!-- Modal 5: Xuất phụ đề (MỚI BỔ SUNG CHÍNH XÁC 100% THEO HÌNH MỚI) -->
+    <!-- Modal 4: Xuất phụ đề (MỚI BỔ SUNG CHÍNH XÁC 100% THEO HÌNH MỚI) -->
     <div class="te-modal-backdrop hidden" id="te-modal-export">
       <div class="te-modal-box">
         <div class="te-modal-header" style="border-bottom: none;">

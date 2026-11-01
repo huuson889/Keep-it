@@ -1126,8 +1126,7 @@ function applySettings() {
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
   if (mainSw[0]) mainSw[0].checked = translationPopupEnabled;
   if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
-  if (mainSw[3]) mainSw[3].checked = isVietnameseHidden();
-  if (mainSw[4]) mainSw[4].checked = settings.hideControls;
+  if (mainSw[3]) mainSw[3].checked = settings.hideControls;
   syncAmbientUi();
 
   // Đồng bộ menu "Tùy chọn phụ đề"
@@ -2490,7 +2489,6 @@ function bindUI() {
   const root = overlayEl();
   const modalMain = $('te-modal-main');
   const modalSub = $('te-modal-sub');
-  const modalMark = $('te-modal-mark');
   const modalLang = $('te-modal-lang');
   const modalExport = $('te-modal-export');
   const settingsBtn = $('te-settings-btn');
@@ -2565,7 +2563,6 @@ function bindUI() {
   nav('open-sub-modal', modalSub, 'back-sub');
   nav('open-ambient-modal', $('te-modal-ambient'), 'back-ambient');
   $('te-modal-ambient').querySelectorAll('.te-btn-subopt').forEach((btn) => btn.addEventListener('click', () => { if (!btn.disabled) setAmbientMode(btn.dataset.ambient); }));
-  nav('open-mark-modal', modalMark, 'back-mark');
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');
 
@@ -2661,8 +2658,7 @@ function bindUI() {
     saveSettings();
     rebuildCaptions();
   });
-  mainSw[3].addEventListener('change', (e) => setVietnameseHidden(e.target.checked));
-  mainSw[4].addEventListener('change', (e) => {
+  mainSw[3].addEventListener('change', (e) => {
     settings.hideControls = e.target.checked;
     saveSettings();
     applySettings();
