@@ -17,7 +17,6 @@
   let speechAutoRecordEnabled = true;
   let speechCueAutoStartPending = false;
   let speechAutoStartTimer = 0;
-  let speechSilenceTimer = 0;
   let speechAnswerRevealed = false;
   let speechRecorder = null;
   let speechRecordingStream = null;
@@ -1324,17 +1323,9 @@
     speechAutoStartTimer = 0;
   }
 
-  function clearSpeechSilenceTimer() {
-    if (speechSilenceTimer) clearTimeout(speechSilenceTimer);
-    speechSilenceTimer = 0;
-  }
-
   function setSpeechAutoRecordEnabled(enabled) {
     speechAutoRecordEnabled = Boolean(enabled);
-    if (!speechAutoRecordEnabled) {
-      clearSpeechAutoStartTimer();
-      clearSpeechSilenceTimer();
-    }
+    if (!speechAutoRecordEnabled) clearSpeechAutoStartTimer();
     updateSpeechAutoRecordControl();
     if (speechAutoRecordEnabled && speechCueAutoStartPending) scheduleSpeechAutoRecord();
   }
@@ -1358,7 +1349,7 @@
       }
       speechCueAutoStartPending = false;
       void toggleSpeechRecognition({ automatic: true });
-    }, 4000);
+    }, 2000);
   }
 
   function clearRecordedSpeech() {
@@ -1492,7 +1483,6 @@
   function stopSpeechRecognition(abort = true) {
     speechCueAutoStartPending = false;
     clearSpeechAutoStartTimer();
-    clearSpeechSilenceTimer();
     speechStartGeneration++;
     speechStartPending = false;
     speechStopRequested = false;
@@ -1500,8 +1490,6 @@
     speechRecognition = null;
     if (recognition) {
       recognition.onresult = null;
-      recognition.onspeechstart = null;
-      recognition.onspeechend = null;
       recognition.onerror = null;
       recognition.onend = null;
       try { abort ? recognition.abort() : recognition.stop(); } catch {}
@@ -1550,7 +1538,6 @@
       speechCueAutoStartPending = false;
       clearSpeechAutoStartTimer();
     }
-    clearSpeechSilenceTimer();
     if (dictationMode !== "speaking") setDictationMode("speaking");
     if (speechStopRequested || speechPlaybackAudio) return;
     if (speechStartPending) {
@@ -1631,28 +1618,9 @@
     setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
     recognition.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
       ? A.state.captionTrackLanguage : "en-US";
-    recognition.continuous = true;
+    recognition.continuous = !automatic;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
-    const scheduleSilenceStop = () => {
-      clearSpeechSilenceTimer();
-      if (!speechAutoRecordEnabled || speechRecognition !== recognition || speechStopRequested) return;
-      speechSilenceTimer = setTimeout(() => {
-        speechSilenceTimer = 0;
-        if (!speechAutoRecordEnabled || speechRecognition !== recognition || speechStopRequested
-          || ![finalText, interimText].filter(Boolean).join(" ").trim()) return;
-        speechStopRequested = true;
-        setSpeechStatus("dictationSpeakProcessing");
-        try { recognition.stop(); }
-        catch {
-          speechStopRequested = false;
-          stopSpeechRecognition(true);
-          setSpeechStatus("dictationSpeakError");
-        }
-      }, 3000);
-    };
-    recognition.onspeechstart = () => clearSpeechSilenceTimer();
-    recognition.onspeechend = scheduleSilenceStop;
     recognition.onresult = (event) => {
       const finals = [];
       const interims = [];
@@ -1664,7 +1632,6 @@
       }
       finalText = finals.join(" ").trim();
       interimText = interims.join(" ").trim();
-      if (speechSilenceTimer && (finalText || interimText).trim()) scheduleSilenceStop();
       renderSpeechResult([finalText, interimText].filter(Boolean).join(" "));
     };
     recognition.onerror = (event) => {
@@ -1676,13 +1643,13 @@
             : code === "aborted" ? "" : "dictationSpeakError";
       if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
         speechStopRequested = true;
-        clearSpeechSilenceTimer();
       }
       if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
     };
     recognition.onend = async () => {
       if (speechRecognition !== recognition) return;
-      if (!speechStopRequested && !["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)
+      if (!automatic && !speechStopRequested
+        && !["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)
         && active && dictationMode === "speaking" && attemptCurrent === current) {
         try {
           recognition.start();
@@ -1691,10 +1658,13 @@
           return;
         } catch { speechRecognitionError = "dictationSpeakError"; }
       }
-      clearSpeechSilenceTimer();
+      const transcript = (finalText || interimText).trim();
+      if (automatic && transcript && !speechStopRequested) {
+        speechStopRequested = true;
+        setSpeechStatus("dictationSpeakProcessing");
+      }
       speechRecognition = null;
       updateSpeechMicState(false);
-      const transcript = (finalText || interimText).trim();
       if (!active || dictationMode !== "speaking" || attemptCurrent !== current) {
         await stopSpeechRecording(true);
         speechStopRequested = false;
