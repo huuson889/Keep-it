@@ -835,23 +835,24 @@ const OVERLAY_CSS = `
       #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
     }
     /* One shared Keepit brand node: visible over the video in Reading and expanded Dictation modes. */
+    /* Brand dimensions scale with the rendered video-slot width; at 400px the current sizing is preserved. */
     #keepit-exact-overlay .te-dict-brand {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 3cqw;
+      left: 3cqw;
       z-index: 3;
       display: none;
       align-items: center;
-      gap: 5px;
-      max-width: calc(100% - 24px);
-      padding: 5px 9px 5px 6px;
-      border: 1px solid rgba(255, 255, 255, .18);
-      border-radius: 9px;
+      gap: 1.25cqw;
+      max-width: calc(100% - 6cqw);
+      padding: 1.25cqw 2.25cqw 1.25cqw 1.5cqw;
+      border: .25cqw solid rgba(255, 255, 255, .18);
+      border-radius: 2.25cqw;
       background: rgba(10, 13, 23, .72);
       color: #fff;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .24);
-      backdrop-filter: blur(8px);
-      font-size: 13px;
+      box-shadow: 0 .5cqw 2cqw rgba(0, 0, 0, .24);
+      backdrop-filter: blur(2cqw);
+      font-size: 3.25cqw;
       font-weight: 650;
       line-height: 1;
       pointer-events: none;
@@ -859,7 +860,7 @@ const OVERLAY_CSS = `
     }
     #keepit-exact-overlay.te-reading-mode:not(.te-reading-audio-compact) .te-dict-brand,
     #keepit-exact-overlay.te-dictation-active:not(.te-dict-video-compact) .te-dict-brand { display: flex; }
-    #keepit-exact-overlay .te-dict-brand img { display: block; flex: 0 0 20px; width: 20px; height: 20px; border-radius: 5px; object-fit: cover; }
+    #keepit-exact-overlay .te-dict-brand img { display: block; flex: 0 0 5cqw; width: 5cqw; height: 5cqw; border-radius: 1.25cqw; object-fit: cover; }
     #keepit-exact-overlay .te-dict-brand-separator { opacity: .78; font-weight: 500; }
 
     /* Reading-mode video ↔ mini-audio control (separate from Dictation's existing control). */
@@ -993,6 +994,7 @@ const OVERLAY_CSS = `
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */
     #keepit-exact-overlay .te-video-slot {
+      container-type: inline-size;
       flex: none;
       width: 100%;
       height: auto;
