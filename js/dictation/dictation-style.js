@@ -869,8 +869,20 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-practice { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; }
 #keepit-exact-overlay .te-dict-speech-practice[hidden],
 #keepit-exact-overlay .te-dict-speech-result-wrap[hidden] { display: none !important; }
-#keepit-exact-overlay .te-dict-speech-controls-spacer { flex: 0 0 100px; width: 100%; height: 146px; }
-#keepit-exact-overlay .te-dict-speech-controls { position: absolute; right: 0; bottom: -4px; left: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; height: 100px; }
+#keepit-exact-overlay .te-dict-speech-controls-spacer { flex: 0 0 132px; width: 100%; height: 132px; }
+#keepit-exact-overlay .te-dict-speech-controls { position: absolute; right: 0; bottom: -4px; left: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; height: 132px; }
+#keepit-exact-overlay .te-dict-speech-auto-toggle {
+  display: inline-flex; flex: none; height: 36px; box-sizing: border-box; align-items: center; justify-content: center; gap: 6px;
+  padding: 5px 10px; border: 1px solid #d4d4d8; border-radius: 999px; background: #fff; color: #52525b;
+  font: inherit; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease;
+}
+#keepit-exact-overlay .te-dict-speech-auto-toggle.active { border-color: rgba(245,158,11,.7); background: rgba(245,158,11,.12); color: #b45309; }
+#keepit-exact-overlay .te-dict-speech-auto-toggle:hover { border-color: #f59e0b; transform: translateY(-1px); }
+#keepit-exact-overlay .te-dict-speech-auto-toggle:focus-visible { outline: 2px solid #f59e0b; outline-offset: 2px; }
+#keepit-exact-overlay .te-dict-speech-auto-toggle svg { flex: none; width: 24px; height: 24px; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-auto-toggle { border-color: #52525b; background: #27272a; color: #d4d4d8; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-auto-toggle.active { border-color: rgba(245,158,11,.75); background: rgba(245,158,11,.18); color: #fbbf24; }
 #keepit-exact-overlay .te-dict-speech-target {
   display: flex; width: 100%; min-height: 72px; align-items: center; justify-content: center;
   padding: 14px 18px; border: 1px solid rgba(245,158,11,.48); border-radius: 14px;

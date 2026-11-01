@@ -14,6 +14,10 @@
   let speechStartPending = false;
   let speechStartGeneration = 0;
   let speechStopRequested = false;
+  let speechAutoRecordEnabled = true;
+  let speechCueAutoStartPending = false;
+  let speechAutoStartTimer = 0;
+  let speechSilenceTimer = 0;
   let speechAnswerRevealed = false;
   let speechRecorder = null;
   let speechRecordingStream = null;
@@ -649,6 +653,7 @@
     ui.miniPlay.title = miniPlayLabel;
     ui.miniPlay.setAttribute("aria-label", miniPlayLabel);
     updateSpeechMicState(ui.speechMic.classList.contains("listening"));
+    updateSpeechAutoRecordControl();
     if (captionStatusKey) ui.loadingStatus.textContent = tr(captionStatusKey);
     if (ui.properNounHint && !ui.properNounHint.hidden) renderProperNounHint(sentenceCues[current]?.en || "");
     updateProgressSyncControl();
@@ -749,6 +754,10 @@
             </div>
             <div class="te-dict-speech-controls-spacer" aria-hidden="true"></div>
             <div class="te-dict-speech-controls">
+              <button class="te-dict-speech-auto-toggle active" id="te-dict-speech-auto-toggle" type="button" aria-pressed="true" aria-label="" title="">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063L2 12l6.5-2.063A2 2 0 0 0 9.937 8.5L12 2l2.063 6.5A2 2 0 0 0 15.5 9.937L22 12l-6.5 2.063A2 2 0 0 0 14.063 15.5L12 22z"/><path d="M19 22v-4"/><path d="M21 20h-4"/></svg>
+                <span data-dict-label="dictationAutoRecord"></span>
+              </button>
               <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
                 ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
               </button>
@@ -952,6 +961,7 @@
       speechTarget: center.querySelector("#te-dict-speech-target"),
       speechResultWrap: center.querySelector("#te-dict-speech-result-wrap"),
       speechResult: center.querySelector("#te-dict-speech-result"),
+      speechAutoToggle: center.querySelector("#te-dict-speech-auto-toggle"),
       speechMic: center.querySelector("#te-dict-speech-mic"),
       speechHelp: center.querySelector("#te-dict-speech-help"),
       speechShortcuts: center.querySelector("#te-dict-speech-shortcuts"),
@@ -1009,7 +1019,8 @@
     ui.speakControl.addEventListener("click", () => setDictationMode("speaking"));
     ui.typeControl.addEventListener("click", () => { setDictationMode("typing"); focusInputIfTyping(); });
     ui.syncProgressControl.addEventListener("click", toggleProgressSync);
-    ui.speechMic.addEventListener("click", toggleSpeechRecognition);
+    ui.speechAutoToggle.addEventListener("click", toggleSpeechAutoRecord);
+    ui.speechMic.addEventListener("click", () => { void toggleSpeechRecognition(); });
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
     ui.input.addEventListener("input", onAnswerInput);
@@ -1254,7 +1265,7 @@
       ui.success.classList.remove("te-dict-speech-toast-spring");
       void ui.success.offsetWidth;
       ui.success.classList.add("te-dict-speech-toast-spring");
-      speechToastTimer = setTimeout(dismissVietnameseSpeechToast, 4000);
+      speechToastTimer = setTimeout(dismissVietnameseSpeechToast, 6000);
     }
   }
 
@@ -1285,6 +1296,15 @@
     updateSpeechCheckDisabled();
   }
 
+  function updateSpeechAutoRecordControl() {
+    if (!ui?.speechAutoToggle) return;
+    const label = tr("dictationAutoRecord");
+    ui.speechAutoToggle.classList.toggle("active", speechAutoRecordEnabled);
+    ui.speechAutoToggle.setAttribute("aria-pressed", String(speechAutoRecordEnabled));
+    ui.speechAutoToggle.setAttribute("aria-label", label);
+    ui.speechAutoToggle.title = label;
+  }
+
   function updateSpeechMicPlaybackState(playing) {
     if (!ui?.speechMic) return;
     const button = ui.speechMic;
@@ -1297,6 +1317,48 @@
     button.setAttribute("aria-label", tr(labelKey));
     button.title = tr(labelKey);
     updateSpeechCheckDisabled();
+  }
+
+  function clearSpeechAutoStartTimer() {
+    if (speechAutoStartTimer) clearTimeout(speechAutoStartTimer);
+    speechAutoStartTimer = 0;
+  }
+
+  function clearSpeechSilenceTimer() {
+    if (speechSilenceTimer) clearTimeout(speechSilenceTimer);
+    speechSilenceTimer = 0;
+  }
+
+  function setSpeechAutoRecordEnabled(enabled) {
+    speechAutoRecordEnabled = Boolean(enabled);
+    if (!speechAutoRecordEnabled) {
+      clearSpeechAutoStartTimer();
+      clearSpeechSilenceTimer();
+    }
+    updateSpeechAutoRecordControl();
+    if (speechAutoRecordEnabled && speechCueAutoStartPending) scheduleSpeechAutoRecord();
+  }
+
+  function toggleSpeechAutoRecord() {
+    setSpeechAutoRecordEnabled(!speechAutoRecordEnabled);
+  }
+
+  function scheduleSpeechAutoRecord() {
+    clearSpeechAutoStartTimer();
+    if (!speechAutoRecordEnabled || !speechCueAutoStartPending || !active || dictationMode !== "speaking" || speechAnswerRevealed
+      || !sentenceCues[current]?.en || speechStartPending || speechRecognition || speechStopRequested
+      || speechPlaybackAudio || speechRecorder || speechRecordingStream) return;
+    speechAutoStartTimer = setTimeout(() => {
+      speechAutoStartTimer = 0;
+      if (!speechAutoRecordEnabled || !speechCueAutoStartPending || !active || dictationMode !== "speaking" || speechAnswerRevealed
+        || !sentenceCues[current]?.en || speechStartPending || speechRecognition || speechStopRequested
+        || speechPlaybackAudio || speechRecorder || speechRecordingStream) {
+        speechCueAutoStartPending = false;
+        return;
+      }
+      speechCueAutoStartPending = false;
+      void toggleSpeechRecognition({ automatic: true });
+    }, 4000);
   }
 
   function clearRecordedSpeech() {
@@ -1428,6 +1490,9 @@
   }
 
   function stopSpeechRecognition(abort = true) {
+    speechCueAutoStartPending = false;
+    clearSpeechAutoStartTimer();
+    clearSpeechSilenceTimer();
     speechStartGeneration++;
     speechStartPending = false;
     speechStopRequested = false;
@@ -1435,6 +1500,8 @@
     speechRecognition = null;
     if (recognition) {
       recognition.onresult = null;
+      recognition.onspeechstart = null;
+      recognition.onspeechend = null;
       recognition.onerror = null;
       recognition.onend = null;
       try { abort ? recognition.abort() : recognition.stop(); } catch {}
@@ -1478,7 +1545,12 @@
     }
   }
 
-  async function toggleSpeechRecognition() {
+  async function toggleSpeechRecognition({ automatic = false } = {}) {
+    if (!automatic) {
+      speechCueAutoStartPending = false;
+      clearSpeechAutoStartTimer();
+    }
+    clearSpeechSilenceTimer();
     if (dictationMode !== "speaking") setDictationMode("speaking");
     if (speechStopRequested || speechPlaybackAudio) return;
     if (speechStartPending) {
@@ -1562,6 +1634,25 @@
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
+    const scheduleSilenceStop = () => {
+      clearSpeechSilenceTimer();
+      if (!speechAutoRecordEnabled || speechRecognition !== recognition || speechStopRequested) return;
+      speechSilenceTimer = setTimeout(() => {
+        speechSilenceTimer = 0;
+        if (!speechAutoRecordEnabled || speechRecognition !== recognition || speechStopRequested
+          || ![finalText, interimText].filter(Boolean).join(" ").trim()) return;
+        speechStopRequested = true;
+        setSpeechStatus("dictationSpeakProcessing");
+        try { recognition.stop(); }
+        catch {
+          speechStopRequested = false;
+          stopSpeechRecognition(true);
+          setSpeechStatus("dictationSpeakError");
+        }
+      }, 3000);
+    };
+    recognition.onspeechstart = () => clearSpeechSilenceTimer();
+    recognition.onspeechend = scheduleSilenceStop;
     recognition.onresult = (event) => {
       const finals = [];
       const interims = [];
@@ -1573,6 +1664,7 @@
       }
       finalText = finals.join(" ").trim();
       interimText = interims.join(" ").trim();
+      if (speechSilenceTimer && (finalText || interimText).trim()) scheduleSilenceStop();
       renderSpeechResult([finalText, interimText].filter(Boolean).join(" "));
     };
     recognition.onerror = (event) => {
@@ -1584,6 +1676,7 @@
             : code === "aborted" ? "" : "dictationSpeakError";
       if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
         speechStopRequested = true;
+        clearSpeechSilenceTimer();
       }
       if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
     };
@@ -1598,6 +1691,7 @@
           return;
         } catch { speechRecognitionError = "dictationSpeakError"; }
       }
+      clearSpeechSilenceTimer();
       speechRecognition = null;
       updateSpeechMicState(false);
       const transcript = (finalText || interimText).trim();
@@ -2923,6 +3017,8 @@
     }
     video?.pause();
     endPlayback();
+    speechCueAutoStartPending = active && dictationMode === "speaking" && !speechAnswerRevealed;
+    scheduleSpeechAutoRecord();
   }
 
   function watchPlayback() {
@@ -2948,6 +3044,8 @@
   }
 
   function playSentence(index, options = {}) {
+    speechCueAutoStartPending = false;
+    clearSpeechAutoStartTimer();
     const cue = sentenceCues[index];
     const video = A?.state?.videoEl;
     if (!cue || !video || !active) return;
@@ -2975,6 +3073,10 @@
 
   // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
   function onVideoPlay() {
+    if (active && dictationMode === "speaking") {
+      speechCueAutoStartPending = false;
+      clearSpeechAutoStartTimer();
+    }
     updateCompactAudioPlaybackState();
     if (active && dictationMode === "speaking" && (speechStartPending || speechRecognition || speechStopRequested || speechPlaybackAudio)) {
       endPlayback();

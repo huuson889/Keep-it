@@ -301,6 +301,7 @@
     dictationSpeakNetwork:"Speech recognition could not connect. Check your connection and try again.",
     dictationSpeakError:"Could not start speech recognition. Please try again.",
     dictationSpeakStart:"Start speaking practice", dictationSpeakStop:"Stop recording and check speech",
+    dictationAutoRecord:"Auto record",
     dictationSpeechShortcutHint:"(Enter) Start/stop/next · (Esc) Reveal/reset · (`) Play/pause · (Ctrl) Replay",
     dictationProgressSyncOn:"Progress sync: on", dictationProgressSyncOff:"Progress sync: off",
     dictationShowTranslation:"Show translation", dictationHideTranslation:"Hide translation"
@@ -321,6 +322,7 @@
     dictationSpeakNetwork:"Không kết nối được dịch vụ nhận diện giọng nói. Hãy kiểm tra mạng và thử lại.",
     dictationSpeakError:"Không thể bắt đầu nhận diện giọng nói. Vui lòng thử lại.",
     dictationSpeakStart:"Bắt đầu luyện nói", dictationSpeakStop:"Dừng ghi âm và chấm điểm",
+    dictationAutoRecord:"Tự động ghi âm",
     dictationSpeechShortcutHint:"(Enter) Bắt đầu/dừng/tiếp · (Esc) Đáp án/đặt lại · (`) Phát/tạm dừng · (Ctrl) Nghe lại",
     dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt",
     dictationShowTranslation:"Hiện bản dịch", dictationHideTranslation:"Ẩn bản dịch"
@@ -357,6 +359,7 @@
     dictationSpeakNetwork:"음성 인식 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
     dictationSpeakError:"음성 인식을 시작할 수 없습니다. 다시 시도하세요.",
     dictationSpeakStart:"말하기 연습 시작", dictationSpeakStop:"녹음을 멈추고 채점",
+    dictationAutoRecord:"자동 녹음",
     dictationSpeechShortcutHint:"(Enter) 시작/정지/다음 · (Esc) 정답/초기화 · (`) 재생/일시정지 · (Ctrl) 다시 듣기",
     dictationProgressSyncOn:"진행률 동기화: 켜짐", dictationProgressSyncOff:"진행률 동기화: 꺼짐",
     dictationShowTranslation:"번역 표시", dictationHideTranslation:"번역 숨기기"
