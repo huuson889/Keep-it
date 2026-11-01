@@ -18,11 +18,12 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 
 ## 3. Luồng chính
 
-1. Manifest nạp template rồi controller. Controller chỉ khởi chạy trên YouTube; `openOverlay()` tạo Shadow DOM và tạm chuyển video hiện có vào slot. Đóng hoặc đổi video phải khôi phục player qua `detachVideo()`.
-2. `loadCaptions()` thử transcript cache, Player API/timedtext, panel transcript, tracklist watch page, rồi nguồn caption đang hiển thị. Cue được làm sạch, dựng theo thời điểm phát và dịch qua `LHN_MESSAGING`.
-3. `LHN_OVERLAY_API` được phát qua `lhn-overlay-ready`; caption mới phát `lhn-dual-captions-updated`. Dictation lấy cue tiếng Anh từ API này.
-4. Thay đổi `lhnSettings.language` làm mới `state.displayLanguage`, nhãn/thuộc tính truy cập của overlay và nhãn Dictation đang mở; `lhnStudyTranslationSettings` tiếp tục điều khiển source/target subtitle language.
-5. Content chỉ cho phép selection dịch/từ điển từ `.te-sub-en` hoặc `.yt-dual-item-en` trong giao diện video. Chọn chữ UI video hoặc dòng dịch không mở popup; selection ngoài giao diện video giữ hành vi chung.
+1. Manifest nạp template/controller. `openOverlay()` tạo Shadow DOM và chuyển player vào slot; `closeOverlay()` hoặc đổi video khôi phục player bằng `detachVideo()`.
+2. `loadCaptions()` lấy cue từ cache, YouTube API/timedtext, transcript panel/tracklist hoặc caption đang hiện; làm sạch rồi dịch qua `LHN_MESSAGING`.
+3. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API` cho Dictation; caption mới phát `lhn-dual-captions-updated`.
+4. Đổi `lhnSettings.language` làm mới nhãn overlay/Dictation; `lhnStudyTranslationSettings` vẫn quản lý ngôn ngữ subtitle.
+5. Selection dịch/từ điển chỉ áp dụng cho `.te-sub-en`/`.yt-dual-item-en`; dòng dịch/UI không mở popup, selection ngoài overlay giữ nguyên.
+6. Reading-only `te-dict-video-toggle` cạnh X đổi hình video thành mini audio bar; play/pause điều khiển cùng video.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -32,11 +33,12 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Bốn mode subtitle (song ngữ, nguồn, dịch, ẩn) và ba mode video (rạp, đọc, kết hợp) tiếp tục dùng trạng thái hiện có; các shortcut không chạy khi focus ở input/editable.
+- Nút `te-dict-video-toggle` của video Reading chỉ bật trong `.te-reading-mode`; mini audio bar chỉ ẩn hình video, giữ nguyên player và reset trạng thái khi rời mode.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --check` các JS liên quan; parse manifest; xác nhận bản dịch đủ EN/VI/KO, selector điều khiển ổn định, CSS cân bằng và `git diff --check`.
+- Static/mock: `node --check` JS liên quan, parse manifest; kiểm tra EN/VI/KO, toggle trước X/chỉ hiện Reading, compact và mini play/pause, CSS, `git diff --check`.
 - Mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection thông thường vẫn qua luồng hiện có. Kiểm tra storage change cập nhật nhãn video và Dictation mà không reset trạng thái panel.
-- Browser: thử các mode, popup dịch/từ điển trên primary transcript, không popup trên dòng dịch/control, đổi ngôn ngữ khi overlay/Dictation đang mở và xác nhận generic page selection không đổi. Không xem static checks là browser test.
+- Browser QA: Reading toggle cạnh X, video/audio và play/pause, responsive/theme, reset khi rời mode; mode khác, popup selection, language changes, generic page selection. Static checks không thay browser test.

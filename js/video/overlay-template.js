@@ -840,6 +840,126 @@ const OVERLAY_CSS = `
       }
       #keepit-exact-overlay.te-reading-mode .yt-dual-transcript-list { padding-right: 12px; padding-left: 12px; }
     }
+    /* Reading-mode video ↔ mini-audio control (separate from Dictation's existing control). */
+    #keepit-exact-overlay .yt-dual-sidebar-header .te-dict-video-toggle {
+      display: none;
+      flex: 0 0 34px;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 1px solid rgba(148, 163, 184, .35);
+      border-radius: 9px;
+      background: transparent;
+      color: #a1a1aa;
+      cursor: pointer;
+      transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+    }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-sidebar-header .te-dict-video-toggle { display: inline-flex; }
+    #keepit-exact-overlay .yt-dual-sidebar-header .te-dict-video-toggle:hover { border-color: #8b5cf6; background: rgba(139, 92, 246, .1); color: #c4b5fd; }
+    #keepit-exact-overlay .yt-dual-sidebar-header .te-dict-video-toggle:active { transform: scale(.94); }
+    #keepit-exact-overlay .yt-dual-sidebar-header .te-dict-video-toggle svg { width: 18px; height: 18px; }
+    #keepit-exact-overlay.theme-light .yt-dual-sidebar-header .te-dict-video-toggle { color: #6b7280; }
+    #keepit-exact-overlay.theme-light .yt-dual-sidebar-header .te-dict-video-toggle:hover { color: #7c3aed; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-sidebar-header { width: 80px; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-actions { gap: 6px; justify-content: flex-end; }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-close-btn { width: 34px; height: 34px; margin-right: 0; border-radius: 9px; }
+
+    #keepit-exact-overlay .te-reading-mini-audio {
+      position: absolute;
+      inset: 0 4px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      overflow: hidden;
+      border: 1px solid rgba(168, 85, 247, .35);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(21, 28, 44, .97), rgba(15, 23, 42, .99));
+      color: #f8fafc;
+      box-shadow: 0 12px 28px rgba(124, 58, 237, .22);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(.98);
+      transition: opacity .3s ease, transform .4s cubic-bezier(.16, 1, .3, 1), visibility 0s linear .3s;
+    }
+    #keepit-exact-overlay.te-reading-mode.te-reading-audio-compact .te-video-slot {
+      flex: 0 0 84px;
+      height: 84px;
+      min-height: 84px;
+      max-height: none;
+      aspect-ratio: auto;
+      overflow: hidden;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    #keepit-exact-overlay.te-reading-mode.te-reading-audio-compact .te-video-slot video {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    #keepit-exact-overlay.te-reading-mode.te-reading-audio-compact .te-reading-mini-audio {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+      transition: opacity .3s ease, transform .4s cubic-bezier(.16, 1, .3, 1), visibility 0s;
+    }
+    #keepit-exact-overlay .te-reading-mini-art {
+      display: flex;
+      flex: 0 0 48px;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      overflow: hidden;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #312e81);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, .35);
+    }
+    #keepit-exact-overlay .te-reading-mini-thumb { display: block; width: 100%; height: 100%; object-fit: cover; }
+    #keepit-exact-overlay .te-reading-mini-thumb[hidden] { display: none !important; }
+    #keepit-exact-overlay .te-reading-mini-info { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 3px; }
+    #keepit-exact-overlay .te-reading-mini-title { overflow: hidden; color: #f8fafc; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    #keepit-exact-overlay .te-reading-mini-source { color: #c4b5fd; font-size: 11px; font-weight: 500; }
+    #keepit-exact-overlay .te-reading-mini-spectrum { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; height: 26px; padding: 0 4px; }
+    #keepit-exact-overlay .te-reading-mini-spectrum span { width: 3px; height: 6px; border-radius: 99px; background: linear-gradient(135deg, #a855f7, #6366f1); box-shadow: 0 0 8px rgba(168, 85, 247, .5); }
+    #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span { animation: teReadingSpectrumWave 1s ease-in-out infinite alternate; }
+    #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span:nth-child(2) { animation-delay: .18s; }
+    #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span:nth-child(3) { animation-delay: .36s; }
+    #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span:nth-child(4) { animation-delay: .12s; }
+    #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span:nth-child(5) { animation-delay: .28s; }
+    @keyframes teReadingSpectrumWave { from { height: 6px; } to { height: 23px; } }
+    #keepit-exact-overlay .te-reading-mini-play {
+      display: inline-flex;
+      flex: 0 0 40px;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(124, 58, 237, .42);
+    }
+    #keepit-exact-overlay .te-reading-mini-play svg { width: 19px; height: 19px; }
+    @media (prefers-reduced-motion: reduce) {
+      #keepit-exact-overlay .te-reading-mini-audio,
+      #keepit-exact-overlay .yt-dual-sidebar-header .te-dict-video-toggle { transition-duration: .01ms; }
+      #keepit-exact-overlay .te-reading-mini-audio.playing .te-reading-mini-spectrum span { animation: none; }
+    }
+    @media (max-width: 520px) {
+      #keepit-exact-overlay .te-reading-mini-audio { gap: 8px; padding: 0 10px; }
+      #keepit-exact-overlay .te-reading-mini-art { flex-basis: 42px; width: 42px; height: 42px; }
+      #keepit-exact-overlay .te-reading-mini-spectrum { display: none; }
+    }
+
     /* Reading view: fixed viewport widths and independent centering for the transcript frame. */
     #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { left: 32.5vw; flex: 0 0 35vw; width: 35vw !important; }
     #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { left: 27.5vw; flex: 0 0 45vw; width: 45vw !important; }
@@ -992,7 +1112,16 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <div class="te-ambient-layer"><canvas class="te-ambient" width="152" height="48" aria-hidden="true"></canvas><canvas class="te-ambient-edge" width="160" height="90" aria-hidden="true"></canvas></div>
     <!-- Left Section -->
     <div class="te-left-section">
-      <div class="te-video-slot"></div>
+      <div class="te-video-slot">
+        <div class="te-reading-mini-audio" role="group" aria-label="Video audio" aria-hidden="true">
+          <div class="te-reading-mini-art"><img class="te-reading-mini-thumb" alt="" hidden></div>
+          <div class="te-reading-mini-info"><div class="te-reading-mini-title"></div><div class="te-reading-mini-source">Audio</div></div>
+          <div class="te-reading-mini-spectrum" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <button class="te-reading-mini-play" id="te-reading-mini-play" type="button" title="Play video audio" aria-label="Play video audio">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+      </div>
       
       <!-- Subtitle box below video -->
       <div class="te-sub-container">
@@ -1078,6 +1207,9 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       <div class="yt-dual-sidebar-header">
         <span><svg class="te-sidebar-logo" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><defs><linearGradient id="te-keepit-mark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#te-keepit-mark)"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="20" width="20" x="6" y="6"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg><span class="te-sidebar-title">Keepit - Video</span></span>
         <div class="yt-dual-actions">
+          <button class="te-dict-video-toggle" id="te-reading-video-toggle" type="button" title="Thu nhỏ video" aria-label="Thu nhỏ video" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          </button>
           <button class="yt-dual-close-btn" title="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
         </div>
       </div>

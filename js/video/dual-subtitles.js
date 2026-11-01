@@ -178,6 +178,7 @@ function refreshVideoUiLocalization() {
   applySettings();
   updateSubtitleDisplayModeLabels();
   setVideoDisplayModeSelection($('te-video-mode-trigger')?.dataset.videoMode || 'combined');
+  syncReadingAudioControls();
   const sizeKeys = ['videoSmall', 'videoMedium', 'videoLarge'];
   uiAll('#te-view-mode-options button').forEach((button, index) => {
     button.textContent = videoT(sizeKeys[index] || 'videoMedium');
@@ -1318,9 +1319,12 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
       button?.setAttribute('aria-pressed', 'false');
     }
   }
+  const wasReading = root.classList.contains('te-reading-mode');
+  if (wasReading !== active) root.classList.remove('te-reading-audio-compact');
   root.classList.toggle('te-reading-mode', active);
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
+  syncReadingAudioControls();
   return active;
 }
 
@@ -1672,6 +1676,7 @@ function attachVideo(video, slot) {
   syncMuteButton();
   enforceVideoPause(video);
   onTimeUpdate();
+  syncReadingAudioControls();
   startAmbient();
 }
 
@@ -1800,9 +1805,62 @@ function stopAmbient() {
 }
 
 function setVideoTitle() {
-  const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim();
+  const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim() || 'YouTube video';
   const el = ui('.te-video-title-text');
-  if (el) el.textContent = t || 'YouTube video';
+  if (el) el.textContent = t;
+  const miniTitle = ui('.te-reading-mini-title');
+  if (miniTitle) miniTitle.textContent = `Keepit - ${t}`;
+  const miniSource = ui('.te-reading-mini-source');
+  if (miniSource) miniSource.textContent = videoT('dictationAudioSource');
+  const miniThumb = ui('.te-reading-mini-thumb');
+  const thumbnails = globalThis.LHN_THUMBNAILS;
+  if (miniThumb && thumbnails?.youtubeVideoId(state.videoId || '')) {
+    miniThumb.hidden = false;
+    thumbnails.loadYouTube(miniThumb, state.videoId, { onError:() => { miniThumb.hidden = true; } });
+  } else {
+    if (miniThumb) miniThumb.hidden = true;
+    thumbnails?.clear(miniThumb);
+  }
+  syncReadingAudioControls();
+}
+
+function syncReadingAudioControls() {
+  const root = overlayEl();
+  const toggle = ui('#te-reading-video-toggle');
+  const bar = ui('.te-reading-mini-audio');
+  const play = ui('#te-reading-mini-play');
+  if (!root || !toggle || !bar || !play) return;
+  const reading = isReadingModeActive();
+  const compact = reading && root.classList.contains('te-reading-audio-compact');
+  toggle.disabled = !reading;
+  toggle.setAttribute('aria-pressed', String(compact));
+  const toggleLabel = videoT(compact ? 'dictationExpandVideo' : 'dictationCompactVideo');
+  toggle.title = toggleLabel;
+  toggle.setAttribute('aria-label', toggleLabel);
+  const videoIcon = '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>';
+  const audioIcon = '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>';
+  toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${compact ? audioIcon : videoIcon}</svg>`;
+  bar.setAttribute('aria-hidden', String(!compact));
+  bar.setAttribute('aria-label', videoT('dictationAudioTitle'));
+  const playing = Boolean(state.videoEl && !state.videoEl.paused);
+  bar.classList.toggle('playing', playing);
+  const playLabel = videoT(playing ? 'dictationMiniPause' : 'dictationMiniPlay');
+  play.title = playLabel;
+  play.setAttribute('aria-label', playLabel);
+  play.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${playing ? PAUSE_PATH : PLAY_PATH}</svg>`;
+}
+
+function setReadingAudioCompact(compact) {
+  const root = overlayEl();
+  if (!root || !isReadingModeActive()) return false;
+  root.classList.toggle('te-reading-audio-compact', Boolean(compact));
+  syncReadingAudioControls();
+  return Boolean(compact);
+}
+
+function toggleReadingAudioCompact() {
+  if (!isReadingModeActive()) return false;
+  return setReadingAudioCompact(!overlayEl().classList.contains('te-reading-audio-compact'));
 }
 
 // ---------- Điều khiển phát ----------
@@ -1843,10 +1901,12 @@ function handleOverlayVideoClick(event) {
 
 function handleVideoPlay() {
   syncPlayButton();
+  syncReadingAudioControls();
 }
 
 function handleVideoPause() {
   syncPlayButton();
+  syncReadingAudioControls();
 }
 
 function handleVideoRateChange() {
@@ -2963,6 +3023,16 @@ function bindUI() {
   }, true);
   ctrl('Toàn màn hình').addEventListener('click', toggleFullscreen);
   ui('.te-progress-track').addEventListener('click', seekByTrack);
+  ui('#te-reading-video-toggle').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleReadingAudioCompact();
+  });
+  ui('#te-reading-mini-play').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    togglePlay();
+  });
   ui('.yt-dual-close-btn').addEventListener('click', closeOverlay);
 
   const transcriptList = $('te-transcript-list');
