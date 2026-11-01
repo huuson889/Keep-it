@@ -973,6 +973,9 @@
       playPause: bar.querySelector("#te-control-play"),
       originalButtonState: new Map(),
     };
+    ui.success.addEventListener("animationend", (event) => {
+      if (event.animationName === "teDictSpeechToastSpringPop") ui.success.classList.remove("te-dict-speech-toast-spring");
+    });
     for (const button of [ui.previous, ui.next, ui.replay]) {
       if (button) ui.originalButtonState.set(button, { disabled: button.disabled, aria: button.getAttribute("aria-disabled") });
     }
@@ -1162,7 +1165,7 @@
     if (!ui?.success) return;
     if (ui.work && ui.success.parentNode !== ui.work) ui.work.insertBefore(ui.success, ui.work.firstChild);
     lastSpeechFeedback = null;
-    ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "state-pass", "state-warn", "state-fail");
+    ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "te-dict-speech-toast-spring", "state-pass", "state-warn", "state-fail");
     if (ui.successIcon) ui.successIcon.innerHTML = '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>';
     if (ui.successMessage) {
       ui.successMessage.dataset.dictLabel = "dictationSuccess";
@@ -1210,7 +1213,7 @@
       if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = true;
     } else {
       if (ui.work && ui.success.parentNode !== ui.work) ui.work.insertBefore(ui.success, ui.work.firstChild);
-      ui.success.classList.remove("te-dict-speech-toast");
+      ui.success.classList.remove("te-dict-speech-toast", "te-dict-speech-toast-spring");
       if (ui.speechToastRing) ui.speechToastRing.hidden = true;
       if (ui.speechToastDescription) ui.speechToastDescription.hidden = true;
       const messageKey = state === "pass"
@@ -1226,10 +1229,21 @@
       if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = `${percent}%`;
     }
     ui.success.hidden = false;
+    if (language() === "vi") {
+      ui.success.classList.remove("te-dict-speech-toast-spring");
+      void ui.success.offsetWidth;
+      ui.success.classList.add("te-dict-speech-toast-spring");
+    }
   }
 
   function shouldKeepVietnameseSpeechToast() {
     return Boolean(ui?.success && !ui.success.hidden && dictationMode === "speaking" && language() === "vi" && ui.success.classList.contains("te-dict-speech-toast"));
+  }
+
+  function dismissVietnameseSpeechToast() {
+    if (!shouldKeepVietnameseSpeechToast()) return;
+    ui.success.hidden = true;
+    resetSpeechFeedback();
   }
 
   function updateSpeechMicState(listening) {
@@ -3179,6 +3193,10 @@
     const panelEditable = path.includes(ui?.input) || path.includes(ui?.note);
     const editableTarget = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
     const noteFocused = path.includes(ui?.note) || (!panelEditable && editableTarget);
+    if (event.key === "Enter" && !event.repeat && !event.shiftKey && !event.ctrlKey && !event.altKey
+      && !event.metaKey && !event.isComposing && event.keyCode !== 229 && shouldKeepVietnameseSpeechToast()) {
+      dismissVietnameseSpeechToast();
+    }
     if (dictationMode === "speaking" && event.key === "Enter" && !event.shiftKey
       && !event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing && event.keyCode !== 229 && !noteFocused) {
       event.preventDefault();
