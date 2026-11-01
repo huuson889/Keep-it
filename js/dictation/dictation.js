@@ -51,6 +51,7 @@
   let indexedVideoTitle = "";
   let saveTimer = 0;
   let toastTimer = 0;
+  let speechToastTimer = 0;
   let lastSpeechFeedback = null;
   let rafId = 0;
   let repeatLeft = 0;
@@ -1163,9 +1164,11 @@
 
   function resetSpeechFeedback() {
     if (!ui?.success) return;
+    clearTimeout(speechToastTimer);
+    speechToastTimer = 0;
     if (ui.work && ui.success.parentNode !== ui.work) ui.work.insertBefore(ui.success, ui.work.firstChild);
     lastSpeechFeedback = null;
-    ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "te-dict-speech-toast-spring", "state-pass", "state-warn", "state-fail");
+    ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "te-dict-speech-toast-spring", "te-dict-speech-toast-exit", "state-pass", "state-warn", "state-fail");
     if (ui.successIcon) ui.successIcon.innerHTML = '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>';
     if (ui.successMessage) {
       ui.successMessage.dataset.dictLabel = "dictationSuccess";
@@ -1202,6 +1205,9 @@
 
   function setSpeechFeedback(tier, percent, sentence, perfect) {
     if (!ui?.success) return;
+    clearTimeout(speechToastTimer);
+    speechToastTimer = 0;
+    ui.success.classList.remove("te-dict-speech-toast-exit");
     const state = ["pass", "warn", "fail"].includes(tier) ? tier : "fail";
     lastSpeechFeedback = { tier: state, percent, sentence, perfect: Boolean(perfect) };
     const iconPaths = {
@@ -1248,6 +1254,7 @@
       ui.success.classList.remove("te-dict-speech-toast-spring");
       void ui.success.offsetWidth;
       ui.success.classList.add("te-dict-speech-toast-spring");
+      speechToastTimer = setTimeout(dismissVietnameseSpeechToast, 4000);
     }
   }
 
@@ -1256,9 +1263,15 @@
   }
 
   function dismissVietnameseSpeechToast() {
-    if (!shouldKeepVietnameseSpeechToast()) return;
-    ui.success.hidden = true;
-    resetSpeechFeedback();
+    if (!shouldKeepVietnameseSpeechToast() || ui.success.classList.contains("te-dict-speech-toast-exit")) return;
+    clearTimeout(speechToastTimer);
+    ui.success.classList.remove("te-dict-speech-toast-spring");
+    ui.success.classList.add("te-dict-speech-toast-exit");
+    speechToastTimer = setTimeout(() => {
+      if (!ui?.success?.classList.contains("te-dict-speech-toast-exit")) return;
+      ui.success.hidden = true;
+      resetSpeechFeedback();
+    }, 300);
   }
 
   function updateSpeechMicState(listening) {

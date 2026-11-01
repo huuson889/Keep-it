@@ -22,7 +22,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, g
 
 1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation lấy English cues và dùng chung player. Caption đến muộn qua `lhn-dual-captions-updated`.
 2. Typing chỉ pass khi `result.perfect`; Speaking pass từ 70%, bật Next nhưng không tự chuyển. Tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
-3. Speaking: mặc định không lặp bổ sung (cue đầu phát một lần), tách repeat Typing; status nhắc mic/Enter và ẩn nút chấm. Enter/mic bắt đầu nhận diện, Enter lần nữa dừng, phát bản thu tạm rồi chấm transcript; video dừng khi thu/phát. Mic dùng icon audio-lines tím và pulse khi phát. Tiers giữ ngưỡng 70/40. Riêng VI hiện popup kính mờ phía trên, giữa panel, có vòng điểm, copy 15 mốc % và Spring Pop; màu giữ nguyên; Enter đóng popup hiện tại, lượt chấm mới hiển thị kết quả mới. EN/KO tiếp tục feedback inline. Recognition có thể tự khởi động lại sau phiên tạm thời; sai thì retry. Escape phát cue và hiện đáp án, Escape tiếp reset; Enter sau reveal chấm 100%, Enter kế chuyển câu.
+3. Speaking: mặc định không lặp bổ sung (cue đầu phát một lần), tách repeat Typing; status nhắc mic/Enter và ẩn nút chấm. Enter/mic bắt đầu nhận diện, Enter lần nữa dừng, phát bản thu tạm rồi chấm transcript; video dừng khi thu/phát. Mic dùng icon audio-lines tím và pulse khi phát. Tiers giữ ngưỡng 70/40. Riêng VI có popup kính mờ phía trên, giữa panel, có vòng điểm, copy 15 mốc % và Spring Pop; màu giữ nguyên; Slide Up ẩn sau 4s hoặc Enter, lượt chấm sau hiện nội dung mới. EN/KO tiếp tục feedback inline. Recognition có thể tự khởi động lại sau phiên tạm thời; sai thì retry. Escape phát cue và hiện đáp án, Escape tiếp reset; Enter sau reveal chấm 100%, Enter kế chuyển câu.
 4. `dictation:<videoId>` lưu progress, notes, translations, title và `wrongWordStats`; session index bổ sung metadata. Không lưu audio.
 5. Chỉ xin mic sau thao tác người dùng. Browser có thể xử lý audio theo cấu hình SpeechRecognition. Nếu MediaRecorder không khả dụng, vẫn thử recognition và báo không thể phát lại. Đóng panel, đổi câu/mode hoặc reset sẽ dừng tracks, dọn playback và revoke Blob URL.
 6. Bản dịch mặc định ẩn; đổi `lhnSettings.language` cập nhật nhãn/placeholder/aria-label và `.te-dict-stats-word` tại chỗ, không dựng lại panel hoặc xóa state.
@@ -31,7 +31,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, g
 
 - Không tạo overlay thứ hai; giữ API/events video và chỉ dùng cue tiếng Anh.
 - UI dùng `--lhn-app-font-family`; phụ đề/transcript vẫn theo tùy chọn font riêng.
-- Refresh language giữ input, câu, progress, notes và mode; video control dùng ID ổn định. Popup Speaking chỉ hiện ở VI, Enter đóng; đổi language dựng lại kết quả mà không đổi tier/scoring. EN/KO dùng inline.
+- Refresh language giữ input, câu, progress, notes và mode; video control dùng ID ổn định. Popup Speaking chỉ hiện ở VI, tự ẩn 4s/Enter; đổi language dựng lại kết quả mà không đổi tier/scoring. EN/KO dùng inline.
 - Progress sync mặc định bật ở `dictation:progress-sync:v1`; khi tắt Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
 - Contraction chỉ qua allowlist. Không thống kê missing, proper nouns, target 1–3 ký tự hoặc lỗi chỉ khác dấu câu. `wrongWordStats` schema v3 là heuristic; migration giữ notes/progress/translations.
 - Proper-noun hint giữ case/thứ tự, bỏ trùng; viết hoa đầu câu không tự thành tên riêng.
