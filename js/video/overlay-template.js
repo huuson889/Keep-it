@@ -1323,7 +1323,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
               <span>Ambient mode</span>
             </div>
-            <div class="te-menu-right"><span id="te-ambient-label">Ambient 1</span> <span>›</span></div>
+            <div class="te-menu-right"><span id="te-ambient-label">Tắt</span> <span>›</span></div>
           </div>
           
           <div class="te-divider"></div>
@@ -1403,11 +1403,9 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           </button>
         </div>
         <div class="te-modal-body" style="padding-top: 0;">
-          <div class="te-btn-group">
-            <button class="te-btn-subopt" data-ambient="off" style="padding: 10px 0;">Tắt</button>
-            <button class="te-btn-subopt" data-ambient="1" style="padding: 10px 0;">Ambient 1</button>
-            <button class="te-btn-subopt" data-ambient="2" style="padding: 10px 0;">Ambient 2</button>
-            <button class="te-btn-subopt" data-ambient="3" style="padding: 10px 0;">Ambient 3</button>
+          <div class="te-setting-item" style="padding: 12px 20px;">
+            <span id="te-ambient-toggle-label">Tắt</span>
+            <label class="te-switch"><input id="te-ambient-toggle" type="checkbox" role="switch" aria-label="Ambient mode"><span class="te-slider"></span></label>
           </div>
         </div>
       </div>

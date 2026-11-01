@@ -1708,23 +1708,26 @@ function detachVideo() {
 // ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
 let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
 // Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
-// ---- Ambient: chế độ (off | 1 | 2 | 3). 1 = cạnh viền 16:9 lan 50%, 2 = cạnh viền 16:9 lan 100%, 3 = radial
-const AMBIENT_LABELS = { off: 'Tắt', '1': 'Ambient 1', '2': 'Ambient 2', '3': 'Ambient 3' };
-const AMBIENT_LABEL_KEYS = { off: 'videoAmbientOff', '1': 'videoAmbient1', '2': 'videoAmbient2', '3': 'videoAmbient3' };
+// Ambient UI chỉ bật/tắt (Ambient 3); giữ renderer viền 1/2 trong mã để có thể bật lại sau.
 function isEdgeAmbient() { const m = ambientMode(); return m === '1' || m === '2'; }
 function ambientMode() {
-  const m = settings.ambientStyle;
-  if (m === 'off' || m === '1' || m === '2' || m === '3') return m;
-  return settings.ambient === false ? 'off' : '3';
+  return settings.ambient === false || settings.ambientStyle === 'off' ? 'off' : '3';
 }
 function syncAmbientUi() {
-  const mode = ambientMode();
+  const enabled = ambientMode() !== 'off';
+  const stateKey = enabled ? 'videoAmbientOn' : 'videoAmbientOff';
   const label = $('te-ambient-label');
-  if (label) label.textContent = videoT(AMBIENT_LABEL_KEYS[mode]);
-  $('te-modal-ambient')?.querySelectorAll('.te-btn-subopt').forEach((btn) => btn.classList.toggle('active', btn.dataset.ambient === mode));
+  if (label) label.textContent = videoT(stateKey);
+  const toggle = $('te-ambient-toggle');
+  if (toggle) {
+    toggle.checked = enabled;
+    toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
+  }
+  const toggleLabel = $('te-ambient-toggle-label');
+  if (toggleLabel) toggleLabel.textContent = videoT(stateKey);
 }
 function setAmbientMode(mode) {
-  if (!AMBIENT_LABELS[mode]) return;
+  if (mode !== 'off' && mode !== '3') return;
   settings.ambientStyle = mode;
   settings.ambient = mode !== 'off';
   saveSettings();
@@ -2823,7 +2826,7 @@ function bindUI() {
   };
   nav('open-sub-modal', modalSub, 'back-sub');
   nav('open-ambient-modal', $('te-modal-ambient'), 'back-ambient');
-  $('te-modal-ambient').querySelectorAll('.te-btn-subopt').forEach((btn) => btn.addEventListener('click', () => { if (!btn.disabled) setAmbientMode(btn.dataset.ambient); }));
+  $('te-ambient-toggle')?.addEventListener('change', (event) => setAmbientMode(event.currentTarget.checked ? '3' : 'off'));
   nav('open-lang-modal', modalLang, 'back-lang');
   nav('open-export-modal', modalExport, 'back-export');
 
