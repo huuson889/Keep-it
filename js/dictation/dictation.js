@@ -656,14 +656,18 @@
           </button>
         </div>
         <div class="te-dict-work">
-          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
+          <div class="te-dict-feedback-slot">
+            <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
+          </div>
           <div class="te-dict-speech-practice" id="te-dict-speech-practice" hidden>
             <div class="te-dict-speech-target" id="te-dict-speech-target"></div>
-            <div class="te-dict-translation" id="te-dict-translation" hidden></div>
+            <div class="te-dict-speech-translation-slot"></div>
             <div class="te-dict-speech-shortcuts" id="te-dict-speech-shortcuts" data-dict-label="dictationSpeechShortcutHint"></div>
-            <div class="te-dict-speech-result-wrap" id="te-dict-speech-result-wrap" hidden>
-              <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
-              <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
+            <div class="te-dict-speech-result-slot">
+              <div class="te-dict-speech-result-wrap" id="te-dict-speech-result-wrap" hidden>
+                <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
+                <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
+              </div>
             </div>
             <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
               ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
@@ -853,6 +857,7 @@
       typeControl: tools.querySelector("#te-dict-type-control"),
       syncProgressControl: tools.querySelector("#te-dict-sync-progress"),
       speechPractice: center.querySelector("#te-dict-speech-practice"),
+      speechTranslationSlot: center.querySelector(".te-dict-speech-translation-slot"),
       speechTarget: center.querySelector("#te-dict-speech-target"),
       speechResultWrap: center.querySelector("#te-dict-speech-result-wrap"),
       speechResult: center.querySelector("#te-dict-speech-result"),
@@ -992,7 +997,7 @@
       const speaking = mode === "speaking";
       ui.root.classList.toggle("te-dict-speaking-mode", speaking);
       ui.speechPractice.hidden = !speaking;
-      if (speaking) ui.speechPractice.insertBefore(ui.translation, ui.speechPractice.querySelector(".te-dict-speech-shortcuts"));
+      if (speaking) ui.speechTranslationSlot.appendChild(ui.translation);
       else ui.translationSlot.appendChild(ui.translation);
       ui.speakControl.classList.toggle("active", speaking);
       ui.typeControl.classList.toggle("active", !speaking);
