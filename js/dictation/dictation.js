@@ -732,7 +732,7 @@
           </button>
         </div>
         <div class="te-dict-work">
-          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<span data-dict-label="dictationSuccess"></span></div>
+          <div class="te-dict-success" id="te-dict-success" role="status" hidden>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<div class="te-dict-success-copy"><span id="te-dict-success-message" data-dict-label="dictationSuccess"></span><span class="te-dict-speech-feedback-sentence" id="te-dict-speech-feedback-sentence" hidden><span data-dict-label="dictationCorrectSentence"></span> <strong id="te-dict-speech-feedback-sentence-text"></strong></span></div><span class="te-dict-speech-feedback-accuracy" id="te-dict-speech-feedback-accuracy" hidden><span data-dict-label="dictationAccuracy"></span> <strong id="te-dict-speech-feedback-accuracy-value"></strong></span></div>
           <div class="te-dict-speech-practice" id="te-dict-speech-practice" hidden>
             <div class="te-dict-speech-target" id="te-dict-speech-target"></div>
             <div class="te-dict-translation" id="te-dict-translation" hidden></div>
@@ -918,6 +918,12 @@
       errorTitleIcon: center.querySelector(".te-dict-error-title svg"),
       errorWords: center.querySelector("#te-dict-error-words"),
       success: center.querySelector("#te-dict-success"),
+      successIcon: center.querySelector("#te-dict-success > svg"),
+      successMessage: center.querySelector("#te-dict-success-message"),
+      speechFeedbackSentence: center.querySelector("#te-dict-speech-feedback-sentence"),
+      speechFeedbackSentenceText: center.querySelector("#te-dict-speech-feedback-sentence-text"),
+      speechFeedbackAccuracy: center.querySelector("#te-dict-speech-feedback-accuracy"),
+      speechFeedbackAccuracyValue: center.querySelector("#te-dict-speech-feedback-accuracy-value"),
       translation: center.querySelector("#te-dict-translation"),
       translationSlot: center.querySelector("#te-dict-translation-slot"),
       check: center.querySelector("#te-dict-check"),
@@ -1051,7 +1057,10 @@
     A?.setPreferredLearningMode?.(mode);
     if (swapProgress) applyModeProgress(mode);
     if (ui) {
-      if (changed) onAnswerInput();
+      if (changed) {
+        onAnswerInput();
+        resetSpeechFeedback();
+      }
       const speaking = mode === "speaking";
       ui.root.classList.toggle("te-dict-speaking-mode", speaking);
       ui.speechPractice.hidden = !speaking;
@@ -1135,7 +1144,48 @@
       speechStartPending || !!speechRecognition || !!speechRecorder || !!speechRecordingStream
       || speechStopRequested || !!speechPlaybackAudio || videoCuePlaying
     );
-    ui.check.disabled = captionControlsDisabled || speakingBusy;
+    const speechMicWaiting = dictationMode === "speaking" && !!ui.speechMic && !ui.speechMic.disabled
+      && !ui.speechMic.classList.contains("listening") && !speakingBusy;
+    ui.check.disabled = captionControlsDisabled || speakingBusy || speechMicWaiting;
+  }
+
+  function resetSpeechFeedback() {
+    if (!ui?.success) return;
+    ui.success.classList.remove("te-dict-speech-feedback", "state-pass", "state-warn", "state-fail");
+    if (ui.successIcon) ui.successIcon.innerHTML = '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>';
+    if (ui.successMessage) {
+      ui.successMessage.dataset.dictLabel = "dictationSuccess";
+      ui.successMessage.textContent = tr("dictationSuccess");
+    }
+    if (ui.speechFeedbackSentence) ui.speechFeedbackSentence.hidden = true;
+    if (ui.speechFeedbackSentenceText) ui.speechFeedbackSentenceText.textContent = "";
+    if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = true;
+    if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = "";
+  }
+
+  function setSpeechFeedback(tier, percent, sentence, perfect) {
+    if (!ui?.success) return;
+    const state = ["pass", "warn", "fail"].includes(tier) ? tier : "fail";
+    const iconPaths = {
+      pass: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+      warn: '<path d="m10.29 3.86-8.47 14.14A2 2 0 0 0 3.54 21h16.92a2 2 0 0 0 1.72-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      fail: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'
+    };
+    ui.success.classList.add("te-dict-speech-feedback");
+    for (const name of ["pass", "warn", "fail"]) ui.success.classList.toggle(`state-${name}`, name === state);
+    if (ui.successIcon) ui.successIcon.innerHTML = iconPaths[state];
+    const messageKey = state === "pass"
+      ? perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed"
+      : "dictationSpeakRetry";
+    if (ui.successMessage) {
+      ui.successMessage.dataset.dictLabel = messageKey;
+      ui.successMessage.textContent = tr(messageKey);
+    }
+    if (ui.speechFeedbackSentence) ui.speechFeedbackSentence.hidden = false;
+    if (ui.speechFeedbackSentenceText) ui.speechFeedbackSentenceText.textContent = String(sentence || "");
+    if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = false;
+    if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = `${percent}%`;
+    ui.success.hidden = false;
   }
 
   function updateSpeechMicState(listening) {
@@ -2223,6 +2273,7 @@
     ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = true;
+    resetSpeechFeedback();
     ui.translation.textContent = "";
     syncCurrentTranslationDisplay(translationAlwaysVisible());
     setScore(wasSolved ? 100 : null);
@@ -2700,13 +2751,16 @@
       renderSpeechResult(ui.input.value);
       setSpeechStatus(tier === "pass" ? "" : "dictationSpeakRetry");
     }
-    const successLabel = ui.success.querySelector("[data-dict-label]");
     const successMessage = isSpeaking
       ? (result.perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed")
       : "dictationSuccess";
-    if (successLabel) successLabel.textContent = tr(successMessage);
+    if (ui.successMessage) {
+      ui.successMessage.dataset.dictLabel = successMessage;
+      ui.successMessage.textContent = tr(successMessage);
+    }
     setScore(result.percent);
     updateCheckButtonStyle(passed);
+    if (isSpeaking) setSpeechFeedback(tier, result.percent, cue.en, result.perfect);
     if (passed) {
       if (result.perfect) {
         const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
@@ -2739,7 +2793,7 @@
     checkedCurrent = false;
     updateAnswerStackOffset();
     ui.input.classList.remove("correct");
-    ui.success.hidden = true;
+    ui.success.hidden = !isSpeaking;
     if (wasSuccessVisible) renderProperNounHint(cue.en);
     syncCurrentTranslationDisplay();
     updateRows(false);

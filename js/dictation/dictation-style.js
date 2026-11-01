@@ -603,6 +603,16 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-empty { color: #6b7280; font-size: 12px; font-style: italic; font-weight: 400; }
 #keepit-exact-overlay .te-dict-success { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border: 1px solid rgba(16, 185, 129, .3); border-radius: 12px; background: rgba(16, 185, 129, .1); color: #059669; font-size: 12px; font-weight: 800; }
 #keepit-exact-overlay.theme-dark .te-dict-success { color: #34d399; }
+#keepit-exact-overlay .te-dict-success.te-dict-speech-feedback { justify-content: flex-start; text-align: left; }
+#keepit-exact-overlay .te-dict-success.te-dict-speech-feedback .te-dict-success-copy { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 4px; }
+#keepit-exact-overlay .te-dict-speech-feedback-sentence { display: block; overflow-wrap: anywhere; font-size: 12px; font-weight: 600; line-height: 1.45; }
+#keepit-exact-overlay .te-dict-speech-feedback-accuracy { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; }
+#keepit-exact-overlay .te-dict-speech-feedback-sentence[hidden],
+#keepit-exact-overlay .te-dict-speech-feedback-accuracy[hidden] { display: none !important; }
+#keepit-exact-overlay .te-dict-success.te-dict-speech-feedback.state-warn { border-color: rgba(245,158,11,.38); background: rgba(245,158,11,.1); color: #b45309; }
+#keepit-exact-overlay .te-dict-success.te-dict-speech-feedback.state-fail { border-color: rgba(239,68,68,.34); background: rgba(239,68,68,.08); color: #dc2626; }
+#keepit-exact-overlay.theme-dark .te-dict-success.te-dict-speech-feedback.state-warn { color: #fbbf24; }
+#keepit-exact-overlay.theme-dark .te-dict-success.te-dict-speech-feedback.state-fail { color: #f87171; }
 #keepit-exact-overlay .te-dict-translation { padding: 12px; border: 1px solid rgba(245, 158, 11, .3); border-radius: 12px; background: rgba(245, 158, 11, .06); color: #92400e; font-size: clamp(14px, 1.1vw, 16px); font-weight: 700; line-height: 1.55; text-align: center; }
 #keepit-exact-overlay.theme-dark .te-dict-translation { color: #fcd34d; }
 #keepit-exact-overlay .te-dict-translation[hidden] { display: none !important; }
