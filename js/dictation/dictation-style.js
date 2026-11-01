@@ -822,7 +822,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-practice[hidden],
 #keepit-exact-overlay .te-dict-speech-result-wrap[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-speech-controls-spacer { flex: 0 0 100px; width: 100%; height: 146px; }
-#keepit-exact-overlay .te-dict-speech-controls { position: absolute; right: 0; bottom: 0px; left: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; height: 100px; }
+#keepit-exact-overlay .te-dict-speech-controls { position: absolute; right: 0; bottom: -4px; left: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; height: 100px; }
 #keepit-exact-overlay .te-dict-speech-target {
   display: flex; width: 100%; min-height: 72px; align-items: center; justify-content: center;
   padding: 14px 18px; border: 1px solid rgba(245,158,11,.48); border-radius: 14px;
