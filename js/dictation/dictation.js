@@ -1023,10 +1023,17 @@
     }
   }
 
-  function getSpeechScoreTier(percent) {
+  function getScoreColorTier(percent) {
     if (!Number.isFinite(percent)) return null;
-    if (percent >= 70) return "pass";
-    return percent >= 40 ? "warn" : "fail";
+    if (percent >= 70) return "green";
+    return percent >= 40 ? "yellow" : "red";
+  }
+
+  function getSpeechScoreTier(percent) {
+    const colorTier = getScoreColorTier(percent);
+    if (colorTier === "green") return "pass";
+    if (colorTier === "yellow") return "warn";
+    return colorTier === "red" ? "fail" : null;
   }
 
   function setSpeechTargetState(state = "practice") {
@@ -1036,15 +1043,16 @@
     }
   }
 
-  function updateSpeechScoreColors(percent) {
+  function updateScoreTierColors(percent) {
     if (!ui?.root) return;
-    const tier = dictationMode === "speaking" ? getSpeechScoreTier(percent) : null;
-    for (const name of ["pass", "warn", "fail"]) {
-      ui.root.classList.toggle(`te-dict-score-${name}`, tier === name);
+    const colorTier = getScoreColorTier(percent);
+    for (const name of ["green", "yellow", "red"]) {
+      ui.root.classList.toggle(`te-dict-score-${name}`, colorTier === name);
     }
+    const speechTier = dictationMode === "speaking" ? getSpeechScoreTier(percent) : null;
     if (ui.speechResultWrap) {
-      ui.speechResultWrap.classList.toggle("state-warn", tier === "warn");
-      ui.speechResultWrap.classList.toggle("state-fail", tier === "fail");
+      ui.speechResultWrap.classList.toggle("state-warn", speechTier === "warn");
+      ui.speechResultWrap.classList.toggle("state-fail", speechTier === "fail");
     }
   }
 
@@ -1634,7 +1642,7 @@
     ui.score.textContent = has ? `${percent}%` : "---";
     ui.toolbarScore.textContent = `${has ? percent : 0}%`;
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
-    updateSpeechScoreColors(percent);
+    updateScoreTierColors(percent);
   }
 
   function updateCheckButtonStyle(perfect) {

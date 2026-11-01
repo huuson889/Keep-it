@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.915; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.916; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
-- Speaking Practice: 70–100% đạt, đánh dấu câu đã giải và bật Next nhưng không tự chuyển; 40–69% vàng/thử lại; 0–39% đỏ/thử lại. Typing giữ behavior hiện có. Privacy note vẫn ẩn và nhóm mic/help giữ vị trí của source v3.4.914.
+- Speaking Practice: 70–100% đạt, đánh dấu câu đã giải và bật Next nhưng không tự chuyển; 40–69% vàng/thử lại; 0–39% đỏ/thử lại. Typing dùng cùng ngưỡng màu điểm nhưng chỉ 100% mới đạt. Privacy note vẫn ẩn và nhóm mic/help giữ vị trí của source v3.4.914.
 - Dictation video giữ bố cục ba cột, transcript và tiến độ cục bộ; các mode overlay/Reading và cache hiện hành không nằm trong phạm vi thay đổi lần này.
-- Static checks v3.4.915 đạt: `node --check` toàn bộ JS, manifest JSON/version, CSS brace balance, tier/localization/style assertions, `git diff --check`; ZIP 109 file CRC/coverage đạt. Browser-test chưa thực hiện.
+- Static checks v3.4.916 đạt: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, color-boundary/typing/Next assertions, docs structure/length và `git diff --check`; browser-test chưa thực hiện.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
 - Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
-- Dictation, Reading và YouTube overlay: kiểm tra typing/speaking, tier 70/40/39, Next không tự chuyển, score colors, speech recognition/permission/result, progress, mode transitions, layout/scroll, cleanup và reload trên Chromium/Firefox/Edge. Chưa browser-test.
+- Dictation, Reading và YouTube overlay: kiểm tra typing colors 70/40/0 với chỉ 100% đạt, Speaking tiers 70/40/0 và Next không tự chuyển, speech recognition/permission/result, progress, mode transitions, layout/scroll, cleanup và reload trên Chromium/Firefox/Edge. Chưa browser-test.
 - Reader/TTS/Settings/voice: kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, search/menu language/keyboard, IPA, network messaging, translation latency, Firefox MV3 và Twemoji trên trang thật; một số chỉ headless-test, chưa xác nhận trong extension.
 
 ### Chưa triển khai / trước phát hành
@@ -112,6 +112,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-01 | v3.4.916 | Arena.ai Agent sửa:**
+
+- Cập nhật riêng màu điểm Typing theo cùng ba ngưỡng màu với Speaking: xanh 70–100%, vàng 40–69%, đỏ 0–39%. Typing vẫn chỉ đánh dấu solved/bật Next tại `result.perfect` (100%); không tự chuyển câu.
+- File: `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `manifest.json`, `docs/modules/dictation.md`, `PROJECT.md`, `Keepit - Optimize Test-v3.4.916.zip`.
+- Kiểm tra: toàn bộ JS `node --check`, manifest JSON/version, CSS brace balance, assertions biên 70/40/39/0, typing chỉ perfect-only, Next không tự chuyển, docs structure/length và `git diff --check` đạt; ZIP 109 file CRC/coverage đạt; chưa browser-test.
 
 **2026-11-01 | v3.4.915 | Arena.ai Agent sửa:**
 
