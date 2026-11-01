@@ -32,8 +32,8 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Bộ dịch UI chỉ tác động nhãn/thuộc tính của overlay, không dịch tiêu đề video, nội dung trang hoặc caption. Caption/transcript vẫn theo font và màu phụ đề tùy chỉnh; chữ điều khiển Keepit dùng `--lhn-app-font-family`.
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
-- Giữ bốn subtitle mode và ba video mode; Reading S/M/L dùng video/giữa = 32/35%, 26/45%, 20/60%. Nhãn VI `videoMedium` là “Vừa”; shortcut bỏ qua input/editable.
-- Reading toggle giữ player, reset khi rời mode. `.te-dict-brand` dùng chung Dictation, scale theo chiều rộng video. Ambient “Chế độ nghệ thuật” có switch trực tiếp trong menu; bật dùng Ambient 3.
+- Bốn subtitle mode, ba video mode; Reading video/giữa S/M/L 32/35%, 26/45%, 20/60%. VI `videoMedium`: “Vừa”, `videoViewSize`: “Kích thước xem”; shortcut bỏ qua editable.
+- Reading toggle giữ player; reset khi rời mode. `.te-dict-brand` dùng chung Dictation, scale theo video. Ambient “Chế độ nghệ thuật” có switch menu, bật dùng Ambient 3. Settings: `.te-modal-body` 4px 0; ẩn `#te-reading-width-hint`; art trước hide-controls.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 

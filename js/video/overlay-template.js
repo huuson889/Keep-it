@@ -375,12 +375,13 @@ const OVERLAY_CSS = `
     }
 
     .te-modal-body {
-      padding: 6px 0;
+      padding: 4px 0;
       max-height: 520px;
       overflow-y: auto;
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
+    #keepit-exact-overlay #te-modal-main #te-reading-width-hint { display: none !important; }
     #keepit-exact-overlay::-webkit-scrollbar,
     #keepit-exact-overlay *::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
     .te-modal-body::-webkit-scrollbar-track { background: transparent; }
@@ -1265,7 +1266,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <div class="te-modal-body">
 
           <!-- Chế độ xem -->
-          <div class="te-setting-section-title">Kích cỡ xem</div>
+          <div class="te-setting-section-title">Kích thước xem</div>
           <div id="te-reading-width-hint" style="display: none; padding: 0 20px 8px; color: #6b7280; font-size: 12px; text-align: center;">Độ rộng khung phụ đề giữa: 40% màn hình</div>
           <div id="te-view-mode-options" style="padding: 0 20px 14px 20px;">
             <div class="te-btn-group">
@@ -1308,6 +1309,14 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
           </div>
 
+          <!-- Ambient art mode: direct on/off switch, like the control-bar visibility switch. -->
+          <div class="te-menu-row">
+            <div class="te-item-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+              <span>Ambient mode</span>
+            </div>
+            <label class="te-switch"><input id="te-ambient-toggle" type="checkbox" role="switch" aria-label="Ambient mode"><span class="te-slider"></span></label>
+          </div>
           <!-- Ẩn thanh điều khiển -->
           <div class="te-menu-row">
             <div class="te-item-left">
@@ -1317,14 +1326,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             <label class="te-switch"><input type="checkbox"><span class="te-slider"></span></label>
           </div>
 
-          <!-- Ambient art mode: direct on/off switch, like the control-bar visibility switch. -->
-          <div class="te-menu-row">
-            <div class="te-item-left">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-              <span>Ambient mode</span>
-            </div>
-            <label class="te-switch"><input id="te-ambient-toggle" type="checkbox" role="switch" aria-label="Ambient mode"><span class="te-slider"></span></label>
-          </div>
           
           <div class="te-divider"></div>
           
