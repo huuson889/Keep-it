@@ -287,8 +287,10 @@
 
   Object.assign(MESSAGES.en, {
     dictationSpeak:"Speak", dictationSpeakTitle:"Shadowing at your pace", dictationModeGroup:"Dictation mode",
-    dictationSpeakHelp:"Tap the microphone and repeat the sentence you hear.",
-    dictationSpeakPrivacy:"The browser's speech-recognition service may process your audio.",
+    dictationSpeakHelp:"Press Enter or tap the microphone to start. Press Enter again to stop, hear your recording, and check it.",
+    dictationSpeakPrivacy:"A temporary memory-only recording plays locally; Keepit does not save or upload it. Browser speech recognition may process your audio.",
+    dictationSpeakRecordingUnavailable:"Can't replay here; speech recognition remains available.",
+    dictationSpeakAnswerRevealed:"Answer revealed. Enter = 100%; Escape = reset.",
     dictationSpeakResult:"Speech recognition result", dictationSpeakListening:"Listening…",
     dictationSpeakProcessing:"Checking what you said…", dictationSpeakSuccess:"Excellent! You said it 100% correctly.",
     dictationSpeakPassed:"Passed. You can move on to the next sentence.",
@@ -297,15 +299,17 @@
     dictationSpeakUnsupported:"Speech recognition is not available in this browser. Try Chrome or Edge, or switch to Type.",
     dictationSpeakNetwork:"Speech recognition could not connect. Check your connection and try again.",
     dictationSpeakError:"Could not start speech recognition. Please try again.",
-    dictationSpeakStart:"Start speaking practice", dictationSpeakStop:"Stop and check speech",
-    dictationSpeechShortcutHint:"(Enter) Check · (Esc) Reveal/Reset · (`) Play/Pause · (Ctrl) Replay",
+    dictationSpeakStart:"Start speaking practice", dictationSpeakStop:"Stop recording and check speech",
+    dictationSpeechShortcutHint:"(Enter) Start/stop/next · (Esc) Reveal/reset · (`) Play/pause · (Ctrl) Replay",
     dictationProgressSyncOn:"Progress sync: on", dictationProgressSyncOff:"Progress sync: off",
     dictationShowTranslation:"Show translation", dictationHideTranslation:"Hide translation"
   });
   Object.assign(MESSAGES.vi, {
     dictationSpeak:"Luyện nói", dictationSpeakTitle:"Luyện nói theo nhịp của bạn", dictationModeGroup:"Chế độ luyện tập",
-    dictationSpeakHelp:"Nhấn micro và nhắc lại câu bạn nghe được.",
-    dictationSpeakPrivacy:"Dịch vụ nhận diện giọng nói của trình duyệt có thể xử lý âm thanh của bạn.",
+    dictationSpeakHelp:"Nhấn Enter hoặc micro để bắt đầu. Nhấn Enter lần nữa để dừng, nghe lại bản ghi và chấm điểm.",
+    dictationSpeakPrivacy:"Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện.",
+    dictationSpeakRecordingUnavailable:"Không phát lại được tại đây; nhận diện giọng nói vẫn hoạt động.",
+    dictationSpeakAnswerRevealed:"Đã hiện đáp án. Enter = 100%; Escape = đặt lại.",
     dictationSpeakResult:"Kết quả nhận diện giọng nói", dictationSpeakListening:"Đang nghe…",
     dictationSpeakProcessing:"Đang kiểm tra câu bạn vừa nói…", dictationSpeakSuccess:"Xuất sắc! Bạn đã nói chính xác 100%.",
     dictationSpeakPassed:"Đạt yêu cầu. Bạn có thể chuyển sang câu tiếp theo.",
@@ -314,8 +318,8 @@
     dictationSpeakUnsupported:"Trình duyệt này chưa hỗ trợ nhận diện giọng nói. Hãy thử Chrome/Edge hoặc chuyển sang Đánh máy.",
     dictationSpeakNetwork:"Không kết nối được dịch vụ nhận diện giọng nói. Hãy kiểm tra mạng và thử lại.",
     dictationSpeakError:"Không thể bắt đầu nhận diện giọng nói. Vui lòng thử lại.",
-    dictationSpeakStart:"Bắt đầu luyện nói", dictationSpeakStop:"Dừng và chấm câu nói",
-    dictationSpeechShortcutHint:"(Enter) Chấm điểm · (Esc) Đáp án/Làm lại · (`) Phát/Tạm dừng · (Ctrl) Nghe lại",
+    dictationSpeakStart:"Bắt đầu luyện nói", dictationSpeakStop:"Dừng ghi âm và chấm điểm",
+    dictationSpeechShortcutHint:"(Enter) Bắt đầu/dừng/tiếp · (Esc) Đáp án/đặt lại · (`) Phát/tạm dừng · (Ctrl) Nghe lại",
     dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt",
     dictationShowTranslation:"Hiện bản dịch", dictationHideTranslation:"Ẩn bản dịch"
   });
@@ -337,8 +341,10 @@
 
   Object.assign(MESSAGES.ko, {
     dictationSpeak:"말하기", dictationSpeakTitle:"나만의 속도로 따라 말하기", dictationModeGroup:"받아쓰기 모드",
-    dictationSpeakHelp:"마이크를 누르고 들은 문장을 따라 말하세요.",
-    dictationSpeakPrivacy:"브라우저 음성 인식 서비스가 음성을 처리할 수 있습니다.",
+    dictationSpeakHelp:"Enter 키나 마이크를 눌러 시작하세요. Enter를 다시 누르면 멈추고 녹음을 들은 뒤 채점합니다.",
+    dictationSpeakPrivacy:"임시 녹음은 메모리에서만 재생되며 Keepit은 저장하거나 업로드하지 않습니다. 브라우저가 음성을 처리할 수 있습니다.",
+    dictationSpeakRecordingUnavailable:"여기서는 재생할 수 없지만 음성 인식은 계속 사용할 수 있습니다.",
+    dictationSpeakAnswerRevealed:"정답 표시. Enter = 100%, Escape = 초기화.",
     dictationSpeakResult:"음성 인식 결과", dictationSpeakListening:"듣는 중…",
     dictationSpeakProcessing:"말한 내용을 확인하는 중…", dictationSpeakSuccess:"잘했어요! 100% 정확하게 말했습니다.",
     dictationSpeakPassed:"통과했습니다. 다음 문장으로 이동할 수 있습니다.",
@@ -347,8 +353,8 @@
     dictationSpeakUnsupported:"이 브라우저에서는 음성 인식을 지원하지 않습니다. Chrome/Edge를 사용하거나 타이핑으로 전환하세요.",
     dictationSpeakNetwork:"음성 인식 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
     dictationSpeakError:"음성 인식을 시작할 수 없습니다. 다시 시도하세요.",
-    dictationSpeakStart:"말하기 연습 시작", dictationSpeakStop:"말하기를 멈추고 확인",
-    dictationSpeechShortcutHint:"(Enter) 채점 · (Esc) 답 보기/초기화 · (`) 재생/일시정지 · (Ctrl) 다시 듣기",
+    dictationSpeakStart:"말하기 연습 시작", dictationSpeakStop:"녹음을 멈추고 채점",
+    dictationSpeechShortcutHint:"(Enter) 시작/정지/다음 · (Esc) 정답/초기화 · (`) 재생/일시정지 · (Ctrl) 다시 듣기",
     dictationProgressSyncOn:"진행률 동기화: 켜짐", dictationProgressSyncOff:"진행률 동기화: 꺼짐",
     dictationShowTranslation:"번역 표시", dictationHideTranslation:"번역 숨기기"
   });

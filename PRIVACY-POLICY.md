@@ -1,6 +1,6 @@
 # Keepit Privacy Policy — Draft / Chính sách quyền riêng tư Keepit — Bản nháp
 
-> **DRAFT — NOT FOR PUBLICATION.** Prepared 24 October 2026 for Keepit extension version 3.4.553. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
+> **DRAFT — NOT FOR PUBLICATION.** Prepared/updated 1 November 2026 for Keepit extension version 3.4.928. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
 >
 > **Controller / owner:** `[LEGAL NAME OF THE PERSON OR ENTITY RESPONSIBLE FOR KEEPIT]`  
 > **Privacy contact:** `[PRIVACY CONTACT EMAIL]`  
@@ -17,13 +17,15 @@ This document covers the current extension and describes planned account/cloud f
 
 This policy applies to the Keepit browser extension/add-on for Chromium-based browsers and Firefox-based browsers, including its Dashboard, page features, translation, dictionary, text-to-speech, Bilingual Reader, flashcards, and diagnostics.
 
-In version 3.4.553, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
+In version 3.4.928, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
 
 ### 2. Information handled by the current extension
 
 **Information stored in the browser profile.** Keepit stores information needed for the features you use, such as highlights, note text, quoted/context text, page title and URL associated with an annotation, colors, tags, favorites, flashcard/study data, extension settings, and local feature/cache/usage state. If you create or edit the Dashboard's demo profile, its display name, username, email address, and avatar image data (if supplied) are also stored locally; this is not a real online account. Annotation data is stored in extension IndexedDB; settings and other local state use the browser's extension storage. Keepit does not currently send this local library, demo profile, or settings to a Keepit-operated server.
 
 **Page content.** The extension's content scripts run on supported web pages to provide highlighting, notes, translation, dictionary, and Reader features. Page text is processed in the browser to provide those features. Keepit does not currently upload whole browsing sessions to a Keepit server. When you invoke a feature that needs an outside service, the relevant word, selected text, or Reader passage may be sent to that service as described below.
+
+**Speaking practice audio.** When you start Dictation Speaking mode, the browser's SpeechRecognition feature processes speech to produce a transcript; the browser/provider may process the audio under its own settings and privacy terms. Keepit also records a temporary audio clip in memory solely to play back your own voice. Keepit does not write that clip to extension storage or a file, and does not upload it. The temporary recording/Blob URL is released when the attempt is reset, the sentence or mode changes, or the panel closes.
 
 **Local usage prototype.** Current usage-limit and billing logic is a local prototype. Its counters and prototype state are stored in the browser profile; the current build does not send those counters to a Keepit billing server and does not process real payments.
 
@@ -38,6 +40,7 @@ Keepit uses outside services to provide features. The service receives the infor
 | Translation, including Bilingual Reader and flashcard translation | Google translation endpoints (`translate.googleapis.com`, `clients5.google.com`); MyMemory (`api.mymemory.translated.net`); the configured Lingva instances (`lingva.ml`, `lingva.thedaviddelta.com`) | The text or passage being translated and the relevant language parameters, to return a translation. Reader passages may be sent when you start or use translation features. The service selected by the feature/fallback may vary. |
 | Dictionary, IPA, synonyms, antonyms, word forms, and collocations | `api.dictionaryapi.dev`; `api.datamuse.com`; Google translation endpoint for a fallback IPA lookup; MyMemory where translation is requested | The word/root or lookup query and language information needed to return the requested definition or related-word data. |
 | Google text-to-speech | `translate.google.com/translate_tts` | The text to be spoken and its language, so Google can return audio. If you choose a browser/system voice, Keepit does not use this Google TTS request path; the browser or operating system may process speech according to its own settings and privacy terms. |
+| Browser speech recognition in Dictation Speaking mode | The browser's configured speech-recognition implementation/provider (varies by browser and settings) | Audio is used to produce a recognized transcript. Provider processing/retention is governed by that provider's terms; the temporary Keepit playback recording itself is not uploaded by Keepit. |
 | Custom web fonts | Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`) | The font stylesheet/assets, requested when you enable and select a custom web font. When custom fonts are off or the website is disabled in Keepit, the stylesheet is not attached. Google may receive normal network/request information and browser-provided referrer information. |
 | Dashboard favicon fallback | Google S2 Favicon (`www.google.com/s2/favicons`) | If the page's direct `/favicon.ico` request fails, the Dashboard requests a fallback icon and includes the page URL in the `domain_url` query parameter. |
 | Definition search opened by the user | Google Search (`www.google.com/search`) | The word/query is included in the search URL when you choose the definition-search feature. |
@@ -54,7 +57,7 @@ Keepit cannot delete information retained by an outside provider after you have 
 
 ### 5. Permissions and access
 
-The extension requests browser permissions for storage, larger local storage, active-tab/tab functions, and a network-request rule used for Google TTS. Content scripts are configured to run on supported websites because highlighting, notes, translation, and Reader features need access to page content. Host access also supports the named translation, dictionary, font, and favicon services. These permissions do not mean that Keepit sends every page to a Keepit server; the transmissions described above occur to provide specific extension features. The policy and any in-product disclosures must remain consistent with the actual manifest and behavior.
+The extension requests browser permissions for storage, larger local storage, active-tab/tab functions, and a network-request rule used for Google TTS. Content scripts are configured to run on supported websites because highlighting, notes, translation, and Reader features need access to page content. Host access also supports the named translation, dictionary, font, and favicon services. These permissions do not mean that Keepit sends every page to a Keepit server; the transmissions described above occur to provide specific extension features. The policy and any in-product disclosures must remain consistent with the actual manifest and behavior. Speaking mode requests microphone access only after the user starts it (via Enter or the microphone control). Keepit's short recording is held in memory for playback and is not persisted or uploaded by Keepit; browser speech recognition may process the audio through its configured provider.
 
 ### 6. Security and international processing
 
@@ -62,7 +65,7 @@ Current user-created content and settings are stored in the browser profile; Kee
 
 ### 7. Planned account and cloud features — NOT ACTIVE
 
-The following describes a product plan only. None of these cloud/account operations is active in version 3.4.553. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
+The following describes a product plan only. None of these cloud/account operations is active in version 3.4.928. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
 
 If launched, account/cloud services are expected to process account/identity details, user-created annotations and settings selected for sync, flashcard/Dictation progress, sync status, and plan/usage entitlements. A server-side service provider has not yet been finalized. The current plan is for a 7-day Ultra trial with sync, followed by Free with no new sync and any existing cloud data in read-only/export mode; plan quotas and payment providers remain undecided. The product plan also calls for advance notices 30 and 7 days before cloud data is progressively removed after 12 months without meaningful activity, with an opportunity to export. These are planned rules, not current data practices, and may change before launch.
 
@@ -86,13 +89,15 @@ Before publication, complete the controller/contact/date/URL fields; verify ever
 
 Chính sách này áp dụng cho tiện ích Keepit trên các trình duyệt nhân Chromium và Firefox, gồm Dashboard, tính năng trên trang, dịch, từ điển, chuyển văn bản thành giọng nói, Bilingual Reader, flashcard và nhật ký chẩn đoán.
 
-Trong phiên bản 3.4.553, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
+Trong phiên bản 3.4.928, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
 
 ### 2. Thông tin được xử lý trong bản hiện tại
 
 **Thông tin lưu trong hồ sơ trình duyệt.** Keepit lưu dữ liệu cần cho tính năng bạn sử dụng, ví dụ phần tô sáng, nội dung ghi chú, câu trích/ngữ cảnh, tiêu đề và URL trang gắn với ghi chú, màu, tag, mục yêu thích, dữ liệu flashcard/ôn tập, cài đặt extension và trạng thái cache/sử dụng local. Nếu bạn tạo hoặc sửa hồ sơ demo trong Dashboard, tên hiển thị, username, email và dữ liệu ảnh đại diện (nếu có) cũng được lưu local; đây không phải tài khoản trực tuyến thật. Dữ liệu annotation lưu trong IndexedDB của extension; cài đặt và trạng thái local khác dùng bộ nhớ extension của trình duyệt. Hiện Keepit không gửi thư viện local, hồ sơ demo hoặc cài đặt đến máy chủ do Keepit vận hành.
 
 **Nội dung trang.** Content script chạy trên website được hỗ trợ để cung cấp tô sáng, ghi chú, dịch, từ điển và Reader. Nội dung trang được xử lý trong trình duyệt để cung cấp các tính năng đó. Hiện Keepit không tải toàn bộ lịch sử duyệt web lên máy chủ Keepit. Khi bạn dùng tính năng cần dịch vụ bên ngoài, từ/câu/đoạn liên quan có thể được gửi đến dịch vụ đó như mô tả bên dưới.
+
+**Âm thanh khi luyện nói.** Khi bạn bắt đầu chế độ Luyện nói của Dictation, tính năng SpeechRecognition của trình duyệt xử lý lời nói để tạo transcript; trình duyệt/nhà cung cấp có thể xử lý audio theo cài đặt và chính sách riêng. Keepit cũng ghi âm tạm vào bộ nhớ chỉ để phát lại giọng của bạn. Keepit không ghi bản ghi vào bộ nhớ extension/tệp và không tải lên. Bản ghi/Blob URL tạm được giải phóng khi đặt lại lượt luyện, đổi câu/chế độ hoặc đóng panel.
 
 **Bản mẫu hạn mức local.** Logic hạn mức và billing hiện tại là bản mẫu chạy local. Bộ đếm và trạng thái mẫu được lưu trong hồ sơ trình duyệt; bản hiện tại không gửi số liệu này đến máy chủ billing của Keepit và không xử lý thanh toán thật.
 
@@ -107,6 +112,7 @@ Keepit dùng dịch vụ bên ngoài để cung cấp tính năng. Dịch vụ n
 | Dịch, gồm Bilingual Reader và dịch flashcard | Google (`translate.googleapis.com`, `clients5.google.com`); MyMemory (`api.mymemory.translated.net`); các máy chủ Lingva đang cấu hình (`lingva.ml`, `lingva.thedaviddelta.com`) | Văn bản/đoạn cần dịch và tham số ngôn ngữ để trả kết quả. Đoạn Reader có thể được gửi khi bạn bắt đầu hoặc dùng tính năng dịch. Nhà cung cấp cụ thể có thể thay đổi theo tính năng/fallback. |
 | Từ điển, IPA, từ đồng nghĩa/trái nghĩa, dạng từ và collocation | `api.dictionaryapi.dev`; `api.datamuse.com`; Google làm nguồn IPA dự phòng; MyMemory khi có yêu cầu dịch | Từ, gốc từ hoặc truy vấn cùng thông tin ngôn ngữ cần thiết để trả dữ liệu tra cứu. |
 | Google text-to-speech | `translate.google.com/translate_tts` | Văn bản cần đọc và ngôn ngữ để Google tạo audio. Nếu chọn giọng trình duyệt/hệ thống, Keepit không dùng đường request Google TTS này; trình duyệt/hệ điều hành có thể xử lý theo cài đặt và chính sách riêng của họ. |
+| Nhận diện giọng nói của trình duyệt trong Dictation Luyện nói | Cơ chế/nhà cung cấp SpeechRecognition do trình duyệt cấu hình (tùy trình duyệt và cài đặt) | Audio được dùng để tạo transcript nhận diện. Việc xử lý/lưu giữ của nhà cung cấp tuân theo điều khoản riêng; bản ghi tạm để Keepit phát lại không được Keepit upload. |
 | Font web tùy chỉnh | Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`) | Stylesheet/font chỉ được yêu cầu khi bạn bật và chọn custom web font. Khi custom font tắt hoặc website bị tắt trong Keepit, stylesheet không được gắn vào trang. Google có thể nhận thông tin mạng/request thông thường và thông tin referrer do trình duyệt gửi. |
 | Fallback favicon trong Dashboard | Google S2 Favicon (`www.google.com/s2/favicons`) | Nếu request trực tiếp tới `/favicon.ico` của trang lỗi, Dashboard gọi Google để lấy icon dự phòng và gửi URL trang trong tham số `domain_url`. |
 | Tra cứu định nghĩa do người dùng mở | Google Search (`www.google.com/search`) | Từ/truy vấn được đưa vào URL tìm kiếm khi bạn chọn tính năng tra cứu định nghĩa. |
@@ -123,7 +129,7 @@ Keepit không thể xóa dữ liệu mà nhà cung cấp bên ngoài đã lưu s
 
 ### 5. Quyền và truy cập
 
-Extension yêu cầu quyền trình duyệt cho bộ nhớ, dung lượng local mở rộng, tab đang hoạt động/các thao tác tab và quy tắc request dùng cho Google TTS. Content script được cấu hình chạy trên website được hỗ trợ vì các tính năng tô sáng, ghi chú, dịch và Reader cần truy cập nội dung trang. Quyền host cũng phục vụ các dịch vụ dịch, từ điển, font và favicon nêu trên. Các quyền này không có nghĩa Keepit gửi mọi trang đến máy chủ Keepit; việc truyền dữ liệu bên ngoài xảy ra để cung cấp các tính năng cụ thể đã mô tả. Chính sách và mọi thông báo trong ứng dụng phải khớp với manifest và hành vi thật.
+Extension yêu cầu quyền trình duyệt cho bộ nhớ, dung lượng local mở rộng, tab đang hoạt động/các thao tác tab và quy tắc request dùng cho Google TTS. Content script được cấu hình chạy trên website được hỗ trợ vì các tính năng tô sáng, ghi chú, dịch và Reader cần truy cập nội dung trang. Quyền host cũng phục vụ các dịch vụ dịch, từ điển, font và favicon nêu trên. Các quyền này không có nghĩa Keepit gửi mọi trang đến máy chủ Keepit; việc truyền dữ liệu bên ngoài xảy ra để cung cấp các tính năng cụ thể đã mô tả. Chính sách và mọi thông báo trong ứng dụng phải khớp với manifest và hành vi thật. Chế độ Luyện nói chỉ yêu cầu quyền microphone sau khi người dùng bắt đầu (bằng Enter hoặc nút micro). Bản ghi ngắn của Keepit chỉ nằm trong bộ nhớ để phát lại, không lưu bền vững hoặc upload; nhận diện giọng nói của trình duyệt có thể xử lý audio qua nhà cung cấp được cấu hình.
 
 ### 6. Bảo mật và xử lý quốc tế
 
@@ -131,7 +137,7 @@ Nội dung người dùng và cài đặt hiện lưu trong hồ sơ trình duy�
 
 ### 7. Tài khoản và cloud dự kiến — CHƯA HOẠT ĐỘNG
 
-Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.4.553**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
+Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.4.928**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
 
 Nếu ra mắt, tài khoản/cloud dự kiến xử lý thông tin tài khoản/định danh, annotation và cài đặt người dùng chọn đồng bộ, tiến độ flashcard/Dictation, trạng thái sync và quyền lợi/hạn mức gói. Nhà cung cấp server chưa được chọn cuối cùng. Kế hoạch hiện tại là dùng thử Ultra 7 ngày có sync; sau đó Free không tạo sync mới và dữ liệu cloud đã có chuyển sang chỉ đọc/xuất. Hạn mức gói và nhà cung cấp thanh toán còn chưa chốt. Kế hoạch cũng dự kiến gửi nhắc trước 30 và 7 ngày khi dữ liệu cloud dần bị xóa sau 12 tháng không có hoạt động có ý nghĩa, đồng thời cho phép export. Đây là quy tắc dự kiến, không phải thực hành xử lý dữ liệu hiện tại, và có thể thay đổi trước khi ra mắt.
 

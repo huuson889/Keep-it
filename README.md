@@ -26,10 +26,11 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. Auto-scroll, paragraph play icons, and the speed step are configurable.
 - The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
 
-### YouTube Dictation (v1)
-- Open **AI keepit** in the existing YouTube overlay to switch it into a three-column typing exercise. It is available only when the active Dual Sub transcript uses English captions.
-- Listen to the real YouTube video, type each sentence, and press Enter to check. Scoring aligns words and ignores capitalization, punctuation, and curly apostrophes. Unsolved sentences stay blurred; a Vietnamese translation appears after a correct answer.
-- Lesson notes and solved-sentence progress are stored locally in `browser.storage.local`, keyed by video and sentence. This v1 does not access the microphone or record speech. Speech practice is planned as a separate phase.
+### YouTube Dictation
+- Open **AI keepit** in the existing YouTube overlay to switch it into a three-column exercise. It is available only when the active Dual Sub transcript uses English captions.
+- Typing mode: listen to the real YouTube video, type each sentence, and press Enter to check. Scoring aligns words and ignores capitalization, punctuation, and curly apostrophes. Unsolved sentences stay blurred; a Vietnamese translation appears after a correct answer.
+- Speaking mode: Enter (or the microphone button) starts speech recognition and a temporary microphone recording. Enter again stops recognition, attempts to play back your own recorded voice, then scores the recognized transcript. Wrong answers can be retried; a pass enables **Next**. Escape replays the original video sentence and reveals its answer; Escape again resets the current attempt. After revealing, Enter marks it 100%; the next Enter advances.
+- Lesson notes and solved-sentence progress are stored locally in `browser.storage.local`, keyed by video and sentence. The short recording is kept in memory only for playback; Keepit does not persist or upload it. The browser's speech-recognition service may process audio according to its own provider/settings. Speaking mode requires browser support for `SpeechRecognition` and `MediaRecorder`; it degrades gracefully when recording/playback is unavailable.
 
 ### Text to speech
 - Google text-to-speech by default, with an automatic fallback to the browser's own voices.
@@ -61,7 +62,7 @@ Defaults are listed below. Everything marked customizable can be changed in Dash
 
 The reading-bar keys (`Space`, arrows, `Alt+L`) work while the reader is active and can be turned off in the reader settings.
 
-While YouTube Dictation is open, `Alt+X` clears the answer and returns focus to it; pressing and releasing `Ctrl` by itself replays the current sentence. `Esc` keeps its existing behavior and closes the video overlay.
+While YouTube Dictation is open, `Alt+X` clears the typing answer and returns focus to it; pressing and releasing `Ctrl` by itself replays the current sentence. In Typing mode, Escape reveals/resets the answer when the answer field is focused. In Speaking mode, Escape replays the video cue and reveals the answer; a second Escape resets the current attempt.
 
 ## Install for testing
 
@@ -79,10 +80,10 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Privacy and permissions
 
-- The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. Dictation v1 also stores solved-sentence progress, lesson notes, and any revealed Vietnamese sentence translations in `browser.storage.local`, keyed by YouTube video and sentence. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
-- When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Dictation v1 requests a Vietnamese translation of a sentence only after you type it correctly; that sentence may be sent through the existing translation service. Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
+- The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. Dictation stores solved-sentence progress, lesson notes, and any revealed Vietnamese sentence translations in `browser.storage.local`, keyed by YouTube video and sentence. Speaking mode captures audio only after the user starts it; a temporary in-memory recording is used for local playback and is not saved to extension storage or uploaded by Keepit. The browser speech-recognition service may process audio under its own provider/settings. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
+- When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Dictation requests a Vietnamese translation of a sentence after a correct typing answer or an accepted speaking result; that sentence may be sent through the existing translation service. Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
 - A local error log keeps at most 200 classified entries (time, component, severity, code), without page URLs, page text, selected text, or account details. It is not automatically uploaded; JSON is generated only when you choose Export in Dashboard > Settings > About.
-- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services. Dictation v1 requests no microphone permission and does not record speech; the planned speech-practice phase is not included in this build.
+- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services. Speaking mode requests browser microphone access only after the user starts speech practice; its short recording stays in memory for playback and is not persisted or uploaded by Keepit. SpeechRecognition may send audio for processing through the browser/provider service, depending on browser implementation and settings.
 - The future account/cloud-sync section in the policy is explicitly marked as not active. Usage limits and Upgrade & Billing are local prototypes with no real payments.
 
 ## Limitations
