@@ -818,6 +818,34 @@ function setVideoDisplayModeMenuOpen(open) {
   trigger.setAttribute('aria-expanded', String(open));
 }
 
+function setVideoSidebarHidden(hidden) {
+  const root = overlayEl();
+  if (!root) return false;
+  const sidebarHidden = Boolean(hidden);
+  root.classList.toggle('te-sidebar-hidden', sidebarHidden);
+  const button = ctrl('Bố cục');
+  button?.classList.toggle('te-active', sidebarHidden);
+  button?.setAttribute('aria-pressed', String(sidebarHidden));
+  if (!root.classList.contains('te-reading-mode')) {
+    setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
+  }
+  return sidebarHidden;
+}
+
+function applyVideoDisplayMode(mode) {
+  if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
+  if (mode === 'reading') {
+    setVideoSidebarHidden(false);
+    setVideoLearningMode(true, { persist: true });
+  } else {
+    setVideoLearningMode(false, { persist: true });
+    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.();
+    setVideoSidebarHidden(mode === 'theater');
+  }
+  setVideoDisplayModeSelection(mode);
+  return true;
+}
+
 async function refreshSubtitleLanguageSettings() {
   let sourceLanguageSetting = state.sourceLanguageSetting;
   let targetLanguageSetting = state.targetLanguageSetting;
@@ -1085,6 +1113,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
   if (active) {
+    setVideoSidebarHidden(false);
     if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.();
     for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
       const button = root.querySelector(selector);
@@ -1097,6 +1126,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   const button = ctrl('Chế độ đọc');
   button?.classList.toggle('te-active', active);
   button?.setAttribute('aria-pressed', String(active));
+  setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   return active;
 }
 
@@ -2644,7 +2674,7 @@ function bindUI() {
     option.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      setVideoDisplayModeSelection(option.dataset.videoMode);
+      applyVideoDisplayMode(option.dataset.videoMode);
       setVideoDisplayModeMenuOpen(false);
     });
   });
@@ -2662,9 +2692,8 @@ function bindUI() {
     root.classList.toggle('te-subs-hidden');
     e.currentTarget.classList.toggle('te-active', root.classList.contains('te-subs-hidden'));
   });
-  ctrl('Bố cục').addEventListener('click', (e) => {
-    root.classList.toggle('te-sidebar-hidden');
-    e.currentTarget.classList.toggle('te-active', root.classList.contains('te-sidebar-hidden'));
+  ctrl('Bố cục').addEventListener('click', () => {
+    setVideoSidebarHidden(!root.classList.contains('te-sidebar-hidden'));
   });
   ctrl('Toàn màn hình').addEventListener('click', toggleFullscreen);
   ui('.te-progress-track').addEventListener('click', seekByTrack);

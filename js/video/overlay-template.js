@@ -947,11 +947,11 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           <button class="te-icon-btn" id="te-reading-mode-btn" title="Chế độ đọc" aria-label="Chế độ đọc" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-minus preview-icon" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M9 15h6"/></svg></button>
           <button class="te-icon-btn" title="Chế độ phụ đề"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg></button>
           <div class="te-video-mode-selector">
-            <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="theater" title="Chế độ hiển thị" aria-label="Chế độ hiển thị" aria-haspopup="menu" aria-expanded="false">
+            <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="combined" title="Chế độ hiển thị" aria-label="Chế độ hiển thị" aria-haspopup="menu" aria-expanded="false">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
             </button>
             <div class="te-video-mode-menu" id="te-video-mode-menu" role="menu" hidden>
-              <button class="te-video-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-video-mode="theater">
+              <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="theater">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
                 <span class="te-video-mode-label">Chế độ rạp</span>
               </button>
@@ -959,7 +959,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
                 <span class="te-video-mode-label">Chế độ đọc</span>
               </button>
-              <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="combined">
+              <button class="te-video-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-video-mode="combined">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M12 4v16M12 9h9"/></svg>
                 <span class="te-video-mode-label">Chế độ kết hợp</span>
               </button>
