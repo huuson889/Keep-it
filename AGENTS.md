@@ -41,7 +41,7 @@
 ## 5. Quy trình sau khi sửa
 
 **5.1. Version**
-  - Với thay đổi phát hành của bất kỳ tác nhân nào (ví dụ Arena, Codex, Claude,...), luôn tăng version trong manifest.json. Với file được lưu trực tiếp trong repo, zip lại file đúng version hiện tại.
+  - Với thay đổi phát hành của bất kỳ tác nhân nào (ví dụ Arena, Codex, Claude,...), luôn tăng version trong manifest.json. Với file được lưu trực tiếp trong repo, zip lại file đúng version đã tăng.
 
 **5.2. Cập nhật PROJECT.md**
   - Thêm mục mới vào đầu **mục nhật ký duy nhất** trong `PROJECT.md`, xếp theo thời gian mới nhất đến cũ nhất; không tạo bản sao của cùng nhật ký ở nhiều mục.
