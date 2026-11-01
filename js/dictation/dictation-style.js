@@ -869,6 +869,29 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark .te-dict-toolbar-accuracy { color: #a1a1aa; }
 #keepit-exact-overlay.theme-dark .te-dict-acc-col strong { color: #fbbf24; }
 #keepit-exact-overlay.theme-dark .te-dict-ring-bg { stroke: #3f3f46; }
+#keepit-exact-overlay .te-dict-speech-target.state-warn { border-color: rgba(245,158,11,.58); background: rgba(245,158,11,.1); color: #b45309; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-target.state-warn { background: rgba(245,158,11,.14); color: #fbbf24; }
+#keepit-exact-overlay .te-dict-speech-result-wrap.state-warn { border-color: rgba(245,158,11,.42); background: rgba(245,158,11,.08); }
+#keepit-exact-overlay .te-dict-speech-result-wrap.state-warn .te-dict-speech-result-title { color: #b45309; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-result-wrap.state-warn .te-dict-speech-result-title { color: #fbbf24; }
+#keepit-exact-overlay .te-dict-speech-result-wrap.state-fail { border-color: rgba(239,68,68,.42); background: rgba(239,68,68,.07); }
+#keepit-exact-overlay .te-dict-speech-result-wrap.state-fail .te-dict-speech-result-title { color: #dc2626; }
+#keepit-exact-overlay.theme-dark .te-dict-speech-result-wrap.state-fail .te-dict-speech-result-title { color: #f87171; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-pass .te-dict-score { border-color: rgba(16,185,129,.48); background: rgba(16,185,129,.08); color: #059669; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-pass .te-dict-acc-col strong { color: #059669; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-pass .te-dict-ring-fg { stroke: #10b981; }
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-pass .te-dict-score,
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-pass .te-dict-acc-col strong { color: #34d399; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-warn .te-dict-score { border-color: rgba(245,158,11,.58); background: rgba(245,158,11,.12); color: #b45309; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-warn .te-dict-acc-col strong { color: #b45309; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-warn .te-dict-ring-fg { stroke: #f59e0b; }
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-warn .te-dict-score,
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-warn .te-dict-acc-col strong { color: #fbbf24; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-fail .te-dict-score { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.08); color: #dc2626; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-fail .te-dict-acc-col strong { color: #dc2626; }
+#keepit-exact-overlay.te-dict-speaking-mode.te-dict-score-fail .te-dict-ring-fg { stroke: #ef4444; }
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-fail .te-dict-score,
+#keepit-exact-overlay.theme-dark.te-dict-speaking-mode.te-dict-score-fail .te-dict-acc-col strong { color: #f87171; }
 #keepit-exact-overlay.te-dictation-active .te-control-bar .te-dict-primary-group { justify-content: flex-start; }
 #keepit-exact-overlay.te-dictation-active .te-control-bar button:disabled { opacity: .42; cursor: not-allowed; }
 #keepit-exact-overlay .te-dict-toast {

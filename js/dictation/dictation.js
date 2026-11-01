@@ -1023,10 +1023,28 @@
     }
   }
 
+  function getSpeechScoreTier(percent) {
+    if (!Number.isFinite(percent)) return null;
+    if (percent >= 70) return "pass";
+    return percent >= 40 ? "warn" : "fail";
+  }
+
   function setSpeechTargetState(state = "practice") {
     if (!ui?.speechTarget) return;
-    for (const name of ["practice", "wrong", "correct"]) {
+    for (const name of ["practice", "wrong", "correct", "warn"]) {
       ui.speechTarget.classList.toggle(`state-${name}`, state === name);
+    }
+  }
+
+  function updateSpeechScoreColors(percent) {
+    if (!ui?.root) return;
+    const tier = dictationMode === "speaking" ? getSpeechScoreTier(percent) : null;
+    for (const name of ["pass", "warn", "fail"]) {
+      ui.root.classList.toggle(`te-dict-score-${name}`, tier === name);
+    }
+    if (ui.speechResultWrap) {
+      ui.speechResultWrap.classList.toggle("state-warn", tier === "warn");
+      ui.speechResultWrap.classList.toggle("state-fail", tier === "fail");
     }
   }
 
@@ -1616,6 +1634,7 @@
     ui.score.textContent = has ? `${percent}%` : "---";
     ui.toolbarScore.textContent = `${has ? percent : 0}%`;
     ui.ring.style.strokeDashoffset = String(56.55 - (56.55 * (has ? percent : 0)) / 100);
+    updateSpeechScoreColors(percent);
   }
 
   function updateCheckButtonStyle(perfect) {
@@ -2297,23 +2316,31 @@
     if (!cue || !ui) return;
     const wasSuccessVisible = !ui.success.hidden;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
-    const statsUpdated = dictationMode === "typing"
+    const isSpeaking = dictationMode === "speaking";
+    const tier = isSpeaking ? getSpeechScoreTier(result.percent) : null;
+    const passed = isSpeaking ? tier === "pass" : result.perfect;
+    const statsUpdated = !isSpeaking
       ? recordWrongWordSubmission(wrongWordStats, current, result, cue.en)
       : false;
     if (statsUpdated) renderWrongWordStats();
-    if (dictationMode === "speaking") {
-      setSpeechTargetState(result.perfect ? "correct" : "wrong");
+    if (isSpeaking) {
+      setSpeechTargetState(tier === "pass" ? "correct" : tier === "warn" ? "warn" : "wrong");
       renderSpeechResult(ui.input.value);
-      ui.speechStatus.textContent = result.perfect ? "" : tr("dictationSpeakRetry");
+      ui.speechStatus.textContent = tier === "pass" ? "" : tr("dictationSpeakRetry");
     }
     const successLabel = ui.success.querySelector("[data-dict-label]");
-    if (successLabel) successLabel.textContent = tr(dictationMode === "speaking" ? "dictationSpeakSuccess" : "dictationSuccess");
+    const successMessage = isSpeaking
+      ? (result.perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed")
+      : "dictationSuccess";
+    if (successLabel) successLabel.textContent = tr(successMessage);
     setScore(result.percent);
-    updateCheckButtonStyle(result.perfect);
-    if (result.perfect) {
-      const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
-      if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
-      if (dictationMode === "speaking") renderSpeechResult(ui.input.value);
+    updateCheckButtonStyle(passed);
+    if (passed) {
+      if (result.perfect) {
+        const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
+        if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
+      }
+      if (isSpeaking && result.perfect) renderSpeechResult(ui.input.value);
       clearInputWrongMarks();
       ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
