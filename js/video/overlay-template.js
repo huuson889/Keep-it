@@ -842,7 +842,7 @@ const OVERLAY_CSS = `
     /* Reading view: fixed viewport widths and independent centering for the transcript frame. */
     #keepit-exact-overlay.te-reading-mode.size-s .yt-dual-right-sidebar { left: 32.5vw; flex: 0 0 35vw; width: 35vw !important; }
     #keepit-exact-overlay.te-reading-mode.size-m .yt-dual-right-sidebar { left: 27.5vw; flex: 0 0 45vw; width: 45vw !important; }
-    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { left: 22.5vw; flex: 0 0 55vw; width: 55vw !important; }
+    #keepit-exact-overlay.te-reading-mode.size-l .yt-dual-right-sidebar { left: 24vw; flex: 0 0 52vw; width: 52vw !important; }
 
     /* Video: rộng theo cột trái, cao theo đúng tỉ lệ thật của video (--te-video-aspect do JS set),
        chặn trên để vùng phụ đề luôn còn tối thiểu 140px + 60px control bar. */

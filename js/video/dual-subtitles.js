@@ -1173,7 +1173,7 @@ function applySettings() {
   $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
   const readingWidthHint = $('te-reading-width-hint');
   if (readingWidthHint) {
-    const width = { S: 35, M: 45, L: 55 }[modalViewSize] ?? 45;
+    const width = { S: 35, M: 45, L: 52 }[modalViewSize] ?? 45;
     readingWidthHint.style.display = isReadingModeActive() ? '' : 'none';
     readingWidthHint.textContent = `Độ rộng khung phụ đề giữa: ${width}% màn hình`;
   }
