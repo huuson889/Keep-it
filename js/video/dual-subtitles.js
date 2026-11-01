@@ -773,6 +773,49 @@ function updateSubtitleLanguageLabels() {
   };
   fill($('te-lang-source-picker'), $('te-lang-source-value'), $('te-lang-source-options'), state.sourceLanguageSetting, 'sourceLanguage');
   fill($('te-lang-target-picker'), $('te-lang-target-value'), $('te-lang-target-options'), state.targetLanguageSetting, 'targetLanguage');
+  updateVideoDisplayModeLabels();
+}
+
+function updateVideoDisplayModeLabels() {
+  const menu = $('te-video-mode-menu');
+  const trigger = $('te-video-mode-trigger');
+  if (!menu || !trigger) return;
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const keys = { theater: 'videoModeTheater', reading: 'videoModeReading', combined: 'videoModeCombined' };
+  menu.querySelectorAll('[data-video-mode]').forEach((option) => {
+    const label = option.querySelector('.te-video-mode-label');
+    if (label) label.textContent = t(keys[option.dataset.videoMode] || 'videoModeTheater');
+  });
+  setVideoDisplayModeSelection(trigger.dataset.videoMode || 'theater');
+}
+
+function setVideoDisplayModeSelection(mode) {
+  const trigger = $('te-video-mode-trigger');
+  const menu = $('te-video-mode-menu');
+  if (!trigger || !menu) return;
+  const option = menu.querySelector(`[data-video-mode="${mode}"]`);
+  if (!option) return;
+  menu.querySelectorAll('[data-video-mode]').forEach((item) => {
+    const selected = item === option;
+    item.classList.toggle('is-selected', selected);
+    item.setAttribute('aria-checked', String(selected));
+  });
+  const icon = option.querySelector('svg');
+  if (icon) trigger.replaceChildren(icon.cloneNode(true));
+  const label = option.querySelector('.te-video-mode-label')?.textContent || '';
+  const selectorLabel = globalThis.LHN_LANGUAGES?.t?.('videoModeSelector', {}, state.displayLanguage) || 'Video display mode';
+  trigger.dataset.videoMode = mode;
+  trigger.title = `${selectorLabel}: ${label}`;
+  trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
+}
+
+function setVideoDisplayModeMenuOpen(open) {
+  const menu = $('te-video-mode-menu');
+  const trigger = $('te-video-mode-trigger');
+  if (!menu || !trigger) return;
+  menu.hidden = !open;
+  trigger.setAttribute('aria-expanded', String(open));
 }
 
 async function refreshSubtitleLanguageSettings() {
@@ -1242,6 +1285,7 @@ function openOverlay() {
 function closeOverlay() {
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
+  setVideoDisplayModeMenuOpen(false);
   globalThis.LHN_DICTATION?.close?.();
   setVideoLearningMode(false);
   document.documentElement.classList.remove('lhn-video-overlay-open');
@@ -2587,6 +2631,33 @@ function bindUI() {
     const enabled = !root.classList.contains('te-reading-mode');
     setVideoLearningMode(enabled, { persist: true });
   });
+  const videoModeSelector = $('te-video-mode-trigger')?.parentElement;
+  const videoModeTrigger = $('te-video-mode-trigger');
+  const videoModeMenu = $('te-video-mode-menu');
+  updateVideoDisplayModeLabels();
+  videoModeTrigger?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setVideoDisplayModeMenuOpen(videoModeMenu.hidden);
+  });
+  videoModeMenu?.querySelectorAll('[data-video-mode]').forEach((option) => {
+    option.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setVideoDisplayModeSelection(option.dataset.videoMode);
+      setVideoDisplayModeMenuOpen(false);
+    });
+  });
+  videoModeSelector?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !videoModeMenu || videoModeMenu.hidden) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setVideoDisplayModeMenuOpen(false);
+    videoModeTrigger?.focus();
+  });
+  overlayEl().addEventListener('click', (event) => {
+    if (!event.target.closest('.te-video-mode-selector')) setVideoDisplayModeMenuOpen(false);
+  }, true);
   ctrl('Chế độ phụ đề').addEventListener('click', (e) => {
     root.classList.toggle('te-subs-hidden');
     e.currentTarget.classList.toggle('te-active', root.classList.contains('te-subs-hidden'));

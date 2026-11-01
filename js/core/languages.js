@@ -315,6 +315,16 @@
     dictationSpeechShortcutHint:"(Enter) Chấm điểm · (Esc) Đáp án/Làm lại · (`) Phát/Tạm dừng · (Ctrl) Nghe lại",
     dictationProgressSyncOn:"Đồng bộ tiến độ: Bật", dictationProgressSyncOff:"Đồng bộ tiến độ: Tắt"
   });
+  Object.assign(MESSAGES.en, {
+    videoModeSelector:"Video display mode", videoModeTheater:"Theater mode", videoModeReading:"Reading mode", videoModeCombined:"Combined mode"
+  });
+  Object.assign(MESSAGES.vi, {
+    videoModeSelector:"Chế độ hiển thị", videoModeTheater:"Chế độ rạp", videoModeReading:"Chế độ đọc", videoModeCombined:"Chế độ kết hợp"
+  });
+  Object.assign(MESSAGES.ko, {
+    videoModeSelector:"동영상 표시 모드", videoModeTheater:"극장 모드", videoModeReading:"읽기 모드", videoModeCombined:"결합 모드"
+  });
+
   Object.assign(MESSAGES.ko, {
     dictationSpeak:"말하기", dictationSpeakTitle:"나만의 속도로 따라 말하기", dictationModeGroup:"받아쓰기 모드",
     dictationSpeakHelp:"마이크를 누르고 들은 문장을 따라 말하세요.",

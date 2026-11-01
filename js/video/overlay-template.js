@@ -243,6 +243,30 @@ const OVERLAY_CSS = `
 
     .te-icon-btn:hover { background: rgba(128, 128, 128, 0.15); }
 
+    .te-video-mode-selector { position: relative; display: flex; align-items: center; }
+    .te-video-mode-menu {
+      position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 1000003;
+      display: grid; gap: 0; width: min(278px, calc(100vw - 24px)); padding: 6px;
+      border: 1px solid #3f3f3f; border-radius: 12px; background: #1f1f1f;
+      color: #f3f4f6; box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    }
+    .te-video-mode-menu[hidden] { display: none !important; }
+    #keepit-exact-overlay.theme-light .te-video-mode-menu {
+      border-color: #e5e7eb; background: #fff; color: #1f2937; box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    }
+    .te-video-mode-option {
+      display: flex; width: 100%; min-height: 46px; align-items: center; gap: 12px;
+      padding: 8px 12px; border: 0; border-radius: 8px; background: transparent;
+      color: inherit; font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+    }
+    .te-video-mode-option svg { flex: none; width: 18px; height: 18px; color: #a3a3a3; }
+    #keepit-exact-overlay.theme-light .te-video-mode-option svg { color: #6b7280; }
+    .te-video-mode-option:hover { background: rgba(128,128,128,.16); }
+    .te-video-mode-option.is-selected { background: rgba(128,128,128,.12); }
+    .te-video-mode-option.is-selected svg { color: #fbbf24; }
+    #keepit-exact-overlay.theme-light .te-video-mode-option.is-selected svg { color: #b45309; }
+    .te-video-mode-trigger svg { display: block; width: 18px; height: 18px; }
+
     .te-icon-btn.lhn-br-key-press,
     .te-play-btn.lhn-br-key-press { animation: lhnBrButtonPress .18s ease-out; }
     @keyframes lhnBrButtonPress {
@@ -922,6 +946,25 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           <button class="te-icon-btn" id="te-dictation-mode-btn" title="Chép chính tả" aria-label="Chép chính tả" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap preview-icon" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></button>
           <button class="te-icon-btn" id="te-reading-mode-btn" title="Chế độ đọc" aria-label="Chế độ đọc" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-minus preview-icon" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M9 15h6"/></svg></button>
           <button class="te-icon-btn" title="Chế độ phụ đề"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h4M6 12h12M6 16h8"/></svg></button>
+          <div class="te-video-mode-selector">
+            <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="theater" title="Chế độ hiển thị" aria-label="Chế độ hiển thị" aria-haspopup="menu" aria-expanded="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
+            </button>
+            <div class="te-video-mode-menu" id="te-video-mode-menu" role="menu" hidden>
+              <button class="te-video-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-video-mode="theater">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M3 20h18"/></svg>
+                <span class="te-video-mode-label">Chế độ rạp</span>
+              </button>
+              <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="reading">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+                <span class="te-video-mode-label">Chế độ đọc</span>
+              </button>
+              <button class="te-video-mode-option" type="button" role="menuitemradio" aria-checked="false" data-video-mode="combined">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M12 4v16M12 9h9"/></svg>
+                <span class="te-video-mode-label">Chế độ kết hợp</span>
+              </button>
+            </div>
+          </div>
           <button class="te-icon-btn" title="Bố cục"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
           <button class="te-icon-btn" title="Toàn màn hình"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           <button class="te-icon-btn" id="te-settings-btn" title="Cài đặt video"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
