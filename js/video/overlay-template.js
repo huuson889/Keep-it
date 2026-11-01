@@ -158,17 +158,19 @@ const OVERLAY_CSS = `
       line-height: 1.35;
     }
 
-    /* Control Bar */
+    /* Symmetric tracks and centered alignment keep play at the bar's geometric midpoint. */
     .te-control-bar {
       height: 70px;
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) 34px repeat(2, minmax(0, 1fr));
+      column-gap: 8px;
       align-items: center;
-      justify-content: space-between;
       padding: 0 16px;
       position: absolute;
       left: 0;
       bottom: 0;
       width: 100%;
+      box-sizing: border-box;
       z-index: 2;
       flex-shrink: 0;
     }
@@ -194,13 +196,23 @@ const OVERLAY_CSS = `
       gap: 8px;
     }
 
+    .te-control-leading-group { grid-column: 1; min-width: 0; }
+    .te-control-transport-left { grid-column: 2; justify-content: flex-end; min-width: 0; }
+    #te-control-play { grid-column: 3; justify-self: center; }
+    .te-control-transport-right { grid-column: 4; justify-content: flex-start; min-width: 0; }
+    .te-control-trailing-group { grid-column: 5; justify-content: flex-end; min-width: 0; }
+    .te-control-leading-group > .te-icon-btn { flex: 0 0 auto; }
+
     .te-yt-logo-box {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: 1 1 170px;
+      width: auto;
       font-size: 13.5px;
       font-weight: 500;
       max-width: 170px;
+      min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1166,7 +1178,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       <div class="te-control-bar">
         <div class="te-progress-track"><div class="te-progress-fill"></div></div>
         
-        <div class="te-ctrl-group">
+        <div class="te-ctrl-group te-control-leading-group">
           <div class="te-yt-logo-box">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
             <span class="te-video-title-label"><span class="te-video-title-text">The Power Of Practice | You Become What You Practice |...</span></span>
@@ -1175,16 +1187,20 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
           <button class="te-icon-btn" id="te-notes-sidebar-toggle" title="Mở thanh bên ghi chú" aria-label="Mở thanh bên ghi chú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
         </div>
 
-        <div class="te-ctrl-group">
+        <div class="te-ctrl-group te-control-transport-left">
           <button class="te-icon-btn" id="te-control-audio" title="Audio"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2 preview-icon" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg></button>
           <button class="te-icon-btn" id="te-control-repeat" title="Lặp lại câu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></button>
           <button class="te-icon-btn" id="te-control-previous" title="Câu trước"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-          <button class="te-play-btn" id="te-control-play" title="Phát/Tạm dừng"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        </div>
+
+        <button class="te-play-btn" id="te-control-play" title="Phát/Tạm dừng"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+
+        <div class="te-ctrl-group te-control-transport-right">
           <button class="te-icon-btn" id="te-control-next" title="Câu tiếp theo"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
           <button class="te-icon-btn" id="te-control-speed" title="Tốc độ"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button><span id="te-speed-label" class="te-speed-label">1.00x</span>
         </div>
 
-        <div class="te-ctrl-group">
+        <div class="te-ctrl-group te-control-trailing-group">
           <button class="te-icon-btn" id="te-speaking-mode-btn" title="Luyện nói" aria-label="Luyện nói" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic preview-icon" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></button>
           <button class="te-icon-btn" id="te-dictation-mode-btn" title="Chép chính tả" aria-label="Chép chính tả" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap preview-icon" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></button>
           <div class="te-subtitle-mode-selector">

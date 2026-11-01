@@ -788,6 +788,7 @@ globalThis.LHN_DICTATION_CSS = `
   bottom: auto !important;
   width: 100% !important;
   height: 70px !important;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 34px minmax(0, 1fr) minmax(0, max-content);
   min-width: 0;
   z-index: 5;
 }
