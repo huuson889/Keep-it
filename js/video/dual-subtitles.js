@@ -1094,11 +1094,16 @@ function saveSettings() {
 
 function updateSidebarTranscriptFontSize(root) {
   if (!root) return;
-  const sideFontBase = root.classList.contains('te-reading-mode')
-    ? 18
-    : settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
-  root.style.setProperty('--te-side-en', (sideFontBase * settings.side.en.pct / 100) + 'px');
-  root.style.setProperty('--te-side-vi', (sideFontBase * settings.side.vi.pct / 100) + 'px');
+  if (root.classList.contains('te-reading-mode')) {
+    // Reading mode shows transcript on screen, so use the video-subtitle sizes.
+    root.style.setProperty('--te-side-en', `${24 * settings.sub.en.pct / 100}px`);
+    root.style.setProperty('--te-side-vi', `${24 * settings.sub.vi.pct / 100}px`);
+    return;
+  }
+  const sideFontBase = settings.size === 'S' ? 20 : settings.size === 'M' ? 18 : 16;
+  const sharedScale = settings.sub.en.pct / 100;
+  root.style.setProperty('--te-side-en', (sideFontBase * sharedScale * settings.side.en.pct / 100) + 'px');
+  root.style.setProperty('--te-side-vi', (sideFontBase * sharedScale * settings.side.vi.pct / 100) + 'px');
 }
 
 function applySettings() {
@@ -1119,6 +1124,11 @@ function applySettings() {
   const enEl = $('te-sub-en-text');
   const viEl = $('te-sub-vi-text');
   const fam = settings.sub.font ? FONT_STACKS[settings.sub.font] : '';
+  setOrRemove(root, '--te-subtitle-font-family', fam);
+  setOrRemove(root, '--te-subtitle-en-weight', settings.sub.bold ? '700' : '');
+  setOrRemove(root, '--te-subtitle-vi-weight', settings.sub.bold ? '600' : '');
+  setOrRemove(root, '--te-reading-en-color', settings.sub.en.color || defaultColorFor('en'));
+  setOrRemove(root, '--te-reading-vi-color', settings.sub.vi.color || defaultColorFor('vi'));
   enEl.style.fontSize = settings.sub.en.pct === 100 ? '' : `calc(24px * ${settings.sub.en.pct / 100})`;
   viEl.style.fontSize = settings.sub.vi.pct === 100 ? '' : `calc(24px * ${settings.sub.vi.pct / 100})`;
   enEl.style.fontWeight = settings.sub.bold ? '700' : '';

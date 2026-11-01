@@ -884,8 +884,16 @@ const OVERLAY_CSS = `
     /* Nhãn tốc độ hiện tại bên phải nút Tốc độ (cùng cỡ chữ với giá trị trong popup) */
     .te-speed-label { font-family: Inter, "Segoe UI", sans-serif; font-size: 14px; font-weight: 200; letter-spacing: -0.02em; margin-left: 4px; min-width: 52px; text-align: left; color: inherit; white-space: nowrap; }
     /* ===== Tùy chọn phụ đề: không scroll, phụ đề thanh bên ===== */
-    #keepit-exact-overlay .yt-dual-item-en { font-size: var(--te-side-en, 18px); color: var(--te-side-en-color, #e5e7eb); }
-    #keepit-exact-overlay .yt-dual-item-vi { font-size: var(--te-side-vi, 16.2px); color: var(--te-side-vi-color, #9ca3af); }
+    #keepit-exact-overlay .yt-dual-item-en {
+      font-size: var(--te-side-en, 18px); color: var(--te-side-en-color, #e5e7eb);
+      font-family: var(--te-subtitle-font-family, inherit); font-weight: var(--te-subtitle-en-weight, inherit);
+    }
+    #keepit-exact-overlay .yt-dual-item-vi {
+      font-size: var(--te-side-vi, 16.2px); color: var(--te-side-vi-color, #9ca3af);
+      font-family: var(--te-subtitle-font-family, inherit); font-weight: var(--te-subtitle-vi-weight, inherit);
+    }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-item-en { color: var(--te-reading-en-color, inherit); }
+    #keepit-exact-overlay.te-reading-mode .yt-dual-item-vi { color: var(--te-reading-vi-color, inherit); }
 
     /* ===== Ambient mode: màu video lan tròn từ tâm video, mờ dần ra thanh điều khiển và thanh bên ===== */
     .te-ambient-layer { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
