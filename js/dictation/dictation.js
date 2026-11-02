@@ -294,7 +294,7 @@
       const previous = dictationSessionIndex.normalizeIndex(stored?.[dictationSessionIndexKey]);
       const previousSession = previous.sessions.find(item => item.sessionId === session.sessionId);
       const sessionWithTitle = { ...session, title:session.title || previousSession?.title || "" };
-      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, sessionWithTitle);
+      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, [sessionWithTitle]);
       await ext.storage.local.set({
         [dictationSessionIndexKey]: {
           version: dictationSessionIndex.VERSION,
@@ -687,9 +687,10 @@
 
   function refreshLanguageLabels() {
     if (!ui) return false;
+    const isWebStudy = A?.sourceType === "web";
     ui.close.setAttribute("aria-label", tr("dictationClose"));
     ui.close.title = tr("dictationClose");
-    ui.compactAudio.setAttribute("aria-label", tr("dictationAudioTitle"));
+    ui.compactAudio.setAttribute("aria-label", tr(isWebStudy ? "dictationWebAudioTitle" : "dictationAudioTitle"));
     ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
     ui.tools.querySelector(".te-dict-mode-switch")?.setAttribute("aria-label", tr("dictationModeGroup"));
     for (const selector of [".te-dict-stats-card", ".te-dict-stats-filter-bar", ".te-dict-stats-scroll"]) {
@@ -709,7 +710,15 @@
       return item;
     }));
     ui.labels = [...ui.root.querySelectorAll("[data-dict-label]")];
-    ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    ui.labels.forEach((node) => {
+      const key = node.dataset.dictLabel;
+      const labelKey = isWebStudy && key === "dictationAudioTitle"
+        ? "dictationWebAudioTitle"
+        : isWebStudy && key === "dictationAudioSource"
+          ? "dictationWebAudioSource"
+          : key;
+      node.textContent = tr(labelKey);
+    });
     setTranslationToggleState(translationAlwaysVisible());
     const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
     ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
@@ -717,14 +726,18 @@
       item.textContent = text;
       return item;
     }));
-    ui.miniSource.textContent = tr("dictationAudioSource");
+    ui.miniSource.textContent = tr(isWebStudy ? "dictationWebAudioSource" : "dictationAudioSource");
     ui.heading.textContent = tr(dictationMode === "speaking" ? "dictationSpeakTitle" : "dictationTitle");
     const compactVideo = ui.root.classList.contains("te-dict-video-compact");
-    const videoToggleLabel = tr(compactVideo ? "dictationExpandVideo" : "dictationCompactVideo");
+    const videoToggleLabel = tr(isWebStudy
+      ? (compactVideo ? "dictationExpandWebImage" : "dictationCompactWebImage")
+      : (compactVideo ? "dictationExpandVideo" : "dictationCompactVideo"));
     ui.videoCompactToggle.title = videoToggleLabel;
     ui.videoCompactToggle.setAttribute("aria-label", videoToggleLabel);
     const video = attachedVideo || A?.state?.videoEl;
-    const miniPlayLabel = tr(video && !video.paused ? "dictationMiniPause" : "dictationMiniPlay");
+    const miniPlayLabel = tr(isWebStudy
+      ? (video && !video.paused ? "dictationWebMiniPause" : "dictationWebMiniPlay")
+      : (video && !video.paused ? "dictationMiniPause" : "dictationMiniPlay"));
     ui.miniPlay.title = miniPlayLabel;
     ui.miniPlay.setAttribute("aria-label", miniPlayLabel);
     updateSpeechMicState(ui.speechMic.classList.contains("listening"));
@@ -1944,7 +1957,10 @@
     const video = attachedVideo || A?.state?.videoEl;
     const playing = !!video && !video.paused;
     ui.compactAudio.classList.toggle("playing", playing);
-    const label = tr(playing ? "dictationMiniPause" : "dictationMiniPlay");
+    const isWebStudy = A?.sourceType === "web";
+    const label = tr(isWebStudy
+      ? (playing ? "dictationWebMiniPause" : "dictationWebMiniPlay")
+      : (playing ? "dictationMiniPause" : "dictationMiniPlay"));
     ui.miniPlay.title = label;
     ui.miniPlay.setAttribute("aria-label", label);
     ui.miniPlayIcon.innerHTML = makeSvg(playing
@@ -3959,6 +3975,7 @@
     const root = shadow.querySelector("#keepit-exact-overlay");
     const frame = root?.querySelector(".te-video-frame");
     if (!root || !frame) return null;
+    root.querySelectorAll(".te-modal-backdrop").forEach(modal => modal.classList.add("hidden"));
     root.classList.add("size-s", "te-web-study-mode");
     frame.style.cssText = "display:flex;position:relative;width:100%;height:100%;min-width:0;min-height:0;align-items:center;justify-content:center;background:#111";
     const image = document.createElement("img");
