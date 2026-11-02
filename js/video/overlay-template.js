@@ -1095,6 +1095,9 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .te-video-frame { display: contents; }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame { display: block; position: relative; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame video { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+    /* Chế độ rạp + Kích thước Lớn: video toàn màn hình, thanh điều khiển nổi trên video */
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-slot { position: fixed; inset: 0; width: 100vw; height: 100vh; max-height: none; aspect-ratio: auto; z-index: 1; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-control-bar { position: relative; z-index: 2; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,

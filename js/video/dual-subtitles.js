@@ -1797,7 +1797,8 @@ function syncTheaterFrame() {
   if (!root.classList.contains('te-sidebar-hidden') || !v) { frame.style.width = ''; frame.style.height = ''; return; }
   const r = slot.getBoundingClientRect();
   const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
-  const w = Math.min(r.width, r.height * a), h = w / a;
+  const sizeFactor = root.classList.contains('size-s') ? 2 / 3 : 1;
+  const w = Math.min(r.width, r.height * a) * sizeFactor, h = w / a;
   frame.style.width = `${Math.round(w)}px`;
   frame.style.height = `${Math.round(h)}px`;
 }
@@ -3263,6 +3264,7 @@ function bindUI() {
     b.addEventListener('click', () => {
       if (isReadingModeActive()) settings.readingViewSize = b.dataset.size;
       else settings.size = b.dataset.size;
+      if (!isReadingModeActive() && settings.size === 'L') settings.hideControls = true;
       saveSettings();
       applySettings();
     });
