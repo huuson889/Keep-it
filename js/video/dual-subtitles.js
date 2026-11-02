@@ -945,7 +945,6 @@ function pumpTranslateQueue() {
       .then((translated) => {
         if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
         item.cue[item.field] = translated;
-        if (item.field === 'vi' && item.cue.sourceCue) item.cue.sourceCue.vi = translated;
         if (item.token === state.loadToken) updateVietnameseRow(item.cue);
       })
       .finally(() => { translateActive--; pumpTranslateQueue(); });
@@ -3613,19 +3612,18 @@ async function bindWebOverlayControls(shadowRoot, payload = {}) {
   state.secondaryNeedsTranslation = true;
   state.activeIdx = -1;
   state.captions = (Array.isArray(payload.cues) ? payload.cues : []).map((cue, index) => {
-    const sourceCue = cue && typeof cue === 'object' ? cue : {};
-    const mainText = String(sourceCue.en || sourceCue.text || sourceCue.mainText || '');
-    const translated = String(sourceCue.vi || '').trim();
+    const readerCue = cue && typeof cue === 'object' ? cue : {};
+    const mainText = String(readerCue.en || readerCue.text || readerCue.mainText || '');
+    const translated = String(readerCue.vi || '').trim();
     return {
-      ...sourceCue,
-      start: Number.isFinite(Number(sourceCue.start)) ? Number(sourceCue.start) : index,
-      end: Number.isFinite(Number(sourceCue.end)) ? Number(sourceCue.end) : index + 1,
+      ...readerCue,
+      start: Number.isFinite(Number(readerCue.start)) ? Number(readerCue.start) : index,
+      end: Number.isFinite(Number(readerCue.end)) ? Number(readerCue.end) : index + 1,
       mainText,
       vi: translated && translated !== PENDING ? translated : PENDING,
       mainNeedsTranslation: false,
       secondaryNeedsTranslation: true,
       secondaryTranslationInput: mainText,
-      sourceCue,
     };
   }).filter(cue => cue.mainText.trim());
   state.allCues = state.captions;

@@ -4281,8 +4281,8 @@
     }
   }
 
-  function close({ restoreView = true, keepWebOverlay = false } = {}) {
-    const preserveWebOverlay = keepWebOverlay || (A?.sourceType === "web" && restoreView === false);
+  function close({ restoreView = true } = {}) {
+    const preserveWebOverlay = A?.sourceType === "web" && restoreView === false;
     if (openingPanel) {
       openingPanel = false;
       openingGeneration++;
