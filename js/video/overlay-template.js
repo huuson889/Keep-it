@@ -1090,7 +1090,11 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
     /* Chế độ rạp: video bo góc như chế độ kết hợp; ambient phủ kín toàn màn hình (cả 2 khung đen hai bên) */
     #keepit-exact-overlay.te-sidebar-hidden .te-video-slot { background-color: #11111100; border-radius: 12px; overflow: hidden; }
-    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px !important; clip-path: inset(0 round 12px) !important; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px; }
+    /* Chế độ rạp: khung bọc đúng kích thước video, bo 4 góc. Ngoài chế độ rạp khung không tạo ô layout (display: contents) */
+    #keepit-exact-overlay .te-video-frame { display: contents; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-frame { display: block; position: relative; width: 100%; height: 100%; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-frame video { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
@@ -1157,6 +1161,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Left Section -->
     <div class="te-left-section">
       <div class="te-video-slot">
+        <div class="te-video-frame"></div>
         <div class="te-reading-mini-audio" role="group" aria-label="Video audio" aria-hidden="true">
           <div class="te-reading-mini-art"><img class="te-reading-mini-thumb" alt="" hidden></div>
           <div class="te-reading-mini-info"><div class="te-reading-mini-title"></div><div class="te-reading-mini-source">Audio</div></div>

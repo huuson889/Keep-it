@@ -116,6 +116,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-11-02 | v3.4.959 | Claude sửa:**
+  - Chế độ rạp: quay lại CSS của v3.4.957 cho video; thêm khung bọc `.te-video-frame` (đúng kích thước video, bo 4 góc 12px, cắt bằng clip-path). Ngoài chế độ rạp khung là `display: contents`, không đổi bố cục. `attachVideo` đưa thẻ video vào khung bọc.
+  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy (cần xác nhận 4 góc video bo ở chế độ rạp và chế độ kết hợp không đổi).
+
+
 - **2026-11-02 | v3.4.958 | Claude sửa:**
   - Chế độ rạp: bo góc được áp trực tiếp cho thẻ video (`border-radius` + `clip-path: inset(0 round 12px)`, !important), vì bo góc của `.te-video-slot` không làm bo hình video.
   - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.

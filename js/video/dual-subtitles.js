@@ -1788,11 +1788,12 @@ function syncVideoAspect(video) {
 
 function attachVideo(video, slot) {
   if (state.videoEl && state.videoEl !== video) detachVideo();
-  if (video.parentElement !== slot) {
+  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
+  if (video.parentElement !== frame) {
     state.origParent = video.parentElement;
     state.origNext = video.nextSibling;
     const wasPlaying = !video.paused;
-    slot.insertBefore(video, slot.firstChild);
+    frame.insertBefore(video, frame.firstChild);
     if (wasPlaying) video.play().catch(() => {});
   }
   state.videoEl = video;
