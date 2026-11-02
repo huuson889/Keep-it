@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dictation luyện caption YouTube hoặc tiếng Anh chính Reader chọn trên trang thường, qua overlay dùng chung với mode `Đánh máy`/`Luyện nói`. Web mode phát câu bằng TTS; SpeechRecognition tạo transcript, MediaRecorder giữ audio replay tạm trong bộ nhớ.
+Dictation luyện caption YouTube hoặc tiếng Anh chính Reader chọn trên trang thường, qua overlay dùng chung với mode `Đánh máy`/`Luyện nói`. Web mode dùng TTS và tái sử dụng video overlay controls; Reading chuyển transcript sang Reader sentences và ảnh thumbnail của trang.
 
 ## 2. File chính và điểm vào
 
@@ -16,12 +16,12 @@ Dictation luyện caption YouTube hoặc tiếng Anh chính Reader chọn trên 
 | [`js/dictation/dictation-learning-rules.js`](../../js/dictation/dictation-learning-rules.js) | `LHN_DICTATION_RULES` | Hint, eligibility, error classes. |
 | [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | Shadow DOM styles. |
 | [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Session metadata. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Player, captions, overlay. |
+| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, `LHN_WEB_OVERLAY_UI.bind` | Video control binding; Reader cues on web. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `t` | EN/VI/KO strings. |
 
 ## 3. Luồng chính
 
-1. YouTube dùng `LHN_OVERLAY_API`/captions; web `Alt+F` lấy Reader main English blocks và tạo TTS cues. Panel/controller dùng chung; web adapter ẩn modal video. Captions gửi `lhn-dual-captions-updated`.
+1. YouTube dùng `LHN_OVERLAY_API`/captions; web `Alt+F` lấy Reader main English blocks, tạo TTS cues và gọi `LHN_WEB_OVERLAY_UI.bind`. CC, Reading-only, fullscreen và Settings dùng handlers hiện có; thumbnail thay video trong Reading. `close({restoreView:false})` giữ web host khi chuyển layout.
 2. Typing pass ở `result.perfect`; sau 100%, keydown trong `te-dict-input` mở lại nhập. Speaking pass từ 70% nhưng không tự chuyển câu; các tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
 3. Auto-record Speaking mặc định bật: cue cuối chờ 1 giây, recognition chạy one-shot và rearm ở `onend`; transcript được gộp/chấm sau 1,5 giây im lặng. Replay lượt auto cắt 1,5 giây cuối; toast ghi âm giữ đến khi dừng.
 4. Auto-record tắt giữ manual continuous. Sai thì retry; Escape reveal/reset, Enter sau reveal chấm 100%, Enter tiếp chuyển câu. Speaking ẩn nút chấm và Next không tự chuyển.
@@ -41,5 +41,5 @@ Dictation luyện caption YouTube hoặc tiếng Anh chính Reader chọn trên 
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --check` JS; kiểm tra web modal/labels, localization EN/VI/KO, session merge contract, manifest và `git diff --check`.
-- Browser QA chưa chạy: xác nhận Chrome web overlay/thumbnail/TTS, Reader restore và YouTube auto/manual replay.
+- Static/mock: `node --check` JS; kiểm tra web binding, localization EN/VI/KO, session merge contract, manifest và `git diff --check`.
+- Browser QA chưa chạy: xác nhận CC, Reading transition/thumbnail/transcript, fullscreen, full Settings, TTS/progress và YouTube replay trên trình duyệt.

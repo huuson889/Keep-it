@@ -945,6 +945,7 @@ function pumpTranslateQueue() {
       .then((translated) => {
         if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
         item.cue[item.field] = translated;
+        if (item.field === 'vi' && item.cue.sourceCue) item.cue.sourceCue.vi = translated;
         if (item.token === state.loadToken) updateVietnameseRow(item.cue);
       })
       .finally(() => { translateActive--; pumpTranslateQueue(); });
@@ -960,7 +961,10 @@ function queueCueTranslation(cue, token, field, text, targetLanguage) {
 function queueCue(cue, token) {
   if (!cue) return;
   if (cue.mainNeedsTranslation) queueCueTranslation(cue, token, 'mainText', cue.mainTranslationInput || cue.en, state.mainLanguage);
-  if (cue.secondaryNeedsTranslation) queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, state.targetLanguage);
+  if (cue.secondaryNeedsTranslation) {
+    const targetLanguage = shadow?.host?.id === 'lhn-web-dictation-host' ? 'vi' : state.targetLanguage;
+    queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, targetLanguage);
+  }
 }
 
 function translateWindow(centerIdx, token = state.loadToken) {
@@ -1065,11 +1069,12 @@ function updateSubtitleDisplayModeLabels() {
   if (!menu || !trigger) return;
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
   const keys = {
     bilingual: 'videoSubtitleBilingual',
-    primary: 'videoSubtitlePrimary',
-    translation: 'videoSubtitleTranslation',
-    hidden: 'videoSubtitleHidden',
+    primary: isWebOverlay ? 'languageEnglish' : 'videoSubtitlePrimary',
+    translation: isWebOverlay ? 'languageVietnamese' : 'videoSubtitleTranslation',
+    hidden: isWebOverlay ? 'videoSubtitleHiddenState' : 'videoSubtitleHidden',
   };
   menu.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
     const label = option.querySelector('.te-subtitle-mode-label');
@@ -1093,11 +1098,12 @@ function setSubtitleDisplayMode(mode) {
     item.classList.toggle('is-selected', selected);
     item.setAttribute('aria-checked', String(selected));
   });
+  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
   const keys = {
     bilingual: 'videoSubtitleBilingual',
-    primary: 'videoSubtitlePrimary',
-    translation: 'videoSubtitleTranslation',
-    hidden: 'videoSubtitleHidden',
+    primary: isWebOverlay ? 'languageEnglish' : 'videoSubtitlePrimary',
+    translation: isWebOverlay ? 'languageVietnamese' : 'videoSubtitleTranslation',
+    hidden: isWebOverlay ? 'videoSubtitleHiddenState' : 'videoSubtitleHidden',
   };
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
@@ -1106,6 +1112,7 @@ function setSubtitleDisplayMode(mode) {
   trigger.dataset.subtitleMode = mode;
   trigger.title = `${selectorLabel}: ${label}`;
   trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
+  if (isWebOverlay && (mode === 'bilingual' || mode === 'translation')) translateVisibleRows();
   return true;
 }
 
@@ -1146,9 +1153,12 @@ function setVideoSidebarHidden(hidden) {
 function applyVideoDisplayMode(mode) {
   if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
   overlayEl().classList.remove('te-learning-entry-pending');
-  settings.preferredVideoMode = mode;
-  settings.readingMode = mode === 'reading';
-  saveSettings();
+  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
+  if (!isWebOverlay) {
+    settings.preferredVideoMode = mode;
+    settings.readingMode = mode === 'reading';
+    saveSettings();
+  }
   if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
   if (mode === 'reading') {
     setVideoSidebarHidden(false);
@@ -1199,6 +1209,14 @@ async function refreshSubtitleLanguageSettings() {
   translateQueue = [];
   updateSubtitleLanguageLabels();
   refreshVideoUiLocalization();
+
+  if (shadow?.host?.id === 'lhn-web-dictation-host' && state.captions.length) {
+    state.mainLanguage = 'en';
+    state.primaryNeedsTranslation = false;
+    state.secondaryNeedsTranslation = true;
+    if (targetChanged || sourceChanged || targetSettingChanged) globalThis.LHN_WEB_OVERLAY_UI?.translateVisible?.();
+    return;
+  }
 
   if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
@@ -1589,6 +1607,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   if (modeChanged) suppressHoverPauseForModeChange();
   if (modeChanged) root.classList.remove('te-reading-audio-compact');
   root.classList.toggle('te-reading-mode', active);
+  root.classList.toggle('te-web-reading-mode', active && shadow?.host?.id === 'lhn-web-dictation-host');
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
@@ -2325,10 +2344,16 @@ function syncMuteButton() {
 }
 
 function toggleFullscreen() {
+  const host = shadow?.host;
+  if (host?.id === 'lhn-web-dictation-host') {
+    if (document.fullscreenElement === host) document.exitFullscreen().catch(() => {});
+    else host.requestFullscreen?.().catch(() => {});
+    return;
+  }
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {});
   } else {
-    shadow?.host.requestFullscreen?.().catch(() => {});
+    host?.requestFullscreen?.().catch(() => {});
   }
 }
 
@@ -3566,6 +3591,88 @@ function bindUI() {
   // Xuất phụ đề
   modalExport.querySelector('.te-export-submit-btn').addEventListener('click', runExport);
 }
+
+// Bind the existing overlay controls to an ordinary-page overlay without changing YouTube routing.
+let webOverlayBoundShadow = null;
+let webOverlayBoundMedia = null;
+async function bindWebOverlayControls(shadowRoot, payload = {}) {
+  if (!shadowRoot?.getElementById?.(OVERLAY_ID)) return false;
+  if (shadow && shadow !== shadowRoot && shadow.host?.id === HOST_ID) return false;
+  shadow = shadowRoot;
+  const firstBind = webOverlayBoundShadow !== shadowRoot;
+  if (firstBind) {
+    settings = await restoreSettings();
+    await refreshSubtitleLanguageSettings();
+  }
+  state.open = false;
+  state.loadToken++;
+  state.videoId = String(payload.videoId || 'web-study');
+  state.captionTrackLanguage = 'en';
+  state.mainLanguage = 'en';
+  state.primaryNeedsTranslation = false;
+  state.secondaryNeedsTranslation = true;
+  state.activeIdx = -1;
+  state.captions = (Array.isArray(payload.cues) ? payload.cues : []).map((cue, index) => {
+    const sourceCue = cue && typeof cue === 'object' ? cue : {};
+    const mainText = String(sourceCue.en || sourceCue.text || sourceCue.mainText || '');
+    const translated = String(sourceCue.vi || '').trim();
+    return {
+      ...sourceCue,
+      start: Number.isFinite(Number(sourceCue.start)) ? Number(sourceCue.start) : index,
+      end: Number.isFinite(Number(sourceCue.end)) ? Number(sourceCue.end) : index + 1,
+      mainText,
+      vi: translated && translated !== PENDING ? translated : PENDING,
+      mainNeedsTranslation: false,
+      secondaryNeedsTranslation: true,
+      secondaryTranslationInput: mainText,
+      sourceCue,
+    };
+  }).filter(cue => cue.mainText.trim());
+  state.allCues = state.captions;
+  state.rawCues = state.captions;
+  state.videoEl = null;
+  if (firstBind) {
+    bindUI();
+    refreshVideoUiLocalization();
+    applySettings();
+    webOverlayBoundShadow = shadowRoot;
+  }
+  renderTranscriptList();
+  const media = payload.media || null;
+  if (webOverlayBoundMedia && webOverlayBoundMedia !== media) {
+    webOverlayBoundMedia.removeEventListener('timeupdate', onTimeUpdate);
+    webOverlayBoundMedia.removeEventListener('play', handleVideoPlay);
+    webOverlayBoundMedia.removeEventListener('pause', handleVideoPause);
+    webOverlayBoundMedia.removeEventListener('ratechange', handleVideoRateChange);
+    webOverlayBoundMedia.removeEventListener('volumechange', handleVideoVolumeChange);
+  }
+  state.videoEl = media;
+  if (media && webOverlayBoundMedia !== media) {
+    media.addEventListener('timeupdate', onTimeUpdate);
+    media.addEventListener('play', handleVideoPlay);
+    media.addEventListener('pause', handleVideoPause);
+    media.addEventListener('ratechange', handleVideoRateChange);
+    media.addEventListener('volumechange', handleVideoVolumeChange);
+    webOverlayBoundMedia = media;
+  }
+  state.currentTime = Number(media?.currentTime) || 0;
+  onTimeUpdate();
+  syncPlayButton();
+  syncSpeedButton();
+  syncMuteButton();
+  return true;
+}
+
+globalThis.LHN_WEB_OVERLAY_UI = Object.freeze({
+  bind: bindWebOverlayControls,
+  translateVisible() {
+    const root = overlayEl();
+    const bounds = root?.getBoundingClientRect?.();
+    const wantsTranslation = root?.classList.contains('te-subtitle-mode-bilingual')
+      || root?.classList.contains('te-subtitle-mode-translation');
+    if (wantsTranslation && bounds?.width && bounds?.height) translateVisibleRows();
+  },
+});
 
 // ---------- Theo dõi điều hướng của YouTube ----------
 // Keepit có thể bị tắt trên riêng website này (Alt+Z) — khi đó ẩn nút mở và đóng overlay.

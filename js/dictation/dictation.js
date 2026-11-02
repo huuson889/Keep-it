@@ -4001,6 +4001,14 @@
       }).catch(() => {});
       return settingsWrite;
     };
+    const webT = key => globalThis.LHN_LANGUAGES?.t?.(key, {}, state.displayLanguage) || key;
+    const closeWebMenus = () => {
+      for (const [menuSelector, triggerSelector] of [["#te-video-mode-menu", "#te-video-mode-trigger"], ["#te-subtitle-mode-menu", "#te-subtitle-mode-trigger"]]) {
+        const menu = root.querySelector(menuSelector);
+        if (menu) menu.hidden = true;
+        root.querySelector(triggerSelector)?.setAttribute("aria-expanded", "false");
+      }
+    };
     const api = {
       sourceType:"web", state,
       overlayEl:() => root,
@@ -4078,24 +4086,48 @@
         catch { state.videoId = hashWebPageUrl(state.url); }
         state.title = cleanVideoTitle(document.querySelector("h1")?.textContent) || cleanVideoTitle(document.title) || state.url;
         state.thumbnailUrl = thumbnails?.fromPageMetadata?.(document, state.url) || "";
-        state.cues = sentences.map((en, index) => ({ id:index, start:index, end:index + 1, en }));
+        state.cues = sentences.map((en, index) => ({ id:index, start:index, end:index + 1, en, vi:"" }));
         state.videoEl.configure(state.cues, state.sourceLanguage);
         const title = root.querySelector(".te-video-title-text");
         if (title) title.textContent = state.title;
+        const miniTitle = root.querySelector(".te-reading-mini-title");
+        if (miniTitle) miniTitle.textContent = `Keepit - ${state.title}`;
+        const miniSource = root.querySelector(".te-reading-mini-source");
+        if (miniSource) miniSource.textContent = webT("dictationWebAudioSource");
         if (image) {
           image.hidden = false;
           thumbnails?.loadSource?.(image, { url:state.url, thumbnailUrl:state.thumbnailUrl });
         }
+        const readingThumb = root.querySelector(".te-reading-mini-thumb");
+        if (readingThumb) {
+          readingThumb.hidden = false;
+          thumbnails?.loadSource?.(readingThumb, { url:state.url, thumbnailUrl:state.thumbnailUrl });
+        }
+        const webUi = globalThis.LHN_WEB_OVERLAY_UI;
+        if (typeof webUi?.bind !== "function") return false;
+        const bound = await webUi.bind(shadow, { media:state.videoEl, videoId:state.videoId, cues:state.cues });
+        if (!bound) return false;
+        api.syncViewSize();
         return true;
       },
       show() {
         globalThis.LHN_READER_MAIN_SOURCE?.stopReading?.();
+        closeWebMenus();
+        root.querySelectorAll(".te-modal-backdrop").forEach(modal => modal.classList.add("hidden"));
+        root.classList.remove("te-reading-mode", "te-web-reading-mode");
         host.style.display = "";
         root.classList.remove("te-hidden");
         document.documentElement.classList.add("lhn-video-overlay-open");
+        globalThis.LHN_WEB_OVERLAY_UI?.translateVisible?.();
       },
       closeWebStudy() {
         state.videoEl.stop();
+        if (document.fullscreenElement === host && typeof document.exitFullscreen === "function") {
+          void document.exitFullscreen().catch(() => {});
+        }
+        closeWebMenus();
+        root.querySelectorAll(".te-modal-backdrop").forEach(modal => modal.classList.add("hidden"));
+        root.classList.remove("te-reading-mode", "te-web-reading-mode");
         root.classList.add("te-hidden");
         host.style.display = "none";
         document.documentElement.classList.remove("lhn-video-overlay-open");
@@ -4110,20 +4142,6 @@
       api.syncViewSize();
       void saveYouTubeSettings({ learningViewSize:size });
     });
-    const speedPopup = root.querySelector("#te-speed-popup");
-    root.querySelector("#te-control-speed")?.addEventListener("click", () => {
-      speedPopup?.classList.toggle("hidden");
-      if (speedPopup && !speedPopup.classList.contains("hidden")) {
-        const button = root.querySelector("#te-control-speed").getBoundingClientRect();
-        const bounds = root.getBoundingClientRect();
-        speedPopup.style.left = `${Math.max(8, Math.min(button.left + button.width / 2 - bounds.left - 170, bounds.width - 348))}px`;
-        speedPopup.style.top = `${Math.max(8, button.top - bounds.top - speedPopup.offsetHeight - 12)}px`;
-      }
-    });
-    root.querySelector("#te-speed-slider")?.addEventListener("input", event => api.setPlaybackRate(event.currentTarget.value));
-    root.querySelector("#te-speed-dec")?.addEventListener("click", () => api.setPlaybackRate(state.videoEl.playbackRate - .05));
-    root.querySelector("#te-speed-inc")?.addEventListener("click", () => api.setPlaybackRate(state.videoEl.playbackRate + .05));
-    speedPopup?.querySelectorAll(".te-speed-btn[data-speed]").forEach(button => button.addEventListener("click", () => api.setPlaybackRate(button.dataset.speed)));
     webStudyApi = api;
     return api;
   }
@@ -4263,7 +4281,8 @@
     }
   }
 
-  function close({ restoreView = true } = {}) {
+  function close({ restoreView = true, keepWebOverlay = false } = {}) {
+    const preserveWebOverlay = keepWebOverlay || (A?.sourceType === "web" && restoreView === false);
     if (openingPanel) {
       openingPanel = false;
       openingGeneration++;
@@ -4275,7 +4294,7 @@
       if (ui?.speechPractice) ui.speechPractice.hidden = true;
       dictationMode = "typing";
       if (restoreView) A?.restorePreferredReadingMode?.();
-      A?.closeWebStudy?.();
+      if (!preserveWebOverlay) A?.closeWebStudy?.();
       return;
     }
     restoreYouTubeScrollbar();
@@ -4335,7 +4354,7 @@
     ui = null;
     ctrlAlone = false;
     if (restoreView) A?.restorePreferredReadingMode?.();
-    A?.closeWebStudy?.();
+    if (!preserveWebOverlay) A?.closeWebStudy?.();
   }
 
   function toggle() { (active || openingPanel) ? close() : void openPanel(); }
