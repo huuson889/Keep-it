@@ -231,6 +231,9 @@ function createWebTtsMedia(cues) {
         if (failed) { paused = true; media.dispatchEvent(new Event('pause')); return; }
         currentTime = state.loop ? cue.start : cue.end;
         media.dispatchEvent(new Event('timeupdate'));
+        // A Web consumer (for example Dictation's repeat counter) may seek or
+        // pause synchronously from timeupdate. Do not advance this stale cue.
+        if (!active()) return;
         const next = state.loop ? index : index + 1;
         if (next < cues.length) media._startCue(next);
         else { paused = true; media.dispatchEvent(new Event('pause')); media.dispatchEvent(new Event('ended')); }
