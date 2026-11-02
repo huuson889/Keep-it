@@ -250,7 +250,7 @@
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
   async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
-    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range) && !isDictationTextRange(range)) return;
     word = cleanText(word); if (!settings.showFullEnglishDictionary || !LHN_DICTIONARY.isEnglishWord(word)) return;
     if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
@@ -375,7 +375,7 @@
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
   }
   async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null } = {}) {
-    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range) && !isDictationTextRange(range)) return;
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
@@ -1293,6 +1293,33 @@
     } catch { return false; }
     return true;
   }
+  const DICTATION_TEXT_RANGE_SELECTOR = "#te-dictation-center .te-dict-speech-result, #te-dictation-center .te-dict-error-words, #te-dictation-center .te-dict-speech-target, #te-dictation-notes .te-dict-stats-word-title";
+  const DICTATION_WORD_CLICK_SELECTOR = "#te-dictation-center .te-dict-speech-result .te-dict-speech-word, #te-dictation-center .te-dict-error-words .te-dict-w";
+  function dictationTextRootForRange(range) {
+    if (!range) return null;
+    const start = selectionElement(range.startContainer)?.closest?.(DICTATION_TEXT_RANGE_SELECTOR);
+    const end = selectionElement(range.endContainer)?.closest?.(DICTATION_TEXT_RANGE_SELECTOR);
+    if (!start || start !== end || start.getRootNode?.()?.host?.id !== "keepit-host") return null;
+    return start;
+  }
+  function isDictationTextRange(range) {
+    return !!dictationTextRootForRange(range);
+  }
+  function getDictationSelectionText(range, fallbackText = "") {
+    const root = dictationTextRootForRange(range);
+    if (!root || !root.matches(".te-dict-speech-result, .te-dict-error-words")) return cleanText(fallbackText || range?.toString());
+    const tokenSelector = root.matches(".te-dict-speech-result") ? ".te-dict-speech-word" : ".te-dict-w";
+    let selectedWords = [];
+    try {
+      selectedWords = [...root.querySelectorAll(tokenSelector)]
+        .filter(token => range.intersectsNode(token))
+        .map(token => cleanText(token.textContent).replace(/^[→➜↦]\s*/, ""))
+        .filter(Boolean);
+    } catch {}
+    if (selectedWords.length > 1) return selectedWords.join(" ");
+    if (selectedWords.length === 1) return selectedWords[0].replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9'’]+$/g, "") || selectedWords[0];
+    return cleanText(fallbackText || range.toString());
+  }
   const handledSelectionMouseUps = new WeakSet();
   function handleSelectionMouseUp(e) {
     if (handledSelectionMouseUps.has(e)) return;
@@ -1305,16 +1332,24 @@
     const selection = currentSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
     if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
     setTimeout(() => {
-      const sel = currentSelection(), text = cleanText(sel?.toString());
-      if (!text || !sel.rangeCount || isEditable(sel.anchorNode)) return;
+      const sel = currentSelection(), rawText = cleanText(sel?.toString());
+      if (!rawText || !sel.rangeCount || isEditable(sel.anchorNode)) return;
       const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
       const isVideoUiSelection = isVideoInterfaceEvent || isVideoInterfaceRange(range);
       const isDualSubtitleSelection = isVideoUiSelection && isPrimaryVideoTranscriptRange(range);
-      if (isVideoUiSelection && !isDualSubtitleSelection) return;
+      const isDictationSelection = isDictationTextRange(range);
+      if (isVideoUiSelection && !isDualSubtitleSelection && !isDictationSelection) return;
+      const text = isDictationSelection ? getDictationSelectionText(range, rawText) : rawText;
+      if (!text) return;
       selectedRange = range.cloneRange();
       removeTranslationUI();
       loadSettings().then(cfg => {
         if (websiteDisabled) return;
+        if (isDictationSelection) {
+          if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) lookupEnglishDictionary(text, selectedRange);
+          else translateSelectedRange(selectedRange, { forcePopup:true, textOverride:text, sourceLanguage:"en" });
+          return;
+        }
         if (isDualSubtitleSelection && cfg.translationPopupEnabled !== false && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
           lookupEnglishDictionary(text, selectedRange, null, { autoSpeak:true });
           return;
@@ -1333,7 +1368,26 @@
       });
     }, 20);
   }
+  const handledDictationWordClicks = new WeakSet();
+  function handleDictationWordClick(event) {
+    if (handledDictationWordClicks.has(event)) return;
+    handledDictationWordClicks.add(event);
+    const token = (event.composedPath?.() || []).find(node => node?.nodeType === Node.ELEMENT_NODE && node.matches?.(DICTATION_WORD_CLICK_SELECTOR));
+    if (!token || token.getRootNode?.()?.host?.id !== "keepit-host") return;
+    const selection = currentSelection();
+    if (selection && !selection.isCollapsed && cleanText(selection.toString())) return;
+    const word = cleanText(token.textContent).replace(/^[^A-Za-z]+|[^A-Za-z'’]+$/g, "");
+    if (!LHN_DICTIONARY.isEnglishWord(word)) return;
+    const range = document.createRange();
+    try { range.selectNodeContents(token); } catch { return; }
+    if (!isDictationTextRange(range)) return;
+    loadSettings().then(cfg => {
+      if (websiteDisabled || cfg.showFullEnglishDictionary === false) return;
+      lookupEnglishDictionary(word, range);
+    }).catch(() => {});
+  }
   document.addEventListener("mouseup", handleSelectionMouseUp);
+  document.addEventListener("click", handleDictationWordClick);
   // Mouse events from a shadow tree may not reach the document listener in every host/browser.
   // Bind directly when the bilingual subtitle host appears; the WeakSet prevents double handling
   // when the same composed event also bubbles to document.
@@ -1344,6 +1398,7 @@
     if (boundSubtitleSelectionRoots.has(root)) return true;
     boundSubtitleSelectionRoots.add(root);
     root.addEventListener("mouseup", handleSelectionMouseUp);
+    root.addEventListener("click", handleDictationWordClick);
     return true;
   }
   if (!bindSubtitleSelectionRoot()) {

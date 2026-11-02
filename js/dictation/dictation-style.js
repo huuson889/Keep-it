@@ -884,6 +884,14 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-result-title { margin-bottom: 8px; color: #059669; font-size: 12px; font-weight: 800; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-result-title { color: #34d399; }
 #keepit-exact-overlay .te-dict-speech-result { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; }
+#keepit-exact-overlay .te-dict-speech-result,
+#keepit-exact-overlay .te-dict-speech-result *,
+#keepit-exact-overlay .te-dict-error-words,
+#keepit-exact-overlay .te-dict-error-words *,
+#keepit-exact-overlay .te-dict-speech-target,
+#keepit-exact-overlay #te-dictation-notes .te-dict-stats-word-title strong { -webkit-user-select: text; user-select: text; }
+#keepit-exact-overlay .te-dict-speech-result .te-dict-speech-word,
+#keepit-exact-overlay .te-dict-error-words .te-dict-w { cursor: pointer; }
 #keepit-exact-overlay .te-dict-speech-mic {
   display: inline-flex; flex: none; width: 66px; height: 66px; align-items: center; justify-content: center;
   padding: 0; border: 0; border-radius: 50%; background: #f59e0b; color: #111827; cursor: pointer;
