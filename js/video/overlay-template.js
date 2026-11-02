@@ -509,7 +509,7 @@ const OVERLAY_CSS = `
     }
     .te-theater-subtitle-color-pill {
       position: relative; display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border: 1px solid rgba(128,128,128,.35);
+      width: 32px; height: 18px; border: 1px solid rgba(128,128,128,.35);
       border-radius: 6px; cursor: pointer;
     }
     .te-theater-subtitle-opacity-control { display: flex; align-items: center; gap: 8px; min-width: 150px; }
@@ -1120,7 +1120,9 @@ const OVERLAY_CSS = `
       box-shadow: 0 -8px 24px rgba(31,41,55,.1);
     }
     #keepit-exact-overlay .te-theater-subtitle-settings { display: none; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-theater-subtitle-settings { display: block; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-theater-subtitle-settings {
+      display: block; margin-top: 10px;
+    }
     #keepit-exact-overlay .te-subtitle-content { display: contents; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;

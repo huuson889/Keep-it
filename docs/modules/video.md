@@ -35,7 +35,7 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 - Bốn subtitle mode, ba video mode; Reading video/giữa S/M/L 32/35%, 26/45%, 20/60%. VI `videoMedium`: “Vừa”, `videoViewSize`: “Kích thước xem”; shortcut bỏ qua editable.
 - `.te-control-play` là con trực tiếp của `.te-control-bar`; grid đối xứng giữ tâm nút chính giữa. `.te-ctrl-group` đầu vẫn là `primaryGroup` Dictation; `.te-yt-logo-box` được phép co bằng `flex`/`min-width: 0`.
 - Theater + Large chỉ active với `.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active)`. Dictation xóa geometry Theater tạm; khôi phục controls chỉ nếu Large tự ẩn, không ghi đè lựa chọn ẩn thủ công. Bar fixed đáy, nền xuyên mờ/blur.
-- Subtitle tối đa 80% chiều rộng frame thật (không quá 80vw), bo nền 16px; giữ màu/opacity mặc định đen/40%. Tùy chọn chỉ hiện trong mode, không có tiêu đề nhóm; swatch 26px. Tay cầm `grab`; double-click phụ đề về Y mặc định.
+- Subtitle rộng tối đa 80% frame/80vw, bo 16px; giữ mặc định đen/40%. Tùy chọn chỉ hiện trong mode, không heading; swatch nền 32×18px như hai swatch phụ đề, cách thẻ trên 10px. Tay cầm `grab`; double-click phụ đề về Y mặc định.
 - Y lưu theo tỷ lệ frame (`frame-v1`), migrate tọa độ viewport cũ một lần. Đo frame/panel/grip/bar khi đổi mode/cỡ, resize, video/caption, reset/kéo/phím; wrapper `display: contents` ngoài mode.
 - Đổi mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` bật suppression chung; re-arm khi rời cả hai vùng. Resume pause do hover, giữ pause thủ công/reason khác; đóng overlay xóa suppression.
 - Reading giữ player và reset khi rời mode; brand dùng chung Dictation. Ambient switch bật Ambient 3; settings giữ padding, ẩn width hint, art trước hide-controls.
@@ -44,6 +44,6 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.969 passed: 56 JS syntax checks; manifest/version; auto/manual-hide and 80%-frame/reset mocks; CSS parse/assertions; docs 691 words; `git diff --check`.
+- v3.4.970 passed: overlay JS syntax; manifest/version; CSS parse/assertions (matching 32×18px swatches, scoped 10px gap); docs 691 words; `git diff --check`.
 - Giữ source assertions: selection primary được phép; dòng dịch/UI bị loại; selection trang thường và storage change giữ state.
 - Browser QA pending: Theater/Large glass/settings/controls, drag/reset/colors, responsive/long captions, mode switching. Static checks không thay browser test.
