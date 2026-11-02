@@ -1477,9 +1477,12 @@
     }
     if (websiteDisabled) return;
     const dictationShortcut = String(settings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut).toLowerCase();
-    if (dictationShortcut && pressed === dictationShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
+    if (dictationShortcut && pressed === dictationShortcut) {
       e.preventDefault(); e.stopPropagation();
-      if (!e.repeat) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
+      if (!e.repeat) {
+        const isYouTube = /^(www\.)?youtube\.com$/i.test(location.hostname);
+        document.dispatchEvent(new CustomEvent(isYouTube ? "lhn-youtube-dictation-toggle" : "lhn-web-dictation-toggle"));
+      }
       return;
     }
     const dualSubtitlesShortcut = String(settings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut).toLowerCase();

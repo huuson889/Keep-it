@@ -21,7 +21,7 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 
 ## 3. Luồng chính
 
-1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation dùng English cues và player hiện có. Caption cập nhật qua `lhn-dual-captions-updated`.
+1. YouTube dùng `LHN_OVERLAY_API`/captions; web `Alt+F` lấy Reader main English blocks, tách câu thành cues qua shared TTS. Panel/controller dùng chung; captions phát `lhn-dual-captions-updated`.
 2. Typing pass khi `result.perfect`; sau khi đạt 100%, keydown đầu tiên trong `te-dict-input` bỏ trạng thái đã chấm và mở lại nhập. Speaking pass từ 70% nhưng không tự chuyển câu. Các tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
 3. Auto-record Speaking mặc định bật: cue cuối chờ 1 giây; recognition one-shot/rearm tại `onend`. Interim transcript cập nhật trực tiếp; gộp segment, reset timer theo speech, rồi chấm sau 1,5 giây im lặng. Khi phát lại lượt đã ghi, chỉ ở chế độ auto-record, dừng audio trước 1,5 giây grace cuối; recognition và scoring vẫn đợi đủ grace. Toast giữ đến khi dừng.
 4. Auto-record tắt thì manual recognition giữ continuous flow. Sai thì retry; Escape reveal/reset, Enter sau reveal chấm 100%, Enter tiếp chuyển câu. Speaking ẩn nút chấm và Next không tự chuyển.
@@ -40,5 +40,5 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.993: playback VM mock đạt (auto dừng tại duration − 1,5 giây; manual đến `ended`; snapshot theo attempt; recognition grace 1500 ms); 54 JS syntax, manifest/docs và diff đạt.
-- Browser QA chưa chạy: xác nhận replay auto cắt, manual phát đầy đủ và các ca Dictation liên quan.
+- v3.4.994: 56 JS syntax; web TTS/sentence VM; 468 CSS rules, manifest/docs và diff checks passed.
+- Browser QA chưa chạy: xác nhận web overlay/thumbnail/TTS và video replay auto cắt, manual phát đầy đủ.

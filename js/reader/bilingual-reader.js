@@ -1290,4 +1290,10 @@
     }, 900);
   });
   pageObserver.observe(document.documentElement, { childList:true, subtree:true });
+
+  // Shared provider hook: Dictation consumes the same main-content blocks as Alt+R/Alt+A.
+  globalThis.LHN_READER_MAIN_SOURCE = Object.freeze({
+    getTextBlocks: () => readerBlocks(true).map(rawText).filter(text => String(text || "").trim()),
+    stopReading:closeReadingBar,
+  });
 })();

@@ -27,6 +27,7 @@ Reader cung cấp dịch song ngữ trên trang và thanh đọc/TTS. `bilingual
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Nạp `bilingual-flags.js` trước `bilingual-reader.js`; helper chỉ giữ mã vùng và hàm tạo emoji, không chứa bảng SVG. Font `TwemojiCountryFlags.woff2` phải nằm trong `web_accessible_resources` vì Reader gắn `@font-face` vào trang host. Readability phải có trước khi Reader gọi `new Readability`.
+- Dictation dùng `LHN_READER_MAIN_SOURCE.getTextBlocks()` cho đúng vùng nội dung của Alt+R/Alt+A; `stopReading()` đóng thanh đọc trước khi học. Giữ Reader làm nguồn trích xuất.
 - Dùng `LHN_TTS` cho chia chunk, normalize language, voice settings và playback; không tạo TTS riêng chỉ cho Reader.
 - Translation đi qua `LHN_MESSAGING`/Background để tận dụng providers và cache chung; không bỏ qua cache nếu thêm đường dịch mới.
 - Reader settings (`lhnBilingualReaderSettings`), display settings (`lhnSettings`) và translation language (`lhnStudyTranslationSettings`) có vai trò riêng; giữ migration/sync behavior.

@@ -1727,3 +1727,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     </div>
   </div>
 `;
+
+
+globalThis.LHN_OVERLAY_TEMPLATE = Object.freeze({ html:OVERLAY_HTML, css:OVERLAY_CSS });

@@ -27,6 +27,7 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
 
 ### YouTube video overlay and Dictation
+- On YouTube, the configurable Dictation shortcut (default `Alt+F`) opens video-based learning. On other webpages, `Alt+F` opens the same learning UI using English main-content sentences selected by the Reader (the same range as `Alt+R`/`Alt+A`) and shared TTS instead of video audio. A page thumbnail is used when available, otherwise the existing default image; Typing/Speaking progress is stored locally per page.
 - Video popup translation and read-aloud preferences are stored separately from general settings; both default to on.
 - In the video **Reading** mode, the toggle beside **X** switches between the video and a mini audio bar; its play/pause control operates the same video.
 - Open **AI keepit** in the existing YouTube overlay to switch it into a three-column exercise. It is available only when the active Dual Sub transcript uses English captions.
@@ -106,7 +107,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.
 - `js/reader/`: Bilingual Reader, TTS engine, and reader voice flags.
 - `js/video/`: YouTube Dual Sub adapter and the existing overlay template.
-- `js/dictation/`: word-alignment scorer, local overlay styles, and YouTube Dictation controller.
+- `js/dictation/`: word-alignment scorer, local overlay styles, and shared video/web Dictation controller.
 - `js/translate/`: translation, dictionary, search, and study translation modules.
 - `js/dashboard/`: Dashboard, annotation utilities, flashcard study, account, backup, and flag modules.
 - `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.

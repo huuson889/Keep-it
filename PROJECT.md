@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.993; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.994; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
 - Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%; sau 100%, keydown đầu tiên trong `te-dict-input` trả về chế độ nhập. Speaking auto-record mặc định bật: mọi auto-start sau cue/repeat chờ 1s; sau `onend` mở lại recognition; gộp transcript và chấm một lần sau 1,5s im lặng, reset timer theo speech; replay attempt auto-record cắt 1,5s grace cuối, không đổi recognition/scoring; auto-record tắt vẫn phát đầy đủ. Chấm sai phát cue một lần rồi auto-mic sau cue +1s; toast/nhãn ghi âm hiện suốt lượt ghi; tắt công tắc giữ manual flow. Speaking ẩn nút chấm điểm, dàn đều bốn nút video, mic playback dùng gradient tím mini-play, compact video dùng icon headphones; popup VI giữ màu/copy 15 mốc %, Spring Pop; tự ẩn sau 6s hoặc Enter; EN/KO giữ inline. Thống kê từ sai tách `wrongWordStats` (Typing) và `speakingWrongWordStats` (Speaking), không nhập dữ liệu cũ. Repeat/cue, bố cục 25:50:25 và font `te-dict-stats-host` giữ nguyên.
 - Video: Dictation learning có `learningViewSize` riêng, mặc định S; S/M/L chỉ điều khiển cột, không đổi kích thước video. Auto-record đồng bộ style với translation; audio card giảm chiều dọc 20%, giữ cỡ chữ. Speaking work area giữ CSS v3.4.938; `.te-dict-translation` full-width dưới hint; bản dịch mặc định bật và nhớ tùy chọn; mic auto chỉ còn vòng tím trong cùng. Popup dịch/đọc tiếng video có tùy chọn riêng trong `lhnYouTubeSettings`, mặc định bật; cài đặt chung giữ nguyên. Auto-hide thanh điều khiển ở Large là runtime; nếu tự ép ẩn thì reset khi rời mode hoặc `pagehide`, còn lựa chọn ẩn thủ công được giữ. Control bar Dictation dùng track đối xứng để play/pause nằm giữa.
-- v3.4.993 targeted playback VM mock, 54 JS syntax, manifest/docs và `git diff --check` đạt; browser QA chưa thực hiện.
+- Web Dictation: Alt+F mở chung Dictation panel ngoài YouTube; Reader main English blocks thành sentence cues, TTS thay audio video, page thumbnail dùng ảnh mặc định nếu thiếu. Progress/session index và learning mode/view size chia sẻ quy ước với video; targeted TTS/sentence VM checks và static checks đạt, browser QA chưa thực hiện.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Kiểm thử trình duyệt
+- Web Dictation: Alt+F open/close, Reader main selection, English-only eligibility, sentence cue progression, Google/browser TTS, pause/resume/repeat and rate, metadata thumbnail/default fallback, compact view, progress/mode preferences, Reader stop/restore and page interactions. Browser QA chưa thực hiện.
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
 - YouTube: xác nhận `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở đúng popup/Full Dict; các dòng dịch/control khác bị chặn; hai tùy chọn popup/đọc riêng; Theater + Large: nếu auto-hide khi trước đó tắt, mọi exit kể cả `pagehide` phải giữ hide-controls off; manual hide vẫn được giữ. Chưa browser-test.
 - Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
@@ -52,7 +53,7 @@ Keepit - Test/
 │   ├── dashboard/                 # dashboard.js (entry), reveal-effects.js (shared reveal orchestration), overview, annotation-utils, settings-ui, study/backup/account, popup thống kê Dictation
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
 │   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
-│   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
+│   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (shared video/web learning), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS), thumbnails.js (LHN_THUMBNAILS), search.js
 ├── css/
@@ -104,7 +105,8 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
                            không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
 Dashboard Settings (`dictationShortcut`, mặc định Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dictation-toggle`
-  └──> YouTube Dual Sub mở overlay nếu đóng; chờ cue nếu đang tải ──> Dictation API open/close
+  ├── YouTube Dual Sub giữ API/player hiện có; cue captions ──> shared Dictation engine
+  └── webpage ──> `LHN_READER_MAIN_SOURCE.getTextBlocks()` ── English sentence cues + `LHN_TTS` ──> shared Dictation engine
 `lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
 YouTube Dual Sub (`state.allCues`, track language, live video)
   └── API overlay hiện có ──> Dictation (3 cột trong overlay, score + phân tích lỗi + ghi chú; Speaking dùng SpeechRecognition + MediaRecorder in-memory local replay; cue playback bằng requestAnimationFrame)
@@ -116,6 +118,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-02 | v3.4.994 | Arena.ai Agent sửa:**
+
+- Web Dictation: Alt+F dùng chung learning engine cho trang thường; Reader chọn main English blocks, sentence cues dùng shared TTS, thumbnail theo metadata/default, progress và learning preferences được lưu theo trang. YouTube flow được giữ nguyên.
+- File: `js/content/content.js`, `css/content/content.css`, `js/core/languages.js`, `js/dictation/dictation.js`, `js/dictation/dictation-style.js`, `js/reader/bilingual-reader.js`, `js/video/overlay-template.js`, `README.md`, `docs/modules/{content,dictation,reader,video}.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: 56 JS syntax; manifest v3.4.994/41 paths/order; TTS/sentence VM; overlay CSS 365 rules, Dictation CSS 468; EN/VI/KO keys; docs 597/672/654/685 từ; `git diff --check` đạt. Browser QA chưa thực hiện.
 
 **2026-11-02 | v3.4.993 | Arena.ai Agent sửa:**
 

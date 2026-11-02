@@ -146,6 +146,18 @@ globalThis.LHN_DICTATION_CSS = `
   opacity: 0 !important;
   pointer-events: none !important;
 }
+#keepit-exact-overlay.te-web-study-mode .te-web-study-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#keepit-exact-overlay.te-web-study-mode.te-dict-video-compact .te-web-study-image {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 #keepit-exact-overlay .te-dict-mini-audio {
   position: absolute;
   inset: 0 4px;
