@@ -34,11 +34,11 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 - Auto-record bật: manual/automatic dùng `continuous=false`; `onend` mở lại recognition. Nối các segment, reset grace timer khi có speech và chỉ grade sau 1,5 giây im lặng. Tắt auto-record giữ manual continuous. Chấm sai phát cue một lần, rồi mic tự mở sau cue 1 giây.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop và tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync mặc định bật; khi tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; thống kê từ sai tách riêng theo mode và nhãn tổng hợp đổi theo mode.
-- Hint giữ proper noun và thứ tự; contraction theo allowlist. Thống kê loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu.
+- Hint giữ proper noun và thứ tự; contraction theo allowlist. Thống kê loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu. Typing: gạch đỏ cho một từ thiếu trước từ kế tiếp đúng; gợi ý theo công tắc, lỗi khác giữ nguyên.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo, migration rightScale v1 sang preference v2 và repeat count riêng theo mode.
 - Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Control bar dùng bốn track hai bên đối xứng và play/pause ở track giữa. Mic một vòng tím; translation dưới hint; `.te-dict-work` CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; speech word dùng `.te-dict-w` (14px). Click result/error token mở Full Dict; multi-select nối bằng dấu cách; target/`enjoy` cho select.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.982 static passed: 56 JS syntax, 14 CSS parses, selection/source assertions, docs and diff.
-- Browser QA chưa chạy: click Full Dict, multiword spacing, select `enjoy`/target; Typing không đổi. Xác nhận Speaking summary và thống kê riêng tồn tại sau reload; dữ liệu Typing không đổi.
+- v3.4.989: 54 JS syntax, 466 CSS rules; 5 diff cases; mock panel bật/tắt hint và overlay giữ input, một marker; manifest/docs/diff đạt.
+- Browser QA chưa chạy: kiểm tra omission trước từ đúng, công tắc hint và các mẫu lỗi khác.

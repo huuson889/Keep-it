@@ -552,7 +552,12 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-input-markup[hidden] { display: none !important; }
 #keepit-exact-overlay .te-dict-input-markup-content { position: absolute; inset: 0; box-sizing: border-box; padding: 16px; border: 1.5px solid transparent; border-radius: 12px; color: transparent; font: inherit; font-size: clamp(18px, 1.6vw, 24px); font-weight: 700; letter-spacing: .01em; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; user-select: none; }
 #keepit-exact-overlay .te-dict-input-wrong-word { text-decoration-line: underline; text-decoration-color: #dc2626; text-decoration-thickness: 3px; text-underline-offset: 4px; text-decoration-skip-ink: none; }
+#keepit-exact-overlay .te-dict-input-missing-gap { background-image: linear-gradient(#dc2626, #dc2626); background-repeat: no-repeat; background-position: left bottom; background-size: 100% 3px; }
+#keepit-exact-overlay .te-dict-input-missing-gap-leading { display: inline-block; position: relative; width: 0; height: 1em; vertical-align: baseline; }
+#keepit-exact-overlay .te-dict-input-missing-gap-leading::after { content: ""; position: absolute; left: -1em; bottom: -.2em; width: .9em; border-bottom: 3px solid #dc2626; }
 #keepit-exact-overlay.theme-dark .te-dict-input-wrong-word { text-decoration-color: #f87171; }
+#keepit-exact-overlay.theme-dark .te-dict-input-missing-gap { background-image: linear-gradient(#f87171, #f87171); }
+#keepit-exact-overlay.theme-dark .te-dict-input-missing-gap-leading::after { border-bottom-color: #f87171; }
 #keepit-exact-overlay .te-dict-note-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, .16); }
 #keepit-exact-overlay.theme-dark .te-dict-input { background: #18181b; color: #f3f4f6; }
 #keepit-exact-overlay.theme-dark .te-dict-input.correct { background: rgba(16, 185, 129, .12); color: #10b981; }

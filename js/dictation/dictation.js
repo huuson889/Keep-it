@@ -2369,7 +2369,20 @@
     ui.inputMarkupContent?.style.removeProperty("transform");
   }
 
-  function renderInputWrongMarks(operations) {
+  function findMissingBeforeCorrect(operations) {
+    const index = operations.findIndex((operation) => operation.type !== "ok");
+    const missing = operations[index];
+    const following = operations[index + 1];
+    const expectedIndices = missing?.expectedIndices || [];
+    const followingExpectedIndices = following?.expectedIndices || [];
+    const followingTypedIndices = following?.typedIndices || [];
+    if (missing?.type !== "missing" || following?.type !== "ok"
+      || expectedIndices.length !== 1 || followingExpectedIndices.length !== 1 || followingTypedIndices.length !== 1
+      || followingExpectedIndices[0] !== expectedIndices[0] + 1) return null;
+    return { index, missing, following, nextTypedIndex: followingTypedIndices[0] };
+  }
+
+  function renderInputWrongMarks(operations, missingPattern = findMissingBeforeCorrect(operations)) {
     if (!ui?.inputMarkup || !ui.inputMarkupContent) return;
     const value = ui.input.value;
     const typedWords = [...value.matchAll(/[\p{L}\p{N}’‘`´']+/gu)];
@@ -2381,17 +2394,36 @@
       const startIndex = indices.length ? indices[0] : typedIndex;
       const match = typedWords[startIndex];
       if (match && (operation.type === "wrong" || operation.type === "extra")) {
-        ranges.push({ start: match.index, end: match.index + match[0].length });
+        ranges.push({ start: match.index, end: match.index + match[0].length, missing: false });
       }
       typedIndex = indices.length ? Math.max(typedIndex, ...indices) + 1 : typedIndex + 1;
     }
+    if (missingPattern) {
+      const followingWord = typedWords[missingPattern.nextTypedIndex];
+      if (followingWord) {
+        const gapIndex = followingWord.index - 1;
+        const hasInlineGap = gapIndex >= 0 && /[ \t]/u.test(value[gapIndex]);
+        const gapStart = hasInlineGap ? gapIndex : followingWord.index;
+        ranges.push({ start: gapStart, end: followingWord.index, missing: true });
+      }
+    }
+    ranges.sort((left, right) => left.start - right.start || Number(right.missing) - Number(left.missing));
     if (!ranges.length) { clearInputWrongMarks(); return; }
     const fragment = document.createDocumentFragment();
     let offset = 0;
     for (const range of ranges) {
+      if (range.start < offset) continue;
       if (range.start > offset) fragment.append(document.createTextNode(value.slice(offset, range.start)));
+      if (range.missing && range.start === range.end) {
+        const marker = document.createElement("span");
+        marker.className = "te-dict-input-missing-gap te-dict-input-missing-gap-leading";
+        marker.setAttribute("aria-hidden", "true");
+        fragment.append(marker);
+        offset = range.start;
+        continue;
+      }
       const word = document.createElement("span");
-      word.className = "te-dict-input-wrong-word";
+      word.className = range.missing ? "te-dict-input-missing-gap" : "te-dict-input-wrong-word";
       word.textContent = value.slice(range.start, range.end);
       fragment.append(word);
       offset = range.end;
@@ -2736,7 +2768,10 @@
     const showHints = shouldShowHints("error", answer);
     const words = getTranscriptWordTokens(cue?.en || "");
     const operations = globalThis.LHN_DICTATION_SCORE.diff(cue?.en || "", answer);
-    const displayOperations = positionalOps(cue?.en || "", answer);
+    const missingPattern = findMissingBeforeCorrect(operations);
+    const displayOperations = missingPattern
+      ? operations.slice(0, missingPattern.index + 2)
+      : positionalOps(cue?.en || "", answer);
     ui.errorWords.replaceChildren();
     const chip = (className, text) => {
       const node = document.createElement("span");
@@ -2786,6 +2821,28 @@
           break;
         }
         if (operation.type === "missing") {
+          if (missingPattern?.missing === operation) {
+            const expected = words[expectedStart(operation)] || {
+              display: operation.expected || "",
+              norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "",
+            };
+            if (showHints) {
+              const group = document.createElement("span");
+              group.className = "te-dict-wg";
+              group.appendChild(chip("te-dict-w fix", `→ ${expectedDisplay(operation)}`));
+              ui.errorWords.appendChild(group);
+            } else {
+              appendMissingMasks([expected]);
+            }
+            advanceExpected(operation);
+            const matchedGroup = document.createElement("span");
+            matchedGroup.className = "te-dict-wg";
+            matchedGroup.appendChild(chip("te-dict-w ok", expectedDisplay(missingPattern.following) || missingPattern.following.typed));
+            ui.errorWords.appendChild(matchedGroup);
+            advanceExpected(missingPattern.following);
+            appendMissingMasks(words.slice(expectedIndex));
+            break;
+          }
           appendMissingMasks(words.slice(expectedStart(operation)));
           break;
         }
@@ -2798,7 +2855,7 @@
         }
       }
     }
-    renderInputWrongMarks(operations);
+    renderInputWrongMarks(operations, missingPattern);
     ui.work?.classList.add("te-dict-has-error");
     ui.error.hidden = false;
   }
