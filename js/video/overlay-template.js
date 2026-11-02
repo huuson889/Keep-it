@@ -1172,9 +1172,6 @@ const OVERLAY_CSS = `
 
     /* Subtitle display selector and four-mode menu. */
     .te-subtitle-mode-selector { position: relative; display: flex; align-items: center; }
-    #keepit-exact-overlay.te-web-study .te-subtitle-mode-selector,
-    #keepit-exact-overlay.te-web-study #open-sub-modal,
-    #keepit-exact-overlay.te-web-study #te-modal-sub,
     #keepit-exact-overlay.te-dictation-active .te-subtitle-mode-selector,
     #keepit-exact-overlay.te-dictation-active #open-sub-modal,
     #keepit-exact-overlay.te-dictation-active #te-modal-sub { display: none !important; }
