@@ -2064,6 +2064,7 @@ function restoreOverlayPageScrollbar() {
 
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
+  overlayEl()?.classList.toggle('te-web-study', state.webStudy);
   const video = state.webStudy ? state.videoEl : (document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video'));
   const slot = ui('.te-video-slot');
   if (!video || !slot) {
@@ -2105,6 +2106,7 @@ function closeOverlay() {
   restoreOverlayPageScrollbar();
   clearHoverPauseState();
   overlayEl()?.classList.add('te-hidden');
+  overlayEl()?.classList.remove('te-web-study');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
