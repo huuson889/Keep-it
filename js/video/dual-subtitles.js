@@ -1795,7 +1795,8 @@ function syncTheaterFrame() {
   if (!root || !slot || !frame) return;
   const v = state.videoEl;
   if (!root.classList.contains('te-sidebar-hidden') || !v) { frame.style.width = ''; frame.style.height = ''; return; }
-  const r = slot.getBoundingClientRect();
+  // Lớn: khung tính theo toàn màn hình (khung cố định), các kích thước khác theo ô video
+  const r = root.classList.contains('size-l') ? { width: innerWidth, height: innerHeight } : slot.getBoundingClientRect();
   const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
   const sizeFactor = root.classList.contains('size-s') ? 2 / 3 : 1;
   const w = Math.min(r.width, r.height * a) * sizeFactor, h = w / a;
@@ -3090,6 +3091,7 @@ function bindUI() {
   });
   mainSw[4].addEventListener('change', (e) => {
     settings.hideControls = e.target.checked;
+    settings.sizeForcedHide = false;
     saveSettings();
     applySettings();
   });
@@ -3264,9 +3266,18 @@ function bindUI() {
     b.addEventListener('click', () => {
       if (isReadingModeActive()) settings.readingViewSize = b.dataset.size;
       else settings.size = b.dataset.size;
-      if (!isReadingModeActive() && settings.size === 'L') settings.hideControls = true;
+      if (!isReadingModeActive()) {
+        if (settings.size === 'L') {
+          if (!settings.hideControls) { settings.hideControls = true; settings.sizeForcedHide = true; }
+        } else if (settings.sizeForcedHide) {
+          settings.hideControls = false;
+          settings.sizeForcedHide = false;
+        }
+      }
       saveSettings();
       applySettings();
+      syncTheaterFrame();
+      if (overlayEl()?.classList.contains('te-ambient-on')) placeAmbient();
     });
   });
 
