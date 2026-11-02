@@ -3432,8 +3432,9 @@
     const selectionEnd = input.selectionEnd;
     const selected = selectionStart !== selectionEnd;
     const slot = activeMissingInputSlots.find(({ start, end }) => selected
-      ? selectionStart < end && selectionEnd > start
-      : selectionStart >= start && selectionStart <= end);
+      ? selectionStart <= end && selectionEnd > start
+      : (selectionStart >= start && selectionStart <= end)
+        || (event.key === "Backspace" && selectionStart === end + 1));
     if (!slot) return false;
     event.preventDefault();
     event.stopPropagation();
