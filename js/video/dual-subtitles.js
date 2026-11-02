@@ -1354,6 +1354,7 @@ function theaterSubtitleBackgroundRgba() {
 
 function isTheaterLargeActive(root = overlayEl()) {
   return Boolean(root && !root.classList.contains('te-reading-mode')
+    && !root.classList.contains('te-dictation-active')
     && root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l'));
 }
 
@@ -1589,8 +1590,11 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   }
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
-  if (active) {
+  if (active || root.classList.contains('te-sidebar-hidden')) {
+    // Learning/Dictation uses its own grid; remove temporary Theater geometry without changing the saved preference.
     setVideoSidebarHidden(false);
+  }
+  if (active) {
     if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
     for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
       const button = root.querySelector(selector);
@@ -1943,7 +1947,8 @@ function syncTheaterFrame() {
   const frame = slot?.querySelector(':scope > .te-video-frame');
   if (!root || !slot || !frame) return;
   const v = state.videoEl;
-  const theaterActive = root.classList.contains('te-sidebar-hidden') && !root.classList.contains('te-reading-mode');
+  const theaterActive = root.classList.contains('te-sidebar-hidden')
+    && !root.classList.contains('te-reading-mode') && !root.classList.contains('te-dictation-active');
   if (!theaterActive || !v) {
     frame.style.width = '';
     frame.style.height = '';

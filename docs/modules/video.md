@@ -34,7 +34,7 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Bốn subtitle mode, ba video mode; Reading video/giữa S/M/L 32/35%, 26/45%, 20/60%. VI `videoMedium`: “Vừa”, `videoViewSize`: “Kích thước xem”; shortcut bỏ qua editable.
 - `.te-control-play` là con trực tiếp của `.te-control-bar`; grid đối xứng giữ tâm nút chính giữa. `.te-ctrl-group` đầu vẫn là `primaryGroup` Dictation; `.te-yt-logo-box` được phép co bằng `flex`/`min-width: 0`.
-- Theater + Large chỉ bật với `.te-sidebar-hidden.size-l:not(.te-reading-mode)`: bar fixed đáy viewport; phụ đề giới hạn `min(80vw, frameWidth)` và vùng trống trước bar. Vị trí lưu theo tỷ lệ frame (`frame-v1`), chuyển dữ liệu viewport cũ một lần. Đo rect frame/panel/grip/bar khi đổi mode/cỡ, resize, video/caption, restore/reset và kéo/phím. Ngoài mode, wrapper dùng `display: contents`.
+- Theater + Large chỉ active với `.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active)`. Vào Dictation xóa Theater tạm, giữ preference. Bar fixed đáy; phụ đề giới hạn theo `min(80vw, frameWidth)` và khoảng trống trước bar. Vị trí lưu theo tỷ lệ frame (`frame-v1`), migrate tọa độ viewport cũ một lần. Đo rect frame/panel/grip/bar khi đổi mode/cỡ, resize, video/caption, restore/reset và kéo/phím; wrapper `display: contents` ngoài mode.
 - Nền ôm nội dung, bo 4px; màu/opacity lưu trong `lhnYouTubeSettings` (đen/40% mặc định); tay cầm kéo dọc chỉ hiện khi hover.
 - Đổi mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` bật suppression chung; re-arm khi rời cả hai vùng. Resume pause do hover, giữ pause thủ công/reason khác; đóng overlay xóa suppression.
 - Reading toggle giữ player và reset khi rời mode; brand dùng chung Dictation. Ambient switch bật Ambient 3. Settings giữ padding 4px 0, ẩn width hint, art trước hide-controls.
@@ -43,6 +43,6 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.967 đã chạy: `node --check` 56 JS, manifest JSON/version, geometry/bounds/migration/scope mocks, CSS block structure, `git diff --check`; docs 696 từ.
+- v3.4.968 đã chạy: `node --check` 56 JS, manifest, mock Theater→Dictation reset class/frame + giữ preference, CSS scope/structure và `git diff --check`.
 - Giữ mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI bị loại; selection trang thường và storage change giữ luồng/state.
 - Browser QA chưa chạy: YouTube Theater + Large, drag/reset/colors, responsive/long captions, mode switching và xác nhận Reading/learning không đổi. Static checks không thay browser test.

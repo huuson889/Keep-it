@@ -1106,13 +1106,13 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame { display: block; position: relative; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame video { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
     /* Chỉ Rạp + Lớn: video, subtitle và control bar dùng ba lớp độc lập theo viewport/frame thật. */
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-video-slot { overflow: visible; container-type: normal; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-control-bar {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-slot { overflow: visible; container-type: normal; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar {
       position: fixed; left: 0; right: 0; bottom: 0; width: 100vw; z-index: 4;
     }
     #keepit-exact-overlay .te-subtitle-content { display: contents; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-container {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;
       display: flex; flex: none; width: fit-content;
       max-width: min(80vw, var(--te-theater-frame-width, 80vw)); min-width: 0; min-height: 0;
@@ -1120,18 +1120,18 @@ const OVERLAY_CSS = `
       transform: translate(-50%, -50%);
       border-radius: 4px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
     }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-subtitle-content {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-content {
       display: flex; flex: 0 1 auto; flex-direction: column; align-items: center; justify-content: center;
       min-width: 0; min-height: 0; width: fit-content; max-width: 100%;
       max-height: max(0px, calc(var(--te-theater-subtitle-max-height, calc(100vh - 100px)) - 24px));
       overflow: auto; overscroll-behavior: contain;
     }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-en,
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-vi {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-en,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-vi {
       max-width: 100%; overflow-wrap: anywhere;
     }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-en { margin-bottom: 0; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-subtitle-drag-handle {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-en { margin-bottom: 0; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-drag-handle {
       position: absolute; top: -24px; left: 50%; z-index: 1; display: inline-flex;
       width: 44px; height: 26px; align-items: center; justify-content: center;
       padding: 0; border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
@@ -1140,13 +1140,13 @@ const OVERLAY_CSS = `
       transition: opacity .15s ease;
       touch-action: none;
     }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-container:hover .te-subtitle-drag-handle,
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-sub-container:focus-within .te-subtitle-drag-handle,
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode).te-theater-subtitle-dragging .te-subtitle-drag-handle {
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-container:hover .te-subtitle-drag-handle,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-container:focus-within .te-subtitle-drag-handle,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active).te-theater-subtitle-dragging .te-subtitle-drag-handle {
       opacity: 1; pointer-events: auto;
     }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-subtitle-drag-handle:hover { background: rgba(0,0,0,.96); }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode) .te-subtitle-drag-handle:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-drag-handle:hover { background: rgba(0,0,0,.96); }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-drag-handle:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
