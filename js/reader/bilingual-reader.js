@@ -1142,7 +1142,7 @@
     queue = nextQueue;
     readingPaused = false; resumeText = ""; queueIndex = fromBlock ? queue.indexOf(fromBlock) : 0;
     reading = true; readingPaused = false; syncPauseShortcutState(); bar.querySelector("[data-shortcut-banner]").hidden = false; bar.classList.add("lhn-show"); syncToolbar();
-    if (interruptCurrent) document.dispatchEvent(new Event("lhn-bilingual-reader-started"));
+    document.dispatchEvent(new Event("lhn-bilingual-reader-started"));
     if (cancelPendingSpeech) speakAfterCancel(); else speakNext();
   }
   function moveReading(delta, event) {
@@ -1177,6 +1177,7 @@
   }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
   document.addEventListener("lhn-bilingual-reader-command", event => {
+    if (event.detail === "stop-reading") { closeReadingBar(); return; }
     if (event.detail === "toggle-lazy" || event.detail === "toggle-near-pointer") sameLangToastShown = false; // cho phép hiện lại toast khi bấm lại Alt+A/Alt+D
     if (event.detail === "toggle-lazy") toggleLazy();
     if (event.detail === "toggle-near-pointer") toggleNearPointer();
