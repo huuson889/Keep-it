@@ -1396,6 +1396,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   if (!root) return null;
   if (!isTheaterLargeActive(root)) {
     root.style.removeProperty('--te-theater-frame-width');
+    root.style.removeProperty('--te-theater-subtitle-max-width');
     root.style.removeProperty('--te-theater-subtitle-max-height');
     root.style.removeProperty('--te-theater-subtitle-top');
     return null;
@@ -1408,6 +1409,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   const frameRect = frame.getBoundingClientRect();
   if (!(frameRect.width > 0 && frameRect.height > 0)) return null;
   root.style.setProperty('--te-theater-frame-width', `${frameRect.width}px`);
+  root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.8)}px`);
 
   const controlsRect = controls?.getBoundingClientRect() || null;
   let panelRect = panel.getBoundingClientRect();
@@ -1437,12 +1439,22 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   return { frameRect, panelRect, bounds, centerY };
 }
 
+function resetTheaterSubtitlePosition(root = overlayEl()) {
+  if (!isTheaterLargeActive(root)) return false;
+  settings.theaterSubtitle.y = defaultSettings().theaterSubtitle.y;
+  settings.theaterSubtitle.positionSpace = THEATER_SUBTITLE_POSITION_SPACE;
+  updateTheaterSubtitleLayout(null, root);
+  saveSettings();
+  return true;
+}
+
 let theaterSubtitleLayoutRaf = 0;
 let theaterSubtitleResizeObserver = null;
 function scheduleTheaterSubtitleLayout(root = overlayEl()) {
   if (!root) return;
   if (!isTheaterLargeActive(root)) {
     root.style.removeProperty('--te-theater-frame-width');
+    root.style.removeProperty('--te-theater-subtitle-max-width');
     root.style.removeProperty('--te-theater-subtitle-max-height');
     root.style.removeProperty('--te-theater-subtitle-top');
     return;
@@ -1590,6 +1602,13 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   }
   pendingDictationShortcut = false;
   pendingDictationOpenImmediately = false;
+  const enteringDictation = !active && globalThis.LHN_DICTATION?.isOpen?.();
+  const leavingTheaterLarge = root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l');
+  if (enteringDictation && leavingTheaterLarge && settings.sizeForcedHide) {
+    settings.hideControls = false;
+    settings.sizeForcedHide = false;
+    saveSettings();
+  }
   if (active || root.classList.contains('te-sidebar-hidden')) {
     // Learning/Dictation uses its own grid; remove temporary Theater geometry without changing the saved preference.
     setVideoSidebarHidden(false);
@@ -3102,6 +3121,10 @@ function bindUI() {
   if (root && theaterSubtitleHandle && theaterSubtitlePanel) {
     let dragSession = null;
     const setSubtitleCenterY = (requestedY) => updateTheaterSubtitleLayout(requestedY, root);
+    theaterSubtitlePanel.addEventListener('dblclick', (event) => {
+      if (theaterSubtitleHandle.contains(event.target)) return;
+      if (resetTheaterSubtitlePosition(root)) event.preventDefault();
+    });
     const finishDrag = (event) => {
       if (!dragSession || event.pointerId !== dragSession.pointerId) return;
       dragSession = null;

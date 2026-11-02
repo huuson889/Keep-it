@@ -508,8 +508,9 @@ const OVERLAY_CSS = `
       cursor: pointer;
     }
     .te-theater-subtitle-color-pill {
-      position: relative; display: inline-block; width: 32px; height: 18px;
-      border: 1px solid rgba(128,128,128,.35); border-radius: 6px; cursor: pointer;
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border: 1px solid rgba(128,128,128,.35);
+      border-radius: 6px; cursor: pointer;
     }
     .te-theater-subtitle-opacity-control { display: flex; align-items: center; gap: 8px; min-width: 150px; }
     .te-theater-subtitle-opacity-control input { width: 108px; accent-color: #8b5cf6; cursor: pointer; }
@@ -1110,15 +1111,24 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar {
       position: fixed; left: 0; right: 0; bottom: 0; width: 100vw; z-index: 4;
+      background-color: rgba(15, 15, 18, .58); backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-top: 1px solid rgba(255,255,255,.15); box-shadow: 0 -8px 24px rgba(0,0,0,.18);
     }
+    #keepit-exact-overlay.theme-light.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar {
+      background-color: rgba(248, 249, 250, .78); border-top-color: rgba(31,41,55,.12);
+      box-shadow: 0 -8px 24px rgba(31,41,55,.1);
+    }
+    #keepit-exact-overlay .te-theater-subtitle-settings { display: none; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-theater-subtitle-settings { display: block; }
     #keepit-exact-overlay .te-subtitle-content { display: contents; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;
       display: flex; flex: none; width: fit-content;
-      max-width: min(80vw, var(--te-theater-frame-width, 80vw)); min-width: 0; min-height: 0;
+      max-width: min(80vw, var(--te-theater-subtitle-max-width, 80vw)); min-width: 0; min-height: 0;
       height: auto; padding: 12px 18px; gap: 2px; overflow: visible;
       transform: translate(-50%, -50%);
-      border-radius: 4px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
+      border-radius: 16px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
     }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-content {
       display: flex; flex: 0 1 auto; flex-direction: column; align-items: center; justify-content: center;
@@ -1135,7 +1145,7 @@ const OVERLAY_CSS = `
       position: absolute; top: -24px; left: 50%; z-index: 1; display: inline-flex;
       width: 44px; height: 26px; align-items: center; justify-content: center;
       padding: 0; border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
-      background: rgba(0,0,0,.82); color: #d1d5db; cursor: ns-resize;
+      background: rgba(0,0,0,.82); color: #d1d5db; cursor: grab;
       opacity: 0; pointer-events: none; transform: translateX(-50%);
       transition: opacity .15s ease;
       touch-action: none;
@@ -1147,6 +1157,7 @@ const OVERLAY_CSS = `
     }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-drag-handle:hover { background: rgba(0,0,0,.96); }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-subtitle-drag-handle:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active).te-theater-subtitle-dragging .te-subtitle-drag-handle { cursor: grabbing; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
@@ -1588,7 +1599,6 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
 
-          <div class="te-setting-section-title"><span>Chế độ rạp · Lớn</span></div>
           <div class="te-card-box te-theater-subtitle-settings" style="margin-bottom: 10px;">
             <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
               <label for="te-theater-subtitle-color-picker" style="font-size: 13.5px;">Màu nền phụ đề</label>
