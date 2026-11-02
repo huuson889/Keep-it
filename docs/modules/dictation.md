@@ -36,7 +36,7 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 - Progress sync mặc định bật; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
 - Hint giữ proper noun và thứ tự; contraction theo allowlist. Thống kê loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo, migration rightScale v1 sang preference v2 và repeat count riêng theo mode.
-- Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Mic một vòng tím; translation dưới hint; `.te-dict-work` CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; speech word dùng `.te-dict-w` (14px). Click result/error token mở Full Dict; multi-select nối bằng dấu cách; target/`enjoy` cho select.
+- Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Control bar dùng bốn track hai bên đối xứng và play/pause ở track giữa. Mic một vòng tím; translation dưới hint; `.te-dict-work` CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; speech word dùng `.te-dict-w` (14px). Click result/error token mở Full Dict; multi-select nối bằng dấu cách; target/`enjoy` cho select.
 
 ## 5. Kiểm tra và xác minh
 

@@ -807,7 +807,7 @@ globalThis.LHN_DICTATION_CSS = `
   bottom: auto !important;
   width: 100% !important;
   height: 70px !important;
-  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 34px minmax(0, 1fr) minmax(0, max-content);
+  grid-template-columns: repeat(2, minmax(0, 1fr)) 34px repeat(2, minmax(0, 1fr));
   min-width: 0;
   z-index: 5;
 }
