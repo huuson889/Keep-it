@@ -3362,7 +3362,7 @@
     attachedVideo = null;
   }
 
-  async function openPanel({ waitForCaptions = false, mode = "typing" } = {}) {
+  async function openPanel({ waitForCaptions = false, mode = "typing", fromEntry = false } = {}) {
     if (active || openingPanel) {
       setDictationMode(mode);
       return;
@@ -3373,7 +3373,8 @@
     build();
     if (!ui) { openingPanel = false; A?.revealLearningEntry?.(); return; }
     setDictationMode(mode);
-    A?.setLearningMode?.(false);
+    // Vào từ phím tắt (Alt+F) khi overlay đang đóng: không chuyển qua chế độ xem video trước
+    if (!fromEntry) A?.setLearningMode?.(false);
     const layoutPrefsPromise = loadDictationLayoutPrefs();
     if (waitForCaptions) {
       void layoutPrefsPromise.then(() => { if (active && ui) applyDictationColumnLayout(); });

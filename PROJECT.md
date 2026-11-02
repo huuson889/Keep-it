@@ -116,6 +116,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-10-31 | v3.4.955 | Claude sửa:**
+  - Alt+F (phím tắt Dictation) khi overlay đang đóng: vào thẳng chế độ học, không gọi lại chế độ xem video trước (bỏ bước `setLearningMode(false)` khi vào từ phím tắt).
+  - File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận Alt+F không còn hiện chế độ xem video).
+
+
 **2026-11-02 | v3.4.953 | Arena.ai Agent sửa:**
 
 - Mở rộng suppression hover-pause sang cả thao tác click dòng transcript. Mode change và click dùng latch chung cho `.te-sub-en` + `.yt-dual-item`; video tiếp tục phát và hover chỉ re-arm sau khi con trỏ rời cả hai vùng.

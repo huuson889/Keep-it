@@ -1755,8 +1755,8 @@ function openPendingDictationShortcut() {
   const mode = pendingDictationMode;
   pendingDictationOpenImmediately = false;
   pendingDictationMode = 'typing';
-  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions: true, mode });
-  else globalThis.LHN_DICTATION?.open?.({ mode });
+  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions: true, mode, fromEntry: true });
+  else globalThis.LHN_DICTATION?.open?.({ mode, fromEntry: true });
 }
 
 async function openDictationFromDashboardIntent() {
