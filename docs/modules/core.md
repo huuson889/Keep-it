@@ -29,7 +29,7 @@
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ `defaults.js` là nguồn duy nhất cho default; không chép default thứ hai vào feature module.
+- Giữ `defaults.js` là nguồn duy nhất cho default; không chép default thứ hai vào feature module. `LHN_DEFAULTS.youtube` sở hữu popup/đọc video riêng, khác `LHN_DEFAULTS.settings`.
 - Thứ tự nạp là hợp đồng: `defaults` → `config` → `settings`/consumer; kiểm tra cả manifest, `importScripts` và thứ tự `<script>` khi đổi.
 - `CONFIG.STORAGE_KEYS` và `CONFIG.DATABASE` là tên/key dùng chung; không đổi một phía mà bỏ migration hoặc consumer cũ.
 - API `LHN_*` được các context gọi trực tiếp trong content script; đổi tên/hình dạng phải rà tất cả consumer.

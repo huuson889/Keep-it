@@ -21,7 +21,7 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 ## 3. Luồng chính
 
 1. Manifest nạp các factory/module trước `content.js`; controller có guard chống khởi tạo lặp trên cùng trang.
-2. `content.js` đọc settings từ `LHN_SETTINGS`/`browser.storage.local`, rồi nối các helper và listener cho lựa chọn chữ, phím tắt, popup và Sidebar.
+2. `content.js` đọc settings chung từ `LHN_SETTINGS`/`browser.storage.local`; lựa chọn video đọc riêng popup/đọc từ `lhnYouTubeSettings`, rồi dispatch qua các helper và listener.
 3. Khi lưu/sửa/xóa annotation, controller tạo record bằng `LHN_NOTE_COMPOSER` rồi gửi message `ADD`, `UPDATE` hoặc `DELETE` qua `LHN_MESSAGING` tới Background.
 4. Khi trang tải hoặc thay đổi DOM, annotation lấy từ Background; `LHN_ANNOTATION_RESTORE` tìm range và `LHNWebHighlighter` dựng mark, có observer/retry cho trang động.
 5. Shortcut YouTube được phát thành custom event; module video xử lý Dual Sub/Dictation. Các action Reader và Dashboard cũng được chuyển qua event/message tương ứng.
@@ -33,7 +33,7 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 - `web-highlighter.js`, `annotation-restore.js`, `note-composer.js`, `page-layout.js` là các helper/factory; giữ ranh giới chức năng thay vì nhân bản logic vào controller.
 - Các thao tác chọn/chữ không được chặn nhập liệu trong input/contenteditable; giữ guard shortcut và hành vi selection khi sửa listener.
 - Khi thay đổi DOM trên trang, loại trừ vùng UI của extension khỏi khôi phục/selection để tránh tự bắt nội dung Keepit.
-- Trên giao diện video Keepit, chỉ `.te-sub-en` và `.yt-dual-item-en` được phép kích hoạt popup dịch/từ điển; dòng dịch, control và Dictation bị loại. Gate không áp lên selection thông thường ngoài giao diện video.
+- Selection video chỉ cho transcript chính `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở popup/từ điển; các vùng dịch/control/UI khác bị chặn. Hai tùy chọn popup/đọc video dùng `lhnYouTubeSettings`; trang thường giữ `lhnSettings`.
 - Tên custom event nối Content với Video/Reader là API nội bộ; tìm consumer trước khi đổi.
 
 ## 5. Kiểm tra và xác minh

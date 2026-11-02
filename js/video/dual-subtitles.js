@@ -8,7 +8,6 @@ const HOST_ID = 'keepit-host';
 const OVERLAY_ID = 'keepit-exact-overlay';
 const SETTINGS_KEY = 'lhnYouTubeSettings';
 const STUDY_TRANSLATION_SETTINGS_KEY = 'lhnStudyTranslationSettings';
-const GLOBAL_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
 const BATCH_SIZE = 15;
 const PENDING = 'Đang dịch...';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -126,7 +125,7 @@ const VIDEO_UI_TEXT_KEYS = Object.freeze({
   'Song ngữ': 'videoSubtitleBilingual', 'Chính': 'videoSubtitlePrimary', 'Dịch': 'videoSubtitleTranslation', 'Ẩn': 'videoSubtitleHidden',
   'Chế độ xem': 'videoModeSelector', 'Chế độ rạp': 'videoModeTheater', 'Chế độ đọc': 'videoModeReading', 'Chế độ kết hợp': 'videoModeCombined',
   'Toàn màn hình': 'videoFullscreen', 'Cài đặt video': 'videoSettings', 'Đóng': 'close', 'Mở cài đặt': 'videoOpenSettings',
-  'Kích thước xem': 'videoViewSize', 'Kích cỡ xem': 'videoViewSize', 'Hiện popup dịch trực tiếp': 'videoTranslationPopup', 'Nhấp để phát âm': 'videoClickToSpeak',
+  'Kích thước xem': 'videoViewSize', 'Kích cỡ xem': 'videoViewSize', 'Nhấn để dịch: hiện popup dịch': 'videoTranslationPopup', 'Phát âm khi dịch: đọc khi mở popup': 'videoClickToSpeak',
   'Kết hợp câu': 'videoCombineSentences', 'Ẩn thanh điều khiển': 'videoHideControls', 'Ambient mode': 'videoAmbientMode',
   'Ambient 1': 'videoAmbient1', 'Ambient 2': 'videoAmbient2', 'Ambient 3': 'videoAmbient3', 'Tắt': 'videoAmbientOff',
   'Chủ đề': 'videoTheme', 'Light': 'lightMode', 'Dark': 'darkMode', 'Tùy chọn phụ đề': 'videoSubtitleOptions',
@@ -1260,80 +1259,6 @@ async function restoreSettings() {
 }
 
 let settings = defaultSettings();
-let translationPopupEnabled = false;
-let temporaryTranslationPopupSnapshot = null;
-let temporaryTranslationPopupWrite = Promise.resolve();
-const TRANSLATION_MODE_KEYS = ['translationPopupEnabled', 'showOnSelect', 'translateIconEnabled'];
-
-async function refreshTranslationPopupSetting() {
-  try {
-    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
-    translationPopupEnabled = values[GLOBAL_SETTINGS_KEY]?.translationPopupEnabled === true;
-    if (overlayEl()) applySettings();
-  } catch {}
-}
-
-async function saveTranslationPopupSetting(enabled) {
-  temporaryTranslationPopupSnapshot = null;
-  translationPopupEnabled = enabled;
-  if (overlayEl()) applySettings();
-  try {
-    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
-    const current = values[GLOBAL_SETTINGS_KEY] || {};
-    const next = { ...current, translationPopupEnabled: enabled };
-    // Match Dashboard's existing exclusive translation-mode behavior.
-    if (enabled) Object.assign(next, { showOnSelect: false, translateIconEnabled: false });
-    await browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
-  } catch {
-    await refreshTranslationPopupSetting();
-  }
-}
-
-async function enableTemporaryTranslationPopup() {
-  if (temporaryTranslationPopupSnapshot) return;
-  try {
-    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
-    const current = values[GLOBAL_SETTINGS_KEY] || {};
-    if (current.translationPopupEnabled === true) return;
-    temporaryTranslationPopupSnapshot = Object.fromEntries(TRANSLATION_MODE_KEYS.map((key) => [
-      key,
-      { existed: Object.prototype.hasOwnProperty.call(current, key), value: current[key] },
-    ]));
-    const next = { ...current, translationPopupEnabled: true, showOnSelect: false, translateIconEnabled: false };
-    translationPopupEnabled = true;
-    if (overlayEl()) applySettings();
-    temporaryTranslationPopupWrite = browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
-    await temporaryTranslationPopupWrite;
-  } catch {
-    temporaryTranslationPopupSnapshot = null;
-    await refreshTranslationPopupSetting();
-  }
-}
-
-async function restoreTemporaryTranslationPopup() {
-  const snapshot = temporaryTranslationPopupSnapshot;
-  if (!snapshot) return;
-  temporaryTranslationPopupSnapshot = null;
-  try {
-    await temporaryTranslationPopupWrite;
-    const values = await browser.storage.local.get(GLOBAL_SETTINGS_KEY);
-    const current = values[GLOBAL_SETTINGS_KEY] || {};
-    const stillTemporary = current.translationPopupEnabled === true &&
-      current.showOnSelect === false && current.translateIconEnabled === false;
-    if (!stillTemporary) return;
-    const next = { ...current };
-    for (const key of TRANSLATION_MODE_KEYS) {
-      if (snapshot[key].existed) next[key] = snapshot[key].value;
-      else delete next[key];
-    }
-    await browser.storage.local.set({ [GLOBAL_SETTINGS_KEY]: next });
-    translationPopupEnabled = next.translationPopupEnabled === true;
-    if (overlayEl()) applySettings();
-  } catch {
-    await refreshTranslationPopupSetting();
-  }
-}
-
 // Trả về nhóm màu/cỡ chữ: 'en'|'vi' (phụ đề chính) hoặc 'side-en'|'side-vi' (phụ đề thanh bên)
 function groupRef(g) {
   return g.startsWith('side-') ? settings.side[g.slice(5)] : activeVideoSubtitleSettings()[g];
@@ -1553,7 +1478,8 @@ function applySettings() {
 
   // Đồng bộ công tắc trong menu cài đặt chính
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
-  if (mainSw[0]) mainSw[0].checked = translationPopupEnabled;
+  if (mainSw[0]) mainSw[0].checked = settings.videoTranslationPopupEnabled !== false;
+  if (mainSw[1]) mainSw[1].checked = settings.videoClickToSpeak !== false;
   if (mainSw[2]) mainSw[2].checked = settings.splitSentences;
   if (mainSw[4]) mainSw[4].checked = settings.hideControls;
   syncAmbientUi();
@@ -1830,7 +1756,6 @@ function openOverlay() {
   shadow.host.style.display = '';
   state.open = true;
   restorePreferredReadingMode();
-  void enableTemporaryTranslationPopup();
   attachVideo(video, slot);
   onTimeUpdate();
   startAppPopupObserver();
@@ -1855,7 +1780,6 @@ function closeOverlay() {
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
-  void restoreTemporaryTranslationPopup();
   syncAppPopupPause();
   stopLiveCaptionCapture();
   detachVideo();
@@ -3328,11 +3252,16 @@ function bindUI() {
     });
   });
 
-  // Công tắc trong menu chính: [0] popup dịch trực tiếp, [1] nhấp để phát âm,
-  // [2] kết hợp câu, [3] ẩn thanh điều khiển
+  // Công tắc trong menu chính: [0] popup dịch video, [1] đọc khi mở popup,
+  // [2] kết hợp câu, [3] ẩn thanh điều khiển.
   const mainSw = modalMain.querySelectorAll('input[type=checkbox]');
   mainSw[0].addEventListener('change', (event) => {
-    void saveTranslationPopupSetting(event.target.checked);
+    settings.videoTranslationPopupEnabled = event.target.checked;
+    saveSettings();
+  });
+  mainSw[1].addEventListener('change', (event) => {
+    settings.videoClickToSpeak = event.target.checked;
+    saveSettings();
   });
   mainSw[2].addEventListener('change', (e) => {
     settings.splitSentences = e.target.checked;
@@ -3736,18 +3665,13 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     void openDictationFromDashboardIntent();
   });
   void refreshKeepitGate();
-  void refreshTranslationPopupSetting();
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (changes[GLOBAL_SETTINGS_KEY]) {
-      translationPopupEnabled = changes[GLOBAL_SETTINGS_KEY].newValue?.translationPopupEnabled === true;
-      if (temporaryTranslationPopupSnapshot) {
-        const current = changes[GLOBAL_SETTINGS_KEY].newValue || {};
-        if (TRANSLATION_MODE_KEYS.some((key) => current[key] !== (key === 'translationPopupEnabled'))) {
-          temporaryTranslationPopupSnapshot = null;
-        }
-      }
+    if (changes[SETTINGS_KEY]) {
+      settings = mergeSettings(defaultSettings(), changes[SETTINGS_KEY].newValue || {});
       if (overlayEl()) applySettings();
+    }
+    if (changes[globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings']) {
       void refreshKeepitGate();
       void refreshSubtitleLanguageSettings();
     }

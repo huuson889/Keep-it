@@ -21,8 +21,8 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 1. Manifest nạp template/controller. `openOverlay()` tạo Shadow DOM và chuyển player vào slot; `closeOverlay()` hoặc đổi video khôi phục player bằng `detachVideo()`.
 2. `loadCaptions()` lấy cue từ cache, YouTube API/timedtext, transcript panel/tracklist hoặc caption đang hiện; làm sạch rồi dịch qua `LHN_MESSAGING`.
 3. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API` cho Dictation; caption mới phát `lhn-dual-captions-updated`.
-4. Đổi `lhnSettings.language` làm mới nhãn overlay/Dictation; `lhnStudyTranslationSettings` vẫn quản lý ngôn ngữ subtitle.
-5. Selection dịch/từ điển chỉ áp dụng cho `.te-sub-en`/`.yt-dual-item-en`; dòng dịch/UI không mở popup, selection ngoài overlay giữ nguyên.
+4. Đổi `lhnSettings.language` làm mới nhãn; `lhnStudyTranslationSettings` quản lý ngôn ngữ phụ đề; tùy chọn popup/đọc video lưu riêng ở `lhnYouTubeSettings`.
+5. Transcript chính/Dictation allowlist dùng cài đặt video; dòng dịch/UI khác bị chặn. Trang thường giữ cài đặt chung.
 6. Reading: toggle cạnh X đổi video/mini-audio; play/pause cùng player. Một `.te-dict-brand` dùng chung cho Reading/Dictation expanded.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -40,7 +40,7 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 - Y lưu theo tỷ lệ frame (`frame-v1`), migrate tọa độ viewport cũ một lần. Đo frame/panel/grip/bar khi đổi mode/cỡ, resize, video/caption, reset/kéo/phím; wrapper `display: contents` ngoài mode.
 - Mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` dùng chung hover-pause suppression; re-arm khi rời cả hai. Resume pause do hover, giữ manual/reason khác; xóa khi đóng.
 - Reading giữ player; brand dùng chung. Ambient bật 3; giữ padding, ẩn width hint, art trước hide-controls.
-- `lhnYouTubeSettings` lưu overlay; subtitle/UI locale: `lhnStudyTranslationSettings`/`lhnSettings`.
+- `lhnYouTubeSettings` lưu overlay và tùy chọn popup/đọc (mặc định bật); `lhnSettings` không đổi. Locale: `lhnStudyTranslationSettings`/`lhnSettings`.
 - Cache transcript dùng LRU và cache bền; giữ giới hạn, TTL, khóa, `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh

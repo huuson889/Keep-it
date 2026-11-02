@@ -1381,22 +1381,22 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
           
-          <!-- Hiện popup dịch trực tiếp -->
+          <!-- Nhấn để dịch: hiện popup dịch -->
           <div class="te-menu-row">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><circle cx="10" cy="13" r="3"/><path d="m12 15 2 2"/></svg>
-              <span>Hiện popup dịch trực tiếp</span>
+              <span>Nhấn để dịch: hiện popup dịch</span>
             </div>
-            <label class="te-switch"><input type="checkbox" id="te-translation-popup-enabled"><span class="te-slider"></span></label>
+            <label class="te-switch"><input type="checkbox" id="te-translation-popup-enabled" checked><span class="te-slider"></span></label>
           </div>
 
-          <!-- Nhấp để phát âm -->
+          <!-- Phát âm khi dịch: đọc khi mở popup -->
           <div class="te-menu-row">
             <div class="te-item-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6L21 8"/><path d="M21 3v5h-5"/><path d="M10 9v6l4-3z"/></svg>
-              <span>Nhấp để phát âm</span>
+              <span>Phát âm khi dịch: đọc khi mở popup</span>
             </div>
-            <label class="te-switch"><input type="checkbox" checked><span class="te-slider"></span></label>
+            <label class="te-switch"><input type="checkbox" id="te-video-click-to-speak-enabled" checked><span class="te-slider"></span></label>
           </div>
 
           <!-- Kết hợp câu -->

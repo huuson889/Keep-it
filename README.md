@@ -26,7 +26,8 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. Auto-scroll, paragraph play icons, and the speed step are configurable.
 - The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
 
-### YouTube Dictation
+### YouTube video overlay and Dictation
+- Video popup translation and read-aloud preferences are stored separately from general settings; both default to on.
 - In the video **Reading** mode, the toggle beside **X** switches between the video and a mini audio bar; its play/pause control operates the same video.
 - Open **AI keepit** in the existing YouTube overlay to switch it into a three-column exercise. It is available only when the active Dual Sub transcript uses English captions.
 - Typing mode: listen to the real YouTube video, type each sentence, and press Enter to check. Scoring aligns words and ignores capitalization, punctuation, and curly apostrophes. Unsolved sentences stay blurred; a Vietnamese translation appears after a correct answer.
