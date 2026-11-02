@@ -79,9 +79,10 @@ const state = {
   loop: false,
   pauseReasons: new Set(),
   hoverPauseReasons: new Set(),
+  hoverPauseSuppressedReasons: new Map(),
   hoverPointer: null,
   hoverPointerRevision: 0,
-  hoverPausePreserveRevision: null,
+  hoverPauseModeChangeRevision: null,
   hoverPauseSyncFrame: null,
   managedPauseVideo: null,
   popupObserver: null,
@@ -220,7 +221,11 @@ const HOVER_PAUSE_ZONES = [
 ];
 
 function activateHoverPause(reason) {
-  if (state.hoverPauseReasons.has(reason)) return;
+  if (state.hoverPauseReasons.has(reason) || state.hoverPauseSuppressedReasons.has(reason)) return;
+  if (state.hoverPauseModeChangeRevision === state.hoverPointerRevision) {
+    state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
+    return;
+  }
   state.hoverPauseReasons.add(reason);
   pauseVideoFor(reason);
 }
@@ -238,7 +243,8 @@ function rememberHoverPointer(event) {
   state.hoverPointer = { x: event.clientX, y: event.clientY };
   if (moved) {
     state.hoverPointerRevision += 1;
-    scheduleHoverPauseSync({ pointerMoved: true });
+    state.hoverPauseModeChangeRevision = false;
+    syncHoverPauseAtPointer();
   }
   return moved;
 }
@@ -253,30 +259,47 @@ function getHoverPauseReasonsAtPointer() {
     .map(({ reason }) => reason));
 }
 
-function syncHoverPauseAtPointer(preserveActive) {
+function syncHoverPauseAtPointer(suppressCurrent = false) {
   const nextReasons = getHoverPauseReasonsAtPointer();
+  if (suppressCurrent) {
+    for (const reason of [...state.hoverPauseReasons, ...nextReasons]) {
+      state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
+    }
+    for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+    return;
+  }
+
+  for (const [reason, revision] of state.hoverPauseSuppressedReasons) {
+    if (revision === state.hoverPointerRevision) continue;
+    if (nextReasons.has(reason)) state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
+    else state.hoverPauseSuppressedReasons.delete(reason);
+  }
   // Activate the next zone first so crossing between pause zones never resumes the video briefly.
   for (const reason of nextReasons) activateHoverPause(reason);
-  // A mode change alone must not release a pause while the pointer has not moved.
-  if (preserveActive) return;
   for (const reason of [...state.hoverPauseReasons]) {
     if (!nextReasons.has(reason)) releaseHoverPause(reason);
   }
 }
 
-function scheduleHoverPauseSync({ preserveActive = false, pointerMoved = false } = {}) {
-  if (!state.open) return;
-  if (pointerMoved) state.hoverPausePreserveRevision = false;
-  else if (preserveActive && state.hoverPausePreserveRevision !== false) {
-    state.hoverPausePreserveRevision = state.hoverPointerRevision;
+function suppressHoverPauseForModeChange() {
+  state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
+  const reasons = new Set([...state.hoverPauseReasons, ...getHoverPauseReasonsAtPointer()]);
+  for (const reason of reasons) {
+    state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
   }
+  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+}
+
+function scheduleHoverPauseSync({ modeChange = false } = {}) {
+  if (!state.open) return;
+  if (modeChange) state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
   if (state.hoverPauseSyncFrame !== null) return;
   state.hoverPauseSyncFrame = requestAnimationFrame(() => {
     state.hoverPauseSyncFrame = null;
-    const preserveActive = typeof state.hoverPausePreserveRevision === 'number'
-      && state.hoverPausePreserveRevision === state.hoverPointerRevision;
-    state.hoverPausePreserveRevision = null;
-    syncHoverPauseAtPointer(preserveActive);
+    const suppressCurrent = typeof state.hoverPauseModeChangeRevision === 'number'
+      && state.hoverPauseModeChangeRevision === state.hoverPointerRevision;
+    state.hoverPauseModeChangeRevision = null;
+    syncHoverPauseAtPointer(suppressCurrent);
   });
 }
 
@@ -287,7 +310,8 @@ function clearHoverPauseState() {
   }
   state.hoverPointer = null;
   state.hoverPointerRevision = 0;
-  state.hoverPausePreserveRevision = null;
+  state.hoverPauseModeChangeRevision = null;
+  state.hoverPauseSuppressedReasons.clear();
   for (const { reason } of HOVER_PAUSE_ZONES) {
     state.hoverPauseReasons.delete(reason);
     resumeVideoFor(reason);
@@ -1072,11 +1096,13 @@ function setVideoSidebarHidden(hidden) {
   const root = overlayEl();
   if (!root) return false;
   const sidebarHidden = Boolean(hidden);
+  const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
+  if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
-  scheduleHoverPauseSync({ preserveActive: true });
+  scheduleHoverPauseSync({ modeChange: modeChanged });
   return sidebarHidden;
 }
 
@@ -1406,12 +1432,14 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
     }
   }
   const wasReading = root.classList.contains('te-reading-mode');
-  if (wasReading !== active) root.classList.remove('te-reading-audio-compact');
+  const modeChanged = wasReading !== active;
+  if (modeChanged) suppressHoverPauseForModeChange();
+  if (modeChanged) root.classList.remove('te-reading-audio-compact');
   root.classList.toggle('te-reading-mode', active);
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
-  scheduleHoverPauseSync({ preserveActive: true });
+  scheduleHoverPauseSync({ modeChange: modeChanged });
   return active;
 }
 
@@ -1938,10 +1966,13 @@ function syncReadingAudioControls() {
 function setReadingAudioCompact(compact) {
   const root = overlayEl();
   if (!root || !isReadingModeActive()) return false;
-  root.classList.toggle('te-reading-audio-compact', Boolean(compact));
+  const nextCompact = Boolean(compact);
+  const modeChanged = root.classList.contains('te-reading-audio-compact') !== nextCompact;
+  if (modeChanged) suppressHoverPauseForModeChange();
+  root.classList.toggle('te-reading-audio-compact', nextCompact);
   syncReadingAudioControls();
-  scheduleHoverPauseSync({ preserveActive: true });
-  return Boolean(compact);
+  scheduleHoverPauseSync({ modeChange: modeChanged });
+  return nextCompact;
 }
 
 function toggleReadingAudioCompact() {
