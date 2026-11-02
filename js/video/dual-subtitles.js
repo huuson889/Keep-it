@@ -2284,7 +2284,7 @@ function attachWebMedia(media, slot) {
   media.addEventListener('loadedmetadata', state.videoGeometryHandler);
   syncVideoAspect(media); syncTheaterFrame();
   syncPlayButton(); syncSpeedButton(); syncMuteButton();
-  onTimeUpdate(); syncReadingAudioControls();
+  onTimeUpdate(); syncReadingAudioControls(); startAmbient();
 }
 
 function attachVideo(video, slot) {
@@ -2383,16 +2383,11 @@ function ambientMode() {
 function syncAmbientUi() {
   const toggle = $('te-ambient-toggle');
   if (!toggle) return;
-  toggle.checked = !state.webStudy && ambientMode() !== 'off';
+  toggle.checked = ambientMode() !== 'off';
   toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
 }
 function setAmbientMode(mode) {
   if (mode !== 'off' && mode !== '3') return;
-  if (state.webStudy && mode !== 'off') {
-    reportWebIssue('Ambient video effects are not configured for static web thumbnails.');
-    syncAmbientUi();
-    return;
-  }
   settings.ambientStyle = mode;
   settings.ambient = mode !== 'off';
   saveSettings();
@@ -2460,18 +2455,24 @@ function placeAmbient() {
 function drawAmbient() {
   if (isEdgeAmbient()) return drawAmbientEdge();
   const canvas = ui('.te-ambient'), v = state.videoEl;
-  if (!canvas || !v || v.readyState < 2 || document.hidden) return;
-  if (v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
+  const isWebThumbnail = state.webStudy;
+  const source = isWebThumbnail ? state.webThumbnail : v;
+  if (!canvas || !source || document.hidden) return;
+  if (isWebThumbnail) {
+    if (ambientLastTime >= 0 || !source.complete || !source.naturalWidth) return;
+  } else {
+    if (v.readyState < 2 || v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
+  }
   try {
     const ctx = canvas.getContext('2d');
-    // Nhảy xa (seek) thì thay hẳn; còn lại pha 35% khung mới để màu chuyển mượt.
-    ctx.globalAlpha = Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
-    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-    ambientLastTime = v.currentTime;
+    // Web dùng thumbnail tĩnh; YouTube pha khung hình mới để màu chuyển mượt.
+    ctx.globalAlpha = isWebThumbnail || Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
+    if (isWebThumbnail) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    ambientLastTime = isWebThumbnail ? 0 : v.currentTime;
   } catch { stopAmbient(); } // video không cho đọc hình (DRM/cross-origin): tắt hiệu ứng
 }
 function startAmbient() {
-  if (state.webStudy) return;
   stopAmbient();
   overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
