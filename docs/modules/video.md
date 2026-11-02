@@ -12,7 +12,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 |---|---|---|
 | [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp các content modules. |
 | [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Nội dung/style Shadow DOM. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `toggleWebStudyFromShortcut`, `openOverlay`, `attachWebMedia`, `loadCaptions` | YouTube controller và web adapter. |
+| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `runSharedVideoShortcut`, `prepareWebStudyForShortcut`, `toggleVideoViewFromShortcut`, `toggleDictationFromShortcut`, `openOverlay` | Shared shortcut handlers, YouTube controller và web adapter. |
 | [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Getter các block Reader đã chọn. |
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.detectLanguage`, `play` | Dò ngôn ngữ và phát TTS. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadSource` | Ảnh metadata và SVG fallback. |
@@ -20,7 +20,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 
 ## 3. Luồng chính
 
-1. Manifest nạp Reader, template, video controller rồi Dictation. Shortcut lấy từ `LHN_SETTINGS`; YouTube giữ event cũ, trang thường dùng listener của video controller.
+1. Manifest nạp Reader, template, video controller rồi Dictation. Content dispatcher đọc Alt+E/Alt+F từ Settings và phát hai event hiện có trên website được bật; `runSharedVideoShortcut()` chuyển cả YouTube lẫn Web vào cùng video/Dictation handlers.
 2. Web gọi getter Reader, tạo một cue cho mỗi câu, phát qua `LHN_TTS`; ảnh metadata trang được ưu tiên trước SVG fallback.
 3. Dùng chung `openOverlay()`/Shadow DOM, transcript và player controls. Reader text là nguồn cue của Web subtitles; shared marking, queue/cache và `BILINGUAL_TRANSLATE` tạo secondary track theo cùng pipeline YouTube/Web learning. Dictation mở shared UI/engine với cue Reader. Ambient Web lấy page thumbnail làm nguồn qua canvas renderer hiện có; YouTube tiếp tục lấy video frame. Lỗi dịch được toast/log.
 4. YouTube `loadCaptions()` dùng cache, player API/timedtext, transcript panel/tracklist hoặc caption đang hiện; sau đó làm sạch và dịch theo cài đặt.
@@ -34,7 +34,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 - Logic riêng của Web ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Reader getter và thuật toán chọn text không đổi; câu Reader vẫn là cue chính. `markWebReaderCues()` tái dùng `markSingleTrackCues()` để đánh dấu cue, còn shared lazy queue/cache/`BILINGUAL_TRANSLATE` tạo bản dịch thứ cấp như trên YouTube. Bilingual/translation mode theo cue và target-language settings; lỗi dịch giữ mode, ghi console và toast.
 - Khi Web thumbnail thay video, `te-web-study-frame` bật clipping trên `.te-video-slot` (12px), rồi được gỡ khi detach; không bo riêng ảnh.
 - Web-study bật class `te-web-study`; YouTube Dictation learning dùng class sẵn có `te-dictation-active`. CSS ẩn CC/subtitle-mode selector, mục `Cài đặt video > Tùy chọn phụ đề` và modal khi một trong hai class hoạt động. Khi thoát learning, class tương ứng được gỡ; YouTube xem thường giữ nguyên các điều khiển.
-- Shortcut web bỏ qua YouTube/ô nhập; tôn trọng site-disabled và dọn adapter khi URL đổi.
+- Alt+E là shared view shortcut, Alt+F là shared learning shortcut; Web không tự bắt keydown hay tạo shortcut riêng. Web adapter được chuẩn bị trong các shared handlers; content dispatcher và `keepitSiteDisabled` vẫn quyết định site có thể dùng chức năng hay không.
 - Giữ mọi mode/UI. Ambient Web dùng thumbnail tĩnh làm nguồn hình và theo shared `settings.ambient`/`ambientStyle`; canvas không đọc frame từ virtual media. Web Dictation dùng cờ nguồn riêng và ngôn ngữ dò được/hint trang; không giả lập YouTube hay English.
 - YouTube Auto vẫn ưu tiên mapping caption/audio track. Reader/TTS dùng language hint trang rồi dò theo cue.
 - Giữ 4 subtitle/3 video modes, Reading S/M/L ratios 32/35%, 26/45%, 20/60%, Theater geometry, hover-pause và transcript cache LRU/TTL.
@@ -42,6 +42,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.12: VM chạy 8 hồi quy shared Alt+E/Alt+F handlers cho Web và YouTube; dispatcher/listener assertions, 54 JS syntax và `git diff --check` đạt. Browser QA chưa chạy.
 - v3.5.11: VM ambient test xác nhận Web bật/tắt dùng thumbnail làm canvas source và YouTube vẫn dùng video frame; source assertions, 54 JS syntax, manifest/docs và `git diff --check` đạt. Browser QA chưa chạy.
 - v3.5.10: source assertions xác nhận CSS ẩn CC/Tùy chọn phụ đề dưới `.te-web-study` và `.te-dictation-active`; 54 JS syntax, manifest/docs và `git diff --check` đạt. Browser QA chưa chạy.
 - v3.5.6: VM translation-pipeline test xác nhận Reader cue vẫn là main text, Web gửi `BILINGUAL_TRANSLATE` và áp kết quả vào secondary, đổi target re-arm translation; 54 JS syntax, source assertions, manifest/docs và `git diff --check` đạt. Browser QA cho modes/target changes chưa chạy.

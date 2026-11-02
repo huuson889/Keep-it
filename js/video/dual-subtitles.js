@@ -1,4 +1,4 @@
-// ===== YouTube song ngữ – content script (chuyển từ extension tham chiếu v1.12) =====
+// ===== Video song ngữ và Web-study – content script (chuyển từ extension tham chiếu v1.12) =====
 // Nạp trước: overlay-template.js (OVERLAY_CSS/OVERLAY_HTML). Giao diện giữ nguyên 100%.
 // Các "đường nối" đã đổi sang module Keepit: LHN_MESSAGING (fetch bridge), browser.storage (cài đặt),
 // LHN_DEFAULTS.youtube (giá trị mặc định).
@@ -95,14 +95,6 @@ const state = {
   webPageUrl: '',
   webThumbnail: null,
 };
-
-let webDictationShortcut = String(globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
-void globalThis.LHN_SETTINGS?.get?.().then((stored) => {
-  webDictationShortcut = String(stored?.dictationShortcut ?? globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
-}).catch((error) => console.warn('[Keepit Web] Could not load the Dictation shortcut setting', error));
-globalThis.LHN_SETTINGS?.subscribe?.((stored) => {
-  webDictationShortcut = String(stored?.dictationShortcut ?? globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
-});
 
 function showWebToast(message) {
   let toast = document.getElementById('lhn-sidebar-toast');
@@ -2147,12 +2139,19 @@ function toggleDictationTypingControl() {
   beginDictationMode('typing');
 }
 
+function prepareWebStudyForShortcut() {
+  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || state.webStudy) return;
+  if (state.open) closeOverlay();
+  prepareWebStudy();
+}
+
 function toggleDictationFromShortcut(event) {
   if (keepitSiteDisabled) return;
   if (event?.detail?.source === 'typing-control') {
     toggleDictationTypingControl();
     return;
   }
+  prepareWebStudyForShortcut();
   const dictation = globalThis.LHN_DICTATION;
   if (state.webStudy) {
     if (dictation?.isOpen?.()) {
@@ -2170,6 +2169,7 @@ function toggleDictationFromShortcut(event) {
 
 function toggleVideoViewFromShortcut() {
   if (keepitSiteDisabled) return;
+  prepareWebStudyForShortcut();
   const dictation = globalThis.LHN_DICTATION;
   if (!state.open) {
     openOverlay();
@@ -4005,31 +4005,25 @@ function tick() {
   }
 }
 
-async function toggleWebStudyFromShortcut(event) {
-  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || keepitSiteDisabled) return;
-  if (event.isComposing || event.repeat || !webDictationShortcut) return;
-  const pressed = globalThis.LHN_SHORTCUTS?.fromEvent?.(event)?.toLowerCase() || '';
-  if (pressed !== webDictationShortcut) return;
-  const target = event.composedPath?.()[0] || event.target;
-  if (target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]') || target?.isContentEditable) return;
-  event.preventDefault(); event.stopImmediatePropagation();
-  if (!keepitSiteGateReady) { await refreshKeepitGate(); if (keepitSiteDisabled) return; }
-  if (state.open && state.webStudy) { closeOverlay(); return; }
-  if (state.open) closeOverlay();
-  prepareWebStudy();
-  openOverlay();
+async function runSharedVideoShortcut(handler, event) {
+  if (!keepitSiteGateReady) await refreshKeepitGate();
+  handler(event);
 }
 
-window.addEventListener('keydown', toggleWebStudyFromShortcut, true);
+document.addEventListener('lhn-youtube-dual-subtitles-toggle', (event) => {
+  void runSharedVideoShortcut(toggleVideoViewFromShortcut, event);
+});
 document.addEventListener('lhn-youtube-dictation-toggle', (event) => {
-  if (state.webStudy) toggleDictationFromShortcut(event);
+  void runSharedVideoShortcut(toggleDictationFromShortcut, event);
+});
+void refreshKeepitGate();
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes[globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings']) void refreshKeepitGate();
 });
 
-// Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
+// YouTube-only player/caption shortcuts and initialization.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   observeLauncherChanges();
-  document.addEventListener('lhn-youtube-dual-subtitles-toggle', toggleVideoViewFromShortcut);
-  document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
   window.addEventListener('pagehide', () => {
     if (isTheaterLargeActive() && sizeForcedHide) restoreForcedHideControls();
@@ -4099,7 +4093,6 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
     tick();
     void openDictationFromDashboardIntent();
   });
-  void refreshKeepitGate();
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes[SETTINGS_KEY]) {
@@ -4109,10 +4102,7 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
       if (wasRuntimeForced && settings.hideControls === false) settings.hideControls = true;
       if (overlayEl()) applySettings();
     }
-    if (changes[globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings']) {
-      void refreshKeepitGate();
-      void refreshSubtitleLanguageSettings();
-    }
+    if (changes[globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings']) void refreshSubtitleLanguageSettings();
     if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) void refreshSubtitleLanguageSettings();
   });
   window.addEventListener('resize', () => { if (state.videoEl) syncVideoAspect(state.videoEl); });
