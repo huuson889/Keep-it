@@ -1565,6 +1565,10 @@
     void stopSpeechRecording(true);
   }
 
+  function showSpeechResultPanel() {
+    if (ui?.speechResultWrap) ui.speechResultWrap.hidden = false;
+  }
+
   function renderSpeechResult(text) {
     if (!ui?.speechResult) return;
     const transcript = String(text || "").trim();
@@ -1699,6 +1703,7 @@
         return;
       }
       if (!completedTranscript) {
+        renderSpeechResult("");
         const recordingUrl = await stopSpeechRecording(false);
         if (generation === speechStartGeneration && active && dictationMode === "speaking" && attemptCurrent === current && recordingUrl) {
           await playRecordedSpeech(recordingUrl);
@@ -1785,7 +1790,8 @@
           speechRecognitionError = "";
           if (speechAutoRecordEnabled) scheduleSpeechEndpointGraceStop(true);
         }
-        renderSpeechResult([...completedSpeechSegments, finalText, interimText].filter(Boolean).join(" "));
+        const livePreview = [...completedSpeechSegments, finalText, interimText].filter(Boolean).join(" ");
+        if (livePreview) renderSpeechResult(livePreview);
       };
       session.onerror = (event) => {
         const code = String(event?.error || "");
@@ -1808,6 +1814,7 @@
         if (!automatic && !speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
           try {
             session.start();
+            showSpeechResultPanel();
             showSpeechRecordingToast();
             setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
             updateSpeechMicState(true);
@@ -1846,6 +1853,7 @@
       };
       try {
         session.start();
+        showSpeechResultPanel();
         showSpeechRecordingToast();
       } catch (error) {
         if (speechRecognition === session) speechRecognition = null;
