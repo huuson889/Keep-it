@@ -1508,6 +1508,16 @@ function updateSidebarTranscriptFontSize(root) {
   root.style.setProperty('--te-side-vi', (sideFontBase * sharedScale * settings.side.vi.pct / 100) + 'px');
 }
 
+function syncViewSizeClasses(root = overlayEl()) {
+  if (!root) return null;
+  const viewSize = root.classList.contains('te-reading-mode') ? (settings.readingViewSize || 'M')
+    : root.classList.contains('te-dictation-active') ? (settings.learningViewSize || 'S') : settings.size;
+  root.classList.toggle('size-s', viewSize === 'S');
+  root.classList.toggle('size-m', viewSize === 'M');
+  root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
+  return viewSize;
+}
+
 function applySettings() {
   const root = overlayEl();
   if (!root) return;
@@ -1516,10 +1526,7 @@ function applySettings() {
   root.classList.toggle('theme-light', settings.theme !== 'dark');
   root.classList.toggle('te-controls-hidden', !!settings.hideControls);
   root.classList.toggle('hide-vi', isVietnameseHidden());
-  const viewSize = root.classList.contains('te-reading-mode') ? (settings.readingViewSize || 'M') : settings.size;
-  root.classList.toggle('size-s', viewSize === 'S');
-  root.classList.toggle('size-m', viewSize === 'M');
-  root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
+  syncViewSizeClasses(root);
   applyTheaterSubtitlePresentation(root);
   updateSidebarTranscriptFontSize(root);
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
@@ -1557,7 +1564,9 @@ function applySettings() {
   const presetIdx = PRESET_VALUES.indexOf(settings.sub.en.pct);
   groups[0].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === presetIdx));
   groups[1].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === (settings.sub.bold ? 1 : 0)));
-  const modalViewSize = isReadingModeActive() ? (settings.readingViewSize || 'M') : settings.size;
+  const modalViewSize = isReadingModeActive()
+    ? (settings.readingViewSize || 'M')
+    : overlayEl()?.classList.contains('te-dictation-active') ? (settings.learningViewSize || 'S') : settings.size;
   const sizeIdx = { S: 0, M: 1, L: 2 }[modalViewSize] ?? 1;
   $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
   const readingWidthHint = $('te-reading-width-hint');
@@ -1646,6 +1655,7 @@ function createDictationOverlayApi() {
     overlayEl,
     ctrl,
     setLearningMode: setVideoLearningMode,
+    syncViewSize: syncViewSizeClasses,
     restorePreferredReadingMode,
     getPreferredLearningMode: preferredLearningMode,
     revealLearningEntry() { overlayEl()?.classList.remove('te-learning-entry-pending'); },
@@ -3504,9 +3514,11 @@ function bindUI() {
 
   $('te-view-mode-options').querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
+      const dictationLearningActive = overlayEl()?.classList.contains('te-dictation-active');
       if (isReadingModeActive()) settings.readingViewSize = b.dataset.size;
+      else if (dictationLearningActive) settings.learningViewSize = b.dataset.size;
       else settings.size = b.dataset.size;
-      if (!isReadingModeActive()) {
+      if (!isReadingModeActive() && !dictationLearningActive) {
         if (settings.size === 'L') {
           if (!settings.hideControls) { settings.hideControls = true; settings.sizeForcedHide = true; }
         } else if (settings.sizeForcedHide) {
@@ -3516,6 +3528,7 @@ function bindUI() {
       }
       saveSettings();
       applySettings();
+      globalThis.LHN_DICTATION?.syncVideoViewSizeColumns?.();
       syncTheaterFrame();
       if (overlayEl()?.classList.contains('te-ambient-on')) placeAmbient();
     });

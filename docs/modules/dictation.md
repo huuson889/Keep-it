@@ -35,8 +35,10 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 - Progress sync mặc định bật tại `dictation:progress-sync:v1`; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
 - Contraction theo allowlist; loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu khỏi thống kê. Hint proper noun giữ case/thứ tự và bỏ trùng; `wrongWordStats` schema v3 là heuristic.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo và migration rightScale v1 sang preference v2. Repeat count riêng theo mode.
+- Trong video learning, auto-record cạnh translation và cùng style/state. Audio card thấp 20%; nút/icon nhỏ 20% cả hai chiều, font giữ nguyên. `learningViewSize` riêng mặc định S (đủ cột); M ẩn trái; L ẩn trái/phải, video không đổi cỡ.
 
 ## 5. Kiểm tra và xác minh
 
+- v3.4.971 passed: 56 JS checks, manifest, S/M/L and view-size isolation mocks, auto-toggle state assertions, CSS parse and `git diff --check`.
 - Static/mock: `node --check`, manifest, keys EN/VI/KO, cue-end/repeat +2s scheduling, cancel khi off/replay/Enter, auto one-shot `continuous=false` → `onend` → playback-before-grade, manual continuous Enter stop, cleanup, CSS braces và `git diff --check`.
 - Browser QA: toggle, auto-start +2s, browser endpoint/onend rồi playback-grade, manual Enter/Escape, permission/fallback/cleanup, Typing và locale trên Chromium/Firefox/Edge. Static checks không thay browser test.

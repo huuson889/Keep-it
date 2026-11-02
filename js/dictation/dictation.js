@@ -334,6 +334,25 @@
     }
   }
 
+  function getDictationColumnVisibilityForViewSize(size) {
+    const normalized = String(size || "S").toUpperCase();
+    return {
+      leftHidden: normalized !== "S",
+      rightHidden: normalized === "L",
+    };
+  }
+
+  function applyVideoViewSizeColumnPreset() {
+    if (!active || !ui?.root?.classList.contains("te-dictation-active")) return false;
+    const root = ui.root;
+    const size = root.classList.contains("size-l") ? "L" : root.classList.contains("size-m") ? "M" : "S";
+    const visibility = getDictationColumnVisibilityForViewSize(size);
+    dictationLayoutPrefs.leftHidden = visibility.leftHidden;
+    dictationLayoutPrefs.rightHidden = visibility.rightHidden;
+    applyDictationColumnLayout();
+    return true;
+  }
+
   function getDictationColumnMetrics() {
     const width = Math.max(0, ui?.root?.clientWidth || ui?.root?.getBoundingClientRect?.().width || 0);
     const available = Math.max(0, width - 16);
@@ -718,6 +737,9 @@
             <p data-dict-label="dictationAudioHelp"></p>
           </div>
           <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
+          <button class="te-dict-hints-toggle te-dict-speech-auto-toggle active" id="te-dict-speech-auto-toggle" type="button" aria-pressed="true" aria-label="" title="">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles preview-icon" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063L2 12l6.5-2.063A2 2 0 0 0 9.937 8.5L12 2l2.063 6.5A2 2 0 0 0 15.5 9.937L22 12l-6.5 2.063A2 2 0 0 0 14.063 15.5L12 22z"/><path d="M19 22v-4"/><path d="M21 20h-4"/></svg>
+          </button>
           <button class="te-dict-hints-toggle te-dict-translation-toggle" id="te-dict-translation-toggle" type="button" aria-pressed="false" aria-label="" title="">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages preview-icon" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
           </button>
@@ -737,10 +759,6 @@
             </div>
             <div class="te-dict-speech-controls-spacer" aria-hidden="true"></div>
             <div class="te-dict-speech-controls">
-              <button class="te-dict-speech-auto-toggle active" id="te-dict-speech-auto-toggle" type="button" aria-pressed="true" aria-label="" title="">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063L2 12l6.5-2.063A2 2 0 0 0 9.937 8.5L12 2l2.063 6.5A2 2 0 0 0 15.5 9.937L22 12l-6.5 2.063A2 2 0 0 0 14.063 15.5L12 22z"/><path d="M19 22v-4"/><path d="M21 20h-4"/></svg>
-                <span data-dict-label="dictationAutoRecord"></span>
-              </button>
               <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
                 ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
               </button>
@@ -3377,7 +3395,7 @@
     if (!fromEntry) A?.setLearningMode?.(false);
     const layoutPrefsPromise = loadDictationLayoutPrefs();
     if (waitForCaptions) {
-      void layoutPrefsPromise.then(() => { if (active && ui) applyDictationColumnLayout(); });
+      void layoutPrefsPromise.then(() => { if (active && ui) applyVideoViewSizeColumnPreset(); });
     } else {
       await layoutPrefsPromise;
     }
@@ -3408,8 +3426,9 @@
     translations = {};
     wrongWordStats = { version: 3, words: {} };
     ui.root.classList.add("te-dictation-active");
+    A?.syncViewSize?.();
     A?.revealLearningEntry?.();
-    applyDictationColumnLayout();
+    applyVideoViewSizeColumnPreset();
     if (typeof ResizeObserver === "function") {
       ui.columnLayoutResizeObserver = new ResizeObserver(applyDictationColumnLayout);
       ui.columnLayoutResizeObserver.observe(ui.root);
@@ -3522,6 +3541,7 @@
       else button.setAttribute("aria-disabled", original.aria);
     }
     ui.root.classList.remove("te-dictation-active", "te-dict-speaking-mode", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
+    A?.syncViewSize?.();
     for (const property of ["--te-dict-left-track", "--te-dict-right-track", "--te-dict-left-splitter", "--te-dict-right-splitter", "--te-dict-center-min"]) {
       ui.root.style.removeProperty(property);
     }
@@ -3644,6 +3664,7 @@
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
   globalThis.LHN_DICTATION = Object.freeze({
     toggle, open: openPanel, close, refreshLanguage: refreshLanguageLabels,
+    syncVideoViewSizeColumns: applyVideoViewSizeColumnPreset,
     isOpen: () => active || openingPanel,
     getMode: () => (active || openingPanel) ? dictationMode : null,
   });

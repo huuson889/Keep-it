@@ -96,6 +96,7 @@
     preferredVideoMode: "combined",
     preferredLearningMode: "typing",
     readingViewSize: "M",
+    learningViewSize: "S",
     readingSubtitle: { en: { pct: 100, color: null }, vi: { pct: 90, color: null } },
     theaterSubtitle: { backgroundColor: "#000000", opacity: 40, y: 82, positionSpace: "frame-v1" },
     splitSentences: true,
