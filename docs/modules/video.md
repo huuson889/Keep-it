@@ -29,18 +29,19 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 
 - Giữ thứ tự nạp `overlay-template.js` → `dual-subtitles.js` → Dictation scripts và hợp đồng `LHN_OVERLAY_API`, `lhn-overlay-ready`, `lhn-dual-captions-updated`.
 - `ctrl(title)` là API nội bộ; control cần dùng selector ổn định/ID vì `title` hiển thị được dịch theo ngôn ngữ cài đặt.
-- Bộ dịch UI chỉ tác động nhãn/thuộc tính của overlay, không dịch tiêu đề video, nội dung trang hoặc caption. Caption/transcript vẫn theo font và màu phụ đề tùy chỉnh; chữ điều khiển Keepit dùng `--lhn-app-font-family`.
+- Dịch UI chỉ đổi nhãn/thuộc tính overlay; caption giữ font/màu tùy chỉnh, UI Keepit dùng `--lhn-app-font-family`.
 - Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Bốn subtitle mode, ba video mode; Reading video/giữa S/M/L 32/35%, 26/45%, 20/60%. VI `videoMedium`: “Vừa”, `videoViewSize`: “Kích thước xem”; shortcut bỏ qua editable.
-- `.te-control-play` là con trực tiếp của `.te-control-bar`; các track grid đối xứng quanh track 34px ở giữa để tâm nút trùng tâm hình học của thanh. Giữ `.te-ctrl-group` đầu làm `primaryGroup` cho Dictation; `.te-yt-logo-box` phải được phép co bằng `flex`/`min-width: 0`.
+- `.te-control-play` là con trực tiếp của `.te-control-bar`; grid đối xứng giữ tâm nút chính giữa. `.te-ctrl-group` đầu vẫn là `primaryGroup` Dictation; `.te-yt-logo-box` được phép co bằng `flex`/`min-width: 0`.
+- Theater + Large: `.te-sub-container` ôm nội dung, max 80vw, bo 4px; nền màu/opacity lưu ở `lhnYouTubeSettings` (mặc định đen/40%); tay cầm kéo dọc chỉ hiện khi hover.
 - Đổi mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` bật suppression chung; re-arm khi rời cả hai vùng. Resume pause do hover, giữ pause thủ công/reason khác; đóng overlay xóa suppression.
-- Reading toggle giữ player; reset khi rời mode. `.te-dict-brand` dùng chung Dictation, scale theo video. Ambient “Chế độ nghệ thuật” có switch menu, bật dùng Ambient 3. Settings: `.te-modal-body` 4px 0; ẩn `#te-reading-width-hint`; art trước hide-controls.
+- Reading toggle giữ player và reset khi rời mode; brand dùng chung Dictation. Ambient switch bật Ambient 3. Settings giữ padding 4px 0, ẩn width hint, art trước hide-controls.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading ratios, brand scale, ambient direct toggle/Ambient 3, toggle X/mini-play, tâm grid/play logo shrink, hover mode/click suppression, exit re-arm, manual pause, CSS, `git diff --check`.
-- Mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection thông thường vẫn qua luồng hiện có. Kiểm tra storage change cập nhật nhãn video và Dictation mà không reset trạng thái panel.
-- Browser QA: Reading toggle cạnh X, video/audio và play/pause, responsive/theme, reset khi rời mode; mode khác, popup selection, language changes, generic page selection. Static checks không thay browser test.
+- Static/mock đã chạy v3.4.966: `node --check` 56 JS, manifest JSON/version, CSS parse, mock default/migration/màu-opacity-vị trí/drag bounds-keyboard, markup 80vw/bo 4px và `git diff --check`.
+- Mock/source assertions cần giữ: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection trang thường giữ luồng hiện có; storage change không reset state panel.
+- Browser QA chưa chạy: Theater + Lớn trên YouTube, hover/drag, màu-opacity/reset và responsive; xác nhận mode khác/Reading không đổi. Static checks không thay browser test.

@@ -131,6 +131,8 @@ const OVERLAY_CSS = `
       overflow: hidden;
     }
 
+    .te-subtitle-drag-handle { display: none; }
+
     .te-sub-container {
       min-height: 140px;
       flex: 1;
@@ -505,6 +507,14 @@ const OVERLAY_CSS = `
       display: inline-block;
       cursor: pointer;
     }
+    .te-theater-subtitle-color-pill {
+      position: relative; display: inline-block; width: 32px; height: 18px;
+      border: 1px solid rgba(128,128,128,.35); border-radius: 6px; cursor: pointer;
+    }
+    .te-theater-subtitle-opacity-control { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+    .te-theater-subtitle-opacity-control input { width: 108px; accent-color: #8b5cf6; cursor: pointer; }
+    .te-theater-subtitle-opacity-control output { min-width: 34px; color: #6b7280; font-size: 12px; text-align: right; }
+    #keepit-exact-overlay.theme-dark .te-theater-subtitle-opacity-control output { color: #a1a1aa; }
 
     .te-counter-btn {
       width: 26px;
@@ -1099,7 +1109,33 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-slot { overflow: visible; container-type: normal; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-control-bar { position: relative; z-index: 2; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container { position: relative; z-index: 2; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container {
+      position: fixed; left: 50%; top: var(--te-theater-subtitle-y, 82vh); z-index: 3;
+      display: flex; flex: none; width: fit-content; max-width: 80vw; min-width: 0; min-height: 0;
+      height: auto; padding: 12px 18px; gap: 2px; transform: translate(-50%, -50%);
+      border-radius: 4px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
+    }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-en,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-vi {
+      max-width: 100%; overflow-wrap: anywhere;
+    }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-en { margin-bottom: 0; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-subtitle-drag-handle {
+      position: absolute; top: -24px; left: 50%; z-index: 1; display: inline-flex;
+      width: 44px; height: 26px; align-items: center; justify-content: center;
+      padding: 0; border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+      background: rgba(0,0,0,.82); color: #d1d5db; cursor: ns-resize;
+      opacity: 0; pointer-events: none; transform: translateX(-50%);
+      transition: opacity .15s ease;
+      touch-action: none;
+    }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container:hover .te-subtitle-drag-handle,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container:focus-within .te-subtitle-drag-handle,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l.te-theater-subtitle-dragging .te-subtitle-drag-handle {
+      opacity: 1; pointer-events: auto;
+    }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-subtitle-drag-handle:hover { background: rgba(0,0,0,.96); }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-subtitle-drag-handle:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
@@ -1182,8 +1218,15 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         </div>
       </div>
       
-      <!-- Subtitle box below video -->
+      <!-- Subtitle box below video / theater-large overlay -->
       <div class="te-sub-container">
+        <button class="te-subtitle-drag-handle" id="te-theater-subtitle-drag-handle" type="button" title="Move subtitle" aria-label="Move subtitle" aria-keyshortcuts="ArrowUp ArrowDown">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="4" r="1.15"/><circle cx="9" cy="4" r="1.15"/><circle cx="13" cy="4" r="1.15"/>
+            <circle cx="5" cy="9" r="1.15"/><circle cx="9" cy="9" r="1.15"/><circle cx="13" cy="9" r="1.15"/>
+            <circle cx="5" cy="14" r="1.15"/><circle cx="9" cy="14" r="1.15"/><circle cx="13" cy="14" r="1.15"/>
+          </svg>
+        </button>
         <div class="te-sub-en" id="te-sub-en-text"></div>
         <div class="te-sub-vi" id="te-sub-vi-text"></div>
       </div>
@@ -1528,6 +1571,21 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               <div class="te-setting-item">
                 <span style="font-size: 13.5px;">Màu phụ đề dịch</span>
                 <span class="te-color-pill" data-group="side-vi" style="background: #9ca3af;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="te-setting-section-title"><span>Chế độ rạp · Lớn</span></div>
+          <div class="te-card-box te-theater-subtitle-settings" style="margin-bottom: 10px;">
+            <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+              <label for="te-theater-subtitle-color-picker" style="font-size: 13.5px;">Màu nền phụ đề</label>
+              <span class="te-theater-subtitle-color-pill" id="te-theater-subtitle-color" aria-label="Màu nền phụ đề"></span>
+            </div>
+            <div class="te-setting-item">
+              <label for="te-theater-subtitle-opacity" style="font-size: 13.5px;">Độ trong suốt</label>
+              <div class="te-theater-subtitle-opacity-control">
+                <input id="te-theater-subtitle-opacity" type="range" min="0" max="100" step="1" value="40" aria-label="Độ trong suốt">
+                <output id="te-theater-subtitle-opacity-value" for="te-theater-subtitle-opacity">40%</output>
               </div>
             </div>
           </div>

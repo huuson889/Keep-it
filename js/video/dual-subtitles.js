@@ -132,6 +132,8 @@ const VIDEO_UI_TEXT_KEYS = Object.freeze({
   'Nhỏ': 'videoSmall', 'Vừa': 'videoMedium', 'Trung bình': 'videoMedium', 'Lớn': 'videoLarge', 'Đậm': 'videoBold', 'Phụ đề video': 'videoVideoSubtitles',
   'Kích thước phụ đề chính': 'videoPrimarySubtitleSize', 'Màu phụ đề chính': 'videoPrimarySubtitleColor',
   'Kích thước phụ đề dịch': 'videoTranslatedSubtitleSize', 'Màu phụ đề dịch': 'videoTranslatedSubtitleColor',
+  'Chế độ rạp · Lớn': 'videoTheaterLargeSubtitle', 'Màu nền phụ đề': 'videoSubtitleBackgroundColor',
+  'Độ trong suốt': 'videoSubtitleBackgroundOpacity', 'Move subtitle': 'videoMoveSubtitle',
   'Phụ đề thanh bên': 'videoSidebarSubtitles', 'Kích thước chính': 'videoPrimarySize', 'Kích thước dịch': 'videoTranslatedSize',
   'Phụ đề chính': 'videoMainSubtitle', 'Phụ đề dịch': 'videoTranslationSubtitle', 'Xuất từ đã lưu': 'videoExportSavedWords',
   'Hiển thị từ đánh dấu': 'videoShowHighlightedWords', 'Chỉ xuất phụ đề': 'videoExportSubtitlesOnly', 'Hiển thị thời gian': 'videoIncludeTimestamps',
@@ -156,6 +158,11 @@ function refreshVideoUiLocalization() {
   globalThis.LHN_DICTATION?.refreshLanguage?.();
   const root = overlayEl();
   if (!root) return false;
+  const subtitleDragHandle = ui('#te-theater-subtitle-drag-handle');
+  if (subtitleDragHandle) {
+    subtitleDragHandle.title = videoT('videoMoveSubtitle');
+    subtitleDragHandle.setAttribute('aria-label', videoT('videoMoveSubtitle'));
+  }
   const excludedUiContent = '.te-video-title-text, .te-sub-container, #te-transcript-list, #te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .te-dict-toolbar-tools';
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
@@ -1230,6 +1237,7 @@ function mergeSettings(d, s) {
       en: { ...d.readingSubtitle.en, ...(s.readingSubtitle?.en || {}) },
       vi: { ...d.readingSubtitle.vi, ...(s.readingSubtitle?.vi || {}) },
     },
+    theaterSubtitle: { ...d.theaterSubtitle, ...(s.theaterSubtitle || {}) },
   };
 }
 
@@ -1329,6 +1337,30 @@ function setOrRemove(el, prop, val) {
   else el.style.removeProperty(prop);
 }
 
+function theaterSubtitleBackgroundRgba() {
+  const storedHex = String(settings.theaterSubtitle?.backgroundColor || '#000000');
+  const hex = /^#[0-9a-f]{6}$/i.test(storedHex) ? storedHex.slice(1) : '000000';
+  const [r, g, b] = hex.match(/.{2}/g).map((channel) => parseInt(channel, 16));
+  const opacity = Math.min(100, Math.max(0, Number(settings.theaterSubtitle?.opacity) || 0)) / 100;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+function applyTheaterSubtitlePresentation(root = overlayEl()) {
+  if (!root) return;
+  const storedPosition = Number(settings.theaterSubtitle?.y);
+  const position = Math.min(96, Math.max(4, Number.isFinite(storedPosition) ? storedPosition : 82));
+  root.style.setProperty('--te-theater-subtitle-background', theaterSubtitleBackgroundRgba());
+  root.style.setProperty('--te-theater-subtitle-y', `${position}vh`);
+  const colorPill = $('te-theater-subtitle-color');
+  const colorPicker = colorPill?.querySelector('input[type="color"]');
+  if (colorPill) colorPill.style.backgroundColor = settings.theaterSubtitle.backgroundColor || '#000000';
+  if (colorPicker) colorPicker.value = settings.theaterSubtitle.backgroundColor || '#000000';
+  const opacitySlider = $('te-theater-subtitle-opacity');
+  const opacityValue = $('te-theater-subtitle-opacity-value');
+  if (opacitySlider) opacitySlider.value = String(settings.theaterSubtitle.opacity);
+  if (opacityValue) opacityValue.textContent = `${settings.theaterSubtitle.opacity}%`;
+}
+
 function saveSettings() {
   try { browser.storage.local.set({ [SETTINGS_KEY]: settings }); } catch {}
 }
@@ -1360,6 +1392,7 @@ function applySettings() {
   root.classList.toggle('size-s', viewSize === 'S');
   root.classList.toggle('size-m', viewSize === 'M');
   root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
+  applyTheaterSubtitlePresentation(root);
   updateSidebarTranscriptFontSize(root);
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
   setOrRemove(root, '--te-side-vi-color', settings.side.vi.color);
@@ -2919,6 +2952,57 @@ function bindUI() {
   const floatingBtn = $('te-floating-btn');
   root?.addEventListener('pointermove', rememberHoverPointer, true);
 
+  const theaterSubtitleHandle = ui('#te-theater-subtitle-drag-handle');
+  const theaterSubtitlePanel = ui('.te-sub-container');
+  if (root && theaterSubtitleHandle && theaterSubtitlePanel) {
+    let dragSession = null;
+    const setSubtitleCenterY = (requestedY) => {
+      const frameRect = ui('.te-video-frame')?.getBoundingClientRect();
+      const panelRect = theaterSubtitlePanel.getBoundingClientRect();
+      const frameTop = frameRect?.height ? frameRect.top : 0;
+      const frameBottom = frameRect?.height ? frameRect.bottom : window.innerHeight;
+      const controlsInset = root.classList.contains('te-controls-hidden') ? 18 : 78;
+      const minY = frameTop + panelRect.height / 2 + 8;
+      const maxY = Math.max(minY, frameBottom - panelRect.height / 2 - controlsInset);
+      const centerY = Math.min(maxY, Math.max(minY, requestedY));
+      const y = Math.round(Math.max(4, Math.min(96, centerY / Math.max(1, window.innerHeight) * 100)) * 10) / 10;
+      settings.theaterSubtitle.y = y;
+      root.style.setProperty('--te-theater-subtitle-y', `${y}vh`);
+    };
+    const finishDrag = (event) => {
+      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+      dragSession = null;
+      root.classList.remove('te-theater-subtitle-dragging');
+      if (theaterSubtitleHandle.hasPointerCapture?.(event.pointerId)) {
+        theaterSubtitleHandle.releasePointerCapture(event.pointerId);
+      }
+      saveSettings();
+    };
+    theaterSubtitleHandle.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || !root.classList.contains('te-sidebar-hidden') || !root.classList.contains('size-l')) return;
+      event.preventDefault();
+      const rect = theaterSubtitlePanel.getBoundingClientRect();
+      dragSession = { pointerId: event.pointerId, startY: event.clientY, centerY: rect.top + rect.height / 2 };
+      root.classList.add('te-theater-subtitle-dragging');
+      theaterSubtitleHandle.setPointerCapture?.(event.pointerId);
+    });
+    theaterSubtitleHandle.addEventListener('pointermove', (event) => {
+      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+      event.preventDefault();
+      setSubtitleCenterY(dragSession.centerY + event.clientY - dragSession.startY);
+    });
+    theaterSubtitleHandle.addEventListener('pointerup', finishDrag);
+    theaterSubtitleHandle.addEventListener('pointercancel', finishDrag);
+    theaterSubtitleHandle.addEventListener('lostpointercapture', finishDrag);
+    theaterSubtitleHandle.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      const rect = theaterSubtitlePanel.getBoundingClientRect();
+      setSubtitleCenterY(rect.top + rect.height / 2 + (event.key === 'ArrowUp' ? -1 : 1) * (event.shiftKey ? 40 : 12));
+      saveSettings();
+    });
+  }
+
   const mainSubtitleText = ui('.te-sub-en');
   mainSubtitleText.addEventListener('pointerover', (event) => {
     rememberHoverPointer(event);
@@ -3321,12 +3405,35 @@ function bindUI() {
     pill.appendChild(picker);
   });
 
+  const theaterSubtitleColorPill = $('te-theater-subtitle-color');
+  if (theaterSubtitleColorPill) {
+    theaterSubtitleColorPill.style.position = 'relative';
+    const picker = document.createElement('input');
+    picker.id = 'te-theater-subtitle-color-picker';
+    picker.type = 'color';
+    picker.setAttribute('aria-label', videoT('videoSubtitleBackgroundColor'));
+    picker.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;';
+    picker.value = settings.theaterSubtitle.backgroundColor || '#000000';
+    picker.addEventListener('input', () => {
+      settings.theaterSubtitle.backgroundColor = picker.value;
+      saveSettings();
+      applyTheaterSubtitlePresentation();
+    });
+    theaterSubtitleColorPill.appendChild(picker);
+  }
+  $('te-theater-subtitle-opacity').addEventListener('input', (event) => {
+    settings.theaterSubtitle.opacity = Math.min(100, Math.max(0, Number(event.target.value) || 0));
+    applyTheaterSubtitlePresentation();
+  });
+  $('te-theater-subtitle-opacity').addEventListener('change', saveSettings);
+
   // Đặt lại (nút ở góc phải tiêu đề menu phụ đề)
   modalSub.querySelector('.te-modal-header button:last-child').addEventListener('click', () => {
     const defaults = defaultSettings();
     settings.sub = defaults.sub;
     settings.side = defaults.side;
     settings.readingSubtitle = defaults.readingSubtitle;
+    settings.theaterSubtitle = defaults.theaterSubtitle;
     saveSettings();
     applySettings();
   });
