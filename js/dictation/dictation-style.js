@@ -575,7 +575,8 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay.theme-dark .te-dict-error.te-dict-error-success .te-dict-error-title { color: #34d399; }
 #keepit-exact-overlay .te-dict-error-words { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
 #keepit-exact-overlay .te-dict-error-words,
-#keepit-exact-overlay .te-dict-error-words * { font-size: 14px !important; }
+#keepit-exact-overlay .te-dict-error-words *,
+#keepit-exact-overlay .te-dict-speech-result .te-dict-speech-word { font-size: 14px !important; }
 #keepit-exact-overlay .te-dict-wg { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; border: 1px solid #059669; border-radius: 6px; background: #f3f4f6; }
 #keepit-exact-overlay.theme-dark .te-dict-wg { background: #18181b; }
 #keepit-exact-overlay .te-dict-w,

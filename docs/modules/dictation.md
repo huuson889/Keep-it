@@ -35,7 +35,7 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 - Progress sync mặc định bật; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
 - Hint giữ proper noun và thứ tự; contraction theo allowlist. Thống kê loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo, migration rightScale v1 sang preference v2 và repeat count riêng theo mode.
-- Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Mic Speaking một vòng tím; translation full-width dưới hint; `.te-dict-work` giữ CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; `.te-dict-speech-word` dùng chung kiểu token `.te-dict-w`.
+- Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Mic Speaking một vòng tím; translation full-width dưới hint; `.te-dict-work` giữ CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; `.te-dict-speech-word` dùng chung kiểu `.te-dict-w` (14px).
 
 ## 5. Kiểm tra và xác minh
 
