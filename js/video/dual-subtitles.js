@@ -27,6 +27,7 @@ const FONT_STACKS = {
 const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
 const PAUSE_PATH = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
+const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
 const THEME_DEFAULT_HEX = {
   light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
   dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },
@@ -59,6 +60,7 @@ const state = {
   open: false,
   videoId: null,
   videoEl: null,
+  videoGeometryHandler: null,
   origParent: null,
   origNext: null,
   rawCues: [],
@@ -1237,7 +1239,12 @@ function mergeSettings(d, s) {
       en: { ...d.readingSubtitle.en, ...(s.readingSubtitle?.en || {}) },
       vi: { ...d.readingSubtitle.vi, ...(s.readingSubtitle?.vi || {}) },
     },
-    theaterSubtitle: { ...d.theaterSubtitle, ...(s.theaterSubtitle || {}) },
+    theaterSubtitle: (() => {
+      const saved = s.theaterSubtitle || {};
+      const theaterSubtitle = { ...d.theaterSubtitle, ...saved };
+      if (saved.positionSpace !== THEATER_SUBTITLE_POSITION_SPACE) theaterSubtitle.positionSpace = 'viewport-v0';
+      return theaterSubtitle;
+    })(),
   };
 }
 
@@ -1345,12 +1352,119 @@ function theaterSubtitleBackgroundRgba() {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+function isTheaterLargeActive(root = overlayEl()) {
+  return Boolean(root && !root.classList.contains('te-reading-mode')
+    && root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l'));
+}
+
+function clampTheaterSubtitlePercent(value) {
+  const number = Number(value);
+  return Math.min(96, Math.max(4, Number.isFinite(number) ? number : 82));
+}
+
+function theaterSubtitleBounds(frameRect, panelRect, controlsRect, handleRect) {
+  const safeInset = 8;
+  const controlsGap = 10;
+  const handleAbovePanel = handleRect ? Math.max(0, panelRect.top - handleRect.top) : 0;
+  const topEdge = frameRect.top + safeInset + handleAbovePanel;
+  let bottomEdge = frameRect.bottom - safeInset;
+  const controlsOverlap = controlsRect && controlsRect.width > 0 && controlsRect.height > 0
+    && controlsRect.left < frameRect.right && controlsRect.right > frameRect.left
+    && controlsRect.top < frameRect.bottom && controlsRect.bottom > frameRect.top;
+  if (controlsOverlap) bottomEdge = Math.min(bottomEdge, controlsRect.top - controlsGap);
+  const maxHeight = Math.max(0, bottomEdge - topEdge);
+  const panelHeight = Math.min(Math.max(0, panelRect.height), maxHeight);
+  return {
+    maxHeight,
+    minCenter: topEdge + panelHeight / 2,
+    maxCenter: bottomEdge - panelHeight / 2,
+  };
+}
+
+function clampTheaterSubtitleCenter(centerY, bounds) {
+  if (bounds.maxCenter < bounds.minCenter) return (bounds.minCenter + bounds.maxCenter) / 2;
+  return Math.min(bounds.maxCenter, Math.max(bounds.minCenter, centerY));
+}
+
+function theaterSubtitlePercent(centerY, frameRect) {
+  if (!frameRect?.height) return 82;
+  return Math.round(((centerY - frameRect.top) / frameRect.height) * 1000) / 10;
+}
+
+function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()) {
+  if (!root) return null;
+  if (!isTheaterLargeActive(root)) {
+    root.style.removeProperty('--te-theater-frame-width');
+    root.style.removeProperty('--te-theater-subtitle-max-height');
+    root.style.removeProperty('--te-theater-subtitle-top');
+    return null;
+  }
+  const frame = ui('.te-video-frame');
+  const panel = ui('.te-sub-container');
+  const controls = ui('.te-control-bar');
+  const handle = ui('#te-theater-subtitle-drag-handle');
+  if (!frame || !panel) return null;
+  const frameRect = frame.getBoundingClientRect();
+  if (!(frameRect.width > 0 && frameRect.height > 0)) return null;
+  root.style.setProperty('--te-theater-frame-width', `${frameRect.width}px`);
+
+  const controlsRect = controls?.getBoundingClientRect() || null;
+  let panelRect = panel.getBoundingClientRect();
+  let handleRect = handle?.getBoundingClientRect() || null;
+  let bounds = theaterSubtitleBounds(frameRect, panelRect, controlsRect, handleRect);
+  root.style.setProperty('--te-theater-subtitle-max-height', `${Math.floor(bounds.maxHeight)}px`);
+  // Re-read after applying width/height caps so drag and automatic layout use the rendered box.
+  panelRect = panel.getBoundingClientRect();
+  handleRect = handle?.getBoundingClientRect() || null;
+  bounds = theaterSubtitleBounds(frameRect, panelRect, controlsRect, handleRect);
+
+  if (settings.theaterSubtitle.positionSpace !== THEATER_SUBTITLE_POSITION_SPACE) {
+    const legacyCenter = clampTheaterSubtitlePercent(settings.theaterSubtitle.y) / 100 * window.innerHeight;
+    settings.theaterSubtitle.y = clampTheaterSubtitlePercent(theaterSubtitlePercent(legacyCenter, frameRect));
+    settings.theaterSubtitle.positionSpace = THEATER_SUBTITLE_POSITION_SPACE;
+    saveSettings();
+  }
+  const desiredCenter = Number.isFinite(requestedCenterY)
+    ? requestedCenterY
+    : frameRect.top + frameRect.height * clampTheaterSubtitlePercent(settings.theaterSubtitle.y) / 100;
+  const centerY = clampTheaterSubtitleCenter(desiredCenter, bounds);
+  root.style.setProperty('--te-theater-subtitle-top', `${centerY}px`);
+  if (Number.isFinite(requestedCenterY)) {
+    settings.theaterSubtitle.y = clampTheaterSubtitlePercent(theaterSubtitlePercent(centerY, frameRect));
+    settings.theaterSubtitle.positionSpace = THEATER_SUBTITLE_POSITION_SPACE;
+  }
+  return { frameRect, panelRect, bounds, centerY };
+}
+
+let theaterSubtitleLayoutRaf = 0;
+let theaterSubtitleResizeObserver = null;
+function scheduleTheaterSubtitleLayout(root = overlayEl()) {
+  if (!root) return;
+  if (!isTheaterLargeActive(root)) {
+    root.style.removeProperty('--te-theater-frame-width');
+    root.style.removeProperty('--te-theater-subtitle-max-height');
+    root.style.removeProperty('--te-theater-subtitle-top');
+    return;
+  }
+  if (theaterSubtitleLayoutRaf) return;
+  theaterSubtitleLayoutRaf = requestAnimationFrame(() => {
+    theaterSubtitleLayoutRaf = 0;
+    updateTheaterSubtitleLayout(null, root);
+  });
+}
+
+function observeTheaterSubtitleLayout() {
+  if (typeof ResizeObserver !== 'function' || theaterSubtitleResizeObserver) return;
+  theaterSubtitleResizeObserver = new ResizeObserver(() => scheduleTheaterSubtitleLayout());
+  for (const selector of ['.te-video-frame', '.te-sub-container', '.te-subtitle-content', '#te-theater-subtitle-drag-handle', '.te-control-bar']) {
+    const element = ui(selector);
+    if (element) theaterSubtitleResizeObserver.observe(element);
+  }
+}
+
 function applyTheaterSubtitlePresentation(root = overlayEl()) {
   if (!root) return;
-  const storedPosition = Number(settings.theaterSubtitle?.y);
-  const position = Math.min(96, Math.max(4, Number.isFinite(storedPosition) ? storedPosition : 82));
   root.style.setProperty('--te-theater-subtitle-background', theaterSubtitleBackgroundRgba());
-  root.style.setProperty('--te-theater-subtitle-y', `${position}vh`);
   const colorPill = $('te-theater-subtitle-color');
   const colorPicker = colorPill?.querySelector('input[type="color"]');
   if (colorPill) colorPill.style.backgroundColor = settings.theaterSubtitle.backgroundColor || '#000000';
@@ -1359,6 +1473,7 @@ function applyTheaterSubtitlePresentation(root = overlayEl()) {
   const opacityValue = $('te-theater-subtitle-opacity-value');
   if (opacitySlider) opacitySlider.value = String(settings.theaterSubtitle.opacity);
   if (opacityValue) opacityValue.textContent = `${settings.theaterSubtitle.opacity}%`;
+  scheduleTheaterSubtitleLayout(root);
 }
 
 function saveSettings() {
@@ -1554,6 +1669,7 @@ function buildOverlay() {
   overlayEl().classList.add('te-hidden');
   window.addEventListener('resize', () => syncTheaterFrame());
   bindUI();
+  observeTheaterSubtitleLayout();
   refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
 
@@ -1827,14 +1943,21 @@ function syncTheaterFrame() {
   const frame = slot?.querySelector(':scope > .te-video-frame');
   if (!root || !slot || !frame) return;
   const v = state.videoEl;
-  if (!root.classList.contains('te-sidebar-hidden') || !v) { frame.style.width = ''; frame.style.height = ''; return; }
-  // Lớn: khung tính theo toàn màn hình (khung cố định), các kích thước khác theo ô video
+  const theaterActive = root.classList.contains('te-sidebar-hidden') && !root.classList.contains('te-reading-mode');
+  if (!theaterActive || !v) {
+    frame.style.width = '';
+    frame.style.height = '';
+    scheduleTheaterSubtitleLayout(root);
+    return;
+  }
+  // Lớn: khung tính theo toàn màn hình (khung cố định), các kích thước khác theo ô video.
   const r = root.classList.contains('size-l') ? { width: innerWidth, height: innerHeight } : slot.getBoundingClientRect();
   const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
   const sizeFactor = root.classList.contains('size-s') ? 2 / 3 : 1;
   const w = Math.min(r.width, r.height * a) * sizeFactor, h = w / a;
   frame.style.width = `${Math.round(w)}px`;
   frame.style.height = `${Math.round(h)}px`;
+  scheduleTheaterSubtitleLayout(root);
 }
 function attachVideo(video, slot) {
   if (state.videoEl && state.videoEl !== video) detachVideo();
@@ -1855,7 +1978,17 @@ function attachVideo(video, slot) {
   video.addEventListener('pause', handleVideoPause);
   video.addEventListener('ratechange', handleVideoRateChange);
   video.addEventListener('volumechange', handleVideoVolumeChange);
-  video.addEventListener('loadedmetadata', () => { syncVideoAspect(video); syncTheaterFrame(); });
+  if (state.videoGeometryHandler) {
+    video.removeEventListener('loadedmetadata', state.videoGeometryHandler);
+    video.removeEventListener('resize', state.videoGeometryHandler);
+  }
+  state.videoGeometryHandler = () => {
+    if (state.videoEl !== video) return;
+    syncVideoAspect(video);
+    syncTheaterFrame();
+  };
+  video.addEventListener('loadedmetadata', state.videoGeometryHandler);
+  video.addEventListener('resize', state.videoGeometryHandler);
   syncVideoAspect(video);
   syncTheaterFrame();
   syncPlayButton();
@@ -1878,6 +2011,11 @@ function detachVideo() {
   v.removeEventListener('pause', handleVideoPause);
   v.removeEventListener('ratechange', handleVideoRateChange);
   v.removeEventListener('volumechange', handleVideoVolumeChange);
+  if (state.videoGeometryHandler) {
+    v.removeEventListener('loadedmetadata', state.videoGeometryHandler);
+    v.removeEventListener('resize', state.videoGeometryHandler);
+    state.videoGeometryHandler = null;
+  }
   if (state.origParent && v.parentElement !== state.origParent) {
     const next = state.origNext && state.origNext.parentNode === state.origParent ? state.origNext : null;
     const wasPlaying = !v.paused;
@@ -2293,6 +2431,7 @@ function setActiveCaption(idx) {
   enEl.innerHTML = renderHoverWords(cap.mainText);
   viEl.innerHTML = renderHoverWords(cap.vi);
   enEl.dataset.idx = viEl.dataset.idx = String(idx);
+  scheduleTheaterSubtitleLayout();
 
   const list = $('te-transcript-list');
   list.querySelectorAll('.yt-dual-item.active').forEach((r) => r.classList.remove('active'));
@@ -2339,6 +2478,7 @@ function updateVietnameseRow(item) {
   }
   if (idx === state.activeIdx) $('te-sub-en-text').innerHTML = renderHoverWords(item.mainText);
   if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
+  if (idx === state.activeIdx) scheduleTheaterSubtitleLayout();
 }
 
 // Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
@@ -2956,19 +3096,7 @@ function bindUI() {
   const theaterSubtitlePanel = ui('.te-sub-container');
   if (root && theaterSubtitleHandle && theaterSubtitlePanel) {
     let dragSession = null;
-    const setSubtitleCenterY = (requestedY) => {
-      const frameRect = ui('.te-video-frame')?.getBoundingClientRect();
-      const panelRect = theaterSubtitlePanel.getBoundingClientRect();
-      const frameTop = frameRect?.height ? frameRect.top : 0;
-      const frameBottom = frameRect?.height ? frameRect.bottom : window.innerHeight;
-      const controlsInset = root.classList.contains('te-controls-hidden') ? 18 : 78;
-      const minY = frameTop + panelRect.height / 2 + 8;
-      const maxY = Math.max(minY, frameBottom - panelRect.height / 2 - controlsInset);
-      const centerY = Math.min(maxY, Math.max(minY, requestedY));
-      const y = Math.round(Math.max(4, Math.min(96, centerY / Math.max(1, window.innerHeight) * 100)) * 10) / 10;
-      settings.theaterSubtitle.y = y;
-      root.style.setProperty('--te-theater-subtitle-y', `${y}vh`);
-    };
+    const setSubtitleCenterY = (requestedY) => updateTheaterSubtitleLayout(requestedY, root);
     const finishDrag = (event) => {
       if (!dragSession || event.pointerId !== dragSession.pointerId) return;
       dragSession = null;
@@ -2979,7 +3107,7 @@ function bindUI() {
       saveSettings();
     };
     theaterSubtitleHandle.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || !root.classList.contains('te-sidebar-hidden') || !root.classList.contains('size-l')) return;
+      if (event.button !== 0 || !isTheaterLargeActive(root)) return;
       event.preventDefault();
       const rect = theaterSubtitlePanel.getBoundingClientRect();
       dragSession = { pointerId: event.pointerId, startY: event.clientY, centerY: rect.top + rect.height / 2 };
@@ -2995,7 +3123,7 @@ function bindUI() {
     theaterSubtitleHandle.addEventListener('pointercancel', finishDrag);
     theaterSubtitleHandle.addEventListener('lostpointercapture', finishDrag);
     theaterSubtitleHandle.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      if (!isTheaterLargeActive(root) || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
       event.preventDefault();
       const rect = theaterSubtitlePanel.getBoundingClientRect();
       setSubtitleCenterY(rect.top + rect.height / 2 + (event.key === 'ArrowUp' ? -1 : 1) * (event.shiftKey ? 40 : 12));
