@@ -1026,6 +1026,11 @@ const OVERLAY_CSS = `
       max-height: calc(100vh - 200px);
       border-radius: 12px;
     }
+    #keepit-exact-overlay .te-video-slot.te-web-study-frame {
+      overflow: hidden;
+      border-radius: 12px;
+      clip-path: inset(0 round 12px);
+    }
 
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
     #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif); }

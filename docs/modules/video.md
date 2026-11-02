@@ -31,7 +31,8 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 
 - Giữ thứ tự `overlay-template.js` → `dual-subtitles.js` → Dictation và hợp đồng `LHN_OVERLAY_API`/events hiện có.
 - Reader getter chỉ dùng `readerBlocks()`/`rawText()`; không đổi thuật toán chọn block hoặc tự tìm lại main text.
-- Web-specific logic ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Cue giữ nguyên câu Reader, không tự dịch. Ảnh thay video (`.te-web-page-thumbnail`) phải clip 12px như `.te-video-frame`, kể cả khi frame dùng `display:contents`.
+- Web-specific logic ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Cue giữ nguyên câu Reader, không tự dịch.
+- Khi Web thumbnail thay video, `te-web-study-frame` bật clipping trên `.te-video-slot` (12px), rồi được gỡ khi detach; không bo riêng ảnh.
 - Shortcut web bỏ qua YouTube/ô nhập; tôn trọng site-disabled và dọn adapter khi URL đổi.
 - Giữ mọi mode/UI. Translation/ambient chưa cấu hình báo toast + console, không ẩn nút. Web Dictation dùng cờ nguồn riêng và ngôn ngữ dò được/hint trang; không giả lập YouTube hay English.
 - YouTube Auto vẫn ưu tiên mapping caption/audio track. Reader/TTS dùng language hint trang rồi dò theo cue.
@@ -41,5 +42,6 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 ## 5. Kiểm tra và xác minh
 
 - v3.5.0: helper VM mock xác nhận sentence segmentation, Arabic/declared-Cyrillic hints, TTS cue progression và pause cancellation; 54 JS syntax, parse manifest, `git diff --check` và cấu trúc docs đạt. Không có test runner ở gốc repo.
+- v3.5.5: source assertions xác nhận clip trên `.te-video-slot` chỉ bật khi Web media attach và được gỡ khi detach; browser QA cần xác nhận góc render trên trang thật.
 - v3.5.1: Web Typing route VM mock, syntax/source checks; browser QA pending cho Alt+F web/YouTube, Reader cues, TTS/language, Typing/Speaking mic, web session URL, thumbnails/fallback, cleanup, warnings và video modes.
 - Các kiểm tra lịch sử ở v3.4.971: 56 JS syntax, manifest/CSS/source checks và S/M/L/view-size mocks; không thay thế browser QA.

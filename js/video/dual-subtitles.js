@@ -2215,7 +2215,8 @@ function attachWebMedia(media, slot) {
   const image = document.createElement('img');
   image.className = 'te-web-page-thumbnail';
   image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;border-radius:12px;clip-path:inset(0 round 12px);cursor:pointer;user-select:none;';
+  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;cursor:pointer;user-select:none;';
+  slot.classList.add('te-web-study-frame');
   image.addEventListener('click', handleOverlayVideoClick);
   frame.replaceChildren(image);
   state.webThumbnail = image;
@@ -2294,6 +2295,7 @@ function detachVideo() {
     if (state.videoGeometryHandler) { v.removeEventListener('loadedmetadata', state.videoGeometryHandler); state.videoGeometryHandler = null; }
     v.pause?.();
     state.webThumbnail?.removeEventListener('click', handleOverlayVideoClick);
+    state.webThumbnail?.closest('.te-video-slot')?.classList.remove('te-web-study-frame');
     globalThis.LHN_THUMBNAILS?.clear?.(state.webThumbnail);
     state.webThumbnail?.remove();
     state.webThumbnail = null;
