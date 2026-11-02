@@ -23,7 +23,7 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 ## 3. Luồng chính
 
 1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; YouTube dùng English caption cues, Web dùng câu Reader. Speaking Web chờ ngôn ngữ được dò/hint trang; caption cập nhật qua `lhn-dual-captions-updated`.
-2. Typing pass khi `result.perfect`; sau khi đạt 100%, keydown đầu tiên trong `te-dict-input` bỏ trạng thái đã chấm và mở lại nhập. Speaking pass từ 70% nhưng không tự chuyển câu. Các tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
+2. Typing pass khi `result.perfect`; sau khi đạt 100%, Enter thường trong `te-dict-input` chuyển sang câu kế tiếp, còn phím đầu tiên khác bỏ trạng thái đã chấm và mở lại nhập. Speaking pass từ 70% nhưng không tự chuyển câu. Các tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
 3. Auto-record Speaking mặc định bật: cue cuối chờ 1 giây; recognition one-shot/rearm tại `onend`. Interim transcript cập nhật trực tiếp; gộp segment, reset timer theo speech, rồi chấm sau 1,5 giây im lặng. Khi phát lại lượt đã ghi, chỉ ở chế độ auto-record, dừng audio trước 1,5 giây grace cuối; recognition và scoring vẫn đợi đủ grace. Toast giữ đến khi dừng.
 4. Auto-record tắt thì manual recognition giữ continuous flow. Sai thì retry; Escape reveal/reset, Enter sau reveal chấm 100%, Enter tiếp chuyển câu. Speaking ẩn nút chấm và Next không tự chuyển.
 5. `dictation:<sourceId>` lưu progress/notes/translations/title; session index giữ `youtube`/`web`, ID và URL thật. Typing/Speaking stats tách riêng; audio/tracks/Blob URL chỉ runtime, dọn khi reset, đổi câu/mode hoặc đóng panel.
@@ -41,5 +41,6 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.7: VM keyboard regression test xác nhận Enter trong Typing khi câu đã solved không bị chặn ở `onGlobalKeyDown`; 54 JS syntax và `git diff --check` đạt. Browser QA Web/YouTube chưa chạy.
 - v3.4.993: playback VM mock đạt (auto dừng tại duration − 1,5 giây; manual đến `ended`; snapshot theo attempt; recognition grace 1500 ms).
 - v3.5.1: Web Typing event VM mock và static/source checks; browser QA chưa chạy cho Web/YouTube cues, language, session URL, mic/replay và các luồng Dictation hiện có.

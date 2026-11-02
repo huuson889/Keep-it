@@ -3642,6 +3642,8 @@
     const editableTarget = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
     const noteFocused = path.includes(ui?.note) || (!panelEditable && editableTarget);
     if (dictationMode === "typing" && path.includes(ui?.input) && checkedCurrent && solved.has(current)) {
+      // Enter must reach onAnswerKeyDown(), which advances an already-checked perfect answer.
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) return;
       onAnswerInput();
       ctrlAlone = false;
       if (event.key === "Enter" || event.key === "Escape" || event.key === "`" || event.code === "Backquote") event.preventDefault();
