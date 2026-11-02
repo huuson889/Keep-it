@@ -70,6 +70,7 @@
   let savedLoop = null;
   let audioCtx = null;
   const translating = new Map();
+  const SPEECH_ENDPOINT_GRACE_MS = 1500;
 
   const language = () => {
     const candidate = A?.lang?.();
@@ -1521,7 +1522,7 @@
     video?.pause();
   }
 
-  function playRecordedSpeech(url) {
+  function playRecordedSpeech(url, trimFinalGraceSilence = false) {
     if (!url || typeof globalThis.Audio !== "function") return Promise.resolve(false);
     pauseVideoForSpeech();
     return new Promise((resolve) => {
@@ -1536,6 +1537,13 @@
         }
         resolve(played);
       };
+      const stopBeforeGraceTail = () => {
+        if (settled || !trimFinalGraceSilence || !Number.isFinite(player?.duration)) return;
+        const cutoff = Math.max(0, player.duration - SPEECH_ENDPOINT_GRACE_MS / 1000);
+        if (player.currentTime < cutoff) return;
+        finish(true);
+        try { player.pause(); } catch {}
+      };
       try {
         player = new Audio(url);
         speechPlaybackAudio = player;
@@ -1543,7 +1551,11 @@
         player.addEventListener("ended", () => finish(true), { once: true });
         player.addEventListener("error", () => finish(false), { once: true });
         player.addEventListener("pause", () => { if (!player.ended) finish(false); }, { once: true });
-        Promise.resolve(player.play()).catch(() => finish(false));
+        if (trimFinalGraceSilence) {
+          player.addEventListener("loadedmetadata", stopBeforeGraceTail);
+          player.addEventListener("timeupdate", stopBeforeGraceTail);
+        }
+        Promise.resolve(player.play()).then(stopBeforeGraceTail, () => finish(false));
       } catch { finish(false); }
     });
   }
@@ -1649,6 +1661,7 @@
     catch { setSpeechStatus("dictationSpeakError"); return; }
 
     const attemptCurrent = current;
+    const trimFinalGraceSilence = speechAutoRecordEnabled;
     const generation = ++speechStartGeneration;
     speechStartPending = true;
     speechStopRequested = false;
@@ -1709,7 +1722,7 @@
         renderSpeechResult("");
         const recordingUrl = await stopSpeechRecording(false);
         if (generation === speechStartGeneration && active && dictationMode === "speaking" && attemptCurrent === current && recordingUrl) {
-          await playRecordedSpeech(recordingUrl);
+          await playRecordedSpeech(recordingUrl, trimFinalGraceSilence);
         }
         if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
           speechStopRequested = false;
@@ -1730,7 +1743,7 @@
       }
       ui.input.value = completedTranscript;
       renderSpeechResult(completedTranscript);
-      const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl) : false;
+      const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl, trimFinalGraceSilence) : false;
       if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
         speechStopRequested = false;
         updateSpeechCheckDisabled();
@@ -1761,7 +1774,7 @@
           }
         }
         void finalizeSpeechAttempt(getCompletedSpeechTranscript());
-      }, 1500);
+      }, SPEECH_ENDPOINT_GRACE_MS);
     }
 
     function startRecognitionSession(existingRecognition = null) {
