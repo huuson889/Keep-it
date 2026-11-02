@@ -1099,7 +1099,11 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-slot { overflow: visible; container-type: normal; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-control-bar { position: relative; z-index: 2; }
-    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container { position: relative; z-index: 2; }
+    /* Chế độ rạp + Lớn: nền phụ đề (màu và độ trong suốt từ Tùy chọn phụ đề), tay cầm chỉ hiện khi rê vào lớp nền */
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container { position: fixed; left: 0; right: 0; bottom: calc(76px + var(--te-sub-lift, 0px)); z-index: 2; background: var(--te-sub-bg, rgba(0,0,0,0.6)); }
+    .te-sub-handle { display: none; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 56px; height: 14px; border-radius: 999px; background: rgba(0,0,0,0.75); cursor: ns-resize; touch-action: none; }
+    .te-sub-handle::before { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 4px; transform: translate(-50%, -50%); background-image: radial-gradient(circle, #fff 1.5px, transparent 1.6px); background-size: 6px 4px; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container:hover .te-sub-handle { display: block; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
@@ -1184,6 +1188,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       
       <!-- Subtitle box below video -->
       <div class="te-sub-container">
+        <div class="te-sub-handle" id="te-sub-handle" aria-label="Kéo phụ đề"></div>
         <div class="te-sub-en" id="te-sub-en-text"></div>
         <div class="te-sub-vi" id="te-sub-vi-text"></div>
       </div>
@@ -1532,6 +1537,21 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
           </div>
 
+                  <div class="te-setting-section-title">Nền phụ đề (chế độ rạp • Lớn)</div>
+          <div class="te-card-box" style="margin-bottom: 10px;">
+            <div class="te-setting-item" style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+              <span style="font-size: 13.5px;">Màu nền phụ đề</span>
+              <input type="color" id="te-sub-bg-color" value="#000000" style="width: 28px; height: 28px; border: 0; padding: 0; background: none; cursor: pointer;">
+            </div>
+            <div class="te-setting-item">
+              <span style="font-size: 13.5px;">Độ trong suốt</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="te-counter-btn" id="te-sub-bg-trans-minus">-</button>
+                <span id="te-sub-bg-trans-val" style="font-size: 13px; font-weight: 500; min-width: 42px; text-align: center;">40%</span>
+                <button class="te-counter-btn" id="te-sub-bg-trans-plus">+</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1348,7 +1348,38 @@ function updateSidebarTranscriptFontSize(root) {
   root.style.setProperty('--te-side-vi', (sideFontBase * sharedScale * settings.side.vi.pct / 100) + 'px');
 }
 
+// Nền phụ đề chế độ rạp (Lớn): màu và độ trong suốt; kéo tay cầm để chỉnh vị trí lên xuống
+let subLift = 0;
+function applySubtitleBackground() {
+  const root = overlayEl();
+  if (!root) return;
+  const hex = settings.subBgColor || '#000000';
+  const t = Math.max(0, Math.min(100, Number(settings.subBgTransparency ?? 40)));
+  const n = parseInt(hex.slice(1), 16);
+  root.style.setProperty('--te-sub-bg', `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${(1 - t / 100).toFixed(2)})`);
+  const pick = $('te-sub-bg-color'); if (pick) pick.value = hex;
+  const val = $('te-sub-bg-trans-val'); if (val) val.textContent = `${t}%`;
+}
+function bindSubtitleBackground() {
+  $('te-sub-bg-color')?.addEventListener('input', (e) => { settings.subBgColor = e.target.value; saveSettings(); applySettings(); });
+  const step = (d) => { settings.subBgTransparency = Math.max(0, Math.min(100, Number(settings.subBgTransparency ?? 40) + d)); saveSettings(); applySettings(); };
+  $('te-sub-bg-trans-minus')?.addEventListener('click', () => step(-5));
+  $('te-sub-bg-trans-plus')?.addEventListener('click', () => step(5));
+  const h = $('te-sub-handle');
+  if (!h) return;
+  let drag = null;
+  h.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId); drag = { y: e.clientY, lift: subLift }; });
+  h.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    subLift = Math.max(0, Math.min(innerHeight - 160, drag.lift + (drag.y - e.clientY)));
+    overlayEl()?.style.setProperty('--te-sub-lift', `${subLift}px`);
+  });
+  const end = () => { drag = null; };
+  h.addEventListener('pointerup', end);
+  h.addEventListener('pointercancel', end);
+}
 function applySettings() {
+  applySubtitleBackground();
   const root = overlayEl();
   if (!root) return;
 
@@ -1521,6 +1552,7 @@ function buildOverlay() {
   overlayEl().classList.add('te-hidden');
   window.addEventListener('resize', () => syncTheaterFrame());
   bindUI();
+  bindSubtitleBackground();
   refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
 
