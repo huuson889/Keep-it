@@ -3642,13 +3642,18 @@
     const editableTarget = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
     const noteFocused = path.includes(ui?.note) || (!panelEditable && editableTarget);
     if (dictationMode === "typing" && path.includes(ui?.input) && checkedCurrent && solved.has(current)) {
-      // Enter must reach onAnswerKeyDown(), which advances an already-checked perfect answer.
+      // After a perfect check, preserve the four Dictation shortcuts; ordinary typing unlocks editing.
       if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) return;
-      onAnswerInput();
-      ctrlAlone = false;
-      if (event.key === "Enter" || event.key === "Escape" || event.key === "`" || event.code === "Backquote") event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
+      const isBacktickShortcut = (event.key === "`" || (event.code === "Backquote" && !event.shiftKey))
+        && !event.ctrlKey && !event.altKey && !event.metaKey;
+      const isPreservedShortcut = event.key === "Escape" || isBacktickShortcut || event.key === "Control";
+      if (!isPreservedShortcut) {
+        onAnswerInput();
+        ctrlAlone = false;
+        if (event.key === "Enter" || event.key === "Escape" || event.key === "`" || event.code === "Backquote") event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
     }
     if (event.key === "Enter" && !event.repeat && !event.shiftKey && !event.ctrlKey && !event.altKey
       && !event.metaKey && !event.isComposing && event.keyCode !== 229 && shouldKeepVietnameseSpeechToast()) {
