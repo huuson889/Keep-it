@@ -116,6 +116,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-11-02 | v3.4.957 | Claude sửa:**
+  - Chế độ rạp: `.te-video-slot` nền trong suốt (`#11111100`), video bo 12px ở cả 4 góc. Chỉ đổi UI chế độ rạp.
+  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+
+
 - **2026-11-02 | v3.4.956 | Claude sửa:**
   - Chế độ rạp (video không có cột bên): ambient phủ kín toàn màn hình, gồm cả hai khung đen hai bên (radial và cạnh viền đều theo viewport); video bo góc 12px như chế độ kết hợp. Không đổi bố cục/vị trí UI khác.
   - File: `css/...` không đổi; `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
