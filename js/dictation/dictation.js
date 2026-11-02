@@ -1,4 +1,4 @@
-// Dictation v1 uses the live YouTube video and Dual Sub's English caption track.
+// Dictation uses YouTube English caption cues or Reader web sentence cues.
 // It transforms the existing overlay in place; it does not create a second overlay.
 (() => {
   const ext = globalThis.browser || globalThis.chrome;
@@ -85,7 +85,7 @@
     const list = A?.getDictationCues?.();
     return Array.isArray(list) ? list.filter((cue) => cue && typeof cue.en === "string" && cue.en.trim()) : [];
   };
-  const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
+  const isEnglishReady = () => (A?.state?.webStudy || A?.state?.captionTrackLanguage === "en") && getCues().length > 0;
   const dictationLayoutStorageKey = "dictation:layout:v1";
   const progressSyncStorageKey = "dictation:progress-sync:v1";
   const translationVisibilityStorageKey = "dictation:translation-visibility:v1";
@@ -1782,8 +1782,13 @@
       let finalText = "";
       let interimText = "";
       speechRecognition = session;
-      session.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
-        ? A.state.captionTrackLanguage : "en-US";
+      if (A?.state?.webStudy) {
+        const sourceLanguage = A.state.webDetectedLanguage || A.state.webLanguageHint || globalThis.navigator?.language || "en-US";
+        session.lang = globalThis.LHN_TTS?.normalizeLanguage?.(sourceLanguage) || sourceLanguage;
+      } else {
+        session.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
+          ? A.state.captionTrackLanguage : "en-US";
+      }
       session.continuous = !(automatic || speechAutoRecordEnabled);
       session.interimResults = true;
       session.maxAlternatives = 1;
@@ -1992,7 +1997,8 @@
   function showToastBeforeOpen() {
     const currentId = A?.state?.videoId;
     const loading = !!currentId && A?.state?.loadingFor === currentId;
-    showToast(tr(loading ? "dictationCaptionsLoading" : "dictationEnglishOnly"));
+    const unavailableKey = A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
+    showToast(tr(loading ? "dictationCaptionsLoading" : unavailableKey));
   }
 
   async function loadProgress(requestVideoId, generation) {
@@ -2032,7 +2038,12 @@
 
   function saveRecord() {
     if (!videoId || !ext?.storage?.local || !progressReady) return Promise.resolve();
-    const sessionId = `youtube:${videoId}`;
+    const isWebSource = A?.state?.webStudy === true;
+    const sessionSourceType = isWebSource ? "web" : "youtube";
+    const sessionSourceId = isWebSource ? String(A?.state?.videoId || videoId) : videoId;
+    const sessionUrl = isWebSource ? String(A?.state?.webPageUrl || globalThis.location?.href || "")
+      : `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+    const sessionId = `${sessionSourceType}:${sessionSourceId}`;
     const totalCount = sentenceCues.length;
     const solvedCount = solved.size;
     const title = getCurrentVideoTitle() || indexedVideoTitle;
@@ -2051,10 +2062,10 @@
     const session = {
       version: 1,
       sessionId,
-      sourceType: "youtube",
-      sourceId: videoId,
+      sourceType: sessionSourceType,
+      sourceId: sessionSourceId,
       title,
-      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      url: sessionUrl,
       currentIndex: Math.max(0, Math.floor(Number(current) || 0)),
       totalCount: Math.max(0, Math.floor(Number(totalCount) || 0)),
       solvedCount: Math.max(0, Math.floor(Number(solvedCount) || 0)),
@@ -3728,6 +3739,10 @@
     if (!isEnglishReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
     openingPanel = true;
     const requestGeneration = ++openingGeneration;
+    if (A?.state?.webStudy && A.state.webLanguageReady) {
+      try { await A.state.webLanguageReady; } catch {}
+      if (requestGeneration !== openingGeneration) { openingPanel = false; return; }
+    }
     build();
     if (!ui) { openingPanel = false; A?.revealLearningEntry?.(); return; }
     setDictationMode(mode);
@@ -3799,7 +3814,8 @@
       renderInitialRows();
       renderCurrent();
       const captionsStillLoading = A?.state?.loadingFor === videoId;
-      setCaptionStatusForKey(captionsStillLoading ? "dictationWaitingForCaptions" : "dictationEnglishOnly", true);
+      const unavailableKey = A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
+      setCaptionStatusForKey(captionsStillLoading ? "dictationWaitingForCaptions" : unavailableKey, true);
       return;
     }
     pendingCaptionStart = false;
@@ -3914,17 +3930,17 @@
     if (!active) return;
     if (currentVideoId() !== videoId) { close(); return; }
     const updated = getCues();
-    if (A?.state?.captionTrackLanguage !== "en" || !updated.length) {
+    if ((!A?.state?.webStudy && A?.state?.captionTrackLanguage !== "en") || !updated.length) {
       if (A?.state?.loadingFor === A?.state?.videoId) {
         if (pendingCaptionStart) setCaptionStatusForKey("dictationWaitingForCaptions", true);
         return;
       }
       if (pendingCaptionStart) {
-        setCaptionStatusForKey("dictationEnglishOnly", true);
+        setCaptionStatusForKey(A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly", true);
         return;
       }
       close();
-      showToast(tr("dictationEnglishOnly"));
+      showToast(tr(A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly"));
       return;
     }
     const unchanged = updated.length === sentenceCues.length && updated.every((cue, index) =>

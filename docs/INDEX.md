@@ -13,4 +13,4 @@
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
 | [Shared](modules/shared.md) | Fonts, UI icons, site favicon resolver/cache, search index | Sửa helper dùng chung, cache favicon hoặc xác định đúng search API. |
 | [Translate](modules/translate.md) | Translation, dictionary, study translation, search | Sửa provider, cache, từ điển hoặc ranking/highlight. |
-| [Video](modules/video.md) | YouTube overlay và Dual Subtitles | Sửa player, caption, track selection hoặc tích hợp Dictation. |
+| [Video](modules/video.md) | YouTube overlay, web-study và Dual Subtitles | Sửa player, caption, Reader cues, track selection hoặc tích hợp Dictation. |

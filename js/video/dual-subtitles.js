@@ -90,6 +90,8 @@ const state = {
   popupObserver: null,
   webStudy: false,
   webLanguageHint: '',
+  webDetectedLanguage: '',
+  webLanguageReady: Promise.resolve(''),
   webPageUrl: '',
   webThumbnail: null,
 };
@@ -312,7 +314,20 @@ function prepareWebStudy() {
   state.videoEl = createWebTtsMedia(cues);
   state.rawCues = cues; state.allCues = cues; state.captions = cues;
   state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = state.webLanguageHint;
-  state.mainLanguage = state.webLanguageHint; state.loadingFor = null; state.primaryNeedsTranslation = false;
+  state.mainLanguage = state.webLanguageHint; state.webDetectedLanguage = ''; state.loadingFor = null; state.primaryNeedsTranslation = false;
+  const pageUrl = state.webPageUrl;
+  state.webLanguageReady = sentences.length
+    ? Promise.resolve(detectWebTtsLanguage(sentences[0], state.webLanguageHint)).then((language) => {
+        const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || state.webLanguageHint) || language || state.webLanguageHint;
+        if (state.webStudy && state.webPageUrl === pageUrl) {
+          state.webDetectedLanguage = detected; state.captionTrackLanguage = detected; state.mainLanguage = detected;
+        }
+        return detected;
+      }).catch((error) => {
+        reportWebIssue('Could not detect the Reader text language for Dictation.', error, { level: 'error' });
+        return state.webLanguageHint;
+      })
+    : Promise.resolve(state.webLanguageHint);
   state.loadToken++; loadedUntil = 0;
   if (!sentences.length) reportWebIssue('Reader did not provide any main-text sentences for this page.', null, { level: 'warn' });
   return cues.length;
@@ -1890,7 +1905,6 @@ function buildOverlay() {
   overlayEl().classList.add('te-hidden');
   window.addEventListener('resize', () => syncTheaterFrame());
   bindUI();
-  overlayEl().addEventListener('click', blockUnconfiguredWebDictationControl, true);
   observeTheaterSubtitleLayout();
   refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
@@ -2055,21 +2069,8 @@ function closeOverlay() {
   detachVideo();
 }
 
-function blockUnconfiguredWebDictationControl(event) {
-  if (!state.webStudy) return;
-  const control = event.composedPath?.().find((node) => node?.id === 'te-dictation-mode-btn' || node?.id === 'te-speaking-mode-btn');
-  if (!control) return;
-  event.preventDefault(); event.stopImmediatePropagation();
-  const mode = control.id === 'te-speaking-mode-btn' ? 'speaking' : 'typing';
-  reportWebIssue(`The ${mode} Dictation mode is not configured for web pages.`);
-}
-
 function beginDictationMode(mode) {
   const selectedMode = mode === 'speaking' ? 'speaking' : 'typing';
-  if (state.webStudy) {
-    reportWebIssue(`The ${selectedMode} Dictation mode is not configured for web pages.`);
-    return;
-  }
   if (state.open) {
     if (!globalThis.LHN_DICTATION?.open) return;
     overlayEl()?.classList.add('te-learning-entry-pending');
@@ -2102,12 +2103,18 @@ function toggleDictationTypingControl() {
 
 function toggleDictationFromShortcut(event) {
   if (keepitSiteDisabled) return;
-  if (state.webStudy) { reportWebIssue('Dictation shortcut modes are not configured for web pages.'); return; }
   if (event?.detail?.source === 'typing-control') {
     toggleDictationTypingControl();
     return;
   }
   const dictation = globalThis.LHN_DICTATION;
+  if (state.webStudy) {
+    if (dictation?.isOpen?.()) {
+      dictation.close?.({ restoreView:false });
+      restorePreferredReadingMode();
+    } else beginDictationMode(preferredLearningMode());
+    return;
+  }
   if (pendingDictationShortcut || dictation?.isOpen?.()) {
     closeOverlay();
     return;
@@ -2290,7 +2297,7 @@ function detachVideo() {
     globalThis.LHN_THUMBNAILS?.clear?.(state.webThumbnail);
     state.webThumbnail?.remove();
     state.webThumbnail = null;
-    state.videoEl = null; state.webStudy = false; state.webLanguageHint = ''; state.webPageUrl = '';
+    state.videoEl = null; state.webStudy = false; state.webLanguageHint = ''; state.webDetectedLanguage = ''; state.webLanguageReady = Promise.resolve(''); state.webPageUrl = '';
     state.origParent = null; state.origNext = null;
     return;
   }
@@ -3958,6 +3965,9 @@ async function toggleWebStudyFromShortcut(event) {
 }
 
 window.addEventListener('keydown', toggleWebStudyFromShortcut, true);
+document.addEventListener('lhn-youtube-dictation-toggle', (event) => {
+  if (state.webStudy) toggleDictationFromShortcut(event);
+});
 
 // Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
