@@ -33,7 +33,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 - Reader getter chỉ dùng `readerBlocks()`/`rawText()`; không đổi thuật toán chọn block hoặc tự tìm lại main text.
 - Logic riêng của Web ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Reader getter và thuật toán chọn text không đổi; câu Reader vẫn là cue chính. `markWebReaderCues()` tái dùng `markSingleTrackCues()` để đánh dấu cue, còn shared lazy queue/cache/`BILINGUAL_TRANSLATE` tạo bản dịch thứ cấp như trên YouTube. Bilingual/translation mode theo cue và target-language settings; lỗi dịch giữ mode, ghi console và toast.
 - Khi Web thumbnail thay video, `te-web-study-frame` bật clipping trên `.te-video-slot` (12px), rồi được gỡ khi detach; không bo riêng ảnh.
-- Web-study bật class `te-web-study` khi mở overlay để ẩn CC/subtitle-mode selector, mục `Cài đặt video > Tùy chọn phụ đề` và modal đó; gỡ class khi đóng. YouTube không bật class này nên giữ nguyên các điều khiển.
+- Web-study bật class `te-web-study`; YouTube Dictation learning dùng class sẵn có `te-dictation-active`. CSS ẩn CC/subtitle-mode selector, mục `Cài đặt video > Tùy chọn phụ đề` và modal khi một trong hai class hoạt động. Khi thoát learning, class tương ứng được gỡ; YouTube xem thường giữ nguyên các điều khiển.
 - Shortcut web bỏ qua YouTube/ô nhập; tôn trọng site-disabled và dọn adapter khi URL đổi.
 - Giữ mọi mode/UI. Ambient chưa cấu hình báo toast + console, không ẩn nút. Web Dictation dùng cờ nguồn riêng và ngôn ngữ dò được/hint trang; không giả lập YouTube hay English.
 - YouTube Auto vẫn ưu tiên mapping caption/audio track. Reader/TTS dùng language hint trang rồi dò theo cue.
@@ -42,7 +42,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.9: source assertions xác nhận Web-study bật/tắt class `te-web-study`, CSS chỉ ẩn CC và Tùy chọn phụ đề trong Web; 54 JS syntax, manifest/docs và `git diff --check` đạt. Browser QA chưa chạy.
+- v3.5.10: source assertions xác nhận CSS ẩn CC/Tùy chọn phụ đề dưới `.te-web-study` và `.te-dictation-active`; 54 JS syntax, manifest/docs và `git diff --check` đạt. Browser QA chưa chạy.
 - v3.5.6: VM translation-pipeline test xác nhận Reader cue vẫn là main text, Web gửi `BILINGUAL_TRANSLATE` và áp kết quả vào secondary, đổi target re-arm translation; 54 JS syntax, source assertions, manifest/docs và `git diff --check` đạt. Browser QA cho modes/target changes chưa chạy.
 - v3.5.5: source assertions xác nhận clip trên `.te-video-slot` chỉ bật khi Web media attach và được gỡ khi detach; browser QA cần xác nhận góc render trên trang thật.
 - v3.5.0: helper VM mock xác nhận sentence segmentation, Arabic/declared-Cyrillic hints, TTS cue progression và pause cancellation; 54 JS syntax, parse manifest, `git diff --check` và cấu trúc docs đạt. Không có test runner ở gốc repo.
