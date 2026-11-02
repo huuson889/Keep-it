@@ -884,14 +884,8 @@ globalThis.LHN_DICTATION_CSS = `
   box-shadow: 0 8px 22px rgba(245,158,11,.22); transition: background .16s ease, transform .16s ease, box-shadow .16s ease;
 }
 #keepit-exact-overlay .te-dict-speech-mic.auto-record-enabled:not(.listening):not(.playing-recording):not(:disabled) {
-  position: relative; outline: 1px solid rgba(245,158,11,.72); outline-offset: 4px;
+  position: relative; outline: 1px solid rgba(139,92,246,.82); outline-offset: 4px;
 }
-#keepit-exact-overlay .te-dict-speech-mic.auto-record-enabled:not(.listening):not(.playing-recording):not(:disabled)::before,
-#keepit-exact-overlay .te-dict-speech-mic.auto-record-enabled:not(.listening):not(.playing-recording):not(:disabled)::after {
-  content: ""; position: absolute; box-sizing: border-box; border: 1px solid rgba(245,158,11,.55); border-radius: 50%; pointer-events: none;
-}
-#keepit-exact-overlay .te-dict-speech-mic.auto-record-enabled:not(.listening):not(.playing-recording):not(:disabled)::before { inset: -10px; }
-#keepit-exact-overlay .te-dict-speech-mic.auto-record-enabled:not(.listening):not(.playing-recording):not(:disabled)::after { inset: -15px; border-color: rgba(245,158,11,.35); }
 #keepit-exact-overlay .te-dict-speech-mic:hover { background: #fbbf24; transform: translateY(-1px); }
 #keepit-exact-overlay .te-dict-speech-mic svg { width: 24px; height: 24px; }
 #keepit-exact-overlay .te-dict-speech-mic.listening { background: #ef4444; color: #fff; box-shadow: 0 0 0 8px rgba(239,68,68,.14); animation: te-dict-mic-pulse 1.25s ease-in-out infinite; }

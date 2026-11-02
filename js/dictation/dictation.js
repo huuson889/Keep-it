@@ -18,6 +18,7 @@
   let speechCueAutoStartPending = false;
   let speechAutoStartTimer = 0;
   let speechEndpointGraceTimer = 0;
+  let speechRecordingToastVisible = false;
   let speechAnswerRevealed = false;
   let speechRecorder = null;
   let speechRecordingStream = null;
@@ -44,6 +45,8 @@
   let progressByMode = { typing: { current: 0, solved: [] }, speaking: { current: 0, solved: [] } };
   let notes = {};
   let translations = {};
+  let translationVisibilityEnabled = true;
+  let translationVisibilityPreferenceWrite = Promise.resolve();
   let wrongWordStats = { version: 3, words: {} };
   let stopAt = -1;
   let attachedVideo = null;
@@ -83,6 +86,7 @@
   const isEnglishReady = () => A?.state?.captionTrackLanguage === "en" && getCues().length > 0;
   const dictationLayoutStorageKey = "dictation:layout:v1";
   const progressSyncStorageKey = "dictation:progress-sync:v1";
+  const translationVisibilityStorageKey = "dictation:translation-visibility:v1";
   let progressSyncPreferenceWrite = Promise.resolve();
 
   function progressModeKey(mode = dictationMode) {
@@ -136,6 +140,28 @@
     } catch {}
     updateProgressSyncControl();
     return progressSyncEnabled;
+  }
+
+  async function loadTranslationVisibilityPreference() {
+    try {
+      await translationVisibilityPreferenceWrite;
+      const stored = await ext.storage.local.get(translationVisibilityStorageKey);
+      if (typeof stored?.[translationVisibilityStorageKey] === "boolean") {
+        translationVisibilityEnabled = stored[translationVisibilityStorageKey];
+      }
+    } catch {}
+    setTranslationToggleState(translationVisibilityEnabled);
+    return translationVisibilityEnabled;
+  }
+
+  function persistTranslationVisibilityPreference() {
+    if (!ext?.storage?.local) return Promise.resolve();
+    const enabled = translationVisibilityEnabled;
+    translationVisibilityPreferenceWrite = translationVisibilityPreferenceWrite
+      .catch(() => {})
+      .then(() => ext.storage.local.set({ [translationVisibilityStorageKey]: enabled }))
+      .catch(() => {});
+    return translationVisibilityPreferenceWrite;
   }
 
   function updateProgressSyncControl() {
@@ -607,7 +633,7 @@
     savedPageScrollStyles = null;
   }
 
-  function showToast(message) {
+  function showToast(message, duration = 3200, kind = "") {
     const root = A?.overlayEl?.();
     if (!root) return;
     ensureStyle(root);
@@ -620,9 +646,36 @@
       root.appendChild(toast);
     }
     toast.textContent = message;
+    toast.dataset.dictToastKind = kind;
     toast.classList.add("visible");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("visible"), 3200);
+    toastTimer = 0;
+    speechRecordingToastVisible = kind === "speech-recording";
+    if (duration > 0) {
+      toastTimer = setTimeout(() => {
+        if (toast.dataset.dictToastKind === kind) {
+          toast.classList.remove("visible");
+          toast.dataset.dictToastKind = "";
+        }
+        toastTimer = 0;
+      }, duration);
+    }
+  }
+
+  function showSpeechRecordingToast() {
+    showToast(tr("dictationSpeakListening"), 0, "speech-recording");
+  }
+
+  function hideSpeechRecordingToast() {
+    if (!speechRecordingToastVisible) return;
+    const toast = A?.overlayEl?.()?.querySelector?.("#te-dict-toast");
+    if (toast?.dataset.dictToastKind === "speech-recording") {
+      toast.classList.remove("visible");
+      toast.dataset.dictToastKind = "";
+    }
+    clearTimeout(toastTimer);
+    toastTimer = 0;
+    speechRecordingToastVisible = false;
   }
 
   function makeSvg(path) {
@@ -741,7 +794,7 @@
           <button class="te-dict-hints-toggle te-dict-speech-auto-toggle active" id="te-dict-speech-auto-toggle" type="button" aria-pressed="true" aria-label="" title="">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles preview-icon" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063L2 12l6.5-2.063A2 2 0 0 0 9.937 8.5L12 2l2.063 6.5A2 2 0 0 0 15.5 9.937L22 12l-6.5 2.063A2 2 0 0 0 14.063 15.5L12 22z"/><path d="M19 22v-4"/><path d="M21 20h-4"/></svg>
           </button>
-          <button class="te-dict-hints-toggle te-dict-translation-toggle" id="te-dict-translation-toggle" type="button" aria-pressed="false" aria-label="" title="">
+          <button class="te-dict-hints-toggle te-dict-translation-toggle" id="te-dict-translation-toggle" type="button" aria-pressed="true" aria-label="" title="">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages preview-icon" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
           </button>
           <button class="te-dict-hints-toggle active" id="te-dict-show-hints" type="button" aria-pressed="true" aria-label="" title="">
@@ -1496,6 +1549,7 @@
     speechCueAutoStartPending = false;
     clearSpeechAutoStartTimer();
     clearSpeechEndpointGraceTimer();
+    hideSpeechRecordingToast();
     speechStartGeneration++;
     speechStartPending = false;
     speechStopRequested = false;
@@ -1633,6 +1687,7 @@
     async function finalizeSpeechAttempt(transcript) {
       if (speechAttemptFinalized) return;
       speechAttemptFinalized = true;
+      hideSpeechRecordingToast();
       clearSpeechEndpointGraceTimer();
       speechRecognition = null;
       updateSpeechMicState(false);
@@ -1753,6 +1808,7 @@
         if (!automatic && !speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
           try {
             session.start();
+            showSpeechRecordingToast();
             setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
             updateSpeechMicState(true);
             return;
@@ -1788,8 +1844,10 @@
         }
         await finalizeSpeechAttempt(transcript);
       };
-      try { session.start(); }
-      catch (error) {
+      try {
+        session.start();
+        showSpeechRecordingToast();
+      } catch (error) {
         if (speechRecognition === session) speechRecognition = null;
         throw error;
       }
@@ -3278,7 +3336,7 @@
   }
 
   function translationAlwaysVisible() {
-    return ui?.translationToggle?.getAttribute("aria-pressed") === "true";
+    return translationVisibilityEnabled;
   }
 
   function setTranslationToggleState(enabled) {
@@ -3295,7 +3353,9 @@
     event.stopPropagation();
     if (!ui) return;
     const enabled = !translationAlwaysVisible();
+    translationVisibilityEnabled = enabled;
     setTranslationToggleState(enabled);
+    void persistTranslationVisibilityPreference();
     if (enabled) ui.translation.textContent = translations[String(current)] || "";
     syncCurrentTranslationDisplay(enabled);
   }
@@ -3487,6 +3547,7 @@
     }
     if (requestGeneration !== openingGeneration) return;
     await loadProgressSyncPreference();
+    await loadTranslationVisibilityPreference();
     if (requestGeneration !== openingGeneration) return;
     if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
     videoId = currentVideoId();
