@@ -1116,6 +1116,7 @@ function setVideoSidebarHidden(hidden) {
   const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
   if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
+  if (root.classList.contains('te-ambient-on')) placeAmbient();
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
@@ -1867,6 +1868,15 @@ function placeAmbientEdge() {
   const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
   // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 1) hoặc 100% (Ambient 2) khoảng đó
   const reach = ambientMode() === '2' ? 1.0 : 0.5;
+  if (rr && root.classList.contains('te-sidebar-hidden')) {
+    // Chế độ rạp: phủ kín toàn màn hình
+    const ew = Math.max(vw, vh * 16 / 9) * 1.05, eh = ew * 9 / 16;
+    edge.style.setProperty('--te-edge-l', `${Math.round((vw - ew) / 2 - rr.left)}px`);
+    edge.style.setProperty('--te-edge-t', `${Math.round((vh - eh) / 2 - rr.top)}px`);
+    edge.style.setProperty('--te-edge-w', `${Math.round(ew)}px`);
+    edge.style.setProperty('--te-edge-h', `${Math.round(eh)}px`);
+    return;
+  }
   const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
   const boxW = r.width + reach * spL + reach * spR, boxH = r.height + reach * spT + reach * spB;
   // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
@@ -1893,6 +1903,14 @@ function placeAmbient() {
   if (isEdgeAmbient()) return placeAmbientEdge();
   const root = overlayEl(), slot = ui('.te-video-slot');
   if (!root || !slot) return;
+  if (root.classList.contains('te-sidebar-hidden')) {
+    // Chế độ rạp: phủ kín toàn màn hình (cả 2 khung đen hai bên)
+    const vw = innerWidth, vh = innerHeight;
+    root.style.setProperty('--te-amb-x', `${Math.round(vw / 2)}px`);
+    root.style.setProperty('--te-amb-y', `${Math.round(vh / 2)}px`);
+    root.style.setProperty('--te-amb-size', `${Math.round(Math.max(vh, vw * 9 / 16) * 1.05)}px`);
+    return;
+  }
   const r = slot.getBoundingClientRect();
   if (!r.width || !r.height) return;
   root.style.setProperty('--te-amb-x', `${Math.round(r.left + r.width / 2)}px`);

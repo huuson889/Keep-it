@@ -1088,6 +1088,10 @@ const OVERLAY_CSS = `
     /* Bật ambient: nền gốc đặt ở root (giữ đúng màu sáng/tối cũ) để các vùng trong suốt lộ ánh sáng */
     #keepit-exact-overlay.te-ambient-on.theme-light { background-color: #ffffff; }
     #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
+    /* Chế độ rạp: video bo góc như chế độ kết hợp; ambient phủ kín toàn màn hình (cả 2 khung đen hai bên) */
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot { border-radius: 12px; overflow: hidden; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px; }
+    #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
     #keepit-exact-overlay.te-ambient-on .yt-dual-right-sidebar { background-color: transparent; }

@@ -116,6 +116,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-11-02 | v3.4.956 | Claude sửa:**
+  - Chế độ rạp (video không có cột bên): ambient phủ kín toàn màn hình, gồm cả hai khung đen hai bên (radial và cạnh viền đều theo viewport); video bo góc 12px như chế độ kết hợp. Không đổi bố cục/vị trí UI khác.
+  - File: `css/...` không đổi; `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận ambient phủ kín và bo góc ở chế độ rạp).
+
+
 - **2026-10-31 | v3.4.955 | Claude sửa:**
   - Alt+F (phím tắt Dictation) khi overlay đang đóng: vào thẳng chế độ học, không gọi lại chế độ xem video trước (bỏ bước `setLearningMode(false)` khi vào từ phím tắt).
   - File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
