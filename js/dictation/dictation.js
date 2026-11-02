@@ -1758,7 +1758,7 @@
           }
         }
         void finalizeSpeechAttempt(getCompletedSpeechTranscript());
-      }, 3000);
+      }, 1500);
     }
 
     function startRecognitionSession(existingRecognition = null) {
