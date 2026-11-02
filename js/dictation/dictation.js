@@ -1089,7 +1089,7 @@
       const speaking = mode === "speaking";
       ui.root.classList.toggle("te-dict-speaking-mode", speaking);
       ui.speechPractice.hidden = !speaking;
-      if (speaking) ui.speechPractice.insertBefore(ui.translation, ui.speechPractice.querySelector(".te-dict-speech-shortcuts"));
+      if (speaking) ui.speechPractice.insertBefore(ui.translation, ui.speechShortcuts.nextSibling);
       else ui.translationSlot.appendChild(ui.translation);
       ui.speakControl.classList.toggle("active", speaking);
       ui.typeControl.classList.toggle("active", !speaking);

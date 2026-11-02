@@ -867,6 +867,7 @@ globalThis.LHN_DICTATION_CSS = `
 #keepit-exact-overlay .te-dict-speech-target.state-correct { border-color: rgba(16,185,129,.48); background: rgba(16,185,129,.08); color: #059669; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-target.state-correct { background: rgba(16,185,129,.09); color: #34d399; }
 #keepit-exact-overlay .te-dict-speech-shortcuts { width: 100%; }
+#keepit-exact-overlay .te-dict-speech-practice > .te-dict-translation { width: 100%; box-sizing: border-box; }
 #keepit-exact-overlay .te-dict-speech-result-wrap { width: 100%; padding: 10px 12px; border: 1px solid rgba(16,185,129,.28); border-radius: 12px; background: rgba(16,185,129,.07); }
 #keepit-exact-overlay .te-dict-speech-result-title { margin-bottom: 8px; color: #059669; font-size: 12px; font-weight: 800; }
 #keepit-exact-overlay.theme-dark .te-dict-speech-result-title { color: #34d399; }
