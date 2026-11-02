@@ -1,10 +1,10 @@
 # Dictation — Hướng dẫn kỹ thuật
 
-> Source code là nguồn sự thật; tài liệu này mô tả overlay, scoring, Speaking và lưu trữ.
+> Source code là nguồn sự thật; trang này mô tả overlay, scoring, Speaking và lưu trữ.
 
 ## 1. Mục đích và phạm vi
 
-Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, với mode `Đánh máy` và `Luyện nói`. SpeechRecognition tạo transcript; MediaRecorder giữ bản ghi tạm để phát lại. Keepit không lưu hoặc upload audio.
+Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, với mode `Đánh máy` và `Luyện nói`. SpeechRecognition tạo transcript; MediaRecorder giữ bản ghi tạm để phát lại. Audio không được lưu lâu dài hoặc upload.
 
 ## 2. File chính và điểm vào
 
@@ -20,25 +20,24 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 
 ## 3. Luồng chính
 
-1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation lấy English cues và dùng player hiện có. Caption đến muộn qua `lhn-dual-captions-updated`.
-2. Typing pass khi `result.perfect`; Speaking pass từ 70% nhưng không tự chuyển câu. Tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
-3. Công tắc Tự động ghi âm Speaking mặc định bật (Sparkles, EN/VI/KO). Sau cue/repeat cuối và video pause 2 giây, bắt đầu thu. Auto dùng `continuous=false`; `onend` chốt transcript, phát bản thu tạm rồi chấm. Không có timer im lặng; endpoint do trình duyệt quyết định. Off hoặc Enter/mic giữ manual flow.
-4. Manual recognition có thể tự khởi động lại; sai thì retry. Escape phát cue/hiện đáp án rồi reset; Enter sau reveal chấm 100%, Enter tiếp chuyển câu. Speaking ẩn nút chấm và không tự chuyển Next.
-5. `dictation:<videoId>` lưu progress, notes, translations, title và `wrongWordStats`; session index lưu metadata. Audio, tracks và Blob URL chỉ tạm runtime, được dọn khi reset, đổi câu/mode hoặc đóng panel.
-6. Trình duyệt quyết định quyền mic; auto-record có thể xin capture sau cue. Thiếu MediaRecorder vẫn nhận diện nhưng không phát lại. Đổi `lhnSettings.language` cập nhật nhãn/aria; bản dịch mặc định ẩn.
+1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; Dictation dùng English cues và player hiện có. Caption cập nhật qua `lhn-dual-captions-updated`.
+2. Typing pass khi `result.perfect`; Speaking pass từ 70% nhưng không tự chuyển câu. Các tier 70–100%, 40–69%, 0–39% lần lượt xanh, vàng, đỏ.
+3. Auto-record Speaking mặc định bật. Sau cue/repeat cuối, đợi 1 giây. Recognition chạy one-shot; tại `onend` mở phiên mới. Gộp transcript các phiên, reset timer khi có speech, rồi dừng/phát bản ghi/chấm đúng một lần sau 3 giây im lặng.
+4. Khi auto-record tắt, manual recognition giữ continuous flow. Sai thì retry; Escape phát cue/hiện đáp án rồi reset; Enter sau reveal chấm 100%, Enter tiếp chuyển câu. Speaking ẩn nút chấm và không tự chuyển Next.
+5. `dictation:<videoId>` lưu progress, notes, translations, title và `wrongWordStats`; session index lưu metadata. Audio, tracks và Blob URL chỉ tạm runtime, dọn khi reset, đổi câu/mode hoặc đóng panel.
+6. Quyền mic do trình duyệt quyết định. Thiếu MediaRecorder vẫn nhận diện nhưng không phát lại. Đổi `lhnSettings.language` cập nhật nhãn/aria; bản dịch mặc định ẩn.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Không tạo overlay thứ hai; chỉ dùng cue tiếng Anh và tái dùng player cùng `.te-dict-brand` duy nhất từ video overlay. UI dùng `--lhn-app-font-family`; phụ đề/transcript giữ font riêng.
-- Auto-record mặc định bật: mic mở tay/tự động đều one-shot tới browser `onend`; tắt thì giữ manual continuous. Chấm sai phát cue một lần rồi auto-mic theo delay hiện có 2s.
-- Popup VI dùng ring, 15 mức điểm, Spring Pop, tự ẩn 6s/Enter; EN/KO inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
-- Progress sync mặc định bật tại `dictation:progress-sync:v1`; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
-- Contraction theo allowlist; loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu khỏi thống kê. Hint proper noun giữ case/thứ tự và bỏ trùng; `wrongWordStats` schema v3 là heuristic.
-- Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo và migration rightScale v1 sang preference v2. Repeat count riêng theo mode.
-- Learning UI: auto-record cạnh translation; card/nút/icon giảm 20%, font giữ nguyên. `learningViewSize` riêng S mặc định: S đủ cột, M ẩn trái, L ẩn trái/phải; video không đổi cỡ. Speaking mic có ba vòng đường kính mic+2/+4/+6px khi auto bật; `.te-dict-translation` full-width dưới hint; `.te-dict-work` giữ CSS v3.4.938.
+- Không tạo overlay thứ hai; tái dùng player và `.te-dict-brand` duy nhất từ video overlay. UI dùng `--lhn-app-font-family`; phụ đề/transcript giữ font riêng.
+- Auto-record bật: manual/automatic dùng `continuous=false`; `onend` mở lại recognition. Nối các segment, reset grace timer khi có speech và chỉ grade sau 3 giây im lặng. Tắt auto-record giữ manual continuous. Chấm sai phát cue một lần, rồi mic tự mở sau cue 1 giây.
+- Popup VI dùng ring, 15 mức điểm, Spring Pop và tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
+- Progress sync mặc định bật; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
+- Hint giữ proper noun và thứ tự; contraction theo allowlist. Thống kê loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu.
+- Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo, migration rightScale v1 sang preference v2 và repeat count riêng theo mode.
+- Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, không resize video. Speaking mic có vòng +10/+20/+30px khi auto bật; translation full-width dưới hint; `.te-dict-work` giữ CSS v3.4.938.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.974 passed: 56 JS syntax, 14 CSS parse; endpoint/retry/ring source assertions; docs and diff checks.
-- Static/mock: syntax, manifest/EN-VI-KO; cue +2s; auto-on manual/auto one-shot → onend → playback-grade; auto-off manual continuous Enter; wrong cue once → auto-mic; cleanup/CSS/diff.
-- Browser QA: toggle, auto-start +2s, browser endpoint/onend rồi playback-grade, manual Enter/Escape, permission/fallback/cleanup, Typing và locale trên Chromium/Firefox/Edge. Static checks không thay browser test.
+- v3.4.975 passed: 56 JS syntax, 14 stylesheet parses, source/manifest/docs assertions, runtime mock (grace/rearm/merge/reset/single grade/manual continuity) and diff check.
+- Browser QA chưa chạy: xác nhận toggle, auto-start +1s, nhiều `onend`, reset timer khi nói tiếp và grade sau 3s im lặng; manual Enter/Escape, quyền/fallback/cleanup, Typing và locale trên Chromium/Firefox/Edge. Static checks không thay browser test.

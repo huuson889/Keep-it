@@ -17,6 +17,7 @@
   let speechAutoRecordEnabled = true;
   let speechCueAutoStartPending = false;
   let speechAutoStartTimer = 0;
+  let speechEndpointGraceTimer = 0;
   let speechAnswerRevealed = false;
   let speechRecorder = null;
   let speechRecordingStream = null;
@@ -1326,9 +1327,17 @@
     speechAutoStartTimer = 0;
   }
 
+  function clearSpeechEndpointGraceTimer() {
+    if (speechEndpointGraceTimer) clearTimeout(speechEndpointGraceTimer);
+    speechEndpointGraceTimer = 0;
+  }
+
   function setSpeechAutoRecordEnabled(enabled) {
     speechAutoRecordEnabled = Boolean(enabled);
-    if (!speechAutoRecordEnabled) clearSpeechAutoStartTimer();
+    if (!speechAutoRecordEnabled) {
+      clearSpeechAutoStartTimer();
+      clearSpeechEndpointGraceTimer();
+    }
     updateSpeechAutoRecordControl();
     if (speechAutoRecordEnabled && speechCueAutoStartPending) scheduleSpeechAutoRecord();
   }
@@ -1352,7 +1361,7 @@
       }
       speechCueAutoStartPending = false;
       void toggleSpeechRecognition({ automatic: true });
-    }, 2000);
+    }, 1000);
   }
 
   function clearRecordedSpeech() {
@@ -1486,6 +1495,7 @@
   function stopSpeechRecognition(abort = true) {
     speechCueAutoStartPending = false;
     clearSpeechAutoStartTimer();
+    clearSpeechEndpointGraceTimer();
     speechStartGeneration++;
     speechStartPending = false;
     speechStopRequested = false;
@@ -1540,6 +1550,7 @@
     if (!automatic) {
       speechCueAutoStartPending = false;
       clearSpeechAutoStartTimer();
+      clearSpeechEndpointGraceTimer();
     }
     if (dictationMode !== "speaking") setDictationMode("speaking");
     if (speechStopRequested || speechPlaybackAudio) return;
@@ -1614,67 +1625,25 @@
       return;
     }
 
-    let finalText = "";
-    let interimText = "";
-    speechRecognition = recognition;
-    speechStartPending = false;
-    setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
-    recognition.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
-      ? A.state.captionTrackLanguage : "en-US";
-    recognition.continuous = !(automatic || speechAutoRecordEnabled);
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (event) => {
-      const finals = [];
-      const interims = [];
-      for (let index = 0; index < event.results.length; index++) {
-        const result = event.results[index];
-        const text = String(result?.[0]?.transcript || "").trim();
-        if (!text) continue;
-        (result.isFinal ? finals : interims).push(text);
-      }
-      finalText = finals.join(" ").trim();
-      interimText = interims.join(" ").trim();
-      renderSpeechResult([finalText, interimText].filter(Boolean).join(" "));
-    };
-    recognition.onerror = (event) => {
-      const code = String(event?.error || "");
-      speechRecognitionError = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
-        ? "dictationSpeakDenied"
-        : code === "network" ? "dictationSpeakNetwork"
-          : code === "no-speech" ? "dictationSpeakNoSpeech"
-            : code === "aborted" ? "" : "dictationSpeakError";
-      if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
-        speechStopRequested = true;
-      }
-      if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
-    };
-    recognition.onend = async () => {
-      if (speechRecognition !== recognition) return;
-      if (!automatic && !speechAutoRecordEnabled && !speechStopRequested
-        && !["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)
-        && active && dictationMode === "speaking" && attemptCurrent === current) {
-        try {
-          recognition.start();
-          setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
-          updateSpeechMicState(true);
-          return;
-        } catch { speechRecognitionError = "dictationSpeakError"; }
-      }
-      const transcript = (finalText || interimText).trim();
-      if (automatic && transcript && !speechStopRequested) {
-        speechStopRequested = true;
-        setSpeechStatus("dictationSpeakProcessing");
-      }
+    const completedSpeechSegments = [];
+    let speechAttemptFinalized = false;
+
+    const getCompletedSpeechTranscript = () => completedSpeechSegments.join(" ").replace(/\s+/g, " ").trim();
+
+    async function finalizeSpeechAttempt(transcript) {
+      if (speechAttemptFinalized) return;
+      speechAttemptFinalized = true;
+      clearSpeechEndpointGraceTimer();
       speechRecognition = null;
       updateSpeechMicState(false);
+      const completedTranscript = String(transcript || "").trim();
       if (!active || dictationMode !== "speaking" || attemptCurrent !== current) {
         await stopSpeechRecording(true);
         speechStopRequested = false;
         updateSpeechCheckDisabled();
         return;
       }
-      if (!transcript) {
+      if (!completedTranscript) {
         const recordingUrl = await stopSpeechRecording(false);
         if (generation === speechStartGeneration && active && dictationMode === "speaking" && attemptCurrent === current && recordingUrl) {
           await playRecordedSpeech(recordingUrl);
@@ -1696,8 +1665,8 @@
         updateSpeechCheckDisabled();
         return;
       }
-      ui.input.value = transcript;
-      renderSpeechResult(transcript);
+      ui.input.value = completedTranscript;
+      renderSpeechResult(completedTranscript);
       const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl) : false;
       if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
         speechStopRequested = false;
@@ -1710,8 +1679,123 @@
       setSpeechStatus("");
       submit();
       if (recordingFailed) setSpeechStatus("dictationSpeakRecordingUnavailable");
-    };
-    try { recognition.start(); }
+    }
+
+    function scheduleSpeechEndpointGraceStop(resetTimer) {
+      if (speechEndpointGraceTimer && !resetTimer) return;
+      clearSpeechEndpointGraceTimer();
+      speechEndpointGraceTimer = setTimeout(() => {
+        speechEndpointGraceTimer = 0;
+        if (speechAttemptFinalized || generation !== speechStartGeneration || !active
+          || dictationMode !== "speaking" || attemptCurrent !== current) return;
+        speechStopRequested = true;
+        setSpeechStatus("dictationSpeakProcessing");
+        const currentRecognition = speechRecognition;
+        if (currentRecognition) {
+          try { currentRecognition.stop(); return; }
+          catch {
+            if (speechRecognition === currentRecognition) speechRecognition = null;
+          }
+        }
+        void finalizeSpeechAttempt(getCompletedSpeechTranscript());
+      }, 3000);
+    }
+
+    function startRecognitionSession(existingRecognition = null) {
+      const session = existingRecognition || new Recognition();
+      let finalText = "";
+      let interimText = "";
+      speechRecognition = session;
+      session.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
+        ? A.state.captionTrackLanguage : "en-US";
+      session.continuous = !(automatic || speechAutoRecordEnabled);
+      session.interimResults = true;
+      session.maxAlternatives = 1;
+      speechStartPending = false;
+      setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
+      updateSpeechMicState(true);
+      session.onresult = (event) => {
+        const finals = [];
+        const interims = [];
+        for (let index = 0; index < event.results.length; index++) {
+          const result = event.results[index];
+          const text = String(result?.[0]?.transcript || "").trim();
+          if (!text) continue;
+          (result.isFinal ? finals : interims).push(text);
+        }
+        finalText = finals.join(" ").trim();
+        interimText = interims.join(" ").trim();
+        const segmentPreview = [finalText, interimText].filter(Boolean).join(" ");
+        if (segmentPreview) {
+          speechRecognitionError = "";
+          if (speechAutoRecordEnabled) scheduleSpeechEndpointGraceStop(true);
+        }
+        renderSpeechResult([...completedSpeechSegments, finalText, interimText].filter(Boolean).join(" "));
+      };
+      session.onerror = (event) => {
+        const code = String(event?.error || "");
+        speechRecognitionError = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
+          ? "dictationSpeakDenied"
+          : code === "network" ? "dictationSpeakNetwork"
+            : code === "no-speech" ? "dictationSpeakNoSpeech"
+              : code === "aborted" ? "" : "dictationSpeakError";
+        if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
+          speechStopRequested = true;
+        }
+        if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
+      };
+      session.onend = async () => {
+        if (speechRecognition !== session) return;
+        const segment = [finalText, interimText].filter(Boolean).join(" ").trim();
+        const fatalError = ["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError);
+        const canContinue = active && dictationMode === "speaking" && attemptCurrent === current;
+
+        if (!automatic && !speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
+          try {
+            session.start();
+            setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
+            updateSpeechMicState(true);
+            return;
+          } catch { speechRecognitionError = "dictationSpeakError"; }
+        }
+
+        if (speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
+          if (segment) {
+            completedSpeechSegments.push(segment);
+            speechRecognitionError = "";
+            scheduleSpeechEndpointGraceStop(true);
+          } else {
+            scheduleSpeechEndpointGraceStop(false);
+          }
+          speechRecognition = null;
+          try {
+            startRecognitionSession();
+            return;
+          } catch {
+            speechRecognitionError = "dictationSpeakError";
+            clearSpeechEndpointGraceTimer();
+            speechStopRequested = false;
+            await finalizeSpeechAttempt(getCompletedSpeechTranscript());
+            return;
+          }
+        }
+
+        if (segment) completedSpeechSegments.push(segment);
+        const transcript = getCompletedSpeechTranscript();
+        if (automatic && transcript && !speechStopRequested) {
+          speechStopRequested = true;
+          setSpeechStatus("dictationSpeakProcessing");
+        }
+        await finalizeSpeechAttempt(transcript);
+      };
+      try { session.start(); }
+      catch (error) {
+        if (speechRecognition === session) speechRecognition = null;
+        throw error;
+      }
+    }
+
+    try { startRecognitionSession(recognition); }
     catch {
       speechRecognition = null;
       speechStartPending = false;
