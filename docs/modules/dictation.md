@@ -31,7 +31,7 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Dùng chung overlay/player, `.te-dict-brand`; Web recognition dùng detected/page language và URL thật; YouTube giữ English gate. Mini-audio dùng chung `LHN_THUMBNAILS.loadSource` cho URL/fallback; UI/caption fonts giữ nguyên.
+- Dùng chung overlay/player, `.te-dict-brand`; Web recognition dùng detected/page language và URL thật; YouTube giữ English gate. Mini-audio dùng chung `LHN_THUMBNAILS.loadSource`; khung ảnh clip 12px như video.
 - Auto-record: one-shot recognition (`continuous=false`), rearm `onend`; gộp transcript, chấm sau 1,5 giây im lặng reset theo speech. Replay bỏ 1,5 giây cuối; manual giữ continuous/full replay. Sai thì cue, mic lại sau 1 giây.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop, tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync bật mặc định; khi tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; wrong-word stats/summary tách mode.
