@@ -31,7 +31,7 @@ Module điều phối overlay YouTube và web-study trên cùng UI/player/API. R
 
 - Giữ thứ tự `overlay-template.js` → `dual-subtitles.js` → Dictation và hợp đồng `LHN_OVERLAY_API`/events hiện có.
 - Reader getter chỉ dùng `readerBlocks()`/`rawText()`; không đổi thuật toán chọn block hoặc tự tìm lại main text.
-- Web-specific logic ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Cue giữ nguyên câu Reader, không tự dịch.
+- Web-specific logic ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Cue giữ nguyên câu Reader, không tự dịch. Ảnh thay video (`.te-web-page-thumbnail`) phải clip 12px như `.te-video-frame`, kể cả khi frame dùng `display:contents`.
 - Shortcut web bỏ qua YouTube/ô nhập; tôn trọng site-disabled và dọn adapter khi URL đổi.
 - Giữ mọi mode/UI. Translation/ambient chưa cấu hình báo toast + console, không ẩn nút. Web Dictation dùng cờ nguồn riêng và ngôn ngữ dò được/hint trang; không giả lập YouTube hay English.
 - YouTube Auto vẫn ưu tiên mapping caption/audio track. Reader/TTS dùng language hint trang rồi dò theo cue.

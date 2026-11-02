@@ -2215,7 +2215,7 @@ function attachWebMedia(media, slot) {
   const image = document.createElement('img');
   image.className = 'te-web-page-thumbnail';
   image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;cursor:pointer;user-select:none;';
+  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;border-radius:12px;clip-path:inset(0 round 12px);cursor:pointer;user-select:none;';
   image.addEventListener('click', handleOverlayVideoClick);
   frame.replaceChildren(image);
   state.webThumbnail = image;

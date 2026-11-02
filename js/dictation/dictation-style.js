@@ -180,8 +180,7 @@ globalThis.LHN_DICTATION_CSS = `
   width: 52px;
   height: 52px;
   overflow: hidden;
-  border-radius: 12px;
-  clip-path: inset(0 round 12px);
+  border-radius: 14px;
   background: linear-gradient(135deg, #7c3aed, #312e81);
   box-shadow: 0 8px 16px rgba(0, 0, 0, .4);
 }
