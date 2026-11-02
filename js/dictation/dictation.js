@@ -48,6 +48,7 @@
   let translationVisibilityEnabled = true;
   let translationVisibilityPreferenceWrite = Promise.resolve();
   let wrongWordStats = { version: 3, words: {} };
+  let speakingWrongWordStats = { version: 3, words: {} };
   let stopAt = -1;
   let attachedVideo = null;
   let ctrlAlone = false;
@@ -1026,6 +1027,7 @@
       ring: tools.querySelector("#te-dict-ring-fg"),
       close: notesPanel.querySelector("#te-dict-close"),
       statsSearch: notesPanel.querySelector("#te-dict-stats-search"),
+      statsSummary: notesPanel.querySelector(".te-dict-stats-title-copy > p"),
       statsCount: notesPanel.querySelector("#te-dict-stats-count"),
       statsScroll: notesPanel.querySelector(".te-dict-stats-scroll"),
       statsFilters: [...notesPanel.querySelectorAll(".te-dict-stats-filter")],
@@ -1159,6 +1161,7 @@
         ui.speechResultWrap.hidden = true;
       }
     }
+    if (changed && ui) renderWrongWordStats();
     syncVideoModeButtons();
     if (swapProgress) {
       pendingResumeIndex = current;
@@ -2010,6 +2013,7 @@
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
     wrongWordStats = normalizeWrongWordStats(record.wrongWordStats);
+    speakingWrongWordStats = normalizeWrongWordStats(record.speakingWrongWordStats);
     return record;
   }
 
@@ -2029,7 +2033,7 @@
     }
     const record = {
       version:1, current, solved:[...solved], progressByMode,
-      notes, translations, wrongWordStats, title, titleUpdatedAt,
+      notes, translations, wrongWordStats, speakingWrongWordStats, title, titleUpdatedAt,
     };
     const session = {
       version: 1,
@@ -2172,7 +2176,13 @@
 
   function renderWrongWordStats() {
     if (!ui?.statsScroll) return;
-    const stats = normalizeWrongWordStats(wrongWordStats);
+    const speaking = dictationMode === "speaking";
+    const stats = normalizeWrongWordStats(speaking ? speakingWrongWordStats : wrongWordStats);
+    const summaryKey = speaking ? "dictationWrongStatsSpeakingSummary" : "dictationWrongStatsSummary";
+    if (ui.statsSummary) {
+      ui.statsSummary.dataset.dictLabel = summaryKey;
+      ui.statsSummary.textContent = tr(summaryKey);
+    }
     const allItems = Object.entries(stats.words).map(([key, item]) => ({ key, ...item, streak: wrongWordStreak(item) }));
     if (ui.statsCount) {
       const spacing = language() === "ko" ? "" : " ";
@@ -3047,9 +3057,8 @@
     const isSpeaking = dictationMode === "speaking";
     const tier = isSpeaking ? getSpeechScoreTier(result.percent) : null;
     const passed = isSpeaking ? tier === "pass" : result.perfect;
-    const statsUpdated = !isSpeaking
-      ? recordWrongWordSubmission(wrongWordStats, current, result, cue.en)
-      : false;
+    const modeStats = isSpeaking ? speakingWrongWordStats : wrongWordStats;
+    const statsUpdated = recordWrongWordSubmission(modeStats, current, result, cue.en);
     if (statsUpdated) renderWrongWordStats();
     if (isSpeaking) {
       setSpeechTargetState(tier === "pass" ? "correct" : tier === "warn" ? "warn" : "wrong");
@@ -3580,6 +3589,7 @@
     notes = {};
     translations = {};
     wrongWordStats = { version: 3, words: {} };
+    speakingWrongWordStats = { version: 3, words: {} };
     ui.root.classList.add("te-dictation-active");
     A?.syncViewSize?.();
     A?.revealLearningEntry?.();

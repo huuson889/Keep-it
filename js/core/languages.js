@@ -154,7 +154,7 @@
   MESSAGES.vi.exportErrorLog = "Xuất log";
   MESSAGES.ko.exportErrorLog = "로그 내보내기";
   Object.assign(MESSAGES.en, {
-    dictationWrongStatsTitle: "Wrong-word stats", dictationWrongStatsSummary: "Spelling mistakes summary",
+    dictationWrongStatsTitle: "Wrong-word stats", dictationWrongStatsSummary: "Spelling mistakes summary", dictationWrongStatsSpeakingSummary: "Speaking mistakes summary",
     dictationWrongStatsSearch: "Search misspellings…", dictationWrongStatsAll: "All", dictationWrongStatsNeedsFix: "Needs practice", dictationWrongStatsWord: "words",
     dictationWrongStatsErrors: "Errors:", dictationWrongStatsCorrect: "Fixes:", dictationWrongStatsAccuracy: "Fix rate:", dictationWrongStatsTimes: "times",
     dictationWrongStatsLastWrong: "Wrong last", dictationWrongStatsLastCorrect: "Corrected", dictationWrongStatsVariants: "Common typos:", dictationWrongStatsMore: "more", dictationWrongStatsCollapse: "Collapse", dictationWrongStatsOmitted: "(missing)", dictationWrongStatsEmpty: "No spelling mistakes yet.", dictationWrongStatsNoResults: "No words match this search or filter.",
@@ -176,7 +176,7 @@
     dictationHideSentencesColumn: "Hide sentences column", dictationShowSentencesColumn: "Show sentences column", dictationHideNotesColumn: "Hide notes column", dictationShowNotesColumn: "Show notes column", dictationResizeSentencesColumn: "Resize sentences column", dictationResizeNotesColumn: "Resize notes column", dictationResizeColumnHelp: "Drag or use arrow keys to resize; double-click to reset."
   });
   Object.assign(MESSAGES.vi, {
-    dictationWrongStatsTitle: "Thống kê từ sai", dictationWrongStatsSummary: "Tổng hợp lỗi chính tả",
+    dictationWrongStatsTitle: "Thống kê từ sai", dictationWrongStatsSummary: "Tổng hợp lỗi chính tả", dictationWrongStatsSpeakingSummary: "Tổng hợp lỗi luyện nói",
     dictationWrongStatsSearch: "Tìm từ gõ sai…", dictationWrongStatsAll: "Tất cả", dictationWrongStatsNeedsFix: "Cần sửa", dictationWrongStatsWord: "từ",
     dictationWrongStatsErrors: "Lỗi:", dictationWrongStatsCorrect: "Sửa đúng:", dictationWrongStatsAccuracy: "Tỷ lệ sửa:", dictationWrongStatsTimes: "lần",
     dictationWrongStatsLastWrong: "Sai mới nhất", dictationWrongStatsLastCorrect: "Đã sửa đúng", dictationWrongStatsVariants: "Hay gõ sai:", dictationWrongStatsMore: "nữa", dictationWrongStatsCollapse: "Thu gọn", dictationWrongStatsOmitted: "(bỏ trống)", dictationWrongStatsEmpty: "Chưa có từ sai trong video này.", dictationWrongStatsNoResults: "Không có từ phù hợp với tìm kiếm hoặc bộ lọc.",
@@ -198,7 +198,7 @@
     dictationHideSentencesColumn: "Ẩn cột câu", dictationShowSentencesColumn: "Hiện cột câu", dictationHideNotesColumn: "Ẩn cột ghi chú", dictationShowNotesColumn: "Hiện cột ghi chú", dictationResizeSentencesColumn: "Điều chỉnh độ rộng cột câu", dictationResizeNotesColumn: "Điều chỉnh độ rộng cột ghi chú", dictationResizeColumnHelp: "Kéo hoặc dùng phím mũi tên để đổi độ rộng; nhấp đúp để đặt lại."
   });
   Object.assign(MESSAGES.ko, {
-    dictationWrongStatsTitle: "오답 단어 통계", dictationWrongStatsSummary: "맞춤법 오류 요약",
+    dictationWrongStatsTitle: "오답 단어 통계", dictationWrongStatsSummary: "맞춤법 오류 요약", dictationWrongStatsSpeakingSummary: "말하기 연습 오류 요약",
     dictationWrongStatsSearch: "오타 검색…", dictationWrongStatsAll: "전체", dictationWrongStatsNeedsFix: "수정 필요", dictationWrongStatsWord: "단어",
     dictationWrongStatsErrors: "오답:", dictationWrongStatsCorrect: "수정 성공:", dictationWrongStatsAccuracy: "수정률:", dictationWrongStatsTimes: "회",
     dictationWrongStatsLastWrong: "최근 오답", dictationWrongStatsLastCorrect: "수정 완료", dictationWrongStatsVariants: "자주 틀리는 입력:", dictationWrongStatsMore: "더", dictationWrongStatsCollapse: "접기", dictationWrongStatsOmitted: "(누락)", dictationWrongStatsEmpty: "이 동영상에 기록된 오답이 없습니다.", dictationWrongStatsNoResults: "검색어나 필터와 일치하는 단어가 없습니다.",
