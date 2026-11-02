@@ -1481,7 +1481,9 @@
       e.preventDefault(); e.stopPropagation();
       if (!e.repeat) {
         const isYouTube = /^(www\.)?youtube\.com$/i.test(location.hostname);
-        document.dispatchEvent(new CustomEvent(isYouTube ? "lhn-youtube-dictation-toggle" : "lhn-web-dictation-toggle"));
+        if (isYouTube) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
+        else if (typeof globalThis.LHN_DICTATION?.toggleWebStudy === "function") void globalThis.LHN_DICTATION.toggleWebStudy();
+        else globalThis.__lhnPendingWebDictationToggle = true;
       }
       return;
     }

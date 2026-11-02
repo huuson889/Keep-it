@@ -30,7 +30,7 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Dùng chung overlay/player và một `.te-dict-brand`; UI dùng app font, phụ đề/transcript giữ font riêng.
+- Web entry gọi `LHN_DICTATION.toggleWebStudy`; pending flag xử lý phím đến trước API và lỗi mở có log/toast. Giữ YouTube event, overlay/player dùng chung một `.te-dict-brand`; UI dùng app font, phụ đề/transcript giữ font riêng.
 - Auto-record bật: recognition one-shot (`continuous=false`), rearm tại `onend`; gộp segment, reset grace khi có speech, chấm sau 1,5 giây im lặng. Replay lượt auto bỏ 1,5 giây cuối theo setting chụp lúc bắt đầu; recognition/scoring không đổi. Tắt auto-record giữ manual continuous và replay đầy đủ. Sai thì cue một lần, mic mở sau cue 1 giây.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop và tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync bật mặc định; khi tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; wrong-word stats và summary tách theo mode.
@@ -40,5 +40,5 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.994: 56 JS syntax; web TTS/sentence VM; 468 CSS rules, manifest/docs và diff checks passed.
-- Browser QA chưa chạy: xác nhận web overlay/thumbnail/TTS và video replay auto cắt, manual phát đầy đủ.
+- v3.4.995: web open success/failure VM, shortcut/integration assertions, 56 JS syntax, manifest/docs và diff checks passed.
+- Browser QA chưa chạy: xác nhận Chrome web overlay/thumbnail/TTS và video replay auto cắt, manual phát đầy đủ.

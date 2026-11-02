@@ -24,7 +24,7 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 2. `content.js` đọc settings chung từ `LHN_SETTINGS`/`browser.storage.local`; lựa chọn video đọc riêng popup/đọc từ `lhnYouTubeSettings`, rồi dispatch qua các helper và listener.
 3. Khi lưu/sửa/xóa annotation, controller tạo record bằng `LHN_NOTE_COMPOSER` rồi gửi message `ADD`, `UPDATE` hoặc `DELETE` qua `LHN_MESSAGING` tới Background.
 4. Khi trang tải hoặc thay đổi DOM, annotation lấy từ Background; `LHN_ANNOTATION_RESTORE` tìm range và `LHNWebHighlighter` dựng mark, có observer/retry cho trang động.
-5. Shortcut YouTube phát custom event cho Dual Sub/Dictation; `Alt+F` trên trang thường gọi web Dictation, dùng `LHN_READER_MAIN_SOURCE` từ Reader. Các action Reader/Dashboard đi qua event/message tương ứng.
+5. Shortcut YouTube phát custom event cho Dual Sub/Dictation; trên trang thường, phím Dictation gọi `LHN_DICTATION.toggleWebStudy()` trực tiếp, hoặc đợi API nếu script chưa nạp. Reader/Dashboard giữ event/message tương ứng.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 

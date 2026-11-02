@@ -3771,12 +3771,12 @@
     return `web-${(hash >>> 0).toString(36)}`;
   }
 
-  function showWebStudyUnavailable() {
+  function showWebStudyUnavailable(messageKey = "dictationWebEnglishOnly") {
     clearTimeout(showWebStudyUnavailable.timer);
     document.getElementById("lhn-web-study-unavailable")?.remove();
     const toast = document.createElement("div");
     toast.id = "lhn-web-study-unavailable";
-    toast.textContent = tr("dictationWebEnglishOnly");
+    toast.textContent = tr(messageKey);
     Object.assign(toast.style, {
       position:"fixed", left:"50%", bottom:"28px", transform:"translateX(-50%)",
       zIndex:"2147483647", maxWidth:"min(560px, calc(100vw - 32px))", padding:"12px 18px",
@@ -4112,14 +4112,22 @@
 
   async function toggleWebStudy() {
     if (active || openingPanel) { close(); return; }
-    const api = createWebStudyApi();
-    if (!api) { showWebStudyUnavailable(); return; }
-    A = api;
-    attachControls();
-    if (!await api.prepare()) { showWebStudyUnavailable(); return; }
-    api.show();
-    await openPanel({ mode:api.getPreferredLearningMode(), fromEntry:true });
-    if (!active && !openingPanel) api.closeWebStudy();
+    let api = null;
+    try {
+      api = createWebStudyApi();
+      if (!api) { showWebStudyUnavailable(); return; }
+      A = api;
+      attachControls();
+      if (!await api.prepare()) { showWebStudyUnavailable(); return; }
+      api.show();
+      await openPanel({ mode:api.getPreferredLearningMode(), fromEntry:true });
+      if (!active && !openingPanel) api.closeWebStudy();
+    } catch (error) {
+      console.error("Keepit web Dictation failed to open", error);
+      if (active || openingPanel) close();
+      else api?.closeWebStudy?.();
+      showWebStudyUnavailable("dictationWebOpenFailed");
+    }
   }
 
   async function openPanel({ waitForCaptions = false, mode = "typing", fromEntry = false } = {}) {
@@ -4411,9 +4419,13 @@
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
   document.addEventListener("lhn-web-dictation-toggle", () => { void toggleWebStudy(); });
   globalThis.LHN_DICTATION = Object.freeze({
-    toggle, open: openPanel, close, refreshLanguage: refreshLanguageLabels,
+    toggle, toggleWebStudy, open: openPanel, close, refreshLanguage: refreshLanguageLabels,
     syncVideoViewSizeColumns: applyVideoViewSizeColumnPreset,
     isOpen: () => active || openingPanel,
     getMode: () => (active || openingPanel) ? dictationMode : null,
   });
+  if (globalThis.__lhnPendingWebDictationToggle) {
+    delete globalThis.__lhnPendingWebDictationToggle;
+    void toggleWebStudy();
+  }
 })();
