@@ -133,6 +133,15 @@ function reportWebIssue(message, error = null, { level = 'warn', toast = true } 
   }
 }
 
+let lastWebTranslationIssueAt = 0;
+function reportWebTranslationIssue(error) {
+  if (!state.webStudy) return;
+  const now = Date.now();
+  const toast = now - lastWebTranslationIssueAt > 5000;
+  lastWebTranslationIssueAt = now;
+  reportWebIssue('The shared translation service failed for Reader text.', error, { level: 'error', toast });
+}
+
 function splitReaderSentences(blocks) {
   const output = [];
   const hint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || '');
@@ -311,16 +320,30 @@ function prepareWebStudy() {
   let hash = 2166136261;
   for (const char of location.href) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   state.videoId = `web-${(hash >>> 0).toString(16)}`;
-  state.videoEl = createWebTtsMedia(cues);
-  state.rawCues = cues; state.allCues = cues; state.captions = cues;
   state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = state.webLanguageHint;
-  state.mainLanguage = state.webLanguageHint; state.webDetectedLanguage = ''; state.loadingFor = null; state.primaryNeedsTranslation = false;
+  state.mainLanguage = state.webLanguageHint; state.webDetectedLanguage = ''; state.loadingFor = null;
+  const readerCues = markWebReaderCues(cues, state.webLanguageHint);
+  state.videoEl = createWebTtsMedia(readerCues);
+  state.rawCues = readerCues; state.allCues = readerCues; state.captions = readerCues;
   const pageUrl = state.webPageUrl;
   state.webLanguageReady = sentences.length
     ? Promise.resolve(detectWebTtsLanguage(sentences[0], state.webLanguageHint)).then((language) => {
         const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || state.webLanguageHint) || language || state.webLanguageHint;
         if (state.webStudy && state.webPageUrl === pageUrl) {
-          state.webDetectedLanguage = detected; state.captionTrackLanguage = detected; state.mainLanguage = detected;
+          const previousLanguage = String(state.captionTrackLanguage || state.webLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
+          const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
+          state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
+          if (previousLanguage !== detectedBase) {
+            translationSettingsRevision++;
+            translateQueue = [];
+            const refreshedCues = markWebReaderCues(state.rawCues, detectedBase);
+            state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
+            state.activeIdx = -1;
+            if (state.open) { renderTranscriptList(); onTimeUpdate(); }
+          } else {
+            state.mainLanguage = detectedBase;
+            updateSubtitleLanguageLabels();
+          }
         }
         return detected;
       }).catch((error) => {
@@ -774,6 +797,20 @@ function markSingleTrackCues(cues, language = state.captionTrackLanguage) {
   }));
 }
 
+function markWebReaderCues(cues, language = state.webDetectedLanguage || state.webLanguageHint) {
+  const sourceLanguage = String(language || 'en').replace(/_/g, '-').split('-')[0].toLowerCase();
+  const marked = markSingleTrackCues(cues, sourceLanguage);
+  state.primaryNeedsTranslation = false;
+  state.mainLanguage = sourceLanguage;
+  updateSubtitleLanguageLabels();
+  return marked.map((cue) => ({
+    ...cue,
+    mainNeedsTranslation: false,
+    mainTranslationInput: cue.en,
+    mainText: cue.en,
+  }));
+}
+
 async function waitFor(fn, timeout) {
   const end = Date.now() + timeout;
   while (Date.now() < end) {
@@ -1167,9 +1204,11 @@ async function translateOne(text, targetLanguage = state.targetLanguage) {
     try {
       const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: targetLanguage });
       const out = res?.translated || '(không dịch được)';
+      if (!res?.translated) reportWebTranslationIssue(new Error('The translation response did not contain translated text.'));
       state.viCache.set(cacheKey, out);
       return out;
-    } catch {
+    } catch (error) {
+      reportWebTranslationIssue(error);
       return '(không dịch được)';
     } finally {
       translateInflight.delete(cacheKey);
@@ -1207,7 +1246,7 @@ function queueCue(cue, token) {
 }
 
 function translateWindow(centerIdx, token = state.loadToken) {
-  if (state.webStudy || !state.captions.length) return;
+  if (!state.captions.length) return;
   const index = Number.isFinite(centerIdx) ? centerIdx : 0;
   const from = Math.max(0, index - TRANSLATE_WINDOW_BEHIND);
   const to = Math.min(state.captions.length, index + TRANSLATE_WINDOW_AHEAD);
@@ -1216,7 +1255,6 @@ function translateWindow(centerIdx, token = state.loadToken) {
 }
 
 function translateVisibleRows() {
-  if (state.webStudy) return;
   const list = $('te-transcript-list');
   if (!list || !state.captions.length) return;
   const top = list.scrollTop;
@@ -1319,18 +1357,15 @@ function updateSubtitleDisplayModeLabels() {
     const label = option.querySelector('.te-subtitle-mode-label');
     if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
   });
-  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual', { notify:false });
+  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
 }
 
-function setSubtitleDisplayMode(mode, { notify = true } = {}) {
+function setSubtitleDisplayMode(mode) {
   const root = overlayEl();
   const menu = $('te-subtitle-mode-menu');
   const trigger = $('te-subtitle-mode-trigger');
   const modes = ['bilingual', 'primary', 'translation', 'hidden'];
   if (!root || !menu || !trigger || !modes.includes(mode)) return false;
-  if (notify && state.webStudy && (mode === 'translation' || mode === 'bilingual')) {
-    reportWebIssue(mode === 'translation' ? 'Web translation subtitles are not configured.' : 'Web mode has no translation track; showing Reader text only.');
-  }
   modes.forEach((name) => root.classList.remove(`te-subtitle-mode-${name}`));
   root.classList.add(`te-subtitle-mode-${mode}`);
   root.classList.toggle('te-subs-hidden', mode === 'hidden');
@@ -1446,7 +1481,16 @@ async function refreshSubtitleLanguageSettings() {
   translateQueue = [];
   updateSubtitleLanguageLabels();
   refreshVideoUiLocalization();
-  if (state.webStudy) return;
+  if (state.webStudy) {
+    if (state.rawCues.length) {
+      const language = state.webDetectedLanguage || state.captionTrackLanguage || state.webLanguageHint;
+      const refreshedCues = markWebReaderCues(state.rawCues, language);
+      state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
+      state.activeIdx = -1;
+      if (state.open) { renderTranscriptList(); onTimeUpdate(); }
+    }
+    return;
+  }
 
   if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
@@ -3555,7 +3599,6 @@ function bindUI() {
   const saveSubtitleLanguage = (key, value, button) => {
     const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'en', 'vi', 'ko'];
     if (!allowed.includes(value)) return;
-    if (state.webStudy) { reportWebIssue('Web subtitle language selection is not configured.'); return; }
     // Update the active overlay immediately; persistence continues to use the
     // single Dashboard translation settings object.
     if (key === 'sourceLanguage') state.sourceLanguageSetting = value;
@@ -3567,7 +3610,15 @@ function bindUI() {
     translationSettingsRevision++;
     translateQueue = [];
     updateSubtitleLanguageLabels();
-    if (state.videoId) {
+    if (state.webStudy) {
+      if (state.rawCues.length) {
+        const language = state.webDetectedLanguage || state.captionTrackLanguage || state.webLanguageHint;
+        const refreshedCues = markWebReaderCues(state.rawCues, language);
+        state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
+        state.activeIdx = -1;
+        if (state.open) { renderTranscriptList(); onTimeUpdate(); }
+      }
+    } else if (state.videoId) {
       state.loadToken++;
       prefetchToken++;
       state.loadingFor = null;
