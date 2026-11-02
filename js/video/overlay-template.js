@@ -1090,7 +1090,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
     /* Chế độ rạp: video bo góc như chế độ kết hợp; ambient phủ kín toàn màn hình (cả 2 khung đen hai bên) */
     #keepit-exact-overlay.te-sidebar-hidden .te-video-slot { background-color: #11111100; border-radius: 12px; overflow: hidden; }
-    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px !important; clip-path: inset(0 round 12px) !important; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,
