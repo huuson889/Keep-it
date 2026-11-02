@@ -40,5 +40,5 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.995: web open success/failure VM, shortcut/integration assertions, 56 JS syntax, manifest/docs và diff checks passed.
+- v3.4.996: `webStudyApi` lexical declaration check; 56 JS syntax, manifest/docs, content CSS parse và diff checks passed.
 - Browser QA chưa chạy: xác nhận Chrome web overlay/thumbnail/TTS và video replay auto cắt, manual phát đầy đủ.

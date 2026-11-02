@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.995; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.4.996; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
 - Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%; sau 100%, keydown đầu tiên trong `te-dict-input` trả về chế độ nhập. Speaking auto-record mặc định bật: mọi auto-start sau cue/repeat chờ 1s; sau `onend` mở lại recognition; gộp transcript và chấm một lần sau 1,5s im lặng, reset timer theo speech; replay attempt auto-record cắt 1,5s grace cuối, không đổi recognition/scoring; auto-record tắt vẫn phát đầy đủ. Chấm sai phát cue một lần rồi auto-mic sau cue +1s; toast/nhãn ghi âm hiện suốt lượt ghi; tắt công tắc giữ manual flow. Speaking ẩn nút chấm điểm, dàn đều bốn nút video, mic playback dùng gradient tím mini-play, compact video dùng icon headphones; popup VI giữ màu/copy 15 mốc %, Spring Pop; tự ẩn sau 6s hoặc Enter; EN/KO giữ inline. Thống kê từ sai tách `wrongWordStats` (Typing) và `speakingWrongWordStats` (Speaking), không nhập dữ liệu cũ. Repeat/cue, bố cục 25:50:25 và font `te-dict-stats-host` giữ nguyên.
 - Video: Dictation learning có `learningViewSize` riêng, mặc định S; S/M/L chỉ điều khiển cột, không đổi kích thước video. Auto-record đồng bộ style với translation; audio card giảm chiều dọc 20%, giữ cỡ chữ. Speaking work area giữ CSS v3.4.938; `.te-dict-translation` full-width dưới hint; bản dịch mặc định bật và nhớ tùy chọn; mic auto chỉ còn vòng tím trong cùng. Popup dịch/đọc tiếng video có tùy chọn riêng trong `lhnYouTubeSettings`, mặc định bật; cài đặt chung giữ nguyên. Auto-hide thanh điều khiển ở Large là runtime; nếu tự ép ẩn thì reset khi rời mode hoặc `pagehide`, còn lựa chọn ẩn thủ công được giữ. Control bar Dictation dùng track đối xứng để play/pause nằm giữa.
@@ -118,6 +118,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<videoId>` để phục hồi mục thiếu, thống kê lỗi từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-02 | v3.4.996 | Arena.ai Agent sửa:**
+
+- Web Dictation: khai báo cache `webStudyApi`; tạo adapter không còn ném `ReferenceError` trước khi mở overlay.
+- File: `js/dictation/dictation.js`, `docs/modules/dictation.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `webStudyApi` lexical declaration assertion; 56 JS syntax; manifest v3.4.996/41 paths; docs 599/693/654/685 từ; content CSS 536 rules; `git diff --check` đạt. Browser QA chưa thực hiện.
 
 **2026-11-02 | v3.4.995 | Arena.ai Agent sửa:**
 

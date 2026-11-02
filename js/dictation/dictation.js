@@ -5,6 +5,7 @@
   const thumbnails = globalThis.LHN_THUMBNAILS;
   let A = null;
   let ui = null;
+  let webStudyApi = null;
   let active = false;
   let openingPanel = false;
   let openingGeneration = 0;
