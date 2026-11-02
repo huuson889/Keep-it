@@ -79,7 +79,8 @@ const state = {
   loop: false,
   pauseReasons: new Set(),
   hoverPauseReasons: new Set(),
-  hoverPauseSuppressedReasons: new Map(),
+  hoverPauseSuppressionActive: false,
+  hoverPauseSuppressionRevision: null,
   hoverPointer: null,
   hoverPointerRevision: 0,
   hoverPauseModeChangeRevision: null,
@@ -221,13 +222,21 @@ const HOVER_PAUSE_ZONES = [
 ];
 
 function activateHoverPause(reason) {
-  if (state.hoverPauseReasons.has(reason) || state.hoverPauseSuppressedReasons.has(reason)) return;
+  if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.has(reason)) return;
   if (state.hoverPauseModeChangeRevision === state.hoverPointerRevision) {
-    state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
+    beginHoverPauseSuppression();
     return;
   }
   state.hoverPauseReasons.add(reason);
   pauseVideoFor(reason);
+}
+
+function beginHoverPauseSuppression({ requirePauseZone = false } = {}) {
+  if (requirePauseZone && !getHoverPauseReasonsAtPointer().size) return false;
+  state.hoverPauseSuppressionActive = true;
+  state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
+  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+  return true;
 }
 
 function releaseHoverPause(reason) {
@@ -262,18 +271,26 @@ function getHoverPauseReasonsAtPointer() {
 function syncHoverPauseAtPointer(suppressCurrent = false) {
   const nextReasons = getHoverPauseReasonsAtPointer();
   if (suppressCurrent) {
-    for (const reason of [...state.hoverPauseReasons, ...nextReasons]) {
-      state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
+    if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.size || nextReasons.size) {
+      beginHoverPauseSuppression();
     }
-    for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
     return;
   }
 
-  for (const [reason, revision] of state.hoverPauseSuppressedReasons) {
-    if (revision === state.hoverPointerRevision) continue;
-    if (nextReasons.has(reason)) state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
-    else state.hoverPauseSuppressedReasons.delete(reason);
+  if (state.hoverPauseSuppressionActive) {
+    if (state.hoverPointerRevision !== state.hoverPauseSuppressionRevision) {
+      if (nextReasons.size) state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
+      else {
+        state.hoverPauseSuppressionActive = false;
+        state.hoverPauseSuppressionRevision = null;
+      }
+    }
+    if (state.hoverPauseSuppressionActive) {
+      for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+      return;
+    }
   }
+
   // Activate the next zone first so crossing between pause zones never resumes the video briefly.
   for (const reason of nextReasons) activateHoverPause(reason);
   for (const reason of [...state.hoverPauseReasons]) {
@@ -283,11 +300,10 @@ function syncHoverPauseAtPointer(suppressCurrent = false) {
 
 function suppressHoverPauseForModeChange() {
   state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
-  const reasons = new Set([...state.hoverPauseReasons, ...getHoverPauseReasonsAtPointer()]);
-  for (const reason of reasons) {
-    state.hoverPauseSuppressedReasons.set(reason, state.hoverPointerRevision);
-  }
-  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+  const isOverPauseZone = state.hoverPauseSuppressionActive
+    || state.hoverPauseReasons.size > 0
+    || getHoverPauseReasonsAtPointer().size > 0;
+  if (isOverPauseZone) beginHoverPauseSuppression();
 }
 
 function scheduleHoverPauseSync({ modeChange = false } = {}) {
@@ -311,7 +327,8 @@ function clearHoverPauseState() {
   state.hoverPointer = null;
   state.hoverPointerRevision = 0;
   state.hoverPauseModeChangeRevision = null;
-  state.hoverPauseSuppressedReasons.clear();
+  state.hoverPauseSuppressionActive = false;
+  state.hoverPauseSuppressionRevision = null;
   for (const { reason } of HOVER_PAUSE_ZONES) {
     state.hoverPauseReasons.delete(reason);
     resumeVideoFor(reason);
@@ -2730,8 +2747,8 @@ function onTranscriptClick(e) {
   const index = Number(row.dataset.idx);
   const cap = state.captions[index];
   if (!cap) return;
+  beginHoverPauseSuppression({ requirePauseZone: true });
   translateWindow(index);
-  resumeVideoFor('subtitle-sidebar-hover');
   v.currentTime = cap.start;
   v.play().catch(() => {});
 }

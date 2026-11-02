@@ -34,13 +34,13 @@ Module dựng overlay Dual Subtitles trên YouTube, quản lý player/caption, d
 - Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
 - Bốn subtitle mode, ba video mode; Reading video/giữa S/M/L 32/35%, 26/45%, 20/60%. VI `videoMedium`: “Vừa”, `videoViewSize`: “Kích thước xem”; shortcut bỏ qua editable.
 - `.te-control-play` là con trực tiếp của `.te-control-bar`; các track grid đối xứng quanh track 34px ở giữa để tâm nút trùng tâm hình học của thanh. Giữ `.te-ctrl-group` đầu làm `primaryGroup` cho Dictation; `.te-yt-logo-box` phải được phép co bằng `flex`/`min-width: 0`.
-- Khi đổi mode dưới vùng `.te-sub-en`/`.yt-dual-item`, suppress hover pause đến lúc con trỏ rời vùng; resume nếu pause do hover, nhưng giữ pause thủ công và các reason khác. Rời vùng sẽ re-arm; đóng overlay xóa suppression.
+- Đổi mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` bật suppression chung; re-arm khi rời cả hai vùng. Resume pause do hover, giữ pause thủ công/reason khác; đóng overlay xóa suppression.
 - Reading toggle giữ player; reset khi rời mode. `.te-dict-brand` dùng chung Dictation, scale theo video. Ambient “Chế độ nghệ thuật” có switch menu, bật dùng Ambient 3. Settings: `.te-modal-body` 4px 0; ẩn `#te-reading-width-hint`; art trước hide-controls.
 - `lhnYouTubeSettings` lưu cài đặt overlay; ngôn ngữ subtitle lấy từ `lhnStudyTranslationSettings`; ngôn ngữ giao diện lấy từ `lhnSettings`.
 - Cache transcript tiếp tục dùng Map LRU trong trang và cache bền hiện có; giữ giới hạn, TTL, khóa và luồng `BILINGUAL_TRANSLATE`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading ratios, brand scale, ambient direct toggle/Ambient 3, toggle X/mini-play, tâm grid/play logo shrink, hover suppress/resume/re-arm và manual pause, CSS, `git diff --check`.
+- Static/mock: `node --check` JS, parse manifest; kiểm tra EN/VI/KO, nhãn “Vừa”, Reading ratios, brand scale, ambient direct toggle/Ambient 3, toggle X/mini-play, tâm grid/play logo shrink, hover mode/click suppression, exit re-arm, manual pause, CSS, `git diff --check`.
 - Mock/source assertions: selection trong primary transcript được phép; dòng dịch/UI video bị loại; selection thông thường vẫn qua luồng hiện có. Kiểm tra storage change cập nhật nhãn video và Dictation mà không reset trạng thái panel.
 - Browser QA: Reading toggle cạnh X, video/audio và play/pause, responsive/theme, reset khi rời mode; mode khác, popup selection, language changes, generic page selection. Static checks không thay browser test.
