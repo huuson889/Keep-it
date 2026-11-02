@@ -17,6 +17,7 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 | [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | Shadow DOM styles. |
 | [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Provider-neutral session metadata. |
 | [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Player, captions, overlay. |
+| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadSource` | Mini-audio source thumbnail and fallback. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `t` | EN/VI/KO UI strings. |
 
 ## 3. Luồng chính
@@ -30,7 +31,7 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Dùng chung overlay/player, `.te-dict-brand`; Web recognition dùng detected/page language và URL thật; YouTube giữ English gate. UI/caption fonts giữ nguyên.
+- Dùng chung overlay/player, `.te-dict-brand`; Web recognition dùng detected/page language và URL thật; YouTube giữ English gate. Mini-audio dùng chung `LHN_THUMBNAILS.loadSource` cho URL/fallback; UI/caption fonts giữ nguyên.
 - Auto-record: one-shot recognition (`continuous=false`), rearm `onend`; gộp transcript, chấm sau 1,5 giây im lặng reset theo speech. Replay bỏ 1,5 giây cuối; manual giữ continuous/full replay. Sai thì cue, mic lại sau 1 giây.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop, tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync bật mặc định; khi tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; wrong-word stats/summary tách mode.

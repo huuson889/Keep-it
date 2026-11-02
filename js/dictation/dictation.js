@@ -1916,10 +1916,12 @@
     const title = cleanVideoTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent) || cleanVideoTitle(document.title);
     ui.miniTitle.textContent = `Keepit - ${title || tr("dictationTitle")}`;
     ui.miniSource.textContent = tr("dictationAudioSource");
-    const id = String(A?.state?.videoId || "");
-    if (thumbnails?.youtubeVideoId(id)) {
+    const isWebSource = A?.state?.webStudy === true;
+    const sourceUrl = String(isWebSource ? A?.state?.webPageUrl || globalThis.location?.href || "" : globalThis.location?.href || "");
+    const thumbnailUrl = isWebSource ? thumbnails?.fromPageMetadata?.(document, sourceUrl) || "" : "";
+    if (thumbnails?.loadSource) {
       ui.miniThumb.hidden = false;
-      thumbnails.loadYouTube(ui.miniThumb, id, { onError:() => { ui.miniThumb.hidden = true; } });
+      thumbnails.loadSource(ui.miniThumb, { url:sourceUrl, thumbnailUrl, onError:() => { ui.miniThumb.hidden = true; } });
     } else {
       ui.miniThumb.hidden = true;
       thumbnails?.clear(ui.miniThumb);
