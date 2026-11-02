@@ -368,19 +368,6 @@ const OVERLAY_CSS = `
 
     .te-modal-backdrop.hidden { display: none !important; }
 
-    #keepit-exact-overlay.te-web-study-mode .te-web-study-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-    #keepit-exact-overlay.te-web-study-mode .te-web-study-image[hidden] { display: none !important; }
-    #keepit-exact-overlay.te-web-study-mode #te-video-mode-menu [data-video-mode="theater"],
-    #keepit-exact-overlay.te-web-study-mode #te-video-mode-menu [data-video-mode="combined"] { display: none !important; }
-    #keepit-exact-overlay.te-web-reading-mode #te-dictation-center,
-    #keepit-exact-overlay.te-web-reading-mode #te-dictation-notes,
-    #keepit-exact-overlay.te-web-reading-mode #te-dict-sentence-area,
-    #keepit-exact-overlay.te-web-reading-mode .te-dict-column-splitter,
-    #keepit-exact-overlay.te-web-reading-mode .te-dict-column-restore,
-    #keepit-exact-overlay.te-web-reading-mode .te-dict-toolbar-tools,
-    #keepit-exact-overlay.te-web-reading-mode .te-dict-video-mask { display: none !important; }
-    #keepit-exact-overlay.te-web-study-mode .yt-dual-item-vi:empty { display: none !important; }
-
     /* Modal Box - Dynamically positioned to the LEFT of te-settings-btn */
     .te-modal-box {
       position: fixed;
@@ -1740,6 +1727,3 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     </div>
   </div>
 `;
-
-
-globalThis.LHN_OVERLAY_TEMPLATE = Object.freeze({ html:OVERLAY_HTML, css:OVERLAY_CSS });

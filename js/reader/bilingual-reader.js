@@ -809,6 +809,9 @@
     // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
     return visibleReaderText(block);
   }
+  globalThis.LHN_READER_MAIN_SOURCE = Object.freeze({
+    getTextBlocks: () => readerBlocks().map(rawText).filter(text => String(text || "").trim()),
+  });
   function lastReaderCharacterRect(block) {
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
     let anchor = null;
@@ -1290,10 +1293,4 @@
     }, 900);
   });
   pageObserver.observe(document.documentElement, { childList:true, subtree:true });
-
-  // Shared provider hook: Dictation consumes the same main-content blocks as Alt+R/Alt+A.
-  globalThis.LHN_READER_MAIN_SOURCE = Object.freeze({
-    getTextBlocks: () => readerBlocks(true).map(rawText).filter(text => String(text || "").trim()),
-    stopReading:closeReadingBar,
-  });
 })();

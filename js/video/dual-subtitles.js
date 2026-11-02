@@ -88,7 +88,235 @@ const state = {
   hoverPauseSyncFrame: null,
   managedPauseVideo: null,
   popupObserver: null,
+  webStudy: false,
+  webLanguageHint: '',
+  webPageUrl: '',
+  webThumbnail: null,
 };
+
+let webDictationShortcut = String(globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
+void globalThis.LHN_SETTINGS?.get?.().then((stored) => {
+  webDictationShortcut = String(stored?.dictationShortcut ?? globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
+}).catch((error) => console.warn('[Keepit Web] Could not load the Dictation shortcut setting', error));
+globalThis.LHN_SETTINGS?.subscribe?.((stored) => {
+  webDictationShortcut = String(stored?.dictationShortcut ?? globalThis.LHN_DEFAULTS?.settings?.dictationShortcut ?? 'Alt+F').toLowerCase();
+});
+
+function showWebToast(message) {
+  let toast = document.getElementById('lhn-sidebar-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'lhn-sidebar-toast';
+    toast.setAttribute('role', 'status');
+    document.documentElement.appendChild(toast);
+  }
+  toast.textContent = String(message || 'Keepit web mode is unavailable.');
+  toast.classList.add('is-visible');
+  clearTimeout(toast._lhnWebToastTimer);
+  toast._lhnWebToastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+}
+
+function reportWebIssue(message, error = null, { level = 'warn', toast = true } = {}) {
+  const log = level === 'error' ? console.error : console.warn;
+  log.call(console, '[Keepit Web]', message, error || '');
+  if (toast) {
+    const locale = String(state.displayLanguage || 'en').toLowerCase().split('-')[0];
+    const isUnconfigured = /not configured/i.test(String(message || ''));
+    const localized = {
+      en: isUnconfigured ? 'This feature is not configured for web mode.' : 'Web mode encountered an error. Check the console for details.',
+      vi: isUnconfigured ? 'Chức năng này chưa được cấu hình cho chế độ web.' : 'Chế độ web gặp lỗi. Xem console để biết chi tiết.',
+      ko: isUnconfigured ? '이 기능은 웹 모드에서 아직 설정되지 않았습니다.' : '웹 모드에서 오류가 발생했습니다. 자세한 내용은 콘솔을 확인하세요.',
+    };
+    showWebToast(localized[locale] || localized.en);
+  }
+}
+
+function splitReaderSentences(blocks) {
+  const output = [];
+  const hint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || '');
+  let segmenter = null;
+  try { segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(hint || undefined, { granularity: 'sentence' }) : null; } catch {}
+  for (const block of Array.isArray(blocks) ? blocks : []) {
+    const text = String(block || '').replace(/\s+/gu, ' ').trim();
+    if (!text) continue;
+    const parts = segmenter
+      ? [...segmenter.segment(text)].map((part) => part.segment.trim())
+      : text.split(/(?<=[.!?。！？])\s+/u).map((part) => part.trim());
+    output.push(...parts.filter(Boolean));
+  }
+  return output;
+}
+
+async function detectWebTtsLanguage(text, fallbackLanguage) {
+  const tts = globalThis.LHN_TTS;
+  const declared = String(fallbackLanguage || '').replace(/_/g, '-');
+  const declaredBase = declared.split('-')[0].toLowerCase();
+  if (/[\p{Script=Arabic}]/u.test(text) && ['ar', 'fa', 'ur', 'ps', 'sd'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
+  if (/[\p{Script=Cyrillic}]/u.test(text) && ['ru', 'uk', 'be', 'bg', 'sr', 'mk'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
+  if (/[\p{Script=Han}]/u.test(text) && ['ja', 'zh'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
+  const direct = tts?.detectReadLanguage?.(text);
+  if (direct) return direct;
+  const scriptHints = [
+    [/\p{Script=Arabic}/u, 'ar-SA'], [/\p{Script=Hebrew}/u, 'he-IL'], [/\p{Script=Greek}/u, 'el-GR'],
+    [/\p{Script=Armenian}/u, 'hy-AM'], [/\p{Script=Georgian}/u, 'ka-GE'], [/\p{Script=Khmer}/u, 'km-KH'],
+    [/\p{Script=Lao}/u, 'lo-LA'], [/\p{Script=Myanmar}/u, 'my-MM'], [/\p{Script=Ethiopic}/u, 'am-ET'],
+    [/\p{Script=Sinhala}/u, 'si-LK'], [/\p{Script=Tamil}/u, 'ta-IN'], [/\p{Script=Telugu}/u, 'te-IN'],
+    [/\p{Script=Kannada}/u, 'kn-IN'], [/\p{Script=Malayalam}/u, 'ml-IN'], [/\p{Script=Gurmukhi}/u, 'pa-IN'],
+  ];
+  for (const [pattern, language] of scriptHints) if (pattern.test(text)) return language;
+  return await tts?.detectLanguage?.(text, fallbackLanguage) || tts?.normalizeLanguage?.(fallbackLanguage) || fallbackLanguage;
+}
+
+function createWebTtsMedia(cues) {
+  const listeners = new Map();
+  let currentTime = 0, paused = true, playbackRate = 1, muted = false, generation = 0;
+  const media = {
+    videoWidth: 16, videoHeight: 9, volume: 1, controls: false,
+    addEventListener(type, listener) {
+      if (!listener) return;
+      const set = listeners.get(type) || new Set(); set.add(listener); listeners.set(type, set);
+    },
+    removeEventListener(type, listener) { listeners.get(type)?.delete(listener); },
+    dispatchEvent(event) {
+      for (const listener of [...(listeners.get(event.type) || [])]) {
+        try { typeof listener === 'function' ? listener.call(media, event) : listener.handleEvent?.(event); }
+        catch (error) { reportWebIssue('The web overlay media event failed.', error, { level: 'error' }); }
+      }
+      return true;
+    },
+    get currentTime() { return currentTime; },
+    set currentTime(value) {
+      const next = Math.max(0, Math.min(cues.length, Number(value) || 0));
+      const changed = Math.abs(next - currentTime) > 0.0001;
+      currentTime = next;
+      media.dispatchEvent(new Event('timeupdate'));
+      if (changed && !paused) {
+        generation++;
+        media._cancelCurrent();
+        if (next >= cues.length) { paused = true; media.dispatchEvent(new Event('pause')); return; }
+        media._startCue(Math.floor(next));
+      }
+    },
+    get duration() { return cues.length; },
+    get paused() { return paused; },
+    get playbackRate() { return playbackRate; },
+    set playbackRate(value) {
+      playbackRate = Math.max(0.5, Math.min(2, Number(value) || 1));
+      media.dispatchEvent(new Event('ratechange'));
+    },
+    get muted() { return muted; },
+    set muted(value) {
+      muted = Boolean(value);
+      if (media._currentAudio) media._currentAudio.muted = muted;
+      media.dispatchEvent(new Event('volumechange'));
+    },
+    _currentAudio: null,
+    _cancelCurrent() {
+      try { media._currentAudio?.pause?.(); } catch {}
+      media._currentAudio = null;
+      try { globalThis.speechSynthesis?.cancel?.(); } catch {}
+    },
+    _startCue(index) {
+      if (paused || index < 0 || index >= cues.length) return;
+      const cue = cues[index];
+      const text = String(cue?.en || '').trim();
+      const token = ++generation;
+      let failed = false;
+      const active = () => state.webStudy && state.videoEl === media && !paused && token === generation;
+      const finish = () => {
+        if (!active()) return;
+        if (failed) { paused = true; media.dispatchEvent(new Event('pause')); return; }
+        currentTime = state.loop ? cue.start : cue.end;
+        media.dispatchEvent(new Event('timeupdate'));
+        const next = state.loop ? index : index + 1;
+        if (next < cues.length) media._startCue(next);
+        else { paused = true; media.dispatchEvent(new Event('pause')); media.dispatchEvent(new Event('ended')); }
+      };
+      if (!text) { finish(); return; }
+      const tts = globalThis.LHN_TTS;
+      if (!tts?.play || !tts?.detectLanguage) {
+        reportWebIssue('The shared TTS engine is unavailable.', null, { level: 'error' });
+        failed = true; finish(); return;
+      }
+      const fallbackLanguage = String(state.webLanguageHint || navigator.language || 'en-US');
+      Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then((lang) => {
+        if (!active()) return;
+        const normalized = tts.normalizeLanguage?.(lang || fallbackLanguage) || lang || fallbackLanguage;
+        const base = String(normalized).replace(/_/g, '-').split('-')[0].toLowerCase() || 'en';
+        return tts.play({
+          text, lang: normalized, googleLanguage: base, voice: `google-translate-default:${base}`,
+          rate: () => playbackRate, isActive: active,
+          setCurrent(audio) { media._currentAudio = audio; if (audio) audio.muted = muted; },
+          clearCurrent() { media._currentAudio = null; },
+          systemSpeak(speechText, speechLanguage, done, browserVoiceURI) {
+            const synth = globalThis.speechSynthesis;
+            const Utterance = globalThis.SpeechSynthesisUtterance;
+            if (!synth || !Utterance) { done({ unsupported: true }); return; }
+            if (muted) { done(); return; }
+            const normalizeTag = (value) => String(value || '').trim().replace(/_/g, '-').toLowerCase();
+            const target = normalizeTag(speechLanguage), languageBase = target.split('-')[0];
+            const voices = synth.getVoices();
+            const voice = voices.find((item) => item.voiceURI === browserVoiceURI)
+              || voices.find((item) => normalizeTag(item.lang) === target)
+              || voices.find((item) => normalizeTag(item.lang).split('-')[0] === languageBase);
+            if (!voice) { done({ unsupported: true }); return; }
+            const utterance = new Utterance(speechText);
+            utterance.lang = voice.lang || speechLanguage;
+            utterance.rate = playbackRate;
+            utterance.voice = voice;
+            utterance.onend = done; utterance.onerror = done;
+            synth.speak(utterance);
+          },
+          onGoogleVoiceFailed(error) { failed = true; reportWebIssue('Google TTS failed for a web sentence.', error, { level: 'error' }); },
+          onGoogleLimitReached() { reportWebIssue('Google TTS usage limit reached; trying the configured browser voice.'); },
+          onGoogleAudioSlow(error) { reportWebIssue('Google TTS audio could not be loaded.', error); },
+          onBrowserVoiceUnavailable(language) { failed = true; reportWebIssue(`No browser voice is available for ${language || normalized}.`, null, { level: 'error' }); },
+          strictVoice: true,
+          onEnd: finish,
+        });
+      }).catch((error) => {
+        if (!active()) return;
+        failed = true; reportWebIssue('Could not detect the web sentence language for TTS.', error, { level: 'error' }); finish();
+      });
+    },
+    play() {
+      if (!cues.length) { reportWebIssue('Reader has no main-text sentences to read.', null, { level: 'warn' }); return Promise.resolve(); }
+      if (!paused) return Promise.resolve();
+      if (currentTime >= cues.length) currentTime = 0;
+      paused = false;
+      media.dispatchEvent(new Event('play'));
+      media._startCue(Math.min(cues.length - 1, Math.floor(currentTime)));
+      return Promise.resolve();
+    },
+    pause() {
+      if (paused) return;
+      paused = true; generation++; media._cancelCurrent();
+      media.dispatchEvent(new Event('pause'));
+    },
+  };
+  return media;
+}
+
+function prepareWebStudy() {
+  state.webStudy = true;
+  state.webPageUrl = location.href;
+  state.webLanguageHint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || navigator.language || 'en-US');
+  let blocks = [];
+  try { blocks = globalThis.LHN_READER_MAIN_SOURCE?.getTextBlocks?.() || []; }
+  catch (error) { reportWebIssue('Could not read the Reader main-text blocks.', error, { level: 'error' }); }
+  const sentences = splitReaderSentences(blocks);
+  const cues = sentences.map((text, index) => ({ id: index, start: index, end: index + 1, en: text, vi: '', mainText: text }));
+  let hash = 2166136261;
+  for (const char of location.href) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  state.videoId = `web-${(hash >>> 0).toString(16)}`;
+  state.videoEl = createWebTtsMedia(cues);
+  state.rawCues = cues; state.allCues = cues; state.captions = cues;
+  state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = state.webLanguageHint;
+  state.mainLanguage = state.webLanguageHint; state.loadingFor = null; state.primaryNeedsTranslation = false;
+  state.loadToken++; loadedUntil = 0;
+  if (!sentences.length) reportWebIssue('Reader did not provide any main-text sentences for this page.', null, { level: 'warn' });
+  return cues.length;
+}
 
 // Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
 const PRELOAD_SECONDS = 300;
@@ -960,14 +1188,11 @@ function queueCueTranslation(cue, token, field, text, targetLanguage) {
 function queueCue(cue, token) {
   if (!cue) return;
   if (cue.mainNeedsTranslation) queueCueTranslation(cue, token, 'mainText', cue.mainTranslationInput || cue.en, state.mainLanguage);
-  if (cue.secondaryNeedsTranslation) {
-    const targetLanguage = shadow?.host?.id === 'lhn-web-dictation-host' ? 'vi' : state.targetLanguage;
-    queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, targetLanguage);
-  }
+  if (cue.secondaryNeedsTranslation) queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, state.targetLanguage);
 }
 
 function translateWindow(centerIdx, token = state.loadToken) {
-  if (!state.captions.length) return;
+  if (state.webStudy || !state.captions.length) return;
   const index = Number.isFinite(centerIdx) ? centerIdx : 0;
   const from = Math.max(0, index - TRANSLATE_WINDOW_BEHIND);
   const to = Math.min(state.captions.length, index + TRANSLATE_WINDOW_AHEAD);
@@ -976,6 +1201,7 @@ function translateWindow(centerIdx, token = state.loadToken) {
 }
 
 function translateVisibleRows() {
+  if (state.webStudy) return;
   const list = $('te-transcript-list');
   if (!list || !state.captions.length) return;
   const top = list.scrollTop;
@@ -1068,26 +1294,28 @@ function updateSubtitleDisplayModeLabels() {
   if (!menu || !trigger) return;
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
   const keys = {
     bilingual: 'videoSubtitleBilingual',
-    primary: isWebOverlay ? 'languageEnglish' : 'videoSubtitlePrimary',
-    translation: isWebOverlay ? 'languageVietnamese' : 'videoSubtitleTranslation',
-    hidden: isWebOverlay ? 'videoSubtitleHiddenState' : 'videoSubtitleHidden',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
   };
   menu.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
     const label = option.querySelector('.te-subtitle-mode-label');
     if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
   });
-  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
+  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual', { notify:false });
 }
 
-function setSubtitleDisplayMode(mode) {
+function setSubtitleDisplayMode(mode, { notify = true } = {}) {
   const root = overlayEl();
   const menu = $('te-subtitle-mode-menu');
   const trigger = $('te-subtitle-mode-trigger');
   const modes = ['bilingual', 'primary', 'translation', 'hidden'];
   if (!root || !menu || !trigger || !modes.includes(mode)) return false;
+  if (notify && state.webStudy && (mode === 'translation' || mode === 'bilingual')) {
+    reportWebIssue(mode === 'translation' ? 'Web translation subtitles are not configured.' : 'Web mode has no translation track; showing Reader text only.');
+  }
   modes.forEach((name) => root.classList.remove(`te-subtitle-mode-${name}`));
   root.classList.add(`te-subtitle-mode-${mode}`);
   root.classList.toggle('te-subs-hidden', mode === 'hidden');
@@ -1097,12 +1325,11 @@ function setSubtitleDisplayMode(mode) {
     item.classList.toggle('is-selected', selected);
     item.setAttribute('aria-checked', String(selected));
   });
-  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
   const keys = {
     bilingual: 'videoSubtitleBilingual',
-    primary: isWebOverlay ? 'languageEnglish' : 'videoSubtitlePrimary',
-    translation: isWebOverlay ? 'languageVietnamese' : 'videoSubtitleTranslation',
-    hidden: isWebOverlay ? 'videoSubtitleHiddenState' : 'videoSubtitleHidden',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
   };
   const languages = globalThis.LHN_LANGUAGES;
   const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
@@ -1111,7 +1338,6 @@ function setSubtitleDisplayMode(mode) {
   trigger.dataset.subtitleMode = mode;
   trigger.title = `${selectorLabel}: ${label}`;
   trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
-  if (isWebOverlay && (mode === 'bilingual' || mode === 'translation')) translateVisibleRows();
   return true;
 }
 
@@ -1152,12 +1378,9 @@ function setVideoSidebarHidden(hidden) {
 function applyVideoDisplayMode(mode) {
   if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
   overlayEl().classList.remove('te-learning-entry-pending');
-  const isWebOverlay = shadow?.host?.id === 'lhn-web-dictation-host';
-  if (!isWebOverlay) {
-    settings.preferredVideoMode = mode;
-    settings.readingMode = mode === 'reading';
-    saveSettings();
-  }
+  settings.preferredVideoMode = mode;
+  settings.readingMode = mode === 'reading';
+  saveSettings();
   if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
   if (mode === 'reading') {
     setVideoSidebarHidden(false);
@@ -1208,14 +1431,7 @@ async function refreshSubtitleLanguageSettings() {
   translateQueue = [];
   updateSubtitleLanguageLabels();
   refreshVideoUiLocalization();
-
-  if (shadow?.host?.id === 'lhn-web-dictation-host' && state.captions.length) {
-    state.mainLanguage = 'en';
-    state.primaryNeedsTranslation = false;
-    state.secondaryNeedsTranslation = true;
-    if (targetChanged || sourceChanged || targetSettingChanged) globalThis.LHN_WEB_OVERLAY_UI?.translateVisible?.();
-    return;
-  }
+  if (state.webStudy) return;
 
   if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
@@ -1606,7 +1822,6 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   if (modeChanged) suppressHoverPauseForModeChange();
   if (modeChanged) root.classList.remove('te-reading-audio-compact');
   root.classList.toggle('te-reading-mode', active);
-  root.classList.toggle('te-web-reading-mode', active && shadow?.host?.id === 'lhn-web-dictation-host');
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
@@ -1639,7 +1854,8 @@ function createDictationOverlayApi() {
     },
     lang: () => state.displayLanguage,
     getDictationCues: () => {
-      if (state.captionTrackLanguage !== 'en' || !state.allCues.length) return [];
+      if (!state.allCues.length || (!state.webStudy && state.captionTrackLanguage !== 'en')) return [];
+      if (state.webStudy) return state.allCues.map((cue, index) => ({ id:index, start:cue.start, end:cue.end, en:String(cue.en || '').trim() })).filter((cue) => cue.en);
       return dedupeSentences(resegmentBySentence(state.allCues)).map((cue, index) => ({
         id: index,
         start: cue.start,
@@ -1674,6 +1890,7 @@ function buildOverlay() {
   overlayEl().classList.add('te-hidden');
   window.addEventListener('resize', () => syncTheaterFrame());
   bindUI();
+  overlayEl().addEventListener('click', blockUnconfiguredWebDictationControl, true);
   observeTheaterSubtitleLayout();
   refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
@@ -1789,10 +2006,11 @@ function restoreOverlayPageScrollbar() {
 
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
-  const video = document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video');
+  const video = state.webStudy ? state.videoEl : (document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video'));
   const slot = ui('.te-video-slot');
   if (!video || !slot) {
-    alert(videoT('videoNoVideoFound'));
+    if (state.webStudy) reportWebIssue('The shared study overlay could not find its video frame.', null, { level: 'error' });
+    else alert(videoT('videoNoVideoFound'));
     return;
   }
   document.documentElement.classList.add('lhn-video-overlay-open');
@@ -1802,12 +2020,18 @@ function openOverlay() {
   shadow.host.style.display = '';
   state.open = true;
   restorePreferredReadingMode();
-  attachVideo(video, slot);
+  if (state.webStudy) attachWebMedia(video, slot);
+  else attachVideo(video, slot);
+  if (state.webStudy) {
+    if (state.captions.length) { setStatus(''); renderTranscriptList(); }
+    else setStatus('');
+  }
   onTimeUpdate();
   startAppPopupObserver();
   setVideoTitle();
   extendLoadedWindow();
-  if (state.captions.length === 0 && state.loadingFor !== state.videoId) loadCaptions();
+  if (!state.webStudy && state.captions.length === 0 && state.loadingFor !== state.videoId) loadCaptions();
+  if (state.webStudy) setSubtitleDisplayMode('primary');
 }
 
 function closeOverlay() {
@@ -1831,8 +2055,21 @@ function closeOverlay() {
   detachVideo();
 }
 
+function blockUnconfiguredWebDictationControl(event) {
+  if (!state.webStudy) return;
+  const control = event.composedPath?.().find((node) => node?.id === 'te-dictation-mode-btn' || node?.id === 'te-speaking-mode-btn');
+  if (!control) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  const mode = control.id === 'te-speaking-mode-btn' ? 'speaking' : 'typing';
+  reportWebIssue(`The ${mode} Dictation mode is not configured for web pages.`);
+}
+
 function beginDictationMode(mode) {
   const selectedMode = mode === 'speaking' ? 'speaking' : 'typing';
+  if (state.webStudy) {
+    reportWebIssue(`The ${selectedMode} Dictation mode is not configured for web pages.`);
+    return;
+  }
   if (state.open) {
     if (!globalThis.LHN_DICTATION?.open) return;
     overlayEl()?.classList.add('te-learning-entry-pending');
@@ -1865,6 +2102,7 @@ function toggleDictationTypingControl() {
 
 function toggleDictationFromShortcut(event) {
   if (keepitSiteDisabled) return;
+  if (state.webStudy) { reportWebIssue('Dictation shortcut modes are not configured for web pages.'); return; }
   if (event?.detail?.source === 'typing-control') {
     toggleDictationTypingControl();
     return;
@@ -1963,6 +2201,38 @@ function syncTheaterFrame() {
   frame.style.height = `${Math.round(h)}px`;
   scheduleTheaterSubtitleLayout(root);
 }
+function attachWebMedia(media, slot) {
+  if (state.videoEl && state.videoEl !== media) detachVideo();
+  state.videoEl = media;
+  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
+  const image = document.createElement('img');
+  image.className = 'te-web-page-thumbnail';
+  image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
+  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;cursor:pointer;user-select:none;';
+  image.addEventListener('click', handleOverlayVideoClick);
+  frame.replaceChildren(image);
+  state.webThumbnail = image;
+  const thumbnails = globalThis.LHN_THUMBNAILS;
+  const thumbnailUrl = thumbnails?.fromPageMetadata?.(document, location.href) || '';
+  if (thumbnails?.loadSource) thumbnails.loadSource(image, { url: location.href, thumbnailUrl, onError:() => reportWebIssue('The page thumbnail and fallback image could not be loaded.', null, { level: 'error' }) });
+  else if (thumbnails?.fallbackSvgUrl) image.src = thumbnails.fallbackSvgUrl();
+  else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level: 'error' });
+
+  media.addEventListener('timeupdate', onTimeUpdate);
+  media.addEventListener('play', handleVideoPlay);
+  media.addEventListener('pause', handleVideoPause);
+  media.addEventListener('ratechange', handleVideoRateChange);
+  media.addEventListener('volumechange', handleVideoVolumeChange);
+  state.videoGeometryHandler = () => {
+    if (state.videoEl !== media) return;
+    syncVideoAspect(media); syncTheaterFrame();
+  };
+  media.addEventListener('loadedmetadata', state.videoGeometryHandler);
+  syncVideoAspect(media); syncTheaterFrame();
+  syncPlayButton(); syncSpeedButton(); syncMuteButton();
+  onTimeUpdate(); syncReadingAudioControls();
+}
+
 function attachVideo(video, slot) {
   if (state.videoEl && state.videoEl !== video) detachVideo();
   const frame = slot.querySelector(':scope > .te-video-frame') || slot;
@@ -2008,6 +2278,22 @@ function detachVideo() {
   const v = state.videoEl;
   if (!v) return;
   stopAmbient();
+  if (state.webStudy) {
+    v.removeEventListener('timeupdate', onTimeUpdate);
+    v.removeEventListener('play', handleVideoPlay);
+    v.removeEventListener('pause', handleVideoPause);
+    v.removeEventListener('ratechange', handleVideoRateChange);
+    v.removeEventListener('volumechange', handleVideoVolumeChange);
+    if (state.videoGeometryHandler) { v.removeEventListener('loadedmetadata', state.videoGeometryHandler); state.videoGeometryHandler = null; }
+    v.pause?.();
+    state.webThumbnail?.removeEventListener('click', handleOverlayVideoClick);
+    globalThis.LHN_THUMBNAILS?.clear?.(state.webThumbnail);
+    state.webThumbnail?.remove();
+    state.webThumbnail = null;
+    state.videoEl = null; state.webStudy = false; state.webLanguageHint = ''; state.webPageUrl = '';
+    state.origParent = null; state.origNext = null;
+    return;
+  }
   v.removeEventListener('click', handleOverlayVideoClick);
   v.removeEventListener('timeupdate', onTimeUpdate);
   v.removeEventListener('play', handleVideoPlay);
@@ -2042,11 +2328,16 @@ function ambientMode() {
 function syncAmbientUi() {
   const toggle = $('te-ambient-toggle');
   if (!toggle) return;
-  toggle.checked = ambientMode() !== 'off';
+  toggle.checked = !state.webStudy && ambientMode() !== 'off';
   toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
 }
 function setAmbientMode(mode) {
   if (mode !== 'off' && mode !== '3') return;
+  if (state.webStudy && mode !== 'off') {
+    reportWebIssue('Ambient video effects are not configured for static web thumbnails.');
+    syncAmbientUi();
+    return;
+  }
   settings.ambientStyle = mode;
   settings.ambient = mode !== 'off';
   saveSettings();
@@ -2125,6 +2416,7 @@ function drawAmbient() {
   } catch { stopAmbient(); } // video không cho đọc hình (DRM/cross-origin): tắt hiệu ứng
 }
 function startAmbient() {
+  if (state.webStudy) return;
   stopAmbient();
   overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
@@ -2147,7 +2439,7 @@ function stopAmbient() {
 }
 
 function setVideoTitle() {
-  const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim() || 'YouTube video';
+  const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim() || (state.webStudy ? location.hostname : 'YouTube video');
   const el = ui('.te-video-title-text');
   if (el) el.textContent = t;
   const miniTitle = ui('.te-reading-mini-title');
@@ -2156,7 +2448,11 @@ function setVideoTitle() {
   if (miniSource) miniSource.textContent = videoT('dictationAudioSource');
   const miniThumb = ui('.te-reading-mini-thumb');
   const thumbnails = globalThis.LHN_THUMBNAILS;
-  if (miniThumb && thumbnails?.youtubeVideoId(state.videoId || '')) {
+  if (state.webStudy && miniThumb && thumbnails?.loadSource) {
+    miniThumb.hidden = false;
+    const thumbnailUrl = thumbnails.fromPageMetadata?.(document, location.href) || '';
+    thumbnails.loadSource(miniThumb, { url: location.href, thumbnailUrl, onError:() => { miniThumb.hidden = true; reportWebIssue('The mini-player thumbnail could not be loaded.', null, { level: 'error' }); } });
+  } else if (miniThumb && thumbnails?.youtubeVideoId(state.videoId || '')) {
     miniThumb.hidden = false;
     thumbnails.loadYouTube(miniThumb, state.videoId, { onError:() => { miniThumb.hidden = true; } });
   } else {
@@ -2343,16 +2639,10 @@ function syncMuteButton() {
 }
 
 function toggleFullscreen() {
-  const host = shadow?.host;
-  if (host?.id === 'lhn-web-dictation-host') {
-    if (document.fullscreenElement === host) document.exitFullscreen().catch(() => {});
-    else host.requestFullscreen?.().catch(() => {});
-    return;
-  }
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {});
   } else {
-    host?.requestFullscreen?.().catch(() => {});
+    shadow?.host.requestFullscreen?.().catch(() => {});
   }
 }
 
@@ -2413,7 +2703,7 @@ function onTimeUpdate() {
 
   if (state.captions.length === 0) return;
 
-  if (state.loop && state.activeIdx >= 0) {
+  if (!state.webStudy && state.loop && state.activeIdx >= 0) {
     const cur = state.captions[state.activeIdx];
     if (v.currentTime >= cur.end) {
       v.currentTime = cur.start;
@@ -2427,7 +2717,7 @@ function onTimeUpdate() {
     translateWindow(idx);
   }
   // Overlay đang mở: giữ cửa sổ phụ đề trước vị trí phát 10 phút.
-  if (state.open) extendLoadedWindow();
+  if (state.open && !state.webStudy) extendLoadedWindow();
 }
 
 function setActiveCaption(idx) {
@@ -2555,7 +2845,7 @@ function cleanCues(list) {
 
 // Chỉ dựng danh sách cho phần đã nạp (cửa sổ), không render toàn bộ video dài.
 function applyLoadedWindow() {
-  if (!state.allCues.length) return;
+  if (state.webStudy || !state.allCues.length) return;
   const windowCues = state.allCues.filter((cue) => loadedUntil <= 0 || cue.start < loadedUntil);
   if (!windowCues.length) return;
   state.rawCues = windowCues;
@@ -2566,7 +2856,7 @@ function applyLoadedWindow() {
 
 // Khi overlay mở: nới cửa sổ tới vị trí đang phát + 10 phút (chỉ nới, không thu lại).
 function extendLoadedWindow() {
-  if (!state.allCues.length) return;
+  if (state.webStudy || !state.allCues.length) return;
   const video = state.videoEl || document.querySelector('video');
   const current = Number(video?.currentTime) || 0;
   const duration = Number.isFinite(video?.duration) ? video.duration : Infinity;
@@ -2869,6 +3159,7 @@ async function transcriptFromPlayerApi(videoId, reasons) {
 }
 
 async function loadCaptions() {
+  if (state.webStudy) return;
   const videoId = state.videoId;
   if (!videoId) return;
 
@@ -3255,6 +3546,7 @@ function bindUI() {
   const saveSubtitleLanguage = (key, value, button) => {
     const allowed = key === 'sourceLanguage' ? ['auto', 'en', 'vi', 'ko'] : ['auto', 'en', 'vi', 'ko'];
     if (!allowed.includes(value)) return;
+    if (state.webStudy) { reportWebIssue('Web subtitle language selection is not configured.'); return; }
     // Update the active overlay immediately; persistence continues to use the
     // single Dashboard translation settings object.
     if (key === 'sourceLanguage') state.sourceLanguageSetting = value;
@@ -3591,90 +3883,10 @@ function bindUI() {
   modalExport.querySelector('.te-export-submit-btn').addEventListener('click', runExport);
 }
 
-// Bind the existing overlay controls to an ordinary-page overlay without changing YouTube routing.
-let webOverlayBoundShadow = null;
-let webOverlayBoundMedia = null;
-async function bindWebOverlayControls(shadowRoot, payload = {}) {
-  if (!shadowRoot?.getElementById?.(OVERLAY_ID)) return false;
-  if (shadow && shadow !== shadowRoot && shadow.host?.id === HOST_ID) return false;
-  shadow = shadowRoot;
-  const firstBind = webOverlayBoundShadow !== shadowRoot;
-  if (firstBind) {
-    settings = await restoreSettings();
-    await refreshSubtitleLanguageSettings();
-  }
-  state.open = false;
-  state.loadToken++;
-  state.videoId = String(payload.videoId || 'web-study');
-  state.captionTrackLanguage = 'en';
-  state.mainLanguage = 'en';
-  state.primaryNeedsTranslation = false;
-  state.secondaryNeedsTranslation = true;
-  state.activeIdx = -1;
-  state.captions = (Array.isArray(payload.cues) ? payload.cues : []).map((cue, index) => {
-    const readerCue = cue && typeof cue === 'object' ? cue : {};
-    const mainText = String(readerCue.en || readerCue.text || readerCue.mainText || '');
-    const translated = String(readerCue.vi || '').trim();
-    return {
-      ...readerCue,
-      start: Number.isFinite(Number(readerCue.start)) ? Number(readerCue.start) : index,
-      end: Number.isFinite(Number(readerCue.end)) ? Number(readerCue.end) : index + 1,
-      mainText,
-      vi: translated && translated !== PENDING ? translated : PENDING,
-      mainNeedsTranslation: false,
-      secondaryNeedsTranslation: true,
-      secondaryTranslationInput: mainText,
-    };
-  }).filter(cue => cue.mainText.trim());
-  state.allCues = state.captions;
-  state.rawCues = state.captions;
-  state.videoEl = null;
-  if (firstBind) {
-    bindUI();
-    refreshVideoUiLocalization();
-    applySettings();
-    webOverlayBoundShadow = shadowRoot;
-  }
-  renderTranscriptList();
-  const media = payload.media || null;
-  if (webOverlayBoundMedia && webOverlayBoundMedia !== media) {
-    webOverlayBoundMedia.removeEventListener('timeupdate', onTimeUpdate);
-    webOverlayBoundMedia.removeEventListener('play', handleVideoPlay);
-    webOverlayBoundMedia.removeEventListener('pause', handleVideoPause);
-    webOverlayBoundMedia.removeEventListener('ratechange', handleVideoRateChange);
-    webOverlayBoundMedia.removeEventListener('volumechange', handleVideoVolumeChange);
-  }
-  state.videoEl = media;
-  if (media && webOverlayBoundMedia !== media) {
-    media.addEventListener('timeupdate', onTimeUpdate);
-    media.addEventListener('play', handleVideoPlay);
-    media.addEventListener('pause', handleVideoPause);
-    media.addEventListener('ratechange', handleVideoRateChange);
-    media.addEventListener('volumechange', handleVideoVolumeChange);
-    webOverlayBoundMedia = media;
-  }
-  state.currentTime = Number(media?.currentTime) || 0;
-  onTimeUpdate();
-  syncPlayButton();
-  syncSpeedButton();
-  syncMuteButton();
-  return true;
-}
-
-globalThis.LHN_WEB_OVERLAY_UI = Object.freeze({
-  bind: bindWebOverlayControls,
-  translateVisible() {
-    const root = overlayEl();
-    const bounds = root?.getBoundingClientRect?.();
-    const wantsTranslation = root?.classList.contains('te-subtitle-mode-bilingual')
-      || root?.classList.contains('te-subtitle-mode-translation');
-    if (wantsTranslation && bounds?.width && bounds?.height) translateVisibleRows();
-  },
-});
-
 // ---------- Theo dõi điều hướng của YouTube ----------
 // Keepit có thể bị tắt trên riêng website này (Alt+Z) — khi đó ẩn nút mở và đóng overlay.
 let keepitSiteDisabled = false;
+let keepitSiteGateReady = false;
 async function refreshKeepitGate() {
   try {
     const stored = await browser.storage.local.get('lhnSettings');
@@ -3685,6 +3897,7 @@ async function refreshKeepitGate() {
       return domain && (host === domain || host.endsWith(`.${domain}`));
     });
   } catch { keepitSiteDisabled = false; }
+  keepitSiteGateReady = true;
   if (keepitSiteDisabled) {
     const launcher = document.getElementById(LAUNCHER_ID);
     if (launcher) launcher.style.display = 'none';
@@ -3694,6 +3907,10 @@ async function refreshKeepitGate() {
 
 function tick() {
   if (keepitSiteDisabled) return;
+  if (state.webStudy) {
+    if (location.href !== state.webPageUrl) closeOverlay();
+    return;
+  }
   const isWatch = location.pathname === '/watch';
   const launcher = ensureLauncher();
   const launcherAttached = launcherIsInPlayerControls(launcher);
@@ -3724,6 +3941,23 @@ function tick() {
     setVideoTitle();
   }
 }
+
+async function toggleWebStudyFromShortcut(event) {
+  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || keepitSiteDisabled) return;
+  if (event.isComposing || event.repeat || !webDictationShortcut) return;
+  const pressed = globalThis.LHN_SHORTCUTS?.fromEvent?.(event)?.toLowerCase() || '';
+  if (pressed !== webDictationShortcut) return;
+  const target = event.composedPath?.()[0] || event.target;
+  if (target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]') || target?.isContentEditable) return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  if (!keepitSiteGateReady) { await refreshKeepitGate(); if (keepitSiteDisabled) return; }
+  if (state.open && state.webStudy) { closeOverlay(); return; }
+  if (state.open) closeOverlay();
+  prepareWebStudy();
+  openOverlay();
+}
+
+window.addEventListener('keydown', toggleWebStudyFromShortcut, true);
 
 // Chỉ chạy trên YouTube: Keepit nạp content script cho mọi website nên phải tự giới hạn ở đây.
 if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {

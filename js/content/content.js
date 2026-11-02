@@ -1477,14 +1477,9 @@
     }
     if (websiteDisabled) return;
     const dictationShortcut = String(settings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut).toLowerCase();
-    if (dictationShortcut && pressed === dictationShortcut) {
+    if (dictationShortcut && pressed === dictationShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
       e.preventDefault(); e.stopPropagation();
-      if (!e.repeat) {
-        const isYouTube = /^(www\.)?youtube\.com$/i.test(location.hostname);
-        if (isYouTube) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
-        else if (typeof globalThis.LHN_DICTATION?.toggleWebStudy === "function") void globalThis.LHN_DICTATION.toggleWebStudy();
-        else globalThis.__lhnPendingWebDictationToggle = true;
-      }
+      if (!e.repeat) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
       return;
     }
     const dualSubtitlesShortcut = String(settings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut).toLowerCase();

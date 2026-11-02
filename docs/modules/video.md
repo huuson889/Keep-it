@@ -4,45 +4,42 @@
 
 ## 1. Mục đích và phạm vi
 
-Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation. UI dùng Shadow DOM; trang thường có thể bind các handlers hiện có vào Web Dictation host, không gắn YouTube player.
+Module điều phối overlay YouTube và web-study trên cùng UI/player/API. Reader giữ quyền chọn main text; Dictation giữ scoring/luyện tập.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Nạp template trước controller video và Dictation. |
-| [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `LHN_OVERLAY_TEMPLATE` | Xuất HTML/CSS overlay dùng chung cho video và web adapter. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `openOverlay`, `LHN_WEB_OVERLAY_UI.bind`, `bindUI` | Player, caption, handlers overlay dùng chung. |
-| [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `t` | Bản dịch EN/VI/KO cho UI video và Dictation. |
-| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION` | Nhận API video và làm mới nhãn học khi đổi ngôn ngữ. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp các content modules. |
+| [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Nội dung/style Shadow DOM. |
+| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `toggleWebStudyFromShortcut`, `openOverlay`, `attachWebMedia`, `loadCaptions` | YouTube controller và web adapter. |
+| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Getter các block Reader đã chọn. |
+| [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.detectLanguage`, `play` | Dò ngôn ngữ và phát TTS. |
+| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadSource` | Ảnh metadata và SVG fallback. |
+| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION` | Tích hợp Dictation trên YouTube. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp template/controller. `openOverlay()` tạo Shadow DOM và chuyển player vào slot; `closeOverlay()` hoặc đổi video khôi phục player bằng `detachVideo()`.
-2. `loadCaptions()` lấy cue từ cache, YouTube API/timedtext, transcript panel/tracklist hoặc caption đang hiện; làm sạch rồi dịch qua `LHN_MESSAGING`.
-3. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API` cho Dictation; caption mới phát `lhn-dual-captions-updated`.
-4. Đổi `lhnSettings.language` làm mới nhãn; `lhnStudyTranslationSettings` quản lý ngôn ngữ phụ đề; tùy chọn popup/đọc video lưu riêng ở `lhnYouTubeSettings`.
-5. Transcript chính/Dictation allowlist dùng cài đặt video; dòng dịch/UI khác bị chặn. Trang thường giữ cài đặt chung.
-6. Web `LHN_WEB_OVERLAY_UI.bind` gắn CC/Reading/fullscreen/settings; dùng Reader cues + TTS, Reading-only và ảnh trang thay video. Video Reading giữ toggle mini-audio; YouTube player riêng.
+1. Manifest nạp Reader, template, video controller rồi Dictation. Shortcut lấy từ `LHN_SETTINGS`; YouTube giữ event cũ, trang thường dùng listener của video controller.
+2. Web gọi getter Reader, tạo một cue cho mỗi câu, phát qua `LHN_TTS`; ảnh metadata trang được ưu tiên trước SVG fallback.
+3. Dùng chung `openOverlay()`/Shadow DOM, transcript và player controls. Chỉ Reader text; mode dịch, Dictation và ambient chưa cấu hình vẫn hiện, báo toast + console khi chọn.
+4. YouTube `loadCaptions()` dùng cache, player API/timedtext, transcript panel/tracklist hoặc caption đang hiện; sau đó làm sạch và dịch theo cài đặt.
+5. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; caption YouTube phát `lhn-dual-captions-updated`. Web cues không gọi tải/dịch caption YouTube.
+6. Đóng overlay/đổi URL dừng TTS và dọn adapter; player thật được trả về vị trí gốc.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ thứ tự nạp template → video controller → Dictation. Web-only `LHN_WEB_OVERLAY_UI.bind` gắn controls hiện có; player/`LHN_OVERLAY_API` vẫn thuộc YouTube. Giữ `lhn-overlay-ready`, `lhn-dual-captions-updated`.
-- `ctrl(title)` là API nội bộ; control cần dùng selector ổn định/ID vì `title` hiển thị được dịch theo ngôn ngữ cài đặt.
-- Dịch UI chỉ đổi nhãn/thuộc tính overlay; caption giữ font/màu tùy chỉnh, UI Keepit dùng `--lhn-app-font-family`. Nhãn switch popup/đọc dùng tên ngắn, không lặp mô tả chức năng.
-- Chỉ áp dụng gate selection cho vùng giao diện video của Keepit. Không thay đổi popup, dictionary, note composer hoặc shortcut trên trang thông thường.
-- Với source Auto, ưu tiên mapping caption/audio track; không dùng English mặc định hoặc `isDefault` làm tiêu chí duy nhất.
-- CC có 4 mode; web dùng nhãn English/Vietnamese và chỉ hiện Reading trong view menu, nhưng giữ đủ 4 control. YouTube giữ 3 video modes. Reading S/M/L ratios: 32/35%, 26/45%, 20/60%; shortcut bỏ qua editable.
-- Dictation `learningViewSize` mặc định S; `LHN_OVERLAY_API.syncViewSize` áp dụng. S hiện đủ cột; M ẩn trái; L ẩn trái/phải; video không đổi cỡ.
-- `.te-control-play` là con trực tiếp của `.te-control-bar`; grid đối xứng giữ tâm nút chính giữa. `.te-ctrl-group` đầu vẫn là `primaryGroup` Dictation; `.te-yt-logo-box` được phép co bằng `flex`/`min-width: 0`.
-- Theater + Large chỉ active với `.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active)`. Auto-hide Large là runtime và reset khi exit/`pagehide`; manual hide được giữ. Dictation bỏ Theater geometry; bar fixed đáy.
-- Subtitle tối đa 80% frame/80vw, bo 16px, nền đen/40%; tùy chọn chỉ hiện đúng mode. Swatch nền 32×18px, gap 10px; grip kéo được, double-click reset Y.
-- Y lưu theo tỷ lệ frame (`frame-v1`), migrate viewport legacy một lần; đo lại khi mode/cỡ, resize, video/caption, reset, kéo hoặc phím đổi.
-- Mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` dùng chung hover-pause suppression; re-arm khi rời cả hai. Resume pause do hover, giữ manual/reason khác; xóa khi đóng.
-- `lhnYouTubeSettings` lưu overlay và tùy chọn popup/đọc (mặc định bật); `lhnSettings` không đổi. Locale: `lhnStudyTranslationSettings`/`lhnSettings`.
-- Cache transcript dùng LRU và cache bền; giữ giới hạn, TTL, khóa, `BILINGUAL_TRANSLATE`.
+- Giữ thứ tự `overlay-template.js` → `dual-subtitles.js` → Dictation và hợp đồng `LHN_OVERLAY_API`/events hiện có.
+- Reader getter chỉ dùng `readerBlocks()`/`rawText()`; không đổi thuật toán chọn block hoặc tự tìm lại main text.
+- Web-specific logic ở `dual-subtitles.js`; dùng chung overlay/player, không tạo UI song song. Cue giữ nguyên câu Reader, không tự dịch.
+- Shortcut web bỏ qua YouTube/ô nhập; tôn trọng site-disabled và dọn adapter khi URL đổi.
+- Giữ mọi mode/UI. Mode chưa cấu hình báo toast + console, không ẩn nút; không giả lập English để vượt Dictation gate.
+- YouTube Auto vẫn ưu tiên mapping caption/audio track. Reader/TTS dùng language hint trang rồi dò theo cue.
+- Giữ 4 subtitle/3 video modes, Reading S/M/L ratios 32/35%, 26/45%, 20/60%, Theater geometry, hover-pause và transcript cache LRU/TTL.
+- Giữ `BILINGUAL_TRANSLATE`, `lhnYouTubeSettings`, `lhnStudyTranslationSettings`, `ctrl(title)` và selector/ID ổn định; UI dùng `--lhn-app-font-family`, caption giữ font/màu.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: kiểm tra thứ tự manifest, JavaScript syntax, web-only source hooks, locale keys và `git diff --check`; ghi đúng kết quả lần chạy.
-- Browser QA pending: bốn toolbar controls trên web, Reader transcript/thumbnail, toàn bộ Settings; đồng thời regression test YouTube menu/player.
+- v3.5.0: helper VM mock xác nhận sentence segmentation, Arabic/declared-Cyrillic language hints, TTS cue progression và pause cancellation; 54 JS syntax, parse manifest, `git diff --check` và kiểm tra cấu trúc docs đạt. Không có test runner ở gốc repo.
+- Browser QA còn pending: Alt+F web/YouTube, reader cues một câu mỗi cue, TTS nhiều ngôn ngữ/voice modes, page thumbnail và SVG fallback, close/navigation cleanup, toast/log cho mode chưa cấu hình, cùng Theater/Reading/Combined và subtitle modes.
+- Các kiểm tra lịch sử ở v3.4.971: 56 JS syntax, manifest/CSS/source checks và S/M/L/view-size mocks; không thay thế browser QA.

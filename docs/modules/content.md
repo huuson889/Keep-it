@@ -24,12 +24,11 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 2. `content.js` đọc settings chung từ `LHN_SETTINGS`/`browser.storage.local`; lựa chọn video đọc riêng popup/đọc từ `lhnYouTubeSettings`, rồi dispatch qua các helper và listener.
 3. Khi lưu/sửa/xóa annotation, controller tạo record bằng `LHN_NOTE_COMPOSER` rồi gửi message `ADD`, `UPDATE` hoặc `DELETE` qua `LHN_MESSAGING` tới Background.
 4. Khi trang tải hoặc thay đổi DOM, annotation lấy từ Background; `LHN_ANNOTATION_RESTORE` tìm range và `LHNWebHighlighter` dựng mark, có observer/retry cho trang động.
-5. Shortcut YouTube phát custom event cho Dual Sub/Dictation; trên trang thường, phím Dictation gọi `LHN_DICTATION.toggleWebStudy()` trực tiếp, hoặc đợi API nếu script chưa nạp. Reader/Dashboard giữ event/message tương ứng.
+5. Shortcut YouTube được phát thành custom event; module video xử lý Dual Sub/Dictation. Các action Reader và Dashboard cũng được chuyển qua event/message tương ứng.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không đổi thứ tự nạp trong manifest: các dependency `LHN_*` phải được tạo trước khi `content.js` gọi chúng.
-- `lhn-video-overlay-open` ẩn phần tử body; ngoại lệ phải gồm `#keepit-host` và `#lhn-web-dictation-host` để cả hai overlay còn nhìn thấy.
 - Annotation record đi qua Background; giữ payload `item`, `id`, `url`, `origin` và các loại message mà Dashboard/Sidebar cùng dùng.
 - `web-highlighter.js`, `annotation-restore.js`, `note-composer.js`, `page-layout.js` là các helper/factory; giữ ranh giới chức năng thay vì nhân bản logic vào controller.
 - Các thao tác chọn/chữ không được chặn nhập liệu trong input/contenteditable; giữ guard shortcut và hành vi selection khi sửa listener.
