@@ -35,7 +35,7 @@ Module quản lý overlay phụ đề YouTube, transcript và API cho Dictation.
 - 4 subtitle/3 video modes. Reading S/M/L video/center ratios: 32/35%, 26/45%, 20/60%. VI labels “Vừa”/“Kích thước xem”; shortcuts skip editable.
 - Dictation `learningViewSize` mặc định S; `LHN_OVERLAY_API.syncViewSize` áp dụng. S hiện đủ cột; M ẩn trái; L ẩn trái/phải; video không đổi cỡ.
 - `.te-control-play` là con trực tiếp của `.te-control-bar`; grid đối xứng giữ tâm nút chính giữa. `.te-ctrl-group` đầu vẫn là `primaryGroup` Dictation; `.te-yt-logo-box` được phép co bằng `flex`/`min-width: 0`.
-- Theater + Large chỉ active với `.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active)`. Dictation xóa geometry Theater tạm; khôi phục controls chỉ nếu Large tự ẩn, không ghi đè lựa chọn ẩn thủ công. Bar fixed đáy, nền xuyên mờ/blur.
+- Theater + Large chỉ active với `.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active)`. Auto-hide Large chỉ giữ runtime; exit/`pagehide` reset trạng thái tự ép, giữ preference ẩn thủ công. Dictation bỏ Theater geometry tạm; bar fixed đáy, blur.
 - Subtitle rộng tối đa 80% frame/80vw, bo 16px; giữ mặc định đen/40%. Tùy chọn chỉ hiện trong mode, không heading; swatch nền 32×18px như hai swatch phụ đề, cách thẻ trên 10px. Tay cầm `grab`; double-click phụ đề về Y mặc định.
 - Y lưu theo tỷ lệ frame (`frame-v1`), migrate tọa độ viewport cũ một lần. Đo frame/panel/grip/bar khi đổi mode/cỡ, resize, video/caption, reset/kéo/phím; wrapper `display: contents` ngoài mode.
 - Mode/click transcript dưới `.te-sub-en`/`.yt-dual-item` dùng chung hover-pause suppression; re-arm khi rời cả hai. Resume pause do hover, giữ manual/reason khác; xóa khi đóng.

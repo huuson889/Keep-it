@@ -1120,10 +1120,20 @@ function setSubtitleModeMenuOpen(open) {
 function setVideoSidebarHidden(hidden) {
   const root = overlayEl();
   if (!root) return false;
+  const wasTheaterLarge = isTheaterLargeActive(root);
   const sidebarHidden = Boolean(hidden);
   const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
   if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
+  const isTheaterLarge = isTheaterLargeActive(root);
+  if (!wasTheaterLarge && isTheaterLarge && !settings.hideControls) {
+    settings.hideControls = true;
+    sizeForcedHide = true;
+    saveSettings();
+  } else if (wasTheaterLarge && !isTheaterLarge && sizeForcedHide) {
+    restoreForcedHideControls(root);
+  }
+  root.classList.toggle('te-controls-hidden', Boolean(settings.hideControls || sizeForcedHide));
   if (root.classList.contains('te-ambient-on')) placeAmbient();
   syncTheaterFrame();
   if (!root.classList.contains('te-reading-mode')) {
@@ -1252,13 +1262,21 @@ async function restoreSettings() {
   try {
     const stored = (await browser.storage.local.get(SETTINGS_KEY))[SETTINGS_KEY];
     if (!stored) return d;
-    return mergeSettings(d, stored);
+    const restored = mergeSettings(d, stored);
+    const wasAutoHidden = stored.sizeForcedHide === true;
+    delete restored.sizeForcedHide;
+    if (wasAutoHidden) {
+      restored.hideControls = false;
+      try { await browser.storage.local.set({ [SETTINGS_KEY]: restored }); } catch {}
+    }
+    return restored;
   } catch {
     return d;
   }
 }
 
 let settings = defaultSettings();
+let sizeForcedHide = false;
 // Trả về nhóm màu/cỡ chữ: 'en'|'vi' (phụ đề chính) hoặc 'side-en'|'side-vi' (phụ đề thanh bên)
 function groupRef(g) {
   return g.startsWith('side-') ? settings.side[g.slice(5)] : activeVideoSubtitleSettings()[g];
@@ -1281,6 +1299,15 @@ function isTheaterLargeActive(root = overlayEl()) {
   return Boolean(root && !root.classList.contains('te-reading-mode')
     && !root.classList.contains('te-dictation-active')
     && root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l'));
+}
+
+function restoreForcedHideControls(root = overlayEl()) {
+  if (!sizeForcedHide) return false;
+  sizeForcedHide = false;
+  settings.hideControls = false;
+  saveSettings();
+  root?.classList.toggle('te-controls-hidden', Boolean(settings.hideControls));
+  return true;
 }
 
 function clampTheaterSubtitlePercent(value) {
@@ -1415,7 +1442,10 @@ function applyTheaterSubtitlePresentation(root = overlayEl()) {
 }
 
 function saveSettings() {
-  try { browser.storage.local.set({ [SETTINGS_KEY]: settings }); } catch {}
+  const persisted = { ...settings };
+  delete persisted.sizeForcedHide;
+  if (sizeForcedHide && settings.hideControls) persisted.hideControls = false;
+  try { browser.storage.local.set({ [SETTINGS_KEY]: persisted }); } catch {}
 }
 
 function updateSidebarTranscriptFontSize(root) {
@@ -1449,9 +1479,9 @@ function applySettings() {
 
   root.classList.toggle('theme-dark', settings.theme === 'dark');
   root.classList.toggle('theme-light', settings.theme !== 'dark');
-  root.classList.toggle('te-controls-hidden', !!settings.hideControls);
   root.classList.toggle('hide-vi', isVietnameseHidden());
   syncViewSizeClasses(root);
+  root.classList.toggle('te-controls-hidden', Boolean(settings.hideControls || sizeForcedHide));
   applyTheaterSubtitlePresentation(root);
   updateSidebarTranscriptFontSize(root);
   setOrRemove(root, '--te-side-en-color', settings.side.en.color);
@@ -1539,10 +1569,8 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   pendingDictationOpenImmediately = false;
   const enteringDictation = !active && globalThis.LHN_DICTATION?.isOpen?.();
   const leavingTheaterLarge = root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l');
-  if (enteringDictation && leavingTheaterLarge && settings.sizeForcedHide) {
-    settings.hideControls = false;
-    settings.sizeForcedHide = false;
-    saveSettings();
+  if (enteringDictation && leavingTheaterLarge && sizeForcedHide) {
+    restoreForcedHideControls(root);
   }
   if (active || root.classList.contains('te-sidebar-hidden')) {
     // Learning/Dictation uses its own grid; remove temporary Theater geometry without changing the saved preference.
@@ -3270,7 +3298,7 @@ function bindUI() {
   });
   mainSw[4].addEventListener('change', (e) => {
     settings.hideControls = e.target.checked;
-    settings.sizeForcedHide = false;
+    sizeForcedHide = false;
     saveSettings();
     applySettings();
   });
@@ -3449,10 +3477,9 @@ function bindUI() {
       else settings.size = b.dataset.size;
       if (!isReadingModeActive() && !dictationLearningActive) {
         if (settings.size === 'L') {
-          if (!settings.hideControls) { settings.hideControls = true; settings.sizeForcedHide = true; }
-        } else if (settings.sizeForcedHide) {
-          settings.hideControls = false;
-          settings.sizeForcedHide = false;
+          if (!settings.hideControls) { settings.hideControls = true; sizeForcedHide = true; }
+        } else if (sizeForcedHide) {
+          restoreForcedHideControls();
         }
       }
       saveSettings();
@@ -3599,6 +3626,9 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   document.addEventListener('lhn-youtube-dual-subtitles-toggle', toggleVideoViewFromShortcut);
   document.addEventListener('lhn-youtube-dictation-toggle', toggleDictationFromShortcut);
   document.addEventListener('lhn-dual-captions-updated', openPendingDictationShortcut);
+  window.addEventListener('pagehide', () => {
+    if (isTheaterLargeActive() && sizeForcedHide) restoreForcedHideControls();
+  });
   // Alt+1–3 chuyển chế độ xem theo thứ tự menu, trừ khi focus đang ở vùng nhập văn bản.
   window.addEventListener('keydown', (event) => {
     if (!state.open || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
@@ -3668,7 +3698,10 @@ if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
   browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes[SETTINGS_KEY]) {
+      const wasRuntimeForced = sizeForcedHide && settings.hideControls;
       settings = mergeSettings(defaultSettings(), changes[SETTINGS_KEY].newValue || {});
+      delete settings.sizeForcedHide;
+      if (wasRuntimeForced && settings.hideControls === false) settings.hideControls = true;
       if (overlayEl()) applySettings();
     }
     if (changes[globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings']) {
