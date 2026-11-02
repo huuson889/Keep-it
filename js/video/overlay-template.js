@@ -1099,6 +1099,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-slot { overflow: visible; container-type: normal; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l .te-control-bar { position: relative; z-index: 2; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l .te-sub-container { position: relative; z-index: 2; }
     #keepit-exact-overlay.te-sidebar-hidden.te-ambient-on .te-ambient { -webkit-mask-image: none; mask-image: none; }
     #keepit-exact-overlay.te-ambient-on .te-left-section,
     #keepit-exact-overlay.te-ambient-on .te-control-bar,

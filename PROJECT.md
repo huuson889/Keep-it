@@ -116,6 +116,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+- **2026-11-02 | v3.4.964 | Claude sửa:**
+  - Chế độ rạp, Kích thước Lớn: phụ đề (`.te-sub-container`) nằm trên khung video toàn màn hình (z-index 2). Chỉ đổi lớp hiển thị, không đổi vị trí UI.
+  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+
+
 - **2026-11-02 | v3.4.963 | Claude sửa:**
   - Chế độ rạp, Kích thước xem: bấm Nhỏ/Vừa/Lớn áp dụng ngay (không cần tắt mở lại chế độ rạp). Lớn: khung video cố định toàn màn hình, thanh điều khiển giữ ở đáy như các kích thước khác. Lớn chỉ bật "Ẩn thanh điều khiển" nếu đang tắt; chọn Vừa/Nhỏ thì tắt lại phần đã tự bật (`settings.sizeForcedHide`).
   - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
