@@ -1304,6 +1304,7 @@
     ui.speechAutoToggle.setAttribute("aria-pressed", String(speechAutoRecordEnabled));
     ui.speechAutoToggle.setAttribute("aria-label", label);
     ui.speechAutoToggle.title = label;
+    ui.speechMic?.classList.toggle("auto-record-enabled", speechAutoRecordEnabled);
   }
 
   function updateSpeechMicPlaybackState(playing) {
@@ -1620,7 +1621,7 @@
     setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
     recognition.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
       ? A.state.captionTrackLanguage : "en-US";
-    recognition.continuous = !automatic;
+    recognition.continuous = !(automatic || speechAutoRecordEnabled);
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
@@ -1650,7 +1651,7 @@
     };
     recognition.onend = async () => {
       if (speechRecognition !== recognition) return;
-      if (!automatic && !speechStopRequested
+      if (!automatic && !speechAutoRecordEnabled && !speechStopRequested
         && !["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)
         && active && dictationMode === "speaking" && attemptCurrent === current) {
         try {
@@ -2955,6 +2956,7 @@
     if (statsUpdated) void saveRecord();
     playErrorSound();
     setNotesLocked(!solved.has(current));
+    if (isSpeaking && speechAutoRecordEnabled) playSentence(current, { count: 1 });
   }
 
   // Phát đúng một câu rồi dừng: rAF canh điểm kết thúc (timeupdate chỉ ~4 lần/giây nên dễ trôi sang câu sau).

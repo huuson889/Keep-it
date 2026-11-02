@@ -30,15 +30,15 @@ Dictation luyện caption tiếng Anh YouTube trong overlay/player hiện có, v
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không tạo overlay thứ hai; chỉ dùng cue tiếng Anh và tái dùng player cùng `.te-dict-brand` duy nhất từ video overlay. UI dùng `--lhn-app-font-family`; phụ đề/transcript giữ font riêng.
-- Auto-record runtime, mặc định bật; start 2 giây sau cue/repeat cuối. Auto one-shot chốt tại browser `onend`, không VAD/timer im lặng. Off hoặc Enter/mic giữ manual flow; Typing không đổi.
+- Auto-record mặc định bật: mic mở tay/tự động đều one-shot tới browser `onend`; tắt thì giữ manual continuous. Chấm sai phát cue một lần rồi auto-mic theo delay hiện có 2s.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop, tự ẩn 6s/Enter; EN/KO inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync mặc định bật tại `dictation:progress-sync:v1`; khi tắt, Typing/Speaking giữ snapshot riêng. Notes, translations và error stats dùng chung.
 - Contraction theo allowlist; loại missing, proper nouns, từ 1–3 ký tự và lỗi chỉ khác dấu câu khỏi thống kê. Hint proper noun giữ case/thứ tự và bỏ trùng; `wrongWordStats` schema v3 là heuristic.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo và migration rightScale v1 sang preference v2. Repeat count riêng theo mode.
-- Trong video learning, auto-record cạnh translation, cùng style/state. Audio card thấp 20%; nút/icon nhỏ 20%, font giữ nguyên. `learningViewSize` riêng mặc định S (đủ cột); M ẩn trái; L ẩn trái/phải, video không đổi cỡ. Speaking: `.te-dict-translation` full-width dưới hint như Typing; work giữ v3.4.938; auto-record ở audio card.
+- Learning UI: auto-record cạnh translation; card/nút/icon giảm 20%, font giữ nguyên. `learningViewSize` riêng S mặc định: S đủ cột, M ẩn trái, L ẩn trái/phải; video không đổi cỡ. Speaking mic có ba vòng đường kính mic+2/+4/+6px khi auto bật; `.te-dict-translation` full-width dưới hint; `.te-dict-work` giữ CSS v3.4.938.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.973 passed: 56 JS syntax, 14 CSS parse; Speaking translation width/order scoped, Typing unchanged; manifest, docs and diff checks.
-- Static/mock: `node --check`, manifest, keys EN/VI/KO, cue-end/repeat +2s scheduling, cancel khi off/replay/Enter, auto one-shot `continuous=false` → `onend` → playback-before-grade, manual continuous Enter stop, cleanup, CSS braces và `git diff --check`.
+- v3.4.974 passed: 56 JS syntax, 14 CSS parse; endpoint/retry/ring source assertions; docs and diff checks.
+- Static/mock: syntax, manifest/EN-VI-KO; cue +2s; auto-on manual/auto one-shot → onend → playback-grade; auto-off manual continuous Enter; wrong cue once → auto-mic; cleanup/CSS/diff.
 - Browser QA: toggle, auto-start +2s, browser endpoint/onend rồi playback-grade, manual Enter/Escape, permission/fallback/cleanup, Typing và locale trên Chromium/Firefox/Edge. Static checks không thay browser test.
