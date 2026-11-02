@@ -116,13 +116,6 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-- **2026-11-02 | v3.4.965 | Claude sửa:**
-  - Chế độ rạp, Lớn: phụ đề có lớp nền (mặc định đen, trong suốt 40%) và tay cầm kéo lên xuống, chỉ hiện khi rê vào lớp nền; vị trí không nhớ, chỉ trong phiên. Tùy chọn phụ đề: thêm mục cuối "Nền phụ đề" gồm màu nền và độ trong suốt (bước 5%), cùng kiểu hàng với "Kích thước phụ đề chính".
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
-  - Việc đang mở: nhãn "Nền phụ đề (chế độ rạp • Lớn)", "Màu nền phụ đề", "Độ trong suốt" chưa dịch EN/KO (theo yêu cầu tạm thời).
-
-
 - **2026-11-02 | v3.4.964 | Claude sửa:**
   - Chế độ rạp, Kích thước Lớn: phụ đề (`.te-sub-container`) nằm trên khung video toàn màn hình (z-index 2). Chỉ đổi lớp hiển thị, không đổi vị trí UI.
   - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
