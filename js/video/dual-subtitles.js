@@ -2153,18 +2153,21 @@ function toggleDictationFromShortcut(event) {
   }
   prepareWebStudyForShortcut();
   const dictation = globalThis.LHN_DICTATION;
-  if (state.webStudy) {
-    if (dictation?.isOpen?.()) {
-      dictation.close?.({ restoreView:false });
-      restorePreferredReadingMode();
-    } else beginDictationMode(preferredLearningMode());
-    return;
-  }
   if (pendingDictationShortcut || dictation?.isOpen?.()) {
     closeOverlay();
     return;
   }
   beginDictationMode(preferredLearningMode());
+}
+
+function startWebTtsInViewMode() {
+  if (!state.webStudy || !state.open || !state.videoEl?.paused) return;
+  try {
+    const playback = state.videoEl.play?.();
+    playback?.catch?.((error) => reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' }));
+  } catch (error) {
+    reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' });
+  }
 }
 
 function toggleVideoViewFromShortcut() {
@@ -2173,6 +2176,7 @@ function toggleVideoViewFromShortcut() {
   const dictation = globalThis.LHN_DICTATION;
   if (!state.open) {
     openOverlay();
+    startWebTtsInViewMode();
     return;
   }
   if (pendingDictationShortcut || dictation?.isOpen?.()) {
@@ -2181,6 +2185,7 @@ function toggleVideoViewFromShortcut() {
     dictation?.close?.({ restoreView: false });
     pendingDictationMode = 'typing';
     applyVideoDisplayMode(preferredVideoMode());
+    startWebTtsInViewMode();
     return;
   }
   closeOverlay();
