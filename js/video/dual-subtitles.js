@@ -1117,6 +1117,7 @@ function setVideoSidebarHidden(hidden) {
   if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
   if (root.classList.contains('te-ambient-on')) placeAmbient();
+  syncTheaterFrame();
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
@@ -1518,6 +1519,7 @@ function buildOverlay() {
   const runtime = globalThis.browser || globalThis.chrome;
   if (brandIcon && runtime?.runtime?.getURL) brandIcon.src = runtime.runtime.getURL('assets/icons/icon.svg');
   overlayEl().classList.add('te-hidden');
+  window.addEventListener('resize', () => syncTheaterFrame());
   bindUI();
   refreshVideoUiLocalization();
   $('te-modal-main').classList.add('hidden');
@@ -1786,6 +1788,19 @@ function syncVideoAspect(video) {
   else root.style.removeProperty('--te-video-aspect');
 }
 
+// Chế độ rạp: khung bọc có kích thước pixel đúng bằng video đang hiển thị (không dùng %)
+function syncTheaterFrame() {
+  const root = overlayEl(), slot = ui('.te-video-slot');
+  const frame = slot?.querySelector(':scope > .te-video-frame');
+  if (!root || !slot || !frame) return;
+  const v = state.videoEl;
+  if (!root.classList.contains('te-sidebar-hidden') || !v) { frame.style.width = ''; frame.style.height = ''; return; }
+  const r = slot.getBoundingClientRect();
+  const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
+  const w = Math.min(r.width, r.height * a), h = w / a;
+  frame.style.width = `${Math.round(w)}px`;
+  frame.style.height = `${Math.round(h)}px`;
+}
 function attachVideo(video, slot) {
   if (state.videoEl && state.videoEl !== video) detachVideo();
   const frame = slot.querySelector(':scope > .te-video-frame') || slot;
@@ -1805,8 +1820,9 @@ function attachVideo(video, slot) {
   video.addEventListener('pause', handleVideoPause);
   video.addEventListener('ratechange', handleVideoRateChange);
   video.addEventListener('volumechange', handleVideoVolumeChange);
-  video.addEventListener('loadedmetadata', () => syncVideoAspect(video));
+  video.addEventListener('loadedmetadata', () => { syncVideoAspect(video); syncTheaterFrame(); });
   syncVideoAspect(video);
+  syncTheaterFrame();
   syncPlayButton();
   syncSpeedButton();
   syncMuteButton();
