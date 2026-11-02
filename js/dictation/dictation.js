@@ -2362,7 +2362,10 @@
     ui.inputMarkupContent.style.transform = `translate(${-ui.input.scrollLeft}px, ${-ui.input.scrollTop}px)`;
   }
 
+  let activeMissingInputSlots = [];
+
   function clearInputWrongMarks() {
+    activeMissingInputSlots = [];
     if (!ui?.inputMarkup) return;
     ui.inputMarkup.hidden = true;
     ui.inputMarkupContent?.replaceChildren();
@@ -2424,8 +2427,11 @@
       const missingWords = pattern.expectedIndices.map((wordIndex) => referenceWords[wordIndex]?.display || "").filter(Boolean);
       if (!missingWords.length) continue;
       const slotLengths = missingWords.map((word) => Math.max(2, [...word].length * 2));
-      let replacement = "  ";
-      for (const slotLength of slotLengths) replacement += `${" ".repeat(slotLength)}  `;
+      let replacement = " ";
+      for (let index = 0; index < slotLengths.length; index++) {
+        replacement += " ".repeat(slotLengths[index]);
+        replacement += index < slotLengths.length - 1 ? "  " : " ";
+      }
       edits.push({ start: editStart, end: gapEnd, replacement, slotLengths });
     }
     edits.sort((left, right) => left.start - right.start || left.end - right.end);
@@ -2438,7 +2444,7 @@
       for (const edit of edits) {
         if (edit.start < cursor) continue;
         normalizedValue += originalValue.slice(cursor, edit.start);
-        let slotStart = normalizedValue.length + 2;
+        let slotStart = normalizedValue.length + 1;
         for (const slotLength of edit.slotLengths) {
           missingRanges.push({ start: slotStart, end: slotStart + slotLength, missing: true });
           slotStart += slotLength + 2;
@@ -2471,6 +2477,7 @@
 
     const typedWords = [...value.matchAll(/[\p{L}\p{N}’‘`´']+/gu)];
     const ranges = [...missingRanges];
+    activeMissingInputSlots = missingRanges.map(({ start, end }) => ({ start, end }));
     let typedIndex = 0;
     for (const operation of operations) {
       if (operation.type === "missing") continue;
@@ -3418,7 +3425,28 @@
     escapeFilledAnswer = true;
   }
 
+  function removeMissingInputUnderline(event) {
+    const input = ui?.input;
+    if (!input || !activeMissingInputSlots.length || (event.key !== "Backspace" && event.key !== "Delete")) return false;
+    const selectionStart = input.selectionStart;
+    const selectionEnd = input.selectionEnd;
+    const selected = selectionStart !== selectionEnd;
+    const slot = activeMissingInputSlots.find(({ start, end }) => selected
+      ? selectionStart < end && selectionEnd > start
+      : selectionStart >= start && selectionStart <= end);
+    if (!slot) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const removeStart = selected ? Math.min(selectionStart, slot.start) : slot.start;
+    const removeEnd = selected ? Math.max(selectionEnd, slot.end) : slot.end;
+    input.value = `${input.value.slice(0, removeStart)}${input.value.slice(removeEnd)}`;
+    input.setSelectionRange(removeStart, removeStart);
+    onAnswerInput();
+    return true;
+  }
+
   function onAnswerKeyDown(event) {
+    if ((event.key === "Backspace" || event.key === "Delete") && removeMissingInputUnderline(event)) return;
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();

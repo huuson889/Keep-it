@@ -34,11 +34,11 @@ Dictation luyện caption YouTube trong overlay/player với hai mode `Đánh m�
 - Auto-record bật: manual/automatic dùng `continuous=false`; `onend` mở lại recognition. Nối các segment, reset grace timer khi có speech và chỉ grade sau 1,5 giây im lặng. Tắt auto-record giữ manual continuous. Chấm sai phát cue một lần, rồi mic tự mở sau cue 1 giây.
 - Popup VI dùng ring, 15 mức điểm, Spring Pop và tự ẩn sau 6 giây/Enter; EN/KO dùng card inline. Đổi ngôn ngữ giữ câu, input, progress, notes và mode.
 - Progress sync mặc định bật; khi tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; thống kê từ sai tách riêng theo mode và nhãn tổng hợp đổi theo mode.
-- Hint giữ proper noun/thứ tự, contraction allowlist; thống kê lọc missing, proper nouns, từ 1–3 ký tự, lỗi chỉ khác dấu câu. Typing: mọi từ thiếu trước từ kế tiếp căn đúng có gạch đỏ, hai space hai bên; gợi ý theo công tắc.
+- Hint giữ proper noun/thứ tự, contraction allowlist; thống kê lọc missing, proper nouns, từ ngắn, lỗi chỉ khác dấu câu. Typing: mọi từ thiếu trước từ kế tiếp đúng có gạch đỏ, một space mỗi bên; Backspace/Delete xóa trọn slot một lần; gợi ý theo công tắc.
 - Grid mặc định video:khu vực học:ghi chú = 25:50:25; giữ giới hạn kéo, migration rightScale v1 sang preference v2 và repeat count riêng theo mode.
 - Learning UI: auto-record cạnh translation; S/M/L ẩn 0/1/2 cột biên, giữ cỡ video. Control bar dùng bốn track hai bên đối xứng và play/pause ở track giữa. Mic một vòng tím; translation dưới hint; `.te-dict-work` CSS v3.4.938. `.te-dict-wg` bỏ padding, viền `#059669`; speech word dùng `.te-dict-w` (14px). Click result/error token mở Full Dict; multi-select nối bằng dấu cách; target/`enjoy` cho select.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.4.990: 54 JS syntax, 466 CSS rules; alignment + DOM mock cho nhiều từ thiếu, khoảng trắng hai bên và hint on/off; manifest/docs/diff đạt.
-- Browser QA chưa chạy: kiểm tra nhiều từ thiếu trước từ kế tiếp đúng, khoảng cách thật, công tắc hint và mẫu lỗi khác.
+- v3.4.991: 54 JS syntax, 466 CSS rules; mock cho khoảng trắng, nhiều từ thiếu, Backspace/Delete nguyên khối và hint on/off; manifest/docs/diff đạt.
+- Browser QA chưa chạy: kiểm tra slot gạch đỏ, một lần xóa, nhiều từ thiếu, hint và mẫu lỗi khác.
