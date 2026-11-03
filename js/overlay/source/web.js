@@ -591,17 +591,18 @@ function webThumbnailCurrentTheme(visualizer, now) {
 
 function webThumbnailEvaluateMotion(mode, motionTime) {
   const baseSafetyScale = 1.12;
+  const motionIntensity = 0.5;
   let dynamicScale = 1;
   let shiftX = 0;
   let shiftY = 0;
   let rotateAngle = 0;
   if (mode === 'breathing') {
-    dynamicScale = 1 + Math.sin(motionTime * 0.4) * 0.05;
+    dynamicScale = 1 + Math.sin(motionTime * 0.4) * 0.05 * motionIntensity;
   } else if (mode === 'pan') {
-    shiftX = Math.sin(motionTime * 0.3) * 0.03;
-    shiftY = Math.cos(motionTime * 0.2) * 0.03;
+    shiftX = Math.sin(motionTime * 0.3) * 0.03 * motionIntensity;
+    shiftY = Math.cos(motionTime * 0.2) * 0.03 * motionIntensity;
   } else if (mode === 'tilt') {
-    rotateAngle = Math.sin(motionTime * 0.25) * 0.02;
+    rotateAngle = Math.sin(motionTime * 0.25) * 0.02 * motionIntensity;
     dynamicScale = 1.03;
   }
   return { scale:baseSafetyScale * dynamicScale, shiftX, shiftY, rotateAngle };

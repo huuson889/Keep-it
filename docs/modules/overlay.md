@@ -35,11 +35,11 @@ Overlay cung cấp một UI cho YouTube và Web Study. `overlay-controller.js` �
 - Study markup/CSS thuộc `overlay-template.js`; selectors, labels, event contracts và hành vi UI phải giữ nguyên khi tách activity behavior.
 - Giữ cấu trúc ngoài `js/overlay/{source,study,view}`; không tạo top-level `js/study/` hoặc `study-controller.js`.
 - Dictation và Shadowing là activities riêng; `study/shared/` chỉ chứa scoring, learning rules, session metadata và behavior thật sự dùng chung. Một số lifecycle/result branches hiện vẫn nằm trong Dictation session shell; cần tách tiếp mà không đổi UX.
-- Web cues tái sử dụng Reader/cache/TTS/translation/thumbnail helpers. Favicon Web/YouTube dùng `LHN_SITE_ICONS`, slot 22×22px và globe fallback. Thumbnail visualizer giữ frame/playback, dùng motion Breathing/Pan/Tilt/Static (0,2×–3,0×; không Pulse), bốn waveform tham chiếu và bảy hiệu ứng random riêng mỗi 30–180 giây với transition mượt; blur ngẫu nhiên 0–10px; bokeh dùng alpha màu glow và radius 2× theo tham chiếu, fade mật độ mượt. YouTube transcript cache/timing thuộc Video source.
+- Web cues tái sử dụng Reader/cache/TTS/translation/thumbnail helpers. Favicon Web/YouTube dùng `LHN_SITE_ICONS`, slot 22×22px và globe fallback. Thumbnail visualizer giữ frame/playback, dùng motion Breathing/Pan/Tilt/Static (0,2×–3,0×; không Pulse; biên độ giảm 50%), bốn waveform tham chiếu và bảy hiệu ứng random riêng mỗi 30–180 giây với transition mượt; blur ngẫu nhiên 0–10px; bokeh dùng alpha màu glow và radius 2× theo tham chiếu, fade mật độ mượt. YouTube transcript cache/timing thuộc Video source.
 - Dashboard hiện có Dictation sessions/statistics; không có Shadowing practice route. Nếu bổ sung sau, Shadowing Dashboard chỉ dành cho sessions/statistics; practice vẫn ở Overlay.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.39: `node --check` đạt cho 61 JavaScript files; 54 manifest paths tồn tại; focused VM xác nhận bokeh dùng alpha glow/radius 2×, giữ fade mật độ; `git diff --check` đạt. Browser QA chưa chạy.
+- v3.5.40: `node --check` đạt 61 JS files; 54 manifest paths tồn tại; VM xác nhận giảm nửa biên độ, giữ speed/transition; `git diff --check` đạt. Chưa browser QA.
 - Static checks có thể lặp bằng Node, parse `manifest.json`, kiểm tra mọi script path và nạp Study scripts theo manifest order trong một VM context.
 - Browser QA cần xác nhận YouTube/Web switching, cues, TTS, Typing, Shadowing recognition/record/replay, Reader mutual exclusion, shortcuts, cleanup và layout. Static/mock checks không thay thế extension/browser test.
