@@ -487,11 +487,11 @@ function markWebReaderCues(cues, language = state.webDetectedLanguage || state.w
 
 const WEB_THUMBNAIL_LOFI_URL = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop';
 const WEB_THUMBNAIL_THEMES = [
-  { id:'gold', main:'#ffcc00', secondary:'#ff8800', glow:'rgba(255,204,0,.12)' },
-  { id:'cyan', main:'#00ffff', secondary:'#00aaff', glow:'rgba(0,255,255,.12)' },
-  { id:'lavender', main:'#c084fc', secondary:'#8b5cf6', glow:'rgba(192,132,252,.12)' },
-  { id:'white', main:'#ffffff', secondary:'#d1d5db', glow:'rgba(255,255,255,.10)' },
-  { id:'rose', main:'#ff4d6d', secondary:'#c9184a', glow:'rgba(255,77,109,.12)' },
+  { id:'gold', main:'#fffbe8', secondary:'#fbbf24', glow:'rgba(251, 191, 36, 0.45)' },
+  { id:'cyan', main:'#e0f2fe', secondary:'#38bdf8', glow:'rgba(56, 189, 248, 0.45)' },
+  { id:'lavender', main:'#f3e8ff', secondary:'#c084fc', glow:'rgba(192, 132, 252, 0.45)' },
+  { id:'white', main:'#ffffff', secondary:'#94a3b8', glow:'rgba(255, 255, 255, 0.4)' },
+  { id:'rose', main:'#ffe4e6', secondary:'#fb7185', glow:'rgba(251, 113, 133, 0.45)' },
 ];
 let activeWebThumbnailVisualizer = null;
 
@@ -517,12 +517,114 @@ function webThumbnailEstimatedDuration() {
   return `≈ ${String(minutes).padStart(2, '0')}:${remainder}`;
 }
 
+function getWebThumbnailWaveHeight(xIndex, time, freqShift = 1) {
+  return (
+    Math.sin(xIndex * 0.008 + time * 2 * freqShift) * 45 +
+    Math.cos(xIndex * 0.004 - time * 1.5) * 30 +
+    Math.sin(xIndex * 0.015 + time * 3) * 15
+  );
+}
+
+function drawWebThumbnailWaveform(visualizer) {
+  const ctx = visualizer.context;
+  const w = visualizer.width;
+  const h = visualizer.height;
+  const centerY = h * 0.78;
+  const activeColorTheme = visualizer.theme;
+  const currentWaveStyle = visualizer.waveStyle;
+  const globalTime = visualizer.time;
+
+  ctx.save();
+  ctx.shadowColor = activeColorTheme.glow;
+  ctx.shadowBlur = 20;
+
+  if (currentWaveStyle === 1) {
+    const layers = [
+      { opacity: 0.2, speed: 0.8, offset: 0, heightScale: 0.6 },
+      { opacity: 0.4, speed: 1.2, offset: 50, heightScale: 0.8 },
+      { opacity: 0.95, speed: 1.0, offset: 0, heightScale: 1.0 },
+    ];
+
+    layers.forEach((layer) => {
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let x = 0; x <= w; x += 10) {
+        const waveY = centerY + getWebThumbnailWaveHeight(x, globalTime * layer.speed + layer.offset) * layer.heightScale;
+        if (x === 0) ctx.lineTo(x, waveY);
+        else ctx.lineTo(x, waveY);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, centerY - 80, 0, h);
+      grad.addColorStop(0, activeColorTheme.main);
+      grad.addColorStop(0.5, activeColorTheme.secondary);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = layer.opacity;
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+  } else if (currentWaveStyle === 2) {
+    const bars = 90;
+    const barWidth = 6;
+    const gap = (w - (bars * barWidth)) / (bars + 1);
+    ctx.fillStyle = activeColorTheme.main;
+    for (let i = 0; i < bars; i++) {
+      const x = gap + i * (barWidth + gap);
+      const waveVal = Math.abs(getWebThumbnailWaveHeight(i * 12, globalTime * 1.5)) + 12;
+      const barHeight = waveVal * 1.8;
+      const y = centerY - barHeight / 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barWidth, barHeight, 4);
+      ctx.fill();
+    }
+  } else if (currentWaveStyle === 3) {
+    const dots = 75;
+    const step = w / dots;
+    for (let i = 0; i < dots; i++) {
+      const x = i * step + step / 2;
+      const waveVal = getWebThumbnailWaveHeight(i * 10, globalTime * 1.4);
+      const y = centerY + waveVal;
+      const radius = Math.max(2, (Math.abs(waveVal) / 60) * 6 + 2.5);
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = activeColorTheme.main;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x, y + 10);
+      ctx.lineTo(x, y + 35);
+      ctx.strokeStyle = activeColorTheme.glow;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  } else if (currentWaveStyle === 4) {
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = activeColorTheme.main;
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 8) {
+      const waveY = centerY - Math.abs(getWebThumbnailWaveHeight(x, globalTime * 1.3)) * 1.2 - 5;
+      if (x === 0) ctx.moveTo(x, waveY);
+      else ctx.lineTo(x, waveY);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 8) {
+      const waveY = centerY + Math.abs(getWebThumbnailWaveHeight(x, globalTime * 1.3)) * 1.2 + 5;
+      if (x === 0) ctx.moveTo(x, waveY);
+      else ctx.lineTo(x, waveY);
+    }
+    ctx.strokeStyle = activeColorTheme.secondary;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawWebThumbnailVisualizer(visualizer, timestamp) {
   if (!visualizer?.active || activeWebThumbnailVisualizer !== visualizer) return;
   const { context:ctx, width, height, theme } = visualizer;
   const elapsed = Math.min(50, Math.max(0, timestamp - (visualizer.lastTimestamp || timestamp)));
   visualizer.lastTimestamp = timestamp;
-  if (!document.hidden) visualizer.time += elapsed * 0.00072;
+  visualizer.time += 0.012;
   ctx.clearRect(0, 0, width, height);
   const motion = document.hidden ? 0 : elapsed / 16.67;
 
@@ -539,97 +641,7 @@ function drawWebThumbnailVisualizer(visualizer, timestamp) {
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-
-  const time = visualizer.time;
-  const style = visualizer.waveStyle;
-  if (style === 1) {
-    for (let layer = 0; layer < 3; layer++) {
-      ctx.beginPath();
-      ctx.moveTo(0, height * 0.77);
-      for (let x = 0; x <= width; x += 5) {
-        const normalized = x / width;
-        const envelope = Math.pow(Math.sin(Math.PI * normalized), 0.7);
-        const wave = Math.sin(x * 0.018 + time * 4 + layer) * 33
-          + Math.sin(x * 0.045 - time * 2.5 + layer * 2) * 19
-          + Math.sin(x * 0.008 + time * 1.8) * 23;
-        ctx.lineTo(x, height * 0.77 + wave * envelope * (1 - layer * 0.17));
-      }
-      ctx.strokeStyle = layer === 1 ? theme.secondary : theme.main;
-      ctx.lineWidth = layer === 1 ? 2.2 : 3.2;
-      ctx.globalAlpha = layer === 1 ? 0.5 : 0.72;
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = theme.main;
-      ctx.stroke();
-    }
-  } else if (style === 2) {
-    const bars = 90;
-    const gap = 5;
-    const barWidth = (width - gap * (bars - 1)) / bars;
-    const centerY = height * 0.78;
-    const gradient = ctx.createLinearGradient(0, centerY - 145, 0, centerY + 145);
-    gradient.addColorStop(0, theme.secondary);
-    gradient.addColorStop(0.5, theme.main);
-    gradient.addColorStop(1, theme.secondary);
-    ctx.fillStyle = gradient;
-    ctx.shadowBlur = 13;
-    ctx.shadowColor = theme.main;
-    for (let i = 0; i < bars; i++) {
-      const heightPx = (Math.sin(i * 0.2 + time * 3) * 0.5 + 0.5) * 105
-        + (Math.sin(i * 0.55 + time * 2) * 0.5 + 0.5) * 45 + 5;
-      const x = i * (barWidth + gap);
-      ctx.globalAlpha = 0.72;
-      ctx.fillRect(x, centerY - heightPx, barWidth, heightPx * 2);
-    }
-  } else if (style === 3) {
-    const dots = 75;
-    const spacing = width / dots;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = theme.main;
-    for (let i = 0; i < dots; i++) {
-      const x = i * spacing + spacing / 2;
-      const heightPx = (Math.sin(i * 0.24 + time * 2.4) * 0.5 + 0.5) * 110 + 12;
-      ctx.fillStyle = i % 3 === 0 ? theme.secondary : theme.main;
-      ctx.globalAlpha = 0.68;
-      ctx.beginPath();
-      ctx.arc(x, height * 0.79 - heightPx, 2.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.25;
-      ctx.beginPath();
-      ctx.arc(x, height * 0.79 + heightPx, 2.1, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else {
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.78);
-    for (let x = 0; x <= width; x += 4) {
-      const normalized = x / width;
-      const wave = Math.sin(x * 0.012 + time * 3.2) * 48
-        + Math.sin(x * 0.035 - time * 2) * 23
-        + Math.sin(x * 0.005 + time) * 33;
-      ctx.lineTo(x, height * 0.78 + wave * Math.pow(Math.sin(Math.PI * normalized), 0.8));
-    }
-    ctx.strokeStyle = theme.main;
-    ctx.lineWidth = 3.5;
-    ctx.globalAlpha = 0.78;
-    ctx.shadowBlur = 22;
-    ctx.shadowColor = theme.main;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.78);
-    for (let x = 0; x <= width; x += 4) {
-      const normalized = x / width;
-      const wave = Math.sin(x * 0.012 + time * 3.2) * 48
-        + Math.sin(x * 0.035 - time * 2) * 23
-        + Math.sin(x * 0.005 + time) * 33;
-      ctx.lineTo(x, height * 0.78 - wave * Math.pow(Math.sin(Math.PI * normalized), 0.8));
-    }
-    ctx.strokeStyle = theme.secondary;
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.48;
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  ctx.shadowBlur = 0;
+  drawWebThumbnailWaveform(visualizer);
   visualizer.frameId = requestAnimationFrame((nextTimestamp) => drawWebThumbnailVisualizer(visualizer, nextTimestamp));
 }
 
