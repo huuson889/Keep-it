@@ -1204,7 +1204,7 @@ const OVERLAY_CSS = `
       border-radius: 16px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
     }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-subtitle-content {
-      display: flex; flex: 0 1 auto; flex-direction: column; align-items: center; justify-content: center;
+      display: flex; flex: 0 1 auto; flex-direction: column; align-items: stretch; justify-content: center;
       min-width: 0; min-height: 0; width: fit-content; max-width: 100%;
       max-height: max(0px, calc(var(--te-theater-subtitle-max-height, calc(100vh - 100px)) - 24px));
       overflow: auto; overscroll-behavior: contain;
