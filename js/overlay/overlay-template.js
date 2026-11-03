@@ -1209,6 +1209,7 @@ const OVERLAY_CSS = `
       max-height: max(0px, calc(var(--te-theater-subtitle-max-height, calc(100vh - 100px)) - 24px));
       overflow: auto; overscroll-behavior: contain;
     }
+    #keepit-exact-overlay.theme-light.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en { color: #ffff00; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en,
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-vi {
       width: max-content; max-width: 100%; overflow-wrap: anywhere;
