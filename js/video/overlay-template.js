@@ -1332,7 +1332,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               </button>
               <button class="te-video-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-video-mode="combined">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M12 4v16M12 9h9"/></svg>
-                <span class="te-video-mode-label">Chế độ kết hợp</span><kbd>Alt+3</kbd>
+                <span class="te-video-mode-label">Chế độ thường</span><kbd>Alt+3</kbd>
               </button>
             </div>
           </div>
