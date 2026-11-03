@@ -751,6 +751,12 @@ function setVideoTitle() {
   const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim() || (state.webStudy ? location.hostname : 'YouTube video');
   const el = ui('.te-video-title-text');
   if (el) el.textContent = t;
+  const siteIcon = ui('.te-site-favicon');
+  const siteIconFallback = ui('.te-site-icon-fallback');
+  if (siteIcon && window.LHN_SITE_ICONS?.load) {
+    const sourceUrl = state.webStudy ? (state.webPageUrl || location.href) : location.href;
+    void window.LHN_SITE_ICONS.load(siteIcon, sourceUrl, { fallbackElement:siteIconFallback });
+  }
   const miniTitle = ui('.te-reading-mini-title');
   if (miniTitle) miniTitle.textContent = `Keepit - ${t}`;
   const miniSource = ui('.te-reading-mini-source');

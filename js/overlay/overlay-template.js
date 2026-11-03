@@ -220,12 +220,15 @@ const OVERLAY_CSS = `
       text-overflow: ellipsis;
     }
 
-    .te-yt-logo-box svg {
+    .te-yt-logo-box .te-site-favicon,
+    .te-yt-logo-box .te-site-icon-fallback {
       width: 22px;
       height: 22px;
-      color: #ff0000;
-      flex-shrink: 0;
+      flex: 0 0 22px;
     }
+
+    .te-yt-logo-box .te-site-favicon { display: block; object-fit: contain; border-radius: 3px; }
+    .te-yt-logo-box .te-site-icon-fallback { color: #71717a; }
 
     /* Tiêu đề dài bị cắt thì chạy vòng tròn nối đuôi khi hover (JS nhân đôi chữ, đặt --te-title-shift/--te-title-dur và class te-title-run) */
     .te-video-title-label { flex: 1 1 auto; min-width: 0; overflow: hidden; }
@@ -2306,7 +2309,11 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         
         <div class="te-ctrl-group te-control-leading-group">
           <div class="te-yt-logo-box">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            <img class="te-site-favicon" alt="" aria-hidden="true" hidden />
+            <svg class="te-site-icon-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+            </svg>
             <span class="te-video-title-label"><span class="te-video-title-text">The Power Of Practice | You Become What You Practice |...</span></span>
           </div>
           <button class="te-icon-btn" id="te-control-add-vocabulary" title="Thêm vào từ vựng"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>

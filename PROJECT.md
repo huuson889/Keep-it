@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.33; Manifest V3. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers dùng chung ở `study/shared/`.
-- Web thumbnail visualizer chỉ đổi lớp hiển thị trong frame hiện có; bốn waveform đã port theo đúng công thức/render trace của HTML mẫu. Frame geometry và playback/TTS/Reader/translation/cache không đổi.
+- Version hiện tại: v3.5.34; Manifest V3. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers dùng chung ở `study/shared/`.
+- Web thumbnail visualizer và `.te-yt-logo-box` giữ nguyên frame/layout; toolbar dùng `LHN_SITE_ICONS` cho favicon nguồn Web/YouTube, 22×22px. Các hành vi playback/TTS/Reader/translation/cache không đổi.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- Static/VM checks đạt cho v3.5.33; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- Static/VM checks đạt cho v3.5.34; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Study activity refactor
@@ -12,6 +12,7 @@
 
 ### Kiểm thử trình duyệt
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
+- Overlay favicon: xác nhận `.te-yt-logo-box` dùng đúng favicon trang cho Web và YouTube, giữ 22×22px/tiêu đề/bố cục, fallback globe khi không có icon; browser QA pending.
 - YouTube: xác nhận `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở đúng popup/Full Dict; các dòng dịch/control khác bị chặn; hai tùy chọn popup/đọc riêng; Theater + Large: nếu auto-hide khi trước đó tắt, mọi exit kể cả `pagehide` phải giữ hide-controls off; manual hide vẫn được giữ. Normal + Large phải giữ thanh control hiện như Small/Medium; mock v3.5.29 pass. v3.5.30: kiểm tra cursor thường và click xóa selection trên YouTube video/Web thumbnail, playback không đổi; browser QA pending.
 - Web-study/video UI v3.5.25 behavior / v3.5.28 relocation / v3.5.29 control-bar UI fix / v3.5.30 frame interaction / v3.5.32 thumbnail visualizer / v3.5.33 exact waveform port: browser QA pending xác nhận Web TTS đổi tốc độ ngay giữa cue và Pause/Play tiếp đúng vị trí trên Google audio/browser voice, gồm pause giữa chunks và seek khi pause; cùng xác nhận clipping cho Web thumbnail/video thật và visualizer cover/Lo-fi fallback, bốn waveform, năm palettes, metadata, trong giới hạn blur/darkness/bokeh ở normal, Theater + Large, Reading và Dictation; giữ frame size/ratio/position; tiếp tục kiểm tra cho Dictation repeat phát lại đúng cue/count trên Web (không bị nhảy sang câu sau), mọi video shortcut (Alt+E/F, Alt+1–3, 1–4, Space/K, arrows/J/L, </>, Escape) trên Web; xác nhận Web view và Bilingual Reader loại trừ nhau hai chiều; giữ controls hiện trong Web view và ẩn trong learning; Ambient dùng thumbnail (công tắc, ảnh tải muộn, on/off và cleanup); Reading + Ambient cần xác nhận control bar dùng chung nền/blur/viền/bóng ở theme sáng/tối, Ambient tắt không đổi nền, geometry fixed chỉ ở Rạp + Lớn; transcript focus ở Normal/Reading tại 40vh mặc định, scroll tay giữ offset qua cue kế tiếp/mode switch, cue đầu/cuối clamp ở natural boundary như v3.5.20, cue cuộn được căn 40vh; Theater/Dictation không đổi; cùng QA các phím Typing sau khi đạt 100% (v3.5.8), shared subtitle translation trên Web (Reader text primary, BILINGUAL_TRANSLATE secondary, bilingual/translation modes, đổi target language), Reader sentence cues, đa ngôn ngữ TTS/SpeechRecognition, Typing/Speaking, session web mở đúng URL, page thumbnail/SVG fallback, navigation cleanup và toast/log lỗi dịch; xác nhận trực quan góc Web frame v3.5.5; Web cue cache trên Tuổi Trẻ/VnExpress: lần đầu lấy Reader mới, đóng/mở cùng document nhiều lần giữ nguyên cue, reload trích xuất lại, persistent cache hit khi source hash trùng, mục không dùng hết hạn sau 7 ngày và được dọn khi cache được dùng lại; CC mặc định `primary` khi cue cùng ngôn ngữ giao diện, `bilingual` khi khác/chưa rõ, và giữ lựa chọn thủ công. Chưa browser-test.
 - Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
@@ -106,6 +107,7 @@ Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Flashcards / S
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
+Overlay Web + YouTube title bar ──> shared/site-icons.js (LHN_SITE_ICONS) ──> same origin favicon, 22×22 toolbar slot
 Dictation YouTube/Web + Dashboard Dictation + Highlights & Notes sources ──> shared/thumbnails.js (LHN_THUMBNAILS) ──> shared URL/fallback/load logic
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
@@ -126,6 +128,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.34 | Arena.ai Agent sửa:**
+
+- `.te-yt-logo-box` nạp favicon theo nguồn Web/YouTube qua `LHN_SITE_ICONS`; giữ slot 22×22px, fallback globe, title và layout.
+- File: `js/overlay/overlay-template.js`, `js/overlay/overlay-controller.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`; tái sử dụng `js/shared/site-icons.js`, không sửa module này.
+- Kiểm tra: `node --check` đạt cho 59 JS files; 42 manifest script references đều tồn tại; focused VM xác nhận shared loader, manifest order, Web/YouTube source URL, fallback, title/layout giữ nguyên và icon 22px; `git diff --check` đạt. Browser QA chưa chạy.
 
 **2026-11-03 | v3.5.33 | Arena.ai Agent sửa:**
 
