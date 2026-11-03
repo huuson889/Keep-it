@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.48; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Caption Rạp + Lớn được dùng đủ 80vw (cap bù 36px padding) nên chỉ xuống dòng khi thật sự vượt 80vw. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.49; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Caption Rạp + Lớn dùng đủ 80vw: cap bù 36px padding và mỗi dòng EN/VI rộng đúng bằng khung (`align-items: stretch`) nên chỉ xuống dòng khi thật sự vượt 80vw, không bị cắt sớm theo độ rộng dòng dịch. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.48: `node --check` file JS sửa đạt cho caption Rạp + Lớn dùng đủ 80vw (cap bù 36px padding); browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- v3.5.49: `node --check` file JS sửa đạt cho caption Rạp + Lớn: mỗi dòng rộng đúng bằng khung nên chỉ xuống dòng khi thật sự vượt vạch 80% video; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,7 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
-- Caption Rạp + Lớn đủ 80vw (v3.5.48): browser QA pending — câu ≤ 80vw nằm một dòng, chỉ xuống dòng khi vượt 80vw; pill có thể nới rộng tối đa 80vw + 36px khi chữ dài; biến `--te-theater-subtitle-max-width` vẫn ghi đè đúng; vị trí top/transform và drag handle không đổi.
+- Caption Rạp + Lớn đủ 80vw (v3.5.48–49): browser QA pending — câu ≤ 80vw nằm một dòng, chỉ xuống dòng khi vượt 80vw; dòng EN không bị cắt sớm theo độ rộng dòng dịch khi dòng dịch hẹp hơn (`align-items: stretch` ở v3.5.49); pill có thể nới rộng tối đa 80vw + 36px khi chữ dài; biến `--te-theater-subtitle-max-width` vẫn ghi đè đúng; vị trí top/transform và drag handle không đổi.
 - Toast "Bạn đang ở (tên chế độ) rồi" (v3.5.47): browser QA pending — bấm Alt+1/2/3 đúng chế độ xem đang mở thì hiện toast đúng tên mode và ngôn ngữ (EN/VI/KO), tự ẩn sau ~2.4s; bấm khác mode vẫn chuyển như cũ; đang mở Study thì không toast và vẫn chuyển mode; menu chế độ xem đang mở vẫn đóng lại; không ảnh hưởng phím Alt+1–3 khi đang nhập liệu.
 - Kích thước xem Normal/Theater độc lập (v3.5.46): browser QA pending — chọn S/M/L ở Normal không đổi cỡ Theater và ngược lại; chuyển Normal ↔ Theater áp ngay kích thước riêng của mode đích, không thừa hưởng cỡ mode trước và không tự ẩn controls sai; Reading/Study giữ key riêng; auto-hide controls khi chọn L ở Theater vẫn hoạt động; giá trị giữ sau reload và khi mở lại overlay.
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
@@ -138,6 +138,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.49 | Qoder Agent sửa:**
+
+- Sửa caption Rạp + Lớn xuống dòng sớm: `.te-subtitle-content` đổi `align-items: center` thành `stretch` để mỗi dòng EN/VI rộng đúng bằng khung thay vì tự co theo nội dung riêng; trước đó dòng EN có thể bị khóa theo độ rộng dòng dịch (hẹp hơn) nên xuống dòng dù chưa chạm vạch 80% video.
+- File: `js/overlay/overlay-template.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` file JS sửa đạt; browser QA chưa chạy.
 
 **2026-11-04 | v3.5.48 | Qoder Agent sửa:**
 
