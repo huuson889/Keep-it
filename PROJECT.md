@@ -1,12 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.30; Manifest V3. Kiến trúc Overlay/Source/Study/View và thứ tự nạp được mô tả ở mục 4; tài liệu tại `docs/INDEX.md`.
-- Toàn bộ Dictation engine, scoring/rules/style/session helpers nằm trong `js/overlay/study/`; không còn thư mục `js/dictation/`. `overlay-controller.js` tạo API/chọn activity; `shadowing.js` sở hữu Speaking entry và Web TTS controls.
-- Refactor v3.5.28 chỉ đổi cấu trúc/đường dẫn. UI fixes v3.5.29 giới hạn auto-hide ở Theater + Large; v3.5.30 đặt cursor thường và xóa text selection khi click khung video, giữ nguyên play/pause.
-- Static/VM checks và browser-QA status được ghi trong mục 5; browser QA chưa chạy theo các mục mở bên dưới.
+- Version hiện tại: v3.5.31; Manifest V3. Study markup/CSS chuyển vào `overlay-template.js`; activity code ở `study/dictation/` và `study/shadowing/`, helpers dùng chung ở `study/shared/`.
+- Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở, không được hiểu là hoàn tất.
+- TTS, Reader, translation và cache tiếp tục dùng engines/modules ngoài Study. Dashboard hiện không có Shadowing route; nếu thêm sau theo scope đã chốt thì chỉ sessions/statistics, practice ở Overlay.
+- Static/VM checks đạt cho v3.5.31; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Study activity refactor
+- Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
+
 ### Kiểm thử trình duyệt
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
 - YouTube: xác nhận `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở đúng popup/Full Dict; các dòng dịch/control khác bị chặn; hai tùy chọn popup/đọc riêng; Theater + Large: nếu auto-hide khi trước đó tắt, mọi exit kể cả `pagehide` phải giữ hide-controls off; manual hide vẫn được giữ. Normal + Large phải giữ thanh control hiện như Small/Medium; mock v3.5.29 pass. v3.5.30: kiểm tra cursor thường và click xóa selection trên YouTube video/Web thumbnail, playback không đổi; browser QA pending.
@@ -54,10 +57,10 @@ Keepit - Test/
 │   │   ├── overlay-controller.js  # Lifecycle, source/activity routing và content-script bootstrap
 │   │   ├── overlay-template.js    # HTML/CSS của Shadow DOM
 │   │   ├── source/                # video.js (YouTube captions/timing), web.js (Reader cues/virtual media)
-│   │   ├── study/                 # Shadowing/Speaking, Dictation/Writing engine và helpers dùng chung
-│   │   │   ├── shadowing.js       # Speaking entry point và Web TTS controls
-│   │   │   ├── dictation.js       # Existing Typing/Speaking engine, moved without duplication
-│   │   │   └── dictation-*.js, session-index.js # Scoring, rules, styles và provider-neutral sessions
+│   │   ├── study/                 # Distinct Dictation/Writing and Shadowing/Speaking activities
+│   │   │   ├── dictation/dictation.js # Typing + shared session shell; some mode branches remain
+│   │   │   ├── shadowing/         # Speaking activity + entry/Web TTS controls
+│   │   │   └── shared/            # Score, learning rules, session metadata used by consumers
 │   │   └── view/                  # layout-mode.js, cc-mode.js
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS), thumbnails.js (LHN_THUMBNAILS), search.js
@@ -112,17 +115,24 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
 Dashboard Settings (`dualSubtitlesShortcut` Alt+E / `dictationShortcut` Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dual-subtitles-toggle` / `lhn-youtube-dictation-toggle` ──> `js/overlay/overlay-controller.js` ──> shared overlay cho YouTube hoặc Web
 `lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
 Reader (`LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh:true})`) ──> `js/overlay/source/web.js` ──> content-hash sentence cues: same-document memory snapshot + `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` (7-day sliding TTL) ──> lazy `LHN_TTS`/`BILINGUAL_TRANSLATE` existing caches + `LHN_THUMBNAILS` ──> Overlay/Study Dictation UI/engine; reload/URL change refreshes Reader source, unchanged source can reuse persistent cues; YouTube cache stays separate. `view/cc-mode.js` applies cue-language default (same→primary; different/unknown→bilingual; manual choice wins). Reader stop/start exclusivity, shortcuts, controls and Ambient behavior unchanged
-Web TTS (`source/web.js`) ──> `study/shadowing.js` playback controls ──> existing `LHN_TTS` chunk callbacks + retained Audio/SpeechSynthesis handle; live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
+Web TTS (`source/web.js`) ──> `study/shadowing/shadowing.js` playback controls ──> existing `LHN_TTS` chunk callbacks + retained Audio/SpeechSynthesis handle; live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
 YouTube source (`js/overlay/source/video.js`: `state.allCues`, track language, live video) ──> `overlay-controller.js` / View
-  └── `overlay-controller.js` (`LHN_OVERLAY_API`, activity routing) ──> `study/dictation.js` existing engine; `study/shadowing.js` routes Speaking entry and Web TTS
+  └── `overlay-controller.js` (`LHN_OVERLAY_API`, activity routing) ──> `study/dictation/dictation.js` session shell/Typing; `study/shadowing/` Speaking behavior and Web TTS entry
                                   ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
                                   └── browser.storage.local → solved / notes / bản dịch theo source+câu + thống kê từ sai theo video/từ/vị trí
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.31 | Arena.ai Agent sửa:**
+
+- Đưa Study CSS và DOM factory vào `overlay-template.js`; chuyển Typing engine vào thư mục activity Dictation, tách Speaking recognition/recording/replay/feedback vào Shadowing activity, và gom score/rules/session index vào `study/shared/`. Giữ nguyên external Reader/TTS/translation/cache engines. Dashboard Shadowing route không được tạo.
+- File: `js/overlay/overlay-template.js`, `js/overlay/study/dictation/dictation.js`, `js/overlay/study/shadowing/{shadowing.js,shadowing-activity.js}`, `js/overlay/study/shared/{study-score.js,learning-rules.js,session-index.js}`, `js/overlay/study/dictation-style.js` (xóa), `manifest.json`, `pages/dashboard.html`, `README.md`, `OPT-ARENA.md`, `PROJECT.md`, `docs/INDEX.md`, `docs/modules/{overlay,dictation,dashboard}.md`.
+- Kiểm tra: `node --check` đạt cho 61 JavaScript files; 44 manifest script paths đều tồn tại; focused Study VM load/order, tier/status delegation, mock DOM references và CSS preservation assertions đạt; `git diff --check` đạt. Browser QA chưa chạy.
+- Tiếp theo: `dictation.js` vẫn chứa shared session shell cùng mode-dependent submit/progress/keyboard/lifecycle branches; tiếp tục tách phần này trước khi xem refactor hoàn tất. Giữ toàn bộ browser QA pending trong mục 2.
 
 **2026-11-03 | v3.5.30 | Arena.ai Agent sửa:**
 

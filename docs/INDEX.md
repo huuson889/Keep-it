@@ -9,7 +9,7 @@
 | [Core](modules/core.md) | Defaults, config, settings, messaging, languages, cache | Sửa nền tảng dùng chung hoặc thứ tự nạp. |
 | [Dashboard](modules/dashboard.md) | Overview, Listening, Highlights & Notes (LR), flashcards/settings | Sửa `pages/dashboard.html`, LR bridge hoặc chức năng Dashboard. |
 | [Overlay](modules/overlay.md) | Shared Video/Web overlay, Study engine/activities và View modes | Sửa overlay, nguồn Video/Web, Shadowing/Dictation integration hoặc chế độ hiển thị. |
-| [Dictation](modules/dictation.md) | Luyện nghe/gõ, scoring, persistence | Sửa Dictation, cue sync, chấm điểm hoặc tiến độ. |
+| [Study](modules/dictation.md) | Dictation/Writing, Shadowing/Speaking, scoring và session persistence | Sửa Study activities, cue sync, chấm điểm hoặc tiến độ. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
 | [Shared](modules/shared.md) | Fonts, UI icons, site favicon resolver/cache, search index | Sửa helper dùng chung, cache favicon hoặc xác định đúng search API. |

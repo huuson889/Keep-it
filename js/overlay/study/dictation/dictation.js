@@ -9,25 +9,6 @@
   let openingPanel = false;
   let openingGeneration = 0;
   let dictationMode = "typing";
-  let speechRecognition = null;
-  let speechRecognitionError = "";
-  let speechStartPending = false;
-  let speechStartGeneration = 0;
-  let speechStopRequested = false;
-  let speechAutoRecordEnabled = true;
-  let speechCueAutoStartPending = false;
-  let speechAutoStartTimer = 0;
-  let speechEndpointGraceTimer = 0;
-  let speechRecordingToastVisible = false;
-  let speechAnswerRevealed = false;
-  let speechRecorder = null;
-  let speechRecordingStream = null;
-  let speechRecordingChunks = [];
-  let speechRecordingUrl = "";
-  let speechRecordingDiscard = false;
-  let speechRecordingStopPromise = null;
-  let resolveSpeechRecordingStop = null;
-  let speechPlaybackAudio = null;
   let current = 0;
   let checkedCurrent = false;
   let savedPageScrollStyles = null;
@@ -59,8 +40,6 @@
   let indexedVideoTitle = "";
   let saveTimer = 0;
   let toastTimer = 0;
-  let speechToastTimer = 0;
-  let lastSpeechFeedback = null;
   let rafId = 0;
   let repeatLeft = 0;
   let repeatCount = 3;
@@ -70,7 +49,6 @@
   let savedLoop = null;
   let audioCtx = null;
   const translating = new Map();
-  const SPEECH_ENDPOINT_GRACE_MS = 1500;
 
   const language = () => {
     const candidate = A?.lang?.();
@@ -89,6 +67,18 @@
   const dictationLayoutStorageKey = "dictation:layout:v1";
   const progressSyncStorageKey = "dictation:progress-sync:v1";
   const translationVisibilityStorageKey = "dictation:translation-visibility:v1";
+
+  const shadowingActivity = globalThis.LHN_SHADOWING_ACTIVITY_FACTORY.create({
+    get A() { return A; }, get ui() { return ui; }, get active() { return active; },
+    get dictationMode() { return dictationMode; }, get current() { return current; },
+    get sentenceCues() { return sentenceCues; },
+    get attachedVideo() { return attachedVideo; }, get stopAt() { return stopAt; },
+    get captionControlsDisabled() { return captionControlsDisabled; },
+    tr, language, getScoreColorTier, getTranscriptWordTokens,
+    get toastTimer() { return toastTimer; }, set toastTimer(value) { toastTimer = value; },
+    setDictationMode, onAnswerInput, playSentence, endPlayback, submit, setScore, renderProperNounHint,
+    syncCurrentTranslationDisplay, updateRows, resetAnswer, prepareCue, showToast,
+  });
   let progressSyncPreferenceWrite = Promise.resolve();
 
   function progressModeKey(mode = dictationMode) {
@@ -602,14 +592,6 @@
     ui.showRightColumn.addEventListener("click", () => setDictationColumnHidden("right", false));
   }
 
-  function ensureStyle(root = A?.overlayEl?.()) {
-    if (!root || root.querySelector("#te-dictation-style")) return;
-    const style = document.createElement("style");
-    style.id = "te-dictation-style";
-    style.textContent = globalThis.LHN_DICTATION_CSS || "";
-    root.prepend(style);
-  }
-
   function hideYouTubeScrollbar() {
     if (savedPageScrollStyles) return;
     const html = document.documentElement;
@@ -652,7 +634,7 @@
     toast.classList.add("visible");
     clearTimeout(toastTimer);
     toastTimer = 0;
-    speechRecordingToastVisible = kind === "speech-recording";
+    shadowingActivity.speechRecordingToastVisible = kind === "speech-recording";
     if (duration > 0) {
       toastTimer = setTimeout(() => {
         if (toast.dataset.dictToastKind === kind) {
@@ -662,22 +644,6 @@
         toastTimer = 0;
       }, duration);
     }
-  }
-
-  function showSpeechRecordingToast() {
-    showToast(tr("dictationSpeakListening"), 0, "speech-recording");
-  }
-
-  function hideSpeechRecordingToast() {
-    if (!speechRecordingToastVisible) return;
-    const toast = A?.overlayEl?.()?.querySelector?.("#te-dict-toast");
-    if (toast?.dataset.dictToastKind === "speech-recording") {
-      toast.classList.remove("visible");
-      toast.dataset.dictToastKind = "";
-    }
-    clearTimeout(toastTimer);
-    toastTimer = 0;
-    speechRecordingToastVisible = false;
   }
 
   function makeSvg(path) {
@@ -726,15 +692,15 @@
     const miniPlayLabel = tr(video && !video.paused ? "dictationMiniPause" : "dictationMiniPlay");
     ui.miniPlay.title = miniPlayLabel;
     ui.miniPlay.setAttribute("aria-label", miniPlayLabel);
-    updateSpeechMicState(ui.speechMic.classList.contains("listening"));
-    updateSpeechAutoRecordControl();
+    shadowingActivity.updateSpeechMicState(ui.speechMic.classList.contains("listening"));
+    shadowingActivity.updateSpeechAutoRecordControl();
     if (captionStatusKey) ui.loadingStatus.textContent = tr(captionStatusKey);
     if (ui.properNounHint && !ui.properNounHint.hidden) renderProperNounHint(sentenceCues[current]?.en || "");
     updateProgressSyncControl();
     applyDictationColumnLayout();
-    if (lastSpeechFeedback && !ui.success.hidden) {
-      const feedback = lastSpeechFeedback;
-      setSpeechFeedback(feedback.tier, feedback.percent, feedback.sentence, feedback.perfect);
+    if (shadowingActivity.lastSpeechFeedback && !ui.success.hidden) {
+      const feedback = shadowingActivity.lastSpeechFeedback;
+      shadowingActivity.setSpeechFeedback(feedback.tier, feedback.percent, feedback.sentence, feedback.perfect);
     }
     return true;
   }
@@ -742,306 +708,9 @@
   function build() {
     if (ui) return;
     const root = A?.overlayEl?.();
-    const left = root?.querySelector(".te-left-section");
-    const bar = root?.querySelector(".te-control-bar");
-    const groups = bar?.querySelectorAll(".te-ctrl-group");
-    const primaryGroup = groups?.[0];
-    const videoSlot = left?.querySelector(".te-video-slot");
-    const brand = videoSlot?.querySelector(".te-dict-brand");
-    if (!root || !left || !bar || !primaryGroup || !videoSlot || !brand) return;
-    ensureStyle(root);
-
-    const compactAudio = document.createElement("div");
-    compactAudio.className = "te-dict-mini-audio";
-    compactAudio.setAttribute("role", "group");
-    compactAudio.setAttribute("aria-label", tr("dictationAudioTitle"));
-    compactAudio.innerHTML = `
-      <div class="te-dict-mini-art"><img class="te-dict-mini-thumb" alt=""></div>
-      <div class="te-dict-mini-info"><div class="te-dict-mini-title"></div><div class="te-dict-mini-source"></div></div>
-      <div class="te-dict-spectrum" aria-hidden="true">${Array.from({ length: 5 }, () => '<span></span>').join("")}</div>
-      <button class="te-dict-mini-play" type="button"><span class="te-dict-mini-play-icon">${makeSvg('<path d="M8 5v14l11-7z"/>')}</span></button>`;
-    videoSlot.appendChild(compactAudio);
-
-    const sentenceArea = document.createElement("section");
-    sentenceArea.id = "te-dict-sentence-area";
-    sentenceArea.setAttribute("aria-label", tr("dictationSentences"));
-    sentenceArea.innerHTML = `
-      <div id="te-dict-sentence-head">
-        <h2 class="te-dict-heading" data-dict-label="dictationSentences"></h2>
-        <span class="te-dict-counter" id="te-dict-counter" aria-live="polite">0/0</span>
-      </div>
-      <div class="te-dict-loading" id="te-dict-loading" role="status" hidden></div>
-      <div id="te-dict-sentences" role="list"></div>
-      <div class="te-dict-sentence-footer">
-        <button class="te-dict-column-toggle" id="te-dict-hide-sentences" type="button">${makeSvg('<path d="m14 7-5 5 5 5"/>')}</button>
-      </div>`;
-    const subtitleBox = left.querySelector(".te-sub-container");
-    left.insertBefore(sentenceArea, subtitleBox || null);
-
-    const center = document.createElement("section");
-    center.id = "te-dictation-center";
-    center.innerHTML = `
-      <div class="te-dict-panel-head">
-        <h2 class="te-dict-heading">${makeSvg('<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>')}<span data-dict-label="dictationTitle"></span></h2>
-        <span class="te-dict-acc"><span class="te-dict-acc-label" data-dict-label="dictationAccuracy"></span><span class="te-dict-score" id="te-dict-score">---</span></span>
-      </div>
-      <div class="te-dict-center-body">
-        <div class="te-dict-audio-card">
-          <button class="te-dict-audio-btn" id="te-dict-audio-btn" type="button">${makeSvg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>')}</button>
-          <div class="te-dict-audio-text">
-            <div class="te-dict-audio-title"><span data-dict-label="dictationAudioTitle"></span><span class="te-dict-chip" data-dict-label="dictationAudioSource"></span></div>
-            <p data-dict-label="dictationAudioHelp"></p>
-          </div>
-          <button class="te-dict-video-toggle" id="te-dict-video-toggle" type="button" aria-pressed="false"></button>
-          <button class="te-dict-hints-toggle te-dict-speech-auto-toggle active" id="te-dict-speech-auto-toggle" type="button" aria-pressed="true" aria-label="" title="">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles preview-icon" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063L2 12l6.5-2.063A2 2 0 0 0 9.937 8.5L12 2l2.063 6.5A2 2 0 0 0 15.5 9.937L22 12l-6.5 2.063A2 2 0 0 0 14.063 15.5L12 22z"/><path d="M19 22v-4"/><path d="M21 20h-4"/></svg>
-          </button>
-          <button class="te-dict-hints-toggle te-dict-translation-toggle" id="te-dict-translation-toggle" type="button" aria-pressed="true" aria-label="" title="">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages preview-icon" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
-          </button>
-          <button class="te-dict-hints-toggle active" id="te-dict-show-hints" type="button" aria-pressed="true" aria-label="" title="">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb preview-icon" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-          </button>
-        </div>
-        <div class="te-dict-work">
-          <div class="te-dict-success" id="te-dict-success" role="status" hidden><div class="te-dict-speech-toast-ring" id="te-dict-speech-toast-ring" hidden><svg viewBox="0 0 50 50" aria-hidden="true"><circle class="te-dict-speech-toast-ring-bg" cx="25" cy="25" r="21"/><circle class="te-dict-speech-toast-ring-fill" id="te-dict-speech-toast-ring-fill" cx="25" cy="25" r="21" stroke-dasharray="132" stroke-dashoffset="132"/></svg><span id="te-dict-speech-toast-score">0%</span></div>${makeSvg('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>')}<div class="te-dict-success-copy"><span id="te-dict-success-message" data-dict-label="dictationSuccess"></span><span class="te-dict-speech-toast-desc" id="te-dict-speech-toast-desc" hidden></span><span class="te-dict-speech-feedback-sentence" id="te-dict-speech-feedback-sentence" hidden><span data-dict-label="dictationCorrectSentence"></span> <strong id="te-dict-speech-feedback-sentence-text"></strong></span></div><span class="te-dict-speech-feedback-accuracy" id="te-dict-speech-feedback-accuracy" hidden><span data-dict-label="dictationAccuracy"></span> <strong id="te-dict-speech-feedback-accuracy-value"></strong></span></div>
-          <div class="te-dict-speech-practice" id="te-dict-speech-practice" hidden>
-            <div class="te-dict-speech-target" id="te-dict-speech-target"></div>
-            <div class="te-dict-translation" id="te-dict-translation" hidden></div>
-            <div class="te-dict-speech-shortcuts" id="te-dict-speech-shortcuts" data-dict-label="dictationSpeechShortcutHint"></div>
-            <div class="te-dict-speech-result-wrap" id="te-dict-speech-result-wrap" hidden>
-              <div class="te-dict-speech-result-title" data-dict-label="dictationSpeakResult"></div>
-              <div class="te-dict-speech-result" id="te-dict-speech-result" role="status" aria-live="polite"></div>
-            </div>
-            <div class="te-dict-speech-controls-spacer" aria-hidden="true"></div>
-            <div class="te-dict-speech-controls">
-              <button class="te-dict-speech-mic" id="te-dict-speech-mic" type="button" aria-pressed="false">
-                ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
-              </button>
-              <p class="te-dict-speech-help" id="te-dict-speech-help" data-dict-label="dictationSpeakHelp"></p>
-              <p class="te-dict-speech-privacy" data-dict-label="dictationSpeakPrivacy"></p>
-              <div class="te-dict-speech-status" id="te-dict-speech-status" role="status" aria-live="polite"></div>
-            </div>
-          </div>
-          <div class="te-dict-answer-stack">
-            <div class="te-dict-proper-noun-hint" id="te-dict-proper-noun-hint" role="note" aria-live="polite" hidden></div>
-            <div class="te-dict-input-wrap">
-              <textarea class="te-dict-input" id="te-dict-input" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-              <div class="te-dict-input-markup" id="te-dict-input-markup" aria-hidden="true" hidden><div class="te-dict-input-markup-content" id="te-dict-input-markup-content"></div></div>
-            </div>
-            <div class="te-dict-hint" id="te-dict-hint"></div>
-            <div class="te-dict-translation-slot" id="te-dict-translation-slot"></div>
-            <div class="te-dict-error" id="te-dict-error" hidden>
-              <div class="te-dict-error-title">${makeSvg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>')}<span data-dict-label="dictationErrorTitle"></span></div>
-              <div class="te-dict-error-words" id="te-dict-error-words"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="te-dict-footer">
-        <div class="te-dict-repeat">
-          <span class="te-dict-repeat-label" data-dict-label="dictationRepeat"></span>
-          ${[0, 1, 2, 3].map((n) => `<button type="button" class="te-dict-repeat-btn${n === repeatCount ? " active" : ""}" data-count="${n}">${n}x</button>`).join("")}
-        </div>
-        <div class="te-dict-actions">
-          <button type="button" class="te-dict-act" id="te-dict-btn-prev">${makeSvg('<path d="m15 6-6 6 6 6"/>')}<span data-dict-label="dictationPrev"></span></button>
-          <button type="button" class="te-dict-act" id="te-dict-btn-replay">${makeSvg('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>')}<span data-dict-label="dictationReplay"></span></button>
-          <button type="button" class="te-dict-act te-dict-act-primary" id="te-dict-check">${makeSvg('<path d="m5 12 5 5 9-10"/>')}<span data-dict-label="dictationCheck"></span></button>
-          <button type="button" class="te-dict-act" id="te-dict-btn-slow">${makeSvg('<path d="M12 14l4-4"/><path d="M3.3 16a9 9 0 1 1 17.4 0"/>')}<span data-dict-label="dictationSlow"></span></button>
-          <button type="button" class="te-dict-act" id="te-dict-btn-next"><span data-dict-label="dictationNext"></span>${makeSvg('<path d="m9 6 6 6-6 6"/>')}</button>
-        </div>
-      </div>`;
-
-    const notesPanel = document.createElement("section");
-    notesPanel.id = "te-dictation-notes";
-    notesPanel.innerHTML = `
-      <div class="te-dict-panel-head">
-        <h2 class="te-dict-heading">${makeSvg('<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>')}<span data-dict-label="dictationLessonNotes"></span></h2>
-        <div class="te-dict-head-actions">
-          <button class="te-dict-save" id="te-dict-save" type="button"></button>
-          <button class="yt-dual-close-btn te-dict-close" id="te-dict-close" type="button"><span aria-hidden="true">×</span></button>
-        </div>
-      </div>
-      <div class="te-dict-note-body">
-        <div class="te-dict-stats-host">
-          <section class="te-dict-stats-card" aria-label="${tr("dictationWrongStatsTitle")}">
-            <header class="te-dict-stats-head">
-              <div class="te-dict-stats-title-group">
-                <span class="te-dict-stats-icon" aria-hidden="true">${makeSvg('<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>')}</span>
-                <div class="te-dict-stats-title-copy">
-                  <h3 data-dict-label="dictationWrongStatsTitle"></h3>
-                  <p data-dict-label="dictationWrongStatsSummary"></p>
-                </div>
-              </div>
-              <span class="te-dict-stats-count" id="te-dict-stats-count" aria-live="polite"></span>
-            </header>
-            <div class="te-dict-stats-filter-bar" aria-label="${tr("dictationWrongStatsTitle")}">
-              <label class="te-dict-stats-search">
-                ${makeSvg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>')}
-                <input id="te-dict-stats-search" type="search" autocomplete="off">
-              </label>
-              <button class="te-dict-stats-filter active" type="button" data-stats-filter="all" aria-pressed="true"><span data-dict-label="dictationWrongStatsAll"></span></button>
-              <button class="te-dict-stats-filter" type="button" data-stats-filter="needs-fix" aria-pressed="false"><span data-dict-label="dictationWrongStatsNeedsFix"></span></button>
-            </div>
-            <div class="te-dict-stats-scroll" tabindex="0" aria-label="${tr("dictationWrongStatsTitle")}">
-            </div>
-          </section>
-        </div>
-        <div class="te-dict-note-text-wrap">
-          <label class="te-dict-note-label" for="te-dict-note" data-dict-label="dictationGrammarNotes"></label>
-          <textarea class="te-dict-note-input" id="te-dict-note"></textarea>
-        </div>
-        <div class="te-dict-lock" id="te-dict-lock" role="status">
-          <span class="te-dict-lock-icon" aria-hidden="true">${makeSvg('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/>')}</span>
-          <strong data-dict-label="dictationNotesLocked"></strong>
-          <span data-dict-label="dictationNotesLockHelp"></span>
-        </div>
-      </div>
-      <div class="te-dict-note-footer">
-        <button class="te-dict-column-toggle" id="te-dict-hide-notes" type="button">${makeSvg('<path d="m10 7 5 5-5 5"/>')}</button>
-        <span class="te-dict-saved" id="te-dict-saved" aria-live="polite"></span>
-      </div>`;
-
-    const leftColumnSplitter = document.createElement("div");
-    leftColumnSplitter.className = "te-dict-column-splitter te-dict-splitter-left";
-    leftColumnSplitter.setAttribute("role", "separator");
-    leftColumnSplitter.setAttribute("aria-orientation", "vertical");
-    leftColumnSplitter.setAttribute("aria-label", tr("dictationResizeSentencesColumn"));
-    leftColumnSplitter.title = tr("dictationResizeColumnHelp");
-    leftColumnSplitter.setAttribute("aria-description", tr("dictationResizeColumnHelp"));
-    leftColumnSplitter.setAttribute("aria-controls", "te-dict-sentence-area");
-    leftColumnSplitter.tabIndex = 0;
-    const rightColumnSplitter = document.createElement("div");
-    rightColumnSplitter.className = "te-dict-column-splitter te-dict-splitter-right";
-    rightColumnSplitter.setAttribute("role", "separator");
-    rightColumnSplitter.setAttribute("aria-orientation", "vertical");
-    rightColumnSplitter.setAttribute("aria-label", tr("dictationResizeNotesColumn"));
-    rightColumnSplitter.title = tr("dictationResizeColumnHelp");
-    rightColumnSplitter.setAttribute("aria-description", tr("dictationResizeColumnHelp"));
-    rightColumnSplitter.setAttribute("aria-controls", "te-dictation-notes");
-    rightColumnSplitter.tabIndex = 0;
-
-    const showLeftColumn = document.createElement("button");
-    showLeftColumn.className = "te-dict-column-restore te-dict-restore-left";
-    showLeftColumn.type = "button";
-    showLeftColumn.innerHTML = makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16m5-11 3 3-3 3"/>');
-    const showRightColumn = document.createElement("button");
-    showRightColumn.className = "te-dict-column-restore te-dict-restore-right";
-    showRightColumn.type = "button";
-    showRightColumn.innerHTML = makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M16 4v16m-5-11-3 3 3 3"/>');
-    const videoMask = document.createElement("div");
-    videoMask.className = "te-dict-video-mask";
-    videoMask.setAttribute("aria-hidden", "true");
-
-    root.append(center, notesPanel, leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn, videoMask);
-
-    const tools = document.createElement("div");
-    tools.className = "te-dict-toolbar-tools";
-    tools.innerHTML = `
-      <div class="te-dict-mode-switch" role="group" aria-label="${tr("dictationModeGroup")}">
-        <button class="te-dict-mode-control" id="te-dict-speak-control" type="button" aria-pressed="false">
-          ${makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>')}
-          <span data-dict-label="dictationSpeak"></span>
-        </button>
-        <button class="te-dict-mode-control active" id="te-dict-type-control" type="button" aria-pressed="true">
-          ${makeSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>')}
-          <span data-dict-label="dictationType"></span>
-        </button>
-        <button class="te-dict-sync-control te-active" id="te-dict-sync-progress" type="button" aria-pressed="true" aria-label="${tr("dictationProgressSyncOn")}" title="${tr("dictationProgressSyncOn")}">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-        </button>
-      </div>
-      <span class="te-dict-toolbar-accuracy">
-        <svg class="te-dict-ring" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle class="te-dict-ring-bg" cx="12" cy="12" r="9"/><circle class="te-dict-ring-fg" id="te-dict-ring-fg" cx="12" cy="12" r="9" transform="rotate(-90 12 12)"/></svg>
-        <span class="te-dict-acc-col"><span data-dict-label="dictationAccuracy"></span><strong id="te-dict-toolbar-score">0%</strong></span>
-      </span>`;
-    primaryGroup.prepend(tools);
-    primaryGroup.classList.add("te-dict-primary-group");
-
-    ui = {
-      root, left, videoSlot, compactAudio, brand, bar, barParent: bar.parentNode, barNextSibling: bar.nextSibling,
-      videoCompactToggle: center.querySelector("#te-dict-video-toggle"),
-      translationToggle: center.querySelector("#te-dict-translation-toggle"),
-      miniThumb: compactAudio.querySelector(".te-dict-mini-thumb"),
-      miniTitle: compactAudio.querySelector(".te-dict-mini-title"),
-      miniSource: compactAudio.querySelector(".te-dict-mini-source"),
-      miniPlay: compactAudio.querySelector(".te-dict-mini-play"),
-      miniPlayIcon: compactAudio.querySelector(".te-dict-mini-play-icon"),
-      videoExpandedHeight: 0, videoExpandedHeightSaved: false, videoTransitionToken: 0, videoResizeObserver: null,
-      columnLayoutResizeObserver: null,
-      originalLeftAriaHidden: left.getAttribute("aria-hidden"),
-      originalVideoSlotHeight: { value: videoSlot.style.getPropertyValue("height"), priority: videoSlot.style.getPropertyPriority("height") },
-      primaryGroup, tools, sentenceArea, center, notesPanel,
-      leftColumnSplitter, rightColumnSplitter, showLeftColumn, showRightColumn, videoMask,
-      hideLeftColumn: sentenceArea.querySelector("#te-dict-hide-sentences"),
-      hideRightColumn: notesPanel.querySelector("#te-dict-hide-notes"),
-      sentences: sentenceArea.querySelector("#te-dict-sentences"),
-      loadingStatus: sentenceArea.querySelector("#te-dict-loading"),
-      counter: sentenceArea.querySelector("#te-dict-counter"),
-      input: center.querySelector("#te-dict-input"),
-      properNounHint: center.querySelector("#te-dict-proper-noun-hint"),
-      inputMarkup: center.querySelector("#te-dict-input-markup"),
-      inputMarkupContent: center.querySelector("#te-dict-input-markup-content"),
-      work: center.querySelector(".te-dict-work"),
-      score: center.querySelector("#te-dict-score"),
-      hint: center.querySelector("#te-dict-hint"),
-      error: center.querySelector("#te-dict-error"),
-      errorTitleText: center.querySelector(".te-dict-error-title span"),
-      errorTitleIcon: center.querySelector(".te-dict-error-title svg"),
-      errorWords: center.querySelector("#te-dict-error-words"),
-      success: center.querySelector("#te-dict-success"),
-      successIcon: center.querySelector("#te-dict-success > svg"),
-      speechToastRing: center.querySelector("#te-dict-speech-toast-ring"),
-      speechToastRingFill: center.querySelector("#te-dict-speech-toast-ring-fill"),
-      speechToastScore: center.querySelector("#te-dict-speech-toast-score"),
-      speechToastDescription: center.querySelector("#te-dict-speech-toast-desc"),
-      successMessage: center.querySelector("#te-dict-success-message"),
-      speechFeedbackSentence: center.querySelector("#te-dict-speech-feedback-sentence"),
-      speechFeedbackSentenceText: center.querySelector("#te-dict-speech-feedback-sentence-text"),
-      speechFeedbackAccuracy: center.querySelector("#te-dict-speech-feedback-accuracy"),
-      speechFeedbackAccuracyValue: center.querySelector("#te-dict-speech-feedback-accuracy-value"),
-      translation: center.querySelector("#te-dict-translation"),
-      translationSlot: center.querySelector("#te-dict-translation-slot"),
-      check: center.querySelector("#te-dict-check"),
-      audioBtn: center.querySelector("#te-dict-audio-btn"),
-      showHints: center.querySelector("#te-dict-show-hints"),
-      repeatBtns: [...center.querySelectorAll(".te-dict-repeat-btn")],
-      btnPrev: center.querySelector("#te-dict-btn-prev"),
-      btnReplay: center.querySelector("#te-dict-btn-replay"),
-      btnSlow: center.querySelector("#te-dict-btn-slow"),
-      btnNext: center.querySelector("#te-dict-btn-next"),
-      modeSwitch: tools.querySelector(".te-dict-mode-switch"),
-      speakControl: tools.querySelector("#te-dict-speak-control"),
-      typeControl: tools.querySelector("#te-dict-type-control"),
-      syncProgressControl: tools.querySelector("#te-dict-sync-progress"),
-      speechPractice: center.querySelector("#te-dict-speech-practice"),
-      speechTarget: center.querySelector("#te-dict-speech-target"),
-      speechResultWrap: center.querySelector("#te-dict-speech-result-wrap"),
-      speechResult: center.querySelector("#te-dict-speech-result"),
-      speechAutoToggle: center.querySelector("#te-dict-speech-auto-toggle"),
-      speechMic: center.querySelector("#te-dict-speech-mic"),
-      speechHelp: center.querySelector("#te-dict-speech-help"),
-      speechShortcuts: center.querySelector("#te-dict-speech-shortcuts"),
-      speechStatus: center.querySelector("#te-dict-speech-status"),
-      heading: center.querySelector(".te-dict-panel-head .te-dict-heading span"),
-      toolbarScore: tools.querySelector("#te-dict-toolbar-score"),
-      ring: tools.querySelector("#te-dict-ring-fg"),
-      close: notesPanel.querySelector("#te-dict-close"),
-      statsSearch: notesPanel.querySelector("#te-dict-stats-search"),
-      statsSummary: notesPanel.querySelector(".te-dict-stats-title-copy > p"),
-      statsCount: notesPanel.querySelector("#te-dict-stats-count"),
-      statsScroll: notesPanel.querySelector(".te-dict-stats-scroll"),
-      statsFilters: [...notesPanel.querySelectorAll(".te-dict-stats-filter")],
-      note: notesPanel.querySelector("#te-dict-note"),
-      lock: notesPanel.querySelector("#te-dict-lock"),
-      save: notesPanel.querySelector("#te-dict-save"),
-      saved: notesPanel.querySelector("#te-dict-saved"),
-      previous: bar.querySelector("#te-control-previous"),
-      next: bar.querySelector("#te-control-next"),
-      replay: bar.querySelector("#te-control-repeat"),
-      playPause: bar.querySelector("#te-control-play"),
-      originalButtonState: new Map(),
-    };
+    if (!root) return;
+    ui = globalThis.LHN_OVERLAY_TEMPLATE?.createStudyUi?.({ root, tr, makeSvg, repeatCount }) || null;
+    if (!ui) return;
     ui.success.addEventListener("animationend", (event) => {
       if (event.animationName === "teDictSpeechToastSpringPop") ui.success.classList.remove("te-dict-speech-toast-spring");
     });
@@ -1077,8 +746,8 @@
     ui.speakControl.addEventListener("click", () => setDictationMode("speaking"));
     ui.typeControl.addEventListener("click", () => { setDictationMode("typing"); focusInputIfTyping(); });
     ui.syncProgressControl.addEventListener("click", toggleProgressSync);
-    ui.speechAutoToggle.addEventListener("click", toggleSpeechAutoRecord);
-    ui.speechMic.addEventListener("click", () => { void toggleSpeechRecognition(); });
+    ui.speechAutoToggle.addEventListener("click", shadowingActivity.toggleSpeechAutoRecord);
+    ui.speechMic.addEventListener("click", () => { void shadowingActivity.toggleSpeechRecognition(); });
     ui.save.addEventListener("click", () => saveNotesNow(true));
     ui.input.addEventListener("keydown", onAnswerKeyDown);
     ui.input.addEventListener("input", onAnswerInput);
@@ -1128,20 +797,20 @@
       captureNoteDraft();
       storeActiveModeProgress(dictationMode);
     }
-    if (changed && mode !== "speaking") stopSpeechRecognition(true);
+    if (changed && mode !== "speaking") shadowingActivity.stopSpeechRecognition(true);
     if (changed && mode === "speaking") {
-      speechAnswerRevealed = false;
-      clearRecordedSpeech();
+      shadowingActivity.speechAnswerRevealed = false;
+      shadowingActivity.clearRecordedSpeech();
     }
     dictationMode = mode;
     syncRepeatButtons();
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
     A?.setPreferredLearningMode?.(mode);
     if (swapProgress) applyModeProgress(mode);
     if (ui) {
       if (changed) {
         onAnswerInput();
-        resetSpeechFeedback();
+        shadowingActivity.resetSpeechFeedback();
       }
       const speaking = mode === "speaking";
       ui.root.classList.toggle("te-dict-speaking-mode", speaking);
@@ -1154,10 +823,10 @@
       ui.typeControl.setAttribute("aria-pressed", String(!speaking));
       ui.heading.textContent = tr(speaking ? "dictationSpeakTitle" : "dictationTitle");
       ui.speechTarget.textContent = sentenceCues[current]?.en || "";
-      setSpeechTargetState("practice");
+      shadowingActivity.setSpeechTargetState("practice");
       ui.speechMic.disabled = !sentenceCues[current];
       if (changed && speaking) {
-        setSpeechStatus("");
+        shadowingActivity.setSpeechStatus("");
         ui.speechResult.replaceChildren();
         ui.speechResultWrap.hidden = true;
       }
@@ -1181,715 +850,14 @@
     return percent >= 40 ? "yellow" : "red";
   }
 
-  function getSpeechScoreTier(percent) {
-    const colorTier = getScoreColorTier(percent);
-    if (colorTier === "green") return "pass";
-    if (colorTier === "yellow") return "warn";
-    return colorTier === "red" ? "fail" : null;
-  }
-
-  function setSpeechTargetState(state = "practice") {
-    if (!ui?.speechTarget) return;
-    for (const name of ["practice", "wrong", "correct", "warn"]) {
-      ui.speechTarget.classList.toggle(`state-${name}`, state === name);
-    }
-  }
-
   function updateScoreTierColors(percent) {
     if (!ui?.root) return;
     const colorTier = getScoreColorTier(percent);
-    for (const name of ["green", "yellow", "red"]) {
-      ui.root.classList.toggle(`te-dict-score-${name}`, colorTier === name);
-    }
-    const speechTier = dictationMode === "speaking" ? getSpeechScoreTier(percent) : null;
+    for (const name of ["green", "yellow", "red"]) ui.root.classList.toggle(`te-dict-score-${name}`, colorTier === name);
+    const speechTier = dictationMode === "speaking" ? shadowingActivity.getSpeechScoreTier(percent) : null;
     if (ui.speechResultWrap) {
       ui.speechResultWrap.classList.toggle("state-warn", speechTier === "warn");
       ui.speechResultWrap.classList.toggle("state-fail", speechTier === "fail");
-    }
-  }
-
-  function setSpeechStatus(messageKey = "") {
-    if (!ui?.speechStatus) return;
-    if (messageKey) {
-      ui.speechStatus.removeAttribute("data-dict-label");
-      ui.speechStatus.textContent = tr(messageKey);
-      return;
-    }
-    ui.speechStatus.dataset.dictLabel = "dictationSpeakReady";
-    ui.speechStatus.textContent = tr("dictationSpeakReady");
-  }
-
-  function updateSpeechCheckDisabled() {
-    if (!ui?.check) return;
-    const video = attachedVideo || A?.state?.videoEl;
-    const videoCuePlaying = stopAt >= 0 && !!video && !video.paused;
-    const speakingBusy = dictationMode === "speaking" && (
-      speechStartPending || !!speechRecognition || !!speechRecorder || !!speechRecordingStream
-      || speechStopRequested || !!speechPlaybackAudio || videoCuePlaying
-    );
-    const speechMicWaiting = dictationMode === "speaking" && !!ui.speechMic && !ui.speechMic.disabled
-      && !ui.speechMic.classList.contains("listening") && !speakingBusy;
-    ui.check.disabled = captionControlsDisabled || speakingBusy || speechMicWaiting;
-  }
-
-  function resetSpeechFeedback() {
-    if (!ui?.success) return;
-    clearTimeout(speechToastTimer);
-    speechToastTimer = 0;
-    if (ui.work && ui.success.parentNode !== ui.work) ui.work.insertBefore(ui.success, ui.work.firstChild);
-    lastSpeechFeedback = null;
-    ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "te-dict-speech-toast-spring", "te-dict-speech-toast-exit", "state-pass", "state-warn", "state-fail");
-    if (ui.successIcon) ui.successIcon.innerHTML = '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>';
-    if (ui.successMessage) {
-      ui.successMessage.dataset.dictLabel = "dictationSuccess";
-      ui.successMessage.textContent = tr("dictationSuccess");
-    }
-    if (ui.speechToastRing) ui.speechToastRing.hidden = true;
-    if (ui.speechToastRingFill) ui.speechToastRingFill.style.strokeDashoffset = "132";
-    if (ui.speechToastScore) ui.speechToastScore.textContent = "0%";
-    if (ui.speechToastDescription) { ui.speechToastDescription.hidden = true; ui.speechToastDescription.textContent = ""; }
-    if (ui.speechFeedbackSentence) ui.speechFeedbackSentence.hidden = true;
-    if (ui.speechFeedbackSentenceText) ui.speechFeedbackSentenceText.textContent = "";
-    if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = true;
-    if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = "";
-  }
-
-  function getVietnameseSpeechCopy(percent) {
-    const score = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
-    if (score <= 9) return { title: "Khởi động lại nào!", description: "Chưa sao cả, cứ mạnh dạn nói tiếp. Mỗi lần thử là một bước gần hơn đến phát âm chuẩn!" };
-    if (score <= 19) return { title: "Đã bắt đầu rồi!", description: "Bạn đã có những âm thanh đầu tiên. Chậm lại một chút, nghe kỹ và thử lại nhé!" };
-    if (score <= 29) return { title: "Có tín hiệu rồi đấy!", description: "Một vài từ đã bắt đầu đúng hướng. Cứ kiên trì, miệng bạn đang dần quen với tiếng Anh!" };
-    if (score <= 39) return { title: "Sắp bắt nhịp rồi!", description: "Bạn đã tiến gần hơn đến mục tiêu. Chỉnh thêm một chút phát âm và ngữ điệu nhé!" };
-    if (score <= 49) return { title: "Khởi sắc rồi!", description: "Bạn đã nói được kha khá đấy. Tiếp tục luyện từng âm để câu nói rõ ràng hơn nhé!" };
-    if (score <= 59) return { title: "Đang vào guồng!", description: "Một nửa chặng đường đã nằm trong tay bạn. Cố thêm chút nữa để lời nói tự nhiên hơn!" };
-    if (score <= 64) return { title: "Tiến bộ đáng kể!", description: "Bạn đã nắm được phần lớn cách phát âm. Chú ý thêm những âm còn thiếu để bứt phá nhé!" };
-    if (score <= 69) return { title: "Chỉ còn một bước nữa!", description: "Bạn đang rất gần mức tốt rồi. Thêm một chút tập trung là có thể chạm đích!" };
-    if (score <= 74) return { title: "Đạt yêu cầu, tiếp tục phát huy!", description: "Bạn đã đạt ngưỡng luyện nói. Luyện thêm để phát âm tự nhiên hơn nhé!" };
-    if (score <= 79) return { title: "Nói khá chuẩn rồi!", description: "Bạn đang làm rất tốt. Chỉnh thêm vài chi tiết nhỏ để câu nói mượt mà hơn nhé!" };
-    if (score <= 84) return { title: "Rất tốt, cứ thế nhé!", description: "Phát âm của bạn đã khá vững vàng. Tiếp tục duy trì phong độ và chinh phục những câu khó hơn!" };
-    if (score <= 89) return { title: "Gần như hoàn hảo!", description: "Bạn đã nói rất rõ ràng và chính xác. Giờ hãy thêm chút ngữ điệu để nghe thật cuốn hút!" };
-    if (score <= 94) return { title: "Xuất sắc!", description: "Bạn đang làm chủ cách phát âm rất tốt. Nghe thôi đã thấy trình độ lên một tầm mới!" };
-    if (score <= 99) return { title: "Đỉnh cao phát âm!", description: "Gần như không có gì để bắt bẻ! Bạn đang tiến sát đến sự hoàn hảo rồi!" };
-    return { title: "Perfect! Quá đỉnh!", description: "Không thể tin được, bạn đã chinh phục câu nói này! Giữ vững phong độ và tiếp tục tỏa sáng!" };
-  }
-
-  function setSpeechFeedback(tier, percent, sentence, perfect) {
-    if (!ui?.success) return;
-    clearTimeout(speechToastTimer);
-    speechToastTimer = 0;
-    ui.success.classList.remove("te-dict-speech-toast-exit");
-    const state = ["pass", "warn", "fail"].includes(tier) ? tier : "fail";
-    lastSpeechFeedback = { tier: state, percent, sentence, perfect: Boolean(perfect) };
-    const iconPaths = {
-      pass: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
-      warn: '<path d="m10.29 3.86-8.47 14.14A2 2 0 0 0 3.54 21h16.92a2 2 0 0 0 1.72-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
-      fail: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'
-    };
-    ui.success.classList.add("te-dict-speech-feedback");
-    for (const name of ["pass", "warn", "fail"]) ui.success.classList.toggle(`state-${name}`, name === state);
-    if (ui.successIcon) ui.successIcon.innerHTML = iconPaths[state];
-    if (language() === "vi") {
-      if (ui.center && ui.success.parentNode !== ui.center) ui.center.appendChild(ui.success);
-      const copy = getVietnameseSpeechCopy(percent);
-      ui.success.classList.add("te-dict-speech-toast");
-      if (ui.successMessage) {
-        ui.successMessage.removeAttribute("data-dict-label");
-        ui.successMessage.textContent = copy.title;
-      }
-      if (ui.speechToastDescription) { ui.speechToastDescription.textContent = copy.description; ui.speechToastDescription.hidden = false; }
-      if (ui.speechToastRing) ui.speechToastRing.hidden = false;
-      if (ui.speechToastScore) ui.speechToastScore.textContent = `${percent}%`;
-      if (ui.speechToastRingFill) ui.speechToastRingFill.style.strokeDashoffset = String(132 - (132 * Math.max(0, Math.min(100, percent))) / 100);
-      if (ui.speechFeedbackSentence) ui.speechFeedbackSentence.hidden = true;
-      if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = true;
-    } else {
-      if (ui.work && ui.success.parentNode !== ui.work) ui.work.insertBefore(ui.success, ui.work.firstChild);
-      ui.success.classList.remove("te-dict-speech-toast", "te-dict-speech-toast-spring");
-      if (ui.speechToastRing) ui.speechToastRing.hidden = true;
-      if (ui.speechToastDescription) ui.speechToastDescription.hidden = true;
-      const messageKey = state === "pass"
-        ? perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed"
-        : "dictationSpeakRetry";
-      if (ui.successMessage) {
-        ui.successMessage.dataset.dictLabel = messageKey;
-        ui.successMessage.textContent = tr(messageKey);
-      }
-      if (ui.speechFeedbackSentence) ui.speechFeedbackSentence.hidden = false;
-      if (ui.speechFeedbackSentenceText) ui.speechFeedbackSentenceText.textContent = String(sentence || "");
-      if (ui.speechFeedbackAccuracy) ui.speechFeedbackAccuracy.hidden = false;
-      if (ui.speechFeedbackAccuracyValue) ui.speechFeedbackAccuracyValue.textContent = `${percent}%`;
-    }
-    ui.success.hidden = false;
-    if (language() === "vi") {
-      ui.success.classList.remove("te-dict-speech-toast-spring");
-      void ui.success.offsetWidth;
-      ui.success.classList.add("te-dict-speech-toast-spring");
-      speechToastTimer = setTimeout(dismissVietnameseSpeechToast, 6000);
-    }
-  }
-
-  function shouldKeepVietnameseSpeechToast() {
-    return Boolean(ui?.success && !ui.success.hidden && dictationMode === "speaking" && language() === "vi" && ui.success.classList.contains("te-dict-speech-toast"));
-  }
-
-  function dismissVietnameseSpeechToast() {
-    if (!shouldKeepVietnameseSpeechToast() || ui.success.classList.contains("te-dict-speech-toast-exit")) return;
-    clearTimeout(speechToastTimer);
-    ui.success.classList.remove("te-dict-speech-toast-spring");
-    ui.success.classList.add("te-dict-speech-toast-exit");
-    speechToastTimer = setTimeout(() => {
-      if (!ui?.success?.classList.contains("te-dict-speech-toast-exit")) return;
-      ui.success.hidden = true;
-      resetSpeechFeedback();
-    }, 300);
-  }
-
-  function updateSpeechMicState(listening) {
-    if (!ui?.speechMic) return;
-    ui.speechMic.classList.toggle("listening", listening);
-    ui.speechMic.setAttribute("aria-pressed", String(listening));
-    const labelKey = ui.speechMic.classList.contains("playing-recording")
-      ? "dictationSpeakPlayback" : listening ? "dictationSpeakStop" : "dictationSpeakStart";
-    ui.speechMic.setAttribute("aria-label", tr(labelKey));
-    ui.speechMic.title = tr(labelKey);
-    updateSpeechCheckDisabled();
-  }
-
-  function updateSpeechAutoRecordControl() {
-    if (!ui?.speechAutoToggle) return;
-    const label = tr("dictationAutoRecord");
-    ui.speechAutoToggle.classList.toggle("active", speechAutoRecordEnabled);
-    ui.speechAutoToggle.setAttribute("aria-pressed", String(speechAutoRecordEnabled));
-    ui.speechAutoToggle.setAttribute("aria-label", label);
-    ui.speechAutoToggle.title = label;
-    ui.speechMic?.classList.toggle("auto-record-enabled", speechAutoRecordEnabled);
-  }
-
-  function updateSpeechMicPlaybackState(playing) {
-    if (!ui?.speechMic) return;
-    const button = ui.speechMic;
-    button.classList.toggle("playing-recording", playing);
-    button.innerHTML = playing
-      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-audio-lines preview-icon" aria-hidden="true"><path d="M10 3v2.341"/><path d="M12 17v4"/><path d="M14 5v.341"/><path d="M18 5v13"/><path d="M2 10v3"/><path d="M22 10v3"/><path d="M6 6v11"/><path d="M9 21h6"/><rect width="4" height="8" x="10" y="9" rx="2"/></svg>'
-      : makeSvg('<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>');
-    const labelKey = playing ? "dictationSpeakPlayback"
-      : button.classList.contains("listening") ? "dictationSpeakStop" : "dictationSpeakStart";
-    button.setAttribute("aria-label", tr(labelKey));
-    button.title = tr(labelKey);
-    updateSpeechCheckDisabled();
-  }
-
-  function clearSpeechAutoStartTimer() {
-    if (speechAutoStartTimer) clearTimeout(speechAutoStartTimer);
-    speechAutoStartTimer = 0;
-  }
-
-  function clearSpeechEndpointGraceTimer() {
-    if (speechEndpointGraceTimer) clearTimeout(speechEndpointGraceTimer);
-    speechEndpointGraceTimer = 0;
-  }
-
-  function setSpeechAutoRecordEnabled(enabled) {
-    speechAutoRecordEnabled = Boolean(enabled);
-    if (!speechAutoRecordEnabled) {
-      clearSpeechAutoStartTimer();
-      clearSpeechEndpointGraceTimer();
-    }
-    updateSpeechAutoRecordControl();
-    if (speechAutoRecordEnabled && speechCueAutoStartPending) scheduleSpeechAutoRecord();
-  }
-
-  function toggleSpeechAutoRecord() {
-    setSpeechAutoRecordEnabled(!speechAutoRecordEnabled);
-  }
-
-  function scheduleSpeechAutoRecord() {
-    clearSpeechAutoStartTimer();
-    if (!speechAutoRecordEnabled || !speechCueAutoStartPending || !active || dictationMode !== "speaking" || speechAnswerRevealed
-      || !sentenceCues[current]?.en || speechStartPending || speechRecognition || speechStopRequested
-      || speechPlaybackAudio || speechRecorder || speechRecordingStream) return;
-    speechAutoStartTimer = setTimeout(() => {
-      speechAutoStartTimer = 0;
-      if (!speechAutoRecordEnabled || !speechCueAutoStartPending || !active || dictationMode !== "speaking" || speechAnswerRevealed
-        || !sentenceCues[current]?.en || speechStartPending || speechRecognition || speechStopRequested
-        || speechPlaybackAudio || speechRecorder || speechRecordingStream) {
-        speechCueAutoStartPending = false;
-        return;
-      }
-      speechCueAutoStartPending = false;
-      void toggleSpeechRecognition({ automatic: true });
-    }, 1000);
-  }
-
-  function clearRecordedSpeech() {
-    if (speechPlaybackAudio) {
-      const player = speechPlaybackAudio;
-      speechPlaybackAudio = null;
-      try { player.pause(); } catch {}
-      updateSpeechMicPlaybackState(false);
-    }
-    if (speechRecordingUrl) {
-      try { globalThis.URL?.revokeObjectURL?.(speechRecordingUrl); } catch {}
-      speechRecordingUrl = "";
-    }
-  }
-
-  function stopSpeechRecording(discard = false) {
-    if (discard) {
-      speechRecordingDiscard = true;
-      clearRecordedSpeech();
-    }
-    const recorder = speechRecorder;
-    if (!recorder) {
-      try { speechRecordingStream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-      speechRecordingStream = null;
-      return Promise.resolve(discard ? "" : speechRecordingUrl);
-    }
-    const stopped = speechRecordingStopPromise || Promise.resolve(speechRecordingUrl);
-    if (recorder.state !== "inactive") {
-      try { recorder.stop(); }
-      catch {
-        try { speechRecordingStream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-        speechRecorder = null;
-        speechRecordingStream = null;
-        speechRecordingChunks = [];
-        speechRecordingStopPromise = null;
-        resolveSpeechRecordingStop = null;
-        updateSpeechCheckDisabled();
-        return Promise.resolve("");
-      }
-    }
-    return stopped.then((url) => discard ? "" : url);
-  }
-
-  function startSpeechRecording(stream) {
-    const Recorder = globalThis.MediaRecorder || globalThis.window?.MediaRecorder;
-    if (typeof Recorder !== "function") {
-      try { stream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-      return false;
-    }
-    let recorder;
-    try { recorder = new Recorder(stream); }
-    catch {
-      try { stream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-      return false;
-    }
-    speechRecordingDiscard = false;
-    speechRecordingStream = stream;
-    speechRecordingChunks = [];
-    speechRecordingStopPromise = new Promise((resolve) => { resolveSpeechRecordingStop = resolve; });
-    speechRecorder = recorder;
-    recorder.ondataavailable = (event) => {
-      if (event.data?.size) speechRecordingChunks.push(event.data);
-    };
-    recorder.onstop = () => {
-      if (!speechRecordingDiscard && speechRecordingChunks.length) {
-        try {
-          clearRecordedSpeech();
-          const type = recorder.mimeType || speechRecordingChunks[0]?.type || "audio/webm";
-          speechRecordingUrl = globalThis.URL?.createObjectURL?.(new Blob(speechRecordingChunks, { type })) || "";
-        } catch { speechRecordingUrl = ""; }
-      }
-      try { speechRecordingStream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-      speechRecordingStream = null;
-      if (speechRecorder === recorder) speechRecorder = null;
-      speechRecordingChunks = [];
-      const resolve = resolveSpeechRecordingStop;
-      const url = speechRecordingUrl;
-      speechRecordingStopPromise = null;
-      resolveSpeechRecordingStop = null;
-      resolve?.(url);
-      updateSpeechCheckDisabled();
-    };
-    try { recorder.start(); }
-    catch {
-      speechRecorder = null;
-      try { stream?.getTracks?.().forEach((track) => track.stop()); } catch {}
-      speechRecordingStream = null;
-      speechRecordingChunks = [];
-      const resolve = resolveSpeechRecordingStop;
-      speechRecordingStopPromise = null;
-      resolveSpeechRecordingStop = null;
-      resolve?.("");
-      return false;
-    }
-    return true;
-  }
-
-  function pauseVideoForSpeech() {
-    endPlayback();
-    const video = attachedVideo || A?.state?.videoEl;
-    video?.pause();
-  }
-
-  function playRecordedSpeech(url, trimFinalGraceSilence = false) {
-    if (!url || typeof globalThis.Audio !== "function") return Promise.resolve(false);
-    pauseVideoForSpeech();
-    return new Promise((resolve) => {
-      let settled = false;
-      let player;
-      const finish = (played) => {
-        if (settled) return;
-        settled = true;
-        if (player && speechPlaybackAudio === player) {
-          speechPlaybackAudio = null;
-          updateSpeechMicPlaybackState(false);
-        }
-        resolve(played);
-      };
-      const stopBeforeGraceTail = () => {
-        if (settled || !trimFinalGraceSilence || !Number.isFinite(player?.duration)) return;
-        const cutoff = Math.max(0, player.duration - SPEECH_ENDPOINT_GRACE_MS / 1000);
-        if (player.currentTime < cutoff) return;
-        finish(true);
-        try { player.pause(); } catch {}
-      };
-      try {
-        player = new Audio(url);
-        speechPlaybackAudio = player;
-        updateSpeechMicPlaybackState(true);
-        player.addEventListener("ended", () => finish(true), { once: true });
-        player.addEventListener("error", () => finish(false), { once: true });
-        player.addEventListener("pause", () => { if (!player.ended) finish(false); }, { once: true });
-        if (trimFinalGraceSilence) {
-          player.addEventListener("loadedmetadata", stopBeforeGraceTail);
-          player.addEventListener("timeupdate", stopBeforeGraceTail);
-        }
-        Promise.resolve(player.play()).then(stopBeforeGraceTail, () => finish(false));
-      } catch { finish(false); }
-    });
-  }
-
-  function stopSpeechRecognition(abort = true) {
-    speechCueAutoStartPending = false;
-    clearSpeechAutoStartTimer();
-    clearSpeechEndpointGraceTimer();
-    hideSpeechRecordingToast();
-    speechStartGeneration++;
-    speechStartPending = false;
-    speechStopRequested = false;
-    const recognition = speechRecognition;
-    speechRecognition = null;
-    if (recognition) {
-      recognition.onresult = null;
-      recognition.onerror = null;
-      recognition.onend = null;
-      try { abort ? recognition.abort() : recognition.stop(); } catch {}
-    }
-    updateSpeechMicState(false);
-    void stopSpeechRecording(true);
-  }
-
-  function showSpeechResultPanel() {
-    if (ui?.speechResultWrap) ui.speechResultWrap.hidden = false;
-  }
-
-  function renderSpeechResult(text) {
-    if (!ui?.speechResult) return;
-    const transcript = String(text || "").trim();
-    ui.speechResult.replaceChildren();
-    ui.speechResultWrap.hidden = !transcript;
-    if (!transcript) return;
-    const reference = sentenceCues[current]?.en || "";
-    const operations = globalThis.LHN_DICTATION_SCORE.score(reference, transcript).ops;
-    const typedTokens = getTranscriptWordTokens(transcript);
-    const expectedTokens = getTranscriptWordTokens(reference);
-    const displayTokens = (tokens, indices, fallback) => {
-      if (!indices?.length) return fallback || "";
-      return tokens.slice(indices[0], indices[indices.length - 1] + 1).map((item) => item.display).join(" ");
-    };
-    for (const operation of operations) {
-      const typedDisplay = displayTokens(typedTokens, operation.typedIndices, operation.typed);
-      const expectedDisplay = displayTokens(expectedTokens, operation.expectedIndices, operation.expected);
-      if (operation.type === "wrong") {
-        const token = document.createElement("span");
-        token.className = "te-dict-speech-word wrong";
-        token.textContent = typedDisplay;
-        ui.speechResult.appendChild(token);
-        const correction = document.createElement("span");
-        correction.className = "te-dict-speech-word fix";
-        correction.textContent = `→ ${expectedDisplay}`;
-        ui.speechResult.appendChild(correction);
-      } else {
-        const token = document.createElement("span");
-        token.className = `te-dict-speech-word ${operation.type}`;
-        token.textContent = operation.type === "missing" ? expectedDisplay : typedDisplay;
-        ui.speechResult.appendChild(token);
-      }
-    }
-  }
-
-  async function toggleSpeechRecognition({ automatic = false } = {}) {
-    if (!automatic) {
-      speechCueAutoStartPending = false;
-      clearSpeechAutoStartTimer();
-      clearSpeechEndpointGraceTimer();
-    }
-    if (dictationMode !== "speaking") setDictationMode("speaking");
-    if (speechStopRequested || speechPlaybackAudio) return;
-    if (speechStartPending) {
-      speechStartGeneration++;
-      speechStartPending = false;
-      updateSpeechMicState(false);
-      setSpeechStatus("");
-      return;
-    }
-    if (speechRecognition) {
-      speechStopRequested = true;
-      setSpeechStatus("dictationSpeakProcessing");
-      try { speechRecognition.stop(); }
-      catch {
-        speechStopRequested = false;
-        stopSpeechRecognition(true);
-        setSpeechStatus("dictationSpeakError");
-      }
-      return;
-    }
-    const Recognition = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition
-      || globalThis.window?.SpeechRecognition || globalThis.window?.webkitSpeechRecognition;
-    if (typeof Recognition !== "function") {
-      setSpeechStatus("dictationSpeakUnsupported");
-      return;
-    }
-    const cue = sentenceCues[current];
-    if (!cue?.en) {
-      setSpeechStatus("dictationWaitingForCaptions");
-      return;
-    }
-    let recognition;
-    try { recognition = new Recognition(); }
-    catch { setSpeechStatus("dictationSpeakError"); return; }
-
-    const attemptCurrent = current;
-    const trimFinalGraceSilence = speechAutoRecordEnabled;
-    const generation = ++speechStartGeneration;
-    speechStartPending = true;
-    speechStopRequested = false;
-    speechAnswerRevealed = false;
-    clearRecordedSpeech();
-    speechRecordingDiscard = false;
-    pauseVideoForSpeech();
-    speechRecognitionError = "";
-    ui.input.value = "";
-    setSpeechTargetState("practice");
-    onAnswerInput();
-    ui.speechResult.replaceChildren();
-    ui.speechResultWrap.hidden = true;
-    setSpeechStatus("dictationSpeakListening");
-    updateSpeechMicState(true);
-
-    let recordingAvailable = false;
-    const mediaDevices = globalThis.navigator?.mediaDevices || globalThis.window?.navigator?.mediaDevices;
-    if (typeof mediaDevices?.getUserMedia === "function"
-      && typeof (globalThis.MediaRecorder || globalThis.window?.MediaRecorder) === "function") {
-      try {
-        const stream = await mediaDevices.getUserMedia({ audio: true });
-        if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
-          try { stream.getTracks?.().forEach((track) => track.stop()); } catch {}
-          return;
-        }
-        recordingAvailable = startSpeechRecording(stream);
-      } catch {
-        recordingAvailable = false;
-      }
-    }
-    if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
-      speechStartPending = false;
-      updateSpeechMicState(false);
-      return;
-    }
-
-    const completedSpeechSegments = [];
-    let speechAttemptFinalized = false;
-
-    const getCompletedSpeechTranscript = () => completedSpeechSegments.join(" ").replace(/\s+/g, " ").trim();
-
-    async function finalizeSpeechAttempt(transcript) {
-      if (speechAttemptFinalized) return;
-      speechAttemptFinalized = true;
-      hideSpeechRecordingToast();
-      clearSpeechEndpointGraceTimer();
-      speechRecognition = null;
-      updateSpeechMicState(false);
-      const completedTranscript = String(transcript || "").trim();
-      if (!active || dictationMode !== "speaking" || attemptCurrent !== current) {
-        await stopSpeechRecording(true);
-        speechStopRequested = false;
-        updateSpeechCheckDisabled();
-        return;
-      }
-      if (!completedTranscript) {
-        renderSpeechResult("");
-        const recordingUrl = await stopSpeechRecording(false);
-        if (generation === speechStartGeneration && active && dictationMode === "speaking" && attemptCurrent === current && recordingUrl) {
-          await playRecordedSpeech(recordingUrl, trimFinalGraceSilence);
-        }
-        if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
-          speechStopRequested = false;
-          updateSpeechCheckDisabled();
-          return;
-        }
-        if (!speechRecognitionError) setSpeechStatus("dictationSpeakNoSpeech");
-        speechStopRequested = false;
-        updateSpeechCheckDisabled();
-        return;
-      }
-      const recordingUrl = await stopSpeechRecording(false);
-      if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
-        clearRecordedSpeech();
-        speechStopRequested = false;
-        updateSpeechCheckDisabled();
-        return;
-      }
-      ui.input.value = completedTranscript;
-      renderSpeechResult(completedTranscript);
-      const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl, trimFinalGraceSilence) : false;
-      if (generation !== speechStartGeneration || !active || dictationMode !== "speaking" || attemptCurrent !== current) {
-        speechStopRequested = false;
-        updateSpeechCheckDisabled();
-        return;
-      }
-      const recordingFailed = !recordingUrl || !recordingAvailable || !recordingPlayed;
-      speechStopRequested = false;
-      updateSpeechCheckDisabled();
-      setSpeechStatus("");
-      submit();
-      if (recordingFailed) setSpeechStatus("dictationSpeakRecordingUnavailable");
-    }
-
-    function scheduleSpeechEndpointGraceStop(resetTimer) {
-      if (speechEndpointGraceTimer && !resetTimer) return;
-      clearSpeechEndpointGraceTimer();
-      speechEndpointGraceTimer = setTimeout(() => {
-        speechEndpointGraceTimer = 0;
-        if (speechAttemptFinalized || generation !== speechStartGeneration || !active
-          || dictationMode !== "speaking" || attemptCurrent !== current) return;
-        speechStopRequested = true;
-        setSpeechStatus("dictationSpeakProcessing");
-        const currentRecognition = speechRecognition;
-        if (currentRecognition) {
-          try { currentRecognition.stop(); return; }
-          catch {
-            if (speechRecognition === currentRecognition) speechRecognition = null;
-          }
-        }
-        void finalizeSpeechAttempt(getCompletedSpeechTranscript());
-      }, SPEECH_ENDPOINT_GRACE_MS);
-    }
-
-    function startRecognitionSession(existingRecognition = null) {
-      const session = existingRecognition || new Recognition();
-      let finalText = "";
-      let interimText = "";
-      speechRecognition = session;
-      if (A?.state?.webStudy) {
-        const sourceLanguage = A.state.webDetectedLanguage || A.state.webLanguageHint || globalThis.navigator?.language || "en-US";
-        session.lang = globalThis.LHN_TTS?.normalizeLanguage?.(sourceLanguage) || sourceLanguage;
-      } else {
-        session.lang = /^en(?:-|$)/i.test(A?.state?.captionTrackLanguage || "")
-          ? A.state.captionTrackLanguage : "en-US";
-      }
-      session.continuous = !(automatic || speechAutoRecordEnabled);
-      session.interimResults = true;
-      session.maxAlternatives = 1;
-      speechStartPending = false;
-      setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
-      updateSpeechMicState(true);
-      session.onresult = (event) => {
-        const finals = [];
-        const interims = [];
-        for (let index = 0; index < event.results.length; index++) {
-          const result = event.results[index];
-          const text = String(result?.[0]?.transcript || "").trim();
-          if (!text) continue;
-          (result.isFinal ? finals : interims).push(text);
-        }
-        finalText = finals.join(" ").trim();
-        interimText = interims.join(" ").trim();
-        const segmentPreview = [finalText, interimText].filter(Boolean).join(" ");
-        if (segmentPreview) {
-          speechRecognitionError = "";
-          if (speechAutoRecordEnabled) scheduleSpeechEndpointGraceStop(true);
-        }
-        const livePreview = [...completedSpeechSegments, finalText, interimText].filter(Boolean).join(" ");
-        if (livePreview) renderSpeechResult(livePreview);
-      };
-      session.onerror = (event) => {
-        const code = String(event?.error || "");
-        speechRecognitionError = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
-          ? "dictationSpeakDenied"
-          : code === "network" ? "dictationSpeakNetwork"
-            : code === "no-speech" ? "dictationSpeakNoSpeech"
-              : code === "aborted" ? "" : "dictationSpeakError";
-        if (["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError)) {
-          speechStopRequested = true;
-        }
-        if (speechRecognitionError && ui) setSpeechStatus(speechRecognitionError);
-      };
-      session.onend = async () => {
-        if (speechRecognition !== session) return;
-        const segment = [finalText, interimText].filter(Boolean).join(" ").trim();
-        const fatalError = ["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(speechRecognitionError);
-        const canContinue = active && dictationMode === "speaking" && attemptCurrent === current;
-
-        if (!automatic && !speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
-          try {
-            session.start();
-            showSpeechResultPanel();
-            showSpeechRecordingToast();
-            setSpeechStatus(recordingAvailable ? "dictationSpeakListening" : "dictationSpeakRecordingUnavailable");
-            updateSpeechMicState(true);
-            return;
-          } catch { speechRecognitionError = "dictationSpeakError"; }
-        }
-
-        if (speechAutoRecordEnabled && !speechStopRequested && !fatalError && canContinue) {
-          if (segment) {
-            completedSpeechSegments.push(segment);
-            speechRecognitionError = "";
-            scheduleSpeechEndpointGraceStop(true);
-          } else {
-            scheduleSpeechEndpointGraceStop(false);
-          }
-          speechRecognition = null;
-          try {
-            startRecognitionSession();
-            return;
-          } catch {
-            speechRecognitionError = "dictationSpeakError";
-            clearSpeechEndpointGraceTimer();
-            speechStopRequested = false;
-            await finalizeSpeechAttempt(getCompletedSpeechTranscript());
-            return;
-          }
-        }
-
-        if (segment) completedSpeechSegments.push(segment);
-        const transcript = getCompletedSpeechTranscript();
-        if (automatic && transcript && !speechStopRequested) {
-          speechStopRequested = true;
-          setSpeechStatus("dictationSpeakProcessing");
-        }
-        await finalizeSpeechAttempt(transcript);
-      };
-      try {
-        session.start();
-        showSpeechResultPanel();
-        showSpeechRecordingToast();
-      } catch (error) {
-        if (speechRecognition === session) speechRecognition = null;
-        throw error;
-      }
-    }
-
-    try { startRecognitionSession(recognition); }
-    catch {
-      speechRecognition = null;
-      speechStartPending = false;
-      speechStopRequested = false;
-      updateSpeechMicState(false);
-      void stopSpeechRecording(true);
-      setSpeechStatus("dictationSpeakError");
     }
   }
 
@@ -2542,7 +1510,7 @@
     clearInputWrongMarks();
     const wasChecked = checkedCurrent;
     const wasSuccessVisible = !ui.success.hidden;
-    const keepSpeechToast = shouldKeepVietnameseSpeechToast();
+    const keepSpeechToast = shadowingActivity.shouldKeepVietnameseSpeechToast();
     checkedCurrent = false;
     ui.input.classList.remove("correct");
     ui.check.classList.add("te-dict-act-primary");
@@ -2663,7 +1631,7 @@
     const disabled = keepControlsDisabled || !sentenceCues.length;
     captionControlsDisabled = disabled;
     ui.input.disabled = disabled;
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
     for (const button of [ui.btnPrev, ui.btnReplay, ui.btnSlow, ui.btnNext, ui.previous, ui.next, ui.replay]) {
       if (button) button.disabled = disabled;
     }
@@ -2688,9 +1656,9 @@
 
   function renderCurrent() {
     if (!ui || !active) return;
-    const keepSpeechToast = shouldKeepVietnameseSpeechToast();
-    stopSpeechRecognition(true);
-    speechAnswerRevealed = false;
+    const keepSpeechToast = shadowingActivity.shouldKeepVietnameseSpeechToast();
+    shadowingActivity.stopSpeechRecognition(true);
+    shadowingActivity.speechAnswerRevealed = false;
     checkedCurrent = false;
     hintResult = null;
     while (current < listStart && listStart > 0) renderPrevious();
@@ -2709,11 +1677,11 @@
     escapeFilledAnswer = false;
     ui.input.value = "";
     ui.speechTarget.textContent = sentenceCues[current]?.en || "";
-    setSpeechTargetState("practice");
+    shadowingActivity.setSpeechTargetState("practice");
     ui.speechMic.disabled = !sentenceCues[current];
     ui.speechResult.replaceChildren();
     ui.speechResultWrap.hidden = true;
-    setSpeechStatus("");
+    shadowingActivity.setSpeechStatus("");
     renderProperNounHint(sentenceCues[current]?.en || "");
     clearInputWrongMarks();
     ui.input.classList.remove("correct");
@@ -2721,7 +1689,7 @@
     ui.work?.classList.remove("te-dict-has-error");
     ui.errorWords.replaceChildren();
     ui.success.hidden = !keepSpeechToast;
-    if (!keepSpeechToast) resetSpeechFeedback();
+    if (!keepSpeechToast) shadowingActivity.resetSpeechFeedback();
     ui.translation.textContent = "";
     syncCurrentTranslationDisplay(translationAlwaysVisible());
     setScore(wasSolved ? 100 : null);
@@ -3216,15 +2184,15 @@
     const wasSuccessVisible = !ui.success.hidden;
     const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
     const isSpeaking = dictationMode === "speaking";
-    const tier = isSpeaking ? getSpeechScoreTier(result.percent) : null;
+    const tier = isSpeaking ? shadowingActivity.getSpeechScoreTier(result.percent) : null;
     const passed = isSpeaking ? tier === "pass" : result.perfect;
     const modeStats = isSpeaking ? speakingWrongWordStats : wrongWordStats;
     const statsUpdated = recordWrongWordSubmission(modeStats, current, result, cue.en);
     if (statsUpdated) renderWrongWordStats();
     if (isSpeaking) {
-      setSpeechTargetState(tier === "pass" ? "correct" : tier === "warn" ? "warn" : "wrong");
-      renderSpeechResult(ui.input.value);
-      setSpeechStatus(tier === "pass" ? "" : "dictationSpeakRetry");
+      shadowingActivity.setSpeechTargetState(tier === "pass" ? "correct" : tier === "warn" ? "warn" : "wrong");
+      shadowingActivity.renderSpeechResult(ui.input.value);
+      shadowingActivity.setSpeechStatus(tier === "pass" ? "" : "dictationSpeakRetry");
     }
     const successMessage = isSpeaking
       ? (result.perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed")
@@ -3235,13 +2203,13 @@
     }
     setScore(result.percent);
     updateCheckButtonStyle(passed);
-    if (isSpeaking) setSpeechFeedback(tier, result.percent, cue.en, result.perfect);
+    if (isSpeaking) shadowingActivity.setSpeechFeedback(tier, result.percent, cue.en, result.perfect);
     if (passed) {
       if (result.perfect) {
         const punctuatedAnswer = addMissingPunctuation(cue.en, ui.input.value);
         if (punctuatedAnswer !== ui.input.value) ui.input.value = punctuatedAnswer;
       }
-      if (isSpeaking && result.perfect) renderSpeechResult(ui.input.value);
+      if (isSpeaking && result.perfect) shadowingActivity.renderSpeechResult(ui.input.value);
       clearInputWrongMarks();
       ui.work?.classList.remove("te-dict-has-error");
       checkedCurrent = true;
@@ -3276,7 +2244,7 @@
     if (statsUpdated) void saveRecord();
     playErrorSound();
     setNotesLocked(!solved.has(current));
-    if (isSpeaking && speechAutoRecordEnabled) playSentence(current, { count: 1 });
+    if (isSpeaking && shadowingActivity.speechAutoRecordEnabled) playSentence(current, { count: 1 });
   }
 
   // Phát đúng một câu rồi dừng: rAF canh điểm kết thúc (timeupdate chỉ ~4 lần/giây nên dễ trôi sang câu sau).
@@ -3297,7 +2265,7 @@
     stopAt = -1;
     repeatLeft = 0;
     restoreRate();
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
   }
 
   function finishCue() {
@@ -3311,8 +2279,8 @@
     }
     video?.pause();
     endPlayback();
-    speechCueAutoStartPending = active && dictationMode === "speaking" && !speechAnswerRevealed;
-    scheduleSpeechAutoRecord();
+    shadowingActivity.speechCueAutoStartPending = active && dictationMode === "speaking" && !shadowingActivity.speechAnswerRevealed;
+    shadowingActivity.scheduleSpeechAutoRecord();
   }
 
   function watchPlayback() {
@@ -3338,8 +2306,8 @@
   }
 
   function playSentence(index, options = {}) {
-    speechCueAutoStartPending = false;
-    clearSpeechAutoStartTimer();
+    shadowingActivity.speechCueAutoStartPending = false;
+    shadowingActivity.clearSpeechAutoStartTimer();
     const cue = sentenceCues[index];
     const video = A?.state?.videoEl;
     if (!cue || !video || !active) return;
@@ -3358,7 +2326,7 @@
     }
     repeatLeft = count - 1;
     stopAt = Number(cue.end) || -1;
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
     try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
     watchPlayback();
     const playing = video.play();
@@ -3368,11 +2336,11 @@
   // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
   function onVideoPlay() {
     if (active && dictationMode === "speaking") {
-      speechCueAutoStartPending = false;
-      clearSpeechAutoStartTimer();
+      shadowingActivity.speechCueAutoStartPending = false;
+      shadowingActivity.clearSpeechAutoStartTimer();
     }
     updateCompactAudioPlaybackState();
-    if (active && dictationMode === "speaking" && (speechStartPending || speechRecognition || speechStopRequested || speechPlaybackAudio)) {
+    if (active && dictationMode === "speaking" && (shadowingActivity.speechStartPending || shadowingActivity.speechRecognition || shadowingActivity.speechStopRequested || shadowingActivity.speechPlaybackAudio)) {
       endPlayback();
       attachedVideo?.pause();
       updateCompactAudioPlaybackState();
@@ -3381,7 +2349,7 @@
     if (!active || !attachedVideo) return;
     const cue = sentenceCues[current];
     if (!cue) return;
-    if (stopAt >= 0) { if (!rafId) watchPlayback(); updateSpeechCheckDisabled(); return; }
+    if (stopAt >= 0) { if (!rafId) watchPlayback(); shadowingActivity.updateSpeechCheckDisabled(); return; }
     const time = attachedVideo.currentTime;
     if (time < cue.start - 0.05 || time >= cue.end - 0.03) {
       try { attachedVideo.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
@@ -3389,12 +2357,12 @@
     stopAt = Number(cue.end) || -1;
     repeatLeft = 0;
     watchPlayback();
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
   }
 
   function onVideoPause() {
     updateCompactAudioPlaybackState();
-    updateSpeechCheckDisabled();
+    shadowingActivity.updateSpeechCheckDisabled();
   }
 
   function onVideoTimeUpdate() {
@@ -3589,7 +2557,7 @@
   function resetAnswer() {
     if (!ui) return;
     const wasSuccessVisible = !ui.success.hidden;
-    const keepSpeechToast = shouldKeepVietnameseSpeechToast();
+    const keepSpeechToast = shadowingActivity.shouldKeepVietnameseSpeechToast();
     hintResult = null;
     escapeFilledAnswer = false;
     checkedCurrent = false;
@@ -3608,30 +2576,6 @@
     updateRows(false);
     setScore(solved.has(current) ? 100 : null);
     focusInputIfTyping();
-  }
-
-  function handleSpeakingEscape() {
-    const cue = sentenceCues[current];
-    if (!ui || !cue) return;
-    stopSpeechRecognition(true);
-    if (!speechAnswerRevealed) {
-      speechAnswerRevealed = true;
-      ui.input.value = cue.en;
-      renderSpeechResult(cue.en);
-      setSpeechTargetState("correct");
-      setSpeechStatus("dictationSpeakAnswerRevealed");
-      playSentence(current, { count: 1 });
-      return;
-    }
-    speechAnswerRevealed = false;
-    resetAnswer();
-    clearRecordedSpeech();
-    ui.speechTarget.textContent = cue.en;
-    setSpeechTargetState("practice");
-    ui.speechResult.replaceChildren();
-    ui.speechResultWrap.hidden = true;
-    setSpeechStatus("");
-    prepareCue();
   }
 
   function onGlobalKeyDown(event) {
@@ -3656,27 +2600,27 @@
       }
     }
     if (event.key === "Enter" && !event.repeat && !event.shiftKey && !event.ctrlKey && !event.altKey
-      && !event.metaKey && !event.isComposing && event.keyCode !== 229 && shouldKeepVietnameseSpeechToast()) {
+      && !event.metaKey && !event.isComposing && event.keyCode !== 229 && shadowingActivity.shouldKeepVietnameseSpeechToast()) {
       dismissVietnameseSpeechToast();
     }
     if (dictationMode === "speaking" && event.key === "Enter" && !event.shiftKey
       && !event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing && event.keyCode !== 229 && !noteFocused) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (event.repeat || speechStopRequested || speechPlaybackAudio) return;
-      if (speechStartPending) {
-        void toggleSpeechRecognition();
+      if (event.repeat || shadowingActivity.speechStopRequested || shadowingActivity.speechPlaybackAudio) return;
+      if (shadowingActivity.speechStartPending) {
+        void shadowingActivity.toggleSpeechRecognition();
         return;
       }
       if (checkedCurrent && solved.has(current)) {
         if (ui?.btnNext && !ui.btnNext.disabled) ui.btnNext.click();
         return;
       }
-      if (speechAnswerRevealed) {
+      if (shadowingActivity.speechAnswerRevealed) {
         submit();
         return;
       }
-      void toggleSpeechRecognition();
+      void shadowingActivity.toggleSpeechRecognition();
       return;
     }
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -3693,7 +2637,7 @@
       if (dictationMode === "speaking" && !noteFocused) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        handleSpeakingEscape();
+        shadowingActivity.handleSpeakingEscape();
         return;
       }
       if (path.includes(ui?.input) || event.target === ui?.input) {
@@ -3865,7 +2809,7 @@
       openingPanel = false;
       openingGeneration++;
     }
-    stopSpeechRecognition(true);
+    shadowingActivity.stopSpeechRecognition(true);
     if (!active || !ui) {
       setDictationButtonActive(false);
       ui?.root.classList.remove("te-dict-speaking-mode");

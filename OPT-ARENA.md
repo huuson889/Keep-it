@@ -172,23 +172,23 @@ Trang YouTube
         └── Annotations (lưu URL video + timestamp)
 ```
 
-#### 8.1.2. Dictation — YouTube overlay
-- Nút `AI keepit` chuyển đổi **overlay YouTube hiện có** sang workspace ba cột; không tạo overlay mới. Tắt bằng nút × hoặc bấm lại nút sẽ khôi phục bố cục hiện tại. Dùng duy nhất video/audio YouTube thật; chỉ cho phép khi transcript Dual Sub đang dùng track phụ đề tiếng Anh.
-- Trái: video và danh sách câu từ transcript đã tách câu, render tăng dần khi cuộn; câu chưa giải được bị làm mờ/khóa. Giữa: nhập đáp án, Enter để chấm bằng căn chỉnh từ; không phân biệt hoa thường, dấu câu và nháy cong. Phải: ghi chú bài học theo video và số câu, khóa tới khi câu hiện tại đạt 100%; bản dịch tiếng Việt chỉ hiện sau khi giải đúng.
-- Tái sử dụng `te-control-bar` hiện có cho điều hướng, phát lại câu và tốc độ; khi Dictation mở, thanh trải hết overlay và tạm ẩn nhóm tiêu đề video, bookmark, bộ sưu tập. Esc vẫn đóng overlay; Alt+X xóa đáp án; Ctrl riêng lẻ phát lại câu.
-- Đợt 1 chỉ có Đánh máy. Tiến độ, ghi chú và bản dịch đã mở lưu trong `browser.storage.local`, theo video/câu. Không CDN; icon SVG nội tuyến, confetti cục bộ và font kế thừa từ app. Đợt này không truy cập hoặc ghi âm micro, không thêm quyền microphone.
-- Đợt 2 (chưa triển khai): Nói riêng. Chromium dùng SpeechRecognition để chấm; Firefox chỉ ghi âm và phát lại. Trước đợt này cần rà disclosure/quyền riêng tư của micro và kiểm tra khác biệt trình duyệt.
+#### 8.1.2. Study — Dictation/Writing và Shadowing/Speaking
+- Cả hai hoạt động dùng **Overlay YouTube/Web hiện có**, cùng cues/session shell và player; không tạo Overlay thứ hai. `overlay-controller.js` chọn source/activity; không thêm top-level `js/study/` hoặc `study-controller.js`.
+- Dictation/Writing giữ luồng nhập đáp án, căn chỉnh từ, notes, bản dịch và tiến độ theo nguồn/câu. Shadowing/Speaking là activity riêng, sở hữu recognition, ghi âm-phát lại giọng người dùng và feedback; practice chỉ nằm trong Overlay.
+- Cấu trúc trong Overlay: activity code ở `js/overlay/study/dictation/` và `js/overlay/study/shadowing/`; chỉ scoring, learning rules, session metadata và behavior thực sự dùng chung ở `js/overlay/study/shared/`. Static Study markup/CSS thuộc `js/overlay/overlay-template.js`; activity modules chỉ binding và cập nhật động.
+- Reuse `te-control-bar`, Reader sentence cues, Web TTS, translation và cache hiện có; không nhân bản/move các engine ngoài Overlay. Giữ UI, selectors, keyboard behavior và persistence hiện hành khi tách module.
+- Dashboard Dictation là route phiên/thống kê. Nếu có hiển thị Shadowing trong Dashboard, chỉ dùng sessions/statistics tương tự; không tạo practice UI thứ hai. Bài luyện vẫn mở trong Overlay.
 
 ```text
-YouTube overlay hiện có
-└── AI keepit (bật/tắt Dictation trên cùng overlay)
-    ├── Trái: video thật + câu Dual Sub (track en, render lười)
-    ├── Giữa: gõ → LHN_DICTATION_SCORE (căn chỉnh từ) → độ chính xác
-    ├── Phải: notes theo video/câu (chỉ mở khi đúng 100%)
-    └── te-control-bar dùng chung: trước / phát lại / phát-tạm dừng / tiếp / tốc độ
+YouTube/Web source ──> overlay-controller.js ──> cùng Overlay shell
+                                               ├── Dictation/Writing activity
+                                               └── Shadowing/Speaking activity
 
-Dictation v1 → browser.storage.local (solved, notes, bản dịch VI)
-Dictation v2 (riêng) → nhận dạng Chromium / ghi âm-phát lại Firefox
+overlay-template.js ── static Study markup/CSS
+study/shared/ ── scoring + learning rules + session metadata dùng chung
+Reader / TTS / translation / cache ── các module hiện có, bên ngoài Overlay
+Dashboard Dictation ── sessions/statistics; Shadowing Dashboard (nếu có) ── sessions/statistics
+Practice ── Overlay only
 ```
 
 #### 8.1.3. Module hỗ trợ

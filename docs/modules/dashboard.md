@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng settings/study/backup. Ba view dùng chung shell, nền/theme và một topbar; Overview và Dictation có khung cuộn riêng giới hạn theo viewport, còn Highlights & Notes giữ cuộn trang chung và giới hạn riêng workspace. Highlights & Notes chạy trong cùng document, không dùng iframe.
+Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng settings/study/backup. Ba view dùng chung shell, nền/theme và một topbar; Overview và Dictation có khung cuộn riêng giới hạn theo viewport, còn Highlights & Notes giữ cuộn trang chung và giới hạn riêng workspace. Highlights & Notes chạy trong cùng document, không dùng iframe. Dashboard Shadowing hiện chưa có route; nếu bổ sung theo phạm vi đã chốt, route đó chỉ hiển thị sessions/statistics, còn practice vẫn ở Overlay.
 
 ## 2. File chính và điểm vào
 
@@ -19,7 +19,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 | [`js/dashboard/study-view.js`](../../js/dashboard/study-view.js), [`js/dashboard/study-utils.js`](../../js/dashboard/study-utils.js) | `LHN_STUDY_VIEW`, `LHN_STUDY_UTILS` | Flashcards và helpers. |
 | [`pages/dictation-stats-popup.html`](../../pages/dictation-stats-popup.html), [`js/dashboard/dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js), [`js/dashboard/reveal-effects.js`](../../js/dashboard/reveal-effects.js) | `#dictationStatsPopupFrame`, `KeepitDashboardReveal` | Render thống kê Dictation cục bộ; reveal stagger theo nhịp Dashboard và hỗ trợ reduced-motion. |
 | [`js/dashboard/dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js) | `KEEPIT_DICTATION_STATS_OPEN/UPDATE/CLOSE` | Quét stats schema v3, gồm nhóm lỗi và mảnh ngữ cảnh; index chỉ bổ sung metadata. |
-| [`js/overlay/study/session-index.js`](../../js/overlay/study/session-index.js), [`css/dashboard/dictation.css`](../../css/dashboard/dictation.css) | `dictation:session-index:v1`, `reconcileYouTubeRecord()` | Chuẩn hóa/đối soát phiên cục bộ với record Dictation theo video và stylesheet của route. |
+| [`js/overlay/study/shared/session-index.js`](../../js/overlay/study/shared/session-index.js), [`css/dashboard/dictation.css`](../../css/dashboard/dictation.css) | `dictation:session-index:v1`, `reconcileYouTubeRecord()` | Chuẩn hóa/đối soát phiên cục bộ với record Dictation theo video và stylesheet của route. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Resolve favicon và cache URL dùng chung cho popup/Highlights & Notes. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadYouTube/loadSource` | Dùng chung thumbnail YouTube và ảnh nguồn/fallback cho Dictation, YouTube content script, Highlights & Notes. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
