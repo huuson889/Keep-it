@@ -493,13 +493,240 @@ const WEB_THUMBNAIL_THEMES = [
   { id:'white', main:'#ffffff', secondary:'#94a3b8', glow:'rgba(255, 255, 255, 0.4)' },
   { id:'rose', main:'#ffe4e6', secondary:'#fb7185', glow:'rgba(251, 113, 133, 0.45)' },
 ];
+// Reference motion modes; Subtle Pulse is intentionally excluded.
+const WEB_THUMBNAIL_MOTION_MODES = ['breathing', 'pan', 'tilt', 'static'];
+const WEB_THUMBNAIL_RANDOM_EFFECTS = ['motionMode', 'motionSpeed', 'blur', 'darkness', 'particleCount', 'waveStyle', 'theme'];
+const WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS = 30_000;
+const WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS = 180_000;
+const WEB_THUMBNAIL_EFFECT_TRANSITION_MS = 2_400;
+// Serialize starts so independently randomized effects never transition simultaneously.
+const WEB_THUMBNAIL_EFFECT_GAP_MS = WEB_THUMBNAIL_EFFECT_TRANSITION_MS + 350;
 let activeWebThumbnailVisualizer = null;
+
+function webThumbnailNow() {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+function webThumbnailRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function webThumbnailClamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function webThumbnailEase(progress) {
+  const p = webThumbnailClamp(progress, 0, 1);
+  return p * p * (3 - 2 * p);
+}
+
+function webThumbnailTransitionProgress(transition, now) {
+  if (!transition || transition.duration <= 0) return 1;
+  return webThumbnailClamp((now - transition.startedAt) / transition.duration, 0, 1);
+}
+
+function webThumbnailScalarValue(transition, now) {
+  if (!transition || transition.duration <= 0) return transition?.to || 0;
+  const raw = webThumbnailTransitionProgress(transition, now);
+  const progress = webThumbnailEase(raw);
+  const value = transition.from + (transition.to - transition.from) * progress;
+  if (raw >= 1) {
+    transition.from = transition.to;
+    transition.duration = 0;
+    return transition.to;
+  }
+  return value;
+}
+
+function webThumbnailStartScalarTransition(visualizer, key, target, now) {
+  const previous = visualizer.values[key];
+  const from = webThumbnailScalarValue(previous, now);
+  visualizer.values[key] = { from, to:target, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
+}
+
+function webThumbnailPickDifferent(values, current) {
+  const options = values.filter(value => value !== current);
+  return options[webThumbnailRandomInt(0, options.length - 1)] ?? current;
+}
+
+function webThumbnailRandomIntDifferent(min, max, current, minimumDifference = 1) {
+  const options = [];
+  for (let value = min; value <= max; value++) {
+    if (Math.abs(value - current) >= minimumDifference) options.push(value);
+  }
+  return options[webThumbnailRandomInt(0, options.length - 1)] ?? webThumbnailRandomInt(min, max);
+}
+
+function webThumbnailColorChannels(value) {
+  const color = String(value || '').trim();
+  const hex = color.match(/^#([\da-f]{6})$/i);
+  if (hex) return [parseInt(hex[1].slice(0, 2), 16), parseInt(hex[1].slice(2, 4), 16), parseInt(hex[1].slice(4, 6), 16), 1];
+  const rgba = color.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  return rgba ? [Number(rgba[1]), Number(rgba[2]), Number(rgba[3]), rgba[4] === undefined ? 1 : Number(rgba[4])] : [255, 255, 255, 1];
+}
+
+function webThumbnailBlendColor(from, to, progress) {
+  const a = webThumbnailColorChannels(from), b = webThumbnailColorChannels(to);
+  const channels = a.map((value, index) => value + (b[index] - value) * progress);
+  return `rgba(${Math.round(channels[0])}, ${Math.round(channels[1])}, ${Math.round(channels[2])}, ${channels[3].toFixed(3)})`;
+}
+
+function webThumbnailCurrentTheme(visualizer, now) {
+  const transition = visualizer.themeTransition;
+  if (!transition) return visualizer.theme;
+  const raw = webThumbnailTransitionProgress(transition, now);
+  const progress = webThumbnailEase(raw);
+  if (raw >= 1) {
+    visualizer.theme = transition.to;
+    visualizer.themeTransition = null;
+    return visualizer.theme;
+  }
+  return {
+    id:progress < 0.5 ? transition.from.id : transition.to.id,
+    main:webThumbnailBlendColor(transition.from.main, transition.to.main, progress),
+    secondary:webThumbnailBlendColor(transition.from.secondary, transition.to.secondary, progress),
+    glow:webThumbnailBlendColor(transition.from.glow, transition.to.glow, progress),
+  };
+}
+
+function webThumbnailEvaluateMotion(mode, motionTime) {
+  const baseSafetyScale = 1.12;
+  let dynamicScale = 1;
+  let shiftX = 0;
+  let shiftY = 0;
+  let rotateAngle = 0;
+  if (mode === 'breathing') {
+    dynamicScale = 1 + Math.sin(motionTime * 0.4) * 0.05;
+  } else if (mode === 'pan') {
+    shiftX = Math.sin(motionTime * 0.3) * 0.03;
+    shiftY = Math.cos(motionTime * 0.2) * 0.03;
+  } else if (mode === 'tilt') {
+    rotateAngle = Math.sin(motionTime * 0.25) * 0.02;
+    dynamicScale = 1.03;
+  }
+  return { scale:baseSafetyScale * dynamicScale, shiftX, shiftY, rotateAngle };
+}
+
+function webThumbnailCurrentMotion(visualizer, now) {
+  const motionTime = visualizer.time * webThumbnailScalarValue(visualizer.values.motionSpeed, now);
+  const transition = visualizer.motionTransition;
+  if (!transition) return webThumbnailEvaluateMotion(visualizer.motionMode, motionTime);
+  const raw = webThumbnailTransitionProgress(transition, now);
+  const progress = webThumbnailEase(raw);
+  const from = webThumbnailEvaluateMotion(transition.from, motionTime);
+  const to = webThumbnailEvaluateMotion(transition.to, motionTime);
+  const motion = {
+    scale:from.scale + (to.scale - from.scale) * progress,
+    shiftX:from.shiftX + (to.shiftX - from.shiftX) * progress,
+    shiftY:from.shiftY + (to.shiftY - from.shiftY) * progress,
+    rotateAngle:from.rotateAngle + (to.rotateAngle - from.rotateAngle) * progress,
+  };
+  if (raw >= 1) {
+    visualizer.motionMode = transition.to;
+    visualizer.motionTransition = null;
+    return to;
+  }
+  return motion;
+}
+
+function webThumbnailCurrentWaveTransition(visualizer, now) {
+  const transition = visualizer.waveTransition;
+  if (!transition) return null;
+  const raw = webThumbnailTransitionProgress(transition, now);
+  const progress = webThumbnailEase(raw);
+  if (raw >= 1) {
+    visualizer.waveStyle = transition.to;
+    visualizer.waveTransition = null;
+    return null;
+  }
+  return { from:transition.from, to:transition.to, progress };
+}
+
+function webThumbnailFinalizeCompletedTransitions(visualizer, now) {
+  for (const transition of Object.values(visualizer.values)) webThumbnailScalarValue(transition, now);
+  webThumbnailCurrentMotion(visualizer, now);
+  webThumbnailCurrentWaveTransition(visualizer, now);
+  webThumbnailCurrentTheme(visualizer, now);
+}
+
+function webThumbnailApplyRandomEffect(visualizer, key, now) {
+  webThumbnailFinalizeCompletedTransitions(visualizer, now);
+  if (key === 'motionMode') {
+    const to = webThumbnailPickDifferent(WEB_THUMBNAIL_MOTION_MODES, visualizer.motionMode);
+    visualizer.motionTransition = { from:visualizer.motionMode, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
+  } else if (key === 'motionSpeed') {
+    const current = webThumbnailScalarValue(visualizer.values.motionSpeed, now);
+    const to = webThumbnailRandomIntDifferent(2, 30, Math.round(current * 10), 2) / 10;
+    webThumbnailStartScalarTransition(visualizer, 'motionSpeed', to, now);
+  } else if (key === 'blur') {
+    const current = webThumbnailScalarValue(visualizer.values.blur, now);
+    webThumbnailStartScalarTransition(visualizer, 'blur', webThumbnailRandomIntDifferent(0, 19, Math.round(current), 3), now);
+  } else if (key === 'darkness') {
+    const current = webThumbnailScalarValue(visualizer.values.darkness, now) * 100;
+    webThumbnailStartScalarTransition(visualizer, 'darkness', webThumbnailRandomIntDifferent(0, 80, Math.round(current), 8) / 100, now);
+  } else if (key === 'particleCount') {
+    const current = webThumbnailScalarValue(visualizer.values.particleCount, now);
+    webThumbnailStartScalarTransition(visualizer, 'particleCount', webThumbnailRandomIntDifferent(11, 100, Math.round(current), 8), now);
+  } else if (key === 'waveStyle') {
+    const to = webThumbnailRandomIntDifferent(1, 4, visualizer.waveStyle);
+    visualizer.waveTransition = { from:visualizer.waveStyle, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
+  } else if (key === 'theme') {
+    const from = webThumbnailCurrentTheme(visualizer, now);
+    const options = WEB_THUMBNAIL_THEMES.filter(theme => theme.id !== from.id);
+    const to = options[webThumbnailRandomInt(0, options.length - 1)];
+    visualizer.themeTransition = { from, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
+  }
+}
+
+function webThumbnailNextEffectTime(visualizer, key, now) {
+  const safe = candidate => [...visualizer.nextEffectTimes.entries()]
+    .every(([otherKey, time]) => otherKey === key || Math.abs(candidate - time) >= WEB_THUMBNAIL_EFFECT_GAP_MS);
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const candidate = now + webThumbnailRandomInt(WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS, WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS);
+    if (safe(candidate)) return candidate;
+  }
+  const candidates = [];
+  for (let delay = WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS; delay <= WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS; delay += 250) {
+    const candidate = now + delay;
+    if (safe(candidate)) candidates.push(candidate);
+  }
+  return candidates.length
+    ? candidates[webThumbnailRandomInt(0, candidates.length - 1)]
+    : now + WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS;
+}
+
+function scheduleWebThumbnailEffect(visualizer, key, now = webThumbnailNow()) {
+  if (!visualizer.active || activeWebThumbnailVisualizer !== visualizer) return;
+  const nextAt = webThumbnailNextEffectTime(visualizer, key, now);
+  visualizer.nextEffectTimes.set(key, nextAt);
+  const timer = setTimeout(() => runWebThumbnailEffect(visualizer, key), Math.max(0, nextAt - webThumbnailNow()));
+  visualizer.effectTimers.set(key, timer);
+}
+
+function runWebThumbnailEffect(visualizer, key) {
+  if (!visualizer.active || activeWebThumbnailVisualizer !== visualizer) return;
+  visualizer.effectTimers.delete(key);
+  visualizer.nextEffectTimes.delete(key);
+  const now = webThumbnailNow();
+  const wait = Math.max(0, visualizer.nextEffectAllowedAt - now);
+  if (wait > 0) {
+    const nextAt = now + wait;
+    visualizer.nextEffectTimes.set(key, nextAt);
+    visualizer.effectTimers.set(key, setTimeout(() => runWebThumbnailEffect(visualizer, key), wait));
+    return;
+  }
+  webThumbnailApplyRandomEffect(visualizer, key, now);
+  visualizer.nextEffectAllowedAt = now + WEB_THUMBNAIL_EFFECT_GAP_MS;
+  scheduleWebThumbnailEffect(visualizer, key, now);
+}
 
 function stopWebThumbnailVisualizer() {
   const visualizer = activeWebThumbnailVisualizer;
   if (!visualizer) return;
   visualizer.active = false;
   if (visualizer.frameId) cancelAnimationFrame(visualizer.frameId);
+  for (const timer of visualizer.effectTimers?.values?.() || []) clearTimeout(timer);
+  visualizer.effectTimers?.clear?.();
   visualizer.titleObserver?.disconnect();
   visualizer.stage.remove();
   activeWebThumbnailVisualizer = null;
@@ -525,18 +752,18 @@ function getWebThumbnailWaveHeight(xIndex, time, freqShift = 1) {
   );
 }
 
-function drawWebThumbnailWaveform(visualizer) {
+function drawWebThumbnailWaveform(visualizer, currentWaveStyle = visualizer.waveStyle, alpha = 1) {
   const ctx = visualizer.context;
   const w = visualizer.width;
   const h = visualizer.height;
   const centerY = h * 0.78;
   const activeColorTheme = visualizer.theme;
-  const currentWaveStyle = visualizer.waveStyle;
   const globalTime = visualizer.time;
 
   ctx.save();
   ctx.shadowColor = activeColorTheme.glow;
   ctx.shadowBlur = 20;
+  if (alpha !== 1) ctx.globalAlpha = alpha;
 
   if (currentWaveStyle === 1) {
     const layers = [
@@ -559,7 +786,7 @@ function drawWebThumbnailWaveform(visualizer) {
       grad.addColorStop(0, activeColorTheme.main);
       grad.addColorStop(0.5, activeColorTheme.secondary);
       grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha = layer.opacity;
+      ctx.globalAlpha = layer.opacity * alpha;
       ctx.fillStyle = grad;
       ctx.fill();
     });
@@ -621,27 +848,51 @@ function drawWebThumbnailWaveform(visualizer) {
 
 function drawWebThumbnailVisualizer(visualizer, timestamp) {
   if (!visualizer?.active || activeWebThumbnailVisualizer !== visualizer) return;
-  const { context:ctx, width, height, theme } = visualizer;
-  const elapsed = Math.min(50, Math.max(0, timestamp - (visualizer.lastTimestamp || timestamp)));
-  visualizer.lastTimestamp = timestamp;
+  const { context:ctx, width, height, stage, image } = visualizer;
+  const now = Number.isFinite(timestamp) ? timestamp : webThumbnailNow();
+  const elapsed = Math.min(50, Math.max(0, now - (visualizer.lastTimestamp || now)));
+  visualizer.lastTimestamp = now;
   visualizer.time += 0.012;
   ctx.clearRect(0, 0, width, height);
-  const motion = document.hidden ? 0 : elapsed / 16.67;
+  const motionStep = document.hidden ? 0 : elapsed / 16.67;
+  const theme = webThumbnailCurrentTheme(visualizer, now);
+  visualizer.theme = theme;
+  stage.style.setProperty('--te-webviz-main', theme.main);
+  stage.style.setProperty('--te-webviz-secondary', theme.secondary);
+  stage.style.setProperty('--te-webviz-glow', theme.glow);
+  stage.style.setProperty('--te-webviz-darkness', webThumbnailScalarValue(visualizer.values.darkness, now).toFixed(4));
+  image.style.setProperty('--te-webviz-blur', `${webThumbnailScalarValue(visualizer.values.blur, now).toFixed(2)}px`);
 
-  for (const particle of visualizer.particles) {
-    particle.y -= particle.speed * motion;
-    particle.x += Math.sin(visualizer.time + particle.phase) * 0.24 * motion;
+  const motionState = webThumbnailCurrentMotion(visualizer, now);
+  image.style.setProperty('--te-webviz-shift-x', `${(motionState.shiftX * 100).toFixed(4)}%`);
+  image.style.setProperty('--te-webviz-shift-y', `${(motionState.shiftY * 100).toFixed(4)}%`);
+  image.style.setProperty('--te-webviz-angle', `${motionState.rotateAngle.toFixed(6)}rad`);
+  image.style.setProperty('--te-webviz-scale', motionState.scale.toFixed(5));
+
+  const particleCount = webThumbnailScalarValue(visualizer.values.particleCount, now);
+  for (let i = 0; i < visualizer.particles.length; i++) {
+    const particle = visualizer.particles[i];
+    particle.y -= particle.speed * motionStep;
+    particle.x += Math.sin(visualizer.time + particle.phase) * 0.24 * motionStep;
     if (particle.y < -12) { particle.y = height + 12; particle.x = Math.random() * width; }
     if (particle.x < -12) particle.x = width + 12;
     if (particle.x > width + 12) particle.x = -12;
-    ctx.globalAlpha = particle.alpha;
+    const visibility = webThumbnailClamp(particleCount - i, 0, 1);
+    if (visibility <= 0) continue;
+    ctx.globalAlpha = particle.alpha * visibility;
     ctx.fillStyle = theme.glow;
     ctx.beginPath();
     ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-  drawWebThumbnailWaveform(visualizer);
+
+  const waveTransition = webThumbnailCurrentWaveTransition(visualizer, now);
+  if (waveTransition) {
+    if (waveTransition.progress < 1) drawWebThumbnailWaveform(visualizer, waveTransition.from, 1 - waveTransition.progress);
+    if (waveTransition.progress > 0) drawWebThumbnailWaveform(visualizer, waveTransition.to, waveTransition.progress);
+  } else drawWebThumbnailWaveform(visualizer);
+
   visualizer.frameId = requestAnimationFrame((nextTimestamp) => drawWebThumbnailVisualizer(visualizer, nextTimestamp));
 }
 
@@ -649,17 +900,24 @@ function createWebThumbnailVisualizer(image) {
   stopWebThumbnailVisualizer();
   const stage = document.createElement('div');
   stage.className = 'te-web-thumbnail-visualizer';
-  const theme = WEB_THUMBNAIL_THEMES[Math.floor(Math.random() * WEB_THUMBNAIL_THEMES.length)];
-  const blur = Math.floor(Math.random() * 20);
-  const darkness = Math.floor(Math.random() * 81);
-  const particleCount = 11 + Math.floor(Math.random() * 90);
-  const waveStyle = 1 + Math.floor(Math.random() * 4);
-  stage.style.setProperty('--te-webviz-darkness', String(darkness / 100));
+  const theme = WEB_THUMBNAIL_THEMES[webThumbnailRandomInt(0, WEB_THUMBNAIL_THEMES.length - 1)];
+  const blur = webThumbnailRandomInt(0, 19);
+  const darkness = webThumbnailRandomInt(0, 80) / 100;
+  const particleCount = webThumbnailRandomInt(11, 100);
+  const waveStyle = webThumbnailRandomInt(1, 4);
+  const motionMode = WEB_THUMBNAIL_MOTION_MODES[webThumbnailRandomInt(0, WEB_THUMBNAIL_MOTION_MODES.length - 1)];
+  const motionSpeed = webThumbnailRandomInt(2, 30) / 10;
+  const now = webThumbnailNow();
+  stage.style.setProperty('--te-webviz-darkness', String(darkness));
   stage.style.setProperty('--te-webviz-main', theme.main);
   stage.style.setProperty('--te-webviz-secondary', theme.secondary);
   stage.style.setProperty('--te-webviz-glow', theme.glow);
   image.classList.add('te-web-thumbnail-bg');
   image.style.setProperty('--te-webviz-blur', `${blur}px`);
+  image.style.setProperty('--te-webviz-scale', '1.12');
+  image.style.setProperty('--te-webviz-shift-x', '0%');
+  image.style.setProperty('--te-webviz-shift-y', '0%');
+  image.style.setProperty('--te-webviz-angle', '0rad');
 
   const shade = document.createElement('div');
   shade.className = 'te-web-thumbnail-shade';
@@ -709,10 +967,14 @@ function createWebThumbnailVisualizer(image) {
   };
   image.addEventListener('load', syncArtwork);
   const context = canvas.getContext('2d', { alpha:true });
+  const scalar = (value) => ({ from:value, to:value, startedAt:now, duration:0 });
   const visualizer = {
-    stage, context, width:canvas.width, height:canvas.height, theme, waveStyle, time:0,
+    stage, image, context, width:canvas.width, height:canvas.height, theme, themeTransition:null,
+    waveStyle, waveTransition:null, motionMode, motionTransition:null, time:0,
+    values:{ blur:scalar(blur), darkness:scalar(darkness), particleCount:scalar(particleCount), motionSpeed:scalar(motionSpeed) },
     lastTimestamp:0, frameId:0, active:true, titleObserver,
-    particles:Array.from({ length:particleCount }, () => ({
+    effectTimers:new Map(), nextEffectTimes:new Map(), nextEffectAllowedAt:now,
+    particles:Array.from({ length:100 }, () => ({
       x:Math.random() * canvas.width,
       y:Math.random() * canvas.height,
       radius:Math.random() * 4 + 1,
@@ -722,7 +984,10 @@ function createWebThumbnailVisualizer(image) {
     })),
   };
   activeWebThumbnailVisualizer = visualizer;
-  if (context) visualizer.frameId = requestAnimationFrame((timestamp) => drawWebThumbnailVisualizer(visualizer, timestamp));
+  if (context) {
+    for (const effect of WEB_THUMBNAIL_RANDOM_EFFECTS) scheduleWebThumbnailEffect(visualizer, effect, now);
+    visualizer.frameId = requestAnimationFrame((timestamp) => drawWebThumbnailVisualizer(visualizer, timestamp));
+  }
   return { stage, visualizer, syncArtwork };
 }
 

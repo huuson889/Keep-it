@@ -1118,7 +1118,9 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .te-video-slot .te-web-page-thumbnail.te-web-thumbnail-bg,
     #keepit-exact-overlay.te-sidebar-hidden .te-video-slot .te-web-page-thumbnail.te-web-thumbnail-bg {
       object-fit: cover !important;
-      transform: scale(1.08) !important;
+      transform: translate(var(--te-webviz-shift-x, 0%), var(--te-webviz-shift-y, 0%)) rotate(var(--te-webviz-angle, 0rad)) scale(var(--te-webviz-scale, 1.12)) !important;
+      transform-origin: 50% 50% !important;
+      will-change: transform, filter;
       filter: blur(var(--te-webviz-blur, 8px)) brightness(.88);
       background: #111;
     }

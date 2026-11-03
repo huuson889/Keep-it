@@ -35,11 +35,11 @@ Overlay cung cấp một UI cho YouTube và Web Study. `overlay-controller.js` �
 - Study markup/CSS thuộc `overlay-template.js`; selectors, labels, event contracts và hành vi UI phải giữ nguyên khi tách activity behavior.
 - Giữ cấu trúc ngoài `js/overlay/{source,study,view}`; không tạo top-level `js/study/` hoặc `study-controller.js`.
 - Dictation và Shadowing là activities riêng; `study/shared/` chỉ chứa scoring, learning rules, session metadata và behavior thật sự dùng chung. Một số lifecycle/result branches hiện vẫn nằm trong Dictation session shell; cần tách tiếp mà không đổi UX.
-- Web cues tiếp tục dùng `LHN_READER_MAIN_SOURCE`, cache hiện có, `LHN_TTS`, `BILINGUAL_TRANSLATE` và `LHN_THUMBNAILS`. `.te-yt-logo-box` lấy favicon Web/YouTube từ `LHN_SITE_ICONS`; giữ 22×22px, title/layout và globe fallback. Web thumbnail visualizer chỉ thay đổi pixels bên trong frame, giữ nguyên frame geometry và playback; bốn waveform dùng cùng hàm height, geometry, colors và per-frame time step như reference HTML; YouTube transcript cache/fallback/timing vẫn thuộc Video source.
+- Web cues tái sử dụng Reader/cache/TTS/translation/thumbnail helpers. Favicon Web/YouTube dùng `LHN_SITE_ICONS`, slot 22×22px và globe fallback. Thumbnail visualizer giữ frame/playback, dùng motion Breathing/Pan/Tilt/Static (0,2×–3,0×; không Pulse), bốn waveform tham chiếu và bảy hiệu ứng random riêng mỗi 30–180 giây với transition mượt. YouTube transcript cache/timing thuộc Video source.
 - Dashboard hiện có Dictation sessions/statistics; không có Shadowing practice route. Nếu bổ sung sau, Shadowing Dashboard chỉ dành cho sessions/statistics; practice vẫn ở Overlay.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.36: `node --check` đạt cho toàn bộ JavaScript files; manifest paths tồn tại; focused VM xác nhận favicon thành công ẩn fallback, lỗi icon giữ fallback, stale response không đổi trạng thái; CSS giữ 22×22px; `git diff --check` đạt. Browser QA chưa chạy.
+- v3.5.37: `node --check` cho toàn bộ JavaScript, manifest script paths, focused visualizer VM (motion formulas/ranges, staggered timers, transitions, cleanup), CSS và `git diff --check`; browser QA chưa chạy.
 - Static checks có thể lặp bằng Node, parse `manifest.json`, kiểm tra mọi script path và nạp Study scripts theo manifest order trong một VM context.
 - Browser QA cần xác nhận YouTube/Web switching, cues, TTS, Typing, Shadowing recognition/record/replay, Reader mutual exclusion, shortcuts, cleanup và layout. Static/mock checks không thay thế extension/browser test.
