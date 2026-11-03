@@ -100,7 +100,6 @@ const state = {
   webPageUrl: '',
   webThumbnail: null,
 };
-const transcriptFocusBasePadding = new WeakMap();
 
 function showWebToast(message) {
   let toast = document.getElementById('lhn-sidebar-toast');
@@ -2937,40 +2936,8 @@ function currentTranscriptFocusRatio() {
   return Number.isFinite(ratio) ? Math.max(0.03, Math.min(0.97, ratio)) : 0.5;
 }
 
-function transcriptFocusBasePaddingFor(list) {
-  const mode = isReadingModeActive() ? 'reading' : 'normal';
-  let cached = transcriptFocusBasePadding.get(list);
-  if (!cached) {
-    cached = {};
-    transcriptFocusBasePadding.set(list, cached);
-  }
-  if (cached[mode]) return cached[mode];
-
-  const previousTop = list.style.paddingTop;
-  const previousBottom = list.style.paddingBottom;
-  list.style.paddingTop = '';
-  list.style.paddingBottom = '';
-  const computed = window.getComputedStyle(list);
-  const padding = {
-    top: Number.parseFloat(computed.paddingTop) || 0,
-    bottom: Number.parseFloat(computed.paddingBottom) || 0,
-  };
-  list.style.paddingTop = previousTop;
-  list.style.paddingBottom = previousBottom;
-  cached[mode] = padding;
-  return padding;
-}
-
 function calculateTranscriptFocusScrollDelta(rowRect, viewportHeight, ratio) {
   return rowRect.top + rowRect.height / 2 - viewportHeight * ratio;
-}
-
-function applyTranscriptFocusScrollSpace(list, row, viewportHeight, targetY) {
-  const base = transcriptFocusBasePaddingFor(list);
-  const halfRowHeight = row.getBoundingClientRect().height / 2;
-  // Give the first and last cue enough scrollable space to reach the chosen focus line.
-  list.style.paddingTop = `${Math.max(base.top, targetY - halfRowHeight)}px`;
-  list.style.paddingBottom = `${Math.max(base.bottom, viewportHeight - targetY - halfRowHeight)}px`;
 }
 
 function alignActiveTranscriptFocus(behavior = 'smooth') {
@@ -2984,9 +2951,6 @@ function alignActiveTranscriptFocus(behavior = 'smooth') {
   const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / viewportHeight);
   const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio()));
   state.transcriptFocusRatio = ratio;
-  const targetY = viewportHeight * ratio;
-  applyTranscriptFocusScrollSpace(list, row, viewportHeight, targetY);
-
   const delta = calculateTranscriptFocusScrollDelta(row.getBoundingClientRect(), viewportHeight, ratio);
   const maxScroll = Math.max(0, list.scrollHeight - list.clientHeight);
   const targetScrollTop = Math.max(0, Math.min(maxScroll, list.scrollTop + delta));

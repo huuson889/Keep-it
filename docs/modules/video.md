@@ -35,7 +35,7 @@ Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. W
 - Web-study TTS cập nhật `playbackRate` trực tiếp trên Google audio đang phát; Pause/Play giữ nguyên audio hoặc browser utterance và vị trí chunk. Đổi tốc độ với browser voice khởi động lại từ boundary gần nhất; seek/đóng overlay huỷ run cũ. Callback tiến độ chunk trong `LHN_TTS` là tuỳ chọn và không đổi các consumer khác.
 - Web-study và Bilingual Reader không chạy đồng thời: Web gửi `stop-reading`; Reader phát `lhn-bilingual-reader-started` sau khi xác nhận cue hợp lệ, trước TTS. Không đổi Reader selection algorithm.
 - Video thật và thumbnail Web dùng chung CSS selector căn chỉnh trong `.te-video-slot`; clipping chung nằm ở `.te-video-slot`/`.te-video-frame`, không bật theo source class. Web adapter chỉ thay video bằng thumbnail và dọn ảnh khi detach; Ambient Web lấy thumbnail tĩnh, YouTube giữ video frame. Theater + Large và Reading + Ambient dùng chung nền/blur/viền/bóng cho control bar; geometry `fixed` chỉ áp dụng cho Theater + Large.
-- Transcript focus dùng chung cho Normal/Reading: active cue mặc định ở `40vh`; scroll tay lưu tỉ lệ dọc đang chọn và cue tiếp theo bám theo vị trí đó. Padding cuộn đầu/cuối đủ để cue đầu/cuối cũng tới focus line; tuỳ chỉnh chỉ tồn tại trong runtime trang. Theater và Dictation giữ hành vi cũ.
+- Transcript focus dùng chung cho Normal/Reading: active cue mặc định ở `40vh`; scroll tay lưu tỉ lệ dọc đang chọn và cue tiếp theo bám theo vị trí đó. Cue đầu/cuối giữ giới hạn cuộn tự nhiên như v3.5.20, không thêm spacer; focus line được căn khi danh sách cho phép. Tuỳ chỉnh chỉ tồn tại trong runtime trang. Theater và Dictation giữ hành vi cũ.
 - Chỉ `.te-dictation-active` ẩn CC/subtitle controls; Web view và YouTube xem thường giữ controls. Giữ `keepitSiteDisabled` gate và settings keys hiện có.
 - Giữ bốn subtitle modes, ba video modes, Reading S/M/L ratios 32/35%, 26/45%, 20/60%, Theater geometry và transcript cache LRU/TTL.
 
@@ -45,5 +45,6 @@ Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. W
 - v3.5.20: CSS parse/source assertions xác nhận rule nền/blur/viền/bóng dùng chung cho Reading + Ambient ở cả theme sáng/tối; geometry fixed chỉ còn ở Theater + Large. Browser QA trực quan chưa chạy.
 - v3.5.21: VM focus checks xác nhận Normal/Reading căn cue ở 50vh, cue đầu/cuối tới được focus line, scroll tay giữ tỉ lệ cho cue tiếp theo; Theater/Dictation không dùng logic mới. Browser QA trực quan chưa chạy.
 - v3.5.22: Default focus đổi từ 50vh thành 40vh theo yêu cầu; test chưa chạy theo yêu cầu.
+- v3.5.23: VM checks xác nhận focus 40vh cho cue cuộn được, cue đầu/cuối clamp ở natural boundary như v3.5.20, scroll tay vẫn giữ offset qua cue sau. Browser QA chưa chạy.
 - Reader test paths được tài liệu tham chiếu (`tests/reader-speaker-placement.test.cjs`, `tests/reader-country-flags.test.cjs`) không tồn tại trong repo nên `node --test` không chạy được.
 - Browser QA chưa chạy: thử Alt+E/F, Alt+1–3, 1–4, Space/K, arrows/J/L, </>, Escape trên Web và YouTube; xác nhận mode/controls, Reader exclusivity, thumbnail/Ambient và cleanup.
