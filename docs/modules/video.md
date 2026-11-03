@@ -32,6 +32,7 @@ Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. W
 - Reader text chỉ lấy qua `readerBlocks()`/`rawText()`; không thay thuật toán chọn block. Web không gọi YouTube caption loader.
 - Dùng `BILINGUAL_TRANSLATE`, marking và queue/cache chung; giữ bilingual/translation modes theo cue và target-language settings. Lỗi dịch ghi console và toast, không đổi mode.
 - Dùng chung overlay/player và không tạo Web keydown listener riêng. Web virtual media kiểm tra generation sau `timeupdate` trước auto-advance, để seek/pause đồng bộ của Dictation không bị stale cue ghi đè; phím native YouTube không bị chặn.
+- Web-study TTS cập nhật `playbackRate` trực tiếp trên Google audio đang phát; Pause/Play giữ nguyên audio hoặc browser utterance và vị trí chunk. Đổi tốc độ với browser voice khởi động lại từ boundary gần nhất; seek/đóng overlay huỷ run cũ. Callback tiến độ chunk trong `LHN_TTS` là tuỳ chọn và không đổi các consumer khác.
 - Web-study và Bilingual Reader không chạy đồng thời: Web gửi `stop-reading`; Reader phát `lhn-bilingual-reader-started` sau khi xác nhận cue hợp lệ, trước TTS. Không đổi Reader selection algorithm.
 - Video thật và thumbnail Web dùng chung CSS selector căn chỉnh trong `.te-video-slot`; clipping chung nằm ở `.te-video-slot`/`.te-video-frame`, không bật theo source class. Web adapter chỉ thay video bằng thumbnail và dọn ảnh khi detach; Ambient Web lấy thumbnail tĩnh, YouTube giữ video frame.
 - Chỉ `.te-dictation-active` ẩn CC/subtitle controls; Web view và YouTube xem thường giữ controls. Giữ `keepitSiteDisabled` gate và settings keys hiện có.
@@ -39,6 +40,6 @@ Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. W
 
 ## 5. Kiểm tra và xác minh
 
-- Regression VM đã chạy: Dictation repeat 1x/2x phát lại cùng Web cue, luồng không Dictation vẫn auto-advance, còn bản thử không có guard tái hiện việc nhảy cue; `node --check` 54 JS, manifest/docs assertions và `git diff --check` đạt.
+- Regression VM đã chạy: Dictation repeat 1x/2x phát lại cùng Web cue, luồng không Dictation vẫn auto-advance, còn bản thử không có guard tái hiện việc nhảy cue; v3.5.19 kiểm tra Web Google audio đổi tốc độ tức thời, pause/resume giữ cùng audio/currentTime, browser speech pause/resume và restart theo boundary, pause giữa chunks, seek khi pause; `LHN_TTS` callbacks được kiểm tra trên Google và browser multi-chunk paths. `node --check` 54 JS, manifest JSON/version assertions, docs assertions và `git diff --check` đạt; Browser QA chưa chạy.
 - Reader test paths được tài liệu tham chiếu (`tests/reader-speaker-placement.test.cjs`, `tests/reader-country-flags.test.cjs`) không tồn tại trong repo nên `node --test` không chạy được.
 - Browser QA chưa chạy: thử Alt+E/F, Alt+1–3, 1–4, Space/K, arrows/J/L, </>, Escape trên Web và YouTube; xác nhận mode/controls, Reader exclusivity, thumbnail/Ambient và cleanup.

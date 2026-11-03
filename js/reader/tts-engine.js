@@ -131,9 +131,16 @@
     return out.filter(Boolean);
   }
 
+  function notifyChunk(opts, name, chunk, index) {
+    try { opts[name]?.(chunk, index); } catch (error) { console.warn("TTS chunk progress callback failed", error); }
+  }
+
   async function playWithBrowserVoice(opts) {
-    for (const chunk of splitChunks(opts.text)) {
+    const chunks = splitChunks(opts.text);
+    for (let index = 0; index < chunks.length; index++) {
       if (!opts.isActive()) return;
+      const chunk = chunks[index];
+      notifyChunk(opts, "onChunkStart", chunk, index);
       const result = await new Promise(resolve => {
         let finished = false;
         const done = status => { if (finished) return; finished = true; resolve(status); };
@@ -144,12 +151,13 @@
         if (opts.isActive()) opts.onEnd?.();
         return;
       }
+      notifyChunk(opts, "onChunkEnd", chunk, index);
     }
     if (opts.isActive()) opts.onEnd?.();
   }
 
   // opts: text, lang, googleLanguage, voice, rate, isActive(), setCurrent(audio, url),
-  //       clearCurrent(), systemSpeak(text, lang, done), onEnd(),
+  //       clearCurrent(), optional onChunkStart/onChunkEnd(text, index), systemSpeak(text, lang, done), onEnd(),
   //       strictVoice (thử lại Google 3 lần, chỉ chuyển giọng trình duyệt khi hết lượt), onGoogleVoiceFailed(error), onGoogleLimitReached(),
   //       onGoogleAudioSlow(error) (mỗi lần tải/phát âm thanh Google lỗi, trừ lỗi hết lượt)
   async function play(opts) {
@@ -160,8 +168,11 @@
       return;
     }
     let limitNotified = false;
-    for (const chunk of splitChunks(opts.text)) {
+    const chunks = splitChunks(opts.text);
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+      const chunk = chunks[chunkIndex];
       if (!opts.isActive()) return;
+      notifyChunk(opts, "onChunkStart", chunk, chunkIndex);
       let played = false, limitReached = false, lastError = null;
       const maxAttempts = opts.strictVoice ? 3 : 1;
       for (let attempt = 0; attempt < maxAttempts && !played && !limitReached; attempt++) {
@@ -177,7 +188,7 @@
           url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
           const audio = new Audio(url);
           audio.playbackRate = typeof opts.rate === "function" ? opts.rate() : (opts.rate || 1);
-          opts.setCurrent(audio, url);
+          opts.setCurrent(audio, url, chunk, chunkIndex);
           if (opts.waitIfPaused) { const wait = opts.waitIfPaused(); if (wait) await wait; if (!opts.isActive()) return; }
           await new Promise((resolve, reject) => {
             audio.onended = resolve;
@@ -192,7 +203,7 @@
           console.warn(opts.strictVoice && !limitReached ? "Google TTS chunk failed" : "Google TTS chunk failed; using browser speech for this chunk", error);
         } finally {
           if (url) URL.revokeObjectURL(url);
-          opts.clearCurrent();
+          opts.clearCurrent(chunk, chunkIndex, played);
         }
       }
       // strictVoice: giọng Google đã chọn thì không tự đổi sang giọng trình duyệt, trừ khi hết lượt (key).
@@ -203,6 +214,7 @@
         if (opts.isActive()) opts.onEnd?.();
         return;
       }
+      let browserFallbackComplete = false;
       if (!played) {
         if (!opts.isActive()) return;
         const result = await new Promise(resolve => opts.systemSpeak(chunk, opts.lang, resolve));
@@ -211,7 +223,9 @@
           if (opts.isActive()) opts.onEnd?.();
           return;
         }
+        browserFallbackComplete = true;
       }
+      if (played || browserFallbackComplete) notifyChunk(opts, "onChunkEnd", chunk, chunkIndex);
     }
     if (opts.isActive()) opts.onEnd?.();
   }

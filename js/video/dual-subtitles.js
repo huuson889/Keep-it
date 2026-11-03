@@ -173,7 +173,24 @@ async function detectWebTtsLanguage(text, fallbackLanguage) {
 function createWebTtsMedia(cues) {
   const listeners = new Map();
   let currentTime = 0, paused = true, playbackRate = 1, muted = false, generation = 0;
-  const media = {
+  let media;
+  const normalizedOffset = (value, length) => Math.max(0, Math.min(length, Number.isFinite(Number(value)) ? Math.floor(Number(value)) : 0));
+  const resumeAt = run => {
+    if (!run) return null;
+    const offset = normalizedOffset(run.position, run.sourceText.length);
+    return { index:run.index, text:run.sourceText.slice(offset), offset };
+  };
+  const chunkStartAt = (run, chunk) => {
+    const value = String(chunk || '');
+    let offset = run.requestText.indexOf(value, run.requestCursor);
+    if (offset < 0) offset = run.requestCursor;
+    run.requestCursor = offset + value.length;
+    run.chunkStart = offset;
+    return offset;
+  };
+  const wakeResumeWaiters = () => media._resumeWaiters.splice(0).forEach(resolve => { try { resolve(); } catch {} });
+
+  media = {
     videoWidth: 16, videoHeight: 9, volume: 1, controls: false,
     addEventListener(type, listener) {
       if (!listener) return;
@@ -193,18 +210,37 @@ function createWebTtsMedia(cues) {
       const changed = Math.abs(next - currentTime) > 0.0001;
       currentTime = next;
       media.dispatchEvent(new Event('timeupdate'));
-      if (changed && !paused) {
-        generation++;
-        media._cancelCurrent();
-        if (next >= cues.length) { paused = true; media.dispatchEvent(new Event('pause')); return; }
-        media._startCue(Math.floor(next));
+      if (!changed) return;
+      const shouldResume = !paused;
+      generation++;
+      media._resumeState = null;
+      media._activeRun = null;
+      media._cancelCurrent();
+      if (next >= cues.length) {
+        if (shouldResume) { paused = true; media.dispatchEvent(new Event('pause')); }
+        return;
       }
+      if (shouldResume) media._startCue(Math.floor(next));
     },
     get duration() { return cues.length; },
     get paused() { return paused; },
     get playbackRate() { return playbackRate; },
     set playbackRate(value) {
-      playbackRate = Math.max(0.5, Math.min(2, Number(value) || 1));
+      const next = Math.max(0.5, Math.min(2, Number(value) || 1));
+      const changed = Math.abs(next - playbackRate) > 0.0001;
+      playbackRate = next;
+      if (media._currentAudio) {
+        try { media._currentAudio.playbackRate = playbackRate; } catch {}
+      } else if (changed && media._currentUtterance && media._activeRun) {
+        const run = media._activeRun;
+        const resume = resumeAt(run);
+        const shouldResume = !paused;
+        generation++;
+        media._activeRun = null;
+        media._cancelCurrent();
+        if (shouldResume) media._startCue(resume.index, resume.text, resume.offset);
+        else media._resumeState = resume;
+      }
       media.dispatchEvent(new Event('ratechange'));
     },
     get muted() { return muted; },
@@ -214,26 +250,58 @@ function createWebTtsMedia(cues) {
       media.dispatchEvent(new Event('volumechange'));
     },
     _currentAudio: null,
+    _currentUtterance: null,
+    _activeRun: null,
+    _resumeState: null,
+    _resumeWaiters: [],
     _cancelCurrent() {
-      try { media._currentAudio?.pause?.(); } catch {}
+      const audio = media._currentAudio;
       media._currentAudio = null;
+      media._currentUtterance = null;
+      try { audio?.pause?.(); } catch {}
       try { globalThis.speechSynthesis?.cancel?.(); } catch {}
+      wakeResumeWaiters();
     },
-    _startCue(index) {
+    _dispose() {
+      paused = true;
+      generation++;
+      media._resumeState = null;
+      media._activeRun = null;
+      media._cancelCurrent();
+    },
+    _startCue(index, textOverride = null, sourceOffset = 0) {
       if (paused || index < 0 || index >= cues.length) return;
       const cue = cues[index];
-      const text = String(cue?.en || '').trim();
+      const sourceText = String(cue?.en || '').trim();
+      const text = textOverride === null ? sourceText : String(textOverride || '');
+      const baseOffset = normalizedOffset(sourceOffset, sourceText.length);
       const token = ++generation;
-      let failed = false;
-      const active = () => state.webStudy && state.videoEl === media && !paused && token === generation;
+      const run = {
+        token, index, cue, sourceText, requestText:text, baseOffset,
+        requestCursor:0, chunkStart:0, position:baseOffset,
+      };
+      media._activeRun = run;
+      const isCurrentRun = () => state.webStudy && state.videoEl === media && token === generation && media._activeRun === run;
+      const active = () => isCurrentRun() && !paused;
       const finish = () => {
         if (!active()) return;
-        if (failed) { paused = true; media.dispatchEvent(new Event('pause')); return; }
+        if (run.failed) {
+          media._activeRun = null;
+          media._currentAudio = null;
+          media._currentUtterance = null;
+          paused = true;
+          media.dispatchEvent(new Event('pause'));
+          return;
+        }
         currentTime = state.loop ? cue.start : cue.end;
         media.dispatchEvent(new Event('timeupdate'));
         // A Web consumer (for example Dictation's repeat counter) may seek or
         // pause synchronously from timeupdate. Do not advance this stale cue.
         if (!active()) return;
+        media._activeRun = null;
+        media._currentAudio = null;
+        media._currentUtterance = null;
+        media._resumeState = null;
         const next = state.loop ? index : index + 1;
         if (next < cues.length) media._startCue(next);
         else { paused = true; media.dispatchEvent(new Event('pause')); media.dispatchEvent(new Event('ended')); }
@@ -242,7 +310,7 @@ function createWebTtsMedia(cues) {
       const tts = globalThis.LHN_TTS;
       if (!tts?.play || !tts?.detectLanguage) {
         reportWebIssue('The shared TTS engine is unavailable.', null, { level: 'error' });
-        failed = true; finish(); return;
+        run.failed = true; finish(); return;
       }
       const fallbackLanguage = String(state.webLanguageHint || navigator.language || 'en-US');
       Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then((lang) => {
@@ -252,8 +320,23 @@ function createWebTtsMedia(cues) {
         return tts.play({
           text, lang: normalized, googleLanguage: base, voice: `google-translate-default:${base}`,
           rate: () => playbackRate, isActive: active,
-          setCurrent(audio) { media._currentAudio = audio; if (audio) audio.muted = muted; },
-          clearCurrent() { media._currentAudio = null; },
+          waitIfPaused: () => paused ? new Promise(resolve => media._resumeWaiters.push(resolve)) : null,
+          onChunkStart(chunk) {
+            if (isCurrentRun()) chunkStartAt(run, chunk);
+          },
+          onChunkEnd(chunk) {
+            if (!isCurrentRun()) return;
+            const offset = run.chunkStart;
+            run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + offset + String(chunk || '').length));
+          },
+          setCurrent(audio) {
+            if (!isCurrentRun()) { try { audio?.pause?.(); } catch {} return; }
+            media._currentAudio = audio;
+            if (audio) { audio.playbackRate = playbackRate; audio.muted = muted; }
+          },
+          clearCurrent() {
+            if (media._activeRun === run) media._currentAudio = null;
+          },
           systemSpeak(speechText, speechLanguage, done, browserVoiceURI) {
             const synth = globalThis.speechSynthesis;
             const Utterance = globalThis.SpeechSynthesisUtterance;
@@ -267,42 +350,90 @@ function createWebTtsMedia(cues) {
               || voices.find((item) => normalizeTag(item.lang).split('-')[0] === languageBase);
             if (!voice) { done({ unsupported: true }); return; }
             const utterance = new Utterance(speechText);
+            const chunkOffset = run.chunkStart;
+            let settled = false;
+            const settle = (status, completed = false) => {
+              if (settled) return;
+              settled = true;
+              if (isCurrentRun()) {
+                if (completed) run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + chunkOffset + speechText.length));
+                if (media._currentUtterance === utterance) media._currentUtterance = null;
+              }
+              done(status);
+            };
             utterance.lang = voice.lang || speechLanguage;
             utterance.rate = playbackRate;
             utterance.voice = voice;
-            utterance.onend = done; utterance.onerror = done;
+            utterance.onboundary = (event) => {
+              if (!isCurrentRun() || !Number.isFinite(event.charIndex)) return;
+              run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + chunkOffset + event.charIndex));
+            };
+            utterance.onend = () => settle(undefined, true);
+            utterance.onerror = () => settle(undefined, true);
+            media._currentUtterance = utterance;
             synth.speak(utterance);
           },
-          onGoogleVoiceFailed(error) { failed = true; reportWebIssue('Google TTS failed for a web sentence.', error, { level: 'error' }); },
+          onGoogleVoiceFailed(error) { run.failed = true; reportWebIssue('Google TTS failed for a web sentence.', error, { level: 'error' }); },
           onGoogleLimitReached() { reportWebIssue('Google TTS usage limit reached; trying the configured browser voice.'); },
           onGoogleAudioSlow(error) { reportWebIssue('Google TTS audio could not be loaded.', error); },
-          onBrowserVoiceUnavailable(language) { failed = true; reportWebIssue(`No browser voice is available for ${language || normalized}.`, null, { level: 'error' }); },
+          onBrowserVoiceUnavailable(language) { run.failed = true; reportWebIssue(`No browser voice is available for ${language || normalized}.`, null, { level: 'error' }); },
           strictVoice: true,
           onEnd: finish,
         });
       }).catch((error) => {
         if (!active()) return;
-        failed = true; reportWebIssue('Could not detect the web sentence language for TTS.', error, { level: 'error' }); finish();
+        run.failed = true; reportWebIssue('Could not detect the web sentence language for TTS.', error, { level: 'error' }); finish();
       });
     },
     play() {
       if (!cues.length) { reportWebIssue('Reader has no main-text sentences to read.', null, { level: 'warn' }); return Promise.resolve(); }
       if (!paused) return Promise.resolve();
-      if (currentTime >= cues.length) currentTime = 0;
+      if (currentTime >= cues.length && !media._resumeState) currentTime = 0;
       paused = false;
       media.dispatchEvent(new Event('play'));
-      media._startCue(Math.min(cues.length - 1, Math.floor(currentTime)));
+      if (media._currentAudio) {
+        const audio = media._currentAudio;
+        try {
+          const playing = audio.play?.();
+          playing?.catch?.((error) => { if (media._currentAudio === audio) { try { audio.onerror?.(error); } catch {} } });
+        } catch (error) { try { audio.onerror?.(error); } catch {} }
+        wakeResumeWaiters();
+        return Promise.resolve();
+      }
+      if (media._currentUtterance) {
+        try { globalThis.speechSynthesis?.resume?.(); } catch {}
+        wakeResumeWaiters();
+        return Promise.resolve();
+      }
+      if (media._resumeState) {
+        const resume = media._resumeState;
+        media._resumeState = null;
+        media._startCue(resume.index, resume.text, resume.offset);
+      } else {
+        media._startCue(Math.min(cues.length - 1, Math.floor(currentTime)));
+      }
+      wakeResumeWaiters();
       return Promise.resolve();
     },
     pause() {
       if (paused) return;
-      paused = true; generation++; media._cancelCurrent();
+      paused = true;
+      if (media._currentAudio) {
+        try { media._currentAudio.pause?.(); } catch {}
+      } else if (media._currentUtterance) {
+        try { globalThis.speechSynthesis?.pause?.(); } catch {}
+      } else {
+        const run = media._activeRun;
+        media._resumeState = resumeAt(run);
+        generation++;
+        media._activeRun = null;
+        media._cancelCurrent();
+      }
       media.dispatchEvent(new Event('pause'));
     },
   };
   return media;
 }
-
 function prepareWebStudy() {
   state.webStudy = true;
   state.webPageUrl = location.href;
@@ -2344,7 +2475,7 @@ function detachVideo() {
     v.removeEventListener('ratechange', handleVideoRateChange);
     v.removeEventListener('volumechange', handleVideoVolumeChange);
     if (state.videoGeometryHandler) { v.removeEventListener('loadedmetadata', state.videoGeometryHandler); state.videoGeometryHandler = null; }
-    v.pause?.();
+    if (typeof v._dispose === 'function') v._dispose(); else v.pause?.();
     state.webThumbnail?.removeEventListener('click', handleOverlayVideoClick);
     globalThis.LHN_THUMBNAILS?.clear?.(state.webThumbnail);
     state.webThumbnail?.remove();
