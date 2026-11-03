@@ -354,7 +354,8 @@ function updateSidebarTranscriptFontSize(root) {
 function syncViewSizeClasses(root = overlayEl()) {
   if (!root) return null;
   const viewSize = root.classList.contains('te-reading-mode') ? (settings.readingViewSize || 'M')
-    : root.classList.contains('te-study-active') ? (settings.learningViewSize || 'S') : settings.size;
+    : root.classList.contains('te-study-active') ? (settings.learningViewSize || 'S')
+    : root.classList.contains('te-sidebar-hidden') ? (settings.theaterSize || 'M') : settings.size;
   root.classList.toggle('size-s', viewSize === 'S');
   root.classList.toggle('size-m', viewSize === 'M');
   root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
@@ -410,7 +411,8 @@ function applySettings() {
   groups[1].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === (settings.sub.bold ? 1 : 0)));
   const modalViewSize = isReadingModeActive()
     ? (settings.readingViewSize || 'M')
-    : overlayEl()?.classList.contains('te-study-active') ? (settings.learningViewSize || 'S') : settings.size;
+    : overlayEl()?.classList.contains('te-study-active') ? (settings.learningViewSize || 'S')
+    : overlayEl()?.classList.contains('te-sidebar-hidden') ? (settings.theaterSize || 'M') : settings.size;
   const sizeIdx = { S: 0, M: 1, L: 2 }[modalViewSize] ?? 1;
   $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
   const readingWidthHint = $('te-reading-width-hint');

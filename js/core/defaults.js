@@ -92,6 +92,7 @@
   const youtube = deepFreeze({
     theme: "dark",
     size: "M",
+    theaterSize: "M",
     readingMode: false,
     preferredVideoMode: "combined",
     preferredLearningMode: "typing",

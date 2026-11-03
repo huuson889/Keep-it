@@ -1689,12 +1689,13 @@ function bindUI() {
   $('te-view-mode-options').querySelectorAll('button').forEach((b) => {
     b.addEventListener('click', () => {
       const studyPanelActive = overlayEl()?.classList.contains('te-study-active');
+      const theaterActive = overlayEl()?.classList.contains('te-sidebar-hidden');
       if (isReadingModeActive()) settings.readingViewSize = b.dataset.size;
       else if (studyPanelActive) settings.learningViewSize = b.dataset.size;
+      else if (theaterActive) settings.theaterSize = b.dataset.size;
       else settings.size = b.dataset.size;
       if (!isReadingModeActive() && !studyPanelActive) {
-        const theaterLargeSelection = settings.size === 'L'
-          && overlayEl()?.classList.contains('te-sidebar-hidden');
+        const theaterLargeSelection = theaterActive && (settings.theaterSize || 'M') === 'L';
         if (theaterLargeSelection) {
           if (!settings.hideControls) { settings.hideControls = true; sizeForcedHide = true; }
         } else if (sizeForcedHide) {
