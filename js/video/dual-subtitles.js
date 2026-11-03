@@ -66,7 +66,7 @@ const state = {
   allCues: [],       // toàn bộ cue đã tải + làm sạch; rawCues chỉ là cửa sổ đang hiển thị
   captions: [],
   activeIdx: -1,
-  transcriptFocusRatio: 0.5,
+  transcriptFocusRatio: 0.4,
   transcriptManualScrollUntil: 0,
   transcriptManualScrollAt: 0,
   transcriptProgrammaticScrollAt: 0,
