@@ -54,6 +54,8 @@ function defaultColorFor(group) {
 let pendingDictationShortcut = false;
 let pendingDictationOpenImmediately = false;
 let pendingDictationMode = 'typing';
+let webStudyCueSessionCache = null;
+let webStudyPreparationPromise = null;
 
 const state = {
   open: false,
@@ -439,28 +441,107 @@ function createWebTtsMedia(cues) {
   };
   return media;
 }
-function prepareWebStudy() {
+function webStudyPageCacheUrl() {
+  try {
+    const url = new URL(location.href);
+    url.hash = '';
+    return url.href;
+  } catch { return String(location.href || ''); }
+}
+
+function webStudyTextFingerprint(text) {
+  let hash = 14695981039346656037n;
+  const value = String(text || '');
+  for (let index = 0; index < value.length; index++) {
+    hash ^= BigInt(value.charCodeAt(index));
+    hash = BigInt.asUintN(64, hash * 1099511628211n);
+  }
+  return `${value.length}-${hash.toString(16).padStart(16, '0')}`;
+}
+
+async function prepareWebStudy() {
+  if (state.webStudy) return state.captions.length;
+  if (webStudyPreparationPromise) return webStudyPreparationPromise;
+  const task = prepareWebStudyFromPage();
+  webStudyPreparationPromise = task;
+  try { return await task; }
+  finally { if (webStudyPreparationPromise === task) webStudyPreparationPromise = null; }
+}
+
+async function prepareWebStudyFromPage() {
+  const pageUrl = location.href;
+  const pageCacheUrl = webStudyPageCacheUrl();
+  const languageHint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || navigator.language || 'en-US');
+  let sentences = null;
+  let cueCacheKey = '';
+
+  if (webStudyCueSessionCache?.document === document && webStudyCueSessionCache.pageUrl === pageCacheUrl) {
+    sentences = webStudyCueSessionCache.sentences.slice();
+    cueCacheKey = webStudyCueSessionCache.cacheKey;
+    if (cueCacheKey && globalThis.LHN_MESSAGING?.sendMessage) {
+      const sendMessage = globalThis.LHN_MESSAGING.sendMessage.bind(globalThis.LHN_MESSAGING);
+      try {
+        void Promise.resolve(sendMessage({ type:'WEB_STUDY_CUE_CACHE_TOUCH', cacheKey:cueCacheKey }))
+          .then((touched) => touched ? true : sendMessage({
+            type:'WEB_STUDY_CUE_CACHE_SAVE', cacheKey:cueCacheKey, sentences,
+          }))
+          .catch(error => console.warn('[Keepit Web] Cue cache touch failed.', error));
+      } catch (error) { console.warn('[Keepit Web] Cue cache touch failed.', error); }
+    }
+  } else {
+    let blocks = [];
+    try { blocks = globalThis.LHN_READER_MAIN_SOURCE?.getTextBlocks?.({ forceRefresh:true }) || []; }
+    catch (error) { reportWebIssue('Could not read the Reader main-text blocks.', error, { level: 'error' }); }
+    const normalizedBlocks = (Array.isArray(blocks) ? blocks : [])
+      .map((block) => String(block || '').replace(/\s+/gu, ' ').trim()).filter(Boolean);
+    const sourceText = normalizedBlocks.join('\n');
+    const sourceLanguage = String(document.documentElement.lang || languageHint || 'en-US').replace(/_/g, '-').toLowerCase();
+    if (sourceText) {
+      const sourceFingerprint = webStudyTextFingerprint(sourceText);
+      const pageFingerprint = webStudyTextFingerprint(`${pageCacheUrl}\n${sourceLanguage}`);
+      cueCacheKey = `web-study-cues:v1:${pageFingerprint}:${sourceFingerprint}`;
+      try {
+        const cachedSentences = await globalThis.LHN_MESSAGING?.sendMessage?.({ type:'WEB_STUDY_CUE_CACHE_GET', cacheKey:cueCacheKey });
+        if (Array.isArray(cachedSentences)) {
+          const cleanCached = cachedSentences.map(text => String(text || '').replace(/\s+/gu, ' ').trim()).filter(Boolean);
+          if (cleanCached.length) sentences = cleanCached;
+        }
+      } catch (error) { console.warn('[Keepit Web] Cue cache read failed; using fresh Reader text.', error); }
+    }
+
+    if (!sentences) {
+      sentences = splitReaderSentences(normalizedBlocks);
+      if (cueCacheKey && sentences.length) {
+        try {
+          await globalThis.LHN_MESSAGING?.sendMessage?.({
+            type:'WEB_STUDY_CUE_CACHE_SAVE', cacheKey:cueCacheKey, sentences,
+          });
+        } catch (error) { console.warn('[Keepit Web] Cue cache write failed; using in-page cue snapshot.', error); }
+      }
+    }
+
+    webStudyCueSessionCache = sentences.length
+      ? { document, pageUrl:pageCacheUrl, cacheKey:cueCacheKey, sentences:sentences.slice() }
+      : null;
+  }
+
   state.webStudy = true;
-  state.webPageUrl = location.href;
-  state.webLanguageHint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || navigator.language || 'en-US');
-  let blocks = [];
-  try { blocks = globalThis.LHN_READER_MAIN_SOURCE?.getTextBlocks?.() || []; }
-  catch (error) { reportWebIssue('Could not read the Reader main-text blocks.', error, { level: 'error' }); }
-  const sentences = splitReaderSentences(blocks);
-  const cues = sentences.map((text, index) => ({ id: index, start: index, end: index + 1, en: text, vi: '', mainText: text }));
+  state.webPageUrl = pageUrl;
+  state.webLanguageHint = languageHint;
   let hash = 2166136261;
-  for (const char of location.href) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  for (const char of pageUrl) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   state.videoId = `web-${(hash >>> 0).toString(16)}`;
-  state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = state.webLanguageHint;
-  state.mainLanguage = state.webLanguageHint; state.webDetectedLanguage = ''; state.loadingFor = null;
-  const readerCues = markWebReaderCues(cues, state.webLanguageHint);
+  state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = languageHint;
+  state.mainLanguage = languageHint; state.webDetectedLanguage = ''; state.loadingFor = null;
+  const cues = sentences.map((text, index) => ({ id:index, start:index, end:index + 1, en:text, vi:'', mainText:text }));
+  const readerCues = markWebReaderCues(cues, languageHint);
   state.videoEl = createWebTtsMedia(readerCues);
   state.rawCues = readerCues; state.allCues = readerCues; state.captions = readerCues;
-  const pageUrl = state.webPageUrl;
+  const activePageUrl = state.webPageUrl;
   state.webLanguageReady = sentences.length
-    ? Promise.resolve(detectWebTtsLanguage(sentences[0], state.webLanguageHint)).then((language) => {
-        const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || state.webLanguageHint) || language || state.webLanguageHint;
-        if (state.webStudy && state.webPageUrl === pageUrl) {
+    ? Promise.resolve(detectWebTtsLanguage(sentences[0], languageHint)).then((language) => {
+        const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || languageHint) || language || languageHint;
+        if (state.webStudy && state.webPageUrl === activePageUrl) {
           const previousLanguage = String(state.captionTrackLanguage || state.webLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
           const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
           state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
@@ -481,7 +562,7 @@ function prepareWebStudy() {
         reportWebIssue('Could not detect the Reader text language for Dictation.', error, { level: 'error' });
         return state.webLanguageHint;
       })
-    : Promise.resolve(state.webLanguageHint);
+    : Promise.resolve(languageHint);
   state.loadToken++; loadedUntil = 0;
   if (!sentences.length) reportWebIssue('Reader did not provide any main-text sentences for this page.', null, { level: 'warn' });
   return cues.length;
@@ -2282,20 +2363,20 @@ function toggleDictationTypingControl() {
   beginDictationMode('typing');
 }
 
-function prepareWebStudyForShortcut() {
+async function prepareWebStudyForShortcut() {
   if (/^(www\.)?youtube\.com$/i.test(location.hostname) || state.webStudy) return;
   if (state.open) closeOverlay();
   document.dispatchEvent(new CustomEvent('lhn-bilingual-reader-command', { detail: 'stop-reading' }));
-  prepareWebStudy();
+  await prepareWebStudy();
 }
 
-function toggleDictationFromShortcut(event) {
+async function toggleDictationFromShortcut(event) {
   if (keepitSiteDisabled) return;
   if (event?.detail?.source === 'typing-control') {
     toggleDictationTypingControl();
     return;
   }
-  prepareWebStudyForShortcut();
+  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebStudyForShortcut();
   const dictation = globalThis.LHN_DICTATION;
   if (pendingDictationShortcut || dictation?.isOpen?.()) {
     closeOverlay();
@@ -2314,9 +2395,9 @@ function startWebTtsInViewMode() {
   }
 }
 
-function toggleVideoViewFromShortcut() {
+async function toggleVideoViewFromShortcut() {
   if (keepitSiteDisabled) return;
-  prepareWebStudyForShortcut();
+  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebStudyForShortcut();
   const dictation = globalThis.LHN_DICTATION;
   if (!state.open) {
     openOverlay();
@@ -4235,7 +4316,7 @@ function tick() {
 
 async function runSharedVideoShortcut(handler, event) {
   if (!keepitSiteGateReady) await refreshKeepitGate();
-  handler(event);
+  await handler(event);
 }
 
 function isEditableVideoShortcutTarget(event) {

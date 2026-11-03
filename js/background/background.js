@@ -114,6 +114,9 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_GET") return LHN_CACHE.getVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
   if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_SAVE") return LHN_CACHE.saveVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""), message.transcript);
   if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_TOUCH") return LHN_CACHE.touchVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_GET") return LHN_CACHE.getWebStudyCues(String(message.cacheKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_SAVE") return LHN_CACHE.saveWebStudyCues(String(message.cacheKey || ""), message.sentences);
+  if (message.type === "WEB_STUDY_CUE_CACHE_TOUCH") return LHN_CACHE.touchWebStudyCues(String(message.cacheKey || ""));
   if (message.type === "YOUTUBE_FETCH_TEXT") {
     const url = String(message.url || "");
     const allowed = /^https:\/\/(?:www\.)?youtube\.com\//.test(url) || /^https:\/\/translate\.googleapis\.com\//.test(url);

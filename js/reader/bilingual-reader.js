@@ -810,7 +810,7 @@
     return visibleReaderText(block);
   }
   globalThis.LHN_READER_MAIN_SOURCE = Object.freeze({
-    getTextBlocks: () => readerBlocks().map(rawText).filter(text => String(text || "").trim()),
+    getTextBlocks: (options = {}) => readerBlocks(Boolean(options?.forceRefresh)).map(rawText).filter(text => String(text || "").trim()),
   });
   function lastReaderCharacterRect(block) {
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);

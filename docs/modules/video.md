@@ -1,50 +1,44 @@
 # Video (YouTube Dual Subtitles) — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code là nguồn sự thật.
+> Source code là nguồn sự thật; trang này mô tả luồng YouTube và Web Study dùng chung overlay.
 
 ## 1. Mục đích và phạm vi
 
-Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. Web lấy câu nguồn từ Reader; Dictation dùng chung UI và engine.
+Điều phối overlay video, YouTube subtitles, Web Study và Dictation. Web lấy bài qua Reader; overlay/virtual-media adapter dùng chung nhưng transcript cache YouTube tách biệt.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp content modules. |
-| [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM và styles. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `handleVideoOverlayShortcut`, `runSharedVideoShortcut`, `prepareWebStudyForShortcut`, `openOverlay` | Shortcut dispatcher, YouTube controller, Web adapter. |
-| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Reader main-text getter. |
-| [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.detectLanguage`, `play` | Dò ngôn ngữ và TTS. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp module. |
+| [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM và giao diện. |
+| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `runSharedVideoShortcut`, `prepareWebStudy`, `openOverlay` | Shortcut, YouTube và Web adapter. |
+| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Chọn và trích main text. |
+| [`js/core/cache.js`](../../js/core/cache.js) | `getWebStudyCues`, `saveWebStudyCues`, `touchWebStudyCues` | Persistent cache cue Web. |
+| [`js/background/background.js`](../../js/background/background.js) | `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` | Cầu message tới cache. |
+| [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.play` | Phát audio/browser speech. |
 | [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION` | Dictation UI/engine dùng chung. |
-| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadSource` | Thumbnail metadata và fallback. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp Reader, template, video controller rồi Dictation. Content dispatcher gửi Alt+E/Alt+F đến `runSharedVideoShortcut()` để mở cùng overlay trên YouTube hoặc Web.
-2. `handleVideoOverlayShortcut()` điều phối phím khi overlay mở. Alt+1–3, 1–4, tốc độ và Escape dùng chung; Space/K và ←/J/→/L để YouTube xử lý native, còn Web virtual media chuyển tới overlay controls/cue navigation.
-3. Web gọi Reader getter, tạo cue theo câu, phát bằng `LHN_TTS`; thumbnail trang dùng cho frame/Ambient. YouTube dùng player/caption discovery hiện có và video frame cho Ambient.
-4. Web subtitles giữ Reader text làm track chính; shared marking, queue/cache và `BILINGUAL_TRANSLATE` tạo track dịch thứ cấp. Dictation dùng chung engine với cue của từng nguồn.
-5. Mở Web-study gửi Reader command `stop-reading`; khi Reader bắt đầu phát, `lhn-bilingual-reader-started` đóng Web overlay trước TTS. Đóng overlay hoặc đổi URL dừng media và dọn adapter.
+1. Manifest nạp Reader trước video controller; shortcut Alt+E/F đi qua dispatcher chung cho Web và YouTube.
+2. Lần đầu mở Web Study gọi Reader `forceRefresh`, chuẩn hóa main text và băm URL/ngôn ngữ/nội dung/schema.
+3. Cache hit theo fingerprint dùng câu lưu; miss thì tách/lưu. Snapshot RAM giữ cue khi đóng/mở cùng document. Reload/URL mới đọc Reader lại để phát hiện nội dung đổi.
+4. Cue hiện trong transcript. TTS và dịch chỉ được gọi khi cần, qua module/cache mặc định; Web adapter không tạo cache riêng.
+5. Web gửi `stop-reading`; Reader start đóng Web overlay. Đóng overlay hủy media nhưng giữ snapshot cue của document. YouTube tiếp tục dùng player/caption loader và transcript cache riêng.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ thứ tự `overlay-template.js` → `dual-subtitles.js` → Dictation, cùng `LHN_OVERLAY_API` và event contracts.
-- Reader text chỉ lấy qua `readerBlocks()`/`rawText()`; không thay thuật toán chọn block. Web không gọi YouTube caption loader.
-- Dùng `BILINGUAL_TRANSLATE`, marking và queue/cache chung; giữ bilingual/translation modes theo cue và target-language settings. Lỗi dịch ghi console và toast, không đổi mode.
-- Dùng chung overlay/player và không tạo Web keydown listener riêng. Web virtual media kiểm tra generation sau `timeupdate` trước auto-advance, để seek/pause đồng bộ của Dictation không bị stale cue ghi đè; phím native YouTube không bị chặn.
-- Web-study TTS cập nhật `playbackRate` trực tiếp trên Google audio đang phát; Pause/Play giữ nguyên audio hoặc browser utterance và vị trí chunk. Đổi tốc độ với browser voice khởi động lại từ boundary gần nhất; seek/đóng overlay huỷ run cũ. Callback tiến độ chunk trong `LHN_TTS` là tuỳ chọn và không đổi các consumer khác.
-- Web-study và Bilingual Reader không chạy đồng thời: Web gửi `stop-reading`; Reader phát `lhn-bilingual-reader-started` sau khi xác nhận cue hợp lệ, trước TTS. Không đổi Reader selection algorithm.
-- Video thật và thumbnail Web dùng chung CSS selector căn chỉnh trong `.te-video-slot`; clipping chung nằm ở `.te-video-slot`/`.te-video-frame`, không bật theo source class. Web adapter chỉ thay video bằng thumbnail và dọn ảnh khi detach; Ambient Web lấy thumbnail tĩnh, YouTube giữ video frame. Theater + Large và Reading + Ambient dùng chung nền/blur/viền/bóng cho control bar; geometry `fixed` chỉ áp dụng cho Theater + Large.
-- Transcript focus dùng chung cho Normal/Reading: active cue mặc định ở `40vh`; scroll tay lưu tỉ lệ dọc đang chọn và cue tiếp theo bám theo vị trí đó. Cue đầu/cuối giữ giới hạn cuộn tự nhiên như v3.5.20, không thêm spacer; focus line được căn khi danh sách cho phép. Tuỳ chỉnh chỉ tồn tại trong runtime trang. Theater và Dictation giữ hành vi cũ.
-- Chỉ `.te-dictation-active` ẩn CC/subtitle controls; Web view và YouTube xem thường giữ controls. Giữ `keepitSiteDisabled` gate và settings keys hiện có.
-- Giữ bốn subtitle modes, ba video modes, Reading S/M/L ratios 32/35%, 26/45%, 20/60%, Theater geometry và transcript cache LRU/TTL.
+- Web chỉ lấy main text qua Reader; không đổi thuật toán chọn block và không dùng YouTube caption loader.
+- Cache Web lưu câu nguồn đã chuẩn hóa, không lưu HTML. Khóa được băm từ URL bỏ fragment, fingerprint text, ngôn ngữ và schema `v1`; URL thô không nằm trong khóa lưu. Thay cách tách câu phải đổi schema.
+- Cache cue có TTL trượt 7 ngày; lần mở lại cùng document chạm cache để gia hạn, cleanup xóa mục không được dùng lại trong thời hạn. Không chia quota/entry với transcript YouTube.
+- Snapshot bộ nhớ gắn với document và URL, chỉ tồn tại qua đóng/mở overlay. Reload tạo content script mới và buộc trích Reader lại; persistent cache chỉ được dùng khi fingerprint còn trùng.
+- TTS và translation giữ cache/policy của module hiện có. Giữ marking, queue, target-language updates và lỗi dịch/toast.
+- Giữ `LHN_OVERLAY_API`, phím native YouTube, shared shortcuts và mutual exclusion Reader/Web. Web virtual media phải kiểm tra generation để seek/pause không bị cue cũ ghi đè.
+- Tốc độ Web TTS cập nhật audio hiện hành; Pause/Play giữ vị trí. Không thay UI, video modes, thumbnail/Ambient hoặc Dictation.
 
 ## 5. Kiểm tra và xác minh
 
-- Regression VM đã chạy: Dictation repeat 1x/2x phát lại cùng Web cue, luồng không Dictation vẫn auto-advance, còn bản thử không có guard tái hiện việc nhảy cue; v3.5.19 kiểm tra Web Google audio đổi tốc độ tức thời, pause/resume giữ cùng audio/currentTime, browser speech pause/resume và restart theo boundary, pause giữa chunks, seek khi pause; `LHN_TTS` callbacks được kiểm tra trên Google và browser multi-chunk paths. `node --check` 54 JS, manifest JSON/version assertions, docs assertions và `git diff --check` đạt; Browser QA chưa chạy.
-- v3.5.20: CSS parse/source assertions xác nhận rule nền/blur/viền/bóng dùng chung cho Reading + Ambient ở cả theme sáng/tối; geometry fixed chỉ còn ở Theater + Large. Browser QA trực quan chưa chạy.
-- v3.5.21: VM focus checks xác nhận Normal/Reading căn cue ở 50vh, cue đầu/cuối tới được focus line, scroll tay giữ tỉ lệ cho cue tiếp theo; Theater/Dictation không dùng logic mới. Browser QA trực quan chưa chạy.
-- v3.5.22: Default focus đổi từ 50vh thành 40vh theo yêu cầu; test chưa chạy theo yêu cầu.
-- v3.5.23: VM checks xác nhận focus 40vh cho cue cuộn được, cue đầu/cuối clamp ở natural boundary như v3.5.20, scroll tay vẫn giữ offset qua cue sau. Browser QA chưa chạy.
-- Reader test paths được tài liệu tham chiếu (`tests/reader-speaker-placement.test.cjs`, `tests/reader-country-flags.test.cjs`) không tồn tại trong repo nên `node --test` không chạy được.
-- Browser QA chưa chạy: thử Alt+E/F, Alt+1–3, 1–4, Space/K, arrows/J/L, </>, Escape trên Web và YouTube; xác nhận mode/controls, Reader exclusivity, thumbnail/Ambient và cleanup.
+- v3.5.24 VM xác nhận fresh Reader read/save đầu tiên, snapshot/touch khi đóng/mở lại, persistent-cache hit sau reload, refresh khi URL đổi, TTL 7 ngày và dọn mục không được dùng lại.
+- Static/source checks: `node --check` 54 JS files, manifest JSON/version, Reader/Web/Background message-contract assertions và `git diff --check`.
+- Browser QA chưa chạy: thử nhiều lần đóng/mở và reload trên Tuổi Trẻ/VnExpress; kiểm tra số cue, TTS/dịch lazy, URL đổi, Alt+E/F, Reader exclusivity, YouTube không đổi và cleanup.

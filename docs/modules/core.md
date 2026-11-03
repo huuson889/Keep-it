@@ -1,6 +1,6 @@
 # Core — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code được dẫn là nguồn sự thật.
+> Source code là nguồn sự thật.
 
 ## 1. Mục đích và phạm vi
 
@@ -16,7 +16,7 @@
 | [`js/core/settings.js`](../../js/core/settings.js) | `LHN_SETTINGS` | Resolve defaults với dữ liệu đã lưu; get/save/subscribe. |
 | [`js/core/messaging.js`](../../js/core/messaging.js) | `LHN_MESSAGING` | Wrapper gửi/nhận runtime message. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `LHN_LANGUAGES` | Ngôn ngữ giao diện, dịch label và phát hiện language. |
-| [`js/core/cache.js`](../../js/core/cache.js) | `LHN_CACHE` | Cache bản dịch song ngữ và TTS audio. |
+| [`js/core/cache.js`](../../js/core/cache.js) | `LHN_CACHE` | Cache bản dịch song ngữ, transcript YouTube, cue Web Study và TTS audio. |
 | [`js/core/shortcuts.js`](../../js/core/shortcuts.js), [`js/core/error-logger.js`](../../js/core/error-logger.js) | `LHN_SHORTCUTS`, `LHN_ERROR_LOGGER` | Chuẩn hóa phím và lưu diagnostic error. |
 
 ## 3. Luồng chính
@@ -24,7 +24,7 @@
 1. Mỗi context nạp polyfill và module cần dùng theo thứ tự trong `manifest.json`, `background.js` hoặc HTML entry.
 2. Nạp `defaults.js` trước `config.js`; config tạo hằng số từ defaults. `settings.js` ghép defaults, giá trị lưu và override context.
 3. Feature modules gọi global API `LHN_*`; request xuyên context gửi qua `LHN_MESSAGING`, không tự dựng channel riêng nếu đã có message contract.
-4. Cache được gọi bởi dịch/TTS; language utilities cung cấp mã và label dùng chung; storage change subscription cập nhật context đang mở.
+4. Cache được Background gọi cho dịch, TTS audio, transcript YouTube và Web Study cues; cue Web có TTL 7 ngày/LRU riêng, không chia quota transcript YouTube. Language utilities cung cấp mã và label dùng chung.
 5. Error logger nhận diagnostic message và ghi vào local storage theo giới hạn của module.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -34,10 +34,11 @@
 - `CONFIG.STORAGE_KEYS` và `CONFIG.DATABASE` là tên/key dùng chung; không đổi một phía mà bỏ migration hoặc consumer cũ.
 - API `LHN_*` được các context gọi trực tiếp trong content script; đổi tên/hình dạng phải rà tất cả consumer.
 - Polyfill không làm API đồng nhất hoàn toàn ở mọi ngữ cảnh; kiểm tra nơi chạy và browser target trước khi dùng API mới.
-- Cache schema/version/TTL và event subscription có thể ảnh hưởng dữ liệu lưu cũ; giữ migration và cleanup tương thích.
+- Cache schema/version/TTL và event subscription có thể ảnh hưởng dữ liệu lưu cũ; giữ migration và cleanup tương thích. Web cue cache dùng khóa băm từ URL + content fingerprint và TTL trượt 7 ngày; mục không được dùng lại trong thời hạn sẽ bị dọn. Thay đổi sentence splitting phải tăng schema key.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/core/*.js; do node --check "$f" || exit; done`; parse `manifest.json`; kiểm tra script order trong manifest, `pages/popup.html`, `pages/dashboard.html` và `importScripts`.
 - Khi đổi defaults/settings, thử dữ liệu thiếu, giá trị đã lưu, override và storage change; khi đổi messaging, thử sender/receiver; khi đổi cache, thử hit, miss, expiry và dữ liệu legacy.
+- v3.5.24: VM mock `browser.storage.local` xác nhận Web cue cache save/hit/touch, TTL trượt 7 ngày và xóa mục quá hạn.
 - Xác nhận các mã ngôn ngữ UI hiện hỗ trợ và fallback thực tế từ `languages.js`; không suy ra danh sách hỗ trợ chỉ từ tên file.

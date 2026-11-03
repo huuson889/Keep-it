@@ -22,7 +22,7 @@ Background là service worker trung gian cho tác vụ cần runtime API, lưu t
 1. Manifest nạp `background.js`; khi có `importScripts`, file này nạp polyfill và dependency theo thứ tự trước khi dùng global API.
 2. UI gửi message qua `LHN_MESSAGING`; listener trong `background.js` phân nhánh theo `message.type`.
 3. Annotation message được chuyển cho `LHN_ANNOTATIONS` (IndexedDB); kết quả thay đổi được phát lại để các context đồng bộ.
-4. Translation và nhận diện ngôn ngữ chuyển sang `LHN_TRANSLATE`; TTS kiểm tra cache/usage rồi lấy audio Google và trả dữ liệu cho requester.
+4. Translation và nhận diện ngôn ngữ chuyển sang `LHN_TRANSLATE`; TTS kiểm tra cache/usage rồi lấy audio Google và trả dữ liệu cho requester. Các message Web Study cue cache được chuyển tới `LHN_CACHE` để đọc/ghi cache cục bộ TTL 7 ngày.
 5. Các message còn lại mở Dashboard/highlight, proxy request YouTube được giới hạn URL, hoặc đọc trạng thái/tiêu thụ usage.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -33,6 +33,7 @@ Background là service worker trung gian cho tác vụ cần runtime API, lưu t
 - `YOUTUBE_FETCH_TEXT` và `YOUTUBE_API` phải giữ allowlist host hiện tại; không biến proxy thành fetch URL tùy ý.
 - Usage-limit prototype và key nằm local, không phải cơ chế thanh toán/bảo mật phía server.
 - TTS request có kiểm tra đầu vào, dedupe request đang chạy và dùng `LHN_CACHE`; giữ các bước cache/usage/error khi thay provider.
+- `WEB_STUDY_CUE_CACHE_GET`/`SAVE`/`TOUCH` chỉ quản lý câu nguồn đã chuẩn hóa; cache key được content script băm từ URL + fingerprint nội dung. Không nhận URL để Background fetch nội dung trang.
 
 ## 5. Kiểm tra và xác minh
 

@@ -9,6 +9,7 @@
   const MAX_ENTRIES = 500;
   const VIDEO_TRANSCRIPT_CACHE_PREFIX = "lhnYouTubeTranscriptCache:v1:item:";
   const VIDEO_TRANSCRIPT_MAX_VIDEOS = 20;
+  const WEB_STUDY_CUE_CACHE_PREFIX = "lhnWebStudyCueCache:v1:item:";
   const TRIM_TRIGGER = 50;
   const TOUCH_INTERVAL = 6 * 60 * 60 * 1000;
   let preparation, entryCount = 0;
@@ -29,6 +30,10 @@
 
   function videoTranscriptStorageKey(videoId) {
     return `${VIDEO_TRANSCRIPT_CACHE_PREFIX}${hashCacheKey(videoId)}`;
+  }
+
+  function webStudyCueStorageKey(cacheKey) {
+    return `${WEB_STUDY_CUE_CACHE_PREFIX}${hashCacheKey(cacheKey)}`;
   }
 
   function lastUsedAt(entry) {
@@ -79,6 +84,7 @@
         if (!ready || now - lastCleanup >= CLEANUP_INTERVAL || !Number.isFinite(savedCount)) {
           await prune(now);
           await pruneVideoTranscriptCache(now);
+          await pruneWebStudyCueCache(now);
           valuesToSet[CLEANUP_KEY] = now;
         } else entryCount = savedCount;
         if (!ready) valuesToSet[READY_KEY] = true;
@@ -189,6 +195,83 @@
     });
   }
 
+  function validWebStudyCueEntry(entry, cacheKey, now = Date.now()) {
+    return entry?.cacheKey === cacheKey && Number.isFinite(entry.expires) && entry.expires > now &&
+      Array.isArray(entry.value?.sentences) && entry.value.sentences.length > 0;
+  }
+
+  async function pruneWebStudyCueCache(now = Date.now()) {
+    const stored = await browser.storage.local.get(null);
+    const entries = Object.keys(stored)
+      .filter(key => key.startsWith(WEB_STUDY_CUE_CACHE_PREFIX))
+      .map(key => ({ key, entry:stored[key] }));
+    const active = entries.filter(({ entry }) =>
+      typeof entry?.cacheKey === "string" && Number.isFinite(entry.expires) && entry.expires > now &&
+      Array.isArray(entry.value?.sentences) && entry.value.sentences.length > 0);
+    const activeKeys = new Set(active.map(({ key }) => key));
+    const expiredOrInvalid = entries.filter(({ key }) => !activeKeys.has(key));
+    if (expiredOrInvalid.length) await browser.storage.local.remove(expiredOrInvalid.map(({ key }) => key));
+    return active.length;
+  }
+
+  async function getWebStudyCues(cacheKey) {
+    if (typeof cacheKey !== "string" || !cacheKey || cacheKey.length > 8192) return null;
+    await prepare();
+    const key = webStudyCueStorageKey(cacheKey);
+    return enqueueWrite(async () => {
+      const now = Date.now();
+      await pruneWebStudyCueCache(now);
+      const stored = await browser.storage.local.get(key), entry = stored[key];
+      if (!validWebStudyCueEntry(entry, cacheKey, now)) {
+        if (entry) await browser.storage.local.remove(key);
+        return null;
+      }
+      await browser.storage.local.set({ [key]:{ ...entry, lastUsedAt:now, expires:now + TTL } });
+      return entry.value.sentences.slice();
+    });
+  }
+
+  async function touchWebStudyCues(cacheKey) {
+    if (typeof cacheKey !== "string" || !cacheKey || cacheKey.length > 8192) return false;
+    await prepare();
+    const key = webStudyCueStorageKey(cacheKey);
+    return enqueueWrite(async () => {
+      const now = Date.now();
+      await pruneWebStudyCueCache(now);
+      const stored = await browser.storage.local.get(key), entry = stored[key];
+      if (!validWebStudyCueEntry(entry, cacheKey, now)) {
+        if (entry) await browser.storage.local.remove(key);
+        return false;
+      }
+      await browser.storage.local.set({ [key]:{ ...entry, lastUsedAt:now, expires:now + TTL } });
+      return true;
+    });
+  }
+
+  async function saveWebStudyCues(cacheKey, sentences) {
+    if (typeof cacheKey !== "string" || !cacheKey || cacheKey.length > 8192 ||
+        !Array.isArray(sentences) || !sentences.length || sentences.length > 5000) return false;
+    const cleanSentences = sentences.map(sentence => String(sentence || "").replace(/\s+/g, " ").trim())
+      .filter(sentence => sentence && sentence.length <= 12000);
+    if (!cleanSentences.length) return false;
+    await prepare();
+    const key = webStudyCueStorageKey(cacheKey), now = Date.now();
+    await enqueueWrite(async () => {
+      const stored = await browser.storage.local.get(key);
+      await browser.storage.local.set({
+        [key]:{
+          cacheKey,
+          value:{ sentences:cleanSentences },
+          createdAt:stored[key]?.createdAt || now,
+          lastUsedAt:now,
+          expires:now + TTL,
+        },
+      });
+      await pruneWebStudyCueCache(now);
+    });
+    return true;
+  }
+
   async function clearBilingualTranslationCache() {
     return enqueueWrite(async () => {
       const stored = await browser.storage.local.get(null);
@@ -271,5 +354,5 @@ async function cacheTtsAudio(key, audio) {
   catch (error) { console.warn("TTS audio cache LRU cleanup failed", error); }
 }
 
-  globalThis.LHN_CACHE = Object.freeze({ prepareBilingualCache:prepare, getBilingualTranslation, saveBilingualTranslation, clearBilingualTranslationCache, getVideoTranscript, saveVideoTranscript, touchVideoTranscript, ensureTtsAudioCacheBudget, getCachedTtsAudio, cacheTtsAudio });
+  globalThis.LHN_CACHE = Object.freeze({ prepareBilingualCache:prepare, getBilingualTranslation, saveBilingualTranslation, clearBilingualTranslationCache, getVideoTranscript, saveVideoTranscript, touchVideoTranscript, getWebStudyCues, saveWebStudyCues, touchWebStudyCues, ensureTtsAudioCacheBudget, getCachedTtsAudio, cacheTtsAudio });
 })();
