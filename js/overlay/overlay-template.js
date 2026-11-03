@@ -296,6 +296,18 @@ const OVERLAY_CSS = `
     }
     .te-video-mode-trigger svg { display: block; width: 18px; height: 18px; }
 
+    #keepit-exact-overlay .te-view-toast {
+      position: fixed; top: 48px; left: 50%; z-index: 40; transform: translateX(-50%) translateY(-8px);
+      box-sizing: border-box; max-width: min(520px, calc(100% - 24px)); padding: 10px 20px;
+      border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(18,18,18,.72);
+      color: #fff; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: center;
+      backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
+      opacity: 0; pointer-events: none; transition: opacity .22s ease, transform .22s ease;
+    }
+    #keepit-exact-overlay .te-view-toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #keepit-exact-overlay.theme-light .te-view-toast { border-color: rgba(17,24,39,.12); background: rgba(255,255,255,.92); color: #111827; }
+    @media (prefers-reduced-motion: reduce) { #keepit-exact-overlay .te-view-toast { transition: none; } }
+
     .te-icon-btn.lhn-br-key-press,
     .te-play-btn.lhn-br-key-press { animation: lhnBrButtonPress .18s ease-out; }
     @keyframes lhnBrButtonPress {
@@ -2274,6 +2286,8 @@ const OVERLAY_CSS = `
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
     <div class="te-ambient-layer"><canvas class="te-ambient" width="152" height="48" aria-hidden="true"></canvas><canvas class="te-ambient-edge" width="160" height="90" aria-hidden="true"></canvas></div>
+    <!-- Toast thông báo nhanh -->
+    <div class="te-view-toast" id="te-view-toast" role="status" aria-live="polite"></div>
     <!-- Left Section -->
     <div class="te-left-section">
       <div class="te-player-slot">

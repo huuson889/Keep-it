@@ -1856,6 +1856,16 @@ function isEditableOverlayShortcutTarget(event) {
   return Boolean(target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]') || target?.isContentEditable);
 }
 
+let viewToastTimer = 0;
+function showViewToast(message) {
+  const toast = $('te-view-toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  clearTimeout(viewToastTimer);
+  viewToastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2400);
+}
+
 function handleOverlayShortcut(event) {
   if (!state.open || event.isComposing) return;
   const editable = isEditableOverlayShortcutTarget(event);
@@ -1867,7 +1877,17 @@ function handleOverlayShortcut(event) {
     if (mode) {
       event.preventDefault();
       event.stopImmediatePropagation();
+      const root = overlayEl();
+      const currentMode = isReadingModeActive() ? 'reading'
+        : root?.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined';
       const menuWasOpen = $('te-video-mode-menu')?.hidden === false;
+      if (!root?.classList.contains('te-study-active') && currentMode === mode) {
+        const modeLabelKeys = { theater: 'videoModeTheater', reading: 'videoModeReading', combined: 'videoModeCombined' };
+        showViewToast(overlayT('videoAlreadyInMode', { mode: overlayT(modeLabelKeys[mode]) }));
+        setVideoDisplayModeMenuOpen(false);
+        if (menuWasOpen) $('te-video-mode-trigger')?.focus();
+        return;
+      }
       applyVideoDisplayMode(mode);
       setVideoDisplayModeMenuOpen(false);
       if (menuWasOpen) $('te-video-mode-trigger')?.focus();
