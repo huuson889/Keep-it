@@ -33,7 +33,7 @@ Module điều phối overlay YouTube và Web-study trên cùng UI/player/API. W
 - Dùng `BILINGUAL_TRANSLATE`, marking và queue/cache chung; giữ bilingual/translation modes theo cue và target-language settings. Lỗi dịch ghi console và toast, không đổi mode.
 - Dùng chung overlay/player và không tạo Web keydown listener riêng. Web virtual media kiểm tra generation sau `timeupdate` trước auto-advance, để seek/pause đồng bộ của Dictation không bị stale cue ghi đè; phím native YouTube không bị chặn.
 - Web-study và Bilingual Reader không chạy đồng thời: Web gửi `stop-reading`; Reader phát `lhn-bilingual-reader-started` sau khi xác nhận cue hợp lệ, trước TTS. Không đổi Reader selection algorithm.
-- Web thumbnail thay media trong `.te-video-slot`, bật clipping qua `te-web-study-frame` và gỡ khi detach; Ambient Web lấy thumbnail tĩnh, YouTube giữ video frame.
+- Video thật và thumbnail Web dùng chung CSS selector căn chỉnh trong `.te-video-slot`; clipping chung nằm ở `.te-video-slot`/`.te-video-frame`, không bật theo source class. Web adapter chỉ thay video bằng thumbnail và dọn ảnh khi detach; Ambient Web lấy thumbnail tĩnh, YouTube giữ video frame.
 - Chỉ `.te-dictation-active` ẩn CC/subtitle controls; Web view và YouTube xem thường giữ controls. Giữ `keepitSiteDisabled` gate và settings keys hiện có.
 - Giữ bốn subtitle modes, ba video modes, Reading S/M/L ratios 32/35%, 26/45%, 20/60%, Theater geometry và transcript cache LRU/TTL.
 

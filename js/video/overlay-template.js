@@ -625,9 +625,9 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-subs-hidden .te-sub-container { display: none; }
     #keepit-exact-overlay.te-sidebar-hidden .yt-dual-right-sidebar { display: none; }
     #keepit-exact-overlay .te-icon-btn.te-active { color: #8b5cf6; }
-    #keepit-exact-overlay .te-video-slot video {
+    #keepit-exact-overlay .te-video-slot :is(video, .te-web-page-thumbnail) {
       position: absolute !important;
-      top: 0; left: 0;
+      inset: 0;
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
@@ -635,7 +635,9 @@ const OVERLAY_CSS = `
       height: 100% !important;
       object-fit: contain;
       transform: none !important;
+      background: #111;
     }
+    #keepit-exact-overlay .te-video-slot .te-web-page-thumbnail { cursor: pointer; user-select: none; }
     #keepit-exact-overlay.hide-vi .te-sub-vi,
     #keepit-exact-overlay.hide-vi .yt-dual-item-vi { display: none; }
     .yt-dual-empty { padding: 16px; font-size: 13px; color: #9ca3af; }
@@ -1026,12 +1028,6 @@ const OVERLAY_CSS = `
       max-height: calc(100vh - 200px);
       border-radius: 12px;
     }
-    #keepit-exact-overlay .te-video-slot.te-web-study-frame {
-      overflow: hidden;
-      border-radius: 12px;
-      clip-path: inset(0 round 12px);
-    }
-
     /* ===== Popup tốc độ (từ speed_control_component): hai mode sáng/tối ===== */
     #te-speed-popup { position: absolute; left: 0; top: 0; z-index: 60; width: 340px; padding: 20px; border-radius: 24px; border: 1px solid #f3f4f6; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); background: #ffffff; user-select: none; font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif); }
     #te-speed-popup.hidden { display: none !important; }
@@ -1106,11 +1102,11 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-ambient-on.theme-dark { background-color: #121212; }
     /* Chế độ rạp: video bo góc như chế độ kết hợp; ambient phủ kín toàn màn hình (cả 2 khung đen hai bên) */
     #keepit-exact-overlay.te-sidebar-hidden .te-video-slot { background-color: #11111100; border-radius: 12px; overflow: hidden; }
-    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot video { border-radius: 12px; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot :is(video, .te-web-page-thumbnail) { border-radius: 12px; }
     /* Chế độ rạp: khung bọc đúng kích thước video, bo 4 góc. Ngoài chế độ rạp khung không tạo ô layout (display: contents) */
     #keepit-exact-overlay .te-video-frame { display: contents; }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame { display: block; position: relative; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
-    #keepit-exact-overlay.te-sidebar-hidden .te-video-frame video { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-frame :is(video, .te-web-page-thumbnail) { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
     /* Chỉ Rạp + Lớn: video, subtitle và control bar dùng ba lớp độc lập theo viewport/frame thật. */
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-slot { overflow: visible; container-type: normal; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }

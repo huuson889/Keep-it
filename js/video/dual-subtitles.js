@@ -2059,7 +2059,6 @@ function restoreOverlayPageScrollbar() {
 
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
-  overlayEl()?.classList.toggle('te-web-study', state.webStudy);
   const video = state.webStudy ? state.videoEl : (document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video'));
   const slot = ui('.te-video-slot');
   if (!video || !slot) {
@@ -2101,7 +2100,6 @@ function closeOverlay() {
   restoreOverlayPageScrollbar();
   clearHoverPauseState();
   overlayEl()?.classList.add('te-hidden');
-  overlayEl()?.classList.remove('te-web-study');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
   state.open = false;
@@ -2270,8 +2268,6 @@ function attachWebMedia(media, slot) {
   const image = document.createElement('img');
   image.className = 'te-web-page-thumbnail';
   image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  image.style.cssText = 'position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;background:#111;cursor:pointer;user-select:none;';
-  slot.classList.add('te-web-study-frame');
   image.addEventListener('click', handleOverlayVideoClick);
   frame.replaceChildren(image);
   state.webThumbnail = image;
@@ -2350,7 +2346,6 @@ function detachVideo() {
     if (state.videoGeometryHandler) { v.removeEventListener('loadedmetadata', state.videoGeometryHandler); state.videoGeometryHandler = null; }
     v.pause?.();
     state.webThumbnail?.removeEventListener('click', handleOverlayVideoClick);
-    state.webThumbnail?.closest('.te-video-slot')?.classList.remove('te-web-study-frame');
     globalThis.LHN_THUMBNAILS?.clear?.(state.webThumbnail);
     state.webThumbnail?.remove();
     state.webThumbnail = null;
