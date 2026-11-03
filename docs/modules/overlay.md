@@ -42,6 +42,7 @@ Overlay cung cấp UI cho Video (YouTube) và Web. `overlay-controller.js` đi�
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.49: `node --check` `js/overlay/overlay-template.js` và `js/overlay/view/layout-mode.js`, `git diff --check` đạt cho 90%-frame subtitle width/wrapping; Browser QA chưa chạy.
 - v3.5.48: `node --check` `js/overlay/overlay-template.js` và `git diff --check` đạt cho Theater + Large subtitle width/wrapping; Browser QA chưa chạy.
 - v3.5.47: `node --check` các file JS sửa đạt cho toast "đang ở chế độ xem này" khi bấm shortcut Alt+1–3 đúng mode; Browser QA chưa chạy.
 - v3.5.44: `node --check` JS Overlay, `git diff --check` và focused VM smoke test cho Web progress (tiến trong cue, phản ánh playback rate, pause giữ nguyên, resume tiếp tục) đạt. Browser QA chưa chạy.

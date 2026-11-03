@@ -250,7 +250,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   const frameRect = frame.getBoundingClientRect();
   if (!(frameRect.width > 0 && frameRect.height > 0)) return null;
   root.style.setProperty('--te-theater-frame-width', `${frameRect.width}px`);
-  root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.8)}px`);
+  root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.9)}px`);
 
   const controlsRect = controls?.getBoundingClientRect() || null;
   let panelRect = panel.getBoundingClientRect();
