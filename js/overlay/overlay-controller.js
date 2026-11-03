@@ -1618,7 +1618,9 @@ function bindUI() {
       else if (dictationLearningActive) settings.learningViewSize = b.dataset.size;
       else settings.size = b.dataset.size;
       if (!isReadingModeActive() && !dictationLearningActive) {
-        if (settings.size === 'L') {
+        const theaterLargeSelection = settings.size === 'L'
+          && overlayEl()?.classList.contains('te-sidebar-hidden');
+        if (theaterLargeSelection) {
           if (!settings.hideControls) { settings.hideControls = true; sizeForcedHide = true; }
         } else if (sizeForcedHide) {
           restoreForcedHideControls();
