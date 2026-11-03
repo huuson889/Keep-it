@@ -11,13 +11,13 @@
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
 | [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp module. |
-| [`js/video/overlay-template.js`](../../js/video/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM và giao diện. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `runSharedVideoShortcut`, `prepareWebStudy`, `openOverlay` | Shortcut, YouTube và Web adapter. |
+| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM và giao diện. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `runSharedVideoShortcut`, `prepareWebStudy`, `openOverlay` | Shortcut, YouTube và Web adapter. |
 | [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Chọn và trích main text. |
 | [`js/core/cache.js`](../../js/core/cache.js) | `getWebStudyCues`, `saveWebStudyCues`, `touchWebStudyCues` | Persistent cache cue Web. |
 | [`js/background/background.js`](../../js/background/background.js) | `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` | Cầu message tới cache. |
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.play` | Phát audio/browser speech. |
-| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION` | Dictation UI/engine dùng chung. |
+| [`js/overlay/study/dictation.js`](../../js/overlay/study/dictation.js) | `LHN_DICTATION` | Dictation UI/engine dùng chung. |
 
 ## 3. Luồng chính
 

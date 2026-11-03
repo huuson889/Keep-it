@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.25",
+  "version": "3.5.27",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -74,13 +74,16 @@
         "js/shared/search.js",
         "js/reader/bilingual-flags.js",
         "js/reader/bilingual-reader.js",
-        "js/video/overlay-template.js",
-        "js/video/dual-subtitles.js",
+        "js/overlay/overlay-template.js",
+        "js/overlay/source/video.js",
+        "js/overlay/view/layout-mode.js",
+        "js/overlay/view/cc-mode.js",
+        "js/overlay/overlay-controller.js",
         "js/dictation/dictation-score.js",
         "js/dictation/dictation-learning-rules.js",
         "js/dictation/dictation-style.js",
         "js/dictation/session-index.js",
-        "js/dictation/dictation.js"
+        "js/overlay/study/dictation.js"
       ],
       "css": [
         "css/shared/ui-tokens.css",

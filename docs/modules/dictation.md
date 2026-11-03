@@ -10,13 +10,13 @@ Dictation luyện YouTube caption hoặc Reader sentence cues trên web trong ov
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/dictation/dictation.js`](../../js/dictation/dictation.js) | `LHN_DICTATION`, `openPanel` | Panel, speech, progress, notes. |
+| [`js/overlay/study/dictation.js`](../../js/overlay/study/dictation.js) | `LHN_DICTATION`, `openPanel` | Panel, speech, progress, notes. |
 | [`js/content/content.js`](../../js/content/content.js) | `handleSelectionMouseUp`, `translateSelectedRange` | Selection, translation/dictionary popups. |
 | [`js/dictation/dictation-score.js`](../../js/dictation/dictation-score.js) | `LHN_DICTATION_SCORE` | Tokenize, score, diff. |
 | [`js/dictation/dictation-learning-rules.js`](../../js/dictation/dictation-learning-rules.js) | `LHN_DICTATION_RULES` | Hint, eligibility, error classes. |
 | [`js/dictation/dictation-style.js`](../../js/dictation/dictation-style.js) | `LHN_DICTATION_CSS` | Shadow DOM styles. |
 | [`js/dictation/session-index.js`](../../js/dictation/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Provider-neutral session metadata. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `LHN_OVERLAY_API`, events | Player, captions, overlay. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `LHN_OVERLAY_API`, events | Player, captions, overlay. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadSource` | Mini-audio source thumbnail and fallback. |
 | [`js/core/languages.js`](../../js/core/languages.js) | `MESSAGES`, `t` | EN/VI/KO UI strings. |
 

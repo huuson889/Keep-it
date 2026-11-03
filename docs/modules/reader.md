@@ -14,7 +14,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS` | TTS, chia chunk, voice và language detection. |
 | [`vendor/readability/Readability.js`](../../vendor/readability/Readability.js) | `Readability` | Phân tích main article. |
 | [`js/translate/translate.js`](../../js/translate/translate.js) | `BILINGUAL_TRANSLATE` | Dịch qua Background/cache dùng chung. |
-| [`js/video/dual-subtitles.js`](../../js/video/dual-subtitles.js) | `prepareWebStudy` | Đọc Reader text để tạo Web cues. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `prepareWebStudy` | Đọc Reader text để tạo Web cues. |
 
 ## 3. Luồng chính
 

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.25; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
+- Version hiện tại: v3.5.26; Manifest V3. Bản đồ mã nguồn ở mục 4; tài liệu module tại `docs/INDEX.md`.
 - Dashboard, Dictation và Highlights & Notes tiếp tục dùng chung shell/theme; H&N cùng document và event bus nội bộ. Route, dữ liệu cục bộ, scroll state và các chức năng hiện có được giữ nguyên.
 - Dictation giữ nguyên tiêu chí hiện hành: Typing chỉ pass 100% lần thử hiện tại, Speaking pass từ 70% nhưng không tự chuyển câu; typing offset -50px chỉ tắt sau lần thử hiện tại đạt 100%; sau 100%, Enter chuyển câu kế tiếp, Esc hiện đáp án/làm lại, ` phát/tạm dừng, Ctrl nghe lại; phím nhập thường đầu tiên trong `te-dict-input` trở về chế độ nhập. Speaking auto-record mặc định bật: mọi auto-start sau cue/repeat chờ 1s; sau `onend` mở lại recognition; gộp transcript và chấm một lần sau 1,5s im lặng, reset timer theo speech; replay attempt auto-record cắt 1,5s grace cuối, không đổi recognition/scoring; auto-record tắt vẫn phát đầy đủ. Chấm sai phát cue một lần rồi auto-mic sau cue +1s; toast/nhãn ghi âm hiện suốt lượt ghi; tắt công tắc giữ manual flow. Speaking ẩn nút chấm điểm, dàn đều bốn nút video, mic playback dùng gradient tím mini-play, compact video dùng icon headphones; popup VI giữ màu/copy 15 mốc %, Spring Pop; tự ẩn sau 6s hoặc Enter; EN/KO giữ inline. Thống kê từ sai tách `wrongWordStats` (Typing) và `speakingWrongWordStats` (Speaking), không nhập dữ liệu cũ. Repeat/cue, bố cục 25:50:25 và font `te-dict-stats-host` giữ nguyên.
 - Video: Dictation learning có `learningViewSize` riêng, mặc định S; S/M/L chỉ điều khiển cột, không đổi kích thước video. Auto-record đồng bộ style với translation; audio card giảm chiều dọc 20%, giữ cỡ chữ. Speaking work area giữ CSS v3.4.938; `.te-dict-translation` full-width dưới hint; bản dịch mặc định bật và nhớ tùy chọn; mic auto chỉ còn vòng tím trong cùng. Popup dịch/đọc tiếng video có tùy chọn riêng trong `lhnYouTubeSettings`, mặc định bật; cài đặt chung giữ nguyên. Auto-hide thanh điều khiển ở Large là runtime; nếu tự ép ẩn thì reset khi rời mode hoặc `pagehide`, còn lựa chọn ẩn thủ công được giữ. Control bar Dictation dùng track đối xứng để play/pause nằm giữa. Web-study trong overlay dùng cùng video shortcut dispatcher với YouTube (Alt+E/F, Alt+1–3, 1–4, </>, Escape; Space/K và arrows/J/L giữ native YouTube, Web chuyển vào overlay controls); Web-study và Bilingual Reader loại trừ nhau qua Reader stop/start events. Alt+E mở/chuyển về view và phát TTS; Alt+F mở learning, nhấn lại đóng overlay. Web Study TTS đổi tốc độ ngay trên audio đang chạy; Pause/Play giữ cùng audio/utterance và vị trí chunk; browser-voice rate restart tại boundary gần nhất; YouTube/Reader không đổi. Reader sentence cues, TTS theo ngôn ngữ dò/hint trang, thumbnail/fallback; Dictation Typing/Speaking dùng chung UI/engine, lưu session web theo URL thật và mini-audio dùng `LHN_THUMBNAILS.loadSource`; Web subtitle Reader cues dùng chung marking, queue/cache và `BILINGUAL_TRANSLATE` của YouTube/Web learning, hỗ trợ bilingual/translation mode và cập nhật theo target-language setting. Web thumbnail thay video clip 12px như `.te-video-frame`. Trong Dictation learning (`.te-dictation-active`), ẩn CC selector và mục Cài đặt video > Tùy chọn phụ đề; Web view và YouTube xem thường giữ điều khiển như nhau. Translation lỗi được toast/log; Web Ambient lấy page thumbnail làm nguồn qua canvas renderer hiện có và giữ cài đặt bật/tắt. Reading + Ambient chia sẻ nền/blur/viền/bóng của control bar với Rạp + Lớn; fixed geometry chỉ thuộc Rạp + Lớn. Transcript focus ở Reading/Normal mặc định 40vh; scroll tay đổi và giữ tỉ lệ focus qua cue/mode; cue đầu/cuối clamp như v3.5.20; Theater/Dictation giữ hành vi cũ. Web Study giữ snapshot cue theo document để đóng/mở lại không trích xuất Reader lần nữa; cache cue persistent với TTL trượt 7 ngày theo URL + fingerprint nguồn; mục không dùng 7 ngày được dọn, reload/đổi URL tạo/tra cache mới. TTS/dịch dùng cache module hiện có; cache transcript YouTube không đổi. CC mặc định: `primary` nếu ngôn ngữ cue trùng giao diện, ngược lại `bilingual`; ngôn ngữ cue chưa rõ thì `bilingual`, lựa chọn tay giữ nguyên.
@@ -52,7 +52,7 @@ Keepit - Test/
 │   ├── translate/                 # translate, dictionary, search, study translation
 │   ├── dashboard/                 # dashboard.js (entry), reveal-effects.js (shared reveal orchestration), overview, annotation-utils, settings-ui, study/backup/account, popup thống kê Dictation
 │   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader, ô tìm Settings (initSettingsSearch: lọc và tô sáng)
-│   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (YouTube + web-study adapter)
+│   ├── overlay/           # overlay-template.js (CSS/HTML), overlay-controller.js (điều phối), source/video.js (nguồn YouTube/CC), view/layout-mode.js, view/cc-mode.js, study/dictation.js, source/web.js & study/shadowing.js (đặt chỗ, chưa nạp)
 │   ├── dictation/                 # session-index.js (hợp đồng provider-neutral), dictation.js (overlay mode), dictation-score.js (căn chỉnh + diff), dictation-learning-rules.js (hint/eligibility/classifier), dictation-style.js
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # custom-font, SVG icons, site-icons.js (LHN_SITE_ICONS), thumbnails.js (LHN_THUMBNAILS), search.js
@@ -104,9 +104,9 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
                            không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
-Dashboard Settings (`dualSubtitlesShortcut` Alt+E / `dictationShortcut` Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dual-subtitles-toggle` / `lhn-youtube-dictation-toggle` ──> shared handlers trong `dual-subtitles.js` ──> YouTube overlay hoặc Web-study adapter trong cùng overlay
+Dashboard Settings (`dualSubtitlesShortcut` Alt+E / `dictationShortcut` Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dual-subtitles-toggle` / `lhn-youtube-dictation-toggle` ──> shared handlers trong `overlay-controller.js` ──> YouTube overlay hoặc Web-study adapter trong cùng overlay
 `lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
-Reader (`LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh:true})`) ──> Web adapter (`dual-subtitles.js`) ──> content-hash sentence cues: same-document memory snapshot + `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` (7-day sliding TTL) ──> lazy `LHN_TTS`/`BILINGUAL_TRANSLATE` existing caches + `LHN_THUMBNAILS` ──> Dictation shared UI/engine; reload/URL change refreshes Reader source, unchanged source can reuse persistent cues; YouTube cache stays separate. Default CC compares cue language to display language (same→primary; different/unknown→bilingual; manual choice wins). Detected/page language + `web:<sourceId>`/real page URL; Reader stop/start exclusivity, shared shortcuts, controls and Ambient behavior unchanged
+Reader (`LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh:true})`) ──> Web adapter (`overlay-controller.js` + `source/video.js`) ──> content-hash sentence cues: same-document memory snapshot + `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` (7-day sliding TTL) ──> lazy `LHN_TTS`/`BILINGUAL_TRANSLATE` existing caches + `LHN_THUMBNAILS` ──> Dictation shared UI/engine; reload/URL change refreshes Reader source, unchanged source can reuse persistent cues; YouTube cache stays separate. Default CC compares cue language to display language (same→primary; different/unknown→bilingual; manual choice wins). Detected/page language + `web:<sourceId>`/real page URL; Reader stop/start exclusivity, shared shortcuts, controls and Ambient behavior unchanged
 Web TTS (`createWebTtsMedia`) ──> optional `LHN_TTS` chunk progress callbacks + retained Audio/SpeechSynthesis handle ──> live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
 YouTube Dual Sub (`state.allCues`, track language, live video)
   └── API overlay hiện có ──> Dictation (3 cột trong overlay, score + phân tích lỗi + ghi chú; Speaking dùng SpeechRecognition + MediaRecorder in-memory local replay; cue playback bằng requestAnimationFrame)
@@ -118,6 +118,16 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ local session index, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.26 | Claude sửa:**
+
+- Tách `js/video/dual-subtitles.js` và `js/video/overlay-template.js` thành cấu trúc `js/overlay/` theo sơ đồ đã chốt: `overlay-controller.js`, `overlay-template.js`, `source/video.js`, `view/layout-mode.js`, `view/cc-mode.js`, `study/dictation.js`. Giữ nguyên nội dung từng dòng, không refactor logic; thứ tự nạp trong manifest giữ như cũ.
+- Tạo đặt chỗ `source/web.js` và `study/shadowing.js` (chưa có mã, không nạp vào manifest).
+- File: `js/overlay/*` (mới), `js/video/` (đã xóa), `js/dictation/dictation.js` (chuyển sang `js/overlay/study/dictation.js`), `manifest.json`, `docs/modules/video.md`, `docs/modules/dictation.md`, `docs/modules/reader.md`, `README.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file JS mới đạt; so sánh từng dòng với bản v3.5.25 — 0 dòng thiếu, 0 dòng thừa, `overlay-template.js` và `study/dictation.js` giữ nguyên. Trên trình duyệt: chưa chạy. Chưa commit: workspace repo `/home/user/Keep-it` không truy cập được.
+- Tiếp theo: chạy kiểm thử thủ công trên YouTube và web-study ở repo gốc; commit khi workspace truy cập được.
+
+
 
 **2026-11-03 | v3.5.25 | Arena.ai Agent sửa:**
 
@@ -447,58 +457,58 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - Kiểm tra đạt: 56 JS syntax, manifest/version, CSS parse, mock default/migration/opacity/drag/key movement, markup constraints, `git diff --check`; docs 655 từ. Browser QA chưa thực hiện.
 - ZIP v3.4.966: 109 file tracked; CRC và nội dung byte-for-byte đã xác minh.
 
-- **2026-11-02 | v3.4.964 | Claude sửa:**
-  - Chế độ rạp, Kích thước Lớn: phụ đề (`.te-sub-container`) nằm trên khung video toàn màn hình (z-index 2). Chỉ đổi lớp hiển thị, không đổi vị trí UI.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+**2026-11-02 | v3.4.964 | Claude sửa:**
+- Chế độ rạp, Kích thước Lớn: phụ đề (`.te-sub-container`) nằm trên khung video toàn màn hình (z-index 2). Chỉ đổi lớp hiển thị, không đổi vị trí UI.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
 
 
-- **2026-11-02 | v3.4.963 | Claude sửa:**
-  - Chế độ rạp, Kích thước xem: bấm Nhỏ/Vừa/Lớn áp dụng ngay (không cần tắt mở lại chế độ rạp). Lớn: khung video cố định toàn màn hình, thanh điều khiển giữ ở đáy như các kích thước khác. Lớn chỉ bật "Ẩn thanh điều khiển" nếu đang tắt; chọn Vừa/Nhỏ thì tắt lại phần đã tự bật (`settings.sizeForcedHide`).
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+**2026-11-02 | v3.4.963 | Claude sửa:**
+- Chế độ rạp, Kích thước xem: bấm Nhỏ/Vừa/Lớn áp dụng ngay (không cần tắt mở lại chế độ rạp). Lớn: khung video cố định toàn màn hình, thanh điều khiển giữ ở đáy như các kích thước khác. Lớn chỉ bật "Ẩn thanh điều khiển" nếu đang tắt; chọn Vừa/Nhỏ thì tắt lại phần đã tự bật (`settings.sizeForcedHide`).
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
 
 
-- **2026-11-02 | v3.4.962 | Claude sửa:**
-  - Chế độ rạp, Kích thước xem: Vừa giữ nguyên; Nhỏ = video rộng 2/3 chiều rộng hiện tại; Lớn = video toàn màn hình và bật "Ẩn thanh điều khiển". Chỉ đổi kích thước video, không đổi UI khác. Chế độ đọc không đổi.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy (cần xác nhận Nhỏ/Lớn đúng kích thước và thanh điều khiển hiện khi rê chuột ở Lớn).
+**2026-11-02 | v3.4.962 | Claude sửa:**
+- Chế độ rạp, Kích thước xem: Vừa giữ nguyên; Nhỏ = video rộng 2/3 chiều rộng hiện tại; Lớn = video toàn màn hình và bật "Ẩn thanh điều khiển". Chỉ đổi kích thước video, không đổi UI khác. Chế độ đọc không đổi.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy (cần xác nhận Nhỏ/Lớn đúng kích thước và thanh điều khiển hiện khi rê chuột ở Lớn).
 
 
-- **2026-11-02 | v3.4.960 | Claude sửa:**
-  - Chế độ rạp: `.te-video-frame` có kích thước pixel đúng bằng video đang hiển thị (tính từ khung video và tỉ lệ thật của video), không dùng %. Cập nhật khi tải metadata, đổi chế độ và đổi kích thước cửa sổ.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+**2026-11-02 | v3.4.960 | Claude sửa:**
+- Chế độ rạp: `.te-video-frame` có kích thước pixel đúng bằng video đang hiển thị (tính từ khung video và tỉ lệ thật của video), không dùng %. Cập nhật khi tải metadata, đổi chế độ và đổi kích thước cửa sổ.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
 
 
-- **2026-11-02 | v3.4.959 | Claude sửa:**
-  - Chế độ rạp: quay lại CSS của v3.4.957 cho video; thêm khung bọc `.te-video-frame` (đúng kích thước video, bo 4 góc 12px, cắt bằng clip-path). Ngoài chế độ rạp khung là `display: contents`, không đổi bố cục. `attachVideo` đưa thẻ video vào khung bọc.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy (cần xác nhận 4 góc video bo ở chế độ rạp và chế độ kết hợp không đổi).
+**2026-11-02 | v3.4.959 | Claude sửa:**
+- Chế độ rạp: quay lại CSS của v3.4.957 cho video; thêm khung bọc `.te-video-frame` (đúng kích thước video, bo 4 góc 12px, cắt bằng clip-path). Ngoài chế độ rạp khung là `display: contents`, không đổi bố cục. `attachVideo` đưa thẻ video vào khung bọc.
+- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy (cần xác nhận 4 góc video bo ở chế độ rạp và chế độ kết hợp không đổi).
 
 
-- **2026-11-02 | v3.4.958 | Claude sửa:**
-  - Chế độ rạp: bo góc được áp trực tiếp cho thẻ video (`border-radius` + `clip-path: inset(0 round 12px)`, !important), vì bo góc của `.te-video-slot` không làm bo hình video.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+**2026-11-02 | v3.4.958 | Claude sửa:**
+- Chế độ rạp: bo góc được áp trực tiếp cho thẻ video (`border-radius` + `clip-path: inset(0 round 12px)`, !important), vì bo góc của `.te-video-slot` không làm bo hình video.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
 
 
-- **2026-11-02 | v3.4.957 | Claude sửa:**
-  - Chế độ rạp: `.te-video-slot` nền trong suốt (`#11111100`), video bo 12px ở cả 4 góc. Chỉ đổi UI chế độ rạp.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
+**2026-11-02 | v3.4.957 | Claude sửa:**
+- Chế độ rạp: `.te-video-slot` nền trong suốt (`#11111100`), video bo 12px ở cả 4 góc. Chỉ đổi UI chế độ rạp.
+- File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt. Trên YouTube: Chưa chạy.
 
 
-- **2026-11-02 | v3.4.956 | Claude sửa:**
-  - Chế độ rạp (video không có cột bên): ambient phủ kín toàn màn hình, gồm cả hai khung đen hai bên (radial và cạnh viền đều theo viewport); video bo góc 12px như chế độ kết hợp. Không đổi bố cục/vị trí UI khác.
-  - File: `css/...` không đổi; `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận ambient phủ kín và bo góc ở chế độ rạp).
+**2026-11-02 | v3.4.956 | Claude sửa:**
+- Chế độ rạp (video không có cột bên): ambient phủ kín toàn màn hình, gồm cả hai khung đen hai bên (radial và cạnh viền đều theo viewport); video bo góc 12px như chế độ kết hợp. Không đổi bố cục/vị trí UI khác.
+- File: `css/...` không đổi; `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận ambient phủ kín và bo góc ở chế độ rạp).
 
 
-- **2026-10-31 | v3.4.955 | Claude sửa:**
-  - Alt+F (phím tắt Dictation) khi overlay đang đóng: vào thẳng chế độ học, không gọi lại chế độ xem video trước (bỏ bước `setLearningMode(false)` khi vào từ phím tắt).
-  - File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận Alt+F không còn hiện chế độ xem video).
+**2026-10-31 | v3.4.955 | Claude sửa:**
+- Alt+F (phím tắt Dictation) khi overlay đang đóng: vào thẳng chế độ học, không gọi lại chế độ xem video trước (bỏ bước `setLearningMode(false)` khi vào từ phím tắt).
+- File: `js/video/dual-subtitles.js`, `js/dictation/dictation.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file đã sửa. Trên YouTube: Chưa chạy (cần xác nhận Alt+F không còn hiện chế độ xem video).
 
 
 **2026-11-02 | v3.4.953 | Arena.ai Agent sửa:**
@@ -1015,11 +1025,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: `js/video/dual-subtitles.js`, `manifest.json`, `docs/modules/video.md`, `PROJECT.md`.
 - Kiểm tra: `node --check` JS video, manifest JSON/version và `git diff --check` đạt. Không chạy test suite vì thư mục `tests` đã xóa theo yêu cầu; browser-test chưa chạy.
 
-- **2026-10-31 | v3.4.862 | Claude sửa:**
-  - Mở overlay video (Alt+E hoặc nút tím): không còn nháy giao diện YouTube. Khi overlay mở, các phần tử gốc của trang bị ẩn (`html.lhn-video-overlay-open body > *:not(#keepit-host)`); nền overlay đặt đặc từ đầu và bỏ hiệu ứng chuyển màu nền.
-  - File: `css/content/content.css`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: không có JS thay đổi logic. Trên YouTube: Chưa chạy (cần xác nhận không còn nháy khi mở, và YouTube hiện lại đúng khi đóng).
-  - Việc đang mở: nếu sidebar Keepit cần hiện khi overlay mở, phải đưa nó vào danh sách không ẩn.
+**2026-10-31 | v3.4.862 | Claude sửa:**
+- Mở overlay video (Alt+E hoặc nút tím): không còn nháy giao diện YouTube. Khi overlay mở, các phần tử gốc của trang bị ẩn (`html.lhn-video-overlay-open body > *:not(#keepit-host)`); nền overlay đặt đặc từ đầu và bỏ hiệu ứng chuyển màu nền.
+- File: `css/content/content.css`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: không có JS thay đổi logic. Trên YouTube: Chưa chạy (cần xác nhận không còn nháy khi mở, và YouTube hiện lại đúng khi đóng).
+- Việc đang mở: nếu sidebar Keepit cần hiện khi overlay mở, phải đưa nó vào danh sách không ẩn.
 
 
 **2026-10-31 | v3.4.861 | Arena.ai Agent sửa:**
