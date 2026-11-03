@@ -186,6 +186,8 @@ function createWebTtsMedia(cues) {
       const run = {
         token, index, cue, sourceText, requestText:text, baseOffset,
         requestCursor:0, chunkStart:0, position:baseOffset,
+        webProgressElapsedMs: sourceText.length ? (baseOffset / sourceText.length) * Math.max(650, (sourceText.length / 15) * 1000) : 0,
+        webProgressLastAt: null,
       };
       media._activeRun = run;
       const isCurrentRun = () => state.sourceType === 'web' && state.activeMedia === media && token === generation && media._activeRun === run;
@@ -1002,6 +1004,56 @@ function createWebThumbnailVisualizer(image) {
   return { stage, visualizer, syncArtwork };
 }
 
+function attachWebProgressAnimation(media) {
+  let frameId = 0;
+  const renderProgress = (timestamp, advance = true) => {
+    if (state.activeMedia !== media) return;
+    const fill = ui('.te-progress-fill');
+    if (!fill) return;
+    const duration = Number(media.duration) || 0;
+    const run = media._activeRun;
+    let position = Number(media.currentTime) || 0;
+    if (run && position >= run.index && position < run.index + 1) {
+      const audio = media._currentAudio;
+      const synth = globalThis.speechSynthesis;
+      const voicePlaying = audio ? !audio.paused : Boolean(media._currentUtterance && synth?.speaking && !synth?.paused);
+      if (advance && !media.paused && voicePlaying) {
+        if (Number.isFinite(run.webProgressLastAt)) {
+          run.webProgressElapsedMs += Math.max(0, timestamp - run.webProgressLastAt) * media.playbackRate;
+        }
+        run.webProgressLastAt = timestamp;
+      } else {
+        run.webProgressLastAt = null;
+      }
+      const estimatedDuration = Math.max(650, (run.sourceText.length / 15) * 1000);
+      const cueProgress = Math.min(0.995, Math.max(0, run.webProgressElapsedMs / estimatedDuration));
+      position = run.index + cueProgress;
+    }
+    fill.style.width = `${duration ? Math.max(0, Math.min(1, position / duration)) * 100 : 0}%`;
+  };
+  const tick = (timestamp) => {
+    frameId = 0;
+    if (state.activeMedia !== media) return;
+    renderProgress(timestamp);
+    if (!media.paused) frameId = requestAnimationFrame(tick);
+  };
+  const start = () => {
+    if (!frameId) frameId = requestAnimationFrame(tick);
+  };
+  const pause = () => {
+    const run = media._activeRun;
+    if (run && Number.isFinite(run.webProgressLastAt)) {
+      run.webProgressElapsedMs += Math.max(0, performance.now() - run.webProgressLastAt) * media.playbackRate;
+      run.webProgressLastAt = null;
+    }
+    if (frameId) cancelAnimationFrame(frameId);
+    frameId = 0;
+    renderProgress(performance.now(), false);
+  };
+  media.addEventListener('play', start);
+  media.addEventListener('pause', pause);
+}
+
 function attachWebMedia(media, slot) {
   if (state.activeMedia && state.activeMedia !== media) detachActiveMedia();
   state.activeMedia = media;
@@ -1034,6 +1086,7 @@ function attachWebMedia(media, slot) {
   } else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level:'error' });
 
   media.addEventListener('timeupdate', onTimeUpdate);
+  attachWebProgressAnimation(media);
   media.addEventListener('play', handleMediaPlay);
   media.addEventListener('pause', handleMediaPause);
   media.addEventListener('ratechange', handleMediaRateChange);

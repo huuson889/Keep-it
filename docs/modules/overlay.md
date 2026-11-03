@@ -35,11 +35,13 @@ Overlay cung cấp UI cho Video (YouTube) và Web. `overlay-controller.js` đi�
 - Selector chung dùng `te-study-*`; Typing/Dictation riêng dùng `te-dict-*`; Shadowing riêng dùng `te-shadowing-*`. Giữ giao diện/hành vi khi đổi định danh.
 - API mới là `LHN_STUDY`, `LHN_STUDY_SCORE`, `LHN_STUDY_RULES`, `LHN_STUDY_SESSION_INDEX`; các global/method Dictation cũ và Web-TTS bridge cũ vẫn được alias. Session/storage keys, `captionTrackLanguage` trong transcript cache và event contract không đổi.
 - Web TTS dùng Reader rate đã lưu (global/per-language, 0.5×–3×); Video/YouTube giữ 0.5×–2×, Dictation replay giữ slow replay 0.6×. Shared TTS engine không đổi.
+- Web Overlay progress fill nội suy trong cue theo tốc độ phát hiện tại và dừng khi TTS tạm dừng; Video dùng updater riêng nên không bị ảnh hưởng.
 - `study/shared/` chỉ chứa logic dùng chung. Lifecycle/result branches còn trong Dictation shell và cần tách tiếp mà không đổi UX. Dashboard có Dictation sessions/statistics, chưa có Shadowing practice route.
 - Giữ các ràng buộc visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, biên độ giảm 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ. Favicon 22×22 px, globe fallback.
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.44: `node --check` JS Overlay, `git diff --check` và focused VM smoke test cho Web progress (tiến trong cue, phản ánh playback rate, pause giữ nguyên, resume tiếp tục) đạt. Browser QA chưa chạy.
 - v3.5.43: `node --check` toàn bộ JS `js/overlay/`, `git diff --check`, 45 manifest JS paths và VM smoke tests cho Study/legacy aliases, scoring, storage key đều đạt. Browser QA chưa chạy; speed contract được kiểm tra tĩnh.
 - v3.5.42: Reader/Web/Overlay VM checks đạt cho Reader shared rate (global/per-language, 0.5×–3×) và speed path YouTube/Dictation riêng. Browser QA chưa chạy.
 - Static checks có thể lặp bằng Node: parse manifest, xác nhận script paths/order và nạp Study scripts trong VM. Browser QA cần xác nhận Video/Web switching, Typing/Shadowing, TTS, shortcuts, cleanup và layout; static checks không thay thế kiểm thử extension thật.

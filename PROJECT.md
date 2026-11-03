@@ -1,14 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.43; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); YouTube và Dictation giữ speed path riêng. Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.44; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.43: `node --check` toàn bộ JS trong `js/overlay/`, `git diff --check`, 45 manifest JS paths và Study API alias/scoring VM smoke tests đạt; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- v3.5.44: `node --check` toàn bộ JS trong `js/overlay/`, `git diff --check`, manifest paths và Web progress VM smoke test đạt; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
 - Browser QA pending: đổi tốc độ ở Reader rồi mở Web TTS và đổi ngược lại; xác nhận 0.5×/3×, global/per-language và persistence sau reload; xác nhận YouTube, Dictation slow replay 0.6× và Flashcard không đổi. Static/VM checks v3.5.42 đã đạt.
+
+### Web Overlay progress
+- Browser QA pending: xác nhận thanh tiến độ chạy trong cue theo tốc độ đọc, dừng/tiếp đúng khi Pause/Play và sang cue kế tiếp; Video không đổi. Web progress VM smoke test v3.5.44 đạt.
 
 ### Study activity refactor
 - Browser QA pending cho source/activity state names, selector/UI wiring, `LHN_STUDY` với alias cũ và Web shared-rate bridge; xác nhận Web 0.5×–3×, YouTube và Dictation replay giữ nguyên. Static/VM checks v3.5.43 đạt.
@@ -132,6 +135,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.44 | Arena.ai Agent sửa:**
+
+- Web Overlay nội suy thanh tiến độ mượt trong từng cue theo độ dài câu và tốc độ phát hiện tại; giữ tiến độ khi tạm dừng/tiếp tục. Video/YouTube, engine TTS và chuyển cue không đổi.
+- File: `js/overlay/source/web.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` JS Overlay, `git diff --check` và focused Web progress VM smoke test (tiến theo tốc độ, pause giữ nguyên, resume tiếp tục) đạt. Browser QA chưa chạy.
 
 **2026-11-03 | v3.5.43 | Arena.ai Agent sửa:**
 
