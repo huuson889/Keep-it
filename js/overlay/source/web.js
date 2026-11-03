@@ -879,10 +879,10 @@ function drawWebThumbnailVisualizer(visualizer, timestamp) {
     if (particle.x > width + 12) particle.x = -12;
     const visibility = webThumbnailClamp(particleCount - i, 0, 1);
     if (visibility <= 0) continue;
-    ctx.globalAlpha = particle.alpha * visibility;
+    ctx.globalAlpha = visibility;
     ctx.fillStyle = theme.glow;
     ctx.beginPath();
-    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+    ctx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
