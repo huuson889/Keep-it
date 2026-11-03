@@ -96,7 +96,7 @@ function createWebTtsMedia(cues) {
   const wakeResumeWaiters = () => media._resumeWaiters.splice(0).forEach(resolve => { try { resolve(); } catch {} });
 
   media = {
-    videoWidth: 16, videoHeight: 9, volume: 1, controls: false,
+    videoWidth: 16, videoHeight: 9, volume: 1, controls: false, _dictationPlaybackRate:1,
     addEventListener(type, listener) {
       if (!listener) return;
       const set = listeners.get(type) || new Set(); set.add(listener); listeners.set(type, set);
@@ -131,7 +131,8 @@ function createWebTtsMedia(cues) {
     get paused() { return paused; },
     get playbackRate() { return playbackRate; },
     set playbackRate(value) {
-      const next = Math.max(0.5, Math.min(2, Number(value) || 1));
+      const sharedRateActive = globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false;
+      const next = Math.max(0.5, Math.min(sharedRateActive ? 3 : 2, Number(value) || 1));
       const changed = Math.abs(next - playbackRate) > 0.0001;
       playbackRate = next;
       if (media._currentAudio) {
@@ -219,9 +220,16 @@ function createWebTtsMedia(cues) {
         run.failed = true; finish(); return;
       }
       const fallbackLanguage = String(state.webLanguageHint || navigator.language || 'en-US');
-      Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then((lang) => {
+      Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then(async (lang) => {
         if (!active()) return;
         const normalized = tts.normalizeLanguage?.(lang || fallbackLanguage) || lang || fallbackLanguage;
+        media._currentLanguage = normalized;
+        let sharedRate = null;
+        if (globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false) {
+          try { sharedRate = await globalThis.LHN_READER_SPEECH_RATE?.getRate?.(normalized); } catch {}
+        }
+        if (!active()) return;
+        if (globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false && Number.isFinite(sharedRate) && Math.abs(playbackRate - sharedRate) > 0.001) media.playbackRate = sharedRate;
         const base = String(normalized).replace(/_/g, '-').split('-')[0].toLowerCase() || 'en';
         return tts.play({
           text, lang: normalized, googleLanguage: base, voice: `google-translate-default:${base}`,
@@ -446,6 +454,7 @@ async function prepareWebStudyFromPage() {
           const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
           state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
           state.webCueLanguageKnown = Boolean(directLanguage) || baseLanguageCode(detected) !== baseLanguageCode(languageHint);
+          void syncWebTtsSpeedFromReader();
           if (state.open) applyDefaultSubtitleDisplayMode();
           if (previousLanguage !== detectedBase) {
             translationSettingsRevision++;
@@ -1035,5 +1044,6 @@ function attachWebMedia(media, slot) {
   media.addEventListener('loadedmetadata', state.videoGeometryHandler);
   syncVideoAspect(media); syncTheaterFrame();
   syncPlayButton(); syncSpeedButton(); syncMuteButton();
+  if (state.webStudy) void syncWebTtsSpeedFromReader();
   onTimeUpdate(); syncReadingAudioControls(); startAmbient();
 }

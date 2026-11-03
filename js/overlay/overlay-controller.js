@@ -836,6 +836,7 @@ function handleVideoPause() {
 }
 
 function handleVideoRateChange() {
+  syncSpeedPopup();
   syncSpeedButton();
   pulseControl('Tốc độ');
 }
@@ -855,9 +856,57 @@ function syncPlayButton(paused = null) {
 
 // ---- Popup tốc độ: nút "Tốc độ" mở popup (không chuyển tuần tự nữa) ----
 const SPEED_MIN = 0.5, SPEED_MAX = 2.0;
+function isWebTtsSharedRateActive() {
+  return Boolean(state.webStudy && !overlayEl()?.classList.contains('te-dictation-active'));
+}
+function webTtsSpeechLanguage() {
+  return state.videoEl?._currentLanguage || state.webDetectedLanguage || state.webLanguageHint || state.mainLanguage || navigator.language || 'en-US';
+}
+function syncWebTtsSpeedFromReader() {
+  const media = state.videoEl;
+  const rateApi = globalThis.LHN_READER_SPEECH_RATE;
+  if (!isWebTtsSharedRateActive() || !media || typeof rateApi?.getRate !== 'function') return Promise.resolve(null);
+  return Promise.resolve(rateApi.getRate(webTtsSpeechLanguage())).then((rate) => {
+    if (!isWebTtsSharedRateActive() || state.videoEl !== media || !Number.isFinite(rate)) return null;
+    if (Math.abs(media.playbackRate - rate) > 0.001) media.playbackRate = rate;
+    syncSpeedPopup(); syncSpeedButton();
+    return rate;
+  }).catch((error) => { console.warn('[Keepit Web] Could not read the shared Reader speech rate.', error); return null; });
+}
+function setWebTtsSpeed(value) {
+  const media = state.videoEl;
+  const rateApi = globalThis.LHN_READER_SPEECH_RATE;
+  if (!media || typeof rateApi?.setRate !== 'function' || typeof rateApi?.clamp !== 'function') return;
+  const rate = rateApi.clamp(value);
+  if (rate === null) return;
+  media.playbackRate = rate;
+  syncSpeedPopup(); syncSpeedButton();
+  Promise.resolve(rateApi.setRate(rate, webTtsSpeechLanguage())).then((savedRate) => {
+    if (!isWebTtsSharedRateActive() || state.videoEl !== media || !Number.isFinite(savedRate)) return;
+    if (Math.abs(media.playbackRate - savedRate) > 0.001) media.playbackRate = savedRate;
+    syncSpeedPopup(); syncSpeedButton();
+  }).catch((error) => console.warn('[Keepit Web] Could not save the shared Reader speech rate.', error));
+}
+function setWebTtsDictationMode(active) {
+  const media = state.videoEl;
+  if (!state.webStudy || !media) return;
+  if (active) {
+    if (!Number.isFinite(media._dictationPlaybackRate)) media._dictationPlaybackRate = 1;
+    if (Math.abs(media.playbackRate - media._dictationPlaybackRate) > 0.001) media.playbackRate = media._dictationPlaybackRate;
+  } else {
+    void syncWebTtsSpeedFromReader();
+  }
+  syncSpeedPopup(); syncSpeedButton();
+}
+globalThis.LHN_WEB_TTS_RATE_ACTIVE = isWebTtsSharedRateActive;
+globalThis.LHN_WEB_TTS_DICTATION_MODE = setWebTtsDictationMode;
 function setVideoSpeed(val) {
+  if (isWebTtsSharedRateActive()) { setWebTtsSpeed(val); return; }
   const sp = Math.round(Math.max(SPEED_MIN, Math.min(SPEED_MAX, parseFloat(val))) * 100) / 100;
-  if (state.videoEl) state.videoEl.playbackRate = sp;
+  if (state.videoEl) {
+    state.videoEl.playbackRate = sp;
+    if (state.webStudy && overlayEl()?.classList.contains('te-dictation-active')) state.videoEl._dictationPlaybackRate = sp;
+  }
   syncSpeedPopup();
   syncSpeedButton();
 }
@@ -870,7 +919,7 @@ function syncSpeedPopup() {
   const val = $('te-speed-value');
   if (val) val.textContent = `${sp.toFixed(2)}x`;
   const sl = $('te-speed-slider');
-  if (sl) sl.value = sp;
+  if (sl) { sl.max = isWebTtsSharedRateActive() ? '3' : String(SPEED_MAX); sl.value = sp; }
   uiAll('#te-speed-popup .te-speed-btn').forEach((btn) => btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.speed) - sp) < 0.02));
 }
 // Đặt popup căn giữa phía trên nút "Tốc độ" (trong hệ tọa độ của overlay), kéo vào trong nếu sát mép
@@ -2045,6 +2094,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[sharedSettingsKey]) {
     void refreshKeepitGate();
     void refreshSubtitleLanguageSettings();
+    if (state.webStudy) void syncWebTtsSpeedFromReader();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) void refreshSubtitleLanguageSettings();
 });

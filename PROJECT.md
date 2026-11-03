@@ -1,12 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.41; Manifest V3. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers dùng chung ở `study/shared/`.
+- Version hiện tại: v3.5.42; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); YouTube và Dictation giữ speed path riêng. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- Static/VM checks đạt cho v3.5.41; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- Syntax, manifest-order và focused VM checks đạt cho v3.5.42; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Reader ↔ Web TTS shared speed
+- Browser QA pending: đổi tốc độ ở Reader rồi mở Web TTS và đổi ngược lại; xác nhận 0.5×/3×, global/per-language và persistence sau reload; xác nhận YouTube, Dictation slow replay 0.6× và Flashcard không đổi. Static/VM checks v3.5.42 đã đạt.
+
 ### Study activity refactor
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
@@ -128,6 +131,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.42 | Arena.ai Agent sửa:**
+
+- Web TTS Overlay dùng cùng Reader rate resolver/setter và giá trị `lhnSettings`, gồm global/per-language và 0,5×–3×. Giới hạn thay đổi trong Web TTS; YouTube 0,5×–2×, Dictation replay 0,6× và Flashcard giữ path riêng.
+- File: `js/reader/bilingual-reader.js`, `js/overlay/overlay-controller.js`, `js/overlay/source/web.js`, `js/overlay/study/dictation/dictation.js`, `manifest.json`, `docs/modules/reader.md`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt 59 JS; 42 content-script references có file và Reader→Web→controller đúng thứ tự; Reader/Web/Overlay focused VM checks đạt (global/per-language, 0,5×–3×, YouTube và Dictation giữ riêng); `git diff --check` đạt. Browser QA chưa chạy.
 
 **2026-11-03 | v3.5.41 | Arena.ai Agent sửa:**
 

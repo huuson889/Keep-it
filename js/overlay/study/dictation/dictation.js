@@ -2736,6 +2736,7 @@
     wrongWordStats = { version: 3, words: {} };
     speakingWrongWordStats = { version: 3, words: {} };
     ui.root.classList.add("te-dictation-active");
+    globalThis.LHN_WEB_TTS_DICTATION_MODE?.(true);
     A?.syncViewSize?.();
     A?.revealLearningEntry?.();
     applyVideoViewSizeColumnPreset();
@@ -2852,6 +2853,7 @@
       else button.setAttribute("aria-disabled", original.aria);
     }
     ui.root.classList.remove("te-dictation-active", "te-dict-speaking-mode", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
+    globalThis.LHN_WEB_TTS_DICTATION_MODE?.(false);
     A?.syncViewSize?.();
     for (const property of ["--te-dict-left-track", "--te-dict-right-track", "--te-dict-left-splitter", "--te-dict-right-splitter", "--te-dict-center-min"]) {
       ui.root.style.removeProperty(property);

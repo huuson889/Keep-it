@@ -397,7 +397,7 @@
     return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang])) ?? 1.25;
   }
   function currentSegmentRate() { return segmentRate(activeSegmentLang()); }
-  function editingLanguageRate() { return dashboardShortcuts?.useLanguageSpeechRate === true && isDisplaySpeechLang(activeSegmentLang()); }
+  function editingLanguageRate(lang = activeSegmentLang()) { return dashboardShortcuts?.useLanguageSpeechRate === true && isDisplaySpeechLang(lang); }
   function writeLanguageSpeechRate(rate) {
     const patch = {
       speechRateByLanguage:{ ...(dashboardShortcuts.speechRateByLanguage || {}), [displayLang]:rate },
@@ -422,13 +422,14 @@
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading && !readingPaused) restartCurrentSpeech();
     syncToolbar();
   }
-  function setSpeechSpeed(value) {
+  function setSpeechSpeed(value, lang = activeSegmentLang()) {
     const rate = clampSpeechRate(value);
-    if (rate === null) return;
-    if (editingLanguageRate()) writeLanguageSpeechRate(rate);
+    if (rate === null) return null;
+    if (editingLanguageRate(lang)) writeLanguageSpeechRate(rate);
     else writeSharedSpeechRate(rate);
     lastAppliedSegmentRate = rate; renderSpeed(rate); syncToolbar();
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
+    return rate;
   }
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
   synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.browserVoiceURI)||selectedVoice; syncToolbar(); if(popover("voices").classList.contains("lhn-open")) renderVoiceChoices();});
@@ -1231,19 +1232,19 @@
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
+      displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       applySharedSpeechRate();
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
       if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI || previousReadLanguage !== settings.readLanguage)) restartCurrentSpeech();
-      displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
       syncToolbar();
       document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
     }
   });
-  browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(async data => {
+  const readerRateSettingsReady = browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(async data => {
     dashboardShortcuts = data[DISPLAY_SETTINGS_KEY] || {};
     displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(data[DISPLAY_SETTINGS_KEY]) || displayLang;
     addonThemePreference = ["light","dark","system"].includes(data[DISPLAY_SETTINGS_KEY]?.sidebarTheme) ? data[DISPLAY_SETTINGS_KEY].sidebarTheme : "system";
@@ -1274,6 +1275,11 @@
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     syncToolbar();
   }).catch(() => applySettings(DEFAULTS));
+  globalThis.LHN_READER_SPEECH_RATE = Object.freeze({
+    clamp: clampSpeechRate,
+    getRate: async (lang) => { await readerRateSettingsReady; return segmentRate(lang); },
+    setRate: async (value, lang) => { await readerRateSettingsReady; return setSpeechSpeed(value, lang); },
+  });
   window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", syncToolbar);
   let pageMutationTimer = 0;
   function shouldObserveReaderMutations() {
