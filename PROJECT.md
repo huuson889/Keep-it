@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.52; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.53; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.52: Theater + Large subtitle handle 54×20 px, hit area mở rộng; vị trí mặc định/reset cách đáy frame 80 px; control-bar overlap chỉ nâng panel tạm thời. `node --check`, `git diff --check` và focused VM checks đạt; browser QA chưa chạy. Chi tiết ở mục 2/5.
+- v3.5.53: double-click trong toàn bộ sub box (kể cả handle) reset vị trí; default/reset cách đáy frame 30 px. `node --check`, `git diff --check` và focused reset/position tests đạt; browser QA chưa chạy. Chi tiết ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,6 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
 - Theater + Large light subtitle (v3.5.51): browser QA pending — main mặc định vàng `#ffff00` như dark mode; bản dịch giữ màu hiện hành; light mode ở các kích cỡ khác vẫn tím app; dark mode không đổi.
 - Theater + Large subtitle (v3.5.49): browser QA pending — xác nhận hộp tăng tới 90% `.te-player-frame` trước khi main/bản dịch wrap; từng dòng ngắn hơn giới hạn giữ một dòng; dòng dài hơn giới hạn wrap bên trong hộp; đổi kích thước cửa sổ/video không giới hạn nhầm theo viewport.
@@ -140,6 +141,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.53 | Arena.ai Agent sửa:**
+
+- Theater + Large: double-click bất kỳ đâu trong sub box, kể cả handle, reset vị trí; default/reset cách đáy frame 30 px.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/view/layout-mode.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check`, `git diff --check` và focused tests cho double-click reset/30 px default đạt; browser QA chưa chạy.
 
 **2026-11-04 | v3.5.52 | Arena.ai Agent sửa:**
 

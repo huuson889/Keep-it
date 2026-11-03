@@ -1,7 +1,7 @@
 // Overlay layout modes, display sizing, and theater presentation.
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
-const THEATER_SUBTITLE_BOTTOM_INSET = 80;
+const THEATER_SUBTITLE_BOTTOM_INSET = 30;
 const THEME_DEFAULT_HEX = {
   light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
   dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },

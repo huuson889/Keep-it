@@ -1269,7 +1269,6 @@ function bindUI() {
     let dragSession = null;
     const setSubtitleCenterY = (requestedY) => updateTheaterSubtitleLayout(requestedY, root);
     theaterSubtitlePanel.addEventListener('dblclick', (event) => {
-      if (theaterSubtitleHandle.contains(event.target)) return;
       if (resetTheaterSubtitlePosition(root)) event.preventDefault();
     });
     const finishDrag = (event) => {
