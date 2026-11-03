@@ -1,6 +1,4 @@
-// Controller overlay video (điều phối)
-// Tách từ js/video/dual-subtitles.js (v3.5.26). Nội dung giữ nguyên, chỉ đổi vị trí file.
-
+// Shared overlay controller and content-script entry. Load after the Overlay modules.
 // ===== Video song ngữ và Web-study – content script (chuyển từ extension tham chiếu v1.12) =====
 // Nạp trước: overlay-template.js (OVERLAY_CSS/OVERLAY_HTML). Giao diện giữ nguyên 100%.
 // Các "đường nối" đã đổi sang module Keepit: LHN_MESSAGING (fetch bridge), browser.storage (cài đặt),
@@ -28,39 +26,6 @@ const FONT_STACKS = {
 };
 const PLAY_PATH = '<path d="M8 5v14l11-7z"/>';
 const PAUSE_PATH = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
-const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
-const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
-const THEME_DEFAULT_HEX = {
-  light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
-  dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },
-};
-function isReadingModeActive() {
-  return Boolean(overlayEl()?.classList.contains('te-reading-mode'));
-}
-function activeVideoSubtitleSettings() {
-  return isReadingModeActive() ? settings.readingSubtitle : settings.sub;
-}
-function preferredVideoMode() {
-  return ['theater', 'reading', 'combined'].includes(settings?.preferredVideoMode)
-    ? settings.preferredVideoMode
-    : settings?.readingMode === true ? 'reading' : 'combined';
-}
-function preferredLearningMode() {
-  return settings?.preferredLearningMode === 'speaking' ? 'speaking' : 'typing';
-}
-function defaultColorFor(group) {
-  const theme = settings?.theme === 'dark' ? 'dark' : 'light';
-  const defaultGroup = !group.startsWith('side-') && isReadingModeActive() ? `side-${group}` : group;
-  return THEME_DEFAULT_HEX[theme][defaultGroup] || DEFAULT_HEX[defaultGroup] || DEFAULT_HEX[group];
-}
-
-let pendingDictationShortcut = false;
-let pendingDictationOpenImmediately = false;
-let pendingDictationMode = 'typing';
-let webStudyCueSessionCache = null;
-let webStudyPreparationPromise = null;
-let subtitleModeManuallySelectedFor = null;
-
 const state = {
   open: false,
   videoId: null,
@@ -108,927 +73,309 @@ const state = {
   webThumbnail: null,
 };
 
-function showWebToast(message) {
-  let toast = document.getElementById('lhn-sidebar-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'lhn-sidebar-toast';
-    toast.setAttribute('role', 'status');
-    document.documentElement.appendChild(toast);
-  }
-  toast.textContent = String(message || 'Keepit web mode is unavailable.');
-  toast.classList.add('is-visible');
-  clearTimeout(toast._lhnWebToastTimer);
-  toast._lhnWebToastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
-}
+let savedOverlayPageScrollStyles = null;
 
-function reportWebIssue(message, error = null, { level = 'warn', toast = true } = {}) {
-  const log = level === 'error' ? console.error : console.warn;
-  log.call(console, '[Keepit Web]', message, error || '');
-  if (toast) {
-    const locale = String(state.displayLanguage || 'en').toLowerCase().split('-')[0];
-    const isUnconfigured = /not configured/i.test(String(message || ''));
-    const localized = {
-      en: isUnconfigured ? 'This feature is not configured for web mode.' : 'Web mode encountered an error. Check the console for details.',
-      vi: isUnconfigured ? 'Chức năng này chưa được cấu hình cho chế độ web.' : 'Chế độ web gặp lỗi. Xem console để biết chi tiết.',
-      ko: isUnconfigured ? '이 기능은 웹 모드에서 아직 설정되지 않았습니다.' : '웹 모드에서 오류가 발생했습니다. 자세한 내용은 콘솔을 확인하세요.',
-    };
-    showWebToast(localized[locale] || localized.en);
-  }
-}
+let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
+const $ = (id) => (shadow ? shadow.getElementById(id) : null);
+const overlayEl = () => $(OVERLAY_ID);
+const uiCache = new Map();
+const ui = (sel) => {
+  const cached = uiCache.get(sel);
+  if (cached && cached.isConnected) return cached;
+  const el = overlayEl()?.querySelector(sel) || null;
+  if (el) uiCache.set(sel, el); else uiCache.delete(sel);
+  return el;
+};
+const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
+const VIDEO_UI_TEXT_KEYS = Object.freeze({
+  'Thêm vào từ vựng': 'videoAddVocabulary', 'Mở thanh bên ghi chú': 'videoOpenNotesSidebar',
+  'Audio': 'videoAudio', 'Lặp lại câu': 'videoRepeatSentence', 'Câu trước': 'videoPreviousSentence',
+  'Phát/Tạm dừng': 'videoPlayPause', 'Câu tiếp theo': 'videoNextSentence', 'Tốc độ': 'videoSpeed',
+  'Luyện nói': 'videoPracticeSpeaking', 'Chép chính tả': 'videoDictation', 'Chế độ phụ đề': 'videoSubtitleMode',
+  'Song ngữ': 'videoSubtitleBilingual', 'Chính': 'videoSubtitlePrimary', 'Dịch': 'videoSubtitleTranslation', 'Ẩn': 'videoSubtitleHidden',
+  'Chế độ xem': 'videoModeSelector', 'Chế độ rạp': 'videoModeTheater', 'Chế độ đọc': 'videoModeReading', 'Chế độ thường': 'videoModeCombined',
+  'Toàn màn hình': 'videoFullscreen', 'Cài đặt video': 'videoSettings', 'Đóng': 'close', 'Mở cài đặt': 'videoOpenSettings',
+  'Kích thước xem': 'videoViewSize', 'Kích cỡ xem': 'videoViewSize', 'Nhấn để dịch': 'videoTranslationPopup', 'Phát âm khi dịch': 'videoClickToSpeak',
+  'Kết hợp câu': 'videoCombineSentences', 'Ẩn thanh điều khiển': 'videoHideControls', 'Ambient mode': 'videoAmbientMode',
+  'Ambient 1': 'videoAmbient1', 'Ambient 2': 'videoAmbient2', 'Ambient 3': 'videoAmbient3', 'Tắt': 'videoAmbientOff',
+  'Chủ đề': 'videoTheme', 'Light': 'lightMode', 'Dark': 'darkMode', 'Tùy chọn phụ đề': 'videoSubtitleOptions',
+  'Ngôn ngữ phụ đề': 'videoSubtitleLanguage', 'Xuất phụ đề': 'videoExportSubtitles', 'Đặt lại': 'videoReset', 'Cài đặt chung': 'videoGeneralSettings',
+  'Nhỏ': 'videoSmall', 'Vừa': 'videoMedium', 'Trung bình': 'videoMedium', 'Lớn': 'videoLarge', 'Đậm': 'videoBold', 'Phụ đề video': 'videoVideoSubtitles',
+  'Kích thước phụ đề chính': 'videoPrimarySubtitleSize', 'Màu phụ đề chính': 'videoPrimarySubtitleColor',
+  'Kích thước phụ đề dịch': 'videoTranslatedSubtitleSize', 'Màu phụ đề dịch': 'videoTranslatedSubtitleColor',
+  'Chế độ rạp · Lớn': 'videoTheaterLargeSubtitle', 'Màu nền phụ đề': 'videoSubtitleBackgroundColor',
+  'Độ trong suốt': 'videoSubtitleBackgroundOpacity', 'Move subtitle': 'videoMoveSubtitle',
+  'Phụ đề thanh bên': 'videoSidebarSubtitles', 'Kích thước chính': 'videoPrimarySize', 'Kích thước dịch': 'videoTranslatedSize',
+  'Phụ đề chính': 'videoMainSubtitle', 'Phụ đề dịch': 'videoTranslationSubtitle', 'Xuất từ đã lưu': 'videoExportSavedWords',
+  'Hiển thị từ đánh dấu': 'videoShowHighlightedWords', 'Chỉ xuất phụ đề': 'videoExportSubtitlesOnly', 'Hiển thị thời gian': 'videoIncludeTimestamps',
+});
+const VIDEO_UI_CONTROL_IDS = Object.freeze({
+  Audio: 'te-control-audio', 'Lặp lại câu': 'te-control-repeat', 'Câu trước': 'te-control-previous',
+  'Phát/Tạm dừng': 'te-control-play', 'Câu tiếp theo': 'te-control-next', 'Tốc độ': 'te-control-speed',
+  'Luyện nói': 'te-speaking-mode-btn', 'Chép chính tả': 'te-dictation-mode-btn', 'Toàn màn hình': 'te-control-fullscreen',
+});
+const localizedVideoText = new WeakMap();
+const localizedVideoAttributes = new WeakMap();
+const videoT = (key, vars = {}) => globalThis.LHN_LANGUAGES?.t?.(key, vars, state.displayLanguage) || key;
+const ctrl = (title) => {
+  const id = VIDEO_UI_CONTROL_IDS[title];
+  return id ? ui(`#${id}`) : null;
+};
 
-let lastWebTranslationIssueAt = 0;
-function reportWebTranslationIssue(error) {
-  if (!state.webStudy) return;
-  const now = Date.now();
-  const toast = now - lastWebTranslationIssueAt > 5000;
-  lastWebTranslationIssueAt = now;
-  reportWebIssue('The shared translation service failed for Reader text.', error, { level: 'error', toast });
-}
-
-function splitReaderSentences(blocks) {
-  const output = [];
-  const hint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || '');
-  let segmenter = null;
-  try { segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(hint || undefined, { granularity: 'sentence' }) : null; } catch {}
-  for (const block of Array.isArray(blocks) ? blocks : []) {
-    const text = String(block || '').replace(/\s+/gu, ' ').trim();
-    if (!text) continue;
-    const parts = segmenter
-      ? [...segmenter.segment(text)].map((part) => part.segment.trim())
-      : text.split(/(?<=[.!?。！？])\s+/u).map((part) => part.trim());
-    output.push(...parts.filter(Boolean));
-  }
-  return output;
-}
-
-async function detectWebTtsLanguage(text, fallbackLanguage) {
-  const tts = globalThis.LHN_TTS;
-  const declared = String(fallbackLanguage || '').replace(/_/g, '-');
-  const declaredBase = declared.split('-')[0].toLowerCase();
-  if (/[\p{Script=Arabic}]/u.test(text) && ['ar', 'fa', 'ur', 'ps', 'sd'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
-  if (/[\p{Script=Cyrillic}]/u.test(text) && ['ru', 'uk', 'be', 'bg', 'sr', 'mk'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
-  if (/[\p{Script=Han}]/u.test(text) && ['ja', 'zh'].includes(declaredBase)) return tts?.normalizeLanguage?.(declared) || declared;
-  const direct = tts?.detectReadLanguage?.(text);
-  if (direct) return direct;
-  const scriptHints = [
-    [/\p{Script=Arabic}/u, 'ar-SA'], [/\p{Script=Hebrew}/u, 'he-IL'], [/\p{Script=Greek}/u, 'el-GR'],
-    [/\p{Script=Armenian}/u, 'hy-AM'], [/\p{Script=Georgian}/u, 'ka-GE'], [/\p{Script=Khmer}/u, 'km-KH'],
-    [/\p{Script=Lao}/u, 'lo-LA'], [/\p{Script=Myanmar}/u, 'my-MM'], [/\p{Script=Ethiopic}/u, 'am-ET'],
-    [/\p{Script=Sinhala}/u, 'si-LK'], [/\p{Script=Tamil}/u, 'ta-IN'], [/\p{Script=Telugu}/u, 'te-IN'],
-    [/\p{Script=Kannada}/u, 'kn-IN'], [/\p{Script=Malayalam}/u, 'ml-IN'], [/\p{Script=Gurmukhi}/u, 'pa-IN'],
-  ];
-  for (const [pattern, language] of scriptHints) if (pattern.test(text)) return language;
-  return await tts?.detectLanguage?.(text, fallbackLanguage) || tts?.normalizeLanguage?.(fallbackLanguage) || fallbackLanguage;
-}
-
-function createWebTtsMedia(cues) {
-  const listeners = new Map();
-  let currentTime = 0, paused = true, playbackRate = 1, muted = false, generation = 0;
-  let media;
-  const normalizedOffset = (value, length) => Math.max(0, Math.min(length, Number.isFinite(Number(value)) ? Math.floor(Number(value)) : 0));
-  const resumeAt = run => {
-    if (!run) return null;
-    const offset = normalizedOffset(run.position, run.sourceText.length);
-    return { index:run.index, text:run.sourceText.slice(offset), offset };
-  };
-  const chunkStartAt = (run, chunk) => {
-    const value = String(chunk || '');
-    let offset = run.requestText.indexOf(value, run.requestCursor);
-    if (offset < 0) offset = run.requestCursor;
-    run.requestCursor = offset + value.length;
-    run.chunkStart = offset;
-    return offset;
-  };
-  const wakeResumeWaiters = () => media._resumeWaiters.splice(0).forEach(resolve => { try { resolve(); } catch {} });
-
-  media = {
-    videoWidth: 16, videoHeight: 9, volume: 1, controls: false,
-    addEventListener(type, listener) {
-      if (!listener) return;
-      const set = listeners.get(type) || new Set(); set.add(listener); listeners.set(type, set);
-    },
-    removeEventListener(type, listener) { listeners.get(type)?.delete(listener); },
-    dispatchEvent(event) {
-      for (const listener of [...(listeners.get(event.type) || [])]) {
-        try { typeof listener === 'function' ? listener.call(media, event) : listener.handleEvent?.(event); }
-        catch (error) { reportWebIssue('The web overlay media event failed.', error, { level: 'error' }); }
-      }
-      return true;
-    },
-    get currentTime() { return currentTime; },
-    set currentTime(value) {
-      const next = Math.max(0, Math.min(cues.length, Number(value) || 0));
-      const changed = Math.abs(next - currentTime) > 0.0001;
-      currentTime = next;
-      media.dispatchEvent(new Event('timeupdate'));
-      if (!changed) return;
-      const shouldResume = !paused;
-      generation++;
-      media._resumeState = null;
-      media._activeRun = null;
-      media._cancelCurrent();
-      if (next >= cues.length) {
-        if (shouldResume) { paused = true; media.dispatchEvent(new Event('pause')); }
-        return;
-      }
-      if (shouldResume) media._startCue(Math.floor(next));
-    },
-    get duration() { return cues.length; },
-    get paused() { return paused; },
-    get playbackRate() { return playbackRate; },
-    set playbackRate(value) {
-      const next = Math.max(0.5, Math.min(2, Number(value) || 1));
-      const changed = Math.abs(next - playbackRate) > 0.0001;
-      playbackRate = next;
-      if (media._currentAudio) {
-        try { media._currentAudio.playbackRate = playbackRate; } catch {}
-      } else if (changed && media._currentUtterance && media._activeRun) {
-        const run = media._activeRun;
-        const resume = resumeAt(run);
-        const shouldResume = !paused;
-        generation++;
-        media._activeRun = null;
-        media._cancelCurrent();
-        if (shouldResume) media._startCue(resume.index, resume.text, resume.offset);
-        else media._resumeState = resume;
-      }
-      media.dispatchEvent(new Event('ratechange'));
-    },
-    get muted() { return muted; },
-    set muted(value) {
-      muted = Boolean(value);
-      if (media._currentAudio) media._currentAudio.muted = muted;
-      media.dispatchEvent(new Event('volumechange'));
-    },
-    _currentAudio: null,
-    _currentUtterance: null,
-    _activeRun: null,
-    _resumeState: null,
-    _resumeWaiters: [],
-    _cancelCurrent() {
-      const audio = media._currentAudio;
-      media._currentAudio = null;
-      media._currentUtterance = null;
-      try { audio?.pause?.(); } catch {}
-      try { globalThis.speechSynthesis?.cancel?.(); } catch {}
-      wakeResumeWaiters();
-    },
-    _dispose() {
-      paused = true;
-      generation++;
-      media._resumeState = null;
-      media._activeRun = null;
-      media._cancelCurrent();
-    },
-    _startCue(index, textOverride = null, sourceOffset = 0) {
-      if (paused || index < 0 || index >= cues.length) return;
-      const cue = cues[index];
-      const sourceText = String(cue?.en || '').trim();
-      const text = textOverride === null ? sourceText : String(textOverride || '');
-      const baseOffset = normalizedOffset(sourceOffset, sourceText.length);
-      const token = ++generation;
-      const run = {
-        token, index, cue, sourceText, requestText:text, baseOffset,
-        requestCursor:0, chunkStart:0, position:baseOffset,
-      };
-      media._activeRun = run;
-      const isCurrentRun = () => state.webStudy && state.videoEl === media && token === generation && media._activeRun === run;
-      const active = () => isCurrentRun() && !paused;
-      const finish = () => {
-        if (!active()) return;
-        if (run.failed) {
-          media._activeRun = null;
-          media._currentAudio = null;
-          media._currentUtterance = null;
-          paused = true;
-          media.dispatchEvent(new Event('pause'));
-          return;
-        }
-        currentTime = state.loop ? cue.start : cue.end;
-        media.dispatchEvent(new Event('timeupdate'));
-        // A Web consumer (for example Dictation's repeat counter) may seek or
-        // pause synchronously from timeupdate. Do not advance this stale cue.
-        if (!active()) return;
-        media._activeRun = null;
-        media._currentAudio = null;
-        media._currentUtterance = null;
-        media._resumeState = null;
-        const next = state.loop ? index : index + 1;
-        if (next < cues.length) media._startCue(next);
-        else { paused = true; media.dispatchEvent(new Event('pause')); media.dispatchEvent(new Event('ended')); }
-      };
-      if (!text) { finish(); return; }
-      const tts = globalThis.LHN_TTS;
-      if (!tts?.play || !tts?.detectLanguage) {
-        reportWebIssue('The shared TTS engine is unavailable.', null, { level: 'error' });
-        run.failed = true; finish(); return;
-      }
-      const fallbackLanguage = String(state.webLanguageHint || navigator.language || 'en-US');
-      Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then((lang) => {
-        if (!active()) return;
-        const normalized = tts.normalizeLanguage?.(lang || fallbackLanguage) || lang || fallbackLanguage;
-        const base = String(normalized).replace(/_/g, '-').split('-')[0].toLowerCase() || 'en';
-        return tts.play({
-          text, lang: normalized, googleLanguage: base, voice: `google-translate-default:${base}`,
-          rate: () => playbackRate, isActive: active,
-          waitIfPaused: () => paused ? new Promise(resolve => media._resumeWaiters.push(resolve)) : null,
-          onChunkStart(chunk) {
-            if (isCurrentRun()) chunkStartAt(run, chunk);
-          },
-          onChunkEnd(chunk) {
-            if (!isCurrentRun()) return;
-            const offset = run.chunkStart;
-            run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + offset + String(chunk || '').length));
-          },
-          setCurrent(audio) {
-            if (!isCurrentRun()) { try { audio?.pause?.(); } catch {} return; }
-            media._currentAudio = audio;
-            if (audio) { audio.playbackRate = playbackRate; audio.muted = muted; }
-          },
-          clearCurrent() {
-            if (media._activeRun === run) media._currentAudio = null;
-          },
-          systemSpeak(speechText, speechLanguage, done, browserVoiceURI) {
-            const synth = globalThis.speechSynthesis;
-            const Utterance = globalThis.SpeechSynthesisUtterance;
-            if (!synth || !Utterance) { done({ unsupported: true }); return; }
-            if (muted) { done(); return; }
-            const normalizeTag = (value) => String(value || '').trim().replace(/_/g, '-').toLowerCase();
-            const target = normalizeTag(speechLanguage), languageBase = target.split('-')[0];
-            const voices = synth.getVoices();
-            const voice = voices.find((item) => item.voiceURI === browserVoiceURI)
-              || voices.find((item) => normalizeTag(item.lang) === target)
-              || voices.find((item) => normalizeTag(item.lang).split('-')[0] === languageBase);
-            if (!voice) { done({ unsupported: true }); return; }
-            const utterance = new Utterance(speechText);
-            const chunkOffset = run.chunkStart;
-            let settled = false;
-            const settle = (status, completed = false) => {
-              if (settled) return;
-              settled = true;
-              if (isCurrentRun()) {
-                if (completed) run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + chunkOffset + speechText.length));
-                if (media._currentUtterance === utterance) media._currentUtterance = null;
-              }
-              done(status);
-            };
-            utterance.lang = voice.lang || speechLanguage;
-            utterance.rate = playbackRate;
-            utterance.voice = voice;
-            utterance.onboundary = (event) => {
-              if (!isCurrentRun() || !Number.isFinite(event.charIndex)) return;
-              run.position = Math.max(run.position, Math.min(sourceText.length, baseOffset + chunkOffset + event.charIndex));
-            };
-            utterance.onend = () => settle(undefined, true);
-            utterance.onerror = () => settle(undefined, true);
-            media._currentUtterance = utterance;
-            synth.speak(utterance);
-          },
-          onGoogleVoiceFailed(error) { run.failed = true; reportWebIssue('Google TTS failed for a web sentence.', error, { level: 'error' }); },
-          onGoogleLimitReached() { reportWebIssue('Google TTS usage limit reached; trying the configured browser voice.'); },
-          onGoogleAudioSlow(error) { reportWebIssue('Google TTS audio could not be loaded.', error); },
-          onBrowserVoiceUnavailable(language) { run.failed = true; reportWebIssue(`No browser voice is available for ${language || normalized}.`, null, { level: 'error' }); },
-          strictVoice: true,
-          onEnd: finish,
-        });
-      }).catch((error) => {
-        if (!active()) return;
-        run.failed = true; reportWebIssue('Could not detect the web sentence language for TTS.', error, { level: 'error' }); finish();
-      });
-    },
-    play() {
-      if (!cues.length) { reportWebIssue('Reader has no main-text sentences to read.', null, { level: 'warn' }); return Promise.resolve(); }
-      if (!paused) return Promise.resolve();
-      if (currentTime >= cues.length && !media._resumeState) currentTime = 0;
-      paused = false;
-      media.dispatchEvent(new Event('play'));
-      if (media._currentAudio) {
-        const audio = media._currentAudio;
-        try {
-          const playing = audio.play?.();
-          playing?.catch?.((error) => { if (media._currentAudio === audio) { try { audio.onerror?.(error); } catch {} } });
-        } catch (error) { try { audio.onerror?.(error); } catch {} }
-        wakeResumeWaiters();
-        return Promise.resolve();
-      }
-      if (media._currentUtterance) {
-        try { globalThis.speechSynthesis?.resume?.(); } catch {}
-        wakeResumeWaiters();
-        return Promise.resolve();
-      }
-      if (media._resumeState) {
-        const resume = media._resumeState;
-        media._resumeState = null;
-        media._startCue(resume.index, resume.text, resume.offset);
-      } else {
-        media._startCue(Math.min(cues.length - 1, Math.floor(currentTime)));
-      }
-      wakeResumeWaiters();
-      return Promise.resolve();
-    },
-    pause() {
-      if (paused) return;
-      paused = true;
-      if (media._currentAudio) {
-        try { media._currentAudio.pause?.(); } catch {}
-      } else if (media._currentUtterance) {
-        try { globalThis.speechSynthesis?.pause?.(); } catch {}
-      } else {
-        const run = media._activeRun;
-        media._resumeState = resumeAt(run);
-        generation++;
-        media._activeRun = null;
-        media._cancelCurrent();
-      }
-      media.dispatchEvent(new Event('pause'));
-    },
-  };
-  return media;
-}
-function webStudyPageCacheUrl() {
-  try {
-    const url = new URL(location.href);
-    url.hash = '';
-    return url.href;
-  } catch { return String(location.href || ''); }
-}
-
-function webStudyTextFingerprint(text) {
-  let hash = 14695981039346656037n;
-  const value = String(text || '');
-  for (let index = 0; index < value.length; index++) {
-    hash ^= BigInt(value.charCodeAt(index));
-    hash = BigInt.asUintN(64, hash * 1099511628211n);
-  }
-  return `${value.length}-${hash.toString(16).padStart(16, '0')}`;
-}
-
-async function prepareWebStudy() {
-  if (state.webStudy) return state.captions.length;
-  if (webStudyPreparationPromise) return webStudyPreparationPromise;
-  const task = prepareWebStudyFromPage();
-  webStudyPreparationPromise = task;
-  try { return await task; }
-  finally { if (webStudyPreparationPromise === task) webStudyPreparationPromise = null; }
-}
-
-async function prepareWebStudyFromPage() {
-  const pageUrl = location.href;
-  const pageCacheUrl = webStudyPageCacheUrl();
-  const languageHint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || navigator.language || 'en-US');
-  let sentences = null;
-  let cueCacheKey = '';
-
-  if (webStudyCueSessionCache?.document === document && webStudyCueSessionCache.pageUrl === pageCacheUrl) {
-    sentences = webStudyCueSessionCache.sentences.slice();
-    cueCacheKey = webStudyCueSessionCache.cacheKey;
-    if (cueCacheKey && globalThis.LHN_MESSAGING?.sendMessage) {
-      const sendMessage = globalThis.LHN_MESSAGING.sendMessage.bind(globalThis.LHN_MESSAGING);
-      try {
-        void Promise.resolve(sendMessage({ type:'WEB_STUDY_CUE_CACHE_TOUCH', cacheKey:cueCacheKey }))
-          .then((touched) => touched ? true : sendMessage({
-            type:'WEB_STUDY_CUE_CACHE_SAVE', cacheKey:cueCacheKey, sentences,
-          }))
-          .catch(error => console.warn('[Keepit Web] Cue cache touch failed.', error));
-      } catch (error) { console.warn('[Keepit Web] Cue cache touch failed.', error); }
-    }
-  } else {
-    let blocks = [];
-    try { blocks = globalThis.LHN_READER_MAIN_SOURCE?.getTextBlocks?.({ forceRefresh:true }) || []; }
-    catch (error) { reportWebIssue('Could not read the Reader main-text blocks.', error, { level: 'error' }); }
-    const normalizedBlocks = (Array.isArray(blocks) ? blocks : [])
-      .map((block) => String(block || '').replace(/\s+/gu, ' ').trim()).filter(Boolean);
-    const sourceText = normalizedBlocks.join('\n');
-    const sourceLanguage = String(document.documentElement.lang || languageHint || 'en-US').replace(/_/g, '-').toLowerCase();
-    if (sourceText) {
-      const sourceFingerprint = webStudyTextFingerprint(sourceText);
-      const pageFingerprint = webStudyTextFingerprint(`${pageCacheUrl}\n${sourceLanguage}`);
-      cueCacheKey = `web-study-cues:v1:${pageFingerprint}:${sourceFingerprint}`;
-      try {
-        const cachedSentences = await globalThis.LHN_MESSAGING?.sendMessage?.({ type:'WEB_STUDY_CUE_CACHE_GET', cacheKey:cueCacheKey });
-        if (Array.isArray(cachedSentences)) {
-          const cleanCached = cachedSentences.map(text => String(text || '').replace(/\s+/gu, ' ').trim()).filter(Boolean);
-          if (cleanCached.length) sentences = cleanCached;
-        }
-      } catch (error) { console.warn('[Keepit Web] Cue cache read failed; using fresh Reader text.', error); }
-    }
-
-    if (!sentences) {
-      sentences = splitReaderSentences(normalizedBlocks);
-      if (cueCacheKey && sentences.length) {
-        try {
-          await globalThis.LHN_MESSAGING?.sendMessage?.({
-            type:'WEB_STUDY_CUE_CACHE_SAVE', cacheKey:cueCacheKey, sentences,
-          });
-        } catch (error) { console.warn('[Keepit Web] Cue cache write failed; using in-page cue snapshot.', error); }
-      }
-    }
-
-    webStudyCueSessionCache = sentences.length
-      ? { document, pageUrl:pageCacheUrl, cacheKey:cueCacheKey, sentences:sentences.slice() }
-      : null;
-  }
-
-  state.webStudy = true;
-  state.webPageUrl = pageUrl;
-  state.webLanguageHint = languageHint;
-  let hash = 2166136261;
-  for (const char of pageUrl) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  state.videoId = `web-${(hash >>> 0).toString(16)}`;
-  state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = languageHint;
-  state.mainLanguage = languageHint; state.webDetectedLanguage = ''; state.webCueLanguageKnown = false; state.loadingFor = null;
-  const cues = sentences.map((text, index) => ({ id:index, start:index, end:index + 1, en:text, vi:'', mainText:text }));
-  const readerCues = markWebReaderCues(cues, languageHint);
-  state.videoEl = createWebTtsMedia(readerCues);
-  state.rawCues = readerCues; state.allCues = readerCues; state.captions = readerCues;
-  const activePageUrl = state.webPageUrl;
-  state.webLanguageReady = sentences.length
-    ? Promise.resolve(detectWebTtsLanguage(sentences[0], languageHint)).then((language) => {
-        const directLanguage = globalThis.LHN_TTS?.detectReadLanguage?.(sentences[0]);
-        const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || languageHint) || language || languageHint;
-        if (state.webStudy && state.webPageUrl === activePageUrl) {
-          const previousLanguage = String(state.captionTrackLanguage || state.webLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
-          const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
-          state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
-          state.webCueLanguageKnown = Boolean(directLanguage) || baseLanguageCode(detected) !== baseLanguageCode(languageHint);
-          if (state.open) applyDefaultSubtitleDisplayMode();
-          if (previousLanguage !== detectedBase) {
-            translationSettingsRevision++;
-            translateQueue = [];
-            const refreshedCues = markWebReaderCues(state.rawCues, detectedBase);
-            state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
-            state.activeIdx = -1;
-            if (state.open) { renderTranscriptList(); onTimeUpdate(); }
-          } else {
-            state.mainLanguage = detectedBase;
-            updateSubtitleLanguageLabels();
-          }
-        }
-        return detected;
-      }).catch((error) => {
-        reportWebIssue('Could not detect the Reader text language for Dictation.', error, { level: 'error' });
-        return state.webLanguageHint;
-      })
-    : Promise.resolve(languageHint);
-  state.loadToken++; loadedUntil = 0;
-  if (!sentences.length) reportWebIssue('Reader did not provide any main-text sentences for this page.', null, { level: 'warn' });
-  return cues.length;
-}
-
-// ---------- Dịch lười qua module translate của Keepit ----------
-// Dùng message BILINGUAL_TRANSLATE (background: LHN_TRANSLATE + LHN_CACHE) và chỉ dịch
-// những cue quanh vị trí đang phát / đang xem, thay vì dịch toàn bộ danh sách ngay.
-const TRANSLATE_WINDOW_AHEAD = 8;
-const TRANSLATE_WINDOW_BEHIND = 2;
-const TRANSLATE_CONCURRENCY = 2;
-const translateInflight = new Map();
-let translateQueue = [];
-let translateActive = 0;
-let translationSettingsRevision = 0;
-
-function translationCacheKey(text, targetLanguage = state.targetLanguage) {
-  return `${targetLanguage}:${text}`;
-}
-
-async function translateOne(text, targetLanguage = state.targetLanguage) {
-  const cacheKey = translationCacheKey(text, targetLanguage);
-  if (state.viCache.has(cacheKey)) return state.viCache.get(cacheKey);
-  if (translateInflight.has(cacheKey)) return translateInflight.get(cacheKey);
-  const job = (async () => {
-    try {
-      const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: targetLanguage });
-      const out = res?.translated || '(không dịch được)';
-      if (!res?.translated) reportWebTranslationIssue(new Error('The translation response did not contain translated text.'));
-      state.viCache.set(cacheKey, out);
-      return out;
-    } catch (error) {
-      reportWebTranslationIssue(error);
-      return '(không dịch được)';
-    } finally {
-      translateInflight.delete(cacheKey);
-    }
-  })();
-  translateInflight.set(cacheKey, job);
-  return job;
-}
-
-function pumpTranslateQueue() {
-  while (translateActive < TRANSLATE_CONCURRENCY && translateQueue.length) {
-    const item = translateQueue.shift();
-    if (!item || item.cue[item.field] !== PENDING) continue;
-    translateActive++;
-    translateOne(item.text, item.targetLanguage)
-      .then((translated) => {
-        if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
-        item.cue[item.field] = translated;
-        if (item.token === state.loadToken) updateVietnameseRow(item.cue);
-      })
-      .finally(() => { translateActive--; pumpTranslateQueue(); });
-  }
-}
-
-function queueCueTranslation(cue, token, field, text, targetLanguage) {
-  if (!cue || cue[field] !== PENDING || !text || !targetLanguage) return;
-  if (translateQueue.some((q) => q.cue === cue && q.field === field && q.targetLanguage === targetLanguage)) return;
-  translateQueue.push({ cue, token, field, text, targetLanguage, revision:translationSettingsRevision });
-}
-
-function queueCue(cue, token) {
-  if (!cue) return;
-  if (cue.mainNeedsTranslation) queueCueTranslation(cue, token, 'mainText', cue.mainTranslationInput || cue.en, state.mainLanguage);
-  if (cue.secondaryNeedsTranslation) queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, state.targetLanguage);
-}
-
-function translateWindow(centerIdx, token = state.loadToken) {
-  if (!state.captions.length) return;
-  const index = Number.isFinite(centerIdx) ? centerIdx : 0;
-  const from = Math.max(0, index - TRANSLATE_WINDOW_BEHIND);
-  const to = Math.min(state.captions.length, index + TRANSLATE_WINDOW_AHEAD);
-  for (let i = from; i < to; i++) queueCue(state.captions[i], token);
-  pumpTranslateQueue();
-}
-
-function translateVisibleRows() {
-  const list = $('te-transcript-list');
-  if (!list || !state.captions.length) return;
-  const top = list.scrollTop;
-  const bottom = top + list.clientHeight;
-  state.captions.forEach((cue, i) => {
-    const row = list.querySelector(`.yt-dual-item[data-idx="${i}"]`);
-    if (!row) return;
-    if (row.offsetTop + row.offsetHeight >= top && row.offsetTop <= bottom) queueCue(cue, state.loadToken);
-  });
-  pumpTranslateQueue();
-}
-
-function updateSubtitleLanguageLabels() {
-  const languages = globalThis.LHN_LANGUAGES;
-  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const fill = (picker, valueNode, menu, value, labelKey) => {
-    if (!picker || !valueNode || !menu) return;
-    const options = [['auto', t('autoLanguage')]];
-    for (const language of languages?.LANGS || []) {
-      const labelKey = { en: 'languageEnglish', vi: 'languageVietnamese', ko: 'languageKorean' }[language.code];
-      options.push([language.code, `${language.flag} ${t(labelKey || language.code)}`]);
-    }
-    const selected = value === 'same' ? 'auto' : value;
-    const selectedLabel = options.find(([code]) => code === selected)?.[1] || options[0][1];
-    picker.setAttribute('aria-label', t(labelKey));
-    picker.dataset.value = selected;
-    valueNode.textContent = selectedLabel;
-    menu.replaceChildren(...options.map(([code, label]) => {
-      const option = document.createElement('button');
-      option.type = 'button';
-      option.className = 'te-language-picker-option';
-      option.dataset.languageValue = code;
-      option.setAttribute('role', 'option');
-      option.setAttribute('aria-selected', String(code === selected));
-      option.textContent = label;
-      return option;
-    }));
-  };
-  fill($('te-lang-source-picker'), $('te-lang-source-value'), $('te-lang-source-options'), state.sourceLanguageSetting, 'sourceLanguage');
-  fill($('te-lang-target-picker'), $('te-lang-target-value'), $('te-lang-target-options'), state.targetLanguageSetting, 'targetLanguage');
-  updateVideoDisplayModeLabels();
-  updateSubtitleDisplayModeLabels();
-}
-
-function updateVideoDisplayModeLabels() {
-  const menu = $('te-video-mode-menu');
-  const trigger = $('te-video-mode-trigger');
-  if (!menu || !trigger) return;
-  const languages = globalThis.LHN_LANGUAGES;
-  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const keys = { theater: 'videoModeTheater', reading: 'videoModeReading', combined: 'videoModeCombined' };
-  menu.querySelectorAll('[data-video-mode]').forEach((option) => {
-    const label = option.querySelector('.te-video-mode-label');
-    if (label) label.textContent = t(keys[option.dataset.videoMode] || 'videoModeTheater');
-  });
-  setVideoDisplayModeSelection(trigger.dataset.videoMode || 'theater');
-}
-
-function setVideoDisplayModeSelection(mode) {
-  const trigger = $('te-video-mode-trigger');
-  const menu = $('te-video-mode-menu');
-  if (!trigger || !menu) return;
-  const option = menu.querySelector(`[data-video-mode="${mode}"]`);
-  if (!option) return;
-  menu.querySelectorAll('[data-video-mode]').forEach((item) => {
-    const selected = item === option;
-    item.classList.toggle('is-selected', selected);
-    item.setAttribute('aria-checked', String(selected));
-  });
-  const icon = option.querySelector('svg');
-  if (icon) trigger.replaceChildren(icon.cloneNode(true));
-  const label = option.querySelector('.te-video-mode-label')?.textContent || '';
-  const selectorLabel = globalThis.LHN_LANGUAGES?.t?.('videoModeSelector', {}, state.displayLanguage) || 'View mode';
-  trigger.dataset.videoMode = mode;
-  trigger.title = `${selectorLabel}: ${label}`;
-  trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
-}
-
-function setVideoDisplayModeMenuOpen(open) {
-  const menu = $('te-video-mode-menu');
-  const trigger = $('te-video-mode-trigger');
-  if (!menu || !trigger) return;
-  menu.hidden = !open;
-  trigger.setAttribute('aria-expanded', String(open));
-}
-
-function updateSubtitleDisplayModeLabels() {
-  const menu = $('te-subtitle-mode-menu');
-  const trigger = $('te-subtitle-mode-trigger');
-  if (!menu || !trigger) return;
-  const languages = globalThis.LHN_LANGUAGES;
-  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const keys = {
-    bilingual: 'videoSubtitleBilingual',
-    primary: 'videoSubtitlePrimary',
-    translation: 'videoSubtitleTranslation',
-    hidden: 'videoSubtitleHidden',
-  };
-  menu.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
-    const label = option.querySelector('.te-subtitle-mode-label');
-    if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
-  });
-  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
-}
-
-function setSubtitleDisplayMode(mode) {
-  const root = overlayEl();
-  const menu = $('te-subtitle-mode-menu');
-  const trigger = $('te-subtitle-mode-trigger');
-  const modes = ['bilingual', 'primary', 'translation', 'hidden'];
-  if (!root || !menu || !trigger || !modes.includes(mode)) return false;
-  modes.forEach((name) => root.classList.remove(`te-subtitle-mode-${name}`));
-  root.classList.add(`te-subtitle-mode-${mode}`);
-  root.classList.toggle('te-subs-hidden', mode === 'hidden');
-  const option = menu.querySelector(`[data-subtitle-mode="${mode}"]`);
-  menu.querySelectorAll('[data-subtitle-mode]').forEach((item) => {
-    const selected = item === option;
-    item.classList.toggle('is-selected', selected);
-    item.setAttribute('aria-checked', String(selected));
-  });
-  const keys = {
-    bilingual: 'videoSubtitleBilingual',
-    primary: 'videoSubtitlePrimary',
-    translation: 'videoSubtitleTranslation',
-    hidden: 'videoSubtitleHidden',
-  };
-  const languages = globalThis.LHN_LANGUAGES;
-  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
-  const label = t(keys[mode]);
-  const selectorLabel = t('videoSubtitleMode');
-  trigger.dataset.subtitleMode = mode;
-  trigger.title = `${selectorLabel}: ${label}`;
-  trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
-  return true;
-}
-
-function subtitleModeContextKey() {
-  return String(state.webStudy ? webStudyPageCacheUrl() : state.videoId || location.href || '');
-}
-
-function baseLanguageCode(language) {
-  return String(language || '').trim().replace(/_/g, '-').toLowerCase().split('-')[0];
-}
-
-function defaultSubtitleDisplayMode() {
-  const detectedCueLanguage = state.webStudy
-    ? (state.webCueLanguageKnown ? state.webDetectedLanguage : '')
-    : state.captionTrackLanguage;
-  const cueLanguage = baseLanguageCode(detectedCueLanguage);
-  const displayLanguage = baseLanguageCode(state.displayLanguage);
-  return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
-}
-
-function applyDefaultSubtitleDisplayMode() {
-  const contextKey = subtitleModeContextKey();
-  if (contextKey && subtitleModeManuallySelectedFor === contextKey) return false;
-  return setSubtitleDisplayMode(defaultSubtitleDisplayMode());
-}
-
-function setSubtitleDisplayModeByUser(mode) {
-  if (!setSubtitleDisplayMode(mode)) return false;
-  subtitleModeManuallySelectedFor = subtitleModeContextKey() || null;
-  return true;
-}
-
-function setSubtitleModeMenuOpen(open) {
-  const menu = $('te-subtitle-mode-menu');
-  const trigger = $('te-subtitle-mode-trigger');
-  if (!menu || !trigger) return;
-  menu.hidden = !open;
-  trigger.setAttribute('aria-expanded', String(open));
-}
-
-function setVideoSidebarHidden(hidden) {
+function refreshVideoUiLocalization() {
+  const launcher = document.getElementById(LAUNCHER_ID);
+  launcher?.setAttribute('title', videoT('videoOpenKeepit'));
+  launcher?.setAttribute('aria-label', videoT('videoOpenKeepit'));
+  globalThis.LHN_DICTATION?.refreshLanguage?.();
   const root = overlayEl();
   if (!root) return false;
-  const wasTheaterLarge = isTheaterLargeActive(root);
-  const sidebarHidden = Boolean(hidden);
-  const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
-  if (modeChanged) suppressHoverPauseForModeChange();
-  root.classList.toggle('te-sidebar-hidden', sidebarHidden);
-  const isTheaterLarge = isTheaterLargeActive(root);
-  if (!wasTheaterLarge && isTheaterLarge && !settings.hideControls) {
-    settings.hideControls = true;
-    sizeForcedHide = true;
-    saveSettings();
-  } else if (wasTheaterLarge && !isTheaterLarge && sizeForcedHide) {
-    restoreForcedHideControls(root);
+  const subtitleDragHandle = ui('#te-theater-subtitle-drag-handle');
+  if (subtitleDragHandle) {
+    subtitleDragHandle.title = videoT('videoMoveSubtitle');
+    subtitleDragHandle.setAttribute('aria-label', videoT('videoMoveSubtitle'));
   }
-  root.classList.toggle('te-controls-hidden', Boolean(settings.hideControls || sizeForcedHide));
-  if (root.classList.contains('te-ambient-on')) placeAmbient();
-  syncTheaterFrame();
-  if (!root.classList.contains('te-reading-mode')) {
-    setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
+  const excludedUiContent = '.te-video-title-text, .te-sub-container, #te-transcript-list, #te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .te-dict-toolbar-tools';
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.parentElement?.closest(excludedUiContent)) continue;
+    const source = localizedVideoText.has(node) ? localizedVideoText.get(node) : node.nodeValue;
+    const key = VIDEO_UI_TEXT_KEYS[source.trim()];
+    if (!key) continue;
+    if (!localizedVideoText.has(node)) localizedVideoText.set(node, source);
+    const leading = source.match(/^\s*/)?.[0] || '';
+    const trailing = source.match(/\s*$/)?.[0] || '';
+    node.nodeValue = `${leading}${videoT(key)}${trailing}`;
   }
-  if (!sidebarHidden && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
-  scheduleHoverPauseSync({ modeChange: modeChanged });
-  return sidebarHidden;
-}
-
-function applyVideoDisplayMode(mode) {
-  if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
-  overlayEl().classList.remove('te-learning-entry-pending');
-  settings.preferredVideoMode = mode;
-  settings.readingMode = mode === 'reading';
-  saveSettings();
-  if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
-  if (mode === 'reading') {
-    setVideoSidebarHidden(false);
-    setVideoLearningMode(true);
-  } else {
-    setVideoLearningMode(false);
-    setVideoSidebarHidden(mode === 'theater');
-  }
-  setVideoDisplayModeSelection(mode);
-  return true;
-}
-
-async function refreshSubtitleLanguageSettings() {
-  let sourceLanguageSetting = state.sourceLanguageSetting;
-  let targetLanguageSetting = state.targetLanguageSetting;
-  let displayLanguage = state.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
-  try {
-    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
-    const keys = [STUDY_TRANSLATION_SETTINGS_KEY, settingsKey];
-    const stored = await browser.storage.local.get(keys);
-    const translation = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
-    sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
-    targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
-    const displaySettings = stored[settingsKey] || {};
-    const declaredDisplayLanguage = String(displaySettings.language || '').trim().toLowerCase().replace('_', '-').split('-')[0];
-    displayLanguage = globalThis.LHN_LANGUAGES?.LANGS?.some((item) => item.code === declaredDisplayLanguage)
-      ? declaredDisplayLanguage
-      : globalThis.LHN_LANGUAGES?.detectLanguage?.() || displayLanguage;
-  } catch (error) {
-    console.warn('Could not read shared subtitle language settings', error);
-  }
-  const targetLanguage = ['auto', 'same'].includes(targetLanguageSetting) ? displayLanguage : targetLanguageSetting;
-
-  const sourceChanged = sourceLanguageSetting !== state.sourceLanguageSetting;
-  const targetSettingChanged = targetLanguageSetting !== state.targetLanguageSetting;
-  const targetChanged = targetLanguage !== state.targetLanguage;
-  const displayChanged = displayLanguage !== state.displayLanguage;
-  state.displayLanguage = displayLanguage;
-  if (!sourceChanged && !targetSettingChanged && !targetChanged) {
-    updateSubtitleLanguageLabels();
-    refreshVideoUiLocalization();
-    if (displayChanged && state.open) applyDefaultSubtitleDisplayMode();
-    return;
-  }
-  state.sourceLanguageSetting = sourceLanguageSetting;
-  state.targetLanguageSetting = targetLanguageSetting;
-  state.targetLanguage = targetLanguage;
-  state.mainLanguage = sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : sourceLanguageSetting;
-  translationSettingsRevision++;
-  translateQueue = [];
-  updateSubtitleLanguageLabels();
-  refreshVideoUiLocalization();
-  if (state.webStudy) {
-    if (state.rawCues.length) {
-      const language = state.webDetectedLanguage || state.captionTrackLanguage || state.webLanguageHint;
-      const refreshedCues = markWebReaderCues(state.rawCues, language);
-      state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
-      state.activeIdx = -1;
-      if (state.open) { renderTranscriptList(); onTimeUpdate(); }
-    }
-    if (state.open) applyDefaultSubtitleDisplayMode();
-    return;
-  }
-  if (displayChanged && !sourceChanged && state.open) applyDefaultSubtitleDisplayMode();
-
-  if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
-    state.loadToken++;
-    prefetchToken++;
-    state.loadingFor = null;
-    state.rawCues = [];
-    state.allCues = [];
-    state.captions = [];
-    state.activeIdx = -1;
-    loadedUntil = 0;
-    if (state.open) loadCaptions();
-    else schedulePrefetch(state.videoId);
-    return;
-  }
-
-  if ((targetChanged || sourceChanged || targetSettingChanged) && state.rawCues.length) {
-    const activeIndex = state.activeIdx;
-    state.captions = [];
-    buildCaptions();
-    translateWindow(Math.max(0, activeIndex));
-  }
-}
-
-
-// ---------- Overlay: tạo, mở, đóng ----------
-function setVideoLearningMode(enabled, { persist = false } = {}) {
-  const root = overlayEl();
-  if (!root) return false;
-  const active = Boolean(enabled);
-  if (persist) {
-    settings.readingMode = active;
-    saveSettings();
-  }
-  pendingDictationShortcut = false;
-  pendingDictationOpenImmediately = false;
-  const enteringDictation = !active && globalThis.LHN_DICTATION?.isOpen?.();
-  const leavingTheaterLarge = root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l');
-  if (enteringDictation && leavingTheaterLarge && sizeForcedHide) {
-    restoreForcedHideControls(root);
-  }
-  if (active || root.classList.contains('te-sidebar-hidden')) {
-    // Learning/Dictation uses its own grid; remove temporary Theater geometry without changing the saved preference.
-    setVideoSidebarHidden(false);
-  }
-  if (active) {
-    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
-    for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
-      const button = root.querySelector(selector);
-      button?.classList.remove('te-active');
-      button?.setAttribute('aria-pressed', 'false');
+  for (const element of root.querySelectorAll('[title], [aria-label]')) {
+    if (element.closest(excludedUiContent)) continue;
+    let saved = localizedVideoAttributes.get(element);
+    if (!saved) { saved = new Map(); localizedVideoAttributes.set(element, saved); }
+    for (const name of ['title', 'aria-label']) {
+      if (!element.hasAttribute(name)) continue;
+      const source = saved.has(name) ? saved.get(name) : element.getAttribute(name);
+      const key = VIDEO_UI_TEXT_KEYS[source];
+      if (!key) continue;
+      if (!saved.has(name)) saved.set(name, source);
+      element.setAttribute(name, videoT(key));
     }
   }
-  const wasReading = root.classList.contains('te-reading-mode');
-  const modeChanged = wasReading !== active;
-  if (modeChanged) suppressHoverPauseForModeChange();
-  if (modeChanged) root.classList.remove('te-reading-audio-compact');
-  root.classList.toggle('te-reading-mode', active);
   applySettings();
-  setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
+  updateSubtitleDisplayModeLabels();
+  setVideoDisplayModeSelection($('te-video-mode-trigger')?.dataset.videoMode || 'combined');
   syncReadingAudioControls();
-  if (modeChanged && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
-  scheduleHoverPauseSync({ modeChange: modeChanged });
-  return active;
-}
-
-function restorePreferredReadingMode() {
-  if (!state.open || pendingDictationShortcut || pendingDictationOpenImmediately
-    || globalThis.LHN_DICTATION?.isOpen?.()) return false;
-  return applyVideoDisplayMode(preferredVideoMode());
-}
-
-function createDictationOverlayApi() {
-  if (globalThis.LHN_OVERLAY_API) return globalThis.LHN_OVERLAY_API;
-  const api = Object.freeze({
-    state,
-    overlayEl,
-    ctrl,
-    setLearningMode: setVideoLearningMode,
-    syncViewSize: syncViewSizeClasses,
-    restorePreferredReadingMode,
-    getPreferredLearningMode: preferredLearningMode,
-    revealLearningEntry() { overlayEl()?.classList.remove('te-learning-entry-pending'); },
-    setPreferredLearningMode(mode) {
-      if (!['typing', 'speaking'].includes(mode)) return false;
-      settings.preferredLearningMode = mode;
-      saveSettings();
-      return true;
-    },
-    lang: () => state.displayLanguage,
-    getDictationCues: () => {
-      if (!state.allCues.length || (!state.webStudy && state.captionTrackLanguage !== 'en')) return [];
-      if (state.webStudy) return state.allCues.map((cue, index) => ({ id:index, start:cue.start, end:cue.end, en:String(cue.en || '').trim() })).filter((cue) => cue.en);
-      return dedupeSentences(resegmentBySentence(state.allCues)).map((cue, index) => ({
-        id: index,
-        start: cue.start,
-        end: cue.end,
-        en: String(cue.en || '').replace(/\s+/g, ' ').trim(),
-      })).filter((cue) => cue.en);
-    },
-    translateToVietnamese: (text) => translateOne(text, 'vi'),
+  const sizeKeys = ['videoSmall', 'videoMedium', 'videoLarge'];
+  uiAll('#te-view-mode-options button').forEach((button, index) => {
+    button.textContent = videoT(sizeKeys[index] || 'videoMedium');
+    button.dataset.size = ['S', 'M', 'L'][index] || 'M';
   });
-  globalThis.LHN_OVERLAY_API = api;
-  return api;
+  const exportRows = uiAll('#te-modal-export .te-card-box .te-setting-item');
+  if (exportRows[3]?.firstElementChild) exportRows[3].firstElementChild.textContent = videoT('videoIncludeSubtitles');
+  const speedNormal = ui('.te-speed-normal');
+  if (speedNormal) speedNormal.textContent = videoT('videoNormal');
+  if (activeVideoStatusKey) setStatus(videoT(activeVideoStatusKey, activeVideoStatusVars), activeVideoStatusKey, activeVideoStatusVars);
+  return true;
 }
 
-function announceDictationCaptionsUpdated() {
-  document.dispatchEvent(new CustomEvent('lhn-dual-captions-updated', {
-    detail: { videoId: state.videoId, language: state.captionTrackLanguage, count: state.allCues.length },
-  }));
+function pauseVideoFor(reason) {
+  state.pauseReasons.add(reason);
+  const video = state.videoEl || state.managedPauseVideo;
+  if (video && !video.paused) {
+    state.managedPauseVideo = video;
+    video.pause();
+  }
+}
+
+function resumeVideoFor(reason) {
+  state.pauseReasons.delete(reason);
+  if (state.pauseReasons.size) return;
+  const video = state.managedPauseVideo;
+  state.managedPauseVideo = null;
+  if (video?.paused) video.play().catch(() => {});
+}
+
+const HOVER_PAUSE_ZONES = [
+  { reason: 'subtitle-main-hover', selector: '.te-sub-en' },
+  { reason: 'subtitle-sidebar-hover', selector: '.yt-dual-item' },
+];
+
+function activateHoverPause(reason) {
+  if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.has(reason)) return;
+  if (state.hoverPauseModeChangeRevision === state.hoverPointerRevision) {
+    beginHoverPauseSuppression();
+    return;
+  }
+  state.hoverPauseReasons.add(reason);
+  pauseVideoFor(reason);
+}
+
+function beginHoverPauseSuppression({ requirePauseZone = false } = {}) {
+  if (requirePauseZone && !getHoverPauseReasonsAtPointer().size) return false;
+  state.hoverPauseSuppressionActive = true;
+  state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
+  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+  return true;
+}
+
+function releaseHoverPause(reason) {
+  if (!state.hoverPauseReasons.delete(reason)) return;
+  resumeVideoFor(reason);
+}
+
+function rememberHoverPointer(event) {
+  if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return false;
+  const moved = !state.hoverPointer
+    || state.hoverPointer.x !== event.clientX
+    || state.hoverPointer.y !== event.clientY;
+  state.hoverPointer = { x: event.clientX, y: event.clientY };
+  if (moved) {
+    state.hoverPointerRevision += 1;
+    state.hoverPauseModeChangeRevision = false;
+    syncHoverPauseAtPointer();
+  }
+  return moved;
+}
+
+function getHoverPauseReasonsAtPointer() {
+  const pointer = state.hoverPointer;
+  if (!state.open || !pointer || typeof shadow?.elementFromPoint !== 'function') return new Set();
+  const target = shadow.elementFromPoint(pointer.x, pointer.y);
+  if (!target || typeof target.closest !== 'function') return new Set();
+  return new Set(HOVER_PAUSE_ZONES
+    .filter(({ selector }) => target.closest(selector))
+    .map(({ reason }) => reason));
+}
+
+function syncHoverPauseAtPointer(suppressCurrent = false) {
+  const nextReasons = getHoverPauseReasonsAtPointer();
+  if (suppressCurrent) {
+    if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.size || nextReasons.size) {
+      beginHoverPauseSuppression();
+    }
+    return;
+  }
+
+  if (state.hoverPauseSuppressionActive) {
+    if (state.hoverPointerRevision !== state.hoverPauseSuppressionRevision) {
+      if (nextReasons.size) state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
+      else {
+        state.hoverPauseSuppressionActive = false;
+        state.hoverPauseSuppressionRevision = null;
+      }
+    }
+    if (state.hoverPauseSuppressionActive) {
+      for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
+      return;
+    }
+  }
+
+  // Activate the next zone first so crossing between pause zones never resumes the video briefly.
+  for (const reason of nextReasons) activateHoverPause(reason);
+  for (const reason of [...state.hoverPauseReasons]) {
+    if (!nextReasons.has(reason)) releaseHoverPause(reason);
+  }
+}
+
+function suppressHoverPauseForModeChange() {
+  state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
+  const isOverPauseZone = state.hoverPauseSuppressionActive
+    || state.hoverPauseReasons.size > 0
+    || getHoverPauseReasonsAtPointer().size > 0;
+  if (isOverPauseZone) beginHoverPauseSuppression();
+}
+
+function scheduleHoverPauseSync({ modeChange = false } = {}) {
+  if (!state.open) return;
+  if (modeChange) state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
+  if (state.hoverPauseSyncFrame !== null) return;
+  state.hoverPauseSyncFrame = requestAnimationFrame(() => {
+    state.hoverPauseSyncFrame = null;
+    const suppressCurrent = typeof state.hoverPauseModeChangeRevision === 'number'
+      && state.hoverPauseModeChangeRevision === state.hoverPointerRevision;
+    state.hoverPauseModeChangeRevision = null;
+    syncHoverPauseAtPointer(suppressCurrent);
+  });
+}
+
+function clearHoverPauseState() {
+  if (state.hoverPauseSyncFrame !== null) {
+    cancelAnimationFrame(state.hoverPauseSyncFrame);
+    state.hoverPauseSyncFrame = null;
+  }
+  state.hoverPointer = null;
+  state.hoverPointerRevision = 0;
+  state.hoverPauseModeChangeRevision = null;
+  state.hoverPauseSuppressionActive = false;
+  state.hoverPauseSuppressionRevision = null;
+  for (const { reason } of HOVER_PAUSE_ZONES) {
+    state.hoverPauseReasons.delete(reason);
+    resumeVideoFor(reason);
+  }
+}
+
+function enforceVideoPause(video) {
+  if (!state.pauseReasons.size || video.paused) return;
+  state.managedPauseVideo = video;
+  video.pause();
+}
+
+const APP_POPUP_SELECTOR = '#lhn-full-english-dictionary, #lhn-direct-translation, #lhn-panel, #lhn-note-pop';
+
+function hasVisibleAppPopup() {
+  return [...document.querySelectorAll(APP_POPUP_SELECTOR)].some((popup) => {
+    const style = getComputedStyle(popup);
+    return style.display !== 'none' && style.visibility !== 'hidden' && popup.getBoundingClientRect().width > 0;
+  });
+}
+
+function syncAppPopupPause() {
+  if (hasVisibleAppPopup()) pauseVideoFor('app-popup');
+  else {
+    resumeVideoFor('app-popup');
+    if (!state.open && state.popupObserver) {
+      state.popupObserver.disconnect();
+      state.popupObserver = null;
+    }
+  }
+}
+
+function startAppPopupObserver() {
+  if (!state.popupObserver) {
+    const isPopupNode = (node) => node?.nodeType === Node.ELEMENT_NODE &&
+      (node.matches(APP_POPUP_SELECTOR) || node.querySelector(APP_POPUP_SELECTOR));
+    state.popupObserver = new MutationObserver((records) => {
+      const relevant = records.some((record) => record.type === 'attributes'
+        ? record.target.matches?.(APP_POPUP_SELECTOR)
+        : [...record.addedNodes, ...record.removedNodes].some(isPopupNode));
+      if (relevant) syncAppPopupPause();
+    });
+    state.popupObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+    });
+  }
+  syncAppPopupPause();
+}
+
+function renderHoverWords(text) {
+  return String(text ?? '').split(/(\s+)/u).map((part) => /^\s+$/u.test(part)
+    ? part
+    : `<span class="yt-dual-word">${escapeHtml(part)}</span>`).join('');
+}
+
+// ---------- Lấy phụ đề (đã kiểm chứng ở v1.4) ----------
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function buildOverlay() {
@@ -1214,70 +561,6 @@ function closeOverlay() {
   detachVideo();
 }
 
-function beginDictationMode(mode) {
-  const selectedMode = mode === 'speaking' ? 'speaking' : 'typing';
-  if (state.open) {
-    if (!globalThis.LHN_DICTATION?.open) return;
-    overlayEl()?.classList.add('te-learning-entry-pending');
-    globalThis.LHN_DICTATION.open({ waitForCaptions: true, mode: selectedMode });
-    return;
-  }
-  pendingDictationShortcut = true;
-  pendingDictationOpenImmediately = true;
-  pendingDictationMode = selectedMode;
-  openOverlay();
-  if (!state.open) {
-    pendingDictationShortcut = false;
-    pendingDictationOpenImmediately = false;
-    pendingDictationMode = 'typing';
-    return;
-  }
-  openPendingDictationShortcut();
-}
-
-function toggleDictationTypingControl() {
-  if (keepitSiteDisabled) return;
-  const dictation = globalThis.LHN_DICTATION;
-  if (dictation?.isOpen?.()) {
-    if (dictation.getMode?.() !== 'typing') dictation.open?.({ waitForCaptions: true, mode: 'typing' });
-    else dictation.close?.();
-    return;
-  }
-  beginDictationMode('typing');
-}
-
-async function prepareWebStudyForShortcut() {
-  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || state.webStudy) return;
-  if (state.open) closeOverlay();
-  document.dispatchEvent(new CustomEvent('lhn-bilingual-reader-command', { detail: 'stop-reading' }));
-  await prepareWebStudy();
-}
-
-async function toggleDictationFromShortcut(event) {
-  if (keepitSiteDisabled) return;
-  if (event?.detail?.source === 'typing-control') {
-    toggleDictationTypingControl();
-    return;
-  }
-  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebStudyForShortcut();
-  const dictation = globalThis.LHN_DICTATION;
-  if (pendingDictationShortcut || dictation?.isOpen?.()) {
-    closeOverlay();
-    return;
-  }
-  beginDictationMode(preferredLearningMode());
-}
-
-function startWebTtsInViewMode() {
-  if (!state.webStudy || !state.open || !state.videoEl?.paused) return;
-  try {
-    const playback = state.videoEl.play?.();
-    playback?.catch?.((error) => reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' }));
-  } catch (error) {
-    reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' });
-  }
-}
-
 async function toggleVideoViewFromShortcut() {
   if (keepitSiteDisabled) return;
   if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebStudyForShortcut();
@@ -1297,146 +580,6 @@ async function toggleVideoViewFromShortcut() {
     return;
   }
   closeOverlay();
-}
-
-function openPendingDictationShortcut() {
-  if (!pendingDictationShortcut) return;
-  if (!state.open) {
-    pendingDictationShortcut = false;
-    pendingDictationOpenImmediately = false;
-    pendingDictationMode = 'typing';
-    return;
-  }
-  const hasCues = !!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length;
-  if (!hasCues && state.loadingFor === state.videoId && !pendingDictationOpenImmediately) return;
-  pendingDictationShortcut = false;
-  const openWhileLoading = pendingDictationOpenImmediately;
-  const mode = pendingDictationMode;
-  pendingDictationOpenImmediately = false;
-  pendingDictationMode = 'typing';
-  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions: true, mode, fromEntry: true });
-  else globalThis.LHN_DICTATION?.open?.({ mode, fromEntry: true });
-}
-
-async function openDictationFromDashboardIntent() {
-  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) return;
-  let targetUrl;
-  try { targetUrl = new URL(location.href); } catch { return; }
-  if (targetUrl.pathname !== "/watch" || targetUrl.searchParams.get("lhn_open_dictation") !== "1") return;
-  targetUrl.searchParams.delete("lhn_open_dictation");
-  history.replaceState(history.state, "", `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
-  await refreshKeepitGate();
-  if (keepitSiteDisabled) return;
-  pendingDictationShortcut = true;
-  pendingDictationOpenImmediately = true;
-  pendingDictationMode = preferredLearningMode();
-  openOverlay();
-  openPendingDictationShortcut();
-}
-
-// Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
-function syncVideoAspect(video) {
-  const root = overlayEl();
-  if (!root) return;
-  const w = Number(video?.videoWidth) || 0;
-  const h = Number(video?.videoHeight) || 0;
-  if (w > 0 && h > 0) root.style.setProperty('--te-video-aspect', `${w} / ${h}`);
-  else root.style.removeProperty('--te-video-aspect');
-}
-
-// Chế độ rạp: khung bọc có kích thước pixel đúng bằng video đang hiển thị (không dùng %)
-function syncTheaterFrame() {
-  const root = overlayEl(), slot = ui('.te-video-slot');
-  const frame = slot?.querySelector(':scope > .te-video-frame');
-  if (!root || !slot || !frame) return;
-  const v = state.videoEl;
-  const theaterActive = root.classList.contains('te-sidebar-hidden')
-    && !root.classList.contains('te-reading-mode') && !root.classList.contains('te-dictation-active');
-  if (!theaterActive || !v) {
-    frame.style.width = '';
-    frame.style.height = '';
-    scheduleTheaterSubtitleLayout(root);
-    return;
-  }
-  // Lớn: khung tính theo toàn màn hình (khung cố định), các kích thước khác theo ô video.
-  const r = root.classList.contains('size-l') ? { width: innerWidth, height: innerHeight } : slot.getBoundingClientRect();
-  const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
-  const sizeFactor = root.classList.contains('size-s') ? 2 / 3 : 1;
-  const w = Math.min(r.width, r.height * a) * sizeFactor, h = w / a;
-  frame.style.width = `${Math.round(w)}px`;
-  frame.style.height = `${Math.round(h)}px`;
-  scheduleTheaterSubtitleLayout(root);
-}
-function attachWebMedia(media, slot) {
-  if (state.videoEl && state.videoEl !== media) detachVideo();
-  state.videoEl = media;
-  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
-  const image = document.createElement('img');
-  image.className = 'te-web-page-thumbnail';
-  image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  image.addEventListener('click', handleOverlayVideoClick);
-  frame.replaceChildren(image);
-  state.webThumbnail = image;
-  const thumbnails = globalThis.LHN_THUMBNAILS;
-  const thumbnailUrl = thumbnails?.fromPageMetadata?.(document, location.href) || '';
-  if (thumbnails?.loadSource) thumbnails.loadSource(image, { url: location.href, thumbnailUrl, onError:() => reportWebIssue('The page thumbnail and fallback image could not be loaded.', null, { level: 'error' }) });
-  else if (thumbnails?.fallbackSvgUrl) image.src = thumbnails.fallbackSvgUrl();
-  else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level: 'error' });
-
-  media.addEventListener('timeupdate', onTimeUpdate);
-  media.addEventListener('play', handleVideoPlay);
-  media.addEventListener('pause', handleVideoPause);
-  media.addEventListener('ratechange', handleVideoRateChange);
-  media.addEventListener('volumechange', handleVideoVolumeChange);
-  state.videoGeometryHandler = () => {
-    if (state.videoEl !== media) return;
-    syncVideoAspect(media); syncTheaterFrame();
-  };
-  media.addEventListener('loadedmetadata', state.videoGeometryHandler);
-  syncVideoAspect(media); syncTheaterFrame();
-  syncPlayButton(); syncSpeedButton(); syncMuteButton();
-  onTimeUpdate(); syncReadingAudioControls(); startAmbient();
-}
-
-function attachVideo(video, slot) {
-  if (state.videoEl && state.videoEl !== video) detachVideo();
-  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
-  if (video.parentElement !== frame) {
-    state.origParent = video.parentElement;
-    state.origNext = video.nextSibling;
-    const wasPlaying = !video.paused;
-    frame.insertBefore(video, frame.firstChild);
-    if (wasPlaying) video.play().catch(() => {});
-  }
-  state.videoEl = video;
-  video.controls = false;
-  video.addEventListener('click', handleOverlayVideoClick);
-  video.addEventListener('timeupdate', onTimeUpdate);
-  video.addEventListener('play', handleVideoPlay);
-  video.addEventListener('play', enforceVideoPause);
-  video.addEventListener('pause', handleVideoPause);
-  video.addEventListener('ratechange', handleVideoRateChange);
-  video.addEventListener('volumechange', handleVideoVolumeChange);
-  if (state.videoGeometryHandler) {
-    video.removeEventListener('loadedmetadata', state.videoGeometryHandler);
-    video.removeEventListener('resize', state.videoGeometryHandler);
-  }
-  state.videoGeometryHandler = () => {
-    if (state.videoEl !== video) return;
-    syncVideoAspect(video);
-    syncTheaterFrame();
-  };
-  video.addEventListener('loadedmetadata', state.videoGeometryHandler);
-  video.addEventListener('resize', state.videoGeometryHandler);
-  syncVideoAspect(video);
-  syncTheaterFrame();
-  syncPlayButton();
-  syncSpeedButton();
-  syncMuteButton();
-  enforceVideoPause(video);
-  onTimeUpdate();
-  syncReadingAudioControls();
-  startAmbient();
 }
 
 function detachVideo() {
@@ -1482,7 +625,152 @@ function detachVideo() {
   state.origNext = null;
 }
 
-// ---------- Điều khiển phát ----------
+// ---------- Ambient mode (ánh sáng mờ theo màu video, giống YouTube) ----------
+let ambientTimer = 0, ambientLastTime = -1, ambientObserver = null;
+// Đặt tâm vòng sáng ở giữa khung video (overlay cố định tại 0,0 nên dùng thẳng toạ độ viewport).
+// Ambient UI chỉ bật/tắt (Ambient 3); giữ renderer viền 1/2 trong mã để có thể bật lại sau.
+function isEdgeAmbient() { const m = ambientMode(); return m === '1' || m === '2'; }
+function ambientMode() {
+  return settings.ambient === false || settings.ambientStyle === 'off' ? 'off' : '3';
+}
+function syncAmbientUi() {
+  const toggle = $('te-ambient-toggle');
+  if (!toggle) return;
+  toggle.checked = ambientMode() !== 'off';
+  toggle.setAttribute('aria-label', videoT('videoAmbientMode'));
+}
+function setAmbientMode(mode) {
+  if (mode !== 'off' && mode !== '3') return;
+  settings.ambientStyle = mode;
+  settings.ambient = mode !== 'off';
+  saveSettings();
+  syncAmbientUi();
+  stopAmbient();
+  if (state.videoEl && mode !== 'off') startAmbient();
+}
+function placeAmbientEdge() {
+  const root = overlayEl(), slot = ui('.te-video-slot'), edge = ui('.te-ambient-edge');
+  if (!root || !slot || !edge) return;
+  const r = slot.getBoundingClientRect(), rr = root.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+  // Khoảng trống còn lại theo từng hướng; ánh sáng lan tối đa 50% (Ambient 1) hoặc 100% (Ambient 2) khoảng đó
+  const reach = ambientMode() === '2' ? 1.0 : 0.5;
+  if (rr && root.classList.contains('te-sidebar-hidden')) {
+    // Chế độ rạp: phủ kín toàn màn hình
+    const ew = Math.max(vw, vh * 16 / 9) * 1.05, eh = ew * 9 / 16;
+    edge.style.setProperty('--te-edge-l', `${Math.round((vw - ew) / 2 - rr.left)}px`);
+    edge.style.setProperty('--te-edge-t', `${Math.round((vh - eh) / 2 - rr.top)}px`);
+    edge.style.setProperty('--te-edge-w', `${Math.round(ew)}px`);
+    edge.style.setProperty('--te-edge-h', `${Math.round(eh)}px`);
+    return;
+  }
+  const spL = Math.max(0, r.left), spR = Math.max(0, vw - r.right), spT = Math.max(0, r.top), spB = Math.max(0, vh - r.bottom);
+  const boxW = r.width + reach * spL + reach * spR, boxH = r.height + reach * spT + reach * spB;
+  // Ảnh giữ tỉ lệ 16:9, lớn nhất có thể trong hộp, đặt giữa video
+  const w = Math.min(boxW, boxH * 16 / 9), h = w * 9 / 16;
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  edge.style.setProperty('--te-edge-l', `${Math.round(cx - w / 2 - rr.left)}px`);
+  edge.style.setProperty('--te-edge-t', `${Math.round(cy - h / 2 - rr.top)}px`);
+  edge.style.setProperty('--te-edge-w', `${Math.round(w)}px`);
+  edge.style.setProperty('--te-edge-h', `${Math.round(h)}px`);
+}
+function drawAmbientEdge() {
+  const canvas = ui('.te-ambient-edge'), v = state.videoEl;
+  if (!canvas || !v || v.currentTime === ambientLastTime) return;
+  try {
+    const ctx = canvas.getContext('2d');
+    ctx.globalAlpha = Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    // Chỉ giữ viền khung hình: phần giữa bị video che nên xóa đi
+    ctx.clearRect(canvas.width * 0.15, canvas.height * 0.15, canvas.width * 0.7, canvas.height * 0.7);
+    ambientLastTime = v.currentTime;
+  } catch { stopAmbient(); }
+}
+function placeAmbient() {
+  if (isEdgeAmbient()) return placeAmbientEdge();
+  const root = overlayEl(), slot = ui('.te-video-slot');
+  if (!root || !slot) return;
+  if (root.classList.contains('te-sidebar-hidden')) {
+    // Chế độ rạp: phủ kín toàn màn hình (cả 2 khung đen hai bên)
+    const vw = innerWidth, vh = innerHeight;
+    root.style.setProperty('--te-amb-x', `${Math.round(vw / 2)}px`);
+    root.style.setProperty('--te-amb-y', `${Math.round(vh / 2)}px`);
+    root.style.setProperty('--te-amb-size', `${Math.round(Math.max(vh, vw * 9 / 16) * 1.05)}px`);
+    return;
+  }
+  const r = slot.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  root.style.setProperty('--te-amb-x', `${Math.round(r.left + r.width / 2)}px`);
+  root.style.setProperty('--te-amb-y', `${Math.round(r.top + r.height / 2)}px`);
+  root.style.setProperty('--te-amb-size', `${Math.round(Math.max(r.width, r.height) * 2.1)}px`);
+}
+function drawAmbient() {
+  if (isEdgeAmbient()) return drawAmbientEdge();
+  const canvas = ui('.te-ambient'), v = state.videoEl;
+  const isWebThumbnail = state.webStudy;
+  const source = isWebThumbnail ? state.webThumbnail : v;
+  if (!canvas || !source || document.hidden) return;
+  if (isWebThumbnail) {
+    if (ambientLastTime >= 0 || !source.complete || !source.naturalWidth) return;
+  } else {
+    if (v.readyState < 2 || v.currentTime === ambientLastTime) return; // tạm dừng/không đổi khung thì không vẽ lại
+  }
+  try {
+    const ctx = canvas.getContext('2d');
+    // Web dùng thumbnail tĩnh; YouTube pha khung hình mới để màu chuyển mượt.
+    ctx.globalAlpha = isWebThumbnail || Math.abs(v.currentTime - ambientLastTime) > 1.5 ? 1 : 0.35;
+    if (isWebThumbnail) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    ambientLastTime = isWebThumbnail ? 0 : v.currentTime;
+  } catch { stopAmbient(); } // video không cho đọc hình (DRM/cross-origin): tắt hiệu ứng
+}
+function startAmbient() {
+  stopAmbient();
+  overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
+  const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-video-slot');
+  if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  placeAmbient();
+  if (typeof ResizeObserver === 'function') { ambientObserver = new ResizeObserver(placeAmbient); ambientObserver.observe(slot); ambientObserver.observe(document.documentElement); }
+  root.classList.add('te-ambient-on');
+  drawAmbient();
+  ambientTimer = setInterval(drawAmbient, 125);
+}
+function stopAmbient() {
+  clearInterval(ambientTimer);
+  ambientTimer = 0;
+  ambientLastTime = -1;
+  ambientObserver?.disconnect();
+  ambientObserver = null;
+  overlayEl()?.classList.remove('te-ambient-on');
+  const canvas = ui('.te-ambient');
+  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function setVideoTitle() {
+  const t = (document.title || '').replace(/\s*-\s*YouTube$/, '').trim() || (state.webStudy ? location.hostname : 'YouTube video');
+  const el = ui('.te-video-title-text');
+  if (el) el.textContent = t;
+  const miniTitle = ui('.te-reading-mini-title');
+  if (miniTitle) miniTitle.textContent = `Keepit - ${t}`;
+  const miniSource = ui('.te-reading-mini-source');
+  if (miniSource) miniSource.textContent = videoT('dictationAudioSource');
+  const miniThumb = ui('.te-reading-mini-thumb');
+  const thumbnails = globalThis.LHN_THUMBNAILS;
+  if (state.webStudy && miniThumb && thumbnails?.loadSource) {
+    miniThumb.hidden = false;
+    const thumbnailUrl = thumbnails.fromPageMetadata?.(document, location.href) || '';
+    thumbnails.loadSource(miniThumb, { url: location.href, thumbnailUrl, onError:() => { miniThumb.hidden = true; reportWebIssue('The mini-player thumbnail could not be loaded.', null, { level: 'error' }); } });
+  } else if (miniThumb && thumbnails?.youtubeVideoId(state.videoId || '')) {
+    miniThumb.hidden = false;
+    thumbnails.loadYouTube(miniThumb, state.videoId, { onError:() => { miniThumb.hidden = true; } });
+  } else {
+    if (miniThumb) miniThumb.hidden = true;
+    thumbnails?.clear(miniThumb);
+  }
+  syncReadingAudioControls();
+}
+
 function togglePlay() {
   const v = state.videoEl;
   if (!v) return;
@@ -1654,49 +942,6 @@ function seekByTrack(e) {
 }
 
 // ---------- Đồng bộ phụ đề với video ----------
-function findCaptionIndex(t) {
-  let lo = 0;
-  let hi = state.captions.length - 1;
-  let ans = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (state.captions[mid].start <= t) {
-      ans = mid;
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-  return ans;
-}
-
-function onTimeUpdate() {
-  const v = state.videoEl;
-  if (!v) return;
-
-  const dur = v.duration || 0;
-  const fill = ui('.te-progress-fill');
-  if (fill) fill.style.width = dur ? `${(v.currentTime / dur) * 100}%` : '0%';
-
-  if (state.captions.length === 0) return;
-
-  if (!state.webStudy && state.loop && state.activeIdx >= 0) {
-    const cur = state.captions[state.activeIdx];
-    if (v.currentTime >= cur.end) {
-      v.currentTime = cur.start;
-      return;
-    }
-  }
-
-  const idx = findCaptionIndex(v.currentTime);
-  if (idx >= 0 && idx !== state.activeIdx) {
-    setActiveCaption(idx);
-    translateWindow(idx);
-  }
-  // Overlay đang mở: giữ cửa sổ phụ đề trước vị trí phát 10 phút.
-  if (state.open && !state.webStudy) extendLoadedWindow();
-}
-
 function usesViewportTranscriptFocus() {
   const root = overlayEl();
   return Boolean(root && !root.classList.contains('te-sidebar-hidden') && !root.classList.contains('te-dictation-active'));
@@ -1789,7 +1034,49 @@ function setStatus(text, languageKey = '', languageVars = {}) {
   list.innerHTML = text ? `<div class="yt-dual-empty">${escapeHtml(text)}</div>` : '';
 }
 
-// ---------- Xuất phụ đề ----------
+// ---------- Transcript ----------
+function renderTranscriptList() {
+  const list = $('te-transcript-list');
+  list.innerHTML = state.captions.map((c, i) => `
+    <div class="yt-dual-item" data-idx="${i}">
+      <div class="yt-dual-timestamp">${formatTime(c.start)}</div>
+      <div class="yt-dual-content">
+        <div class="yt-dual-item-en">${renderHoverWords(c.mainText)}</div>
+        <div class="yt-dual-item-vi">${renderHoverWords(c.vi)}</div>
+      </div>
+    </div>`).join('');
+  state.activeIdx = -1;
+}
+
+function updateVietnameseRow(item) {
+  const idx = state.captions.indexOf(item);
+  if (idx < 0) return;
+  const row = $('te-transcript-list').querySelector(`.yt-dual-item[data-idx="${idx}"]`);
+  if (row) {
+    row.querySelector('.yt-dual-item-en').innerHTML = renderHoverWords(item.mainText);
+    row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+  }
+  if (idx === state.activeIdx) $('te-sub-en-text').innerHTML = renderHoverWords(item.mainText);
+  if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
+  if (idx === state.activeIdx) scheduleTheaterSubtitleLayout();
+}
+
+// Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
+function onTranscriptClick(e) {
+  const timestamp = e.target.closest('.yt-dual-timestamp');
+  const row = timestamp?.closest('.yt-dual-item');
+  const v = state.videoEl;
+  if (!row || !v) return;
+  const index = Number(row.dataset.idx);
+  const cap = state.captions[index];
+  if (!cap) return;
+  beginHoverPauseSuppression({ requirePauseZone: true });
+  translateWindow(index);
+  v.currentTime = cap.start;
+  v.play().catch(() => {});
+}
+
+// ---------- Ẩn/hiện bản dịch tiếng Việt (v1.4) ----------
 function srtTime(sec) {
   const ms = Math.round(sec * 1000);
   const h = Math.floor(ms / 3600000);
@@ -2556,6 +1843,141 @@ function handleVideoOverlayShortcut(event) {
   action[1]();
   pulseControl(action[0]);
 }
+
+// Dictation/Speaking routing and overlay API for the Study engine under js/overlay/study.
+let pendingDictationShortcut = false;
+let pendingDictationOpenImmediately = false;
+let pendingDictationMode = 'typing';
+function createDictationOverlayApi() {
+  if (globalThis.LHN_OVERLAY_API) return globalThis.LHN_OVERLAY_API;
+  const api = Object.freeze({
+    state,
+    overlayEl,
+    ctrl,
+    setLearningMode: setVideoLearningMode,
+    syncViewSize: syncViewSizeClasses,
+    restorePreferredReadingMode,
+    getPreferredLearningMode: preferredLearningMode,
+    revealLearningEntry() { overlayEl()?.classList.remove('te-learning-entry-pending'); },
+    setPreferredLearningMode(mode) {
+      if (!['typing', 'speaking'].includes(mode)) return false;
+      settings.preferredLearningMode = mode;
+      saveSettings();
+      return true;
+    },
+    lang: () => state.displayLanguage,
+    getDictationCues: () => {
+      if (!state.allCues.length || (!state.webStudy && state.captionTrackLanguage !== 'en')) return [];
+      if (state.webStudy) return state.allCues.map((cue, index) => ({ id:index, start:cue.start, end:cue.end, en:String(cue.en || '').trim() })).filter((cue) => cue.en);
+      return dedupeSentences(resegmentBySentence(state.allCues)).map((cue, index) => ({
+        id: index,
+        start: cue.start,
+        end: cue.end,
+        en: String(cue.en || '').replace(/\s+/g, ' ').trim(),
+      })).filter((cue) => cue.en);
+    },
+    translateToVietnamese: (text) => translateOne(text, 'vi'),
+  });
+  globalThis.LHN_OVERLAY_API = api;
+  return api;
+}
+
+function announceDictationCaptionsUpdated() {
+  document.dispatchEvent(new CustomEvent('lhn-dual-captions-updated', {
+    detail: { videoId: state.videoId, language: state.captionTrackLanguage, count: state.allCues.length },
+  }));
+}
+
+function beginDictationMode(mode) {
+  const selectedMode = mode === 'speaking' ? 'speaking' : 'typing';
+  if (state.open) {
+    if (!globalThis.LHN_DICTATION?.open) return;
+    overlayEl()?.classList.add('te-learning-entry-pending');
+    globalThis.LHN_DICTATION.open({ waitForCaptions: true, mode: selectedMode });
+    return;
+  }
+  pendingDictationShortcut = true;
+  pendingDictationOpenImmediately = true;
+  pendingDictationMode = selectedMode;
+  openOverlay();
+  if (!state.open) {
+    pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
+    pendingDictationMode = 'typing';
+    return;
+  }
+  openPendingDictationShortcut();
+}
+
+function toggleDictationTypingControl() {
+  if (keepitSiteDisabled) return;
+  const dictation = globalThis.LHN_DICTATION;
+  if (dictation?.isOpen?.()) {
+    if (dictation.getMode?.() !== 'typing') dictation.open?.({ waitForCaptions: true, mode: 'typing' });
+    else dictation.close?.();
+    return;
+  }
+  beginDictationMode('typing');
+}
+
+async function prepareWebStudyForShortcut() {
+  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || state.webStudy) return;
+  if (state.open) closeOverlay();
+  document.dispatchEvent(new CustomEvent('lhn-bilingual-reader-command', { detail: 'stop-reading' }));
+  await prepareWebStudy();
+}
+
+async function toggleDictationFromShortcut(event) {
+  if (keepitSiteDisabled) return;
+  if (event?.detail?.source === 'typing-control') {
+    toggleDictationTypingControl();
+    return;
+  }
+  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebStudyForShortcut();
+  const dictation = globalThis.LHN_DICTATION;
+  if (pendingDictationShortcut || dictation?.isOpen?.()) {
+    closeOverlay();
+    return;
+  }
+  beginDictationMode(preferredLearningMode());
+}
+
+function openPendingDictationShortcut() {
+  if (!pendingDictationShortcut) return;
+  if (!state.open) {
+    pendingDictationShortcut = false;
+    pendingDictationOpenImmediately = false;
+    pendingDictationMode = 'typing';
+    return;
+  }
+  const hasCues = !!globalThis.LHN_OVERLAY_API?.getDictationCues?.().length;
+  if (!hasCues && state.loadingFor === state.videoId && !pendingDictationOpenImmediately) return;
+  pendingDictationShortcut = false;
+  const openWhileLoading = pendingDictationOpenImmediately;
+  const mode = pendingDictationMode;
+  pendingDictationOpenImmediately = false;
+  pendingDictationMode = 'typing';
+  if (openWhileLoading) globalThis.LHN_DICTATION?.open?.({ waitForCaptions: true, mode, fromEntry: true });
+  else globalThis.LHN_DICTATION?.open?.({ mode, fromEntry: true });
+}
+
+async function openDictationFromDashboardIntent() {
+  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) return;
+  let targetUrl;
+  try { targetUrl = new URL(location.href); } catch { return; }
+  if (targetUrl.pathname !== "/watch" || targetUrl.searchParams.get("lhn_open_dictation") !== "1") return;
+  targetUrl.searchParams.delete("lhn_open_dictation");
+  history.replaceState(history.state, "", `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
+  await refreshKeepitGate();
+  if (keepitSiteDisabled) return;
+  pendingDictationShortcut = true;
+  pendingDictationOpenImmediately = true;
+  pendingDictationMode = preferredLearningMode();
+  openOverlay();
+  openPendingDictationShortcut();
+}
+
+// Khung video co theo đúng tỉ lệ của video (không ép 16:9); chưa có metadata thì dùng 16:9.
 
 window.addEventListener('keydown', handleVideoOverlayShortcut, true);
 document.addEventListener('keydown', (event) => {

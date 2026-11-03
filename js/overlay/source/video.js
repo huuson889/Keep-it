@@ -1,7 +1,4 @@
-// Nguồn phụ đề YouTube: tải, đọc CC, transcript
-// Tách từ js/video/dual-subtitles.js (v3.5.26). Nội dung giữ nguyên, chỉ đổi vị trí file.
-
-// Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
+// YouTube source: caption discovery, transcript cache, cue model, and video timing.
 const PRELOAD_SECONDS = 300;
 const LOOKAHEAD_SECONDS = 600;
 const TRANSCRIPT_CACHE_LIMIT = 20;
@@ -14,299 +11,6 @@ let activeVideoStatusKey = '';
 let activeVideoStatusVars = {};
 let prefetchToken = 0;
 let prefetchTimer = 0;
-let savedOverlayPageScrollStyles = null;
-
-let shadow = null; // ShadowRoot chứa toàn bộ giao diện keepit
-const $ = (id) => (shadow ? shadow.getElementById(id) : null);
-const overlayEl = () => $(OVERLAY_ID);
-const uiCache = new Map();
-const ui = (sel) => {
-  const cached = uiCache.get(sel);
-  if (cached && cached.isConnected) return cached;
-  const el = overlayEl()?.querySelector(sel) || null;
-  if (el) uiCache.set(sel, el); else uiCache.delete(sel);
-  return el;
-};
-const uiAll = (sel) => (overlayEl() ? [...overlayEl().querySelectorAll(sel)] : []);
-const VIDEO_UI_TEXT_KEYS = Object.freeze({
-  'Thêm vào từ vựng': 'videoAddVocabulary', 'Mở thanh bên ghi chú': 'videoOpenNotesSidebar',
-  'Audio': 'videoAudio', 'Lặp lại câu': 'videoRepeatSentence', 'Câu trước': 'videoPreviousSentence',
-  'Phát/Tạm dừng': 'videoPlayPause', 'Câu tiếp theo': 'videoNextSentence', 'Tốc độ': 'videoSpeed',
-  'Luyện nói': 'videoPracticeSpeaking', 'Chép chính tả': 'videoDictation', 'Chế độ phụ đề': 'videoSubtitleMode',
-  'Song ngữ': 'videoSubtitleBilingual', 'Chính': 'videoSubtitlePrimary', 'Dịch': 'videoSubtitleTranslation', 'Ẩn': 'videoSubtitleHidden',
-  'Chế độ xem': 'videoModeSelector', 'Chế độ rạp': 'videoModeTheater', 'Chế độ đọc': 'videoModeReading', 'Chế độ thường': 'videoModeCombined',
-  'Toàn màn hình': 'videoFullscreen', 'Cài đặt video': 'videoSettings', 'Đóng': 'close', 'Mở cài đặt': 'videoOpenSettings',
-  'Kích thước xem': 'videoViewSize', 'Kích cỡ xem': 'videoViewSize', 'Nhấn để dịch': 'videoTranslationPopup', 'Phát âm khi dịch': 'videoClickToSpeak',
-  'Kết hợp câu': 'videoCombineSentences', 'Ẩn thanh điều khiển': 'videoHideControls', 'Ambient mode': 'videoAmbientMode',
-  'Ambient 1': 'videoAmbient1', 'Ambient 2': 'videoAmbient2', 'Ambient 3': 'videoAmbient3', 'Tắt': 'videoAmbientOff',
-  'Chủ đề': 'videoTheme', 'Light': 'lightMode', 'Dark': 'darkMode', 'Tùy chọn phụ đề': 'videoSubtitleOptions',
-  'Ngôn ngữ phụ đề': 'videoSubtitleLanguage', 'Xuất phụ đề': 'videoExportSubtitles', 'Đặt lại': 'videoReset', 'Cài đặt chung': 'videoGeneralSettings',
-  'Nhỏ': 'videoSmall', 'Vừa': 'videoMedium', 'Trung bình': 'videoMedium', 'Lớn': 'videoLarge', 'Đậm': 'videoBold', 'Phụ đề video': 'videoVideoSubtitles',
-  'Kích thước phụ đề chính': 'videoPrimarySubtitleSize', 'Màu phụ đề chính': 'videoPrimarySubtitleColor',
-  'Kích thước phụ đề dịch': 'videoTranslatedSubtitleSize', 'Màu phụ đề dịch': 'videoTranslatedSubtitleColor',
-  'Chế độ rạp · Lớn': 'videoTheaterLargeSubtitle', 'Màu nền phụ đề': 'videoSubtitleBackgroundColor',
-  'Độ trong suốt': 'videoSubtitleBackgroundOpacity', 'Move subtitle': 'videoMoveSubtitle',
-  'Phụ đề thanh bên': 'videoSidebarSubtitles', 'Kích thước chính': 'videoPrimarySize', 'Kích thước dịch': 'videoTranslatedSize',
-  'Phụ đề chính': 'videoMainSubtitle', 'Phụ đề dịch': 'videoTranslationSubtitle', 'Xuất từ đã lưu': 'videoExportSavedWords',
-  'Hiển thị từ đánh dấu': 'videoShowHighlightedWords', 'Chỉ xuất phụ đề': 'videoExportSubtitlesOnly', 'Hiển thị thời gian': 'videoIncludeTimestamps',
-});
-const VIDEO_UI_CONTROL_IDS = Object.freeze({
-  Audio: 'te-control-audio', 'Lặp lại câu': 'te-control-repeat', 'Câu trước': 'te-control-previous',
-  'Phát/Tạm dừng': 'te-control-play', 'Câu tiếp theo': 'te-control-next', 'Tốc độ': 'te-control-speed',
-  'Luyện nói': 'te-speaking-mode-btn', 'Chép chính tả': 'te-dictation-mode-btn', 'Toàn màn hình': 'te-control-fullscreen',
-});
-const localizedVideoText = new WeakMap();
-const localizedVideoAttributes = new WeakMap();
-const videoT = (key, vars = {}) => globalThis.LHN_LANGUAGES?.t?.(key, vars, state.displayLanguage) || key;
-const ctrl = (title) => {
-  const id = VIDEO_UI_CONTROL_IDS[title];
-  return id ? ui(`#${id}`) : null;
-};
-
-function refreshVideoUiLocalization() {
-  const launcher = document.getElementById(LAUNCHER_ID);
-  launcher?.setAttribute('title', videoT('videoOpenKeepit'));
-  launcher?.setAttribute('aria-label', videoT('videoOpenKeepit'));
-  globalThis.LHN_DICTATION?.refreshLanguage?.();
-  const root = overlayEl();
-  if (!root) return false;
-  const subtitleDragHandle = ui('#te-theater-subtitle-drag-handle');
-  if (subtitleDragHandle) {
-    subtitleDragHandle.title = videoT('videoMoveSubtitle');
-    subtitleDragHandle.setAttribute('aria-label', videoT('videoMoveSubtitle'));
-  }
-  const excludedUiContent = '.te-video-title-text, .te-sub-container, #te-transcript-list, #te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .te-dict-toolbar-tools';
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node;
-  while ((node = walker.nextNode())) {
-    if (node.parentElement?.closest(excludedUiContent)) continue;
-    const source = localizedVideoText.has(node) ? localizedVideoText.get(node) : node.nodeValue;
-    const key = VIDEO_UI_TEXT_KEYS[source.trim()];
-    if (!key) continue;
-    if (!localizedVideoText.has(node)) localizedVideoText.set(node, source);
-    const leading = source.match(/^\s*/)?.[0] || '';
-    const trailing = source.match(/\s*$/)?.[0] || '';
-    node.nodeValue = `${leading}${videoT(key)}${trailing}`;
-  }
-  for (const element of root.querySelectorAll('[title], [aria-label]')) {
-    if (element.closest(excludedUiContent)) continue;
-    let saved = localizedVideoAttributes.get(element);
-    if (!saved) { saved = new Map(); localizedVideoAttributes.set(element, saved); }
-    for (const name of ['title', 'aria-label']) {
-      if (!element.hasAttribute(name)) continue;
-      const source = saved.has(name) ? saved.get(name) : element.getAttribute(name);
-      const key = VIDEO_UI_TEXT_KEYS[source];
-      if (!key) continue;
-      if (!saved.has(name)) saved.set(name, source);
-      element.setAttribute(name, videoT(key));
-    }
-  }
-  applySettings();
-  updateSubtitleDisplayModeLabels();
-  setVideoDisplayModeSelection($('te-video-mode-trigger')?.dataset.videoMode || 'combined');
-  syncReadingAudioControls();
-  const sizeKeys = ['videoSmall', 'videoMedium', 'videoLarge'];
-  uiAll('#te-view-mode-options button').forEach((button, index) => {
-    button.textContent = videoT(sizeKeys[index] || 'videoMedium');
-    button.dataset.size = ['S', 'M', 'L'][index] || 'M';
-  });
-  const exportRows = uiAll('#te-modal-export .te-card-box .te-setting-item');
-  if (exportRows[3]?.firstElementChild) exportRows[3].firstElementChild.textContent = videoT('videoIncludeSubtitles');
-  const speedNormal = ui('.te-speed-normal');
-  if (speedNormal) speedNormal.textContent = videoT('videoNormal');
-  if (activeVideoStatusKey) setStatus(videoT(activeVideoStatusKey, activeVideoStatusVars), activeVideoStatusKey, activeVideoStatusVars);
-  return true;
-}
-
-function pauseVideoFor(reason) {
-  state.pauseReasons.add(reason);
-  const video = state.videoEl || state.managedPauseVideo;
-  if (video && !video.paused) {
-    state.managedPauseVideo = video;
-    video.pause();
-  }
-}
-
-function resumeVideoFor(reason) {
-  state.pauseReasons.delete(reason);
-  if (state.pauseReasons.size) return;
-  const video = state.managedPauseVideo;
-  state.managedPauseVideo = null;
-  if (video?.paused) video.play().catch(() => {});
-}
-
-const HOVER_PAUSE_ZONES = [
-  { reason: 'subtitle-main-hover', selector: '.te-sub-en' },
-  { reason: 'subtitle-sidebar-hover', selector: '.yt-dual-item' },
-];
-
-function activateHoverPause(reason) {
-  if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.has(reason)) return;
-  if (state.hoverPauseModeChangeRevision === state.hoverPointerRevision) {
-    beginHoverPauseSuppression();
-    return;
-  }
-  state.hoverPauseReasons.add(reason);
-  pauseVideoFor(reason);
-}
-
-function beginHoverPauseSuppression({ requirePauseZone = false } = {}) {
-  if (requirePauseZone && !getHoverPauseReasonsAtPointer().size) return false;
-  state.hoverPauseSuppressionActive = true;
-  state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
-  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
-  return true;
-}
-
-function releaseHoverPause(reason) {
-  if (!state.hoverPauseReasons.delete(reason)) return;
-  resumeVideoFor(reason);
-}
-
-function rememberHoverPointer(event) {
-  if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return false;
-  const moved = !state.hoverPointer
-    || state.hoverPointer.x !== event.clientX
-    || state.hoverPointer.y !== event.clientY;
-  state.hoverPointer = { x: event.clientX, y: event.clientY };
-  if (moved) {
-    state.hoverPointerRevision += 1;
-    state.hoverPauseModeChangeRevision = false;
-    syncHoverPauseAtPointer();
-  }
-  return moved;
-}
-
-function getHoverPauseReasonsAtPointer() {
-  const pointer = state.hoverPointer;
-  if (!state.open || !pointer || typeof shadow?.elementFromPoint !== 'function') return new Set();
-  const target = shadow.elementFromPoint(pointer.x, pointer.y);
-  if (!target || typeof target.closest !== 'function') return new Set();
-  return new Set(HOVER_PAUSE_ZONES
-    .filter(({ selector }) => target.closest(selector))
-    .map(({ reason }) => reason));
-}
-
-function syncHoverPauseAtPointer(suppressCurrent = false) {
-  const nextReasons = getHoverPauseReasonsAtPointer();
-  if (suppressCurrent) {
-    if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.size || nextReasons.size) {
-      beginHoverPauseSuppression();
-    }
-    return;
-  }
-
-  if (state.hoverPauseSuppressionActive) {
-    if (state.hoverPointerRevision !== state.hoverPauseSuppressionRevision) {
-      if (nextReasons.size) state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
-      else {
-        state.hoverPauseSuppressionActive = false;
-        state.hoverPauseSuppressionRevision = null;
-      }
-    }
-    if (state.hoverPauseSuppressionActive) {
-      for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
-      return;
-    }
-  }
-
-  // Activate the next zone first so crossing between pause zones never resumes the video briefly.
-  for (const reason of nextReasons) activateHoverPause(reason);
-  for (const reason of [...state.hoverPauseReasons]) {
-    if (!nextReasons.has(reason)) releaseHoverPause(reason);
-  }
-}
-
-function suppressHoverPauseForModeChange() {
-  state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
-  const isOverPauseZone = state.hoverPauseSuppressionActive
-    || state.hoverPauseReasons.size > 0
-    || getHoverPauseReasonsAtPointer().size > 0;
-  if (isOverPauseZone) beginHoverPauseSuppression();
-}
-
-function scheduleHoverPauseSync({ modeChange = false } = {}) {
-  if (!state.open) return;
-  if (modeChange) state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
-  if (state.hoverPauseSyncFrame !== null) return;
-  state.hoverPauseSyncFrame = requestAnimationFrame(() => {
-    state.hoverPauseSyncFrame = null;
-    const suppressCurrent = typeof state.hoverPauseModeChangeRevision === 'number'
-      && state.hoverPauseModeChangeRevision === state.hoverPointerRevision;
-    state.hoverPauseModeChangeRevision = null;
-    syncHoverPauseAtPointer(suppressCurrent);
-  });
-}
-
-function clearHoverPauseState() {
-  if (state.hoverPauseSyncFrame !== null) {
-    cancelAnimationFrame(state.hoverPauseSyncFrame);
-    state.hoverPauseSyncFrame = null;
-  }
-  state.hoverPointer = null;
-  state.hoverPointerRevision = 0;
-  state.hoverPauseModeChangeRevision = null;
-  state.hoverPauseSuppressionActive = false;
-  state.hoverPauseSuppressionRevision = null;
-  for (const { reason } of HOVER_PAUSE_ZONES) {
-    state.hoverPauseReasons.delete(reason);
-    resumeVideoFor(reason);
-  }
-}
-
-function enforceVideoPause(video) {
-  if (!state.pauseReasons.size || video.paused) return;
-  state.managedPauseVideo = video;
-  video.pause();
-}
-
-const APP_POPUP_SELECTOR = '#lhn-full-english-dictionary, #lhn-direct-translation, #lhn-panel, #lhn-note-pop';
-
-function hasVisibleAppPopup() {
-  return [...document.querySelectorAll(APP_POPUP_SELECTOR)].some((popup) => {
-    const style = getComputedStyle(popup);
-    return style.display !== 'none' && style.visibility !== 'hidden' && popup.getBoundingClientRect().width > 0;
-  });
-}
-
-function syncAppPopupPause() {
-  if (hasVisibleAppPopup()) pauseVideoFor('app-popup');
-  else {
-    resumeVideoFor('app-popup');
-    if (!state.open && state.popupObserver) {
-      state.popupObserver.disconnect();
-      state.popupObserver = null;
-    }
-  }
-}
-
-function startAppPopupObserver() {
-  if (!state.popupObserver) {
-    const isPopupNode = (node) => node?.nodeType === Node.ELEMENT_NODE &&
-      (node.matches(APP_POPUP_SELECTOR) || node.querySelector(APP_POPUP_SELECTOR));
-    state.popupObserver = new MutationObserver((records) => {
-      const relevant = records.some((record) => record.type === 'attributes'
-        ? record.target.matches?.(APP_POPUP_SELECTOR)
-        : [...record.addedNodes, ...record.removedNodes].some(isPopupNode));
-      if (relevant) syncAppPopupPause();
-    });
-    state.popupObserver.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style'],
-    });
-  }
-  syncAppPopupPause();
-}
-
-function renderHoverWords(text) {
-  return String(text ?? '').split(/(\s+)/u).map((part) => /^\s+$/u.test(part)
-    ? part
-    : `<span class="yt-dual-word">${escapeHtml(part)}</span>`).join('');
-}
-
-// ---------- Lấy phụ đề (đã kiểm chứng ở v1.4) ----------
 const SENTENCE_END_RE = /[.!?…]["'”’)\]]*$/;
 const ABBREVIATION_RE = /\b(mr|mrs|ms|dr|vs|etc|e\.g|i\.e|st|no)\.$/i;
 const MAX_SENTENCE_SEC = 12;
@@ -314,18 +18,6 @@ const MAX_SENTENCE_WORDS = 30;
 const MIN_TRANSCRIPT_LINE_WORDS = 5;
 const TRANSCRIPT_LABEL = /show transcript|hiển thị bản ghi|bản ghi/i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 async function fetchText(url) {
   const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'YOUTUBE_FETCH_TEXT', url });
@@ -439,20 +131,6 @@ function markSingleTrackCues(cues, language = state.captionTrackLanguage) {
     secondaryNeedsTranslation: targetNeedsTranslation,
     secondaryTranslationInput: cue.en,
     vi: targetNeedsTranslation ? PENDING : cue.en,
-  }));
-}
-
-function markWebReaderCues(cues, language = state.webDetectedLanguage || state.webLanguageHint) {
-  const sourceLanguage = String(language || 'en').replace(/_/g, '-').split('-')[0].toLowerCase();
-  const marked = markSingleTrackCues(cues, sourceLanguage);
-  state.primaryNeedsTranslation = false;
-  state.mainLanguage = sourceLanguage;
-  updateSubtitleLanguageLabels();
-  return marked.map((cue) => ({
-    ...cue,
-    mainNeedsTranslation: false,
-    mainTranslationInput: cue.en,
-    mainText: cue.en,
   }));
 }
 
@@ -826,34 +504,93 @@ function parseCaptions(events) {
   return list;
 }
 
-// ---------- Transcript ----------
-function renderTranscriptList() {
-  const list = $('te-transcript-list');
-  list.innerHTML = state.captions.map((c, i) => `
-    <div class="yt-dual-item" data-idx="${i}">
-      <div class="yt-dual-timestamp">${formatTime(c.start)}</div>
-      <div class="yt-dual-content">
-        <div class="yt-dual-item-en">${renderHoverWords(c.mainText)}</div>
-        <div class="yt-dual-item-vi">${renderHoverWords(c.vi)}</div>
-      </div>
-    </div>`).join('');
-  state.activeIdx = -1;
-}
-
-function updateVietnameseRow(item) {
-  const idx = state.captions.indexOf(item);
-  if (idx < 0) return;
-  const row = $('te-transcript-list').querySelector(`.yt-dual-item[data-idx="${idx}"]`);
-  if (row) {
-    row.querySelector('.yt-dual-item-en').innerHTML = renderHoverWords(item.mainText);
-    row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+// ---------- Dịch lười qua module translate của Keepit ----------
+// Dùng message BILINGUAL_TRANSLATE (background: LHN_TRANSLATE + LHN_CACHE) và chỉ dịch
+// những cue quanh vị trí đang phát / đang xem, thay vì dịch toàn bộ danh sách ngay.
+function attachVideo(video, slot) {
+  if (state.videoEl && state.videoEl !== video) detachVideo();
+  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
+  if (video.parentElement !== frame) {
+    state.origParent = video.parentElement;
+    state.origNext = video.nextSibling;
+    const wasPlaying = !video.paused;
+    frame.insertBefore(video, frame.firstChild);
+    if (wasPlaying) video.play().catch(() => {});
   }
-  if (idx === state.activeIdx) $('te-sub-en-text').innerHTML = renderHoverWords(item.mainText);
-  if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
-  if (idx === state.activeIdx) scheduleTheaterSubtitleLayout();
+  state.videoEl = video;
+  video.controls = false;
+  video.addEventListener('click', handleOverlayVideoClick);
+  video.addEventListener('timeupdate', onTimeUpdate);
+  video.addEventListener('play', handleVideoPlay);
+  video.addEventListener('play', enforceVideoPause);
+  video.addEventListener('pause', handleVideoPause);
+  video.addEventListener('ratechange', handleVideoRateChange);
+  video.addEventListener('volumechange', handleVideoVolumeChange);
+  if (state.videoGeometryHandler) {
+    video.removeEventListener('loadedmetadata', state.videoGeometryHandler);
+    video.removeEventListener('resize', state.videoGeometryHandler);
+  }
+  state.videoGeometryHandler = () => {
+    if (state.videoEl !== video) return;
+    syncVideoAspect(video);
+    syncTheaterFrame();
+  };
+  video.addEventListener('loadedmetadata', state.videoGeometryHandler);
+  video.addEventListener('resize', state.videoGeometryHandler);
+  syncVideoAspect(video);
+  syncTheaterFrame();
+  syncPlayButton();
+  syncSpeedButton();
+  syncMuteButton();
+  enforceVideoPause(video);
+  onTimeUpdate();
+  syncReadingAudioControls();
+  startAmbient();
 }
 
-// Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
+function findCaptionIndex(t) {
+  let lo = 0;
+  let hi = state.captions.length - 1;
+  let ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (state.captions[mid].start <= t) {
+      ans = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return ans;
+}
+
+function onTimeUpdate() {
+  const v = state.videoEl;
+  if (!v) return;
+
+  const dur = v.duration || 0;
+  const fill = ui('.te-progress-fill');
+  if (fill) fill.style.width = dur ? `${(v.currentTime / dur) * 100}%` : '0%';
+
+  if (state.captions.length === 0) return;
+
+  if (!state.webStudy && state.loop && state.activeIdx >= 0) {
+    const cur = state.captions[state.activeIdx];
+    if (v.currentTime >= cur.end) {
+      v.currentTime = cur.start;
+      return;
+    }
+  }
+
+  const idx = findCaptionIndex(v.currentTime);
+  if (idx >= 0 && idx !== state.activeIdx) {
+    setActiveCaption(idx);
+    translateWindow(idx);
+  }
+  // Overlay đang mở: giữ cửa sổ phụ đề trước vị trí phát 10 phút.
+  if (state.open && !state.webStudy) extendLoadedWindow();
+}
+
 function dedupeSentences(list) {
   const out = [];
   for (const cue of list) {
@@ -1323,18 +1060,3 @@ async function loadCaptions() {
     }
   }
 }
-
-function onTranscriptClick(e) {
-  const timestamp = e.target.closest('.yt-dual-timestamp');
-  const row = timestamp?.closest('.yt-dual-item');
-  const v = state.videoEl;
-  if (!row || !v) return;
-  const index = Number(row.dataset.idx);
-  const cap = state.captions[index];
-  if (!cap) return;
-  beginHoverPauseSuppression({ requirePauseZone: true });
-  translateWindow(index);
-  v.currentTime = cap.start;
-  v.play().catch(() => {});
-}
-

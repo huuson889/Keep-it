@@ -70,7 +70,7 @@
   - Sau mỗi thay đổi, sửa đè mục 1 và 2 theo các quy tắc snapshot/open-items bên trên; việc đã xác nhận hoàn tất thì gỡ khỏi mục 2. Giữ mục 5 theo thứ tự mới nhất → cũ nhất.
 
 **5.2.1. Tài liệu kỹ thuật nội bộ (`docs/`)**
-  - Phạm vi module là các thư mục first-party cấp cao nhất hiện có dưới `js/`: `background`, `content`, `core`, `dashboard`, `dictation`, `popup`, `reader`, `shared`, `translate`, `video`. Mỗi module có một trang `docs/modules/<slug>.md`; module mới phải thêm trang tương ứng và cập nhật `docs/INDEX.md`. Không tạo tài liệu riêng cho từng file mã nguồn hoặc cho `vendor/`.
+  - Phạm vi module là các thư mục first-party cấp cao nhất hiện có dưới `js/`: `background`, `content`, `core`, `dashboard`, `overlay`, `popup`, `reader`, `shared`, `translate`. Mỗi module có một trang `docs/modules/<slug>.md`; module mới phải thêm trang tương ứng và cập nhật `docs/INDEX.md`. Không tạo tài liệu riêng cho từng file mã nguồn hoặc cho `vendor/`.
   - `docs/INDEX.md` là mục lục duy nhất, dùng bảng đúng 3 cột: `Tài liệu | Phạm vi | Đọc khi`; chỉ đọc trang có liên quan tới yêu cầu, không nạp toàn bộ docs mặc định.
   - Mọi trang module phải có đúng một H1 theo mẫu `# <Tên module> — Hướng dẫn kỹ thuật`, tiếp theo đúng năm H2, cùng tên và thứ tự sau; không thêm H2 khác:
     - `## 1. Mục đích và phạm vi`

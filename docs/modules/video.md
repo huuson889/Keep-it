@@ -1,46 +1,40 @@
-# Video (YouTube Dual Subtitles) — Hướng dẫn kỹ thuật
+# Video (YouTube source) — Hướng dẫn kỹ thuật
 
-> Source code là nguồn sự thật; trang này mô tả luồng YouTube và Web Study dùng chung overlay.
+> Source code là nguồn sự thật; giao diện và điều phối dùng chung được mô tả trong [Overlay](overlay.md).
 
 ## 1. Mục đích và phạm vi
 
-Điều phối overlay video, YouTube subtitles, Web Study và Dictation. Web lấy bài qua Reader; overlay/virtual-media adapter dùng chung nhưng transcript cache YouTube tách biệt.
+Phần Video sở hữu nguồn YouTube: tìm track, lấy transcript/caption, chuẩn hóa cue, cache theo video/ngôn ngữ và đồng bộ cue với playback. Overlay/controller sở hữu UI/lifecycle; Web Study là source riêng, không dùng YouTube transcript loader.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp module. |
-| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM và giao diện. |
-| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `runSharedVideoShortcut`, `prepareWebStudy`, `openOverlay` | Shortcut, YouTube và Web adapter. |
-| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `LHN_READER_MAIN_SOURCE.getTextBlocks` | Chọn và trích main text. |
-| [`js/core/cache.js`](../../js/core/cache.js) | `getWebStudyCues`, `saveWebStudyCues`, `touchWebStudyCues` | Persistent cache cue Web. |
-| [`js/background/background.js`](../../js/background/background.js) | `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` | Cầu message tới cache. |
-| [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS.play` | Phát audio/browser speech. |
-| [`js/overlay/study/dictation.js`](../../js/overlay/study/dictation.js) | `LHN_DICTATION` | Dictation UI/engine dùng chung. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | Thứ tự nạp; controller Overlay chạy sau Typing/Speaking engine trong Overlay/Study. |
+| [`js/overlay/source/video.js`](../../js/overlay/source/video.js) | `loadCaptions`, `parseCaptions`, `onTimeUpdate` | YouTube tracks, transcript, caption cache, cue model và timing. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `tick`, `openOverlay`, `closeOverlay` | Lifecycle chung; chỉ phần YouTube-specific polling thuộc Video flow. |
+| [`js/core/cache.js`](../../js/core/cache.js) | transcript cache APIs | Persistent cache dùng chung cho transcript YouTube. |
+| [`js/background/background.js`](../../js/background/background.js) | transcript cache messages | Cầu tới cache/background khi source cần lưu hoặc đọc. |
+| [`js/core/languages.js`](../../js/core/languages.js) | language helpers | Mã ngôn ngữ track và nhãn giao diện. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp Reader trước video controller; shortcut Alt+E/F đi qua dispatcher chung cho Web và YouTube.
-2. Lần đầu mở Web Study gọi Reader `forceRefresh`, chuẩn hóa main text và băm URL/ngôn ngữ/nội dung/schema.
-3. Cache hit theo fingerprint dùng câu lưu; miss thì tách/lưu. Snapshot RAM giữ cue khi đóng/mở cùng document. Reload/URL mới đọc Reader lại để phát hiện nội dung đổi.
-4. Cue hiện trong transcript. TTS và dịch chỉ được gọi khi cần, qua module/cache mặc định; Web adapter không tạo cache riêng.
-5. Web gửi `stop-reading`; Reader start đóng Web overlay. Đóng overlay hủy media nhưng giữ snapshot cue của document. YouTube tiếp tục dùng player/caption loader và transcript cache riêng.
+1. Manifest nạp `source/video.js` cùng các Overlay module; `overlay-controller.js` khởi tạo sau Dictation engine trong Overlay/Study.
+2. Khi video YouTube thay đổi, controller cập nhật `videoId`, token và prefetch; source module tìm track/ transcript từ player API hoặc transcript panel.
+3. Caption events/XML được giải mã, chuẩn hóa thời gian/câu và đánh dấu ngôn ngữ track. Nếu nguồn chính không khả dụng, live caption capture quan sát caption đang hiển thị.
+4. Cue được cache theo video/track, nạp theo cửa sổ và chuyển thành caption model cho overlay. `onTimeUpdate` đồng bộ cue hiện hành với playback.
+5. Overlay view áp dụng layout/CC modes và translation queue dùng chung; mở Web Study không truy cập transcript cache YouTube.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Web chỉ lấy main text qua Reader; không đổi thuật toán chọn block và không dùng YouTube caption loader.
-- Cache Web lưu câu nguồn đã chuẩn hóa, không lưu HTML. Khóa được băm từ URL bỏ fragment, fingerprint text, ngôn ngữ và schema `v1`; URL thô không nằm trong khóa lưu. Thay cách tách câu phải đổi schema.
-- Cache cue có TTL trượt 7 ngày; lần mở lại cùng document chạm cache để gia hạn, cleanup xóa mục không được dùng lại trong thời hạn. Không chia quota/entry với transcript YouTube.
-- Snapshot bộ nhớ gắn với document và URL, chỉ tồn tại qua đóng/mở overlay. Reload tạo content script mới và buộc trích Reader lại; persistent cache chỉ được dùng khi fingerprint còn trùng.
-- TTS và translation giữ cache/policy của module hiện có. Giữ marking, queue, target-language updates và lỗi dịch/toast.
-- Giữ `LHN_OVERLAY_API`, phím native YouTube, shared shortcuts và mutual exclusion Reader/Web. Web virtual media phải kiểm tra generation để seek/pause không bị cue cũ ghi đè.
-- CC mặc định so mã ngôn ngữ cơ sở của cue thực tế (YouTube track/Web detection) với giao diện: trùng → `primary`, khác/chưa rõ → `bilingual`. Web chỉ fallback sang page/browser hint thì tính là chưa rõ. Cập nhật khi cue được xác định, trừ khi người dùng đã chọn chế độ cho video/trang đó.
-- Tốc độ Web TTS cập nhật audio hiện hành; Pause/Play giữ vị trí. Không thay UI, video modes, thumbnail/Ambient hoặc Dictation.
+- Cache transcript YouTube tiếp tục tách khỏi persistent Web Study cue cache; khóa nguồn giữ video ID và track language.
+- Giữ fallback giữa player API, transcript panel và live captions, cùng cleanup/cancel token khi video thay đổi.
+- Cue time phải tăng hợp lệ; xử lý merge/resegment không làm nhảy vị trí transcript hoặc thay video timing.
+- Track language và CC default policy được tiêu thụ bởi `view/cc-mode.js`; lựa chọn thủ công vẫn áp dụng cho video hiện tại.
+- Không di chuyển UI/template vào Video source. Các selectors, events và `LHN_OVERLAY_API` thuộc shared Overlay contract.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.24 VM xác nhận fresh Reader read/save đầu tiên, snapshot/touch khi đóng/mở lại, persistent-cache hit sau reload, refresh khi URL đổi, TTL 7 ngày và dọn mục không được dùng lại.
-- Static/source checks: `node --check` 54 JS files, manifest JSON/version, Reader/Web/Background message-contract assertions và `git diff --check`.
-- v3.5.25 VM xác nhận cùng mã cơ sở → `primary`, khác/không rõ → `bilingual`, Web dùng ngôn ngữ cue được dò và lựa chọn thủ công không bị ghi đè.
-- Browser QA chưa chạy: thử nhiều lần đóng/mở và reload trên Tuổi Trẻ/VnExpress; kiểm tra số cue, TTS/dịch lazy, URL đổi, Alt+E/F, Reader exclusivity, YouTube không đổi và cleanup.
+- v3.5.25 VM xác nhận cùng mã ngôn ngữ cơ sở với giao diện chọn `primary`, khác/chưa rõ chọn `bilingual`, và manual override không bị ghi đè.
+- v3.5.26 đã chạy: 60 JS syntax, manifest JSON/path/order, VM load theo thứ tự manifest, 310 source blocks giữ nguyên, chỉ chuẩn hóa trailing blank lines; template byte-for-byte; `git diff --check` đạt.
+- Browser QA chưa chạy: xác nhận YouTube track selection, transcript fallback/cache, playback synchronization, source switching, CC/layout modes, shortcuts và Dictation.

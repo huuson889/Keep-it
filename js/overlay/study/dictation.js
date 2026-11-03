@@ -3997,29 +3997,12 @@
     document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle", { detail: { source: "typing-control" } }));
   }
 
-  function onSpeakingClick(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (active || openingPanel) {
-      if (dictationMode === "speaking") close();
-      else void openPanel({ waitForCaptions: true, mode: "speaking" });
-      return;
-    }
-    void openPanel({ waitForCaptions: true, mode: "speaking" });
-  }
-
   function attachControls() {
     const dictationButton = A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn") || A?.ctrl?.("Chép chính tả");
     if (dictationButton && dictationButton !== attachControls.dictationButton) {
       if (attachControls.dictationButton) attachControls.dictationButton.removeEventListener("click", onToggleClick);
       dictationButton.addEventListener("click", onToggleClick);
       attachControls.dictationButton = dictationButton;
-    }
-    const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
-    if (speakingButton && speakingButton !== attachControls.speakingButton) {
-      if (attachControls.speakingButton) attachControls.speakingButton.removeEventListener("click", onSpeakingClick);
-      speakingButton.addEventListener("click", onSpeakingClick);
-      attachControls.speakingButton = speakingButton;
     }
   }
 
