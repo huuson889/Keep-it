@@ -494,7 +494,7 @@ const WEB_THUMBNAIL_THEMES = [
   { id:'rose', main:'#ffe4e6', secondary:'#fb7185', glow:'rgba(251, 113, 133, 0.45)' },
 ];
 // Reference motion modes; Subtle Pulse is intentionally excluded.
-const WEB_THUMBNAIL_MOTION_MODES = ['breathing', 'pan', 'tilt', 'static'];
+const WEB_THUMBNAIL_MOTION_MODES = ['breathing', 'pan', 'tilt'];
 const WEB_THUMBNAIL_RANDOM_EFFECTS = ['motionMode', 'motionSpeed', 'blur', 'darkness', 'particleCount', 'waveStyle', 'theme'];
 const WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS = 30_000;
 const WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS = 180_000;
