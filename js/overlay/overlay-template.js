@@ -227,8 +227,10 @@ const OVERLAY_CSS = `
       flex: 0 0 22px;
     }
 
-    .te-yt-logo-box .te-site-favicon { display: block; object-fit: contain; border-radius: 3px; }
+    .te-yt-logo-box .te-site-favicon { object-fit: contain; border-radius: 3px; }
     .te-yt-logo-box .te-site-icon-fallback { color: #71717a; }
+    .te-yt-logo-box .te-site-favicon[hidden],
+    .te-yt-logo-box .te-site-icon-fallback[hidden] { display: none !important; }
 
     /* Tiêu đề dài bị cắt thì chạy vòng tròn nối đuôi khi hover (JS nhân đôi chữ, đặt --te-title-shift/--te-title-dur và class te-title-run) */
     .te-video-title-label { flex: 1 1 auto; min-width: 0; overflow: hidden; }

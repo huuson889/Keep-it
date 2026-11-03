@@ -40,6 +40,6 @@ Overlay cung cấp một UI cho YouTube và Web Study. `overlay-controller.js` �
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.34: `node --check` đạt cho toàn bộ JavaScript files; manifest paths tồn tại; focused VM xác nhận favicon loader nhận đúng URL Web/YouTube và fallback; CSS giữ icon 22×22px; `git diff --check` đạt. Browser QA chưa chạy.
+- v3.5.35: `node --check` đạt cho toàn bộ JavaScript files; manifest paths tồn tại; focused VM xác nhận favicon/fallback hidden-state, cùng CSS 22×22px; `git diff --check` đạt. Browser QA chưa chạy.
 - Static checks có thể lặp bằng Node, parse `manifest.json`, kiểm tra mọi script path và nạp Study scripts theo manifest order trong một VM context.
 - Browser QA cần xác nhận YouTube/Web switching, cues, TTS, Typing, Shadowing recognition/record/replay, Reader mutual exclusion, shortcuts, cleanup và layout. Static/mock checks không thay thế extension/browser test.
