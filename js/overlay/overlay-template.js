@@ -1108,6 +1108,50 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay .te-video-frame { display: contents; }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame { display: block; position: relative; border-radius: 12px; overflow: hidden; clip-path: inset(0 round 12px); }
     #keepit-exact-overlay.te-sidebar-hidden .te-video-frame :is(video, .te-web-page-thumbnail) { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+    /* Web thumbnails fill the existing video frame; all visualizer layers stay clipped inside it. */
+    #keepit-exact-overlay .te-video-slot .te-web-page-thumbnail.te-web-thumbnail-bg,
+    #keepit-exact-overlay.te-sidebar-hidden .te-video-slot .te-web-page-thumbnail.te-web-thumbnail-bg {
+      object-fit: cover !important;
+      transform: scale(1.08) !important;
+      filter: blur(var(--te-webviz-blur, 8px)) brightness(.88);
+      background: #111;
+    }
+    #keepit-exact-overlay .te-video-slot .te-web-thumbnail-visualizer {
+      position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none;
+      container-type: inline-size; border-radius: inherit;
+    }
+    #keepit-exact-overlay .te-web-thumbnail-shade {
+      position: absolute; inset: 0; z-index: 1;
+      background: rgba(11, 15, 23, var(--te-webviz-darkness, .4));
+    }
+    #keepit-exact-overlay .te-web-thumbnail-shade::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,.58) 100%);
+    }
+    #keepit-exact-overlay .te-web-thumbnail-canvas { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
+    #keepit-exact-overlay .te-web-thumbnail-meta {
+      position: absolute; z-index: 3; left: 8%; top: 28%; width: 84%;
+      display: flex; align-items: center; gap: clamp(12px, 2cqw, 40px);
+      color: #fff; font-family: inherit; text-shadow: 0 2px 14px rgba(0,0,0,.72);
+    }
+    #keepit-exact-overlay .te-web-thumbnail-art {
+      flex: 0 0 clamp(56px, 8cqw, 140px); width: clamp(56px, 8cqw, 140px);
+      height: clamp(56px, 8cqw, 140px); object-fit: cover; border-radius: clamp(7px, .7cqw, 14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.45); background: #18212a;
+    }
+    #keepit-exact-overlay .te-web-thumbnail-details { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: clamp(3px, .45cqw, 9px); }
+    #keepit-exact-overlay .te-web-thumbnail-duration {
+      color: var(--te-webviz-main, #ffcc00); font-size: clamp(9px, 1.05cqw, 20px);
+      font-weight: 650; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+    }
+    #keepit-exact-overlay .te-web-thumbnail-title {
+      overflow: hidden; color: #fff; font-size: clamp(13px, 2.7cqw, 52px);
+      font-weight: 750; line-height: 1.12; white-space: nowrap; text-overflow: ellipsis;
+    }
+    #keepit-exact-overlay .te-web-thumbnail-artist {
+      overflow: hidden; color: rgba(255,255,255,.84); font-size: clamp(10px, 1.35cqw, 26px);
+      font-weight: 500; white-space: nowrap; text-overflow: ellipsis;
+    }
     /* Chỉ Rạp + Lớn: video, subtitle và control bar dùng ba lớp độc lập theo viewport/frame thật. */
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-slot { overflow: visible; container-type: normal; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }

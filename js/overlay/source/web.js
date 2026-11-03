@@ -173,6 +173,7 @@ function createWebTtsMedia(cues) {
       media._resumeState = null;
       media._activeRun = null;
       media._cancelCurrent();
+      stopWebThumbnailVisualizer();
     },
     _startCue(index, textOverride = null, sourceOffset = 0) {
       if (paused || index < 0 || index >= cues.length) return;
@@ -484,6 +485,235 @@ function markWebReaderCues(cues, language = state.webDetectedLanguage || state.w
   }));
 }
 
+const WEB_THUMBNAIL_LOFI_URL = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop';
+const WEB_THUMBNAIL_THEMES = [
+  { id:'gold', main:'#ffcc00', secondary:'#ff8800', glow:'rgba(255,204,0,.12)' },
+  { id:'cyan', main:'#00ffff', secondary:'#00aaff', glow:'rgba(0,255,255,.12)' },
+  { id:'lavender', main:'#c084fc', secondary:'#8b5cf6', glow:'rgba(192,132,252,.12)' },
+  { id:'white', main:'#ffffff', secondary:'#d1d5db', glow:'rgba(255,255,255,.10)' },
+  { id:'rose', main:'#ff4d6d', secondary:'#c9184a', glow:'rgba(255,77,109,.12)' },
+];
+let activeWebThumbnailVisualizer = null;
+
+function stopWebThumbnailVisualizer() {
+  const visualizer = activeWebThumbnailVisualizer;
+  if (!visualizer) return;
+  visualizer.active = false;
+  if (visualizer.frameId) cancelAnimationFrame(visualizer.frameId);
+  visualizer.titleObserver?.disconnect();
+  visualizer.stage.remove();
+  activeWebThumbnailVisualizer = null;
+}
+
+function webThumbnailEstimatedDuration() {
+  const cues = Array.isArray(state.allCues) ? state.allCues : (Array.isArray(state.captions) ? state.captions : []);
+  const wordCount = cues.reduce((total, cue) => {
+    const text = String(cue?.en || cue?.mainText || cue?.text || '');
+    return total + (text.match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) || []).length;
+  }, 0);
+  const seconds = Math.max(30, Math.round((wordCount || 150) / 165 * 60));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = String(seconds % 60).padStart(2, '0');
+  return `≈ ${String(minutes).padStart(2, '0')}:${remainder}`;
+}
+
+function drawWebThumbnailVisualizer(visualizer, timestamp) {
+  if (!visualizer?.active || activeWebThumbnailVisualizer !== visualizer) return;
+  const { context:ctx, width, height, theme } = visualizer;
+  const elapsed = Math.min(50, Math.max(0, timestamp - (visualizer.lastTimestamp || timestamp)));
+  visualizer.lastTimestamp = timestamp;
+  if (!document.hidden) visualizer.time += elapsed * 0.00072;
+  ctx.clearRect(0, 0, width, height);
+  const motion = document.hidden ? 0 : elapsed / 16.67;
+
+  for (const particle of visualizer.particles) {
+    particle.y -= particle.speed * motion;
+    particle.x += Math.sin(visualizer.time + particle.phase) * 0.24 * motion;
+    if (particle.y < -12) { particle.y = height + 12; particle.x = Math.random() * width; }
+    if (particle.x < -12) particle.x = width + 12;
+    if (particle.x > width + 12) particle.x = -12;
+    ctx.globalAlpha = particle.alpha;
+    ctx.fillStyle = theme.glow;
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const time = visualizer.time;
+  const style = visualizer.waveStyle;
+  if (style === 1) {
+    for (let layer = 0; layer < 3; layer++) {
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.77);
+      for (let x = 0; x <= width; x += 5) {
+        const normalized = x / width;
+        const envelope = Math.pow(Math.sin(Math.PI * normalized), 0.7);
+        const wave = Math.sin(x * 0.018 + time * 4 + layer) * 33
+          + Math.sin(x * 0.045 - time * 2.5 + layer * 2) * 19
+          + Math.sin(x * 0.008 + time * 1.8) * 23;
+        ctx.lineTo(x, height * 0.77 + wave * envelope * (1 - layer * 0.17));
+      }
+      ctx.strokeStyle = layer === 1 ? theme.secondary : theme.main;
+      ctx.lineWidth = layer === 1 ? 2.2 : 3.2;
+      ctx.globalAlpha = layer === 1 ? 0.5 : 0.72;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = theme.main;
+      ctx.stroke();
+    }
+  } else if (style === 2) {
+    const bars = 90;
+    const gap = 5;
+    const barWidth = (width - gap * (bars - 1)) / bars;
+    const centerY = height * 0.78;
+    const gradient = ctx.createLinearGradient(0, centerY - 145, 0, centerY + 145);
+    gradient.addColorStop(0, theme.secondary);
+    gradient.addColorStop(0.5, theme.main);
+    gradient.addColorStop(1, theme.secondary);
+    ctx.fillStyle = gradient;
+    ctx.shadowBlur = 13;
+    ctx.shadowColor = theme.main;
+    for (let i = 0; i < bars; i++) {
+      const heightPx = (Math.sin(i * 0.2 + time * 3) * 0.5 + 0.5) * 105
+        + (Math.sin(i * 0.55 + time * 2) * 0.5 + 0.5) * 45 + 5;
+      const x = i * (barWidth + gap);
+      ctx.globalAlpha = 0.72;
+      ctx.fillRect(x, centerY - heightPx, barWidth, heightPx * 2);
+    }
+  } else if (style === 3) {
+    const dots = 75;
+    const spacing = width / dots;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = theme.main;
+    for (let i = 0; i < dots; i++) {
+      const x = i * spacing + spacing / 2;
+      const heightPx = (Math.sin(i * 0.24 + time * 2.4) * 0.5 + 0.5) * 110 + 12;
+      ctx.fillStyle = i % 3 === 0 ? theme.secondary : theme.main;
+      ctx.globalAlpha = 0.68;
+      ctx.beginPath();
+      ctx.arc(x, height * 0.79 - heightPx, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.arc(x, height * 0.79 + heightPx, 2.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.78);
+    for (let x = 0; x <= width; x += 4) {
+      const normalized = x / width;
+      const wave = Math.sin(x * 0.012 + time * 3.2) * 48
+        + Math.sin(x * 0.035 - time * 2) * 23
+        + Math.sin(x * 0.005 + time) * 33;
+      ctx.lineTo(x, height * 0.78 + wave * Math.pow(Math.sin(Math.PI * normalized), 0.8));
+    }
+    ctx.strokeStyle = theme.main;
+    ctx.lineWidth = 3.5;
+    ctx.globalAlpha = 0.78;
+    ctx.shadowBlur = 22;
+    ctx.shadowColor = theme.main;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, height * 0.78);
+    for (let x = 0; x <= width; x += 4) {
+      const normalized = x / width;
+      const wave = Math.sin(x * 0.012 + time * 3.2) * 48
+        + Math.sin(x * 0.035 - time * 2) * 23
+        + Math.sin(x * 0.005 + time) * 33;
+      ctx.lineTo(x, height * 0.78 - wave * Math.pow(Math.sin(Math.PI * normalized), 0.8));
+    }
+    ctx.strokeStyle = theme.secondary;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.48;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  visualizer.frameId = requestAnimationFrame((nextTimestamp) => drawWebThumbnailVisualizer(visualizer, nextTimestamp));
+}
+
+function createWebThumbnailVisualizer(image) {
+  stopWebThumbnailVisualizer();
+  const stage = document.createElement('div');
+  stage.className = 'te-web-thumbnail-visualizer';
+  const theme = WEB_THUMBNAIL_THEMES[Math.floor(Math.random() * WEB_THUMBNAIL_THEMES.length)];
+  const blur = Math.floor(Math.random() * 20);
+  const darkness = Math.floor(Math.random() * 81);
+  const particleCount = 11 + Math.floor(Math.random() * 90);
+  const waveStyle = 1 + Math.floor(Math.random() * 4);
+  stage.style.setProperty('--te-webviz-darkness', String(darkness / 100));
+  stage.style.setProperty('--te-webviz-main', theme.main);
+  stage.style.setProperty('--te-webviz-secondary', theme.secondary);
+  stage.style.setProperty('--te-webviz-glow', theme.glow);
+  image.classList.add('te-web-thumbnail-bg');
+  image.style.setProperty('--te-webviz-blur', `${blur}px`);
+
+  const shade = document.createElement('div');
+  shade.className = 'te-web-thumbnail-shade';
+  shade.setAttribute('aria-hidden', 'true');
+  const canvas = document.createElement('canvas');
+  canvas.className = 'te-web-thumbnail-canvas';
+  canvas.width = 1920;
+  canvas.height = 1080;
+  canvas.setAttribute('aria-hidden', 'true');
+  const metadata = document.createElement('div');
+  metadata.className = 'te-web-thumbnail-meta';
+  const artwork = document.createElement('img');
+  artwork.className = 'te-web-thumbnail-art';
+  artwork.alt = '';
+  artwork.setAttribute('aria-hidden', 'true');
+  artwork.decoding = 'async';
+  const details = document.createElement('div');
+  details.className = 'te-web-thumbnail-details';
+  const duration = document.createElement('div');
+  duration.className = 'te-web-thumbnail-duration';
+  duration.textContent = `${webThumbnailEstimatedDuration()} • ${(() => {
+    try { return new URL(state.webPageUrl || location.href).hostname.replace(/^www\./i, '') || 'website'; }
+    catch { return 'website'; }
+  })()}`;
+  const title = document.createElement('div');
+  title.className = 'te-web-thumbnail-title';
+  const artist = document.createElement('div');
+  artist.className = 'te-web-thumbnail-artist';
+  artist.textContent = 'Keepit - Keep Everything For You';
+  details.append(duration, title, artist);
+  metadata.append(artwork, details);
+  stage.append(shade, canvas, metadata);
+
+  const updateTitle = () => {
+    title.textContent = String(document.title || '').trim() || 'Web page';
+    stage.setAttribute('aria-label', `${title.textContent}. Keepit - Keep Everything For You. ${duration.textContent}`);
+  };
+  updateTitle();
+  const titleNode = document.querySelector('title') || document.head;
+  const titleObserver = typeof MutationObserver === 'function' && titleNode
+    ? new MutationObserver(updateTitle) : null;
+  titleObserver?.observe(titleNode, { childList:true, subtree:true, characterData:true });
+
+  const syncArtwork = () => {
+    const src = image.currentSrc || image.src;
+    if (src && artwork.src !== src) artwork.src = src;
+  };
+  image.addEventListener('load', syncArtwork);
+  const context = canvas.getContext('2d', { alpha:true });
+  const visualizer = {
+    stage, context, width:canvas.width, height:canvas.height, theme, waveStyle, time:0,
+    lastTimestamp:0, frameId:0, active:true, titleObserver,
+    particles:Array.from({ length:particleCount }, () => ({
+      x:Math.random() * canvas.width,
+      y:Math.random() * canvas.height,
+      radius:Math.random() * 4 + 1,
+      speed:Math.random() * 0.8 + 0.2,
+      alpha:Math.random() * 0.4 + 0.15,
+      phase:Math.random() * Math.PI * 2,
+    })),
+  };
+  activeWebThumbnailVisualizer = visualizer;
+  if (context) visualizer.frameId = requestAnimationFrame((timestamp) => drawWebThumbnailVisualizer(visualizer, timestamp));
+  return { stage, visualizer, syncArtwork };
+}
+
 function attachWebMedia(media, slot) {
   if (state.videoEl && state.videoEl !== media) detachVideo();
   state.videoEl = media;
@@ -491,14 +721,29 @@ function attachWebMedia(media, slot) {
   const image = document.createElement('img');
   image.className = 'te-web-page-thumbnail';
   image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  image.addEventListener('click', handleOverlayVideoClick);
-  frame.replaceChildren(image);
-  state.webThumbnail = image;
+  const pageUrl = state.webPageUrl || location.href;
   const thumbnails = globalThis.LHN_THUMBNAILS;
-  const thumbnailUrl = thumbnails?.fromPageMetadata?.(document, location.href) || '';
-  if (thumbnails?.loadSource) thumbnails.loadSource(image, { url: location.href, thumbnailUrl, onError:() => reportWebIssue('The page thumbnail and fallback image could not be loaded.', null, { level: 'error' }) });
-  else if (thumbnails?.fallbackSvgUrl) image.src = thumbnails.fallbackSvgUrl();
-  else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level: 'error' });
+  const thumbnailUrl = thumbnails?.fromPageMetadata?.(document, pageUrl) || '';
+  const { stage, syncArtwork } = createWebThumbnailVisualizer(image);
+  image.addEventListener('click', handleOverlayVideoClick);
+  frame.replaceChildren(image, stage);
+  state.webThumbnail = image;
+  if (thumbnails?.load) {
+    const fallbackSvg = thumbnails.fallbackSvgUrl?.() || '';
+    const onError = () => {
+      const message = () => reportWebIssue('The page thumbnail and fallback image could not be loaded.', null, { level:'error' });
+      if (thumbnailUrl && fallbackSvg) thumbnails.load(image, { src:fallbackSvg, onLoad:syncArtwork, onError:message });
+      else message();
+    };
+    thumbnails.load(image, {
+      src:thumbnailUrl || WEB_THUMBNAIL_LOFI_URL,
+      fallbackUrl:thumbnailUrl ? WEB_THUMBNAIL_LOFI_URL : fallbackSvg,
+      onLoad:syncArtwork,
+      onError,
+    });
+  } else if (thumbnails?.fallbackSvgUrl) {
+    image.src = thumbnails.fallbackSvgUrl();
+  } else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level:'error' });
 
   media.addEventListener('timeupdate', onTimeUpdate);
   media.addEventListener('play', handleVideoPlay);
