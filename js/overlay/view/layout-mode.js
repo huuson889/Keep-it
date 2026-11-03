@@ -75,6 +75,7 @@ function setVideoSidebarHidden(hidden) {
   const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
   if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
+  syncViewSizeClasses(root);
   const isTheaterLarge = isTheaterLargeActive(root);
   if (!wasTheaterLarge && isTheaterLarge && !settings.hideControls) {
     settings.hideControls = true;
