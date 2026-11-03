@@ -32,9 +32,11 @@ Phần Video sở hữu nguồn YouTube: tìm track, lấy transcript/caption, c
 - Cue time phải tăng hợp lệ; xử lý merge/resegment không làm nhảy vị trí transcript hoặc thay video timing.
 - Track language và CC default policy được tiêu thụ bởi `view/cc-mode.js`; lựa chọn thủ công vẫn áp dụng cho video hiện tại.
 - Không di chuyển UI/template vào Video source. Các selectors, events và `LHN_OVERLAY_API` thuộc shared Overlay contract.
+- Khung video YouTube và thumbnail Web dùng cursor mặc định; click xóa text selection ở document/ShadowRoot rồi vẫn gọi hành vi phát/tạm dừng hiện có.
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.30: targeted VM xác nhận click khung xóa selection ở document và ShadowRoot nhưng vẫn gọi play/pause/pulse; CSS assertions xác nhận cursor mặc định cho video/thumbnail. Browser QA chưa chạy.
 - v3.5.25 VM xác nhận cùng mã ngôn ngữ cơ sở với giao diện chọn `primary`, khác/chưa rõ chọn `bilingual`, và manual override không bị ghi đè.
 - v3.5.26 đã chạy: 60 JS syntax, manifest JSON/path/order, VM load theo thứ tự manifest, 310 source blocks giữ nguyên, chỉ chuẩn hóa trailing blank lines; template byte-for-byte; `git diff --check` đạt.
 - Browser QA chưa chạy: xác nhận YouTube track selection, transcript fallback/cache, playback synchronization, source switching, CC/layout modes, shortcuts và Dictation.

@@ -626,6 +626,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden .yt-dual-right-sidebar { display: none; }
     #keepit-exact-overlay .te-icon-btn.te-active { color: #8b5cf6; }
     #keepit-exact-overlay .te-video-slot :is(video, .te-web-page-thumbnail) {
+      cursor: default;
       position: absolute !important;
       inset: 0;
       display: block !important;
@@ -637,7 +638,7 @@ const OVERLAY_CSS = `
       transform: none !important;
       background: #111;
     }
-    #keepit-exact-overlay .te-video-slot .te-web-page-thumbnail { cursor: pointer; user-select: none; }
+    #keepit-exact-overlay .te-video-slot .te-web-page-thumbnail { cursor: default; user-select: none; }
     #keepit-exact-overlay.hide-vi .te-sub-vi,
     #keepit-exact-overlay.hide-vi .yt-dual-item-vi { display: none; }
     .yt-dual-empty { padding: 16px; font-size: 13px; color: #9ca3af; }

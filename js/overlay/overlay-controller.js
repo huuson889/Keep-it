@@ -802,6 +802,8 @@ function pulseControl(title) {
 function handleOverlayVideoClick(event) {
   event.preventDefault();
   event.stopPropagation();
+  window.getSelection?.()?.removeAllRanges?.();
+  shadow?.getSelection?.()?.removeAllRanges?.();
   togglePlay();
   pulseControl('Phát/Tạm dừng');
 }
