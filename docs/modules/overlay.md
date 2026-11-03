@@ -4,50 +4,43 @@
 
 ## 1. Mục đích và phạm vi
 
-Overlay cung cấp UI cho Video (YouTube) và Web. `overlay-controller.js` điều phối source/activity; runtime state dùng `sourceType` (`video`/`web`), `sourceId`, `activeMedia`, `sourceLanguage` và `studyActivity` (`null`/`dictation`/`shadowing`). `source/` xử lý cues/media, `study/` xử lý activities/helpers, `view/` quản lý layout/caption. Reader, TTS, translation và cache vẫn thuộc module tương ứng.
+Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều phối source/activity; `source/`, `study/` và `view/` lần lượt xử lý cues/media, hoạt động học và layout/caption. Reader, TTS, translation và cache vẫn thuộc module riêng.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `openOverlay`, `createStudyOverlayApi`, `LHN_OVERLAY_SET_STUDY_ACTIVITY` | Lifecycle, routing và Reader rate bridge. |
-| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS`, `LHN_OVERLAY_TEMPLATE.createStudyUi` | Shadow DOM markup/CSS và Study UI. |
-| [`js/overlay/source/video.js`](../../js/overlay/source/video.js) | `loadCaptions`, `onTimeUpdate`, `parseCaptions` | YouTube captions, cache và cue timing. |
-| [`js/overlay/source/web.js`](../../js/overlay/source/web.js) | `prepareWebSource`, `createWebTtsMedia`, `attachWebMedia` | Reader cues, Web media và thumbnail visualizer. |
-| [`js/overlay/study/dictation/dictation.js`](../../js/overlay/study/dictation/dictation.js) | `LHN_STUDY.open` | Shared Study shell và Dictation/Typing. `LHN_DICTATION` là alias cũ. |
-| [`js/overlay/study/shadowing/shadowing-activity.js`](../../js/overlay/study/shadowing/shadowing-activity.js), [`js/overlay/study/shadowing/shadowing.js`](../../js/overlay/study/shadowing/shadowing.js) | `LHN_SHADOWING_ACTIVITY_FACTORY`, `onShadowingControlClick` | Shadowing recognition, recording, feedback và Web TTS controls. |
-| [`js/overlay/study/shared/study-score.js`](../../js/overlay/study/shared/study-score.js), [`js/overlay/study/shared/learning-rules.js`](../../js/overlay/study/shared/learning-rules.js) | `LHN_STUDY_SCORE`, `LHN_STUDY_RULES` | Logic dùng chung; globals Dictation cũ là aliases. |
-| [`js/overlay/study/shared/session-index.js`](../../js/overlay/study/shared/session-index.js) | `LHN_STUDY_SESSION_INDEX` | Session metadata; legacy global và storage key được giữ. |
-| [`js/overlay/view/layout-mode.js`](../../js/overlay/view/layout-mode.js), [`js/overlay/view/cc-mode.js`](../../js/overlay/view/cc-mode.js) | `applyVideoDisplayMode`, `setSubtitleDisplayMode` | Theater/Reading/Combined, CC modes và translation queue. |
-| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin cho title bar. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `openOverlay`, `LHN_OVERLAY_SET_STUDY_ACTIVITY` | Lifecycle, routing và bootstrap cuối. |
+| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM markup/CSS. |
+| [`js/overlay/source/video.js`](../../js/overlay/source/video.js) | `loadCaptions`, `onTimeUpdate` | YouTube captions, cache và cue timing. |
+| [`js/overlay/source/web.js`](../../js/overlay/source/web.js) | `prepareWebSource`, `createWebTtsMedia` | Reader cues, Web media và thumbnail visualizer. |
+| [`js/overlay/study/dictation/dictation.js`](../../js/overlay/study/dictation/dictation.js) | `LHN_STUDY.open` | Shared Study shell và Dictation/Typing. |
+| [`js/overlay/study/shadowing/shadowing-activity.js`](../../js/overlay/study/shadowing/shadowing-activity.js), [`shadowing.js`](../../js/overlay/study/shadowing/shadowing.js) | `LHN_SHADOWING_ACTIVITY_FACTORY` | Shadowing recognition, recording, feedback và controls. |
+| [`js/overlay/study/shared/study-score.js`](../../js/overlay/study/shared/study-score.js), [`learning-rules.js`](../../js/overlay/study/shared/learning-rules.js) | `LHN_STUDY_SCORE`, `LHN_STUDY_RULES` | Logic học dùng chung. |
+| [`js/overlay/view/layout-mode.js`](../../js/overlay/view/layout-mode.js), [`cc-mode.js`](../../js/overlay/view/cc-mode.js) | `applyVideoDisplayMode`, `setSubtitleDisplayMode` | Theater/Reading/Combined, sizing và CC modes. |
+| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp template, source/view và Study modules; controller bootstrap cuối. Site icons cung cấp favicon theo origin.
-2. Controller chọn Video hoặc Web. Video lấy captions từ player/transcript hoặc live-caption fallback; Web lấy Reader text và dựng cues/media ảo, dùng thumbnail hoặc Lo-fi Room fallback trong frame.
-3. `LHN_OVERLAY_API` cung cấp cues; `LHN_STUDY` mở shared shell cho Dictation/Typing hoặc Shadowing. Recognition, recording, replay và feedback thuộc Shadowing activity.
-4. Web TTS dùng `LHN_TTS`/Reader rate; translation dùng `BILINGUAL_TRANSLATE` và cache hiện có. View quản lý layout/CC, không tạo engine hay cue cache song song.
-5. Khi đóng, Overlay dọn media/listeners theo source và giữ mutual exclusion với Reader.
+1. Manifest nạp template, source/view và Study modules; controller bootstrap sau cùng.
+2. Controller chọn Video hoặc Web. Video lấy captions; Web dựng cues/media từ Reader text.
+3. `LHN_OVERLAY_API` cung cấp cues; `LHN_STUDY` mở Dictation/Typing hoặc Shadowing.
+4. Web TTS dùng Reader rate; translation dùng `BILINGUAL_TRANSLATE` và cache hiện có.
+5. View quản lý layout/CC. Khi đóng, Overlay dọn media/listeners và giữ mutual exclusion với Reader.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Các file là classic content scripts trong cùng isolated world; giữ controller bootstrap sau module definitions.
-- Selector chung dùng `te-study-*`; Typing/Dictation riêng dùng `te-dict-*`; Shadowing riêng dùng `te-shadowing-*`. Giữ giao diện/hành vi khi đổi định danh.
-- API mới là `LHN_STUDY`, `LHN_STUDY_SCORE`, `LHN_STUDY_RULES`, `LHN_STUDY_SESSION_INDEX`; các global/method Dictation cũ và Web-TTS bridge cũ vẫn được alias. Session/storage keys, `captionTrackLanguage` trong transcript cache và event contract không đổi.
-- Web TTS dùng Reader rate đã lưu (global/per-language, 0.5×–3×); Video/YouTube giữ 0.5×–2×, Dictation replay giữ slow replay 0.6×. Shared TTS engine không đổi.
-- Web Overlay progress fill nội suy trong cue theo tốc độ phát hiện tại và dừng khi TTS tạm dừng; Video dùng updater riêng nên không bị ảnh hưởng.
-- Theater + Large: khung phụ đề giới hạn theo 90% chiều rộng `.te-player-frame`; main và dòng dịch giữ chiều rộng tự nhiên, chỉ wrap khi nội dung vượt giới hạn đó.
-- Light mode: main subtitle mặc định dùng app purple; riêng Theater + Large dùng vàng `#ffff00` như dark mode. Transcript rows đang focus dùng nền lavender và accent tím cho `.te-ts-row.active`/`.yt-dual-item.active`; các màu dark mode khác giữ nguyên.
-- `study/shared/` chỉ chứa logic dùng chung. Lifecycle/result branches còn trong Dictation shell và cần tách tiếp mà không đổi UX. Dashboard có Dictation sessions/statistics, chưa có Shadowing practice route.
-- Giữ các ràng buộc visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, biên độ giảm 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ. Favicon 22×22 px, globe fallback.
+- Đây là classic content scripts trong cùng isolated world; giữ controller bootstrap cuối. API chính là `LHN_STUDY`; globals/method Dictation cũ, storage keys, transcript-cache schema và event contracts vẫn tương thích.
+- Selector chung dùng `te-study-*`; Dictation riêng dùng `te-dict-*`; Shadowing riêng dùng `te-shadowing-*`.
+- Web TTS dùng Reader rate đã lưu (global/per-language, 0.5×–3×); Video/YouTube giữ 0.5×–2× và Dictation replay 0.6×. Không đổi shared TTS engine.
+- Web progress nội suy trong cue và dừng khi TTS pause; Video giữ updater riêng.
+- Theater + Large: subtitle box tối đa 90% `.te-player-frame`; main/dịch giữ chiều rộng tự nhiên và wrap khi nội dung vượt giới hạn. Handle 54×20 px, icon 14×14, nhô 10 px; vùng hover thêm 4× chiều rộng nút mỗi bên. Kéo theo chiều dọc; double-click box reset về cách đáy frame 80 px. Control bar đang hiện chỉ clamp vị trí render; tọa độ đã lưu trở lại khi bar ẩn.
+- Light mode main subtitle dùng app purple, ngoại trừ Theater + Large dùng `#ffff00` như dark mode. Transcript focus dùng nền lavender/accent tím ở light; các màu dark không đổi.
+- Giữ visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, giảm biên độ 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ.
+- `study/shared/` chỉ chứa logic dùng chung; lifecycle/result branches còn trong Dictation shell cần tách mà không đổi UX. Dashboard chưa có Shadowing practice route.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.51: `node --check` `js/overlay/overlay-template.js`, `git diff --check` đạt cho Theater + Large light-mode main subtitle color; Browser QA chưa chạy.
-- v3.5.49: `node --check` `js/overlay/overlay-template.js` và `js/overlay/view/layout-mode.js`, `git diff --check` đạt cho 90%-frame subtitle width/wrapping; Browser QA chưa chạy.
-- v3.5.48: `node --check` `js/overlay/overlay-template.js` và `git diff --check` đạt cho Theater + Large subtitle width/wrapping; Browser QA chưa chạy.
-- v3.5.47: `node --check` các file JS sửa đạt cho toast "đang ở chế độ xem này" khi bấm shortcut Alt+1–3 đúng mode; Browser QA chưa chạy.
-- v3.5.44: `node --check` JS Overlay, `git diff --check` và focused VM smoke test cho Web progress (tiến trong cue, phản ánh playback rate, pause giữ nguyên, resume tiếp tục) đạt. Browser QA chưa chạy.
-- v3.5.43: `node --check` toàn bộ JS `js/overlay/`, `git diff --check`, 45 manifest JS paths và VM smoke tests cho Study/legacy aliases, scoring, storage key đều đạt. Browser QA chưa chạy; speed contract được kiểm tra tĩnh.
-- v3.5.42: Reader/Web/Overlay VM checks đạt cho Reader shared rate (global/per-language, 0.5×–3×) và speed path YouTube/Dictation riêng. Browser QA chưa chạy.
-- Static checks có thể lặp bằng Node: parse manifest, xác nhận script paths/order và nạp Study scripts trong VM. Browser QA cần xác nhận Video/Web switching, Typing/Shadowing, TTS, shortcuts, cleanup và layout; static checks không thay thế kiểm thử extension thật.
+- v3.5.52: `node --check` các JS sửa, `git diff --check`, source assertions và focused VM tests cho legacy/default position, handle geometry, control visibility, clamp và restore đều đạt. Browser QA chưa chạy.
+- Browser QA cần xác nhận Theater + Large: handle drag bottom↔top, double-click reset 80 px, và panel trở lại đúng vị trí sau khi control bar ẩn; thử cả vị trí tùy chỉnh cũ.
+- Static checks không thay thế kiểm thử extension thật; regression QA cần xác nhận Video/Web switching, TTS, Study activities, shortcuts và cleanup.

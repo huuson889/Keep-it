@@ -1216,16 +1216,21 @@ const OVERLAY_CSS = `
     }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en { margin-bottom: 0; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-subtitle-drag-handle {
-      position: absolute; top: -24px; left: 50%; z-index: 1; display: inline-flex;
-      width: 44px; height: 26px; align-items: center; justify-content: center;
+      position: absolute; top: -10px; left: 50%; z-index: 1; display: inline-flex;
+      width: 54px; height: 20px; align-items: center; justify-content: center;
       padding: 0; border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
       background: rgba(0,0,0,.82); color: #d1d5db; cursor: grab;
       opacity: 0; pointer-events: none; transform: translateX(-50%);
       transition: opacity .15s ease;
       touch-action: none;
     }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-subtitle-drag-handle::before {
+      content: ""; position: absolute; top: 0; left: -400%; width: 900%; height: 100%;
+      border-radius: 999px; background: transparent;
+    }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-container:hover .te-subtitle-drag-handle,
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-container:focus-within .te-subtitle-drag-handle,
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-subtitle-drag-handle:hover,
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active).te-theater-subtitle-dragging .te-subtitle-drag-handle {
       opacity: 1; pointer-events: auto;
     }
@@ -2311,7 +2316,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       <!-- Subtitle box below video / theater-large overlay -->
       <div class="te-sub-container">
         <button class="te-subtitle-drag-handle" id="te-theater-subtitle-drag-handle" type="button" title="Move subtitle" aria-label="Move subtitle" aria-keyshortcuts="ArrowUp ArrowDown">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
             <circle cx="5" cy="4" r="1.15"/><circle cx="9" cy="4" r="1.15"/><circle cx="13" cy="4" r="1.15"/>
             <circle cx="5" cy="9" r="1.15"/><circle cx="9" cy="9" r="1.15"/><circle cx="13" cy="9" r="1.15"/>
             <circle cx="5" cy="14" r="1.15"/><circle cx="9" cy="14" r="1.15"/><circle cx="13" cy="14" r="1.15"/>

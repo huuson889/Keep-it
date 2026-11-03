@@ -1,6 +1,7 @@
 // Overlay layout modes, display sizing, and theater presentation.
 const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
+const THEATER_SUBTITLE_BOTTOM_INSET = 80;
 const THEME_DEFAULT_HEX = {
   light: { en: '#ff0000', vi: '#4b5563', 'side-en': '#111827', 'side-vi': '#4b5563' },
   dark: { en: '#ffff00', vi: '#d1d5db', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' },
@@ -140,6 +141,10 @@ function mergeSettings(d, s) {
     theaterSubtitle: (() => {
       const saved = s.theaterSubtitle || {};
       const theaterSubtitle = { ...d.theaterSubtitle, ...saved };
+      if (typeof saved.useDefaultPosition !== 'boolean') {
+        const savedY = Number(saved.y);
+        theaterSubtitle.useDefaultPosition = saved.y === null || saved.y === undefined || !Number.isFinite(savedY) || savedY === 82;
+      }
       if (saved.positionSpace !== THEATER_SUBTITLE_POSITION_SPACE) theaterSubtitle.positionSpace = 'viewport-v0';
       return theaterSubtitle;
     })(),
@@ -204,6 +209,14 @@ function clampTheaterSubtitlePercent(value) {
   return Math.min(96, Math.max(4, Number.isFinite(number) ? number : 82));
 }
 
+function theaterSubtitleControlsVisible(root, controls) {
+  if (!controls) return false;
+  const style = window.getComputedStyle(controls);
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  if (!root.classList.contains('te-controls-hidden') || controls.matches(':hover, :focus-within')) return true;
+  return Number.parseFloat(style.opacity) > 0.01;
+}
+
 function theaterSubtitleBounds(frameRect, panelRect, controlsRect, handleRect) {
   const safeInset = 8;
   const controlsGap = 10;
@@ -252,7 +265,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   root.style.setProperty('--te-theater-frame-width', `${frameRect.width}px`);
   root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.9)}px`);
 
-  const controlsRect = controls?.getBoundingClientRect() || null;
+  const controlsRect = theaterSubtitleControlsVisible(root, controls) ? controls.getBoundingClientRect() : null;
   let panelRect = panel.getBoundingClientRect();
   let handleRect = handle?.getBoundingClientRect() || null;
   let bounds = theaterSubtitleBounds(frameRect, panelRect, controlsRect, handleRect);
@@ -270,11 +283,16 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   }
   const desiredCenter = Number.isFinite(requestedCenterY)
     ? requestedCenterY
-    : frameRect.top + frameRect.height * clampTheaterSubtitlePercent(settings.theaterSubtitle.y) / 100;
+    : settings.theaterSubtitle.useDefaultPosition !== false
+      ? frameRect.bottom - THEATER_SUBTITLE_BOTTOM_INSET - panelRect.height / 2
+      : frameRect.top + frameRect.height * clampTheaterSubtitlePercent(settings.theaterSubtitle.y) / 100;
   const centerY = clampTheaterSubtitleCenter(desiredCenter, bounds);
   root.style.setProperty('--te-theater-subtitle-top', `${centerY}px`);
   if (Number.isFinite(requestedCenterY)) {
-    settings.theaterSubtitle.y = clampTheaterSubtitlePercent(theaterSubtitlePercent(centerY, frameRect));
+    settings.theaterSubtitle.useDefaultPosition = false;
+    const storedBounds = theaterSubtitleBounds(frameRect, panelRect, null, handleRect);
+    const storedCenterY = clampTheaterSubtitleCenter(requestedCenterY, storedBounds);
+    settings.theaterSubtitle.y = clampTheaterSubtitlePercent(theaterSubtitlePercent(storedCenterY, frameRect));
     settings.theaterSubtitle.positionSpace = THEATER_SUBTITLE_POSITION_SPACE;
   }
   return { frameRect, panelRect, bounds, centerY };
@@ -283,6 +301,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
 function resetTheaterSubtitlePosition(root = overlayEl()) {
   if (!isTheaterLargeActive(root)) return false;
   settings.theaterSubtitle.y = defaultSettings().theaterSubtitle.y;
+  settings.theaterSubtitle.useDefaultPosition = true;
   settings.theaterSubtitle.positionSpace = THEATER_SUBTITLE_POSITION_SPACE;
   updateTheaterSubtitleLayout(null, root);
   saveSettings();
@@ -291,6 +310,8 @@ function resetTheaterSubtitlePosition(root = overlayEl()) {
 
 let theaterSubtitleLayoutRaf = 0;
 let theaterSubtitleResizeObserver = null;
+let theaterSubtitleControlsClassObserver = null;
+let theaterSubtitleControlsEventTarget = null;
 function scheduleTheaterSubtitleLayout(root = overlayEl()) {
   if (!root) return;
   if (!isTheaterLargeActive(root)) {
@@ -308,8 +329,25 @@ function scheduleTheaterSubtitleLayout(root = overlayEl()) {
 }
 
 function observeTheaterSubtitleLayout() {
+  const root = overlayEl();
+  const controls = ui('.te-control-bar');
+  if (root && typeof MutationObserver === 'function' && !theaterSubtitleControlsClassObserver) {
+    theaterSubtitleControlsClassObserver = new MutationObserver(() => scheduleTheaterSubtitleLayout(root));
+    theaterSubtitleControlsClassObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
+  }
+  if (controls && theaterSubtitleControlsEventTarget !== controls) {
+    theaterSubtitleControlsEventTarget = controls;
+    const reschedule = () => scheduleTheaterSubtitleLayout(root);
+    controls.addEventListener('pointerenter', reschedule);
+    controls.addEventListener('pointerleave', reschedule);
+    controls.addEventListener('focusin', reschedule);
+    controls.addEventListener('focusout', reschedule);
+    controls.addEventListener('transitionend', (event) => {
+      if (event.target === controls && event.propertyName === 'opacity') reschedule();
+    });
+  }
   if (typeof ResizeObserver !== 'function' || theaterSubtitleResizeObserver) return;
-  theaterSubtitleResizeObserver = new ResizeObserver(() => scheduleTheaterSubtitleLayout());
+  theaterSubtitleResizeObserver = new ResizeObserver(() => scheduleTheaterSubtitleLayout(root));
   for (const selector of ['.te-player-frame', '.te-sub-container', '.te-subtitle-content', '#te-theater-subtitle-drag-handle', '.te-control-bar']) {
     const element = ui(selector);
     if (element) theaterSubtitleResizeObserver.observe(element);
