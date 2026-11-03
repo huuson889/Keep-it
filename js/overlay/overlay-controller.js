@@ -753,9 +753,20 @@ function setVideoTitle() {
   if (el) el.textContent = t;
   const siteIcon = ui('.te-site-favicon');
   const siteIconFallback = ui('.te-site-icon-fallback');
-  if (siteIcon && window.LHN_SITE_ICONS?.load) {
-    const sourceUrl = state.webStudy ? (state.webPageUrl || location.href) : location.href;
-    void window.LHN_SITE_ICONS.load(siteIcon, sourceUrl, { fallbackElement:siteIconFallback });
+  const siteIconBox = ui('.te-yt-logo-box');
+  if (siteIcon) {
+    const requestId = (Number(siteIcon._lhnIconRequestId) || 0) + 1;
+    siteIcon._lhnIconRequestId = requestId;
+    siteIconBox?.classList.remove('te-site-icon-loaded');
+    if (window.LHN_SITE_ICONS?.load) {
+      const sourceUrl = state.webStudy ? (state.webPageUrl || location.href) : location.href;
+      Promise.resolve(window.LHN_SITE_ICONS.load(siteIcon, sourceUrl, { fallbackElement:siteIconFallback })).then((iconUrl) => {
+        if (siteIcon._lhnIconRequestId !== requestId) return;
+        siteIconBox?.classList.toggle('te-site-icon-loaded', Boolean(iconUrl));
+      }, () => {
+        if (siteIcon._lhnIconRequestId === requestId) siteIconBox?.classList.remove('te-site-icon-loaded');
+      });
+    }
   }
   const miniTitle = ui('.te-reading-mini-title');
   if (miniTitle) miniTitle.textContent = `Keepit - ${t}`;

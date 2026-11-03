@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.35; Manifest V3. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers dùng chung ở `study/shared/`.
+- Version hiện tại: v3.5.36; Manifest V3. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers dùng chung ở `study/shared/`.
 - Web thumbnail visualizer và `.te-yt-logo-box` giữ nguyên frame/layout; toolbar dùng `LHN_SITE_ICONS` cho favicon nguồn Web/YouTube, 22×22px. Các hành vi playback/TTS/Reader/translation/cache không đổi.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- Static/VM checks đạt cho v3.5.35; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- Static/VM checks đạt cho v3.5.36; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Study activity refactor
@@ -128,6 +128,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-03 | v3.5.36 | Arena.ai Agent sửa:**
+
+- Khắc phục icon kép: chỉ đánh dấu box và ẩn fallback SVG sau khi `LHN_SITE_ICONS.load()` trả favicon; khi lỗi/mất icon fallback globe vẫn hiển thị. Bỏ kết quả bất đồng bộ đã cũ để không đảo trạng thái.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/overlay-template.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` đạt cho 59 JS files; 42 manifest script references đều tồn tại; focused VM xác nhận tải thành công ẩn globe, tải lỗi giữ fallback và phản hồi stale không đổi trạng thái hiện tại; CSS 22×22px/hidden assertion và `git diff --check` đạt. Browser QA chưa chạy.
 
 **2026-11-03 | v3.5.35 | Arena.ai Agent sửa:**
 

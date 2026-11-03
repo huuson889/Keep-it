@@ -229,6 +229,7 @@ const OVERLAY_CSS = `
 
     .te-yt-logo-box .te-site-favicon { object-fit: contain; border-radius: 3px; }
     .te-yt-logo-box .te-site-icon-fallback { color: #71717a; }
+    .te-yt-logo-box.te-site-icon-loaded .te-site-icon-fallback { display: none !important; }
     .te-yt-logo-box .te-site-favicon[hidden],
     .te-yt-logo-box .te-site-icon-fallback[hidden] { display: none !important; }
 
