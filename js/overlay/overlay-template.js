@@ -1198,13 +1198,13 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;
       display: flex; flex: none; width: fit-content;
-      max-width: calc(min(80vw, var(--te-theater-subtitle-max-width, 80vw)) + 36px); min-width: 0; min-height: 0;
+      max-width: min(80vw, var(--te-theater-subtitle-max-width, 80vw)); min-width: 0; min-height: 0;
       height: auto; padding: 12px 18px; gap: 2px; overflow: visible;
       transform: translate(-50%, -50%);
       border-radius: 16px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
     }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-subtitle-content {
-      display: flex; flex: 0 1 auto; flex-direction: column; align-items: stretch; justify-content: center;
+      display: flex; flex: 0 1 auto; flex-direction: column; align-items: center; justify-content: center;
       min-width: 0; min-height: 0; width: fit-content; max-width: 100%;
       max-height: max(0px, calc(var(--te-theater-subtitle-max-height, calc(100vh - 100px)) - 24px));
       overflow: auto; overscroll-behavior: contain;
