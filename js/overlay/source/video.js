@@ -7,8 +7,8 @@ const transcriptTrackLanguageCache = new Map();
 const failedUntil = new Map(); // videoId -> thời điểm hết hạn cache lỗi
 const FAILED_CACHE_MS = 10 * 60 * 1000;
 let loadedUntil = 0;               // mốc thời gian đã nạp xong (giây)
-let activeVideoStatusKey = '';
-let activeVideoStatusVars = {};
+let activeStatusKey = '';
+let activeStatusVars = {};
 let prefetchToken = 0;
 let prefetchTimer = 0;
 const SENTENCE_END_RE = /[.!?…]["'”’)\]]*$/;
@@ -111,12 +111,12 @@ function selectLanguageTrack(tracks, language, tracklist = null) {
 
 function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting, tracklist = null) {
   const selected = selectLanguageTrack(tracks, sourceLanguage, tracklist);
-  state.captionTrackLanguage = trackLanguageCode(selected.track);
+  state.sourceLanguage = trackLanguageCode(selected.track);
   state.primaryNeedsTranslation = selected.needsTranslation;
   return selected.track;
 }
 
-function markSingleTrackCues(cues, language = state.captionTrackLanguage) {
+function markSingleTrackCues(cues, language = state.sourceLanguage) {
   const sourceNeedsTranslation = state.sourceLanguageSetting !== 'auto' && language !== state.sourceLanguageSetting;
   const targetNeedsTranslation = language !== state.targetLanguage;
   state.primaryNeedsTranslation = sourceNeedsTranslation;
@@ -319,9 +319,9 @@ function commitLiveCue(text, start, nowAt) {
 function startLiveCaptionCapture(reasons) {
   stopLiveCaptionCapture();
   ensureCaptionsOn();
-  setStatus(videoT('videoLiveCaptionStatus'), 'videoLiveCaptionStatus');
+  setStatus(overlayT('videoLiveCaptionStatus'), 'videoLiveCaptionStatus');
   livePollTimer = setInterval(() => {
-    const video = state.videoEl || document.querySelector('video');
+    const video = state.activeMedia || document.querySelector('video');
     if (!video) return;
     const text = visibleCaptionText();
     if (!text) { livePendingText = ''; livePendingTicks = 0; return; }
@@ -508,8 +508,8 @@ function parseCaptions(events) {
 // Dùng message BILINGUAL_TRANSLATE (background: LHN_TRANSLATE + LHN_CACHE) và chỉ dịch
 // những cue quanh vị trí đang phát / đang xem, thay vì dịch toàn bộ danh sách ngay.
 function attachVideo(video, slot) {
-  if (state.videoEl && state.videoEl !== video) detachVideo();
-  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
+  if (state.activeMedia && state.activeMedia !== video) detachActiveMedia();
+  const frame = slot.querySelector(':scope > .te-player-frame') || slot;
   if (video.parentElement !== frame) {
     state.origParent = video.parentElement;
     state.origNext = video.nextSibling;
@@ -517,27 +517,27 @@ function attachVideo(video, slot) {
     frame.insertBefore(video, frame.firstChild);
     if (wasPlaying) video.play().catch(() => {});
   }
-  state.videoEl = video;
+  state.activeMedia = video;
   video.controls = false;
-  video.addEventListener('click', handleOverlayVideoClick);
+  video.addEventListener('click', handlePlayerClick);
   video.addEventListener('timeupdate', onTimeUpdate);
-  video.addEventListener('play', handleVideoPlay);
+  video.addEventListener('play', handleMediaPlay);
   video.addEventListener('play', enforceVideoPause);
-  video.addEventListener('pause', handleVideoPause);
-  video.addEventListener('ratechange', handleVideoRateChange);
-  video.addEventListener('volumechange', handleVideoVolumeChange);
-  if (state.videoGeometryHandler) {
-    video.removeEventListener('loadedmetadata', state.videoGeometryHandler);
-    video.removeEventListener('resize', state.videoGeometryHandler);
+  video.addEventListener('pause', handleMediaPause);
+  video.addEventListener('ratechange', handleMediaRateChange);
+  video.addEventListener('volumechange', handleMediaVolumeChange);
+  if (state.mediaGeometryHandler) {
+    video.removeEventListener('loadedmetadata', state.mediaGeometryHandler);
+    video.removeEventListener('resize', state.mediaGeometryHandler);
   }
-  state.videoGeometryHandler = () => {
-    if (state.videoEl !== video) return;
-    syncVideoAspect(video);
+  state.mediaGeometryHandler = () => {
+    if (state.activeMedia !== video) return;
+    syncMediaAspect(video);
     syncTheaterFrame();
   };
-  video.addEventListener('loadedmetadata', state.videoGeometryHandler);
-  video.addEventListener('resize', state.videoGeometryHandler);
-  syncVideoAspect(video);
+  video.addEventListener('loadedmetadata', state.mediaGeometryHandler);
+  video.addEventListener('resize', state.mediaGeometryHandler);
+  syncMediaAspect(video);
   syncTheaterFrame();
   syncPlayButton();
   syncSpeedButton();
@@ -565,7 +565,7 @@ function findCaptionIndex(t) {
 }
 
 function onTimeUpdate() {
-  const v = state.videoEl;
+  const v = state.activeMedia;
   if (!v) return;
 
   const dur = v.duration || 0;
@@ -574,7 +574,7 @@ function onTimeUpdate() {
 
   if (state.captions.length === 0) return;
 
-  if (!state.webStudy && state.loop && state.activeIdx >= 0) {
+  if (state.sourceType !== 'web' && state.loop && state.activeIdx >= 0) {
     const cur = state.captions[state.activeIdx];
     if (v.currentTime >= cur.end) {
       v.currentTime = cur.start;
@@ -588,7 +588,7 @@ function onTimeUpdate() {
     translateWindow(idx);
   }
   // Overlay đang mở: giữ cửa sổ phụ đề trước vị trí phát 10 phút.
-  if (state.open && !state.webStudy) extendLoadedWindow();
+  if (state.open && state.sourceType !== 'web') extendLoadedWindow();
 }
 
 function dedupeSentences(list) {
@@ -630,7 +630,7 @@ function buildCaptions() {
     };
   });
   renderTranscriptList();
-  announceDictationCaptionsUpdated();
+  announceOverlayCaptionsUpdated();
 }
 
 // ---------- Làm sạch, cửa sổ hiển thị và prefetch ----------
@@ -654,7 +654,7 @@ function cleanCues(list) {
 
 // Chỉ dựng danh sách cho phần đã nạp (cửa sổ), không render toàn bộ video dài.
 function applyLoadedWindow() {
-  if (state.webStudy || !state.allCues.length) return;
+  if (state.sourceType === 'web' || !state.allCues.length) return;
   const windowCues = state.allCues.filter((cue) => loadedUntil <= 0 || cue.start < loadedUntil);
   if (!windowCues.length) return;
   state.rawCues = windowCues;
@@ -665,8 +665,8 @@ function applyLoadedWindow() {
 
 // Khi overlay mở: nới cửa sổ tới vị trí đang phát + 10 phút (chỉ nới, không thu lại).
 function extendLoadedWindow() {
-  if (state.webStudy || !state.allCues.length) return;
-  const video = state.videoEl || document.querySelector('video');
+  if (state.sourceType === 'web' || !state.allCues.length) return;
+  const video = state.activeMedia || document.querySelector('video');
   const current = Number(video?.currentTime) || 0;
   const duration = Number.isFinite(video?.duration) ? video.duration : Infinity;
   const target = Math.min(duration, current + LOOKAHEAD_SECONDS);
@@ -719,7 +719,7 @@ async function storeTranscript(videoId, cues) {
   transcriptCache.delete(key);
   transcriptTrackLanguageCache.delete(key);
   transcriptCache.set(key, cues);
-  transcriptTrackLanguageCache.set(key, state.captionTrackLanguage);
+  transcriptTrackLanguageCache.set(key, state.sourceLanguage);
   promoteTranscriptVideoInMemory(videoId);
   trimTranscriptMemoryCache();
 
@@ -728,7 +728,7 @@ async function storeTranscript(videoId, cues) {
       type: 'YOUTUBE_TRANSCRIPT_CACHE_SAVE',
       videoId,
       variantKey,
-      transcript: { cues, captionTrackLanguage: state.captionTrackLanguage },
+      transcript: { cues, captionTrackLanguage: state.sourceLanguage },
     });
   } catch (error) {
     console.warn('[keepit] Could not save video transcript cache:', error);
@@ -738,10 +738,10 @@ async function storeTranscript(videoId, cues) {
 function takeCachedTranscript(videoId) {
   const key = transcriptMemoryKey(videoId);
   const cached = transcriptCache.get(key);
-  state.captionTrackLanguage = transcriptTrackLanguageCache.get(key) || '';
+  state.sourceLanguage = transcriptTrackLanguageCache.get(key) || '';
   state.primaryNeedsTranslation = !!cached?.[0]?.mainNeedsTranslation;
   state.secondaryNeedsTranslation = !!cached?.[0]?.secondaryNeedsTranslation;
-  state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : state.sourceLanguageSetting;
+  state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (state.sourceLanguage || 'en') : state.sourceLanguageSetting;
   if (!cached?.length) return null;
   promoteTranscriptVideoInMemory(videoId);
   return cached;
@@ -786,10 +786,10 @@ async function prefetchTranscript(videoId) {
   if (!videoId || keepitSiteDisabled) return;
   if (document.visibilityState !== 'visible') return; // (1) chỉ prefetch khi tab đang hiển thị
   if ((failedUntil.get(videoId) || 0) > Date.now()) return; // (3) đang trong thời hạn cache lỗi
-  if (state.videoId !== videoId) return;
+  if (state.sourceId !== videoId) return;
   const token = prefetchToken;
   const cached = await getCachedTranscript(videoId);
-  if (token !== prefetchToken || state.videoId !== videoId) return;
+  if (token !== prefetchToken || state.sourceId !== videoId) return;
   if (cached) {
     state.allCues = cached;
     loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
@@ -800,7 +800,7 @@ async function prefetchTranscript(videoId) {
   if (video?.duration === Infinity) return; // livestream: không có transcript
   const reasons = [];
   const cues = await transcriptFromPlayerApi(videoId, reasons);
-  if (token !== prefetchToken || state.videoId !== videoId) return;
+  if (token !== prefetchToken || state.sourceId !== videoId) return;
   const cleaned = cleanCues(cues);
   if (!cleaned.length) {
     failedUntil.set(videoId, Date.now() + FAILED_CACHE_MS);
@@ -808,7 +808,7 @@ async function prefetchTranscript(videoId) {
     return;
   }
   void storeTranscript(videoId, cleaned);
-  if (token !== prefetchToken || state.videoId !== videoId) return;
+  if (token !== prefetchToken || state.sourceId !== videoId) return;
   state.allCues = cleaned;
   loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
   applyLoadedWindow();
@@ -917,11 +917,11 @@ async function captionsFromTracks(tracks, reasons, tracklist = null) {
   const originalCues = byTrack.get(original) || mainCues;
   const targetCues = byTrack.get(secondary.track) || [];
 
-  state.captionTrackLanguage = trackLanguageCode(primary.track);
+  state.sourceLanguage = trackLanguageCode(primary.track);
   state.primaryNeedsTranslation = primary.needsTranslation;
   state.secondaryNeedsTranslation = secondary.needsTranslation;
   state.mainLanguage = state.sourceLanguageSetting === 'auto'
-    ? (state.captionTrackLanguage || state.mainLanguage || 'en')
+    ? (state.sourceLanguage || state.mainLanguage || 'en')
     : state.sourceLanguageSetting;
   updateSubtitleLanguageLabels();
 
@@ -968,15 +968,15 @@ async function transcriptFromPlayerApi(videoId, reasons) {
 }
 
 async function loadCaptions() {
-  if (state.webStudy) return;
-  const videoId = state.videoId;
+  if (state.sourceType === 'web') return;
+  const videoId = state.sourceId;
   if (!videoId) return;
 
   const token = ++state.loadToken;
   state.loadingFor = videoId;
   // Prefetch hoặc persistent cache trong background: hiện ngay nếu đã có.
   const cached = await getCachedTranscript(videoId);
-  if (token !== state.loadToken || state.videoId !== videoId) return;
+  if (token !== state.loadToken || state.sourceId !== videoId) return;
   if (cached) {
     state.allCues = cached;
     loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
@@ -985,10 +985,10 @@ async function loadCaptions() {
     if (state.open) applyDefaultSubtitleDisplayMode();
     return;
   }
-  state.captionTrackLanguage = '';
+  state.sourceLanguage = '';
   state.primaryNeedsTranslation = false;
   state.secondaryNeedsTranslation = false;
-  setStatus(videoT('videoLoadingSubtitles'), 'videoLoadingSubtitles');
+  setStatus(overlayT('videoLoadingSubtitles'), 'videoLoadingSubtitles');
 
   const reasons = [];
   try {
@@ -1020,7 +1020,7 @@ async function loadCaptions() {
     if (cues.length === 0) {
       // Cùng đường: đọc phụ đề đang hiển thị (nguồn cuối, chất lượng kém hơn).
       state.primaryNeedsTranslation = false;
-      state.captionTrackLanguage = '';
+      state.sourceLanguage = '';
       console.warn('[keepit] Không lấy được phụ đề từ player/panel/timedtext:', reasons);
       state.allCues = [];
       loadedUntil = 0;
@@ -1051,12 +1051,12 @@ async function loadCaptions() {
     console.error('[keepit] Lỗi tải phụ đề:', err);
     if (token === state.loadToken) {
       const error = errorText([...reasons, err.message]);
-      setStatus(videoT('videoCaptionLoadError', error), 'videoCaptionLoadError', error);
+      setStatus(overlayT('videoCaptionLoadError', error), 'videoCaptionLoadError', error);
     }
   } finally {
     if (token === state.loadToken) {
       state.loadingFor = null;
-      announceDictationCaptionsUpdated();
+      announceOverlayCaptionsUpdated();
     }
   }
 }

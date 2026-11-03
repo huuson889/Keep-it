@@ -89,23 +89,23 @@ function setVideoSidebarHidden(hidden) {
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
-  if (!sidebarHidden && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
+  if (!sidebarHidden && !root.classList.contains('te-study-active')) alignActiveTranscriptFocus('auto');
   scheduleHoverPauseSync({ modeChange: modeChanged });
   return sidebarHidden;
 }
 
 function applyVideoDisplayMode(mode) {
   if (!['theater', 'reading', 'combined'].includes(mode) || !overlayEl()) return false;
-  overlayEl().classList.remove('te-learning-entry-pending');
+  overlayEl().classList.remove('te-study-entry-pending');
   settings.preferredVideoMode = mode;
   settings.readingMode = mode === 'reading';
   saveSettings();
-  if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
+  if (globalThis.LHN_STUDY?.isOpen?.()) globalThis.LHN_STUDY.close?.({ restoreView: false });
   if (mode === 'reading') {
     setVideoSidebarHidden(false);
-    setVideoLearningMode(true);
+    setReadingMode(true);
   } else {
-    setVideoLearningMode(false);
+    setReadingMode(false);
     setVideoSidebarHidden(mode === 'theater');
   }
   setVideoDisplayModeSelection(mode);
@@ -185,7 +185,7 @@ function theaterSubtitleBackgroundRgba() {
 
 function isTheaterLargeActive(root = overlayEl()) {
   return Boolean(root && !root.classList.contains('te-reading-mode')
-    && !root.classList.contains('te-dictation-active')
+    && !root.classList.contains('te-study-active')
     && root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l'));
 }
 
@@ -241,7 +241,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
     root.style.removeProperty('--te-theater-subtitle-top');
     return null;
   }
-  const frame = ui('.te-video-frame');
+  const frame = ui('.te-player-frame');
   const panel = ui('.te-sub-container');
   const controls = ui('.te-control-bar');
   const handle = ui('#te-theater-subtitle-drag-handle');
@@ -309,7 +309,7 @@ function scheduleTheaterSubtitleLayout(root = overlayEl()) {
 function observeTheaterSubtitleLayout() {
   if (typeof ResizeObserver !== 'function' || theaterSubtitleResizeObserver) return;
   theaterSubtitleResizeObserver = new ResizeObserver(() => scheduleTheaterSubtitleLayout());
-  for (const selector of ['.te-video-frame', '.te-sub-container', '.te-subtitle-content', '#te-theater-subtitle-drag-handle', '.te-control-bar']) {
+  for (const selector of ['.te-player-frame', '.te-sub-container', '.te-subtitle-content', '#te-theater-subtitle-drag-handle', '.te-control-bar']) {
     const element = ui(selector);
     if (element) theaterSubtitleResizeObserver.observe(element);
   }
@@ -354,7 +354,7 @@ function updateSidebarTranscriptFontSize(root) {
 function syncViewSizeClasses(root = overlayEl()) {
   if (!root) return null;
   const viewSize = root.classList.contains('te-reading-mode') ? (settings.readingViewSize || 'M')
-    : root.classList.contains('te-dictation-active') ? (settings.learningViewSize || 'S') : settings.size;
+    : root.classList.contains('te-study-active') ? (settings.learningViewSize || 'S') : settings.size;
   root.classList.toggle('size-s', viewSize === 'S');
   root.classList.toggle('size-m', viewSize === 'M');
   root.classList.toggle('size-l', viewSize !== 'S' && viewSize !== 'M');
@@ -392,7 +392,7 @@ function applySettings() {
   enEl.style.color = settings.sub.en.color || '';
   viEl.style.color = settings.sub.vi.color || '';
 
-  $('te-theme-label').textContent = videoT(settings.theme === 'dark' ? 'darkMode' : 'lightMode');
+  $('te-theme-label').textContent = overlayT(settings.theme === 'dark' ? 'darkMode' : 'lightMode');
 
   // Đồng bộ công tắc trong menu cài đặt chính
   const mainSw = $('te-modal-main').querySelectorAll('input[type=checkbox]');
@@ -410,21 +410,21 @@ function applySettings() {
   groups[1].querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === (settings.sub.bold ? 1 : 0)));
   const modalViewSize = isReadingModeActive()
     ? (settings.readingViewSize || 'M')
-    : overlayEl()?.classList.contains('te-dictation-active') ? (settings.learningViewSize || 'S') : settings.size;
+    : overlayEl()?.classList.contains('te-study-active') ? (settings.learningViewSize || 'S') : settings.size;
   const sizeIdx = { S: 0, M: 1, L: 2 }[modalViewSize] ?? 1;
   $('te-view-mode-options').querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === sizeIdx));
   const readingWidthHint = $('te-reading-width-hint');
   if (readingWidthHint) {
     const width = { S: 35, M: 45, L: 52 }[modalViewSize] ?? 45;
     readingWidthHint.style.display = isReadingModeActive() ? '' : 'none';
-    readingWidthHint.textContent = videoT('videoReadingWidthHint', { width });
+    readingWidthHint.textContent = overlayT('videoReadingWidthHint', { width });
   }
   sub.querySelector('select').value = settings.sub.font || 'Inter';
   const videoSubSettings = activeVideoSubtitleSettings();
   const videoSubtitleTitle = $('te-video-subtitle-settings-title');
   if (videoSubtitleTitle) videoSubtitleTitle.textContent = isReadingModeActive()
-    ? `${videoT('videoVideoSubtitles')} · ${videoT('videoModeReading')}`
-    : videoT('videoVideoSubtitles');
+    ? `${overlayT('videoVideoSubtitles')} · ${overlayT('videoModeReading')}`
+    : overlayT('videoVideoSubtitles');
 
   const counters = sub.querySelectorAll('.te-counter-btn');
   counters[0].nextElementSibling.textContent = videoSubSettings.en.pct + '%';
@@ -445,7 +445,7 @@ function applySettings() {
 }
 
 // ---------- Overlay: tạo, mở, đóng ----------
-function setVideoLearningMode(enabled, { persist = false } = {}) {
+function setReadingMode(enabled, { persist = false } = {}) {
   const root = overlayEl();
   if (!root) return false;
   const active = Boolean(enabled);
@@ -453,20 +453,20 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
     settings.readingMode = active;
     saveSettings();
   }
-  pendingDictationShortcut = false;
-  pendingDictationOpenImmediately = false;
-  const enteringDictation = !active && globalThis.LHN_DICTATION?.isOpen?.();
+  pendingStudyShortcut = false;
+  pendingStudyOpenImmediately = false;
+  const enteringStudy = !active && globalThis.LHN_STUDY?.isOpen?.();
   const leavingTheaterLarge = root.classList.contains('te-sidebar-hidden') && root.classList.contains('size-l');
-  if (enteringDictation && leavingTheaterLarge && sizeForcedHide) {
+  if (enteringStudy && leavingTheaterLarge && sizeForcedHide) {
     restoreForcedHideControls(root);
   }
   if (active || root.classList.contains('te-sidebar-hidden')) {
-    // Learning/Dictation uses its own grid; remove temporary Theater geometry without changing the saved preference.
+    // Study uses its own grid; remove temporary Theater geometry without changing the saved preference.
     setVideoSidebarHidden(false);
   }
   if (active) {
-    if (globalThis.LHN_DICTATION?.isOpen?.()) globalThis.LHN_DICTATION.close?.({ restoreView: false });
-    for (const selector of ['#te-speaking-mode-btn', '#te-dictation-mode-btn']) {
+    if (globalThis.LHN_STUDY?.isOpen?.()) globalThis.LHN_STUDY.close?.({ restoreView: false });
+    for (const selector of ['#te-shadowing-mode-btn', '#te-dictation-mode-btn']) {
       const button = root.querySelector(selector);
       button?.classList.remove('te-active');
       button?.setAttribute('aria-pressed', 'false');
@@ -480,35 +480,35 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
-  if (modeChanged && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
+  if (modeChanged && !root.classList.contains('te-study-active')) alignActiveTranscriptFocus('auto');
   scheduleHoverPauseSync({ modeChange: modeChanged });
   return active;
 }
 
 function restorePreferredReadingMode() {
-  if (!state.open || pendingDictationShortcut || pendingDictationOpenImmediately
-    || globalThis.LHN_DICTATION?.isOpen?.()) return false;
+  if (!state.open || pendingStudyShortcut || pendingStudyOpenImmediately
+    || globalThis.LHN_STUDY?.isOpen?.()) return false;
   return applyVideoDisplayMode(preferredVideoMode());
 }
 
-function syncVideoAspect(video) {
+function syncMediaAspect(media) {
   const root = overlayEl();
   if (!root) return;
-  const w = Number(video?.videoWidth) || 0;
-  const h = Number(video?.videoHeight) || 0;
+  const w = Number(media?.videoWidth) || 0;
+  const h = Number(media?.videoHeight) || 0;
   if (w > 0 && h > 0) root.style.setProperty('--te-video-aspect', `${w} / ${h}`);
   else root.style.removeProperty('--te-video-aspect');
 }
 
 // Chế độ rạp: khung bọc có kích thước pixel đúng bằng video đang hiển thị (không dùng %)
 function syncTheaterFrame() {
-  const root = overlayEl(), slot = ui('.te-video-slot');
-  const frame = slot?.querySelector(':scope > .te-video-frame');
+  const root = overlayEl(), slot = ui('.te-player-slot');
+  const frame = slot?.querySelector(':scope > .te-player-frame');
   if (!root || !slot || !frame) return;
-  const v = state.videoEl;
+  const media = state.activeMedia;
   const theaterActive = root.classList.contains('te-sidebar-hidden')
-    && !root.classList.contains('te-reading-mode') && !root.classList.contains('te-dictation-active');
-  if (!theaterActive || !v) {
+    && !root.classList.contains('te-reading-mode') && !root.classList.contains('te-study-active');
+  if (!theaterActive || !media) {
     frame.style.width = '';
     frame.style.height = '';
     scheduleTheaterSubtitleLayout(root);
@@ -516,7 +516,7 @@ function syncTheaterFrame() {
   }
   // Lớn: khung tính theo toàn màn hình (khung cố định), các kích thước khác theo ô video.
   const r = root.classList.contains('size-l') ? { width: innerWidth, height: innerHeight } : slot.getBoundingClientRect();
-  const a = (v.videoWidth && v.videoHeight) ? v.videoWidth / v.videoHeight : 16 / 9;
+  const a = (media.videoWidth && media.videoHeight) ? media.videoWidth / media.videoHeight : 16 / 9;
   const sizeFactor = root.classList.contains('size-s') ? 2 / 3 : 1;
   const w = Math.min(r.width, r.height * a) * sizeFactor, h = w / a;
   frame.style.width = `${Math.round(w)}px`;

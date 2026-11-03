@@ -1,8 +1,8 @@
 // Shadowing playback integration; the shared TTS engine remains in Reader.
 function startWebTtsInViewMode() {
-  if (!state.webStudy || !state.open || !state.videoEl?.paused) return;
+  if (state.sourceType !== 'web' || !state.open || !state.activeMedia?.paused) return;
   try {
-    const playback = state.videoEl.play?.();
+    const playback = state.activeMedia.play?.();
     playback?.catch?.((error) => reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' }));
   } catch (error) {
     reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' });
@@ -11,7 +11,7 @@ function startWebTtsInViewMode() {
 
 function syncReadingAudioControls() {
   const root = overlayEl();
-  const toggle = ui('#te-reading-video-toggle');
+  const toggle = ui('#te-reading-media-toggle');
   const bar = ui('.te-reading-mini-audio');
   const play = ui('#te-reading-mini-play');
   if (!root || !toggle || !bar || !play) return;
@@ -19,17 +19,17 @@ function syncReadingAudioControls() {
   const compact = reading && root.classList.contains('te-reading-audio-compact');
   toggle.disabled = !reading;
   toggle.setAttribute('aria-pressed', String(compact));
-  const toggleLabel = videoT(compact ? 'dictationExpandVideo' : 'dictationCompactVideo');
+  const toggleLabel = overlayT(compact ? 'dictationExpandVideo' : 'dictationCompactVideo');
   toggle.title = toggleLabel;
   toggle.setAttribute('aria-label', toggleLabel);
   const videoIcon = '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>';
   const audioIcon = '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>';
   toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${compact ? audioIcon : videoIcon}</svg>`;
   bar.setAttribute('aria-hidden', String(!compact));
-  bar.setAttribute('aria-label', videoT('dictationAudioTitle'));
-  const playing = Boolean(state.videoEl && !state.videoEl.paused);
+  bar.setAttribute('aria-label', overlayT('dictationAudioTitle'));
+  const playing = Boolean(state.activeMedia && !state.activeMedia.paused);
   bar.classList.toggle('playing', playing);
-  const playLabel = videoT(playing ? 'dictationMiniPause' : 'dictationMiniPlay');
+  const playLabel = overlayT(playing ? 'dictationMiniPause' : 'dictationMiniPlay');
   play.title = playLabel;
   play.setAttribute('aria-label', playLabel);
   play.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${playing ? PAUSE_PATH : PLAY_PATH}</svg>`;
@@ -54,23 +54,23 @@ function toggleReadingAudioCompact() {
 
 // ---------- Điều khiển phát ----------
 
-// Speaking entry belongs to the Shadowing study adapter; the existing shared Dictation engine performs the work.
+// Speaking entry belongs to the Shadowing study adapter; the existing shared Study engine performs the work.
 let shadowingControl = null;
 function onShadowingControlClick(event) {
   event.preventDefault();
   event.stopPropagation();
-  const dictation = globalThis.LHN_DICTATION;
-  if (!dictation?.open) return;
-  if (dictation.isOpen?.()) {
-    if (dictation.getMode?.() === 'speaking') dictation.close?.();
-    else dictation.open({ waitForCaptions: true, mode: 'speaking' });
+  const study = globalThis.LHN_STUDY;
+  if (!study?.open) return;
+  if (study.isOpen?.()) {
+    if (study.getMode?.() === 'speaking') study.close?.();
+    else study.open({ waitForCaptions: true, mode: 'speaking' });
     return;
   }
-  dictation.open({ waitForCaptions: true, mode: 'speaking' });
+  study.open({ waitForCaptions: true, mode: 'speaking' });
 }
 
 function attachShadowingControl(api) {
-  const button = api?.overlayEl?.()?.querySelector?.('#te-speaking-mode-btn') || null;
+  const button = api?.overlayEl?.()?.querySelector?.('#te-shadowing-mode-btn') || null;
   if (button === shadowingControl) return;
   if (shadowingControl) shadowingControl.removeEventListener('click', onShadowingControlClick);
   shadowingControl = button;

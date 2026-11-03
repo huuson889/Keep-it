@@ -8,14 +8,14 @@
   let active = false;
   let openingPanel = false;
   let openingGeneration = 0;
-  let dictationMode = "typing";
+  let studyMode = "typing";
   let current = 0;
   let checkedCurrent = false;
   let savedPageScrollStyles = null;
   let listStart = 0;
   let listEnd = 0;
   let sentenceCues = [];
-  let videoId = "";
+  let sourceId = "";
   let progressReady = false;
   let pendingCaptionStart = false;
   let captionStatusKey = "";
@@ -31,13 +31,13 @@
   let wrongWordStats = { version: 3, words: {} };
   let speakingWrongWordStats = { version: 3, words: {} };
   let stopAt = -1;
-  let attachedVideo = null;
+  let attachedMedia = null;
   let ctrlAlone = false;
   let escapeFilledAnswer = false;
   let panelGeneration = 0;
-  let videoTitleObserver = null;
-  let videoTitleSaveTimer = 0;
-  let indexedVideoTitle = "";
+  let sourceTitleObserver = null;
+  let sourceTitleSaveTimer = 0;
+  let indexedSourceTitle = "";
   let saveTimer = 0;
   let toastTimer = 0;
   let rafId = 0;
@@ -55,33 +55,33 @@
     return ["en", "vi", "ko"].includes(candidate) ? candidate : (globalThis.LHN_LANGUAGES?.detectLanguage?.() || "en");
   };
   const tr = (key) => globalThis.LHN_LANGUAGES?.t?.(key, {}, language()) || key;
-  const currentVideoId = () => String(A?.state?.videoId || "");
-  const storageKey = () => `dictation:${videoId}`;
-  const dictationSessionIndex = globalThis.LHN_DICTATION_SESSION_INDEX;
-  const dictationSessionIndexKey = dictationSessionIndex.STORAGE_KEY;
+  const currentSourceId = () => String(A?.state?.sourceId || "");
+  const storageKey = () => `dictation:${sourceId}`;
+  const studySessionIndex = globalThis.LHN_STUDY_SESSION_INDEX;
+  const studySessionIndexKey = studySessionIndex.STORAGE_KEY;
   const getCues = () => {
-    const list = A?.getDictationCues?.();
+    const list = A?.getStudyCues?.();
     return Array.isArray(list) ? list.filter((cue) => cue && typeof cue.en === "string" && cue.en.trim()) : [];
   };
-  const isEnglishReady = () => (A?.state?.webStudy || A?.state?.captionTrackLanguage === "en") && getCues().length > 0;
-  const dictationLayoutStorageKey = "dictation:layout:v1";
+  const isStudySourceReady = () => (A?.state?.sourceType === 'web' || A?.state?.sourceLanguage === "en") && getCues().length > 0;
+  const studyLayoutStorageKey = "dictation:layout:v1";
   const progressSyncStorageKey = "dictation:progress-sync:v1";
   const translationVisibilityStorageKey = "dictation:translation-visibility:v1";
 
   const shadowingActivity = globalThis.LHN_SHADOWING_ACTIVITY_FACTORY.create({
     get A() { return A; }, get ui() { return ui; }, get active() { return active; },
-    get dictationMode() { return dictationMode; }, get current() { return current; },
+    get studyMode() { return studyMode; }, get current() { return current; },
     get sentenceCues() { return sentenceCues; },
-    get attachedVideo() { return attachedVideo; }, get stopAt() { return stopAt; },
+    get attachedMedia() { return attachedMedia; }, get stopAt() { return stopAt; },
     get captionControlsDisabled() { return captionControlsDisabled; },
     tr, language, getScoreColorTier, getTranscriptWordTokens,
     get toastTimer() { return toastTimer; }, set toastTimer(value) { toastTimer = value; },
-    setDictationMode, onAnswerInput, playSentence, endPlayback, submit, setScore, renderProperNounHint,
+    setStudyMode, onAnswerInput, playSentence, endPlayback, submit, setScore, renderProperNounHint,
     syncCurrentTranslationDisplay, updateRows, resetAnswer, prepareCue, showToast,
   });
   let progressSyncPreferenceWrite = Promise.resolve();
 
-  function progressModeKey(mode = dictationMode) {
+  function progressModeKey(mode = studyMode) {
     return mode === "speaking" ? "speaking" : "typing";
   }
 
@@ -105,11 +105,11 @@
     return { current: snapshot.current, solved: [...snapshot.solved] };
   }
 
-  function storeActiveModeProgress(mode = dictationMode) {
+  function storeActiveModeProgress(mode = studyMode) {
     progressByMode[progressModeKey(mode)] = currentProgressSnapshot();
   }
 
-  function applyModeProgress(mode = dictationMode) {
+  function applyModeProgress(mode = studyMode) {
     const snapshot = normalizeProgressSnapshot(progressByMode[progressModeKey(mode)]);
     current = snapshot.current;
     solved = new Set(snapshot.solved);
@@ -226,80 +226,80 @@
     void saveRecord();
   }
 
-  function cleanVideoTitle(value) {
+  function cleanSourceTitle(value) {
     return String(value || "").replace(/^\s*Keepit\s*-\s*/i, "").replace(/\s*[-|]\s*YouTube\s*$/i, "").trim().slice(0, 240);
   }
 
-  function getCurrentVideoTitle() {
+  function getCurrentSourceTitle() {
     try {
-      const visibleOverlayTitle = cleanVideoTitle(ui?.miniTitle?.textContent);
+      const visibleOverlayTitle = cleanSourceTitle(ui?.miniTitle?.textContent);
       const genericTitle = String(tr("dictationTitle") || "").trim().toLocaleLowerCase();
       if (visibleOverlayTitle && !/^(youtube|keepit|dictation)$/i.test(visibleOverlayTitle)
         && visibleOverlayTitle.toLocaleLowerCase() !== genericTitle) return visibleOverlayTitle;
-      const heading = cleanVideoTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent);
+      const heading = cleanSourceTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent);
       if (heading && !/^(youtube|keepit|dictation)$/i.test(heading)) return heading;
-      const pageTitle = cleanVideoTitle(document.title);
+      const pageTitle = cleanSourceTitle(document.title);
       if (pageTitle && !/^(youtube|keepit|dictation)$/i.test(pageTitle)
         && pageTitle.toLocaleLowerCase() !== genericTitle) return pageTitle;
       return "";
     } catch { return ""; }
   }
 
-  function queueVideoTitleIndexUpdate() {
-    if (!active || !videoId) return;
+  function queueSourceTitleIndexUpdate() {
+    if (!active || !sourceId) return;
     updateCompactAudioInfo();
-    const title = getCurrentVideoTitle();
-    if (!title || title === indexedVideoTitle) return;
-    indexedVideoTitle = title;
-    clearTimeout(videoTitleSaveTimer);
-    videoTitleSaveTimer = setTimeout(() => {
-      videoTitleSaveTimer = 0;
-      if (active && videoId) void saveRecord();
+    const title = getCurrentSourceTitle();
+    if (!title || title === indexedSourceTitle) return;
+    indexedSourceTitle = title;
+    clearTimeout(sourceTitleSaveTimer);
+    sourceTitleSaveTimer = setTimeout(() => {
+      sourceTitleSaveTimer = 0;
+      if (active && sourceId) void saveRecord();
     }, 80);
   }
 
-  function observeVideoTitle() {
-    videoTitleObserver?.disconnect();
-    videoTitleObserver = null;
-    indexedVideoTitle = getCurrentVideoTitle();
+  function observeSourceTitle() {
+    sourceTitleObserver?.disconnect();
+    sourceTitleObserver = null;
+    indexedSourceTitle = getCurrentSourceTitle();
     if (typeof MutationObserver !== "function") return;
-    const observer = new MutationObserver(queueVideoTitleIndexUpdate);
+    const observer = new MutationObserver(queueSourceTitleIndexUpdate);
     const titleNodes = [document.querySelector("h1.ytd-watch-metadata"), document.querySelector("head title")].filter(Boolean);
     for (const node of titleNodes) observer.observe(node, { childList:true, characterData:true, subtree:true });
-    videoTitleObserver = observer;
+    sourceTitleObserver = observer;
   }
 
-  function stopObservingVideoTitle() {
-    videoTitleObserver?.disconnect();
-    videoTitleObserver = null;
-    clearTimeout(videoTitleSaveTimer);
-    videoTitleSaveTimer = 0;
-    indexedVideoTitle = "";
+  function stopObservingSourceTitle() {
+    sourceTitleObserver?.disconnect();
+    sourceTitleObserver = null;
+    clearTimeout(sourceTitleSaveTimer);
+    sourceTitleSaveTimer = 0;
+    indexedSourceTitle = "";
   }
 
-  async function saveDictationSessionIndex(session) {
+  async function saveStudySessionIndex(session) {
     try {
-      const stored = await ext.storage.local.get(dictationSessionIndexKey);
-      const previous = dictationSessionIndex.normalizeIndex(stored?.[dictationSessionIndexKey]);
+      const stored = await ext.storage.local.get(studySessionIndexKey);
+      const previous = studySessionIndex.normalizeIndex(stored?.[studySessionIndexKey]);
       const previousSession = previous.sessions.find(item => item.sessionId === session.sessionId);
       const sessionWithTitle = { ...session, title:session.title || previousSession?.title || "" };
-      const sessions = dictationSessionIndex.mergeSessions(previous.sessions, sessionWithTitle);
+      const sessions = studySessionIndex.mergeSessions(previous.sessions, sessionWithTitle);
       await ext.storage.local.set({
-        [dictationSessionIndexKey]: {
-          version: dictationSessionIndex.VERSION,
+        [studySessionIndexKey]: {
+          version: studySessionIndex.VERSION,
           updatedAt: Date.now(),
           legacyMigrationComplete: previous.legacyMigrationComplete,
           sessions,
         },
       });
     } catch (error) {
-      // Overview indexing is additive: failure must never affect Dictation's existing progress record.
-      console.warn("Could not update Dictation session summary", error);
+      // Overview indexing is additive: failure must never affect the existing Study progress record.
+      console.warn("Could not update Study session summary", error);
     }
   }
-  const DICTATION_COLUMN_LAYOUT_PREFS_VERSION = 2;
+  const STUDY_COLUMN_LAYOUT_PREFS_VERSION = 2;
   const PREVIOUS_RIGHT_COLUMN_DEFAULT = 0.30;
-  const DICTATION_COLUMN_RATIOS = Object.freeze({
+  const STUDY_COLUMN_RATIOS = Object.freeze({
     leftMin: 0.15,
     leftDefault: 0.25,
     leftMax: 0.30,
@@ -308,52 +308,52 @@
     rightDefault: 0.25,
     rightMax: 0.35,
   });
-  const dictationLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
-  let dictationLayoutLoadPromise = null;
+  const studyLayoutPrefs = { leftScale: 1, rightScale: 1, leftHidden: false, rightHidden: false };
+  let studyLayoutLoadPromise = null;
 
-  function clampDictationColumn(value, minimum, maximum) {
+  function clampStudyColumn(value, minimum, maximum) {
     return Math.min(maximum, Math.max(minimum, value));
   }
 
-  async function loadDictationLayoutPrefs() {
-    if (!dictationLayoutLoadPromise) {
-      dictationLayoutLoadPromise = (async () => {
+  async function loadStudyLayoutPrefs() {
+    if (!studyLayoutLoadPromise) {
+      studyLayoutLoadPromise = (async () => {
         try {
-          const result = await ext.storage.local.get(dictationLayoutStorageKey);
-          const stored = result?.[dictationLayoutStorageKey];
+          const result = await ext.storage.local.get(studyLayoutStorageKey);
+          const stored = result?.[studyLayoutStorageKey];
           if (!stored || typeof stored !== "object") return;
           const leftScale = Number(stored.leftScale);
           let rightScale = Number(stored.rightScale);
-          if (Number.isFinite(leftScale)) dictationLayoutPrefs.leftScale = clampDictationColumn(leftScale, DICTATION_COLUMN_RATIOS.leftMin / DICTATION_COLUMN_RATIOS.leftDefault, DICTATION_COLUMN_RATIOS.leftMax / DICTATION_COLUMN_RATIOS.leftDefault);
+          if (Number.isFinite(leftScale)) studyLayoutPrefs.leftScale = clampStudyColumn(leftScale, STUDY_COLUMN_RATIOS.leftMin / STUDY_COLUMN_RATIOS.leftDefault, STUDY_COLUMN_RATIOS.leftMax / STUDY_COLUMN_RATIOS.leftDefault);
           if (Number.isFinite(rightScale)) {
             const storedVersion = Number(stored.version) || 1;
-            if (storedVersion < DICTATION_COLUMN_LAYOUT_PREFS_VERSION && rightScale !== 1) {
-              rightScale *= PREVIOUS_RIGHT_COLUMN_DEFAULT / DICTATION_COLUMN_RATIOS.rightDefault;
+            if (storedVersion < STUDY_COLUMN_LAYOUT_PREFS_VERSION && rightScale !== 1) {
+              rightScale *= PREVIOUS_RIGHT_COLUMN_DEFAULT / STUDY_COLUMN_RATIOS.rightDefault;
             }
-            dictationLayoutPrefs.rightScale = clampDictationColumn(rightScale, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
+            studyLayoutPrefs.rightScale = clampStudyColumn(rightScale, STUDY_COLUMN_RATIOS.rightMin / STUDY_COLUMN_RATIOS.rightDefault, STUDY_COLUMN_RATIOS.rightMax / STUDY_COLUMN_RATIOS.rightDefault);
           }
-          dictationLayoutPrefs.leftHidden = stored.leftHidden === true;
-          dictationLayoutPrefs.rightHidden = stored.rightHidden === true;
+          studyLayoutPrefs.leftHidden = stored.leftHidden === true;
+          studyLayoutPrefs.rightHidden = stored.rightHidden === true;
         } catch (error) {
-          console.warn("Could not load Dictation column layout", error);
+          console.warn("Could not load Study column layout", error);
         }
       })();
     }
-    await dictationLayoutLoadPromise;
+    await studyLayoutLoadPromise;
   }
 
-  function persistDictationLayoutPrefs() {
+  function persistStudyLayoutPrefs() {
     try {
       const result = ext.storage.local.set({
-        [dictationLayoutStorageKey]: { version: DICTATION_COLUMN_LAYOUT_PREFS_VERSION, ...dictationLayoutPrefs },
+        [studyLayoutStorageKey]: { version: STUDY_COLUMN_LAYOUT_PREFS_VERSION, ...studyLayoutPrefs },
       });
-      result?.catch?.((error) => console.warn("Could not save Dictation column layout", error));
+      result?.catch?.((error) => console.warn("Could not save Study column layout", error));
     } catch (error) {
-      console.warn("Could not save Dictation column layout", error);
+      console.warn("Could not save Study column layout", error);
     }
   }
 
-  function getDictationColumnVisibilityForViewSize(size) {
+  function getStudyColumnVisibilityForViewSize(size) {
     const normalized = String(size || "S").toUpperCase();
     return {
       leftHidden: normalized !== "S",
@@ -361,60 +361,60 @@
     };
   }
 
-  function applyVideoViewSizeColumnPreset() {
-    if (!active || !ui?.root?.classList.contains("te-dictation-active")) return false;
+  function applyStudyViewSizeColumnPreset() {
+    if (!active || !ui?.root?.classList.contains("te-study-active")) return false;
     const root = ui.root;
     const size = root.classList.contains("size-l") ? "L" : root.classList.contains("size-m") ? "M" : "S";
-    const visibility = getDictationColumnVisibilityForViewSize(size);
-    dictationLayoutPrefs.leftHidden = visibility.leftHidden;
-    dictationLayoutPrefs.rightHidden = visibility.rightHidden;
-    applyDictationColumnLayout();
+    const visibility = getStudyColumnVisibilityForViewSize(size);
+    studyLayoutPrefs.leftHidden = visibility.leftHidden;
+    studyLayoutPrefs.rightHidden = visibility.rightHidden;
+    applyStudyColumnLayout();
     return true;
   }
 
-  function getDictationColumnMetrics() {
+  function getStudyColumnMetrics() {
     const width = Math.max(0, ui?.root?.clientWidth || ui?.root?.getBoundingClientRect?.().width || 0);
     const available = Math.max(0, width - 16);
-    const minLeft = available * DICTATION_COLUMN_RATIOS.leftMin;
-    const baseLeft = available * DICTATION_COLUMN_RATIOS.leftDefault;
-    const maxLeft = available * DICTATION_COLUMN_RATIOS.leftMax;
-    const minCenter = available * DICTATION_COLUMN_RATIOS.centerMin;
-    const minRight = available * DICTATION_COLUMN_RATIOS.rightMin;
-    const baseRight = available * DICTATION_COLUMN_RATIOS.rightDefault;
-    const maxRight = available * DICTATION_COLUMN_RATIOS.rightMax;
+    const minLeft = available * STUDY_COLUMN_RATIOS.leftMin;
+    const baseLeft = available * STUDY_COLUMN_RATIOS.leftDefault;
+    const maxLeft = available * STUDY_COLUMN_RATIOS.leftMax;
+    const minCenter = available * STUDY_COLUMN_RATIOS.centerMin;
+    const minRight = available * STUDY_COLUMN_RATIOS.rightMin;
+    const baseRight = available * STUDY_COLUMN_RATIOS.rightDefault;
+    const maxRight = available * STUDY_COLUMN_RATIOS.rightMax;
     return { width, available, minLeft, baseLeft, maxLeft, minCenter, minRight, baseRight, maxRight };
   }
 
-  function getDictationColumnState() {
-    const metrics = getDictationColumnMetrics();
-    const leftSplitterWidth = dictationLayoutPrefs.leftHidden ? 0 : 8;
-    const rightSplitterWidth = dictationLayoutPrefs.rightHidden ? 0 : 8;
-    const leftRailWidth = dictationLayoutPrefs.leftHidden ? 24 : 0;
-    const rightRailWidth = dictationLayoutPrefs.rightHidden ? 24 : 0;
+  function getStudyColumnState() {
+    const metrics = getStudyColumnMetrics();
+    const leftSplitterWidth = studyLayoutPrefs.leftHidden ? 0 : 8;
+    const rightSplitterWidth = studyLayoutPrefs.rightHidden ? 0 : 8;
+    const leftRailWidth = studyLayoutPrefs.leftHidden ? 24 : 0;
+    const rightRailWidth = studyLayoutPrefs.rightHidden ? 24 : 0;
     const panelBudget = Math.max(0, metrics.width - leftSplitterWidth - rightSplitterWidth - leftRailWidth - rightRailWidth);
-    const leftWidth = dictationLayoutPrefs.leftHidden ? 0 : clampDictationColumn(
-      metrics.baseLeft * dictationLayoutPrefs.leftScale, metrics.minLeft, metrics.maxLeft
+    const leftWidth = studyLayoutPrefs.leftHidden ? 0 : clampStudyColumn(
+      metrics.baseLeft * studyLayoutPrefs.leftScale, metrics.minLeft, metrics.maxLeft
     );
     const rightMaximum = Math.max(metrics.minRight, Math.min(
       metrics.maxRight, panelBudget - leftWidth - metrics.minCenter
     ));
-    const rightWidth = dictationLayoutPrefs.rightHidden ? 0 : clampDictationColumn(
-      metrics.baseRight * dictationLayoutPrefs.rightScale, metrics.minRight, rightMaximum
+    const rightWidth = studyLayoutPrefs.rightHidden ? 0 : clampStudyColumn(
+      metrics.baseRight * studyLayoutPrefs.rightScale, metrics.minRight, rightMaximum
     );
     return {
       ...metrics,
       leftWidth,
       rightWidth,
-      leftTrackWidth: dictationLayoutPrefs.leftHidden ? 24 : leftWidth,
-      rightTrackWidth: dictationLayoutPrefs.rightHidden ? 24 : rightWidth,
+      leftTrackWidth: studyLayoutPrefs.leftHidden ? 24 : leftWidth,
+      rightTrackWidth: studyLayoutPrefs.rightHidden ? 24 : rightWidth,
       leftSplitterWidth,
       rightSplitterWidth,
-      leftHidden: dictationLayoutPrefs.leftHidden,
-      rightHidden: dictationLayoutPrefs.rightHidden,
+      leftHidden: studyLayoutPrefs.leftHidden,
+      rightHidden: studyLayoutPrefs.rightHidden,
     };
   }
 
-  function getDictationColumnBounds(side, state = getDictationColumnState()) {
+  function getStudyColumnBounds(side, state = getStudyColumnState()) {
     const panelBudget = state.width - state.leftSplitterWidth - state.rightSplitterWidth -
       (state.leftHidden ? 24 : 0) - (state.rightHidden ? 24 : 0);
     if (side === "left") {
@@ -427,9 +427,9 @@
     return { minimum, maximum: Math.max(minimum, maximum) };
   }
 
-  function updateDictationSplitterAccessibility(splitter, side, state) {
+  function updateStudySplitterAccessibility(splitter, side, state) {
     if (!splitter) return;
-    const bounds = getDictationColumnBounds(side, state);
+    const bounds = getStudyColumnBounds(side, state);
     const value = side === "left" ? state.leftWidth : state.rightWidth;
     splitter.setAttribute("aria-valuemin", String(Math.round(bounds.minimum)));
     splitter.setAttribute("aria-valuemax", String(Math.round(bounds.maximum)));
@@ -437,17 +437,17 @@
     splitter.setAttribute("aria-valuetext", `${Math.round(value)} px`);
   }
 
-  function applyDictationColumnLayout() {
+  function applyStudyColumnLayout() {
     if (!ui?.root) return;
-    const state = getDictationColumnState();
+    const state = getStudyColumnState();
     const root = ui.root;
-    root.style.setProperty("--te-dict-left-track", `${state.leftTrackWidth}px`);
-    root.style.setProperty("--te-dict-right-track", `${state.rightTrackWidth}px`);
-    root.style.setProperty("--te-dict-left-splitter", `${state.leftSplitterWidth}px`);
-    root.style.setProperty("--te-dict-right-splitter", `${state.rightSplitterWidth}px`);
-    root.style.setProperty("--te-dict-center-min", `${state.minCenter}px`);
-    root.classList.toggle("te-dict-column-left-hidden", state.leftHidden);
-    root.classList.toggle("te-dict-column-right-hidden", state.rightHidden);
+    root.style.setProperty("--te-study-left-track", `${state.leftTrackWidth}px`);
+    root.style.setProperty("--te-study-right-track", `${state.rightTrackWidth}px`);
+    root.style.setProperty("--te-study-left-splitter", `${state.leftSplitterWidth}px`);
+    root.style.setProperty("--te-study-right-splitter", `${state.rightSplitterWidth}px`);
+    root.style.setProperty("--te-study-center-min", `${state.minCenter}px`);
+    root.classList.toggle("te-study-column-left-hidden", state.leftHidden);
+    root.classList.toggle("te-study-column-right-hidden", state.rightHidden);
     ui.left.setAttribute("aria-hidden", String(state.leftHidden));
     ui.notesPanel.setAttribute("aria-hidden", String(state.rightHidden));
     const labels = [
@@ -461,50 +461,50 @@
       button.setAttribute("aria-label", tr(key));
       button.title = tr(key);
     }
-    ui.hideLeftColumn.setAttribute("aria-controls", "te-dict-sentence-area");
-    ui.hideRightColumn.setAttribute("aria-controls", "te-dictation-notes");
-    ui.showLeftColumn.setAttribute("aria-controls", "te-dict-sentence-area");
-    ui.showRightColumn.setAttribute("aria-controls", "te-dictation-notes");
+    ui.hideLeftColumn.setAttribute("aria-controls", "te-study-sentence-area");
+    ui.hideRightColumn.setAttribute("aria-controls", "te-study-notes");
+    ui.showLeftColumn.setAttribute("aria-controls", "te-study-sentence-area");
+    ui.showRightColumn.setAttribute("aria-controls", "te-study-notes");
     ui.hideLeftColumn.setAttribute("aria-expanded", String(!state.leftHidden));
     ui.hideRightColumn.setAttribute("aria-expanded", String(!state.rightHidden));
     ui.showLeftColumn.setAttribute("aria-expanded", String(!state.leftHidden));
     ui.showRightColumn.setAttribute("aria-expanded", String(!state.rightHidden));
-    updateDictationSplitterAccessibility(ui.leftColumnSplitter, "left", state);
-    updateDictationSplitterAccessibility(ui.rightColumnSplitter, "right", state);
+    updateStudySplitterAccessibility(ui.leftColumnSplitter, "left", state);
+    updateStudySplitterAccessibility(ui.rightColumnSplitter, "right", state);
   }
 
-  function setDictationColumnWidth(side, requestedWidth, persist = false) {
-    const state = getDictationColumnState();
-    const bounds = getDictationColumnBounds(side, state);
-    const width = clampDictationColumn(requestedWidth, bounds.minimum, bounds.maximum);
-    if (side === "left" && state.baseLeft > 0) dictationLayoutPrefs.leftScale = clampDictationColumn(width / state.baseLeft, DICTATION_COLUMN_RATIOS.leftMin / DICTATION_COLUMN_RATIOS.leftDefault, DICTATION_COLUMN_RATIOS.leftMax / DICTATION_COLUMN_RATIOS.leftDefault);
-    if (side === "right" && state.baseRight > 0) dictationLayoutPrefs.rightScale = clampDictationColumn(width / state.baseRight, DICTATION_COLUMN_RATIOS.rightMin / DICTATION_COLUMN_RATIOS.rightDefault, DICTATION_COLUMN_RATIOS.rightMax / DICTATION_COLUMN_RATIOS.rightDefault);
-    applyDictationColumnLayout();
-    if (persist) persistDictationLayoutPrefs();
+  function setStudyColumnWidth(side, requestedWidth, persist = false) {
+    const state = getStudyColumnState();
+    const bounds = getStudyColumnBounds(side, state);
+    const width = clampStudyColumn(requestedWidth, bounds.minimum, bounds.maximum);
+    if (side === "left" && state.baseLeft > 0) studyLayoutPrefs.leftScale = clampStudyColumn(width / state.baseLeft, STUDY_COLUMN_RATIOS.leftMin / STUDY_COLUMN_RATIOS.leftDefault, STUDY_COLUMN_RATIOS.leftMax / STUDY_COLUMN_RATIOS.leftDefault);
+    if (side === "right" && state.baseRight > 0) studyLayoutPrefs.rightScale = clampStudyColumn(width / state.baseRight, STUDY_COLUMN_RATIOS.rightMin / STUDY_COLUMN_RATIOS.rightDefault, STUDY_COLUMN_RATIOS.rightMax / STUDY_COLUMN_RATIOS.rightDefault);
+    applyStudyColumnLayout();
+    if (persist) persistStudyLayoutPrefs();
   }
 
-  function setDictationColumnHidden(side, hidden) {
-    if (side === "left") dictationLayoutPrefs.leftHidden = hidden;
-    else dictationLayoutPrefs.rightHidden = hidden;
-    applyDictationColumnLayout();
+  function setStudyColumnHidden(side, hidden) {
+    if (side === "left") studyLayoutPrefs.leftHidden = hidden;
+    else studyLayoutPrefs.rightHidden = hidden;
+    applyStudyColumnLayout();
     const focusTarget = side === "left"
       ? (hidden ? ui.showLeftColumn : ui.hideLeftColumn)
       : (hidden ? ui.showRightColumn : ui.hideRightColumn);
     focusTarget?.focus?.({ preventScroll: true });
-    persistDictationLayoutPrefs();
+    persistStudyLayoutPrefs();
   }
 
-  function resetDictationColumnWidth(side) {
-    if (side === "left") dictationLayoutPrefs.leftScale = 1;
-    else dictationLayoutPrefs.rightScale = 1;
-    applyDictationColumnLayout();
-    persistDictationLayoutPrefs();
+  function resetStudyColumnWidth(side) {
+    if (side === "left") studyLayoutPrefs.leftScale = 1;
+    else studyLayoutPrefs.rightScale = 1;
+    applyStudyColumnLayout();
+    persistStudyLayoutPrefs();
   }
 
-  function beginDictationColumnDrag(event, side, splitter) {
+  function beginStudyColumnDrag(event, side, splitter) {
     if (event.button !== 0) return;
     event.preventDefault();
-    const state = getDictationColumnState();
+    const state = getStudyColumnState();
     const startX = event.clientX;
     const startWidth = side === "left" ? state.leftWidth : state.rightWidth;
     const pointerId = event.pointerId;
@@ -517,7 +517,7 @@
       const delta = moveEvent.clientX - startX;
       if (!didDrag && Math.abs(delta) < 4) return;
       didDrag = true;
-      setDictationColumnWidth(side, startWidth + (side === "left" ? delta : -delta));
+      setStudyColumnWidth(side, startWidth + (side === "left" ? delta : -delta));
     };
     const finish = (finishEvent) => {
       if (finishEvent.pointerId !== pointerId) return;
@@ -530,21 +530,21 @@
         splitter.dataset.suppressCollapseClick = "true";
         window.setTimeout(() => { delete splitter.dataset.suppressCollapseClick; }, 100);
       }
-      persistDictationLayoutPrefs();
+      persistStudyLayoutPrefs();
     };
     splitter.addEventListener("pointermove", onMove);
     splitter.addEventListener("pointerup", finish);
     splitter.addEventListener("pointercancel", finish);
   }
 
-  function onDictationSplitterKeyDown(event, side) {
+  function onStudySplitterKeyDown(event, side) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setDictationColumnHidden(side, true);
+      setStudyColumnHidden(side, true);
       return;
     }
-    const bounds = getDictationColumnBounds(side);
-    const state = getDictationColumnState();
+    const bounds = getStudyColumnBounds(side);
+    const state = getStudyColumnState();
     const currentWidth = side === "left" ? state.leftWidth : state.rightWidth;
     let target = null;
     if (event.key === "Home") target = bounds.minimum;
@@ -555,14 +555,14 @@
       target = currentWidth + direction * step * (side === "left" ? 1 : -1);
     } else return;
     event.preventDefault();
-    setDictationColumnWidth(side, target, true);
+    setStudyColumnWidth(side, target, true);
   }
 
-  function installDictationColumnControls() {
+  function installStudyColumnControls() {
     if (!ui) return;
     for (const [splitter, side] of [[ui.leftColumnSplitter, "left"], [ui.rightColumnSplitter, "right"]]) {
       let collapseTimer = null;
-      splitter.addEventListener("pointerdown", (event) => beginDictationColumnDrag(event, side, splitter));
+      splitter.addEventListener("pointerdown", (event) => beginStudyColumnDrag(event, side, splitter));
       splitter.addEventListener("click", (event) => {
         if (splitter.dataset.suppressCollapseClick === "true") {
           delete splitter.dataset.suppressCollapseClick;
@@ -575,21 +575,21 @@
         if (event.detail > 1) return;
         collapseTimer = window.setTimeout(() => {
           collapseTimer = null;
-          if (ui?.root?.contains(splitter)) setDictationColumnHidden(side, true);
+          if (ui?.root?.contains(splitter)) setStudyColumnHidden(side, true);
         }, 350);
       });
       splitter.addEventListener("dblclick", (event) => {
         event.preventDefault();
         if (collapseTimer) window.clearTimeout(collapseTimer);
         collapseTimer = null;
-        resetDictationColumnWidth(side);
+        resetStudyColumnWidth(side);
       });
-      splitter.addEventListener("keydown", (event) => onDictationSplitterKeyDown(event, side));
+      splitter.addEventListener("keydown", (event) => onStudySplitterKeyDown(event, side));
     }
-    ui.hideLeftColumn.addEventListener("click", () => setDictationColumnHidden("left", true));
-    ui.hideRightColumn.addEventListener("click", () => setDictationColumnHidden("right", true));
-    ui.showLeftColumn.addEventListener("click", () => setDictationColumnHidden("left", false));
-    ui.showRightColumn.addEventListener("click", () => setDictationColumnHidden("right", false));
+    ui.hideLeftColumn.addEventListener("click", () => setStudyColumnHidden("left", true));
+    ui.hideRightColumn.addEventListener("click", () => setStudyColumnHidden("right", true));
+    ui.showLeftColumn.addEventListener("click", () => setStudyColumnHidden("left", false));
+    ui.showRightColumn.addEventListener("click", () => setStudyColumnHidden("right", false));
   }
 
   function hideYouTubeScrollbar() {
@@ -621,11 +621,11 @@
     const root = A?.overlayEl?.();
     if (!root) return;
     ensureStyle(root);
-    let toast = root.querySelector("#te-dict-toast");
+    let toast = root.querySelector("#te-study-toast");
     if (!toast) {
       toast = document.createElement("div");
-      toast.id = "te-dict-toast";
-      toast.className = "te-dict-toast";
+      toast.id = "te-study-toast";
+      toast.className = "te-study-toast";
       toast.setAttribute("role", "status");
       root.appendChild(toast);
     }
@@ -656,8 +656,8 @@
     ui.close.title = tr("dictationClose");
     ui.compactAudio.setAttribute("aria-label", tr("dictationAudioTitle"));
     ui.sentences.setAttribute("aria-label", tr("dictationSentences"));
-    ui.tools.querySelector(".te-dict-mode-switch")?.setAttribute("aria-label", tr("dictationModeGroup"));
-    for (const selector of [".te-dict-stats-card", ".te-dict-stats-filter-bar", ".te-dict-stats-scroll"]) {
+    ui.tools.querySelector(".te-study-mode-switch")?.setAttribute("aria-label", tr("dictationModeGroup"));
+    for (const selector of [".te-study-stats-card", ".te-study-stats-filter-bar", ".te-study-stats-scroll"]) {
       ui.notesPanel.querySelector(selector)?.setAttribute("aria-label", tr("dictationWrongStatsTitle"));
     }
     ui.input.placeholder = tr("dictationPlaceholder");
@@ -673,8 +673,8 @@
       item.textContent = text;
       return item;
     }));
-    ui.labels = [...ui.root.querySelectorAll("[data-dict-label]")];
-    ui.labels.forEach((node) => { node.textContent = tr(node.dataset.dictLabel); });
+    ui.labels = [...ui.root.querySelectorAll("[data-study-label]")];
+    ui.labels.forEach((node) => { node.textContent = tr(node.dataset.studyLabel); });
     setTranslationToggleState(translationAlwaysVisible());
     const speechShortcutTexts = tr("dictationSpeechShortcutHint").split(/\s*·\s*/).slice(0, 4);
     ui.speechShortcuts.replaceChildren(...speechShortcutTexts.map((text) => {
@@ -683,13 +683,13 @@
       return item;
     }));
     ui.miniSource.textContent = tr("dictationAudioSource");
-    ui.heading.textContent = tr(dictationMode === "speaking" ? "dictationSpeakTitle" : "dictationTitle");
-    const compactVideo = ui.root.classList.contains("te-dict-video-compact");
-    const videoToggleLabel = tr(compactVideo ? "dictationExpandVideo" : "dictationCompactVideo");
-    ui.videoCompactToggle.title = videoToggleLabel;
-    ui.videoCompactToggle.setAttribute("aria-label", videoToggleLabel);
-    const video = attachedVideo || A?.state?.videoEl;
-    const miniPlayLabel = tr(video && !video.paused ? "dictationMiniPause" : "dictationMiniPlay");
+    ui.heading.textContent = tr(studyMode === "speaking" ? "dictationSpeakTitle" : "dictationTitle");
+    const compactMedia = ui.root.classList.contains("te-study-media-compact");
+    const mediaToggleLabel = tr(compactMedia ? "dictationExpandVideo" : "dictationCompactVideo");
+    ui.mediaCompactToggle.title = mediaToggleLabel;
+    ui.mediaCompactToggle.setAttribute("aria-label", mediaToggleLabel);
+    const media = attachedMedia || A?.state?.activeMedia;
+    const miniPlayLabel = tr(media && !media.paused ? "dictationMiniPause" : "dictationMiniPlay");
     ui.miniPlay.title = miniPlayLabel;
     ui.miniPlay.setAttribute("aria-label", miniPlayLabel);
     shadowingActivity.updateSpeechMicState(ui.speechMic.classList.contains("listening"));
@@ -697,7 +697,7 @@
     if (captionStatusKey) ui.loadingStatus.textContent = tr(captionStatusKey);
     if (ui.properNounHint && !ui.properNounHint.hidden) renderProperNounHint(sentenceCues[current]?.en || "");
     updateProgressSyncControl();
-    applyDictationColumnLayout();
+    applyStudyColumnLayout();
     if (shadowingActivity.lastSpeechFeedback && !ui.success.hidden) {
       const feedback = shadowingActivity.lastSpeechFeedback;
       shadowingActivity.setSpeechFeedback(feedback.tier, feedback.percent, feedback.sentence, feedback.perfect);
@@ -712,26 +712,26 @@
     ui = globalThis.LHN_OVERLAY_TEMPLATE?.createStudyUi?.({ root, tr, makeSvg, repeatCount }) || null;
     if (!ui) return;
     ui.success.addEventListener("animationend", (event) => {
-      if (event.animationName === "teDictSpeechToastSpringPop") ui.success.classList.remove("te-dict-speech-toast-spring");
+      if (event.animationName === "teDictSpeechToastSpringPop") ui.success.classList.remove("te-shadowing-toast-spring");
     });
     for (const button of [ui.previous, ui.next, ui.replay]) {
       if (button) ui.originalButtonState.set(button, { disabled: button.disabled, aria: button.getAttribute("aria-disabled") });
     }
     refreshLanguageLabels();
-    installDictationColumnControls();
+    installStudyColumnControls();
     updateCompactAudioInfo();
     updateCompactAudioPlaybackState();
-    ui.videoCompactToggle.addEventListener("click", toggleCompactVideo);
+    ui.mediaCompactToggle.addEventListener("click", toggleCompactMedia);
     ui.translationToggle.addEventListener("click", onTranslationToggle);
     ui.miniPlay.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      toggleVideoPlayback();
+      toggleMediaPlayback();
     });
-    ui.videoSlot.addEventListener("transitionend", onVideoSlotTransitionEnd);
+    ui.playerSlot.addEventListener("transitionend", onPlayerSlotTransitionEnd);
     if (typeof ResizeObserver === "function") {
-      ui.videoResizeObserver = new ResizeObserver(onDictationVideoResize);
-      ui.videoResizeObserver.observe(ui.left);
+      ui.playerResizeObserver = new ResizeObserver(onStudyPlayerResize);
+      ui.playerResizeObserver.observe(ui.left);
     }
 
     ui.close.addEventListener("click", close);
@@ -743,8 +743,8 @@
     ui.showHints.addEventListener("click", onShowHintsToggle);
     ui.btnSlow.addEventListener("click", () => { playSentence(current, { rate: 0.6 }); refocus(); });
     ui.repeatBtns.forEach((button) => button.addEventListener("click", () => { setRepeat(Number(button.dataset.count)); refocus(); }));
-    ui.speakControl.addEventListener("click", () => setDictationMode("speaking"));
-    ui.typeControl.addEventListener("click", () => { setDictationMode("typing"); focusInputIfTyping(); });
+    ui.speakControl.addEventListener("click", () => setStudyMode("speaking"));
+    ui.typeControl.addEventListener("click", () => { setStudyMode("typing"); focusInputIfTyping(); });
     ui.syncProgressControl.addEventListener("click", toggleProgressSync);
     ui.speechAutoToggle.addEventListener("click", shadowingActivity.toggleSpeechAutoRecord);
     ui.speechMic.addEventListener("click", () => { void shadowingActivity.toggleSpeechRecognition(); });
@@ -774,11 +774,11 @@
     ui.bar.addEventListener("click", onControlClick, true);
   }
 
-  function syncVideoModeButtons() {
+  function syncStudyModeButtons() {
     const typingButton = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
-    const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
-    const typingActive = active && dictationMode === "typing";
-    const speakingActive = active && dictationMode === "speaking";
+    const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-shadowing-mode-btn");
+    const typingActive = active && studyMode === "typing";
+    const speakingActive = active && studyMode === "speaking";
     typingButton?.classList.toggle("te-active", typingActive);
     typingButton?.setAttribute("aria-pressed", String(typingActive));
     speakingButton?.classList.toggle("te-active", speakingActive);
@@ -786,23 +786,24 @@
   }
 
   function focusInputIfTyping() {
-    if (dictationMode === "typing") ui?.input.focus({ preventScroll: true });
+    if (studyMode === "typing") ui?.input.focus({ preventScroll: true });
   }
 
-  function setDictationMode(mode) {
+  function setStudyMode(mode) {
     if (mode !== "typing" && mode !== "speaking") return;
-    const changed = mode !== dictationMode;
+    const changed = mode !== studyMode;
     const swapProgress = changed && active && progressReady && !progressSyncEnabled;
     if (swapProgress) {
       captureNoteDraft();
-      storeActiveModeProgress(dictationMode);
+      storeActiveModeProgress(studyMode);
     }
     if (changed && mode !== "speaking") shadowingActivity.stopSpeechRecognition(true);
     if (changed && mode === "speaking") {
       shadowingActivity.speechAnswerRevealed = false;
       shadowingActivity.clearRecordedSpeech();
     }
-    dictationMode = mode;
+    studyMode = mode;
+    if (active) globalThis.LHN_OVERLAY_SET_STUDY_ACTIVITY?.(mode === "speaking" ? "shadowing" : "dictation");
     syncRepeatButtons();
     shadowingActivity.updateSpeechCheckDisabled();
     A?.setPreferredLearningMode?.(mode);
@@ -813,7 +814,7 @@
         shadowingActivity.resetSpeechFeedback();
       }
       const speaking = mode === "speaking";
-      ui.root.classList.toggle("te-dict-speaking-mode", speaking);
+      ui.root.classList.toggle("te-shadowing-active", speaking);
       ui.speechPractice.hidden = !speaking;
       if (speaking) ui.speechPractice.insertBefore(ui.translation, ui.speechShortcuts.nextSibling);
       else ui.translationSlot.appendChild(ui.translation);
@@ -832,7 +833,7 @@
       }
     }
     if (changed && ui) renderWrongWordStats();
-    syncVideoModeButtons();
+    syncStudyModeButtons();
     if (swapProgress) {
       pendingResumeIndex = current;
       listStart = 0;
@@ -854,7 +855,7 @@
     if (!ui?.root) return;
     const colorTier = getScoreColorTier(percent);
     for (const name of ["green", "yellow", "red"]) ui.root.classList.toggle(`te-dict-score-${name}`, colorTier === name);
-    const speechTier = dictationMode === "speaking" ? shadowingActivity.getSpeechScoreTier(percent) : null;
+    const speechTier = studyMode === "speaking" ? shadowingActivity.getSpeechScoreTier(percent) : null;
     if (ui.speechResultWrap) {
       ui.speechResultWrap.classList.toggle("state-warn", speechTier === "warn");
       ui.speechResultWrap.classList.toggle("state-fail", speechTier === "fail");
@@ -864,7 +865,7 @@
   function refocus() { focusInputIfTyping(); }
 
   function getRepeatCount() {
-    return dictationMode === "speaking" ? speakingRepeatCount : repeatCount;
+    return studyMode === "speaking" ? speakingRepeatCount : repeatCount;
   }
 
   function syncRepeatButtons() {
@@ -874,18 +875,18 @@
 
   function setRepeat(count) {
     const value = Math.max(0, Math.min(3, count | 0));
-    if (dictationMode === "speaking") speakingRepeatCount = value;
+    if (studyMode === "speaking") speakingRepeatCount = value;
     else repeatCount = value;
     syncRepeatButtons();
   }
 
   function updateCompactAudioInfo() {
     if (!ui) return;
-    const title = cleanVideoTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent) || cleanVideoTitle(document.title);
+    const title = cleanSourceTitle(document.querySelector("h1.ytd-watch-metadata")?.textContent) || cleanSourceTitle(document.title);
     ui.miniTitle.textContent = `Keepit - ${title || tr("dictationTitle")}`;
     ui.miniSource.textContent = tr("dictationAudioSource");
-    const isWebSource = A?.state?.webStudy === true;
-    const sourceUrl = String(isWebSource ? A?.state?.webPageUrl || globalThis.location?.href || "" : globalThis.location?.href || "");
+    const isWebSource = A?.state?.sourceType === 'web';
+    const sourceUrl = String(isWebSource ? A?.state?.webSourceUrl || globalThis.location?.href || "" : globalThis.location?.href || "");
     const thumbnailUrl = isWebSource ? thumbnails?.fromPageMetadata?.(document, sourceUrl) || "" : "";
     if (thumbnails?.loadSource) {
       ui.miniThumb.hidden = false;
@@ -894,20 +895,20 @@
       ui.miniThumb.hidden = true;
       thumbnails?.clear(ui.miniThumb);
     }
-    const compact = ui.root.classList.contains("te-dict-video-compact");
+    const compact = ui.root.classList.contains("te-study-media-compact");
     const label = tr(compact ? "dictationExpandVideo" : "dictationCompactVideo");
-    ui.videoCompactToggle.title = label;
-    ui.videoCompactToggle.setAttribute("aria-label", label);
-    ui.videoCompactToggle.setAttribute("aria-pressed", String(compact));
-    ui.videoCompactToggle.innerHTML = makeSvg(compact
+    ui.mediaCompactToggle.title = label;
+    ui.mediaCompactToggle.setAttribute("aria-label", label);
+    ui.mediaCompactToggle.setAttribute("aria-pressed", String(compact));
+    ui.mediaCompactToggle.innerHTML = makeSvg(compact
       ? '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>'
       : '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>');
   }
 
   function updateCompactAudioPlaybackState() {
     if (!ui) return;
-    const video = attachedVideo || A?.state?.videoEl;
-    const playing = !!video && !video.paused;
+    const media = attachedMedia || A?.state?.activeMedia;
+    const playing = !!media && !media.paused;
     ui.compactAudio.classList.toggle("playing", playing);
     const label = tr(playing ? "dictationMiniPause" : "dictationMiniPlay");
     ui.miniPlay.title = label;
@@ -917,69 +918,69 @@
       : '<path d="M8 5v14l11-7z"/>');
   }
 
-  function toggleCompactVideo() {
-    if (!ui?.videoSlot) return;
-    const compact = ui.root.classList.contains("te-dict-video-compact");
-    const slot = ui.videoSlot;
+  function toggleCompactMedia() {
+    if (!ui?.playerSlot) return;
+    const compact = ui.root.classList.contains("te-study-media-compact");
+    const slot = ui.playerSlot;
     const currentHeight = slot.getBoundingClientRect().height;
     if (!currentHeight) return;
-    if (!compact && !ui.videoExpandedHeightSaved) {
-      ui.videoExpandedHeight = currentHeight;
-      ui.videoExpandedHeightSaved = true;
+    if (!compact && !ui.playerExpandedHeightSaved) {
+      ui.playerExpandedHeight = currentHeight;
+      ui.playerExpandedHeightSaved = true;
     }
-    const targetHeight = compact ? ui.videoExpandedHeight : ui.videoExpandedHeight / 3;
+    const targetHeight = compact ? ui.playerExpandedHeight : ui.playerExpandedHeight / 3;
     if (!targetHeight) return;
-    const token = ++ui.videoTransitionToken;
+    const token = ++ui.playerTransitionToken;
     slot.style.height = `${currentHeight}px`;
     void slot.offsetHeight;
-    ui.root.classList.toggle("te-dict-video-compact", !compact);
+    ui.root.classList.toggle("te-study-media-compact", !compact);
     updateCompactAudioInfo();
     requestAnimationFrame(() => {
-      if (!ui || ui.videoTransitionToken !== token) return;
+      if (!ui || ui.playerTransitionToken !== token) return;
       slot.style.height = `${targetHeight}px`;
     });
   }
 
-  function onVideoSlotTransitionEnd(event) {
-    if (!ui || event.target !== ui.videoSlot || event.propertyName !== "height") return;
-    if (ui.root.classList.contains("te-dict-video-compact")) return;
-    if (ui.videoExpandedHeightSaved) {
-      ui.videoExpandedHeight = ui.videoSlot.getBoundingClientRect().height;
-      ui.videoExpandedHeightSaved = false;
+  function onPlayerSlotTransitionEnd(event) {
+    if (!ui || event.target !== ui.playerSlot || event.propertyName !== "height") return;
+    if (ui.root.classList.contains("te-study-media-compact")) return;
+    if (ui.playerExpandedHeightSaved) {
+      ui.playerExpandedHeight = ui.playerSlot.getBoundingClientRect().height;
+      ui.playerExpandedHeightSaved = false;
     }
-    const original = ui.originalVideoSlotHeight;
-    if (original.value) ui.videoSlot.style.setProperty("height", original.value, original.priority);
-    else ui.videoSlot.style.removeProperty("height");
+    const original = ui.originalPlayerSlotHeight;
+    if (original.value) ui.playerSlot.style.setProperty("height", original.value, original.priority);
+    else ui.playerSlot.style.removeProperty("height");
   }
 
-  function onDictationVideoResize() {
-    if (!ui?.root.classList.contains("te-dict-video-compact") || !ui.videoExpandedHeightSaved) return;
-    const slotWidth = ui.videoSlot.getBoundingClientRect().width;
+  function onStudyPlayerResize() {
+    if (!ui?.root.classList.contains("te-study-media-compact") || !ui.playerExpandedHeightSaved) return;
+    const slotWidth = ui.playerSlot.getBoundingClientRect().width;
     const leftHeight = ui.left.getBoundingClientRect().height;
-    const video = attachedVideo || A?.state?.videoEl;
-    const aspect = video?.videoWidth && video?.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
+    const media = attachedMedia || A?.state?.activeMedia;
+    const aspect = media?.videoWidth && media?.videoHeight ? media.videoWidth / media.videoHeight : 16 / 9;
     if (!slotWidth || !leftHeight || !aspect) return;
-    ui.videoExpandedHeight = Math.min(slotWidth / aspect, leftHeight * .42);
-    if (ui.videoExpandedHeight > 0) ui.videoSlot.style.height = `${ui.videoExpandedHeight / 3}px`;
+    ui.playerExpandedHeight = Math.min(slotWidth / aspect, leftHeight * .42);
+    if (ui.playerExpandedHeight > 0) ui.playerSlot.style.height = `${ui.playerExpandedHeight / 3}px`;
   }
 
 
   function showToastBeforeOpen() {
-    const currentId = A?.state?.videoId;
+    const currentId = A?.state?.sourceId;
     const loading = !!currentId && A?.state?.loadingFor === currentId;
-    const unavailableKey = A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
+    const unavailableKey = A?.state?.sourceType === 'web' ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
     showToast(tr(loading ? "dictationCaptionsLoading" : unavailableKey));
   }
 
-  async function loadProgress(requestVideoId, generation) {
-    const key = `dictation:${requestVideoId}`;
+  async function loadProgress(requestSourceId, generation) {
+    const key = `dictation:${requestSourceId}`;
     let record = {};
     try {
       record = (await ext.storage.local.get(key))[key] || {};
     } catch {}
-    if (!active || videoId !== requestVideoId || panelGeneration !== generation) return null;
-    const storedTitle = cleanVideoTitle(record.title);
-    if (storedTitle && !getCurrentVideoTitle()) indexedVideoTitle = storedTitle;
+    if (!active || sourceId !== requestSourceId || panelGeneration !== generation) return null;
+    const storedTitle = cleanSourceTitle(record.title);
+    if (storedTitle && !getCurrentSourceTitle()) indexedSourceTitle = storedTitle;
     const sharedProgress = normalizeProgressSnapshot({ current: record.current, solved: record.solved });
     const storedByMode = record.progressByMode && typeof record.progressByMode === "object" ? record.progressByMode : {};
     progressByMode = {
@@ -997,7 +998,7 @@
       const synchronized = currentProgressSnapshot();
       progressByMode = { typing: cloneProgressSnapshot(synchronized), speaking: cloneProgressSnapshot(synchronized) };
     } else {
-      applyModeProgress(dictationMode);
+      applyModeProgress(studyMode);
     }
     notes = record.notes && typeof record.notes === "object" ? record.notes : {};
     translations = record.translations && typeof record.translations === "object" ? record.translations : {};
@@ -1007,18 +1008,18 @@
   }
 
   function saveRecord() {
-    if (!videoId || !ext?.storage?.local || !progressReady) return Promise.resolve();
-    const isWebSource = A?.state?.webStudy === true;
+    if (!sourceId || !ext?.storage?.local || !progressReady) return Promise.resolve();
+    const isWebSource = A?.state?.sourceType === 'web';
     const sessionSourceType = isWebSource ? "web" : "youtube";
-    const sessionSourceId = isWebSource ? String(A?.state?.videoId || videoId) : videoId;
-    const sessionUrl = isWebSource ? String(A?.state?.webPageUrl || globalThis.location?.href || "")
-      : `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+    const sessionSourceId = isWebSource ? String(A?.state?.sourceId || sourceId) : sourceId;
+    const sessionUrl = isWebSource ? String(A?.state?.webSourceUrl || globalThis.location?.href || "")
+      : `https://www.youtube.com/watch?v=${encodeURIComponent(sourceId)}`;
     const sessionId = `${sessionSourceType}:${sessionSourceId}`;
     const totalCount = sentenceCues.length;
     const solvedCount = solved.size;
-    const title = getCurrentVideoTitle() || indexedVideoTitle;
+    const title = getCurrentSourceTitle() || indexedSourceTitle;
     const titleUpdatedAt = title ? Date.now() : 0;
-    if (title) indexedVideoTitle = title;
+    if (title) indexedSourceTitle = title;
     const activeProgress = currentProgressSnapshot();
     if (progressSyncEnabled) {
       progressByMode = { typing: cloneProgressSnapshot(activeProgress), speaking: cloneProgressSnapshot(activeProgress) };
@@ -1043,7 +1044,7 @@
       status: totalCount > 0 && solvedCount >= totalCount ? "complete" : "in_progress",
     };
     return ext.storage.local.set({ [storageKey()]: record })
-      .then(() => { void saveDictationSessionIndex(session); })
+      .then(() => { void saveStudySessionIndex(session); })
       .catch(() => {});
   }
 
@@ -1087,7 +1088,7 @@
     for (const [storageKey, item] of Object.entries(value.words)) {
       if (!storageKey.startsWith("w:") || !item || typeof item !== "object") continue;
       const word = typeof item.word === "string" ? item.word : storageKey.slice(2);
-      if (!word || globalThis.LHN_DICTATION_RULES.countLetters(word) < 4) continue;
+      if (!word || globalThis.LHN_STUDY_RULES.countLetters(word) < 4) continue;
       const errors = safeCount(item.errors);
       if (errors < 1) continue;
       const variants = {};
@@ -1140,7 +1141,7 @@
   }
 
   function recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp = Date.now()) {
-    return globalThis.LHN_DICTATION_RULES.recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp);
+    return globalThis.LHN_STUDY_RULES.recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp);
   }
 
   function wrongWordStreak(item) {
@@ -1170,11 +1171,11 @@
 
   function renderWrongWordStats() {
     if (!ui?.statsScroll) return;
-    const speaking = dictationMode === "speaking";
+    const speaking = studyMode === "speaking";
     const stats = normalizeWrongWordStats(speaking ? speakingWrongWordStats : wrongWordStats);
     const summaryKey = speaking ? "dictationWrongStatsSpeakingSummary" : "dictationWrongStatsSummary";
     if (ui.statsSummary) {
-      ui.statsSummary.dataset.dictLabel = summaryKey;
+      ui.statsSummary.dataset.studyLabel = summaryKey;
       ui.statsSummary.textContent = tr(summaryKey);
     }
     const allItems = Object.entries(stats.words).map(([key, item]) => ({ key, ...item, streak: wrongWordStreak(item) }));
@@ -1203,7 +1204,7 @@
     ui.statsScroll.replaceChildren();
     if (!allItems.length || !visibleItems.length) {
       const empty = document.createElement("p");
-      empty.className = "te-dict-stats-empty";
+      empty.className = "te-study-stats-empty";
       empty.setAttribute("role", "status");
       empty.textContent = allItems.length ? tr("dictationWrongStatsNoResults") : tr("dictationWrongStatsEmpty");
       ui.statsScroll.appendChild(empty);
@@ -1212,7 +1213,7 @@
 
     const label = (key) => {
       const node = document.createElement("span");
-      node.dataset.dictLabel = key;
+      node.dataset.studyLabel = key;
       node.textContent = tr(key);
       return node;
     };
@@ -1227,7 +1228,7 @@
     };
     const variantChip = (variant, extra = false) => {
       const chip = document.createElement("span");
-      chip.className = `te-dict-stats-variant${extra ? " extra" : ""}`;
+      chip.className = `te-study-stats-variant${extra ? " extra" : ""}`;
       chip.append(document.createTextNode(variant.text || tr("dictationWrongStatsOmitted")));
       const count = document.createElement("b");
       count.textContent = `×${variant.count}`;
@@ -1241,27 +1242,27 @@
       const denominator = item.errors + item.corrections;
       const rate = denominator ? Math.round((item.corrections / denominator) * 100) : 0;
       const article = document.createElement("article");
-      article.className = "te-dict-stats-word";
+      article.className = "te-study-stats-word";
 
       const head = document.createElement("div");
-      head.className = "te-dict-stats-word-head";
+      head.className = "te-study-stats-word-head";
       const title = document.createElement("div");
-      title.className = "te-dict-stats-word-title";
+      title.className = "te-study-stats-word-title";
       const rankNode = document.createElement("span");
-      rankNode.className = `te-dict-stats-rank${rank <= 3 ? " top3" : ""}`;
+      rankNode.className = `te-study-stats-rank${rank <= 3 ? " top3" : ""}`;
       rankNode.textContent = `#${rank}`;
       const word = document.createElement("strong");
       word.textContent = item.word;
       title.append(rankNode, word);
       const status = document.createElement("span");
-      status.className = `te-dict-stats-status ${isWrong ? "wrong" : "correct"}`;
+      status.className = `te-study-stats-status ${isWrong ? "wrong" : "correct"}`;
       const statusDot = document.createElement("i");
       statusDot.setAttribute("aria-hidden", "true");
       status.append(statusDot, label(isWrong ? "dictationWrongStatsLastWrong" : "dictationWrongStatsLastCorrect"));
       head.append(title, status);
 
       const metrics = document.createElement("div");
-      metrics.className = "te-dict-stats-metrics";
+      metrics.className = "te-study-stats-metrics";
       metrics.append(countMetric("dictationWrongStatsErrors", item.errors, "wrong"));
       metrics.append(countMetric("dictationWrongStatsCorrect", item.corrections, "correct"));
       const rateMetric = document.createElement("span");
@@ -1272,25 +1273,25 @@
       metrics.appendChild(rateMetric);
 
       const bar = document.createElement("div");
-      bar.className = "te-dict-stats-accuracy";
+      bar.className = "te-study-stats-accuracy";
       bar.setAttribute("aria-hidden", "true");
       const fill = document.createElement("span");
       fill.style.width = `${rate}%`;
       bar.appendChild(fill);
 
       const variantsWrap = document.createElement("div");
-      variantsWrap.className = "te-dict-stats-variants";
+      variantsWrap.className = "te-study-stats-variants";
       const variantsLabel = label("dictationWrongStatsVariants");
-      variantsLabel.className = "te-dict-stats-variants-label";
+      variantsLabel.className = "te-study-stats-variants-label";
       const variantList = document.createElement("div");
-      variantList.className = "te-dict-stats-variant-list";
+      variantList.className = "te-study-stats-variant-list";
       const variants = Object.values(item.variants || {}).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
       variants.forEach((variant, index) => variantList.appendChild(variantChip(variant, index >= 2)));
       const extras = variants.slice(2);
       let details = null;
       if (extras.length) {
         details = document.createElement("details");
-        details.className = "te-dict-stats-more";
+        details.className = "te-study-stats-more";
         const summary = document.createElement("summary");
         const more = document.createElement("span");
         more.className = "more-label";
@@ -1527,7 +1528,7 @@
 
   function updateRows(scrollCurrent = true) {
     if (!ui) return;
-    ui.sentences.querySelectorAll(".te-dict-row").forEach((row) => {
+    ui.sentences.querySelectorAll(".te-study-row").forEach((row) => {
       const index = Number(row.dataset.index);
       const isSolved = solved.has(index);
       const isLocked = index > current || (index === current && !checkedCurrent);
@@ -1539,14 +1540,14 @@
       row.classList.toggle("past", isPast);
       const stateLabel = isSolved ? `, ${tr("dictationSolved")}` : isLocked ? `, ${tr("dictationLocked")}` : "";
       row.setAttribute("aria-label", `${tr("dictationSentenceNumber")} ${index + 1}${stateLabel}`);
-      const translation = row.querySelector(".te-dict-vi");
+      const translation = row.querySelector(".te-study-vi");
       const showTranslation = !isLocked;
       translation.textContent = showTranslation ? (translations[String(index)] || tr("dictationTranslationLoading")) : "";
       translation.hidden = !showTranslation;
       if (showTranslation && !translations[String(index)]) void ensureVietnamese(index);
     });
     if (scrollCurrent) {
-      const currentRow = ui.sentences.querySelector(`.te-dict-row[data-index="${current}"]`);
+      const currentRow = ui.sentences.querySelector(`.te-study-row[data-index="${current}"]`);
       currentRow?.scrollIntoView({ block: "center" });
     }
   }
@@ -1555,15 +1556,15 @@
     const cue = sentenceCues[index];
     const row = document.createElement("button");
     row.type = "button";
-    row.className = "te-dict-row";
+    row.className = "te-study-row";
     row.dataset.index = String(index);
     row.disabled = index > current || (index === current && !checkedCurrent);
     row.classList.toggle("past", index < current);
     row.setAttribute("role", "listitem");
-    row.innerHTML = `<span class="te-dict-num"></span><span class="te-dict-text"></span><span class="te-dict-icon" aria-hidden="true"><svg class="play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="te-dict-vi" hidden></span>`;
-    row.querySelector(".te-dict-num").textContent = String(index + 1);
-    row.querySelector(".te-dict-text").textContent = cue.en;
-    const translation = row.querySelector(".te-dict-vi");
+    row.innerHTML = `<span class="te-study-num"></span><span class="te-study-text"></span><span class="te-study-icon" aria-hidden="true"><svg class="play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="te-study-vi" hidden></span>`;
+    row.querySelector(".te-study-num").textContent = String(index + 1);
+    row.querySelector(".te-study-text").textContent = cue.en;
+    const translation = row.querySelector(".te-study-vi");
     const showTranslation = index < current || (index === current && checkedCurrent);
     translation.textContent = showTranslation ? (translations[String(index)] || tr("dictationTranslationLoading")) : "";
     translation.hidden = !showTranslation;
@@ -1617,7 +1618,7 @@
 
   function setNotesLocked(locked) {
     if (!ui) return;
-    ui.notesPanel.classList.toggle("te-dict-notes-locked", locked);
+    ui.notesPanel.classList.toggle("te-study-notes-locked", locked);
     ui.lock.hidden = !locked;
     ui.note.disabled = locked;
     ui.save.disabled = locked;
@@ -1643,7 +1644,7 @@
 
   function renderProperNounHint(sentence) {
     if (!ui?.properNounHint) return;
-    const names = globalThis.LHN_DICTATION_RULES.getProperNounHints(sentence);
+    const names = globalThis.LHN_STUDY_RULES.getProperNounHints(sentence);
     ui.properNounHint.replaceChildren();
     ui.properNounHint.hidden = names.length === 0;
     if (!names.length) return;
@@ -1724,7 +1725,7 @@
     if (!ui) return;
     const translated = translations[String(index)] || "";
     const canShowTranslation = index < current || (index === current && checkedCurrent);
-    const row = ui.sentences.querySelector(`.te-dict-row[data-index="${index}"] .te-dict-vi`);
+    const row = ui.sentences.querySelector(`.te-study-row[data-index="${index}"] .te-study-vi`);
     if (row) {
       row.textContent = canShowTranslation ? (translated || tr("dictationTranslationLoading")) : "";
       row.hidden = !canShowTranslation;
@@ -1743,11 +1744,11 @@
     }
     const cue = sentenceCues[index];
     if (!cue || typeof A?.translateToVietnamese !== "function") return "";
-    const requestVideoId = videoId;
-    const requestKey = `${requestVideoId}:${index}:${cue.en}`;
+    const requestSourceId = sourceId;
+    const requestKey = `${requestSourceId}:${index}:${cue.en}`;
     if (translating.has(requestKey)) return translating.get(requestKey);
     const request = Promise.resolve(A.translateToVietnamese(cue.en)).then((translated) => {
-      if (videoId !== requestVideoId || sentenceCues[index]?.en !== cue.en) return "";
+      if (sourceId !== requestSourceId || sentenceCues[index]?.en !== cue.en) return "";
       const value = String(translated || "").trim();
       if (!value || value === "(không dịch được)") {
         if (ui && active && current === index) ui.translation.textContent = tr("dictationTranslationFailed");
@@ -1758,7 +1759,7 @@
       updateTranslationViews(index);
       return value;
     }).catch(() => {
-      if (videoId === requestVideoId && sentenceCues[index]?.en === cue.en && ui && active && current === index) {
+      if (sourceId === requestSourceId && sentenceCues[index]?.en === cue.en && ui && active && current === index) {
         ui.translation.textContent = tr("dictationTranslationFailed");
       }
       return "";
@@ -1769,7 +1770,7 @@
 
   // So theo vị trí: từng từ gõ so với từ cùng vị trí của câu gốc. Dừng ở lỗi (sai/thiếu) đầu tiên.
   function positionalOps(refText, typedText) {
-    return globalThis.LHN_DICTATION_SCORE.positionalDiff(refText, typedText);
+    return globalThis.LHN_STUDY_SCORE.positionalDiff(refText, typedText);
   }
 
   function setErrorPanelSuccess(success) {
@@ -1806,10 +1807,10 @@
 
   function renderPrefixSuggestion(reference, answer) {
     setErrorPanelSuccess(false);
-    const progress = globalThis.LHN_DICTATION_SCORE.getPrefixProgress(reference, answer);
+    const progress = globalThis.LHN_STUDY_SCORE.getPrefixProgress(reference, answer);
     const words = progress.expectedUnits.map((unit) => ({
       display: unit.display,
-      norm: globalThis.LHN_DICTATION_SCORE.tokenize(unit.display).join("") || unit.norm,
+      norm: globalThis.LHN_STUDY_SCORE.tokenize(unit.display).join("") || unit.norm,
     }));
     const enteredCount = progress.matchedUnits;
     const showHint = shouldShowHints("prefix", answer);
@@ -1836,7 +1837,7 @@
     const answer = ui.input.value;
     const showHints = shouldShowHints("error", answer);
     const words = getTranscriptWordTokens(cue?.en || "");
-    const operations = globalThis.LHN_DICTATION_SCORE.diff(cue?.en || "", answer);
+    const operations = globalThis.LHN_STUDY_SCORE.diff(cue?.en || "", answer);
     const missingPatterns = findMissingBeforeCorrect(operations);
     const missingPattern = missingPatterns[0] || null;
     const displayOperations = missingPattern
@@ -1883,7 +1884,7 @@
           if (showHints) group.appendChild(chip("te-dict-w fix", `→ ${expectedDisplay(operation)}`));
           ui.errorWords.appendChild(group);
           if (!showHints) {
-            const expected = words[expectedStart(operation)] || { norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "" };
+            const expected = words[expectedStart(operation)] || { norm: globalThis.LHN_STUDY_SCORE.tokenize(operation.expected)[0] || "" };
             appendMissingMasks([expected]);
           }
           advanceExpected(operation);
@@ -1895,7 +1896,7 @@
             for (const expectedIndex of missingPattern.expectedIndices) {
               const expected = words[expectedIndex] || {
                 display: "",
-                norm: globalThis.LHN_DICTATION_SCORE.tokenize(operation.expected)[0] || "",
+                norm: globalThis.LHN_STUDY_SCORE.tokenize(operation.expected)[0] || "",
               };
               if (showHints) {
                 const group = document.createElement("span");
@@ -2058,7 +2059,7 @@
       const after = [...source.slice(end, nextStart).matchAll(/\p{P}/gu)].map((item) => item[0]).join("");
       return {
         raw: match[0],
-        norm: globalThis.LHN_DICTATION_SCORE.tokenize(match[0])[0] || "",
+        norm: globalThis.LHN_STUDY_SCORE.tokenize(match[0])[0] || "",
         display: `${before}${match[0]}${after}`,
         start: match.index,
         end,
@@ -2069,7 +2070,7 @@
   function canonicalizeCorrectWords(reference, answer) {
     const expectedWords = getTranscriptWordTokens(reference);
     const typedWords = getTranscriptWordTokens(answer);
-    const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
+    const operations = globalThis.LHN_STUDY_SCORE.diff(reference, answer);
     const replacements = [];
     for (const operation of operations) {
       const expectedIndices = operation.expectedIndices || [];
@@ -2089,7 +2090,7 @@
   function restoreAlignedPunctuation(reference, answer) {
     const expectedWords = getTranscriptWordTokens(reference);
     const typedWords = getTranscriptWordTokens(answer);
-    const operations = globalThis.LHN_DICTATION_SCORE.diff(reference, answer);
+    const operations = globalThis.LHN_STUDY_SCORE.diff(reference, answer);
     const expectedToTyped = new Array(expectedWords.length).fill(-1);
     const expectedStatus = new Array(expectedWords.length).fill("missing");
     for (const operation of operations) {
@@ -2182,8 +2183,8 @@
     const cue = sentenceCues[current];
     if (!cue || !ui) return;
     const wasSuccessVisible = !ui.success.hidden;
-    const result = globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value);
-    const isSpeaking = dictationMode === "speaking";
+    const result = globalThis.LHN_STUDY_SCORE.score(cue.en, ui.input.value);
+    const isSpeaking = studyMode === "speaking";
     const tier = isSpeaking ? shadowingActivity.getSpeechScoreTier(result.percent) : null;
     const passed = isSpeaking ? tier === "pass" : result.perfect;
     const modeStats = isSpeaking ? speakingWrongWordStats : wrongWordStats;
@@ -2198,7 +2199,7 @@
       ? (result.perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed")
       : "dictationSuccess";
     if (ui.successMessage) {
-      ui.successMessage.dataset.dictLabel = successMessage;
+      ui.successMessage.dataset.studyLabel = successMessage;
       ui.successMessage.textContent = tr(successMessage);
     }
     setScore(result.percent);
@@ -2254,8 +2255,8 @@
   }
 
   function restoreRate() {
-    if (savedRate !== null && attachedVideo) {
-      try { attachedVideo.playbackRate = savedRate; } catch {}
+    if (savedRate !== null && attachedMedia) {
+      try { attachedMedia.playbackRate = savedRate; } catch {}
     }
     savedRate = null;
   }
@@ -2269,17 +2270,17 @@
   }
 
   function finishCue() {
-    const video = attachedVideo;
+    const media = attachedMedia;
     const cue = sentenceCues[current];
-    if (repeatLeft > 0 && video && cue) {
+    if (repeatLeft > 0 && media && cue) {
       repeatLeft--;
-      try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+      try { media.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
       watchPlayback();
       return;
     }
-    video?.pause();
+    media?.pause();
     endPlayback();
-    shadowingActivity.speechCueAutoStartPending = active && dictationMode === "speaking" && !shadowingActivity.speechAnswerRevealed;
+    shadowingActivity.speechCueAutoStartPending = active && studyMode === "speaking" && !shadowingActivity.speechAnswerRevealed;
     shadowingActivity.scheduleSpeechAutoRecord();
   }
 
@@ -2287,30 +2288,30 @@
     stopWatch();
     const step = () => {
       rafId = 0;
-      const video = attachedVideo;
-      if (!active || stopAt < 0 || !video) return;
-      if (video.paused) return; // tiếp tục khi sự kiện "play" kích hoạt lại
-      if (video.currentTime >= stopAt - 0.03 || video.ended) { finishCue(); return; }
+      const media = attachedMedia;
+      if (!active || stopAt < 0 || !media) return;
+      if (media.paused) return; // tiếp tục khi sự kiện "play" kích hoạt lại
+      if (media.currentTime >= stopAt - 0.03 || media.ended) { finishCue(); return; }
       rafId = requestAnimationFrame(step);
     };
     rafId = requestAnimationFrame(step);
   }
 
   function prepareCue() {
-    const video = A?.state?.videoEl;
+    const media = A?.state?.activeMedia;
     const cue = sentenceCues[current];
     endPlayback();
-    if (!video || !cue) return;
-    video.pause();
-    try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+    if (!media || !cue) return;
+    media.pause();
+    try { media.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
   }
 
   function playSentence(index, options = {}) {
     shadowingActivity.speechCueAutoStartPending = false;
     shadowingActivity.clearSpeechAutoStartTimer();
     const cue = sentenceCues[index];
-    const video = A?.state?.videoEl;
-    if (!cue || !video || !active) return;
+    const media = A?.state?.activeMedia;
+    if (!cue || !media || !active) return;
     if (index !== current) {
       flushNotes();
       current = index;
@@ -2321,38 +2322,38 @@
     if (count < 1) return;
     endPlayback();
     if (options.rate) {
-      savedRate = video.playbackRate;
-      try { video.playbackRate = options.rate; } catch {}
+      savedRate = media.playbackRate;
+      try { media.playbackRate = options.rate; } catch {}
     }
     repeatLeft = count - 1;
     stopAt = Number(cue.end) || -1;
     shadowingActivity.updateSpeechCheckDisabled();
-    try { video.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+    try { media.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
     watchPlayback();
-    const playing = video.play();
+    const playing = media.play();
     if (playing?.catch) playing.catch(() => {});
   }
 
-  // Mọi lần phát (bấm video, Space, nút play) đều bị giới hạn trong câu hiện tại.
-  function onVideoPlay() {
-    if (active && dictationMode === "speaking") {
+  // Mọi lần phát (bấm media, Space, nút play) đều bị giới hạn trong câu hiện tại.
+  function onMediaPlay() {
+    if (active && studyMode === "speaking") {
       shadowingActivity.speechCueAutoStartPending = false;
       shadowingActivity.clearSpeechAutoStartTimer();
     }
     updateCompactAudioPlaybackState();
-    if (active && dictationMode === "speaking" && (shadowingActivity.speechStartPending || shadowingActivity.speechRecognition || shadowingActivity.speechStopRequested || shadowingActivity.speechPlaybackAudio)) {
+    if (active && studyMode === "speaking" && (shadowingActivity.speechStartPending || shadowingActivity.speechRecognition || shadowingActivity.speechStopRequested || shadowingActivity.speechPlaybackAudio)) {
       endPlayback();
-      attachedVideo?.pause();
+      attachedMedia?.pause();
       updateCompactAudioPlaybackState();
       return;
     }
-    if (!active || !attachedVideo) return;
+    if (!active || !attachedMedia) return;
     const cue = sentenceCues[current];
     if (!cue) return;
     if (stopAt >= 0) { if (!rafId) watchPlayback(); shadowingActivity.updateSpeechCheckDisabled(); return; }
-    const time = attachedVideo.currentTime;
+    const time = attachedMedia.currentTime;
     if (time < cue.start - 0.05 || time >= cue.end - 0.03) {
-      try { attachedVideo.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
+      try { attachedMedia.currentTime = Math.max(0, Number(cue.start) || 0); } catch {}
     }
     stopAt = Number(cue.end) || -1;
     repeatLeft = 0;
@@ -2360,23 +2361,23 @@
     shadowingActivity.updateSpeechCheckDisabled();
   }
 
-  function onVideoPause() {
+  function onMediaPause() {
     updateCompactAudioPlaybackState();
     shadowingActivity.updateSpeechCheckDisabled();
   }
 
-  function onVideoTimeUpdate() {
-    if (!active || stopAt < 0 || !attachedVideo || attachedVideo.paused) return;
-    if (attachedVideo.currentTime >= stopAt - 0.03) finishCue();
+  function onMediaTimeUpdate() {
+    if (!active || stopAt < 0 || !attachedMedia || attachedMedia.paused) return;
+    if (attachedMedia.currentTime >= stopAt - 0.03) finishCue();
   }
 
-  function toggleVideoPlayback() {
-    const video = A?.state?.videoEl;
-    if (!video) return;
-    if (video.paused) {
-      const playing = video.play();
+  function toggleMediaPlayback() {
+    const media = A?.state?.activeMedia;
+    if (!media) return;
+    if (media.paused) {
+      const playing = media.play();
       if (playing?.catch) playing.catch(() => {});
-    } else video.pause();
+    } else media.pause();
   }
 
   function onControlClick(event) {
@@ -2394,7 +2395,7 @@
     } else if (title === "Lặp lại câu") {
       playSentence(current);
     } else {
-      toggleVideoPlayback();
+      toggleMediaPlayback();
     }
   }
 
@@ -2403,7 +2404,7 @@
   }
 
   function isCorrectIncompletePrefix(reference, answer) {
-    return globalThis.LHN_DICTATION_SCORE.isCorrectIncompletePrefix(reference, answer);
+    return globalThis.LHN_STUDY_SCORE.isCorrectIncompletePrefix(reference, answer);
   }
 
   function handleAnswerEscape() {
@@ -2476,7 +2477,7 @@
           onAnswerInput();
         }
       }
-      const isPerfect = !!cue && globalThis.LHN_DICTATION_SCORE.score(cue.en, ui.input.value).perfect;
+      const isPerfect = !!cue && globalThis.LHN_STUDY_SCORE.score(cue.en, ui.input.value).perfect;
       if (isPerfect && solved.has(current) && checkedCurrent) { ui?.btnNext?.click(); return; }
       ui.check.click();
     }
@@ -2585,7 +2586,7 @@
     const panelEditable = path.includes(ui?.input) || path.includes(ui?.note);
     const editableTarget = real?.closest?.("input, textarea, select, [contenteditable='true']") || real?.isContentEditable;
     const noteFocused = path.includes(ui?.note) || (!panelEditable && editableTarget);
-    if (dictationMode === "typing" && path.includes(ui?.input) && checkedCurrent && solved.has(current)) {
+    if (studyMode === "typing" && path.includes(ui?.input) && checkedCurrent && solved.has(current)) {
       // After a perfect check, preserve the four Dictation shortcuts; ordinary typing unlocks editing.
       if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) return;
       const isBacktickShortcut = (event.key === "`" || (event.code === "Backquote" && !event.shiftKey))
@@ -2603,7 +2604,7 @@
       && !event.metaKey && !event.isComposing && event.keyCode !== 229 && shadowingActivity.shouldKeepVietnameseSpeechToast()) {
       dismissVietnameseSpeechToast();
     }
-    if (dictationMode === "speaking" && event.key === "Enter" && !event.shiftKey
+    if (studyMode === "speaking" && event.key === "Enter" && !event.shiftKey
       && !event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing && event.keyCode !== 229 && !noteFocused) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -2634,7 +2635,7 @@
     }
     if (event.key === "Escape") {
       ctrlAlone = false;
-      if (dictationMode === "speaking" && !noteFocused) {
+      if (studyMode === "speaking" && !noteFocused) {
         event.preventDefault();
         event.stopImmediatePropagation();
         shadowingActivity.handleSpeakingEscape();
@@ -2651,7 +2652,7 @@
     if (isBacktick && !event.ctrlKey && !event.altKey && !event.metaKey) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (!event.repeat) toggleVideoPlayback();
+      if (!event.repeat) toggleMediaPlayback();
       return;
     }
     if (event.key === "Control") { ctrlAlone = true; return; }
@@ -2668,42 +2669,42 @@
     ctrlAlone = false;
   }
 
-  function attachVideoEvents() {
-    attachedVideo = A?.state?.videoEl || null;
-    attachedVideo?.addEventListener("timeupdate", onVideoTimeUpdate);
-    attachedVideo?.addEventListener("play", onVideoPlay);
-    attachedVideo?.addEventListener("pause", onVideoPause);
+  function attachMediaEvents() {
+    attachedMedia = A?.state?.activeMedia || null;
+    attachedMedia?.addEventListener("timeupdate", onMediaTimeUpdate);
+    attachedMedia?.addEventListener("play", onMediaPlay);
+    attachedMedia?.addEventListener("pause", onMediaPause);
     updateCompactAudioPlaybackState();
   }
 
-  function detachVideoEvents() {
+  function detachMediaEvents() {
     endPlayback();
-    attachedVideo?.removeEventListener("timeupdate", onVideoTimeUpdate);
-    attachedVideo?.removeEventListener("play", onVideoPlay);
-    attachedVideo?.removeEventListener("pause", onVideoPause);
-    attachedVideo = null;
+    attachedMedia?.removeEventListener("timeupdate", onMediaTimeUpdate);
+    attachedMedia?.removeEventListener("play", onMediaPlay);
+    attachedMedia?.removeEventListener("pause", onMediaPause);
+    attachedMedia = null;
   }
 
   async function openPanel({ waitForCaptions = false, mode = "typing", fromEntry = false } = {}) {
     if (active || openingPanel) {
-      setDictationMode(mode);
+      setStudyMode(mode);
       return;
     }
-    if (!isEnglishReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
+    if (!isStudySourceReady() && !waitForCaptions) { showToastBeforeOpen(); return; }
     openingPanel = true;
     const requestGeneration = ++openingGeneration;
-    if (A?.state?.webStudy && A.state.webLanguageReady) {
-      try { await A.state.webLanguageReady; } catch {}
+    if (A?.state?.sourceType === 'web' && A.state.webSourceLanguageReady) {
+      try { await A.state.webSourceLanguageReady; } catch {}
       if (requestGeneration !== openingGeneration) { openingPanel = false; return; }
     }
     build();
     if (!ui) { openingPanel = false; A?.revealLearningEntry?.(); return; }
-    setDictationMode(mode);
+    setStudyMode(mode);
     // Vào từ phím tắt (Alt+F) khi overlay đang đóng: không chuyển qua chế độ xem video trước
-    if (!fromEntry) A?.setLearningMode?.(false);
-    const layoutPrefsPromise = loadDictationLayoutPrefs();
+    if (!fromEntry) A?.setReadingMode?.(false);
+    const layoutPrefsPromise = loadStudyLayoutPrefs();
     if (waitForCaptions) {
-      void layoutPrefsPromise.then(() => { if (active && ui) applyVideoViewSizeColumnPreset(); });
+      void layoutPrefsPromise.then(() => { if (active && ui) applyStudyViewSizeColumnPreset(); });
     } else {
       await layoutPrefsPromise;
     }
@@ -2711,18 +2712,18 @@
     await loadProgressSyncPreference();
     await loadTranslationVisibilityPreference();
     if (requestGeneration !== openingGeneration) return;
-    if (!ui || (!isEnglishReady() && !waitForCaptions)) { openingPanel = false; return; }
-    videoId = currentVideoId();
-    if (!videoId) { openingPanel = false; A?.revealLearningEntry?.(); showToastBeforeOpen(); return; }
+    if (!ui || (!isStudySourceReady() && !waitForCaptions)) { openingPanel = false; return; }
+    sourceId = currentSourceId();
+    if (!sourceId) { openingPanel = false; A?.revealLearningEntry?.(); showToastBeforeOpen(); return; }
     sentenceCues = getCues();
     if (!sentenceCues.length && !waitForCaptions) { openingPanel = false; showToastBeforeOpen(); return; }
     active = true;
-    syncVideoModeButtons();
+    syncStudyModeButtons();
     progressReady = false;
     updateProgressSyncControl();
     pendingCaptionStart = waitForCaptions && !sentenceCues.length;
     pendingResumeIndex = 0;
-    observeVideoTitle();
+    observeSourceTitle();
     openingPanel = false;
     checkedCurrent = false;
     hideYouTubeScrollbar();
@@ -2735,13 +2736,13 @@
     translations = {};
     wrongWordStats = { version: 3, words: {} };
     speakingWrongWordStats = { version: 3, words: {} };
-    ui.root.classList.add("te-dictation-active");
-    globalThis.LHN_WEB_TTS_DICTATION_MODE?.(true);
+    ui.root.classList.add("te-study-active");
+    globalThis.LHN_OVERLAY_SET_STUDY_ACTIVITY?.(studyMode === "speaking" ? "shadowing" : "dictation");
     A?.syncViewSize?.();
     A?.revealLearningEntry?.();
-    applyVideoViewSizeColumnPreset();
+    applyStudyViewSizeColumnPreset();
     if (typeof ResizeObserver === "function") {
-      ui.columnLayoutResizeObserver = new ResizeObserver(applyDictationColumnLayout);
+      ui.columnLayoutResizeObserver = new ResizeObserver(applyStudyColumnLayout);
       ui.columnLayoutResizeObserver.observe(ui.root);
     }
     ui.root.insertBefore(ui.bar, ui.center);
@@ -2750,13 +2751,13 @@
     document.addEventListener("keyup", onGlobalKeyUp, true);
     savedLoop = typeof A?.state?.loop === "boolean" ? A.state.loop : null;
     if (savedLoop !== null) A.state.loop = false; // vòng lặp câu của Dual Sub sẽ làm video chạy lệch câu
-    attachVideoEvents();
+    attachMediaEvents();
     renderInitialRows();
     setNotesLocked(true);
     setCaptionStatusForKey(sentenceCues.length ? "" : "dictationWaitingForCaptions");
     setScore(null);
-    const record = await loadProgress(videoId, generation);
-    if (!active || panelGeneration !== generation || currentVideoId() !== videoId || !record) return;
+    const record = await loadProgress(sourceId, generation);
+    if (!active || panelGeneration !== generation || currentSourceId() !== sourceId || !record) return;
     progressReady = true;
     updateProgressSyncControl();
     renderWrongWordStats();
@@ -2767,8 +2768,8 @@
       listEnd = 0;
       renderInitialRows();
       renderCurrent();
-      const captionsStillLoading = A?.state?.loadingFor === videoId;
-      const unavailableKey = A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
+      const captionsStillLoading = A?.state?.loadingFor === sourceId;
+      const unavailableKey = A?.state?.sourceType === 'web' ? "dictationWebTextUnavailable" : "dictationEnglishOnly";
       setCaptionStatusForKey(captionsStillLoading ? "dictationWaitingForCaptions" : unavailableKey, true);
       return;
     }
@@ -2794,10 +2795,10 @@
   }
 
   function setDictationButtonActive(enabled) {
-    if (enabled) syncVideoModeButtons();
+    if (enabled) syncStudyModeButtons();
     else {
       const typingButton = A?.ctrl?.("Chép chính tả") || A?.overlayEl?.()?.querySelector?.("#te-dictation-mode-btn");
-      const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-speaking-mode-btn");
+      const speakingButton = A?.overlayEl?.()?.querySelector?.("#te-shadowing-mode-btn");
       for (const button of [typingButton, speakingButton]) {
         button?.classList.remove("te-active");
         button?.setAttribute("aria-pressed", "false");
@@ -2813,9 +2814,10 @@
     shadowingActivity.stopSpeechRecognition(true);
     if (!active || !ui) {
       setDictationButtonActive(false);
-      ui?.root.classList.remove("te-dict-speaking-mode");
+      ui?.root.classList.remove("te-shadowing-active");
       if (ui?.speechPractice) ui.speechPractice.hidden = true;
-      dictationMode = "typing";
+      studyMode = "typing";
+      globalThis.LHN_OVERLAY_SET_STUDY_ACTIVITY?.(null);
       if (restoreView) A?.restorePreferredReadingMode?.();
       return;
     }
@@ -2823,39 +2825,39 @@
     flushNotes();
     active = false;
     setDictationButtonActive(false);
-    dictationMode = "typing";
+    studyMode = "typing";
     progressReady = false;
     pendingCaptionStart = false;
     pendingResumeIndex = 0;
-    stopObservingVideoTitle();
+    stopObservingSourceTitle();
     hintResult = null;
     panelGeneration++;
     document.removeEventListener("keydown", onGlobalKeyDown, true);
     document.removeEventListener("keyup", onGlobalKeyUp, true);
-    detachVideoEvents();
+    detachMediaEvents();
     if (savedLoop !== null && A?.state) A.state.loop = savedLoop;
     savedLoop = null;
     void audioCtx?.close?.();
     audioCtx = null;
     ui.bar.removeEventListener("click", onControlClick, true);
-    ui.videoTransitionToken++;
-    ui.videoResizeObserver?.disconnect();
-    ui.videoSlot.removeEventListener("transitionend", onVideoSlotTransitionEnd);
+    ui.playerTransitionToken++;
+    ui.playerResizeObserver?.disconnect();
+    ui.playerSlot.removeEventListener("transitionend", onPlayerSlotTransitionEnd);
     ui.columnLayoutResizeObserver?.disconnect();
-    persistDictationLayoutPrefs();
-    const originalVideoHeight = ui.originalVideoSlotHeight;
-    if (originalVideoHeight.value) ui.videoSlot.style.setProperty("height", originalVideoHeight.value, originalVideoHeight.priority);
-    else ui.videoSlot.style.removeProperty("height");
+    persistStudyLayoutPrefs();
+    const originalPlayerHeight = ui.originalPlayerSlotHeight;
+    if (originalPlayerHeight.value) ui.playerSlot.style.setProperty("height", originalPlayerHeight.value, originalPlayerHeight.priority);
+    else ui.playerSlot.style.removeProperty("height");
     ui.compactAudio.remove();
     for (const [button, original] of ui.originalButtonState) {
       button.disabled = original.disabled;
       if (original.aria === null) button.removeAttribute("aria-disabled");
       else button.setAttribute("aria-disabled", original.aria);
     }
-    ui.root.classList.remove("te-dictation-active", "te-dict-speaking-mode", "te-dict-video-compact", "te-dict-column-left-hidden", "te-dict-column-right-hidden");
-    globalThis.LHN_WEB_TTS_DICTATION_MODE?.(false);
+    ui.root.classList.remove("te-study-active", "te-shadowing-active", "te-study-media-compact", "te-study-column-left-hidden", "te-study-column-right-hidden");
+    globalThis.LHN_OVERLAY_SET_STUDY_ACTIVITY?.(null);
     A?.syncViewSize?.();
-    for (const property of ["--te-dict-left-track", "--te-dict-right-track", "--te-dict-left-splitter", "--te-dict-right-splitter", "--te-dict-center-min"]) {
+    for (const property of ["--te-study-left-track", "--te-study-right-track", "--te-study-left-splitter", "--te-study-right-splitter", "--te-study-center-min"]) {
       ui.root.style.removeProperty(property);
     }
     if (ui.originalLeftAriaHidden === null) ui.left.removeAttribute("aria-hidden");
@@ -2871,9 +2873,9 @@
     ui.rightColumnSplitter.remove();
     ui.showLeftColumn.remove();
     ui.showRightColumn.remove();
-    ui.videoMask.remove();
+    ui.playerMask.remove();
     ui.tools.remove();
-    ui.primaryGroup.classList.remove("te-dict-primary-group");
+    ui.primaryGroup.classList.remove("te-study-primary-group");
     ui = null;
     ctrlAlone = false;
     if (restoreView) A?.restorePreferredReadingMode?.();
@@ -2883,19 +2885,19 @@
 
   function onCaptionsUpdated() {
     if (!active) return;
-    if (currentVideoId() !== videoId) { close(); return; }
+    if (currentSourceId() !== sourceId) { close(); return; }
     const updated = getCues();
-    if ((!A?.state?.webStudy && A?.state?.captionTrackLanguage !== "en") || !updated.length) {
-      if (A?.state?.loadingFor === A?.state?.videoId) {
+    if ((A?.state?.sourceType !== 'web' && A?.state?.sourceLanguage !== "en") || !updated.length) {
+      if (A?.state?.loadingFor === A?.state?.sourceId) {
         if (pendingCaptionStart) setCaptionStatusForKey("dictationWaitingForCaptions", true);
         return;
       }
       if (pendingCaptionStart) {
-        setCaptionStatusForKey(A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly", true);
+        setCaptionStatusForKey(A?.state?.sourceType === 'web' ? "dictationWebTextUnavailable" : "dictationEnglishOnly", true);
         return;
       }
       close();
-      showToast(tr(A?.state?.webStudy ? "dictationWebTextUnavailable" : "dictationEnglishOnly"));
+      showToast(tr(A?.state?.sourceType === 'web' ? "dictationWebTextUnavailable" : "dictationEnglishOnly"));
       return;
     }
     const unchanged = updated.length === sentenceCues.length && updated.every((cue, index) =>
@@ -2958,10 +2960,14 @@
     attachControls();
   });
   document.addEventListener("lhn-dual-captions-updated", onCaptionsUpdated);
-  globalThis.LHN_DICTATION = Object.freeze({
+  const studyApi = Object.freeze({
     toggle, open: openPanel, close, refreshLanguage: refreshLanguageLabels,
-    syncVideoViewSizeColumns: applyVideoViewSizeColumnPreset,
+    syncStudyViewSizeColumns: applyStudyViewSizeColumnPreset,
+    syncVideoViewSizeColumns: applyStudyViewSizeColumnPreset, // Compatibility alias for the former Dictation API.
     isOpen: () => active || openingPanel,
-    getMode: () => (active || openingPanel) ? dictationMode : null,
+    getMode: () => (active || openingPanel) ? studyMode : null,
+    getActivity: () => active ? (studyMode === "speaking" ? "shadowing" : "dictation") : null,
   });
+  globalThis.LHN_STUDY = studyApi;
+  globalThis.LHN_DICTATION = studyApi; // Compatibility alias for the existing Dictation shortcut integration.
 })();

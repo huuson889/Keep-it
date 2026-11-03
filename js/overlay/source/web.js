@@ -1,6 +1,6 @@
 // Web source: Reader cues, language detection, page cache, and virtual media.
-let webStudyCueSessionCache = null;
-let webStudyPreparationPromise = null;
+let webSourceCueSessionCache = null;
+let webSourcePreparationPromise = null;
 function showWebToast(message) {
   let toast = document.getElementById('lhn-sidebar-toast');
   if (!toast) {
@@ -32,7 +32,7 @@ function reportWebIssue(message, error = null, { level = 'warn', toast = true } 
 
 let lastWebTranslationIssueAt = 0;
 function reportWebTranslationIssue(error) {
-  if (!state.webStudy) return;
+  if (state.sourceType !== 'web') return;
   const now = Date.now();
   const toast = now - lastWebTranslationIssueAt > 5000;
   lastWebTranslationIssueAt = now;
@@ -96,7 +96,7 @@ function createWebTtsMedia(cues) {
   const wakeResumeWaiters = () => media._resumeWaiters.splice(0).forEach(resolve => { try { resolve(); } catch {} });
 
   media = {
-    videoWidth: 16, videoHeight: 9, volume: 1, controls: false, _dictationPlaybackRate:1,
+    videoWidth: 16, videoHeight: 9, volume: 1, controls: false, _studyPlaybackRate:1,
     addEventListener(type, listener) {
       if (!listener) return;
       const set = listeners.get(type) || new Set(); set.add(listener); listeners.set(type, set);
@@ -131,7 +131,7 @@ function createWebTtsMedia(cues) {
     get paused() { return paused; },
     get playbackRate() { return playbackRate; },
     set playbackRate(value) {
-      const sharedRateActive = globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false;
+      const sharedRateActive = globalThis.LHN_OVERLAY_WEB_TTS_USES_READER_RATE?.() !== false;
       const next = Math.max(0.5, Math.min(sharedRateActive ? 3 : 2, Number(value) || 1));
       const changed = Math.abs(next - playbackRate) > 0.0001;
       playbackRate = next;
@@ -188,7 +188,7 @@ function createWebTtsMedia(cues) {
         requestCursor:0, chunkStart:0, position:baseOffset,
       };
       media._activeRun = run;
-      const isCurrentRun = () => state.webStudy && state.videoEl === media && token === generation && media._activeRun === run;
+      const isCurrentRun = () => state.sourceType === 'web' && state.activeMedia === media && token === generation && media._activeRun === run;
       const active = () => isCurrentRun() && !paused;
       const finish = () => {
         if (!active()) return;
@@ -202,7 +202,7 @@ function createWebTtsMedia(cues) {
         }
         currentTime = state.loop ? cue.start : cue.end;
         media.dispatchEvent(new Event('timeupdate'));
-        // A Web consumer (for example Dictation's repeat counter) may seek or
+        // A Web consumer (for example the Study repeat counter) may seek or
         // pause synchronously from timeupdate. Do not advance this stale cue.
         if (!active()) return;
         media._activeRun = null;
@@ -219,17 +219,17 @@ function createWebTtsMedia(cues) {
         reportWebIssue('The shared TTS engine is unavailable.', null, { level: 'error' });
         run.failed = true; finish(); return;
       }
-      const fallbackLanguage = String(state.webLanguageHint || navigator.language || 'en-US');
+      const fallbackLanguage = String(state.webSourceLanguageHint || navigator.language || 'en-US');
       Promise.resolve(detectWebTtsLanguage(text, fallbackLanguage)).then(async (lang) => {
         if (!active()) return;
         const normalized = tts.normalizeLanguage?.(lang || fallbackLanguage) || lang || fallbackLanguage;
         media._currentLanguage = normalized;
         let sharedRate = null;
-        if (globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false) {
+        if (globalThis.LHN_OVERLAY_WEB_TTS_USES_READER_RATE?.() !== false) {
           try { sharedRate = await globalThis.LHN_READER_SPEECH_RATE?.getRate?.(normalized); } catch {}
         }
         if (!active()) return;
-        if (globalThis.LHN_WEB_TTS_RATE_ACTIVE?.() !== false && Number.isFinite(sharedRate) && Math.abs(playbackRate - sharedRate) > 0.001) media.playbackRate = sharedRate;
+        if (globalThis.LHN_OVERLAY_WEB_TTS_USES_READER_RATE?.() !== false && Number.isFinite(sharedRate) && Math.abs(playbackRate - sharedRate) > 0.001) media.playbackRate = sharedRate;
         const base = String(normalized).replace(/_/g, '-').split('-')[0].toLowerCase() || 'en';
         return tts.play({
           text, lang: normalized, googleLanguage: base, voice: `google-translate-default:${base}`,
@@ -348,7 +348,7 @@ function createWebTtsMedia(cues) {
   };
   return media;
 }
-function webStudyPageCacheUrl() {
+function webSourcePageCacheUrl() {
   try {
     const url = new URL(location.href);
     url.hash = '';
@@ -356,7 +356,7 @@ function webStudyPageCacheUrl() {
   } catch { return String(location.href || ''); }
 }
 
-function webStudyTextFingerprint(text) {
+function webSourceTextFingerprint(text) {
   let hash = 14695981039346656037n;
   const value = String(text || '');
   for (let index = 0; index < value.length; index++) {
@@ -366,25 +366,25 @@ function webStudyTextFingerprint(text) {
   return `${value.length}-${hash.toString(16).padStart(16, '0')}`;
 }
 
-async function prepareWebStudy() {
-  if (state.webStudy) return state.captions.length;
-  if (webStudyPreparationPromise) return webStudyPreparationPromise;
-  const task = prepareWebStudyFromPage();
-  webStudyPreparationPromise = task;
+async function prepareWebSource() {
+  if (state.sourceType === 'web') return state.captions.length;
+  if (webSourcePreparationPromise) return webSourcePreparationPromise;
+  const task = prepareWebSourceFromPage();
+  webSourcePreparationPromise = task;
   try { return await task; }
-  finally { if (webStudyPreparationPromise === task) webStudyPreparationPromise = null; }
+  finally { if (webSourcePreparationPromise === task) webSourcePreparationPromise = null; }
 }
 
-async function prepareWebStudyFromPage() {
+async function prepareWebSourceFromPage() {
   const pageUrl = location.href;
-  const pageCacheUrl = webStudyPageCacheUrl();
+  const pageCacheUrl = webSourcePageCacheUrl();
   const languageHint = String(document.documentElement.lang || document.querySelector('html[lang]')?.lang || navigator.language || 'en-US');
   let sentences = null;
   let cueCacheKey = '';
 
-  if (webStudyCueSessionCache?.document === document && webStudyCueSessionCache.pageUrl === pageCacheUrl) {
-    sentences = webStudyCueSessionCache.sentences.slice();
-    cueCacheKey = webStudyCueSessionCache.cacheKey;
+  if (webSourceCueSessionCache?.document === document && webSourceCueSessionCache.pageUrl === pageCacheUrl) {
+    sentences = webSourceCueSessionCache.sentences.slice();
+    cueCacheKey = webSourceCueSessionCache.cacheKey;
     if (cueCacheKey && globalThis.LHN_MESSAGING?.sendMessage) {
       const sendMessage = globalThis.LHN_MESSAGING.sendMessage.bind(globalThis.LHN_MESSAGING);
       try {
@@ -404,8 +404,8 @@ async function prepareWebStudyFromPage() {
     const sourceText = normalizedBlocks.join('\n');
     const sourceLanguage = String(document.documentElement.lang || languageHint || 'en-US').replace(/_/g, '-').toLowerCase();
     if (sourceText) {
-      const sourceFingerprint = webStudyTextFingerprint(sourceText);
-      const pageFingerprint = webStudyTextFingerprint(`${pageCacheUrl}\n${sourceLanguage}`);
+      const sourceFingerprint = webSourceTextFingerprint(sourceText);
+      const pageFingerprint = webSourceTextFingerprint(`${pageCacheUrl}\n${sourceLanguage}`);
       cueCacheKey = `web-study-cues:v1:${pageFingerprint}:${sourceFingerprint}`;
       try {
         const cachedSentences = await globalThis.LHN_MESSAGING?.sendMessage?.({ type:'WEB_STUDY_CUE_CACHE_GET', cacheKey:cueCacheKey });
@@ -427,33 +427,34 @@ async function prepareWebStudyFromPage() {
       }
     }
 
-    webStudyCueSessionCache = sentences.length
+    webSourceCueSessionCache = sentences.length
       ? { document, pageUrl:pageCacheUrl, cacheKey:cueCacheKey, sentences:sentences.slice() }
       : null;
   }
 
-  state.webStudy = true;
-  state.webPageUrl = pageUrl;
-  state.webLanguageHint = languageHint;
+  state.sourceType = 'web';
+  state.studyActivity = null;
+  state.webSourceUrl = pageUrl;
+  state.webSourceLanguageHint = languageHint;
   let hash = 2166136261;
   for (const char of pageUrl) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  state.videoId = `web-${(hash >>> 0).toString(16)}`;
-  state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = languageHint;
-  state.mainLanguage = languageHint; state.webDetectedLanguage = ''; state.webCueLanguageKnown = false; state.loadingFor = null;
+  state.sourceId = `web-${(hash >>> 0).toString(16)}`;
+  state.activeIdx = -1; state.viCache = new Map(); state.sourceLanguage = languageHint;
+  state.mainLanguage = languageHint; state.webSourceDetectedLanguage = ''; state.webSourceCueLanguageKnown = false; state.loadingFor = null;
   const cues = sentences.map((text, index) => ({ id:index, start:index, end:index + 1, en:text, vi:'', mainText:text }));
   const readerCues = markWebReaderCues(cues, languageHint);
-  state.videoEl = createWebTtsMedia(readerCues);
+  state.activeMedia = createWebTtsMedia(readerCues);
   state.rawCues = readerCues; state.allCues = readerCues; state.captions = readerCues;
-  const activePageUrl = state.webPageUrl;
-  state.webLanguageReady = sentences.length
+  const activePageUrl = state.webSourceUrl;
+  state.webSourceLanguageReady = sentences.length
     ? Promise.resolve(detectWebTtsLanguage(sentences[0], languageHint)).then((language) => {
         const directLanguage = globalThis.LHN_TTS?.detectReadLanguage?.(sentences[0]);
         const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || languageHint) || language || languageHint;
-        if (state.webStudy && state.webPageUrl === activePageUrl) {
-          const previousLanguage = String(state.captionTrackLanguage || state.webLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
+        if (state.sourceType === 'web' && state.webSourceUrl === activePageUrl) {
+          const previousLanguage = String(state.sourceLanguage || state.webSourceLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
           const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
-          state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
-          state.webCueLanguageKnown = Boolean(directLanguage) || baseLanguageCode(detected) !== baseLanguageCode(languageHint);
+          state.webSourceDetectedLanguage = detected; state.sourceLanguage = detected;
+          state.webSourceCueLanguageKnown = Boolean(directLanguage) || baseLanguageCode(detected) !== baseLanguageCode(languageHint);
           void syncWebTtsSpeedFromReader();
           if (state.open) applyDefaultSubtitleDisplayMode();
           if (previousLanguage !== detectedBase) {
@@ -470,8 +471,8 @@ async function prepareWebStudyFromPage() {
         }
         return detected;
       }).catch((error) => {
-        reportWebIssue('Could not detect the Reader text language for Dictation.', error, { level: 'error' });
-        return state.webLanguageHint;
+        reportWebIssue('Could not detect the Reader text language for Web playback.', error, { level: 'error' });
+        return state.webSourceLanguageHint;
       })
     : Promise.resolve(languageHint);
   state.loadToken++; loadedUntil = 0;
@@ -480,7 +481,7 @@ async function prepareWebStudyFromPage() {
 }
 
 // Tải trước phụ đề khi vừa mở video (5 phút), khi mở overlay thì giữ trước 10 phút.
-function markWebReaderCues(cues, language = state.webDetectedLanguage || state.webLanguageHint) {
+function markWebReaderCues(cues, language = state.webSourceDetectedLanguage || state.webSourceLanguageHint) {
   const sourceLanguage = String(language || 'en').replace(/_/g, '-').split('-')[0].toLowerCase();
   const marked = markSingleTrackCues(cues, sourceLanguage);
   state.primaryNeedsTranslation = false;
@@ -512,32 +513,32 @@ const WEB_THUMBNAIL_EFFECT_TRANSITION_MS = 2_400;
 const WEB_THUMBNAIL_EFFECT_GAP_MS = WEB_THUMBNAIL_EFFECT_TRANSITION_MS + 350;
 let activeWebThumbnailVisualizer = null;
 
-function webThumbnailNow() {
+function webSourceThumbnailNow() {
   return globalThis.performance?.now?.() ?? Date.now();
 }
 
-function webThumbnailRandomInt(min, max) {
+function webSourceThumbnailRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function webThumbnailClamp(value, min, max) {
+function webSourceThumbnailClamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function webThumbnailEase(progress) {
-  const p = webThumbnailClamp(progress, 0, 1);
+function webSourceThumbnailEase(progress) {
+  const p = webSourceThumbnailClamp(progress, 0, 1);
   return p * p * (3 - 2 * p);
 }
 
-function webThumbnailTransitionProgress(transition, now) {
+function webSourceThumbnailTransitionProgress(transition, now) {
   if (!transition || transition.duration <= 0) return 1;
-  return webThumbnailClamp((now - transition.startedAt) / transition.duration, 0, 1);
+  return webSourceThumbnailClamp((now - transition.startedAt) / transition.duration, 0, 1);
 }
 
-function webThumbnailScalarValue(transition, now) {
+function webSourceThumbnailScalarValue(transition, now) {
   if (!transition || transition.duration <= 0) return transition?.to || 0;
-  const raw = webThumbnailTransitionProgress(transition, now);
-  const progress = webThumbnailEase(raw);
+  const raw = webSourceThumbnailTransitionProgress(transition, now);
+  const progress = webSourceThumbnailEase(raw);
   const value = transition.from + (transition.to - transition.from) * progress;
   if (raw >= 1) {
     transition.from = transition.to;
@@ -547,26 +548,26 @@ function webThumbnailScalarValue(transition, now) {
   return value;
 }
 
-function webThumbnailStartScalarTransition(visualizer, key, target, now) {
+function webSourceThumbnailStartScalarTransition(visualizer, key, target, now) {
   const previous = visualizer.values[key];
-  const from = webThumbnailScalarValue(previous, now);
+  const from = webSourceThumbnailScalarValue(previous, now);
   visualizer.values[key] = { from, to:target, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
 }
 
-function webThumbnailPickDifferent(values, current) {
+function webSourceThumbnailPickDifferent(values, current) {
   const options = values.filter(value => value !== current);
-  return options[webThumbnailRandomInt(0, options.length - 1)] ?? current;
+  return options[webSourceThumbnailRandomInt(0, options.length - 1)] ?? current;
 }
 
-function webThumbnailRandomIntDifferent(min, max, current, minimumDifference = 1) {
+function webSourceThumbnailRandomIntDifferent(min, max, current, minimumDifference = 1) {
   const options = [];
   for (let value = min; value <= max; value++) {
     if (Math.abs(value - current) >= minimumDifference) options.push(value);
   }
-  return options[webThumbnailRandomInt(0, options.length - 1)] ?? webThumbnailRandomInt(min, max);
+  return options[webSourceThumbnailRandomInt(0, options.length - 1)] ?? webSourceThumbnailRandomInt(min, max);
 }
 
-function webThumbnailColorChannels(value) {
+function webSourceThumbnailColorChannels(value) {
   const color = String(value || '').trim();
   const hex = color.match(/^#([\da-f]{6})$/i);
   if (hex) return [parseInt(hex[1].slice(0, 2), 16), parseInt(hex[1].slice(2, 4), 16), parseInt(hex[1].slice(4, 6), 16), 1];
@@ -574,17 +575,17 @@ function webThumbnailColorChannels(value) {
   return rgba ? [Number(rgba[1]), Number(rgba[2]), Number(rgba[3]), rgba[4] === undefined ? 1 : Number(rgba[4])] : [255, 255, 255, 1];
 }
 
-function webThumbnailBlendColor(from, to, progress) {
-  const a = webThumbnailColorChannels(from), b = webThumbnailColorChannels(to);
+function webSourceThumbnailBlendColor(from, to, progress) {
+  const a = webSourceThumbnailColorChannels(from), b = webSourceThumbnailColorChannels(to);
   const channels = a.map((value, index) => value + (b[index] - value) * progress);
   return `rgba(${Math.round(channels[0])}, ${Math.round(channels[1])}, ${Math.round(channels[2])}, ${channels[3].toFixed(3)})`;
 }
 
-function webThumbnailCurrentTheme(visualizer, now) {
+function webSourceThumbnailCurrentTheme(visualizer, now) {
   const transition = visualizer.themeTransition;
   if (!transition) return visualizer.theme;
-  const raw = webThumbnailTransitionProgress(transition, now);
-  const progress = webThumbnailEase(raw);
+  const raw = webSourceThumbnailTransitionProgress(transition, now);
+  const progress = webSourceThumbnailEase(raw);
   if (raw >= 1) {
     visualizer.theme = transition.to;
     visualizer.themeTransition = null;
@@ -592,13 +593,13 @@ function webThumbnailCurrentTheme(visualizer, now) {
   }
   return {
     id:progress < 0.5 ? transition.from.id : transition.to.id,
-    main:webThumbnailBlendColor(transition.from.main, transition.to.main, progress),
-    secondary:webThumbnailBlendColor(transition.from.secondary, transition.to.secondary, progress),
-    glow:webThumbnailBlendColor(transition.from.glow, transition.to.glow, progress),
+    main:webSourceThumbnailBlendColor(transition.from.main, transition.to.main, progress),
+    secondary:webSourceThumbnailBlendColor(transition.from.secondary, transition.to.secondary, progress),
+    glow:webSourceThumbnailBlendColor(transition.from.glow, transition.to.glow, progress),
   };
 }
 
-function webThumbnailEvaluateMotion(mode, motionTime) {
+function webSourceThumbnailEvaluateMotion(mode, motionTime) {
   const baseSafetyScale = 1.12;
   const motionIntensity = 0.5;
   let dynamicScale = 1;
@@ -617,14 +618,14 @@ function webThumbnailEvaluateMotion(mode, motionTime) {
   return { scale:baseSafetyScale * dynamicScale, shiftX, shiftY, rotateAngle };
 }
 
-function webThumbnailCurrentMotion(visualizer, now) {
-  const motionTime = visualizer.time * webThumbnailScalarValue(visualizer.values.motionSpeed, now);
+function webSourceThumbnailCurrentMotion(visualizer, now) {
+  const motionTime = visualizer.time * webSourceThumbnailScalarValue(visualizer.values.motionSpeed, now);
   const transition = visualizer.motionTransition;
-  if (!transition) return webThumbnailEvaluateMotion(visualizer.motionMode, motionTime);
-  const raw = webThumbnailTransitionProgress(transition, now);
-  const progress = webThumbnailEase(raw);
-  const from = webThumbnailEvaluateMotion(transition.from, motionTime);
-  const to = webThumbnailEvaluateMotion(transition.to, motionTime);
+  if (!transition) return webSourceThumbnailEvaluateMotion(visualizer.motionMode, motionTime);
+  const raw = webSourceThumbnailTransitionProgress(transition, now);
+  const progress = webSourceThumbnailEase(raw);
+  const from = webSourceThumbnailEvaluateMotion(transition.from, motionTime);
+  const to = webSourceThumbnailEvaluateMotion(transition.to, motionTime);
   const motion = {
     scale:from.scale + (to.scale - from.scale) * progress,
     shiftX:from.shiftX + (to.shiftX - from.shiftX) * progress,
@@ -639,11 +640,11 @@ function webThumbnailCurrentMotion(visualizer, now) {
   return motion;
 }
 
-function webThumbnailCurrentWaveTransition(visualizer, now) {
+function webSourceThumbnailCurrentWaveTransition(visualizer, now) {
   const transition = visualizer.waveTransition;
   if (!transition) return null;
-  const raw = webThumbnailTransitionProgress(transition, now);
-  const progress = webThumbnailEase(raw);
+  const raw = webSourceThumbnailTransitionProgress(transition, now);
+  const progress = webSourceThumbnailEase(raw);
   if (raw >= 1) {
     visualizer.waveStyle = transition.to;
     visualizer.waveTransition = null;
@@ -652,47 +653,47 @@ function webThumbnailCurrentWaveTransition(visualizer, now) {
   return { from:transition.from, to:transition.to, progress };
 }
 
-function webThumbnailFinalizeCompletedTransitions(visualizer, now) {
-  for (const transition of Object.values(visualizer.values)) webThumbnailScalarValue(transition, now);
-  webThumbnailCurrentMotion(visualizer, now);
-  webThumbnailCurrentWaveTransition(visualizer, now);
-  webThumbnailCurrentTheme(visualizer, now);
+function webSourceThumbnailFinalizeCompletedTransitions(visualizer, now) {
+  for (const transition of Object.values(visualizer.values)) webSourceThumbnailScalarValue(transition, now);
+  webSourceThumbnailCurrentMotion(visualizer, now);
+  webSourceThumbnailCurrentWaveTransition(visualizer, now);
+  webSourceThumbnailCurrentTheme(visualizer, now);
 }
 
-function webThumbnailApplyRandomEffect(visualizer, key, now) {
-  webThumbnailFinalizeCompletedTransitions(visualizer, now);
+function webSourceThumbnailApplyRandomEffect(visualizer, key, now) {
+  webSourceThumbnailFinalizeCompletedTransitions(visualizer, now);
   if (key === 'motionMode') {
-    const to = webThumbnailPickDifferent(WEB_THUMBNAIL_MOTION_MODES, visualizer.motionMode);
+    const to = webSourceThumbnailPickDifferent(WEB_THUMBNAIL_MOTION_MODES, visualizer.motionMode);
     visualizer.motionTransition = { from:visualizer.motionMode, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
   } else if (key === 'motionSpeed') {
-    const current = webThumbnailScalarValue(visualizer.values.motionSpeed, now);
-    const to = webThumbnailRandomIntDifferent(2, 30, Math.round(current * 10), 2) / 10;
-    webThumbnailStartScalarTransition(visualizer, 'motionSpeed', to, now);
+    const current = webSourceThumbnailScalarValue(visualizer.values.motionSpeed, now);
+    const to = webSourceThumbnailRandomIntDifferent(2, 30, Math.round(current * 10), 2) / 10;
+    webSourceThumbnailStartScalarTransition(visualizer, 'motionSpeed', to, now);
   } else if (key === 'blur') {
-    const current = webThumbnailScalarValue(visualizer.values.blur, now);
-    webThumbnailStartScalarTransition(visualizer, 'blur', webThumbnailRandomIntDifferent(0, 10, Math.round(current), 3), now);
+    const current = webSourceThumbnailScalarValue(visualizer.values.blur, now);
+    webSourceThumbnailStartScalarTransition(visualizer, 'blur', webSourceThumbnailRandomIntDifferent(0, 10, Math.round(current), 3), now);
   } else if (key === 'darkness') {
-    const current = webThumbnailScalarValue(visualizer.values.darkness, now) * 100;
-    webThumbnailStartScalarTransition(visualizer, 'darkness', webThumbnailRandomIntDifferent(0, 80, Math.round(current), 8) / 100, now);
+    const current = webSourceThumbnailScalarValue(visualizer.values.darkness, now) * 100;
+    webSourceThumbnailStartScalarTransition(visualizer, 'darkness', webSourceThumbnailRandomIntDifferent(0, 80, Math.round(current), 8) / 100, now);
   } else if (key === 'particleCount') {
-    const current = webThumbnailScalarValue(visualizer.values.particleCount, now);
-    webThumbnailStartScalarTransition(visualizer, 'particleCount', webThumbnailRandomIntDifferent(11, 100, Math.round(current), 8), now);
+    const current = webSourceThumbnailScalarValue(visualizer.values.particleCount, now);
+    webSourceThumbnailStartScalarTransition(visualizer, 'particleCount', webSourceThumbnailRandomIntDifferent(11, 100, Math.round(current), 8), now);
   } else if (key === 'waveStyle') {
-    const to = webThumbnailRandomIntDifferent(1, 4, visualizer.waveStyle);
+    const to = webSourceThumbnailRandomIntDifferent(1, 4, visualizer.waveStyle);
     visualizer.waveTransition = { from:visualizer.waveStyle, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
   } else if (key === 'theme') {
-    const from = webThumbnailCurrentTheme(visualizer, now);
+    const from = webSourceThumbnailCurrentTheme(visualizer, now);
     const options = WEB_THUMBNAIL_THEMES.filter(theme => theme.id !== from.id);
-    const to = options[webThumbnailRandomInt(0, options.length - 1)];
+    const to = options[webSourceThumbnailRandomInt(0, options.length - 1)];
     visualizer.themeTransition = { from, to, startedAt:now, duration:WEB_THUMBNAIL_EFFECT_TRANSITION_MS };
   }
 }
 
-function webThumbnailNextEffectTime(visualizer, key, now) {
+function webSourceThumbnailNextEffectTime(visualizer, key, now) {
   const safe = candidate => [...visualizer.nextEffectTimes.entries()]
     .every(([otherKey, time]) => otherKey === key || Math.abs(candidate - time) >= WEB_THUMBNAIL_EFFECT_GAP_MS);
   for (let attempt = 0; attempt < 80; attempt++) {
-    const candidate = now + webThumbnailRandomInt(WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS, WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS);
+    const candidate = now + webSourceThumbnailRandomInt(WEB_THUMBNAIL_EFFECT_MIN_DELAY_MS, WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS);
     if (safe(candidate)) return candidate;
   }
   const candidates = [];
@@ -701,15 +702,15 @@ function webThumbnailNextEffectTime(visualizer, key, now) {
     if (safe(candidate)) candidates.push(candidate);
   }
   return candidates.length
-    ? candidates[webThumbnailRandomInt(0, candidates.length - 1)]
+    ? candidates[webSourceThumbnailRandomInt(0, candidates.length - 1)]
     : now + WEB_THUMBNAIL_EFFECT_MAX_DELAY_MS;
 }
 
-function scheduleWebThumbnailEffect(visualizer, key, now = webThumbnailNow()) {
+function scheduleWebThumbnailEffect(visualizer, key, now = webSourceThumbnailNow()) {
   if (!visualizer.active || activeWebThumbnailVisualizer !== visualizer) return;
-  const nextAt = webThumbnailNextEffectTime(visualizer, key, now);
+  const nextAt = webSourceThumbnailNextEffectTime(visualizer, key, now);
   visualizer.nextEffectTimes.set(key, nextAt);
-  const timer = setTimeout(() => runWebThumbnailEffect(visualizer, key), Math.max(0, nextAt - webThumbnailNow()));
+  const timer = setTimeout(() => runWebThumbnailEffect(visualizer, key), Math.max(0, nextAt - webSourceThumbnailNow()));
   visualizer.effectTimers.set(key, timer);
 }
 
@@ -717,7 +718,7 @@ function runWebThumbnailEffect(visualizer, key) {
   if (!visualizer.active || activeWebThumbnailVisualizer !== visualizer) return;
   visualizer.effectTimers.delete(key);
   visualizer.nextEffectTimes.delete(key);
-  const now = webThumbnailNow();
+  const now = webSourceThumbnailNow();
   const wait = Math.max(0, visualizer.nextEffectAllowedAt - now);
   if (wait > 0) {
     const nextAt = now + wait;
@@ -725,7 +726,7 @@ function runWebThumbnailEffect(visualizer, key) {
     visualizer.effectTimers.set(key, setTimeout(() => runWebThumbnailEffect(visualizer, key), wait));
     return;
   }
-  webThumbnailApplyRandomEffect(visualizer, key, now);
+  webSourceThumbnailApplyRandomEffect(visualizer, key, now);
   visualizer.nextEffectAllowedAt = now + WEB_THUMBNAIL_EFFECT_GAP_MS;
   scheduleWebThumbnailEffect(visualizer, key, now);
 }
@@ -742,7 +743,7 @@ function stopWebThumbnailVisualizer() {
   activeWebThumbnailVisualizer = null;
 }
 
-function webThumbnailEstimatedDuration() {
+function webSourceThumbnailEstimatedDuration() {
   const cues = Array.isArray(state.allCues) ? state.allCues : (Array.isArray(state.captions) ? state.captions : []);
   const wordCount = cues.reduce((total, cue) => {
     const text = String(cue?.en || cue?.mainText || cue?.text || '');
@@ -859,27 +860,27 @@ function drawWebThumbnailWaveform(visualizer, currentWaveStyle = visualizer.wave
 function drawWebThumbnailVisualizer(visualizer, timestamp) {
   if (!visualizer?.active || activeWebThumbnailVisualizer !== visualizer) return;
   const { context:ctx, width, height, stage, image } = visualizer;
-  const now = Number.isFinite(timestamp) ? timestamp : webThumbnailNow();
+  const now = Number.isFinite(timestamp) ? timestamp : webSourceThumbnailNow();
   const elapsed = Math.min(50, Math.max(0, now - (visualizer.lastTimestamp || now)));
   visualizer.lastTimestamp = now;
   visualizer.time += 0.012;
   ctx.clearRect(0, 0, width, height);
   const motionStep = document.hidden ? 0 : elapsed / 16.67;
-  const theme = webThumbnailCurrentTheme(visualizer, now);
+  const theme = webSourceThumbnailCurrentTheme(visualizer, now);
   visualizer.theme = theme;
   stage.style.setProperty('--te-webviz-main', theme.main);
   stage.style.setProperty('--te-webviz-secondary', theme.secondary);
   stage.style.setProperty('--te-webviz-glow', theme.glow);
-  stage.style.setProperty('--te-webviz-darkness', webThumbnailScalarValue(visualizer.values.darkness, now).toFixed(4));
-  image.style.setProperty('--te-webviz-blur', `${webThumbnailScalarValue(visualizer.values.blur, now).toFixed(2)}px`);
+  stage.style.setProperty('--te-webviz-darkness', webSourceThumbnailScalarValue(visualizer.values.darkness, now).toFixed(4));
+  image.style.setProperty('--te-webviz-blur', `${webSourceThumbnailScalarValue(visualizer.values.blur, now).toFixed(2)}px`);
 
-  const motionState = webThumbnailCurrentMotion(visualizer, now);
+  const motionState = webSourceThumbnailCurrentMotion(visualizer, now);
   image.style.setProperty('--te-webviz-shift-x', `${(motionState.shiftX * 100).toFixed(4)}%`);
   image.style.setProperty('--te-webviz-shift-y', `${(motionState.shiftY * 100).toFixed(4)}%`);
   image.style.setProperty('--te-webviz-angle', `${motionState.rotateAngle.toFixed(6)}rad`);
   image.style.setProperty('--te-webviz-scale', motionState.scale.toFixed(5));
 
-  const particleCount = webThumbnailScalarValue(visualizer.values.particleCount, now);
+  const particleCount = webSourceThumbnailScalarValue(visualizer.values.particleCount, now);
   for (let i = 0; i < visualizer.particles.length; i++) {
     const particle = visualizer.particles[i];
     particle.y -= particle.speed * motionStep;
@@ -887,7 +888,7 @@ function drawWebThumbnailVisualizer(visualizer, timestamp) {
     if (particle.y < -12) { particle.y = height + 12; particle.x = Math.random() * width; }
     if (particle.x < -12) particle.x = width + 12;
     if (particle.x > width + 12) particle.x = -12;
-    const visibility = webThumbnailClamp(particleCount - i, 0, 1);
+    const visibility = webSourceThumbnailClamp(particleCount - i, 0, 1);
     if (visibility <= 0) continue;
     ctx.globalAlpha = visibility;
     ctx.fillStyle = theme.glow;
@@ -897,7 +898,7 @@ function drawWebThumbnailVisualizer(visualizer, timestamp) {
   }
   ctx.globalAlpha = 1;
 
-  const waveTransition = webThumbnailCurrentWaveTransition(visualizer, now);
+  const waveTransition = webSourceThumbnailCurrentWaveTransition(visualizer, now);
   if (waveTransition) {
     if (waveTransition.progress < 1) drawWebThumbnailWaveform(visualizer, waveTransition.from, 1 - waveTransition.progress);
     if (waveTransition.progress > 0) drawWebThumbnailWaveform(visualizer, waveTransition.to, waveTransition.progress);
@@ -910,14 +911,14 @@ function createWebThumbnailVisualizer(image) {
   stopWebThumbnailVisualizer();
   const stage = document.createElement('div');
   stage.className = 'te-web-thumbnail-visualizer';
-  const theme = WEB_THUMBNAIL_THEMES[webThumbnailRandomInt(0, WEB_THUMBNAIL_THEMES.length - 1)];
-  const blur = webThumbnailRandomInt(0, 10);
-  const darkness = webThumbnailRandomInt(0, 80) / 100;
-  const particleCount = webThumbnailRandomInt(11, 100);
-  const waveStyle = webThumbnailRandomInt(1, 4);
-  const motionMode = WEB_THUMBNAIL_MOTION_MODES[webThumbnailRandomInt(0, WEB_THUMBNAIL_MOTION_MODES.length - 1)];
-  const motionSpeed = webThumbnailRandomInt(2, 30) / 10;
-  const now = webThumbnailNow();
+  const theme = WEB_THUMBNAIL_THEMES[webSourceThumbnailRandomInt(0, WEB_THUMBNAIL_THEMES.length - 1)];
+  const blur = webSourceThumbnailRandomInt(0, 10);
+  const darkness = webSourceThumbnailRandomInt(0, 80) / 100;
+  const particleCount = webSourceThumbnailRandomInt(11, 100);
+  const waveStyle = webSourceThumbnailRandomInt(1, 4);
+  const motionMode = WEB_THUMBNAIL_MOTION_MODES[webSourceThumbnailRandomInt(0, WEB_THUMBNAIL_MOTION_MODES.length - 1)];
+  const motionSpeed = webSourceThumbnailRandomInt(2, 30) / 10;
+  const now = webSourceThumbnailNow();
   stage.style.setProperty('--te-webviz-darkness', String(darkness));
   stage.style.setProperty('--te-webviz-main', theme.main);
   stage.style.setProperty('--te-webviz-secondary', theme.secondary);
@@ -948,8 +949,8 @@ function createWebThumbnailVisualizer(image) {
   details.className = 'te-web-thumbnail-details';
   const duration = document.createElement('div');
   duration.className = 'te-web-thumbnail-duration';
-  duration.textContent = `${webThumbnailEstimatedDuration()} • ${(() => {
-    try { return new URL(state.webPageUrl || location.href).hostname.replace(/^www\./i, '') || 'website'; }
+  duration.textContent = `${webSourceThumbnailEstimatedDuration()} • ${(() => {
+    try { return new URL(state.webSourceUrl || location.href).hostname.replace(/^www\./i, '') || 'website'; }
     catch { return 'website'; }
   })()}`;
   const title = document.createElement('div');
@@ -1002,19 +1003,19 @@ function createWebThumbnailVisualizer(image) {
 }
 
 function attachWebMedia(media, slot) {
-  if (state.videoEl && state.videoEl !== media) detachVideo();
-  state.videoEl = media;
-  const frame = slot.querySelector(':scope > .te-video-frame') || slot;
+  if (state.activeMedia && state.activeMedia !== media) detachActiveMedia();
+  state.activeMedia = media;
+  const frame = slot.querySelector(':scope > .te-player-frame') || slot;
   const image = document.createElement('img');
   image.className = 'te-web-page-thumbnail';
   image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.decoding = 'async';
-  const pageUrl = state.webPageUrl || location.href;
+  const pageUrl = state.webSourceUrl || location.href;
   const thumbnails = globalThis.LHN_THUMBNAILS;
   const thumbnailUrl = thumbnails?.fromPageMetadata?.(document, pageUrl) || '';
   const { stage, syncArtwork } = createWebThumbnailVisualizer(image);
-  image.addEventListener('click', handleOverlayVideoClick);
+  image.addEventListener('click', handlePlayerClick);
   frame.replaceChildren(image, stage);
-  state.webThumbnail = image;
+  state.webSourceThumbnail = image;
   if (thumbnails?.load) {
     const fallbackSvg = thumbnails.fallbackSvgUrl?.() || '';
     const onError = () => {
@@ -1033,17 +1034,17 @@ function attachWebMedia(media, slot) {
   } else reportWebIssue('The shared page-thumbnail helper is unavailable.', null, { level:'error' });
 
   media.addEventListener('timeupdate', onTimeUpdate);
-  media.addEventListener('play', handleVideoPlay);
-  media.addEventListener('pause', handleVideoPause);
-  media.addEventListener('ratechange', handleVideoRateChange);
-  media.addEventListener('volumechange', handleVideoVolumeChange);
-  state.videoGeometryHandler = () => {
-    if (state.videoEl !== media) return;
-    syncVideoAspect(media); syncTheaterFrame();
+  media.addEventListener('play', handleMediaPlay);
+  media.addEventListener('pause', handleMediaPause);
+  media.addEventListener('ratechange', handleMediaRateChange);
+  media.addEventListener('volumechange', handleMediaVolumeChange);
+  state.mediaGeometryHandler = () => {
+    if (state.activeMedia !== media) return;
+    syncMediaAspect(media); syncTheaterFrame();
   };
-  media.addEventListener('loadedmetadata', state.videoGeometryHandler);
-  syncVideoAspect(media); syncTheaterFrame();
+  media.addEventListener('loadedmetadata', state.mediaGeometryHandler);
+  syncMediaAspect(media); syncTheaterFrame();
   syncPlayButton(); syncSpeedButton(); syncMuteButton();
-  if (state.webStudy) void syncWebTtsSpeedFromReader();
+  if (state.sourceType === 'web') void syncWebTtsSpeedFromReader();
   onTimeUpdate(); syncReadingAudioControls(); startAmbient();
 }

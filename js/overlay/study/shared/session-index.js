@@ -1,4 +1,4 @@
-// Shared, provider-neutral Dictation session summary contract used by content and Dashboard contexts.
+// Shared, provider-neutral Study session summary contract used by content and Dashboard contexts.
 (() => {
   const STORAGE_KEY = "dictation:session-index:v1";
   const VERSION = 1;
@@ -106,5 +106,7 @@
       .slice(0, MAX_SESSIONS);
   }
 
-  globalThis.LHN_DICTATION_SESSION_INDEX = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord });
+  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord });
+  globalThis.LHN_STUDY_SESSION_INDEX = studySessionIndex;
+  globalThis.LHN_DICTATION_SESSION_INDEX = studySessionIndex; // Compatibility alias for existing integrations.
 })();

@@ -1,4 +1,4 @@
-// Local-only rules for hinting proper nouns and recording eligible Dictation errors.
+// Local-only rules for hinting proper nouns and recording eligible Study errors.
 (() => {
   const STATS_VERSION = 3;
   const ERROR_TYPES = Object.freeze(["phonetic", "rule", "typo"]);
@@ -14,7 +14,7 @@
       start: match.index,
       end: match.index + match[0].length,
       index,
-    })).filter(token => globalThis.LHN_DICTATION_SCORE.tokenize(token.raw)[0]);
+    })).filter(token => globalThis.LHN_STUDY_SCORE.tokenize(token.raw)[0]);
   }
   function isCapitalized(word) { return /^\p{Lu}[\p{Ll}\p{M}]/u.test(String(word ?? "")); }
   function isUppercaseAcronym(word) { return /^[\p{Lu}]{2,6}$/u.test(String(word ?? "")); }
@@ -141,7 +141,7 @@
   }
 
   function recordWrongWordSubmission(stats, cueIndex, result, referenceSentence, timestamp = Date.now()) {
-    const score = globalThis.LHN_DICTATION_SCORE;
+    const score = globalThis.LHN_STUDY_SCORE;
     if (!stats || stats.version !== STATS_VERSION || !stats.words || !Array.isArray(result?.ops) || !score) return false;
     const referenceWords = getWords(referenceSentence);
     const properIndexes = getProperNounIndexes(referenceSentence);
@@ -218,7 +218,7 @@
     return changed;
   }
 
-  globalThis.LHN_DICTATION_RULES = Object.freeze({
+  const studyRules = Object.freeze({
     STATS_VERSION,
     getProperNounIndexes,
     getProperNounHints,
@@ -228,4 +228,6 @@
     errorContext,
     recordWrongWordSubmission,
   });
+  globalThis.LHN_STUDY_RULES = studyRules;
+  globalThis.LHN_DICTATION_RULES = studyRules; // Compatibility alias for existing integrations.
 })();

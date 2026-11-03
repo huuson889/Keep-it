@@ -45,7 +45,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
 
   function hideSpeechRecordingToast() {
     if (!state.speechRecordingToastVisible) return;
-    const toast = ctx.A?.overlayEl?.()?.querySelector?.("#te-dict-toast");
+    const toast = ctx.A?.overlayEl?.()?.querySelector?.("#te-study-toast");
     if (toast?.dataset.dictToastKind === "speech-recording") {
       toast.classList.remove("visible");
       toast.dataset.dictToastKind = "";
@@ -58,23 +58,23 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
   function setSpeechStatus(messageKey = "") {
     if (!ctx.ui?.speechStatus) return;
     if (messageKey) {
-      ctx.ui.speechStatus.removeAttribute("data-dict-label");
+      ctx.ui.speechStatus.removeAttribute("data-study-label");
       ctx.ui.speechStatus.textContent = ctx.tr(messageKey);
       return;
     }
-    ctx.ui.speechStatus.dataset.dictLabel = "dictationSpeakReady";
+    ctx.ui.speechStatus.dataset.studyLabel = "dictationSpeakReady";
     ctx.ui.speechStatus.textContent = ctx.tr("dictationSpeakReady");
   }
 
   function updateSpeechCheckDisabled() {
     if (!ctx.ui?.check) return;
-    const video = ctx.attachedVideo || ctx.A?.state?.videoEl;
-    const videoCuePlaying = ctx.stopAt >= 0 && !!video && !video.paused;
-    const speakingBusy = ctx.dictationMode === "speaking" && (
+    const media = ctx.attachedMedia || ctx.A?.state?.activeMedia;
+    const mediaCuePlaying = ctx.stopAt >= 0 && !!media && !media.paused;
+    const speakingBusy = ctx.studyMode === "speaking" && (
       state.speechStartPending || !!state.speechRecognition || !!state.speechRecorder || !!state.speechRecordingStream
-      || state.speechStopRequested || !!state.speechPlaybackAudio || videoCuePlaying
+      || state.speechStopRequested || !!state.speechPlaybackAudio || mediaCuePlaying
     );
-    const speechMicWaiting = ctx.dictationMode === "speaking" && !!ctx.ui.speechMic && !ctx.ui.speechMic.disabled
+    const speechMicWaiting = ctx.studyMode === "speaking" && !!ctx.ui.speechMic && !ctx.ui.speechMic.disabled
       && !ctx.ui.speechMic.classList.contains("listening") && !speakingBusy;
     ctx.ui.check.disabled = ctx.captionControlsDisabled || speakingBusy || speechMicWaiting;
   }
@@ -85,10 +85,10 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     state.speechToastTimer = 0;
     if (ctx.ui.work && ctx.ui.success.parentNode !== ctx.ui.work) ctx.ui.work.insertBefore(ctx.ui.success, ctx.ui.work.firstChild);
     state.lastSpeechFeedback = null;
-    ctx.ui.success.classList.remove("te-dict-speech-feedback", "te-dict-speech-toast", "te-dict-speech-toast-spring", "te-dict-speech-toast-exit", "state-pass", "state-warn", "state-fail");
+    ctx.ui.success.classList.remove("te-shadowing-feedback", "te-shadowing-toast", "te-shadowing-toast-spring", "te-shadowing-toast-exit", "state-pass", "state-warn", "state-fail");
     if (ctx.ui.successIcon) ctx.ui.successIcon.innerHTML = '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>';
     if (ctx.ui.successMessage) {
-      ctx.ui.successMessage.dataset.dictLabel = "dictationSuccess";
+      ctx.ui.successMessage.dataset.studyLabel = "dictationSuccess";
       ctx.ui.successMessage.textContent = ctx.tr("dictationSuccess");
     }
     if (ctx.ui.speechToastRing) ctx.ui.speechToastRing.hidden = true;
@@ -124,7 +124,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     if (!ctx.ui?.success) return;
     clearTimeout(state.speechToastTimer);
     state.speechToastTimer = 0;
-    ctx.ui.success.classList.remove("te-dict-speech-toast-exit");
+    ctx.ui.success.classList.remove("te-shadowing-toast-exit");
     const state = ["pass", "warn", "fail"].includes(tier) ? tier : "fail";
     state.lastSpeechFeedback = { tier: state, percent, sentence, perfect: Boolean(perfect) };
     const iconPaths = {
@@ -132,15 +132,15 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       warn: '<path d="m10.29 3.86-8.47 14.14A2 2 0 0 0 3.54 21h16.92a2 2 0 0 0 1.72-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
       fail: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'
     };
-    ctx.ui.success.classList.add("te-dict-speech-feedback");
+    ctx.ui.success.classList.add("te-shadowing-feedback");
     for (const name of ["pass", "warn", "fail"]) ctx.ui.success.classList.toggle(`state-${name}`, name === state);
     if (ctx.ui.successIcon) ctx.ui.successIcon.innerHTML = iconPaths[state];
     if (ctx.language() === "vi") {
       if (ctx.ui.center && ctx.ui.success.parentNode !== ctx.ui.center) ctx.ui.center.appendChild(ctx.ui.success);
       const copy = getVietnameseSpeechCopy(percent);
-      ctx.ui.success.classList.add("te-dict-speech-toast");
+      ctx.ui.success.classList.add("te-shadowing-toast");
       if (ctx.ui.successMessage) {
-        ctx.ui.successMessage.removeAttribute("data-dict-label");
+        ctx.ui.successMessage.removeAttribute("data-study-label");
         ctx.ui.successMessage.textContent = copy.title;
       }
       if (ctx.ui.speechToastDescription) { ctx.ui.speechToastDescription.textContent = copy.description; ctx.ui.speechToastDescription.hidden = false; }
@@ -151,14 +151,14 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       if (ctx.ui.speechFeedbackAccuracy) ctx.ui.speechFeedbackAccuracy.hidden = true;
     } else {
       if (ctx.ui.work && ctx.ui.success.parentNode !== ctx.ui.work) ctx.ui.work.insertBefore(ctx.ui.success, ctx.ui.work.firstChild);
-      ctx.ui.success.classList.remove("te-dict-speech-toast", "te-dict-speech-toast-spring");
+      ctx.ui.success.classList.remove("te-shadowing-toast", "te-shadowing-toast-spring");
       if (ctx.ui.speechToastRing) ctx.ui.speechToastRing.hidden = true;
       if (ctx.ui.speechToastDescription) ctx.ui.speechToastDescription.hidden = true;
       const messageKey = state === "pass"
         ? perfect ? "dictationSpeakSuccess" : "dictationSpeakPassed"
         : "dictationSpeakRetry";
       if (ctx.ui.successMessage) {
-        ctx.ui.successMessage.dataset.dictLabel = messageKey;
+        ctx.ui.successMessage.dataset.studyLabel = messageKey;
         ctx.ui.successMessage.textContent = ctx.tr(messageKey);
       }
       if (ctx.ui.speechFeedbackSentence) ctx.ui.speechFeedbackSentence.hidden = false;
@@ -168,24 +168,24 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     }
     ctx.ui.success.hidden = false;
     if (ctx.language() === "vi") {
-      ctx.ui.success.classList.remove("te-dict-speech-toast-spring");
+      ctx.ui.success.classList.remove("te-shadowing-toast-spring");
       void ctx.ui.success.offsetWidth;
-      ctx.ui.success.classList.add("te-dict-speech-toast-spring");
+      ctx.ui.success.classList.add("te-shadowing-toast-spring");
       state.speechToastTimer = setTimeout(dismissVietnameseSpeechToast, 6000);
     }
   }
 
   function shouldKeepVietnameseSpeechToast() {
-    return Boolean(ctx.ui?.success && !ctx.ui.success.hidden && ctx.dictationMode === "speaking" && ctx.language() === "vi" && ctx.ui.success.classList.contains("te-dict-speech-toast"));
+    return Boolean(ctx.ui?.success && !ctx.ui.success.hidden && ctx.studyMode === "speaking" && ctx.language() === "vi" && ctx.ui.success.classList.contains("te-shadowing-toast"));
   }
 
   function dismissVietnameseSpeechToast() {
-    if (!shouldKeepVietnameseSpeechToast() || ctx.ui.success.classList.contains("te-dict-speech-toast-exit")) return;
+    if (!shouldKeepVietnameseSpeechToast() || ctx.ui.success.classList.contains("te-shadowing-toast-exit")) return;
     clearTimeout(state.speechToastTimer);
-    ctx.ui.success.classList.remove("te-dict-speech-toast-spring");
-    ctx.ui.success.classList.add("te-dict-speech-toast-exit");
+    ctx.ui.success.classList.remove("te-shadowing-toast-spring");
+    ctx.ui.success.classList.add("te-shadowing-toast-exit");
     state.speechToastTimer = setTimeout(() => {
-      if (!ctx.ui?.success?.classList.contains("te-dict-speech-toast-exit")) return;
+      if (!ctx.ui?.success?.classList.contains("te-shadowing-toast-exit")) return;
       ctx.ui.success.hidden = true;
       resetSpeechFeedback();
     }, 300);
@@ -252,12 +252,12 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
 
   function scheduleSpeechAutoRecord() {
     clearSpeechAutoStartTimer();
-    if (!state.speechAutoRecordEnabled || !state.speechCueAutoStartPending || !ctx.active || ctx.dictationMode !== "speaking" || state.speechAnswerRevealed
+    if (!state.speechAutoRecordEnabled || !state.speechCueAutoStartPending || !ctx.active || ctx.studyMode !== "speaking" || state.speechAnswerRevealed
       || !ctx.sentenceCues[ctx.current]?.en || state.speechStartPending || state.speechRecognition || state.speechStopRequested
       || state.speechPlaybackAudio || state.speechRecorder || state.speechRecordingStream) return;
     state.speechAutoStartTimer = setTimeout(() => {
       state.speechAutoStartTimer = 0;
-      if (!state.speechAutoRecordEnabled || !state.speechCueAutoStartPending || !ctx.active || ctx.dictationMode !== "speaking" || state.speechAnswerRevealed
+      if (!state.speechAutoRecordEnabled || !state.speechCueAutoStartPending || !ctx.active || ctx.studyMode !== "speaking" || state.speechAnswerRevealed
         || !ctx.sentenceCues[ctx.current]?.en || state.speechStartPending || state.speechRecognition || state.speechStopRequested
         || state.speechPlaybackAudio || state.speechRecorder || state.speechRecordingStream) {
         state.speechCueAutoStartPending = false;
@@ -363,15 +363,15 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     return true;
   }
 
-  function pauseVideoForSpeech() {
+  function pauseMediaForSpeech() {
     ctx.endPlayback();
-    const video = ctx.attachedVideo || ctx.A?.state?.videoEl;
-    video?.pause();
+    const media = ctx.attachedMedia || ctx.A?.state?.activeMedia;
+    media?.pause();
   }
 
   function playRecordedSpeech(url, trimFinalGraceSilence = false) {
     if (!url || typeof globalThis.Audio !== "function") return Promise.resolve(false);
-    pauseVideoForSpeech();
+    pauseMediaForSpeech();
     return new Promise((resolve) => {
       let settled = false;
       let player;
@@ -438,7 +438,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     ctx.ui.speechResultWrap.hidden = !transcript;
     if (!transcript) return;
     const reference = ctx.sentenceCues[ctx.current]?.en || "";
-    const operations = globalThis.LHN_DICTATION_SCORE.score(reference, transcript).ops;
+    const operations = globalThis.LHN_STUDY_SCORE.score(reference, transcript).ops;
     const typedTokens = ctx.getTranscriptWordTokens(transcript);
     const expectedTokens = ctx.getTranscriptWordTokens(reference);
     const displayTokens = (tokens, indices, fallback) => {
@@ -450,16 +450,16 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       const expectedDisplay = displayTokens(expectedTokens, operation.expectedIndices, operation.expected);
       if (operation.type === "wrong") {
         const token = document.createElement("span");
-        token.className = "te-dict-speech-word wrong";
+        token.className = "te-shadowing-word wrong";
         token.textContent = typedDisplay;
         ctx.ui.speechResult.appendChild(token);
         const correction = document.createElement("span");
-        correction.className = "te-dict-speech-word fix";
+        correction.className = "te-shadowing-word fix";
         correction.textContent = `→ ${expectedDisplay}`;
         ctx.ui.speechResult.appendChild(correction);
       } else {
         const token = document.createElement("span");
-        token.className = `te-dict-speech-word ${operation.type}`;
+        token.className = `te-shadowing-word ${operation.type}`;
         token.textContent = operation.type === "missing" ? expectedDisplay : typedDisplay;
         ctx.ui.speechResult.appendChild(token);
       }
@@ -472,7 +472,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       clearSpeechAutoStartTimer();
       clearSpeechEndpointGraceTimer();
     }
-    if (ctx.dictationMode !== "speaking") ctx.setDictationMode("speaking");
+    if (ctx.studyMode !== "speaking") ctx.setStudyMode("speaking");
     if (state.speechStopRequested || state.speechPlaybackAudio) return;
     if (state.speechStartPending) {
       state.speechStartGeneration++;
@@ -515,7 +515,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
     state.speechAnswerRevealed = false;
     clearRecordedSpeech();
     state.speechRecordingDiscard = false;
-    pauseVideoForSpeech();
+    pauseMediaForSpeech();
     state.speechRecognitionError = "";
     ctx.ui.input.value = "";
     setSpeechTargetState("practice");
@@ -531,7 +531,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       && typeof (globalThis.MediaRecorder || globalThis.window?.MediaRecorder) === "function") {
       try {
         const stream = await mediaDevices.getUserMedia({ audio: true });
-        if (generation !== state.speechStartGeneration || !ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+        if (generation !== state.speechStartGeneration || !ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
           try { stream.getTracks?.().forEach((track) => track.stop()); } catch {}
           return;
         }
@@ -540,7 +540,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
         recordingAvailable = false;
       }
     }
-    if (generation !== state.speechStartGeneration || !ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+    if (generation !== state.speechStartGeneration || !ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
       state.speechStartPending = false;
       updateSpeechMicState(false);
       return;
@@ -559,7 +559,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       state.speechRecognition = null;
       updateSpeechMicState(false);
       const completedTranscript = String(transcript || "").trim();
-      if (!ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+      if (!ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
         await stopSpeechRecording(true);
         state.speechStopRequested = false;
         updateSpeechCheckDisabled();
@@ -568,10 +568,10 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       if (!completedTranscript) {
         renderSpeechResult("");
         const recordingUrl = await stopSpeechRecording(false);
-        if (generation === state.speechStartGeneration && ctx.active && ctx.dictationMode === "speaking" && attemptCurrent === ctx.current && recordingUrl) {
+        if (generation === state.speechStartGeneration && ctx.active && ctx.studyMode === "speaking" && attemptCurrent === ctx.current && recordingUrl) {
           await playRecordedSpeech(recordingUrl, trimFinalGraceSilence);
         }
-        if (generation !== state.speechStartGeneration || !ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+        if (generation !== state.speechStartGeneration || !ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
           state.speechStopRequested = false;
           updateSpeechCheckDisabled();
           return;
@@ -582,7 +582,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
         return;
       }
       const recordingUrl = await stopSpeechRecording(false);
-      if (generation !== state.speechStartGeneration || !ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+      if (generation !== state.speechStartGeneration || !ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
         clearRecordedSpeech();
         state.speechStopRequested = false;
         updateSpeechCheckDisabled();
@@ -591,7 +591,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       ctx.ui.input.value = completedTranscript;
       renderSpeechResult(completedTranscript);
       const recordingPlayed = recordingUrl ? await playRecordedSpeech(recordingUrl, trimFinalGraceSilence) : false;
-      if (generation !== state.speechStartGeneration || !ctx.active || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) {
+      if (generation !== state.speechStartGeneration || !ctx.active || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) {
         state.speechStopRequested = false;
         updateSpeechCheckDisabled();
         return;
@@ -610,7 +610,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       state.speechEndpointGraceTimer = setTimeout(() => {
         state.speechEndpointGraceTimer = 0;
         if (speechAttemptFinalized || generation !== state.speechStartGeneration || !ctx.active
-          || ctx.dictationMode !== "speaking" || attemptCurrent !== ctx.current) return;
+          || ctx.studyMode !== "speaking" || attemptCurrent !== ctx.current) return;
         state.speechStopRequested = true;
         setSpeechStatus("dictationSpeakProcessing");
         const currentRecognition = state.speechRecognition;
@@ -629,12 +629,12 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       let finalText = "";
       let interimText = "";
       state.speechRecognition = session;
-      if (ctx.A?.state?.webStudy) {
-        const sourceLanguage = ctx.A.state.webDetectedLanguage || ctx.A.state.webLanguageHint || globalThis.navigator?.language || "en-US";
+      if (ctx.A?.state?.sourceType === 'web') {
+        const sourceLanguage = ctx.A.state.webSourceDetectedLanguage || ctx.A.state.webSourceLanguageHint || globalThis.navigator?.language || "en-US";
         session.lang = globalThis.LHN_TTS?.normalizeLanguage?.(sourceLanguage) || sourceLanguage;
       } else {
-        session.lang = /^en(?:-|$)/i.test(ctx.A?.state?.captionTrackLanguage || "")
-          ? ctx.A.state.captionTrackLanguage : "en-US";
+        session.lang = /^en(?:-|$)/i.test(ctx.A?.state?.sourceLanguage || "")
+          ? ctx.A.state.sourceLanguage : "en-US";
       }
       session.continuous = !(automatic || state.speechAutoRecordEnabled);
       session.interimResults = true;
@@ -677,7 +677,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
         if (state.speechRecognition !== session) return;
         const segment = [finalText, interimText].filter(Boolean).join(" ").trim();
         const fatalError = ["dictationSpeakDenied", "dictationSpeakNetwork", "dictationSpeakError"].includes(state.speechRecognitionError);
-        const canContinue = ctx.active && ctx.dictationMode === "speaking" && attemptCurrent === ctx.current;
+        const canContinue = ctx.active && ctx.studyMode === "speaking" && attemptCurrent === ctx.current;
 
         if (!automatic && !state.speechAutoRecordEnabled && !state.speechStopRequested && !fatalError && canContinue) {
           try {
@@ -770,7 +770,7 @@ globalThis.LHN_SHADOWING_ACTIVITY_FACTORY = Object.freeze({
       dismissVietnameseSpeechToast, updateSpeechMicState, updateSpeechAutoRecordControl,
       updateSpeechMicPlaybackState, clearSpeechAutoStartTimer, clearSpeechEndpointGraceTimer,
       setSpeechAutoRecordEnabled, toggleSpeechAutoRecord, scheduleSpeechAutoRecord, clearRecordedSpeech,
-      stopSpeechRecording, startSpeechRecording, pauseVideoForSpeech, playRecordedSpeech, stopSpeechRecognition,
+      stopSpeechRecording, startSpeechRecording, pauseMediaForSpeech, playRecordedSpeech, stopSpeechRecognition,
       showSpeechResultPanel, renderSpeechResult, toggleSpeechRecognition, handleSpeakingEscape,
       get speechAutoRecordEnabled() { return state.speechAutoRecordEnabled; },
       get speechCueAutoStartPending() { return state.speechCueAutoStartPending; },

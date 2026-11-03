@@ -1,4 +1,4 @@
-// Dictation scoring: case- and punctuation-insensitive word matching, plus standard English contractions.
+// Study scoring: case- and punctuation-insensitive word matching, plus standard English contractions.
 (() => {
   const APOS = /[’‘`´']/g;
   const WORDS = /[\p{L}\p{N}’‘`´']+/gu;
@@ -214,5 +214,7 @@
     };
   }
 
-  globalThis.LHN_DICTATION_SCORE = Object.freeze({ tokenize, score, diff, positionalDiff, isCorrectIncompletePrefix, getPrefixProgress });
+  const studyScore = Object.freeze({ tokenize, score, diff, positionalDiff, isCorrectIncompletePrefix, getPrefixProgress });
+  globalThis.LHN_STUDY_SCORE = studyScore;
+  globalThis.LHN_DICTATION_SCORE = studyScore; // Compatibility alias for existing integrations.
 })();

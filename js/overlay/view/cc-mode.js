@@ -167,7 +167,7 @@ function setSubtitleDisplayMode(mode) {
 }
 
 function subtitleModeContextKey() {
-  return String(state.webStudy ? webStudyPageCacheUrl() : state.videoId || location.href || '');
+  return String(state.sourceType === 'web' ? webSourcePageCacheUrl() : state.sourceId || location.href || '');
 }
 
 function baseLanguageCode(language) {
@@ -175,9 +175,9 @@ function baseLanguageCode(language) {
 }
 
 function defaultSubtitleDisplayMode() {
-  const detectedCueLanguage = state.webStudy
-    ? (state.webCueLanguageKnown ? state.webDetectedLanguage : '')
-    : state.captionTrackLanguage;
+  const detectedCueLanguage = state.sourceType === 'web'
+    ? (state.webSourceCueLanguageKnown ? state.webSourceDetectedLanguage : '')
+    : state.sourceLanguage;
   const cueLanguage = baseLanguageCode(detectedCueLanguage);
   const displayLanguage = baseLanguageCode(state.displayLanguage);
   return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
@@ -231,21 +231,21 @@ async function refreshSubtitleLanguageSettings() {
   state.displayLanguage = displayLanguage;
   if (!sourceChanged && !targetSettingChanged && !targetChanged) {
     updateSubtitleLanguageLabels();
-    refreshVideoUiLocalization();
+    refreshOverlayUiLocalization();
     if (displayChanged && state.open) applyDefaultSubtitleDisplayMode();
     return;
   }
   state.sourceLanguageSetting = sourceLanguageSetting;
   state.targetLanguageSetting = targetLanguageSetting;
   state.targetLanguage = targetLanguage;
-  state.mainLanguage = sourceLanguageSetting === 'auto' ? (state.captionTrackLanguage || 'en') : sourceLanguageSetting;
+  state.mainLanguage = sourceLanguageSetting === 'auto' ? (state.sourceLanguage || 'en') : sourceLanguageSetting;
   translationSettingsRevision++;
   translateQueue = [];
   updateSubtitleLanguageLabels();
-  refreshVideoUiLocalization();
-  if (state.webStudy) {
+  refreshOverlayUiLocalization();
+  if (state.sourceType === 'web') {
     if (state.rawCues.length) {
-      const language = state.webDetectedLanguage || state.captionTrackLanguage || state.webLanguageHint;
+      const language = state.webSourceDetectedLanguage || state.sourceLanguage || state.webSourceLanguageHint;
       const refreshedCues = markWebReaderCues(state.rawCues, language);
       state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
       state.activeIdx = -1;
@@ -256,7 +256,7 @@ async function refreshSubtitleLanguageSettings() {
   }
   if (displayChanged && !sourceChanged && state.open) applyDefaultSubtitleDisplayMode();
 
-  if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
+  if ((sourceChanged || targetSettingChanged || targetChanged) && state.sourceId) {
     state.loadToken++;
     prefetchToken++;
     state.loadingFor = null;
@@ -266,7 +266,7 @@ async function refreshSubtitleLanguageSettings() {
     state.activeIdx = -1;
     loadedUntil = 0;
     if (state.open) loadCaptions();
-    else schedulePrefetch(state.videoId);
+    else schedulePrefetch(state.sourceId);
     return;
   }
 

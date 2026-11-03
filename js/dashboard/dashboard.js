@@ -1184,8 +1184,8 @@ window.addEventListener("keepit:highlights-notes-action", event => {
   if (!data || data.type !== "HIGHLIGHTS_NOTES_ACTION" || data.version !== 1) return;
   void handleHighlightsNotesAction(data);
 });
-const DICTATION_SESSION_INDEX = globalThis.LHN_DICTATION_SESSION_INDEX;
-const OVERVIEW_DICTATION_SESSION_INDEX_KEY = DICTATION_SESSION_INDEX.STORAGE_KEY;
+const STUDY_SESSION_INDEX = globalThis.LHN_STUDY_SESSION_INDEX;
+const OVERVIEW_STUDY_SESSION_INDEX_KEY = STUDY_SESSION_INDEX.STORAGE_KEY;
 let overviewSessionEntries = [];
 let overviewSummaryCache = null;
 let overviewSummaryCacheRevision = -1;
@@ -1600,8 +1600,8 @@ function renderOverviewRecentItems(model) {
     host.appendChild(row);
   }
 }
-function normalizeOverviewSessionIndex(value) { return DICTATION_SESSION_INDEX.normalizeIndex(value); }
-function mergeOverviewSessions(...groups) { return DICTATION_SESSION_INDEX.mergeSessions(...groups); }
+function normalizeOverviewSessionIndex(value) { return STUDY_SESSION_INDEX.normalizeIndex(value); }
+function mergeOverviewSessions(...groups) { return STUDY_SESSION_INDEX.mergeSessions(...groups); }
 function migrateLegacyDictationRecords(storageData, existingSessions) {
   const indexedById = new Map((existingSessions || []).map(session => [session.sessionId, session]));
   const titleByVideoId = new Map();
@@ -1614,7 +1614,7 @@ function migrateLegacyDictationRecords(storageData, existingSessions) {
     const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
     if (!match || !record || typeof record !== "object") continue;
     const sourceId = match[1];
-    const session = DICTATION_SESSION_INDEX.reconcileYouTubeRecord(
+    const session = STUDY_SESSION_INDEX.reconcileYouTubeRecord(
       sourceId, record, indexedById.get(`youtube:${sourceId}`), { title:titleByVideoId.get(sourceId) || "" }
     );
     if (session) reconciled.push(session);
@@ -1634,17 +1634,17 @@ async function loadOverviewDictationSessions() {
   overviewSessionsLoading = true;
   try {
     const allData = await browser.storage.local.get(null);
-    const index = normalizeOverviewSessionIndex(allData?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+    const index = normalizeOverviewSessionIndex(allData?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
     const reconciledSessions = migrateLegacyDictationRecords(allData, index.sessions);
     const sessions = mergeOverviewSessions(index.sessions, reconciledSessions);
     overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, sessions);
     if (!index.legacyMigrationComplete || overviewSessionsNeedReconciliation(index.sessions, reconciledSessions)) {
       const migrated = { version:1, updatedAt:Date.now(), legacyMigrationComplete:true, sessions:overviewSessionEntries };
       try {
-        const recheck = await browser.storage.local.get(OVERVIEW_DICTATION_SESSION_INDEX_KEY);
-        const concurrent = normalizeOverviewSessionIndex(recheck?.[OVERVIEW_DICTATION_SESSION_INDEX_KEY]);
+        const recheck = await browser.storage.local.get(OVERVIEW_STUDY_SESSION_INDEX_KEY);
+        const concurrent = normalizeOverviewSessionIndex(recheck?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
         migrated.sessions = mergeOverviewSessions(concurrent.sessions, overviewSessionEntries);
-        await browser.storage.local.set({ [OVERVIEW_DICTATION_SESSION_INDEX_KEY]:migrated });
+        await browser.storage.local.set({ [OVERVIEW_STUDY_SESSION_INDEX_KEY]:migrated });
       } catch (error) {
         console.warn("Could not persist Dictation session index reconciliation", error);
       }
@@ -3553,8 +3553,8 @@ browser.storage.onChanged.addListener((changes, area) => {
     render();
     syncHighlightsNotesView();
   }
-  if (changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY]) {
-    const index = normalizeOverviewSessionIndex(changes[OVERVIEW_DICTATION_SESSION_INDEX_KEY].newValue);
+  if (changes[OVERVIEW_STUDY_SESSION_INDEX_KEY]) {
+    const index = normalizeOverviewSessionIndex(changes[OVERVIEW_STUDY_SESSION_INDEX_KEY].newValue);
     overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, index.sessions);
     overviewSessionsReady = true;
     renderOverviewDictationSessions();
