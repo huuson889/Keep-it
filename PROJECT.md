@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.46; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.47; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.46: `node --check` các file JS sửa đạt cho tách kích thước xem Normal/Theater gồm đồng bộ class kích thước khi chuyển mode; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- v3.5.47: `node --check` các file JS sửa đạt cho toast "đang ở chế độ xem này" khi bấm shortcut Alt+1–3 đúng mode; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,6 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- Toast "Bạn đang ở (tên chế độ) rồi" (v3.5.47): browser QA pending — bấm Alt+1/2/3 đúng chế độ xem đang mở thì hiện toast đúng tên mode và ngôn ngữ (EN/VI/KO), tự ẩn sau ~2.4s; bấm khác mode vẫn chuyển như cũ; đang mở Study thì không toast và vẫn chuyển mode; menu chế độ xem đang mở vẫn đóng lại; không ảnh hưởng phím Alt+1–3 khi đang nhập liệu.
 - Kích thước xem Normal/Theater độc lập (v3.5.46): browser QA pending — chọn S/M/L ở Normal không đổi cỡ Theater và ngược lại; chuyển Normal ↔ Theater áp ngay kích thước riêng của mode đích, không thừa hưởng cỡ mode trước và không tự ẩn controls sai; Reading/Study giữ key riêng; auto-hide controls khi chọn L ở Theater vẫn hoạt động; giá trị giữ sau reload và khi mở lại overlay.
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
 - Overlay favicon: xác nhận `.te-yt-logo-box` dùng đúng favicon trang cho Web và YouTube, giữ 22×22px/tiêu đề/bố cục, fallback globe khi không có icon; browser QA pending.
@@ -136,6 +137,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.47 | Qoder Agent sửa:**
+
+- Bấm shortcut chế độ xem (Alt+1 Rạp / Alt+2 Đọc / Alt+3 Thường) khi đang ở đúng chế độ đó thì hiện toast "Bạn đang ở (tên chế độ) rồi" (dịch EN/VI/KO), tự ẩn sau ~2.4s; bấm khác chế độ vẫn chuyển như cũ, đang mở Study không toast.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/overlay-template.js`, `js/core/languages.js`, `manifest.json`, `docs/modules/overlay.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` các file JS sửa đạt; browser QA chưa chạy.
 
 **2026-11-04 | v3.5.46 | Qoder Agent sửa:**
 
