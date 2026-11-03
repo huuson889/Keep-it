@@ -1198,7 +1198,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;
       display: flex; flex: none; width: fit-content;
-      max-width: min(80vw, var(--te-theater-subtitle-max-width, 80vw)); min-width: 0; min-height: 0;
+      max-width: calc(min(80vw, var(--te-theater-subtitle-max-width, 80vw)) + 36px); min-width: 0; min-height: 0;
       height: auto; padding: 12px 18px; gap: 2px; overflow: visible;
       transform: translate(-50%, -50%);
       border-radius: 16px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
