@@ -35,10 +35,12 @@
 - Snapshot bộ nhớ gắn với document và URL, chỉ tồn tại qua đóng/mở overlay. Reload tạo content script mới và buộc trích Reader lại; persistent cache chỉ được dùng khi fingerprint còn trùng.
 - TTS và translation giữ cache/policy của module hiện có. Giữ marking, queue, target-language updates và lỗi dịch/toast.
 - Giữ `LHN_OVERLAY_API`, phím native YouTube, shared shortcuts và mutual exclusion Reader/Web. Web virtual media phải kiểm tra generation để seek/pause không bị cue cũ ghi đè.
+- CC mặc định so mã ngôn ngữ cơ sở của cue thực tế (YouTube track/Web detection) với giao diện: trùng → `primary`, khác/chưa rõ → `bilingual`. Web chỉ fallback sang page/browser hint thì tính là chưa rõ. Cập nhật khi cue được xác định, trừ khi người dùng đã chọn chế độ cho video/trang đó.
 - Tốc độ Web TTS cập nhật audio hiện hành; Pause/Play giữ vị trí. Không thay UI, video modes, thumbnail/Ambient hoặc Dictation.
 
 ## 5. Kiểm tra và xác minh
 
 - v3.5.24 VM xác nhận fresh Reader read/save đầu tiên, snapshot/touch khi đóng/mở lại, persistent-cache hit sau reload, refresh khi URL đổi, TTL 7 ngày và dọn mục không được dùng lại.
 - Static/source checks: `node --check` 54 JS files, manifest JSON/version, Reader/Web/Background message-contract assertions và `git diff --check`.
+- v3.5.25 VM xác nhận cùng mã cơ sở → `primary`, khác/không rõ → `bilingual`, Web dùng ngôn ngữ cue được dò và lựa chọn thủ công không bị ghi đè.
 - Browser QA chưa chạy: thử nhiều lần đóng/mở và reload trên Tuổi Trẻ/VnExpress; kiểm tra số cue, TTS/dịch lazy, URL đổi, Alt+E/F, Reader exclusivity, YouTube không đổi và cleanup.

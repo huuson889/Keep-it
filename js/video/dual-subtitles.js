@@ -56,6 +56,7 @@ let pendingDictationOpenImmediately = false;
 let pendingDictationMode = 'typing';
 let webStudyCueSessionCache = null;
 let webStudyPreparationPromise = null;
+let subtitleModeManuallySelectedFor = null;
 
 const state = {
   open: false,
@@ -98,6 +99,7 @@ const state = {
   webStudy: false,
   webLanguageHint: '',
   webDetectedLanguage: '',
+  webCueLanguageKnown: false,
   webLanguageReady: Promise.resolve(''),
   webPageUrl: '',
   webThumbnail: null,
@@ -532,7 +534,7 @@ async function prepareWebStudyFromPage() {
   for (const char of pageUrl) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   state.videoId = `web-${(hash >>> 0).toString(16)}`;
   state.activeIdx = -1; state.viCache = new Map(); state.captionTrackLanguage = languageHint;
-  state.mainLanguage = languageHint; state.webDetectedLanguage = ''; state.loadingFor = null;
+  state.mainLanguage = languageHint; state.webDetectedLanguage = ''; state.webCueLanguageKnown = false; state.loadingFor = null;
   const cues = sentences.map((text, index) => ({ id:index, start:index, end:index + 1, en:text, vi:'', mainText:text }));
   const readerCues = markWebReaderCues(cues, languageHint);
   state.videoEl = createWebTtsMedia(readerCues);
@@ -540,11 +542,14 @@ async function prepareWebStudyFromPage() {
   const activePageUrl = state.webPageUrl;
   state.webLanguageReady = sentences.length
     ? Promise.resolve(detectWebTtsLanguage(sentences[0], languageHint)).then((language) => {
+        const directLanguage = globalThis.LHN_TTS?.detectReadLanguage?.(sentences[0]);
         const detected = globalThis.LHN_TTS?.normalizeLanguage?.(language || languageHint) || language || languageHint;
         if (state.webStudy && state.webPageUrl === activePageUrl) {
           const previousLanguage = String(state.captionTrackLanguage || state.webLanguageHint).replace(/_/g, '-').split('-')[0].toLowerCase();
           const detectedBase = String(detected).replace(/_/g, '-').split('-')[0].toLowerCase();
           state.webDetectedLanguage = detected; state.captionTrackLanguage = detected;
+          state.webCueLanguageKnown = Boolean(directLanguage) || baseLanguageCode(detected) !== baseLanguageCode(languageHint);
+          if (state.open) applyDefaultSubtitleDisplayMode();
           if (previousLanguage !== detectedBase) {
             translationSettingsRevision++;
             translateQueue = [];
@@ -1603,6 +1608,35 @@ function setSubtitleDisplayMode(mode) {
   return true;
 }
 
+function subtitleModeContextKey() {
+  return String(state.webStudy ? webStudyPageCacheUrl() : state.videoId || location.href || '');
+}
+
+function baseLanguageCode(language) {
+  return String(language || '').trim().replace(/_/g, '-').toLowerCase().split('-')[0];
+}
+
+function defaultSubtitleDisplayMode() {
+  const detectedCueLanguage = state.webStudy
+    ? (state.webCueLanguageKnown ? state.webDetectedLanguage : '')
+    : state.captionTrackLanguage;
+  const cueLanguage = baseLanguageCode(detectedCueLanguage);
+  const displayLanguage = baseLanguageCode(state.displayLanguage);
+  return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
+}
+
+function applyDefaultSubtitleDisplayMode() {
+  const contextKey = subtitleModeContextKey();
+  if (contextKey && subtitleModeManuallySelectedFor === contextKey) return false;
+  return setSubtitleDisplayMode(defaultSubtitleDisplayMode());
+}
+
+function setSubtitleDisplayModeByUser(mode) {
+  if (!setSubtitleDisplayMode(mode)) return false;
+  subtitleModeManuallySelectedFor = subtitleModeContextKey() || null;
+  return true;
+}
+
 function setSubtitleModeMenuOpen(open) {
   const menu = $('te-subtitle-mode-menu');
   const trigger = $('te-subtitle-mode-trigger');
@@ -1680,10 +1714,12 @@ async function refreshSubtitleLanguageSettings() {
   const sourceChanged = sourceLanguageSetting !== state.sourceLanguageSetting;
   const targetSettingChanged = targetLanguageSetting !== state.targetLanguageSetting;
   const targetChanged = targetLanguage !== state.targetLanguage;
+  const displayChanged = displayLanguage !== state.displayLanguage;
   state.displayLanguage = displayLanguage;
   if (!sourceChanged && !targetSettingChanged && !targetChanged) {
     updateSubtitleLanguageLabels();
     refreshVideoUiLocalization();
+    if (displayChanged && state.open) applyDefaultSubtitleDisplayMode();
     return;
   }
   state.sourceLanguageSetting = sourceLanguageSetting;
@@ -1702,8 +1738,10 @@ async function refreshSubtitleLanguageSettings() {
       state.activeIdx = -1;
       if (state.open) { renderTranscriptList(); onTimeUpdate(); }
     }
+    if (state.open) applyDefaultSubtitleDisplayMode();
     return;
   }
+  if (displayChanged && !sourceChanged && state.open) applyDefaultSubtitleDisplayMode();
 
   if ((sourceChanged || targetSettingChanged || targetChanged) && state.videoId) {
     state.loadToken++;
@@ -2307,7 +2345,7 @@ function openOverlay() {
   setVideoTitle();
   extendLoadedWindow();
   if (!state.webStudy && state.captions.length === 0 && state.loadingFor !== state.videoId) loadCaptions();
-  if (state.webStudy) setSubtitleDisplayMode('primary');
+  applyDefaultSubtitleDisplayMode();
 }
 
 function closeOverlay() {
@@ -3514,6 +3552,7 @@ async function loadCaptions() {
     loadedUntil = Math.max(loadedUntil, PRELOAD_SECONDS);
     state.loadingFor = null;
     applyLoadedWindow();
+    if (state.open) applyDefaultSubtitleDisplayMode();
     return;
   }
   state.captionTrackLanguage = '';
@@ -3575,6 +3614,7 @@ async function loadCaptions() {
     loadedUntil = Math.max(loadedUntil, Math.min(PRELOAD_SECONDS, cleaned[cleaned.length - 1].end || PRELOAD_SECONDS));
     console.info('[keepit] Nguồn phụ đề đã dùng:', cleaned.length, 'cue |', reasons.length ? reasons.join(' | ') : 'player API');
     applyLoadedWindow();
+    if (state.open) applyDefaultSubtitleDisplayMode();
     state.loadingFor = null;
     translateWindow(0, token);
   } catch (err) {
@@ -4050,7 +4090,7 @@ function bindUI() {
     option.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      setSubtitleDisplayMode(option.dataset.subtitleMode);
+      setSubtitleDisplayModeByUser(option.dataset.subtitleMode);
       setSubtitleModeMenuOpen(false);
       subtitleModeTrigger?.focus();
     });
@@ -4351,7 +4391,7 @@ function handleVideoOverlayShortcut(event) {
       event.preventDefault();
       event.stopImmediatePropagation();
       const menuWasOpen = $('te-subtitle-mode-menu')?.hidden === false;
-      setSubtitleDisplayMode(mode);
+      setSubtitleDisplayModeByUser(mode);
       setSubtitleModeMenuOpen(false);
       if (menuWasOpen) $('te-subtitle-mode-trigger')?.focus();
       return;
