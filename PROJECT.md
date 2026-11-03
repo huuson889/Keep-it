@@ -137,7 +137,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
-**2026-11-04 | v3.5.45 | Claude sửa:**
+**2026-11-04 | v3.5.45 | Qoder Agent sửa:**
 
 - Tách "Kích thước xem" của Normal và Theater thành hai giá trị độc lập: thêm `theaterSize` (mặc định M); khi ở Theater (ẩn thanh bên, không Reading/Study) nút kích thước ghi và áp `theaterSize`, Normal vẫn dùng `size`. Reading/Study giữ `readingViewSize`/`learningViewSize` như cũ; auto-hide controls khi chọn L ở Theater giữ nguyên.
 - File: `js/core/defaults.js`, `js/overlay/view/layout-mode.js`, `js/overlay/overlay-controller.js`, `docs/modules/overlay.md`, `manifest.json`, `PROJECT.md`.
