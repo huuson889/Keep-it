@@ -66,6 +66,11 @@ const state = {
   allCues: [],       // toàn bộ cue đã tải + làm sạch; rawCues chỉ là cửa sổ đang hiển thị
   captions: [],
   activeIdx: -1,
+  transcriptFocusRatio: 0.5,
+  transcriptManualScrollUntil: 0,
+  transcriptManualScrollAt: 0,
+  transcriptProgrammaticScrollAt: 0,
+  transcriptPointerScrolling: false,
   viCache: new Map(),
   sourceLanguageSetting: 'auto',
   targetLanguageSetting: 'auto',
@@ -95,6 +100,7 @@ const state = {
   webPageUrl: '',
   webThumbnail: null,
 };
+const transcriptFocusBasePadding = new WeakMap();
 
 function showWebToast(message) {
   let toast = document.getElementById('lhn-sidebar-toast');
@@ -1547,6 +1553,7 @@ function setVideoSidebarHidden(hidden) {
   if (!root.classList.contains('te-reading-mode')) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
+  if (!sidebarHidden && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
   scheduleHoverPauseSync({ modeChange: modeChanged });
   return sidebarHidden;
 }
@@ -2010,6 +2017,7 @@ function setVideoLearningMode(enabled, { persist = false } = {}) {
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
+  if (modeChanged && !root.classList.contains('te-dictation-active')) alignActiveTranscriptFocus('auto');
   scheduleHoverPauseSync({ modeChange: modeChanged });
   return active;
 }
@@ -2073,7 +2081,10 @@ function buildOverlay() {
   const runtime = globalThis.browser || globalThis.chrome;
   if (brandIcon && runtime?.runtime?.getURL) brandIcon.src = runtime.runtime.getURL('assets/icons/icon.svg');
   overlayEl().classList.add('te-hidden');
-  window.addEventListener('resize', () => syncTheaterFrame());
+  window.addEventListener('resize', () => {
+    syncTheaterFrame();
+    if (state.open) alignActiveTranscriptFocus('auto');
+  });
   bindUI();
   observeTheaterSubtitleLayout();
   refreshVideoUiLocalization();
@@ -2211,6 +2222,7 @@ function openOverlay() {
     else setStatus('');
   }
   onTimeUpdate();
+  alignActiveTranscriptFocus('auto');
   startAppPopupObserver();
   setVideoTitle();
   extendLoadedWindow();
@@ -2911,6 +2923,97 @@ function onTimeUpdate() {
   if (state.open && !state.webStudy) extendLoadedWindow();
 }
 
+function usesViewportTranscriptFocus() {
+  const root = overlayEl();
+  return Boolean(root && !root.classList.contains('te-sidebar-hidden') && !root.classList.contains('te-dictation-active'));
+}
+
+function transcriptViewportHeight() {
+  return Math.max(1, window.innerHeight || document.documentElement.clientHeight || overlayEl()?.clientHeight || 1);
+}
+
+function currentTranscriptFocusRatio() {
+  const ratio = Number(state.transcriptFocusRatio);
+  return Number.isFinite(ratio) ? Math.max(0.03, Math.min(0.97, ratio)) : 0.5;
+}
+
+function transcriptFocusBasePaddingFor(list) {
+  const mode = isReadingModeActive() ? 'reading' : 'normal';
+  let cached = transcriptFocusBasePadding.get(list);
+  if (!cached) {
+    cached = {};
+    transcriptFocusBasePadding.set(list, cached);
+  }
+  if (cached[mode]) return cached[mode];
+
+  const previousTop = list.style.paddingTop;
+  const previousBottom = list.style.paddingBottom;
+  list.style.paddingTop = '';
+  list.style.paddingBottom = '';
+  const computed = window.getComputedStyle(list);
+  const padding = {
+    top: Number.parseFloat(computed.paddingTop) || 0,
+    bottom: Number.parseFloat(computed.paddingBottom) || 0,
+  };
+  list.style.paddingTop = previousTop;
+  list.style.paddingBottom = previousBottom;
+  cached[mode] = padding;
+  return padding;
+}
+
+function calculateTranscriptFocusScrollDelta(rowRect, viewportHeight, ratio) {
+  return rowRect.top + rowRect.height / 2 - viewportHeight * ratio;
+}
+
+function applyTranscriptFocusScrollSpace(list, row, viewportHeight, targetY) {
+  const base = transcriptFocusBasePaddingFor(list);
+  const halfRowHeight = row.getBoundingClientRect().height / 2;
+  // Give the first and last cue enough scrollable space to reach the chosen focus line.
+  list.style.paddingTop = `${Math.max(base.top, targetY - halfRowHeight)}px`;
+  list.style.paddingBottom = `${Math.max(base.bottom, viewportHeight - targetY - halfRowHeight)}px`;
+}
+
+function alignActiveTranscriptFocus(behavior = 'smooth') {
+  if (!state.open || !usesViewportTranscriptFocus()) return false;
+  const list = $('te-transcript-list');
+  const row = list?.querySelector('.yt-dual-item.active');
+  if (!list || !row) return false;
+
+  const viewportHeight = transcriptViewportHeight();
+  const rowRect = row.getBoundingClientRect();
+  const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / viewportHeight);
+  const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio()));
+  state.transcriptFocusRatio = ratio;
+  const targetY = viewportHeight * ratio;
+  applyTranscriptFocusScrollSpace(list, row, viewportHeight, targetY);
+
+  const delta = calculateTranscriptFocusScrollDelta(row.getBoundingClientRect(), viewportHeight, ratio);
+  const maxScroll = Math.max(0, list.scrollHeight - list.clientHeight);
+  const targetScrollTop = Math.max(0, Math.min(maxScroll, list.scrollTop + delta));
+  const distance = Math.abs(targetScrollTop - list.scrollTop);
+  if (distance < 0.5) return true;
+  const scrollBehavior = behavior === 'auto' || Math.abs(delta) > list.clientHeight * 1.5 ? 'auto' : 'smooth';
+  state.transcriptProgrammaticScrollAt = globalThis.performance?.now?.() ?? Date.now();
+  list.scrollTo({ top: targetScrollTop, behavior: scrollBehavior });
+  return true;
+}
+
+function captureTranscriptFocusPosition(list = $('te-transcript-list')) {
+  const row = list?.querySelector('.yt-dual-item.active');
+  if (!list || !row) return false;
+  const viewportHeight = transcriptViewportHeight();
+  const rect = row.getBoundingClientRect();
+  const margin = Math.min(0.45, Math.max(12, rect.height / 2) / viewportHeight);
+  state.transcriptFocusRatio = Math.max(margin, Math.min(1 - margin, (rect.top + rect.height / 2) / viewportHeight));
+  return true;
+}
+
+function markTranscriptManualScroll() {
+  const now = globalThis.performance?.now?.() ?? Date.now();
+  state.transcriptManualScrollAt = now;
+  state.transcriptManualScrollUntil = now + 900;
+}
+
 function setActiveCaption(idx) {
   const hadStatus = Boolean(activeVideoStatusKey);
   activeVideoStatusKey = '';
@@ -2929,9 +3032,11 @@ function setActiveCaption(idx) {
   const row = list.querySelector(`.yt-dual-item[data-idx="${idx}"]`);
   if (row) {
     row.classList.add('active');
-    const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
-    // Gần thì cuộn mượt; nhảy xa (seek/mở overlay) thì đặt thẳng để không cuộn dài.
-    list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
+    if (state.open && usesViewportTranscriptFocus()) alignActiveTranscriptFocus();
+    else {
+      const target = row.offsetTop - list.clientHeight / 2 + row.offsetHeight / 2;
+      list.scrollTo({ top: target, behavior: Math.abs(target - list.scrollTop) > list.clientHeight * 1.5 ? 'auto' : 'smooth' });
+    }
   }
 }
 
@@ -3953,11 +4058,35 @@ function bindUI() {
     const nextItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
     if (item && !nextItem) scheduleHoverPauseSync();
   });
-  // Dịch lười: khi người dùng cuộn danh sách thì dịch các dòng đang nhìn thấy.
+  // Dịch lười và ghi nhận vị trí focus mới khi người dùng tự cuộn transcript.
   let scrollRaf = 0;
-  $('te-transcript-list').addEventListener('scroll', () => {
+  const markManualTranscriptScroll = () => markTranscriptManualScroll();
+  transcriptList.addEventListener('wheel', markManualTranscriptScroll, { passive: true });
+  transcriptList.addEventListener('touchmove', markManualTranscriptScroll, { passive: true });
+  transcriptList.addEventListener('keydown', (event) => {
+    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) markManualTranscriptScroll();
+  });
+  transcriptList.addEventListener('pointerdown', (event) => {
+    const rect = transcriptList.getBoundingClientRect();
+    if (event.clientX >= rect.right - Math.max(18, transcriptList.offsetWidth - transcriptList.clientWidth)) {
+      state.transcriptPointerScrolling = true;
+      markManualTranscriptScroll();
+    }
+  }, true);
+  transcriptList.addEventListener('pointermove', (event) => {
+    if (state.transcriptPointerScrolling && event.buttons) markManualTranscriptScroll();
+  }, { passive: true });
+  window.addEventListener('pointerup', () => { state.transcriptPointerScrolling = false; }, { passive: true });
+  transcriptList.addEventListener('scroll', () => {
     if (scrollRaf) return;
-    scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; translateVisibleRows(); });
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      const now = globalThis.performance?.now?.() ?? Date.now();
+      const manualScrollIsCurrent = state.transcriptManualScrollAt > state.transcriptProgrammaticScrollAt
+        && now <= state.transcriptManualScrollUntil;
+      if (state.open && usesViewportTranscriptFocus() && manualScrollIsCurrent) captureTranscriptFocusPosition(transcriptList);
+      translateVisibleRows();
+    });
   }, { passive: true });
 
   // Tùy chọn phụ đề
