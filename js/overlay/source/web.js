@@ -660,7 +660,7 @@ function webThumbnailApplyRandomEffect(visualizer, key, now) {
     webThumbnailStartScalarTransition(visualizer, 'motionSpeed', to, now);
   } else if (key === 'blur') {
     const current = webThumbnailScalarValue(visualizer.values.blur, now);
-    webThumbnailStartScalarTransition(visualizer, 'blur', webThumbnailRandomIntDifferent(0, 19, Math.round(current), 3), now);
+    webThumbnailStartScalarTransition(visualizer, 'blur', webThumbnailRandomIntDifferent(0, 10, Math.round(current), 3), now);
   } else if (key === 'darkness') {
     const current = webThumbnailScalarValue(visualizer.values.darkness, now) * 100;
     webThumbnailStartScalarTransition(visualizer, 'darkness', webThumbnailRandomIntDifferent(0, 80, Math.round(current), 8) / 100, now);
@@ -901,7 +901,7 @@ function createWebThumbnailVisualizer(image) {
   const stage = document.createElement('div');
   stage.className = 'te-web-thumbnail-visualizer';
   const theme = WEB_THUMBNAIL_THEMES[webThumbnailRandomInt(0, WEB_THUMBNAIL_THEMES.length - 1)];
-  const blur = webThumbnailRandomInt(0, 19);
+  const blur = webThumbnailRandomInt(0, 10);
   const darkness = webThumbnailRandomInt(0, 80) / 100;
   const particleCount = webThumbnailRandomInt(11, 100);
   const waveStyle = webThumbnailRandomInt(1, 4);
