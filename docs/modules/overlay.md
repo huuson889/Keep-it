@@ -41,6 +41,7 @@ Overlay cung cấp UI cho Video (YouTube) và Web. `overlay-controller.js` đi�
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.45: `node --check` 3 file JS sửa (defaults/layout-mode/overlay-controller) đạt cho tách `theaterSize` độc lập khỏi `size`; Browser QA chưa chạy.
 - v3.5.44: `node --check` JS Overlay, `git diff --check` và focused VM smoke test cho Web progress (tiến trong cue, phản ánh playback rate, pause giữ nguyên, resume tiếp tục) đạt. Browser QA chưa chạy.
 - v3.5.43: `node --check` toàn bộ JS `js/overlay/`, `git diff --check`, 45 manifest JS paths và VM smoke tests cho Study/legacy aliases, scoring, storage key đều đạt. Browser QA chưa chạy; speed contract được kiểm tra tĩnh.
 - v3.5.42: Reader/Web/Overlay VM checks đạt cho Reader shared rate (global/per-language, 0.5×–3×) và speed path YouTube/Dictation riêng. Browser QA chưa chạy.

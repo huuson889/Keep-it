@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.44; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.45; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater đã tách riêng: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.44: `node --check` toàn bộ JS trong `js/overlay/`, `git diff --check`, manifest paths và Web progress VM smoke test đạt; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
+- v3.5.45: `node --check` 3 file JS sửa (defaults/layout-mode/overlay-controller) đạt cho thay đổi tách kích thước xem Normal/Theater; browser QA chưa chạy. Chi tiết và rủi ro còn lại ở mục 2/5.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,6 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- Kích thước xem Normal/Theater độc lập (v3.5.45): browser QA pending — chọn S/M/L ở Normal không đổi cỡ Theater và ngược lại; Reading/Study giữ key riêng; auto-hide controls khi chọn L ở Theater vẫn hoạt động; giá trị giữ sau reload và khi mở lại overlay.
 - Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
 - Overlay favicon: xác nhận `.te-yt-logo-box` dùng đúng favicon trang cho Web và YouTube, giữ 22×22px/tiêu đề/bố cục, fallback globe khi không có icon; browser QA pending.
 - YouTube: xác nhận `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở đúng popup/Full Dict; các dòng dịch/control khác bị chặn; hai tùy chọn popup/đọc riêng; Theater + Large: nếu auto-hide khi trước đó tắt, mọi exit kể cả `pagehide` phải giữ hide-controls off; manual hide vẫn được giữ. Normal + Large phải giữ thanh control hiện như Small/Medium; mock v3.5.29 pass. v3.5.30: kiểm tra cursor thường và click xóa selection trên YouTube video/Web thumbnail, playback không đổi; browser QA pending.
@@ -135,6 +136,12 @@ Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tì
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.45 | Claude sửa:**
+
+- Tách "Kích thước xem" của Normal và Theater thành hai giá trị độc lập: thêm `theaterSize` (mặc định M); khi ở Theater (ẩn thanh bên, không Reading/Study) nút kích thước ghi và áp `theaterSize`, Normal vẫn dùng `size`. Reading/Study giữ `readingViewSize`/`learningViewSize` như cũ; auto-hide controls khi chọn L ở Theater giữ nguyên.
+- File: `js/core/defaults.js`, `js/overlay/view/layout-mode.js`, `js/overlay/overlay-controller.js`, `docs/modules/overlay.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 3 file JS sửa đạt; browser QA chưa chạy.
 
 **2026-11-03 | v3.5.44 | Arena.ai Agent sửa:**
 
