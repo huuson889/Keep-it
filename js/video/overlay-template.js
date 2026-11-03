@@ -1112,11 +1112,16 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-video-frame { position: fixed; inset: 0; margin: auto; z-index: 1; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar {
       position: fixed; left: 0; right: 0; bottom: 0; width: 100vw; z-index: 4;
+    }
+    /* Chia sẻ style nền mờ (nền/blur/viền/bóng) của Rạp + Lớn với Reading khi Ambient bật; không đổi geometry Reading. */
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar,
+    #keepit-exact-overlay.te-reading-mode.te-ambient-on:not(.te-dictation-active) .te-control-bar {
       background-color: rgba(15, 15, 18, .58); backdrop-filter: blur(14px) saturate(140%);
       -webkit-backdrop-filter: blur(14px) saturate(140%);
       border-top: 1px solid rgba(255,255,255,.15); box-shadow: 0 -8px 24px rgba(0,0,0,.18);
     }
-    #keepit-exact-overlay.theme-light.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar {
+    #keepit-exact-overlay.theme-light.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-dictation-active) .te-control-bar,
+    #keepit-exact-overlay.theme-light.te-reading-mode.te-ambient-on:not(.te-dictation-active) .te-control-bar {
       background-color: rgba(248, 249, 250, .78); border-top-color: rgba(31,41,55,.12);
       box-shadow: 0 -8px 24px rgba(31,41,55,.1);
     }
