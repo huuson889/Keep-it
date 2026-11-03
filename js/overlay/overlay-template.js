@@ -41,15 +41,15 @@ const OVERLAY_CSS = `
     }
     #keepit-exact-overlay.theme-light .te-left-section { background-color: #ffffff; }
     #keepit-exact-overlay.theme-light .te-sub-container { background-color: transparent;}
-    #keepit-exact-overlay.theme-light .te-sub-en { color: #ff0000; }
+    #keepit-exact-overlay.theme-light .te-sub-en { color: #8b5cf6; }
     #keepit-exact-overlay.theme-light .te-sub-vi { color: #4b5563; }
     #keepit-exact-overlay.theme-light .te-control-bar { background-color: #ffffff; }
     #keepit-exact-overlay.theme-light .te-right-sidebar { background-color: #ffffff; border-left: 1px solid #e5e7eb; }
     #keepit-exact-overlay.theme-light .te-sidebar-top { border-bottom: 1px solid #e5e7eb; color: #111827; }
     #keepit-exact-overlay.theme-light .te-ts-row:hover { background-color: #f3f4f6; }
-    #keepit-exact-overlay.theme-light .te-ts-row.active { background-color: #fef3c7; }
+    #keepit-exact-overlay.theme-light .te-ts-row.active { background-color: #f3e8ff; box-shadow: inset 4px 0 0 #8b5cf6; }
     #keepit-exact-overlay.theme-light .te-ts-row.active .te-ts-en,
-    #keepit-exact-overlay.theme-light .te-ts-row.active .te-ts-time { color: #d97706; font-weight: 600; }
+    #keepit-exact-overlay.theme-light .te-ts-row.active .te-ts-time { color: #6d28d9; font-weight: 600; }
     #keepit-exact-overlay.theme-light .te-ts-en { color: #111827; }
     #keepit-exact-overlay.theme-light .te-ts-vi { color: #4b5563; }
     #keepit-exact-overlay.theme-light .te-modal-box { background-color: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); color: #1f2937; }
@@ -778,7 +778,7 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay.theme-light .yt-dual-close-btn:hover { color: #111827; }
 #keepit-exact-overlay.theme-light .yt-dual-item:hover { background-color: #f3f4f6; }
 #keepit-exact-overlay.theme-light .yt-dual-item { box-shadow: inset 4px 0 0 rgba(217, 119, 6, 0); }
-#keepit-exact-overlay.theme-light .yt-dual-item.active { background-color: #fef3c7; box-shadow: inset 4px 0 0 #d97706; }
+#keepit-exact-overlay.theme-light .yt-dual-item.active { background-color: #f3e8ff; box-shadow: inset 4px 0 0 #8b5cf6; }
 #keepit-exact-overlay.theme-light .yt-dual-timestamp { color: #7c3aed; }
 #keepit-exact-overlay.theme-light .yt-dual-empty { color: #6b7280; }
 

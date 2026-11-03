@@ -36,7 +36,8 @@ Overlay cung cấp UI cho Video (YouTube) và Web. `overlay-controller.js` đi�
 - API mới là `LHN_STUDY`, `LHN_STUDY_SCORE`, `LHN_STUDY_RULES`, `LHN_STUDY_SESSION_INDEX`; các global/method Dictation cũ và Web-TTS bridge cũ vẫn được alias. Session/storage keys, `captionTrackLanguage` trong transcript cache và event contract không đổi.
 - Web TTS dùng Reader rate đã lưu (global/per-language, 0.5×–3×); Video/YouTube giữ 0.5×–2×, Dictation replay giữ slow replay 0.6×. Shared TTS engine không đổi.
 - Web Overlay progress fill nội suy trong cue theo tốc độ phát hiện tại và dừng khi TTS tạm dừng; Video dùng updater riêng nên không bị ảnh hưởng.
-- Theater + Large: khung phụ đề giới hạn theo 80% chiều rộng `.te-player-frame`; main subtitle giữ chiều rộng tự nhiên và chỉ wrap khi vượt giới hạn đó. Dòng dịch vẫn được wrap theo chiều rộng còn lại.
+- Theater + Large: khung phụ đề giới hạn theo 90% chiều rộng `.te-player-frame`; main và dòng dịch giữ chiều rộng tự nhiên, chỉ wrap khi nội dung vượt giới hạn đó.
+- Light mode: main subtitle mặc định dùng app purple; transcript rows đang focus dùng nền lavender và accent tím cho `.te-ts-row.active`/`.yt-dual-item.active`. Dark-mode colors giữ nguyên.
 - `study/shared/` chỉ chứa logic dùng chung. Lifecycle/result branches còn trong Dictation shell và cần tách tiếp mà không đổi UX. Dashboard có Dictation sessions/statistics, chưa có Shadowing practice route.
 - Giữ các ràng buộc visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, biên độ giảm 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ. Favicon 22×22 px, globe fallback.
 
