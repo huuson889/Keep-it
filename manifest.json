@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.83",
+  "version": "3.5.84",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -183,7 +183,7 @@
       "suggested_key": {
         "default": "Alt+X"
       },
-      "description": "Toggle ChatGPT panel and prepare an unsent page draft"
+      "description": "Toggle ChatGPT panel and summarize the current page"
     }
   }
 }

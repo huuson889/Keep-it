@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, shortcut, Reader và ChatGPT panel. `content.js` điều phối giao diện; annotation CRUD thuộc Background.
+Content scripts cung cấp UI và hành vi trên website: selection, highlight, note, Reader và ChatGPT panel. `content.js` điều phối giao diện; annotation CRUD thuộc Background.
 
 ## 2. File chính và điểm vào
 
@@ -11,39 +11,31 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 | [`manifest.json`](../../manifest.json) | `content_scripts` | URL, frame, thứ tự và thời điểm nạp. |
 | [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI và message listeners. |
 | [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Legacy body-text/clipboard; launcher hiện không gọi. |
-| [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | document-start marker capture | Giữ panel/request ID qua fragment rewrite. |
-| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | pending link, panel navigation, route watcher | Xử lý `?q=`, source-context/draft restore, conversation mapping và toolbar ChatGPT. |
+| [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | document-start `capture` | Giữ panel/request/source marker trước ChatGPT fragment rewrite. |
+| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | request/route listeners | `?q=`, follow-up, mapping, route metadata và toolbar; không lưu composer draft. |
 | [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Sidebar tabs và controls. |
-| [`js/content/web-highlighter.js`](../../js/content/web-highlighter.js) | `LHNWebHighlighter.create` | Tạo/khôi phục highlights. |
-| [`js/content/annotation-restore.js`](../../js/content/annotation-restore.js) | `LHN_ANNOTATION_RESTORE.create` | Khôi phục text/range trên trang động. |
-| [`js/content/note-composer.js`](../../js/content/note-composer.js) | `LHN_NOTE_COMPOSER` | Form và chuẩn hóa annotation. |
 
 ## 3. Luồng chính
 
 1. Manifest nạp factories trước controller; controller đọc settings rồi gắn selection, sidebar và UI listeners.
-2. Note/annotation CRUD gửi qua `LHN_MESSAGING`; khi trang đổi, restore/highlighter dựng lại marks. Reader và YouTube chuyển action qua custom events tới Overlay.
-3. Alt+X/launcher gửi `OPEN_CHATGPT_LINK_PANEL` với intent summary; icon Hỏi AI gửi đúng `range.toString()` đang chọn cùng intent riêng. Background đọc exact URL tab nguồn, lookup exact URL → conversation mapping và cấp request ID; không lấy page body/title.
-4. Với URL mới, Background tạo hai bullet với URL nguồn ở dòng đầu và câu cuối đã bản địa hóa ở dòng thứ hai: mặc định EN/VI/KO tùy ngôn ngữ, gồm `• Trang web: <URL>\n• Hãy tóm tắt web này` (Alt+X) và `• Trang web: <URL>\n• "<selected text>" Đoạn này trên web nghĩa là sao?` (Hỏi AI) trong tiếng Việt. Auto-send bật dùng ChatGPT `?q=` và giữ native-submit/duplicate guard; khi tắt, mở URL không q-prefill, điền prompt làm bản nháp và đợi user send trước khi lưu mapping. Marker `document_start` giữ panel/request ID trước fragment rewrite.
-5. Với URL đã map, Alt+X chỉ mở hội thoại, không gửi prompt. Hỏi AI mở đúng `/c/<id>` rồi thay prompt bằng selection hiện tại + câu kết tùy chỉnh, không kèm URL; khi auto-send bật chỉ gửi sau route check, khi tắt để câu hỏi thành draft. Khi đổi source context, composer draft được lưu local theo exact source URL và khôi phục khi quay lại; tác vụ mới thay prompt đang hoạt động, còn draft cũ không chặn điều hướng.
-6. `/c/<id>` được map với exact source URL; URL khác tạo chat mới, không tái sử dụng hội thoại. Right-click selection gọi cùng Hỏi AI trên Chromium/Firefox; toolbar trên ChatGPT giữ source link và provider tabs.
+2. Alt+X gửi intent summary; Hỏi AI gửi đúng `range.toString()` hiện tại. Background tra exact URL mapping và cấp request ID; không truyền body/title.
+3. URL mới tạo prompt hai bullet với URL ở dòng đầu. Auto-send dùng ChatGPT `?q=` và giữ native-submit/duplicate guard; khi tắt, prompt được chèn vào composer đang mở, không `?q=`, và chờ manual send để tạo mapping.
+4. URL đã map: Alt+X chỉ mở conversation. Hỏi AI thay prompt bằng selection hiện tại + câu kết tùy chỉnh, không kèm URL; auto-send tắt thì để unsent trong composer.
+5. Firefox top-level sidebar xử lý navigation request và route; Chromium iframe host chuyển source context. Pending link chỉ chạy khi source URL của request khớp source đang hiển thị. Context switch không khôi phục composer text.
+6. Conversation route watcher gửi route sạch cho panel/session metadata và cập nhật toolbar nguồn. Document-start marker lưu request ID, không lưu selection/prompt vào session.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ thứ tự nạp manifest và payload/message types hiện hành; annotation tiếp tục lưu qua Background.
-- Thanh icon dịch lấy `translateIconStyle` từ settings đã resolve (`1` compact text, `2` icon-only, `3` micro hover; mặc định `3`), áp dụng theme theo `sidebarTheme`; thay kiểu chỉ đổi UI, không đổi ba action hiện có.
-- Không cho shortcut chặn nhập liệu; loại extension UI khỏi annotation restore và text capture.
-- Alt+X/Hỏi AI first-use prompt có hai bullet và được bản địa hóa tức thì theo ngôn ngữ Dashboard; câu kết được chỉnh trong Dashboard Settings → Hỏi AI. Mặc định tiếng Việt: `• Trang web: <exact URL>\n• Hãy tóm tắt web này` và `• Trang web: <exact URL>\n• "<selected text>" Đoạn này trên web nghĩa là sao?`. Chỉ icon Hỏi AI lấy đoạn selection hiện tại; không gọi `LHN_CHATGPT_CONTEXT`, không trích body/title và không dùng clipboard.
-- Cùng URL lần sau, Alt+X chỉ reopen mapping; Hỏi AI dùng đúng selection hiện tại vào exact mapped `/c/<id>` (không URL). Auto-send bật giữ request-scoped send guard; tắt thì thay composer theo flow Hỏi AI hiện có nhưng để unsent draft.
-- Với URL mới, marker chạy `document_start`, giữ request ID và exact q trước fragment rewrite. Chỉ pending request hiện hành với prompt q khớp mới được xử lý; nhận diện q native-send để tránh gửi trùng.
-- Lưu exact URL → validated HTTPS conversation `/c/<id>` local; composer drafts được lưu local theo exact source URL và restore khi context trở lại; draft-link chỉ được map sau manual send. URL khác không tái sử dụng chat. Pending hết hạn/stale không được gửi; follow-up metadata có thể chứa selected text/prompt đến khi hoàn tất/hết hạn. Giữ legacy body/clipboard code tách khỏi launcher.
-- Alt+Q/`sidebarShortcut` tiếp tục điều khiển Highlight; giữ label EN/VI/KO.
+- Hỏi AI là selection-only; không gọi `LHN_CHATGPT_CONTEXT`, không trích body/title và không đọc clipboard.
+- Giữ prompt defaults EN/VI/KO, newline thật, settings auto-send và exact source URL → conversation mapping.
+- Pending prompt/selection là dữ liệu thao tác theo request; không phải draft lưu trữ. Source khác, panel close/cancel, hoàn tất hoặc expiry phải dừng/xóa request phù hợp.
+- Không lưu/restore per-source composer text, không có navigation guard bảo vệ draft và không dùng global last-conversation URL.
+- Mapped follow-up chỉ thay/gửi khi exact conversation route khớp. Manual-send first-use mới tạo mapping; tab/source switch không tự prompt.
+- Route metadata báo cáo về panel chỉ gồm URL nguồn và ChatGPT origin/path; query/hash/prompt/composer text bị loại khỏi route.
+- Giữ `Alt+Q`/`sidebarShortcut`, right-click selection menu trên Chromium/Firefox và toolbar/provider tabs hiện có.
 
 ## 5. Kiểm tra và xác minh
 
-- Focused VM PASS: exact newline `?q=` prompts (summary and Ask AI); first-use/new mapping, same-URL Alt+X reopen with no prompt, same-URL selected-text follow-up; document-start marker captures a new request ID on hash-only navigation and hash/popstate retries pending processing; exact mapped-route guard; follow-up sent once; existing composer draft preserved; wrong route untouched; q native-send avoids duplicate; Ask AI keeps/opens Chrome/Firefox panel while Alt+X retains toggle.
-- v3.5.78 focused VM PASS: auto-send-off new URL inserts an unsent prompt, reports draft-ready, records a manual send gesture, then reports the exact created conversation URL without clicking Send; mapped follow-up replaces with the current selection prompt and remains unsent.
-- v3.5.79 focused VM PASS: first-use Vietnamese bullet draft is inserted with the actual newline intact and remains unsent.
-- v3.5.81: shared `js/shared/chatgpt-prompt-format.js` supplies the exact two-line string for `?q=` and uses explicit `<br>` nodes for draft/manual-send composer rendering; auto-send fallback re-renders the matching prefill before its single guarded Send. Browser composer/linkification still requires Chrome/Firefox confirmation.
-- Historical v3.5.68 static/build: first-party JS syntax, manifest/version/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each and Firefox Chrome-only keys removed.
-- v3.5.82 focused VM/static PASS: ChatGPT panel source-scoped draft stash/context restore, same-route mapped reopen without reload, mapped direct panel URL; v3.5.83 source change on same mapped route now reloads to isolate drafts, while same-source mapped reopen retains the iframe; toolbar source URL, default ChatGPT, blank unintegrated tabs, keyboard navigation/localization; right-click handler calls Firefox `sidebarAction.open()` with no args and Chrome `sidePanel.open()` in the source window, passing selected text only. All JS syntax, Python compile, manifest/Firefox transform and `git diff --check` PASS. Browser QA Chrome/Firefox remains unverified: composer/linkification, real tab switching/draft restoration, context menu, source link, blank AI tabs and panel timing need user confirmation.
-- Cũng cần xác nhận scrollbar panel, Alt+Q, sidebar tabs, annotation và website-disabled trên trình duyệt thật; static/VM không thay thế browser QA.
+- Đã chạy `node --check` cho toàn bộ first-party JavaScript; marker VM xác nhận request ID và source được giữ, q prompt không bị nhân bản vào sessionStorage, và content không còn page-draft save/restore/guard — PASS.
+- Background/link focused VMs xác nhận `?q=`/manual-send, mapped selection-only route, pending source guard, debounce và close cancellation — PASS.
+- Browser QA Chrome/Firefox chưa chạy. Cần xác nhận composer controls/linkification, q native-send/duplicate prevention, manual mapping, mapped follow-up, context-menu và source switch thật.
