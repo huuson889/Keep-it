@@ -162,6 +162,12 @@
     const rect = range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
     position(translateIcon, rect.right, rect.bottom);
+    const actionTray = translateIcon.querySelector(".lhn-translate-actions");
+    const trayWidth = actionTray?.offsetWidth || 260;
+    const launcherLeft = Number.parseFloat(translateIcon.style.left) || 0;
+    const leftRoom = launcherLeft;
+    const rightRoom = innerWidth - launcherLeft - translateIcon.offsetWidth;
+    translateIcon.classList.toggle("lhn-actions-right", leftRoom < trayWidth + 8 && rightRoom > leftRoom);
     translateIcon.style.setProperty("left", translateIcon.style.left, "important");
     translateIcon.style.setProperty("top", translateIcon.style.top, "important");
   }
@@ -340,16 +346,66 @@
     if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
     translateIcon?.remove();
-    const button = document.createElement("button");
-    button.id = "lhn-translate-icon"; button.type = "button"; button.setAttribute("aria-label", t("translateSelectedText")); button.title = t("translateSelectedText");
-    button.innerHTML = '<img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNCI+DQogIDxwYXRoIGQ9Im05IDExLTYgNnYzaDlsMy0zIi8+DQogIDxwYXRoIGQ9Im0yMiAxMi00LjYgNC42YTIgMiAwIDAgMS0yLjggMGwtNS4yLTUuMmEyIDIgMCAwIDEgMC0yLjhMMTQgNCIvPg0KPC9zdmc+DQo=" />';
-    button.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-    button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); translateSelectedRange(range, { forcePopup:true }); });
-    document.documentElement.appendChild(button); translateIcon = button;
-    // Keep host-page button rules from hiding the translate control.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"grid", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483646", width:"20px", height:"20px" })) button.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+
+    const launcher = document.createElement("div");
+    launcher.id = "lhn-translate-icon";
+    launcher.className = "lhn-translate-launcher";
+    launcher.setAttribute("role", "group");
+    launcher.setAttribute("aria-label", t("translateSelectedText"));
+
+    const logoButton = document.createElement("button");
+    logoButton.className = "lhn-translate-logo";
+    logoButton.type = "button";
+    logoButton.setAttribute("aria-label", t("translateSelectedText"));
+    logoButton.title = t("translateSelectedText");
+    logoButton.innerHTML = '<img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNCI+DQogIDxwYXRoIGQ9Im05IDExLTYgNnYzaDlsMy0zIi8+DQogIDxwYXRoIGQ9Im0yMiAxMi00LjYgNC42YTIgMiAwIDAgMS0yLjggMGwtNS4yLTUuMmEyIDIgMCAwIDEgMC0yLjhMMTQgNCIvPg0KPC9zdmc+DQo=" />';
+    logoButton.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
+    logoButton.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); translateSelectedRange(range, { forcePopup:true }); });
+
+    const actions = document.createElement("div");
+    actions.className = "lhn-translate-actions";
+    actions.setAttribute("role", "group");
+    actions.setAttribute("aria-label", t("translateSelectedText"));
+    const actionSpecs = [
+      {
+        className: "lhn-action-highlight",
+        label: t("toolbarHighlight"),
+        svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 6 6M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="M3 22h18"/></svg>',
+        run: () => showComposer(range),
+      },
+      {
+        className: "lhn-action-translate",
+        label: t("toolbarTranslate"),
+        svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h11M9.5 3v2M7 5c.4 4 3 7 6.5 9M13 5c-.7 4.1-3.6 7.3-7.5 9"/><path d="m14 21 4-10 4 10M15.5 17h5"/></svg>',
+        run: () => translateSelectedRange(range, { forcePopup:true }),
+      },
+      {
+        className: "lhn-action-ai",
+        label: t("toolbarAskAI"),
+        svg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/><path d="m5 2 .7 1.8L7.5 4.5l-1.8.7L5 7l-.7-1.8-1.8-.7 1.8-.7L5 2Z"/></svg>',
+        run: () => launchChatGPTSidePanel(),
+      },
+    ];
+    for (const spec of actionSpecs) {
+      const action = document.createElement("button");
+      action.type = "button";
+      action.className = `lhn-translate-action ${spec.className}`;
+      action.title = spec.label;
+      action.setAttribute("aria-label", spec.label);
+      action.innerHTML = `${spec.svg}<span>${spec.label}</span>`;
+      action.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
+      action.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); spec.run(); });
+      actions.appendChild(action);
+    }
+
+    launcher.append(logoButton, actions);
+    launcher.addEventListener("mousedown", event => event.stopPropagation());
+    document.documentElement.appendChild(launcher);
+    translateIcon = launcher;
+    // Keep host-page rules from hiding or restyling the floating control.
+    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:"2147483646", width:"30px", height:"30px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
-    requestAnimationFrame(() => button.isConnected && button.classList.add("lhn-visible"));
+    requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
   function syncTranslateIconAvailability() {
     if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {

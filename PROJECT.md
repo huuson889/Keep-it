@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.63; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- Version hiện tại: v3.5.64; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
 - ChatGPT flow link-only dùng `?q=`, mapping URL→conversation và bảo vệ draft; cùng URL mở lại hội thoại, URL khác tạo request mới.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
-- v3.5.63 toggle/legacy-close fallback passed focused VM and static checks; Chrome/Firefox ZIPs built and verified (122 files each). Real browser QA not run.
+- UI tray biểu tượng dịch v3.5.64 đã nối ba action vào luồng hiện có; static checks đã chạy, browser QA chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,6 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- Biểu tượng dịch nổi (v3.5.64): browser QA pending — bật/tắt “Hiện biểu tượng dịch Keepit”; xác nhận tray 3 nút chỉ hiện khi tính năng bật, bung khi hover/focus, nằm bên trái logo nếu đủ chỗ và lật phía ở mép trái; xác nhận Tô sáng/Dịch/Hỏi AI gọi luồng hiện tại và các tương tác ngoài phạm vi không đổi.
 - ChatGPT browser side panel (v3.5.63): browser QA pending — verify Alt+X/button opens and closes repeatedly, including after the background service worker restarts; verify first exact URL q-submit/mapping, same-URL reopen, different-URL fresh chat, native-send duplicate guard, draft protection, Chrome iframe and Firefox sidebar. Confirm route restore, frame/DNR, scrollbar restoration and Alt+Q/custom `sidebarShortcut` regression.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
@@ -153,6 +154,12 @@ Sidebar trang giữ tab Highlight; tab ChatGPT và `Alt+X` toggle browser-native
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.64 | Arena.ai Agent sửa:**
+
+- Chỉnh UI biểu tượng dịch: hover/focus logo mở khay ba nút Tô sáng, Dịch, Hỏi AI ở cùng hàng; dùng SVG và nhãn ngắn EN/VI/KO. Ba action tái sử dụng composer/highlight, translation selection và ChatGPT link-only launcher; không thay đổi các luồng chức năng.
+- File: `manifest.json`, `js/content/content.js`, `css/content/content.css`, `js/core/languages.js`, `PROJECT.md`.
+- Kiểm tra: `node --check` trên JS liên quan và `git diff --check` PASS; browser QA chưa chạy.
 
 **2026-11-04 | v3.5.63 | Arena.ai Agent sửa:**
 

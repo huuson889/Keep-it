@@ -365,9 +365,9 @@
     dictationShowTranslation:"번역 표시", dictationHideTranslation:"번역 숨기기"
   });
 
-  Object.assign(MESSAGES.en, { ovMenuDictation:"Dictation", ovMenuHighlightsNotes:"Highlights & Notes" });
-  Object.assign(MESSAGES.vi, { ovMenuDictation:"Chép chính tả", ovMenuHighlightsNotes:"Tô sáng & Ghi chú" });
-  Object.assign(MESSAGES.ko, { ovMenuDictation:"받아쓰기", ovMenuHighlightsNotes:"하이라이트 및 메모" });
+  Object.assign(MESSAGES.en, { ovMenuDictation:"Dictation", ovMenuHighlightsNotes:"Highlights & Notes", toolbarHighlight:"Highlight", toolbarTranslate:"Translate", toolbarAskAI:"Ask AI" });
+  Object.assign(MESSAGES.vi, { ovMenuDictation:"Chép chính tả", ovMenuHighlightsNotes:"Tô sáng & Ghi chú", toolbarHighlight:"Tô sáng", toolbarTranslate:"Dịch", toolbarAskAI:"Hỏi AI" });
+  Object.assign(MESSAGES.ko, { ovMenuDictation:"받아쓰기", ovMenuHighlightsNotes:"하이라이트 및 메모", toolbarHighlight:"하이라이트", toolbarTranslate:"번역", toolbarAskAI:"AI에 질문" });
 
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
