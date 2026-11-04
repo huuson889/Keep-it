@@ -1,4 +1,5 @@
 (() => {
+  // Legacy v3.5.60 full-page context builder retained for rollback; the v3.5.61 link-only flow must not call it.
   const PROMPT = "Hãy tóm tắt nội dung ngắn gọn";
   const MAX_PAGE_TEXT_LENGTH = 5000;
   const EXTENSION_UI_SELECTOR = [

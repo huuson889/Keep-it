@@ -47,6 +47,10 @@ function ensureChatGPTFrameRule(forceUpdate = false) {
   });
 }
 const CHATGPT_DRAFT_PENDING_KEY = "keepitChatGPTDraftPending";
+// Link-only flow (v3.5.61); legacy full-page draft keys/handlers remain for rollback.
+const CHATGPT_LINK_PENDING_KEY = "keepitChatGPTLinkPending";
+const CHATGPT_SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
+const CHATGPT_PANEL_NAVIGATION_KEY = "keepitChatGPTPanelNavigationRequest";
 let chatGPTPanelOpen = false;
 let chatGPTFocusedWindowId = null;
 const chatGPTOpenWindows = new Set();
@@ -183,8 +187,126 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
   }
   return { ok:false, error:"side-panel-unsupported" };
 }
+
+// v3.5.61: link-only ChatGPT flow. This deliberately never requests page text.
+function normalizeChatGPTSourceUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch { return ""; }
+}
+function safeChatGPTConversationUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(url.hostname)) return "";
+    if (!/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname)) return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch { return ""; }
+}
+function makeChatGPTLinkTarget(requestId) {
+  // Leave q= out: some ChatGPT builds auto-submit it, others only prefill it. The content script
+  // inserts and clicks Send once, avoiding ambiguous/double-submit behavior. The prompt is URL-only.
+  const target = new URL("https://chatgpt.com/");
+  const hash = new URLSearchParams();
+  hash.set("keepit-chatgpt-panel", "1");
+  hash.set("keepit-chatgpt-link-request", requestId);
+  target.hash = hash.toString();
+  return target.href;
+}
+async function queueChatGPTLinkPanelFlow(tab) {
+  const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
+  if (!sourceUrl) return { ok:false, error:"source-url-unavailable" };
+  const stored = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
+  const conversations = stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY];
+  const savedConversation = safeChatGPTConversationUrl(conversations?.[sourceUrl]);
+  const navigationRequest = {
+    requestId:`nav-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
+    targetUrl:savedConversation || "",
+    mode:savedConversation ? "reopen" : "new-link",
+    expiresAt:Date.now() + 60000
+  };
+  if (!savedConversation) {
+    const linkRequestId = `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const pending = {
+      requestId:linkRequestId,
+      sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
+      sourceUrl,
+      mode:"auto-send-link",
+      expiresAt:Date.now() + 120000
+    };
+    navigationRequest.targetUrl = makeChatGPTLinkTarget(linkRequestId);
+    navigationRequest.linkRequestId = linkRequestId;
+    await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
+    setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, 121000);
+  } else {
+    navigationRequest.targetUrl = savedConversation;
+  }
+  await browser.storage.local.set({ [CHATGPT_PANEL_NAVIGATION_KEY]:navigationRequest });
+  return { ok:true, action:savedConversation ? "reopen-existing" : "send-link-only" };
+}
+async function openChatGPTLinkPanel({ sender, tab } = {}) {
+  const sourceTab = tab || sender?.tab;
+  // Invoke the existing toggle before any async lookup, preserving browser gesture requirements.
+  const panel = await openChatGPTSidePanel({ sender, tab:sourceTab });
+  if (!panel?.ok || !panel.opened) return panel;
+  if (Number.isInteger(sourceTab?.windowId)) trackChatGPTPanel(sourceTab.windowId, sourceTab.id, true);
+  const flow = await queueChatGPTLinkPanelFlow(sourceTab);
+  return { ...panel, ...flow };
+}
+async function clearExpiredChatGPTLinkPending(expectedRequestId = "") {
+  const stored = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
+  const pending = stored?.[CHATGPT_LINK_PENDING_KEY];
+  if (pending && pending.expiresAt <= Date.now() && (!expectedRequestId || pending.requestId === expectedRequestId)) {
+    await browser.storage.local.remove(CHATGPT_LINK_PENDING_KEY);
+    return true;
+  }
+  return false;
+}
+async function completeChatGPTLinkRequest(message) {
+  const stored = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
+  const pending = stored?.[CHATGPT_LINK_PENDING_KEY];
+  if (!pending || message?.requestId !== pending.requestId) return { ok:false, stale:true };
+  const conversationUrl = message.ok === true ? safeChatGPTConversationUrl(message.conversationUrl) : "";
+  if (conversationUrl) {
+    const mappingData = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
+    const mappings = { ...(mappingData?.[CHATGPT_SOURCE_CONVERSATIONS_KEY] || {}) };
+    delete mappings[pending.sourceUrl];
+    mappings[pending.sourceUrl] = conversationUrl;
+    await browser.storage.local.set({ [CHATGPT_SOURCE_CONVERSATIONS_KEY]:mappings });
+  }
+  await browser.storage.local.remove(CHATGPT_LINK_PENDING_KEY);
+  if (Number.isInteger(pending.sourceTabId)) {
+    try {
+      await browser.tabs.sendMessage(pending.sourceTabId, {
+        type:"CHATGPT_AUTOFILL_RESULT",
+        ok:Boolean(conversationUrl),
+        reason:conversationUrl ? "" : String(message.reason || "conversation-not-created")
+      });
+    } catch { /* source tab may have navigated or closed */ }
+  }
+  return { ok:Boolean(conversationUrl), conversationUrl };
+}
+async function reportChatGPTNavigationBlocked(message) {
+  if (typeof message?.linkRequestId === "string" && message.linkRequestId) {
+    return completeChatGPTLinkRequest({ requestId:message.linkRequestId, ok:false, reason:message.reason || "composer-not-empty" });
+  }
+  if (Number.isInteger(message?.sourceTabId)) {
+    try {
+      await browser.tabs.sendMessage(message.sourceTabId, {
+        type:"CHATGPT_AUTOFILL_RESULT",
+        ok:false,
+        reason:String(message.reason || "composer-not-empty")
+      });
+      return { ok:true };
+    } catch { return { ok:false, error:"source-tab-unavailable" }; }
+  }
+  return { ok:false, error:"source-tab-unavailable" };
+}
 browser.runtime.onInstalled.addListener(async () => {
-  try { await clearExpiredChatGPTDraft(); } catch (error) { console.warn("Could not clean an expired ChatGPT draft request", error); }
+  try { await clearExpiredChatGPTDraft(); await clearExpiredChatGPTLinkPending(); } catch (error) { console.warn("Could not clean an expired ChatGPT request", error); }
   try { await USAGE_LIMITS.initialize(); }
   catch (error) { console.warn("Could not initialize local usage trial", error); }
   try { await ensureChatGPTFrameRule(true); }
@@ -192,7 +314,7 @@ browser.runtime.onInstalled.addListener(async () => {
   await resetLegacyDictationWrongWordStats();
 });
 browser.runtime.onStartup?.addListener(() => {
-  clearExpiredChatGPTDraft().catch(error => console.warn("Could not clean an expired ChatGPT draft request", error));
+  Promise.all([clearExpiredChatGPTDraft(), clearExpiredChatGPTLinkPending()]).catch(error => console.warn("Could not clean an expired ChatGPT request", error));
   ensureChatGPTFrameRule().catch(error => console.warn("Could not configure the ChatGPT iframe header rule", error));
 });
 async function copyChatGPTContextFromTab(tab) {
@@ -203,8 +325,26 @@ async function copyChatGPTContextFromTab(tab) {
     return { ok:false, error:"page-content-unavailable" };
   }
 }
+// Legacy v3.5.60 command flow retained but no longer called: it copied page/main text.
+function openChatGPTFromCommandLegacy() {
+  let togglePromise;
+  try { togglePromise = openChatGPTSidePanel(); }
+  catch (error) { togglePromise = Promise.reject(error); }
+  const tabPromise = browser.tabs.query({ active:true, currentWindow:true }).then(tabs => tabs?.[0] || null);
+  Promise.allSettled([togglePromise, tabPromise]).then(async ([panelResult, tabResult]) => {
+    const tab = tabResult.status === "fulfilled" ? tabResult.value : null;
+    const panel = panelResult.status === "fulfilled" ? panelResult.value : null;
+    if (!panel?.ok || !panel.opened || !tab?.id) return;
+    trackChatGPTPanel(tab.windowId, tab.id, true);
+    const copied = await copyChatGPTContextFromTab(tab);
+    if (copied?.ok) {
+      try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_AUTOFILL_PENDING" }); } catch {}
+      await registerChatGPTDraft(tab.id, copied.truncated === true);
+    }
+  }).catch(error => console.warn("Could not finish the legacy ChatGPT command", error));
+}
 function openChatGPTFromCommand() {
-  // Toggle immediately in the keyboard command's user-gesture turn; copy only if it opened.
+  // Open/toggle in the command gesture, then pass only the active tab URL to the new flow.
   let togglePromise;
   try { togglePromise = openChatGPTSidePanel(); }
   catch (error) { togglePromise = Promise.reject(error); }
@@ -224,12 +364,11 @@ function openChatGPTFromCommand() {
     }
     if (tab?.id) {
       trackChatGPTPanel(tab.windowId, tab.id, true);
-      const copied = await copyChatGPTContextFromTab(tab);
-      if (copied?.ok) {
-        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_AUTOFILL_PENDING" }); } catch {}
-        await registerChatGPTDraft(tab.id, copied.truncated === true);
+      const queued = await queueChatGPTLinkPanelFlow(tab);
+      if (!queued.ok) {
+        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_LINK_PANEL_FAILED" }); } catch {}
       } else {
-        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_COPY_FAILED" }); } catch {}
+        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_LINK_PANEL_QUEUED", action:queued.action }); } catch {}
       }
     }
   }).catch(error => console.warn("Could not finish the ChatGPT keyboard command", error));
@@ -365,6 +504,9 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   }
   if (message.type === "CHATGPT_DRAFT_READY") return registerChatGPTDraft(sender?.tab?.id, message.truncated === true);
   if (message.type === "CHATGPT_AUTOFILL_RESULT") return notifyChatGPTDraftResult(message);
+  if (message.type === "CHATGPT_LINK_RESULT") return completeChatGPTLinkRequest(message);
+  if (message.type === "CHATGPT_PANEL_NAVIGATION_BLOCKED") return reportChatGPTNavigationBlocked(message);
+  if (message.type === "OPEN_CHATGPT_LINK_PANEL") return openChatGPTLinkPanel({ sender });
   if (message.type === "OPEN_CHATGPT_SIDEPANEL") return openChatGPTSidePanel({ sender });
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);

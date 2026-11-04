@@ -23,7 +23,7 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 2. UI gửi message qua `LHN_MESSAGING`; listener phân nhánh theo `message.type`.
 3. Annotation đi qua `LHN_ANNOTATIONS`/IndexedDB; thay đổi được phát lại để đồng bộ context.
 4. Translation, TTS và Web Study cache chuyển tới `LHN_TRANSLATE`, `LHN_CACHE` hoặc usage service; Background trả kết quả cho requester.
-5. `OPEN_CHATGPT_SIDEPANEL` toggle Chrome Side Panel hoặc Firefox `sidebarAction`. `Alt+X` gọi API trước khi truy vấn tab; chỉ khi mở mới yêu cầu content chép draft. Background lưu metadata pending có hạn dùng, nhận kết quả autofill và điều khiển scrollbar; không nhận page text.
+5. `OPEN_CHATGPT_LINK_PANEL` toggle panel rồi lấy URL từ sender tab; lần đầu ghi pending URL-only và yêu cầu điều hướng tới ChatGPT. Khi ChatGPT báo conversation route, Background lưu mapping exact source URL → conversation URL; lần sau cùng URL chỉ điều hướng tới route đã lưu. `Alt+X` khởi chạy cùng flow; flow mới không đọc page body hoặc clipboard.
 6. Các message khác mở Dashboard/highlight hoặc proxy YouTube request theo allowlist.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -33,12 +33,12 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 - Annotation do Background/IndexedDB sở hữu; không tạo nguồn lưu annotation thứ hai trong UI.
 - Giữ allowlist host của `YOUTUBE_FETCH_TEXT`/`YOUTUBE_API`; không biến proxy thành fetch tùy ý.
 - Cache và usage state ở local; giữ validation, dedupe và error paths của TTS/translation.
-- Không chuyển hoặc lưu nội dung trang ChatGPT qua Background/storage. Chỉ lưu `requestId`, source tab, trạng thái rút gọn và expiry; draft đi từ content trang vào clipboard rồi được đọc cục bộ ở panel.
+- Luồng link-only chỉ chuyển/lưu URL nguồn và metadata request, không đọc/chuyển/lưu page body, title hay prompt draft. Mapping `keepitChatGPTConversationBySourceUrl` là exact source URL → validated HTTPS `/c/<id>`; pending expires, và mapping không được dùng để gửi prompt lại.
 - Chrome DNR rule 9002 chỉ áp dụng cho ChatGPT subframe do extension khởi tạo, dù gỡ cả CSP của frame. Firefox build bỏ `sidePanel`/`side_panel` và giữ `sidebar_action.open_at_install=false`.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/background/*.js; do node --check "$f" || exit; done`; parse manifest và chạy `git diff --check`.
-- Message changes: kiểm tra sender, receiver, payload và metadata; xác nhận page text không xuất hiện trong message/storage.
-- Focused VM: toggle/open-before-tab-query, Firefox `isOpen`/toggle, pending expiry/result, DNR scope và scrollbar bật/tắt.
-- Browser QA: xác nhận Chrome/Firefox toggle, clipboard permission, draft chỉ vào composer rỗng, không submit, restore scrollbar khi đóng và Firefox install không tự mở. Static/VM không thay thế browser QA.
+- Message changes: kiểm tra sender, receiver, payload và metadata; xác nhận chỉ URL nguồn/route được lưu, không có page body/title.
+- v3.5.61 VM đã chạy: first-link pending, exact URL→conversation mapping, same-URL reopen, different-URL new request và không có body/title — PASS. Static JS/manifest checks cũng PASS.
+- Browser QA Chrome/Firefox chưa chạy: xác nhận auto-send thật, cùng URL chỉ reopen, draft guard, panel toggle/scrollbar và Firefox install không tự mở.

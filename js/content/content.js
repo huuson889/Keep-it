@@ -1117,7 +1117,8 @@
       ? "* { scrollbar-width: thin !important; }"
       : "*::-webkit-scrollbar { width: 3px !important; height: 3px !important; }";
   }
-  async function launchChatGPTSidePanel() {
+  // Legacy v3.5.60 page-text workflow retained but no longer called by the launcher.
+  async function launchChatGPTSidePanelLegacy() {
     // Send the toggle immediately from the click handler; only copy/fill when it opened.
     let togglePromise;
     try { togglePromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_SIDEPANEL" }); }
@@ -1149,6 +1150,28 @@
       showSidebarToast(() => t("chatGPTAutoFillFailedToast"));
     }
     return { opened:true, copied:true, truncated:copyResult.truncated };
+  }
+
+  // v3.5.61: open the panel using only the current page URL; no page text is read or copied.
+  async function launchChatGPTSidePanel() {
+    let requestPromise;
+    try { requestPromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_LINK_PANEL" }); }
+    catch (error) { requestPromise = Promise.reject(error); }
+    const settled = await Promise.allSettled([requestPromise]);
+    const result = settled[0].status === "fulfilled" ? settled[0].value : null;
+    if (!result?.ok) {
+      const reason = settled[0].status === "rejected" ? String(settled[0].reason?.message || settled[0].reason) : result?.reason || result?.error;
+      console.warn("Could not open the link-only ChatGPT flow", reason || "unknown-error");
+      showSidebarToast(() => t(result?.opened ? "chatGPTAutoFillFailedToast" : "chatGPTPanelOpenFailedToast"));
+      return { opened:false };
+    }
+    if (!result.opened) {
+      showSidebarToast(() => t("chatGPTPanelClosedToast"));
+      return { opened:false, closed:true };
+    }
+    if (sidebarOpen) closeSidebar();
+    if (result.action === "send-link-only") showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+    return { opened:true, action:result.action || "" };
   }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
   function syncSidebarEdgeToggle() {
@@ -1813,7 +1836,12 @@
     if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
     if (message?.type === "CHATGPT_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
     if (message?.type === "CHATGPT_COPY_FAILED") { showSidebarToast(() => t("chatGPTCopyFailedToast")); return; }
+    if (message?.type === "CHATGPT_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
     if (message?.type === "CHATGPT_AUTOFILL_PENDING") { showSidebarToast(() => t("chatGPTAutoFillPendingToast")); return; }
+    if (message?.type === "CHATGPT_LINK_PANEL_QUEUED") {
+      if (message.action === "send-link-only") showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+      return;
+    }
     if (message?.type === "CHATGPT_AUTOFILL_RESULT") {
       if (message.ok) showSidebarToast(() => t(message.truncated ? "chatGPTAutoFillTruncatedToast" : "chatGPTAutoFillSuccessToast"));
       else showSidebarToast(() => t(message.reason === "composer-not-empty" ? "chatGPTComposerPreservedToast" : "chatGPTAutoFillFailedToast"));
