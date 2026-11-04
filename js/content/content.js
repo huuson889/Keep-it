@@ -1117,6 +1117,10 @@
     const [openResult, copyResult] = await Promise.allSettled([openPromise, copyPromise]);
     const opened = openResult.status === "fulfilled" && openResult.value?.ok === true;
     const copied = copyResult.status === "fulfilled" && copyResult.value?.ok === true;
+    if (!opened) {
+      const reason = openResult.status === "rejected" ? String(openResult.reason?.message || openResult.reason) : openResult.value?.reason || openResult.value?.error || "unknown-error";
+      console.warn("Could not open the ChatGPT side panel from the page launcher", reason);
+    }
     if (opened && sidebarOpen) closeSidebar();
     if (!copied) showSidebarToast(() => t("chatGPTCopyFailedToast"));
     else if (!opened) showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));

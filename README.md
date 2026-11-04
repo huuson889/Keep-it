@@ -1,6 +1,6 @@
 # Keepit
 
-Keepit is a browser extension / add-on for every Chromium-based browser (Chrome, Edge, …) and Firefox-based browsers (Firefox, Zen,..). It is one codebase with one Manifest V3 `manifest.json`, so the same folder loads in both browser families.
+Keepit is a browser extension / add-on for Chromium-based browsers (Chrome, Edge, …) and Firefox-based browsers (Firefox, Zen,..). It uses one codebase with Manifest V3; the source `manifest.json` targets Chromium, and `scripts/build_firefox.py` creates a Firefox-ready folder without Chromium-only manifest keys.
 
 Keepit helps you keep learning from anything you read online: highlight text and add notes, translate and look up words, listen to pages read aloud, read paragraphs side by side with their translation, and review your highlights as flashcards.
 
@@ -79,10 +79,10 @@ Chromium-based browsers (Chrome, Edge, Brave, …):
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the folder that contains `manifest.json`.
 
-Chromium-based browsers (Firefox, Zen, Floorp,..) (121 or later):
-1. Extract the ZIP to a normal folder.
+Firefox-based browsers (Firefox, Zen, Floorp,..) (121 or later):
+1. From the repository, run `python scripts/build_firefox.py` (or pass `--output /path/to/folder`). This creates a Firefox-ready copy outside the repository, removes Chromium-only `sidePanel` entries, and sets `sidebar_action.open_at_install` to `false`.
 2. Open `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…** and select `manifest.json`.
+3. Click **Load Temporary Add-on…** and select `manifest.json` inside the generated folder.
 
 Firefox removes temporary add-ons when it restarts; repeat the steps to test again. Your data stays in the browser profile unless you clear extension data, so export a JSON backup from the Dashboard regularly.
 
@@ -92,7 +92,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Dictation requests a Vietnamese translation of a sentence after a correct typing answer or an accepted speaking result; that sentence may be sent through the existing translation service. Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
 - When you invoke ChatGPT with `Alt+X` or the ChatGPT tab, Keepit extracts readable main-page text and writes it with the Vietnamese summary prompt to the system clipboard. Keepit does not send that text to its background or a Keepit server; you choose whether to paste it into ChatGPT, and it is not auto-sent. This replaces the current clipboard contents.
 - A local error log keeps at most 200 classified entries (time, component, severity, code), without page URLs, page text, selected text, or account details. It is not automatically uploaded; JSON is generated only when you choose Export in Dashboard > Settings > About.
-- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, `declarativeNetRequest`, `clipboardWrite`, and `sidePanel`. Host access supports content scripts on websites and the named external services. Chrome removes ChatGPT's `X-Frame-Options` and full `Content-Security-Policy` only on ChatGPT subframes initiated by Keepit's side panel so the site can be embedded; this weakens those protections for that framed ChatGPT document. Firefox loads ChatGPT as the top-level browser sidebar page instead. With auto-record enabled (the default), Speaking may request browser microphone access 2 seconds after the final cue ends; turn it off to use manual Enter/mic start. Its short recording stays in memory for playback and is not persisted or uploaded by Keepit. SpeechRecognition may send audio for processing through the browser/provider service, depending on browser implementation and settings.
+- Permissions: the Chromium manifest uses `storage`, `unlimitedStorage`, `activeTab`, `tabs`, `declarativeNetRequest`, `clipboardWrite`, and `sidePanel`. The Firefox build removes the Chromium-only `sidePanel` permission and `side_panel` key, then uses `sidebar_action` with `open_at_install: false`. Host access supports content scripts on websites and the named external services. Chrome removes ChatGPT's `X-Frame-Options` and full `Content-Security-Policy` only on ChatGPT subframes initiated by Keepit's side panel so the site can be embedded; this weakens those protections for that framed ChatGPT document. Firefox loads ChatGPT as the top-level browser sidebar page instead. With auto-record enabled (the default), Speaking may request browser microphone access 2 seconds after the final cue ends; turn it off to use manual Enter/mic start. Its short recording stays in memory for playback and is not persisted or uploaded by Keepit. SpeechRecognition may send audio for processing through the browser/provider service, depending on browser implementation and settings.
 - The future account/cloud-sync section in the policy is explicitly marked as not active. Usage limits and Upgrade & Billing are local prototypes with no real payments.
 
 ## Limitations
@@ -107,7 +107,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Project structure
 
-- `manifest.json`: extension entry points and permissions; keep it at the repository root.
+- `manifest.json`: Chromium source manifest; `scripts/build_firefox.py` emits a Firefox-ready copy with unsupported Chromium-only keys removed.
 - `pages/`: `dashboard.html` and `popup.html` UI entry points, plus browser-native ChatGPT side-panel pages for Chrome and Firefox.
 - `js/core/`: browser polyfill, shared configuration, languages, settings, messaging, cache, and shortcuts.
 - `js/background/`: background service worker, annotation storage, usage limits, and error logging.
@@ -124,7 +124,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Development
 
-- There is no build step: the folder is the extension.
+- Chromium loads the source folder directly; generate a Firefox-ready folder with `python scripts/build_firefox.py` before loading it in Firefox.
 - Shared code uses the `browser.*` namespace through `js/core/browser-polyfill.js`.
 - Keep shared defaults in `js/core/config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
 

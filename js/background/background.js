@@ -56,8 +56,9 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
       await chromePanel.open({ tabId });
       return { ok:true, browser:"chromium" };
     } catch (error) {
-      console.warn("Could not open the ChatGPT Chrome side panel", error);
-      return { ok:false, error:"panel-open-failed" };
+      const reason = String(error?.message || error || "unknown-error");
+      console.warn("Could not open the ChatGPT Chrome side panel", reason);
+      return { ok:false, error:"panel-open-failed", reason };
     }
   }
   const firefoxSidebar = globalThis.browser?.sidebarAction;
@@ -66,8 +67,9 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
       await firefoxSidebar.open();
       return { ok:true, browser:"firefox" };
     } catch (error) {
-      console.warn("Could not open the ChatGPT Firefox sidebar", error);
-      return { ok:false, error:"panel-open-failed" };
+      const reason = String(error?.message || error || "unknown-error");
+      console.warn("Could not open the ChatGPT Firefox sidebar", reason);
+      return { ok:false, error:"panel-open-failed", reason };
     }
   }
   return { ok:false, error:"side-panel-unsupported" };
@@ -90,19 +92,36 @@ async function copyChatGPTContextFromTab(tab) {
     return { ok:false, error:"page-content-unavailable" };
   }
 }
-async function openChatGPTFromCommand() {
-  // Firefox can open its sidebar synchronously from the command's user gesture.
-  const firefoxOpen = typeof browser.sidebarAction?.open === "function" ? browser.sidebarAction.open() : null;
-  const [tab] = await browser.tabs.query({ active:true, currentWindow:true });
-  if (!tab?.id) return;
-  const openPromise = firefoxOpen || openChatGPTSidePanel({ tab });
-  const copyPromise = copyChatGPTContextFromTab(tab);
-  const [openResult] = await Promise.allSettled([openPromise, copyPromise]);
-  const opened = openResult.status === "fulfilled" && openResult.value?.ok !== false;
-  if (!opened) {
-    try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); }
-    catch { /* the active page may not accept extension scripts */ }
+function openChatGPTFromCommand() {
+  // Open synchronously in the browser command's user-gesture turn; do not await tab lookup first.
+  let openPromise;
+  try {
+    const chromePanel = globalThis.chrome?.sidePanel;
+    if (typeof chromePanel?.open === "function") {
+      const currentWindowId = globalThis.chrome?.windows?.WINDOW_ID_CURRENT ?? -2;
+      openPromise = chromePanel.open({ windowId:currentWindowId });
+    } else if (typeof browser.sidebarAction?.open === "function") {
+      openPromise = browser.sidebarAction.open();
+    } else {
+      openPromise = Promise.resolve({ ok:false, error:"side-panel-unsupported" });
+    }
+  } catch (error) {
+    openPromise = Promise.reject(error);
   }
+  const tabPromise = browser.tabs.query({ active:true, currentWindow:true }).then(tabs => tabs?.[0] || null);
+  Promise.allSettled([openPromise, tabPromise]).then(async ([openResult, tabResult]) => {
+    const tab = tabResult.status === "fulfilled" ? tabResult.value : null;
+    if (tab?.id) await copyChatGPTContextFromTab(tab);
+    const opened = openResult.status === "fulfilled" && openResult.value?.ok !== false;
+    if (!opened) {
+      const reason = openResult.status === "rejected" ? String(openResult.reason?.message || openResult.reason) : openResult.value?.reason || openResult.value?.error;
+      console.warn("Could not open the ChatGPT panel from the keyboard command", reason || "unknown-error");
+      if (tab?.id) {
+        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); }
+        catch { /* the active page may not accept extension scripts */ }
+      }
+    }
+  }).catch(error => console.warn("Could not finish the ChatGPT keyboard command", error));
 }
 browser.commands?.onCommand.addListener(command => {
   if (command === "open-chatgpt-sidepanel") void openChatGPTFromCommand();

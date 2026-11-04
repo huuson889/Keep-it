@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.56; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
+- Version hiện tại: v3.5.57; Manifest V3. Reader và Web TTS Overlay dùng chung Reader rate API/storage (global/per-language, 0.5×–3×); Web progress fill nội suy theo cue và tốc độ đọc, dừng khi TTS tạm dừng; YouTube và Dictation giữ speed path riêng. Kích thước xem Normal và Theater tách riêng hoàn toàn: `size` cho Normal, `theaterSize` (mặc định M) cho Theater khi ẩn thanh bên; chuyển mode đồng bộ ngay class kích thước của mode đích; Reading/Study vẫn dùng `readingViewSize`/`learningViewSize`. Bấm shortcut Alt+1–3 đúng chế độ xem đang mở thì hiện toast "Bạn đang ở (tên chế độ) rồi" (EN/VI/KO). Overlay runtime dùng source-neutral `sourceType`/`sourceId`/`activeMedia`/`sourceLanguage` và activity state riêng `studyActivity`; API chung là `LHN_STUDY`, legacy `LHN_DICTATION` vẫn alias. Study markup/CSS ở `overlay-template.js`; activity code ở `study/dictation/`, `study/shadowing/` và helpers ở `study/shared/`.
 - Web thumbnail giữ frame/playback, thêm motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%) và bảy hiệu ứng đổi riêng mỗi 30–180 giây; blur ngẫu nhiên 0–10px; bokeh giữ glow alpha và bán kính 2× theo tham chiếu; favicon Web/YouTube giữ `LHN_SITE_ICONS`, 22×22px.
 - Speaking recognition, recording, replay và feedback đã tách sang `shadowing-activity.js`; `dictation.js` vẫn giữ shared session shell cùng một số mode-dependent lifecycle/result branches. Việc tách phần còn lại vẫn mở.
-- v3.5.56: Alt+X hoặc tab ChatGPT mở browser-native side panel; nội dung chính + prompt được chép vào clipboard (tối đa 40.000 ký tự), người dùng tự Ctrl+V, không tự gửi. Chrome dùng `sidePanel` + iframe/DNR giới hạn; Firefox dùng `sidebar_action` top-level. Static/VM checks passed; browser QA pending, xem mục 2/5.
+- v3.5.57: sửa lệnh Chrome để gọi `sidePanel.open()` đồng bộ trong thao tác phím trước khi truy vấn tab; Firefox build bỏ `sidePanel`/`side_panel` Chrome-only và đặt `sidebar_action.open_at_install=false`. Static/VM checks PASS; Chrome/Firefox browser QA pending.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,7 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
-- ChatGPT browser side panel (v3.5.56): browser QA pending — Chrome 116+ mở side panel và tải phiên ChatGPT/login; Firefox mở native sidebar top-level; Alt+X và tab/button ChatGPT copy prompt + main-page text (cap 40.000), Ctrl+V tạo draft, không auto-send; kiểm tra copy fail, trang dài/không có bài viết, API unavailable, Chrome DNR scope/frame policy. Giữ kiểm tra Alt+Q/custom `sidebarShortcut` mở Highlight, tab UI/labels EN/VI/KO, search/filter/list/footer và website-disabled.
+- ChatGPT browser side panel (v3.5.56–3.5.57): browser QA pending — Chrome Alt+X must open synchronously before active-tab lookup; verify the reported AbortError/toast and ChatGPT login/frame policy. Firefox must load the generated folder from `scripts/build_firefox.py` without Chrome-only manifest warnings and stay closed on install (`open_at_install=false`); browser QA still needs confirmation. Both browsers: Alt+X/tab/button copy prompt + main text (cap 40.000), manual Ctrl+V only; test page-button gesture, copy failure, long/empty page, DNR scope, and Alt+Q/custom `sidebarShortcut` still opens Highlight.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -42,8 +42,8 @@
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
 - Khi phát hiện tên file/đường dẫn sai hoặc không nhất quán, báo người dùng và nêu rõ phạm vi trước khi sửa; nếu chỉ yêu cầu đổi tên, giữ nguyên logic bên trong.
 - Mọi API dùng browser.* (đã có polyfill).
-- Chrome dùng `side_panel`/`sidePanel`; Firefox dùng `sidebar_action`. Popup và Dashboard vẫn giữ entry hiện tại.
-- Thư mục nguồn là nguồn duy nhất; zip do Arena đóng gói vào D:\Keepit.
+- Chromium dùng `side_panel`/`sidePanel`; Firefox build qua `scripts/build_firefox.py` bỏ các key Chrome-only và dùng `sidebar_action`. Popup và Dashboard giữ entry hiện tại.
+- Thư mục nguồn là nguồn duy nhất; Firefox manifest là build output bên ngoài repo; zip do Arena đóng gói vào D:\Keepit.
 - AGENTS.md và PROJECT.md nằm trong zip và được commit vào Git. Trước khi nộp store, người dùng tự xóa hai file này khỏi zip.
 - Thay đổi lớn nêu rõ trong commit message.
 
@@ -52,7 +52,9 @@
 ### 4.1. Bản đồ file
 ```text
 Keepit - Test/
-├── manifest.json                  # Quyền và entry points của extension
+├── manifest.json                  # Manifest source cho Chromium
+├── scripts/
+│   └── build_firefox.py           # Tạo Firefox build, bỏ permission/key Chrome-only
 ├── pages/
 │   ├── chatgpt-chrome-sidepanel.html # Chrome native side panel; embeds ChatGPT
 │   ├── chatgpt-firefox-sidebar.html # Firefox browser sidebar; redirects to ChatGPT
@@ -100,7 +102,7 @@ Keepit - Test/
 └── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, SUPABASE_SYNC.md, THIRD_PARTY_NOTICES.md
 ```
 
-`manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
+`manifest.json` ở gốc repo là bản Chromium; `scripts/build_firefox.py` tạo thư mục Firefox riêng với manifest hợp lệ cho Firefox. Thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
 Có 2 entry `content_scripts`: entry `document_start`/`all_frames` chỉ nạp browser API, messaging, error-logger và custom-font; app chính chạy `document_idle` ở top frame.
 
@@ -150,6 +152,14 @@ Sidebar trang giữ tab Highlight; tab ChatGPT mở side panel riêng. `Alt+X` l
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.57 | Arena.ai Agent sửa:**
+
+- Sửa lệnh Chrome `Alt+X`: gọi `sidePanel.open({windowId: WINDOW_ID_CURRENT})` đồng bộ trước khi truy vấn tab để giữ user gesture; vẫn lấy/copy nội dung trang sau đó. Thêm log lý do cụ thể khi API mở panel thất bại.
+- Thêm `scripts/build_firefox.py`: tạo Firefox-ready folder bỏ permission `sidePanel`, manifest key `side_panel` và background `service_worker`; giữ `sidebar_action.open_at_install=false` để Firefox không tự mở sidebar khi cài. Runtime chỉ gọi `sidebarAction.open()` từ command hoặc launcher.
+- File: `manifest.json`, `scripts/build_firefox.py`, `js/background/background.js`, `js/content/content.js`, `README.md`, `PRIVACY-POLICY.md`, `docs/modules/background.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` toàn bộ JS, parse manifest, `py_compile` builder, Firefox build loại Chrome-only keys + giữ `open_at_install=false`, VM xác nhận Chrome/Firefox gọi API mở trước tab query, docs word count và `git diff --check` — PASS; chưa browser-test.
+- Tiếp theo: browser QA Chrome xác nhận toast AbortError đã hết; Firefox load build sinh ra, không cảnh báo manifest và không tự mở khi cài.
 
 **2026-11-04 | v3.5.56 | Arena.ai Agent sửa:**
 
