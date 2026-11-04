@@ -359,9 +359,12 @@
   }
 
   function findSendButton() {
+    const composerForm = findComposer()?.closest("form");
     return document.querySelector('button[data-testid="send-button"]')
       || document.querySelector('button[aria-label*="Send prompt" i]')
-      || document.querySelector('button[aria-label="Send" i]');
+      || document.querySelector('button[aria-label="Send" i]')
+      || composerForm?.querySelector('button[aria-label*="Gửi" i], button[type="submit"]')
+      || document.querySelector('button[aria-label="Gửi" i]');
   }
 
   async function waitForEnabledSendButton(timeoutMs = 9000) {

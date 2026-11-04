@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.73; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- ChatGPT flow v3.5.73: Alt+X lần đầu gửi URL + prompt tóm tắt qua `?q=`, cùng URL lần sau chỉ mở hội thoại; Hỏi AI trên đúng hội thoại đã map thay prompt nháp hiện có bằng câu hỏi từ selection mới rồi gửi. Nháp vẫn được bảo vệ nếu phải chuyển sang hội thoại khác; browser QA v3.5.72 đã xác nhận selector composer hoạt động trên Chrome.
+- Version hiện tại: v3.5.74; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- ChatGPT flow v3.5.74: Hỏi AI trên đúng hội thoại đã map thay prompt nháp bằng câu hỏi từ selection mới rồi gửi; nhánh tạo chat mới dùng selector nút gửi tiếng Việt `aria-label="Gửi"` / form submit để gửi lần đầu và ghi mapping. Firefox sidebar open gesture và map follow-up cần browser QA.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
 - Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
@@ -19,7 +19,7 @@
 
 ### Kiểm thử trình duyệt
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
-- ChatGPT prompt flow (v3.5.73; based on v3.5.63 panel): pending user confirmation for the new existing-draft behavior — v3.5.72 empty-composer repeat was confirmed on Chrome; verify that v3.5.73 replaces an unsent draft only on the exact mapped route, then sends the new selected question; broader first/new-chat, Alt+X, Firefox and regression checklist remains pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, actual localized contenteditable textbox selector, exact route + empty-composer guard, exact mapped-chat draft replacement, drafts preserved on route changes, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
+- ChatGPT prompt flow (v3.5.74; based on v3.5.63 panel): browser QA pending — verify Firefox first-chat send with localized `Gửi` button, exact source mapping, reopening old mapped chat, sidebar opens from Hỏi AI when closed, and replacement/send on mapped chat with draft; broader first/new-chat, Alt+X, Firefox and regression checklist remains pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, actual localized contenteditable textbox selector, exact route + empty-composer guard, exact mapped-chat draft replacement, drafts preserved on route changes, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -155,10 +155,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-04 | v3.5.74 | Arena.ai Agent sửa:**
+
+- Firefox runtime result `send-button-unavailable`; DevTools xác nhận nút ChatGPT tiếng Việt là `BUTTON[type=submit][aria-label="Gửi"]`. Bổ sung selector aria-label tiếng Việt và submit button nằm trong form composer để gửi lần đầu và ghi mapping.
+- Kiểm tra: VM selector match `Gửi`, composer replacement/send, mapping/draft/route behavior; toàn bộ JS syntax và ZIP Chrome/Firefox. Chờ người dùng browser-test Firefox.
+
 **2026-11-04 | v3.5.73 | Arena.ai Agent sửa:**
 
 - Theo yêu cầu người dùng, khi bấm Hỏi AI trên đúng hội thoại đã map, chọn toàn bộ prompt nháp trong composer rồi thay bằng câu hỏi từ selection mới và gửi. Nhánh chuyển hội thoại khác vẫn giữ draft guard; Firefox same-route cũng xử lý nháp theo yêu cầu.
-- Kiểm tra: VM replacement của contenteditable; follow-up mapped route thay draft/gửi một lần; route sai không được gửi; Firefox same-route bỏ navigation guard còn route khác giữ guard. Browser QA đang chờ.
+- Kiểm tra: composer contenteditable replacement + draft/route guards; localized `Gửi` selector VM, pending first-chat send and mapping flow; toàn bộ JS syntax, ZIP Chrome/Firefox. Firefox browser QA pending.
 
 **2026-11-04 | v3.5.72 | Arena.ai Agent sửa:**
 
