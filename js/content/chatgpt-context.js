@@ -1,6 +1,6 @@
 (() => {
   const PROMPT = "Hãy tóm tắt nội dung ngắn gọn";
-  const MAX_PAGE_TEXT_LENGTH = 40000;
+  const MAX_PAGE_TEXT_LENGTH = 5000;
   const EXTENSION_UI_SELECTOR = [
     "#lhn-sidebar", "#lhn-sidebar-toast", "#lhn-sidebar-edge-toggle", "#lhn-panel", "#lhn-note-pop",
     "#lhn-selection-overlay", "#lhn-translate-icon", "#lhn-direct-translation", "#lhn-full-english-dictionary",
@@ -20,21 +20,18 @@
 
   function create({ document, location, navigator = globalThis.navigator, getReadability = () => globalThis.Readability }) {
     function extractMainText() {
+      try {
+        const readerBlocks = globalThis.LHN_READER_MAIN_SOURCE?.getTextBlocks?.({ forceRefresh:true });
+        const readerText = normalizeText(Array.isArray(readerBlocks) ? readerBlocks.join("\n\n") : "");
+        if (readerText) return readerText;
+      } catch { /* use the local Readability fallback if Reader extraction is unavailable */ }
       const clone = document.cloneNode(true);
       if (!clone) return "";
       clone.querySelectorAll(`${EXTENSION_UI_SELECTOR},${NON_CONTENT_SELECTOR}`).forEach(node => node.remove());
-      let text = "";
       const Readability = getReadability?.();
-      if (typeof Readability === "function") {
-        try { text = new Readability(clone).parse()?.textContent || ""; }
-        catch { /* use the cleaned body as a fallback */ }
-      }
-      if (!text) {
-        const body = clone.querySelector?.("body") || clone;
-        body.querySelectorAll?.("nav,header,footer,aside,[hidden],[aria-hidden='true']").forEach(node => node.remove());
-        text = body.innerText || body.textContent || "";
-      }
-      return normalizeText(text);
+      if (typeof Readability !== "function") return "";
+      try { return normalizeText(new Readability(clone).parse()?.textContent || ""); }
+      catch { return ""; }
     }
 
     function buildPromptText() {

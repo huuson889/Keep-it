@@ -12,8 +12,8 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 |---|---|---|
 | [`manifest.json`](../../manifest.json) | `content_scripts` | Khai báo script theo URL, frame và thứ tự nạp. |
 | [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI và message listeners. |
-| [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Trích nội dung trang, ghép prompt, ghi clipboard. |
-| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | pending watcher, route watcher | Panel-only clipboard read, empty-composer fill và lưu origin/path hội thoại gần nhất. |
+| [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Dùng Reader main blocks, ghép prompt, ghi clipboard. |
+| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | pending watcher, route watcher | Prefill qua q/direct fallback, bảo toàn composer và lưu origin/path hội thoại. |
 | [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Sidebar, tabs và controls. |
 | [`js/content/web-highlighter.js`](../../js/content/web-highlighter.js) | `LHNWebHighlighter.create` | Tạo và khôi phục highlight marks. |
 | [`js/content/annotation-restore.js`](../../js/content/annotation-restore.js) | `LHN_ANNOTATION_RESTORE.create` | Tìm lại text/range trên trang động. |
@@ -25,7 +25,8 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 2. Controller đọc settings, rồi gắn selection, sidebar và UI listeners.
 3. Annotation được tạo bởi `LHN_NOTE_COMPOSER`, gửi CRUD qua `LHN_MESSAGING`; khi trang đổi, restore/highlighter dựng lại mark.
 4. Reader và YouTube chuyển action qua custom events; Overlay xử lý video/Study.
-5. Tab ChatGPT và `Alt+X` toggle browser-native panel. Khi mở, content trích main text và ghi prompt vào clipboard. Background chỉ giữ metadata pending có hạn dùng, không nhận page text. Script panel được đánh dấu (URL marker hoặc session marker) dùng storage event kèm poll để không bỏ lỡ request; nó điền composer rỗng, giữ nguyên draft đã có, báo kết quả và không submit. Chỉ lưu origin + pathname của conversation `/c/<id>` để mở lại cùng chat; không lưu query/hash hay page text.
+5. ChatGPT tab/`Alt+X` mở panel; context dùng Reader Alt+R main blocks (Readability-only fallback), cap 5.000 ký tự và ghi prompt vào clipboard.
+6. Với pending metadata, panel đọc clipboard rồi đặt ChatGPT `?q=` trên cả hai browser. Storage event + poll bắt request lặp; script nhận diện q-prefill, direct-fill chỉ khi composer rỗng, giữ text có sẵn và không gửi. Chỉ conversation origin/path được lưu để restore; query/page text không lưu.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -33,9 +34,9 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 - Annotation CRUD tiếp tục qua Background; giữ payload `item`, `id`, `url`, `origin` và message types hiện tại.
 - Shortcut không chặn nhập liệu; giữ guard cho input/contenteditable và event Reader/Overlay.
 - Loại extension UI khỏi annotation restore và capture text; không biến UI thành nguồn annotation/selection.
-- `LHN_CHATGPT_CONTEXT` dùng Readability rồi fallback cleaned body; cap page text 40.000 ký tự và chỉ ghi clipboard sau hành động người dùng.
-- Auto-fill chỉ chạy trong marked ChatGPT panel (URL/session marker), khi metadata pending còn hạn và clipboard khớp prompt; poll dự phòng storage event để request sau không bị bỏ lỡ. Không đọc clipboard ở tab thường, không ghi đè composer có text, tuyệt đối không click Send/press Enter.
-- Conversation resume chỉ lưu URL HTTPS hợp lệ đã rút còn origin + pathname `/c/<id>`; không lưu query, fragment, title hoặc nội dung chat. Giữ `clipboardRead` và disclosures khớp hành vi.
+- `LHN_CHATGPT_CONTEXT` ưu tiên Reader Alt+R blocks, chỉ fallback Readability; không lấy toàn trang. Cap main text 5.000 ký tự; chỉ ghi clipboard sau thao tác người dùng.
+- Auto-fill chỉ chạy trong ChatGPT panel có marker và pending metadata còn hạn. Đọc draft clipboard, dùng URL `?q=` cho Chrome/Firefox; nếu composer vẫn trống thì fallback điền trực tiếp. Giữ draft có sẵn, không click Send/press Enter. Request q gửi draft đến ChatGPT khi panel tải; page text không qua Background/storage của Keepit.
+- Khôi phục conversation chỉ lưu HTTPS origin + pathname `/c/<id>` đã validate; không lưu query, fragment, title hoặc chat text. Disclosure phải nêu rõ q-prefill và clipboard.
 - Alt+Q/custom `sidebarShortcut` tiếp tục điều khiển Highlight; giữ label mới đồng bộ EN/VI/KO trong `LHN_LANGUAGES`.
 
 ## 5. Kiểm tra và xác minh
