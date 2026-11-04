@@ -147,11 +147,29 @@
           selection?.addRange(range);
         } catch { /* the textContent fallback below still replaces the draft */ }
       }
-      let inserted = false;
-      try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe editor fallback */ }
-      if (!inserted || composerText(composer) !== text.trim()) {
-        composer.textContent = text;
-        composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+      if (String(text).includes("\n")) {
+        // Setting textContent or insertText can collapse newlines in ChatGPT's contenteditable
+        // when a prompt arrives as an unsent draft. Insert explicit BR nodes so draft and ?q=
+        // prompts render the same two bullets in Chromium and Firefox.
+        try {
+          const fragment = document.createDocumentFragment();
+          String(text).split(/\r?\n/).forEach((line, index) => {
+            if (index) fragment.append(document.createElement("br"));
+            fragment.append(document.createTextNode(line));
+          });
+          composer.replaceChildren(fragment);
+          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+        } catch {
+          composer.textContent = text;
+          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+        }
+      } else {
+        let inserted = false;
+        try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe editor fallback */ }
+        if (!inserted || composerText(composer) !== text.trim()) {
+          composer.textContent = text;
+          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+        }
       }
     } else {
       const proto = Object.getPrototypeOf(composer);
