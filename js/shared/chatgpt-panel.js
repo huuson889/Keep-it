@@ -7,6 +7,22 @@
   const frame = document.getElementById("chatgpt-frame");
   const handledNavigationIds = new Set();
 
+  // Chrome versions without sidePanel.close() close the extension page itself as a fallback.
+  browser.runtime.onMessage.addListener(message => {
+    if (message?.type !== "KEEPIT_CLOSE_CHATGPT_PANEL" || !globalThis.chrome?.sidePanel) return;
+    return (async () => {
+      try {
+        const currentWindow = await browser.windows.getCurrent();
+        if (!Number.isInteger(message.windowId) || currentWindow?.id !== message.windowId) return { closed:false };
+        window.close();
+        return { closed:true };
+      } catch (error) {
+        console.warn("Keepit could not close this ChatGPT panel window", error);
+        return { closed:false };
+      }
+    })();
+  });
+
   function safeConversationUrl(value) {
     if (typeof value !== "string") return "";
     try {

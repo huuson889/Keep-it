@@ -15,7 +15,7 @@
 | [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | Normalize, index và search. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon resolver và cache local. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/page thumbnail và fallback. |
-| [`js/shared/chatgpt-panel.js`](../../js/shared/chatgpt-panel.js) | `openPanelPage`, navigation request listener | Restore/reopen validated URL và điều hướng panel; bảo vệ composer draft trước khi đổi chat. |
+| [`js/shared/chatgpt-panel.js`](../../js/shared/chatgpt-panel.js) | `openPanelPage`, navigation/close listeners | Restore/reopen validated URL, bảo vệ composer draft và fallback tự đóng Chromium panel. |
 
 ## 3. Luồng chính
 
@@ -24,7 +24,7 @@
 3. Site icon resolver chuẩn hóa về HTTP(S) origin, thử favicon site rồi fallback, chỉ cache sau khi ảnh tải thành công.
 4. Thumbnail helper chuẩn hóa source URL, thử ảnh chính rồi fallback; consumer quyết định DOM state và aria.
 5. Extension page gọi `chatgpt-panel.js`, xử lý navigation request URL đã validate hoặc restore last conversation; Chrome đặt iframe `src`, Firefox dùng `location.replace`.
-6. Với navigation mới, panel helper hỏi ChatGPT iframe có draft trước khi đổi; draft hiện có sẽ chặn điều hướng. Marker fragment nhận diện panel, link request ID gắn riêng cho request mới. Content script gửi kết quả route về Background để lưu exact source URL → conversation mapping.
+6. Với navigation mới, helper hỏi iframe về draft; draft hiện có chặn đổi chat. Marker fragment nhận diện panel/request. Với Chromium chưa có `sidePanel.close()`, helper chỉ đóng panel cùng window khi Background gửi close request; route mới được map theo exact source URL.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -34,6 +34,7 @@
 - `LHN_THUMBNAILS` là nơi duy nhất tạo URL thumbnail YouTube; giữ fallback/error order.
 - Chỉ mở HTTPS URL trên ChatGPT hosts đã allowlist; `/c/<id>` route được validate cho map, root URL dùng cho request mới hoặc empty-state mặc định. Không chấp nhận arbitrary path/host.
 - Navigation request có expiry và request ID; link prompt ID gắn trong fragment, không gửi trong HTTP request. Draft guard phải fail closed khi panel đã tải nhưng không thể xác nhận state.
+- Fallback close chỉ chạy trong trang Chromium side panel, đối chiếu `windowId` với `windows.getCurrent()` rồi mới gọi `window.close()`; không đóng panel ở cửa sổ khác.
 - Mapping exact source URL → conversation route lưu local. Request mới không mang page body/title; helper không đọc composer DOM trực tiếp mà dùng postMessage guard, kiểm tra ChatGPT-origin và iframe source; content script chỉ trả lời yêu cầu từ extension origin.
 - Giữ helper độc lập khỏi Dashboard/Content DOM và không thêm host permission mới cho shared utilities.
 
@@ -42,6 +43,6 @@
 - Static: `for f in js/shared/*.js; do node --check "$f" || exit; done`; kiểm tra `manifest.json`/HTML script order và `git diff --check`.
 - Site icons: mock load/fail, fallback, origin-only URL, cache TTL và invalidation.
 - Thumbnails: YouTube URL/ID, SVG fallback, load/error retry và consumer callbacks.
-- v3.5.61 panel VM đã chạy: root/link marker, navigation request cleanup và ChatGPT-origin/source draft guard — PASS. Browser QA Chrome/Firefox chưa chạy.
+- v3.5.61 panel VM: root/link marker, navigation cleanup và ChatGPT-origin/source draft guard — PASS. v3.5.63 fallback mock PASS: chỉ đóng Chromium panel nếu window ID trùng; browser QA Chrome/Firefox chưa chạy.
 - ChatGPT panel: thêm allowlist/route validation, navigation expiry và current-conversation restore tests khi thay helper.
 - SVG/font: icon fallback, render hợp lệ, font setting và storage update. Static/mock không thay thế kiểm thử trang thật.

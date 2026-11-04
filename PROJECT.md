@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.62; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- ChatGPT flow mới chỉ dùng URL: prompt `Hãy tóm tắt bài sau: [URL]` đi qua `?q=`; same exact URL reopens its saved conversation, different URL requests a fresh chat. Launcher does not manually type into an empty composer.
-- No page body/title/clipboard in this flow; composer drafts are protected, and only the exact request prompt may be submitted. Mapping and short-lived pending request metadata are local and contain the source URL.
-- v3.5.62 query-based flow passed focused VM and static checks; Chrome/Firefox v3.5.62 ZIPs were built and verified (122 files each). Real Chrome/Firefox browser QA has not run.
+- Version hiện tại: v3.5.63; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- ChatGPT flow link-only dùng `?q=`, mapping URL→conversation và bảo vệ draft; cùng URL mở lại hội thoại, URL khác tạo request mới.
+- Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
+- v3.5.63 toggle/legacy-close fallback passed focused VM and static checks; Chrome/Firefox ZIPs built and verified (122 files each). Real browser QA not run.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,7 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
-- ChatGPT browser side panel (v3.5.62): browser QA pending — first exact URL must open ChatGPT with only `?q=Hãy tóm tắt bài sau: [URL]`, submit once, and save URL→conversation; same exact URL must reopen without another prompt; a different URL must use a fresh chat. Verify marker survives fragment rewrite, whether native q auto-sends or content script sends the exact prefill once, no body/title/clipboard, draft protection, failed/login behavior, Chrome iframe and Firefox sidebar. Also verify Alt+X toggle, saved `/c/<id>` restore, frame/DNR, scrollbar restoration and Alt+Q/custom `sidebarShortcut` regression.
+- ChatGPT browser side panel (v3.5.63): browser QA pending — verify Alt+X/button opens and closes repeatedly, including after the background service worker restarts; verify first exact URL q-submit/mapping, same-URL reopen, different-URL fresh chat, native-send duplicate guard, draft protection, Chrome iframe and Firefox sidebar. Confirm route restore, frame/DNR, scrollbar restoration and Alt+Q/custom `sidebarShortcut` regression.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -148,11 +148,18 @@ Video source (`js/overlay/source/video.js`: `state.allCues`, `sourceLanguage`, v
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Sidebar trang giữ tab Highlight; tab ChatGPT và `Alt+X` toggle browser-native panel. Flow v3.5.62 chỉ dùng URL tab: Background tìm mapping exact URL → conversation; khi chưa có mapping, target ChatGPT mang prompt `Hãy tóm tắt bài sau: [URL]` trong query `?q=`; document_start marker giữ link request ID qua fragment rewrite. ChatGPT có thể native-submit; nếu exact prompt còn trong composer, content script chỉ bấm Send sau xác nhận draft/request và tránh native duplicate. Không tự gõ vào composer rỗng; draft khác được giữ. Route `/c/<id>` được lưu vào map. URL đã lưu chỉ điều hướng tới hội thoại cũ, không gửi lại. Page body/title/clipboard không được lấy trong flow này. `chatgpt-context.js` và clipboard autofill cũ còn trong repo nhưng không được gọi bởi launcher/Alt+X. Panel open state điều khiển scrollbar (Chromium 3px, Firefox thin), đóng thì khôi phục. Chrome DNR rule 9002 chỉ nhắm ChatGPT subframe do extension panel khởi tạo nhưng vẫn bỏ toàn bộ CSP của tài liệu nhúng; Firefox dùng ChatGPT top-level trong sidebar.
+Sidebar trang giữ tab Highlight; tab ChatGPT và `Alt+X` toggle browser-native panel. Chrome lưu window IDs có panel mở trong `storage.session` để Background khôi phục toggle sau worker restart; khi thiếu `sidePanel.close()`, trang side panel cùng window tự đóng. Firefox tiếp tục dùng `sidebarAction.toggle()`. Flow v3.5.63 chỉ dùng URL tab: Background tìm mapping exact URL → conversation; khi chưa có mapping, target ChatGPT mang prompt `Hãy tóm tắt bài sau: [URL]` trong query `?q=`; document_start marker giữ link request ID qua fragment rewrite. ChatGPT có thể native-submit; nếu exact prompt còn trong composer, content script chỉ bấm Send sau xác nhận draft/request và tránh native duplicate. Không tự gõ vào composer rỗng; draft khác được giữ. Route `/c/<id>` được lưu vào map. URL đã lưu chỉ điều hướng tới hội thoại cũ, không gửi lại. Page body/title/clipboard không được lấy trong flow này. `chatgpt-context.js` và clipboard autofill cũ còn trong repo nhưng không được gọi bởi launcher/Alt+X. Panel open state điều khiển scrollbar (Chromium 3px, Firefox thin), đóng thì khôi phục. Chrome DNR rule 9002 chỉ nhắm ChatGPT subframe do extension panel khởi tạo nhưng vẫn bỏ toàn bộ CSP của tài liệu nhúng; Firefox dùng ChatGPT top-level trong sidebar.
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.63 | Arena.ai Agent sửa:**
+
+- Sửa toggle ChatGPT Chromium: lưu open window IDs trong `storage.session` và khôi phục sau khi MV3 service worker restart; `sidePanel.open()` vẫn chạy trong user-gesture turn. Dùng `sidePanel.close()` khi có API; Chromium cũ nhận close request từ Background và chỉ panel page trong window đích gọi `window.close()`. Firefox tiếp tục dùng native toggle.
+- Không đổi q-flow, mapping URL→conversation, draft guard hoặc UI. Không thêm permission.
+- File: `manifest.json`, `js/background/background.js`, `js/shared/chatgpt-panel.js`, `docs/modules/background.md`, `docs/modules/shared.md`, `PRIVACY-POLICY.md`, `PROJECT.md`.
+- Kiểm tra: focused VM PASS — Chromium toggle open/close, state restore sau service-worker restart, cold-start giữ user gesture, legacy close fallback chỉ tác động window đích, Firefox native toggle; static PASS (`node --check` first-party JS, Python compile, manifest/version/references/permissions, docs structure, `git diff --check`); Chrome/Firefox ZIPs PASS (122 files each; Firefox manifest transform verified). Browser QA Chrome/Firefox chưa chạy.
 
 **2026-11-04 | v3.5.62 | Arena.ai Agent sửa:**
 

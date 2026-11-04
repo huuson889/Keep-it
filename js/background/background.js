@@ -47,6 +47,7 @@ function ensureChatGPTFrameRule(forceUpdate = false) {
   });
 }
 const CHATGPT_DRAFT_PENDING_KEY = "keepitChatGPTDraftPending";
+const CHATGPT_PANEL_STATE_KEY = "keepitChatGPTPanelOpenWindowIds";
 // Link-only flow (v3.5.61); legacy full-page draft keys/handlers remain for rollback.
 const CHATGPT_LINK_PENDING_KEY = "keepitChatGPTLinkPending";
 const CHATGPT_SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
@@ -55,6 +56,47 @@ let chatGPTPanelOpen = false;
 let chatGPTFocusedWindowId = null;
 const chatGPTOpenWindows = new Set();
 const chatGPTSourceTabs = new Map();
+let chatGPTPanelStateRevision = 0;
+let chatGPTPanelStateWrite = Promise.resolve();
+async function restoreChatGPTPanelState() {
+  try {
+    const sessionStorage = browser.storage.session;
+    if (!sessionStorage?.get) return new Set();
+    const stateAtStart = chatGPTPanelStateRevision;
+    const stored = await sessionStorage.get(CHATGPT_PANEL_STATE_KEY);
+    const ids = stored?.[CHATGPT_PANEL_STATE_KEY];
+    let openWindows = Array.isArray(ids) ? [...new Set(ids.filter(id => Number.isInteger(id) && id >= 0))] : [];
+    if (browser.windows?.getAll) {
+      const live = new Set((await browser.windows.getAll()).map(win => win.id));
+      openWindows = openWindows.filter(id => live.has(id));
+    }
+    if (chatGPTPanelStateRevision === stateAtStart) {
+      chatGPTOpenWindows.clear();
+      for (const id of openWindows) chatGPTOpenWindows.add(id);
+      chatGPTPanelOpen = chatGPTOpenWindows.size > 0;
+    } else {
+      openWindows = [...chatGPTOpenWindows];
+    }
+    return new Set(openWindows);
+  } catch (error) {
+    console.warn("Could not restore ChatGPT panel toggle state", error);
+    return new Set(chatGPTOpenWindows);
+  }
+}
+let chatGPTPanelStateRestoreSnapshot = null;
+const chatGPTPanelStateRestorePromise = restoreChatGPTPanelState().then(openWindows => {
+  chatGPTPanelStateRestoreSnapshot = openWindows;
+  return openWindows;
+});
+function persistChatGPTPanelState() {
+  const sessionStorage = browser.storage.session;
+  if (!sessionStorage?.set) return;
+  const openWindows = [...chatGPTOpenWindows];
+  chatGPTPanelStateWrite = chatGPTPanelStateWrite
+    .then(() => sessionStorage.set({ [CHATGPT_PANEL_STATE_KEY]:openWindows }))
+    .catch(error => console.warn("Could not save ChatGPT panel toggle state", error));
+  return chatGPTPanelStateWrite;
+}
 browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (!Number.isInteger(windowId)) return;
   chatGPTFocusedWindowId = windowId;
@@ -68,16 +110,19 @@ browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (typeof sidebar?.isOpen === "function") {
     try {
       const opened = await sidebar.isOpen({ windowId });
-      if (opened) trackChatGPTPanel(windowId, tabId, true);
-      else if (chatGPTOpenWindows.has(windowId)) trackChatGPTPanel(windowId, tabId, false);
+      if (opened) await trackChatGPTPanel(windowId, tabId, true);
+      else if (chatGPTOpenWindows.has(windowId)) await trackChatGPTPanel(windowId, tabId, false);
     } catch { /* Firefox may not report sidebar state for a closing window */ }
   }
 });
 browser.windows?.onFocusChanged?.addListener(windowId => { if (Number.isInteger(windowId) && windowId >= 0) chatGPTFocusedWindowId = windowId; });
 browser.windows?.onRemoved?.addListener(windowId => {
   chatGPTOpenWindows.delete(windowId);
+  chatGPTPanelStateRestoreSnapshot?.delete(windowId);
   chatGPTSourceTabs.delete(windowId);
   chatGPTPanelOpen = chatGPTOpenWindows.size > 0;
+  chatGPTPanelStateRevision++;
+  return persistChatGPTPanelState();
 });
 function chatGPTWindowId(sourceTab) {
   return Number.isInteger(sourceTab?.windowId) ? sourceTab.windowId : chatGPTFocusedWindowId ?? globalThis.chrome?.windows?.WINDOW_ID_CURRENT ?? -2;
@@ -91,6 +136,19 @@ async function setChatGPTPageScrollbar(tabId, open) {
   try { await browser.tabs.sendMessage(tabId, { type:"CHATGPT_PANEL_VISIBILITY", open:!!open }); }
   catch { /* unsupported/restricted tabs have no Keepit content script */ }
 }
+async function closeChromeChatGPTPanel(windowId, chromePanel) {
+  if (typeof chromePanel?.close === "function") {
+    await chromePanel.close({ windowId });
+    return true;
+  }
+  try {
+    const response = await browser.runtime.sendMessage({ type:"KEEPIT_CLOSE_CHATGPT_PANEL", windowId });
+    return response?.closed === true;
+  } catch (error) {
+    console.warn("Could not close the legacy Chromium ChatGPT side panel", error);
+    return false;
+  }
+}
 function trackChatGPTPanel(windowId, tabId, open) {
   const targetTabId = Number.isInteger(tabId) ? tabId : (Number.isInteger(windowId) ? chatGPTSourceTabs.get(windowId) : null);
   if (Number.isInteger(windowId) && windowId >= 0) {
@@ -99,7 +157,16 @@ function trackChatGPTPanel(windowId, tabId, open) {
     else if (!open) chatGPTSourceTabs.delete(windowId);
   }
   chatGPTPanelOpen = open ? true : chatGPTOpenWindows.size > 0;
+  if (chatGPTPanelStateRestoreSnapshot) {
+    if (Number.isInteger(windowId) && windowId >= 0) {
+      if (open) chatGPTPanelStateRestoreSnapshot.add(windowId);
+      else chatGPTPanelStateRestoreSnapshot.delete(windowId);
+    }
+  }
+  chatGPTPanelStateRevision++;
+  const persisted = persistChatGPTPanelState();
   void setChatGPTPageScrollbar(targetTabId, open);
+  return persisted;
 }
 globalThis.chrome?.sidePanel?.onOpened?.addListener(async info => {
   const windowId = info?.windowId;
@@ -107,12 +174,12 @@ globalThis.chrome?.sidePanel?.onOpened?.addListener(async info => {
   if (!Number.isInteger(tabId) && Number.isInteger(windowId)) {
     try { tabId = (await browser.tabs.query({ active:true, windowId }))?.[0]?.id; } catch {}
   }
-  trackChatGPTPanel(windowId, tabId, true);
+  await trackChatGPTPanel(windowId, tabId, true);
 });
-globalThis.chrome?.sidePanel?.onClosed?.addListener(info => {
+globalThis.chrome?.sidePanel?.onClosed?.addListener(async info => {
   const windowId = info?.windowId;
   const tabId = info?.tabId ?? (Number.isInteger(windowId) ? chatGPTSourceTabs.get(windowId) : null);
-  trackChatGPTPanel(windowId, tabId, false);
+  await trackChatGPTPanel(windowId, tabId, false);
 });
 async function clearExpiredChatGPTDraft(expectedRequestId = "") {
   const stored = await browser.storage.local.get(CHATGPT_DRAFT_PENDING_KEY);
@@ -152,14 +219,29 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
   const chromePanel = globalThis.chrome?.sidePanel;
   if (typeof chromePanel?.open === "function") {
     try {
-      if (typeof chromePanel.close === "function" && chatGPTPanelIsOpen(windowId)) {
-        await chromePanel.close({ windowId });
-        trackChatGPTPanel(windowId, sourceTab?.id, false);
+      const alreadyOpen = chatGPTPanelIsOpen(windowId);
+      const stateRevisionAtToggle = chatGPTPanelStateRevision;
+      if (alreadyOpen) {
+        const closed = await closeChromeChatGPTPanel(windowId, chromePanel);
+        if (!closed) return { ok:false, error:"panel-close-failed" };
+        await trackChatGPTPanel(windowId, sourceTab?.id, false);
         return { ok:true, browser:"chromium", opened:false, toggled:true };
       }
+      // Keep open() in the original user-gesture turn. If the service worker just woke,
+      // the session snapshot below tells us whether this call should instead finish as close.
       const openPromise = chromePanel.open({ windowId });
       await openPromise;
-      trackChatGPTPanel(windowId, sourceTab?.id, true);
+      if (!alreadyOpen) {
+        const restoredOpenWindows = await chatGPTPanelStateRestorePromise;
+        if (chatGPTPanelStateRevision === stateRevisionAtToggle && restoredOpenWindows.has(windowId)) {
+          const closed = await closeChromeChatGPTPanel(windowId, chromePanel);
+          if (closed) {
+            await trackChatGPTPanel(windowId, sourceTab?.id, false);
+            return { ok:true, browser:"chromium", opened:false, toggled:true };
+          }
+        }
+      }
+      await trackChatGPTPanel(windowId, sourceTab?.id, true);
       return { ok:true, browser:"chromium", opened:true, toggled:true };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
@@ -177,7 +259,7 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
         try { opened = await firefoxSidebar.isOpen(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}); }
         catch (error) { console.warn("Could not read Firefox sidebar state after toggle", error); }
       }
-      trackChatGPTPanel(windowId, sourceTab?.id, opened);
+      await trackChatGPTPanel(windowId, sourceTab?.id, opened);
       return { ok:true, browser:"firefox", opened, toggled:true };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
@@ -251,7 +333,7 @@ async function openChatGPTLinkPanel({ sender, tab } = {}) {
   // Invoke the existing toggle before any async lookup, preserving browser gesture requirements.
   const panel = await openChatGPTSidePanel({ sender, tab:sourceTab });
   if (!panel?.ok || !panel.opened) return panel;
-  if (Number.isInteger(sourceTab?.windowId)) trackChatGPTPanel(sourceTab.windowId, sourceTab.id, true);
+  if (Number.isInteger(sourceTab?.windowId)) await trackChatGPTPanel(sourceTab.windowId, sourceTab.id, true);
   const flow = await queueChatGPTLinkPanelFlow(sourceTab);
   return { ...panel, ...flow };
 }
@@ -362,7 +444,7 @@ function openChatGPTFromCommand() {
       return;
     }
     if (tab?.id) {
-      trackChatGPTPanel(tab.windowId, tab.id, true);
+      await trackChatGPTPanel(tab.windowId, tab.id, true);
       const queued = await queueChatGPTLinkPanelFlow(tab);
       if (!queued.ok) {
         try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_LINK_PANEL_FAILED" }); } catch {}
@@ -495,7 +577,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
       const windowId = sender?.tab?.windowId ?? chatGPTFocusedWindowId;
       if (await browser.sidebarAction.isOpen(Number.isInteger(windowId) ? { windowId } : {})) {
         const active = Number.isInteger(sender?.tab?.id) ? sender.tab : (await browser.tabs.query({ active:true, currentWindow:true }))?.[0];
-        trackChatGPTPanel(windowId, active?.id, true);
+        await trackChatGPTPanel(windowId, active?.id, true);
         return { ok:true, open:true };
       }
     } catch {}
