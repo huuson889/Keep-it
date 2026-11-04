@@ -702,3 +702,16 @@ html.lhn-video-overlay-open body > *:not(#keepit-host){ visibility:hidden !impor
   height:var(--lhn-scrollbar-width,3px)!important;
 }
 [id^="lhn-"] ::-webkit-scrollbar-thumb, [id^="lhn-"]::-webkit-scrollbar-thumb { border-radius:999px; background:var(--lhn-sb-scrollbar,#cbd5e1); }
+
+/* Page sidebar: Highlight and empty ChatGPT tabs sit directly above the footer. */
+#lhn-sidebar .lhn-sidebar-chatgpt-panel{ flex:1 1 auto !important; min-height:0 !important; background:var(--lhn-sb-list) !important; }
+#lhn-sidebar .lhn-sidebar-chatgpt-panel[hidden]{ display:none !important; }
+#lhn-sidebar[data-active-tab="chatgpt"] .lhn-sidebar-search-wrap,
+#lhn-sidebar[data-active-tab="chatgpt"] .lhn-sidebar-filters,
+#lhn-sidebar[data-active-tab="chatgpt"] .lhn-sidebar-list,
+#lhn-sidebar[data-active-tab="highlights"] .lhn-sidebar-chatgpt-panel{ display:none !important; }
+#lhn-sidebar .lhn-sidebar-tabs{ display:flex !important; flex:0 0 auto !important; gap:6px !important; padding:8px !important; background:var(--lhn-sb-footer) !important; }
+#lhn-sidebar .lhn-sidebar-tab{ display:inline-flex !important; flex:1 1 0% !important; align-items:center !important; justify-content:center !important; min-width:0 !important; min-height:32px !important; padding:6px 8px !important; border:1px solid var(--lhn-sb-border) !important; border-radius:8px !important; background:var(--lhn-sb-panel) !important; color:var(--lhn-sb-text) !important; font:600 12px/1.25 var(--lhn-app-font-family) !important; cursor:pointer !important; }
+#lhn-sidebar .lhn-sidebar-tab:hover{ border-color:var(--lhn-sb-active-border) !important; background:var(--lhn-sb-active) !important; color:var(--lhn-sb-brand) !important; }
+#lhn-sidebar .lhn-sidebar-tab.is-active{ border-color:var(--lhn-sb-active-border) !important; background:var(--lhn-sb-active) !important; color:var(--lhn-sb-brand) !important; }
+#lhn-sidebar .lhn-sidebar-tab:focus-visible{ outline:2px solid var(--lhn-sb-brand) !important; outline-offset:2px !important; }

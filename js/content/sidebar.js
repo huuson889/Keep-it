@@ -43,7 +43,7 @@
       highlightMatches(card, query);
       return card;
     }
-    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, colors, filter, searchQuery, t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onStopPropagation }) {
+    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, colors, filter, searchQuery, activeTab = 'highlights', t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onSelectTab, onStopPropagation }) {
       const top = document.createElement('div'); top.className = 'lhn-sidebar-top';
       const brand = document.createElement('div'); brand.className = 'lhn-sidebar-brand';
       const logo = document.createElement('img'); logo.src = browser.runtime.getURL('assets/icons/icon.svg'); logo.alt = '';
@@ -92,12 +92,36 @@
       if (websiteDisabled) { const message = document.createElement('div'); message.className = 'lhn-site-disabled-message'; message.textContent = t('websiteDisabledMessage'); headerCard.replaceChildren(brandRow, message); }
       top.append(headerCard);
       const list = document.createElement('div'); list.className = 'lhn-sidebar-list'; list.id = 'lhn-sidebar-list';
+      const chatGPTPanel = document.createElement('div'); chatGPTPanel.className = 'lhn-sidebar-chatgpt-panel'; chatGPTPanel.id = 'lhn-sidebar-chatgpt-panel'; chatGPTPanel.setAttribute('role', 'tabpanel'); chatGPTPanel.setAttribute('aria-labelledby', 'lhn-sidebar-tab-chatgpt'); chatGPTPanel.hidden = true;
+      const tabs = document.createElement('div'); tabs.className = 'lhn-sidebar-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', t('sidebarTabsLabel'));
       const footer = document.createElement('div'); footer.className = 'lhn-sidebar-footer';
       const footerToggle = document.createElement('button'); footerToggle.type = 'button'; footerToggle.className = 'lhn-sidebar-footer-toggle'; footerToggle.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); onToggleWebsiteDisabled(); });
       const footerVersion = document.createElement('span'); footerVersion.className = 'lhn-sidebar-footer-version'; footerVersion.textContent = `v${version}`; footer.append(footerToggle, footerVersion);
-      const sidebar = document.createElement('aside'); sidebar.id = 'lhn-sidebar'; sidebar.style.width = width + 'px'; sidebar.append(top, list, footer);
-      sidebar.addEventListener('mousedown', onStopPropagation); sidebar.addEventListener('click', onStopPropagation);
-      return { sidebar, headerActions };
+      let sidebarElement = null;
+      const setActiveTab = (tab, notify = true) => {
+        const activeTab = tab === 'chatgpt' ? 'chatgpt' : 'highlights';
+        sidebarElement?.setAttribute('data-active-tab', activeTab);
+        const showChatGPT = activeTab === 'chatgpt';
+        list.hidden = showChatGPT; chatGPTPanel.hidden = !showChatGPT;
+        searchWrap.hidden = showChatGPT; filters.hidden = showChatGPT;
+        highlightTab.setAttribute('aria-selected', String(!showChatGPT)); highlightTab.tabIndex = showChatGPT ? -1 : 0;
+        highlightTab.classList.toggle('is-active', !showChatGPT);
+        chatGPTTab.setAttribute('aria-selected', String(showChatGPT)); chatGPTTab.tabIndex = showChatGPT ? 0 : -1;
+        chatGPTTab.classList.toggle('is-active', showChatGPT);
+        if (notify) onSelectTab?.(activeTab);
+      };
+      const createTab = (id, labelKey, panelId, tabName) => {
+        const button = createButton(t(labelKey), 'lhn-sidebar-tab', () => setActiveTab(tabName));
+        button.id = id; button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', panelId);
+        return button;
+      };
+      const highlightTab = createTab('lhn-sidebar-tab-highlights', 'sidebarTabHighlights', 'lhn-sidebar-list', 'highlights');
+      const chatGPTTab = createTab('lhn-sidebar-tab-chatgpt', 'sidebarTabChatGPT', 'lhn-sidebar-chatgpt-panel', 'chatgpt');
+      tabs.append(highlightTab, chatGPTTab);
+      sidebarElement = document.createElement('aside'); sidebarElement.id = 'lhn-sidebar'; sidebarElement.style.width = width + 'px'; sidebarElement.append(top, list, chatGPTPanel, tabs, footer);
+      sidebarElement.addEventListener('mousedown', onStopPropagation); sidebarElement.addEventListener('click', onStopPropagation);
+      setActiveTab(activeTab, false);
+      return { sidebar:sidebarElement, headerActions, setActiveTab };
     }
     return Object.freeze({ createButton, renderContextSentence, searchFields, highlightMatches, createHighlightCard, createShell });
   }

@@ -24,7 +24,7 @@
   let translateIcon = null, translationPopup = null, translationRequestId = 0, dictionaryPopup = null, dictionaryRequestId = 0;
   let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
-  let sidebar = null, sidebarOpen = false, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
+  let sidebar = null, sidebarOpen = false, sidebarActiveTab = "highlights", sidebarSetActiveTab = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
@@ -1128,10 +1128,22 @@
     sidebarEdgeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
   }
   function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
+  function toggleSidebarToTab(tab) {
+    const nextTab = tab === "chatgpt" ? "chatgpt" : "highlights";
+    if (sidebarOpen && sidebarActiveTab === nextTab) { closeSidebar(); return; }
+    sidebarActiveTab = nextTab;
+    if (sidebarOpen) {
+      if (sidebarSetActiveTab) sidebarSetActiveTab(nextTab);
+      else openSidebar(true);
+      return;
+    }
+    openSidebar();
+  }
   function closeSidebar() {
     clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
     sidebarOpen = false;
     if (sidebar) { const old = sidebar; sidebar = null; animateRemove(old); }
+    sidebarSetActiveTab = null;
     LHN_PAGE_LAYOUT.restorePageWidth();
     syncSidebarEdgeToggle();
   }
@@ -1146,7 +1158,8 @@
     LHN_PAGE_LAYOUT.applyPageShrink(width);
     const shell = SIDEBAR.createShell({
       width, pageTitle:pageTitle(), pageUrl:pageUrl(), websiteDisabled, version:browser.runtime.getManifest().version, colors:COLORS,
-      filter:sidebarFilter, searchQuery:sidebarSearchQuery, t, config:CONFIG,
+      filter:sidebarFilter, searchQuery:sidebarSearchQuery, activeTab:sidebarActiveTab, t, config:CONFIG,
+      onSelectTab:tab => { sidebarActiveTab = tab; },
       onToggleSidebarSetting:toggleSidebarSetting, onToggleWebsiteDisabled:toggleWebsiteDisabled,
       onOpenDashboard:() => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)),
       onToggleTheme:toggleSidebarTheme,
@@ -1154,7 +1167,7 @@
       onFilter:(value, filters) => { sidebarFilter = value; filters.querySelectorAll(".lhn-side-filter").forEach(button => button.classList.toggle("is-active", button.dataset.filter === sidebarFilter)); renderSidebar(true); },
       onStopPropagation:event => event.stopPropagation()
     });
-    sidebar = shell.sidebar; sidebarHeaderActions = shell.headerActions;
+    sidebar = shell.sidebar; sidebarHeaderActions = shell.headerActions; sidebarSetActiveTab = shell.setActiveTab;
     syncSidebarSettingsButtons(); syncSidebarTheme();    // Keep the fixed sidebar outside the narrowed body so body overflow rules on
     // sites such as GitHub cannot clip the extension UI.
     if (previousSidebar) {
@@ -1454,9 +1467,14 @@
     const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
     if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
+    if (pressed === "alt+x") {
+      e.preventDefault(); e.stopPropagation();
+      if (!e.repeat) toggleSidebarToTab("chatgpt");
+      return;
+    }
     const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
     if (sidebarShortcut && pressed === sidebarShortcut) {
-      e.preventDefault(); e.stopPropagation(); toggleSidebar(); return;
+      e.preventDefault(); e.stopPropagation(); toggleSidebarToTab("highlights"); return;
     }
     const notePopupShortcut = String(settings.shortcut ?? "Alt+S").toLowerCase();
     if (!websiteSettingsReady) {

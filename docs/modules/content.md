@@ -25,6 +25,7 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 3. Khi lưu/sửa/xóa annotation, controller tạo record bằng `LHN_NOTE_COMPOSER` rồi gửi message `ADD`, `UPDATE` hoặc `DELETE` qua `LHN_MESSAGING` tới Background.
 4. Khi trang tải hoặc thay đổi DOM, annotation lấy từ Background; `LHN_ANNOTATION_RESTORE` tìm range và `LHNWebHighlighter` dựng mark, có observer/retry cho trang động.
 5. Shortcut YouTube được phát thành custom event; module video xử lý Dual Sub/Dictation. Các action Reader và Dashboard cũng được chuyển qua event/message tương ứng.
+6. Sidebar hiển thị tab Highlight và ChatGPT; Alt+Q (hoặc `sidebarShortcut`) chọn/toggle Highlight, Alt+X chọn/toggle panel ChatGPT trống.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -35,10 +36,12 @@ Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục
 - Khi thay đổi DOM trên trang, loại trừ vùng UI của extension khỏi khôi phục/selection để tránh tự bắt nội dung Keepit.
 - Selection video chỉ cho transcript chính `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở popup/từ điển; các vùng dịch/control/UI khác bị chặn. Hai tùy chọn popup/đọc video dùng `lhnYouTubeSettings`; trang thường giữ `lhnSettings`.
 - Tên custom event nối Content với Video/Reader là API nội bộ; tìm consumer trước khi đổi.
+- Sidebar tabs là UI-only: Highlight giữ list/search/filter hiện tại; ChatGPT là panel trống và ẩn các control/danh sách Highlight. Tab hiện hành giữ trong phiên sidebar; Alt+Q mặc định theo `sidebarShortcut`, Alt+X dành cho ChatGPT. Nhãn tab phải dịch qua `LHN_LANGUAGES`.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/content/*.js; do node --check "$f" || exit; done`; xác nhận file trong manifest tồn tại và `git diff --check`.
+- Sidebar tabs: `node --check` cho `content.js`, `sidebar.js`, `languages.js`; source/VM checks cho thứ tự tab, panel ChatGPT trống, chuyển tab, Alt+Q/Alt+X routing và nhãn EN/VI/KO.
 - Annotation: thử lưu, sửa, xóa, reload trang, khôi phục highlight, điều hướng trang động và mở record từ Sidebar/Dashboard.
-- Selection/UI: thử popup dịch/từ điển, auto note, website-disable và shortcut; lặp lại trên trang có input, iframe hoặc DOM thay đổi để phát hiện listener xung đột.
+- Selection/UI: thử popup dịch/từ điển, auto note, website-disable và shortcut; sidebar Alt+Q/Alt+X mở đúng tab, ChatGPT trống, tabs bấm được và footer giữ nguyên. Lặp lại trên trang có input, iframe hoặc DOM thay đổi để phát hiện listener xung đột.
 - Browser verification phải ghi rõ trình duyệt và hành vi đã chạy; static check không thay thế kiểm thử trang thật.
