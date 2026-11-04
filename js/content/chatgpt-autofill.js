@@ -594,7 +594,13 @@
     if (currentHref !== lastObservedHref) { lastObservedHref = currentHref; void rememberCurrentConversation(); void processPendingLink(); }
   });
   routeObserver.observe(document.documentElement, { childList:true, subtree:true });
-  const rememberAfterNavigation = () => { lastObservedHref = location.href; void rememberCurrentConversation(); };
+  const rememberAfterNavigation = () => {
+    lastObservedHref = location.href;
+    void rememberCurrentConversation();
+    // A repeat Ask AI uses the same /c/<id> route with a new request marker in the hash.
+    // Re-run the pending sender on that hash/popstate event instead of waiting for a poll.
+    void processPendingLink();
+  };
   document.addEventListener("visibilitychange", pollPanel);
   window.addEventListener("popstate", rememberAfterNavigation);
   window.addEventListener("hashchange", rememberAfterNavigation);

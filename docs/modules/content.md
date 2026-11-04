@@ -40,7 +40,7 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 
 ## 5. Kiểm tra và xác minh
 
-- Focused VM PASS: exact newline `?q=` prompts (summary and Ask AI); first-use/new mapping, same-URL Alt+X reopen with no prompt, same-URL selected-text follow-up; exact mapped-route guard; follow-up sent once; existing composer draft preserved; wrong route untouched; q native-send avoids duplicate; Ask AI keeps/opens Chrome/Firefox panel while Alt+X retains toggle.
-- Static/build PASS: first-party JS syntax, manifest/version/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each, v3.5.67 manifest and prompt/action checks, Firefox Chrome-only keys removed.
+- Focused VM PASS: exact newline `?q=` prompts (summary and Ask AI); first-use/new mapping, same-URL Alt+X reopen with no prompt, same-URL selected-text follow-up; document-start marker captures a new request ID on hash-only navigation and hash/popstate retries pending processing; exact mapped-route guard; follow-up sent once; existing composer draft preserved; wrong route untouched; q native-send avoids duplicate; Ask AI keeps/opens Chrome/Firefox panel while Alt+X retains toggle.
+- Static/build PASS: first-party JS syntax, manifest/version/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each, v3.5.68 manifest and prompt/action checks, Firefox Chrome-only keys removed.
 - Browser QA Chrome/Firefox chưa chạy: xác nhận ChatGPT thật xử lý q/newlines, composer/send và follow-up vào hội thoại hiện có, login/frame, mapping, draft guard, panel toggle/open và Alt+Q regression.
 - Cũng cần xác nhận scrollbar panel, Alt+Q, sidebar tabs, annotation và website-disabled trên trình duyệt thật; static/VM không thay thế browser QA.

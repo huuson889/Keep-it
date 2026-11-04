@@ -43,5 +43,5 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 - Static: `for f in js/background/*.js; do node --check "$f" || exit; done`; parse manifest và chạy `git diff --check`.
 - Message changes: kiểm tra sender, receiver, payload và metadata; chỉ selected-text action được chuyển prompt từ selection rõ ràng; không lấy page body/title. Pending request prompt/snippet hết hạn sau thời gian ngắn.
 - Focused VM PASS: first-use q prompts for summary/selected text, URL mapping, same-URL Alt+X reopen without prompt, selected-text follow-up only in mapped conversation, empty-composer guard, exact-once send, wrong-route rejection, native-q duplicate guard, Chrome/Firefox Ask AI open-or-keep-open, Alt+X toggle.
-- Static/build PASS: first-party JS syntax, manifest v3.5.67/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each, prompt/action smoke PASS, Firefox Chrome-only manifest keys removed.
+- Static/build PASS: first-party JS syntax, manifest v3.5.68/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each, prompt/action smoke PASS, Firefox Chrome-only manifest keys removed.
 - Browser QA Chrome/Firefox chưa chạy để xác nhận panel thật, follow-up gửi vào cùng chat, toggle sau worker restart, q/mapping, draft guard, scrollbar và Firefox install không tự mở.

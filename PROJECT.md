@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.67; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- ChatGPT flow v3.5.67: Alt+X lần đầu gửi URL + prompt tóm tắt qua `?q=`, cùng URL lần sau chỉ mở hội thoại; icon Hỏi AI gửi selected text, lần đầu kèm URL, lần sau hỏi trong hội thoại đã map. Exact URL mapping/draft guard giữ nguyên; focused VM checks đạt, browser QA pending.
+- Version hiện tại: v3.5.68; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- ChatGPT flow v3.5.68: Alt+X lần đầu gửi URL + prompt tóm tắt qua `?q=`, cùng URL lần sau chỉ mở hội thoại; icon Hỏi AI gửi selected text, lần đầu kèm URL, lần sau hỏi trong hội thoại đã map. Hash/popstate đổi request marker sẽ kích hoạt gửi follow-up; focused VM checks đạt, browser QA pending.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
 - Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
@@ -19,7 +19,7 @@
 
 ### Kiểm thử trình duyệt
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
-- ChatGPT prompt flow (v3.5.67; based on v3.5.63 panel): browser QA pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends only the question into the mapped conversation once. Confirm URL/query text/newlines, selected snippet only (no page body/title), exact route + empty-composer guard, existing drafts preserved, q native-send without duplicate, same panel behavior in Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
+- ChatGPT prompt flow (v3.5.68; based on v3.5.63 panel): browser QA pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends only the question into the mapped conversation once, including after a hash-only same-route navigation. Confirm URL/query text/newlines, selected snippet only (no page body/title), hashchange/popstate request pickup, exact route + empty-composer guard, existing drafts preserved, q native-send without duplicate, same panel behavior in Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -154,6 +154,13 @@ Sidebar trang giữ tab Highlight; Alt+X vẫn toggle browser-native panel; icon
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.68 | Arena.ai Agent sửa:**
+
+- Fix Hỏi AI không được kích hoạt lại ở lần hỏi thứ hai trên cùng hội thoại: `document_start` marker bắt request ID mới trên `hashchange` trước khi ChatGPT xóa hash; `hashchange`/`popstate` chạy lại bộ xử lý pending dù route `/c/<id>` giữ nguyên. Đoạn đang chọn vẫn lấy từ selection range hiện tại; không đọc page body/title.
+- File: `manifest.json`, `js/content/chatgpt-link-marker.js`, `js/content/chatgpt-autofill.js`, `docs/modules/content.md`, `PRIVACY-POLICY.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` toàn bộ JS, marker VM (hash-only request ID/q capture), follow-up VM + draft/route guards, `git diff --check` PASS. Chrome/Firefox ZIP smoke PASS (122 files each; v3.5.68; repeat-question hash wiring and manifest invariants). Browser QA pending.
+- Gói: `Keepit - Optimize Test-v3.5.68.zip`, `Keepit - Optimize Test-v3.5.68-Firefox.zip`.
 
 **2026-11-04 | v3.5.67 | Arena.ai Agent sửa:**
 
