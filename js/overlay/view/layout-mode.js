@@ -65,6 +65,22 @@ function setVideoDisplayModeMenuOpen(open) {
   const trigger = $('te-video-mode-trigger');
   if (!menu || !trigger) return;
   menu.hidden = !open;
+  if (open) {
+    const selector = trigger.parentElement;
+    const controlBar = overlayEl()?.querySelector('.te-control-bar');
+    if (selector && controlBar) {
+      const barRect = controlBar.getBoundingClientRect();
+      const selectorRect = selector.getBoundingClientRect();
+      const menuWidth = menu.getBoundingClientRect().width;
+      menu.style.left = `${barRect.right - selectorRect.left - menuWidth - 4}px`;
+      menu.style.right = 'auto';
+      menu.style.transform = 'none';
+    }
+  } else {
+    menu.style.removeProperty('left');
+    menu.style.removeProperty('right');
+    menu.style.removeProperty('transform');
+  }
   trigger.setAttribute('aria-expanded', String(open));
 }
 
@@ -263,7 +279,7 @@ function updateTheaterSubtitleLayout(requestedCenterY = null, root = overlayEl()
   const frameRect = frame.getBoundingClientRect();
   if (!(frameRect.width > 0 && frameRect.height > 0)) return null;
   root.style.setProperty('--te-theater-frame-width', `${frameRect.width}px`);
-  root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.9)}px`);
+  root.style.setProperty('--te-theater-subtitle-max-width', `${Math.round(frameRect.width * 0.98)}px`);
 
   const controlsRect = theaterSubtitleControlsVisible(root, controls) ? controls.getBoundingClientRect() : null;
   let panelRect = panel.getBoundingClientRect();

@@ -1315,13 +1315,17 @@ function bindUI() {
     if (!mainSubtitleText.contains(event.relatedTarget)) scheduleHoverPauseSync();
   });
 
-  // Định vị menu bên trái nút cài đặt (giống bản UI gốc)
+  // Định vị popup Cài đặt theo mép phải control bar; các submenu giữ anchor cũ.
   const positionModal = (modalEl) => {
     const box = modalEl.querySelector('.te-modal-box');
     if (!box) return;
     const btnRect = settingsBtn.getBoundingClientRect();
-    const modalWidth = 360;
-    box.style.left = Math.max(10, btnRect.left - modalWidth - 12 + 38) + 'px';
+    const controlBarRect = root.querySelector('.te-control-bar')?.getBoundingClientRect();
+    const modalWidth = box.getBoundingClientRect().width || 360;
+    const left = modalEl === modalMain && controlBarRect
+      ? controlBarRect.right - modalWidth - 4
+      : Math.max(10, btnRect.left - modalWidth - 12 + 38);
+    box.style.left = `${left}px`;
     box.style.bottom = (window.innerHeight - btnRect.top + 12) + 'px';
     box.style.right = 'auto';
   };

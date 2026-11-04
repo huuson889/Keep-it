@@ -267,7 +267,7 @@ const OVERLAY_CSS = `
     .te-video-mode-menu {
       position: absolute; left: 50%; right: auto; bottom: calc(100% + 10px); z-index: 1000003;
       transform: translateX(-50%);
-      display: grid; gap: 0; width: min(214px, calc(100vw - 24px)); padding: 6px;
+      display: grid; gap: 0; width: min(234px, calc(100vw - 24px)); padding: 6px;
       border: 1px solid #27272a; border-radius: 12px; background: #18181b;
       color: #f3f4f6; box-shadow: 0 20px 35px rgba(0,0,0,.7);
     }
@@ -413,6 +413,7 @@ const OVERLAY_CSS = `
       scrollbar-width: auto;
       scrollbar-color: auto;
     }
+    #keepit-exact-overlay #te-modal-main .te-modal-body { max-height: 530px; }
     #keepit-exact-overlay #te-modal-main #te-reading-width-hint { display: none !important; }
     #keepit-exact-overlay::-webkit-scrollbar,
     #keepit-exact-overlay *::-webkit-scrollbar { width: var(--lhn-scrollbar-width); height: var(--lhn-scrollbar-width); }
@@ -1198,7 +1199,7 @@ const OVERLAY_CSS = `
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-container {
       position: fixed; left: 50%; top: var(--te-theater-subtitle-top, 82vh); z-index: 3;
       display: flex; flex: none; width: fit-content;
-      max-width: var(--te-theater-subtitle-max-width, 90vw); min-width: 0; min-height: 0;
+      max-width: var(--te-theater-subtitle-max-width, 98vw); min-width: 0; min-height: 0;
       height: auto; padding: 12px 18px; gap: 2px; overflow: visible;
       transform: translate(-50%, -50%);
       border-radius: 16px; background-color: var(--te-theater-subtitle-background, rgba(0,0,0,.4));
@@ -1210,6 +1211,8 @@ const OVERLAY_CSS = `
       overflow: auto; overscroll-behavior: contain;
     }
     #keepit-exact-overlay.theme-light.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en { color: #ffff00; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en { font-size: 26px; }
+    #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-vi { font-size: 20px; }
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-en,
     #keepit-exact-overlay.te-sidebar-hidden.size-l:not(.te-reading-mode):not(.te-study-active) .te-sub-vi {
       width: max-content; max-width: 100%; overflow-wrap: anywhere;
