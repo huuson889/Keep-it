@@ -23,7 +23,7 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 2. UI gửi message qua `LHN_MESSAGING`; listener phân nhánh theo `message.type`.
 3. Annotation đi qua `LHN_ANNOTATIONS`/IndexedDB; thay đổi được phát lại để đồng bộ context.
 4. Translation, TTS và Web Study cache chuyển tới `LHN_TRANSLATE`, `LHN_CACHE` hoặc usage service; Background trả kết quả cho requester.
-5. `OPEN_CHATGPT_LINK_PANEL` toggle panel rồi lấy URL tab nguồn. Chrome giữ window IDs đang mở trong `storage.session` để khôi phục sau service-worker restart; đóng bằng `sidePanel.close()` hoặc yêu cầu chính trang panel `window.close()` trên Chromium cũ. Firefox dùng `sidebarAction.toggle()`. Khi panel mở, lần đầu gửi q URL-only và lưu mapping exact source URL → conversation; URL đã map chỉ mở lại route. `Alt+X` khởi chạy cùng flow, không đọc body/clipboard.
+5. `OPEN_CHATGPT_LINK_PANEL` nhận intent summary hoặc selected-text. Alt+X giữ toggle; icon Hỏi AI mở/giữ panel mở để gửi câu hỏi. Chrome giữ window IDs trong `storage.session` và dùng `sidePanel.open()` trong user-gesture turn; Firefox mở sidebar (toggle fallback). URL mới gửi bullet-formatted URL + summary/question qua `?q=` rồi lưu exact source URL → conversation. URL đã map: Alt+X chỉ reopen; Hỏi AI cấp request ID để content script gửi câu hỏi selected-text vào đúng conversation sau draft guard, không lặp URL.
 6. Các message khác mở Dashboard/highlight hoặc proxy YouTube request theo allowlist.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -33,14 +33,15 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 - Annotation do Background/IndexedDB sở hữu; không tạo nguồn lưu annotation thứ hai trong UI.
 - Giữ allowlist host của `YOUTUBE_FETCH_TEXT`/`YOUTUBE_API`; không biến proxy thành fetch tùy ý.
 - Cache và usage state ở local; giữ validation, dedupe và error paths của TTS/translation.
-- Luồng link-only chỉ chuyển/lưu URL nguồn và metadata request, không đọc/chuyển/lưu page body, title hay prompt draft. Mapping `keepitChatGPTConversationBySourceUrl` là exact source URL → validated HTTPS `/c/<id>`; pending expires, và mapping không được dùng để gửi prompt lại.
-- Chrome toggle state key `keepitChatGPTPanelOpenWindowIds` chỉ chứa window IDs trong `storage.session`; `onOpened`/`onClosed` cập nhật state sau worker restart. Giữ `sidePanel.open()` trong user-gesture turn; dùng `sidePanel.close()` khi có, nếu không thì chỉ panel thuộc window đích tự `window.close()`. Firefox dùng native `sidebarAction.toggle()`.
+- Luồng ChatGPT không trích xuất/gửi page body hoặc title, không dùng clipboard. Alt+X chỉ gửi summary + exact URL trong lần đầu; icon Hỏi AI chỉ lấy selected text khi người dùng bấm và gửi câu hỏi + URL trong lần đầu, rồi câu hỏi selected-text vào mapping lần sau. Metadata pending có hạn ngắn và có thể giữ prompt/selected snippet; composer draft chỉ được kiểm tra để bảo vệ, không bị thay/gửi.
+- Mapping `keepitChatGPTConversationBySourceUrl` là exact source URL → validated HTTPS `/c/<id>`; Alt+X mapping không tự gửi prompt lại. Follow-up Hỏi AI chỉ được gửi khi route khớp mapping và composer trống.
+- Chrome state key `keepitChatGPTPanelOpenWindowIds` chỉ chứa window IDs trong `storage.session`; `onOpened`/`onClosed` cập nhật state sau worker restart. Giữ `sidePanel.open()` trong user-gesture turn; Alt+X vẫn toggle/close, Ask AI gọi open-or-keep-open. Firefox dùng `sidebarAction.toggle()` cho Alt+X và `sidebarAction.open()` cho Ask AI (toggle fallback nếu open API không có).
 - Chrome DNR rule 9002 chỉ áp dụng cho ChatGPT subframe do extension khởi tạo, dù gỡ cả CSP của frame. Firefox build bỏ `sidePanel`/`side_panel` và giữ `sidebar_action.open_at_install=false`.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/background/*.js; do node --check "$f" || exit; done`; parse manifest và chạy `git diff --check`.
-- Message changes: kiểm tra sender, receiver, payload và metadata; xác nhận chỉ URL nguồn/route được lưu, không có page body/title.
-- Focused VM PASS: Chromium toggle open/close, session restore after worker restart, immediate open gesture, legacy close fallback/window isolation, Firefox native toggle.
-- Static PASS: first-party JS syntax, Python compile, manifest/version/references/permissions, docs structure/length và `git diff --check`. Chrome/Firefox ZIPs PASS (122 files each; Firefox manifest transforms verified).
-- Browser QA Chrome/Firefox chưa chạy để xác nhận panel thật, toggle sau worker restart, q/mapping, draft guard, scrollbar và Firefox install không tự mở.
+- Message changes: kiểm tra sender, receiver, payload và metadata; chỉ selected-text action được chuyển prompt từ selection rõ ràng; không lấy page body/title. Pending request prompt/snippet hết hạn sau thời gian ngắn.
+- Focused VM PASS: first-use q prompts for summary/selected text, URL mapping, same-URL Alt+X reopen without prompt, selected-text follow-up only in mapped conversation, empty-composer guard, exact-once send, wrong-route rejection, native-q duplicate guard, Chrome/Firefox Ask AI open-or-keep-open, Alt+X toggle.
+- Static/build PASS: first-party JS syntax, manifest v3.5.67/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each, prompt/action smoke PASS, Firefox Chrome-only manifest keys removed.
+- Browser QA Chrome/Firefox chưa chạy để xác nhận panel thật, follow-up gửi vào cùng chat, toggle sau worker restart, q/mapping, draft guard, scrollbar và Firefox install không tự mở.

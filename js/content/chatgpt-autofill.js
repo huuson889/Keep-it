@@ -353,7 +353,7 @@
         conversationUrl:conversationUrl || "",
         reason
       });
-    } catch (error) { console.warn("Keepit could not report the ChatGPT link summary result", error); }
+    } catch (error) { console.warn("Keepit could not report the ChatGPT prompt result", error); }
   }
 
   async function processPendingLink() {
@@ -369,7 +369,10 @@
         return;
       }
 
-      const expectedPrompt = `${LINK_PROMPT_PREFIX} ${pending.sourceUrl}`;
+      const isFollowup = pending.mode === "auto-send-followup";
+      const expectedPrompt = typeof pending.prompt === "string" && pending.prompt
+        ? pending.prompt
+        : `${LINK_PROMPT_PREFIX} ${pending.sourceUrl}`;
       const expectedNormalized = normalizedDraft(expectedPrompt);
       const activeRequestId = activeLinkRequestId();
       const currentUrl = new URL(location.href);
@@ -384,7 +387,18 @@
       } catch {}
       const qPromptMatches = queryMatches || qPrompt === expectedPrompt;
       const qRequestMatches = qRequestId === pending.requestId && qPromptMatches;
-      if (!qPromptMatches || (activeRequestId !== pending.requestId && !qRequestMatches)) return;
+      if (isFollowup) {
+        const canonicalConversation = value => {
+          try {
+            const target = new URL(String(value || ""));
+            if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname) || !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return "";
+            return `${target.origin}${target.pathname.replace(/\/+$/, "")}`;
+          } catch { return ""; }
+        };
+        if (activeRequestId !== pending.requestId || canonicalConversation(currentConversationUrl()) !== canonicalConversation(pending.conversationUrl)) return;
+      } else if (!qPromptMatches || (activeRequestId !== pending.requestId && !qRequestMatches)) {
+        return;
+      }
 
       let conversationUrl = currentConversationUrl();
       let composer = findComposer();
@@ -392,9 +406,10 @@
         await reportLinkResult(pending, true, conversationUrl);
         return;
       }
-      // ChatGPT may submit ?q= itself. If it has already created the conversation and cleared
-      // the composer, record the mapping instead of clicking Send a second time.
-      if (conversationUrl && (queryMatches || qRequestMatches) && !composerHasText(composer)) {
+      // For the first request, ChatGPT may submit ?q= natively. If it has cleared the exact
+      // prefill, record success rather than clicking Send a second time. Follow-ups deliberately
+      // target the existing /c/<id> route and are sent only from an empty, request-guarded composer.
+      if (!isFollowup && conversationUrl && (queryMatches || qRequestMatches) && !composerHasText(composer)) {
         try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
         await reportLinkResult(pending, true, conversationUrl);
         return;
@@ -402,9 +417,9 @@
       if (lastLinkAttemptId === pending.requestId) return;
       lastLinkAttemptId = pending.requestId;
 
-      // Without evidence that this route came from our ?q= navigation, never reuse an
-      // existing conversation for a new source URL. Preserve the draft guard before New Chat.
-      if (conversationUrl && !queryMatches && !qRequestMatches) {
+      // A new URL must not reuse an unrelated existing conversation. Follow-ups are allowed
+      // only on the exact mapped conversation validated above; preserve the existing draft guard.
+      if (!isFollowup && conversationUrl && !queryMatches && !qRequestMatches) {
         if (composerHasText(composer)) {
           await reportLinkResult(pending, false, "", "composer-not-empty");
           return;
@@ -426,44 +441,60 @@
       if (latestBeforeRead?.requestId !== pending.requestId || pending.expiresAt <= Date.now()) return;
       composer = findComposer() || await waitForLinkComposer();
       if (!composer) {
-        // Give ChatGPT's native ?q= handling a moment to create and clear the composer.
-        const createdConversation = await waitForConversationRoute(3500);
-        if (createdConversation && (queryMatches || qRequestMatches)) {
-          try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
-          await reportLinkResult(pending, true, createdConversation);
-        } else {
-          await reportLinkResult(pending, false, "", "composer-unavailable");
+        if (!isFollowup) {
+          const createdConversation = await waitForConversationRoute(3500);
+          if (createdConversation && (queryMatches || qRequestMatches)) {
+            try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
+            await reportLinkResult(pending, true, createdConversation);
+            return;
+          }
         }
+        await reportLinkResult(pending, false, "", "composer-unavailable");
         return;
       }
 
       let text = normalizedDraft(composerText(composer));
-      if (text && text !== expectedNormalized) {
-        // Never replace or send an unrelated user draft, even if the ?q= URL is present.
-        await reportLinkResult(pending, false, "", "composer-not-empty");
-        return;
-      }
-      if (!text) {
-        // The query parameter is the primary prompt transport. Do not manually type into an
-        // empty composer: wait briefly for ChatGPT to handle q=, otherwise fail safely.
-        const createdConversation = await waitForConversationRoute(3500);
-        if (createdConversation && (queryMatches || qRequestMatches)) {
+      if (isFollowup) {
+        if (composerHasText(composer)) {
+          await reportLinkResult(pending, false, "", "composer-not-empty");
+          return;
+        }
+        // The follow-up prompt is sourced only from the user's explicit text selection; never
+        // replace any existing composer content. This path is used because q= starts new chats.
+        insertDraft(composer, expectedPrompt);
+        text = normalizedDraft(composerText(composer));
+        if (text !== expectedNormalized) {
+          await reportLinkResult(pending, false, "", "composer-insert-failed");
+          return;
+        }
+      } else {
+        if (text && text !== expectedNormalized) {
+          // Never replace or send an unrelated user draft, even if the ?q= URL is present.
+          await reportLinkResult(pending, false, "", "composer-not-empty");
+          return;
+        }
+        if (!text) {
+          // The query parameter is the primary prompt transport. Do not manually type into an
+          // empty composer: wait briefly for ChatGPT to handle q=, otherwise fail safely.
+          const createdConversation = await waitForConversationRoute(3500);
+          if (createdConversation && (queryMatches || qRequestMatches)) {
+            try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
+            await reportLinkResult(pending, true, createdConversation);
+          } else {
+            await reportLinkResult(pending, false, "", "q-prefill-empty");
+          }
+          return;
+        }
+
+        // The exact request prompt is present from ChatGPT's q= prefill. First allow native
+        // auto-submit to finish; if it did, do not submit a duplicate.
+        let createdConversation = await waitForConversationRoute(2200);
+        composer = findComposer() || composer;
+        if (createdConversation && !composerHasText(composer)) {
           try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
           await reportLinkResult(pending, true, createdConversation);
-        } else {
-          await reportLinkResult(pending, false, "", "q-prefill-empty");
+          return;
         }
-        return;
-      }
-
-      // The exact request prompt is present from ChatGPT's q= prefill. First allow native
-      // auto-submit to finish; if it did, do not submit a duplicate.
-      let createdConversation = await waitForConversationRoute(2200);
-      composer = findComposer() || composer;
-      if (createdConversation && !composerHasText(composer)) {
-        try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
-        await reportLinkResult(pending, true, createdConversation);
-        return;
       }
 
       const latest = (await browserApi.storage.local.get(LINK_PENDING_KEY))?.[LINK_PENDING_KEY];
@@ -478,18 +509,24 @@
         await reportLinkResult(pending, false, "", "send-button-unavailable");
         return;
       }
-      // Final draft and request checks immediately before sending.
+      // Final draft and request checks immediately before the single send.
       if (normalizedDraft(composerText(composer)) !== expectedNormalized) {
         await reportLinkResult(pending, false, "", "composer-not-empty");
         return;
       }
       try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
       sendButton.click();
-      createdConversation = await waitForConversationRoute(18000);
-      if (createdConversation) await reportLinkResult(pending, true, createdConversation);
-      else await reportLinkResult(pending, false, "", "conversation-not-created");
+      if (isFollowup) {
+        conversationUrl = currentConversationUrl();
+        if (conversationUrl) await reportLinkResult(pending, true, conversationUrl);
+        else await reportLinkResult(pending, false, "", "conversation-route-missing");
+      } else {
+        const createdConversation = await waitForConversationRoute(18000);
+        if (createdConversation) await reportLinkResult(pending, true, createdConversation);
+        else await reportLinkResult(pending, false, "", "conversation-not-created");
+      }
     } catch (error) {
-      console.warn("Keepit could not send the ChatGPT link-only prompt", error);
+      console.warn("Could not send the request-scoped ChatGPT prompt", error);
       if (pending) await reportLinkResult(pending, false, "", "link-autosend-failed");
     } finally {
       linkProcessing = false;
@@ -519,7 +556,7 @@
       if (target.pathname !== "/" && !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return false;
       const params = new URLSearchParams(target.hash.replace(/^#/, ""));
       params.set(PANEL_MARKER, "1");
-      if (request.mode === "new-link" && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
+      if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
       else params.delete(LINK_REQUEST_MARKER);
       target.hash = params.toString();
       const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);

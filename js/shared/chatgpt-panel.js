@@ -114,7 +114,8 @@
       return true;
     }
     handledNavigationIds.add(request.requestId);
-    const url = panelUrl(target, request.mode === "new-link" ? String(request.linkRequestId || "") : "");
+    const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
+    const url = panelUrl(target, requestScopedFlow ? String(request.linkRequestId || "") : "");
     if (frame) frame.src = url;
     else {
       await clearNavigationRequest(request.requestId);

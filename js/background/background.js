@@ -48,7 +48,7 @@ function ensureChatGPTFrameRule(forceUpdate = false) {
 }
 const CHATGPT_DRAFT_PENDING_KEY = "keepitChatGPTDraftPending";
 const CHATGPT_PANEL_STATE_KEY = "keepitChatGPTPanelOpenWindowIds";
-// Link-only flow (v3.5.61); legacy full-page draft keys/handlers remain for rollback.
+// URL/selected-text ChatGPT flow; legacy full-page draft keys/handlers remain for rollback.
 const CHATGPT_LINK_PENDING_KEY = "keepitChatGPTLinkPending";
 const CHATGPT_SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
 const CHATGPT_PANEL_NAVIGATION_KEY = "keepitChatGPTPanelNavigationRequest";
@@ -213,25 +213,29 @@ async function notifyChatGPTDraftResult(message) {
   }
   return { ok:true };
 }
-async function openChatGPTSidePanel({ sender, tab } = {}) {
+async function openChatGPTSidePanel({ sender, tab, toggle = true } = {}) {
   const sourceTab = tab || sender?.tab;
   const windowId = chatGPTWindowId(sourceTab);
   const chromePanel = globalThis.chrome?.sidePanel;
   if (typeof chromePanel?.open === "function") {
     try {
       const alreadyOpen = chatGPTPanelIsOpen(windowId);
+      if (!toggle && alreadyOpen) {
+        await trackChatGPTPanel(windowId, sourceTab?.id, true);
+        return { ok:true, browser:"chromium", opened:true, toggled:false };
+      }
       const stateRevisionAtToggle = chatGPTPanelStateRevision;
-      if (alreadyOpen) {
+      if (toggle && alreadyOpen) {
         const closed = await closeChromeChatGPTPanel(windowId, chromePanel);
         if (!closed) return { ok:false, error:"panel-close-failed" };
         await trackChatGPTPanel(windowId, sourceTab?.id, false);
         return { ok:true, browser:"chromium", opened:false, toggled:true };
       }
-      // Keep open() in the original user-gesture turn. If the service worker just woke,
-      // the session snapshot below tells us whether this call should instead finish as close.
+      // Keep open() in the original user-gesture turn. Selected-text requests are
+      // open-or-keep-open; Alt+X and existing launchers retain their toggle behavior.
       const openPromise = chromePanel.open({ windowId });
       await openPromise;
-      if (!alreadyOpen) {
+      if (toggle && !alreadyOpen) {
         const restoredOpenWindows = await chatGPTPanelStateRestorePromise;
         if (chatGPTPanelStateRevision === stateRevisionAtToggle && restoredOpenWindows.has(windowId)) {
           const closed = await closeChromeChatGPTPanel(windowId, chromePanel);
@@ -242,35 +246,43 @@ async function openChatGPTSidePanel({ sender, tab } = {}) {
         }
       }
       await trackChatGPTPanel(windowId, sourceTab?.id, true);
-      return { ok:true, browser:"chromium", opened:true, toggled:true };
+      return { ok:true, browser:"chromium", opened:true, toggled:toggle };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
-      console.warn("Could not toggle the ChatGPT Chrome side panel", reason);
+      console.warn("Could not open the ChatGPT Chrome side panel", reason);
       return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
   const firefoxSidebar = globalThis.browser?.sidebarAction;
   if (typeof firefoxSidebar?.toggle === "function") {
     try {
-      const togglePromise = firefoxSidebar.toggle();
-      await togglePromise;
+      const sidebarOptions = Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {};
+      if (!toggle && chatGPTPanelIsOpen(windowId)) {
+        await trackChatGPTPanel(windowId, sourceTab?.id, true);
+        return { ok:true, browser:"firefox", opened:true, toggled:false };
+      }
+      // Call open/toggle before awaiting anything so Firefox keeps the user-gesture context.
+      const sidebarPromise = toggle
+        ? firefoxSidebar.toggle()
+        : (typeof firefoxSidebar.open === "function" ? firefoxSidebar.open(sidebarOptions) : firefoxSidebar.toggle());
+      await sidebarPromise;
       let opened = true;
       if (typeof firefoxSidebar.isOpen === "function") {
-        try { opened = await firefoxSidebar.isOpen(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}); }
-        catch (error) { console.warn("Could not read Firefox sidebar state after toggle", error); }
+        try { opened = await firefoxSidebar.isOpen(sidebarOptions); }
+        catch (error) { console.warn("Could not read Firefox sidebar state after opening", error); }
       }
       await trackChatGPTPanel(windowId, sourceTab?.id, opened);
-      return { ok:true, browser:"firefox", opened, toggled:true };
+      return { ok:true, browser:"firefox", opened, toggled:toggle };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
-      console.warn("Could not toggle the ChatGPT Firefox sidebar", reason);
+      console.warn("Could not open the ChatGPT Firefox sidebar", reason);
       return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
   return { ok:false, error:"side-panel-unsupported" };
 }
 
-// v3.5.61: link-only ChatGPT flow. This deliberately never requests page text.
+// ChatGPT prompt flow: uses the current tab URL and, only for Ask AI, the explicit text selection; never requests page body/title.
 function normalizeChatGPTSourceUrl(value) {
   try {
     const url = new URL(String(value || ""));
@@ -287,18 +299,24 @@ function safeChatGPTConversationUrl(value) {
     return url.href;
   } catch { return ""; }
 }
-function makeChatGPTLinkTarget(sourceUrl, requestId) {
+function makeChatGPTLinkTarget(prompt, requestId) {
   const target = new URL("https://chatgpt.com/");
-  target.searchParams.set("q", `Hãy tóm tắt bài sau: ${sourceUrl}`);
+  target.searchParams.set("q", prompt);
   const hash = new URLSearchParams();
   hash.set("keepit-chatgpt-panel", "1");
   hash.set("keepit-chatgpt-link-request", requestId);
   target.hash = hash.toString();
   return target.href;
 }
-async function queueChatGPTLinkPanelFlow(tab) {
+function makeChatGPTQuestionPrompt(selectedText) {
+  return `"${String(selectedText || "").trim()}" có nghĩa là gì?`;
+}
+async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText = "" } = {}) {
   const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
   if (!sourceUrl) return { ok:false, error:"source-url-unavailable" };
+  const askingAboutSelection = intent === "ask-selected-text";
+  const selection = String(selectedText || "").trim();
+  if (askingAboutSelection && !selection) return { ok:false, error:"selected-text-unavailable" };
   const stored = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
   const conversations = stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY];
   const savedConversation = safeChatGPTConversationUrl(conversations?.[sourceUrl]);
@@ -311,14 +329,35 @@ async function queueChatGPTLinkPanelFlow(tab) {
   };
   if (!savedConversation) {
     const linkRequestId = `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const promptLine = askingAboutSelection ? makeChatGPTQuestionPrompt(selection) : "Hãy tóm tắt bài viết này";
+    const prompt = `- Website: ${sourceUrl}\n- ${promptLine}`;
     const pending = {
       requestId:linkRequestId,
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
       sourceUrl,
+      prompt,
       mode:"auto-send-link",
       expiresAt:Date.now() + 120000
     };
-    navigationRequest.targetUrl = makeChatGPTLinkTarget(sourceUrl, linkRequestId);
+    navigationRequest.targetUrl = makeChatGPTLinkTarget(prompt, linkRequestId);
+    navigationRequest.linkRequestId = linkRequestId;
+    await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
+    setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, 121000);
+  } else if (askingAboutSelection) {
+    // ChatGPT's q= URL only starts a fresh conversation. Use a request-scoped, guarded
+    // composer send to append this question to the mapped conversation without its URL.
+    const linkRequestId = `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const pending = {
+      requestId:linkRequestId,
+      sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
+      sourceUrl,
+      conversationUrl:savedConversation,
+      prompt:makeChatGPTQuestionPrompt(selection),
+      mode:"auto-send-followup",
+      expiresAt:Date.now() + 120000
+    };
+    navigationRequest.targetUrl = savedConversation;
+    navigationRequest.mode = "followup";
     navigationRequest.linkRequestId = linkRequestId;
     await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
     setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, 121000);
@@ -326,15 +365,19 @@ async function queueChatGPTLinkPanelFlow(tab) {
     navigationRequest.targetUrl = savedConversation;
   }
   await browser.storage.local.set({ [CHATGPT_PANEL_NAVIGATION_KEY]:navigationRequest });
-  return { ok:true, action:savedConversation ? "reopen-existing" : "send-link-only" };
+  const action = !savedConversation
+    ? (askingAboutSelection ? "ask-selected-text-new" : "send-summary")
+    : (askingAboutSelection ? "ask-selected-text-existing" : "reopen-existing");
+  return { ok:true, action };
 }
-async function openChatGPTLinkPanel({ sender, tab } = {}) {
+async function openChatGPTLinkPanel({ sender, tab, intent = "summary", selectedText = "" } = {}) {
   const sourceTab = tab || sender?.tab;
-  // Invoke the existing toggle before any async lookup, preserving browser gesture requirements.
-  const panel = await openChatGPTSidePanel({ sender, tab:sourceTab });
+  if (intent === "ask-selected-text" && !String(selectedText || "").trim()) return { ok:false, error:"selected-text-unavailable" };
+  // Alt+X keeps its toggle contract. Ask AI opens or keeps the panel open so the question can be sent.
+  const panel = await openChatGPTSidePanel({ sender, tab:sourceTab, toggle:intent !== "ask-selected-text" });
   if (!panel?.ok || !panel.opened) return panel;
   if (Number.isInteger(sourceTab?.windowId)) await trackChatGPTPanel(sourceTab.windowId, sourceTab.id, true);
-  const flow = await queueChatGPTLinkPanelFlow(sourceTab);
+  const flow = await queueChatGPTLinkPanelFlow(sourceTab, { intent, selectedText });
   return { ...panel, ...flow };
 }
 async function clearExpiredChatGPTLinkPending(expectedRequestId = "") {
@@ -587,7 +630,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "CHATGPT_AUTOFILL_RESULT") return notifyChatGPTDraftResult(message);
   if (message.type === "CHATGPT_LINK_RESULT") return completeChatGPTLinkRequest(message);
   if (message.type === "CHATGPT_PANEL_NAVIGATION_BLOCKED") return reportChatGPTNavigationBlocked(message);
-  if (message.type === "OPEN_CHATGPT_LINK_PANEL") return openChatGPTLinkPanel({ sender });
+  if (message.type === "OPEN_CHATGPT_LINK_PANEL") return openChatGPTLinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
   if (message.type === "OPEN_CHATGPT_SIDEPANEL") return openChatGPTSidePanel({ sender });
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);

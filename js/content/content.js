@@ -382,7 +382,7 @@
         label: t("toolbarAskAI"),
         title: t("toolbarAskAI"),
         svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>',
-        run: () => launchChatGPTSidePanel(),
+        run: () => launchChatGPTSidePanel({ selectedText:range.toString() }),
       },
     ];
     actionSpecs.forEach((spec, index) => {
@@ -1224,16 +1224,27 @@
     return { opened:true, copied:true, truncated:copyResult.truncated };
   }
 
-  // v3.5.61: open the panel using only the current page URL; no page text is read or copied.
-  async function launchChatGPTSidePanel() {
+  // URL-only summary via Alt+X; the explicit Ask AI icon passes only the selected snippet.
+  async function launchChatGPTSidePanel(options = {}) {
+    const hasSelection = Object.prototype.hasOwnProperty.call(options, "selectedText");
+    const selectedText = hasSelection ? String(options.selectedText || "").trim() : "";
+    if (hasSelection && !selectedText) {
+      showSidebarToast(() => t("chatGPTAutoFillFailedToast"));
+      return { opened:false, error:"selected-text-unavailable" };
+    }
     let requestPromise;
-    try { requestPromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_LINK_PANEL" }); }
-    catch (error) { requestPromise = Promise.reject(error); }
+    try {
+      requestPromise = LHN_MESSAGING.sendMessage({
+        type:"OPEN_CHATGPT_LINK_PANEL",
+        intent:hasSelection ? "ask-selected-text" : "summary",
+        ...(hasSelection ? { selectedText } : {})
+      });
+    } catch (error) { requestPromise = Promise.reject(error); }
     const settled = await Promise.allSettled([requestPromise]);
     const result = settled[0].status === "fulfilled" ? settled[0].value : null;
     if (!result?.ok) {
       const reason = settled[0].status === "rejected" ? String(settled[0].reason?.message || settled[0].reason) : result?.reason || result?.error;
-      console.warn("Could not open the link-only ChatGPT flow", reason || "unknown-error");
+      console.warn("Could not open the ChatGPT prompt flow", reason || "unknown-error");
       showSidebarToast(() => t(result?.opened ? "chatGPTAutoFillFailedToast" : "chatGPTPanelOpenFailedToast"));
       return { opened:false };
     }
@@ -1242,7 +1253,7 @@
       return { opened:false, closed:true };
     }
     if (sidebarOpen) closeSidebar();
-    if (result.action === "send-link-only") showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+    if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(result.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
     return { opened:true, action:result.action || "" };
   }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
@@ -1911,7 +1922,7 @@
     if (message?.type === "CHATGPT_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
     if (message?.type === "CHATGPT_AUTOFILL_PENDING") { showSidebarToast(() => t("chatGPTAutoFillPendingToast")); return; }
     if (message?.type === "CHATGPT_LINK_PANEL_QUEUED") {
-      if (message.action === "send-link-only") showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+      if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(message.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
       return;
     }
     if (message?.type === "CHATGPT_AUTOFILL_RESULT") {
