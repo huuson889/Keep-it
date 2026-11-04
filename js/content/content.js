@@ -1246,7 +1246,8 @@
     if (!result?.ok) {
       const reason = settled[0].status === "rejected" ? String(settled[0].reason?.message || settled[0].reason) : result?.reason || result?.error;
       console.warn("Could not open the ChatGPT prompt flow", reason || "unknown-error");
-      showSidebarToast(() => t(result?.opened ? "chatGPTAutoFillFailedToast" : "chatGPTPanelOpenFailedToast"));
+      const firefoxSelectionHint = hasSelection && /Firefox\//i.test(navigator.userAgent || "") && result?.error === "panel-toggle-failed";
+      showSidebarToast(() => t(firefoxSelectionHint ? "chatGPTFirefoxAskAIContextMenuHint" : result?.opened ? "chatGPTAutoFillFailedToast" : "chatGPTPanelOpenFailedToast"));
       return { opened:false };
     }
     if (!result.opened) {

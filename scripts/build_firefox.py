@@ -39,6 +39,8 @@ def build_firefox(output: Path) -> Path:
     # These Chromium-only fields produce Firefox manifest warnings; Firefox uses
     # sidebar_action instead. MV3 Firefox background scripts use scripts, not service_worker.
     manifest["permissions"] = [p for p in manifest.get("permissions", []) if p != "sidePanel"]
+    if "contextMenus" not in manifest["permissions"]:
+        manifest["permissions"].append("contextMenus")
     manifest.pop("side_panel", None)
     background = manifest.get("background", {})
     background.pop("service_worker", None)

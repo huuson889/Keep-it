@@ -380,6 +380,44 @@ async function openChatGPTLinkPanel({ sender, tab, intent = "summary", selectedT
   const flow = await queueChatGPTLinkPanelFlow(sourceTab, { intent, selectedText });
   return { ...panel, ...flow };
 }
+
+const FIREFOX_ASK_AI_CONTEXT_MENU_ID = "keepit-ask-ai-selection";
+async function ensureFirefoxAskAIContextMenu() {
+  const menus = globalThis.browser?.contextMenus;
+  if (!globalThis.browser?.sidebarAction || !menus?.create) return;
+  try { await menus.remove(FIREFOX_ASK_AI_CONTEXT_MENU_ID); } catch {}
+  try {
+    await menus.create({
+      id:FIREFOX_ASK_AI_CONTEXT_MENU_ID,
+      title:"Keepit: Hỏi AI / Ask AI",
+      contexts:["selection"]
+    });
+  } catch (error) { console.warn("Could not register the Firefox Ask AI selection menu", error); }
+}
+function onFirefoxAskAIContextMenu(info, tab) {
+  if (info?.menuItemId !== FIREFOX_ASK_AI_CONTEXT_MENU_ID || !Number.isInteger(tab?.id)) return;
+  const selectedText = String(info.selectionText || "").trim();
+  if (!selectedText) return;
+  // Firefox only allows opening its sidebar inside a browser/extension user-action handler.
+  // Invoke open() synchronously from the native context-menu click, before any await/message.
+  let sidebarPromise;
+  try { sidebarPromise = globalThis.browser.sidebarAction.open(); }
+  catch (error) { sidebarPromise = Promise.reject(error); }
+  void Promise.resolve(sidebarPromise).then(async () => {
+    await trackChatGPTPanel(tab.windowId, tab.id, true);
+    const flow = await queueChatGPTLinkPanelFlow(tab, { intent:"ask-selected-text", selectedText });
+    await browser.tabs.sendMessage(tab.id, flow?.ok
+      ? { type:"CHATGPT_LINK_PANEL_QUEUED", action:flow.action }
+      : { type:"CHATGPT_LINK_PANEL_FAILED" });
+  }).catch(async error => {
+    console.warn("Could not open the Firefox ChatGPT sidebar from its selection menu", String(error?.message || error));
+    try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); } catch {}
+  });
+}
+if (globalThis.browser?.sidebarAction && globalThis.browser?.contextMenus?.onClicked) {
+  globalThis.browser.contextMenus.onClicked.addListener(onFirefoxAskAIContextMenu);
+}
+
 async function clearExpiredChatGPTLinkPending(expectedRequestId = "") {
   const stored = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
   const pending = stored?.[CHATGPT_LINK_PENDING_KEY];
@@ -435,10 +473,11 @@ browser.runtime.onInstalled.addListener(async () => {
   catch (error) { console.warn("Could not initialize local usage trial", error); }
   try { await ensureChatGPTFrameRule(true); }
   catch (error) { console.warn("Could not configure the ChatGPT iframe header rule", error); }
+  await ensureFirefoxAskAIContextMenu();
   await resetLegacyDictationWrongWordStats();
 });
 browser.runtime.onStartup?.addListener(() => {
-  Promise.all([clearExpiredChatGPTDraft(), clearExpiredChatGPTLinkPending()]).catch(error => console.warn("Could not clean an expired ChatGPT request", error));
+  Promise.all([clearExpiredChatGPTDraft(), clearExpiredChatGPTLinkPending(), ensureFirefoxAskAIContextMenu()]).catch(error => console.warn("Could not clean expired ChatGPT requests or register Firefox selection menu", error));
   ensureChatGPTFrameRule().catch(error => console.warn("Could not configure the ChatGPT iframe header rule", error));
 });
 async function copyChatGPTContextFromTab(tab) {
