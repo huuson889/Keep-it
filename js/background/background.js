@@ -299,17 +299,30 @@ function safeChatGPTConversationUrl(value) {
     return url.href;
   } catch { return ""; }
 }
-function makeChatGPTLinkTarget(prompt, requestId) {
+function normalizeChatGPTInstruction(value, fallback) {
+  const normalized = String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
+  return normalized || String(fallback || "").trim();
+}
+async function getChatGPTPromptSettings() {
+  const stored = await browser.storage.local.get(CONFIG.STORAGE_KEYS.SETTINGS);
+  const settings = stored?.[CONFIG.STORAGE_KEYS.SETTINGS] || {};
+  return {
+    autoSend:settings.chatGPTAutoSend !== false,
+    summaryPrompt:normalizeChatGPTInstruction(settings.chatGPTSummaryPrompt, CONFIG.DEFAULT_SETTINGS.chatGPTSummaryPrompt),
+    askPrompt:normalizeChatGPTInstruction(settings.chatGPTAskPrompt, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)
+  };
+}
+function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
   const target = new URL("https://chatgpt.com/");
-  target.searchParams.set("q", prompt);
+  if (includeQuery) target.searchParams.set("q", prompt);
   const hash = new URLSearchParams();
   hash.set("keepit-chatgpt-panel", "1");
   hash.set("keepit-chatgpt-link-request", requestId);
   target.hash = hash.toString();
   return target.href;
 }
-function makeChatGPTQuestionPrompt(selectedText) {
-  return `"${String(selectedText || "").trim()}" có nghĩa là gì?`;
+function makeChatGPTQuestionPrompt(selectedText, instruction = CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt) {
+  return `"${String(selectedText || "").trim()}" ${normalizeChatGPTInstruction(instruction, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)}`;
 }
 async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText = "" } = {}) {
   const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
@@ -317,6 +330,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
   const askingAboutSelection = intent === "ask-selected-text";
   const selection = String(selectedText || "").trim();
   if (askingAboutSelection && !selection) return { ok:false, error:"selected-text-unavailable" };
+  const promptSettings = await getChatGPTPromptSettings();
   const stored = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
   const conversations = stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY];
   const savedConversation = safeChatGPTConversationUrl(conversations?.[sourceUrl]);
@@ -329,31 +343,33 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
   };
   if (!savedConversation) {
     const linkRequestId = `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const promptLine = askingAboutSelection ? makeChatGPTQuestionPrompt(selection) : "Hãy tóm tắt bài viết này";
+    const promptLine = askingAboutSelection
+      ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt)
+      : promptSettings.summaryPrompt;
     const prompt = `- Website: ${sourceUrl}\n- ${promptLine}`;
     const pending = {
       requestId:linkRequestId,
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
       sourceUrl,
       prompt,
-      mode:"auto-send-link",
-      expiresAt:Date.now() + 120000
+      mode:promptSettings.autoSend ? "auto-send-link" : "draft-link",
+      draftReady:false,
+      expiresAt:Date.now() + (promptSettings.autoSend ? 120000 : 86400000)
     };
-    navigationRequest.targetUrl = makeChatGPTLinkTarget(prompt, linkRequestId);
+    navigationRequest.targetUrl = makeChatGPTLinkTarget(prompt, linkRequestId, promptSettings.autoSend);
     navigationRequest.linkRequestId = linkRequestId;
     await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
-    setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, 121000);
+    setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, promptSettings.autoSend ? 121000 : 86401000);
   } else if (askingAboutSelection) {
-    // ChatGPT's q= URL only starts a fresh conversation. Use a request-scoped, guarded
-    // composer send to append this question to the mapped conversation without its URL.
+    // Exact mapped-route Hỏi AI replaces the existing composer prompt; auto-send is optional.
     const linkRequestId = `link-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const pending = {
       requestId:linkRequestId,
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
       sourceUrl,
       conversationUrl:savedConversation,
-      prompt:makeChatGPTQuestionPrompt(selection),
-      mode:"auto-send-followup",
+      prompt:makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt),
+      mode:promptSettings.autoSend ? "auto-send-followup" : "draft-followup",
       expiresAt:Date.now() + 120000
     };
     navigationRequest.targetUrl = savedConversation;
@@ -458,6 +474,18 @@ async function completeChatGPTLinkRequest(message) {
     } catch { /* source tab may have navigated or closed */ }
   }
   return { ok:Boolean(conversationUrl), conversationUrl };
+}
+async function notifyChatGPTLinkDraftReady(message) {
+  const stored = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
+  const pending = stored?.[CHATGPT_LINK_PENDING_KEY];
+  if (!pending || pending.requestId !== message?.requestId || pending.mode !== "draft-link") return { ok:false, stale:true };
+  const updated = { ...pending, draftReady:true, expiresAt:Date.now() + 86400000 };
+  await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:updated });
+  setTimeout(() => { void clearExpiredChatGPTLinkPending(updated.requestId); }, 86401000);
+  if (Number.isInteger(updated.sourceTabId)) {
+    try { await browser.tabs.sendMessage(updated.sourceTabId, { type:"CHATGPT_AUTOFILL_RESULT", ok:true, reason:"draft-ready" }); } catch {}
+  }
+  return { ok:true };
 }
 async function reportChatGPTNavigationBlocked(message) {
   if (typeof message?.linkRequestId === "string" && message.linkRequestId) {
@@ -676,6 +704,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "CHATGPT_DRAFT_READY") return registerChatGPTDraft(sender?.tab?.id, message.truncated === true);
   if (message.type === "CHATGPT_AUTOFILL_RESULT") return notifyChatGPTDraftResult(message);
   if (message.type === "CHATGPT_LINK_RESULT") return completeChatGPTLinkRequest(message);
+  if (message.type === "CHATGPT_LINK_DRAFT_READY") return notifyChatGPTLinkDraftReady(message);
   if (message.type === "CHATGPT_PANEL_NAVIGATION_BLOCKED") return reportChatGPTNavigationBlocked(message);
   if (message.type === "OPEN_CHATGPT_LINK_PANEL") return openChatGPTLinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
   if (message.type === "OPEN_CHATGPT_SIDEPANEL") return openChatGPTSidePanel({ sender });

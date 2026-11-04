@@ -555,6 +555,11 @@ body > header .profile-menu-avatar svg { width:13px; height:13px; }
 .settings-preference-row>span:first-child,.settings-backup-row>span { display:grid; gap:4px; }
 .settings-preference-row strong,.settings-backup-row strong,.settings-shortcut-row strong { color:#374151; font-size:13px; font-weight:600; }
 .settings-preference-row small,.settings-backup-row small { color:#6b7280; font-size:11px; line-height:1.45; }
+.settings-chatgpt-prompt-field { display:grid; gap:8px; margin-top:16px; }
+.settings-chatgpt-prompt-field>span { display:grid; gap:4px; }
+.settings-chatgpt-prompt-input { box-sizing:border-box; width:100%; min-height:36px; padding:8px 10px; border:1px solid #dce2ee; border-radius:8px; background:#fff; color:#334155; font:12px var(--lhn-app-font-family); }
+.settings-chatgpt-prompt-input:focus { border-color:#6366f1; outline:3px solid rgba(99,102,241,.14); }
+html.dark .settings-chatgpt-prompt-input { border-color:#374151; background:#1f2937; color:#e5e7eb; }
 .settings-panel-page[data-settings-panel="bilingualReader"] .settings-preference-row select { box-sizing:border-box; width:min(230px,55%); min-width:0; height:35px; flex:none; padding:0 9px; border:1px solid #dce2ee; border-radius:8px; background:#fff; color:#334155; font:12px var(--lhn-app-font-family); }
 html.dark .settings-panel-page[data-settings-panel="bilingualReader"] .settings-preference-row select { border-color:#374151; background:#1f2937; color:#e5e7eb; }
 .settings-panel-page[data-settings-panel="bilingualReader"] .settings-subsection>.settings-preference-list { margin-top:16px; }

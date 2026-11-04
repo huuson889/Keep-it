@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = n
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -151,6 +151,9 @@ function refreshDashboardSettings() {
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
   syncBilingualReaderControls();
+  $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend !== false;
+  $("settingsChatGPTSummaryPrompt").value = String(dashboardSettings.chatGPTSummaryPrompt || CONFIG.DEFAULT_SETTINGS.chatGPTSummaryPrompt);
+  $("settingsChatGPTAskPrompt").value = String(dashboardSettings.chatGPTAskPrompt || CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt);
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
@@ -3254,6 +3257,16 @@ function saveDashboardTranslationMode(settingKey, enabled) {
   else if (enabled && settingKey === "translationPopupEnabled") Object.assign(updates, { showOnSelect:false, translateIconEnabled:false });
   return saveDashboardSettings(updates);
 }
+$("settingsChatGPTAutoSend").addEventListener("change", event => saveDashboardSettings({ chatGPTAutoSend:event.target.checked }));
+function saveChatGPTPromptSetting(input, key) {
+  const fallback = String(CONFIG.DEFAULT_SETTINGS[key] || "");
+  const value = String(input.value || "").replace(/\s+/g, " ").trim().slice(0, 500);
+  if (!value) { input.value = dashboardSettings[key] || fallback; return; }
+  input.value = value;
+  void saveDashboardSettings({ [key]:value });
+}
+$("settingsChatGPTSummaryPrompt").addEventListener("change", event => saveChatGPTPromptSetting(event.target, "chatGPTSummaryPrompt"));
+$("settingsChatGPTAskPrompt").addEventListener("change", event => saveChatGPTPromptSetting(event.target, "chatGPTAskPrompt"));
 $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslationMode("showOnSelect", event.target.checked));
 $("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));

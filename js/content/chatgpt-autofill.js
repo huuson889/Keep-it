@@ -11,6 +11,7 @@
   const LINK_Q_PROMPT_SESSION_KEY = "keepitChatGPTLinkQPrompt";
   const LINK_SENT_SESSION_KEY = "keepitChatGPTLinkSentRequestId";
   const LINK_PREPARED_SESSION_KEY = "keepitChatGPTPreparedRequestId";
+  const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitChatGPTDraftManualSendRequestId";
   const QUERY_REQUEST_KEY = "keepit-chatgpt-query-prefill-request";
   const PROMPT_PREFIX = "Hãy tóm tắt nội dung ngắn gọn";
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
@@ -301,6 +302,7 @@
   let linkProcessing = false;
   let linkRetryRequested = false;
   let lastLinkAttemptId = "";
+  let stagedDraftLinkPending = null;
 
   function activeLinkRequestId() {
     const currentHash = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
@@ -336,6 +338,26 @@
       }, 150);
     });
   }
+
+  function markManualDraftLinkSend(event) {
+    const pending = stagedDraftLinkPending;
+    if (!pending || pending.mode !== "draft-link" || pending.expiresAt <= Date.now()) return;
+    const composer = findComposer();
+    if (!composer || !composerHasText(composer) || currentConversationUrl()) return;
+    if (event.type === "submit" && !event.target?.contains?.(composer)) return;
+    if (event.type === "keydown" && (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229 || !composer.contains?.(event.target))) return;
+    if (event.type === "click") {
+      const button = event.target?.closest?.("button");
+      if (!button || button !== findSendButton()) return;
+    }
+    try {
+      if (sessionStorage.getItem(LINK_PREPARED_SESSION_KEY) !== pending.requestId) return;
+      sessionStorage.setItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY, pending.requestId);
+    } catch { return; }
+  }
+  document.addEventListener("submit", markManualDraftLinkSend, true);
+  document.addEventListener("click", markManualDraftLinkSend, true);
+  document.addEventListener("keydown", markManualDraftLinkSend, true);
 
   function waitForLinkComposer(timeoutMs = 16000) {
     const initial = findComposer();
@@ -418,7 +440,9 @@
         return;
       }
 
-      const isFollowup = pending.mode === "auto-send-followup";
+      const isDraftLink = pending.mode === "draft-link";
+      const isFollowup = ["auto-send-followup", "draft-followup"].includes(pending.mode);
+      const isDraftOnly = isDraftLink || pending.mode === "draft-followup";
       const expectedPrompt = typeof pending.prompt === "string" && pending.prompt
         ? pending.prompt
         : `${LINK_PROMPT_PREFIX} ${pending.sourceUrl}`;
@@ -439,7 +463,9 @@
       } catch {}
       const qPromptMatches = queryMatches || qPrompt === expectedPrompt;
       const qRequestMatches = qRequestId === pending.requestId && qPromptMatches;
-      if (isFollowup) {
+      if (isDraftLink) {
+        if (activeRequestId !== pending.requestId) return;
+      } else if (isFollowup) {
         const canonicalConversation = value => {
           try {
             const target = new URL(String(value || ""));
@@ -454,6 +480,27 @@
 
       let conversationUrl = currentConversationUrl();
       let composer = findComposer();
+      if (isDraftLink) {
+        let preparedRequestId = "", manualSendRequestId = "";
+        try {
+          preparedRequestId = sessionStorage.getItem(LINK_PREPARED_SESSION_KEY) || "";
+          manualSendRequestId = sessionStorage.getItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY) || "";
+        } catch {}
+        if (manualSendRequestId === pending.requestId && conversationUrl) {
+          try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
+          await reportLinkResult(pending, true, conversationUrl);
+          stagedDraftLinkPending = null;
+          return;
+        }
+        if (preparedRequestId === pending.requestId) {
+          stagedDraftLinkPending = pending;
+          if (pending.draftReady !== true) {
+            try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
+            catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
+          }
+          return;
+        }
+      }
       if (conversationUrl && alreadySentRequestId === pending.requestId) {
         await reportLinkResult(pending, true, conversationUrl);
         return;
@@ -506,7 +553,20 @@
       }
 
       let text = normalizedDraft(composerText(composer));
-      if (isFollowup) {
+      if (isDraftLink) {
+        if (text && text !== expectedNormalized) {
+          await reportLinkResult(pending, false, "", "composer-not-empty");
+          return;
+        }
+        if (!text) {
+          insertDraft(composer, expectedPrompt);
+          text = normalizedDraft(composerText(composer));
+          if (text !== expectedNormalized) {
+            await reportLinkResult(pending, false, "", "composer-insert-failed");
+            return;
+          }
+        }
+      } else if (isFollowup) {
         // An explicit Ask AI selection replaces any unsent composer draft, then sends only
         // the newly selected question. This runs only after the exact mapped route is validated.
         insertDraft(composer, expectedPrompt, true);
@@ -550,6 +610,17 @@
       composer = findComposer() || composer;
       if (normalizedDraft(composerText(composer)) !== expectedNormalized) {
         await reportLinkResult(pending, false, "", "composer-not-empty");
+        return;
+      }
+      if (isDraftOnly) {
+        if (isDraftLink) {
+          try { sessionStorage.setItem(LINK_PREPARED_SESSION_KEY, pending.requestId); } catch {}
+          stagedDraftLinkPending = { ...pending, draftReady:true };
+          try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
+          catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
+        } else {
+          await reportLinkResult(pending, true, conversationUrl || pending.conversationUrl || "");
+        }
         return;
       }
       const sendButton = await waitForEnabledSendButton();

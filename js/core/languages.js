@@ -369,6 +369,43 @@
   Object.assign(MESSAGES.vi, { ovMenuDictation:"Chép chính tả", ovMenuHighlightsNotes:"Tô sáng & Ghi chú", toolbarHighlight:"Tô sáng", toolbarTranslate:"Dịch", toolbarAskAI:"Hỏi AI", iconDisplayTab:"Icon hiển thị", iconDisplayHelp:"Chọn kiểu hiển thị thanh công cụ Keepit nổi. Khung xem trước đổi theo giao diện sáng hoặc tối.", iconStyle1Title:"Dạng 1: Icon + Text ngắn (Logo bên phải)", iconStyle1Help:"Rõ ràng, dễ bấm", iconStyle2Title:"Dạng 2: Only Icons (Logo bên phải)", iconStyle2Help:"Siêu gọn nhẹ", iconStyle3Title:"Dạng 3: Micro Badge (Di chuột vào Logo để mở)", iconStyle3Help:"Rê chuột vào Logo ở góc phải" });
   Object.assign(MESSAGES.ko, { ovMenuDictation:"받아쓰기", ovMenuHighlightsNotes:"하이라이트 및 메모", toolbarHighlight:"하이라이트", toolbarTranslate:"번역", toolbarAskAI:"AI에 질문", iconDisplayTab:"아이콘 표시", iconDisplayHelp:"플로팅 Keepit 도구 모음 표시 방식을 선택합니다. 미리보기는 선택한 라이트 또는 다크 테마를 따릅니다.", iconStyle1Title:"유형 1: 아이콘 + 텍스트 (로고 오른쪽)", iconStyle1Help:"명확한 레이블과 쉬운 터치.", iconStyle2Title:"유형 2: 아이콘만 (로고 오른쪽)", iconStyle2Help:"아주 간결한 아이콘 도구 모음.", iconStyle3Title:"유형 3: 마이크로 배지 (호버하여 열기)", iconStyle3Help:"로고에 마우스를 올려 도구 모음을 표시합니다." });
 
+  Object.assign(MESSAGES.en, {
+    chatGPTSettingsTab:"Ask AI",
+    chatGPTSettingsHelp:"Choose whether prompts are sent automatically and edit their final sentence.",
+    chatGPTAutoSendLabel:"Open the side panel and send immediately",
+    chatGPTAutoSendHelp:"When off, Keepit leaves the prompt as a draft for you to send.",
+    chatGPTPromptTemplates:"Prompt templates",
+    chatGPTPromptTemplatesHelp:"Keepit preserves the Website URL line and adds your sentence at the end.",
+    chatGPTFirstOpenPromptLabel:"First time opening the side panel",
+    chatGPTFirstOpenPromptHelp:"Used when a source URL has no mapped conversation.",
+    chatGPTAskPromptLabel:"When clicking Ask AI",
+    chatGPTAskPromptHelp:"The selected text stays in the question; this sentence is added at the end. Mapped chats still omit the URL."
+  });
+  Object.assign(MESSAGES.vi, {
+    chatGPTSettingsTab:"Hỏi AI",
+    chatGPTSettingsHelp:"Chọn cách gửi câu lệnh và chỉnh sửa câu cuối.",
+    chatGPTAutoSendLabel:"Mở side panel và gửi luôn",
+    chatGPTAutoSendHelp:"Khi tắt, Keepit điền câu lệnh thành bản nháp để bạn tự gửi.",
+    chatGPTPromptTemplates:"Câu lệnh mẫu",
+    chatGPTPromptTemplatesHelp:"Keepit giữ dòng Website: URL và thêm câu của bạn ở cuối.",
+    chatGPTFirstOpenPromptLabel:"Lần đầu mở side panel",
+    chatGPTFirstOpenPromptHelp:"Dùng khi URL nguồn chưa có hội thoại được ánh xạ.",
+    chatGPTAskPromptLabel:"Khi bấm Hỏi AI",
+    chatGPTAskPromptHelp:"Văn bản đang chọn vẫn nằm trong câu hỏi; câu này được thêm ở cuối. Hội thoại đã ánh xạ không lặp URL."
+  });
+  Object.assign(MESSAGES.ko, {
+    chatGPTSettingsTab:"AI에 질문",
+    chatGPTSettingsHelp:"질문을 자동으로 보낼지 선택하고 마지막 문장을 편집합니다.",
+    chatGPTAutoSendLabel:"사이드 패널을 열고 바로 보내기",
+    chatGPTAutoSendHelp:"끄면 Keepit이 질문을 초안으로 입력하고 직접 보내도록 둡니다.",
+    chatGPTPromptTemplates:"질문 템플릿",
+    chatGPTPromptTemplatesHelp:"Website URL 줄은 유지되고 사용자의 문장은 끝에 추가됩니다.",
+    chatGPTFirstOpenPromptLabel:"사이드 패널 첫 열기",
+    chatGPTFirstOpenPromptHelp:"원본 URL에 연결된 대화가 없을 때 사용합니다.",
+    chatGPTAskPromptLabel:"AI에 질문을 클릭할 때",
+    chatGPTAskPromptHelp:"선택한 텍스트는 질문에 포함되고 이 문장은 끝에 추가됩니다. 연결된 대화에는 URL을 반복하지 않습니다."
+  });
+
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {
