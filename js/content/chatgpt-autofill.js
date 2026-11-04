@@ -134,11 +134,20 @@
     });
   }
 
-  function insertDraft(composer, text) {
+  function insertDraft(composer, text, replaceExisting = false) {
     composer.focus();
     if (composer.isContentEditable) {
+      if (replaceExisting) {
+        try {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(composer);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        } catch { /* the textContent fallback below still replaces the draft */ }
+      }
       let inserted = false;
-      try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe empty-editor fallback */ }
+      try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe editor fallback */ }
       if (!inserted || composerText(composer) !== text.trim()) {
         composer.textContent = text;
         composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
@@ -495,13 +504,9 @@
 
       let text = normalizedDraft(composerText(composer));
       if (isFollowup) {
-        if (composerHasText(composer)) {
-          await reportLinkResult(pending, false, "", "composer-not-empty");
-          return;
-        }
-        // The follow-up prompt is sourced only from the user's explicit text selection; never
-        // replace any existing composer content. This path is used because q= starts new chats.
-        insertDraft(composer, expectedPrompt);
+        // An explicit Ask AI selection replaces any unsent composer draft, then sends only
+        // the newly selected question. This runs only after the exact mapped route is validated.
+        insertDraft(composer, expectedPrompt, true);
         text = normalizedDraft(composerText(composer));
         if (text !== expectedNormalized) {
           await reportLinkResult(pending, false, "", "composer-insert-failed");
@@ -576,20 +581,6 @@
 
   async function processPanelNavigationRequest(request) {
     if (!isFirefox || window.top !== window || !request || request.expiresAt <= Date.now()) return false;
-    const currentComposer = findComposer() || await waitForLinkComposer(1300);
-    if (composerHasText(currentComposer)) {
-      try {
-        await globalThis.LHN_MESSAGING.sendMessage({
-          type:"CHATGPT_PANEL_NAVIGATION_BLOCKED",
-          sourceTabId:request.sourceTabId,
-          linkRequestId:request.linkRequestId || "",
-          reason:"composer-not-empty"
-        });
-        const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
-        if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-      } catch (error) { console.warn("Keepit could not protect the Firefox ChatGPT composer draft", error); }
-      return true;
-    }
     try {
       const target = new URL(String(request.targetUrl || ""));
       if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname)) return false;
@@ -601,7 +592,9 @@
           return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}`;
         } catch { return ""; }
       };
-      if (request.mode === "followup" && request.linkRequestId && conversationKey(currentConversationUrl()) === conversationKey(target.href)) {
+      const sameMappedFollowup = request.mode === "followup" && request.linkRequestId
+        && conversationKey(currentConversationUrl()) === conversationKey(target.href);
+      if (sameMappedFollowup) {
         try {
           sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
           sessionStorage.setItem(LINK_SESSION_KEY, request.linkRequestId);
@@ -611,6 +604,24 @@
         void processPendingLink();
         return true;
       }
+
+      // Protect drafts when navigation would leave the current conversation. On the exact
+      // mapped follow-up route, the explicit Ask AI action is allowed to replace the draft.
+      const currentComposer = findComposer() || await waitForLinkComposer(1300);
+      if (composerHasText(currentComposer)) {
+        try {
+          await globalThis.LHN_MESSAGING.sendMessage({
+            type:"CHATGPT_PANEL_NAVIGATION_BLOCKED",
+            sourceTabId:request.sourceTabId,
+            linkRequestId:request.linkRequestId || "",
+            reason:"composer-not-empty"
+          });
+          const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+          if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+        } catch (error) { console.warn("Keepit could not protect the Firefox ChatGPT composer draft", error); }
+        return true;
+      }
+
       const params = new URLSearchParams(target.hash.replace(/^#/, ""));
       params.set(PANEL_MARKER, "1");
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
