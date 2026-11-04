@@ -52,10 +52,13 @@ const CHATGPT_PANEL_STATE_KEY = "keepitChatGPTPanelOpenWindowIds";
 const CHATGPT_LINK_PENDING_KEY = "keepitChatGPTLinkPending";
 const CHATGPT_SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
 const CHATGPT_PANEL_NAVIGATION_KEY = "keepitChatGPTPanelNavigationRequest";
+const CHATGPT_PAGE_DRAFTS_KEY = "keepitChatGPTPageDraftsBySourceUrl";
+const CHATGPT_PANEL_SOURCE_URLS_KEY = "keepitChatGPTPanelSourceUrlByWindow";
 let chatGPTPanelOpen = false;
 let chatGPTFocusedWindowId = null;
 const chatGPTOpenWindows = new Set();
 const chatGPTSourceTabs = new Map();
+const chatGPTPanelSourceUrls = new Map();
 let chatGPTPanelStateRevision = 0;
 let chatGPTPanelStateWrite = Promise.resolve();
 async function restoreChatGPTPanelState() {
@@ -63,13 +66,22 @@ async function restoreChatGPTPanelState() {
     const sessionStorage = browser.storage.session;
     if (!sessionStorage?.get) return new Set();
     const stateAtStart = chatGPTPanelStateRevision;
-    const stored = await sessionStorage.get(CHATGPT_PANEL_STATE_KEY);
+    const stored = await sessionStorage.get([CHATGPT_PANEL_STATE_KEY, CHATGPT_PANEL_SOURCE_URLS_KEY]);
     const ids = stored?.[CHATGPT_PANEL_STATE_KEY];
+    const sourceUrls = stored?.[CHATGPT_PANEL_SOURCE_URLS_KEY];
+    chatGPTPanelSourceUrls.clear();
+    for (const [windowId, sourceUrl] of Object.entries(sourceUrls || {})) {
+      const id = Number(windowId);
+      const normalized = normalizeChatGPTSourceUrl(sourceUrl);
+      if (Number.isInteger(id) && id >= 0 && normalized) chatGPTPanelSourceUrls.set(id, normalized);
+    }
     let openWindows = Array.isArray(ids) ? [...new Set(ids.filter(id => Number.isInteger(id) && id >= 0))] : [];
+    let live = null;
     if (browser.windows?.getAll) {
-      const live = new Set((await browser.windows.getAll()).map(win => win.id));
+      live = new Set((await browser.windows.getAll()).map(win => win.id));
       openWindows = openWindows.filter(id => live.has(id));
     }
+    if (live) for (const id of [...chatGPTPanelSourceUrls.keys()]) if (!live.has(id)) chatGPTPanelSourceUrls.delete(id);
     if (chatGPTPanelStateRevision === stateAtStart) {
       chatGPTOpenWindows.clear();
       for (const id of openWindows) chatGPTOpenWindows.add(id);
@@ -93,10 +105,66 @@ function persistChatGPTPanelState() {
   if (!sessionStorage?.set) return;
   const openWindows = [...chatGPTOpenWindows];
   chatGPTPanelStateWrite = chatGPTPanelStateWrite
-    .then(() => sessionStorage.set({ [CHATGPT_PANEL_STATE_KEY]:openWindows }))
+    .then(() => sessionStorage.set({
+      [CHATGPT_PANEL_STATE_KEY]:openWindows,
+      [CHATGPT_PANEL_SOURCE_URLS_KEY]:Object.fromEntries(chatGPTPanelSourceUrls)
+    }))
     .catch(error => console.warn("Could not save ChatGPT panel toggle state", error));
   return chatGPTPanelStateWrite;
 }
+async function rememberChatGPTPanelSourceUrl(windowId, sourceUrl) {
+  const normalized = normalizeChatGPTSourceUrl(sourceUrl);
+  if (!Number.isInteger(windowId) || windowId < 0 || !normalized) return;
+  chatGPTPanelSourceUrls.set(windowId, normalized);
+  try {
+    const sessionStorage = browser.storage.session;
+    if (sessionStorage?.set) await sessionStorage.set({ [CHATGPT_PANEL_SOURCE_URLS_KEY]:Object.fromEntries(chatGPTPanelSourceUrls) });
+  } catch (error) { console.warn("Could not save the ChatGPT source page for this window", error); }
+}
+async function queueChatGPTPageContext(tab) {
+  const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
+  const windowId = Number.isInteger(tab?.windowId) ? tab.windowId : null;
+  let sourceHost = "";
+  try { sourceHost = new URL(sourceUrl).hostname; } catch {}
+  if (!sourceUrl || ["chatgpt.com", "chat.openai.com"].includes(sourceHost) || !Number.isInteger(windowId)) return false;
+  await chatGPTPanelStateRestorePromise;
+  if (!chatGPTPanelIsOpen(windowId)) return false;
+  const previousSourceUrl = chatGPTPanelSourceUrls.get(windowId) || "";
+  if (previousSourceUrl === sourceUrl) return false;
+  chatGPTPanelSourceUrls.set(windowId, sourceUrl); // Deduplicate overlapping activation/update events.
+  try {
+    const stored = await browser.storage.local.get([CHATGPT_SOURCE_CONVERSATIONS_KEY, CHATGPT_PAGE_DRAFTS_KEY]);
+    if (chatGPTPanelSourceUrls.get(windowId) !== sourceUrl) return false;
+    const mapped = safeChatGPTConversationUrl(stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY]?.[sourceUrl]);
+    const savedDraft = stored?.[CHATGPT_PAGE_DRAFTS_KEY]?.[sourceUrl];
+    const draftConversation = safeChatGPTConversationUrl(savedDraft?.conversationUrl);
+    const request = {
+      requestId:`context-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
+      sourceUrl,
+      mode:"context-switch",
+      targetUrl:mapped || draftConversation || "https://chatgpt.com/",
+      expiresAt:Date.now() + 60000
+    };
+    await rememberChatGPTPanelSourceUrl(windowId, sourceUrl);
+    if (chatGPTPanelSourceUrls.get(windowId) !== sourceUrl) return false;
+    await browser.storage.local.set({ [CHATGPT_PANEL_NAVIGATION_KEY]:request });
+    if (chatGPTPanelSourceUrls.get(windowId) !== sourceUrl) {
+      const latest = await browser.storage.local.get(CHATGPT_PANEL_NAVIGATION_KEY);
+      if (latest?.[CHATGPT_PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browser.storage.local.remove(CHATGPT_PANEL_NAVIGATION_KEY);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    if (chatGPTPanelSourceUrls.get(windowId) === sourceUrl) chatGPTPanelSourceUrls.set(windowId, previousSourceUrl);
+    throw error;
+  }
+}
+browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo?.status !== "complete" || !Number.isInteger(tab?.windowId)) return;
+  if (chatGPTSourceTabs.get(tab.windowId) !== tabId) return;
+  void queueChatGPTPageContext(tab);
+});
 browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (!Number.isInteger(windowId)) return;
   chatGPTFocusedWindowId = windowId;
@@ -105,13 +173,16 @@ browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (chatGPTOpenWindows.has(windowId)) {
     chatGPTSourceTabs.set(windowId, tabId);
     void setChatGPTPageScrollbar(tabId, true);
+    try { void browser.tabs.get(tabId).then(tab => queueChatGPTPageContext(tab)).catch(() => {}); } catch {}
   }
   const sidebar = globalThis.browser?.sidebarAction;
   if (typeof sidebar?.isOpen === "function") {
     try {
       const opened = await sidebar.isOpen({ windowId });
-      if (opened) await trackChatGPTPanel(windowId, tabId, true);
-      else if (chatGPTOpenWindows.has(windowId)) await trackChatGPTPanel(windowId, tabId, false);
+      if (opened) {
+        await trackChatGPTPanel(windowId, tabId, true);
+        if (Number.isInteger(tabId)) try { void browser.tabs.get(tabId).then(tab => queueChatGPTPageContext(tab)).catch(() => {}); } catch {}
+      } else if (chatGPTOpenWindows.has(windowId)) await trackChatGPTPanel(windowId, tabId, false);
     } catch { /* Firefox may not report sidebar state for a closing window */ }
   }
 });
@@ -120,6 +191,7 @@ browser.windows?.onRemoved?.addListener(windowId => {
   chatGPTOpenWindows.delete(windowId);
   chatGPTPanelStateRestoreSnapshot?.delete(windowId);
   chatGPTSourceTabs.delete(windowId);
+  chatGPTPanelSourceUrls.delete(windowId);
   chatGPTPanelOpen = chatGPTOpenWindows.size > 0;
   chatGPTPanelStateRevision++;
   return persistChatGPTPanelState();
@@ -348,6 +420,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
   const askingAboutSelection = intent === "ask-selected-text";
   const selection = String(selectedText || "").trim();
   if (askingAboutSelection && !selection) return { ok:false, error:"selected-text-unavailable" };
+  await browser.storage.local.remove(CHATGPT_LINK_PENDING_KEY);
   const promptSettings = await getChatGPTPromptSettings();
   const stored = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
   const conversations = stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY];
@@ -355,6 +428,8 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
   const navigationRequest = {
     requestId:`nav-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
+    sourceUrl,
+    intent:askingAboutSelection ? "ask-selected-text" : "summary",
     targetUrl:savedConversation || "",
     mode:savedConversation ? "reopen" : "new-link",
     expiresAt:Date.now() + 60000
@@ -399,6 +474,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
     navigationRequest.targetUrl = savedConversation;
   }
   await browser.storage.local.set({ [CHATGPT_PANEL_NAVIGATION_KEY]:navigationRequest });
+  if (Number.isInteger(tab?.windowId)) await rememberChatGPTPanelSourceUrl(tab.windowId, sourceUrl);
   const action = !savedConversation
     ? (askingAboutSelection ? "ask-selected-text-new" : "send-summary")
     : (askingAboutSelection ? "ask-selected-text-existing" : "reopen-existing");
@@ -415,49 +491,54 @@ async function openChatGPTLinkPanel({ sender, tab, intent = "summary", selectedT
   return { ...panel, ...flow };
 }
 
-const FIREFOX_ASK_AI_CONTEXT_MENU_ID = "keepit-ask-ai-selection";
-let firefoxAskAIContextMenuRegistration = null;
-function ensureFirefoxAskAIContextMenu() {
+const ASK_AI_CONTEXT_MENU_ID = "keepit-ask-ai-selection";
+let askAIContextMenuRegistration = null;
+function ensureAskAIContextMenu() {
   const menus = globalThis.browser?.contextMenus;
-  if (!globalThis.browser?.sidebarAction || !menus?.create) return Promise.resolve();
-  if (firefoxAskAIContextMenuRegistration) return firefoxAskAIContextMenuRegistration;
-  firefoxAskAIContextMenuRegistration = (async () => {
-    try { await menus.remove(FIREFOX_ASK_AI_CONTEXT_MENU_ID); } catch {}
+  if (!menus?.create || !menus?.onClicked) return Promise.resolve();
+  if (askAIContextMenuRegistration) return askAIContextMenuRegistration;
+  askAIContextMenuRegistration = (async () => {
+    try { await menus.remove(ASK_AI_CONTEXT_MENU_ID); } catch {}
     try {
       await menus.create({
-        id:FIREFOX_ASK_AI_CONTEXT_MENU_ID,
+        id:ASK_AI_CONTEXT_MENU_ID,
         title:"Keepit: Hỏi AI / Ask AI",
         contexts:["selection"]
       });
-    } catch (error) { console.warn("Could not register the Firefox Ask AI selection menu", error); }
-  })().finally(() => { firefoxAskAIContextMenuRegistration = null; });
-  return firefoxAskAIContextMenuRegistration;
+    } catch (error) { console.warn("Could not register the Keepit Ask AI selection menu", error); }
+  })().finally(() => { askAIContextMenuRegistration = null; });
+  return askAIContextMenuRegistration;
 }
-function onFirefoxAskAIContextMenu(info, tab) {
-  if (info?.menuItemId !== FIREFOX_ASK_AI_CONTEXT_MENU_ID || !Number.isInteger(tab?.id)) return;
+function onAskAIContextMenu(info, tab) {
+  if (info?.menuItemId !== ASK_AI_CONTEXT_MENU_ID || !Number.isInteger(tab?.id)) return;
   const selectedText = String(info.selectionText || "").trim();
   if (!selectedText) return;
-  // Firefox only allows opening its sidebar inside a browser/extension user-action handler.
-  // Invoke open() synchronously from the native context-menu click, before any await/message.
-  let sidebarPromise;
-  try { sidebarPromise = globalThis.browser.sidebarAction.open(); }
-  catch (error) { sidebarPromise = Promise.reject(error); }
-  void Promise.resolve(sidebarPromise).then(async () => {
+  // Invoke the browser-specific panel open synchronously in the native menu gesture.
+  let openPromise;
+  try {
+    if (typeof globalThis.chrome?.sidePanel?.open === "function") {
+      openPromise = globalThis.chrome.sidePanel.open({ windowId:tab.windowId });
+    } else if (typeof globalThis.browser?.sidebarAction?.open === "function") {
+      openPromise = globalThis.browser.sidebarAction.open();
+    } else {
+      openPromise = Promise.reject(new Error("side-panel-unsupported"));
+    }
+  } catch (error) { openPromise = Promise.reject(error); }
+  void Promise.resolve(openPromise).then(async () => {
     await trackChatGPTPanel(tab.windowId, tab.id, true);
     const flow = await queueChatGPTLinkPanelFlow(tab, { intent:"ask-selected-text", selectedText });
     await browser.tabs.sendMessage(tab.id, flow?.ok
       ? { type:"CHATGPT_LINK_PANEL_QUEUED", action:flow.action }
       : { type:"CHATGPT_LINK_PANEL_FAILED" });
   }).catch(async error => {
-    console.warn("Could not open the Firefox ChatGPT sidebar from its selection menu", String(error?.message || error));
+    console.warn("Could not open the ChatGPT panel from the selection context menu", String(error?.message || error));
     try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); } catch {}
   });
 }
-if (globalThis.browser?.sidebarAction && globalThis.browser?.contextMenus?.onClicked) {
-  globalThis.browser.contextMenus.onClicked.addListener(onFirefoxAskAIContextMenu);
-  // Register immediately as well as on install/startup so the item is present even
-  // when Firefox reloads the background context without delivering those lifecycle events.
-  void ensureFirefoxAskAIContextMenu();
+if (globalThis.browser?.contextMenus?.onClicked) {
+  globalThis.browser.contextMenus.onClicked.addListener(onAskAIContextMenu);
+  // Register immediately as well as on install/startup to keep one selection menu in both engines.
+  void ensureAskAIContextMenu();
 }
 
 async function clearExpiredChatGPTLinkPending(expectedRequestId = "") {
@@ -527,11 +608,11 @@ browser.runtime.onInstalled.addListener(async () => {
   catch (error) { console.warn("Could not initialize local usage trial", error); }
   try { await ensureChatGPTFrameRule(true); }
   catch (error) { console.warn("Could not configure the ChatGPT iframe header rule", error); }
-  await ensureFirefoxAskAIContextMenu();
+  await ensureAskAIContextMenu();
   await resetLegacyDictationWrongWordStats();
 });
 browser.runtime.onStartup?.addListener(() => {
-  Promise.all([clearExpiredChatGPTDraft(), clearExpiredChatGPTLinkPending(), ensureFirefoxAskAIContextMenu()]).catch(error => console.warn("Could not clean expired ChatGPT requests or register Firefox selection menu", error));
+  Promise.all([clearExpiredChatGPTDraft(), clearExpiredChatGPTLinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired ChatGPT requests or register Firefox selection menu", error));
   ensureChatGPTFrameRule().catch(error => console.warn("Could not configure the ChatGPT iframe header rule", error));
 });
 async function copyChatGPTContextFromTab(tab) {

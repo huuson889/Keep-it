@@ -5,6 +5,11 @@
   const CONVERSATION_KEY = "keepitChatGPTLastConversationUrl";
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
+  const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
+  const RESTORE_DRAFT_MARKER = "keepit-chatgpt-restore-draft";
+  const SOURCE_URL_SESSION_KEY = "keepitChatGPTPanelSourceUrl";
+  const RESTORE_DRAFT_SESSION_KEY = "keepitChatGPTRestoreSourceDraft";
+  const PAGE_DRAFTS_KEY = "keepitChatGPTPageDraftsBySourceUrl";
   const LINK_SESSION_KEY = "keepitChatGPTLinkRequestId";
   const LINK_DIRECT_SESSION_KEY = "keepitChatGPTDirectFollowupRequestId";
   const LINK_Q_SESSION_KEY = "keepitChatGPTLinkQRequestId";
@@ -23,10 +28,20 @@
   const initialHashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
   const hasUrlMarker = url.searchParams.get(PANEL_MARKER) === "1" || initialHashParams.get(PANEL_MARKER) === "1";
   const initialLinkRequestId = initialHashParams.get(LINK_REQUEST_MARKER) || "";
+  let initialRestoreDraft = initialHashParams.get(RESTORE_DRAFT_MARKER) === "1";
+  const safeSourceUrl = value => {
+    try { const parsed = new URL(String(value || "")); return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : ""; }
+    catch { return ""; }
+  };
+  let activeSourceUrl = safeSourceUrl(initialHashParams.get(SOURCE_URL_MARKER));
   let hasSessionMarker = false;
   try {
     hasSessionMarker = sessionStorage.getItem(PANEL_MARKER) === "1";
+    if (!activeSourceUrl) activeSourceUrl = safeSourceUrl(sessionStorage.getItem(SOURCE_URL_SESSION_KEY));
+    initialRestoreDraft = initialRestoreDraft || sessionStorage.getItem(RESTORE_DRAFT_SESSION_KEY) === "1";
+    if (initialRestoreDraft) sessionStorage.removeItem(RESTORE_DRAFT_SESSION_KEY);
     if (hasUrlMarker) sessionStorage.setItem(PANEL_MARKER, "1");
+    if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
     if (initialLinkRequestId) sessionStorage.setItem(LINK_SESSION_KEY, initialLinkRequestId);
   } catch { /* restricted storage still allows the explicit URL marker */ }
   const extensionRoot = globalThis.browser?.runtime?.getURL?.("") || "";
@@ -41,6 +56,7 @@
   if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
+  const chatGPTToolbar = globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:activeSourceUrl });
   if (isFirefox) {
     globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
   }
@@ -66,6 +82,48 @@
     return /[^\s]/.test(composerText(composer));
   }
 
+  async function saveSourceDraft(sourceUrl, text, conversationUrl = "") {
+    const key = safeSourceUrl(sourceUrl);
+    const draftText = String(text || "");
+    if (!key || !draftText.trim()) return false;
+    try {
+      const stored = await browserApi.storage.local.get(PAGE_DRAFTS_KEY);
+      const drafts = { ...(stored?.[PAGE_DRAFTS_KEY] || {}) };
+      drafts[key] = { text:draftText, conversationUrl:String(conversationUrl || ""), savedAt:Date.now() };
+      await browserApi.storage.local.set({ [PAGE_DRAFTS_KEY]:drafts });
+      return true;
+    } catch (error) { console.warn("Keepit could not save the draft for this source page", error); return false; }
+  }
+
+  async function stashCurrentSourceDraft() {
+    const composer = findComposer();
+    if (!composer || !composerHasText(composer) || !activeSourceUrl) return false;
+    return saveSourceDraft(activeSourceUrl, composerText(composer), currentConversationUrl());
+  }
+
+  let sourceDraftSaveTimer = 0;
+  async function persistLiveSourceDraft(sourceUrl) {
+    const sourceKey = safeSourceUrl(sourceUrl);
+    if (!sourceKey || activeSourceUrl !== sourceKey) return;
+    const composer = findComposer();
+    const text = composerText(composer);
+    try {
+      const stored = await browserApi.storage.local.get(PAGE_DRAFTS_KEY);
+      const drafts = { ...(stored?.[PAGE_DRAFTS_KEY] || {}) };
+      if (text.trim()) drafts[sourceKey] = { text, conversationUrl:currentConversationUrl(), savedAt:Date.now() };
+      else delete drafts[sourceKey];
+      await browserApi.storage.local.set({ [PAGE_DRAFTS_KEY]:drafts });
+    } catch (error) { console.warn("Keepit could not persist the current source draft", error); }
+  }
+  document.addEventListener("input", event => {
+    const composer = findComposer();
+    if (!composer || (event.target !== composer && !composer.contains?.(event.target))) return;
+    const sourceUrl = activeSourceUrl;
+    if (!sourceUrl) return;
+    clearTimeout(sourceDraftSaveTimer);
+    sourceDraftSaveTimer = setTimeout(() => void persistLiveSourceDraft(sourceUrl), 250);
+  }, true);
+
   // The side-panel host asks before changing conversations and directly wakes a same-route follow-up.
   window.addEventListener("message", event => {
     // Chrome may expose MessageEvent.source as null for messages sent by extension pages.
@@ -75,9 +133,17 @@
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_NAV_GUARD") {
       void (async () => {
         const composer = findComposer() || await waitForLinkComposer(1300);
-        const hasDraft = composerHasText(composer);
-        try { window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft }, event.origin); } catch {}
+        const draftText = composerText(composer);
+        const hasDraft = /[^\s]/.test(draftText);
+        try { window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft, draftText }, event.origin); } catch {}
       })();
+      return;
+    }
+    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT") {
+      activeSourceUrl = safeSourceUrl(event.data.sourceUrl);
+      chatGPTToolbar?.setSourceUrl(activeSourceUrl);
+      try { if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
+      if (event.data.restoreDraft && activeSourceUrl) void restoreSavedSourceDraft(activeSourceUrl);
       return;
     }
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST" && typeof event.data.requestId === "string" && event.data.requestId) {
@@ -447,7 +513,17 @@
     try {
       const stored = await browserApi.storage.local.get(LINK_PENDING_KEY);
       pending = stored?.[LINK_PENDING_KEY];
-      if (!pending?.requestId || !pending.sourceUrl) return;
+      if (!pending?.requestId || !pending.sourceUrl) {
+        if (!pending && stagedDraftLinkPending) {
+          stagedDraftLinkPending = null;
+          try { sessionStorage.removeItem(LINK_PREPARED_SESSION_KEY); sessionStorage.removeItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY); } catch {}
+        }
+        return;
+      }
+      if (stagedDraftLinkPending && stagedDraftLinkPending.requestId !== pending.requestId) {
+        stagedDraftLinkPending = null;
+        try { sessionStorage.removeItem(LINK_PREPARED_SESSION_KEY); sessionStorage.removeItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY); } catch {}
+      }
       if (!Number.isFinite(pending.expiresAt) || pending.expiresAt < Date.now()) {
         await reportLinkResult(pending, false, "", "link-request-expired");
         return;
@@ -684,6 +760,8 @@
   async function processPanelNavigationRequest(request) {
     if (!isFirefox || window.top !== window || !request || request.expiresAt <= Date.now()) return false;
     try {
+      const latestAtStart = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+      if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
       const target = new URL(String(request.targetUrl || ""));
       if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname)) return false;
       if (target.pathname !== "/" && !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return false;
@@ -697,35 +775,65 @@
       const sameMappedFollowup = request.mode === "followup" && request.linkRequestId
         && conversationKey(currentConversationUrl()) === conversationKey(target.href);
       if (sameMappedFollowup) {
+        const currentComposer = findComposer();
+        if (composerHasText(currentComposer) && activeSourceUrl) {
+          await saveSourceDraft(activeSourceUrl, composerText(currentComposer), currentConversationUrl());
+        }
+        const latest = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+        if (latest?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
+        activeSourceUrl = safeSourceUrl(request.sourceUrl) || activeSourceUrl;
+        chatGPTToolbar?.setSourceUrl(activeSourceUrl);
         try {
+          sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
           sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
           sessionStorage.setItem(LINK_SESSION_KEY, request.linkRequestId);
         } catch {}
-        const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
-        if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+        await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
         void processPendingLink();
         return true;
       }
 
-      // Protect drafts when navigation would leave the current conversation. On the exact
-      // mapped follow-up route, the explicit Ask AI action is allowed to replace the draft.
-      const currentComposer = findComposer() || await waitForLinkComposer(1300);
-      if (composerHasText(currentComposer)) {
-        try {
-          await globalThis.LHN_MESSAGING.sendMessage({
-            type:"CHATGPT_PANEL_NAVIGATION_BLOCKED",
-            sourceTabId:request.sourceTabId,
-            linkRequestId:request.linkRequestId || "",
-            reason:"composer-not-empty"
-          });
-          const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
-          if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-        } catch (error) { console.warn("Keepit could not protect the Firefox ChatGPT composer draft", error); }
+      const targetConversation = conversationKey(target.href);
+      const displayedConversation = conversationKey(currentConversationUrl());
+      if (["reopen", "context-switch"].includes(request.mode) && targetConversation && targetConversation === displayedConversation) {
+        const composer = findComposer();
+        const previousSourceUrl = activeSourceUrl;
+        if (composerHasText(composer) && previousSourceUrl) {
+          await saveSourceDraft(previousSourceUrl, composerText(composer), displayedConversation);
+        }
+        const latest = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+        if (latest?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
+        if (request.sourceUrl) {
+          activeSourceUrl = safeSourceUrl(request.sourceUrl);
+          chatGPTToolbar?.setSourceUrl(activeSourceUrl);
+          try { sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
+        }
+        if (latest?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+        if (request.mode === "context-switch" || (request.sourceUrl && request.sourceUrl !== previousSourceUrl)) {
+          await restoreSavedSourceDraft(activeSourceUrl);
+        }
         return true;
       }
 
+      const currentComposer = findComposer() || await waitForLinkComposer(1300);
+      if (composerHasText(currentComposer)) {
+        const saved = await saveSourceDraft(activeSourceUrl, composerText(currentComposer), currentConversationUrl());
+        if (!saved) {
+          await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_NAVIGATION_BLOCKED", sourceTabId:request.sourceTabId, linkRequestId:request.linkRequestId || "", reason:"composer-not-empty" });
+          const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+          if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+          return true;
+        }
+      }
+
+      const latestBeforeNavigation = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+      if (latestBeforeNavigation?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
       const params = new URLSearchParams(target.hash.replace(/^#/, ""));
       params.set(PANEL_MARKER, "1");
+      if (request.sourceUrl) params.set(SOURCE_URL_MARKER, request.sourceUrl);
+      else params.delete(SOURCE_URL_MARKER);
+      if (request.mode === "context-switch") params.set(RESTORE_DRAFT_MARKER, "1");
+      else params.delete(RESTORE_DRAFT_MARKER);
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
       else params.delete(LINK_REQUEST_MARKER);
       target.hash = params.toString();
@@ -739,9 +847,32 @@
     }
   }
 
+  async function restoreSavedSourceDraft(sourceUrl) {
+    const key = safeSourceUrl(sourceUrl);
+    if (!key) return false;
+    const stored = await browserApi.storage.local.get(PAGE_DRAFTS_KEY);
+    const drafts = { ...(stored?.[PAGE_DRAFTS_KEY] || {}) };
+    const record = drafts[key];
+    if (!record || typeof record.text !== "string" || !record.text.trim()) return false;
+    const composer = findComposer() || await waitForLinkComposer(12000);
+    if (!composer || composerHasText(composer)) return false;
+    activeSourceUrl = key;
+    chatGPTToolbar?.setSourceUrl(key);
+    try { sessionStorage.setItem(SOURCE_URL_SESSION_KEY, key); } catch {}
+    insertDraft(composer, record.text);
+    if (normalizedDraft(composerText(composer)) !== normalizedDraft(record.text)) return false;
+    delete drafts[key];
+    await browserApi.storage.local.set({ [PAGE_DRAFTS_KEY]:drafts });
+    return true;
+  }
+  async function restoreSourceDraftIfRequested() {
+    if (!initialRestoreDraft || !activeSourceUrl) return false;
+    return restoreSavedSourceDraft(activeSourceUrl);
+  }
+
   browserApi.storage.onChanged?.addListener((changes, areaName) => {
     if (areaName !== "local") return;
-    if (changes?.[LINK_PENDING_KEY]?.newValue) void processPendingLink();
+    if (changes?.[LINK_PENDING_KEY]?.newValue || changes?.[LINK_PENDING_KEY]?.oldValue) void processPendingLink();
     const navRequest = changes?.[PANEL_NAVIGATION_KEY]?.newValue;
     if (navRequest) void processPanelNavigationRequest(navRequest);
   });
@@ -755,6 +886,7 @@
     void rememberCurrentConversation();
     if (!linkProcessing) void processPendingLink();
   };
+  if (initialRestoreDraft) void restoreSourceDraftIfRequested();
   void rememberCurrentConversation();
   void processPendingLink();
   const panelPollTimer = setInterval(pollPanel, 1200);
@@ -774,5 +906,5 @@
   document.addEventListener("visibilitychange", pollPanel);
   window.addEventListener("popstate", rememberAfterNavigation);
   window.addEventListener("hashchange", rememberAfterNavigation);
-  window.addEventListener("pagehide", () => { clearInterval(panelPollTimer); routeObserver.disconnect(); }, { once:true });
+  window.addEventListener("pagehide", () => { void stashCurrentSourceDraft(); clearInterval(panelPollTimer); routeObserver.disconnect(); }, { once:true });
 })();
