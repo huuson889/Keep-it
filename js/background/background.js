@@ -382,17 +382,22 @@ async function openChatGPTLinkPanel({ sender, tab, intent = "summary", selectedT
 }
 
 const FIREFOX_ASK_AI_CONTEXT_MENU_ID = "keepit-ask-ai-selection";
-async function ensureFirefoxAskAIContextMenu() {
+let firefoxAskAIContextMenuRegistration = null;
+function ensureFirefoxAskAIContextMenu() {
   const menus = globalThis.browser?.contextMenus;
-  if (!globalThis.browser?.sidebarAction || !menus?.create) return;
-  try { await menus.remove(FIREFOX_ASK_AI_CONTEXT_MENU_ID); } catch {}
-  try {
-    await menus.create({
-      id:FIREFOX_ASK_AI_CONTEXT_MENU_ID,
-      title:"Keepit: Hỏi AI / Ask AI",
-      contexts:["selection"]
-    });
-  } catch (error) { console.warn("Could not register the Firefox Ask AI selection menu", error); }
+  if (!globalThis.browser?.sidebarAction || !menus?.create) return Promise.resolve();
+  if (firefoxAskAIContextMenuRegistration) return firefoxAskAIContextMenuRegistration;
+  firefoxAskAIContextMenuRegistration = (async () => {
+    try { await menus.remove(FIREFOX_ASK_AI_CONTEXT_MENU_ID); } catch {}
+    try {
+      await menus.create({
+        id:FIREFOX_ASK_AI_CONTEXT_MENU_ID,
+        title:"Keepit: Hỏi AI / Ask AI",
+        contexts:["selection"]
+      });
+    } catch (error) { console.warn("Could not register the Firefox Ask AI selection menu", error); }
+  })().finally(() => { firefoxAskAIContextMenuRegistration = null; });
+  return firefoxAskAIContextMenuRegistration;
 }
 function onFirefoxAskAIContextMenu(info, tab) {
   if (info?.menuItemId !== FIREFOX_ASK_AI_CONTEXT_MENU_ID || !Number.isInteger(tab?.id)) return;
@@ -416,6 +421,9 @@ function onFirefoxAskAIContextMenu(info, tab) {
 }
 if (globalThis.browser?.sidebarAction && globalThis.browser?.contextMenus?.onClicked) {
   globalThis.browser.contextMenus.onClicked.addListener(onFirefoxAskAIContextMenu);
+  // Register immediately as well as on install/startup so the item is present even
+  // when Firefox reloads the background context without delivering those lifecycle events.
+  void ensureFirefoxAskAIContextMenu();
 }
 
 async function clearExpiredChatGPTLinkPending(expectedRequestId = "") {

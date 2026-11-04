@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.75; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- ChatGPT flow v3.5.75: Hỏi AI trên đúng hội thoại đã map thay prompt nháp bằng câu hỏi từ selection mới rồi gửi; nhánh tạo chat mới dùng selector nút gửi tiếng Việt `aria-label="Gửi"` / form submit để gửi lần đầu và ghi mapping. Firefox closed-sidebar selection action uses a Firefox-native context menu; browser QA pending.
+- Version hiện tại: v3.5.76; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- ChatGPT flow v3.5.76: Hỏi AI trên đúng hội thoại đã map thay prompt nháp bằng câu hỏi từ selection mới rồi gửi; nhánh tạo chat mới dùng selector nút gửi tiếng Việt `aria-label="Gửi"` / form submit để gửi lần đầu và ghi mapping. Firefox closed-sidebar selection action uses a Firefox-native context menu; browser QA pending.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
 - Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
@@ -19,7 +19,7 @@
 
 ### Kiểm thử trình duyệt
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
-- ChatGPT prompt flow (v3.5.75; based on v3.5.63 panel): browser QA pending — verify Firefox first-chat send with localized `Gửi` button, exact source mapping, reopening old mapped chat, Firefox selection context-menu opens a closed sidebar and sends; in-page Hỏi AI remains supported when open; replacement/send on mapped chat with draft; broader first/new-chat, Alt+X, Firefox and regression checklist remains pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, actual localized contenteditable textbox selector, exact route + empty-composer guard, exact mapped-chat draft replacement, drafts preserved on route changes, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
+- ChatGPT prompt flow (v3.5.76; based on v3.5.63 panel): browser QA pending — verify Firefox first-chat send with localized `Gửi` button, exact source mapping, reopening old mapped chat, Firefox selection context-menu opens a closed sidebar and sends; in-page Hỏi AI remains supported when open; replacement/send on mapped chat with draft; broader first/new-chat, Alt+X, Firefox and regression checklist remains pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, actual localized contenteditable textbox selector, exact route + empty-composer guard, exact mapped-chat draft replacement, drafts preserved on route changes, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -155,9 +155,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-04 | v3.5.76 | Arena.ai Agent sửa:**
+
+- Tăng version sau phản hồi người dùng; Firefox selection context-menu được đăng ký cả lúc background nạp (có khóa tránh tạo/xóa menu đồng thời), ngoài install/startup. Firefox ZIP dùng hậu tố ` Firefox` cách bằng dấu cách, không dùng dấu gạch ngang sau version.
+- Kiểm tra: syntax, Firefox menu VM, Firefox-only permission, ZIP Chrome/Firefox 122 files và `git diff --check` PASS. Browser QA vẫn cần người dùng xác nhận menu hiện và hoạt động thật.
+
 **2026-11-04 | v3.5.75 | Arena.ai Agent sửa:**
 
-- Thêm Firefox-native context-menu `Keepit: Hỏi AI / Ask AI` chỉ hiện khi có selection. Click menu gọi `sidebarAction.open()` ngay trong user-action handler, sau đó dùng đúng `selectionText` để chạy flow selected-text đã có; không đọc page body/title/clipboard. Đăng ký menu lúc install/startup và chỉ thêm `contextMenus` permission trong Firefox build. Alt+X, mapping URL→conversation, Chrome và page button không đổi.
+- Thêm Firefox-native context-menu `Keepit: Hỏi AI / Ask AI` chỉ hiện khi có selection. Click menu gọi `sidebarAction.open()` ngay trong user-action handler, sau đó dùng đúng `selectionText` để chạy flow selected-text đã có; không đọc page body/title/clipboard. Đăng ký menu ngay khi background nạp và bổ sung lúc install/startup (chống thiếu lifecycle event), chỉ thêm `contextMenus` permission trong Firefox build. Alt+X, mapping URL→conversation, Chrome và page button không đổi.
 - Khi page Hỏi AI không thể mở sidebar đã đóng trên Firefox, hiện hướng dẫn dùng right-click menu.
 - Kiểm tra source/build/package/syntax đang tiến hành; Firefox browser QA bắt buộc trước khi xác nhận hành vi.
 
