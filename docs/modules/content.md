@@ -1,48 +1,44 @@
 # Content — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code là nguồn sự thật.
-
 ## 1. Mục đích và phạm vi
 
-Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, shortcut và reader/overlay entry. `content.js` điều phối giao diện; helper giữ logic độc lập; annotation thuộc Background.
+Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, shortcut, Reader và ChatGPT panel. `content.js` điều phối giao diện; annotation CRUD thuộc Background.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Khai báo script theo URL, frame và thứ tự nạp. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | URL, frame, thứ tự và thời điểm nạp. |
 | [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI và message listeners. |
-| [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Legacy body-text/clipboard workflow; link-only flow không gọi. |
-| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | link pending, panel navigation, route watcher | Chỉ gửi prompt URL-only, bảo vệ draft, báo conversation route để lưu/reopen. |
-| [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Sidebar, tabs và controls. |
-| [`js/content/web-highlighter.js`](../../js/content/web-highlighter.js) | `LHNWebHighlighter.create` | Tạo và khôi phục highlight marks. |
-| [`js/content/annotation-restore.js`](../../js/content/annotation-restore.js) | `LHN_ANNOTATION_RESTORE.create` | Tìm lại text/range trên trang động. |
-| [`js/content/note-composer.js`](../../js/content/note-composer.js) | `LHN_NOTE_COMPOSER` | Dựng form và chuẩn hóa annotation. |
+| [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Legacy body-text/clipboard; launcher hiện không gọi. |
+| [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | document-start marker capture | Giữ panel/request ID qua fragment rewrite. |
+| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | pending link, panel navigation, route watcher | Xử lý `?q=`, draft guard và conversation mapping. |
+| [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Sidebar tabs và controls. |
+| [`js/content/web-highlighter.js`](../../js/content/web-highlighter.js) | `LHNWebHighlighter.create` | Tạo/khôi phục highlights. |
+| [`js/content/annotation-restore.js`](../../js/content/annotation-restore.js) | `LHN_ANNOTATION_RESTORE.create` | Khôi phục text/range trên trang động. |
+| [`js/content/note-composer.js`](../../js/content/note-composer.js) | `LHN_NOTE_COMPOSER` | Form và chuẩn hóa annotation. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp factories trước `content.js`; controller chống khởi tạo lặp trên document.
-2. Controller đọc settings, rồi gắn selection, sidebar và UI listeners.
-3. Annotation được tạo bởi `LHN_NOTE_COMPOSER`, gửi CRUD qua `LHN_MESSAGING`; khi trang đổi, restore/highlighter dựng lại mark.
-4. Reader và YouTube chuyển action qua custom events; Overlay xử lý video/Study.
-5. ChatGPT launcher/`Alt+X` gửi `OPEN_CHATGPT_LINK_PANEL`; Background lấy exact URL của tab nguồn và điều hướng panel tới ChatGPT. `chatgpt-context.js` body-text/clipboard path vẫn là legacy nhưng launcher mới không gọi.
-6. Panel script xác nhận request ID, chỉ chèn `Hãy tóm tắt bài sau: [URL]` vào composer rỗng rồi click Send; nếu có draft khác thì báo lỗi, giữ nguyên và chặn điều hướng. Khi route `/c/<id>` xuất hiện, Background lưu exact source URL → conversation URL; cùng URL sau đó chỉ mở route đã lưu, URL khác tạo request mới.
+1. Manifest nạp factories trước controller; controller đọc settings rồi gắn selection, sidebar và UI listeners.
+2. Note/annotation CRUD gửi qua `LHN_MESSAGING`; khi trang đổi, restore/highlighter dựng lại marks. Reader và YouTube chuyển action qua custom events tới Overlay.
+3. ChatGPT launcher/`Alt+X` gửi `OPEN_CHATGPT_LINK_PANEL`; Background lấy exact URL tab nguồn và dựng prompt URL-only trong ChatGPT `?q=`. Marker `document_start` giữ panel/request ID trước khi ChatGPT có thể xóa fragment.
+4. `chatgpt-autofill.js` đối chiếu pending request với q/ID. ChatGPT có thể native-submit; nếu exact prompt vẫn trong composer, content script xác nhận rồi bấm Send một lần. Composer rỗng không bị tự điền; draft khác được giữ.
+5. `/c/<id>` được map với exact source URL; URL đã map chỉ mở lại hội thoại, URL khác tạo request mới.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ thứ tự nạp manifest để mọi global `LHN_*` tồn tại trước khi controller dùng.
-- Annotation CRUD tiếp tục qua Background; giữ payload `item`, `id`, `url`, `origin` và message types hiện tại.
-- Shortcut không chặn nhập liệu; giữ guard cho input/contenteditable và event Reader/Overlay.
-- Loại extension UI khỏi annotation restore và capture text; không biến UI thành nguồn annotation/selection.
-- Luồng v3.5.61 không gọi `LHN_CHATGPT_CONTEXT`, không trích page body/title và không dùng clipboard; prompt chỉ có `Hãy tóm tắt bài sau: ` + exact current URL.
-- Auto-send chỉ chạy trong ChatGPT panel có marker và pending request ID khớp; chỉ chèn prompt nếu composer rỗng, đánh dấu prompt do request tạo và xác nhận chính xác trước khi click Send. Mọi draft có sẵn—kể cả trùng chuỗi—không bị thay hoặc gửi; panel navigation được chặn nếu draft đã có trước đó.
-- Exact source URL → validated HTTPS conversation `/c/<id>` mapping được lưu local. Cùng URL chỉ reopen mapping, khác URL không tái sử dụng chat; expired/stale pending không được gửi. Legacy clipboard/body path được giữ nhưng không gắn vào launcher hiện tại.
-- Alt+Q/custom `sidebarShortcut` tiếp tục điều khiển Highlight; giữ label mới đồng bộ EN/VI/KO trong `LHN_LANGUAGES`.
+- Giữ thứ tự nạp manifest và payload/message types hiện hành; annotation tiếp tục lưu qua Background.
+- Không cho shortcut chặn nhập liệu; loại extension UI khỏi annotation restore và text capture.
+- Prompt chỉ là `Hãy tóm tắt bài sau: ` + exact current URL. Luồng này không gọi `LHN_CHATGPT_CONTEXT`, không gửi body/title và không dùng clipboard.
+- Marker chạy `document_start`; lưu request ID và exact q trước fragment rewrite. Chỉ pending request hiện hành với prompt q khớp chính xác mới được xử lý.
+- Nhận diện q native-send để tránh duplicate; chỉ click Send nếu composer còn exact prompt. Không gõ vào composer rỗng; draft khác không bị thay/gửi, và draft có trước navigation sẽ chặn navigation.
+- Lưu exact URL → validated HTTPS conversation `/c/<id>` local; cùng URL reopen, URL khác không tái sử dụng chat. Pending hết hạn/stale không được gửi. Giữ legacy body/clipboard code tách khỏi launcher.
+- Alt+Q/`sidebarShortcut` tiếp tục điều khiển Highlight; giữ label EN/VI/KO.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/content/*.js; do node --check "$f" || exit; done`; kiểm tra manifest references và `git diff --check`.
-- v3.5.61 VM đã chạy: exact URL-only prompt, single Send, no clipboard, different-link new-chat isolation, existing/identical draft protection và Firefox navigation guard — PASS.
-- Browser QA Chrome/Firefox chưa chạy: xác nhận composer/send control thật, login/frame policy, route mapping và toggle.
-- Xác nhận scrollbar Chromium 3px/Firefox thin chỉ khi panel mở, được restore lúc đóng; regression Alt+Q, sidebar tabs, annotation và website-disabled.
-- Ghi rõ browser nào đã chạy; static/VM không thay thế browser verification.
+- Focused VM PASS: exact `?q=` + marker capture; native-send không duplicate; composer exact gửi một lần; draft khác được giữ; q rỗng fail-safe; stale request bị bỏ qua. Background mapping PASS: URL đầu tạo q, URL trùng reopen mapping, URL khác tạo request mới.
+- Static PASS: `node --check` first-party JS, Python compile, manifest/version/references, no-debugger, cấu trúc/độ dài tài liệu và `git diff --check`.
+- Browser QA Chrome/Firefox chưa chạy: xác nhận ChatGPT thực tế xử lý `?q=`, composer/send, login/frame, mapping, draft guard và panel toggle.
+- Cũng cần xác nhận scrollbar panel, Alt+Q, sidebar tabs, annotation và website-disabled trên trình duyệt thật; static/VM không thay thế browser QA.

@@ -205,10 +205,9 @@ function safeChatGPTConversationUrl(value) {
     return url.href;
   } catch { return ""; }
 }
-function makeChatGPTLinkTarget(requestId) {
-  // Leave q= out: some ChatGPT builds auto-submit it, others only prefill it. The content script
-  // inserts and clicks Send once, avoiding ambiguous/double-submit behavior. The prompt is URL-only.
+function makeChatGPTLinkTarget(sourceUrl, requestId) {
   const target = new URL("https://chatgpt.com/");
+  target.searchParams.set("q", `Hãy tóm tắt bài sau: ${sourceUrl}`);
   const hash = new URLSearchParams();
   hash.set("keepit-chatgpt-panel", "1");
   hash.set("keepit-chatgpt-link-request", requestId);
@@ -237,7 +236,7 @@ async function queueChatGPTLinkPanelFlow(tab) {
       mode:"auto-send-link",
       expiresAt:Date.now() + 120000
     };
-    navigationRequest.targetUrl = makeChatGPTLinkTarget(linkRequestId);
+    navigationRequest.targetUrl = makeChatGPTLinkTarget(sourceUrl, linkRequestId);
     navigationRequest.linkRequestId = linkRequestId;
     await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
     setTimeout(() => { void clearExpiredChatGPTLinkPending(linkRequestId); }, 121000);
