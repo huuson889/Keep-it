@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.70; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- ChatGPT flow v3.5.71: Alt+X lần đầu gửi URL + prompt tóm tắt qua `?q=`, cùng URL lần sau chỉ mở hội thoại; icon Hỏi AI lấy đúng selection hiện tại, lần đầu kèm URL, lần sau gửi câu hỏi vào composer của hội thoại đã map, không URL. Sửa nhận Chrome extension `postMessage` khi `event.source` là null; cần xác nhận lại trên Chrome/Firefox thật.
+- Version hiện tại: v3.5.72; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- ChatGPT flow v3.5.72: Alt+X lần đầu gửi URL + prompt tóm tắt qua `?q=`, cùng URL lần sau chỉ mở hội thoại; icon Hỏi AI giữ selection hiện tại, lần đầu kèm URL, lần sau gửi câu hỏi vào composer hội thoại đã map, không URL. Thêm selector cho composer hiện dùng `DIV[contenteditable=true][role=textbox][aria-label="Hỏi ChatGPT"]`; cần xác nhận lại trên Chrome thực.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
 - Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
@@ -19,7 +19,7 @@
 
 ### Kiểm thử trình duyệt
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
-- ChatGPT prompt flow (v3.5.71; based on v3.5.63 panel): browser QA pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, exact route + empty-composer guard, existing drafts preserved, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
+- ChatGPT prompt flow (v3.5.72; based on v3.5.63 panel): browser QA pending — first URL via Alt+X sends `- Website: <URL>\n- Hãy tóm tắt bài viết này` via q and maps conversation; first Ask AI sends `- Website: <URL>\n- "<selection>" có nghĩa là gì?`; repeat Alt+X only reopens; repeat Ask AI sends the exact current selection as a question into the mapped conversation once, without URL. Confirm URL/query text/newlines, selected snippet capture and no page body/title, extension-origin postMessage reporting, `event.source === null` acceptance for Chrome extension messages, direct same-route frame dispatch / fallback navigation when route differs, actual localized contenteditable textbox selector, exact route + empty-composer guard, existing drafts preserved, q native-send without duplicate, Chrome iframe/Firefox sidebar, Alt+X toggle, worker restart, frame/DNR/scrollbar and Alt+Q/custom `sidebarShortcut` regressions.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -155,9 +155,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-04 | v3.5.72 | Arena.ai Agent sửa:**
+
+- Người dùng xác nhận runtime result của follow-up là `composer-unavailable`; DevTools trong frame ChatGPT tìm thấy composer là `DIV` contenteditable, `role="textbox"`, `aria-label="Hỏi ChatGPT"`, không khớp selector cũ. Thêm selector aria-label ChatGPT và fallback `[contenteditable=true][role=textbox]`.
+- Kiểm tra: selector target xác nhận theo DOM người dùng; VM logic follow-up/draft/route, toàn bộ JS syntax, ZIP Chrome/Firefox 122 files. Browser QA v3.5.72 đang chờ.
+
 **2026-11-04 | v3.5.71 | Arena.ai Agent sửa:**
 
-- Bổ sung nhận extension message trong Chrome khi `MessageEvent.source` là `null` (được xác thực bằng exact extension origin); trả lời draft guard qua `window.parent` thay vì `event.source`, có thể null. v3.5.70 vẫn chưa được xác nhận hoạt động; user browser QA sau khi nạp v3.5.71 đang chờ.
+- Bổ sung nhận extension message trong Chrome khi `MessageEvent.source` là `null` (được xác thực bằng exact extension origin); trả lời draft guard qua `window.parent` thay vì `event.source`, có thể null. Người dùng thử v3.5.71 và xác nhận vẫn chưa hiện câu hỏi; storage listener chứng minh request được queue rồi clear, result báo `composer-unavailable`.
 - Kiểm tra: VM mô phỏng `source=null` nhận follow-up, origin khác bị từ chối, trả draft guard đúng parent; syntax/build smoke.
 
 **2026-11-04 | v3.5.70 | Arena.ai Agent sửa:**

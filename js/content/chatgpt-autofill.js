@@ -51,6 +51,8 @@
   function findComposer() {
     return document.querySelector("#prompt-textarea")
       || document.querySelector('[contenteditable="true"][data-testid="prompt-textarea"]')
+      || document.querySelector('[contenteditable="true"][role="textbox"][aria-label*="ChatGPT" i]')
+      || document.querySelector('[contenteditable="true"][role="textbox"]')
       || document.querySelector('textarea[placeholder*="Message" i]')
       || document.querySelector('textarea[aria-label*="Message" i]');
   }
