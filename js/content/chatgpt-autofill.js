@@ -65,14 +65,15 @@
 
   // The side-panel host asks before changing conversations and directly wakes a same-route follow-up.
   window.addEventListener("message", event => {
-    if (window.top === window || event.source !== window.parent) return;
+    // Chrome may expose MessageEvent.source as null for messages sent by extension pages.
+    if (window.top === window || (event.source !== window.parent && event.source !== null)) return;
     const extensionOrigin = extensionMessageOrigin();
     if (!extensionOrigin || event.origin !== extensionOrigin) return;
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_NAV_GUARD") {
       void (async () => {
         const composer = findComposer() || await waitForLinkComposer(1300);
         const hasDraft = composerHasText(composer);
-        try { event.source.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft }, event.origin); } catch {}
+        try { window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft }, event.origin); } catch {}
       })();
       return;
     }
