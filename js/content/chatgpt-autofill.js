@@ -29,6 +29,12 @@
     if (initialLinkRequestId) sessionStorage.setItem(LINK_SESSION_KEY, initialLinkRequestId);
   } catch { /* restricted storage still allows the explicit URL marker */ }
   const extensionRoot = globalThis.browser?.runtime?.getURL?.("") || "";
+  function extensionMessageOrigin() {
+    try {
+      const parsed = new URL(extensionRoot);
+      return parsed.host ? `${parsed.protocol}//${parsed.host}` : "";
+    } catch { return ""; }
+  }
   const hasExtensionReferrer = !!extensionRoot && document.referrer.startsWith(extensionRoot);
   if (hasExtensionReferrer && !hasSessionMarker) { try { sessionStorage.setItem(PANEL_MARKER, "1"); hasSessionMarker = true; } catch {} }
   if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
@@ -60,7 +66,7 @@
   // The side-panel host asks before changing conversations and directly wakes a same-route follow-up.
   window.addEventListener("message", event => {
     if (window.top === window || event.source !== window.parent) return;
-    const extensionOrigin = (() => { try { return new URL(extensionRoot).origin; } catch { return ""; } })();
+    const extensionOrigin = extensionMessageOrigin();
     if (!extensionOrigin || event.origin !== extensionOrigin) return;
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_NAV_GUARD") {
       void (async () => {
@@ -158,7 +164,8 @@
   function notifyPanelHostConversation(conversationUrl) {
     if (window.top === window) return;
     try {
-      const extensionOrigin = new URL(extensionRoot).origin;
+      const extensionOrigin = extensionMessageOrigin();
+      if (!extensionOrigin) return;
       window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_CONVERSATION", conversationUrl:String(conversationUrl || "") }, extensionOrigin);
     } catch {}
   }
