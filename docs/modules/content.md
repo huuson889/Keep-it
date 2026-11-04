@@ -29,6 +29,7 @@ Content scripts gắn Keepit vào website: highlight, note, dịch, sidebar, sho
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Giữ thứ tự nạp manifest và payload/message types hiện hành; annotation tiếp tục lưu qua Background.
+- Thanh icon dịch lấy `translateIconStyle` từ settings đã resolve (`1` compact text, `2` icon-only, `3` micro hover; mặc định `3`), áp dụng theme theo `sidebarTheme`; thay kiểu chỉ đổi UI, không đổi ba action hiện có.
 - Không cho shortcut chặn nhập liệu; loại extension UI khỏi annotation restore và text capture.
 - Prompt chỉ là `Hãy tóm tắt bài sau: ` + exact current URL. Luồng này không gọi `LHN_CHATGPT_CONTEXT`, không gửi body/title và không dùng clipboard.
 - Marker chạy `document_start`; lưu request ID và exact q trước fragment rewrite. Chỉ pending request hiện hành với prompt q khớp chính xác mới được xử lý.

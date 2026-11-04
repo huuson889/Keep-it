@@ -24,6 +24,7 @@
     hasCustomSpeechRateByLanguage: {},
     inheritedSpeechRateByLanguage: {},
     translateIconEnabled: false,
+    translateIconStyle: "3",
     autoSpeakOnTranslate: true,
     translationPopupEnabled: false,
     showFullEnglishDictionary: true,

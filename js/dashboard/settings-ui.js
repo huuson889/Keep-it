@@ -70,7 +70,7 @@
       dependent.querySelectorAll("input,button,select,textarea").forEach(control => { control.disabled = !enabled; });
     }
     // Ô tìm Settings: lọc hàng/nhóm/tab bằng class tạm (không đổi hidden hay state), xóa ô tìm là về nguyên trạng.
-    const SEARCH_ROWS = ".settings-preference-row,.settings-shortcut-row,.settings-account-row,.settings-backup-row,.settings-speech-rate-row,.settings-danger-row,.settings-speech-voice-row,.settings-language-speech-rate-row";
+    const SEARCH_ROWS = ".settings-preference-row,.settings-icon-display-option,.settings-shortcut-row,.settings-account-row,.settings-backup-row,.settings-speech-rate-row,.settings-danger-row,.settings-speech-voice-row,.settings-language-speech-rate-row";
     function initSettingsSearch() {
       const dialog = $("dashboardSettingsDialog"), input = $("settingsSearch"), content = dialog?.querySelector(".settings-window-content"), empty = $("settingsSearchEmpty");
       if (!input || !content) return;

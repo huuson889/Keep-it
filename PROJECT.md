@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.65; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- Version hiện tại: v3.5.66; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
 - ChatGPT flow link-only dùng `?q=`, mapping URL→conversation và bảo vệ draft; cùng URL mở lại hội thoại, URL khác tạo request mới.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
-- UI tray v3.5.65 dùng đúng ba SVG người dùng cung cấp và nối action vào luồng hiện có; static checks đang chạy, browser QA chưa chạy.
+- Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Reader ↔ Web TTS shared speed
@@ -18,7 +18,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
-- Biểu tượng dịch nổi (v3.5.65): browser QA pending — bật/tắt “Hiện biểu tượng dịch Keepit”; xác nhận tray 3 nút chỉ hiện khi tính năng bật, bung khi hover/focus, nằm bên trái logo nếu đủ chỗ và lật phía ở mép trái; xác nhận đúng SVG eraser/languages/sparkles 16×16, action gọi luồng hiện tại và các tương tác ngoài phạm vi không đổi.
+- Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
 - ChatGPT browser side panel (v3.5.63): browser QA pending — verify Alt+X/button opens and closes repeatedly, including after the background service worker restarts; verify first exact URL q-submit/mapping, same-URL reopen, different-URL fresh chat, native-send duplicate guard, draft protection, Chrome iframe and Firefox sidebar. Confirm route restore, frame/DNR, scrollbar restoration and Alt+Q/custom `sidebarShortcut` regression.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
@@ -154,6 +154,14 @@ Sidebar trang giữ tab Highlight; tab ChatGPT và `Alt+X` toggle browser-native
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-04 | v3.5.66 | Arena.ai Agent sửa:**
+
+- Thêm tab Settings “Icon hiển thị” để chọn ba dạng đầu từ `ICON POPUP KEEPIT.html`; mặc định Dạng 3. Lưu lựa chọn vào `lhnSettings.translateIconStyle`, render lại popup khi đổi lựa chọn và hỗ trợ light/dark theo theme extension.
+- Giữ nguyên markup/paths SVG và cấu trúc thị giác ba mẫu; action vẫn gọi composer, dịch đoạn chọn và ChatGPT link-only launcher hiện có.
+- File: `manifest.json`, `js/core/defaults.js`, `js/core/languages.js`, `js/dashboard/dashboard.js`, `js/dashboard/settings-ui.js`, `pages/dashboard.html`, `css/dashboard/dashboard.css`, `js/content/content.js`, `css/content/content.css`, `docs/modules/dashboard.md`, `docs/modules/content.md`, `PROJECT.md`.
+- Kiểm tra: `node --check`, so sánh XML SVG với file người dùng, tab/option/default/localization checks, manifest/CSS braces và `git diff --check` PASS. Chrome/Firefox ZIPs PASS (122 files each; v3.5.66 manifest, tab and SVG checks). Browser QA chưa chạy.
+- Gói: `Keepit - Optimize Test-v3.5.66.zip`, `Keepit - Optimize Test-v3.5.66-Firefox.zip`.
 
 **2026-11-04 | v3.5.65 | Arena.ai Agent sửa:**
 

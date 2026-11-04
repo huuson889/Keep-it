@@ -1181,3 +1181,50 @@ body *::-webkit-scrollbar-thumb {
 #dashboardSidebar .dashboard-reference-nav { scrollbar-width:none!important; }
 #dashboardSidebar .dashboard-reference-nav::-webkit-scrollbar { display:none!important; }
 @-moz-document url-prefix() { #dashboardSidebar .dashboard-reference-nav { scrollbar-width:none!important; } }
+
+/* Floating translate-icon style selector previews (light and dark follow Dashboard theme). */
+.settings-icon-display-options { display:grid; gap:12px; }
+.settings-icon-display-option { position:relative; display:grid; grid-template-columns:18px minmax(0,1fr); grid-template-rows:auto auto; align-items:start; gap:12px 10px; padding:14px; border:1px solid var(--lhn-ui-border); border-radius:12px; background:var(--lhn-ui-surface); color:var(--lhn-ui-text); cursor:pointer; transition:border-color 140ms ease,background-color 140ms ease,box-shadow 140ms ease; }
+.settings-icon-display-option:hover { border-color:var(--lhn-ui-brand); }
+.settings-icon-display-option.is-selected { border-color:var(--lhn-ui-brand); background:var(--lhn-ui-brand-soft); box-shadow:0 0 0 2px color-mix(in srgb,var(--lhn-ui-brand) 12%,transparent); }
+.settings-icon-style-radio { grid-column:1; grid-row:1; width:16px; height:16px; margin:2px 0 0; accent-color:var(--lhn-ui-brand); }
+.settings-icon-style-radio:focus-visible { outline:2px solid var(--lhn-ui-brand); outline-offset:3px; }
+.settings-icon-style-copy { grid-column:2; display:grid; gap:4px; min-width:0; }
+.settings-icon-style-copy strong { color:var(--lhn-ui-text); font-size:13px; font-weight:650; line-height:1.35; }
+.settings-icon-style-copy small { color:var(--lhn-ui-muted); font-size:11px; line-height:1.4; }
+.settings-icon-preview-stage { grid-column:2; display:flex; align-items:center; justify-content:center; box-sizing:border-box; min-width:0; min-height:90px; padding:18px 14px; overflow-x:auto; border:1px solid rgba(203,213,225,.6); border-radius:12px; background:rgba(226,232,240,.5); }
+html.dark .settings-icon-preview-stage { border-color:rgba(30,41,59,.9); background:rgba(15,23,42,.4); }
+.settings-icon-preview-toolbar { display:inline-flex; flex:0 0 auto; align-items:center; box-sizing:border-box; padding:4px; border:1px solid #e2e8f0; background:rgba(255,255,255,.95); color:#1e293b; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1); font:500 12px/16px ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"; white-space:nowrap; }
+html.dark .settings-icon-preview-toolbar { border-color:#1e293b; background:rgba(15,23,42,.95); color:#f1f5f9; box-shadow:0 25px 50px -12px rgba(0,0,0,.25); }
+.settings-icon-style-1 { gap:4px; border-radius:12px; }
+.settings-icon-style-2 { gap:2px; border-radius:8px; }
+.settings-icon-style-3 { gap:0; border-radius:12px; transition:all 200ms ease-out; }
+.settings-icon-preview-action { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; box-sizing:border-box; padding:4px 8px; border-radius:6px; font:500 12px/16px ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"; white-space:nowrap; transition:background-color 120ms ease; }
+.settings-icon-preview-action svg { display:block; flex:0 0 16px; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.settings-icon-preview-action span { margin-left:6px; }
+.settings-icon-style-1 .settings-icon-preview-action:hover,.settings-icon-style-2 .settings-icon-preview-action:hover,.settings-icon-style-3 .settings-icon-preview-action:hover { background:#f1f5f9; }
+html.dark .settings-icon-style-1 .settings-icon-preview-action:hover,html.dark .settings-icon-style-2 .settings-icon-preview-action:hover,html.dark .settings-icon-style-3 .settings-icon-preview-action:hover { background:#1e293b; }
+.settings-icon-preview-action.lhn-action-highlight { color:#d97706; }
+html.dark .settings-icon-preview-action.lhn-action-highlight { color:#fbbf24; }
+.settings-icon-preview-action.lhn-action-translate { color:#0284c7; }
+html.dark .settings-icon-preview-action.lhn-action-translate { color:#38bdf8; }
+.settings-icon-preview-action.lhn-action-ai { color:#059669; }
+html.dark .settings-icon-preview-action.lhn-action-ai { color:#34d399; }
+.settings-icon-preview-separator { flex:0 0 1px; width:1px; height:14px; background:#e2e8f0; }
+html.dark .settings-icon-preview-separator { background:#1e293b; }
+.settings-icon-preview-logo { display:flex; flex:0 0 28px; align-items:center; justify-content:center; width:28px; height:28px; cursor:pointer; transition:transform 150ms ease; }
+.settings-icon-preview-logo:hover { transform:scale(1.05); }
+.settings-icon-preview-logo>svg { display:block; flex:none; width:28px; height:28px; overflow:visible; }
+.settings-icon-style-1 .settings-icon-preview-logo { margin-left:2px; }
+.settings-icon-style-2 .settings-icon-preview-logo { margin-left:4px; }
+.settings-icon-style-1 .settings-icon-preview-action { gap:6px; padding:4px 8px; }
+.settings-icon-style-2 .settings-icon-preview-action { gap:0; padding:6px; }
+.settings-icon-style-2 .settings-icon-preview-action span { display:none; }
+.settings-icon-style-3 .settings-icon-preview-actions { display:flex; flex:0 0 auto; align-items:center; gap:2px; max-width:0; padding:0; overflow:hidden; opacity:0; transition:max-width 200ms ease-out,opacity 200ms ease-out,padding 200ms ease-out; }
+.settings-icon-style-3 .settings-icon-preview-action { gap:0; padding:6px; }
+.settings-icon-style-3 .settings-icon-preview-action span { display:none; }
+.settings-icon-style-3:hover .settings-icon-preview-actions,.settings-icon-style-3:focus-within .settings-icon-preview-actions { max-width:320px; padding-right:4px; opacity:1; }
+@media(max-width:620px) {
+  .settings-icon-display-option { grid-template-columns:18px minmax(0,1fr); }
+  .settings-icon-preview-stage { padding:12px 8px; justify-content:flex-start; }
+}

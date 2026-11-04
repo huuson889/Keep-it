@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = n
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -155,6 +155,8 @@ function refreshDashboardSettings() {
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
   $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
+  const iconStyle = ["1", "2", "3"].includes(String(dashboardSettings.translateIconStyle)) ? String(dashboardSettings.translateIconStyle) : "3";
+  document.querySelectorAll("input[name=translateIconStyle]").forEach(input => { const selected = input.value === iconStyle; input.checked = selected; input.closest(".settings-icon-display-option")?.classList.toggle("is-selected", selected); });
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
   $("settingsFullEnglishDictionary").checked = dashboardSettings.showFullEnglishDictionary !== false;
   $("settingsAutoTranslatePopup").checked = dashboardSettings.autoTranslate !== false;
@@ -3256,6 +3258,7 @@ $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslat
 $("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));
 $("settingsTranslateIconEnabled").addEventListener("change", event => saveDashboardTranslationMode("translateIconEnabled", event.target.checked));
+document.querySelectorAll("input[name=translateIconStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && ["1", "2", "3"].includes(event.target.value)) saveDashboardSettings({ translateIconStyle:event.target.value }); }));
 $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDashboardTranslationMode("translationPopupEnabled", event.target.checked));
 $("settingsFullEnglishDictionary").addEventListener("change", event => saveDashboardSettings({ showFullEnglishDictionary:event.target.checked }));
 $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboardSettings({ autoTranslate:event.target.checked }));
