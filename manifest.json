@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.57",
+  "version": "3.5.58",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -13,6 +13,7 @@
     "tabs",
     "declarativeNetRequest",
     "clipboardWrite",
+    "clipboardRead",
     "sidePanel"
   ],
   "background": {
@@ -99,6 +100,19 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
+        "js/content/chatgpt-autofill.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "browser_specific_settings": {
@@ -155,7 +169,7 @@
       "suggested_key": {
         "default": "Alt+X"
       },
-      "description": "Open ChatGPT side panel and copy page text"
+      "description": "Toggle ChatGPT panel and prepare an unsent page draft"
     }
   }
 }

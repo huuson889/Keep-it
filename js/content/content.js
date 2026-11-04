@@ -1108,24 +1108,47 @@
     clearTimeout(sidebarToastTimer);
     sidebarToastTimer = setTimeout(() => { toast.classList.remove("is-visible"); sidebarToastTimer = setTimeout(() => { if (sidebarToastRender === renderToast) sidebarToastRender = null; toast.remove(); }, 220); }, 1800);
   }
+  function setChatGPTPanelScrollbar(open) {
+    const styleId = "lhn-chatgpt-panel-scrollbar-style";
+    let style = document.getElementById(styleId);
+    if (!open) { style?.remove(); return; }
+    if (!style) { style = document.createElement("style"); style.id = styleId; (document.head || document.documentElement).appendChild(style); }
+    style.textContent = /Firefox\//i.test(navigator.userAgent)
+      ? "* { scrollbar-width: thin !important; }"
+      : "*::-webkit-scrollbar { width: 3px !important; height: 3px !important; }";
+  }
   async function launchChatGPTSidePanel() {
-    // Start the open request and clipboard write directly in the user action handler.
-    let openPromise;
-    try { openPromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_SIDEPANEL" }); }
-    catch (error) { openPromise = Promise.reject(error); }
-    const copyPromise = CHATGPT_CONTEXT.copyPromptToClipboard();
-    const [openResult, copyResult] = await Promise.allSettled([openPromise, copyPromise]);
-    const opened = openResult.status === "fulfilled" && openResult.value?.ok === true;
-    const copied = copyResult.status === "fulfilled" && copyResult.value?.ok === true;
-    if (!opened) {
-      const reason = openResult.status === "rejected" ? String(openResult.reason?.message || openResult.reason) : openResult.value?.reason || openResult.value?.error || "unknown-error";
-      console.warn("Could not open the ChatGPT side panel from the page launcher", reason);
+    // Send the toggle immediately from the click handler; only copy/fill when it opened.
+    let togglePromise;
+    try { togglePromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_SIDEPANEL" }); }
+    catch (error) { togglePromise = Promise.reject(error); }
+    const toggleResult = await Promise.allSettled([togglePromise]);
+    const result = toggleResult[0].status === "fulfilled" ? toggleResult[0].value : null;
+    const opened = result?.ok === true && result.opened === true;
+    if (!result?.ok) {
+      const reason = toggleResult[0].status === "rejected" ? String(toggleResult[0].reason?.message || toggleResult[0].reason) : result?.reason || result?.error || "unknown-error";
+      console.warn("Could not toggle the ChatGPT side panel from the page launcher", reason);
+      showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
+      return { opened:false, copied:false };
     }
-    if (opened && sidebarOpen) closeSidebar();
-    if (!copied) showSidebarToast(() => t("chatGPTCopyFailedToast"));
-    else if (!opened) showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
-    else showSidebarToast(() => t(copyResult.value.truncated ? "chatGPTCopiedTruncatedToast" : "chatGPTCopiedToast"));
-    return { opened, copied };
+    if (!opened) {
+      showSidebarToast(() => t("chatGPTPanelClosedToast"));
+      return { opened:false, copied:false, closed:true };
+    }
+    if (sidebarOpen) closeSidebar();
+    const copyResult = await CHATGPT_CONTEXT.copyPromptToClipboard();
+    if (!copyResult.ok) {
+      showSidebarToast(() => t("chatGPTCopyFailedToast"));
+      return { opened:true, copied:false };
+    }
+    showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+    try {
+      await LHN_MESSAGING.sendMessage({ type:"CHATGPT_DRAFT_READY", truncated:copyResult.truncated === true });
+    } catch (error) {
+      console.warn("Could not request ChatGPT draft auto-fill", error);
+      showSidebarToast(() => t("chatGPTAutoFillFailedToast"));
+    }
+    return { opened:true, copied:true, truncated:copyResult.truncated };
   }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
   function syncSidebarEdgeToggle() {
@@ -1786,7 +1809,16 @@
         return result;
       });
     }
-    if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
+    if (message?.type === "CHATGPT_PANEL_VISIBILITY") { setChatGPTPanelScrollbar(message.open === true); return; }
+    if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
+    if (message?.type === "CHATGPT_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
+    if (message?.type === "CHATGPT_COPY_FAILED") { showSidebarToast(() => t("chatGPTCopyFailedToast")); return; }
+    if (message?.type === "CHATGPT_AUTOFILL_PENDING") { showSidebarToast(() => t("chatGPTAutoFillPendingToast")); return; }
+    if (message?.type === "CHATGPT_AUTOFILL_RESULT") {
+      if (message.ok) showSidebarToast(() => t(message.truncated ? "chatGPTAutoFillTruncatedToast" : "chatGPTAutoFillSuccessToast"));
+      else showSidebarToast(() => t(message.reason === "composer-not-empty" ? "chatGPTComposerPreservedToast" : "chatGPTAutoFillFailedToast"));
+      return;
+    }
     if (message?.type === "RESTORE_HIGHLIGHTS") return websiteDisabled ? undefined : restoreAnnotations();
     if (message?.type === "OPEN_SIDEBAR") return openSidebar();
     if (message?.type === "TOGGLE_SIDEBAR") return toggleSidebar();

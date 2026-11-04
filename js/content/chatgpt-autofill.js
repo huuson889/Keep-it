@@ -1,0 +1,143 @@
+(() => {
+  const PENDING_KEY = "keepitChatGPTDraftPending";
+  const PANEL_MARKER = "keepit-chatgpt-panel";
+  const PROMPT_PREFIX = "Hãy tóm tắt nội dung ngắn gọn";
+  const MAX_WAIT_MS = 25000;
+  const isFirefox = /Firefox\//i.test(globalThis.navigator?.userAgent || "");
+  let url;
+  try { url = new URL(location.href); } catch { return; }
+  // ChatGPT in an ordinary tab must never read or receive the extension's clipboard draft.
+  if (url.searchParams.get(PANEL_MARKER) !== "1" || (!isFirefox && window.top === window)) return;
+  const browserApi = globalThis.browser;
+  if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
+
+  let processing = false;
+  let retryRequested = false;
+  let lastRequestId = "";
+
+  function findComposer() {
+    return document.querySelector("#prompt-textarea")
+      || document.querySelector('[contenteditable="true"][data-testid="prompt-textarea"]')
+      || document.querySelector('textarea[placeholder*="Message" i]')
+      || document.querySelector('textarea[aria-label*="Message" i]');
+  }
+
+  function composerText(composer) {
+    return String(composer?.isContentEditable ? composer.innerText || composer.textContent : composer?.value || "").replace(/[\u200b\u2060]/g, "");
+  }
+
+  function composerHasText(composer) {
+    return /[^\s]/.test(composerText(composer));
+  }
+
+  function waitForComposer() {
+    const initial = findComposer();
+    if (initial) return Promise.resolve(initial);
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        observer.disconnect();
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const observer = new MutationObserver(() => {
+        const composer = findComposer();
+        if (composer) finish(composer);
+      });
+      observer.observe(document.documentElement, { childList:true, subtree:true });
+      const timer = setTimeout(() => finish(null), MAX_WAIT_MS);
+    });
+  }
+
+  function insertDraft(composer, text) {
+    composer.focus();
+    if (composer.isContentEditable) {
+      let inserted = false;
+      try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe empty-editor fallback */ }
+      if (!inserted || composerText(composer) !== text.trim()) {
+        composer.textContent = text;
+        composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+      }
+    } else {
+      const proto = Object.getPrototypeOf(composer);
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+      if (setter) setter.call(composer, text); else composer.value = text;
+      composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
+      composer.dispatchEvent(new Event("change", { bubbles:true }));
+    }
+    return composerText(composer) === text.trim();
+  }
+
+  async function report(pending, ok, reason = "") {
+    try {
+      await globalThis.LHN_MESSAGING.sendMessage({
+        type:"CHATGPT_AUTOFILL_RESULT",
+        requestId:pending?.requestId || "",
+        ok:!!ok,
+        reason
+      });
+    } catch (error) { console.warn("Keepit could not report the ChatGPT draft result", error); }
+  }
+
+  async function processPendingDraft() {
+    if (processing) { retryRequested = true; return; }
+    processing = true;
+    let pending = null;
+    try {
+      const stored = await browserApi.storage.local.get(PENDING_KEY);
+      pending = stored?.[PENDING_KEY];
+      if (!pending || !pending.requestId || pending.requestId === lastRequestId) return;
+      lastRequestId = pending.requestId;
+      if (!Number.isFinite(pending.expiresAt) || pending.expiresAt < Date.now()) {
+        await report(pending, false, "draft-expired");
+        return;
+      }
+      const composer = await waitForComposer();
+      if (!composer) {
+        await report(pending, false, "composer-unavailable");
+        return;
+      }
+      // Never replace text that the user has already typed in ChatGPT.
+      if (composerHasText(composer)) {
+        await report(pending, false, "composer-not-empty");
+        return;
+      }
+      let clipboardText = "";
+      try { clipboardText = await navigator.clipboard.readText(); }
+      catch (error) {
+        console.warn("Keepit could not read the prepared ChatGPT draft from the clipboard", error);
+        await report(pending, false, "clipboard-read-failed");
+        return;
+      }
+      if (!clipboardText.startsWith(PROMPT_PREFIX) || !clipboardText.includes("Nội dung chính:")) {
+        await report(pending, false, "prepared-draft-not-found");
+        return;
+      }
+      const latest = (await browserApi.storage.local.get(PENDING_KEY))?.[PENDING_KEY];
+      if (latest?.requestId !== pending.requestId) { retryRequested = true; return; }
+      // Recheck after clipboard access in case the user started typing meanwhile.
+      if (composerHasText(composer)) {
+        await report(pending, false, "composer-not-empty");
+        return;
+      }
+      const inserted = insertDraft(composer, clipboardText);
+      await report(pending, inserted, inserted ? "" : "composer-insert-failed");
+    } catch (error) {
+      console.warn("Keepit could not fill the ChatGPT draft", error);
+      if (pending) await report(pending, false, "autofill-failed");
+    } finally {
+      processing = false;
+      if (retryRequested) { retryRequested = false; queueMicrotask(() => void processPendingDraft()); }
+    }
+  }
+
+  if (isFirefox) {
+    globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
+  }
+  browserApi.storage.onChanged?.addListener((changes, areaName) => {
+    if (areaName === "local" && changes?.[PENDING_KEY]?.newValue) void processPendingDraft();
+  });
+  void processPendingDraft();
+})();

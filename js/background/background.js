@@ -46,35 +46,145 @@ function ensureChatGPTFrameRule(forceUpdate = false) {
     }).then(() => true);
   });
 }
+const CHATGPT_DRAFT_PENDING_KEY = "keepitChatGPTDraftPending";
+let chatGPTPanelOpen = false;
+let chatGPTFocusedWindowId = null;
+const chatGPTOpenWindows = new Set();
+const chatGPTSourceTabs = new Map();
+browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
+  if (!Number.isInteger(windowId)) return;
+  chatGPTFocusedWindowId = windowId;
+  const previousTabId = chatGPTSourceTabs.get(windowId);
+  if (Number.isInteger(previousTabId) && previousTabId !== tabId) void setChatGPTPageScrollbar(previousTabId, false);
+  if (chatGPTOpenWindows.has(windowId)) {
+    chatGPTSourceTabs.set(windowId, tabId);
+    void setChatGPTPageScrollbar(tabId, true);
+  }
+  const sidebar = globalThis.browser?.sidebarAction;
+  if (typeof sidebar?.isOpen === "function") {
+    try {
+      const opened = await sidebar.isOpen({ windowId });
+      if (opened) trackChatGPTPanel(windowId, tabId, true);
+      else if (chatGPTOpenWindows.has(windowId)) trackChatGPTPanel(windowId, tabId, false);
+    } catch { /* Firefox may not report sidebar state for a closing window */ }
+  }
+});
+browser.windows?.onFocusChanged?.addListener(windowId => { if (Number.isInteger(windowId) && windowId >= 0) chatGPTFocusedWindowId = windowId; });
+browser.windows?.onRemoved?.addListener(windowId => {
+  chatGPTOpenWindows.delete(windowId);
+  chatGPTSourceTabs.delete(windowId);
+  chatGPTPanelOpen = chatGPTOpenWindows.size > 0;
+});
+function chatGPTWindowId(sourceTab) {
+  return Number.isInteger(sourceTab?.windowId) ? sourceTab.windowId : chatGPTFocusedWindowId ?? globalThis.chrome?.windows?.WINDOW_ID_CURRENT ?? -2;
+}
+function chatGPTPanelIsOpen(windowId) {
+  if (Number.isInteger(windowId) && windowId >= 0) return chatGPTOpenWindows.has(windowId) || (chatGPTPanelOpen && chatGPTFocusedWindowId === windowId);
+  return chatGPTPanelOpen || chatGPTOpenWindows.size > 0;
+}
+async function setChatGPTPageScrollbar(tabId, open) {
+  if (!Number.isInteger(tabId)) return;
+  try { await browser.tabs.sendMessage(tabId, { type:"CHATGPT_PANEL_VISIBILITY", open:!!open }); }
+  catch { /* unsupported/restricted tabs have no Keepit content script */ }
+}
+function trackChatGPTPanel(windowId, tabId, open) {
+  const targetTabId = Number.isInteger(tabId) ? tabId : (Number.isInteger(windowId) ? chatGPTSourceTabs.get(windowId) : null);
+  if (Number.isInteger(windowId) && windowId >= 0) {
+    if (open) chatGPTOpenWindows.add(windowId); else chatGPTOpenWindows.delete(windowId);
+    if (Number.isInteger(tabId)) chatGPTSourceTabs.set(windowId, tabId);
+    else if (!open) chatGPTSourceTabs.delete(windowId);
+  }
+  chatGPTPanelOpen = open ? true : chatGPTOpenWindows.size > 0;
+  void setChatGPTPageScrollbar(targetTabId, open);
+}
+globalThis.chrome?.sidePanel?.onOpened?.addListener(async info => {
+  const windowId = info?.windowId;
+  let tabId = info?.tabId ?? (Number.isInteger(windowId) ? chatGPTSourceTabs.get(windowId) : null);
+  if (!Number.isInteger(tabId) && Number.isInteger(windowId)) {
+    try { tabId = (await browser.tabs.query({ active:true, windowId }))?.[0]?.id; } catch {}
+  }
+  trackChatGPTPanel(windowId, tabId, true);
+});
+globalThis.chrome?.sidePanel?.onClosed?.addListener(info => {
+  const windowId = info?.windowId;
+  const tabId = info?.tabId ?? (Number.isInteger(windowId) ? chatGPTSourceTabs.get(windowId) : null);
+  trackChatGPTPanel(windowId, tabId, false);
+});
+async function clearExpiredChatGPTDraft(expectedRequestId = "") {
+  const stored = await browser.storage.local.get(CHATGPT_DRAFT_PENDING_KEY);
+  const pending = stored?.[CHATGPT_DRAFT_PENDING_KEY];
+  if (pending && pending.expiresAt <= Date.now() && (!expectedRequestId || pending.requestId === expectedRequestId)) {
+    await browser.storage.local.remove(CHATGPT_DRAFT_PENDING_KEY);
+    return true;
+  }
+  return false;
+}
+async function registerChatGPTDraft(tabId, truncated = false) {
+  await clearExpiredChatGPTDraft();
+  const pending = {
+    requestId:`${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    sourceTabId:Number.isInteger(tabId) ? tabId : null,
+    truncated:truncated === true,
+    expiresAt:Date.now() + 90000
+  };
+  await browser.storage.local.set({ [CHATGPT_DRAFT_PENDING_KEY]:pending });
+  setTimeout(() => { void clearExpiredChatGPTDraft(pending.requestId); }, 91000);
+  return { ok:true, requestId:pending.requestId };
+}
+async function notifyChatGPTDraftResult(message) {
+  const stored = await browser.storage.local.get(CHATGPT_DRAFT_PENDING_KEY);
+  const pending = stored?.[CHATGPT_DRAFT_PENDING_KEY];
+  if (!pending || typeof message.requestId !== "string" || message.requestId !== pending.requestId) return { ok:false, stale:true };
+  await browser.storage.local.remove(CHATGPT_DRAFT_PENDING_KEY);
+  if (Number.isInteger(pending.sourceTabId)) {
+    try { await browser.tabs.sendMessage(pending.sourceTabId, { type:"CHATGPT_AUTOFILL_RESULT", ok:message.ok === true, reason:message.reason || "", truncated:pending.truncated === true }); }
+    catch { /* the source tab may have navigated or closed */ }
+  }
+  return { ok:true };
+}
 async function openChatGPTSidePanel({ sender, tab } = {}) {
   const sourceTab = tab || sender?.tab;
+  const windowId = chatGPTWindowId(sourceTab);
   const chromePanel = globalThis.chrome?.sidePanel;
   if (typeof chromePanel?.open === "function") {
-    const tabId = sourceTab?.id;
-    if (!Number.isInteger(tabId)) return { ok:false, error:"active-tab-unavailable" };
     try {
-      await chromePanel.open({ tabId });
-      return { ok:true, browser:"chromium" };
+      if (typeof chromePanel.close === "function" && chatGPTPanelIsOpen(windowId)) {
+        await chromePanel.close({ windowId });
+        trackChatGPTPanel(windowId, sourceTab?.id, false);
+        return { ok:true, browser:"chromium", opened:false, toggled:true };
+      }
+      const openPromise = chromePanel.open({ windowId });
+      await openPromise;
+      trackChatGPTPanel(windowId, sourceTab?.id, true);
+      return { ok:true, browser:"chromium", opened:true, toggled:true };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
-      console.warn("Could not open the ChatGPT Chrome side panel", reason);
-      return { ok:false, error:"panel-open-failed", reason };
+      console.warn("Could not toggle the ChatGPT Chrome side panel", reason);
+      return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
   const firefoxSidebar = globalThis.browser?.sidebarAction;
-  if (typeof firefoxSidebar?.open === "function") {
+  if (typeof firefoxSidebar?.toggle === "function") {
     try {
-      await firefoxSidebar.open();
-      return { ok:true, browser:"firefox" };
+      const togglePromise = firefoxSidebar.toggle();
+      await togglePromise;
+      let opened = true;
+      if (typeof firefoxSidebar.isOpen === "function") {
+        try { opened = await firefoxSidebar.isOpen(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}); }
+        catch (error) { console.warn("Could not read Firefox sidebar state after toggle", error); }
+      }
+      trackChatGPTPanel(windowId, sourceTab?.id, opened);
+      return { ok:true, browser:"firefox", opened, toggled:true };
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
-      console.warn("Could not open the ChatGPT Firefox sidebar", reason);
-      return { ok:false, error:"panel-open-failed", reason };
+      console.warn("Could not toggle the ChatGPT Firefox sidebar", reason);
+      return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
   return { ok:false, error:"side-panel-unsupported" };
 }
 browser.runtime.onInstalled.addListener(async () => {
+  try { await clearExpiredChatGPTDraft(); } catch (error) { console.warn("Could not clean an expired ChatGPT draft request", error); }
   try { await USAGE_LIMITS.initialize(); }
   catch (error) { console.warn("Could not initialize local usage trial", error); }
   try { await ensureChatGPTFrameRule(true); }
@@ -82,6 +192,7 @@ browser.runtime.onInstalled.addListener(async () => {
   await resetLegacyDictationWrongWordStats();
 });
 browser.runtime.onStartup?.addListener(() => {
+  clearExpiredChatGPTDraft().catch(error => console.warn("Could not clean an expired ChatGPT draft request", error));
   ensureChatGPTFrameRule().catch(error => console.warn("Could not configure the ChatGPT iframe header rule", error));
 });
 async function copyChatGPTContextFromTab(tab) {
@@ -93,32 +204,32 @@ async function copyChatGPTContextFromTab(tab) {
   }
 }
 function openChatGPTFromCommand() {
-  // Open synchronously in the browser command's user-gesture turn; do not await tab lookup first.
-  let openPromise;
-  try {
-    const chromePanel = globalThis.chrome?.sidePanel;
-    if (typeof chromePanel?.open === "function") {
-      const currentWindowId = globalThis.chrome?.windows?.WINDOW_ID_CURRENT ?? -2;
-      openPromise = chromePanel.open({ windowId:currentWindowId });
-    } else if (typeof browser.sidebarAction?.open === "function") {
-      openPromise = browser.sidebarAction.open();
-    } else {
-      openPromise = Promise.resolve({ ok:false, error:"side-panel-unsupported" });
-    }
-  } catch (error) {
-    openPromise = Promise.reject(error);
-  }
+  // Toggle immediately in the keyboard command's user-gesture turn; copy only if it opened.
+  let togglePromise;
+  try { togglePromise = openChatGPTSidePanel(); }
+  catch (error) { togglePromise = Promise.reject(error); }
   const tabPromise = browser.tabs.query({ active:true, currentWindow:true }).then(tabs => tabs?.[0] || null);
-  Promise.allSettled([openPromise, tabPromise]).then(async ([openResult, tabResult]) => {
+  Promise.allSettled([togglePromise, tabPromise]).then(async ([panelResult, tabResult]) => {
     const tab = tabResult.status === "fulfilled" ? tabResult.value : null;
-    if (tab?.id) await copyChatGPTContextFromTab(tab);
-    const opened = openResult.status === "fulfilled" && openResult.value?.ok !== false;
-    if (!opened) {
-      const reason = openResult.status === "rejected" ? String(openResult.reason?.message || openResult.reason) : openResult.value?.reason || openResult.value?.error;
-      console.warn("Could not open the ChatGPT panel from the keyboard command", reason || "unknown-error");
-      if (tab?.id) {
-        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); }
-        catch { /* the active page may not accept extension scripts */ }
+    const panel = panelResult.status === "fulfilled" ? panelResult.value : null;
+    if (!panel?.ok) {
+      const reason = panelResult.status === "rejected" ? String(panelResult.reason?.message || panelResult.reason) : panel?.reason || panel?.error;
+      console.warn("Could not toggle the ChatGPT panel from the keyboard command", reason || "unknown-error");
+      if (tab?.id) try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); } catch {}
+      return;
+    }
+    if (!panel.opened) {
+      if (tab?.id) try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_TOGGLED_CLOSED" }); } catch {}
+      return;
+    }
+    if (tab?.id) {
+      trackChatGPTPanel(tab.windowId, tab.id, true);
+      const copied = await copyChatGPTContextFromTab(tab);
+      if (copied?.ok) {
+        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_AUTOFILL_PENDING" }); } catch {}
+        await registerChatGPTDraft(tab.id, copied.truncated === true);
+      } else {
+        try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_COPY_FAILED" }); } catch {}
       }
     }
   }).catch(error => console.warn("Could not finish the ChatGPT keyboard command", error));
@@ -241,6 +352,19 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
   if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
+  if (message.type === "CHATGPT_PANEL_CONTEXT_READY" && typeof browser.sidebarAction?.isOpen === "function") {
+    try {
+      const windowId = sender?.tab?.windowId ?? chatGPTFocusedWindowId;
+      if (await browser.sidebarAction.isOpen(Number.isInteger(windowId) ? { windowId } : {})) {
+        const active = Number.isInteger(sender?.tab?.id) ? sender.tab : (await browser.tabs.query({ active:true, currentWindow:true }))?.[0];
+        trackChatGPTPanel(windowId, active?.id, true);
+        return { ok:true, open:true };
+      }
+    } catch {}
+    return { ok:true, open:false };
+  }
+  if (message.type === "CHATGPT_DRAFT_READY") return registerChatGPTDraft(sender?.tab?.id, message.truncated === true);
+  if (message.type === "CHATGPT_AUTOFILL_RESULT") return notifyChatGPTDraftResult(message);
   if (message.type === "OPEN_CHATGPT_SIDEPANEL") return openChatGPTSidePanel({ sender });
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);

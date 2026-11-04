@@ -4,42 +4,41 @@
 
 ## 1. Mục đích và phạm vi
 
-Background là service worker trung gian cho tác vụ cần runtime API, lưu trữ tập trung hoặc gọi dịch vụ từ các context của extension. Module này không dựng giao diện; UI nằm ở Content, Popup, Dashboard, Reader và các overlay.
+Background là trung gian cho runtime API, storage và dịch vụ dùng chung giữa các context. UI thuộc Content, Popup, Dashboard, Reader và Overlay; Background không xử lý page DOM.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `background` | Khai báo service worker cho Chromium và script fallback cho Firefox. |
-| [`js/background/background.js`](../../js/background/background.js) | `LHN_MESSAGING.onMessage`, `browser.commands.onCommand` | Nạp dependency, xử lý message, mở browser-native ChatGPT panel và điều phối dịch vụ. |
-| [`js/background/annotations.js`](../../js/background/annotations.js) | `LHN_ANNOTATIONS` | IndexedDB, migration và CRUD/phân trang annotation. |
-| [`js/background/usage-limits.js`](../../js/background/usage-limits.js) | `LHN_USAGE_LIMITS.create` | Đếm usage local cho translation và Google TTS. |
-| [`js/core/messaging.js`](../../js/core/messaging.js) | `LHN_MESSAGING` | Cầu runtime message dùng chung giữa extension contexts. |
-| [`js/translate/translate.js`](../../js/translate/translate.js), [`js/core/cache.js`](../../js/core/cache.js) | `LHN_TRANSLATE`, `LHN_CACHE` | Translation, phát hiện ngôn ngữ và cache mà Background gọi. |
+| [`manifest.json`](../../manifest.json) | `background` | Khai báo service worker Chromium và script Firefox. |
+| [`js/background/background.js`](../../js/background/background.js) | `LHN_MESSAGING.onMessage`, `browser.commands.onCommand` | Message routing, ChatGPT panel và dịch vụ runtime. |
+| [`js/background/annotations.js`](../../js/background/annotations.js) | `LHN_ANNOTATIONS` | IndexedDB, migration và CRUD annotation. |
+| [`js/background/usage-limits.js`](../../js/background/usage-limits.js) | `LHN_USAGE_LIMITS.create` | Usage state local cho translation/TTS. |
+| [`js/core/messaging.js`](../../js/core/messaging.js) | `LHN_MESSAGING` | Runtime message API dùng chung. |
+| [`js/translate/translate.js`](../../js/translate/translate.js), [`js/core/cache.js`](../../js/core/cache.js) | `LHN_TRANSLATE`, `LHN_CACHE` | Translation, language detection và cache. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp `background.js`; khi có `importScripts`, file này nạp polyfill và dependency theo thứ tự trước khi dùng global API.
-2. UI gửi message qua `LHN_MESSAGING`; listener trong `background.js` phân nhánh theo `message.type`.
-3. Annotation message được chuyển cho `LHN_ANNOTATIONS` (IndexedDB); kết quả thay đổi được phát lại để các context đồng bộ.
-4. Translation và nhận diện ngôn ngữ chuyển sang `LHN_TRANSLATE`; TTS kiểm tra cache/usage rồi lấy audio Google và trả dữ liệu cho requester. Các message Web Study cue cache được chuyển tới `LHN_CACHE` để đọc/ghi cache cục bộ TTL 7 ngày.
-5. `OPEN_CHATGPT_SIDEPANEL` mở Chrome Side Panel hoặc Firefox `sidebarAction`; lệnh `open-chatgpt-sidepanel` gọi API mở đồng bộ trước khi truy vấn tab để giữ user gesture, rồi yêu cầu content chép trang vào clipboard.
-6. Các message còn lại mở Dashboard/highlight, proxy request YouTube được giới hạn URL, hoặc đọc trạng thái/tiêu thụ usage.
+1. Manifest nạp `background.js`; `importScripts` nạp polyfill và dependency trước khi dùng global API.
+2. UI gửi message qua `LHN_MESSAGING`; listener phân nhánh theo `message.type`.
+3. Annotation đi qua `LHN_ANNOTATIONS`/IndexedDB; thay đổi được phát lại để đồng bộ context.
+4. Translation, TTS và Web Study cache chuyển tới `LHN_TRANSLATE`, `LHN_CACHE` hoặc usage service; Background trả kết quả cho requester.
+5. `OPEN_CHATGPT_SIDEPANEL` toggle Chrome Side Panel hoặc Firefox `sidebarAction`. `Alt+X` gọi API trước khi truy vấn tab; chỉ khi mở mới yêu cầu content chép draft. Background lưu metadata pending có hạn dùng, nhận kết quả autofill và điều khiển scrollbar; không nhận page text.
+6. Các message khác mở Dashboard/highlight hoặc proxy YouTube request theo allowlist.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ đồng bộ danh sách dependency và thứ tự nạp trong `manifest.json`, `importScripts` và file entry; `LHN_CONFIG`/`LHN_MESSAGING` phải sẵn sàng trước khi sử dụng.
-- `message.type` là hợp đồng giữa các context. Trước khi đổi tên, payload hoặc kiểu kết quả, tìm mọi sender/receiver.
-- Annotation được sở hữu bởi Background/IndexedDB; không tạo thêm nguồn lưu annotation riêng ở UI.
-- `YOUTUBE_FETCH_TEXT` và `YOUTUBE_API` phải giữ allowlist host hiện tại; không biến proxy thành fetch URL tùy ý.
-- Usage-limit prototype và key nằm local, không phải cơ chế thanh toán/bảo mật phía server.
-- TTS request có kiểm tra đầu vào, dedupe request đang chạy và dùng `LHN_CACHE`; giữ các bước cache/usage/error khi thay provider.
-- `WEB_STUDY_CUE_CACHE_GET`/`SAVE`/`TOUCH` chỉ quản lý câu nguồn đã chuẩn hóa; cache key được content script băm từ URL + fingerprint nội dung. Không nhận URL để Background fetch nội dung trang.
-- Không chuyển nội dung trang ChatGPT qua Background hoặc storage: Background chỉ mở panel và gửi `COPY_CHATGPT_CONTEXT` tới content script. Chrome DNR rule 9002 chỉ sửa response của ChatGPT subframe do extension panel khởi tạo; nó vẫn bỏ toàn bộ CSP của tài liệu đó nên cần giữ phạm vi host/resource/initiator hẹp. Firefox build phải bỏ permission `sidePanel` và key `side_panel`, đồng thời giữ `sidebar_action.open_at_install=false` để không tự mở khi cài.
+- Giữ đồng bộ dependency và thứ tự nạp giữa manifest, `importScripts` và entry file.
+- `message.type` là contract giữa context; tìm mọi sender/receiver trước khi đổi payload hoặc kiểu kết quả.
+- Annotation do Background/IndexedDB sở hữu; không tạo nguồn lưu annotation thứ hai trong UI.
+- Giữ allowlist host của `YOUTUBE_FETCH_TEXT`/`YOUTUBE_API`; không biến proxy thành fetch tùy ý.
+- Cache và usage state ở local; giữ validation, dedupe và error paths của TTS/translation.
+- Không chuyển hoặc lưu nội dung trang ChatGPT qua Background/storage. Chỉ lưu `requestId`, source tab, trạng thái rút gọn và expiry; draft đi từ content trang vào clipboard rồi được đọc cục bộ ở panel.
+- Chrome DNR rule 9002 chỉ áp dụng cho ChatGPT subframe do extension khởi tạo, dù gỡ cả CSP của frame. Firefox build bỏ `sidePanel`/`side_panel` và giữ `sidebar_action.open_at_install=false`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/background/*.js; do node --check "$f" || exit; done`; kiểm tra `manifest.json` parse và `git diff --check`.
-- Khi đổi message, kiểm tra sender UI và nhánh receiver; khi đổi annotation, kiểm tra schema/migration IndexedDB và notification; khi đổi TTS/translation, kiểm tra cache hit, provider error, usage bị từ chối và payload trả về.
-- ChatGPT: static/VM kiểm tra message không chứa page text, DNR scope, API routing và command gọi open trước tab lookup; browser QA xác nhận panel, đăng nhập, paste thủ công, không auto-send, không tự mở lúc khởi động.
-- Integration: mở Popup/Content/Dashboard/Reader để xác nhận request đi qua service worker và UI xử lý lỗi. Không ghi nhận browser verification nếu chưa chạy thực tế.
+- Static: `for f in js/background/*.js; do node --check "$f" || exit; done`; parse manifest và chạy `git diff --check`.
+- Message changes: kiểm tra sender, receiver, payload và metadata; xác nhận page text không xuất hiện trong message/storage.
+- Focused VM: toggle/open-before-tab-query, Firefox `isOpen`/toggle, pending expiry/result, DNR scope và scrollbar bật/tắt.
+- Browser QA: xác nhận Chrome/Firefox toggle, clipboard permission, draft chỉ vào composer rỗng, không submit, restore scrollbar khi đóng và Firefox install không tự mở. Static/VM không thay thế browser QA.
