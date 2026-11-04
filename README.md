@@ -12,6 +12,7 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - Select text to open a note composer (configurable), or press the shortcut for the current selection.
 - Color highlights with editable notes; hover a highlight to see its note and edit or delete it.
 - A page sidebar lists the page's highlights, filters them by color, and jumps to a highlight when you click it.
+- `Alt+X` or the ChatGPT tab opens ChatGPT in a separate browser side panel and copies the page's main text with the prompt `Hãy tóm tắt nội dung ngắn gọn`; focus ChatGPT and press `Ctrl+V`. It stays a draft and is never auto-sent.
 - Highlights are saved per page URL and restored from the exact text and its nearby context.
 
 ### Translation and dictionary
@@ -54,6 +55,7 @@ Defaults are listed below. Everything marked customizable can be changed in Dash
 | --- | --- | --- |
 | `Alt+S` | Open the note popup for the selection | Yes |
 | `Alt+Q` | Toggle the page sidebar | Yes |
+| `Alt+X` | Copy page text and open ChatGPT in a browser side panel | Browser settings |
 | `Alt+W` | Translate selected text | Yes |
 | `Alt+Z` | Toggle Keepit on this website | Yes |
 | `Space` | Pause or resume speech | Yes |
@@ -64,9 +66,11 @@ Defaults are listed below. Everything marked customizable can be changed in Dash
 | `Alt+D` | Translate the paragraph near the pointer | No |
 | `Alt+R` | Start or stop reading aloud | No |
 
+`Alt+X` can be changed in the browser's extension-shortcut settings, not in Keepit's Dashboard.
+
 The reading-bar keys (`Space`, arrows, `Alt+L`) work while the reader is active and can be turned off in the reader settings.
 
-While Dictation is open, `Alt+X` clears the typing answer and returns focus to it; pressing and releasing `Ctrl` by itself replays the current sentence. In Typing mode, Escape reveals/resets the answer when the answer field is focused. In Speaking mode, Escape replays the video cue and reveals the answer; a second Escape resets the current attempt.
+In Dictation, pressing and releasing `Ctrl` by itself replays the current sentence. In Typing mode, Escape reveals/resets the answer when the answer field is focused. In Speaking mode, Escape replays the video cue and reveals the answer; a second Escape resets the current attempt.
 
 ## Install for testing
 
@@ -86,8 +90,9 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 - The current build stores highlights/notes in the extension's IndexedDB and settings/state in `browser.storage.local`. Dictation stores solved-sentence progress, lesson notes, revealed Vietnamese translations, and Web session metadata (including the real source-page URL) in `browser.storage.local`, keyed by YouTube video or Web source and sentence. Speaking auto-record is enabled by default and may request microphone access after the current cue; you can turn it off for manual Enter/mic control. Recordings are temporary in-memory playback only and are not saved to extension storage or uploaded by Keepit. The browser speech-recognition service may process audio under its own provider/settings. The optional Dashboard demo profile (display name, username, email, avatar) is local only; there is no Keepit-operated account or sync server and no real payment processing. See [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md), currently a draft with publication placeholders.
 - When you use translation, dictionary, IPA, related-word, or Google TTS features, the relevant query text may be sent to the providers listed in the privacy draft (Google, MyMemory, Lingva, dictionaryapi.dev, or Datamuse). Dictation requests a Vietnamese translation of a sentence after a correct typing answer or an accepted speaking result; that sentence may be sent through the existing translation service. Google Fonts is requested only when a custom web font is enabled and selected; the Dashboard may send the page URL to Google S2 Favicon if the direct favicon request fails. These data flows must be reviewed before a public release.
+- When you invoke ChatGPT with `Alt+X` or the ChatGPT tab, Keepit extracts readable main-page text and writes it with the Vietnamese summary prompt to the system clipboard. Keepit does not send that text to its background or a Keepit server; you choose whether to paste it into ChatGPT, and it is not auto-sent. This replaces the current clipboard contents.
 - A local error log keeps at most 200 classified entries (time, component, severity, code), without page URLs, page text, selected text, or account details. It is not automatically uploaded; JSON is generated only when you choose Export in Dashboard > Settings > About.
-- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, and `declarativeNetRequest` (used for the Google TTS request header). Host access supports content scripts on websites and the named external services. With auto-record enabled (the default), Speaking may request browser microphone access 2 seconds after the final cue ends; turn it off to use manual Enter/mic start. Its short recording stays in memory for playback and is not persisted or uploaded by Keepit. SpeechRecognition may send audio for processing through the browser/provider service, depending on browser implementation and settings.
+- Permissions: `storage`, `unlimitedStorage`, `activeTab`, `tabs`, `declarativeNetRequest`, `clipboardWrite`, and `sidePanel`. Host access supports content scripts on websites and the named external services. Chrome removes ChatGPT's `X-Frame-Options` and full `Content-Security-Policy` only on ChatGPT subframes initiated by Keepit's side panel so the site can be embedded; this weakens those protections for that framed ChatGPT document. Firefox loads ChatGPT as the top-level browser sidebar page instead. With auto-record enabled (the default), Speaking may request browser microphone access 2 seconds after the final cue ends; turn it off to use manual Enter/mic start. Its short recording stays in memory for playback and is not persisted or uploaded by Keepit. SpeechRecognition may send audio for processing through the browser/provider service, depending on browser implementation and settings.
 - The future account/cloud-sync section in the policy is explicitly marked as not active. Usage limits and Upgrade & Billing are local prototypes with no real payments.
 
 ## Limitations
@@ -96,13 +101,14 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - Keepit narrows the page layout to make room for the sidebar; some sites with fixed elements or custom minimum widths may not reflow perfectly.
 - Highlights are restored from text and context, so heavily changed pages or identical repeated quotes can be restored imperfectly. Different query strings or fragments are treated as different pages.
 - The **Highlights & Notes** surface currently loads all local annotations for search, filters, and export; a very large collection will need a paginated redesign.
-- Main-content detection is heuristic. Pages without a clear article (for example search results or apps) may be read differently from article pages.
+- Main-content detection is heuristic. Pages without a clear article (for example search results or apps) may be read differently from article pages. ChatGPT transfer follows the same best-effort extraction and caps copied page text at 40,000 characters.
+- ChatGPT remains a manual-paste workflow: after Keepit copies the prompt and page text, focus the ChatGPT composer and press `Ctrl+V`; the extension cannot simulate paste or send the prompt. Chrome's side panel requires a recent Chromium browser with the Side Panel API (Chrome 116+); Firefox uses its native extension sidebar. ChatGPT may change its frame policy or login behavior, which can break Chrome's embedded panel.
 - This is a development build, not signed for store distribution; the Firefox add-on ID in `manifest.json` is a placeholder.
 
 ## Project structure
 
 - `manifest.json`: extension entry points and permissions; keep it at the repository root.
-- `pages/`: `dashboard.html` and `popup.html` UI entry points.
+- `pages/`: `dashboard.html` and `popup.html` UI entry points, plus browser-native ChatGPT side-panel pages for Chrome and Firefox.
 - `js/core/`: browser polyfill, shared configuration, languages, settings, messaging, cache, and shortcuts.
 - `js/background/`: background service worker, annotation storage, usage limits, and error logging.
 - `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.

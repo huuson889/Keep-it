@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.55",
+  "version": "3.5.56",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -11,7 +11,9 @@
     "unlimitedStorage",
     "activeTab",
     "tabs",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "clipboardWrite",
+    "sidePanel"
   ],
   "background": {
     "service_worker": "js/background/background.js",
@@ -69,6 +71,7 @@
         "js/content/annotation-restore.js",
         "js/shared/thumbnails.js",
         "js/shared/site-icons.js",
+        "js/content/chatgpt-context.js",
         "js/content/content.js",
         "vendor/readability/Readability.js",
         "vendor/readability/Readability-readerable.js",
@@ -137,6 +140,21 @@
     "default_icon": {
       "32": "assets/icons/icon-32.png",
       "16": "assets/icons/icon-16.png"
+    }
+  },
+  "sidebar_action": {
+    "default_title": "ChatGPT",
+    "default_panel": "pages/chatgpt-firefox-sidebar.html"
+  },
+  "side_panel": {
+    "default_path": "pages/chatgpt-chrome-sidepanel.html"
+  },
+  "commands": {
+    "open-chatgpt-sidepanel": {
+      "suggested_key": {
+        "default": "Alt+X"
+      },
+      "description": "Open ChatGPT side panel and copy page text"
     }
   }
 }

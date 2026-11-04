@@ -43,7 +43,7 @@
       highlightMatches(card, query);
       return card;
     }
-    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, colors, filter, searchQuery, activeTab = 'highlights', t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onToggleTheme, onSearch, onFilter, onSelectTab, onStopPropagation }) {
+    function createShell({ width, pageTitle, pageUrl, websiteDisabled, version, colors, filter, searchQuery, activeTab = 'highlights', t, config, onToggleSidebarSetting, onToggleWebsiteDisabled, onOpenDashboard, onOpenChatGPT, onToggleTheme, onSearch, onFilter, onSelectTab, onStopPropagation }) {
       const top = document.createElement('div'); top.className = 'lhn-sidebar-top';
       const brand = document.createElement('div'); brand.className = 'lhn-sidebar-brand';
       const logo = document.createElement('img'); logo.src = browser.runtime.getURL('assets/icons/icon.svg'); logo.alt = '';
@@ -93,6 +93,10 @@
       top.append(headerCard);
       const list = document.createElement('div'); list.className = 'lhn-sidebar-list'; list.id = 'lhn-sidebar-list';
       const chatGPTPanel = document.createElement('div'); chatGPTPanel.className = 'lhn-sidebar-chatgpt-panel'; chatGPTPanel.id = 'lhn-sidebar-chatgpt-panel'; chatGPTPanel.setAttribute('role', 'tabpanel'); chatGPTPanel.setAttribute('aria-labelledby', 'lhn-sidebar-tab-chatgpt'); chatGPTPanel.hidden = true;
+      const chatGPTLaunch = document.createElement('div'); chatGPTLaunch.className = 'lhn-chatgpt-launch';
+      const chatGPTHint = document.createElement('p'); chatGPTHint.className = 'lhn-chatgpt-launch-hint'; chatGPTHint.textContent = t('chatGPTPanelHint');
+      const chatGPTOpen = createButton(t('chatGPTOpenPanel'), 'lhn-chatgpt-open-button', onOpenChatGPT);
+      chatGPTLaunch.append(chatGPTHint, chatGPTOpen); chatGPTPanel.append(chatGPTLaunch);
       const tabs = document.createElement('div'); tabs.className = 'lhn-sidebar-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', t('sidebarTabsLabel'));
       const footer = document.createElement('div'); footer.className = 'lhn-sidebar-footer';
       const footerToggle = document.createElement('button'); footerToggle.type = 'button'; footerToggle.className = 'lhn-sidebar-footer-toggle'; footerToggle.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); onToggleWebsiteDisabled(); });

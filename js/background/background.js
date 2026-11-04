@@ -21,10 +21,91 @@ async function resetLegacyDictationWrongWordStats() {
     console.warn("Could not reset legacy Dictation error statistics", error);
   }
 }
+const CHATGPT_FRAME_RULE_ID = 9002;
+function ensureChatGPTFrameRule(forceUpdate = false) {
+  const dnr = globalThis.chrome?.declarativeNetRequest;
+  const extensionId = globalThis.chrome?.runtime?.id;
+  if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules || !extensionId) return Promise.resolve(false);
+  return dnr.getDynamicRules().then(rules => {
+    if (!forceUpdate && rules.some(rule => rule.id === CHATGPT_FRAME_RULE_ID)) return true;
+    return dnr.updateDynamicRules({
+      removeRuleIds: [CHATGPT_FRAME_RULE_ID],
+      addRules: [{
+        id: CHATGPT_FRAME_RULE_ID,
+        priority: 1,
+        action: { type: "modifyHeaders", responseHeaders: [
+          { header: "x-frame-options", operation: "remove" },
+          { header: "content-security-policy", operation: "remove" }
+        ] },
+        condition: {
+          requestDomains: ["chatgpt.com", "chat.openai.com"],
+          initiatorDomains: [extensionId],
+          resourceTypes: ["sub_frame"]
+        }
+      }]
+    }).then(() => true);
+  });
+}
+async function openChatGPTSidePanel({ sender, tab } = {}) {
+  const sourceTab = tab || sender?.tab;
+  const chromePanel = globalThis.chrome?.sidePanel;
+  if (typeof chromePanel?.open === "function") {
+    const tabId = sourceTab?.id;
+    if (!Number.isInteger(tabId)) return { ok:false, error:"active-tab-unavailable" };
+    try {
+      await chromePanel.open({ tabId });
+      return { ok:true, browser:"chromium" };
+    } catch (error) {
+      console.warn("Could not open the ChatGPT Chrome side panel", error);
+      return { ok:false, error:"panel-open-failed" };
+    }
+  }
+  const firefoxSidebar = globalThis.browser?.sidebarAction;
+  if (typeof firefoxSidebar?.open === "function") {
+    try {
+      await firefoxSidebar.open();
+      return { ok:true, browser:"firefox" };
+    } catch (error) {
+      console.warn("Could not open the ChatGPT Firefox sidebar", error);
+      return { ok:false, error:"panel-open-failed" };
+    }
+  }
+  return { ok:false, error:"side-panel-unsupported" };
+}
 browser.runtime.onInstalled.addListener(async () => {
   try { await USAGE_LIMITS.initialize(); }
   catch (error) { console.warn("Could not initialize local usage trial", error); }
+  try { await ensureChatGPTFrameRule(true); }
+  catch (error) { console.warn("Could not configure the ChatGPT iframe header rule", error); }
   await resetLegacyDictationWrongWordStats();
+});
+browser.runtime.onStartup?.addListener(() => {
+  ensureChatGPTFrameRule().catch(error => console.warn("Could not configure the ChatGPT iframe header rule", error));
+});
+async function copyChatGPTContextFromTab(tab) {
+  if (!Number.isInteger(tab?.id)) return { ok:false, error:"active-tab-unavailable" };
+  try { return await browser.tabs.sendMessage(tab.id, { type:"COPY_CHATGPT_CONTEXT" }); }
+  catch (error) {
+    console.warn("Could not copy page text for ChatGPT", error);
+    return { ok:false, error:"page-content-unavailable" };
+  }
+}
+async function openChatGPTFromCommand() {
+  // Firefox can open its sidebar synchronously from the command's user gesture.
+  const firefoxOpen = typeof browser.sidebarAction?.open === "function" ? browser.sidebarAction.open() : null;
+  const [tab] = await browser.tabs.query({ active:true, currentWindow:true });
+  if (!tab?.id) return;
+  const openPromise = firefoxOpen || openChatGPTSidePanel({ tab });
+  const copyPromise = copyChatGPTContextFromTab(tab);
+  const [openResult] = await Promise.allSettled([openPromise, copyPromise]);
+  const opened = openResult.status === "fulfilled" && openResult.value?.ok !== false;
+  if (!opened) {
+    try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_PANEL_OPEN_FAILED" }); }
+    catch { /* the active page may not accept extension scripts */ }
+  }
+}
+browser.commands?.onCommand.addListener(command => {
+  if (command === "open-chatgpt-sidepanel") void openChatGPTFromCommand();
 });
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
 const ttsAudioRequests = new Map();
@@ -141,6 +222,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
   if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
+  if (message.type === "OPEN_CHATGPT_SIDEPANEL") return openChatGPTSidePanel({ sender });
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);

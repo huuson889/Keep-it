@@ -26,6 +26,7 @@
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
   let sidebar = null, sidebarOpen = false, sidebarActiveTab = "highlights", sidebarSetActiveTab = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
+  const CHATGPT_CONTEXT = globalThis.LHN_CHATGPT_CONTEXT.create({ document, location, getReadability:() => globalThis.Readability });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
   const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
@@ -1107,6 +1108,21 @@
     clearTimeout(sidebarToastTimer);
     sidebarToastTimer = setTimeout(() => { toast.classList.remove("is-visible"); sidebarToastTimer = setTimeout(() => { if (sidebarToastRender === renderToast) sidebarToastRender = null; toast.remove(); }, 220); }, 1800);
   }
+  async function launchChatGPTSidePanel() {
+    // Start the open request and clipboard write directly in the user action handler.
+    let openPromise;
+    try { openPromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_SIDEPANEL" }); }
+    catch (error) { openPromise = Promise.reject(error); }
+    const copyPromise = CHATGPT_CONTEXT.copyPromptToClipboard();
+    const [openResult, copyResult] = await Promise.allSettled([openPromise, copyPromise]);
+    const opened = openResult.status === "fulfilled" && openResult.value?.ok === true;
+    const copied = copyResult.status === "fulfilled" && copyResult.value?.ok === true;
+    if (opened && sidebarOpen) closeSidebar();
+    if (!copied) showSidebarToast(() => t("chatGPTCopyFailedToast"));
+    else if (!opened) showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
+    else showSidebarToast(() => t(copyResult.value.truncated ? "chatGPTCopiedTruncatedToast" : "chatGPTCopiedToast"));
+    return { opened, copied };
+  }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
   function syncSidebarEdgeToggle() {
     if (!sidebarEdgeToggle) {
@@ -1159,7 +1175,8 @@
     const shell = SIDEBAR.createShell({
       width, pageTitle:pageTitle(), pageUrl:pageUrl(), websiteDisabled, version:browser.runtime.getManifest().version, colors:COLORS,
       filter:sidebarFilter, searchQuery:sidebarSearchQuery, activeTab:sidebarActiveTab, t, config:CONFIG,
-      onSelectTab:tab => { sidebarActiveTab = tab; },
+      onSelectTab:tab => { sidebarActiveTab = tab; if (tab === "chatgpt") void launchChatGPTSidePanel(); },
+      onOpenChatGPT:() => { void launchChatGPTSidePanel(); },
       onToggleSidebarSetting:toggleSidebarSetting, onToggleWebsiteDisabled:toggleWebsiteDisabled,
       onOpenDashboard:() => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)),
       onToggleTheme:toggleSidebarTheme,
@@ -1467,11 +1484,6 @@
     const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
     if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
-    if (pressed === "alt+x") {
-      e.preventDefault(); e.stopPropagation();
-      if (!e.repeat) toggleSidebarToTab("chatgpt");
-      return;
-    }
     const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
     if (sidebarShortcut && pressed === sidebarShortcut) {
       e.preventDefault(); e.stopPropagation(); toggleSidebarToTab("highlights"); return;
@@ -1761,6 +1773,16 @@
       if (sidebarOpen) renderSidebar(true);
       return;
     }
+    if (message?.type === "COPY_CHATGPT_CONTEXT") {
+      return CHATGPT_CONTEXT.copyPromptToClipboard().then(result => {
+        if (result.ok) {
+          if (sidebarOpen) closeSidebar();
+          showSidebarToast(() => t(result.truncated ? "chatGPTCopiedTruncatedToast" : "chatGPTCopiedToast"));
+        } else showSidebarToast(() => t("chatGPTCopyFailedToast"));
+        return result;
+      });
+    }
+    if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
     if (message?.type === "RESTORE_HIGHLIGHTS") return websiteDisabled ? undefined : restoreAnnotations();
     if (message?.type === "OPEN_SIDEBAR") return openSidebar();
     if (message?.type === "TOGGLE_SIDEBAR") return toggleSidebar();

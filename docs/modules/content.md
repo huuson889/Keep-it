@@ -1,47 +1,46 @@
 # Content — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code được dẫn là nguồn sự thật.
+> Tài liệu định hướng; source code là nguồn sự thật.
 
 ## 1. Mục đích và phạm vi
 
-Content scripts gắn tính năng Keepit vào trang web: highlight, khôi phục annotation, note, popup dịch/từ điển, Sidebar và shortcut. `content.js` điều phối các tiện ích; logic nền tảng dùng chung nằm ở `core`, còn dữ liệu annotation chính được xử lý qua Background.
+Content scripts gắn Keepit vào website: highlight, note, dịch, Sidebar, shortcut và reader/overlay entry. `content.js` điều phối UI; helper/factory giữ logic độc lập; annotation được sở hữu bởi Background.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Nạp helpers trước `content.js` ở top frame; entry sớm khác chạy `document_start`. |
-| [`js/content/content.js`](../../js/content/content.js) | IIFE content controller | Khởi tạo settings, selection, popup, Sidebar, annotation và event listeners. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | Nạp dependency và content entry theo thứ tự. |
+| [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI, annotations và event listeners. |
+| [`js/content/chatgpt-context.js`](../../js/content/chatgpt-context.js) | `LHN_CHATGPT_CONTEXT.create` | Trích nội dung chính, ghép prompt và ghi clipboard. |
+| [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Dựng Sidebar, tabs, cards và controls. |
 | [`js/content/web-highlighter.js`](../../js/content/web-highlighter.js) | `LHNWebHighlighter.create` | Tô/khôi phục highlight và gắn event vào mark. |
 | [`js/content/annotation-restore.js`](../../js/content/annotation-restore.js) | `LHN_ANNOTATION_RESTORE.create` | Tìm lại text/range trên trang động. |
-| [`js/content/note-composer.js`](../../js/content/note-composer.js) | `LHN_NOTE_COMPOSER` | Tạo record và xác định nội dung note có thay đổi không. |
-| [`js/content/sidebar.js`](../../js/content/sidebar.js), [`js/content/ui-components.js`](../../js/content/ui-components.js) | `LHN_SIDEBAR`, `LHN_UI_COMPONENTS` | Dựng Sidebar/card và component tag editor. |
-| [`js/content/page-layout.js`](../../js/content/page-layout.js), [`js/content/sentence-note.js`](../../js/content/sentence-note.js) | `LHN_PAGE_LAYOUT`, `LHN_SENTENCE_NOTE` | Phục hồi layout trang và trích context cho note. |
+| [`js/content/note-composer.js`](../../js/content/note-composer.js) | `LHN_NOTE_COMPOSER` | Dựng form và chuẩn hóa note record. |
+| [`js/content/page-layout.js`](../../js/content/page-layout.js), [`js/content/sentence-note.js`](../../js/content/sentence-note.js) | `LHN_PAGE_LAYOUT`, `LHN_SENTENCE_NOTE` | Layout trang và sentence context. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp các factory/module trước `content.js`; controller có guard chống khởi tạo lặp trên cùng trang.
-2. `content.js` đọc settings chung từ `LHN_SETTINGS`/`browser.storage.local`; lựa chọn video đọc riêng popup/đọc từ `lhnYouTubeSettings`, rồi dispatch qua các helper và listener.
-3. Khi lưu/sửa/xóa annotation, controller tạo record bằng `LHN_NOTE_COMPOSER` rồi gửi message `ADD`, `UPDATE` hoặc `DELETE` qua `LHN_MESSAGING` tới Background.
-4. Khi trang tải hoặc thay đổi DOM, annotation lấy từ Background; `LHN_ANNOTATION_RESTORE` tìm range và `LHNWebHighlighter` dựng mark, có observer/retry cho trang động.
-5. Shortcut YouTube được phát thành custom event; module video xử lý Dual Sub/Dictation. Các action Reader và Dashboard cũng được chuyển qua event/message tương ứng.
-6. Sidebar hiển thị tab Highlight và ChatGPT; Alt+Q (hoặc `sidebarShortcut`) chọn/toggle Highlight, Alt+X chọn/toggle panel ChatGPT trống.
+1. Manifest nạp factory/module trước `content.js`; controller chống khởi tạo lặp trên cùng document.
+2. Controller đọc settings từ `LHN_SETTINGS`/`browser.storage.local`, rồi kết nối selection, helper và UI listeners.
+3. Annotation được tạo bởi `LHN_NOTE_COMPOSER`, gửi `ADD`/`UPDATE`/`DELETE` qua `LHN_MESSAGING`; khi trang đổi, `LHN_ANNOTATION_RESTORE` và `LHNWebHighlighter` khôi phục mark.
+4. Reader/YouTube chuyển action qua custom events; overlay xử lý phần video/Study.
+5. Tab ChatGPT trong page Sidebar và extension command `Alt+X` mở browser-native panel. Content trích nội dung, ghi prompt + page text vào clipboard; Background mở Chrome `sidePanel` hoặc Firefox `sidebarAction`. Người dùng tự Ctrl+V; không auto-send.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Không đổi thứ tự nạp trong manifest: các dependency `LHN_*` phải được tạo trước khi `content.js` gọi chúng.
-- Annotation record đi qua Background; giữ payload `item`, `id`, `url`, `origin` và các loại message mà Dashboard/Sidebar cùng dùng.
-- `web-highlighter.js`, `annotation-restore.js`, `note-composer.js`, `page-layout.js` là các helper/factory; giữ ranh giới chức năng thay vì nhân bản logic vào controller.
-- Các thao tác chọn/chữ không được chặn nhập liệu trong input/contenteditable; giữ guard shortcut và hành vi selection khi sửa listener.
-- Khi thay đổi DOM trên trang, loại trừ vùng UI của extension khỏi khôi phục/selection để tránh tự bắt nội dung Keepit.
-- Selection video chỉ cho transcript chính `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở popup/từ điển; các vùng dịch/control/UI khác bị chặn. Hai tùy chọn popup/đọc video dùng `lhnYouTubeSettings`; trang thường giữ `lhnSettings`.
-- Tên custom event nối Content với Video/Reader là API nội bộ; tìm consumer trước khi đổi.
-- Sidebar tabs là UI-only: Highlight giữ list/search/filter hiện tại; ChatGPT là panel trống và ẩn các control/danh sách Highlight. Tab hiện hành giữ trong phiên sidebar; Alt+Q mặc định theo `sidebarShortcut`, Alt+X dành cho ChatGPT. Nhãn tab phải dịch qua `LHN_LANGUAGES`.
+- Giữ thứ tự nạp manifest: dependency `LHN_*` phải tồn tại trước khi controller dùng.
+- Annotation CRUD tiếp tục qua Background; giữ payload `item`, `id`, `url`, `origin` và các loại message.
+- Giữ helper/factory theo ranh giới; không nhân bản restore, note composer hoặc layout logic vào controller.
+- Shortcut không chặn nhập liệu; khi sửa key listener phải giữ guard input/contenteditable và các event Reader/overlay.
+- UI của extension không được tự trở thành nguồn annotation/selection; loại vùng UI khỏi khôi phục và capture text.
+- `LHN_CHATGPT_CONTEXT` dùng Readability rồi fallback cleaned body, giới hạn page text 40.000 ký tự; chỉ chép prompt `Hãy tóm tắt nội dung ngắn gọn` + text vào clipboard sau hành động người dùng. Không đưa page text qua Background/storage, không tự paste/submit.
+- ChatGPT tab là launcher tới panel riêng; Alt+Q/custom `sidebarShortcut` vẫn mở Highlight. Label/hướng dẫn mới phải có EN/VI/KO trong `LHN_LANGUAGES`.
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `for f in js/content/*.js; do node --check "$f" || exit; done`; xác nhận file trong manifest tồn tại và `git diff --check`.
-- Sidebar tabs: `node --check` cho `content.js`, `sidebar.js`, `languages.js`; source/VM checks cho thứ tự tab, panel ChatGPT trống, chuyển tab, Alt+Q/Alt+X routing và nhãn EN/VI/KO.
-- Annotation: thử lưu, sửa, xóa, reload trang, khôi phục highlight, điều hướng trang động và mở record từ Sidebar/Dashboard.
-- Selection/UI: thử popup dịch/từ điển, auto note, website-disable và shortcut; sidebar Alt+Q/Alt+X mở đúng tab, ChatGPT trống, tabs bấm được và footer giữ nguyên. Lặp lại trên trang có input, iframe hoặc DOM thay đổi để phát hiện listener xung đột.
-- Browser verification phải ghi rõ trình duyệt và hành vi đã chạy; static check không thay thế kiểm thử trang thật.
+- Static: `for f in js/content/*.js; do node --check "$f" || exit; done`; kiểm tra manifest references và `git diff --check`.
+- Focused VM: Readability/fallback, prompt prefix, cap 40.000 ký tự, clipboard success/failure; xác nhận message mở panel không mang page text.
+- Browser QA pending: Chrome 116+ và Firefox; Alt+X/tab mở native panel, clipboard + Ctrl+V để thành draft, không gửi; thử trang dài/trống, copy/API fail và đăng nhập ChatGPT. Chrome iframe/DNR/frame policy cần xác minh thực tế.
+- Regression: Alt+Q/custom shortcut, page-sidebar tab/controls/footer, annotation CRUD/restore, selection UI và website-disabled trên DOM/input/iframe biến động.
+- Ghi rõ browser nào đã chạy; static/VM check không thay thế browser verification.

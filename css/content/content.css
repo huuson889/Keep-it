@@ -703,8 +703,11 @@ html.lhn-video-overlay-open body > *:not(#keepit-host){ visibility:hidden !impor
 }
 [id^="lhn-"] ::-webkit-scrollbar-thumb, [id^="lhn-"]::-webkit-scrollbar-thumb { border-radius:999px; background:var(--lhn-sb-scrollbar,#cbd5e1); }
 
-/* Page sidebar: Highlight and empty ChatGPT tabs sit directly above the footer. */
+/* Page sidebar: Highlight list and ChatGPT launcher tab sit directly above the footer. */
 #lhn-sidebar .lhn-sidebar-chatgpt-panel{ flex:1 1 auto !important; min-height:0 !important; background:var(--lhn-sb-list) !important; }
+#lhn-sidebar .lhn-chatgpt-launch{ display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:12px !important; min-height:100% !important; padding:24px !important; text-align:center !important; }
+#lhn-sidebar .lhn-chatgpt-launch-hint{ max-width:300px !important; margin:0 !important; color:var(--lhn-sb-muted) !important; font:13px/1.55 var(--lhn-app-font-family) !important; }
+#lhn-sidebar .lhn-chatgpt-open-button{ max-width:100% !important; white-space:normal !important; }
 #lhn-sidebar .lhn-sidebar-chatgpt-panel[hidden]{ display:none !important; }
 #lhn-sidebar[data-active-tab="chatgpt"] .lhn-sidebar-search-wrap,
 #lhn-sidebar[data-active-tab="chatgpt"] .lhn-sidebar-filters,

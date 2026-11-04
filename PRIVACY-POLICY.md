@@ -1,6 +1,6 @@
 # Keepit Privacy Policy — Draft / Chính sách quyền riêng tư Keepit — Bản nháp
 
-> **DRAFT — NOT FOR PUBLICATION.** Prepared/updated 1 November 2026 for Keepit extension version 3.4.928. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
+> **DRAFT — NOT FOR PUBLICATION.** Prepared/updated 4 November 2026 for Keepit extension version 3.5.56. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
 >
 > **Controller / owner:** `[LEGAL NAME OF THE PERSON OR ENTITY RESPONSIBLE FOR KEEPIT]`  
 > **Privacy contact:** `[PRIVACY CONTACT EMAIL]`  
@@ -15,15 +15,17 @@ This document covers the current extension and describes planned account/cloud f
 
 ### 1. Scope and current service status
 
-This policy applies to the Keepit browser extension/add-on for Chromium-based browsers and Firefox-based browsers, including its Dashboard, page features, translation, dictionary, text-to-speech, Bilingual Reader, flashcards, and diagnostics.
+This policy applies to the Keepit browser extension/add-on for Chromium-based browsers and Firefox-based browsers, including its Dashboard, page features, translation, dictionary, text-to-speech, Bilingual Reader, flashcards, diagnostics, and ChatGPT clipboard workflow.
 
-In version 3.4.928, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
+In version 3.5.56, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
 
 ### 2. Information handled by the current extension
 
 **Information stored in the browser profile.** Keepit stores information needed for the features you use, such as highlights, note text, quoted/context text, page title and URL associated with an annotation, colors, tags, favorites, flashcard/study data, extension settings, and local feature/cache/usage state. If you create or edit the Dashboard's demo profile, its display name, username, email address, and avatar image data (if supplied) are also stored locally; this is not a real online account. Annotation data is stored in extension IndexedDB; settings and other local state use the browser's extension storage. Keepit does not currently send this local library, demo profile, or settings to a Keepit-operated server.
 
 **Page content.** The extension's content scripts run on supported web pages to provide highlighting, notes, translation, dictionary, and Reader features. Page text is processed in the browser to provide those features. Keepit does not currently upload whole browsing sessions to a Keepit server. When you invoke a feature that needs an outside service, the relevant word, selected text, or Reader passage may be sent to that service as described below.
+
+**ChatGPT clipboard workflow.** When you explicitly invoke the ChatGPT panel workflow, Keepit extracts the readable main text of the current page, its title and URL, adds a sample summarization prompt, and writes that draft to the system clipboard. Page text is capped at 40,000 characters; longer text is truncated with a note. This action replaces the current clipboard contents. Keepit does not send the page text to a Keepit server or automatically submit it to ChatGPT. You decide whether to paste it into ChatGPT and submit it; if you do, OpenAI/ChatGPT receives the content and handles it under its own terms and privacy policy.
 
 **Speaking practice audio.** When you start Dictation Speaking mode, the browser's SpeechRecognition feature processes speech to produce a transcript; the browser/provider may process the audio under its own settings and privacy terms. Keepit also records a temporary audio clip in memory solely to play back your own voice. Keepit does not write that clip to extension storage or a file, and does not upload it. The temporary recording/Blob URL is released when the attempt is reset, the sentence or mode changes, or the panel closes.
 
@@ -44,6 +46,7 @@ Keepit uses outside services to provide features. The service receives the infor
 | Custom web fonts | Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`) | The font stylesheet/assets, requested when you enable and select a custom web font. When custom fonts are off or the website is disabled in Keepit, the stylesheet is not attached. Google may receive normal network/request information and browser-provided referrer information. |
 | Dashboard favicon fallback | Google S2 Favicon (`www.google.com/s2/favicons`) | If the page's direct `/favicon.ico` request fails, the Dashboard requests a fallback icon and includes the page URL in the `domain_url` query parameter. |
 | Definition search opened by the user | Google Search (`www.google.com/search`) | The word/query is included in the search URL when you choose the definition-search feature. |
+| ChatGPT prompt after user paste/submit | OpenAI's ChatGPT website | If you choose to paste the clipboard draft and submit it, the sample prompt, page title, URL, and extracted page text are sent to ChatGPT. Keepit only prepares the clipboard draft and does not submit it; OpenAI handles submitted content under its own terms and privacy policy. |
 
 Keepit uses these requests to provide the requested extension features. Keepit does not use the text sent for these features for advertising or sell it to data brokers. This statement does not control how a third-party provider handles a request under its own terms.
 
@@ -57,7 +60,7 @@ Keepit cannot delete information retained by an outside provider after you have 
 
 ### 5. Permissions and access
 
-The extension requests browser permissions for storage, larger local storage, active-tab/tab functions, and a network-request rule used for Google TTS. Content scripts are configured to run on supported websites because highlighting, notes, translation, and Reader features need access to page content. Host access also supports the named translation, dictionary, font, and favicon services. These permissions do not mean that Keepit sends every page to a Keepit server; the transmissions described above occur to provide specific extension features. The policy and any in-product disclosures must remain consistent with the actual manifest and behavior. Speaking auto-record is enabled by default: after the current cue's final repeat ends and the video pauses, it may request microphone access after a two-second delay. Auto-started recognition uses a single utterance and ends according to the browser's speech endpoint. The user can disable the toggle and use manual Enter/microphone controls instead; browser permission settings still govern access. Keepit's short recording is held in memory for playback and is not persisted or uploaded by Keepit; browser speech recognition may process audio through its configured provider.
+The extension requests browser permissions for storage, larger local storage, active-tab/tab functions, clipboard writing, browser-native side panels, and network-request rules. Content scripts are configured to run on supported websites because highlighting, notes, translation, Reader, and the user-invoked ChatGPT draft workflow need access to page content. Host access also supports the named translation, dictionary, font, and favicon services. In Chrome, a narrowly scoped network rule removes frame-blocking response headers only for ChatGPT subframes initiated by Keepit's extension page so ChatGPT can load inside the side panel; this changes those protections for that embedded ChatGPT frame. Firefox opens ChatGPT as a top-level page in its native sidebar. These permissions do not mean that Keepit sends every page to a Keepit server; the transmissions described above occur only for specific user-invoked features. The policy and any in-product disclosures must remain consistent with the actual manifest and behavior. Speaking auto-record is enabled by default: after the current cue's final repeat ends and the video pauses, it may request microphone access after a two-second delay. Auto-started recognition uses a single utterance and ends according to the browser's speech endpoint. The user can disable the toggle and use manual Enter/microphone controls instead; browser permission settings still govern access. Keepit's short recording is held in memory for playback and is not persisted or uploaded by Keepit; browser speech recognition may process audio through its configured provider.
 
 ### 6. Security and international processing
 
@@ -65,7 +68,7 @@ Current user-created content and settings are stored in the browser profile; Kee
 
 ### 7. Planned account and cloud features — NOT ACTIVE
 
-The following describes a product plan only. None of these cloud/account operations is active in version 3.4.928. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
+The following describes a product plan only. None of these cloud/account operations is active in version 3.5.56. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
 
 If launched, account/cloud services are expected to process account/identity details, user-created annotations and settings selected for sync, flashcard/Dictation progress, sync status, and plan/usage entitlements. A server-side service provider has not yet been finalized. The current plan is for a 7-day Ultra trial with sync, followed by Free with no new sync and any existing cloud data in read-only/export mode; plan quotas and payment providers remain undecided. The product plan also calls for advance notices 30 and 7 days before cloud data is progressively removed after 12 months without meaningful activity, with an opportunity to export. These are planned rules, not current data practices, and may change before launch.
 
@@ -87,15 +90,17 @@ Before publication, complete the controller/contact/date/URL fields; verify ever
 
 ### 1. Phạm vi và trạng thái hiện tại
 
-Chính sách này áp dụng cho tiện ích Keepit trên các trình duyệt nhân Chromium và Firefox, gồm Dashboard, tính năng trên trang, dịch, từ điển, chuyển văn bản thành giọng nói, Bilingual Reader, flashcard và nhật ký chẩn đoán.
+Chính sách này áp dụng cho tiện ích Keepit trên các trình duyệt nhân Chromium và Firefox, gồm Dashboard, tính năng trên trang, dịch, từ điển, chuyển văn bản thành giọng nói, Bilingual Reader, flashcard, nhật ký chẩn đoán và luồng clipboard ChatGPT.
 
-Trong phiên bản 3.4.928, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
+Trong phiên bản 3.5.56, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
 
 ### 2. Thông tin được xử lý trong bản hiện tại
 
 **Thông tin lưu trong hồ sơ trình duyệt.** Keepit lưu dữ liệu cần cho tính năng bạn sử dụng, ví dụ phần tô sáng, nội dung ghi chú, câu trích/ngữ cảnh, tiêu đề và URL trang gắn với ghi chú, màu, tag, mục yêu thích, dữ liệu flashcard/ôn tập, cài đặt extension và trạng thái cache/sử dụng local. Nếu bạn tạo hoặc sửa hồ sơ demo trong Dashboard, tên hiển thị, username, email và dữ liệu ảnh đại diện (nếu có) cũng được lưu local; đây không phải tài khoản trực tuyến thật. Dữ liệu annotation lưu trong IndexedDB của extension; cài đặt và trạng thái local khác dùng bộ nhớ extension của trình duyệt. Hiện Keepit không gửi thư viện local, hồ sơ demo hoặc cài đặt đến máy chủ do Keepit vận hành.
 
 **Nội dung trang.** Content script chạy trên website được hỗ trợ để cung cấp tô sáng, ghi chú, dịch, từ điển và Reader. Nội dung trang được xử lý trong trình duyệt để cung cấp các tính năng đó. Hiện Keepit không tải toàn bộ lịch sử duyệt web lên máy chủ Keepit. Khi bạn dùng tính năng cần dịch vụ bên ngoài, từ/câu/đoạn liên quan có thể được gửi đến dịch vụ đó như mô tả bên dưới.
+
+**Luồng clipboard ChatGPT.** Khi bạn chủ động dùng tính năng ChatGPT panel, Keepit trích nội dung chính có thể đọc của trang hiện tại, tiêu đề và URL, thêm prompt mẫu tóm tắt rồi ghi bản nháp vào clipboard hệ thống. Phần văn bản trang tối đa 40.000 ký tự; phần dài hơn sẽ bị cắt và có ghi chú. Thao tác này thay thế nội dung clipboard hiện tại. Keepit không gửi văn bản trang đến máy chủ Keepit và không tự gửi nội dung sang ChatGPT. Bạn tự quyết định có dán vào ChatGPT và gửi hay không; nếu thực hiện, OpenAI/ChatGPT nhận nội dung và xử lý theo điều khoản cùng chính sách quyền riêng tư riêng.
 
 **Âm thanh khi luyện nói.** Tự động ghi âm Speaking mặc định bật: sau khi cue cuối (kể cả repeat) kết thúc và video tạm dừng, Keepit đợi 2 giây rồi có thể yêu cầu quyền microphone. Lượt tự động dùng nhận diện một câu và kết thúc theo endpoint của trình duyệt. Bạn có thể tắt công tắc để dùng Enter/mic thủ công; quyền truy cập vẫn do trình duyệt quyết định. SpeechRecognition xử lý lời nói để tạo transcript; trình duyệt/nhà cung cấp có thể xử lý audio theo cài đặt và chính sách riêng. Keepit chỉ giữ bản ghi tạm trong bộ nhớ để phát lại, không ghi vào extension storage/tệp và không upload. Bản ghi/Blob URL được giải phóng khi đặt lại lượt luyện, đổi câu/chế độ hoặc đóng panel.
 
@@ -116,6 +121,7 @@ Keepit dùng dịch vụ bên ngoài để cung cấp tính năng. Dịch vụ n
 | Font web tùy chỉnh | Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`) | Stylesheet/font chỉ được yêu cầu khi bạn bật và chọn custom web font. Khi custom font tắt hoặc website bị tắt trong Keepit, stylesheet không được gắn vào trang. Google có thể nhận thông tin mạng/request thông thường và thông tin referrer do trình duyệt gửi. |
 | Fallback favicon trong Dashboard | Google S2 Favicon (`www.google.com/s2/favicons`) | Nếu request trực tiếp tới `/favicon.ico` của trang lỗi, Dashboard gọi Google để lấy icon dự phòng và gửi URL trang trong tham số `domain_url`. |
 | Tra cứu định nghĩa do người dùng mở | Google Search (`www.google.com/search`) | Từ/truy vấn được đưa vào URL tìm kiếm khi bạn chọn tính năng tra cứu định nghĩa. |
+| Prompt ChatGPT sau khi người dùng dán/gửi | Website ChatGPT của OpenAI | Nếu bạn chọn dán bản nháp từ clipboard và gửi, prompt mẫu, tiêu đề trang, URL và nội dung trang đã trích được gửi đến ChatGPT. Keepit chỉ chuẩn bị clipboard, không tự gửi; OpenAI xử lý nội dung đã gửi theo điều khoản và chính sách riêng. |
 
 Keepit dùng các request này để cung cấp tính năng tương ứng. Keepit không dùng văn bản gửi qua các tính năng này cho quảng cáo và không bán dữ liệu cho data broker. Cam kết này không kiểm soát cách nhà cung cấp bên thứ ba xử lý request theo điều khoản riêng của họ.
 
@@ -129,7 +135,7 @@ Keepit không thể xóa dữ liệu mà nhà cung cấp bên ngoài đã lưu s
 
 ### 5. Quyền và truy cập
 
-Extension yêu cầu quyền trình duyệt cho bộ nhớ, dung lượng local mở rộng, tab đang hoạt động/các thao tác tab và quy tắc request dùng cho Google TTS. Content script được cấu hình chạy trên website được hỗ trợ vì các tính năng tô sáng, ghi chú, dịch và Reader cần truy cập nội dung trang. Quyền host cũng phục vụ các dịch vụ dịch, từ điển, font và favicon nêu trên. Các quyền này không có nghĩa Keepit gửi mọi trang đến máy chủ Keepit; việc truyền dữ liệu bên ngoài xảy ra để cung cấp các tính năng cụ thể đã mô tả. Chính sách và mọi thông báo trong ứng dụng phải khớp với manifest và hành vi thật. Tự động ghi âm Luyện nói mặc định bật; sau cue cuối/repeat và khi video tạm dừng, Keepit có thể yêu cầu quyền microphone sau 2 giây. Lượt tự động kết thúc theo endpoint một lượt của trình duyệt. Người dùng có thể tắt công tắc để dùng Enter/mic thủ công; quyền truy cập do trình duyệt quyết định. Bản ghi ngắn chỉ nằm trong bộ nhớ để phát lại, không lưu bền vững hoặc upload; nhận diện giọng nói của trình duyệt có thể xử lý audio qua nhà cung cấp được cấu hình.
+Extension yêu cầu quyền trình duyệt cho bộ nhớ, dung lượng local mở rộng, tab đang hoạt động/các thao tác tab, ghi clipboard, side panel tích hợp và quy tắc request mạng. Content script chạy trên website được hỗ trợ vì các tính năng tô sáng, ghi chú, dịch, Reader và luồng tạo bản nháp ChatGPT theo yêu cầu của người dùng cần truy cập nội dung trang. Quyền host cũng phục vụ các dịch vụ dịch, từ điển, font và favicon nêu trên. Trên Chrome, quy tắc mạng giới hạn gỡ các header chặn frame chỉ cho subframe ChatGPT do trang extension Keepit khởi tạo để ChatGPT tải trong side panel; việc này thay đổi các bảo vệ đó đối với frame ChatGPT được nhúng. Firefox mở ChatGPT như trang cấp cao nhất trong sidebar tích hợp. Các quyền này không có nghĩa Keepit gửi mọi trang đến máy chủ Keepit; dữ liệu chỉ được truyền cho tính năng cụ thể do người dùng chủ động gọi như mô tả ở trên. Chính sách và mọi thông báo trong ứng dụng phải khớp với manifest và hành vi thật. Tự động ghi âm Luyện nói mặc định bật; sau cue cuối/repeat và khi video tạm dừng, Keepit có thể yêu cầu quyền microphone sau 2 giây. Lượt tự động kết thúc theo endpoint một lượt của trình duyệt. Người dùng có thể tắt công tắc để dùng Enter/mic thủ công; quyền truy cập do trình duyệt quyết định. Bản ghi ngắn chỉ nằm trong bộ nhớ để phát lại, không lưu bền vững hoặc upload; nhận diện giọng nói của trình duyệt có thể xử lý audio qua nhà cung cấp được cấu hình.
 
 ### 6. Bảo mật và xử lý quốc tế
 
@@ -137,7 +143,7 @@ Nội dung người dùng và cài đặt hiện lưu trong hồ sơ trình duy�
 
 ### 7. Tài khoản và cloud dự kiến — CHƯA HOẠT ĐỘNG
 
-Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.4.928**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
+Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.5.56**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
 
 Nếu ra mắt, tài khoản/cloud dự kiến xử lý thông tin tài khoản/định danh, annotation và cài đặt người dùng chọn đồng bộ, tiến độ flashcard/Dictation, trạng thái sync và quyền lợi/hạn mức gói. Nhà cung cấp server chưa được chọn cuối cùng. Kế hoạch hiện tại là dùng thử Ultra 7 ngày có sync; sau đó Free không tạo sync mới và dữ liệu cloud đã có chuyển sang chỉ đọc/xuất. Hạn mức gói và nhà cung cấp thanh toán còn chưa chốt. Kế hoạch cũng dự kiến gửi nhắc trước 30 và 7 ngày khi dữ liệu cloud dần bị xóa sau 12 tháng không có hoạt động có ý nghĩa, đồng thời cho phép export. Đây là quy tắc dự kiến, không phải thực hành xử lý dữ liệu hiện tại, và có thể thay đổi trước khi ra mắt.
 
