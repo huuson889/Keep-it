@@ -1,5 +1,6 @@
-(() => {
+(async () => {
   const PENDING_KEY = "keepitChatGPTDraftPending";
+  const CONVERSATION_KEY = "keepitChatGPTLastConversationUrl";
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const PROMPT_PREFIX = "Hãy tóm tắt nội dung ngắn gọn";
   const MAX_WAIT_MS = 25000;
@@ -7,9 +8,21 @@
   let url;
   try { url = new URL(location.href); } catch { return; }
   // ChatGPT in an ordinary tab must never read or receive the extension's clipboard draft.
-  if (url.searchParams.get(PANEL_MARKER) !== "1" || (!isFirefox && window.top === window)) return;
+  const hasUrlMarker = url.searchParams.get(PANEL_MARKER) === "1" || url.hash === `#${PANEL_MARKER}=1`;
+  let hasSessionMarker = false;
+  try {
+    hasSessionMarker = sessionStorage.getItem(PANEL_MARKER) === "1";
+    if (hasUrlMarker) sessionStorage.setItem(PANEL_MARKER, "1");
+  } catch { /* restricted storage still allows the explicit URL marker */ }
+  const extensionRoot = globalThis.browser?.runtime?.getURL?.("") || "";
+  const hasExtensionReferrer = !!extensionRoot && document.referrer.startsWith(extensionRoot);
+  if (hasExtensionReferrer && !hasSessionMarker) { try { sessionStorage.setItem(PANEL_MARKER, "1"); hasSessionMarker = true; } catch {} }
+  if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
+  if (isFirefox) {
+    globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
+  }
 
   let processing = false;
   let retryRequested = false;
@@ -81,6 +94,18 @@
     } catch (error) { console.warn("Keepit could not report the ChatGPT draft result", error); }
   }
 
+  let lastConversationUrl = "";
+  async function rememberCurrentConversation() {
+    try {
+      const current = new URL(location.href);
+      if (!['chatgpt.com', 'chat.openai.com'].includes(current.hostname) || !/\/c\/[A-Za-z0-9_-]{8,}(?:\/|$)/i.test(current.pathname)) return;
+      const conversationUrl = `${current.origin}${current.pathname}`;
+      if (conversationUrl === lastConversationUrl) return;
+      lastConversationUrl = conversationUrl;
+      await browserApi.storage.local.set({ [CONVERSATION_KEY]:conversationUrl });
+    } catch (error) { lastConversationUrl = ""; console.warn("Keepit could not remember the ChatGPT conversation route", error); }
+  }
+
   async function processPendingDraft() {
     if (processing) { retryRequested = true; return; }
     processing = true;
@@ -133,11 +158,26 @@
     }
   }
 
-  if (isFirefox) {
-    globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
-  }
   browserApi.storage.onChanged?.addListener((changes, areaName) => {
     if (areaName === "local" && changes?.[PENDING_KEY]?.newValue) void processPendingDraft();
   });
+  const pollPanel = () => {
+    if (document.visibilityState === "hidden") return;
+    void rememberCurrentConversation();
+    if (!processing) void processPendingDraft();
+  };
+  void rememberCurrentConversation();
   void processPendingDraft();
+  const panelPollTimer = setInterval(pollPanel, 1200);
+  let lastObservedHref = location.href;
+  const routeObserver = new MutationObserver(() => {
+    const currentHref = location.href;
+    if (currentHref !== lastObservedHref) { lastObservedHref = currentHref; void rememberCurrentConversation(); }
+  });
+  routeObserver.observe(document.documentElement, { childList:true, subtree:true });
+  const rememberAfterNavigation = () => { lastObservedHref = location.href; void rememberCurrentConversation(); };
+  document.addEventListener("visibilitychange", pollPanel);
+  window.addEventListener("popstate", rememberAfterNavigation);
+  window.addEventListener("hashchange", rememberAfterNavigation);
+  window.addEventListener("pagehide", () => { clearInterval(panelPollTimer); routeObserver.disconnect(); }, { once:true });
 })();

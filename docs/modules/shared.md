@@ -1,46 +1,45 @@
 # Shared — Hướng dẫn kỹ thuật
 
-> Tài liệu định hướng; source code được dẫn là nguồn sự thật.
+> Tài liệu định hướng; source code là nguồn sự thật.
 
 ## 1. Mục đích và phạm vi
 
-`shared` chứa tiện ích không sở hữu nghiệp vụ giao diện riêng: custom font, SVG icons, index search, site-icon resolver/cache và thumbnail resolver/loader dùng chung. Các thuật toán search trong `js/translate/search.js` là module khác, không thuộc API `LHN_INDEX_SEARCH`.
+`shared` cung cấp tiện ích dùng chéo context: custom font, SVG, index search, site icons, thumbnails và bootstrap ChatGPT panel. `js/translate/search.js` là API khác, không thuộc `LHN_INDEX_SEARCH`.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/shared/custom-font.js`](../../js/shared/custom-font.js) | storage listener | Áp dụng font tùy chỉnh trên trang HTTP(S). |
-| [`js/shared/icons.js`](../../js/shared/icons.js) | `LHN_ICONS.render` | Render SVG inline từ icon name và class. |
-| [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | Normalize text, tạo index, search và debounce. |
-| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Tìm icon website, cập nhật fallback và dùng cache persistent chung. |
-| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | Chuẩn hóa YouTube/page thumbnail, tạo SVG fallback và load ảnh với fallback thống nhất. |
-| [`js/translate/search.js`](../../js/translate/search.js) | `LHN_SEARCH` | Search rank/highlight; chỉ dẫn ở đây để phân biệt hai API. |
+| [`js/shared/custom-font.js`](../../js/shared/custom-font.js) | storage listener | Áp dụng font tùy chỉnh trên HTTP(S). |
+| [`js/shared/icons.js`](../../js/shared/icons.js) | `LHN_ICONS.render` | Render SVG theo icon name. |
+| [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | Normalize, index và search. |
+| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon resolver và cache local. |
+| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/page thumbnail và fallback. |
+| [`js/shared/chatgpt-panel.js`](../../js/shared/chatgpt-panel.js) | `openPanelPage` | Restore URL conversation cho Chrome/Firefox panel. |
 
 ## 3. Luồng chính
 
-1. Manifest hoặc HTML entry nạp shared helper trước consumer tương ứng.
-2. Custom-font đọc cài đặt và cập nhật khi storage đổi; chỉ áp dụng trên trang web phù hợp.
-3. Consumer gọi `LHN_ICONS.render(name, className)` để tạo SVG, `LHN_INDEX_SEARCH.createIndex/search` để tái sử dụng dữ liệu đã normalize, `LHN_SITE_ICONS.load(image, pageUrl, options)` để gắn favicon hoặc `LHN_THUMBNAILS.loadYouTube/loadSource` để lấy thumbnail.
-4. Site-icon resolver chuẩn hóa website về HTTP(S) origin, ưu tiên `favIconUrl` do browser cung cấp cho tab cùng origin, rồi thử favicon SVG/Apple touch icon và fallback Google S2 128px; chỉ lưu ứng viên sau khi ảnh tải thành công.
-5. Resolver dùng `browser.storage.local` làm cache chung giữa extension pages, TTL 30 ngày (6 giờ nếu không tìm thấy), tối đa 256 website; cache chỉ lưu origin và URL icon, không lưu path/query của trang. `storage.onChanged` đồng bộ cache giữa các context.
-6. Thumbnail helper dùng chung URL `hqdefault.jpg` cho YouTube, chuẩn hóa `og:image`/Twitter image và URL annotation, tạo SVG fallback cho source card. `load()` thử nguồn chính rồi fallback, còn consumer quyết định DOM class/fallback/aria trong `onLoad`/`onError`. Không có network cache hoặc quyền host mới.
+1. Manifest/HTML nạp helper trước consumer tương ứng.
+2. Consumer dùng `LHN_ICONS`, `LHN_INDEX_SEARCH`, `LHN_SITE_ICONS` hoặc `LHN_THUMBNAILS`; API giữ logic độc lập với UI cụ thể.
+3. Site icon resolver chuẩn hóa về HTTP(S) origin, thử favicon site rồi fallback, chỉ cache sau khi ảnh tải thành công.
+4. Thumbnail helper chuẩn hóa source URL, thử ảnh chính rồi fallback; consumer quyết định DOM state và aria.
+5. Extension page gọi `chatgpt-panel.js`, đọc key conversation URL từ `browser.storage.local`, validate host/path rồi đặt iframe `src` (Chrome) hoặc `location.replace` (Firefox).
+6. Panel content script lưu origin + pathname của route `/c/<id>`; bootstrap thêm marker fragment để nhận diện panel mà không gửi marker trong HTTP request.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ tên và shape các global API (`LHN_ICONS`, `LHN_INDEX_SEARCH`, `LHN_THUMBNAILS`); manifest/HTML phải nạp file trước consumer.
-- `LHN_INDEX_SEARCH` là tiện ích index/normalize/debounce; không trộn `rank`/`highlightMatches` của `LHN_SEARCH` vào đây nếu chưa rà consumer.
-- `LHN_SITE_ICONS.load` chỉ nhận HTTP(S), chỉ tạo ứng viên từ origin đã chuẩn hóa và Google S2 với `domain_url` chỉ chứa origin. Không gửi path/query trang tới dịch vụ ngoài.
-- `LHN_THUMBNAILS.youtubeUrl/loadYouTube` là nơi duy nhất xây URL `i.ytimg.com`; consumers không tự ghép URL YouTube. `loadSource` ưu tiên thumbnail đã lưu, sau đó YouTube thumbnail, rồi SVG; ảnh hỏng thử fallback trước callback lỗi cuối.
-- Cache site icons dùng riêng `keepit:site-icon-cache:v1`, kiểm tra lại URL đã lưu theo danh sách ứng viên, giới hạn số origin/TTL và fallback khi icon lỗi; không mở rộng host permissions.
-- Icon name có fallback theo `LHN_CONFIG.ACTION_ICON_PATHS`/icon mặc định; không trả SVG với nội dung không được kiểm soát từ input người dùng.
-- Custom font cần tôn trọng theme/font settings hiện có và không áp dụng lên trang không hỗ trợ.
-- Các tiện ích phải giữ độc lập khỏi Dashboard/Content DOM để có thể dùng chéo context.
+- Giữ tên/shape các global API; manifest và HTML phải nạp helper trước consumer.
+- Không trộn `LHN_SEARCH` rank/highlight với `LHN_INDEX_SEARCH` nếu chưa rà consumers.
+- `LHN_SITE_ICONS` chỉ dùng origin và cache riêng; không gửi path/query của trang tới dịch vụ favicon.
+- `LHN_THUMBNAILS` là nơi duy nhất tạo URL thumbnail YouTube; giữ fallback/error order.
+- Chỉ restore ChatGPT URL HTTPS trên `chatgpt.com` hoặc `chat.openai.com` có segment `/c/<id>`; bỏ query/hash, title và nội dung chat.
+- Route conversation chỉ lưu local để mở lại cùng chat; không lưu page text/prompt. URL được gửi tới ChatGPT chỉ khi browser tải route đã chọn.
+- Giữ helper độc lập khỏi Dashboard/Content DOM và không thêm host permission mới cho shared utilities.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/shared/*.js; do node --check "$f" || exit; done`; kiểm tra `manifest.json`/HTML script order và `git diff --check`.
-- Search: test normalize (hoa/thường, dấu Unicode, whitespace), index key, query rỗng/không match và debounce.
-- Site icons: mock load/fail, fallback, URL chỉ chứa origin, storage cache chung giữa hai context, TTL/LRU và cache invalidation; xác nhận trên trang thật khi browser-test.
-- Thumbnails: YouTube URL variants/ID, URL metadata an toàn, SVG fallback, load/error retry, cùng thứ tự nạp helper trong manifest/HTML và các consumer.
-- SVG/font: kiểm tra icon tồn tại/fallback, SVG render hợp lệ, font auto/custom và cập nhật khi storage đổi trên một trang thật.
+- Site icons: mock load/fail, fallback, origin-only URL, cache TTL và invalidation.
+- Thumbnails: YouTube URL/ID, SVG fallback, load/error retry và consumer callbacks.
+- ChatGPT panel: mock URL đúng/sai host, route `/c/<id>`, bỏ query/hash, default URL, marker fragment, iframe/redirect restore.
+- SVG/font: icon fallback, render hợp lệ, font setting và storage update. Static/mock không thay thế kiểm thử trang thật.
