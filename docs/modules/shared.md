@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-`shared` cung cấp tiện ích dùng chéo context: custom font, SVG, index search, site icons, thumbnails và bootstrap ChatGPT panel. `js/translate/search.js` là API khác, không thuộc `LHN_INDEX_SEARCH`.
+`shared` cung cấp tiện ích dùng chéo context: custom font, SVG, index search, site icons, thumbnails, ChatGPT panel và định dạng prompt ChatGPT dùng chung cho background/content. `js/translate/search.js` là API khác, không thuộc `LHN_INDEX_SEARCH`.
 
 ## 2. File chính và điểm vào
 
@@ -16,6 +16,7 @@
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon resolver và cache local. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/page thumbnail và fallback. |
 | [`js/shared/chatgpt-panel.js`](../../js/shared/chatgpt-panel.js) | `openPanelPage`, navigation/close listeners | Restore/reopen validated URL, bảo vệ composer draft và fallback tự đóng Chromium panel. |
+| [`js/shared/chatgpt-prompt-format.js`](../../js/shared/chatgpt-prompt-format.js) | `LHN_CHATGPT_PROMPT_FORMAT` | Tạo một chuỗi hai bullet cho `?q=` và dựng cùng chuỗi thành text/`<br>` trong composer cho draft hoặc manual-send fallback. |
 
 ## 3. Luồng chính
 
@@ -37,6 +38,7 @@
 - Fallback close chỉ chạy trong trang Chromium side panel, đối chiếu `windowId` với `windows.getCurrent()` rồi mới gọi `window.close()`; không đóng panel ở cửa sổ khác.
 - Mapping exact source URL → conversation route lưu local. Request mới không mang page body/title; helper không đọc composer DOM trực tiếp mà dùng postMessage guard, kiểm tra ChatGPT-origin và iframe source; content script chỉ trả lời yêu cầu từ extension origin.
 - Giữ helper độc lập khỏi Dashboard/Content DOM và không thêm host permission mới cho shared utilities.
+- Prompt URL mới phải qua `LHN_CHATGPT_PROMPT_FORMAT.formatLinkPrompt`; draft và nhánh gửi dự phòng dùng `insertMultilineComposerText`/cùng đường `insertDraft`, giữ cùng thứ tự URL rồi instruction và một newline.
 
 ## 5. Kiểm tra và xác minh
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.80",
+  "version": "3.5.81",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -120,6 +120,7 @@
       "js": [
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
+        "js/shared/chatgpt-prompt-format.js",
         "js/content/chatgpt-autofill.js"
       ],
       "run_at": "document_idle",

@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/shared/chatgpt-prompt-format.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -364,7 +364,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
     const promptLine = askingAboutSelection
       ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt)
       : promptSettings.summaryPrompt;
-    const prompt = `• ${promptSettings.websiteLabel}: ${sourceUrl}\n• ${promptLine}`;
+    const prompt = globalThis.LHN_CHATGPT_PROMPT_FORMAT.formatLinkPrompt(promptSettings.websiteLabel, sourceUrl, promptLine);
     const pending = {
       requestId:linkRequestId,
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,

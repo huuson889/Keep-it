@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.80; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
-- Hỏi AI Settings v3.5.80: giữ nguyên ba controls đã duyệt; URL và prompt thành hai bullet trên hai dòng thật, Website label/câu mặc định đổi tức thì theo EN/VI/KO; Ask AI tiếng Việt dùng `Đoạn này trên web nghĩa là sao?`. Focused VM/static/Chrome package checks đã đạt; browser QA Chrome/Firefox chưa được người dùng xác nhận.
+- Version hiện tại: v3.5.81; Manifest V3, một codebase Chromium/Firefox. Kiến trúc Reader, Overlay và Dashboard chi tiết ở mục 4.
+- Hỏi AI Settings v3.5.81: giữ nguyên ba controls đã duyệt; URL và prompt thành hai bullet trên hai dòng thật, Website label/câu mặc định đổi tức thì theo EN/VI/KO; Ask AI tiếng Việt dùng `Đoạn này trên web nghĩa là sao?`. v3.5.81 dùng chung formatter cho `?q=`, draft và manual-send fallback; shared formatter/static checks đạt, browser QA Chrome/Firefox chưa được người dùng xác nhận.
 - Chrome side-panel toggle state được lưu session qua service-worker restart; Chromium cũ dùng close fallback trong side-panel page, Firefox dùng native sidebar toggle.
 - Tab Settings “Icon hiển thị” chọn 1 trong 3 kiểu mẫu, lưu `translateIconStyle`; popup và preview theo theme sáng/tối. Static checks chạy, browser QA chưa chạy.
 
@@ -19,7 +19,7 @@
 
 ### Kiểm thử trình duyệt
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66): browser QA pending — chọn lần lượt Dạng 1/2/3, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
-- Hỏi AI Settings / ChatGPT prompt flow (v3.5.80): Firefox context-menu behavior was confirmed earlier; Chrome side-panel behavior still needs user confirmation. Verify the two approved settings only: auto-send defaults on; when off, first-use prompts are drafts without `?q=` and mapped Hỏi AI replacements are unsent drafts. Verify editable endings localized immediately for EN/VI/KO, including Vietnamese `Hãy tóm tắt web này` and `Đoạn này trên web nghĩa là sao?`; use `•` bullets with a real newline after the URL and exact source-URL mapping; mapped follow-ups remain URL-free and selection-only. Alt+X on mapped URLs only reopens. Check manual send establishes first-use mapping; unrelated drafts/navigation protection remain intact; exact mapped-chat replacement uses only current selection. Confirm EN/VI/KO labels, Chrome iframe/Firefox sidebar, first-use q native-send when enabled, duplicate prevention, Alt+X toggle, worker restart, and Alt+Q/custom `sidebarShortcut` regressions. Browser QA has not been run.
+- Hỏi AI Settings / ChatGPT prompt flow (v3.5.81): Firefox context-menu behavior was confirmed earlier; Chrome side-panel behavior still needs user confirmation. Verify the two approved settings only: auto-send defaults on; when off, first-use prompts are drafts without `?q=` and mapped Hỏi AI replacements are unsent drafts. Verify editable endings localized immediately for EN/VI/KO, including Vietnamese `Hãy tóm tắt web này` and `Đoạn này trên web nghĩa là sao?`; use `•` bullets with a real newline after the URL and exact source-URL mapping; mapped follow-ups remain URL-free and selection-only. Alt+X on mapped URLs only reopens. Check manual send establishes first-use mapping; unrelated drafts/navigation protection remain intact; exact mapped-chat replacement uses only current selection. Confirm EN/VI/KO labels, Chrome iframe/Firefox sidebar, first-use q native-send when enabled, duplicate prevention, Alt+X toggle, worker restart, and Alt+Q/custom `sidebarShortcut` regressions. Browser QA has not been run.
 - Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
 - Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
 - Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
@@ -236,6 +236,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - Chỉnh UI biểu tượng dịch: hover/focus logo mở khay ba nút Tô sáng, Dịch, Hỏi AI ở cùng hàng; dùng SVG và nhãn ngắn EN/VI/KO. Ba action tái sử dụng composer/highlight, translation selection và ChatGPT link-only launcher; không thay đổi các luồng chức năng.
 - File: `manifest.json`, `js/content/content.js`, `css/content/content.css`, `js/core/languages.js`, `PROJECT.md`.
 - Kiểm tra: `node --check` trên JS liên quan và `git diff --check` PASS; browser QA chưa chạy.
+
+**2026-11-04 | v3.5.81 | Arena.ai Agent sửa:**
+
+- Gom định dạng URL + instruction thành một shared formatter dùng chung bởi `?q=` auto-send, bản nháp và nhánh bấm Send dự phòng. Nhánh gửi dự phòng chuẩn hóa lại composer bằng cùng các node text/`<br>` trước lần gửi duy nhất; giữ nguyên `?q=` và native-send/duplicate guard cho chat mới.
+- File: `manifest.json`, `js/shared/chatgpt-prompt-format.js`, `js/background/background.js`, `js/content/chatgpt-autofill.js`, `docs/modules/content.md`, `docs/modules/shared.md`, `PRIVACY-POLICY.md`, `PROJECT.md`.
+- Kiểm tra: shared formatter VM/static và kiểm tra manifest/script load order, all-JS `node --check`, Python compile, `git diff --check`; browser composer/linkification vẫn cần xác nhận thực tế trên Chrome/Firefox.
 
 **2026-11-04 | v3.5.80 | Arena.ai Agent sửa:**
 

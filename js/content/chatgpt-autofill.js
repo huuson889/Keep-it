@@ -138,7 +138,7 @@
   function insertDraft(composer, text, replaceExisting = false) {
     composer.focus();
     if (composer.isContentEditable) {
-      if (replaceExisting) {
+      if (replaceExisting && !String(text).includes("\n")) {
         try {
           const selection = window.getSelection();
           const range = document.createRange();
@@ -148,18 +148,13 @@
         } catch { /* the textContent fallback below still replaces the draft */ }
       }
       if (String(text).includes("\n")) {
-        // Setting textContent or insertText can collapse newlines in ChatGPT's contenteditable
-        // when a prompt arrives as an unsent draft. Insert explicit BR nodes so draft and ?q=
-        // prompts render the same two bullets in Chromium and Firefox.
+        // Drafts and the manual-send fallback use the same shared two-line formatter/rendering.
+        // The new-chat ?q= path serializes the exact same formatted string.
+        let inserted = false;
         try {
-          const fragment = document.createDocumentFragment();
-          String(text).split(/\r?\n/).forEach((line, index) => {
-            if (index) fragment.append(document.createElement("br"));
-            fragment.append(document.createTextNode(line));
-          });
-          composer.replaceChildren(fragment);
-          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
-        } catch {
+          inserted = globalThis.LHN_CHATGPT_PROMPT_FORMAT?.insertMultilineComposerText(composer, text, replaceExisting) === true;
+        } catch { /* use the safe editor fallback below */ }
+        if (!inserted) {
           composer.textContent = text;
           composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
         }
@@ -619,6 +614,21 @@
         if (createdConversation && !composerHasText(composer)) {
           try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
           await reportLinkResult(pending, true, createdConversation);
+          return;
+        }
+      }
+
+      // If ChatGPT did not complete its native ?q= send, re-render its exact prefill with
+      // the shared multiline formatter before the one guarded manual Send click.
+      if (!isFollowup && !isDraftOnly && !isDraftLink) {
+        composer = findComposer() || composer;
+        if (normalizedDraft(composerText(composer)) !== expectedNormalized) {
+          await reportLinkResult(pending, false, "", "composer-not-empty");
+          return;
+        }
+        insertDraft(composer, expectedPrompt, true);
+        if (normalizedDraft(composerText(composer)) !== expectedNormalized) {
+          await reportLinkResult(pending, false, "", "composer-insert-failed");
           return;
         }
       }
