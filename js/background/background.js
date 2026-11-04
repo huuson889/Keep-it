@@ -303,13 +303,31 @@ function normalizeChatGPTInstruction(value, fallback) {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
   return normalized || String(fallback || "").trim();
 }
+function getChatGPTPromptLanguage(settings) {
+  const supported = ["en", "vi", "ko"];
+  if (supported.includes(settings?.language)) return settings.language;
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (zone === "Asia/Ho_Chi_Minh") return "vi";
+    if (zone === "Asia/Seoul") return "ko";
+  } catch {}
+  try {
+    const locale = String(browser.i18n?.getUILanguage?.() || "en").toLowerCase();
+    if (locale.startsWith("vi")) return "vi";
+    if (locale.startsWith("ko")) return "ko";
+  } catch {}
+  return "en";
+}
 async function getChatGPTPromptSettings() {
   const stored = await browser.storage.local.get(CONFIG.STORAGE_KEYS.SETTINGS);
   const settings = stored?.[CONFIG.STORAGE_KEYS.SETTINGS] || {};
+  const language = getChatGPTPromptLanguage(settings);
   return {
     autoSend:settings.chatGPTAutoSend !== false,
-    summaryPrompt:normalizeChatGPTInstruction(settings.chatGPTSummaryPrompt, CONFIG.DEFAULT_SETTINGS.chatGPTSummaryPrompt),
-    askPrompt:normalizeChatGPTInstruction(settings.chatGPTAskPrompt, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)
+    language,
+    websiteLabel:globalThis.LHN_CHATGPT_PROMPTS.websiteLabel(language),
+    summaryPrompt:globalThis.LHN_CHATGPT_PROMPTS.resolve(language, "chatGPTSummaryPrompt", settings.chatGPTSummaryPrompt),
+    askPrompt:globalThis.LHN_CHATGPT_PROMPTS.resolve(language, "chatGPTAskPrompt", settings.chatGPTAskPrompt)
   };
 }
 function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
@@ -346,7 +364,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
     const promptLine = askingAboutSelection
       ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt)
       : promptSettings.summaryPrompt;
-    const prompt = `- Website: ${sourceUrl}\n- ${promptLine}`;
+    const prompt = `• ${promptSettings.websiteLabel}: ${sourceUrl}\n• ${promptLine}`;
     const pending = {
       requestId:linkRequestId,
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,

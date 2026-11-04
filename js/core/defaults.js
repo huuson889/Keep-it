@@ -32,7 +32,7 @@
     sidebarIndicatorOnDisabledSites: true,
     chatGPTAutoSend: true,
     chatGPTSummaryPrompt: "Hãy tóm tắt web này",
-    chatGPTAskPrompt: "đoạn này trên web là sao?",
+    chatGPTAskPrompt: "Đoạn này trên web nghĩa là sao?",
     defaultHighlightColor: "yellow",
     shortcut: "Alt+S",
     sidebarShortcut: "Alt+Q",
@@ -48,6 +48,13 @@
     selectVoiceShortcut: "Alt+L",
     disabledWebsites: []
   });
+
+  const chatGPTPrompts = deepFreeze({
+    en:{ websiteLabel:"Website", summary:"Summarize this website", ask:"What does this part of the website mean?" },
+    vi:{ websiteLabel:"Trang web", summary:"Hãy tóm tắt web này", ask:"Đoạn này trên web nghĩa là sao?" },
+    ko:{ websiteLabel:"웹사이트", summary:"이 웹사이트를 요약해 주세요", ask:"이 부분은 웹사이트에서 무슨 뜻인가요?" }
+  });
+  const legacyChatGPTAskPrompts = deepFreeze(["đoạn này trên web là sao?"]);
 
   const reader = deepFreeze({
     accentColor: "#9c27b0",
@@ -114,5 +121,27 @@
     sub: { font: null, bold: false, en: { pct: 100, color: null }, vi: { pct: 90, color: null } }
   });
 
-  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, youtube, readerDisabledWebsites: READER_DISABLED_WEBSITES });
+  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, youtube, chatGPTPrompts, legacyChatGPTAskPrompts, readerDisabledWebsites: READER_DISABLED_WEBSITES });
+  const promptFields = Object.freeze({ chatGPTSummaryPrompt:"summary", chatGPTAskPrompt:"ask" });
+  const normalizePrompt = value => String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
+  const isKnownDefault = (key, value) => {
+    const field = promptFields[key];
+    if (!field) return false;
+    const normalized = normalizePrompt(value);
+    const localized = Object.values(chatGPTPrompts).some(prompts => prompts[field] === normalized);
+    return localized || (key === "chatGPTAskPrompt" && legacyChatGPTAskPrompts.includes(normalized));
+  };
+  globalThis.LHN_CHATGPT_PROMPTS = Object.freeze({
+    defaultFor(language, key) {
+      const field = promptFields[key];
+      if (!field) return "";
+      return (chatGPTPrompts[language] || chatGPTPrompts.en)[field];
+    },
+    resolve(language, key, value) {
+      const normalized = normalizePrompt(value);
+      return !normalized || isKnownDefault(key, normalized) ? this.defaultFor(language, key) : normalized;
+    },
+    websiteLabel(language) { return (chatGPTPrompts[language] || chatGPTPrompts.en).websiteLabel; },
+    isDefault: isKnownDefault
+  });
 })();

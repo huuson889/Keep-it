@@ -152,8 +152,8 @@ function refreshDashboardSettings() {
   renderDisabledReaderWebsiteList();
   syncBilingualReaderControls();
   $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend !== false;
-  $("settingsChatGPTSummaryPrompt").value = String(dashboardSettings.chatGPTSummaryPrompt || CONFIG.DEFAULT_SETTINGS.chatGPTSummaryPrompt);
-  $("settingsChatGPTAskPrompt").value = String(dashboardSettings.chatGPTAskPrompt || CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt);
+  $("settingsChatGPTSummaryPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTSummaryPrompt", dashboardSettings.chatGPTSummaryPrompt);
+  $("settingsChatGPTAskPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTAskPrompt", dashboardSettings.chatGPTAskPrompt);
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
@@ -3259,9 +3259,9 @@ function saveDashboardTranslationMode(settingKey, enabled) {
 }
 $("settingsChatGPTAutoSend").addEventListener("change", event => saveDashboardSettings({ chatGPTAutoSend:event.target.checked }));
 function saveChatGPTPromptSetting(input, key) {
-  const fallback = String(CONFIG.DEFAULT_SETTINGS[key] || "");
+  const fallback = LHN_CHATGPT_PROMPTS.defaultFor(currentLang, key);
   const value = String(input.value || "").replace(/\s+/g, " ").trim().slice(0, 500);
-  if (!value) { input.value = dashboardSettings[key] || fallback; return; }
+  if (!value) { input.value = LHN_CHATGPT_PROMPTS.resolve(currentLang, key, dashboardSettings[key]) || fallback; return; }
   input.value = value;
   void saveDashboardSettings({ [key]:value });
 }
@@ -3546,7 +3546,7 @@ browser.storage.onChanged.addListener((changes, area) => {
     currentLang = LANGUAGES.languageFor(dashboardSettings);
     syncDashboardTheme();
     if (currentLang !== previousLanguage) { applyTranslations(); render(); void renderDictationErrorSummary(); syncBilingualPreview(); }
-    else refreshDashboardSettings();
+    refreshDashboardSettings();
     syncHighlightsNotesView();
   }
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
