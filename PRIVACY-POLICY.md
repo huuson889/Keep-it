@@ -1,6 +1,6 @@
 # Keepit Privacy Policy — Draft / Chính sách quyền riêng tư Keepit — Bản nháp
 
-> **DRAFT — NOT FOR PUBLICATION.** Prepared/updated 4 November 2026 for Keepit extension version 3.5.68. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
+> **DRAFT — NOT FOR PUBLICATION.** Prepared/updated 4 November 2026 for Keepit extension version 3.5.69. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
 >
 > **Controller / owner:** `[LEGAL NAME OF THE PERSON OR ENTITY RESPONSIBLE FOR KEEPIT]`  
 > **Privacy contact:** `[PRIVACY CONTACT EMAIL]`  
@@ -17,7 +17,7 @@ This document covers the current extension and describes planned account/cloud f
 
 This policy applies to the Keepit browser extension/add-on for Chromium-based browsers and Firefox-based browsers, including its Dashboard, page features, translation, dictionary, text-to-speech, Bilingual Reader, flashcards, diagnostics, and user-invoked ChatGPT URL/selected-text workflow.
 
-In version 3.5.68, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
+In version 3.5.69, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
 
 ### 2. Information handled by the current extension
 
@@ -68,7 +68,7 @@ Current user-created content and settings are stored in the browser profile; Kee
 
 ### 7. Planned account and cloud features — NOT ACTIVE
 
-The following describes a product plan only. None of these cloud/account operations is active in version 3.5.68. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
+The following describes a product plan only. None of these cloud/account operations is active in version 3.5.69. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
 
 If launched, account/cloud services are expected to process account/identity details, user-created annotations and settings selected for sync, flashcard/Dictation progress, sync status, and plan/usage entitlements. A server-side service provider has not yet been finalized. The current plan is for a 7-day Ultra trial with sync, followed by Free with no new sync and any existing cloud data in read-only/export mode; plan quotas and payment providers remain undecided. The product plan also calls for advance notices 30 and 7 days before cloud data is progressively removed after 12 months without meaningful activity, with an opportunity to export. These are planned rules, not current data practices, and may change before launch.
 
@@ -92,7 +92,7 @@ Before publication, complete the controller/contact/date/URL fields; verify ever
 
 Chính sách này áp dụng cho tiện ích Keepit trên các trình duyệt nhân Chromium và Firefox, gồm Dashboard, tính năng trên trang, dịch, từ điển, chuyển văn bản thành giọng nói, Bilingual Reader, flashcard, nhật ký chẩn đoán và luồng ChatGPT URL/văn bản đã chọn do người dùng chủ động gọi.
 
-Trong phiên bản 3.5.68, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
+Trong phiên bản 3.5.69, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
 
 ### 2. Thông tin được xử lý trong bản hiện tại
 
@@ -143,7 +143,7 @@ Nội dung người dùng và cài đặt hiện lưu trong hồ sơ trình duy�
 
 ### 7. Tài khoản và cloud dự kiến — CHƯA HOẠT ĐỘNG
 
-Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.5.68**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
+Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.5.69**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
 
 Nếu ra mắt, tài khoản/cloud dự kiến xử lý thông tin tài khoản/định danh, annotation và cài đặt người dùng chọn đồng bộ, tiến độ flashcard/Dictation, trạng thái sync và quyền lợi/hạn mức gói. Nhà cung cấp server chưa được chọn cuối cùng. Kế hoạch hiện tại là dùng thử Ultra 7 ngày có sync; sau đó Free không tạo sync mới và dữ liệu cloud đã có chuyển sang chỉ đọc/xuất. Hạn mức gói và nhà cung cấp thanh toán còn chưa chốt. Kế hoạch cũng dự kiến gửi nhắc trước 30 và 7 ngày khi dữ liệu cloud dần bị xóa sau 12 tháng không có hoạt động có ý nghĩa, đồng thời cho phép export. Đây là quy tắc dự kiến, không phải thực hành xử lý dữ liệu hiện tại, và có thể thay đổi trước khi ra mắt.
 

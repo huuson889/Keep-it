@@ -6,6 +6,7 @@
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
   const LINK_SESSION_KEY = "keepitChatGPTLinkRequestId";
+  const LINK_DIRECT_SESSION_KEY = "keepitChatGPTDirectFollowupRequestId";
   const LINK_Q_SESSION_KEY = "keepitChatGPTLinkQRequestId";
   const LINK_Q_PROMPT_SESSION_KEY = "keepitChatGPTLinkQPrompt";
   const LINK_SENT_SESSION_KEY = "keepitChatGPTLinkSentRequestId";
@@ -56,16 +57,26 @@
     return /[^\s]/.test(composerText(composer));
   }
 
-  // The side-panel host asks before changing conversations; preserve any existing composer draft.
+  // The side-panel host asks before changing conversations and directly wakes a same-route follow-up.
   window.addEventListener("message", event => {
-    if (window.top === window || event.source !== window.parent || event.data?.type !== "KEEPIT_CHATGPT_PANEL_NAV_GUARD") return;
+    if (window.top === window || event.source !== window.parent) return;
     const extensionOrigin = (() => { try { return new URL(extensionRoot).origin; } catch { return ""; } })();
     if (!extensionOrigin || event.origin !== extensionOrigin) return;
-    void (async () => {
-      const composer = findComposer() || await waitForLinkComposer(1300);
-      const hasDraft = composerHasText(composer);
-      try { event.source.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft }, event.origin); } catch {}
-    })();
+    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_NAV_GUARD") {
+      void (async () => {
+        const composer = findComposer() || await waitForLinkComposer(1300);
+        const hasDraft = composerHasText(composer);
+        try { event.source.postMessage({ type:"KEEPIT_CHATGPT_PANEL_NAV_GUARD_RESULT", requestId:event.data.requestId, hasDraft }, event.origin); } catch {}
+      })();
+      return;
+    }
+    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST" && typeof event.data.requestId === "string" && event.data.requestId) {
+      try {
+        sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, event.data.requestId);
+        sessionStorage.setItem(LINK_SESSION_KEY, event.data.requestId);
+      } catch {}
+      void processPendingLink();
+    }
   });
 
   const normalizedDraft = value => String(value || "").replace(/[\u200b\u2060]/g, "").replace(/\r\n?/g, "\n").replace(/\s+/g, " ").trim();
@@ -144,14 +155,30 @@
     } catch (error) { console.warn("Keepit could not report the ChatGPT draft result", error); }
   }
 
+  function notifyPanelHostConversation(conversationUrl) {
+    if (window.top === window) return;
+    try {
+      const extensionOrigin = new URL(extensionRoot).origin;
+      window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_CONVERSATION", conversationUrl:String(conversationUrl || "") }, extensionOrigin);
+    } catch {}
+  }
+
   let lastConversationUrl = "";
   async function rememberCurrentConversation() {
     try {
       const current = new URL(location.href);
-      if (!['chatgpt.com', 'chat.openai.com'].includes(current.hostname) || !/\/c\/[A-Za-z0-9_-]{8,}(?:\/|$)/i.test(current.pathname)) return;
+      if (!["chatgpt.com", "chat.openai.com"].includes(current.hostname)) return;
+      if (!/\/c\/[A-Za-z0-9_-]{8,}(?:\/|$)/i.test(current.pathname)) {
+        if (lastConversationUrl) {
+          lastConversationUrl = "";
+          notifyPanelHostConversation("");
+        }
+        return;
+      }
       const conversationUrl = `${current.origin}${current.pathname}`;
       if (conversationUrl === lastConversationUrl) return;
       lastConversationUrl = conversationUrl;
+      notifyPanelHostConversation(conversationUrl);
       await browserApi.storage.local.set({ [CONVERSATION_KEY]:conversationUrl });
     } catch (error) { lastConversationUrl = ""; console.warn("Keepit could not remember the ChatGPT conversation route", error); }
   }
@@ -374,7 +401,10 @@
         ? pending.prompt
         : `${LINK_PROMPT_PREFIX} ${pending.sourceUrl}`;
       const expectedNormalized = normalizedDraft(expectedPrompt);
-      const activeRequestId = activeLinkRequestId();
+      let activeRequestId = activeLinkRequestId();
+      if (isFollowup) {
+        try { if (sessionStorage.getItem(LINK_DIRECT_SESSION_KEY) === pending.requestId) activeRequestId = pending.requestId; } catch {}
+      }
       const currentUrl = new URL(location.href);
       const queryMatches = currentUrl.searchParams.get("q") === expectedPrompt;
       let qRequestId = "";
@@ -554,6 +584,23 @@
       const target = new URL(String(request.targetUrl || ""));
       if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname)) return false;
       if (target.pathname !== "/" && !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return false;
+      const conversationKey = value => {
+        try {
+          const parsed = new URL(String(value || ""));
+          if (parsed.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(parsed.hostname) || !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(parsed.pathname)) return "";
+          return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}`;
+        } catch { return ""; }
+      };
+      if (request.mode === "followup" && request.linkRequestId && conversationKey(currentConversationUrl()) === conversationKey(target.href)) {
+        try {
+          sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
+          sessionStorage.setItem(LINK_SESSION_KEY, request.linkRequestId);
+        } catch {}
+        const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
+        if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+        void processPendingLink();
+        return true;
+      }
       const params = new URLSearchParams(target.hash.replace(/^#/, ""));
       params.set(PANEL_MARKER, "1");
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);

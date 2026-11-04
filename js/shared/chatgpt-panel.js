@@ -108,6 +108,20 @@
       await clearNavigationRequest(request.requestId);
       return false;
     }
+    const targetConversation = safeConversationUrl(target);
+    const displayedConversation = safeConversationUrl(frame?.dataset?.currentConversationUrl || "");
+    if (request.mode === "followup" && frame?.dataset.keepitLoaded === "true" && targetConversation && displayedConversation === targetConversation) {
+      handledNavigationIds.add(request.requestId);
+      await clearNavigationRequest(request.requestId);
+      const wakeFollowup = () => {
+        if (!frame.isConnected || !frame.contentWindow) return;
+        try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST", requestId:String(request.linkRequestId || "") }, "*"); } catch {}
+      };
+      wakeFollowup();
+      setTimeout(wakeFollowup, 350);
+      setTimeout(wakeFollowup, 1100);
+      return true;
+    }
     if (await currentComposerHasDraft(request)) {
       await clearNavigationRequest(request.requestId);
       await reportBlockedNavigation(request);
@@ -116,8 +130,23 @@
     handledNavigationIds.add(request.requestId);
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
     const url = panelUrl(target, requestScopedFlow ? String(request.linkRequestId || "") : "");
-    if (frame) frame.src = url;
-    else {
+    if (frame) {
+      if (request.mode === "followup" && request.linkRequestId) {
+        delete frame.dataset.currentConversationUrl;
+        const wakeFollowup = () => {
+          if (!frame.isConnected || !frame.contentWindow) return;
+          try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST", requestId:String(request.linkRequestId) }, "*"); } catch {}
+        };
+        frame.addEventListener("load", wakeFollowup, { once:true });
+        frame.src = url;
+        // Hash-only updates may not fire iframe load; also wake the current same-route document.
+        wakeFollowup();
+        setTimeout(wakeFollowup, 350);
+        setTimeout(wakeFollowup, 1100);
+      } else {
+        frame.src = url;
+      }
+    } else {
       await clearNavigationRequest(request.requestId);
       location.replace(url);
       return true;
@@ -145,6 +174,14 @@
 
   frame?.addEventListener("load", () => {
     if (safePanelTarget(frame.src)) frame.dataset.keepitLoaded = "true";
+  });
+
+  window.addEventListener("message", event => {
+    if (!frame || event.source !== frame.contentWindow || !["https://chatgpt.com", "https://chat.openai.com"].includes(event.origin)) return;
+    if (event.data?.type !== "KEEPIT_CHATGPT_PANEL_CONVERSATION") return;
+    const conversationUrl = safeConversationUrl(String(event.data.conversationUrl || ""));
+    if (conversationUrl) frame.dataset.currentConversationUrl = conversationUrl;
+    else delete frame.dataset.currentConversationUrl;
   });
 
   browser.storage.onChanged.addListener((changes, areaName) => {
