@@ -49,5 +49,6 @@ Background là trung gian cho runtime API, storage và dịch vụ dùng chung g
 - v3.5.79 focused VM PASS: localized EN/VI/KO Website labels and prompt sentences, old default Ask AI migration, custom prompt preservation, literal newline between bullet points, and q value retaining that newline.
 - v3.5.82 focused VM PASS: context-menu click opens Firefox with no arguments and Chrome in the source window; selected text alone is passed. Page-context queue restores source-scoped draft context and stale route updates are discarded.
 - Historical v3.5.68 static/build: first-party JS syntax, manifest/no-debugger, `git diff --check`; Chrome/Firefox ZIPs 122 files each and Firefox Chrome-only manifest keys removed.
-- v3.5.82 current checks: all first-party JS syntax, Python compile, Chromium manifest/contextMenus/no-debugger, Firefox transform and `git diff --check` PASS. Browser QA remains pending user confirmation.
+- v3.5.82 historical checks: all first-party JS syntax, Python compile, Chromium manifest/contextMenus/no-debugger, Firefox transform and `git diff --check` PASS. Browser QA remains pending user confirmation.
+- v3.5.83 context behavior: a different source URL requests its own mapped/new chat; page-context and draft behavior documented in content/shared modules.
 - Browser QA Chrome/Firefox chưa chạy để xác nhận panel thật, follow-up gửi vào cùng chat, toggle sau worker restart, q/mapping, draft guard, scrollbar và Firefox install không tự mở.

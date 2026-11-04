@@ -115,6 +115,20 @@
     } catch (error) { console.warn("Keepit could not report a protected ChatGPT draft", error); }
   }
 
+  function reloadPanelFrame(targetUrl, onTargetLoad) {
+    if (!frame) return false;
+    frame.dataset.keepitLoaded = "false";
+    delete frame.dataset.currentConversationUrl;
+    const loadTargetAfterBlank = () => {
+      frame.removeEventListener("load", loadTargetAfterBlank);
+      if (onTargetLoad) frame.addEventListener("load", onTargetLoad, { once:true });
+      frame.src = targetUrl;
+    };
+    frame.addEventListener("load", loadTargetAfterBlank, { once:true });
+    frame.src = "about:blank";
+    return true;
+  }
+
   async function navigate(request) {
     if (!request || typeof request.requestId !== "string" || handledNavigationIds.has(request.requestId)) return false;
     if (!Number.isFinite(request.expiresAt) || request.expiresAt <= Date.now()) {
@@ -128,9 +142,11 @@
     }
     const targetConversation = safeConversationUrl(target);
     const displayedConversation = safeConversationUrl(frame?.dataset?.currentConversationUrl || frame?.src || "");
-    if (request.mode === "followup" && frame?.dataset.keepitLoaded === "true" && targetConversation && displayedConversation === targetConversation) {
+    const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
+    const sourceContextChanged = !!request.sourceUrl && request.sourceUrl !== previousSourceUrl;
+    const sameMappedConversation = !!targetConversation && displayedConversation === targetConversation;
+    if (request.mode === "followup" && !sourceContextChanged && frame?.dataset.keepitLoaded === "true" && sameMappedConversation) {
       const composerState = await currentComposerDraft(request);
-      const previousSourceUrl = String(frame.dataset.keepitSourceUrl || "");
       if ((!composerState.known && frame.dataset.keepitLoaded === "true") || (composerState.hasDraft && !previousSourceUrl)) {
         await clearNavigationRequest(request.requestId);
         await reportBlockedNavigation(request);
@@ -158,9 +174,8 @@
       setTimeout(wakeFollowup, 1100);
       return true;
     }
-    if (["reopen", "context-switch"].includes(request.mode) && frame?.dataset.keepitLoaded === "true" && targetConversation && displayedConversation === targetConversation) {
+    if (["reopen", "context-switch"].includes(request.mode) && !sourceContextChanged && frame?.dataset.keepitLoaded === "true" && sameMappedConversation) {
       const composerState = await currentComposerDraft(request);
-      const previousSourceUrl = String(frame.dataset.keepitSourceUrl || "");
       if ((!composerState.known && frame.dataset.keepitLoaded === "true") || (composerState.hasDraft && !previousSourceUrl)) {
         await clearNavigationRequest(request.requestId);
         await reportBlockedNavigation(request);
@@ -184,7 +199,6 @@
       return true;
     }
     const composerState = await currentComposerDraft(request);
-    const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
     if (!composerState.known && frame?.dataset?.keepitLoaded === "true") {
       await clearNavigationRequest(request.requestId);
       await reportBlockedNavigation(request);
@@ -202,7 +216,9 @@
     }
     handledNavigationIds.add(request.requestId);
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
-    const url = panelUrl(target, requestScopedFlow ? String(request.linkRequestId || "") : "", request.sourceUrl || "", request.mode === "context-switch");
+    const restoreTargetDraft = request.mode === "context-switch" || (request.mode === "reopen" && sourceContextChanged);
+    const url = panelUrl(target, requestScopedFlow ? String(request.linkRequestId || "") : "", request.sourceUrl || "", restoreTargetDraft);
+    const forceSameRouteContextReload = sourceContextChanged && sameMappedConversation;
     if (frame) {
       if (request.sourceUrl) frame.dataset.keepitSourceUrl = String(request.sourceUrl);
       if (request.mode === "followup" && request.linkRequestId) {
@@ -211,18 +227,36 @@
           if (!frame.isConnected || !frame.contentWindow) return;
           try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST", requestId:String(request.linkRequestId) }, "*"); } catch {}
         };
-        frame.addEventListener("load", wakeFollowup, { once:true });
-        frame.src = url;
-        // Hash-only updates may not fire iframe load; also wake the current same-route document.
-        wakeFollowup();
-        setTimeout(wakeFollowup, 350);
-        setTimeout(wakeFollowup, 1100);
+        if (forceSameRouteContextReload) {
+          reloadPanelFrame(url, () => {
+            wakeFollowup();
+            setTimeout(wakeFollowup, 350);
+            setTimeout(wakeFollowup, 1100);
+          });
+        } else {
+          frame.addEventListener("load", wakeFollowup, { once:true });
+          frame.src = url;
+          // Hash-only updates may not fire iframe load; also wake the current same-route document.
+          wakeFollowup();
+          setTimeout(wakeFollowup, 350);
+          setTimeout(wakeFollowup, 1100);
+        }
+      } else if (forceSameRouteContextReload) {
+        reloadPanelFrame(url);
       } else {
         frame.src = url;
       }
     } else {
       await clearNavigationRequest(request.requestId);
-      location.replace(url);
+      if (forceSameRouteContextReload) {
+        try {
+          history.replaceState(history.state, "", url);
+          location.reload();
+        } catch (error) {
+          console.warn("Could not reload the Firefox ChatGPT panel for a new source page", error);
+          location.replace(url);
+        }
+      } else location.replace(url);
       return true;
     }
     await clearNavigationRequest(request.requestId);

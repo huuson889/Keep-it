@@ -26,7 +26,7 @@
 3. Site icon resolver chuẩn hóa về HTTP(S) origin, thử favicon site rồi fallback, chỉ cache sau khi ảnh tải thành công.
 4. Thumbnail helper chuẩn hóa source URL, thử ảnh chính rồi fallback; consumer quyết định DOM state và aria.
 5. Extension page gọi `chatgpt-panel.js`, xử lý navigation request URL đã validate hoặc restore last conversation; Chrome đặt iframe `src`, Firefox dùng `location.replace`.
-6. Navigation mới hỏi composer state, lưu draft theo source URL rồi điều hướng; cùng mapped conversation được mở lại mà không reload. Marker fragment nhận diện panel/request/source. Với Chromium chưa có `sidePanel.close()`, helper chỉ đóng panel cùng window khi Background gửi close request; route mới được map theo exact source URL.
+6. Navigation mới hỏi composer state, lưu draft theo source URL rồi điều hướng; cùng mapped conversation chỉ fast-path/no-reload khi source URL cũng là nguồn đang hiển thị. Source URL khác luôn reload ChatGPT kể cả khi cùng `/c/<id>`, để draft đích được restore riêng. Marker fragment nhận diện panel/request/source. Với Chromium chưa có `sidePanel.close()`, helper chỉ đóng panel cùng window khi Background gửi close request; route mới được map theo exact source URL.
 7. ChatGPT content script gắn toolbar shadow DOM với liên kết trang nguồn và bốn provider tabs; lựa chọn provider ngoài ChatGPT hiển thị blank overlay, không mở mạng/provider ngoài.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -48,5 +48,5 @@
 - Site icons: mock load/fail, fallback, origin-only URL, cache TTL và invalidation.
 - Thumbnails: YouTube URL/ID, SVG fallback, load/error retry và consumer callbacks.
 - v3.5.61 panel VM: root/link marker, navigation cleanup và ChatGPT-origin/source draft guard — PASS. v3.5.63 fallback mock PASS: chỉ đóng Chromium panel nếu window ID trùng; browser QA Chrome/Firefox chưa chạy.
-- ChatGPT panel: static/VM kiểm tra per-source draft stash/restore, same-route no-reload, toolbar source-link validation, default ChatGPT tab, blank unintegrated providers; trình duyệt thật vẫn cần QA.
+- v3.5.83 focused regression VM: source URL khác nhưng route giống nhau buộc panel reload; same-source mapped reopen giữ iframe; Firefox thay source marker rồi reload top-level. Browser QA remains pending.
 - SVG/font: icon fallback, render hợp lệ, font setting và storage update. Static/mock không thay thế kiểm thử trang thật.

@@ -772,7 +772,8 @@
           return `${parsed.origin}${parsed.pathname.replace(/\/+$/, "")}`;
         } catch { return ""; }
       };
-      const sameMappedFollowup = request.mode === "followup" && request.linkRequestId
+      const sourceContextChanged = !!request.sourceUrl && safeSourceUrl(request.sourceUrl) !== activeSourceUrl;
+      const sameMappedFollowup = request.mode === "followup" && request.linkRequestId && !sourceContextChanged
         && conversationKey(currentConversationUrl()) === conversationKey(target.href);
       if (sameMappedFollowup) {
         const currentComposer = findComposer();
@@ -795,7 +796,7 @@
 
       const targetConversation = conversationKey(target.href);
       const displayedConversation = conversationKey(currentConversationUrl());
-      if (["reopen", "context-switch"].includes(request.mode) && targetConversation && targetConversation === displayedConversation) {
+      if (["reopen", "context-switch"].includes(request.mode) && !sourceContextChanged && targetConversation && targetConversation === displayedConversation) {
         const composer = findComposer();
         const previousSourceUrl = activeSourceUrl;
         if (composerHasText(composer) && previousSourceUrl) {
@@ -832,14 +833,23 @@
       params.set(PANEL_MARKER, "1");
       if (request.sourceUrl) params.set(SOURCE_URL_MARKER, request.sourceUrl);
       else params.delete(SOURCE_URL_MARKER);
-      if (request.mode === "context-switch") params.set(RESTORE_DRAFT_MARKER, "1");
+      if (request.mode === "context-switch" || (request.mode === "reopen" && sourceContextChanged)) params.set(RESTORE_DRAFT_MARKER, "1");
       else params.delete(RESTORE_DRAFT_MARKER);
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
       else params.delete(LINK_REQUEST_MARKER);
       target.hash = params.toString();
       const current = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
       if (current?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-      location.replace(target.href);
+      const forceSameRouteContextReload = sourceContextChanged && targetConversation && targetConversation === displayedConversation;
+      if (forceSameRouteContextReload) {
+        try {
+          history.replaceState(history.state, "", target.href);
+          location.reload();
+        } catch (error) {
+          console.warn("Keepit could not reload Firefox ChatGPT for a new source page", error);
+          location.replace(target.href);
+        }
+      } else location.replace(target.href);
       return true;
     } catch (error) {
       console.warn("Keepit could not navigate the Firefox ChatGPT panel", error);
