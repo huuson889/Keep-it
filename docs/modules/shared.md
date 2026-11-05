@@ -33,12 +33,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: font Inter-first của Keepit; toggle auto-send chỉ cập nhật `lhnSettings.chatGPTAutoSend` và đồng bộ thay đổi storage. URL HTTP(S) đầy đủ màu xanh, nền đặc theo hệ thống, AI capsule mở sẵn và ChatGPT mặc định. Chevron chỉ ẩn/hiện tab; mapping/prompt không đổi. Icon dùng `LHN_SITE_ICONS` hoặc favicon nhúng dự phòng.
+- Toolbar: font Inter-first, nền opaque theo hệ thống với bar tối `#3c3c3c`; toggle auto-send chỉ cập nhật `lhnSettings.chatGPTAutoSend`, bật tím ở chữ/icon trên nền thường. URL xanh, AI capsule và ChatGPT mặc định; chevron chỉ ẩn/hiện tab. Icon dùng `LHN_SITE_ICONS` hoặc fallback nhúng.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.91 toolbar VM: auto-send persistence/sync, locale, order/icon, 20% brighter dark surfaces, providers/fallback — PASS; browser QA pending.
+- v3.5.92 toolbar VM: auto-send persistence/sync, opaque matching dark bar, purple text/icon on, 12.8px zap, providers/fallback — PASS; browser QA pending.
 - v3.5.90 toolbar VM: font stack, URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
 - v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
 - v3.5.86: Content VM confirms exact localized URL header, mapping/send separation and no user-prompt persistence; JS/manifest checks — PASS.
