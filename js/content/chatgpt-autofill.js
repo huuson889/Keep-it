@@ -14,6 +14,7 @@
   const LINK_SENT_SESSION_KEY = "keepitChatGPTLinkSentRequestId";
   const LINK_PREPARED_SESSION_KEY = "keepitChatGPTPreparedRequestId";
   const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitChatGPTDraftManualSendRequestId";
+  const LINK_MANUAL_SEND_SESSION_KEY = "keepitChatGPTManualLinkSendRequestId";
   const QUERY_REQUEST_KEY = "keepit-chatgpt-query-prefill-request";
   const PROMPT_PREFIX = "Hãy tóm tắt nội dung ngắn gọn";
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
@@ -397,6 +398,9 @@
   let linkRetryRequested = false;
   let lastLinkAttemptId = "";
   let stagedDraftLinkPending = null;
+  let activePendingLinkMode = "";
+  let manualSendIntercepting = false;
+  let bypassManualSendIntercept = false;
 
   function activeLinkRequestId() {
     const currentHash = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
@@ -442,6 +446,7 @@
   }
 
   function markManualDraftLinkSend(event) {
+    if (manualSendIntercepting || bypassManualSendIntercept) return;
     const pending = stagedDraftLinkPending;
     if (!pending || pending.mode !== "draft-link" || pending.expiresAt <= Date.now() || safeSourceUrl(pending.sourceUrl) !== activeSourceUrl) return;
     const composer = findComposer();
@@ -457,10 +462,6 @@
       sessionStorage.setItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY, pending.requestId);
     } catch { return; }
   }
-  document.addEventListener("submit", markManualDraftLinkSend, true);
-  document.addEventListener("click", markManualDraftLinkSend, true);
-  document.addEventListener("keydown", markManualDraftLinkSend, true);
-
   function waitForLinkComposer(timeoutMs = 16000) {
     const initial = findComposer();
     if (initial) return Promise.resolve(initial);
@@ -501,6 +502,144 @@
     return null;
   }
 
+  function isManualSendIntent(event, composer) {
+    if (!composer || !composerHasText(composer)) return false;
+    if (event.type === "submit") return !!composer.closest("form") && event.target?.contains?.(composer);
+    if (event.type === "keydown") return event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229 && composer.contains?.(event.target);
+    if (event.type === "click") {
+      const button = event.target?.closest?.("button");
+      return !!button && button === findSendButton();
+    }
+    return false;
+  }
+
+  function isKeepitQueryAutoSend() {
+    const requestId = activeLinkRequestId();
+    try { return !!requestId && sessionStorage.getItem(LINK_Q_SESSION_KEY) === requestId; }
+    catch { return false; }
+  }
+
+  function replayChatGPTSend() {
+    bypassManualSendIntercept = true;
+    try {
+      const button = findSendButton();
+      if (button && !button.disabled && button.getAttribute("aria-disabled") !== "true") {
+        button.click();
+        return true;
+      }
+      const form = findComposer()?.closest("form");
+      if (typeof form?.requestSubmit === "function") {
+        form.requestSubmit();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.warn("Keepit could not resume the ChatGPT send action", error);
+      return false;
+    } finally {
+      setTimeout(() => { bypassManualSendIntercept = false; }, 0);
+    }
+  }
+
+  async function prepareAndSendManualPrompt(sourceUrl, originalPrompt) {
+    if (linkProcessing) {
+      const started = Date.now();
+      while (linkProcessing && Date.now() - started < 8000) await new Promise(resolve => setTimeout(resolve, 50));
+      if (linkProcessing) return;
+    }
+    let preparation = null;
+    try {
+      preparation = await globalThis.LHN_MESSAGING.sendMessage({
+        type:"CHATGPT_MANUAL_LINK_PREPARE",
+        sourceUrl
+      });
+    } catch (error) {
+      console.warn("Keepit could not prepare the source link for this ChatGPT send", error);
+      replayChatGPTSend();
+      return;
+    }
+    if (!preparation?.ok) {
+      if (!preparation?.stale) replayChatGPTSend();
+      return;
+    }
+    if (safeSourceUrl(activeSourceUrl) !== sourceUrl) return;
+    const liveComposer = findComposer();
+    if (!liveComposer || normalizedDraft(composerText(liveComposer)) !== normalizedDraft(originalPrompt)) return;
+    if (preparation.mapped) {
+      replayChatGPTSend();
+      return;
+    }
+    const requestId = String(preparation.requestId || "");
+    const websiteLabel = String(preparation.websiteLabel || "Website");
+    if (!requestId) { replayChatGPTSend(); return; }
+
+    const header = `• ${websiteLabel}: ${sourceUrl}`;
+    const promptBody = String(originalPrompt || "").trim();
+    const alreadyHasExactHeader = promptBody.split(/\r?\n/, 1)[0] === header;
+    const fullPrompt = alreadyHasExactHeader
+      ? promptBody
+      : (globalThis.LHN_CHATGPT_PROMPT_FORMAT?.formatLinkPrompt(websiteLabel, sourceUrl, promptBody)
+          || `${header}\n• ${promptBody}`);
+    const composer = findComposer();
+    if (!composer || safeSourceUrl(activeSourceUrl) !== sourceUrl
+        || normalizedDraft(composerText(composer)) !== normalizedDraft(originalPrompt)) return;
+    if (!insertDraft(composer, fullPrompt, true)) {
+      insertDraft(composer, originalPrompt, true);
+      return;
+    }
+
+    const sendButton = await waitForEnabledSendButton();
+    const currentComposer = findComposer();
+    const stillPrepared = currentComposer && normalizedDraft(composerText(currentComposer)) === normalizedDraft(fullPrompt);
+    if (!sendButton || safeSourceUrl(activeSourceUrl) !== sourceUrl || !stillPrepared) {
+      if (safeSourceUrl(activeSourceUrl) === sourceUrl && stillPrepared) insertDraft(currentComposer, originalPrompt, true);
+      return;
+    }
+    try {
+      if (preparation.mode === "draft-link") {
+        sessionStorage.setItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY, requestId);
+      } else {
+        sessionStorage.setItem(LINK_MANUAL_SEND_SESSION_KEY, requestId);
+      }
+    } catch { /* session storage may be disabled; composer still receives the exact link */ }
+    bypassManualSendIntercept = true;
+    try { sendButton.click(); }
+    catch (error) { console.warn("Keepit could not submit the manually prepared ChatGPT prompt", error); }
+    finally { setTimeout(() => { bypassManualSendIntercept = false; }, 0); }
+  }
+
+  function interceptManualSend(event) {
+    if (bypassManualSendIntercept) return;
+    const composer = findComposer();
+    if (!isManualSendIntent(event, composer)) return;
+    if (manualSendIntercepting) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      return;
+    }
+    const keepitPromptOwnsSend = linkProcessing && ["auto-send-link", "auto-send-followup", "draft-followup"].includes(activePendingLinkMode);
+    if (keepitPromptOwnsSend || isKeepitQueryAutoSend()) return;
+    const sourceUrl = safeSourceUrl(activeSourceUrl);
+    if (!sourceUrl) return;
+    const originalPrompt = composerText(composer);
+    manualSendIntercepting = true;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    void prepareAndSendManualPrompt(sourceUrl, originalPrompt).catch(error => {
+      console.warn("Keepit could not prepare the manually sent ChatGPT prompt", error);
+      replayChatGPTSend();
+    }).finally(() => { manualSendIntercepting = false; });
+  }
+
+  document.addEventListener("click", interceptManualSend, true);
+  document.addEventListener("keydown", interceptManualSend, true);
+  document.addEventListener("submit", interceptManualSend, true);
+  document.addEventListener("submit", markManualDraftLinkSend, true);
+  document.addEventListener("click", markManualDraftLinkSend, true);
+  document.addEventListener("keydown", markManualDraftLinkSend, true);
+
   function findNewChatButton() {
     return document.querySelector('button[data-testid="create-new-chat-button"]')
       || document.querySelector('a[data-testid="create-new-chat-button"]')
@@ -520,7 +659,7 @@
   function clearRequestSessionData(requestId) {
     if (!requestId) return;
     try {
-      for (const key of [LINK_SESSION_KEY, LINK_DIRECT_SESSION_KEY, LINK_Q_SESSION_KEY, LINK_SENT_SESSION_KEY, LINK_PREPARED_SESSION_KEY, LINK_DRAFT_MANUAL_SEND_SESSION_KEY, QUERY_REQUEST_KEY]) {
+      for (const key of [LINK_SESSION_KEY, LINK_DIRECT_SESSION_KEY, LINK_Q_SESSION_KEY, LINK_SENT_SESSION_KEY, LINK_PREPARED_SESSION_KEY, LINK_DRAFT_MANUAL_SEND_SESSION_KEY, LINK_MANUAL_SEND_SESSION_KEY, QUERY_REQUEST_KEY]) {
         if (sessionStorage.getItem(key) === requestId) sessionStorage.removeItem(key);
       }
     } catch {}
@@ -547,6 +686,7 @@
       await clearStaleComposerForPanelLoad();
       const stored = await browserApi.storage.local.get(LINK_PENDING_KEY);
       pending = stored?.[LINK_PENDING_KEY];
+      activePendingLinkMode = String(pending?.mode || "");
       if (!pending?.requestId || !pending.sourceUrl) {
         if (!pending && stagedDraftLinkPending) {
           stagedDraftLinkPending = null;
@@ -566,6 +706,7 @@
       }
 
       const isDraftLink = pending.mode === "draft-link";
+      const isManualLink = pending.mode === "manual-link";
       const isFollowup = ["auto-send-followup", "draft-followup"].includes(pending.mode);
       const isDraftOnly = isDraftLink || pending.mode === "draft-followup";
       const expectedPrompt = typeof pending.prompt === "string" && pending.prompt
@@ -589,19 +730,28 @@
         if (activeRequestId !== pending.requestId) return;
       } else if (isFollowup) {
         if (activeRequestId !== pending.requestId || canonicalConversationUrl(currentConversationUrl()) !== canonicalConversationUrl(pending.conversationUrl)) return;
-      } else if (!queryMatches && !qRequestMatches) {
+      } else if (!isManualLink && !queryMatches && !qRequestMatches) {
         return;
       }
 
       let conversationUrl = currentConversationUrl();
       let composer = findComposer();
+      if (isManualLink) {
+        let manualRequestId = "";
+        try { manualRequestId = sessionStorage.getItem(LINK_MANUAL_SEND_SESSION_KEY) || ""; } catch {}
+        if (manualRequestId === pending.requestId && conversationUrl && composer && !composerHasText(composer)) {
+          try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
+          await reportLinkResult(pending, true, conversationUrl);
+        }
+        return;
+      }
       if (isDraftLink) {
         let preparedRequestId = "", manualSendRequestId = "";
         try {
           preparedRequestId = sessionStorage.getItem(LINK_PREPARED_SESSION_KEY) || "";
           manualSendRequestId = sessionStorage.getItem(LINK_DRAFT_MANUAL_SEND_SESSION_KEY) || "";
         } catch {}
-        if (manualSendRequestId === pending.requestId && conversationUrl) {
+        if (manualSendRequestId === pending.requestId && conversationUrl && composer && !composerHasText(composer)) {
           try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
           await reportLinkResult(pending, true, conversationUrl);
           stagedDraftLinkPending = null;
@@ -782,6 +932,7 @@
       if (pending) await reportLinkResult(pending, false, "", "link-autosend-failed");
     } finally {
       linkProcessing = false;
+      activePendingLinkMode = "";
       if (linkRetryRequested) { linkRetryRequested = false; queueMicrotask(() => void processPendingLink()); }
     }
   }

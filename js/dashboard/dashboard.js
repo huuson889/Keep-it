@@ -151,7 +151,7 @@ function refreshDashboardSettings() {
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
   syncBilingualReaderControls();
-  $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend !== false;
+  $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend === true;
   $("settingsChatGPTSummaryPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTSummaryPrompt", dashboardSettings.chatGPTSummaryPrompt);
   $("settingsChatGPTAskPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTAskPrompt", dashboardSettings.chatGPTAskPrompt);
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;

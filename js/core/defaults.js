@@ -30,7 +30,7 @@
     showFullEnglishDictionary: true,
     sidebarIndicatorEnabled: true,
     sidebarIndicatorOnDisabledSites: true,
-    chatGPTAutoSend: true,
+    chatGPTAutoSend: false,
     chatGPTSummaryPrompt: "Hãy tóm tắt web này",
     chatGPTAskPrompt: "Đoạn này trên web nghĩa là sao?",
     defaultHighlightColor: "yellow",

@@ -19,23 +19,23 @@ Content scripts cung cấp UI và hành vi trên website: selection, highlight, 
 
 1. Manifest nạp factories trước controller; controller đọc settings rồi gắn selection, sidebar và UI listeners.
 2. Alt+X gửi intent summary; Hỏi AI gửi đúng `range.toString()` hiện tại. Background tra exact URL mapping và cấp request ID; không truyền body/title.
-3. URL mới tạo prompt hai bullet với URL ở dòng đầu. Auto-send dùng ChatGPT `?q=` và giữ native-submit/duplicate guard; khi tắt, prompt được chèn vào composer đang mở, không `?q=`, và chờ manual send để tạo mapping.
-4. URL đã map: Alt+X chỉ mở conversation. Hỏi AI thay prompt bằng selection hiện tại + câu kết tùy chỉnh, không kèm URL; auto-send tắt thì để unsent trong composer.
+3. URL chưa map: auto-send mặc định tắt ở cài đặt mới. Alt+X/Hỏi AI explicit chèn sample không có URL; prompt người dùng tự viết vẫn cần họ chủ động bấm Send. Với mọi prompt được gửi thủ công trên URL chưa map, content chặn đúng click/Enter/submit đầu tiên, thêm nhãn website đã bản địa hóa + exact URL ngay trước một lần gửi duy nhất. Nếu auto-send đã được bật rõ ràng, action Keepit explicit dùng `?q=`; không áp dụng cho prompt người dùng tự viết.
+4. URL đã map: Alt+X chỉ mở conversation. Hỏi AI thay prompt bằng selection hiện tại + câu kết tùy chỉnh, không kèm URL; auto-send tắt thì để unsent trong composer. Source mapping chỉ được ghi sau composer clear và route `/c/<id>` xác nhận gửi.
 5. Firefox top-level sidebar xử lý navigation request và route; Chromium iframe host chuyển source context. Pending link chỉ chạy khi source URL của request khớp source đang hiển thị. Source change và panel document mới mang one-shot clear marker; content xóa composer text cũ trước request hiện hành, nhưng giữ đúng prompt `?q=` đang chạy.
 6. Conversation route watcher gửi route sạch cho panel/session metadata và cập nhật toolbar nguồn. Document-start marker lưu request ID, không lưu selection/prompt vào session.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Hỏi AI là selection-only; không gọi `LHN_CHATGPT_CONTEXT`, không trích body/title và không đọc clipboard.
-- Giữ prompt defaults EN/VI/KO, newline thật, settings auto-send và exact source URL → conversation mapping.
+- Giữ prompt defaults EN/VI/KO, newline thật, auto-send default off cho cài đặt mới (giữ stored preference rõ ràng), exact source URL → conversation mapping và URL injection ở send-time chỉ cho unmapped source.
 - Pending prompt/selection là dữ liệu thao tác theo request; không phải draft lưu trữ. Source khác, panel close/cancel, hoàn tất hoặc expiry phải dừng/xóa request phù hợp.
 - Không lưu/restore per-source composer text; clear marker xóa composer cũ khi source đổi hoặc panel document được tạo lại. Same-source/same-route fast path giữ nguyên document đang sống. Không dùng global last-conversation URL.
-- Mapped follow-up chỉ thay/gửi khi exact conversation route khớp. Manual-send first-use mới tạo mapping; tab/source switch không tự prompt.
+- Mapped follow-up chỉ thay/gửi khi exact conversation route khớp. URL mới chỉ tạo mapping sau khi manual send hoặc explicit opt-in send đã được xác nhận; tab/source switch không tự prompt/send.
 - Route metadata báo cáo về panel chỉ gồm URL nguồn và ChatGPT origin/path; query/hash/prompt/composer text bị loại khỏi route.
 - Giữ `Alt+Q`/`sidebarShortcut`, right-click selection menu trên Chromium/Firefox và toolbar/provider tabs hiện có.
 
 ## 5. Kiểm tra và xác minh
 
-- Đã chạy `node --check` cho toàn bộ first-party JavaScript; marker/composer VM xác nhận request ID/source được giữ, stale composer bị clear, active `?q=` được giữ và content không có page-draft save/restore/guard — PASS.
-- Background/link focused VMs xác nhận `?q=`/manual-send, mapped selection-only route, pending source guard, debounce và close cancellation — PASS.
-- Browser QA Chrome/Firefox chưa chạy. Cần xác nhận composer controls/linkification, q native-send/duplicate prevention, manual mapping, mapped follow-up, context-menu và source switch thật.
+- v3.5.86 Content VM: click/Enter/submit, mapped vs. unmapped, exact localized URL once, sample URL-free until send, mapping after empty composer + `/c/<id>`, and no user prompt in storage — PASS.
+- Static syntax cho toàn bộ first-party JavaScript và passive clear/q-preservation checks của v3.5.85 vẫn có trong release history; browser QA Chrome/Firefox cho composer controls/linkification, native q-send, mapping, mapped follow-up, context menu và source switching chưa chạy.
+- Browser QA Chrome/Firefox chưa chạy; kiểm tra thật composer controls/linkification, native `?q=` send, mapping, mapped follow-up, context menu, source switch và panel lifecycle còn outstanding.

@@ -29,7 +29,7 @@
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ `defaults.js` là nguồn duy nhất cho default; không chép default thứ hai vào feature module. `LHN_DEFAULTS.youtube` sở hữu popup/đọc video riêng, khác `LHN_DEFAULTS.settings`. Hỏi AI dùng `chatGPTAutoSend:true`, `chatGPTSummaryPrompt:"Hãy tóm tắt web này"`, `chatGPTAskPrompt:"Đoạn này trên web nghĩa là sao?"`; localized prompt endings and Website labels for EN/VI/KO are defined in `LHN_DEFAULTS.chatGPTPrompts` and resolved by `LHN_CHATGPT_PROMPTS`.
+- Giữ `defaults.js` là nguồn duy nhất cho default; không chép default thứ hai vào feature module. `LHN_DEFAULTS.youtube` sở hữu popup/đọc video riêng, khác `LHN_DEFAULTS.settings`. Hỏi AI dùng `chatGPTAutoSend:false`, `chatGPTSummaryPrompt:"Hãy tóm tắt web này"`, `chatGPTAskPrompt:"Đoạn này trên web nghĩa là sao?"`; localized prompt endings and Website labels for EN/VI/KO are defined in `LHN_DEFAULTS.chatGPTPrompts` and resolved by `LHN_CHATGPT_PROMPTS`.
 - Thứ tự nạp là hợp đồng: `defaults` → `config` → `settings`/consumer; kiểm tra cả manifest, `importScripts` và thứ tự `<script>` khi đổi.
 - `CONFIG.STORAGE_KEYS` và `CONFIG.DATABASE` là tên/key dùng chung; không đổi một phía mà bỏ migration hoặc consumer cũ.
 - API `LHN_*` được các context gọi trực tiếp trong content script; đổi tên/hình dạng phải rà tất cả consumer.
@@ -40,6 +40,7 @@
 
 - Static: `for f in js/core/*.js; do node --check "$f" || exit; done`; parse `manifest.json`; kiểm tra script order trong manifest, `pages/popup.html`, `pages/dashboard.html` và `importScripts`.
 - Khi đổi defaults/settings, thử dữ liệu thiếu, giá trị đã lưu, override và storage change; khi đổi messaging, thử sender/receiver; khi đổi cache, thử hit, miss, expiry và dữ liệu legacy.
+- v3.5.86: missing `chatGPTAutoSend` resolves off for new installs; saved `true`/`false` remains explicit. Dashboard checks `=== true`, and background settings VM confirms default-off plus saved-true behavior — PASS.
 - v3.5.24: VM mock `browser.storage.local` xác nhận Web cue cache save/hit/touch, TTL trượt 7 ngày và xóa mục quá hạn.
 - Xác nhận các mã ngôn ngữ UI hiện hỗ trợ và fallback thực tế từ `languages.js`; không suy ra danh sách hỗ trợ chỉ từ tên file.
 - v3.5.79: `LHN_CHATGPT_PROMPTS` resolves localized defaults immediately by language, recognizes the prior Vietnamese Ask AI default, and preserves non-default custom sentences.

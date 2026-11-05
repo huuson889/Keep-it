@@ -371,11 +371,11 @@
 
   Object.assign(MESSAGES.en, {
     chatGPTSettingsTab:"Ask AI",
-    chatGPTSettingsHelp:"Choose whether prompts are sent automatically and edit their final sentence.",
-    chatGPTAutoSendLabel:"Open the side panel and send immediately",
-    chatGPTAutoSendHelp:"When off, Keepit leaves the prompt as a draft for you to send.",
+    chatGPTSettingsHelp:"Choose whether explicit Keepit prompts may auto-send and edit their final sentence. User-written prompts always require your Send action.",
+    chatGPTAutoSendLabel:"Auto-send explicit Keepit prompts",
+    chatGPTAutoSendHelp:"Off for new installs. When off, an unmapped source URL is added only when you send; mapped chats omit it.",
     chatGPTPromptTemplates:"Prompt templates",
-    chatGPTPromptTemplatesHelp:"Keepit keeps the source URL as the first bullet and adds your sentence as the second.",
+    chatGPTPromptTemplatesHelp:"For a new unmapped URL, Keepit adds the exact URL when you send; mapped chats omit it.",
     chatGPTFirstOpenPromptLabel:"First time opening the side panel",
     chatGPTFirstOpenPromptHelp:"Used when a source URL has no mapped conversation.",
     chatGPTAskPromptLabel:"When clicking Ask AI",
@@ -383,11 +383,11 @@
   });
   Object.assign(MESSAGES.vi, {
     chatGPTSettingsTab:"Hỏi AI",
-    chatGPTSettingsHelp:"Chọn cách gửi câu lệnh và chỉnh sửa câu cuối.",
-    chatGPTAutoSendLabel:"Mở side panel và gửi luôn",
-    chatGPTAutoSendHelp:"Khi tắt, Keepit điền câu lệnh thành bản nháp để bạn tự gửi.",
+    chatGPTSettingsHelp:"Chọn có tự gửi prompt explicit của Keepit hay không và chỉnh câu cuối. Prompt bạn tự viết luôn cần bạn bấm Gửi.",
+    chatGPTAutoSendLabel:"Tự động gửi prompt explicit của Keepit",
+    chatGPTAutoSendHelp:"Mặc định tắt ở cài đặt mới. Khi tắt, URL source chưa map chỉ được thêm lúc bạn gửi; chat đã map không lặp URL.",
     chatGPTPromptTemplates:"Câu lệnh mẫu",
-    chatGPTPromptTemplatesHelp:"Keepit giữ URL nguồn ở bullet đầu tiên và thêm câu của bạn ở bullet thứ hai.",
+    chatGPTPromptTemplatesHelp:"Với URL mới chưa map, Keepit thêm URL chính xác lúc bạn gửi; chat đã map không lặp URL.",
     chatGPTFirstOpenPromptLabel:"Lần đầu mở side panel",
     chatGPTFirstOpenPromptHelp:"Dùng khi URL nguồn chưa có hội thoại được ánh xạ.",
     chatGPTAskPromptLabel:"Khi bấm Hỏi AI",
@@ -395,11 +395,11 @@
   });
   Object.assign(MESSAGES.ko, {
     chatGPTSettingsTab:"AI에 질문",
-    chatGPTSettingsHelp:"질문을 자동으로 보낼지 선택하고 마지막 문장을 편집합니다.",
-    chatGPTAutoSendLabel:"사이드 패널을 열고 바로 보내기",
-    chatGPTAutoSendHelp:"끄면 Keepit이 질문을 초안으로 입력하고 직접 보내도록 둡니다.",
+    chatGPTSettingsHelp:"Keepit의 명시적 프롬프트를 자동 전송할지 선택하고 마지막 문장을 편집합니다. 직접 작성한 프롬프트는 사용자가 보내야 합니다.",
+    chatGPTAutoSendLabel:"Keepit 프롬프트 자동 전송",
+    chatGPTAutoSendHelp:"새 설치에서는 기본적으로 꺼져 있습니다. 끄면 매핑되지 않은 URL은 보낼 때만 추가하고, 매핑된 대화에는 URL을 반복하지 않습니다.",
     chatGPTPromptTemplates:"질문 템플릿",
-    chatGPTPromptTemplatesHelp:"원본 URL은 첫 번째 글머리 기호에, 사용자의 문장은 두 번째에 표시됩니다.",
+    chatGPTPromptTemplatesHelp:"새 URL이 아직 매핑되지 않은 경우 보내기 직전에 정확한 URL을 추가하며, 매핑된 대화에는 URL을 추가하지 않습니다.",
     chatGPTFirstOpenPromptLabel:"사이드 패널 첫 열기",
     chatGPTFirstOpenPromptHelp:"원본 URL에 연결된 대화가 없을 때 사용합니다.",
     chatGPTAskPromptLabel:"AI에 질문을 클릭할 때",

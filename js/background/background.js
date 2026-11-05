@@ -552,12 +552,53 @@ async function getChatGPTPromptSettings() {
   const settings = stored?.[CONFIG.STORAGE_KEYS.SETTINGS] || {};
   const language = getChatGPTPromptLanguage(settings);
   return {
-    autoSend:settings.chatGPTAutoSend !== false,
+    autoSend:settings.chatGPTAutoSend === true,
     language,
     websiteLabel:globalThis.LHN_CHATGPT_PROMPTS.websiteLabel(language),
     summaryPrompt:globalThis.LHN_CHATGPT_PROMPTS.resolve(language, "chatGPTSummaryPrompt", settings.chatGPTSummaryPrompt),
     askPrompt:globalThis.LHN_CHATGPT_PROMPTS.resolve(language, "chatGPTAskPrompt", settings.chatGPTAskPrompt)
   };
+}
+async function prepareChatGPTManualLinkSend(message, sender) {
+  const sourceUrl = normalizeChatGPTSourceUrl(message?.sourceUrl);
+  if (!sourceUrl) return { ok:false, error:"source-url-unavailable" };
+  const senderWindowId = Number.isInteger(sender?.tab?.windowId) ? sender.tab.windowId : null;
+  const windowId = Number.isInteger(senderWindowId) ? senderWindowId : chatGPTFocusedWindowId;
+  if (!Number.isInteger(windowId)) return { ok:false, error:"panel-window-unavailable" };
+  await chatGPTPanelStateRestorePromise;
+  if (!await chatGPTPanelIsActuallyOpen(windowId)) return { ok:false, error:"panel-not-open" };
+  const currentSource = chatGPTPanelSourceUrls.get(windowId) || "";
+  if (currentSource && currentSource !== sourceUrl) return { ok:false, stale:true };
+  if (!currentSource) await rememberChatGPTPanelSourceUrl(windowId, sourceUrl);
+
+  const mappingData = await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY);
+  if (safeChatGPTConversationUrl(mappingData?.[CHATGPT_SOURCE_CONVERSATIONS_KEY]?.[sourceUrl])) {
+    return { ok:true, mapped:true };
+  }
+
+  const settings = await getChatGPTPromptSettings();
+  const pendingData = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
+  const existing = pendingData?.[CHATGPT_LINK_PENDING_KEY];
+  if (existing && existing.expiresAt > Date.now() && existing.windowId === windowId && existing.sourceUrl === sourceUrl
+      && ["draft-link", "manual-link"].includes(existing.mode)) {
+    return { ok:true, mapped:false, requestId:existing.requestId, mode:existing.mode, websiteLabel:settings.websiteLabel };
+  }
+  if (existing && existing.expiresAt > Date.now() && Number.isInteger(existing.windowId) && existing.windowId !== windowId) {
+    return { ok:false, error:"another-panel-request-active" };
+  }
+
+  const requestId = `link-manual-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const pending = {
+    requestId,
+    windowId,
+    sourceTabId:null,
+    sourceUrl,
+    mode:"manual-link",
+    expiresAt:Date.now() + 120000
+  };
+  await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
+  setTimeout(() => { void clearExpiredChatGPTLinkPending(requestId); }, 121000);
+  return { ok:true, mapped:false, requestId, mode:pending.mode, websiteLabel:settings.websiteLabel };
 }
 function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
   const target = new URL("https://chatgpt.com/");
@@ -617,7 +658,9 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
     const promptLine = askingAboutSelection
       ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt)
       : promptSettings.summaryPrompt;
-    const prompt = globalThis.LHN_CHATGPT_PROMPT_FORMAT.formatLinkPrompt(promptSettings.websiteLabel, sourceUrl, promptLine);
+    const prompt = promptSettings.autoSend
+      ? globalThis.LHN_CHATGPT_PROMPT_FORMAT.formatLinkPrompt(promptSettings.websiteLabel, sourceUrl, promptLine)
+      : promptLine;
     const pending = {
       requestId:linkRequestId,
       windowId:Number.isInteger(tab?.windowId) ? tab.windowId : null,
@@ -1025,6 +1068,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   }
   if (message.type === "CHATGPT_DRAFT_READY") return registerChatGPTDraft(sender?.tab?.id, message.truncated === true);
   if (message.type === "CHATGPT_AUTOFILL_RESULT") return notifyChatGPTDraftResult(message);
+  if (message.type === "CHATGPT_MANUAL_LINK_PREPARE") return prepareChatGPTManualLinkSend(message, sender);
   if (message.type === "CHATGPT_LINK_RESULT") return completeChatGPTLinkRequest(message);
   if (message.type === "CHATGPT_LINK_DRAFT_READY") return notifyChatGPTLinkDraftReady(message);
   if (message.type === "CHATGPT_PANEL_NAVIGATION_BLOCKED") return reportChatGPTNavigationBlocked(message);
