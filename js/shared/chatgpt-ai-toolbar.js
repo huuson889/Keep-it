@@ -7,6 +7,12 @@
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
   const PANEL_LABELS = { en:"panel", vi:"khung AI", ko:"AI 패널" };
   const CHEVRON_LABELS = { en:"Show or hide AI services", vi:"Hiện/ẩn hàng AI", ko:"AI 서비스 표시/숨기기" };
+  const AUTO_SEND_LABELS = { en:"Auto-send", vi:"Tự động gửi", ko:"자동 전송" };
+  const AUTO_SEND_STATUS_LABELS = {
+    en:{ on:"Auto-send is on", off:"Auto-send is off" },
+    vi:{ on:"Tự động gửi đang bật", off:"Tự động gửi đang tắt" },
+    ko:{ on:"자동 전송 켜짐", off:"자동 전송 꺼짐" },
+  };
   const PROVIDERS = ["chatgpt", "gemini", "claude", "grok"];
   const PROVIDER_NAMES = { chatgpt:"ChatGPT", gemini:"Gemini", claude:"Claude", grok:"Grok" };
   const PROVIDER_SITES = {
@@ -40,17 +46,20 @@
             all: initial;
             color-scheme: light dark;
             font: 13px/1.3 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-            --bar: #212121;
-            --window: #1a1a1a;
-            --surface: #292929;
-            --segment: #2e2e2e;
-            --surface-hover: #333333;
-            --surface-active: #3b3b3b;
-            --border: #404040;
+            --bar: #4d4d4d;
+            --window: #484848;
+            --surface: #545454;
+            --segment: #585858;
+            --surface-hover: #5c5c5c;
+            --surface-active: #626262;
+            --border: #666666;
             --text: #f4f4f4;
-            --muted: #a2a2a2;
-            --faint: #737373;
+            --muted: #b5b5b5;
+            --faint: #8f8f8f;
             --link: #78a5ff;
+            --auto-send-brand: #a5a9ff;
+            --auto-send-hover: #c0c2ff;
+            --auto-send-ink: #212121;
           }
           @media (prefers-color-scheme: light) {
             :host {
@@ -66,6 +75,9 @@
               --muted: #687990;
               --faint: #8795a8;
               --link: #4d6bb8;
+              --auto-send-brand: #4f46e5;
+              --auto-send-hover: #4338ca;
+              --auto-send-ink: #ffffff;
             }
           }
           *, *::before, *::after { box-sizing: border-box; }
@@ -132,6 +144,28 @@
           }
           .source-link:hover { text-decoration: underline; text-underline-offset: 2px; }
           .empty-source { color: var(--muted); opacity: .58; font-size: 11px; font-style: italic; }
+          .auto-send {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 4px;
+            height: 25px;
+            padding: 0 6px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--muted);
+            background: transparent;
+            font: inherit;
+            font-size: 10px;
+            font-weight: 650;
+            white-space: nowrap;
+            cursor: pointer;
+          }
+          .auto-send:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
+          .auto-send.is-enabled { border-color: var(--auto-send-brand); background: var(--auto-send-brand); color: var(--auto-send-ink); }
+          .auto-send.is-enabled:hover { border-color: var(--auto-send-hover); background: var(--auto-send-hover); }
+          .auto-send:disabled { opacity: .65; cursor: wait; }
+          .auto-send svg { flex: 0 0 16px; width: 16px; height: 16px; }
           .chevron {
             display: grid;
             flex: 0 0 25px;
@@ -147,7 +181,7 @@
             cursor: pointer;
           }
           .chevron:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
-          .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
+          .auto-send:focus-visible, .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
             outline: 2px solid var(--link);
             outline-offset: 2px;
           }
@@ -250,7 +284,7 @@
           @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
         </style>
         <div class="bar is-expanded">
-          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
           <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">
             <button class="tab" type="button" role="tab" data-provider="chatgpt" aria-selected="true"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">C</span></span><span class="tab-label">ChatGPT</span></button>
             <button class="tab" type="button" role="tab" data-provider="gemini" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">G</span></span><span class="tab-label">Gemini</span></button>
@@ -271,10 +305,13 @@
     const emptySource = shadow.querySelector(".empty-source");
     const blankPanel = shadow.querySelector(".blank-panel");
     const chevron = shadow.querySelector(".chevron");
+    const autoSendButton = shadow.querySelector(".auto-send");
+    const autoSendLabel = shadow.querySelector(".auto-send-label");
     const providerButtons = [...shadow.querySelectorAll("[data-provider]")];
     let currentSourceUrl = "";
     let selectedProvider = "chatgpt";
     let expanded = true;
+    let autoSendEnabled = false;
     let uiLanguage = supportedLanguage(globalThis.browser?.i18n?.getUILanguage?.());
 
     function setSourceUrl(value) {
@@ -306,6 +343,15 @@
       }
       blankPanel.style.display = selectedProvider === "chatgpt" ? "none" : "block";
       blankPanel.setAttribute("aria-label", `${PROVIDER_NAMES[selectedProvider]} ${PANEL_LABELS[uiLanguage]}`);
+    }
+
+    function renderAutoSend() {
+      const stateLabel = AUTO_SEND_STATUS_LABELS[uiLanguage][autoSendEnabled ? "on" : "off"];
+      autoSendButton.classList.toggle("is-enabled", autoSendEnabled);
+      autoSendButton.setAttribute("aria-pressed", String(autoSendEnabled));
+      autoSendButton.setAttribute("aria-label", stateLabel);
+      autoSendButton.title = stateLabel;
+      autoSendLabel.textContent = AUTO_SEND_LABELS[uiLanguage];
     }
 
     function renderExpansion() {
@@ -357,6 +403,24 @@
       }
     }
 
+    autoSendButton.addEventListener("click", async () => {
+      if (autoSendButton.disabled) return;
+      const nextValue = !autoSendEnabled;
+      autoSendButton.disabled = true;
+      try {
+        const storage = globalThis.browser?.storage?.local;
+        if (!storage?.get || !storage?.set) throw new Error("Settings storage is unavailable");
+        const stored = await storage.get(UI_LANGUAGE_KEY);
+        const previous = stored?.[UI_LANGUAGE_KEY];
+        const settings = previous && typeof previous === "object" && !Array.isArray(previous) ? { ...previous } : {};
+        settings.chatGPTAutoSend = nextValue;
+        await storage.set({ [UI_LANGUAGE_KEY]:settings });
+        autoSendEnabled = nextValue;
+      } catch {}
+      autoSendButton.disabled = false;
+      renderAutoSend();
+    });
+
     chevron.addEventListener("click", () => {
       expanded = !expanded;
       renderExpansion();
@@ -377,22 +441,29 @@
     void (async () => {
       try {
         const stored = await globalThis.browser?.storage?.local?.get?.(UI_LANGUAGE_KEY);
-        uiLanguage = supportedLanguage(stored?.[UI_LANGUAGE_KEY]?.language || uiLanguage);
+        const settings = stored?.[UI_LANGUAGE_KEY] || {};
+        uiLanguage = supportedLanguage(settings.language || uiLanguage);
+        autoSendEnabled = settings.chatGPTAutoSend === true;
       } catch {}
       sourceLabel.textContent = SOURCE_LABELS[uiLanguage];
       sourceLabel.setAttribute("aria-label", SOURCE_LABELS[uiLanguage]);
       sourceRow.setAttribute("aria-label", SOURCE_LABELS[uiLanguage]);
       tabs.setAttribute("aria-label", TABS_LABELS[uiLanguage]);
+      autoSendButton.disabled = false;
+      renderAutoSend();
       renderExpansion();
       renderProvider();
     })();
     globalThis.browser?.storage?.onChanged?.addListener?.((changes, areaName) => {
       if (areaName !== "local" || !changes?.[UI_LANGUAGE_KEY]) return;
-      uiLanguage = supportedLanguage(changes[UI_LANGUAGE_KEY].newValue?.language || "en");
+      const settings = changes[UI_LANGUAGE_KEY].newValue || {};
+      uiLanguage = supportedLanguage(settings.language || uiLanguage);
+      autoSendEnabled = settings.chatGPTAutoSend === true;
       sourceLabel.textContent = SOURCE_LABELS[uiLanguage];
       sourceLabel.setAttribute("aria-label", SOURCE_LABELS[uiLanguage]);
       sourceRow.setAttribute("aria-label", SOURCE_LABELS[uiLanguage]);
       tabs.setAttribute("aria-label", TABS_LABELS[uiLanguage]);
+      renderAutoSend();
       renderExpansion();
       renderProvider();
     });
