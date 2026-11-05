@@ -27,7 +27,7 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 
 - `message.type`, payload và callback/Promise response là contract xuyên context; không đổi một phía riêng lẻ.
 - Mapping key phải là exact `sourceUrl`, value là validated HTTPS `/c/<id>`. Draft text không phải mapping và không thuộc storage API.
-- Route sanitizer chỉ trả origin/path ChatGPT đã kiểm tra; loại query, hash, prompt và composer text. Route session gắn với source, không fallback sang global last conversation.
+- Route sanitizer chỉ trả origin/path ChatGPT đã kiểm tra; loại query, hash, prompt và composer text. Route session gắn với source, không fallback sang global last conversation. Panel URL dùng one-shot clear marker khi source đổi hoặc document mới để content xóa composer cũ.
 - Prompt/selection lưu tạm theo request ID chỉ phục vụ explicit action; clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
@@ -36,6 +36,6 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 ## 5. Kiểm tra và xác minh
 
 - Đã chạy JavaScript syntax cho toàn bộ first-party files, Firefox build transform, manifest validation và `git diff --check` — PASS.
-- Focused panel VM: sanitize source route (bỏ query/hash), không dùng global fallback, same-source/same-route fast path, force reload khi khác source dù cùng `/c/<id>`, không prompt tự động, giữ explicit `?q=` — PASS.
+- Focused panel VM: sanitize source route, không global fallback, same-source/same-route fast path, force reload khác source dù cùng route, one-shot clear marker khi panel mới/context reload, không prompt tự động, giữ explicit `?q=` — PASS.
 - Background VM xác nhận route mapping, request supersession/expiry/close và deadline tab event — PASS.
 - Chrome/Firefox browser QA chưa chạy; kiểm tra thật route change, sidebar/panel unload/reopen và UI vẫn còn cần thiết.

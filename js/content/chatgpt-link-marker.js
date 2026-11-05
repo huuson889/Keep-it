@@ -3,6 +3,8 @@
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
   const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
+  const CLEAR_COMPOSER_MARKER = "keepit-chatgpt-clear-composer";
+  const CLEAR_COMPOSER_SESSION_KEY = "keepitChatGPTClearComposerOnLoad";
   const SOURCE_URL_SESSION_KEY = "keepitChatGPTPanelSourceUrl";
   const LINK_SESSION_KEY = "keepitChatGPTLinkRequestId";
   const LINK_Q_SESSION_KEY = "keepitChatGPTLinkQRequestId";
@@ -14,12 +16,14 @@
     const panelMarker = url.searchParams.get(PANEL_MARKER) || params.get(PANEL_MARKER);
     const requestId = params.get(LINK_REQUEST_MARKER) || "";
     const sourceUrl = params.get(SOURCE_URL_MARKER) || "";
+    const clearComposer = params.get(CLEAR_COMPOSER_MARKER) === "1";
     const hasLinkPrompt = url.searchParams.has("q");
-    if (panelMarker !== "1" && !requestId && !hasLinkPrompt && !sourceUrl) return;
+    if (panelMarker !== "1" && !requestId && !hasLinkPrompt && !sourceUrl && !clearComposer) return;
     try {
       sessionStorage.setItem(PANEL_MARKER, "1");
       if (requestId) sessionStorage.setItem(LINK_SESSION_KEY, requestId);
       if (sourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, sourceUrl);
+      if (clearComposer) sessionStorage.setItem(CLEAR_COMPOSER_SESSION_KEY, "1");
       if (requestId && hasLinkPrompt) {
         sessionStorage.setItem(LINK_Q_SESSION_KEY, requestId);
       }

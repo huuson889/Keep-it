@@ -5,6 +5,8 @@
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
   const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
+  const CLEAR_COMPOSER_MARKER = "keepit-chatgpt-clear-composer";
+  const CLEAR_COMPOSER_SESSION_KEY = "keepitChatGPTClearComposerOnLoad";
   const SOURCE_URL_SESSION_KEY = "keepitChatGPTPanelSourceUrl";
   const LINK_SESSION_KEY = "keepitChatGPTLinkRequestId";
   const LINK_DIRECT_SESSION_KEY = "keepitChatGPTDirectFollowupRequestId";
@@ -17,6 +19,7 @@
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
   const MAX_WAIT_MS = 25000;
   const isFirefox = /Firefox\//i.test(globalThis.navigator?.userAgent || "");
+  const isChatGPTPanelRoot = isFirefox ? window.top === window : window.parent === window.top;
   let url;
   try { url = new URL(location.href); } catch { return; }
   // ChatGPT in an ordinary tab must never read or receive the extension's clipboard draft.
@@ -28,9 +31,14 @@
     catch { return ""; }
   };
   let activeSourceUrl = safeSourceUrl(initialHashParams.get(SOURCE_URL_MARKER));
+  let clearComposerOnPanelLoad = isChatGPTPanelRoot && initialHashParams.get(CLEAR_COMPOSER_MARKER) === "1";
   let hasSessionMarker = false;
   try {
     hasSessionMarker = sessionStorage.getItem(PANEL_MARKER) === "1";
+    if (isChatGPTPanelRoot) {
+      clearComposerOnPanelLoad = clearComposerOnPanelLoad || sessionStorage.getItem(CLEAR_COMPOSER_SESSION_KEY) === "1";
+      sessionStorage.removeItem(CLEAR_COMPOSER_SESSION_KEY);
+    }
     if (!activeSourceUrl) activeSourceUrl = safeSourceUrl(sessionStorage.getItem(SOURCE_URL_SESSION_KEY));
     if (hasUrlMarker) sessionStorage.setItem(PANEL_MARKER, "1");
     if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
@@ -181,6 +189,53 @@
       composer.dispatchEvent(new Event("change", { bubbles:true }));
     }
     return composerText(composer) === text.trim();
+  }
+
+  function clearComposerText(composer) {
+    if (!composer) return false;
+    insertDraft(composer, "", true);
+    if (composerHasText(composer)) {
+      if (composer.isContentEditable) {
+        composer.textContent = "";
+        try { composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"deleteContentBackward", data:null })); }
+        catch { composer.dispatchEvent(new Event("input", { bubbles:true })); }
+      } else {
+        const proto = Object.getPrototypeOf(composer);
+        const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+        if (setter) setter.call(composer, ""); else composer.value = "";
+        try { composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"deleteContentBackward", data:null })); }
+        catch { composer.dispatchEvent(new Event("input", { bubbles:true })); }
+        composer.dispatchEvent(new Event("change", { bubbles:true }));
+      }
+    }
+    return !composerHasText(composer);
+  }
+
+  let panelLoadComposerClearPromise = null;
+  async function clearStaleComposerForPanelLoad() {
+    if (!clearComposerOnPanelLoad) return;
+    if (!panelLoadComposerClearPromise) {
+      panelLoadComposerClearPromise = (async () => {
+        const stored = await browserApi.storage.local.get(LINK_PENDING_KEY);
+        const pending = stored?.[LINK_PENDING_KEY];
+        const composer = findComposer() || await waitForLinkComposer(6000);
+        if (!composer || !composerHasText(composer)) return;
+        let currentUrl = null;
+        try { currentUrl = new URL(location.href); } catch {}
+        const activeRequestId = activeLinkRequestId();
+        const pendingIsCurrent = pending?.requestId && pending.expiresAt > Date.now()
+          && safeSourceUrl(pending.sourceUrl) === activeSourceUrl
+          && activeRequestId === pending.requestId;
+        const expectedPrompt = normalizedDraft(pending?.prompt || "");
+        if (pendingIsCurrent && expectedPrompt && normalizedDraft(composerText(composer)) === expectedPrompt) return;
+        if (pendingIsCurrent && pending.mode === "auto-send-link" && currentUrl?.searchParams.get("q") === pending.prompt) {
+          const queryComposer = await waitForComposerDraft(pending.prompt, 2200);
+          if (queryComposer) return;
+        }
+        clearComposerText(findComposer() || composer);
+      })().catch(error => console.warn("Keepit could not clear a stale ChatGPT composer draft", error));
+    }
+    await panelLoadComposerClearPromise;
   }
 
   async function report(pending, ok, reason = "") {
@@ -489,6 +544,7 @@
     linkProcessing = true;
     let pending = null;
     try {
+      await clearStaleComposerForPanelLoad();
       const stored = await browserApi.storage.local.get(LINK_PENDING_KEY);
       pending = stored?.[LINK_PENDING_KEY];
       if (!pending?.requestId || !pending.sourceUrl) {
@@ -774,6 +830,8 @@
       params.set(PANEL_MARKER, "1");
       if (request.sourceUrl) params.set(SOURCE_URL_MARKER, request.sourceUrl);
       else params.delete(SOURCE_URL_MARKER);
+      if (sourceContextChanged) params.set(CLEAR_COMPOSER_MARKER, "1");
+      else params.delete(CLEAR_COMPOSER_MARKER);
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
       else params.delete(LINK_REQUEST_MARKER);
       target.hash = params.toString();

@@ -4,6 +4,7 @@
   const PANEL_MARKER = "keepit-chatgpt-panel";
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
   const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
+  const CLEAR_COMPOSER_MARKER = "keepit-chatgpt-clear-composer";
   const SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
   const DEFAULT_CHATGPT_URL = "https://chatgpt.com/";
   const frame = document.getElementById("chatgpt-frame");
@@ -58,7 +59,7 @@
     } catch { return ""; }
   }
 
-  function panelUrl(value, linkRequestId = "", sourceUrl = "") {
+  function panelUrl(value, linkRequestId = "", sourceUrl = "", clearComposer = false) {
     const url = new URL(safePanelTarget(value) || safeConversationUrl(value) || DEFAULT_CHATGPT_URL);
     const params = new URLSearchParams(url.hash.replace(/^#/, ""));
     params.set(PANEL_MARKER, "1");
@@ -66,6 +67,8 @@
     else params.delete(LINK_REQUEST_MARKER);
     if (sourceUrl) params.set(SOURCE_URL_MARKER, sourceUrl);
     else params.delete(SOURCE_URL_MARKER);
+    if (clearComposer) params.set(CLEAR_COMPOSER_MARKER, "1");
+    else params.delete(CLEAR_COMPOSER_MARKER);
     url.hash = params.toString();
     return url.href;
   }
@@ -146,7 +149,7 @@
     }
 
     handledNavigationIds.add(request.requestId);
-    const url = panelUrl(target, linkRequestId, request.sourceUrl || "");
+    const url = panelUrl(target, linkRequestId, request.sourceUrl || "", sourceContextChanged);
     const forceSameRouteContextReload = sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset?.keepitLoaded === "true";
     if (frame) {
       if (request.sourceUrl) frame.dataset.keepitSourceUrl = request.sourceUrl;
@@ -210,14 +213,14 @@
       const mapped = safeConversationUrl(stored?.[SOURCE_CONVERSATIONS_KEY]?.[sourceUrl]);
       // Reopen only this source's route metadata; never restore a global last-chat URL or composer text.
       const target = sessionRoute || mapped || DEFAULT_CHATGPT_URL;
-      const targetUrl = panelUrl(target, "", sourceUrl);
+      const targetUrl = panelUrl(target, "", sourceUrl, true);
       if (frame) {
         if (sourceUrl) frame.dataset.keepitSourceUrl = sourceUrl;
         frame.src = targetUrl;
       } else location.replace(targetUrl);
     } catch (error) {
       console.warn("Keepit could not initialize the ChatGPT panel", error);
-      const target = panelUrl(DEFAULT_CHATGPT_URL);
+      const target = panelUrl(DEFAULT_CHATGPT_URL, "", "", true);
       if (frame) frame.src = target;
       else location.replace(target);
     }
