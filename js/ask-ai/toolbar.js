@@ -122,7 +122,7 @@
             top: 100%;
             right: 0;
             left: 0;
-            height: 36px;
+            height: 39.6px;
             background: var(--bar);
             content: "";
             opacity: 0;
@@ -133,7 +133,7 @@
           .bar::after {
             position: absolute;
             z-index: 5;
-            top: 61px;
+            top: 64.6px;
             right: 0;
             left: 0;
             height: 1px;
@@ -241,7 +241,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            height: 32px;
+            height: 35.2px;
             padding: 1px 0;
             overflow: hidden;
             scrollbar-width: none;
@@ -266,7 +266,7 @@
             justify-content: center;
             gap: 6px;
             min-width: 0;
-            height: 30px;
+            height: 33px;
             padding: 2px 10px;
             border: 0;
             border-radius: 7px;
