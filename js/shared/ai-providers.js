@@ -79,6 +79,18 @@
     } catch { return ""; }
   }
 
+  // Selected AI panel provider: per-window choice (storage.session), then the last choice
+  // (storage.local, survives refresh/restart), then ChatGPT only if nothing was ever chosen.
+  const SELECTED_BY_WINDOW_KEY = "keepitAiPanelProviderByWindow";
+  const LAST_SELECTED_KEY = "keepitAiPanelLastProvider";
+  function pickSelectedProvider(byWindow, windowId, lastProviderId) {
+    const candidates = [Number.isInteger(windowId) ? byWindow?.[String(windowId)] : "", lastProviderId];
+    for (const candidate of candidates) {
+      if (candidate && isPanelProvider(candidate)) return get(candidate).id;
+    }
+    return "chatgpt";
+  }
+
   // Shared panel route: a validated conversation URL, or the provider's blank-chat start route.
   function panelRoute(providerId, value) {
     const provider = get(providerId);
@@ -134,6 +146,9 @@
     normalizeConversationUrl,
     panelRoute,
     planPanelNavigation,
+    SELECTED_BY_WINDOW_KEY,
+    LAST_SELECTED_KEY,
+    pickSelectedProvider,
     makePrompt
   });
 })();

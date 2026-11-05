@@ -50,12 +50,14 @@
     catch { return null; }
   }
 
+  // Same read order as background getAIProviderForWindow (LHN_AI_PROVIDERS.pickSelectedProvider).
   async function getSavedProvider(windowId) {
-    try {
-      const stored = await browser.storage.session?.get?.(PROVIDER_BY_WINDOW_KEY);
-      const providerId = stored?.[PROVIDER_BY_WINDOW_KEY]?.[String(windowId)] || "chatgpt";
-      return providers?.isPanelProvider(providerId) ? providers.get(providerId).id : "chatgpt";
-    } catch { return "chatgpt"; }
+    if (!providers) return "chatgpt";
+    let byWindow = {};
+    let lastProviderId = "";
+    try { byWindow = (await browser.storage.session?.get?.(PROVIDER_BY_WINDOW_KEY))?.[PROVIDER_BY_WINDOW_KEY] || {}; } catch {}
+    try { lastProviderId = (await browser.storage.local.get(providers.LAST_SELECTED_KEY))?.[providers.LAST_SELECTED_KEY] || ""; } catch {}
+    return providers.pickSelectedProvider(byWindow, windowId, lastProviderId);
   }
 
   async function rememberProvider(providerId) {

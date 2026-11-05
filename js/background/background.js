@@ -23,27 +23,34 @@ async function resetLegacyDictationWrongWordStats() {
 }
 const AI_PROVIDER_FRAME_RULE_ID = 9002;
 const AI_PANEL_PROVIDER_BY_WINDOW_KEY = "keepitAiPanelProviderByWindow";
+// Same read order as the panel's getSavedProvider (LHN_AI_PROVIDERS.pickSelectedProvider).
 async function getAIProviderForWindow(windowId) {
-  if (!Number.isInteger(windowId)) return globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
-  try {
-    const stored = await browser.storage.session?.get?.(AI_PANEL_PROVIDER_BY_WINDOW_KEY);
-    const id = stored?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY]?.[String(windowId)] || "chatgpt";
-    return globalThis.LHN_AI_PROVIDERS?.isPanelProvider(id)
-      ? globalThis.LHN_AI_PROVIDERS.get(id)
-      : globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
-  } catch { return globalThis.LHN_AI_PROVIDERS?.get("chatgpt"); }
+  const providers = globalThis.LHN_AI_PROVIDERS;
+  if (!providers) return undefined;
+  let providersByWindow = {};
+  let lastProviderId = "";
+  try { providersByWindow = (await browser.storage.session?.get?.(AI_PANEL_PROVIDER_BY_WINDOW_KEY))?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY] || {}; } catch {}
+  try { lastProviderId = (await browser.storage.local.get(providers.LAST_SELECTED_KEY))?.[providers.LAST_SELECTED_KEY] || ""; } catch {}
+  return providers.get(providers.pickSelectedProvider(providersByWindow, windowId, lastProviderId));
 }
 async function rememberAIProviderForWindow(windowId, providerId) {
-  const provider = globalThis.LHN_AI_PROVIDERS?.get(providerId);
-  if (!provider || !globalThis.LHN_AI_PROVIDERS?.isPanelProvider(provider.id)
-    || !Number.isInteger(windowId) || !browser.storage.session?.get || !browser.storage.session?.set) return false;
+  const providers = globalThis.LHN_AI_PROVIDERS;
+  const provider = providers?.get(providerId);
+  if (!provider || !providers.isPanelProvider(provider.id) || !Number.isInteger(windowId)) return false;
+  // The last choice persists across refresh, extension reload and browser restart.
+  let rememberedLast = false;
+  try {
+    await browser.storage.local.set({ [providers.LAST_SELECTED_KEY]:provider.id });
+    rememberedLast = true;
+  } catch {}
+  if (!browser.storage.session?.get || !browser.storage.session?.set) return rememberedLast;
   try {
     const stored = await browser.storage.session.get(AI_PANEL_PROVIDER_BY_WINDOW_KEY);
     const providersByWindow = { ...(stored?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY] || {}) };
     providersByWindow[String(windowId)] = provider.id;
     await browser.storage.session.set({ [AI_PANEL_PROVIDER_BY_WINDOW_KEY]:providersByWindow });
     return true;
-  } catch { return false; }
+  } catch { return rememberedLast; }
 }
 const GROK_SIGN_IN_TAB_STORAGE_PREFIX = "keepitGrokSignInTab:";
 const GROK_SIGN_IN_TAB_OPENING = new Set();

@@ -16,7 +16,7 @@ Background điều phối runtime messages, provider state, panel lifecycle và 
 ## 3. Luồng chính
 
 1. Manifest/background nạp `ai-providers.js` trước message handler; mọi provider ID được kiểm tra qua registry.
-2. `AI_PANEL_PROVIDER_SELECTED` lưu provider ID theo window trong `storage.session`; panel action nhận provider hiện hành.
+2. `AI_PANEL_PROVIDER_SELECTED` → `rememberAIProviderForWindow` lưu provider ID theo window trong `storage.session` và lựa chọn gần nhất trong `storage.local` (`LAST_SELECTED_KEY`). `getAIProviderForWindow` đọc qua `pickSelectedProvider`, cùng thứ tự với panel.
 3. `OPEN_CHATGPT_LINK_PANEL` lấy exact source URL, selection tường minh và prompt settings; mapping lookup dùng key riêng theo ChatGPT, Gemini hoặc Claude.
 4. Gemini/Claude draft không chứa URL khi auto-send tắt. Với mọi manual Send, kể cả nguồn đã map, `AI_PROVIDER_MANUAL_LINK_PREPARE` trả localized label và exact URL; Content chỉ gắn URL ở thời điểm gửi sau khi editor đã ổn định.
 5. `AI_PROVIDER_LINK_RESULT` xác thực request/provider/source/route rồi lưu mapping chỉ sau confirmed send. Editor/source mismatch hoặc text không ổn định thì không bấm Send và request bị từ chối. Auto-send chỉ dành cho Keepit action khi setting opt-in; prompt tự gõ không auto-send.
@@ -32,6 +32,6 @@ Background điều phối runtime messages, provider state, panel lifecycle và 
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.108/v3.5.109 `node --test tests/` (15/15 PASS) covers URL-only/completed tab updates, selected Gemini mapping, context-switch route mode, stable manual editor text and confirmation-only mapping — 7/7 PASS.
+- v3.5.108–v3.5.110 `node --test tests/` (19/19 PASS) covers provider memory after session clear,  URL-only/completed tab updates, selected Gemini mapping, context-switch route mode, stable manual editor text and confirmation-only mapping — 7/7 PASS.
 - Full release checks, Firefox transform, docs structure, `git diff --check` and final ZIP integrity/version/content checks remain pending.
 - Real Chromium/Firefox browser QA pending: iframe/sidebar, provider selectors, source switching, send confirmation, opt-in behavior và ChatGPT regressions. Browser QA người dùng vẫn là nguồn sự thật.

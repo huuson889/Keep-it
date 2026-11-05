@@ -33,12 +33,12 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 - Opt-in auto-send is limited to explicit Keepit actions. User-written prompts are never auto-sent. Manual Gemini/Claude Send appends the localized label + exact URL only at send time on an unmapped source (mapped sources omit it, like ChatGPT), and sends only while the exact editor text remains stable.
 - `ai-providers.js` owns `panelRoute()` and `planPanelNavigation()` (stay/reload/load) for ChatGPT, Gemini and Claude. `ai-panel.js` stores the live route from `KEEPIT_AI_PANEL_CONVERSATION` (event source, provider origin and frame provider validated) and exports `reloadFrame()`; `chatgpt-panel.js` reuses both.
 - ChatGPT `?q=` and ChatGPT-specific prompt route remain separate; Grok is excluded from visible provider tabs.
-- Provider state ở `storage.session` theo window, không có global last-chat. Source change giữ source link và clear composer cũ theo request.
+- Provider đã chọn: `pickSelectedProvider` trong `ai-providers.js` là thứ tự đọc duy nhất (window trong `storage.session` → lựa chọn gần nhất trong `storage.local` → ChatGPT), dùng cho cả `getSavedProvider` và background; Grok ẩn không được khôi phục. Không có global last-chat. Source change giữ source link và clear composer cũ theo request.
 - DNR chỉ áp dụng cho subframe trên allowlist host provider; không dùng rule toàn URL hoặc thêm Google auth. Firefox điều hướng top-level.
 - Giữ toolbar geometry/palette đã duyệt: bar 25px, tabs 32px, tab 30px, source link xanh, light/dark; auto-send hiện với từng tab ChatGPT/Gemini/Claude.
 
 ## 5. Kiểm tra và xác minh
 
-- `node --test tests/` — 15/15 PASS (v3.5.108 + v3.5.109), covering shared route planning, Gemini `/app/<id>` → new source reload, Claude parity, origin validation, URL-only source updates and stable send guards.
+- `node --test tests/` — 19/19 PASS (v3.5.108–v3.5.110, gồm nhớ provider sau refresh), covering shared route planning, Gemini `/app/<id>` → new source reload, Claude parity, origin validation, URL-only source updates and stable send guards.
 - Full provider route/browser checks, Firefox build transform, docs structure, `git diff --check` and final ZIP integrity/version/content assertions remain pending.
 - Browser QA pending: visible tabs/controls, source-route mapping, typed/Keepit send-time URL insertion, opt-in auto-send, source change, Firefox routing, live selectors, ChatGPT regressions and legacy Grok auth behavior.
