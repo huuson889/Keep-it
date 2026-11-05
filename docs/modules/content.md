@@ -24,7 +24,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 2. Selection tạo highlight/note qua `web-highlighter.js` và `note-composer.js`, rồi gửi `ADD`/`UPDATE` tới Background.
 3. Khi tải trang hoặc nhận `ANNOTATIONS_CHANGED`/`RESTORE_HIGHLIGHTS`, `annotation-restore.js` tìm lại vị trí và vẽ lại mark.
 4. Sidebar trang hiển thị danh sách, tìm kiếm và bộ lọc; `page-layout.js` giữ layout trang khi sidebar mở.
-5. Hỏi AI gửi `OPEN_AI_PANEL` với selection tường minh; `AI_PANEL_*`/`AI_LINK_PANEL_*` từ Background chỉ hiện toast hoặc chỉnh scrollbar.
+5. Hỏi AI gửi `OPEN_AI_PANEL` với selection tường minh; `AI_PANEL_*`/`AI_LINK_PANEL_*` từ Background chỉ hiện toast, chỉnh scrollbar hoặc đổi nút cạnh trang sang chế độ AI (Chromium, khi AI panel mở và sidebar Highlight đóng; bấm gửi `TOGGLE_AI_PANEL`).
 
 ## 4. Hợp đồng và quy tắc cần giữ
 

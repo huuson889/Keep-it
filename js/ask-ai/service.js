@@ -361,6 +361,7 @@ browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
   const urlChanged = typeof changeInfo?.url === "string";
   if ((!urlChanged && changeInfo?.status !== "complete") || !Number.isInteger(tab?.windowId)) return;
   if (aiPanelSourceTabs.get(tab.windowId) !== tabId) return;
+  if (changeInfo?.status === "complete" && aiPanelOpenWindows.has(tab.windowId)) void setAIPanelPageScrollbar(tabId, true);
   const revision = nextAIPanelContextRevision(tab.windowId);
   const deadline = Date.now() + AI_PANEL_CONTEXT_DELAY_MS;
   const updatedTab = urlChanged ? { ...tab, url:changeInfo.url } : tab;
@@ -414,9 +415,21 @@ function aiPanelIsOpen(windowId) {
   if (Number.isInteger(windowId) && windowId >= 0) return aiPanelOpenWindows.has(windowId) || (aiPanelOpen && aiPanelFocusedWindowId === windowId);
   return aiPanelOpen || aiPanelOpenWindows.size > 0;
 }
+async function aiPanelShortcutLabel() {
+  // Users can rebind the command in the browser; show the live shortcut (empty when unset).
+  try {
+    const commands = await browser.commands?.getAll?.();
+    const command = commands?.find(item => item?.name === "open-chatgpt-sidepanel");
+    if (command) return String(command.shortcut || "");
+  } catch {}
+  return "Alt+X";
+}
 async function setAIPanelPageScrollbar(tabId, open) {
   if (!Number.isInteger(tabId)) return;
-  try { await browser.tabs.sendMessage(tabId, { type:"AI_PANEL_VISIBILITY", open:!!open }); }
+  // Only Chromium can close/toggle its panel from a page click; Firefox requires a direct user action in the sidebar API.
+  const pageToggle = typeof globalThis.chrome?.sidePanel?.open === "function";
+  const shortcut = open ? await aiPanelShortcutLabel() : "";
+  try { await browser.tabs.sendMessage(tabId, { type:"AI_PANEL_VISIBILITY", open:!!open, pageToggle, shortcut }); }
   catch { /* unsupported/restricted tabs have no Keepit content script */ }
 }
 async function closeChromiumAIPanel(windowId, chromePanel) {
@@ -908,7 +921,7 @@ browser.commands?.onCommand.addListener((command, tab) => {
 // AI runtime messages (pages, panel and content script) handled by the background router.
 const ASK_AI_UNHANDLED = Symbol("ask-ai-unhandled");
 const ASK_AI_MESSAGE_TYPES = new Set([
-  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_MAYBE_CLOSED", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL"
+  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_MAYBE_CLOSED", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL", "TOGGLE_AI_PANEL"
 ]);
 async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_PANEL_GROK_AUTH_FRAME_DETECTED") return openGrokSignInTabFromEmbeddedAuth(message, sender);
@@ -964,5 +977,7 @@ async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_LINK_RESULT") return completeAILinkRequest(message, sender);
   if (message.type === "AI_LINK_DRAFT_READY") return notifyAILinkDraftReady(message);
   if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
+  // Page edge button shown while the panel is open: same toggle as Alt+X, in the sender's window.
+  if (message.type === "TOGGLE_AI_PANEL") return openAIPanel({ sender, toggle:true });
   return ASK_AI_UNHANDLED;
 }

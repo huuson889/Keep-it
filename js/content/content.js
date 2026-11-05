@@ -25,6 +25,8 @@
   let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
   let sidebar = null, sidebarOpen = false, sidebarActiveTab = "highlights", sidebarSetActiveTab = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
+  // AI panel state reported by the background (AI_PANEL_VISIBILITY); drives the page edge button.
+  let aiPanelVisible = false, aiPanelPageToggle = false, aiPanelShortcut = "Alt+X", aiPanelToggleBusy = false;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
@@ -1223,23 +1225,45 @@
     return { opened:true, action:result.action || "" };
   }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
+  // While the AI panel is open (Chromium), the edge button toggles the AI panel instead of the Highlight sidebar.
+  function edgeToggleControlsAIPanel() { return aiPanelVisible && aiPanelPageToggle && !sidebarOpen; }
+  async function toggleAIPanelFromEdge() {
+    if (aiPanelToggleBusy) return;
+    aiPanelToggleBusy = true;
+    try {
+      const result = await LHN_MESSAGING.sendMessage({ type:"TOGGLE_AI_PANEL" });
+      if (!result?.ok) { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
+      if (!result.opened) {
+        aiPanelVisible = false;
+        syncSidebarEdgeToggle();
+        showSidebarToast(() => t("chatGPTPanelClosedToast"));
+      }
+    } catch { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); }
+    finally { aiPanelToggleBusy = false; }
+  }
   function syncSidebarEdgeToggle() {
     if (!sidebarEdgeToggle) {
       sidebarEdgeToggle = document.createElement("button"); sidebarEdgeToggle.id = "lhn-sidebar-edge-toggle"; sidebarEdgeToggle.type = "button";
       sidebarEdgeToggle.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-      sidebarEdgeToggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); toggleSidebar(); });
+      sidebarEdgeToggle.addEventListener("click", event => {
+        event.preventDefault(); event.stopPropagation();
+        if (edgeToggleControlsAIPanel()) void toggleAIPanelFromEdge(); else toggleSidebar();
+      });
       document.documentElement.appendChild(sidebarEdgeToggle);
     }
-    const shortcut = settings.sidebarShortcut ?? "Alt+Q";
-    const label = shortcut ? `${t("toggleSidebar")} (${shortcut})` : t("toggleSidebar");
-    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen));
+    const aiMode = edgeToggleControlsAIPanel();
+    const shortcut = aiMode ? aiPanelShortcut : (settings.sidebarShortcut ?? "Alt+Q");
+    const text = aiMode ? t("aiPanelToggleTooltip") : t("toggleSidebar");
+    const label = shortcut ? `${text} (${shortcut})` : text;
+    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen || aiMode));
     sidebarEdgeToggle.dataset.tooltip = label;
+    sidebarEdgeToggle.classList.toggle("is-ai-panel", aiMode);
     sidebarEdgeToggle.classList.toggle("is-open", sidebarOpen);
     sidebarEdgeToggle.classList.toggle("is-site-disabled", websiteDisabled);
     sidebarEdgeToggle.classList.toggle("lhn-hidden-by-setting", settings.sidebarIndicatorEnabled === false || (websiteDisabled && settings.sidebarIndicatorOnDisabledSites === false));
     const width = sidebarOpen ? (Number.parseFloat(sidebar?.style.width) || 0) : 0;
     sidebarEdgeToggle.style.right = `${width}px`;
-    const path = sidebarOpen ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
+    const path = sidebarOpen || aiMode ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
     sidebarEdgeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
   }
   function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
@@ -1872,7 +1896,14 @@
       if (sidebarOpen) renderSidebar(true);
       return;
     }
-    if (message?.type === "AI_PANEL_VISIBILITY") { setChatGPTPanelScrollbar(message.open === true); return; }
+    if (message?.type === "AI_PANEL_VISIBILITY") {
+      setChatGPTPanelScrollbar(message.open === true);
+      aiPanelVisible = message.open === true;
+      aiPanelPageToggle = message.pageToggle === true;
+      if (typeof message.shortcut === "string" && aiPanelVisible) aiPanelShortcut = message.shortcut;
+      syncSidebarEdgeToggle();
+      return;
+    }
     if (message?.type === "AI_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
     if (message?.type === "AI_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
     if (message?.type === "AI_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }

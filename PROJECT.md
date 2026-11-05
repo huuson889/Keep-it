@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- v3.5.117: thêm nút sao chép liên kết nguồn bên trái "Tự động gửi" trên thanh AI panel (icon lucide-copy người dùng cung cấp); bấm → `navigator.clipboard.writeText` (dự phòng `execCommand("copy")`), toast "Đã sao chép liên kết" trong toolbar và icon chuyển dấu tích + vòng lan 1,6 giây; không có nguồn thì nút bị vô hiệu; không thêm quyền, không đọc clipboard. Release commit `v3.5.117: Add copy-link button to the AI panel toolbar` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.117.zip`.
-- v3.5.116: hàng tab AI cao thêm 10% (người dùng xác nhận đẹp). v3.5.115: Alt+X dùng `windowId` của tab đi kèm `onCommand`. v3.5.114: vạch ngang mỏng 1/2. v3.5.113: một pipeline ChatGPT/Gemini/Claude (người dùng xác nhận).
+- v3.5.118: khi AI panel mở (Chromium) và sidebar Highlight đóng, nút chevron cạnh trang đổi thành nút ẩn AI panel: cùng kiểu dáng, màu xanh, chevron phải, tooltip "Toggle thanh AI (Alt+X)" (phím tắt thật, đa ngôn ngữ); bấm → `TOGGLE_AI_PANEL` đóng panel cùng cửa sổ, toast "Đã đóng AI panel", nút trở lại Highlight. Firefox giữ nút Highlight (sidebarAction cần thao tác trực tiếp). Release commit `v3.5.118: Edge button toggles the AI panel while it is open` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.118.zip`.
+- v3.5.117: nút sao chép liên kết trên thanh AI. v3.5.116: hàng tab AI +10% (người dùng xác nhận đẹp). v3.5.115: Alt+X dùng `windowId` của tab đi kèm `onCommand`. v3.5.113: một pipeline ChatGPT/Gemini/Claude (người dùng xác nhận).
 - Khoảng trắng dưới thanh trên Claude (Chromium) là header riêng của Claude; người dùng chọn không xử lý.
 - Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### AI panel providers
-- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.117 nút sao chép liên kết (Chromium panel + Firefox sidebar); v3.5.115 Alt+X đóng panel sau khi để yên >30 giây; v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.118 nút cạnh trang ẩn AI panel (Chromium); v3.5.117 nút sao chép liên kết (Chromium panel + Firefox sidebar); v3.5.115 Alt+X đóng panel sau khi để yên >30 giây; v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
 - v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
 ### Reader ↔ Web TTS shared speed
@@ -160,6 +160,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.118 | Arena.ai Agent sửa:**
+
+- Khi AI panel mở trên Chromium và sidebar Highlight đang đóng, `#lhn-sidebar-edge-toggle` chuyển sang chế độ AI: class `is-ai-panel` (gradient xanh dương, cùng kích thước/viền/tooltip với nút Highlight), chevron phải, tooltip/aria "Toggle thanh AI (<phím tắt>)" (vi; en "Toggle AI panel", ko "AI 패널 전환"; key `aiPanelToggleTooltip`). Bấm → `TOGGLE_AI_PANEL` → `openAIPanel({ sender, toggle:true })` (cửa sổ của tab gửi), đóng xong hiện toast "Đã đóng AI panel" và nút trở lại Highlight; lỗi → toast "Không mở được AI panel". Khi sidebar Highlight đang mở, nút vẫn là nút đóng sidebar.
+- `AI_PANEL_VISIBILITY` thêm `pageToggle` (chỉ Chromium) và `shortcut` (lấy từ `commands.getAll`, rỗng nếu chưa gán); gửi lại khi tab nguồn tải xong trong lúc panel mở. Firefox giữ nút Highlight vì `sidebarAction` chỉ mở/đóng trong thao tác trực tiếp của người dùng.
+- File: `manifest.json`, `js/ask-ai/service.js`, `js/content/content.js`, `css/content/content.css`, `js/core/languages.js`, `docs/modules/{ask-ai,content}.md`, `PROJECT.md`.
+- Kiểm tra (ngoài repo): background 5/5 (pageToggle/shortcut, TOGGLE đóng đúng cửa sổ, Firefox false, gửi lại khi reload, phím tắt rỗng) + service/Alt+X 24/24; jsdom toàn bộ content stack 6/6 (nút AI xanh + tooltip, bấm đóng + toast + trở lại Highlight, lỗi, đóng bằng cách khác, Firefox/phím tắt tùy chỉnh/tiếng Anh). Browser QA chưa xác nhận.
 
 **2026-11-06 | v3.5.117 | Arena.ai Agent sửa:**
 
