@@ -610,7 +610,7 @@ function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
   return target.href;
 }
 function makeChatGPTQuestionPrompt(selectedText, instruction = CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt) {
-  return `"${String(selectedText || "").trim()}" ${normalizeChatGPTInstruction(instruction, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)}`;
+  return `"${String(selectedText || "").trim()}"\n${normalizeChatGPTInstruction(instruction, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)}`;
 }
 async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText = "" } = {}) {
   const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
