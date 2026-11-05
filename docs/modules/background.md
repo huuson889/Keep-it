@@ -32,6 +32,6 @@ Background điều phối runtime messages, provider state, panel lifecycle và 
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.108 focused `node --test tests/ai-panel-v3.5.108.test.js` covers URL-only/completed tab updates, selected Gemini mapping, context-switch route mode, stable manual editor text and confirmation-only mapping — 7/7 PASS.
+- v3.5.108/v3.5.109 `node --test tests/` (15/15 PASS) covers URL-only/completed tab updates, selected Gemini mapping, context-switch route mode, stable manual editor text and confirmation-only mapping — 7/7 PASS.
 - Full release checks, Firefox transform, docs structure, `git diff --check` and final ZIP integrity/version/content checks remain pending.
 - Real Chromium/Firefox browser QA pending: iframe/sidebar, provider selectors, source switching, send confirmation, opt-in behavior và ChatGPT regressions. Browser QA người dùng vẫn là nguồn sự thật.

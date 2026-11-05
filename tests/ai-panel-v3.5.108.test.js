@@ -101,8 +101,9 @@ test("Chromium and Firefox route mapped or new context-switch destinations", () 
   const chromiumPanel = read("js/shared/ai-panel.js");
   const firefoxContent = read("js/content/ai-fill.js");
   for (const source of [chromiumPanel, firefoxContent]) {
-    assert.match(source, /\["new-link",\s*"context-switch"\]\.includes\(request\.mode\)/);
-    assert.match(source, /\["reopen",\s*"followup",\s*"context-switch"\]\.includes\(request\.mode\)/);
+    // v3.5.109: both paths use the shared ChatGPT/Gemini/Claude route rule.
+    assert.match(source, /providers\.planPanelNavigation\(/);
+    assert.match(source, /providers\.panelRoute\(/);
   }
 });
 
@@ -185,10 +186,10 @@ function makeWorkflow({ mapped = false, mutateDuringSettle = false } = {}) {
   };
 }
 
-test("manual send appends the exact source URL even for mapped Gemini sources", async () => {
+test("manual send on a mapped Gemini source sends the prompt without the URL (ChatGPT rule, v3.5.109)", async () => {
   const workflow = makeWorkflow({ mapped:true });
   await new Promise(resolve => setTimeout(resolve, 200));
-  assert.equal(workflow.editor.text, workflow.expectedText);
+  assert.equal(workflow.editor.text, "Summarize this page");
   assert.equal(workflow.clicks, 1);
   assert.equal(workflow.reports.length, 0, "mapped sends do not create a new source mapping");
 });

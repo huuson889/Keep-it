@@ -240,6 +240,31 @@
     })();
   });
 
+  // Shared for ChatGPT/Gemini/Claude: the Chromium panel cannot read this cross-origin URL,
+  // so report the live conversation route whenever the provider SPA changes it.
+  let lastReportedPanelRoute = null;
+  function reportPanelConversation() {
+    if (isFirefox || window.parent === window || !extensionOrigin || !providers.isPanelProvider(currentProvider.id)) return;
+    const routeUrl = providers.panelRoute(currentProvider.id, location.href);
+    if (routeUrl === lastReportedPanelRoute) return;
+    lastReportedPanelRoute = routeUrl;
+    try {
+      window.parent.postMessage({
+        type:"KEEPIT_AI_PANEL_CONVERSATION",
+        providerId:currentProvider.id,
+        conversationUrl:providers.normalizeConversationUrl(currentProvider.id, location.href),
+        routeUrl
+      }, extensionOrigin);
+    } catch { /* The panel may be closing. */ }
+  }
+  if (!isFirefox && window.parent !== window && extensionOrigin) {
+    reportPanelConversation();
+    setInterval(reportPanelConversation, 700);
+    window.addEventListener("popstate", reportPanelConversation);
+    window.addEventListener("hashchange", reportPanelConversation);
+    window.addEventListener("load", reportPanelConversation);
+  }
+
   let firefoxPanelActive = false;
   let toolbar = null;
   let activeSourceUrl = "";
@@ -340,6 +365,7 @@
     if (latest?.[NAVIGATION_KEY]?.requestId !== request.requestId) return true;
     lastNavigationRequestId = request.requestId;
     const sourceUrl = safeSourceUrl(request.sourceUrl) || activeSourceUrl;
+    const sourceChanged = !!sourceUrl && sourceUrl !== activeSourceUrl;
     toolbar?.setSourceUrl(sourceUrl);
     activeSourceUrl = sourceUrl;
     globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPanelContext({ providerId:provider.id, sourceUrl, active:true });
@@ -349,14 +375,16 @@
       return true;
     }
 
+    // Shared rule; Firefox reads the live top-level URL. A same-route source change keeps the
+    // document and clears the stale composer below instead of reloading the provider page.
     const target = panelTargetUrl(provider, request.targetUrl);
-    const currentConversation = providers.normalizeConversationUrl(provider.id, location.href);
-    const targetConversation = providers.normalizeConversationUrl(provider.id, target);
-    const needsNewConversation = ["new-link", "context-switch"].includes(request.mode)
-      && !!currentConversation && !targetConversation;
-    const needsMappedRoute = ["reopen", "followup", "context-switch"].includes(request.mode)
-      && !!targetConversation && currentConversation !== targetConversation;
-    if (needsNewConversation || needsMappedRoute) {
+    const plan = providers.planPanelNavigation({
+      displayedRoute:providers.panelRoute(provider.id, location.href),
+      targetRoute:providers.panelRoute(provider.id, target),
+      sourceChanged,
+      loaded:true
+    });
+    if (plan === "load") {
       location.replace(panelUrl(provider, sourceUrl, request));
       return true;
     }

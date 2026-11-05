@@ -113,18 +113,9 @@
     } catch { /* ChatGPT may be navigating */ }
   }
 
+  // Shared with Gemini/Claude through LHN_AI_PANEL.
   function reloadPanelFrame(targetUrl, onTargetLoad) {
-    if (!frame) return false;
-    frame.dataset.keepitLoaded = "false";
-    delete frame.dataset.currentConversationUrl;
-    const loadTargetAfterBlank = () => {
-      frame.removeEventListener("load", loadTargetAfterBlank);
-      if (onTargetLoad) frame.addEventListener("load", onTargetLoad, { once:true });
-      frame.src = targetUrl;
-    };
-    frame.addEventListener("load", loadTargetAfterBlank, { once:true });
-    frame.src = "about:blank";
-    return true;
+    return aiPanel?.reloadFrame?.(targetUrl, onTargetLoad) === true;
   }
 
   async function navigate(request) {
@@ -151,7 +142,14 @@
     const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
     const sourceContextChanged = !!request.sourceUrl && request.sourceUrl !== previousSourceUrl;
     if (request.sourceUrl) aiPanel?.setSourceUrl(request.sourceUrl);
-    const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset.keepitLoaded === "true";
+    // Same navigation rule as Gemini/Claude (LHN_AI_PROVIDERS.planPanelNavigation).
+    const plan = globalThis.LHN_AI_PROVIDERS.planPanelNavigation({
+      displayedRoute,
+      targetRoute,
+      sourceChanged:sourceContextChanged,
+      loaded:frame?.dataset?.keepitLoaded === "true"
+    });
+    const sameSourceAndRoute = plan === "stay";
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
     const linkRequestId = requestScopedFlow ? String(request.linkRequestId || "") : "";
     const focusComposer = request.mode === "reopen" && request.focusComposer === true;
@@ -176,7 +174,7 @@
 
     handledNavigationIds.add(request.requestId);
     const url = panelUrl(target, linkRequestId, request.sourceUrl || "", sourceContextChanged, focusComposer);
-    const forceSameRouteContextReload = sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset?.keepitLoaded === "true";
+    const forceSameRouteContextReload = plan === "reload";
     if (frame) {
       if (request.sourceUrl) frame.dataset.keepitSourceUrl = request.sourceUrl;
       if (request.mode === "followup" && linkRequestId) {
@@ -276,9 +274,16 @@
 
   window.addEventListener("message", event => {
     if (!frame || event.source !== frame.contentWindow || !["https://chatgpt.com", "https://chat.openai.com"].includes(event.origin)) return;
-    if (event.data?.type !== "KEEPIT_CHATGPT_PANEL_CONVERSATION") return;
+    const type = event.data?.type;
+    // The shared KEEPIT_AI_PANEL_CONVERSATION route is stored by LHN_AI_PANEL; here it only feeds ChatGPT route metadata.
+    if (type === "KEEPIT_AI_PANEL_CONVERSATION" && event.data.providerId === "chatgpt") {
+      void reportPanelRoute(String(event.data.routeUrl || "") || frame.src || DEFAULT_CHATGPT_URL);
+      return;
+    }
+    if (type !== "KEEPIT_CHATGPT_PANEL_CONVERSATION") return;
     const conversationUrl = safeConversationUrl(String(event.data.conversationUrl || ""));
-    if (conversationUrl) frame.dataset.currentConversationUrl = conversationUrl;
+    const route = safePanelRoute(String(event.data.routeUrl || "")) || conversationUrl;
+    if (route) frame.dataset.currentConversationUrl = route;
     else delete frame.dataset.currentConversationUrl;
     void reportPanelRoute(event.data.routeUrl || conversationUrl || frame.src || DEFAULT_CHATGPT_URL);
   });

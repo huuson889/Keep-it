@@ -228,7 +228,10 @@
       return;
     }
     if (!preparation.mapped && !requestId) return;
-    const sentText = linkPrompt(preparation.websiteLabel || pendingLink?.websiteLabel || "Website", sourceUrl, originalPrompt);
+    // Same rule as ChatGPT: only an unmapped source receives the localized label + exact URL.
+    const sentText = preparation.mapped === true
+      ? originalPrompt
+      : linkPrompt(preparation.websiteLabel || pendingLink?.websiteLabel || "Website", sourceUrl, originalPrompt);
     if (sentText !== originalPrompt && !editorApi.setEditorText(editor, sentText, true)) {
       await rejectUnconfirmedManualSend(requestId, sourceUrl, "source-link-editor-update-failed");
       return;

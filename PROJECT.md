@@ -1,16 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- v3.5.108 đang hoàn thiện: đã bắt URL-only update, tra mapping provider đang chọn, định tuyến context-switch Chromium/Firefox và giữ prompt đúng/ổn định trước khi gửi. Tập trung 7 regression tests đạt; full static/build checks đạt; release commit `v3.5.108: Gemini source sync and send-time URL fix` + ZIP `Keepit - Optimize Test-v3.5.108.zip`.
-- v3.5.107 đã commit `6f4539d`, giao `/home/user/Keep-it/Keepit - Optimize Test-v3.5.107.zip`; người dùng xác nhận đã sync. Không sửa ZIP này.
-- Chưa có browser QA thật cho v3.5.108. Trên v3.5.107 đã sync, người dùng thấy Gemini không cập nhật context khi URL cùng tab đổi; manual Send hiện URL thoáng qua nhưng tin nhắn gửi thiếu URL; opt-in auto-send có URL.
-- Kiến trúc/ràng buộc ở mục 4. AI panel hiện ChatGPT/Gemini/Claude; Grok vẫn ẩn. Sau khi giao v3.5.108, chờ người dùng xác nhận sync trước khi sửa source/repackage tiếp.
+- v3.5.109: ChatGPT/Gemini/Claude dùng chung một cơ chế route của AI panel. Iframe provider báo route sống, panel áp chung quy tắc stay/reload/load, nên Gemini/Claude trên Chromium đổi hội thoại khi URL nguồn đổi mà không cần mở lại panel. Source đã map gửi tay không thêm URL (theo ChatGPT). Release commit `v3.5.109: Shared AI panel route tracking` + ZIP `Keepit - Optimize Test-v3.5.109.zip`.
+- v3.5.108 commit `c021cd8`, ZIP đã giao; người dùng test và báo "đúng hơn rồi", rồi báo Gemini Chromium không đổi hội thoại khi URL đổi cho tới khi mở lại panel. Không sửa ZIP cũ.
+- Kiến trúc/ràng buộc ở mục 4. AI panel hiện ChatGPT/Gemini/Claude; Grok vẫn ẩn. Sau khi giao v3.5.109, chờ người dùng xác nhận sync trước khi sửa source/repackage tiếp.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### AI panel providers v3.5.108
-- Đã chạy `node --test tests/ai-panel-v3.5.108.test.js` (7/7), all-JS syntax, Python compile, manifest/script/unchanged-permission-host-DNR assertions, Firefox transform, docs structure/word caps và `git diff --check` — PASS. Đã commit và đóng gói ZIP v3.5.108 (integrity/version checks trong báo cáo giao).
-- Browser QA v3.5.108 chưa chạy. Sau khi người dùng sync, kiểm tra same-tab `changeInfo.url` không có page-complete, mapped Gemini route, Chromium/Firefox, draft URL-free trước Send, localized label + exact URL với summary và prompt tự gõ, editor bị đổi thì không gửi/không map, opt-in auto-send và không auto-send text tự gõ; kiểm tra ChatGPT regression. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
-- Chờ người dùng xác nhận sync v3.5.108 trước mọi sửa source/repackage. v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
+### AI panel providers v3.5.109
+- `node --test tests/` 15/15 PASS (VM gồm tình huống Gemini `/app` → `/app/<id>` → source mới chưa map tải lại blank chat, Claude tương tự, origin sai bị bỏ qua, reporter iframe post tới extension origin, mapped không thêm URL). Static/build checks theo báo cáo giao.
+- Browser QA v3.5.109 chưa chạy: Gemini/Claude Chromium đổi hội thoại khi URL nguồn đổi (sau khi gửi, và source mới chưa map/đã map) không cần mở lại panel; Firefox mapped/new route; manual Send source chưa map có label + URL, source đã map không URL; editor bị đổi thì không gửi/không map; opt-in auto-send; ChatGPT regression. Claude embed Chromium vẫn chưa xác minh. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+- v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
 ### Reader ↔ Web TTS shared speed
 - Browser QA pending: đổi tốc độ ở Reader rồi mở Web TTS và đổi ngược lại; xác nhận 0.5×/3×, global/per-language và persistence sau reload; xác nhận YouTube, Dictation slow replay 0.6× và Flashcard không đổi. Static/VM checks v3.5.42 đã đạt.
@@ -159,11 +158,19 @@ Video source (`js/overlay/source/video.js`: `state.allCues`, `sourceLanguage`, v
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; Hỏi AI mở hoặc giữ panel mở. Provider selection lưu theo window trong `storage.session`; visible tabs chỉ là ChatGPT, Gemini, Claude, còn Grok hidden nhưng registry/auth code không bị xóa. Chromium giữ provider trong iframe; Firefox dùng sidebar native và chuyển provider top-level. Gemini/Claude dùng exact source→conversation mapping, localized prompt, URL injection lúc Send (gồm prompt tự gõ) và shared opt-in auto-send cho explicit Keepit actions. User-written prompts không bao giờ auto-send; mapping chỉ sau confirmed send. ChatGPT giữ `?q=` route flow riêng. Grok embedded sign-in legacy handler chỉ giữ origin validation; không hiện Grok tab/button. Không đọc page body/title/clipboard, không lưu/khôi phục unsent draft. Tab/source context đổi dùng debounce 2 giây; đóng panel hủy timer/request. Không dùng global last-chat URL. Toolbar geometry giữ nguyên; auto-send hiện với ChatGPT/Gemini/Claude. DNR rule 9002 chỉ nhắm subframe trên allowlist provider; không thêm Google auth vào DNR. Manifest không cấp clipboard permission.
+Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; Hỏi AI mở hoặc giữ panel mở. Provider selection lưu theo window trong `storage.session`; visible tabs chỉ là ChatGPT, Gemini, Claude, còn Grok hidden nhưng registry/auth code không bị xóa. Chromium giữ provider trong iframe; Firefox dùng sidebar native và chuyển provider top-level. Gemini/Claude dùng exact source→conversation mapping, localized prompt, URL injection lúc Send trên source chưa map (gồm prompt tự gõ; source đã map không thêm URL như ChatGPT) và shared opt-in auto-send cho explicit Keepit actions. ChatGPT/Gemini/Claude dùng chung route tracking: iframe `ai-fill.js` báo `KEEPIT_AI_PANEL_CONVERSATION`, panel áp `planPanelNavigation()` stay/reload/load và `reloadFrame()` chung. User-written prompts không bao giờ auto-send; mapping chỉ sau confirmed send. Riêng ChatGPT chỉ giữ phần `?q=`/marker/follow-up. Grok embedded sign-in legacy handler chỉ giữ origin validation; không hiện Grok tab/button. Không đọc page body/title/clipboard, không lưu/khôi phục unsent draft. Tab/source context đổi dùng debounce 2 giây; đóng panel hủy timer/request. Không dùng global last-chat URL. Toolbar geometry giữ nguyên; auto-send hiện với ChatGPT/Gemini/Claude. DNR rule 9002 chỉ nhắm subframe trên allowlist provider; không thêm Google auth vào DNR. Manifest không cấp clipboard permission.
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-05 | v3.5.109 | Arena.ai Agent sửa:**
+
+- Gộp route tracking AI panel cho ChatGPT/Gemini/Claude: `ai-providers.js` thêm `panelRoute()`/`planPanelNavigation()`; `ai-fill.js` (iframe Chromium) post `KEEPIT_AI_PANEL_CONVERSATION` tới extension origin và Firefox dùng planner; `ai-panel.js` lưu route sống (validate source/origin/provider), export `reloadFrame()`; `chatgpt-panel.js` dùng planner + reload chung. Manual Send trên source đã map không thêm URL (theo ChatGPT).
+- Nguyên nhân lỗi: panel Chromium chỉ biết `frame.src` (`/app`) trong khi Gemini SPA đã sang `/app/<id>`, nên coi là start→start và chỉ clear composer; chỉ ChatGPT có reporter riêng.
+- File: `manifest.json`, `js/shared/ai-providers.js`, `js/shared/ai-panel.js`, `js/shared/chatgpt-panel.js`, `js/content/ai-fill.js`, `js/content/ai-provider-workflow.js`, `tests/ai-panel-v3.5.108.test.js`, `tests/ai-panel-shared-v3.5.109.test.js`, README, PRIVACY-POLICY, PROJECT, docs modules.
+- Kiểm tra: `node --test tests/` 15/15 PASS; static/build checks theo báo cáo giao. Browser QA chưa xác nhận.
+- Lưu ý: người dùng yêu cầu các AI có hành vi giống nhau phải dùng chung cơ chế như ChatGPT, không làm luồng song song.
 
 **2026-11-05 | v3.5.108 | Arena.ai Agent sửa:**
 

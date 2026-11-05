@@ -30,7 +30,8 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 - Registry sở hữu ID/URL/host/origin; không nhận hostname từ page message. Bridge kiểm tra `event.source`, extension origin, provider ID và response origin.
 - `ai-fill.js` generic editor fill itself does not submit. Separate Gemini/Claude workflow injects exact source URL only at Send and maps only after confirmed send.
 - Mapping uses exact source URL and validated provider route; no global last-chat fallback. Same-tab source URL updates send a provider-specific context switch; mapped conversations are routed in Chromium and Firefox, otherwise the provider start route is used.
-- Opt-in auto-send is limited to explicit Keepit actions. User-written prompts are never auto-sent. Manual Gemini/Claude Send appends the localized label + exact URL only at send time, including mapped sources, and sends only while the exact editor text remains stable.
+- Opt-in auto-send is limited to explicit Keepit actions. User-written prompts are never auto-sent. Manual Gemini/Claude Send appends the localized label + exact URL only at send time on an unmapped source (mapped sources omit it, like ChatGPT), and sends only while the exact editor text remains stable.
+- `ai-providers.js` owns `panelRoute()` and `planPanelNavigation()` (stay/reload/load) for ChatGPT, Gemini and Claude. `ai-panel.js` stores the live route from `KEEPIT_AI_PANEL_CONVERSATION` (event source, provider origin and frame provider validated) and exports `reloadFrame()`; `chatgpt-panel.js` reuses both.
 - ChatGPT `?q=` and ChatGPT-specific prompt route remain separate; Grok is excluded from visible provider tabs.
 - Provider state ở `storage.session` theo window, không có global last-chat. Source change giữ source link và clear composer cũ theo request.
 - DNR chỉ áp dụng cho subframe trên allowlist host provider; không dùng rule toàn URL hoặc thêm Google auth. Firefox điều hướng top-level.
@@ -38,6 +39,6 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 
 ## 5. Kiểm tra và xác minh
 
-- `node --test tests/ai-panel-v3.5.108.test.js` — 7/7 PASS, covering URL-only source updates, selected-provider mapped routes and stable send guards.
+- `node --test tests/` — 15/15 PASS (v3.5.108 + v3.5.109), covering shared route planning, Gemini `/app/<id>` → new source reload, Claude parity, origin validation, URL-only source updates and stable send guards.
 - Full provider route/browser checks, Firefox build transform, docs structure, `git diff --check` and final ZIP integrity/version/content assertions remain pending.
 - Browser QA pending: visible tabs/controls, source-route mapping, typed/Keepit send-time URL insertion, opt-in auto-send, source change, Firefox routing, live selectors, ChatGPT regressions and legacy Grok auth behavior.

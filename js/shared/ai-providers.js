@@ -79,6 +79,29 @@
     } catch { return ""; }
   }
 
+  // Shared panel route: a validated conversation URL, or the provider's blank-chat start route.
+  function panelRoute(providerId, value) {
+    const provider = get(providerId);
+    if (!provider || provider.id === "grok") return "";
+    const conversation = normalizeConversationUrl(provider.id, value);
+    if (conversation) return conversation;
+    try {
+      const url = new URL(String(value || ""));
+      if (url.protocol !== "https:" || fromHost(url.hostname)?.id !== provider.id) return "";
+      const start = new URL(provider.startUrl);
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+      const startPath = start.pathname.replace(/\/+$/, "") || "/";
+      return path === "/" || path === startPath ? `${start.origin}${start.pathname}` : "";
+    } catch { return ""; }
+  }
+
+  // One navigation rule for ChatGPT, Gemini and Claude panels:
+  // same route + same source stays; same route + new source reloads; otherwise load the target.
+  function planPanelNavigation({ displayedRoute = "", targetRoute = "", sourceChanged = false, loaded = false } = {}) {
+    if (!targetRoute || !loaded || displayedRoute !== targetRoute) return "load";
+    return sourceChanged ? "reload" : "stay";
+  }
+
   function makePrompt(providerId, {
     intent = "summary", sourceUrl = "", selectedText = "", language = "en",
     summaryPrompt = "", askPrompt = "", includeSource = true
@@ -109,6 +132,8 @@
     fromUrl,
     isPanelProvider,
     normalizeConversationUrl,
+    panelRoute,
+    planPanelNavigation,
     makePrompt
   });
 })();

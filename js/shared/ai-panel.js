@@ -175,6 +175,8 @@
 
     if (frame) {
       const target = await chromeProviderUrl(provider, url);
+      frame.dataset.keepitLoaded = "false";
+      delete frame.dataset.currentConversationUrl;
       frame.src = provider.id === "chatgpt" ? withChatGPTPanelMarkers(target, currentSourceUrl) : target;
       frame.dataset.keepitProvider = provider.id;
       return true;
@@ -263,6 +265,28 @@
     } catch {}
   }
 
+  // Shared iframe reload for every provider; also used by the ChatGPT controller.
+  function reloadFrame(targetUrl, onTargetLoad) {
+    if (!frame) return false;
+    frame.dataset.keepitLoaded = "false";
+    delete frame.dataset.currentConversationUrl;
+    const loadTargetAfterBlank = () => {
+      frame.removeEventListener("load", loadTargetAfterBlank);
+      if (onTargetLoad) frame.addEventListener("load", onTargetLoad, { once:true });
+      frame.src = targetUrl;
+    };
+    frame.addEventListener("load", loadTargetAfterBlank, { once:true });
+    frame.src = "about:blank";
+    return true;
+  }
+
+  // Live route reported by the provider page (ChatGPT, Gemini, Claude), else the last loaded src.
+  function displayedRoute(providerId) {
+    if (!frame) return "";
+    return providers.panelRoute(providerId, frame.dataset.currentConversationUrl || "")
+      || providers.panelRoute(providerId, frame.src);
+  }
+
   function setActiveProvider(providerId) {
     const provider = providers?.get(providerId);
     if (!provider || !providers?.isPanelProvider(provider.id)) return false;
@@ -290,13 +314,15 @@
     }
 
     const target = await chromeProviderUrl(provider, request.targetUrl);
-    const currentConversation = providers.normalizeConversationUrl(providerId, frame.src);
-    const targetConversation = providers.normalizeConversationUrl(providerId, target);
-    const needsNewConversation = ["new-link", "context-switch"].includes(request.mode)
-      && !!currentConversation && !targetConversation;
-    const needsMappedRoute = ["reopen", "followup", "context-switch"].includes(request.mode)
-      && !!targetConversation && currentConversation !== targetConversation;
-    const shouldLoad = wasDifferentProvider || !frame.dataset.keepitProvider || needsNewConversation || needsMappedRoute;
+    const targetRoute = providers.panelRoute(providerId, target);
+    const plan = wasDifferentProvider || frame.dataset.keepitProvider !== providerId
+      ? "load"
+      : providers.planPanelNavigation({
+        displayedRoute:displayedRoute(providerId),
+        targetRoute,
+        sourceChanged,
+        loaded:frame.dataset.keepitLoaded === "true"
+      });
     currentProviderId = providerId;
     frame.dataset.keepitProvider = providerId;
     const fillRequest = request.linkRequestId && ["new-link", "followup"].includes(request.mode);
@@ -321,22 +347,41 @@
       }
     };
 
-    if (shouldLoad) {
+    if (plan !== "stay") {
       await new Promise(resolve => {
         const timer = setTimeout(resolve, 18000);
-        frame.addEventListener("load", () => { clearTimeout(timer); resolve(); }, { once:true });
-        frame.src = target;
+        const done = () => { clearTimeout(timer); resolve(); };
+        // The src attribute can still equal the target after the SPA moved; force a real navigation.
+        if (plan === "reload" || providers.panelRoute(providerId, frame.src) === targetRoute) {
+          reloadFrame(target, done);
+        } else {
+          frame.dataset.keepitLoaded = "false";
+          delete frame.dataset.currentConversationUrl;
+          frame.addEventListener("load", done, { once:true });
+          frame.src = target;
+        }
       });
     }
     await afterLoad();
     return true;
   }
 
+  window.addEventListener("message", event => {
+    if (!frame || event.source !== frame.contentWindow || event.data?.type !== "KEEPIT_AI_PANEL_CONVERSATION") return;
+    const provider = providers?.get(event.data.providerId);
+    if (!provider || !providers.isPanelProvider(provider.id) || providers.fromUrl(frame.src)?.id !== provider.id
+      || !provider.origins.includes(event.origin)) return;
+    const route = providers.panelRoute(provider.id, String(event.data.routeUrl || ""));
+    if (route) frame.dataset.currentConversationUrl = route;
+    else delete frame.dataset.currentConversationUrl;
+  });
+
   frame?.addEventListener("load", () => {
     const provider = providers?.fromUrl(frame.src);
     if (!provider) return;
     currentProviderId = provider.id;
     frame.dataset.keepitProvider = provider.id;
+    frame.dataset.keepitLoaded = "true";
     if (providers.isPanelProvider(provider.id) && currentSourceUrl) {
       setTimeout(() => setSourceMessage(currentSourceUrl), 120);
       setTimeout(() => setSourceMessage(currentSourceUrl), 550);
@@ -363,6 +408,8 @@
     getProvider:() => currentProviderId,
     getFrame:() => frame,
     navigateRequest,
+    reloadFrame,
+    displayedRoute,
     getSavedProvider,
     getCurrentWindowId
   });
