@@ -350,71 +350,25 @@
     if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
     const selectedText = String(window.getSelection()?.toString() || range.toString()).trim();
     translateIcon?.remove();
-    const style = ["1", "2", "3"].includes(String(settings.translateIconStyle)) ? String(settings.translateIconStyle) : "3";
+    const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
+    const style = toolbar.normalizeStyle(settings.selectionToolbarStyle);
     const launcher = document.createElement("div");
     launcher.id = "lhn-translate-icon";
     launcher.className = "lhn-translate-launcher";
     launcher.dataset.style = style;
     launcher.setAttribute("role", "group");
     launcher.setAttribute("aria-label", t("translateSelectedText"));
-
-    const shell = document.createElement("div");
-    shell.className = "lhn-translate-shell";
-    const actions = document.createElement("div");
-    actions.className = "lhn-translate-actions";
-    actions.setAttribute("role", "group");
-    actions.setAttribute("aria-label", t("translateSelectedText"));
-    const actionSpecs = [
-      {
-        className: "lhn-action-highlight",
-        label: t("toolbarHighlight"),
-        title: t("toolbarHighlight"),
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>',
-        run: () => showComposer(range),
-      },
-      {
-        className: "lhn-action-translate",
-        label: t("toolbarTranslate"),
-        title: t("toolbarTranslate"),
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>',
-        run: () => translateSelectedRange(range, { forcePopup:true }),
-      },
-      {
-        className: "lhn-action-ai",
-        label: t("toolbarAskAI"),
-        title: t("toolbarAskAI"),
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>',
-        run: () => launchChatGPTSidePanel({ selectedText }),
-      },
-    ];
-    actionSpecs.forEach((spec, index) => {
-      const action = document.createElement("button");
-      action.type = "button";
-      action.className = `lhn-translate-action ${spec.className}`;
-      action.setAttribute("aria-label", spec.title);
-      if (style === "1") action.innerHTML = `${spec.svg}<span>${spec.label}</span>`;
-      else { action.title = spec.title; action.innerHTML = spec.svg; }
-      action.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-      action.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); spec.run(); });
-      actions.appendChild(action);
-      if (index < actionSpecs.length - 1) {
-        const separator = document.createElement("span");
-        separator.className = "lhn-translate-separator";
-        separator.setAttribute("aria-hidden", "true");
-        actions.appendChild(separator);
-      }
+    // Same actions for the toolbar buttons and the logo; the logo runs the action chosen in Settings → Icon display.
+    const runAction = {
+      highlight:() => showComposer(range),
+      translate:() => translateSelectedRange(range, { forcePopup:true }),
+      ai:() => launchChatGPTSidePanel({ selectedText }),
+    };
+    const shell = toolbar.build({
+      document, style, t, logoAction:settings.selectionToolbarLogoAction,
+      onAction:id => runAction[id]?.()
     });
-
-    const logoButton = document.createElement("button");
-    logoButton.className = "lhn-translate-logo";
-    logoButton.type = "button";
-    logoButton.setAttribute("aria-label", t("translateSelectedText"));
-    logoButton.title = t("translateSelectedText");
-    logoButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32"><defs><linearGradient id="lhnTranslateIconMark" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient><filter id="lhnTranslateIconShadow" x="-25%" y="-15%" width="150%" height="155%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dy="2"/><feComponentTransfer><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect x="0" y="0" width="32" height="32" fill="url(#lhnTranslateIconMark)" filter="url(#lhnTranslateIconShadow)" rx="8"/><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" height="18" width="18" x="7" y="7"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></svg>';
-    logoButton.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-    logoButton.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); translateSelectedRange(range, { forcePopup:true }); });
-
-    shell.append(actions, logoButton);
+    shell.querySelector(".lhn-translate-actions")?.setAttribute("aria-label", t("translateSelectedText"));
     launcher.appendChild(shell);
     launcher.addEventListener("mousedown", event => event.stopPropagation());
     launcher.classList.toggle("lhn-ui-dark", isSidebarDark());

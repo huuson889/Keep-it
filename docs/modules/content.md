@@ -17,6 +17,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 | [`js/content/sentence-note.js`](../../js/content/sentence-note.js) | `LHN_SENTENCE_NOTE` | Lấy ngữ cảnh câu quanh selection. |
 | [`js/content/page-layout.js`](../../js/content/page-layout.js) | `LHN_PAGE_LAYOUT` | Snapshot/khôi phục layout khi mở sidebar. |
 | [`js/content/ui-components.js`](../../js/content/ui-components.js) | `LHN_UI_COMPONENTS` | Tag editor dùng chung. |
+| [`js/shared/selection-toolbar.js`](../../js/shared/selection-toolbar.js) + [`css/shared/selection-toolbar.css`](../../css/shared/selection-toolbar.css) | `LHN_SELECTION_TOOLBAR` | Toolbar nổi khi chọn chữ (Tô sáng/Dịch/Hỏi AI + logo), dùng chung cho trang và preview Dashboard. |
 
 ## 3. Luồng chính
 
@@ -33,6 +34,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - Website bị tắt thì không restore highlight và không áp UI trang.
 - Message từ Background phải kiểm tra `type` trước khi xử lý; không thực thi nội dung từ page.
 - Giữ selector/class `lhn-*` để CSS content và sidebar không vỡ.
+- Selection toolbar: chỉ dựng bằng `LHN_SELECTION_TOOLBAR.build()`. 4 dạng = 2 cờ `data-labels`/`data-collapsible` (1 chữ+mở sẵn, 2 icon+mở sẵn, 3 chữ+hover mở, 4 icon+hover mở); CSS chỉ đọc cờ, không đọc số dạng. Logo chạy `selectionToolbarLogoAction` (mặc định Tô sáng), tooltip theo thao tác đó. `content.css` chỉ giữ định vị `#lhn-translate-icon`. Background `onInstalled` (reason `update`) chuyển `translateIconStyle` cũ: 1→1, 2→2, 3/không có→4.
 
 ## 5. Kiểm tra và xác minh
 

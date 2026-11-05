@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js", "/js/shared/selection-toolbar.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -21,7 +21,23 @@ async function resetLegacyDictationWrongWordStats() {
     console.warn("Could not reset legacy Dictation error statistics", error);
   }
 }
-browser.runtime.onInstalled.addListener(async () => {
+async function migrateSelectionToolbarStyle() {
+  // v3.5.119 renumbered the selection toolbar: old style 3 (icons, hover to open) is now style 4 and a new style 3 is the default
+  // for fresh installs. Existing users keep the look they had (an unsaved old default was also old style 3).
+  const storage = browser?.storage?.local;
+  const key = CONFIG?.STORAGE_KEYS?.SETTINGS;
+  const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
+  if (!storage || !key || !toolbar) return;
+  const data = await storage.get(key);
+  const saved = data?.[key] && typeof data[key] === "object" && !Array.isArray(data[key]) ? data[key] : {};
+  if (saved.selectionToolbarStyle) return;
+  await storage.set({ [key]:{ ...saved, selectionToolbarStyle:toolbar.styleFromLegacy(saved.translateIconStyle) } });
+}
+browser.runtime.onInstalled.addListener(async details => {
+  if (details?.reason === "update") {
+    try { await migrateSelectionToolbarStyle(); }
+    catch (error) { console.warn("Could not migrate the selection toolbar style", error); }
+  }
   try {
     await cleanupAskAIStorage();
   } catch (error) { console.warn("Could not clean expired or legacy Ask AI data", error); }

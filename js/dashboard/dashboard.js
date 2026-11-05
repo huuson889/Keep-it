@@ -77,11 +77,31 @@ function profileDisplayName(profile = demoProfile) {
   return (username || email).split("@")[0] || t("profileGuest");
 }
 function profilePictureMarkup(profile = demoProfile, fallback = "") { return profile?.avatarDataUrl ? `<img class="profile-picture-img" src="${escapeHtml(profile.avatarDataUrl)}" alt="">` : fallback; }
+// Settings → Icon display: radios, logo-action tabs and live previews built by the shared toolbar module (same DOM/CSS as the page).
+function syncSelectionToolbarPreviewTheme() {
+  const dark = document.documentElement.classList.contains("dark");
+  document.querySelectorAll(".lhn-sel-preview").forEach(stage => { stage.classList.toggle("lhn-ui-dark", dark); stage.classList.toggle("lhn-ui-light", !dark); });
+}
+function syncSelectionToolbarSettings() {
+  const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
+  if (!toolbar) return;
+  const style = toolbar.normalizeStyle(dashboardSettings.selectionToolbarStyle);
+  const logoAction = toolbar.normalizeLogoAction(dashboardSettings.selectionToolbarLogoAction);
+  document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => { const selected = input.value === style; input.checked = selected; input.closest(".settings-icon-display-option")?.classList.toggle("is-selected", selected); });
+  document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => { const selected = input.value === logoAction; input.checked = selected; input.closest(".settings-logo-action-tab")?.classList.toggle("is-selected", selected); });
+  document.querySelectorAll("[data-selection-toolbar-icon]").forEach(icon => { if (!icon.firstElementChild) icon.innerHTML = toolbar.ICONS[icon.dataset.selectionToolbarIcon] || ""; });
+  document.querySelectorAll("[data-selection-toolbar-preview]").forEach(stage => {
+    const previewStyle = stage.dataset.selectionToolbarPreview;
+    stage.replaceChildren(toolbar.build({ document, style:previewStyle, t, logoAction, preview:true, idSuffix:`Preview${previewStyle}` }));
+  });
+  syncSelectionToolbarPreviewTheme();
+}
 function syncDashboardTheme() {
   const preference = dashboardSettings.sidebarTheme;
   const dark = preference === "dark" || (preference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   const root = document.documentElement;
   root.classList.toggle("dark", dark);
+  syncSelectionToolbarPreviewTheme();
   if (root.classList.contains("dashboard-theme-pending")) {
     requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("dashboard-theme-pending")));
   }
@@ -158,8 +178,7 @@ function refreshDashboardSettings() {
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
   $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
-  const iconStyle = ["1", "2", "3"].includes(String(dashboardSettings.translateIconStyle)) ? String(dashboardSettings.translateIconStyle) : "3";
-  document.querySelectorAll("input[name=translateIconStyle]").forEach(input => { const selected = input.value === iconStyle; input.checked = selected; input.closest(".settings-icon-display-option")?.classList.toggle("is-selected", selected); });
+  syncSelectionToolbarSettings();
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
   $("settingsFullEnglishDictionary").checked = dashboardSettings.showFullEnglishDictionary !== false;
   $("settingsAutoTranslatePopup").checked = dashboardSettings.autoTranslate !== false;
@@ -3271,7 +3290,8 @@ $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslat
 $("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));
 $("settingsTranslateIconEnabled").addEventListener("change", event => saveDashboardTranslationMode("translateIconEnabled", event.target.checked));
-document.querySelectorAll("input[name=translateIconStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && ["1", "2", "3"].includes(event.target.value)) saveDashboardSettings({ translateIconStyle:event.target.value }); }));
+document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && Object.hasOwn(LHN_SELECTION_TOOLBAR.STYLES, event.target.value)) saveDashboardSettings({ selectionToolbarStyle:event.target.value }); }));
+document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && LHN_SELECTION_TOOLBAR.ACTION_IDS.includes(event.target.value)) saveDashboardSettings({ selectionToolbarLogoAction:event.target.value }); }));
 $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDashboardTranslationMode("translationPopupEnabled", event.target.checked));
 $("settingsFullEnglishDictionary").addEventListener("change", event => saveDashboardSettings({ showFullEnglishDictionary:event.target.checked }));
 $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboardSettings({ autoTranslate:event.target.checked }));
