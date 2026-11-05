@@ -2,6 +2,7 @@
   "use strict";
 
   const HOST_ID = "keepit-chatgpt-ai-toolbar-host";
+  const PAGE_SPACER_ID = "keepit-chatgpt-ai-toolbar-page-spacer";
   const UI_LANGUAGE_KEY = "lhnSettings";
   const SOURCE_LABELS = { en:"Source:", vi:"Nguồn:", ko:"출처:" };
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
@@ -33,7 +34,22 @@
     return Object.hasOwn(SOURCE_LABELS, language) ? language : "en";
   }
 
+  function ensurePageTopSpacer() {
+    const body = document.body;
+    if (!body) return;
+    let spacer = document.getElementById(PAGE_SPACER_ID);
+    if (!spacer) {
+      spacer = document.createElement("div");
+      spacer.id = PAGE_SPACER_ID;
+      spacer.setAttribute("aria-hidden", "true");
+      spacer.setAttribute("role", "presentation");
+      spacer.style.cssText = "all:initial!important;display:block!important;position:static!important;box-sizing:border-box!important;flex:0 0 25px!important;grid-column:1/-1!important;width:100%!important;height:25px!important;min-height:25px!important;max-height:25px!important;margin:0!important;padding:0!important;border:0!important;visibility:hidden!important;pointer-events:none!important;";
+    }
+    if (spacer.parentNode !== body || body.firstChild !== spacer) body.insertBefore(spacer, body.firstChild);
+  }
+
   function create({ sourceUrl = "" } = {}) {
+    ensurePageTopSpacer();
     let host = document.getElementById(HOST_ID);
     if (!host) {
       host = document.createElement("div");

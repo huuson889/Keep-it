@@ -22,7 +22,7 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 2. `LHN_STORAGE` bọc API browser storage. Callers dùng local cho persistent settings/mapping và session cho tab/window route context.
 3. `LHN_CHATGPT_PANEL` build HTTPS ChatGPT URL, validate `/c/<id>`, exact source mapping, prompt/link và sanitize route metadata.
 4. `LHN_CHATGPT_PROMPT_FORMAT` tạo localized URL header + instruction cho opt-in `?q=` và send-time injection. Panel host giữ same-source/same-route fast path; explicit mapped reopen gửi `KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER`, còn đổi route mang marker một lần để content focus composer sau khi sẵn sàng. Context switch thụ động không focus. Content chỉ đọc composer text trong memory; prompt người dùng tự viết không nằm trong background message/storage. Mapping/confirmation vẫn thuộc Background.
-5. `LHN_CHATGPT_AI_TOOLBAR.create({sourceUrl})` hiển thị URL nguồn, hàng AI mở sẵn và toggle auto-send đồng bộ `lhnSettings.chatGPTAutoSend`; theme theo hệ thống, icon dùng `LHN_SITE_ICONS` hoặc favicon nhúng dự phòng.
+5. `LHN_CHATGPT_AI_TOOLBAR.create({sourceUrl})` hiển thị URL nguồn, thêm spacer flow 25px để đẩy trang AI xuống; hàng tab vẫn overlay. Auto-send đồng bộ `lhnSettings.chatGPTAutoSend`; icon dùng `LHN_SITE_ICONS` hoặc favicon dự phòng.
 6. `LHN_UTILS` và `LHN_SANITIZER` xử lý dữ liệu hiển thị; `HIGHLIGHT_STATE` phát sự kiện thay đổi cho các UI.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -33,12 +33,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: bar cao 25px, divider/panel tại 66px; tabs phẳng, 4 cột đều/căn giữa, mỗi tab 30px, padding 2px 10px, chữ 10px. Dark AI row cùng nền bar; active tab dùng link-blue tint. Auto-send dùng setting hiện có, chữ/icon cùng màu.
+- Toolbar: spacer 25px đầu body đẩy trang AI xuống; tab overlay không tăng chiều cao trang. Bar 25px/divider 66px; tabs 4 cột đều, tab 30px, padding 2px 10px, chữ 10px. Dark row cùng nền bar, active tint link-blue; auto-send dùng setting hiện có.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.97 toolbar VM: dark row matches bar, active link-blue tint, bar/tab dimensions, provider behavior — PASS; browser QA pending.
+- v3.5.98 toolbar VM: 25px flow spacer, overlay tab row, idempotency, source/provider behavior — PASS; browser QA pending.
 - v3.5.90 toolbar VM: font stack, URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
 - v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
 - v3.5.86: Content VM confirms exact localized URL header, mapping/send separation and no user-prompt persistence; JS/manifest checks — PASS.
