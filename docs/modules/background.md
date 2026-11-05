@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Background điều phối runtime, storage, panel lifecycle và request. Nó không đọc AI page, composer draft, page body/title, clipboard hay credentials. ChatGPT giữ mapping/route/auto-send; provider khác chỉ nhận prompt draft. Google sign-in của Grok không được handoff qua background; tab fallback thuộc Chromium AI panel.
+Background điều phối runtime, storage, panel lifecycle và request. Nó không đọc AI page, composer draft, page body/title, clipboard hay credentials. ChatGPT giữ mapping/route/auto-send; provider khác chỉ nhận prompt draft. Với Google sign-in nhúng bên trong Grok trong Chromium AI panel, background xác thực frame/ancestor origins rồi tự mở `grok.com` top-level; chỉ giữ tab/window IDs và cooldown chống trùng trong `storage.session`. Không chuyển OAuth URL hay credentials, không đóng tab mới; toolbar button vẫn là fallback.
 
 ## 2. File chính và điểm vào
 
@@ -21,8 +21,9 @@ Background điều phối runtime, storage, panel lifecycle và request. Nó kh�
 2. `AI_PANEL_PROVIDER_SELECTED` xác thực ID rồi lưu theo window trong `storage.session`. Khi panel context đổi, background đọc provider hiện hành và đính `providerId` vào navigation request.
 3. `OPEN_CHATGPT_LINK_PANEL` tiếp tục xử lý URL nguồn, selection tường minh, prompt settings và ChatGPT source mapping. Nếu provider là ChatGPT, route, `?q=` và opt-in auto-send vẫn theo luồng cũ.
 4. Với Gemini/Claude/Grok, background không tra hay tạo ChatGPT mapping và không auto-send. Nó tạo prompt localized từ instruction, exact source URL và (chỉ với Ask AI) selection hiện tại, rồi cấp request ID/provider ID cùng prompt draft ngắn hạn; panel/content side điền prompt vào editor. Draft text người dùng đã nhập trực tiếp vào composer không đi qua Background.
-5. Tab/source context switch giữ debounce per-window; khi hết hạn, request điều hướng provider hiện chọn. Panel close, source supersession và expiry dọn pending request.
-6. Chromium DNR rule 9002 chỉ áp response headers cho subframe trên allowlist host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
+5. Khi nhận `AI_PANEL_GROK_AUTH_FRAME_DETECTED`, background xác thực sender là embedded `accounts.google.com` frame và origin chain có cả Grok lẫn extension panel, sau đó mở/focus `grok.com` top-level. Tab ID/window ID và cooldown 60 giây trong `storage.session` deduplicate; không lấy Google sign-in URL hay credentials.
+6. Tab/source context switch giữ debounce per-window; khi hết hạn, request điều hướng provider hiện chọn. Panel close, source supersession và expiry dọn pending request.
+7. Chromium DNR rule 9002 chỉ áp response headers cho subframe trên allowlist host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -36,6 +37,6 @@ Background điều phối runtime, storage, panel lifecycle và request. Nó kh�
 ## 5. Kiểm tra và xác minh
 
 - Đã chạy provider registry/prompt VM với localized generic prompt, selected text và exact source URL — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
-- DNR VM: migrate rule cũ, allowlist host + `sub_frame` — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
-- Chưa chạy Background VM cho provider storage/debounce, pending cleanup và ChatGPT regressions.
-- Browser QA chưa chạy: kiểm tra Chromium provider iframe/DNR, Firefox sidebar, hai window đồng thời, source change, ChatGPT mapping/auto-send và no-submit trên provider khác.
+- Grok auth VM: frame/sender/origin validation, top-level `grok.com`, duplicate-tab focus, 60-second cooldown, worker restart and concurrent detection — PASS.
+- DNR allowlist/resource-type assertions, all-JS `node --check`, manifest/permission assertions, Firefox transform and `git diff --check` — PASS.
+- Browser QA pending: real Chromium auth-frame ancestry/sign-in behavior and Firefox no-op; also provider iframe/DNR, Firefox sidebar, multiple windows, source change, ChatGPT mapping/auto-send and no-submit on other providers.

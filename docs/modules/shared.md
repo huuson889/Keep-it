@@ -22,8 +22,8 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 2. Chromium đặt `LHN_AI_TOOLBAR` trong panel shell; chọn tab đổi iframe URL và lưu provider theo window. Firefox chuyển trang top-level; toolbar chỉ hiện khi marker hợp lệ và sidebar mở.
 3. `chatgpt-panel.js` xác thực route/mapping ChatGPT, rồi ủy quyền request provider khác cho `LHN_AI_PANEL` để fill editor khi sẵn sàng.
 4. `LHN_AI_PANEL` gửi `KEEPIT_AI_FILL/CLEAR/FOCUS` tới đúng provider origin; `ai-fill.js` trả kết quả, không gửi prompt.
-5. Chromium Grok toolbar button calls `tabs.create` synchronously from the user's click to open `grok.com` top-level; Firefox toolbar does not receive this callback.
-6. Source link/provider selection dùng chung; auto-send và mapping nguồn→conversation chỉ thuộc ChatGPT.
+5. A Chromium-only observer detects a Google sign-in frame embedded within Grok and the AI panel, then asks Background to open the standard `grok.com` start page top-level. It sends no auth URL or credentials and does not close the new tab; Firefox behavior is unchanged.
+6. The Chromium Grok toolbar button remains a manual fallback and calls `tabs.create` from the user's click. Source link/provider selection are shared; auto-send and source→conversation mapping belong only to ChatGPT.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -32,11 +32,12 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 - Mapping, route, `?q=` và opt-in auto-send chỉ thuộc ChatGPT; provider khác nhận prompt tạm, không tạo mapping.
 - Provider state ở `storage.session` theo window, không có global last-chat. Source change giữ source link và clear composer cũ theo request.
 - DNR chỉ áp dụng cho subframe trên allowlist host provider; không dùng rule toàn URL hoặc thêm Google auth. Firefox điều hướng top-level.
-- Nút mở tab chỉ xuất hiện khi Chromium chọn Grok và callback được cung cấp. Nó mở `provider.startUrl` bằng user gesture; không chuyển OAuth URL, không thay đổi iframe, không fill hay submit prompt.
+- Nút mở tab chỉ xuất hiện khi Chromium chọn Grok và callback được cung cấp; đây là manual fallback, mở `provider.startUrl` bằng user gesture. Handoff tự động chỉ do auth-frame observer khởi chạy; cả hai cách không chuyển OAuth URL, không thay đổi iframe, không fill hay submit prompt.
 - Giữ toolbar geometry/palette đã duyệt: bar 25px, tabs 32px, tab 30px, source link xanh, light/dark; auto-send chỉ hiện với ChatGPT.
 
 ## 5. Kiểm tra và xác minh
 
 - Đã chạy: provider/prompt registry VM; editor bridge VM cho bốn provider; Chromium panel VM kiểm tra origin-specific fill/cleanup; Firefox sidebar VM kiểm tra marker, pending fill, cleanup và lifecycle message names — PASS. All-JS `node --check`, manifest parse và `git diff --check` cũng PASS.
-- Grok tab action VM xác nhận nút chỉ được cấp ở Chromium và mở `https://grok.com/` bằng `tabs.create`; All-JS `node --check`, manifest parse, Firefox transform và `git diff --check` — PASS.
-- Browser QA chưa chạy: xác nhận nút toolbar chỉ hiện khi chọn Grok, tab top-level mở và cho phép đăng nhập; phiên đăng nhập trong iframe vẫn không được đảm bảo. Kiểm tra thêm iframe/DNR, Firefox sidebar/provider switching, selector thật, source switching và ChatGPT mapping/auto-send.
+- Grok toolbar VM: fallback chỉ được cấp ở Chromium và mở `https://grok.com/` bằng `tabs.create` — PASS. Embedded-auth detector VM: đúng frame/ancestor chain signal, top-level/wrong provider/Firefox no-op — PASS.
+- All-JS `node --check`, manifest/permission assertions, Firefox transform and `git diff --check` — PASS.
+- Browser QA pending: automatic sign-in handoff and manual fallback on real Chromium; verify Firefox no-op, frame/DNR behavior, provider switching, live selectors, source switching and ChatGPT mapping/auto-send. Embedded-panel session reuse after sign-in remains unverified.

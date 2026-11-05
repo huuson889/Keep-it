@@ -42,6 +42,64 @@ async function rememberAIProviderForWindow(windowId, providerId) {
     return true;
   } catch { return false; }
 }
+const GROK_SIGN_IN_TAB_STORAGE_PREFIX = "keepitGrokSignInTab:";
+const GROK_SIGN_IN_TAB_OPENING = new Set();
+const GROK_SIGN_IN_TAB_MEMORY = new Map();
+function grokSignInTabStorageKey(windowId) { return `${GROK_SIGN_IN_TAB_STORAGE_PREFIX}${windowId}`; }
+async function openGrokSignInTabFromEmbeddedAuth(message, sender) {
+  if (!Number.isInteger(sender?.frameId) || sender.frameId <= 0) return { ok:false, error:"not-an-embedded-frame" };
+  let senderUrl;
+  let extensionOrigin;
+  try {
+    senderUrl = new URL(String(sender.url || ""));
+    const extensionUrl = new URL(browser.runtime.getURL("/"));
+    extensionOrigin = `${extensionUrl.protocol}//${extensionUrl.host}`;
+  } catch { return { ok:false, error:"invalid-auth-frame" }; }
+  const ancestors = Array.isArray(message?.ancestorOrigins) ? message.ancestorOrigins.map(String) : [];
+  const hasGrokAncestor = ancestors.some(origin => globalThis.LHN_AI_PROVIDERS?.fromUrl(origin)?.id === "grok");
+  if (senderUrl.origin !== "https://accounts.google.com" || message.extensionOrigin !== extensionOrigin
+    || !ancestors.includes(extensionOrigin) || !hasGrokAncestor) return { ok:false, error:"auth-frame-not-in-grok-panel" };
+
+  let windowId = sender?.tab?.windowId;
+  if (!Number.isInteger(windowId) || windowId < 0) {
+    try { windowId = (await browser.windows.getLastFocused({ windowTypes:["normal"] }))?.id; } catch {}
+  }
+  if (!Number.isInteger(windowId) || windowId < 0) windowId = chatGPTFocusedWindowId;
+  if (!Number.isInteger(windowId) || windowId < 0) return { ok:false, error:"panel-window-unavailable" };
+  if (GROK_SIGN_IN_TAB_OPENING.has(windowId)) return { ok:true, alreadyOpening:true };
+
+  GROK_SIGN_IN_TAB_OPENING.add(windowId);
+  try {
+    const key = grokSignInTabStorageKey(windowId);
+    let previous = GROK_SIGN_IN_TAB_MEMORY.get(windowId) || null;
+    try { previous = (await browser.storage.session.get(key))?.[key] || previous; } catch {}
+    if (Number.isInteger(previous?.tabId)) {
+      try {
+        const existingTab = await browser.tabs.get(previous.tabId);
+        if (existingTab && (globalThis.LHN_AI_PROVIDERS?.fromUrl(existingTab.url)?.id === "grok"
+          || ["accounts.google.com", "consent.google.com"].includes(new URL(existingTab.url || "").hostname))) {
+          const existingWindowId = Number.isInteger(existingTab.windowId) ? existingTab.windowId : windowId;
+          try { await browser.windows.update(existingWindowId, { focused:true }); } catch {}
+          await browser.tabs.update(existingTab.id, { active:true });
+          return { ok:true, alreadyOpen:true };
+        }
+      } catch {}
+    }
+    if (Number(previous?.cooldownUntil) > Date.now()) return { ok:false, error:"grok-sign-in-tab-cooldown" };
+
+    const provider = globalThis.LHN_AI_PROVIDERS?.get("grok");
+    if (!provider) return { ok:false, error:"grok-provider-unavailable" };
+    let tab;
+    try { tab = await browser.tabs.create({ url:provider.startUrl, active:true, windowId }); }
+    catch { return { ok:false, error:"grok-sign-in-tab-create-failed" }; }
+    if (!Number.isInteger(tab?.id)) return { ok:false, error:"grok-sign-in-tab-create-failed" };
+    const state = { windowId, tabId:tab.id, cooldownUntil:Date.now() + 60000 };
+    GROK_SIGN_IN_TAB_MEMORY.set(windowId, state);
+    try { await browser.storage.session.set({ [key]:state }); } catch {}
+    try { await browser.windows.update(windowId, { focused:true }); } catch {}
+    return { ok:true, opened:true, tabId:tab.id };
+  } finally { GROK_SIGN_IN_TAB_OPENING.delete(windowId); }
+}
 function ensureAIProviderFrameRule(forceUpdate = false) {
   const dnr = globalThis.chrome?.declarativeNetRequest;
   if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules) return Promise.resolve(false);
@@ -1007,6 +1065,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
   if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
+  if (message.type === "AI_PANEL_GROK_AUTH_FRAME_DETECTED") return openGrokSignInTabFromEmbeddedAuth(message, sender);
   if (message.type === "AI_PANEL_PROVIDER_SELECTED") {
     const provider = globalThis.LHN_AI_PROVIDERS?.get(message.providerId);
     const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? chatGPTFocusedWindowId);
