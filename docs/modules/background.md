@@ -22,7 +22,7 @@ Background điều phối runtime, extension storage, panel lifecycle và action
 3. `OPEN_CHATGPT_LINK_PANEL` tiếp tục xử lý URL nguồn, selection tường minh, prompt settings và ChatGPT source mapping. Nếu provider là ChatGPT, route, `?q=` và opt-in auto-send vẫn theo luồng cũ.
 4. Với Gemini/Claude/Grok, background không tra hay tạo ChatGPT mapping và không auto-send. Nó tạo prompt localized từ instruction, exact source URL và (chỉ với Ask AI) selection hiện tại, rồi cấp request ID/provider ID cùng prompt draft ngắn hạn; panel/content side điền prompt vào editor. Draft text người dùng đã nhập trực tiếp vào composer không đi qua Background.
 5. Tab/source context switch giữ debounce per-window; khi hết hạn, request điều hướng provider hiện chọn. Panel close, source supersession và expiry dọn pending request.
-6. Chromium DNR rule 9002 chỉ áp response headers cho subframe từ extension initiator trên danh sách host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
+6. Chromium DNR rule 9002 chỉ áp response headers cho subframe trên allowlist host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -31,10 +31,10 @@ Background điều phối runtime, extension storage, panel lifecycle và action
 - Auto-send chỉ áp dụng luồng ChatGPT đã opt-in. Gemini, Claude, Grok chỉ nhận fill/clear/focus; không click Send, Enter hay kích hoạt submit.
 - Request-scoped prompt/selection không phải composer draft. Không persist, khôi phục, đọc hoặc gửi nội dung người dùng tự gõ trong composer.
 - Giữ `sidePanel.open()`/`sidebarAction.open()` trong user-gesture turn; giữ Alt+X toggle và Hỏi AI open-or-keep-open. Firefox sidebar provider state phải gắn đúng window.
-- DNR giữ `initiatorDomains` là extension ID và `resourceTypes` là `sub_frame`; không dùng CSP-removal rule toàn cục.
+- DNR giữ `requestDomains` đúng allowlist provider và `resourceTypes` là `sub_frame`; không dùng rule toàn URL.
 
 ## 5. Kiểm tra và xác minh
 
 - Đã chạy provider registry/prompt VM với localized generic prompt, selected text và exact source URL — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
-- Chưa chạy focused Background VM cho provider-selection storage, pending request creation/cleanup, debounce đa provider và ChatGPT mapping/auto-send regression.
+- DNR VM: migrate rule cũ, allowlist host + `sub_frame` — PASS. Chưa chạy Background VM cho provider storage/debounce, pending cleanup và ChatGPT regressions.
 - Browser QA chưa chạy: kiểm tra Chrome provider iframe/DNR, Firefox sidebar, hai window đồng thời, source change, ChatGPT mapping/auto-send và no-submit trên provider khác.

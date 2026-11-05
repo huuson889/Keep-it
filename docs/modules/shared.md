@@ -30,7 +30,7 @@ Shared modules cung cấp provider registry, panel control và prompt/route help
 - `ai-fill.js` chỉ find/focus/fill/clear editor trên bốn host; không submit, đọc body/title/clipboard hoặc lưu/restore composer draft.
 - Mapping, route, `?q=` và opt-in auto-send chỉ thuộc ChatGPT; provider khác nhận prompt tạm, không tạo mapping.
 - Provider state ở `storage.session` theo window, không có global last-chat. Source change giữ source link và clear composer cũ theo request.
-- DNR chỉ áp dụng cho subframe từ extension trên allowlist host; không dùng CSP rule toàn cục. Firefox điều hướng top-level.
+- DNR chỉ áp dụng cho subframe trên allowlist host provider; không dùng rule toàn URL. Firefox điều hướng top-level.
 - Giữ toolbar geometry/palette đã duyệt: bar 25px, tabs 32px, tab 30px, source link xanh, light/dark; auto-send chỉ hiện với ChatGPT.
 
 ## 5. Kiểm tra và xác minh

@@ -9,7 +9,7 @@ Content scripts cung cấp UI và hành vi trên website: selection, highlight, 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
 | [`manifest.json`](../../manifest.json) | `content_scripts` | Match provider hosts và thứ tự document-start/document-idle. |
-| [`js/content/ai-fill.js`](../../js/content/ai-fill.js) | `LHN_AI_FILL` | Selectors ChatGPT/Gemini/Claude/Grok; editor operation và Firefox provider toolbar. |
+| [`js/content/ai-fill.js`](../../js/content/ai-fill.js) | `LHN_AI_FILL` | Selectors bốn provider (Grok có textarea fallbacks); editor operation và Firefox toolbar. |
 | [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | request/route listeners | ChatGPT query/follow-up, mapping, route reporting và send workflow. |
 | [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | document-start marker capture | Giữ ChatGPT request/source marker trước app URL rewrite. |
 | [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI và message listeners. |
@@ -34,6 +34,6 @@ Content scripts cung cấp UI và hành vi trên website: selection, highlight, 
 
 ## 5. Kiểm tra và xác minh
 
-- Đã chạy editor bridge VM với textarea mock cho ChatGPT/Gemini/Claude/Grok: tìm editor, fill/clear/focus, provider routing và no-submit guard — PASS. Firefox sidebar VM xác nhận marker/context gate, generic pending fill/cleanup và lifecycle message — PASS. All-JS `node --check` — PASS.
+- Editor VM: bốn provider find/fill/clear/focus/no-submit; Grok selector fallback; Firefox sidebar pending/lifecycle — PASS. All-JS `node --check` — PASS.
 - Chưa xác nhận selectors trên DOM hiện hành của website hay contenteditable/controlled-input behavior.
 - Browser QA Chrome/Firefox chưa chạy: cần xác nhận selector/editor fill/clear/focus trên từng host, iframe policy, provider switching, source change và ChatGPT mapping/auto-send regressions.

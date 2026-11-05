@@ -39,7 +39,10 @@
       'textarea[placeholder*="Ask" i]',
       'textarea[aria-label*="Ask" i]',
       'div[contenteditable="true"][data-placeholder*="Ask" i]',
-      'div[contenteditable="true"][role="textbox"]'
+      'div[contenteditable="true"][role="textbox"]',
+      'div[contenteditable="true"]',
+      'textarea[aria-label]',
+      'textarea'
     ]
   });
 

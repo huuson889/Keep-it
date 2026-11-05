@@ -44,14 +44,13 @@ async function rememberAIProviderForWindow(windowId, providerId) {
 }
 function ensureAIProviderFrameRule(forceUpdate = false) {
   const dnr = globalThis.chrome?.declarativeNetRequest;
-  const extensionId = globalThis.chrome?.runtime?.id;
-  if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules || !extensionId) return Promise.resolve(false);
+  if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules) return Promise.resolve(false);
   return dnr.getDynamicRules().then(rules => {
     const domains = ["chatgpt.com", "chat.openai.com", "gemini.google.com", "claude.ai", "grok.com"];
     const existing = rules.find(rule => rule.id === AI_PROVIDER_FRAME_RULE_ID);
     const existingDomains = Array.isArray(existing?.condition?.requestDomains) ? [...existing.condition.requestDomains].sort() : [];
     if (!forceUpdate && existing && JSON.stringify(existingDomains) === JSON.stringify([...domains].sort())
-      && existing.condition?.initiatorDomains?.includes(extensionId)
+      && !Array.isArray(existing.condition?.initiatorDomains)
       && existing.condition?.resourceTypes?.includes("sub_frame")) return true;
     return dnr.updateDynamicRules({
       removeRuleIds: [AI_PROVIDER_FRAME_RULE_ID],
@@ -64,7 +63,6 @@ function ensureAIProviderFrameRule(forceUpdate = false) {
         ] },
         condition: {
           requestDomains: domains,
-          initiatorDomains: [extensionId],
           resourceTypes: ["sub_frame"]
         }
       }]
