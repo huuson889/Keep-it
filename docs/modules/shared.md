@@ -34,11 +34,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: parent side-panel Chrome dùng flex column và vùng flow 25px trước iframe; source bar phủ vùng đó, AI tabs overlay iframe. Firefox giữ toolbar trong content. Bar 25px/divider 66px; tabs 4 cột đều, tab 30px, padding 2px 10px, chữ 10px. Dark row trùng nền bar; selected tint link-blue; auto-send dùng setting hiện có.
+- Toolbar: parent side-panel Chrome dùng flex column và vùng flow 25px trước iframe; source bar phủ vùng đó, AI tabs overlay iframe. Firefox giữ toolbar trong content. Bar 25px, divider top 61px, blank panel top 66px; tabs row 32px, 4 cột đều, tab 30px, padding 2px 10px, chữ 10px. Dark row trùng nền bar; selected tint link-blue; auto-send dùng setting hiện có.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.101 CSS assertions: `.bar::before` 36px, `.bar::after` top 61px, `.tabs` 32px; bar25/tab30/blank-panel66 preserved — PASS; browser QA pending.
 - v3.5.100 panel layout/static assertions: parent toolbar Chrome, flex flow 25px trước iframe, tabs overlay, đồng bộ URL nguồn và không tạo toolbar trùng ở iframe — PASS; browser QA pending.
 - v3.5.99 toolbar VM: +25px body padding or fixed/absolute app-root top offset, legacy spacer cleanup, idempotency and layout/provider regression assertions — PASS; browser QA pending.
 - v3.5.98 toolbar VM: 25px flow spacer, overlay tab row, idempotency, source/provider behavior — PASS; browser QA pending.
