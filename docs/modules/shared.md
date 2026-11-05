@@ -33,12 +33,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: URL HTTP(S) đầy đủ, màu xanh, nền đặc theo hệ thống, AI capsule mở sẵn và ChatGPT mặc định. Chevron chỉ ẩn/hiện tab; mapping/prompt không đổi. Icon dùng `LHN_SITE_ICONS` hoặc favicon nhúng dự phòng.
+- Toolbar: font Inter-first của Keepit; URL HTTP(S) đầy đủ màu xanh, nền đặc theo hệ thống, AI capsule mở sẵn và ChatGPT mặc định. Chevron chỉ ẩn/hiện tab; mapping/prompt không đổi. Icon dùng `LHN_SITE_ICONS` hoặc favicon nhúng dự phòng.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.89 toolbar VM: URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
+- v3.5.90 toolbar VM: font stack, URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
 - v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
 - v3.5.86: Content VM confirms the shared multiline formatter produces the exact localized URL header before manual send; source URL and user-written prompt remain separate, and the user-written body is not persisted. All first-party JS syntax and manifest checks — PASS.
 - Focused panel VM: sanitize source route, không global fallback, same-source/same-route fast path, force reload khác source dù cùng route, one-shot clear marker khi panel mới/context reload, không prompt tự động, giữ explicit `?q=` — PASS.

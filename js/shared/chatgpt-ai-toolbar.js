@@ -32,7 +32,7 @@
     if (!host) {
       host = document.createElement("div");
       host.id = HOST_ID;
-      host.style.cssText = "all:initial;position:fixed;inset:0 0 auto 0;z-index:2147483647;pointer-events:none;";
+      host.style.cssText = "all:initial;position:fixed;inset:0 0 auto 0;z-index:2147483647;pointer-events:none;font:13px/1.3 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;";
       const shadow = host.attachShadow({ mode:"open" });
       shadow.innerHTML = `
         <style>
