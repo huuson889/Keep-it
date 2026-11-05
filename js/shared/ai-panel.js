@@ -292,8 +292,9 @@
     const target = await chromeProviderUrl(provider, request.targetUrl);
     const currentConversation = providers.normalizeConversationUrl(providerId, frame.src);
     const targetConversation = providers.normalizeConversationUrl(providerId, target);
-    const needsNewConversation = request.mode === "new-link" && !!currentConversation;
-    const needsMappedRoute = ["reopen", "followup"].includes(request.mode)
+    const needsNewConversation = ["new-link", "context-switch"].includes(request.mode)
+      && !!currentConversation && !targetConversation;
+    const needsMappedRoute = ["reopen", "followup", "context-switch"].includes(request.mode)
       && !!targetConversation && currentConversation !== targetConversation;
     const shouldLoad = wasDifferentProvider || !frame.dataset.keepitProvider || needsNewConversation || needsMappedRoute;
     currentProviderId = providerId;

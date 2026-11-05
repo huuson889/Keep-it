@@ -58,6 +58,20 @@
 
   function editorText() { return editorApi.editorText(editorApi.findEditor()); }
 
+  async function waitForEditorText(expectedText, timeoutMs = 900) {
+    const started = Date.now();
+    let stableSamples = 0;
+    while (Date.now() - started < timeoutMs) {
+      const editor = editorApi.findEditor();
+      if (editor && editorApi.editorText(editor) === expectedText) {
+        stableSamples++;
+        if (stableSamples >= 4) return editor;
+      } else stableSamples = 0;
+      await new Promise(resolve => setTimeout(resolve, 35));
+    }
+    return null;
+  }
+
   function findSendButton() {
     const editor = editorApi.findEditor();
     const form = editor?.closest?.("form");
@@ -92,18 +106,6 @@
     return false;
   }
 
-  function replaySend() {
-    bypassManualSendIntercept = true;
-    try {
-      const button = findSendButton();
-      if (button) { button.click(); return true; }
-      const form = editorApi.findEditor()?.closest?.("form");
-      if (typeof form?.requestSubmit === "function") { form.requestSubmit(); return true; }
-    } catch (error) { console.warn("Keepit could not resume the provider send action", error); }
-    finally { setTimeout(() => { bypassManualSendIntercept = false; }, 0); }
-    return false;
-  }
-
   function linkPrompt(websiteLabel, sourceUrl, prompt) {
     const label = String(websiteLabel || "Website");
     const header = `• ${label}: ${sourceUrl}`;
@@ -125,6 +127,12 @@
         reason
       });
     } catch (error) { console.warn("Keepit could not save the provider conversation mapping", error); }
+  }
+
+  async function rejectUnconfirmedManualSend(requestId, sourceUrl, reason) {
+    if (!requestId) return;
+    if (pendingLink?.requestId === requestId) pendingLink = null;
+    await reportCompletion({ requestId, sourceUrl }, false, "", reason || "manual-send-not-confirmed");
   }
 
   function watchForSuccessfulSend(completion) {
@@ -167,10 +175,8 @@
       button = findSendButton();
     }
     if (!button || activeSourceUrl !== completion.sourceUrl) return { ok:false, error:"send-button-unavailable" };
-    if (["auto-send-link", "auto-send-followup"].includes(completion.mode) && editorText() !== completion.sentText) {
-      return { ok:false, error:"prompt-changed-before-auto-send" };
-    }
-    watchForSuccessfulSend(completion);
+    if (editorText() !== completion.sentText) return { ok:false, error:"prompt-changed-before-send" };
+    if (completion.requestId) watchForSuccessfulSend(completion);
     bypassManualSendIntercept = true;
     try { button.click(); }
     catch (error) {
@@ -207,24 +213,34 @@
       console.warn("Keepit could not prepare the source URL for this send", error);
       return;
     }
-    if (!preparation?.ok || !findSendButton()) return;
-    const editor = editorApi.findEditor();
-    if (activeSourceUrl !== sourceUrl || !editor || editorApi.editorText(editor) !== originalPrompt) return;
-    const requestId = String(preparation.requestId || "");
-    if (!preparation.mapped && !requestId) return;
-    const shouldAddSource = preparation.mapped !== true;
-    const sentText = shouldAddSource
-      ? linkPrompt(preparation.websiteLabel || pendingLink?.websiteLabel || "Website", sourceUrl, originalPrompt)
-      : originalPrompt;
-    if (sentText !== originalPrompt && !editorApi.setEditorText(editor, sentText, true)) return;
-    const currentEditor = editorApi.findEditor();
-    if (!currentEditor || editorApi.editorText(currentEditor) !== sentText) return;
-    if (requestId) pendingLink = { providerId:provider.id, requestId, sourceUrl, mode:preparation.mode || pendingLink?.mode || "manual-link" };
-    if (requestId) {
-      await clickSend({ requestId, sourceUrl, mode:preparation.mode || "manual-link", sentText });
-    } else {
-      replaySend();
+    const requestId = String(preparation?.requestId || "");
+    if (!preparation?.ok) {
+      await rejectUnconfirmedManualSend(requestId, sourceUrl, preparation?.error || "manual-send-not-prepared");
+      return;
     }
+    if (!findSendButton()) {
+      await rejectUnconfirmedManualSend(requestId, sourceUrl, "send-button-unavailable");
+      return;
+    }
+    const editor = editorApi.findEditor();
+    if (activeSourceUrl !== sourceUrl || !editor || editorApi.editorText(editor) !== originalPrompt) {
+      await rejectUnconfirmedManualSend(requestId, sourceUrl, "prompt-changed-before-link");
+      return;
+    }
+    if (!preparation.mapped && !requestId) return;
+    const sentText = linkPrompt(preparation.websiteLabel || pendingLink?.websiteLabel || "Website", sourceUrl, originalPrompt);
+    if (sentText !== originalPrompt && !editorApi.setEditorText(editor, sentText, true)) {
+      await rejectUnconfirmedManualSend(requestId, sourceUrl, "source-link-editor-update-failed");
+      return;
+    }
+    const stableEditor = await waitForEditorText(sentText);
+    if (!stableEditor || activeSourceUrl !== sourceUrl) {
+      await rejectUnconfirmedManualSend(requestId, sourceUrl, "source-link-editor-not-stable");
+      return;
+    }
+    if (requestId) pendingLink = { providerId:provider.id, requestId, sourceUrl, mode:preparation.mode || pendingLink?.mode || "manual-link" };
+    const result = await clickSend({ requestId, sourceUrl, mode:preparation.mode || "manual-link", sentText });
+    if (!result?.ok) await rejectUnconfirmedManualSend(requestId, sourceUrl, result?.error || "manual-send-not-confirmed");
   }
 
   function interceptManualSend(event) {

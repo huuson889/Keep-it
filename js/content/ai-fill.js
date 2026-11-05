@@ -352,8 +352,9 @@
     const target = panelTargetUrl(provider, request.targetUrl);
     const currentConversation = providers.normalizeConversationUrl(provider.id, location.href);
     const targetConversation = providers.normalizeConversationUrl(provider.id, target);
-    const needsNewConversation = request.mode === "new-link" && !!currentConversation;
-    const needsMappedRoute = ["reopen", "followup"].includes(request.mode)
+    const needsNewConversation = ["new-link", "context-switch"].includes(request.mode)
+      && !!currentConversation && !targetConversation;
+    const needsMappedRoute = ["reopen", "followup", "context-switch"].includes(request.mode)
       && !!targetConversation && currentConversation !== targetConversation;
     if (needsNewConversation || needsMappedRoute) {
       location.replace(panelUrl(provider, sourceUrl, request));

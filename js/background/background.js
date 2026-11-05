@@ -332,9 +332,12 @@ async function queueChatGPTPageContext(tab, delayMs = CHATGPT_PAGE_CONTEXT_DELAY
         if (chatGPTPageContextRevisions.get(windowId) !== revision) return;
         const selectedProvider = await getAIProviderForWindow(windowId);
         if (chatGPTPageContextRevisions.get(windowId) !== revision) return;
-        const stored = selectedProvider?.id === "chatgpt" ? await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY) : {};
+        const mappingKey = selectedProvider?.conversationMapKey || "";
+        const stored = mappingKey ? await browser.storage.local.get(mappingKey) : {};
         if (chatGPTPageContextRevisions.get(windowId) !== revision) return;
-        const mapped = selectedProvider?.id === "chatgpt" ? safeChatGPTConversationUrl(stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY]?.[sourceUrl]) : "";
+        const mapped = selectedProvider?.id === "chatgpt"
+          ? safeChatGPTConversationUrl(stored?.[mappingKey]?.[sourceUrl])
+          : globalThis.LHN_AI_PROVIDERS?.normalizeConversationUrl(selectedProvider?.id, stored?.[mappingKey]?.[sourceUrl]) || "";
         const request = {
           requestId:`context-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           windowId,
@@ -359,11 +362,13 @@ async function queueChatGPTPageContext(tab, delayMs = CHATGPT_PAGE_CONTEXT_DELAY
   return true;
 }
 browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo?.status !== "complete" || !Number.isInteger(tab?.windowId)) return;
+  const urlChanged = typeof changeInfo?.url === "string";
+  if ((!urlChanged && changeInfo?.status !== "complete") || !Number.isInteger(tab?.windowId)) return;
   if (chatGPTSourceTabs.get(tab.windowId) !== tabId) return;
   const revision = nextChatGPTPageContextRevision(tab.windowId);
   const deadline = Date.now() + CHATGPT_PAGE_CONTEXT_DELAY_MS;
-  void queueChatGPTPageContext(tab, CHATGPT_PAGE_CONTEXT_DELAY_MS, revision, deadline);
+  const updatedTab = urlChanged ? { ...tab, url:changeInfo.url } : tab;
+  void queueChatGPTPageContext(updatedTab, CHATGPT_PAGE_CONTEXT_DELAY_MS, revision, deadline);
 });
 browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (!Number.isInteger(windowId)) return;
@@ -696,7 +701,7 @@ async function prepareAIProviderManualLinkSend(message, sender) {
   if (existing && existing.expiresAt > Date.now() && Number.isInteger(existing.windowId) && existing.windowId !== windowId) {
     return { ok:false, error:"another-panel-request-active" };
   }
-  if (mappedConversation) return { ok:true, mapped:true, conversationUrl:mappedConversation };
+  if (mappedConversation) return { ok:true, mapped:true, conversationUrl:mappedConversation, websiteLabel:settings.websiteLabel };
 
   const requestId = `ai-link-manual-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const pending = { requestId, windowId, sourceTabId:null, sourceUrl, providerId:provider.id, mode:"manual-link", expiresAt:Date.now() + 120000 };

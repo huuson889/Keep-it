@@ -21,8 +21,8 @@ Content scripts cung cấp page UI và editor bridge cho AI providers. `ai-fill.
 
 1. `ai-fill.js` chạy sớm để cung cấp `LHN_AI_FILL`; Chromium toolbar ở extension parent, Firefox toolbar cần marker và sidebar mở.
 2. Parent gửi fill/clear/focus/context/submit tới provider origin. Generic fill chỉ sửa editor; submit chỉ được cấp cho Keepit auto-send mode hợp lệ.
-3. Gemini/Claude draft bỏ URL. Khi user bấm Send/Enter, workflow xin metadata từ Background, thêm localized label + exact URL nếu chưa map, rồi gửi.
-4. Sau khi conversation URL hợp lệ và composer trống, workflow báo `AI_PROVIDER_LINK_RESULT`; Background lưu mapping. Source đó dùng để reopen cùng conversation.
+3. Gemini/Claude draft bỏ URL khi auto-send tắt. Khi user bấm Send/Enter, workflow xin localized label + exact URL, gắn vào prompt tại thời điểm gửi kể cả trên mapped source, rồi chờ editor hiển thị chính xác cùng ổn định qua nhiều lần đọc trước khi click.
+4. Nếu source/editor đổi, update thất bại hoặc exact prompt không còn hiện diện, workflow không gửi và từ chối pending request. Chỉ sau confirmed send—conversation URL hợp lệ và composer trống—workflow báo `AI_PROVIDER_LINK_RESULT` để Background lưu mapping.
 5. Firefox dùng top-level route/marker; `ai-fill.js` điều hướng tới mapped route và chỉ submit mode opt-in.
 6. ChatGPT flow ở `chatgpt-autofill.js`; Grok auth detector chỉ giữ origin validation.
 
@@ -30,7 +30,7 @@ Content scripts cung cấp page UI và editor bridge cho AI providers. `ai-fill.
 
 - Selectors theo host tập trung trong fill module; chỉ thao tác editor trên provider allowlist, không truy vấn body/title/clipboard.
 - `ai-fill.js` generic fill tự nó không submit. Workflow riêng chỉ có thể auto-send Keepit action khi opt-in và composer vẫn khớp chính xác với prompt action; text người dùng sửa/tự gõ không bao giờ bị auto-send.
-- Gemini/Claude giữ URL ngoài draft đến lúc user Send; URL injection áp dụng cả prompt tự gõ và prompt Keepit. Mapping exact URL chỉ lưu sau khi send được xác nhận.
+- Gemini/Claude giữ URL ngoài draft đến lúc user Send; mọi manual prompt, gồm prompt tự gõ và mapped source, nhận localized label + exact current URL. Click Send chỉ khi editor còn đúng prompt dự kiến sau thời gian ổn định; nếu không, không gửi URL-less prompt và không lưu mapping.
 - Không lưu/khôi phục unsent draft. Keepit prompt/selection là request tạm, không phải user composer content.
 - ChatGPT `?q=` riêng; visible tabs chỉ ChatGPT/Gemini/Claude. Grok integration còn nhưng ẩn.
 - Firefox toolbar cần panel marker + sidebar-open; nested frames không nhận editor bridge.
@@ -38,6 +38,6 @@ Content scripts cung cấp page UI và editor bridge cho AI providers. `ai-fill.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.107 đã chạy all-JS `node --check`, manifest/script registration, provider registry, AI panel mapped-route, Firefox content-route, background queue/mapping và Gemini/Claude send-interception VM checks — PASS. Kiểm tra gồm URL-free draft, send-time insertion, mapped omission, confirmed mapping và changed text không auto-send.
-- Firefox build transform xác nhận manifest/script mới — PASS. Live provider selectors/editor behavior chưa được kiểm tra.
+- `node --test tests/ai-panel-v3.5.108.test.js` — 7/7 PASS, gồm same-tab URL update, selected-provider map routing, manual send URL on mapped source, unstable editor no-click/no-map, and mapping only after confirmation.
+- Full all-JS syntax, Firefox build transform, docs structure and final archive checks remain pending. Live Gemini/Claude editor behavior and authenticated browser QA are not yet verified.
 - Browser QA Chromium/Firefox pending: provider tabs, send-time URL injection, opt-in auto-send, exact mapping/reopen, source switch, selectors, ChatGPT regression và legacy Grok auth behavior.
