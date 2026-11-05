@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.5.103; Manifest V3, một codebase Chromium/Firefox. Bản đồ kiến trúc và module ở mục 4.
+- Version hiện tại: v3.5.104; Manifest V3, một codebase Chromium/Firefox. Bản đồ kiến trúc và module ở mục 4.
 - AI panel có registry chung ChatGPT/Gemini/Claude/Grok; Chromium dùng iframe trong side panel, Firefox provider đổi trang top-level trong sidebar. Generic fill chỉ điền composer, không gửi.
+- Chromium chuyển Google sign-in phát sinh trong Grok iframe sang popup và reload Grok khi callback quay về; cookie/session reuse trong iframe chưa được browser-QA xác nhận.
 - Mapping, route, prompt format và opt-in auto-send vẫn là workflow riêng của ChatGPT. Không đọc body/title/clipboard hoặc lưu/khôi phục composer draft.
-- Đã đối chiếu và sửa Grok iframe rule cùng textarea fallback theo file demo người dùng gửi; static/VM checks đạt. Browser/editor-selector QA thực tế vẫn chưa chạy.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### AI panel providers v3.5.103
-- Browser QA pending trên Chromium và Firefox: bốn tab/provider, provider persistence theo window, iframe CSP/DNR scope, Firefox top-level sidebar switching, source link/context switch, selectors fill/clear/focus trên từng host; xác nhận provider khác ChatGPT không Send/Enter/submit, không đọc body/title/clipboard, không lưu/khôi phục draft. Chạy regression ChatGPT mapping, prompt, `?q=`, auto-send opt-in và Firefox panel lifecycle.
+### AI panel providers v3.5.104
+- Browser QA pending trên Chromium và Firefox: Google sign-in Grok trong Chromium mở đúng popup, callback về Grok đóng popup, focus window và reload panel; xác nhận đăng nhập có được dùng lại trong iframe hay cần tab fallback. Tiếp tục kiểm tra bốn tab/provider, provider persistence theo window, iframe CSP/DNR scope, Firefox top-level sidebar switching, source link/context switch, selectors fill/clear/focus trên từng host; xác nhận provider khác ChatGPT không Send/Enter/submit, không đọc body/title/clipboard, không lưu/khôi phục draft. Chạy regression ChatGPT mapping, prompt, `?q=`, auto-send opt-in và Firefox panel lifecycle.
 - Chưa xác nhận selector hiện hành của Gemini/Claude/Grok trên DOM thật. HTTP HEAD từ workspace nhận X-Frame-Options: DENY ở Gemini và Grok; Claude trả 403 nên frame policy không quan sát được. Browser QA trên phiên đăng nhập còn bắt buộc; không nới DNR/CSP ngoài host đã allowlist.
 
 ### Reader ↔ Web TTS shared speed
@@ -73,6 +73,7 @@ Keepit - Test/
 │   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
 │   ├── content/                   # Page interaction and provider editor content scripts
 │   │   ├── ai-fill.js             # Four provider selectors + shared editor fill/clear/focus; never submits
+│   │   ├── grok-google-auth.js    # Chromium Grok iframe Google-auth handoff detection
 │   │   ├── chatgpt-autofill.js    # ChatGPT-only prompt, mapping, route and opt-in auto-send
 │   │   ├── chatgpt-link-marker.js # document_start ChatGPT request/source marker
 │   │   ├── sidebar.js             # Page sidebar tabs and search tools
@@ -157,11 +158,18 @@ Video source (`js/overlay/source/video.js`: `state.allCues`, `sourceLanguage`, v
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; Hỏi AI mở hoặc giữ panel mở. Provider selection được lưu theo window trong `storage.session`. Chromium giữ provider trong iframe của panel; Firefox dùng sidebar native và chuyển provider top-level. ChatGPT giữ workflow hiện có: Dashboard Settings → Hỏi AI chỉnh câu kết và auto-send (mặc định tắt cài đặt mới; preference đã lưu được giữ); exact source→conversation mapping, request-scoped prompt/selection, native `?q=` opt-in, route metadata và focus behavior vẫn chỉ thuộc ChatGPT. Provider khác dùng prompt generic localized gồm exact source URL và chỉ selection hiện tại khi Hỏi AI; shared editor bridge điền prompt vào composer, người dùng tự gửi. Không đọc page body/title/clipboard, không submit provider khác và không lưu/khôi phục unsent composer draft. Tab/source context đổi dùng debounce 2 giây; đóng panel hủy timer/request. Khi mở lại, ChatGPT chỉ dùng source metadata/mapping chính xác rồi ChatGPT trống; không dùng global last conversation. Chrome toolbar ở parent side-panel shell với 25px flow reserve; Firefox toolbar content-side top-level. Toolbar giữ source link, provider tabs, auto-send chỉ hiện với ChatGPT, theme/icon behavior và accepted geometry (bar 25px, divider 61px, tabs 32px, tabs controls 30px). DNR rule 9002 chỉ nhắm subframe trên allowlist host AI cụ thể; Firefox không dùng iframe. Manifest không cấp quyền clipboard.
+Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; Hỏi AI mở hoặc giữ panel mở. Provider selection được lưu theo window trong `storage.session`. Chromium giữ provider trong iframe của panel; Firefox dùng sidebar native và chuyển provider top-level. Nếu Google sign-in của Grok mở trong iframe Chromium, content script chỉ nhận diện Google frame có extension ancestor; Background mở URL Google trong popup, đóng popup khi callback về host Grok và gửi reload cho đúng panel/window. Chỉ window/tab IDs và cooldown được giữ ngắn hạn trong `storage.session`, không lưu URL OAuth hoặc credentials. ChatGPT giữ workflow hiện có: Dashboard Settings → Hỏi AI chỉnh câu kết và auto-send (mặc định tắt cài đặt mới; preference đã lưu được giữ); exact source→conversation mapping, request-scoped prompt/selection, native `?q=` opt-in, route metadata và focus behavior vẫn chỉ thuộc ChatGPT. Provider khác dùng prompt generic localized gồm exact source URL và chỉ selection hiện tại khi Hỏi AI; shared editor bridge điền prompt vào composer, người dùng tự gửi. Không đọc page body/title/clipboard, không submit provider khác và không lưu/khôi phục unsent composer draft. Tab/source context đổi dùng debounce 2 giây; đóng panel hủy timer/request. Khi mở lại, ChatGPT chỉ dùng source metadata/mapping chính xác rồi ChatGPT trống; không dùng global last conversation. Chrome toolbar ở parent side-panel shell với 25px flow reserve; Firefox toolbar content-side top-level. Toolbar giữ source link, provider tabs, auto-send chỉ hiện với ChatGPT, theme/icon behavior và accepted geometry (bar 25px, divider 61px, tabs 32px, tabs controls 30px). DNR rule 9002 chỉ nhắm subframe trên allowlist host AI cụ thể; Firefox không dùng iframe. Manifest không cấp quyền clipboard.
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-05 | v3.5.104 | Arena.ai Agent sửa:**
+
+- Chromium Grok Google sign-in được bàn giao từ iframe sang popup xác thực top-level; khi popup điều hướng về host Grok, background đóng popup, focus cửa sổ AI panel và yêu cầu reload iframe.
+- Handoff bị giới hạn vào Google iframe có extension origin trong ancestor chain, đúng Google auth URL, provider Grok đang chọn và callback thuộc Grok registry. Không thêm permissions, không mở rộng DNR, không lưu OAuth URL/credentials, không thay đổi generic fill/ChatGPT workflow.
+- File: `manifest.json`, `js/content/grok-google-auth.js`, `js/background/background.js`, `js/shared/ai-panel.js`, `README.md`, `PRIVACY-POLICY.md`, `PROJECT.md`, `docs/modules/{background,content,shared}.md`.
+- Kiểm tra: Grok Google-auth VM, AI-panel callback/reload VM (đúng window/provider/frame, worker restart, callback/cooldown) — PASS; all-JS `node --check`, manifest/version/permission/path checks, Firefox transform và `git diff --check` — PASS. Chromium/Firefox browser QA chưa chạy; cookie/session reuse của Grok trong iframe sau top-level sign-in vẫn cần xác minh.
 
 **2026-11-05 | v3.5.103 | Arena.ai Agent sửa:**
 
