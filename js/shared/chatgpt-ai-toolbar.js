@@ -239,12 +239,12 @@
             font-weight: 650;
           }
           @media (prefers-color-scheme: dark) {
-            .tabs { background: #2e2e2e; }
+            .tabs { background: var(--bar); }
             .tab { color: #a2a2a2; }
             .tab:hover { color: #f4f4f4; background: #333333; }
             .tab[aria-selected="true"] {
-              color: #f4f4f4;
-              background: #3b3b3b;
+              color: var(--link);
+              background: color-mix(in srgb, var(--link) 18%, var(--bar));
               font-weight: 700;
             }
           }
