@@ -11,6 +11,12 @@
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
   const CHEVRON_LABELS = { en:"Show or hide AI services", vi:"Hiện/ẩn hàng AI", ko:"AI 서비스 표시/숨기기" };
   const AUTO_SEND_LABELS = { en:"Auto-send", vi:"Tự động gửi", ko:"자동 전송" };
+  const COPY_LINK_LABELS = { en:"Copy link", vi:"Sao chép liên kết", ko:"링크 복사" };
+  const COPY_RESULT_LABELS = {
+    en:{ ok:"Link copied", failed:"Could not copy the link" },
+    vi:{ ok:"Đã sao chép liên kết", failed:"Không sao chép được liên kết" },
+    ko:{ ok:"링크를 복사했습니다", failed:"링크를 복사하지 못했습니다" },
+  };
   const OPEN_GROK_TAB_LABELS = { en:"Open Grok in a new tab", vi:"Mở Grok trong tab mới", ko:"새 탭에서 Grok 열기" };
   const AUTO_SEND_STATUS_LABELS = {
     en:{ on:"Auto-send is on", off:"Auto-send is off" },
@@ -87,6 +93,9 @@
             --faint: #8f8f8f;
             --link: #78a5ff;
             --auto-send-brand: #a5a9ff;
+            --copied: #4ade80;
+            --toast-bg: #f4f4f4;
+            --toast-text: #1f1f1f;
           }
           @media (prefers-color-scheme: light) {
             :host {
@@ -103,6 +112,9 @@
               --faint: #8795a8;
               --link: #4d6bb8;
               --auto-send-brand: #4f46e5;
+              --copied: #16a34a;
+              --toast-bg: #253348;
+              --toast-text: #ffffff;
             }
           }
           *, *::before, *::after { box-sizing: border-box; }
@@ -194,6 +206,71 @@
           .auto-send:disabled { opacity: .65; cursor: wait; }
           .auto-send-label, .auto-send svg { color: inherit; }
           .auto-send svg { flex: 0 0 12.8px; width: 12.8px; height: 12.8px; }
+          .copy-link {
+            position: relative;
+            display: grid;
+            flex: 0 0 25px;
+            place-items: center;
+            width: 25px;
+            height: 25px;
+            margin-right: -5px;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--muted);
+            background: var(--bar);
+            cursor: pointer;
+          }
+          .copy-link:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
+          .copy-link:disabled { opacity: .45; cursor: default; }
+          .copy-link:disabled:hover { border-color: transparent; background: var(--bar); color: var(--muted); }
+          .copy-link svg { grid-area: 1 / 1; width: 13px; height: 13px; transition: opacity .16s ease, transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+          .copy-link .copy-done { color: var(--copied); opacity: 0; transform: scale(.4); }
+          .copy-link.is-copied { color: var(--copied); }
+          .copy-link.is-copied .copy-idle { opacity: 0; transform: scale(.4); }
+          .copy-link.is-copied .copy-done { opacity: 1; transform: scale(1); }
+          .copy-link.is-copied::after {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 var(--copied);
+            content: "";
+            animation: keepit-copy-ring .5s ease-out;
+            pointer-events: none;
+          }
+          @keyframes keepit-copy-ring {
+            from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--copied) 45%, transparent); }
+            to { box-shadow: 0 0 0 7px transparent; }
+          }
+          .copy-toast {
+            position: absolute;
+            z-index: 6;
+            top: 72.6px;
+            left: 50%;
+            max-width: calc(100% - 24px);
+            padding: 5px 10px;
+            overflow: hidden;
+            border-radius: 7px;
+            color: var(--toast-text);
+            background: var(--toast-bg);
+            box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+            font-size: 11px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate(-50%, -4px);
+            transition: opacity .16s ease, transform .16s ease, visibility 0s linear .16s;
+          }
+          .bar:not(.is-expanded) .copy-toast { top: 33px; }
+          .copy-toast.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0);
+            transition: opacity .16s ease, transform .16s ease, visibility 0s;
+          }
           .open-grok-tab {
             display: grid;
             flex: 0 0 25px;
@@ -224,7 +301,7 @@
             cursor: pointer;
           }
           .chevron:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
-          .auto-send:focus-visible, .open-grok-tab:focus-visible, .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
+          .copy-link:focus-visible, .auto-send:focus-visible, .open-grok-tab:focus-visible, .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
             outline: 2px solid var(--link);
             outline-offset: 2px;
           }
@@ -329,8 +406,9 @@
           @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
         </style>
         <div class="bar is-expanded">
-          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="open-grok-tab" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="copy-link" type="button" aria-label="Sao chép liên kết" title="Sao chép liên kết" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy copy-idle" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check copy-done" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="open-grok-tab" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
           <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">${PROVIDERS.map(provider => `<button class="tab" type="button" role="tab" data-provider="${provider.id}" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">${provider.name.slice(0, 1)}</span></span><span class="tab-label">${provider.name}</span></button>`).join("")}</div>
+          <div class="copy-toast" role="status" aria-live="polite"></div>
         </div>`;
       document.documentElement.append(host);
     }
@@ -346,6 +424,10 @@
     const autoSendButton = shadow.querySelector(".auto-send");
     const autoSendLabel = shadow.querySelector(".auto-send-label");
     const openGrokTabButton = shadow.querySelector(".open-grok-tab");
+    const copyLinkButton = shadow.querySelector(".copy-link");
+    const copyToast = shadow.querySelector(".copy-toast");
+    let copyFeedbackTimer = null;
+    let copyToastTimer = null;
     const providerButtons = [...shadow.querySelectorAll("[data-provider]")];
     let currentSourceUrl = "";
     let selectedProvider = PROVIDER_IDS.has(initialProvider) ? initialProvider : "chatgpt";
@@ -365,12 +447,14 @@
         sourceLink.textContent = `${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
         sourceLink.hidden = false;
         emptySource.hidden = true;
+        copyLinkButton.disabled = false;
       } else {
         sourceLink.removeAttribute("href");
         sourceLink.textContent = "";
         sourceLink.hidden = true;
         emptySource.textContent = "";
         emptySource.hidden = false;
+        copyLinkButton.disabled = true;
       }
     }
 
@@ -388,6 +472,46 @@
       const label = OPEN_GROK_TAB_LABELS[uiLanguage];
       openGrokTabButton.setAttribute("aria-label", label);
       openGrokTabButton.title = label;
+    }
+
+    function renderCopyLink() {
+      const label = COPY_LINK_LABELS[uiLanguage];
+      copyLinkButton.setAttribute("aria-label", label);
+      copyLinkButton.title = label;
+    }
+
+    function showCopyToast(text) {
+      clearTimeout(copyToastTimer);
+      copyToast.textContent = text;
+      copyToast.classList.add("is-visible");
+      copyToastTimer = setTimeout(() => copyToast.classList.remove("is-visible"), 1600);
+    }
+
+    function copyWithSelection(text) {
+      // Fallback for pages where the async Clipboard API is unavailable; writes only, never reads.
+      const field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+      shadow.append(field);
+      field.select();
+      let copied = false;
+      try { copied = document.execCommand("copy"); } catch {}
+      field.remove();
+      copyLinkButton.focus({ preventScroll:true });
+      return copied;
+    }
+
+    async function copySourceLink() {
+      const text = currentSourceUrl;
+      if (!text) return false;
+      try {
+        if (typeof navigator.clipboard?.writeText === "function") {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {}
+      return copyWithSelection(text);
     }
 
     function renderAutoSend() {
@@ -471,6 +595,18 @@
       renderAutoSend();
     });
 
+    copyLinkButton.addEventListener("click", async () => {
+      if (copyLinkButton.disabled || !currentSourceUrl) return;
+      const copied = await copySourceLink();
+      showCopyToast(COPY_RESULT_LABELS[uiLanguage][copied ? "ok" : "failed"]);
+      if (!copied) return;
+      clearTimeout(copyFeedbackTimer);
+      copyLinkButton.classList.remove("is-copied");
+      void copyLinkButton.offsetWidth;
+      copyLinkButton.classList.add("is-copied");
+      copyFeedbackTimer = setTimeout(() => copyLinkButton.classList.remove("is-copied"), 1600);
+    });
+
     openGrokTabButton.addEventListener("click", () => {
       if (openGrokTabButton.hidden || typeof onOpenGrokInTab !== "function") return;
       try { Promise.resolve(onOpenGrokInTab()).catch(error => console.warn("Keepit could not open Grok in a tab", error)); }
@@ -508,6 +644,7 @@
       autoSendButton.disabled = false;
       renderAutoSend();
       renderOpenGrokTab();
+      renderCopyLink();
       renderExpansion();
       renderProvider();
     })();
@@ -522,12 +659,14 @@
       tabs.setAttribute("aria-label", TABS_LABELS[uiLanguage]);
       renderAutoSend();
       renderOpenGrokTab();
+      renderCopyLink();
       renderExpansion();
       renderProvider();
     });
 
     setSourceUrl(sourceUrl);
     renderOpenGrokTab();
+    renderCopyLink();
     renderExpansion();
     renderProvider();
     loadProviderIcons();
