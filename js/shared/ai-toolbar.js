@@ -17,7 +17,7 @@
     vi:{ on:"Tự động gửi đang bật", off:"Tự động gửi đang tắt" },
     ko:{ on:"자동 전송 켜짐", off:"자동 전송 꺼짐" },
   };
-  const PROVIDERS = globalThis.LHN_AI_PROVIDERS?.list || [];
+  const PROVIDERS = globalThis.LHN_AI_PROVIDERS?.panelList || globalThis.LHN_AI_PROVIDERS?.list || [];
   const PROVIDER_IDS = new Set(PROVIDERS.map(provider => provider.id));
   const PROVIDER_SITES = Object.fromEntries(PROVIDERS.map(provider => [provider.id, provider.startUrl]));
   const PROVIDER_ICON_DATA = {
@@ -378,7 +378,7 @@
         button.setAttribute("aria-selected", String(selected));
         button.tabIndex = selected ? 0 : -1;
       }
-      autoSendButton.hidden = selectedProvider !== "chatgpt";
+      autoSendButton.hidden = !["chatgpt", "gemini", "claude"].includes(selectedProvider);
       openGrokTabButton.hidden = selectedProvider !== "grok" || typeof onOpenGrokInTab !== "function";
     }
 

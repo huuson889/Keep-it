@@ -2,40 +2,42 @@
 
 ## 1. Mục đích và phạm vi
 
-Content scripts cung cấp UI và hành vi trên website: selection, highlight, note, Reader và editor bridge cho AI providers. `ai-fill.js` sở hữu thao tác tìm/fill/clear/focus composer dùng chung; `chatgpt-autofill.js` giữ nguyên workflow ChatGPT-specific như mapping, route, prompt format và auto-send đã opt-in. Một script riêng chỉ quan sát frame Google sign-in nhúng bên trong Grok trong Chromium AI panel và gửi các origin cần xác thực cho Background; không đọc nội dung trang hoặc trường đăng nhập.
+Content scripts cung cấp page UI và editor bridge cho AI providers. `ai-fill.js` thao tác composer; `chatgpt-autofill.js` giữ ChatGPT flow; `ai-provider-workflow.js` xử lý Gemini/Claude Send và mapping. Grok tab bị ẩn; auth-frame detector legacy vẫn tồn tại. Không đọc page body hoặc trường đăng nhập.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `content_scripts` | Match provider hosts và thứ tự document-start/document-idle. |
-| [`js/content/ai-fill.js`](../../js/content/ai-fill.js) | `LHN_AI_FILL` | Selectors bốn provider (Grok có textarea fallbacks); editor operation và Firefox toolbar. |
-| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | request/route listeners | ChatGPT query/follow-up, mapping, route reporting và send workflow. |
-| [`js/content/grok-google-auth.js`](../../js/content/grok-google-auth.js) | `AI_PANEL_GROK_AUTH_FRAME_DETECTED` | Chỉ khi Google sign-in frame được nhúng trong Grok và AI panel, gửi frame/ancestor origins để Background mở Grok top-level. |
-| [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | document-start marker capture | Giữ ChatGPT request/source marker trước app URL rewrite. |
-| [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Settings, selection, UI và message listeners. |
-| [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Sidebar tabs và controls. |
+| [`manifest.json`](../../manifest.json) | `content_scripts` | Provider host matches và script order. |
+| [`js/content/ai-fill.js`](../../js/content/ai-fill.js) | `LHN_AI_FILL` | Editor selectors/operations, panel context, Firefox toolbar. |
+| [`js/content/ai-provider-workflow.js`](../../js/content/ai-provider-workflow.js) | `LHN_AI_PROVIDER_WORKFLOW` | Gemini/Claude Send, URL injection, opt-in submit, mapping report. |
+| [`js/content/chatgpt-autofill.js`](../../js/content/chatgpt-autofill.js) | request listeners | ChatGPT prompt, mapping and send workflow. |
+| [`js/content/grok-google-auth.js`](../../js/content/grok-google-auth.js) | auth-frame message | Validates embedded Google/Grok ancestor origins. |
+| [`js/content/chatgpt-link-marker.js`](../../js/content/chatgpt-link-marker.js) | marker capture | Keeps ChatGPT source markers before URL rewrite. |
+| [`js/content/content.js`](../../js/content/content.js) | IIFE controller | Page settings, selection and messages. |
+| [`js/content/sidebar.js`](../../js/content/sidebar.js) | `LHN_SIDEBAR.create` | Page sidebar controls. |
 
 ## 3. Luồng chính
 
-1. `ai-fill.js` chạy sớm trên bốn AI host để nhận diện panel marker và cung cấp `LHN_AI_FILL`; ở Chromium iframe, toolbar nằm ở extension parent. Trên Firefox, script chỉ tạo toolbar nếu URL/session/referrer marker hợp lệ và native sidebar đang mở.
-2. Chromium parent gửi `KEEPIT_AI_FILL`, `KEEPIT_AI_CLEAR` hoặc `KEEPIT_AI_FOCUS` tới đúng provider origin. Content script kiểm tra parent source/origin/provider ID, thao tác trên editor tương ứng rồi trả kết quả; không gửi form.
-3. Firefox toolbar chọn provider bằng top-level navigation và mang theo marker/source URL. Khi background tạo navigation request cho provider khác ChatGPT, `ai-fill.js` đọc request/pending prompt, chuyển trang nếu cần, fill editor rồi dọn request.
-4. ChatGPT vẫn dùng `chatgpt-autofill.js` cho `?q=`, mapped follow-up, source mapping, focus-after-send và existing auto-send contract. Các helper editor trong file này ủy quyền cho `LHN_AI_FILL`.
-5. `grok-google-auth.js` chỉ chạy hành động trên Chromium (`chrome-extension:`), tại `accounts.google.com` frame có ancestry chứa Grok và extension origin; nó gửi `AI_PANEL_GROK_AUTH_FRAME_DETECTED`. Không truyền URL auth/credentials; Firefox được thoát sớm và không thay đổi hành vi.
-6. `CHATGPT_PANEL_SOURCE_CONTEXT` và route reports đồng bộ source metadata; passive context switch không tự tạo prompt/send. Source change theo request có thể clear editor cũ trước khi provider nhận prompt mới.
+1. `ai-fill.js` chạy sớm để cung cấp `LHN_AI_FILL`; Chromium toolbar ở extension parent, Firefox toolbar cần marker và sidebar mở.
+2. Parent gửi fill/clear/focus/context/submit tới provider origin. Generic fill chỉ sửa editor; submit chỉ được cấp cho Keepit auto-send mode hợp lệ.
+3. Gemini/Claude draft bỏ URL. Khi user bấm Send/Enter, workflow xin metadata từ Background, thêm localized label + exact URL nếu chưa map, rồi gửi.
+4. Sau khi conversation URL hợp lệ và composer trống, workflow báo `AI_PROVIDER_LINK_RESULT`; Background lưu mapping. Source đó dùng để reopen cùng conversation.
+5. Firefox dùng top-level route/marker; `ai-fill.js` điều hướng tới mapped route và chỉ submit mode opt-in.
+6. ChatGPT flow ở `chatgpt-autofill.js`; Grok auth detector chỉ giữ origin validation.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Selectors theo host chỉ nằm trong một shared fill module; mọi thao tác chỉ trên editor của host đã allowlist. Không truy vấn body/title/clipboard.
-- Generic fill phải thay composer text, focus nếu được yêu cầu và phát input/change phù hợp; tuyệt đối không click Send, nhấn Enter hoặc submit form.
-- Không lưu hoặc khôi phục unsent composer drafts. Pending prompt/selection là request action tạm, không phải nội dung composer người dùng.
-- Giữ ChatGPT-specific validation, source→conversation mapping, localized prompt formatting, route watcher và auto-send opt-in chỉ trong ChatGPT workflow; không áp dụng cho Gemini, Claude hay Grok.
-- Firefox ordinary AI tabs không được có Keepit toolbar; yêu cầu panel marker cộng với trạng thái sidebar đang mở. Nested frames không được nhận toolbar/editor bridge.
-- Keep URL scheme/provider origin checks, request ID matching, source supersession, expiry và clear behavior khi đổi source.
+- Selectors theo host tập trung trong fill module; chỉ thao tác editor trên provider allowlist, không truy vấn body/title/clipboard.
+- `ai-fill.js` generic fill tự nó không submit. Workflow riêng chỉ có thể auto-send Keepit action khi opt-in và composer vẫn khớp chính xác với prompt action; text người dùng sửa/tự gõ không bao giờ bị auto-send.
+- Gemini/Claude giữ URL ngoài draft đến lúc user Send; URL injection áp dụng cả prompt tự gõ và prompt Keepit. Mapping exact URL chỉ lưu sau khi send được xác nhận.
+- Không lưu/khôi phục unsent draft. Keepit prompt/selection là request tạm, không phải user composer content.
+- ChatGPT `?q=` riêng; visible tabs chỉ ChatGPT/Gemini/Claude. Grok integration còn nhưng ẩn.
+- Firefox toolbar cần panel marker + sidebar-open; nested frames không nhận editor bridge.
+- Giữ HTTPS/host checks, request ID, expiry và source-change clear.
 
 ## 5. Kiểm tra và xác minh
 
-- Editor VM: bốn provider find/fill/clear/focus/no-submit; Grok selector fallback; Firefox sidebar pending/lifecycle — PASS. Grok auth detector VM: valid Chromium frame chain signals, while wrong ancestor, top-level, and `moz-extension:` no-op — PASS.
-- All-JS `node --check` — PASS; live provider selectors/editor behavior remain unverified.
-- Browser QA Chromium/Firefox pending: automatic Grok auth tab, manual fallback, selector/editor behavior, provider switching, source change, and ChatGPT mapping/auto-send regressions.
+- v3.5.107 đã chạy all-JS `node --check`, manifest/script registration, provider registry, AI panel mapped-route, Firefox content-route, background queue/mapping và Gemini/Claude send-interception VM checks — PASS. Kiểm tra gồm URL-free draft, send-time insertion, mapped omission, confirmed mapping và changed text không auto-send.
+- Firefox build transform xác nhận manifest/script mới — PASS. Live provider selectors/editor behavior chưa được kiểm tra.
+- Browser QA Chromium/Firefox pending: provider tabs, send-time URL injection, opt-in auto-send, exact mapping/reopen, source switch, selectors, ChatGPT regression và legacy Grok auth behavior.

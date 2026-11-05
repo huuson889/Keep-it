@@ -54,7 +54,7 @@
     try {
       const stored = await browser.storage.session?.get?.(PROVIDER_BY_WINDOW_KEY);
       const providerId = stored?.[PROVIDER_BY_WINDOW_KEY]?.[String(windowId)] || "chatgpt";
-      return providers?.get(providerId)?.id || "chatgpt";
+      return providers?.isPanelProvider(providerId) ? providers.get(providerId).id : "chatgpt";
     } catch { return "chatgpt"; }
   }
 
@@ -73,17 +73,33 @@
     currentSourceUrl = safeSourceUrl(value);
     toolbar?.setSourceUrl(currentSourceUrl);
     const frameProvider = frame ? providers?.fromUrl(frame.src) : null;
-    if (currentProviderId === "chatgpt" && frameProvider?.id === "chatgpt" && frame?.contentWindow && currentSourceUrl) {
+    if (frameProvider && frameProvider.id === currentProviderId && frame?.contentWindow) {
       try {
         const targetOrigin = new URL(frame.src).origin;
-        frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl:currentSourceUrl }, targetOrigin);
-      } catch { /* ChatGPT may be navigating. */ }
+        const message = frameProvider.id === "chatgpt"
+          ? { type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl:currentSourceUrl }
+          : { type:"KEEPIT_AI_PANEL_CONTEXT", providerId:frameProvider.id, sourceUrl:currentSourceUrl };
+        frame.contentWindow.postMessage(message, targetOrigin);
+      } catch { /* Provider iframe may be navigating. */ }
     }
     return currentSourceUrl;
   }
 
+  function providerTargetUrl(provider, value) {
+    const safe = safeProviderUrl(provider, value);
+    if (!safe || provider.id === "chatgpt") return safe || provider.startUrl;
+    const conversation = providers.normalizeConversationUrl(provider.id, safe);
+    if (conversation) return conversation;
+    try {
+      const target = new URL(safe);
+      const start = new URL(provider.startUrl);
+      if (target.origin === start.origin && target.pathname === start.pathname) return `${start.origin}${start.pathname}`;
+    } catch {}
+    return provider.startUrl;
+  }
+
   function firefoxPanelUrl(provider, sourceUrl, request = null) {
-    const url = new URL(provider.startUrl);
+    const url = new URL(request?.targetUrl ? providerTargetUrl(provider, request.targetUrl) : provider.startUrl);
     const params = new URLSearchParams(url.hash.replace(/^#/, ""));
     if (provider.id === "chatgpt") {
       params.set(CHATGPT_PANEL_MARKER, "1");
@@ -115,6 +131,16 @@
     } catch { return providers.get("chatgpt").startUrl; }
   }
 
+  async function providerUrlForSource(provider, sourceUrl) {
+    if (!provider || !sourceUrl) return provider?.startUrl || "";
+    if (provider.id === "chatgpt") return chatGPTUrlForSource(sourceUrl);
+    if (!provider.conversationMapKey) return provider.startUrl;
+    try {
+      const stored = await browser.storage.local.get(provider.conversationMapKey);
+      return safeProviderUrl(provider, providers.normalizeConversationUrl(provider.id, stored?.[provider.conversationMapKey]?.[sourceUrl])) || provider.startUrl;
+    } catch { return provider.startUrl; }
+  }
+
   function safeProviderUrl(provider, value) {
     try {
       const url = new URL(String(value || ""));
@@ -124,9 +150,8 @@
   }
 
   async function chromeProviderUrl(provider, providedUrl = "") {
-    if (providedUrl) return safeProviderUrl(provider, providedUrl) || provider.startUrl;
-    if (provider.id === "chatgpt") return safeProviderUrl(provider, await chatGPTUrlForSource(currentSourceUrl)) || provider.startUrl;
-    return provider.startUrl;
+    if (providedUrl) return providerTargetUrl(provider, providedUrl);
+    return providerTargetUrl(provider, await providerUrlForSource(provider, currentSourceUrl));
   }
 
   function withChatGPTPanelMarkers(value, sourceUrl) {
@@ -141,7 +166,7 @@
 
   async function switchProvider(providerId, { url = "", sourceUrl = currentSourceUrl, notify = true } = {}) {
     const provider = providers?.get(providerId);
-    if (!provider) return false;
+    if (!provider || !providers?.isPanelProvider(provider.id)) return false;
     currentSourceUrl = safeSourceUrl(sourceUrl);
     toolbar?.setSourceUrl(currentSourceUrl);
     currentProviderId = provider.id;
@@ -155,16 +180,23 @@
       return true;
     }
 
-    try { location.replace(firefoxPanelUrl(provider, currentSourceUrl)); return true; }
-    catch { return false; }
+    try {
+      const target = await chromeProviderUrl(provider, url);
+      location.replace(firefoxPanelUrl(provider, currentSourceUrl, { targetUrl:target }));
+      return true;
+    } catch { return false; }
   }
 
   function setSourceMessage(sourceUrl) {
-    if (!frame?.contentWindow || currentProviderId !== "chatgpt" || providers?.fromUrl(frame.src)?.id !== "chatgpt") return;
+    const provider = frame ? providers?.fromUrl(frame.src) : null;
+    if (!frame?.contentWindow || !provider || provider.id !== currentProviderId) return;
     try {
       const targetOrigin = new URL(frame.src).origin;
-      frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl }, targetOrigin);
-    } catch { /* ChatGPT may be navigating. */ }
+      const message = provider.id === "chatgpt"
+        ? { type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl }
+        : { type:"KEEPIT_AI_PANEL_CONTEXT", providerId:provider.id, sourceUrl };
+      frame.contentWindow.postMessage(message, targetOrigin);
+    } catch { /* Provider iframe may be navigating. */ }
   }
 
   function sendCommand(provider, type, extra = {}, timeoutMs = 16000) {
@@ -233,16 +265,16 @@
 
   function setActiveProvider(providerId) {
     const provider = providers?.get(providerId);
-    if (!provider) return false;
+    if (!provider || !providers?.isPanelProvider(provider.id)) return false;
     currentProviderId = provider.id;
     toolbar?.setProvider(provider.id, { notify:false });
     return true;
   }
 
   async function navigateRequest(request) {
-    const providerId = providers?.get(request?.providerId)?.id || "chatgpt";
-    if (providerId === "chatgpt") return false;
-    const provider = providers.get(providerId);
+    const provider = providers?.get(request?.providerId || "chatgpt");
+    if (!provider || !providers.isPanelProvider(provider.id) || provider.id === "chatgpt") return false;
+    const providerId = provider.id;
     const sourceUrl = safeSourceUrl(request?.sourceUrl) || currentSourceUrl;
     const sourceChanged = !!sourceUrl && sourceUrl !== currentSourceUrl;
     const wasDifferentProvider = currentProviderId !== providerId;
@@ -257,33 +289,45 @@
       catch { return false; }
     }
 
-    const shouldLoad = wasDifferentProvider || !frame.dataset.keepitProvider;
+    const target = await chromeProviderUrl(provider, request.targetUrl);
+    const currentConversation = providers.normalizeConversationUrl(providerId, frame.src);
+    const targetConversation = providers.normalizeConversationUrl(providerId, target);
+    const needsNewConversation = request.mode === "new-link" && !!currentConversation;
+    const needsMappedRoute = ["reopen", "followup"].includes(request.mode)
+      && !!targetConversation && currentConversation !== targetConversation;
+    const shouldLoad = wasDifferentProvider || !frame.dataset.keepitProvider || needsNewConversation || needsMappedRoute;
     currentProviderId = providerId;
     frame.dataset.keepitProvider = providerId;
     const fillRequest = request.linkRequestId && ["new-link", "followup"].includes(request.mode);
-    let pending = null;
-    if (fillRequest) pending = await getPending({ ...request, providerId });
+    const pending = fillRequest ? await getPending({ ...request, providerId }) : null;
 
     const afterLoad = async () => {
+      setSourceMessage(sourceUrl);
       if (sourceChanged && !fillRequest) await sendCommand(provider, "KEEPIT_AI_CLEAR");
+      if (request.mode === "reopen" && request.focusComposer) await sendCommand(provider, "KEEPIT_AI_FOCUS");
       if (pending) {
-        const result = await sendCommand(provider, "KEEPIT_AI_FILL", { text:pending.prompt });
-        if (result?.ok) await removePending(pending.requestId);
+        const metadata = {
+          sourceUrl:pending.sourceUrl,
+          linkRequestId:pending.requestId,
+          linkMode:pending.mode,
+          websiteLabel:pending.websiteLabel || "Website"
+        };
+        if (pending.mode === "draft-link" || pending.mode === "auto-send-link") await sendCommand(provider, "KEEPIT_AI_CLEAR");
+        const result = await sendCommand(provider, "KEEPIT_AI_FILL", { text:pending.prompt, ...metadata });
+        if (result?.ok && ["auto-send-link", "auto-send-followup"].includes(pending.mode)) {
+          await sendCommand(provider, "KEEPIT_AI_SUBMIT", metadata);
+        }
       }
     };
 
     if (shouldLoad) {
-      const target = await chromeProviderUrl(provider, request.targetUrl);
       await new Promise(resolve => {
         const timer = setTimeout(resolve, 18000);
         frame.addEventListener("load", () => { clearTimeout(timer); resolve(); }, { once:true });
         frame.src = target;
       });
-      await afterLoad();
-    } else {
-      setSourceMessage(sourceUrl);
-      await afterLoad();
     }
+    await afterLoad();
     return true;
   }
 
@@ -292,7 +336,7 @@
     if (!provider) return;
     currentProviderId = provider.id;
     frame.dataset.keepitProvider = provider.id;
-    if (provider.id === "chatgpt" && currentSourceUrl) {
+    if (providers.isPanelProvider(provider.id) && currentSourceUrl) {
       setTimeout(() => setSourceMessage(currentSourceUrl), 120);
       setTimeout(() => setSourceMessage(currentSourceUrl), 550);
     }

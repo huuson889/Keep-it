@@ -371,11 +371,11 @@
 
   Object.assign(MESSAGES.en, {
     chatGPTSettingsTab:"Ask AI",
-    chatGPTSettingsHelp:"Choose whether explicit Keepit prompts may auto-send and edit their final sentence. User-written prompts always require your Send action.",
+    chatGPTSettingsHelp:"For ChatGPT, Gemini, and Claude, choose whether explicit Keepit prompts may auto-send and edit their final sentence. User-written prompts always require your Send action.",
     chatGPTAutoSendLabel:"Auto-send explicit Keepit prompts",
-    chatGPTAutoSendHelp:"Off for new installs. When off, an unmapped source URL is added only when you send; mapped chats omit it.",
+    chatGPTAutoSendHelp:"Off for new installs. For an unmapped source, the exact URL is added only when sent; mapped chats omit it. Typed prompts are never auto-sent.",
     chatGPTPromptTemplates:"Prompt templates",
-    chatGPTPromptTemplatesHelp:"For a new unmapped URL, Keepit adds the exact URL when you send; mapped chats omit it.",
+    chatGPTPromptTemplatesHelp:"For an unmapped Gemini/Claude source, the URL stays out of the draft until Send; mapped chats omit it.",
     chatGPTFirstOpenPromptLabel:"First time opening the side panel",
     chatGPTFirstOpenPromptHelp:"Used when a source URL has no mapped conversation.",
     chatGPTAskPromptLabel:"When clicking Ask AI",
@@ -383,11 +383,11 @@
   });
   Object.assign(MESSAGES.vi, {
     chatGPTSettingsTab:"Hỏi AI",
-    chatGPTSettingsHelp:"Chọn có tự gửi prompt explicit của Keepit hay không và chỉnh câu cuối. Prompt bạn tự viết luôn cần bạn bấm Gửi.",
+    chatGPTSettingsHelp:"Với ChatGPT, Gemini và Claude, chọn có tự gửi prompt explicit của Keepit hay không và chỉnh câu cuối. Prompt bạn tự viết luôn cần bạn bấm Gửi.",
     chatGPTAutoSendLabel:"Tự động gửi prompt explicit của Keepit",
-    chatGPTAutoSendHelp:"Mặc định tắt ở cài đặt mới. Khi tắt, URL source chưa map chỉ được thêm lúc bạn gửi; chat đã map không lặp URL.",
+    chatGPTAutoSendHelp:"Mặc định tắt ở cài đặt mới. URL của nguồn chưa map chỉ được thêm khi gửi; chat đã map không lặp URL. Prompt tự gõ không tự gửi.",
     chatGPTPromptTemplates:"Câu lệnh mẫu",
-    chatGPTPromptTemplatesHelp:"Với URL mới chưa map, Keepit thêm URL chính xác lúc bạn gửi; chat đã map không lặp URL.",
+    chatGPTPromptTemplatesHelp:"Với Gemini/Claude, URL chưa map không hiện trong draft cho tới khi Gửi; chat đã map không lặp URL.",
     chatGPTFirstOpenPromptLabel:"Lần đầu mở side panel",
     chatGPTFirstOpenPromptHelp:"Dùng khi URL nguồn chưa có hội thoại được ánh xạ.",
     chatGPTAskPromptLabel:"Khi bấm Hỏi AI",
@@ -395,11 +395,11 @@
   });
   Object.assign(MESSAGES.ko, {
     chatGPTSettingsTab:"AI에 질문",
-    chatGPTSettingsHelp:"Keepit의 명시적 프롬프트를 자동 전송할지 선택하고 마지막 문장을 편집합니다. 직접 작성한 프롬프트는 사용자가 보내야 합니다.",
+    chatGPTSettingsHelp:"ChatGPT, Gemini, Claude에서 Keepit의 명시적 프롬프트 자동 전송을 선택하고 마지막 문장을 편집합니다. 직접 작성한 프롬프트는 사용자가 보내야 합니다.",
     chatGPTAutoSendLabel:"Keepit 프롬프트 자동 전송",
-    chatGPTAutoSendHelp:"새 설치에서는 기본적으로 꺼져 있습니다. 끄면 매핑되지 않은 URL은 보낼 때만 추가하고, 매핑된 대화에는 URL을 반복하지 않습니다.",
+    chatGPTAutoSendHelp:"새 설치에서는 기본적으로 꺼져 있습니다. 매핑되지 않은 URL은 보낼 때만 추가하고, 매핑된 대화에는 반복하지 않습니다. 직접 작성한 프롬프트는 자동 전송되지 않습니다.",
     chatGPTPromptTemplates:"질문 템플릿",
-    chatGPTPromptTemplatesHelp:"새 URL이 아직 매핑되지 않은 경우 보내기 직전에 정확한 URL을 추가하며, 매핑된 대화에는 URL을 추가하지 않습니다.",
+    chatGPTPromptTemplatesHelp:"Gemini/Claude의 매핑되지 않은 URL은 Send 전까지 초안에 표시되지 않으며, 매핑된 대화에는 반복되지 않습니다.",
     chatGPTFirstOpenPromptLabel:"사이드 패널 첫 열기",
     chatGPTFirstOpenPromptHelp:"원본 URL에 연결된 대화가 없을 때 사용합니다.",
     chatGPTAskPromptLabel:"AI에 질문을 클릭할 때",

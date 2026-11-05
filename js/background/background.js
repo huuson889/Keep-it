@@ -28,12 +28,15 @@ async function getAIProviderForWindow(windowId) {
   try {
     const stored = await browser.storage.session?.get?.(AI_PANEL_PROVIDER_BY_WINDOW_KEY);
     const id = stored?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY]?.[String(windowId)] || "chatgpt";
-    return globalThis.LHN_AI_PROVIDERS?.get(id) || globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
+    return globalThis.LHN_AI_PROVIDERS?.isPanelProvider(id)
+      ? globalThis.LHN_AI_PROVIDERS.get(id)
+      : globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
   } catch { return globalThis.LHN_AI_PROVIDERS?.get("chatgpt"); }
 }
 async function rememberAIProviderForWindow(windowId, providerId) {
   const provider = globalThis.LHN_AI_PROVIDERS?.get(providerId);
-  if (!provider || !Number.isInteger(windowId) || !browser.storage.session?.get || !browser.storage.session?.set) return false;
+  if (!provider || !globalThis.LHN_AI_PROVIDERS?.isPanelProvider(provider.id)
+    || !Number.isInteger(windowId) || !browser.storage.session?.get || !browser.storage.session?.set) return false;
   try {
     const stored = await browser.storage.session.get(AI_PANEL_PROVIDER_BY_WINDOW_KEY);
     const providersByWindow = { ...(stored?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY] || {}) };
@@ -652,6 +655,79 @@ async function prepareChatGPTManualLinkSend(message, sender) {
   setTimeout(() => { void clearExpiredChatGPTLinkPending(requestId); }, 121000);
   return { ok:true, mapped:false, requestId, mode:pending.mode, websiteLabel:settings.websiteLabel };
 }
+async function prepareAIProviderManualLinkSend(message, sender) {
+  const providers = globalThis.LHN_AI_PROVIDERS;
+  const provider = providers?.get(message?.providerId);
+  const senderProvider = providers?.fromUrl(sender?.url);
+  if (!provider || !["gemini", "claude"].includes(provider.id) || senderProvider?.id !== provider.id) {
+    return { ok:false, error:"invalid-ai-provider" };
+  }
+  const sourceUrl = normalizeChatGPTSourceUrl(message?.sourceUrl);
+  if (!sourceUrl) return { ok:false, error:"source-url-unavailable" };
+  const senderWindowId = Number.isInteger(sender?.tab?.windowId) ? sender.tab.windowId : null;
+  const windowId = Number.isInteger(senderWindowId) ? senderWindowId : chatGPTFocusedWindowId;
+  if (!Number.isInteger(windowId)) return { ok:false, error:"panel-window-unavailable" };
+  await chatGPTPanelStateRestorePromise;
+  if (!await chatGPTPanelIsActuallyOpen(windowId)) return { ok:false, error:"panel-not-open" };
+  if ((await getAIProviderForWindow(windowId))?.id !== provider.id) return { ok:false, error:"provider-not-selected" };
+  const sourceTabId = chatGPTSourceTabs.get(windowId);
+  if (Number.isInteger(sourceTabId)) {
+    try {
+      const sourceTab = await browser.tabs.get(sourceTabId);
+      const liveSourceUrl = normalizeChatGPTSourceUrl(sourceTab?.url);
+      if (liveSourceUrl && liveSourceUrl !== sourceUrl) return { ok:false, stale:true };
+    } catch { /* Keep the panel's validated source when the browser hides the tab URL. */ }
+  }
+  const currentSource = chatGPTPanelSourceUrls.get(windowId) || "";
+  if (currentSource && currentSource !== sourceUrl) return { ok:false, stale:true };
+  if (!currentSource) await rememberChatGPTPanelSourceUrl(windowId, sourceUrl);
+
+  const mappingKey = provider.conversationMapKey;
+  const [mappingData, pendingData, settings] = await Promise.all([
+    browser.storage.local.get(mappingKey), browser.storage.local.get(CHATGPT_LINK_PENDING_KEY), getChatGPTPromptSettings()
+  ]);
+  const mappedConversation = providers.normalizeConversationUrl(provider.id, mappingData?.[mappingKey]?.[sourceUrl]);
+  const existing = pendingData?.[CHATGPT_LINK_PENDING_KEY];
+  if (existing && existing.expiresAt > Date.now() && existing.windowId === windowId
+      && existing.sourceUrl === sourceUrl && existing.providerId === provider.id
+      && ["draft-link", "manual-link", "draft-followup", "auto-send-link", "auto-send-followup"].includes(existing.mode)) {
+    return { ok:true, mapped:!!mappedConversation, requestId:existing.requestId, mode:existing.mode, websiteLabel:settings.websiteLabel };
+  }
+  if (existing && existing.expiresAt > Date.now() && Number.isInteger(existing.windowId) && existing.windowId !== windowId) {
+    return { ok:false, error:"another-panel-request-active" };
+  }
+  if (mappedConversation) return { ok:true, mapped:true, conversationUrl:mappedConversation };
+
+  const requestId = `ai-link-manual-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const pending = { requestId, windowId, sourceTabId:null, sourceUrl, providerId:provider.id, mode:"manual-link", expiresAt:Date.now() + 120000 };
+  await browser.storage.local.set({ [CHATGPT_LINK_PENDING_KEY]:pending });
+  setTimeout(() => { void clearExpiredChatGPTLinkPending(requestId); }, 121000);
+  return { ok:true, mapped:false, requestId, mode:pending.mode, websiteLabel:settings.websiteLabel };
+}
+async function completeAIProviderLinkRequest(message, sender) {
+  const providers = globalThis.LHN_AI_PROVIDERS;
+  const stored = await browser.storage.local.get(CHATGPT_LINK_PENDING_KEY);
+  const pending = stored?.[CHATGPT_LINK_PENDING_KEY];
+  const provider = providers?.get(pending?.providerId);
+  const senderProvider = providers?.fromUrl(sender?.url);
+  const senderWindowId = Number.isInteger(sender?.tab?.windowId) ? sender.tab.windowId : null;
+  if (!pending || pending.requestId !== message?.requestId || !["gemini", "claude"].includes(provider?.id)
+      || senderProvider?.id !== provider.id || normalizeChatGPTSourceUrl(message?.sourceUrl) !== pending.sourceUrl
+      || (Number.isInteger(senderWindowId) && senderWindowId !== pending.windowId)) return { ok:false, stale:true };
+  if (Number(pending.expiresAt) <= Date.now()) {
+    await browser.storage.local.remove(CHATGPT_LINK_PENDING_KEY);
+    return { ok:false, stale:true };
+  }
+  const conversationUrl = message?.ok === true ? providers.normalizeConversationUrl(provider.id, message.conversationUrl) : "";
+  if (conversationUrl) {
+    const mappingData = await browser.storage.local.get(provider.conversationMapKey);
+    const mappings = { ...(mappingData?.[provider.conversationMapKey] || {}) };
+    mappings[pending.sourceUrl] = conversationUrl;
+    await browser.storage.local.set({ [provider.conversationMapKey]:mappings });
+  }
+  await browser.storage.local.remove(CHATGPT_LINK_PENDING_KEY);
+  return { ok:!!conversationUrl, conversationUrl };
+}
 function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
   const target = new URL("https://chatgpt.com/");
   if (includeQuery) target.searchParams.set("q", prompt);
@@ -683,12 +759,15 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
   const promptSettings = await getChatGPTPromptSettings();
   if (!await actionStillCurrent()) return { ok:false, error:"panel-closed" };
   const selectedProvider = await getAIProviderForWindow(windowId);
-  const provider = selectedProvider || globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
-  const stored = provider?.id === "chatgpt" ? await browser.storage.local.get(CHATGPT_SOURCE_CONVERSATIONS_KEY) : {};
+  const provider = globalThis.LHN_AI_PROVIDERS?.isPanelProvider(selectedProvider?.id) ? selectedProvider : globalThis.LHN_AI_PROVIDERS?.get("chatgpt");
+  const mappingKey = provider?.conversationMapKey || CHATGPT_SOURCE_CONVERSATIONS_KEY;
+  const stored = provider ? await browser.storage.local.get(mappingKey) : {};
   if (!await actionStillCurrent()) return { ok:false, error:"panel-closed" };
-  const conversations = stored?.[CHATGPT_SOURCE_CONVERSATIONS_KEY];
-  const savedConversation = provider?.id === "chatgpt" ? safeChatGPTConversationUrl(conversations?.[sourceUrl]) : "";
-  const providerAutoSend = provider?.id === "chatgpt" && promptSettings.autoSend;
+  const conversations = stored?.[mappingKey] || {};
+  const savedConversation = provider?.id === "chatgpt"
+    ? safeChatGPTConversationUrl(conversations[sourceUrl])
+    : globalThis.LHN_AI_PROVIDERS?.normalizeConversationUrl(provider?.id, conversations[sourceUrl]) || "";
+  const providerAutoSend = globalThis.LHN_AI_PROVIDERS?.isPanelProvider(provider?.id) === true && promptSettings.autoSend;
   const navigationRequest = {
     requestId:`nav-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     windowId:Number.isInteger(tab?.windowId) ? tab.windowId : null,
@@ -716,9 +795,11 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
       ? (askingAboutSelection ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt) : promptSettings.summaryPrompt)
       : (globalThis.LHN_AI_PROVIDERS?.makePrompt(provider?.id, {
         intent:askingAboutSelection ? "ask-selected-text" : "summary",
-        sourceUrl,
         selectedText:selection,
-        language:promptSettings.language
+        language:promptSettings.language,
+        summaryPrompt:promptSettings.summaryPrompt,
+        askPrompt:promptSettings.askPrompt,
+        includeSource:false
       }) || "");
     const prompt = providerAutoSend
       ? globalThis.LHN_CHATGPT_PROMPT_FORMAT.formatLinkPrompt(promptSettings.websiteLabel, sourceUrl, promptLine)
@@ -751,8 +832,14 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
       sourceTabId:Number.isInteger(tab?.id) ? tab.id : null,
       sourceUrl,
       conversationUrl:savedConversation,
-      prompt:makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt),
-      mode:promptSettings.autoSend ? "auto-send-followup" : "draft-followup",
+      prompt:provider?.id === "chatgpt"
+        ? makeChatGPTQuestionPrompt(selection, promptSettings.askPrompt)
+        : (globalThis.LHN_AI_PROVIDERS?.makePrompt(provider?.id, {
+          intent:"ask-selected-text", selectedText:selection, language:promptSettings.language,
+          askPrompt:promptSettings.askPrompt, includeSource:false
+        }) || ""),
+      providerId:provider?.id || "chatgpt",
+      mode:providerAutoSend ? "auto-send-followup" : "draft-followup",
       expiresAt:Date.now() + 120000
     };
     navigationRequest.targetUrl = savedConversation;
@@ -1069,7 +1156,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "AI_PANEL_PROVIDER_SELECTED") {
     const provider = globalThis.LHN_AI_PROVIDERS?.get(message.providerId);
     const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? chatGPTFocusedWindowId);
-    if (!provider || !Number.isInteger(windowId)) return { ok:false, error:"invalid-ai-provider" };
+    if (!provider || !globalThis.LHN_AI_PROVIDERS?.isPanelProvider(provider.id) || !Number.isInteger(windowId)) return { ok:false, error:"invalid-ai-provider" };
     return { ok:await rememberAIProviderForWindow(windowId, provider.id), providerId:provider.id };
   }
   if (message.type === "AI_PANEL_CONTEXT_READY" && typeof browser.sidebarAction?.isOpen === "function") {
@@ -1111,6 +1198,8 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (Number.isInteger(windowId)) await trackChatGPTPanel(windowId, chatGPTSourceTabs.get(windowId), false);
     return { ok:true };
   }
+  if (message.type === "AI_PROVIDER_MANUAL_LINK_PREPARE") return prepareAIProviderManualLinkSend(message, sender);
+  if (message.type === "AI_PROVIDER_LINK_RESULT") return completeAIProviderLinkRequest(message, sender);
   if (message.type === "CHATGPT_MANUAL_LINK_PREPARE") return prepareChatGPTManualLinkSend(message, sender);
   if (message.type === "CHATGPT_LINK_RESULT") return completeChatGPTLinkRequest(message);
   if (message.type === "CHATGPT_LINK_DRAFT_READY") return notifyChatGPTLinkDraftReady(message);

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.106",
+  "version": "3.5.107",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -166,7 +166,8 @@
         "js/core/messaging.js",
         "js/shared/ai-providers.js",
         "js/shared/ai-toolbar.js",
-        "js/content/ai-fill.js"
+        "js/content/ai-fill.js",
+        "js/content/ai-provider-workflow.js"
       ],
       "run_at": "document_start",
       "all_frames": true

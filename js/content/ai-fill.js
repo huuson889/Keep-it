@@ -68,6 +68,13 @@
       return ["http:", "https:"].includes(url.protocol) ? url.href : "";
     } catch { return ""; }
   };
+  function safeProviderUrl(provider, value) {
+    try {
+      const url = new URL(String(value || ""));
+      if (url.protocol !== "https:" || !provider?.hosts?.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`))) return "";
+      return url.href;
+    } catch { return ""; }
+  }
 
   function findEditor(root = document) {
     for (const selector of HOST_SELECTORS[currentProvider.id] || []) {
@@ -186,8 +193,11 @@
     waitForEditor,
     fill,
     setSourceUrl:value => {
-      activeSourceUrl = safeSourceUrl(value);
+      const nextSourceUrl = safeSourceUrl(value);
+      if (currentProvider.id !== "chatgpt" && activeSourceUrl && activeSourceUrl !== nextSourceUrl) clearEditor(findEditor());
+      activeSourceUrl = nextSourceUrl;
       toolbar?.setSourceUrl(activeSourceUrl);
+      globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPanelContext({ providerId:currentProvider.id, sourceUrl:activeSourceUrl, active:true });
       return activeSourceUrl;
     }
   });
@@ -204,17 +214,29 @@
   window.addEventListener("message", event => {
     if (isFirefox || window.parent === window || event.source !== window.parent || !extensionOrigin || event.origin !== extensionOrigin) return;
     const message = event.data;
-    if (!message || !["KEEPIT_AI_FILL", "KEEPIT_AI_CLEAR", "KEEPIT_AI_FOCUS"].includes(message.type)) return;
+    if (!message || !["KEEPIT_AI_FILL", "KEEPIT_AI_CLEAR", "KEEPIT_AI_FOCUS", "KEEPIT_AI_SUBMIT", "KEEPIT_AI_PANEL_CONTEXT"].includes(message.type)) return;
     if (message.providerId !== currentProvider.id) return;
+    if (message.type === "KEEPIT_AI_PANEL_CONTEXT") {
+      const nextSourceUrl = safeSourceUrl(message.sourceUrl);
+      if (activeSourceUrl && activeSourceUrl !== nextSourceUrl) clearEditor(findEditor());
+      activeSourceUrl = nextSourceUrl;
+      toolbar?.setSourceUrl(activeSourceUrl);
+      globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPanelContext({ providerId:currentProvider.id, sourceUrl:activeSourceUrl, active:true });
+      return;
+    }
     void (async () => {
       let result;
-      if (message.type === "KEEPIT_AI_FILL") result = await fill(String(message.text ?? ""), { requestId:message.requestId, focus:true });
-      else {
+      if (message.type === "KEEPIT_AI_FILL") {
+        globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPendingLink(message);
+        result = await fill(String(message.text ?? ""), { requestId:message.requestId, focus:true });
+      } else if (message.type === "KEEPIT_AI_SUBMIT") {
+        result = await globalThis.LHN_AI_PROVIDER_WORKFLOW?.submitFromKeepit(message) || { ok:false, requestId:message.requestId, providerId:currentProvider.id };
+      } else {
         const editor = findEditor() || await waitForEditor();
         const ok = message.type === "KEEPIT_AI_CLEAR" ? clearEditor(editor) : focusAtEnd(editor);
         result = { ok:!!ok, requestId:String(message.requestId || ""), providerId:currentProvider.id };
       }
-      try { event.source.postMessage({ type:"KEEPIT_AI_RESULT", ...result }, extensionOrigin); } catch {}
+      try { event.source.postMessage({ type:"KEEPIT_AI_RESULT", ...result, requestId:message.requestId }, extensionOrigin); } catch {}
     })();
   });
 
@@ -233,8 +255,21 @@
     } catch { return { marked:false, sourceUrl:"" }; }
   }
 
+  function panelTargetUrl(provider, value) {
+    const safe = safeProviderUrl(provider, value);
+    if (!safe || provider.id === "chatgpt") return safe || provider.startUrl;
+    const conversation = providers.normalizeConversationUrl(provider.id, safe);
+    if (conversation) return conversation;
+    try {
+      const target = new URL(safe);
+      const start = new URL(provider.startUrl);
+      if (target.origin === start.origin && target.pathname === start.pathname) return `${start.origin}${start.pathname}`;
+    } catch {}
+    return provider.startUrl;
+  }
+
   function panelUrl(provider, sourceUrl, request = null) {
-    const url = new URL(provider.startUrl);
+    const url = new URL(request?.targetUrl ? panelTargetUrl(provider, request.targetUrl) : provider.startUrl);
     const params = new URLSearchParams(url.hash.replace(/^#/, ""));
     if (provider.id === "chatgpt") {
       params.set(CHATGPT_PANEL_MARKER, "1");
@@ -259,10 +294,16 @@
 
   async function selectFirefoxProvider(providerId) {
     const provider = providers.get(providerId);
-    if (!provider || provider.id === currentProvider.id) return;
+    if (!provider || !providers.isPanelProvider(provider.id) || provider.id === currentProvider.id) return;
     await reportProviderSelection(provider.id);
-    const target = panelUrl(provider, activeSourceUrl);
-    location.replace(target);
+    let targetUrl = provider.startUrl;
+    if (provider.conversationMapKey && activeSourceUrl) {
+      try {
+        const stored = await browser.storage.local.get(provider.conversationMapKey);
+        targetUrl = safeProviderUrl(provider, providers.normalizeConversationUrl(provider.id, stored?.[provider.conversationMapKey]?.[activeSourceUrl])) || provider.startUrl;
+      } catch {}
+    }
+    location.replace(panelUrl(provider, activeSourceUrl, { targetUrl }));
   }
 
   async function firefoxPanelIsOpen() {
@@ -294,18 +335,31 @@
     }
     if (request.requestId === lastNavigationRequestId) return false;
     const provider = providers.get(request.providerId || "chatgpt");
-    if (!provider || provider.id === "chatgpt") return false;
+    if (!provider || !providers.isPanelProvider(provider.id) || provider.id === "chatgpt") return false;
     const latest = await browser.storage.local.get(NAVIGATION_KEY);
     if (latest?.[NAVIGATION_KEY]?.requestId !== request.requestId) return true;
     lastNavigationRequestId = request.requestId;
     const sourceUrl = safeSourceUrl(request.sourceUrl) || activeSourceUrl;
     toolbar?.setSourceUrl(sourceUrl);
     activeSourceUrl = sourceUrl;
+    globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPanelContext({ providerId:provider.id, sourceUrl, active:true });
     if (provider.id !== currentProvider.id) {
       await reportProviderSelection(provider.id);
       location.replace(panelUrl(provider, sourceUrl, request));
       return true;
     }
+
+    const target = panelTargetUrl(provider, request.targetUrl);
+    const currentConversation = providers.normalizeConversationUrl(provider.id, location.href);
+    const targetConversation = providers.normalizeConversationUrl(provider.id, target);
+    const needsNewConversation = request.mode === "new-link" && !!currentConversation;
+    const needsMappedRoute = ["reopen", "followup"].includes(request.mode)
+      && !!targetConversation && currentConversation !== targetConversation;
+    if (needsNewConversation || needsMappedRoute) {
+      location.replace(panelUrl(provider, sourceUrl, request));
+      return true;
+    }
+
     const pendingId = String(request.linkRequestId || "");
     if (pendingId && ["new-link", "followup"].includes(request.mode)) {
       const stored = await browser.storage.local.get(LINK_PENDING_KEY);
@@ -313,9 +367,19 @@
       const pendingExpiresAt = Number(pending?.expiresAt);
       if (pending?.requestId === pendingId && pending.providerId === provider.id && typeof pending.prompt === "string"
         && Number.isFinite(pendingExpiresAt) && pendingExpiresAt > Date.now()) {
+        const pendingMessage = {
+          providerId:provider.id,
+          sourceUrl:pending.sourceUrl,
+          linkRequestId:pending.requestId,
+          linkMode:pending.mode,
+          websiteLabel:pending.websiteLabel || "Website",
+          text:pending.prompt
+        };
+        globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPendingLink(pendingMessage);
         const result = await fill(pending.prompt, { requestId:pendingId, focus:true });
-        if (result.ok) await removePendingIfSame(pendingId);
-        else {
+        if (result.ok && ["auto-send-link", "auto-send-followup"].includes(pending.mode)) {
+          await globalThis.LHN_AI_PROVIDER_WORKFLOW?.submitFromKeepit(pendingMessage);
+        } else if (!result.ok) {
           lastNavigationRequestId = "";
           setTimeout(() => { void processFirefoxNavigation(request); }, 1800);
           return true;
@@ -323,7 +387,7 @@
       } else if (pending?.requestId === pendingId) {
         await removePendingIfSame(pendingId);
       }
-    } else if (request.mode === "context-switch" && sourceUrl) {
+    } else if ((request.mode === "context-switch" || request.mode === "reopen") && sourceUrl) {
       const editor = findEditor() || await waitForEditor(5000);
       if (editor) clearEditor(editor);
     }
@@ -360,6 +424,7 @@
         if (!activeSourceUrl) activeSourceUrl = "";
       } catch {}
     }
+    globalThis.LHN_AI_PROVIDER_WORKFLOW?.setPanelContext({ providerId:currentProvider.id, sourceUrl:activeSourceUrl, active:true });
     toolbar = globalThis.LHN_AI_TOOLBAR?.create({
       sourceUrl:activeSourceUrl,
       initialProvider:currentProvider.id,
