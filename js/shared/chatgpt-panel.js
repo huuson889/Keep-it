@@ -9,6 +9,7 @@
   const SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
   const DEFAULT_CHATGPT_URL = "https://chatgpt.com/";
   const frame = document.getElementById("chatgpt-frame");
+  const panelToolbar = globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:"" });
   const handledNavigationIds = new Set();
 
   // Chromium versions without sidePanel.close() close the extension page itself as a fallback.
@@ -84,7 +85,9 @@
   }
 
   function sendSourceContext(sourceUrl) {
-    if (!frame?.contentWindow || !sourceUrl) return;
+    if (!sourceUrl) return;
+    panelToolbar?.setSourceUrl(sourceUrl);
+    if (!frame?.contentWindow) return;
     try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl:String(sourceUrl) }, "*"); }
     catch { /* ChatGPT may be navigating */ }
   }
@@ -136,6 +139,7 @@
     const displayedRoute = safePanelRoute(frame?.dataset?.currentConversationUrl || frame?.src || "");
     const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
     const sourceContextChanged = !!request.sourceUrl && request.sourceUrl !== previousSourceUrl;
+    if (request.sourceUrl) panelToolbar?.setSourceUrl(request.sourceUrl);
     const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset.keepitLoaded === "true";
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
     const linkRequestId = requestScopedFlow ? String(request.linkRequestId || "") : "";
@@ -215,6 +219,7 @@
         const candidate = new URL(String(activeTabs?.[0]?.url || ""));
         if (["http:", "https:"].includes(candidate.protocol)) sourceUrl = candidate.href;
       } catch {}
+      panelToolbar?.setSourceUrl(sourceUrl);
       let session = {};
       try {
         if (browser.storage.session?.get) session = await browser.storage.session.get(PANEL_CONTEXTS_KEY);

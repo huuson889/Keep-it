@@ -65,7 +65,7 @@
   }
 
   function create({ sourceUrl = "" } = {}) {
-    ensurePageTopOffset();
+    if (!document.getElementById("keepit-ai-page-offset")) ensurePageTopOffset();
     let host = document.getElementById(HOST_ID);
     if (!host) {
       host = document.createElement("div");

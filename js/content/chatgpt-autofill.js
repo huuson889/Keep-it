@@ -61,7 +61,7 @@
   if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
-  const chatGPTToolbar = globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:activeSourceUrl });
+  const chatGPTToolbar = isFirefox ? globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:activeSourceUrl }) : null;
   if (isFirefox) {
     globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
   }
