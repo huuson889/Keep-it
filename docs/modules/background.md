@@ -16,7 +16,7 @@ Background điều phối runtime messages cho annotation, usage, TTS, cache, Yo
 
 ## 3. Luồng chính
 
-1. Chromium `importScripts` core, translate, annotations, usage, `ask-ai/providers.js`, `chatgpt-prompt-format.js`, `ask-ai/service.js`; Firefox nạp theo `background.scripts`.
+1. Chromium `importScripts` core, translate, annotations, usage, `ask-ai/providers.js`, `ask-ai/prompt-format.js`, `ask-ai/service.js`; Firefox nạp đúng danh sách đó qua `background.scripts`. `onInstalled` gọi `cleanupAskAIStorage`, `onStartup` gọi `clearExpiredAILinkPending`.
 2. `onInstalled` dọn request AI hết hạn, khởi tạo usage, cấu hình DNR AI, đăng ký context menu và reset thống kê Dictation cũ; `onStartup` dọn request và cấu hình lại.
 3. Router kiểm tra message theo thứ tự cố định; type trong `ASK_AI_MESSAGE_TYPES` được chuyển cho `handleAskAIMessage` tại đúng vị trí cũ, kết quả không xử lý thì đi tiếp.
 4. Annotation messages (`ADD`, `UPDATE`, `DELETE`, `IMPORT`…) gọi `LHN_ANNOTATIONS` và phát `ANNOTATIONS_CHANGED`.

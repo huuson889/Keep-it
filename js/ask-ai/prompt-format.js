@@ -36,7 +36,7 @@
     return true;
   }
 
-  globalThis.LHN_CHATGPT_PROMPT_FORMAT = Object.freeze({
+  globalThis.LHN_AI_PROMPT_FORMAT = Object.freeze({
     formatLinkPrompt,
     insertMultilineComposerText
   });

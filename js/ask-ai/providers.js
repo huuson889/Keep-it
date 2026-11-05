@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  // Provider registry + per-AI adapters. Everything that differs between ChatGPT, Gemini and
+  // Claude lives here (composer/send/new-chat selectors, ?q= support, conversation URL shape);
+  // the panel, page send flow and background service share one pipeline for all of them.
   const entries = [
     {
       id:"chatgpt",
@@ -8,7 +11,35 @@
       startUrl:"https://chatgpt.com/",
       conversationMapKey:"keepitChatGPTConversationBySourceUrl",
       hosts:["chatgpt.com", "chat.openai.com"],
-      origins:["https://chatgpt.com", "https://chat.openai.com"]
+      origins:["https://chatgpt.com", "https://chat.openai.com"],
+      conversationPath:/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/,
+      // ChatGPT accepts the first prompt through ?q= and may submit it natively.
+      queryPrompt:true,
+      // ChatGPT's ProseMirror composer needs explicit line breaks for the label/URL/prompt lines.
+      multilineComposer:true,
+      composerSelectors:[
+        "#prompt-textarea",
+        '[contenteditable="true"][data-testid="prompt-textarea"]',
+        '[contenteditable="true"][role="textbox"][aria-label*="ChatGPT" i]',
+        '[contenteditable="true"][role="textbox"]',
+        'textarea[placeholder*="Message" i]',
+        'textarea[aria-label*="Message" i]'
+      ],
+      // First match wins (even while disabled); the send flow waits for it to become enabled.
+      sendButtonMatch:"first",
+      sendButtons:[
+        { scope:"document", selector:'button[data-testid="send-button"]' },
+        { scope:"document", selector:'button[aria-label*="Send prompt" i]' },
+        { scope:"document", selector:'button[aria-label="Send" i]' },
+        { scope:"form", selector:'button[aria-label*="Gửi" i], button[type="submit"]' },
+        { scope:"document", selector:'button[aria-label="Gửi" i]' }
+      ],
+      newChatSelectors:[
+        'button[data-testid="create-new-chat-button"]',
+        'a[data-testid="create-new-chat-button"]',
+        'button[aria-label*="New chat" i]',
+        'a[aria-label*="New chat" i]'
+      ]
     },
     {
       id:"gemini",
@@ -16,7 +47,24 @@
       startUrl:"https://gemini.google.com/app",
       conversationMapKey:"keepitGeminiConversationBySourceUrl",
       hosts:["gemini.google.com"],
-      origins:["https://gemini.google.com"]
+      origins:["https://gemini.google.com"],
+      conversationPath:/^\/app\/[A-Za-z0-9_-]+(?:\/|$)/,
+      queryPrompt:false,
+      multilineComposer:false,
+      composerSelectors:[
+        'rich-textarea [contenteditable="true"]',
+        'div[contenteditable="true"][aria-label*="prompt" i]',
+        'div[contenteditable="true"][aria-label*="message" i]',
+        'textarea[aria-label*="prompt" i]'
+      ],
+      // First enabled match wins.
+      sendButtonMatch:"enabled",
+      sendButtons:null,
+      newChatSelectors:[
+        '[data-test-id="new-chat-button"] button',
+        'button[aria-label*="New chat" i]',
+        'a[aria-label*="New chat" i]'
+      ]
     },
     {
       id:"claude",
@@ -24,24 +72,77 @@
       startUrl:"https://claude.ai/new",
       conversationMapKey:"keepitClaudeConversationBySourceUrl",
       hosts:["claude.ai"],
-      origins:["https://claude.ai", "https://www.claude.ai"]
+      origins:["https://claude.ai", "https://www.claude.ai"],
+      conversationPath:/^\/chat\/[A-Za-z0-9_-]+(?:\/|$)/,
+      queryPrompt:false,
+      multilineComposer:false,
+      composerSelectors:[
+        'div[contenteditable="true"][data-placeholder*="Reply" i]',
+        'div[contenteditable="true"][aria-label*="Write a message" i]',
+        'div[contenteditable="true"][role="textbox"]',
+        'textarea[placeholder*="Reply" i]'
+      ],
+      sendButtonMatch:"enabled",
+      sendButtons:null,
+      newChatSelectors:[
+        'a[href="/new"]',
+        'button[aria-label*="New chat" i]',
+        'a[aria-label*="New chat" i]'
+      ]
     },
     {
       id:"grok",
       name:"Grok",
       startUrl:"https://grok.com/",
       hosts:["grok.com"],
-      origins:["https://grok.com", "https://www.grok.com"]
+      origins:["https://grok.com", "https://www.grok.com"],
+      conversationPath:null,
+      queryPrompt:false,
+      multilineComposer:false,
+      composerSelectors:[
+        'textarea[placeholder*="Ask" i]',
+        'textarea[aria-label*="Ask" i]',
+        'div[contenteditable="true"][data-placeholder*="Ask" i]',
+        'div[contenteditable="true"][role="textbox"]',
+        'div[contenteditable="true"]',
+        'textarea[aria-label]',
+        'textarea'
+      ],
+      sendButtonMatch:"enabled",
+      sendButtons:null,
+      newChatSelectors:[]
     }
-  ].map(provider => Object.freeze({
+  ];
+
+  // Gemini/Claude send buttons: the composer form first, then the document.
+  const GENERIC_SEND_SELECTORS = [
+    'button[data-testid*="send" i]',
+    'button[data-test-id*="send" i]',
+    'button[aria-label^="Send" i]',
+    'button[title^="Send" i]',
+    'button[aria-label^="Gửi" i]',
+    'button[aria-label^="전송" i]',
+    'button[aria-label^="보내기" i]',
+    'button[aria-label="Send" i]',
+    'button[type="submit"]'
+  ];
+  const GENERIC_SEND_BUTTONS = [
+    ...GENERIC_SEND_SELECTORS.map(selector => ({ scope:"form", selector })),
+    ...GENERIC_SEND_SELECTORS.map(selector => ({ scope:"document", selector }))
+  ];
+
+  const frozenEntries = entries.map(provider => Object.freeze({
     ...provider,
     hosts:Object.freeze(provider.hosts),
-    origins:Object.freeze(provider.origins)
+    origins:Object.freeze(provider.origins),
+    composerSelectors:Object.freeze(provider.composerSelectors),
+    sendButtons:Object.freeze((provider.sendButtons || GENERIC_SEND_BUTTONS).map(item => Object.freeze({ ...item }))),
+    newChatSelectors:Object.freeze(provider.newChatSelectors)
   }));
 
-  const byId = new Map(entries.map(provider => [provider.id, provider]));
+  const byId = new Map(frozenEntries.map(provider => [provider.id, provider]));
   const panelIds = Object.freeze(["chatgpt", "gemini", "claude"]);
-  const panelEntries = Object.freeze(entries.filter(provider => panelIds.includes(provider.id)));
+  const panelEntries = Object.freeze(frozenEntries.filter(provider => panelIds.includes(provider.id)));
 
   function get(providerId) {
     return byId.get(String(providerId || "").toLowerCase()) || null;
@@ -49,7 +150,7 @@
 
   function fromHost(hostname) {
     const host = String(hostname || "").toLowerCase().replace(/\.$/, "");
-    return entries.find(provider => provider.hosts.some(domain => host === domain || host.endsWith(`.${domain}`))) || null;
+    return frozenEntries.find(provider => provider.hosts.some(domain => host === domain || host.endsWith(`.${domain}`))) || null;
   }
 
   function fromUrl(value) {
@@ -61,20 +162,21 @@
 
   function isPanelProvider(providerId) { return panelIds.includes(get(providerId)?.id || ""); }
 
+  // Source pages are plain http(s) URLs; the panel never reads page body, title or clipboard.
+  function normalizeSourceUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    } catch { return ""; }
+  }
+
   function normalizeConversationUrl(providerId, value) {
     const provider = get(providerId);
-    if (!provider || provider.id === "grok") return "";
+    if (!provider?.conversationPath) return "";
     try {
       const url = new URL(String(value || ""));
       if (url.protocol !== "https:" || fromHost(url.hostname)?.id !== provider.id) return "";
-      const validPath = provider.id === "chatgpt"
-        ? /^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname)
-        : provider.id === "gemini"
-          ? /^\/app\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname)
-          : /^\/chat\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname);
-      if (!validPath) return "";
-      url.search = "";
-      url.hash = "";
+      if (!provider.conversationPath.test(url.pathname)) return "";
       return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
     } catch { return ""; }
   }
@@ -91,64 +193,120 @@
     return "chatgpt";
   }
 
+  function isStartPath(provider, url) {
+    const start = new URL(provider.startUrl);
+    const path = url.pathname.replace(/\/+$/, "") || "/";
+    const startPath = start.pathname.replace(/\/+$/, "") || "/";
+    return path === "/" || path === startPath;
+  }
+
   // Shared panel route: a validated conversation URL, or the provider's blank-chat start route.
   function panelRoute(providerId, value) {
     const provider = get(providerId);
-    if (!provider || provider.id === "grok") return "";
+    if (!isPanelProvider(provider?.id)) return "";
     const conversation = normalizeConversationUrl(provider.id, value);
     if (conversation) return conversation;
     try {
       const url = new URL(String(value || ""));
-      if (url.protocol !== "https:" || fromHost(url.hostname)?.id !== provider.id) return "";
+      if (url.protocol !== "https:" || fromHost(url.hostname)?.id !== provider.id || !isStartPath(provider, url)) return "";
       const start = new URL(provider.startUrl);
-      const path = url.pathname.replace(/\/+$/, "") || "/";
-      const startPath = start.pathname.replace(/\/+$/, "") || "/";
-      return path === "/" || path === startPath ? `${start.origin}${start.pathname}` : "";
+      return `${start.origin}${start.pathname}`;
     } catch { return ""; }
   }
 
-  // One navigation rule for ChatGPT, Gemini and Claude panels:
+  // A navigation target: a conversation, or the start route (with ?q= only for providers that support it).
+  function panelTarget(providerId, value) {
+    const provider = get(providerId);
+    const route = panelRoute(provider?.id, value);
+    if (!route) return "";
+    if (normalizeConversationUrl(provider.id, route)) return route;
+    try {
+      const url = new URL(String(value || ""));
+      const target = new URL(route);
+      if (provider.queryPrompt && url.searchParams.has("q")) target.searchParams.set("q", url.searchParams.get("q"));
+      return target.href;
+    } catch { return route; }
+  }
+
+  // First-prompt target used by the background service: ?q= only when the provider supports it
+  // and the prompt is auto-sent (same as the ChatGPT flow); otherwise the start route.
+  function linkTarget(providerId, prompt, includeQuery) {
+    const provider = get(providerId);
+    if (!provider) return "";
+    const target = new URL(provider.startUrl);
+    if (provider.queryPrompt && includeQuery) target.searchParams.set("q", String(prompt || ""));
+    return target.href;
+  }
+
+  // One navigation rule for every panel provider:
   // same route + same source stays; same route + new source reloads; otherwise load the target.
   function planPanelNavigation({ displayedRoute = "", targetRoute = "", sourceChanged = false, loaded = false } = {}) {
     if (!targetRoute || !loaded || displayedRoute !== targetRoute) return "load";
     return sourceChanged ? "reload" : "stay";
   }
 
-  function makePrompt(providerId, {
-    intent = "summary", sourceUrl = "", selectedText = "", language = "en",
-    summaryPrompt = "", askPrompt = "", includeSource = true
-  } = {}) {
-    if (!get(providerId) || providerId === "chatgpt") return "";
-    const locale = ["en", "vi", "ko"].includes(language) ? language : "en";
-    const strings = {
-      en:{ summary:"Summarize this web page.", ask:"What does this selected text mean in context?", source:"Source" },
-      vi:{ summary:"Hãy tóm tắt trang web sau.", ask:"Đoạn văn bản được chọn này có nghĩa là gì trong ngữ cảnh?", source:"Nguồn" },
-      ko:{ summary:"다음 웹페이지를 요약해 주세요.", ask:"선택한 텍스트는 이 웹페이지의 맥락에서 무엇을 의미하나요?", source:"출처" }
-    }[locale];
-    const source = String(sourceUrl || "").trim();
-    const selection = String(selectedText || "").trim();
-    const isAsk = intent === "ask-selected-text";
-    const instruction = String(isAsk ? askPrompt : summaryPrompt).trim() || (isAsk ? strings.ask : strings.summary);
-    const lines = isAsk && selection ? [`"${selection}"`, instruction] : [instruction];
-    if (includeSource && source) lines.push("", `${strings.source}: ${source}`);
-    return lines.join("\n");
+  // Panel URL fragment markers shared by the panel host and the provider page scripts.
+  const PANEL_MARKERS = Object.freeze({
+    panel:"keepit-ai-panel",
+    linkRequest:"keepit-ai-link-request",
+    sourceUrl:"keepit-ai-source-url",
+    clearComposer:"keepit-ai-clear-composer",
+    focusComposer:"keepit-ai-focus-composer"
+  });
+
+  function panelUrl(providerId, value, { linkRequestId = "", sourceUrl = "", clearComposer = false, focusComposer = false } = {}) {
+    const provider = get(providerId) || get("chatgpt");
+    const url = new URL(panelTarget(provider.id, value) || provider.startUrl);
+    const params = new URLSearchParams(url.hash.replace(/^#/, ""));
+    params.set(PANEL_MARKERS.panel, "1");
+    if (linkRequestId) params.set(PANEL_MARKERS.linkRequest, String(linkRequestId));
+    else params.delete(PANEL_MARKERS.linkRequest);
+    if (sourceUrl) params.set(PANEL_MARKERS.sourceUrl, String(sourceUrl));
+    else params.delete(PANEL_MARKERS.sourceUrl);
+    if (clearComposer) params.set(PANEL_MARKERS.clearComposer, "1");
+    else params.delete(PANEL_MARKERS.clearComposer);
+    if (focusComposer) params.set(PANEL_MARKERS.focusComposer, "1");
+    else params.delete(PANEL_MARKERS.focusComposer);
+    url.hash = params.toString();
+    return url.href;
+  }
+
+  function readPanelMarkers(value) {
+    try {
+      const url = new URL(String(value || ""));
+      const params = new URLSearchParams(url.hash.replace(/^#/, ""));
+      return {
+        panel:url.searchParams.get(PANEL_MARKERS.panel) === "1" || params.get(PANEL_MARKERS.panel) === "1",
+        linkRequestId:params.get(PANEL_MARKERS.linkRequest) || "",
+        sourceUrl:normalizeSourceUrl(params.get(PANEL_MARKERS.sourceUrl)),
+        clearComposer:params.get(PANEL_MARKERS.clearComposer) === "1",
+        focusComposer:params.get(PANEL_MARKERS.focusComposer) === "1"
+      };
+    } catch {
+      return { panel:false, linkRequestId:"", sourceUrl:"", clearComposer:false, focusComposer:false };
+    }
   }
 
   globalThis.LHN_AI_PROVIDERS = Object.freeze({
-    list:Object.freeze(entries),
+    list:Object.freeze(frozenEntries),
     panelList:panelEntries,
-    ids:Object.freeze(entries.map(provider => provider.id)),
+    ids:Object.freeze(frozenEntries.map(provider => provider.id)),
     panelIds,
     get,
     fromHost,
     fromUrl,
     isPanelProvider,
+    normalizeSourceUrl,
     normalizeConversationUrl,
     panelRoute,
+    panelTarget,
+    linkTarget,
     planPanelNavigation,
+    PANEL_MARKERS,
+    panelUrl,
+    readPanelMarkers,
     SELECTED_BY_WINDOW_KEY,
     LAST_SELECTED_KEY,
-    pickSelectedProvider,
-    makePrompt
+    pickSelectedProvider
   });
 })();

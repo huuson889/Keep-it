@@ -1200,7 +1200,7 @@
     let requestPromise;
     try {
       requestPromise = LHN_MESSAGING.sendMessage({
-        type:"OPEN_CHATGPT_LINK_PANEL",
+        type:"OPEN_AI_PANEL",
         intent:hasSelection ? "ask-selected-text" : "summary",
         ...(hasSelection ? { selectedText } : {})
       });
@@ -1872,15 +1872,15 @@
       if (sidebarOpen) renderSidebar(true);
       return;
     }
-    if (message?.type === "CHATGPT_PANEL_VISIBILITY") { setChatGPTPanelScrollbar(message.open === true); return; }
-    if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
-    if (message?.type === "CHATGPT_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
-    if (message?.type === "CHATGPT_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
-    if (message?.type === "CHATGPT_LINK_PANEL_QUEUED") {
+    if (message?.type === "AI_PANEL_VISIBILITY") { setChatGPTPanelScrollbar(message.open === true); return; }
+    if (message?.type === "AI_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
+    if (message?.type === "AI_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
+    if (message?.type === "AI_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
+    if (message?.type === "AI_LINK_PANEL_QUEUED") {
       if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(message.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
       return;
     }
-    if (message?.type === "CHATGPT_AUTOFILL_RESULT") {
+    if (message?.type === "AI_PANEL_RESULT") {
       if (message.ok) showSidebarToast(() => t(message.truncated ? "chatGPTAutoFillTruncatedToast" : "chatGPTAutoFillSuccessToast"));
       else showSidebarToast(() => t(message.reason === "composer-not-empty" ? "chatGPTComposerPreservedToast" : "chatGPTAutoFillFailedToast"));
       return;

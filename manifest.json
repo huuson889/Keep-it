@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.112",
+  "version": "3.5.113",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -29,6 +29,7 @@
       "js/background/usage-limits.js",
       "js/background/annotations.js",
       "js/ask-ai/providers.js",
+      "js/ask-ai/prompt-format.js",
       "js/ask-ai/service.js",
       "js/background/background.js"
     ]
@@ -92,14 +93,14 @@
         "js/overlay/study/shadowing/shadowing.js",
         "js/overlay/overlay-controller.js"
       ],
+      "run_at": "document_idle",
+      "all_frames": false,
       "css": [
         "css/shared/ui-tokens.css",
         "css/content/content.css",
         "css/content/content-theme.css",
         "css/content/video.css"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
+      ]
     },
     {
       "matches": [
@@ -128,34 +129,7 @@
     {
       "matches": [
         "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
-      ],
-      "js": [
-        "js/core/browser-polyfill.js",
-        "js/core/messaging.js",
-        "js/ask-ai/providers.js",
-        "js/ask-ai/panel/ai-toolbar.js",
-        "js/ask-ai/page/ai-fill.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
-    },
-    {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
-      ],
-      "js": [
-        "js/core/browser-polyfill.js",
-        "js/core/messaging.js",
-        "js/ask-ai/chatgpt-prompt-format.js",
-        "js/ask-ai/page/chatgpt-autofill.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": true
-    },
-    {
-      "matches": [
+        "https://chat.openai.com/*",
         "https://gemini.google.com/*",
         "https://claude.ai/*",
         "https://*.claude.ai/*",
@@ -166,11 +140,27 @@
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
         "js/ask-ai/providers.js",
-        "js/ask-ai/panel/ai-toolbar.js",
-        "js/ask-ai/page/ai-fill.js",
-        "js/ask-ai/page/ai-provider-workflow.js"
+        "js/ask-ai/prompt-format.js",
+        "js/ask-ai/toolbar.js",
+        "js/ask-ai/page/composer.js"
       ],
       "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*",
+        "https://claude.ai/*",
+        "https://*.claude.ai/*",
+        "https://grok.com/*",
+        "https://*.grok.com/*"
+      ],
+      "js": [
+        "js/ask-ai/page/send-flow.js"
+      ],
+      "run_at": "document_idle",
       "all_frames": true
     }
   ],

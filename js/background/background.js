@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/chatgpt-prompt-format.js", "/js/ask-ai/service.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -23,9 +23,8 @@ async function resetLegacyDictationWrongWordStats() {
 }
 browser.runtime.onInstalled.addListener(async () => {
   try {
-    await clearExpiredChatGPTLinkPending();
-    await browser.storage.local.remove([CHATGPT_DRAFT_PENDING_KEY, LEGACY_CHATGPT_PAGE_DRAFTS_KEY, LEGACY_CHATGPT_LAST_CONVERSATION_KEY, CHATGPT_LINK_PENDING_KEY, CHATGPT_PANEL_NAVIGATION_KEY]);
-  } catch (error) { console.warn("Could not clean expired or legacy ChatGPT data", error); }
+    await cleanupAskAIStorage();
+  } catch (error) { console.warn("Could not clean expired or legacy Ask AI data", error); }
   try { await USAGE_LIMITS.initialize(); }
   catch (error) { console.warn("Could not initialize local usage trial", error); }
   try { await ensureAIProviderFrameRule(true); }
@@ -34,7 +33,7 @@ browser.runtime.onInstalled.addListener(async () => {
   await resetLegacyDictationWrongWordStats();
 });
 browser.runtime.onStartup?.addListener(() => {
-  Promise.all([clearExpiredChatGPTLinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired ChatGPT requests or register Firefox selection menu", error));
+  Promise.all([clearExpiredAILinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired Ask AI requests or register Firefox selection menu", error));
   ensureAIProviderFrameRule().catch(error => console.warn("Could not configure the AI-provider iframe header rule", error));
 });
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;

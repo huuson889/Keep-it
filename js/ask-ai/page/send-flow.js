@@ -1,49 +1,52 @@
+// ONE Send/link/mapping flow for ChatGPT, Gemini and Claude panel pages, using the ChatGPT
+// behavior as the standard. Provider differences come only from the LHN_AI_PROVIDERS adapter
+// (selectors, ?q= support, conversation URL shape) through LHN_AI_COMPOSER.
 (async () => {
-  const LINK_PENDING_KEY = "keepitChatGPTLinkPending";
-  const PANEL_NAVIGATION_KEY = "keepitChatGPTPanelNavigationRequest";
-  const PANEL_MARKER = "keepit-chatgpt-panel";
-  const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
-  const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
-  const CLEAR_COMPOSER_MARKER = "keepit-chatgpt-clear-composer";
-  const CLEAR_COMPOSER_SESSION_KEY = "keepitChatGPTClearComposerOnLoad";
-  const SOURCE_URL_SESSION_KEY = "keepitChatGPTPanelSourceUrl";
-  const LINK_SESSION_KEY = "keepitChatGPTLinkRequestId";
-  const LINK_DIRECT_SESSION_KEY = "keepitChatGPTDirectFollowupRequestId";
-  const LINK_Q_SESSION_KEY = "keepitChatGPTLinkQRequestId";
-  const LINK_SENT_SESSION_KEY = "keepitChatGPTLinkSentRequestId";
-  const FOCUS_COMPOSER_MARKER = "keepit-chatgpt-focus-composer";
-  const LINK_PREPARED_SESSION_KEY = "keepitChatGPTPreparedRequestId";
-  const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitChatGPTDraftManualSendRequestId";
-  const LINK_MANUAL_SEND_SESSION_KEY = "keepitChatGPTManualLinkSendRequestId";
-  const QUERY_REQUEST_KEY = "keepit-chatgpt-query-prefill-request";
+  const providers = globalThis.LHN_AI_PROVIDERS;
+  const composerApi = globalThis.LHN_AI_COMPOSER;
+  if (!providers || !composerApi) return;
+  const provider = providers.fromHost(location.hostname);
+  if (!provider || !providers.isPanelProvider(provider.id) || composerApi.providerId !== provider.id) return;
+  // Only ChatGPT receives the first prompt through ?q= (see providers.js queryPrompt).
+  const usesQueryPrompt = provider.queryPrompt === true;
+
+  const LINK_PENDING_KEY = "keepitAiLinkPending";
+  const PANEL_NAVIGATION_KEY = "keepitAiPanelNavigationRequest";
+  const MARKERS = providers.PANEL_MARKERS;
+  const SESSION = composerApi.SESSION_KEYS;
+  const PANEL_SESSION_KEY = SESSION.panel;
+  const CLEAR_COMPOSER_SESSION_KEY = SESSION.clearComposer;
+  const SOURCE_URL_SESSION_KEY = SESSION.sourceUrl;
+  const LINK_SESSION_KEY = SESSION.linkRequestId;
+  const LINK_DIRECT_SESSION_KEY = "keepitAiDirectFollowupRequestId";
+  const LINK_Q_SESSION_KEY = "keepitAiLinkQRequestId";
+  const LINK_SENT_SESSION_KEY = "keepitAiLinkSentRequestId";
+  const LINK_PREPARED_SESSION_KEY = "keepitAiPreparedRequestId";
+  const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitAiDraftManualSendRequestId";
+  const LINK_MANUAL_SEND_SESSION_KEY = "keepitAiManualLinkSendRequestId";
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
   const MAX_WAIT_MS = 25000;
-  const isFirefox = /Firefox\//i.test(globalThis.navigator?.userAgent || "");
-  const isChatGPTPanelRoot = isFirefox ? window.top === window : window.parent === window.top;
+  const isFirefox = composerApi.isFirefox;
+  const isPanelRoot = isFirefox ? window.top === window : window.parent === window.top;
+  const safeSourceUrl = providers.normalizeSourceUrl;
   let url;
   try { url = new URL(location.href); } catch { return; }
-  // Ordinary ChatGPT tabs must never process extension-panel requests.
-  const initialHashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const hasUrlMarker = url.searchParams.get(PANEL_MARKER) === "1" || initialHashParams.get(PANEL_MARKER) === "1";
-  const initialLinkRequestId = initialHashParams.get(LINK_REQUEST_MARKER) || "";
-  const initialFocusComposer = initialHashParams.get(FOCUS_COMPOSER_MARKER) === "1";
-  const initialFocusComposerRoute = initialFocusComposer && /^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname)
-    ? `${url.origin}${url.pathname.replace(/\/$/, "")}` : "";
-  const safeSourceUrl = value => {
-    try { const parsed = new URL(String(value || "")); return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : ""; }
-    catch { return ""; }
-  };
-  let activeSourceUrl = safeSourceUrl(initialHashParams.get(SOURCE_URL_MARKER));
-  let clearComposerOnPanelLoad = isChatGPTPanelRoot && initialHashParams.get(CLEAR_COMPOSER_MARKER) === "1";
+  // Ordinary provider tabs must never process extension-panel requests.
+  const initialMarkers = providers.readPanelMarkers(url.href);
+  const hasUrlMarker = initialMarkers.panel;
+  const initialLinkRequestId = initialMarkers.linkRequestId;
+  const initialFocusComposerRoute = initialMarkers.focusComposer ? providers.normalizeConversationUrl(provider.id, url.href) : "";
+  let activeSourceUrl = initialMarkers.sourceUrl;
+  let clearComposerOnPanelLoad = isPanelRoot && initialMarkers.clearComposer;
   let hasSessionMarker = false;
   try {
-    hasSessionMarker = sessionStorage.getItem(PANEL_MARKER) === "1";
-    if (isChatGPTPanelRoot) {
+    hasSessionMarker = sessionStorage.getItem(PANEL_SESSION_KEY) === "1";
+    if (isPanelRoot) {
       clearComposerOnPanelLoad = clearComposerOnPanelLoad || sessionStorage.getItem(CLEAR_COMPOSER_SESSION_KEY) === "1";
       sessionStorage.removeItem(CLEAR_COMPOSER_SESSION_KEY);
     }
     if (!activeSourceUrl) activeSourceUrl = safeSourceUrl(sessionStorage.getItem(SOURCE_URL_SESSION_KEY));
-    if (hasUrlMarker) sessionStorage.setItem(PANEL_MARKER, "1");
+    if (hasUrlMarker) sessionStorage.setItem(PANEL_SESSION_KEY, "1");
     if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
     if (initialLinkRequestId) sessionStorage.setItem(LINK_SESSION_KEY, initialLinkRequestId);
   } catch { /* restricted storage still allows the explicit URL marker */ }
@@ -55,17 +58,18 @@
     } catch { return ""; }
   }
   const hasExtensionReferrer = !!extensionRoot && document.referrer.startsWith(extensionRoot);
-  if (hasExtensionReferrer && !hasSessionMarker) { try { sessionStorage.setItem(PANEL_MARKER, "1"); hasSessionMarker = true; } catch {} }
+  if (hasExtensionReferrer && !hasSessionMarker) { try { sessionStorage.setItem(PANEL_SESSION_KEY, "1"); hasSessionMarker = true; } catch {} }
   if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
+  if (activeSourceUrl) composerApi.setSourceUrl(activeSourceUrl);
 
   function findComposer() {
-    return globalThis.LHN_AI_FILL?.findEditor() || null;
+    return composerApi.findEditor() || null;
   }
 
   function composerText(composer) {
-    return globalThis.LHN_AI_FILL?.editorText(composer) || "";
+    return composerApi.editorText(composer) || "";
   }
 
   function composerHasText(composer) {
@@ -74,7 +78,19 @@
 
   function focusComposerAtEnd(composer) {
     try { window.focus?.(); } catch {}
-    return globalThis.LHN_AI_FILL?.focusAtEnd(composer) === true;
+    return composerApi.focusAtEnd(composer) === true;
+  }
+
+  function currentConversationUrl() {
+    return providers.normalizeConversationUrl(provider.id, location.href);
+  }
+
+  function canonicalConversationUrl(value) {
+    return providers.normalizeConversationUrl(provider.id, value);
+  }
+
+  function currentPanelRouteUrl() {
+    return providers.panelRoute(provider.id, location.href);
   }
 
   async function focusComposerWhenReady({ timeoutMs = MAX_WAIT_MS, requireEmpty = false, expectedText = "", targetRoute = "" } = {}) {
@@ -96,24 +112,28 @@
     return false;
   }
 
+  function setActiveSourceUrl(value) {
+    activeSourceUrl = safeSourceUrl(value);
+    composerApi.setSourceUrl(activeSourceUrl);
+    try { if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
+  }
+
   // The side-panel host updates the source context and wakes same-route follow-ups.
   window.addEventListener("message", event => {
     // Chrome may expose MessageEvent.source as null for messages sent by extension pages.
     if (window.top === window || (event.source !== window.parent && event.source !== null)) return;
     const extensionOrigin = extensionMessageOrigin();
     if (!extensionOrigin || event.origin !== extensionOrigin) return;
-    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT") {
-      activeSourceUrl = safeSourceUrl(event.data.sourceUrl);
-      globalThis.LHN_AI_FILL?.setSourceUrl(activeSourceUrl);
-      try { if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
+    if (event.data?.type === "KEEPIT_AI_PANEL_SOURCE_CONTEXT") {
+      setActiveSourceUrl(event.data.sourceUrl);
       void reportPanelRouteContext(currentPanelRouteUrl());
       return;
     }
-    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER") {
+    if (event.data?.type === "KEEPIT_AI_PANEL_FOCUS_COMPOSER") {
       void focusComposerWhenReady({ targetRoute:event.data.targetRoute || "" });
       return;
     }
-    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST" && typeof event.data.requestId === "string" && event.data.requestId) {
+    if (event.data?.type === "KEEPIT_AI_PANEL_FOLLOWUP_REQUEST" && typeof event.data.requestId === "string" && event.data.requestId) {
       try {
         sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, event.data.requestId);
         sessionStorage.setItem(LINK_SESSION_KEY, event.data.requestId);
@@ -146,16 +166,29 @@
     });
   }
 
-  function waitForComposer() {
-    return globalThis.LHN_AI_FILL?.waitForEditor(MAX_WAIT_MS) || Promise.resolve(null);
+  // Some editors (Gemini) update their model a moment after insertion; require the exact
+  // prompt to stay in the composer for several samples before the single Send click.
+  async function waitForStableDraft(text, timeoutMs = 900) {
+    const expected = normalizedDraft(text);
+    const started = Date.now();
+    let stableSamples = 0;
+    while (Date.now() - started < timeoutMs) {
+      const composer = findComposer();
+      if (composer && normalizedDraft(composerText(composer)) === expected) {
+        stableSamples++;
+        if (stableSamples >= 4) return composer;
+      } else stableSamples = 0;
+      await new Promise(resolve => setTimeout(resolve, 35));
+    }
+    return null;
   }
 
   function insertDraft(composer, text, replaceExisting = false) {
-    return globalThis.LHN_AI_FILL?.setEditorText(composer, text, replaceExisting) === true;
+    return composerApi.setEditorText(composer, text, replaceExisting) === true;
   }
 
   function clearComposerText(composer) {
-    return globalThis.LHN_AI_FILL?.clearEditor(composer) === true;
+    return composerApi.clearEditor(composer) === true;
   }
 
   let panelLoadComposerClearPromise = null;
@@ -175,35 +208,16 @@
           && activeRequestId === pending.requestId;
         const expectedPrompt = normalizedDraft(pending?.prompt || "");
         if (pendingIsCurrent && expectedPrompt && normalizedDraft(composerText(composer)) === expectedPrompt) return;
-        if (pendingIsCurrent && pending.mode === "auto-send-link" && currentUrl?.searchParams.get("q") === pending.prompt) {
+        if (usesQueryPrompt && pendingIsCurrent && pending.mode === "auto-send-link" && currentUrl?.searchParams.get("q") === pending.prompt) {
           const queryComposer = await waitForComposerDraft(pending.prompt, 2200);
           if (queryComposer) return;
         }
         clearComposerText(findComposer() || composer);
-      })().catch(error => console.warn("Keepit could not clear a stale ChatGPT composer draft", error));
+      })().catch(error => console.warn("Keepit could not clear a stale AI composer draft", error));
     }
     await panelLoadComposerClearPromise;
   }
 
-  function notifyPanelHostConversation(conversationUrl) {
-    if (window.top === window) return;
-    try {
-      const extensionOrigin = extensionMessageOrigin();
-      if (!extensionOrigin) return;
-      window.parent.postMessage({ type:"KEEPIT_CHATGPT_PANEL_CONVERSATION", conversationUrl:String(conversationUrl || ""), routeUrl:currentPanelRouteUrl() }, extensionOrigin);
-    } catch {}
-  }
-
-  function currentPanelRouteUrl() {
-    try {
-      const current = new URL(location.href);
-      if (!["chatgpt.com", "chat.openai.com"].includes(current.hostname)) return "";
-      if (/^\/c\/[A-Za-z0-9_-]{8,}(?:\/|$)/i.test(current.pathname)) return `${current.origin}${current.pathname.replace(/\/$/, "")}`;
-      return `${current.origin}/`;
-    } catch { return ""; }
-  }
-
-  let lastConversationUrl = "";
   let lastReportedRouteContext = "";
   let pendingRouteContextKey = "";
   function reportPanelRouteContext(routeUrl) {
@@ -213,24 +227,15 @@
     const key = `${sourceUrl}\n${route}`;
     if (key === lastReportedRouteContext || key === pendingRouteContextKey) return;
     pendingRouteContextKey = key;
-    void globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_ROUTE_CONTEXT", sourceUrl, chatUrl:route })
+    void globalThis.LHN_MESSAGING.sendMessage({ type:"AI_PANEL_ROUTE_CONTEXT", providerId:provider.id, sourceUrl, chatUrl:route })
       .then(response => { if (response?.ok && pendingRouteContextKey === key) lastReportedRouteContext = key; })
       .catch(() => {})
       .finally(() => { if (pendingRouteContextKey === key) pendingRouteContextKey = ""; });
   }
 
-  async function rememberCurrentConversation() {
-    try {
-      const current = new URL(location.href);
-      if (!["chatgpt.com", "chat.openai.com"].includes(current.hostname)) return;
-      const isConversation = /^\/c\/[A-Za-z0-9_-]{8,}(?:\/|$)/i.test(current.pathname);
-      const conversationUrl = isConversation ? `${current.origin}${current.pathname.replace(/\/$/, "")}` : "";
-      if (conversationUrl !== lastConversationUrl) {
-        lastConversationUrl = conversationUrl;
-        notifyPanelHostConversation(conversationUrl);
-      }
-      reportPanelRouteContext(isConversation ? conversationUrl : `${current.origin}/`);
-    } catch (error) { lastConversationUrl = ""; console.warn("Keepit could not report the ChatGPT panel route", error); }
+  function rememberCurrentConversation() {
+    try { reportPanelRouteContext(currentPanelRouteUrl()); }
+    catch (error) { console.warn("Keepit could not report the AI panel route", error); }
   }
 
   let linkProcessing = false;
@@ -242,33 +247,13 @@
   let bypassManualSendIntercept = false;
 
   function activeLinkRequestId() {
-    const currentHash = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
-    const fromHash = currentHash.get(LINK_REQUEST_MARKER) || "";
+    const fromHash = providers.readPanelMarkers(location.href).linkRequestId;
     if (fromHash) {
       try { sessionStorage.setItem(LINK_SESSION_KEY, fromHash); } catch {}
       return fromHash;
     }
     try { return sessionStorage.getItem(LINK_SESSION_KEY) || initialLinkRequestId; }
     catch { return initialLinkRequestId; }
-  }
-
-  function currentConversationUrl() {
-    try {
-      const current = new URL(location.href);
-      if (!["chatgpt.com", "chat.openai.com"].includes(current.hostname)) return "";
-      if (!/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(current.pathname)) return "";
-      current.search = "";
-      current.hash = "";
-      return current.href;
-    } catch { return ""; }
-  }
-
-  function canonicalConversationUrl(value) {
-    try {
-      const target = new URL(String(value || ""));
-      if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname) || !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return "";
-      return `${target.origin}${target.pathname.replace(/\/+$/, "")}`;
-    } catch { return ""; }
   }
 
   function waitForConversationRoute(timeoutMs = 12000) {
@@ -323,12 +308,7 @@
   }
 
   function findSendButton() {
-    const composerForm = findComposer()?.closest("form");
-    return document.querySelector('button[data-testid="send-button"]')
-      || document.querySelector('button[aria-label*="Send prompt" i]')
-      || document.querySelector('button[aria-label="Send" i]')
-      || composerForm?.querySelector('button[aria-label*="Gửi" i], button[type="submit"]')
-      || document.querySelector('button[aria-label="Gửi" i]');
+    return composerApi.findSendButton();
   }
 
   async function waitForEnabledSendButton(timeoutMs = 9000) {
@@ -353,12 +333,13 @@
   }
 
   function isKeepitQueryAutoSend() {
+    if (!usesQueryPrompt) return false;
     const requestId = activeLinkRequestId();
     try { return !!requestId && sessionStorage.getItem(LINK_Q_SESSION_KEY) === requestId; }
     catch { return false; }
   }
 
-  function replayChatGPTSend() {
+  function replaySend() {
     bypassManualSendIntercept = true;
     try {
       const button = findSendButton();
@@ -373,7 +354,7 @@
       }
       return false;
     } catch (error) {
-      console.warn("Keepit could not resume the ChatGPT send action", error);
+      console.warn("Keepit could not resume the AI send action", error);
       return false;
     } finally {
       setTimeout(() => { bypassManualSendIntercept = false; }, 0);
@@ -389,35 +370,36 @@
     let preparation = null;
     try {
       preparation = await globalThis.LHN_MESSAGING.sendMessage({
-        type:"CHATGPT_MANUAL_LINK_PREPARE",
+        type:"AI_LINK_PREPARE",
+        providerId:provider.id,
         sourceUrl
       });
     } catch (error) {
-      console.warn("Keepit could not prepare the source link for this ChatGPT send", error);
-      replayChatGPTSend();
+      console.warn("Keepit could not prepare the source link for this AI send", error);
+      replaySend();
       return;
     }
     if (!preparation?.ok) {
-      if (!preparation?.stale) replayChatGPTSend();
+      if (!preparation?.stale) replaySend();
       return;
     }
     if (safeSourceUrl(activeSourceUrl) !== sourceUrl) return;
     const liveComposer = findComposer();
     if (!liveComposer || normalizedDraft(composerText(liveComposer)) !== normalizedDraft(originalPrompt)) return;
     if (preparation.mapped) {
-      replayChatGPTSend();
+      replaySend();
       return;
     }
     const requestId = String(preparation.requestId || "");
     const websiteLabel = String(preparation.websiteLabel || "Website");
-    if (!requestId) { replayChatGPTSend(); return; }
+    if (!requestId) { replaySend(); return; }
 
     const header = `• ${websiteLabel}: ${sourceUrl}`;
     const promptBody = String(originalPrompt || "").trim();
     const alreadyHasExactHeader = promptBody.split(/\r?\n/, 1)[0] === header;
     const fullPrompt = alreadyHasExactHeader
       ? promptBody
-      : (globalThis.LHN_CHATGPT_PROMPT_FORMAT?.formatLinkPrompt(websiteLabel, sourceUrl, promptBody)
+      : (globalThis.LHN_AI_PROMPT_FORMAT?.formatLinkPrompt(websiteLabel, sourceUrl, promptBody)
           || `${header}\n• ${promptBody}`);
     const composer = findComposer();
     if (!composer || safeSourceUrl(activeSourceUrl) !== sourceUrl
@@ -428,7 +410,7 @@
     }
 
     const sendButton = await waitForEnabledSendButton();
-    const currentComposer = findComposer();
+    const currentComposer = sendButton ? await waitForStableDraft(fullPrompt) || findComposer() : findComposer();
     const stillPrepared = currentComposer && normalizedDraft(composerText(currentComposer)) === normalizedDraft(fullPrompt);
     if (!sendButton || safeSourceUrl(activeSourceUrl) !== sourceUrl || !stillPrepared) {
       if (safeSourceUrl(activeSourceUrl) === sourceUrl && stillPrepared) insertDraft(currentComposer, originalPrompt, true);
@@ -443,7 +425,7 @@
     } catch { /* session storage may be disabled; composer still receives the exact link */ }
     bypassManualSendIntercept = true;
     try { sendButton.click(); }
-    catch (error) { console.warn("Keepit could not submit the manually prepared ChatGPT prompt", error); }
+    catch (error) { console.warn("Keepit could not submit the manually prepared AI prompt", error); }
     finally { setTimeout(() => { bypassManualSendIntercept = false; }, 0); }
   }
 
@@ -467,8 +449,8 @@
     event.stopPropagation();
     event.stopImmediatePropagation?.();
     void prepareAndSendManualPrompt(sourceUrl, originalPrompt).catch(error => {
-      console.warn("Keepit could not prepare the manually sent ChatGPT prompt", error);
-      replayChatGPTSend();
+      console.warn("Keepit could not prepare the manually sent AI prompt", error);
+      replaySend();
     }).finally(() => { manualSendIntercepting = false; });
   }
 
@@ -478,13 +460,6 @@
   document.addEventListener("submit", markManualDraftLinkSend, true);
   document.addEventListener("click", markManualDraftLinkSend, true);
   document.addEventListener("keydown", markManualDraftLinkSend, true);
-
-  function findNewChatButton() {
-    return document.querySelector('button[data-testid="create-new-chat-button"]')
-      || document.querySelector('a[data-testid="create-new-chat-button"]')
-      || document.querySelector('button[aria-label*="New chat" i]')
-      || document.querySelector('a[aria-label*="New chat" i]');
-  }
 
   async function waitForNewChatRoute(timeoutMs = 6000) {
     const started = Date.now();
@@ -498,7 +473,7 @@
   function clearRequestSessionData(requestId) {
     if (!requestId) return;
     try {
-      for (const key of [LINK_SESSION_KEY, LINK_DIRECT_SESSION_KEY, LINK_Q_SESSION_KEY, LINK_SENT_SESSION_KEY, LINK_PREPARED_SESSION_KEY, LINK_DRAFT_MANUAL_SEND_SESSION_KEY, LINK_MANUAL_SEND_SESSION_KEY, QUERY_REQUEST_KEY]) {
+      for (const key of [LINK_SESSION_KEY, LINK_DIRECT_SESSION_KEY, LINK_Q_SESSION_KEY, LINK_SENT_SESSION_KEY, LINK_PREPARED_SESSION_KEY, LINK_DRAFT_MANUAL_SEND_SESSION_KEY, LINK_MANUAL_SEND_SESSION_KEY]) {
         if (sessionStorage.getItem(key) === requestId) sessionStorage.removeItem(key);
       }
     } catch {}
@@ -508,17 +483,23 @@
     let response = null;
     try {
       response = await globalThis.LHN_MESSAGING.sendMessage({
-        type:"CHATGPT_LINK_RESULT",
+        type:"AI_LINK_RESULT",
+        providerId:provider.id,
         requestId:pending?.requestId || "",
         ok:!!ok,
         conversationUrl:conversationUrl || "",
         reason
       });
-    } catch (error) { console.warn("Keepit could not report the ChatGPT prompt result", error); }
+    } catch (error) { console.warn("Keepit could not report the AI prompt result", error); }
     clearRequestSessionData(pending?.requestId);
     if (ok && response?.ok && ["auto-send-link", "auto-send-followup"].includes(pending?.mode)) {
       void focusComposerWhenReady({ timeoutMs:6000, requireEmpty:true, expectedText:pending.prompt || "" });
     }
+  }
+
+  async function notifyDraftReady(pending) {
+    try { await globalThis.LHN_MESSAGING.sendMessage({ type:"AI_LINK_DRAFT_READY", providerId:provider.id, requestId:pending.requestId }); }
+    catch (error) { console.warn("Keepit could not register the manually-sendable AI draft", error); }
   }
 
   async function processPendingLink() {
@@ -537,6 +518,8 @@
         }
         return;
       }
+      // A request belongs to the AI it was created for; another provider page never runs it.
+      if ((pending.providerId || "chatgpt") !== provider.id) return;
       // A pending explicit prompt is bound to its exact source; a background tab switch must not run it in another source context.
       if (activeSourceUrl && safeSourceUrl(pending.sourceUrl) !== activeSourceUrl) return;
       if (stagedDraftLinkPending && stagedDraftLinkPending.requestId !== pending.requestId) {
@@ -552,6 +535,8 @@
       const isManualLink = pending.mode === "manual-link";
       const isFollowup = ["auto-send-followup", "draft-followup"].includes(pending.mode);
       const isDraftOnly = isDraftLink || pending.mode === "draft-followup";
+      // Without ?q= the first auto-sent prompt is typed like a draft, then sent once (ChatGPT's guarded Send).
+      const isTypedAutoLink = pending.mode === "auto-send-link" && !usesQueryPrompt;
       const expectedPrompt = typeof pending.prompt === "string" && pending.prompt
         ? pending.prompt
         : `${LINK_PROMPT_PREFIX} ${pending.sourceUrl}`;
@@ -561,15 +546,15 @@
         try { if (sessionStorage.getItem(LINK_DIRECT_SESSION_KEY) === pending.requestId) activeRequestId = pending.requestId; } catch {}
       }
       const currentUrl = new URL(location.href);
-      const queryMatches = currentUrl.searchParams.get("q") === expectedPrompt;
+      const queryMatches = usesQueryPrompt && currentUrl.searchParams.get("q") === expectedPrompt;
       let qRequestId = "";
       let alreadySentRequestId = "";
       try {
-        qRequestId = sessionStorage.getItem(LINK_Q_SESSION_KEY) || "";
+        qRequestId = usesQueryPrompt ? sessionStorage.getItem(LINK_Q_SESSION_KEY) || "" : "";
         alreadySentRequestId = sessionStorage.getItem(LINK_SENT_SESSION_KEY) || "";
       } catch {}
-      const qRequestMatches = qRequestId === pending.requestId && (queryMatches || !currentUrl.searchParams.has("q"));
-      if (isDraftLink) {
+      const qRequestMatches = usesQueryPrompt && qRequestId === pending.requestId && (queryMatches || !currentUrl.searchParams.has("q"));
+      if (isDraftLink || isTypedAutoLink) {
         if (activeRequestId !== pending.requestId) return;
       } else if (isFollowup) {
         if (activeRequestId !== pending.requestId || canonicalConversationUrl(currentConversationUrl()) !== canonicalConversationUrl(pending.conversationUrl)) return;
@@ -603,10 +588,7 @@
         if (preparedRequestId === pending.requestId) {
           stagedDraftLinkPending = pending;
           if (composer && normalizedDraft(composerText(composer)) === expectedNormalized) focusComposerAtEnd(composer);
-          if (pending.draftReady !== true) {
-            try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
-            catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
-          }
+          if (pending.draftReady !== true) await notifyDraftReady(pending);
           return;
         }
       }
@@ -616,7 +598,7 @@
       }
       // For the first request, ChatGPT may submit ?q= natively. If it has cleared the exact
       // prefill, record success rather than clicking Send a second time. Follow-ups deliberately
-      // target the existing /c/<id> route and are sent only from an empty, request-guarded composer.
+      // target the existing conversation route and are sent only from an empty, request-guarded composer.
       if (!isFollowup && conversationUrl && (queryMatches || qRequestMatches) && !composerHasText(composer)) {
         try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
         await reportLinkResult(pending, true, conversationUrl);
@@ -632,7 +614,7 @@
           await reportLinkResult(pending, false, "", "composer-not-empty");
           return;
         }
-        const newChatButton = findNewChatButton();
+        const newChatButton = composerApi.findNewChatButton();
         if (!newChatButton) {
           await reportLinkResult(pending, false, "", "new-chat-unavailable");
           return;
@@ -662,7 +644,7 @@
       }
 
       let text = normalizedDraft(composerText(composer));
-      if (isDraftLink) {
+      if (isDraftLink || isTypedAutoLink) {
         if (text && text !== expectedNormalized) {
           await reportLinkResult(pending, false, "", "composer-not-empty");
           return;
@@ -705,7 +687,7 @@
 
         // The exact request prompt is present from ChatGPT's q= prefill. First allow native
         // auto-submit to finish; if it did, do not submit a duplicate.
-        let createdConversation = await waitForConversationRoute(2200);
+        const createdConversation = await waitForConversationRoute(2200);
         composer = findComposer() || composer;
         if (createdConversation && !composerHasText(composer)) {
           try { sessionStorage.setItem(LINK_SENT_SESSION_KEY, pending.requestId); } catch {}
@@ -716,7 +698,7 @@
 
       // If ChatGPT did not complete its native ?q= send, re-render its exact prefill with
       // the shared multiline formatter before the one guarded manual Send click.
-      if (!isFollowup && !isDraftOnly && !isDraftLink) {
+      if (usesQueryPrompt && !isFollowup && !isDraftOnly && !isDraftLink) {
         composer = findComposer() || composer;
         if (normalizedDraft(composerText(composer)) !== expectedNormalized) {
           await reportLinkResult(pending, false, "", "composer-not-empty");
@@ -742,8 +724,7 @@
           focusComposerAtEnd(composer);
           try { sessionStorage.setItem(LINK_PREPARED_SESSION_KEY, pending.requestId); } catch {}
           stagedDraftLinkPending = { ...pending, draftReady:true };
-          try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
-          catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
+          await notifyDraftReady(pending);
         } else {
           await reportLinkResult(pending, true, conversationUrl || pending.conversationUrl || "");
           focusComposerAtEnd(composer);
@@ -755,6 +736,7 @@
         await reportLinkResult(pending, false, "", "send-button-unavailable");
         return;
       }
+      composer = await waitForStableDraft(expectedPrompt) || findComposer() || composer;
       // Final route/source, draft, and request checks immediately before the single send.
       if (activeSourceUrl && safeSourceUrl(pending.sourceUrl) !== activeSourceUrl) return;
       if (isFollowup && canonicalConversationUrl(currentConversationUrl()) !== canonicalConversationUrl(pending.conversationUrl)) return;
@@ -774,7 +756,7 @@
         else await reportLinkResult(pending, false, "", "conversation-not-created");
       }
     } catch (error) {
-      console.warn("Could not send the request-scoped ChatGPT prompt", error);
+      console.warn("Could not send the request-scoped AI prompt", error);
       if (pending) await reportLinkResult(pending, false, "", "link-autosend-failed");
     } finally {
       linkProcessing = false;
@@ -783,38 +765,42 @@
     }
   }
 
+  // Firefox shows the provider page itself in the sidebar, so it applies panel navigation requests here.
   async function processPanelNavigationRequest(request) {
     if (!isFirefox || window.top !== window || !request || request.expiresAt <= Date.now()) return false;
     try {
       const latestAtStart = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
       if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
-      const target = new URL(String(request.targetUrl || ""));
-      if (target.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(target.hostname)) return false;
-      if (target.pathname !== "/" && !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(target.pathname)) return false;
-      const routeKey = value => {
-        try {
-          const parsed = new URL(String(value || ""));
-          if (parsed.protocol !== "https:" || !["chatgpt.com", "chat.openai.com"].includes(parsed.hostname)) return "";
-          if (parsed.pathname !== "/" && !/^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(parsed.pathname)) return "";
-          return `${parsed.origin}${parsed.pathname === "/" ? "/" : parsed.pathname.replace(/\/$/, "")}`;
-        } catch { return ""; }
-      };
+      const requestProvider = providers.get(request.providerId || "chatgpt");
+      if (!requestProvider || !providers.isPanelProvider(requestProvider.id)) return false;
+      const target = providers.panelTarget(requestProvider.id, request.targetUrl);
+      if (!target) return false;
       const sourceContextChanged = !!request.sourceUrl && safeSourceUrl(request.sourceUrl) !== activeSourceUrl;
-      const targetRoute = routeKey(target.href);
-      const displayedRoute = routeKey(currentPanelRouteUrl());
+      const linkRequestId = ["new-link", "followup"].includes(request.mode) ? String(request.linkRequestId || "") : "";
+      const focusComposer = request.mode === "reopen" && request.focusComposer === true;
+      const targetUrl = providers.panelUrl(requestProvider.id, target, {
+        linkRequestId,
+        sourceUrl:request.sourceUrl || "",
+        clearComposer:sourceContextChanged,
+        focusComposer
+      });
+      if (requestProvider.id !== provider.id) {
+        // Another AI was selected: open its page in the sidebar with the same request markers.
+        location.replace(targetUrl);
+        await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
+        return true;
+      }
+      const targetRoute = providers.panelRoute(provider.id, target);
+      const displayedRoute = currentPanelRouteUrl();
       const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && targetRoute === displayedRoute;
       if (sameSourceAndRoute && ["reopen", "context-switch"].includes(request.mode)) {
-        if (request.mode === "reopen" && request.focusComposer === true) {
-          void focusComposerWhenReady({ targetRoute });
-        }
+        if (focusComposer) void focusComposerWhenReady({ targetRoute });
         if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
         return true;
       }
       if (sameSourceAndRoute && request.mode === "followup") {
-        activeSourceUrl = safeSourceUrl(request.sourceUrl) || activeSourceUrl;
-        globalThis.LHN_AI_FILL?.setSourceUrl(activeSourceUrl);
+        setActiveSourceUrl(safeSourceUrl(request.sourceUrl) || activeSourceUrl);
         try {
-          sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
           sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
           sessionStorage.setItem(LINK_SESSION_KEY, request.linkRequestId);
         } catch {}
@@ -826,31 +812,20 @@
 
       const latestBeforeNavigation = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
       if (latestBeforeNavigation?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
-      const params = new URLSearchParams(target.hash.replace(/^#/, ""));
-      params.set(PANEL_MARKER, "1");
-      if (request.sourceUrl) params.set(SOURCE_URL_MARKER, request.sourceUrl);
-      else params.delete(SOURCE_URL_MARKER);
-      if (sourceContextChanged) params.set(CLEAR_COMPOSER_MARKER, "1");
-      else params.delete(CLEAR_COMPOSER_MARKER);
-      if (request.mode === "reopen" && request.focusComposer === true) params.set(FOCUS_COMPOSER_MARKER, "1");
-      else params.delete(FOCUS_COMPOSER_MARKER);
-      if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
-      else params.delete(LINK_REQUEST_MARKER);
-      target.hash = params.toString();
       const forceSameRouteContextReload = sourceContextChanged && !!targetRoute && targetRoute === displayedRoute;
       if (forceSameRouteContextReload) {
         try {
-          history.replaceState(history.state, "", target.href);
+          history.replaceState(history.state, "", targetUrl);
           location.reload();
         } catch (error) {
-          console.warn("Keepit could not reload Firefox ChatGPT for a new source page", error);
-          location.replace(target.href);
+          console.warn("Keepit could not reload the Firefox AI panel for a new source page", error);
+          location.replace(targetUrl);
         }
-      } else location.replace(target.href);
+      } else location.replace(targetUrl);
       await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
       return true;
     } catch (error) {
-      console.warn("Keepit could not navigate the Firefox ChatGPT panel", error);
+      console.warn("Keepit could not navigate the Firefox AI panel", error);
       return false;
     }
   }
@@ -875,23 +850,23 @@
   }
   const pollPanel = () => {
     if (document.visibilityState === "hidden") return;
-    void rememberCurrentConversation();
+    rememberCurrentConversation();
     if (!linkProcessing) void processPendingLink();
   };
-  void rememberCurrentConversation();
+  rememberCurrentConversation();
   void processPendingLink();
   if (initialFocusComposerRoute) void focusComposerWhenReady({ targetRoute:initialFocusComposerRoute });
   const panelPollTimer = setInterval(pollPanel, 1200);
   let lastObservedHref = location.href;
   const routeObserver = new MutationObserver(() => {
     const currentHref = location.href;
-    if (currentHref !== lastObservedHref) { lastObservedHref = currentHref; void rememberCurrentConversation(); void processPendingLink(); }
+    if (currentHref !== lastObservedHref) { lastObservedHref = currentHref; rememberCurrentConversation(); void processPendingLink(); }
   });
   routeObserver.observe(document.documentElement, { childList:true, subtree:true });
   const rememberAfterNavigation = () => {
     lastObservedHref = location.href;
-    void rememberCurrentConversation();
-    // A repeat Ask AI uses the same /c/<id> route with a new request marker in the hash.
+    rememberCurrentConversation();
+    // A repeat Ask AI uses the same conversation route with a new request marker in the hash.
     // Re-run the pending sender on that hash/popstate event instead of waiting for a poll.
     void processPendingLink();
   };
