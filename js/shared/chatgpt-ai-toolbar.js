@@ -191,13 +191,13 @@
             left: 8px;
             right: 8px;
             display: flex;
+            align-items: center;
             gap: 4px;
             height: 36px;
             padding: 3px;
             overflow: hidden;
-            border: 1px solid var(--border);
-            border-radius: 13px;
-            background: var(--segment);
+            scrollbar-width: none;
+            background: var(--bar);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -218,10 +218,10 @@
             justify-content: center;
             gap: 6px;
             min-width: 0;
-            padding: 0 5px;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            color: var(--muted);
+            padding: 6px 10px;
+            border: 0;
+            border-radius: 7px;
+            color: CanvasText;
             background: transparent;
             font: inherit;
             font-size: 10px;
@@ -229,12 +229,11 @@
             white-space: nowrap;
             cursor: pointer;
           }
-          .tab:hover { color: var(--text); background: var(--surface-hover); }
+          .tab:hover { background: color-mix(in srgb, CanvasText 8%, var(--bar)); }
           .tab[aria-selected="true"] {
-            border-color: var(--border);
-            color: var(--text);
-            background: var(--surface-active);
-            font-weight: 700;
+            color: LinkText;
+            background: color-mix(in srgb, LinkText 15%, var(--bar));
+            font-weight: 650;
           }
           .provider-icon-wrap {
             position: relative;
