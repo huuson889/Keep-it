@@ -13,11 +13,26 @@
   const providers = globalThis.LHN_AI_PROVIDERS;
   const toolbar = frame && globalThis.LHN_AI_TOOLBAR?.create({
     initialProvider:"chatgpt",
-    onProviderChange:providerId => { void switchProvider(providerId); }
+    onProviderChange:providerId => { void switchProvider(providerId); },
+    onOpenGrokInTab:() => openGrokInNewTab()
   });
   let currentProviderId = "chatgpt";
   let currentSourceUrl = "";
   const commandWaiters = new Map();
+
+  function openGrokInNewTab() {
+    const provider = providers?.get("grok");
+    if (!frame || currentProviderId !== "grok" || !provider) return false;
+    try {
+      return browser.tabs.create({ url:provider.startUrl, active:true }).then(() => true).catch(error => {
+        console.warn("Keepit could not open Grok in a new tab", error);
+        return false;
+      });
+    } catch (error) {
+      console.warn("Keepit could not open Grok in a new tab", error);
+      return false;
+    }
+  }
 
   function safeSourceUrl(value) {
     try {
@@ -191,22 +206,6 @@
     const waiter = commandWaiters.get(String(event.data.requestId || ""));
     if (!provider || !waiter || waiter.providerId !== provider.id || !provider.origins.includes(event.origin)) return;
     waiter.finish(event.data);
-  });
-
-  browser.runtime.onMessage.addListener(message => {
-    if (message?.type !== "AI_PANEL_GOOGLE_AUTH_COMPLETED" || message.providerId !== "grok" || !frame) return;
-    return (async () => {
-      const windowId = await getCurrentWindowId();
-      if (windowId !== message.windowId || await getSavedProvider(windowId) !== "grok") return { ok:false, ignored:true };
-      const provider = providers?.get("grok");
-      if (!provider || providers?.fromUrl(frame.src)?.id !== provider.id) return { ok:false, ignored:true };
-      currentProviderId = provider.id;
-      toolbar?.setProvider(provider.id, { notify:false });
-      const target = await chromeProviderUrl(provider, frame.src);
-      frame.src = target;
-      frame.dataset.keepitProvider = provider.id;
-      return { ok:true, reloaded:true };
-    })();
   });
 
   async function getPending(request) {

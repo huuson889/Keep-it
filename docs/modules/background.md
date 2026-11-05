@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Background điều phối runtime, storage, panel lifecycle và request. Nó không đọc AI page, composer draft, page body/title, clipboard hay credentials. ChatGPT giữ mapping/route/auto-send; provider khác chỉ nhận prompt draft. Chromium chuyển Google sign-in trong Grok iframe sang popup.
+Background điều phối runtime, storage, panel lifecycle và request. Nó không đọc AI page, composer draft, page body/title, clipboard hay credentials. ChatGPT giữ mapping/route/auto-send; provider khác chỉ nhận prompt draft. Google sign-in của Grok không được handoff qua background; tab fallback thuộc Chromium AI panel.
 
 ## 2. File chính và điểm vào
 
@@ -23,7 +23,6 @@ Background điều phối runtime, storage, panel lifecycle và request. Nó kh�
 4. Với Gemini/Claude/Grok, background không tra hay tạo ChatGPT mapping và không auto-send. Nó tạo prompt localized từ instruction, exact source URL và (chỉ với Ask AI) selection hiện tại, rồi cấp request ID/provider ID cùng prompt draft ngắn hạn; panel/content side điền prompt vào editor. Draft text người dùng đã nhập trực tiếp vào composer không đi qua Background.
 5. Tab/source context switch giữ debounce per-window; khi hết hạn, request điều hướng provider hiện chọn. Panel close, source supersession và expiry dọn pending request.
 6. Chromium DNR rule 9002 chỉ áp response headers cho subframe trên allowlist host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
-7. `AI_PANEL_GOOGLE_AUTH_REQUEST` chỉ nhận từ embedded Google frame khi window chọn Grok. Background mở URL Google trong popup; callback về host Grok sẽ đóng popup, focus panel và gửi reload. `storage.session` chỉ giữ window/tab IDs và cooldown để qua worker restart.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -33,10 +32,10 @@ Background điều phối runtime, storage, panel lifecycle và request. Nó kh�
 - Request-scoped prompt/selection không phải composer draft. Không persist, khôi phục, đọc hoặc gửi nội dung người dùng tự gõ trong composer.
 - Giữ `sidePanel.open()`/`sidebarAction.open()` trong user-gesture turn; giữ Alt+X toggle và Hỏi AI open-or-keep-open. Firefox sidebar provider state phải gắn đúng window.
 - DNR giữ `requestDomains` đúng allowlist provider và `resourceTypes` là `sub_frame`; không dùng rule toàn URL hoặc thêm Google auth.
-- Popup chỉ nhận sender/auth URL từ `accounts.google.com`, extension ancestor và window chọn Grok; callback phải thuộc Grok registry. Không persist OAuth URL, token hay credentials.
 
 ## 5. Kiểm tra và xác minh
 
 - Đã chạy provider registry/prompt VM với localized generic prompt, selected text và exact source URL — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
-- DNR VM: migrate rule cũ, allowlist host + `sub_frame` — PASS. Grok Google-auth VM — PASS: chỉ embedded Google frame và đúng Grok window mở popup; Google page chưa đóng popup; callback Grok đóng/focus/reload, worker restart giữ flow, cooldown chặn vòng lặp; OAuth URL không persist.
-- Browser QA chưa chạy: kiểm tra popup/Google callback và khả năng iframe dùng lại session trên Chromium, Chrome provider iframe/DNR, Firefox sidebar, hai window đồng thời, source change, ChatGPT mapping/auto-send và no-submit trên provider khác.
+- DNR VM: migrate rule cũ, allowlist host + `sub_frame` — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
+- Chưa chạy Background VM cho provider storage/debounce, pending cleanup và ChatGPT regressions.
+- Browser QA chưa chạy: kiểm tra Chromium provider iframe/DNR, Firefox sidebar, hai window đồng thời, source change, ChatGPT mapping/auto-send và no-submit trên provider khác.

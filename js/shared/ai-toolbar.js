@@ -11,6 +11,7 @@
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
   const CHEVRON_LABELS = { en:"Show or hide AI services", vi:"Hiện/ẩn hàng AI", ko:"AI 서비스 표시/숨기기" };
   const AUTO_SEND_LABELS = { en:"Auto-send", vi:"Tự động gửi", ko:"자동 전송" };
+  const OPEN_GROK_TAB_LABELS = { en:"Open Grok in a new tab", vi:"Mở Grok trong tab mới", ko:"새 탭에서 Grok 열기" };
   const AUTO_SEND_STATUS_LABELS = {
     en:{ on:"Auto-send is on", off:"Auto-send is off" },
     vi:{ on:"Tự động gửi đang bật", off:"Tự động gửi đang tắt" },
@@ -59,7 +60,7 @@
     body.style.setProperty("padding-top", `calc(${originalPaddingTop} + 25px)`, "important");
   }
 
-  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {} } = {}) {
+  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {}, onOpenGrokInTab = null } = {}) {
     if (!document.getElementById("keepit-ai-page-offset")) ensurePageTopOffset();
     document.getElementById(LEGACY_HOST_ID)?.remove();
     let host = document.getElementById(HOST_ID);
@@ -191,6 +192,21 @@
           .auto-send:disabled { opacity: .65; cursor: wait; }
           .auto-send-label, .auto-send svg { color: inherit; }
           .auto-send svg { flex: 0 0 12.8px; width: 12.8px; height: 12.8px; }
+          .open-grok-tab {
+            display: grid;
+            flex: 0 0 25px;
+            place-items: center;
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--muted);
+            background: var(--bar);
+            cursor: pointer;
+          }
+          .open-grok-tab:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
+          .open-grok-tab svg { width: 13px; height: 13px; }
           .chevron {
             display: grid;
             flex: 0 0 25px;
@@ -206,7 +222,7 @@
             cursor: pointer;
           }
           .chevron:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
-          .auto-send:focus-visible, .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
+          .auto-send:focus-visible, .open-grok-tab:focus-visible, .chevron:focus-visible, .tab:focus-visible, .source-link:focus-visible {
             outline: 2px solid var(--link);
             outline-offset: 2px;
           }
@@ -303,7 +319,7 @@
             font-size: 9.6px;
             font-weight: 750;
           }
-          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden] { display: none; }
+          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden], .open-grok-tab[hidden] { display: none; }
           @media (max-width: 520px) {
             .tab { gap: 3px; padding-inline: 2px; font-size: 10px; }
             .provider-icon-wrap, .provider-icon, .provider-icon-fallback { flex-basis: 15.6px; width: 15.6px; height: 15.6px; }
@@ -311,7 +327,7 @@
           @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
         </style>
         <div class="bar is-expanded">
-          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="open-grok-tab" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
           <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">${PROVIDERS.map(provider => `<button class="tab" type="button" role="tab" data-provider="${provider.id}" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">${provider.name.slice(0, 1)}</span></span><span class="tab-label">${provider.name}</span></button>`).join("")}</div>
         </div>`;
       document.documentElement.append(host);
@@ -327,6 +343,7 @@
     const chevron = shadow.querySelector(".chevron");
     const autoSendButton = shadow.querySelector(".auto-send");
     const autoSendLabel = shadow.querySelector(".auto-send-label");
+    const openGrokTabButton = shadow.querySelector(".open-grok-tab");
     const providerButtons = [...shadow.querySelectorAll("[data-provider]")];
     let currentSourceUrl = "";
     let selectedProvider = PROVIDER_IDS.has(initialProvider) ? initialProvider : "chatgpt";
@@ -362,6 +379,13 @@
         button.tabIndex = selected ? 0 : -1;
       }
       autoSendButton.hidden = selectedProvider !== "chatgpt";
+      openGrokTabButton.hidden = selectedProvider !== "grok" || typeof onOpenGrokInTab !== "function";
+    }
+
+    function renderOpenGrokTab() {
+      const label = OPEN_GROK_TAB_LABELS[uiLanguage];
+      openGrokTabButton.setAttribute("aria-label", label);
+      openGrokTabButton.title = label;
     }
 
     function renderAutoSend() {
@@ -445,6 +469,12 @@
       renderAutoSend();
     });
 
+    openGrokTabButton.addEventListener("click", () => {
+      if (openGrokTabButton.hidden || typeof onOpenGrokInTab !== "function") return;
+      try { Promise.resolve(onOpenGrokInTab()).catch(error => console.warn("Keepit could not open Grok in a tab", error)); }
+      catch (error) { console.warn("Keepit could not open Grok in a tab", error); }
+    });
+
     chevron.addEventListener("click", () => {
       expanded = !expanded;
       renderExpansion();
@@ -475,6 +505,7 @@
       tabs.setAttribute("aria-label", TABS_LABELS[uiLanguage]);
       autoSendButton.disabled = false;
       renderAutoSend();
+      renderOpenGrokTab();
       renderExpansion();
       renderProvider();
     })();
@@ -488,11 +519,13 @@
       sourceRow.setAttribute("aria-label", SOURCE_LABELS[uiLanguage]);
       tabs.setAttribute("aria-label", TABS_LABELS[uiLanguage]);
       renderAutoSend();
+      renderOpenGrokTab();
       renderExpansion();
       renderProvider();
     });
 
     setSourceUrl(sourceUrl);
+    renderOpenGrokTab();
     renderExpansion();
     renderProvider();
     loadProviderIcons();

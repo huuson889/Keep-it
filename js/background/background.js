@@ -42,116 +42,6 @@ async function rememberAIProviderForWindow(windowId, providerId) {
     return true;
   } catch { return false; }
 }
-const GROK_GOOGLE_AUTH_STORAGE_PREFIX = "keepitGrokGoogleAuthFlow:";
-const GROK_GOOGLE_AUTH_OPENING = new Set();
-const GROK_GOOGLE_AUTH_COMPLETING = new Set();
-function grokGoogleAuthStorageKey(windowId) { return `${GROK_GOOGLE_AUTH_STORAGE_PREFIX}${windowId}`; }
-async function readGrokGoogleAuthState(windowId) {
-  const key = grokGoogleAuthStorageKey(windowId);
-  try { return (await browser.storage.session.get(key))?.[key] || null; }
-  catch { return null; }
-}
-async function openGrokGoogleAuthPopup(message, sender) {
-  if (!Number.isInteger(sender?.frameId) || sender.frameId <= 0 || sender.id !== browser.runtime.id) return { ok:false, error:"not-an-embedded-extension-frame" };
-  let senderUrl;
-  let authUrl;
-  let extensionOrigin;
-  try {
-    senderUrl = new URL(String(sender.url || ""));
-    authUrl = new URL(String(message?.authUrl || ""));
-    const extensionUrl = new URL(browser.runtime.getURL("/"));
-    extensionOrigin = `${extensionUrl.protocol}//${extensionUrl.host}`;
-  } catch { return { ok:false, error:"invalid-google-auth-request" }; }
-  if (senderUrl.origin !== "https://accounts.google.com" || authUrl.origin !== "https://accounts.google.com"
-    || authUrl.username || authUrl.password || message.extensionOrigin !== extensionOrigin) return { ok:false, error:"invalid-google-auth-origin" };
-  if (message.referrer) {
-    const referrerProvider = globalThis.LHN_AI_PROVIDERS?.fromUrl(message.referrer);
-    if (referrerProvider?.id !== "grok") return { ok:false, error:"invalid-google-auth-referrer" };
-  }
-  let windowId = sender?.tab?.windowId;
-  if (!Number.isInteger(windowId)) {
-    try { windowId = (await browser.windows.getLastFocused({ windowTypes:["normal"] }))?.id; } catch {}
-  }
-  if (!Number.isInteger(windowId)) windowId = chatGPTFocusedWindowId;
-  if (!Number.isInteger(windowId) || windowId < 0 || (await getAIProviderForWindow(windowId))?.id !== "grok") return { ok:false, error:"grok-not-selected" };
-  if (GROK_GOOGLE_AUTH_OPENING.has(windowId)) return { ok:true, alreadyOpening:true };
-  GROK_GOOGLE_AUTH_OPENING.add(windowId);
-  try {
-    const key = grokGoogleAuthStorageKey(windowId);
-    const previous = await readGrokGoogleAuthState(windowId);
-    if (Number.isInteger(previous?.popupWindowId)) {
-      try {
-        await browser.windows.update(previous.popupWindowId, { focused:true });
-        return { ok:true, alreadyOpen:true };
-      } catch { await browser.storage.session.remove(key); }
-    }
-    if (Number(previous?.cooldownUntil) > Date.now()) return { ok:false, error:"google-auth-recently-completed" };
-
-    let popup;
-    try { popup = await browser.windows.create({ url:"about:blank", type:"popup", width:520, height:700, focused:true }); }
-    catch { return { ok:false, error:"google-auth-popup-failed" }; }
-    if (!Number.isInteger(popup?.id)) return { ok:false, error:"google-auth-popup-failed" };
-    let authTab;
-    try { authTab = (await browser.tabs.query({ windowId:popup.id }))?.[0]; } catch {}
-    if (!Number.isInteger(authTab?.id)) {
-      try { await browser.windows.remove(popup.id); } catch {}
-      return { ok:false, error:"google-auth-tab-unavailable" };
-    }
-    const flow = { panelWindowId:windowId, popupWindowId:popup.id, popupTabId:authTab.id };
-    try { await browser.storage.session.set({ [key]:flow }); }
-    catch {
-      try { await browser.windows.remove(popup.id); } catch {}
-      return { ok:false, error:"google-auth-state-unavailable" };
-    }
-    try { await browser.tabs.update(authTab.id, { url:authUrl.href }); }
-    catch {
-      await browser.storage.session.remove(key);
-      try { await browser.windows.remove(popup.id); } catch {}
-      return { ok:false, error:"google-auth-navigation-failed" };
-    }
-    return { ok:true, opened:true };
-  } finally { GROK_GOOGLE_AUTH_OPENING.delete(windowId); }
-}
-async function completeGrokGoogleAuth(key, flow) {
-  if (!flow || GROK_GOOGLE_AUTH_COMPLETING.has(flow.popupTabId)) return;
-  GROK_GOOGLE_AUTH_COMPLETING.add(flow.popupTabId);
-  try {
-    const current = (await browser.storage.session.get(key))?.[key];
-    if (current?.popupTabId !== flow.popupTabId || current?.popupWindowId !== flow.popupWindowId) return;
-    await browser.storage.session.set({ [key]:{ panelWindowId:flow.panelWindowId, cooldownUntil:Date.now() + 60000 } });
-    try { await browser.windows.remove(flow.popupWindowId); } catch {}
-    try { await browser.windows.update(flow.panelWindowId, { focused:true }); } catch {}
-    try {
-      await browser.runtime.sendMessage({ type:"AI_PANEL_GOOGLE_AUTH_COMPLETED", providerId:"grok", windowId:flow.panelWindowId });
-    } catch { /* the panel may have closed while Google sign-in completed */ }
-  } finally { GROK_GOOGLE_AUTH_COMPLETING.delete(flow.popupTabId); }
-}
-async function handleGrokGoogleAuthTabUpdate(tabId, changeInfo, tab) {
-  if (changeInfo?.status !== "complete") return;
-  const finalUrl = String(tab?.url || changeInfo?.url || "");
-  if (globalThis.LHN_AI_PROVIDERS?.fromUrl(finalUrl)?.id !== "grok") return;
-  let stored;
-  try { stored = await browser.storage.session.get(null); } catch { return; }
-  for (const [key, flow] of Object.entries(stored || {})) {
-    if (!key.startsWith(GROK_GOOGLE_AUTH_STORAGE_PREFIX) || flow?.popupTabId !== tabId) continue;
-    await completeGrokGoogleAuth(key, flow);
-    return;
-  }
-}
-async function cleanupGrokGoogleAuthWindow(windowId) {
-  let stored;
-  try { stored = await browser.storage.session.get(null); } catch { return; }
-  for (const [key, flow] of Object.entries(stored || {})) {
-    if (!key.startsWith(GROK_GOOGLE_AUTH_STORAGE_PREFIX)) continue;
-    if (flow?.popupWindowId === windowId) await browser.storage.session.remove(key);
-    else if (flow?.panelWindowId === windowId) {
-      await browser.storage.session.remove(key);
-      if (Number.isInteger(flow?.popupWindowId)) {
-        try { await browser.windows.remove(flow.popupWindowId); } catch {}
-      }
-    }
-  }
-}
 function ensureAIProviderFrameRule(forceUpdate = false) {
   const dnr = globalThis.chrome?.declarativeNetRequest;
   if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules) return Promise.resolve(false);
@@ -414,8 +304,6 @@ browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
   const deadline = Date.now() + CHATGPT_PAGE_CONTEXT_DELAY_MS;
   void queueChatGPTPageContext(tab, CHATGPT_PAGE_CONTEXT_DELAY_MS, revision, deadline);
 });
-browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => { void handleGrokGoogleAuthTabUpdate(tabId, changeInfo, tab); });
-browser.windows.onRemoved?.addListener(windowId => { void cleanupGrokGoogleAuthWindow(windowId); });
 browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   if (!Number.isInteger(windowId)) return;
   const deadline = Date.now() + CHATGPT_PAGE_CONTEXT_DELAY_MS;
@@ -1119,7 +1007,6 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
   if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
-  if (message.type === "AI_PANEL_GOOGLE_AUTH_REQUEST") return openGrokGoogleAuthPopup(message, sender);
   if (message.type === "AI_PANEL_PROVIDER_SELECTED") {
     const provider = globalThis.LHN_AI_PROVIDERS?.get(message.providerId);
     const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? chatGPTFocusedWindowId);
