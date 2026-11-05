@@ -1,15 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- v3.5.110: nhớ AI đã chọn sau refresh/reload extension/khởi động lại trình duyệt (`storage.local` `keepitAiPanelLastProvider`; thứ tự đọc chung `pickSelectedProvider`: window → gần nhất → ChatGPT). Release commit `v3.5.110: Remember selected AI panel provider` + ZIP `Keepit - Optimize Test-v3.5.110.zip`.
-- v3.5.109 commit `9ee2674`, ZIP đã giao; người dùng xác nhận chạy đúng ("ok được rồi"). Không sửa ZIP cũ.
-- Lộ trình đã chốt với người dùng (làm đúng 100% đề xuất, mỗi bước một bản, chờ sync giữa các bản): v3.5.110 nhớ provider → v3.5.111 chỉ chuyển file AI vào `js/ask-ai/` (`providers.js`, `panel/`, `page/`, `service.js` tách từ background, `docs/modules/ask-ai.md`, cập nhật manifest/HTML/build Firefox/INDEX/AGENTS) không đổi hành vi → v3.5.112 gộp luồng ChatGPT/Gemini/Claude theo chuẩn ChatGPT (một pipeline fill/send/link/mapping, adapter riêng chỉ selector/`?q=`/URL hội thoại; bỏ `KEEPIT_CHATGPT_PANEL_CONVERSATION`; thêm session route reopen cho Gemini/Claude; đổi tên khóa/hàm "ChatGPT" dùng chung).
-- Sau khi giao v3.5.110, chờ người dùng xác nhận sync trước khi làm v3.5.111.
+- v3.5.112: gom toàn bộ code AI vào `js/ask-ai/` (`providers.js`, `service.js` tách từ background, `chatgpt-prompt-format.js`, `panel/`, `page/`), docs `docs/modules/ask-ai.md`; không đổi hành vi. Release commit `v3.5.112: Move AI panel code into js/ask-ai` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.112.zip`.
+- Người dùng cho làm tiếp sau v3.5.111 (dọn `tests/`, ZIP chuyển sang `/home/user/Keepit-zip`). Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
+- Còn lại trong lộ trình đã chốt: v3.5.113 gộp luồng ChatGPT/Gemini/Claude theo chuẩn ChatGPT (một pipeline fill/send/link/mapping; adapter riêng chỉ selector/`?q=`/URL hội thoại; bỏ `KEEPIT_CHATGPT_PANEL_CONVERSATION`; thêm session route reopen cho Gemini/Claude; đổi tên khóa/hàm "ChatGPT" dùng chung). Chờ người dùng xác nhận sync v3.5.112 trước khi làm.
+- Phát hiện có sẵn, chưa sửa: Firefox `background.scripts` thiếu `js/ask-ai/chatgpt-prompt-format.js` (Chromium nạp qua `importScripts`), nên `LHN_CHATGPT_PROMPT_FORMAT` có thể undefined ở Firefox background.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### AI panel providers v3.5.110
-- `node --test tests/` 19/19 PASS (VM: session bị xóa vẫn mở Gemini ở panel và background, hai window khác provider, window mới lấy lựa chọn gần nhất, Grok không được lưu). Static/build checks theo báo cáo giao.
-- Browser QA v3.5.110 chưa chạy: chọn Gemini/Claude rồi refresh/reload extension/khởi động lại trình duyệt → panel mở đúng AI và gửi được; hai cửa sổ hai AI; Firefox sidebar. Còn pending từ v3.5.109: Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+### AI panel providers
+- Browser QA chưa chạy: v3.5.112 toàn bộ AI panel sau khi chuyển thư mục (mở/đóng, Alt+X, Hỏi AI, context menu, đổi tab AI, đổi source, Send/mapping, ChatGPT) trên Chromium/Firefox; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
 - v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
 ### Reader ↔ Web TTS shared speed
@@ -71,12 +70,14 @@ Keepit - Test/
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
-│   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
-│   ├── content/                   # Page interaction and provider editor content scripts
-│   │   ├── ai-fill.js             # Provider editor fill/clear/focus and panel bridge
-│   │   ├── ai-provider-workflow.js # Gemini/Claude send-time URL, opt-in submit and mapping report
-│   │   ├── chatgpt-autofill.js    # ChatGPT-only prompt, mapping, route and opt-in auto-send
-│   │   ├── chatgpt-link-marker.js # document_start ChatGPT request/source marker
+│   ├── background/                # background.js (entry, router; nạp ask-ai/service.js), annotations, usage-limits
+│   ├── ask-ai/                    # AI panel ChatGPT/Gemini/Claude (Grok ẩn)
+│   │   ├── providers.js           # Registry, panelRoute/planPanelNavigation, pickSelectedProvider
+│   │   ├── service.js             # Background AI: panel lifecycle, provider, mapping, link, Alt+X, DNR 9002
+│   │   ├── chatgpt-prompt-format.js # Nhãn + URL + prompt formatting
+│   │   ├── panel/                 # ai-panel.js, ai-toolbar.js, chatgpt-panel.js
+│   │   └── page/                  # ai-fill.js, ai-provider-workflow.js, chatgpt-autofill.js, chatgpt-link-marker.js, grok-google-auth.js
+│   ├── content/                   # Page interaction content scripts
 │   │   ├── sidebar.js             # Page sidebar tabs and search tools
 │   │   └── note-composer.js       # Note form and record normalization
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
@@ -89,13 +90,7 @@ Keepit - Test/
 │   │   ├── study/                 # Dictation/Typing and Shadowing activities
 │   │   └── view/                  # layout-mode.js, cc-mode.js
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/
-│       ├── ai-providers.js       # ChatGPT/Gemini/Claude/Grok registry + generic prompt draft
-│       ├── ai-panel.js           # Provider control: Chromium iframe / Firefox top-level routing
-│       ├── ai-toolbar.js         # Source/ChatGPT-Gemini-Claude tabs and shared opt-in auto-send
-│       ├── chatgpt-panel.js      # ChatGPT-only route/mapping controller
-│       ├── chatgpt-prompt-format.js # ChatGPT-only prompt formatting
-│       └── other shared icons, thumbnails, fonts and search helpers
+│   └── shared/                    # custom-font, icons, search, site-icons, thumbnails
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation
@@ -164,6 +159,20 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.112 | Arena.ai Agent sửa:**
+
+- Chuyển code AI vào `js/ask-ai/` bằng `git mv`: `providers.js` (từ `js/shared/ai-providers.js`), `chatgpt-prompt-format.js`, `panel/{ai-panel,ai-toolbar,chatgpt-panel}.js`, `page/{ai-fill,ai-provider-workflow,chatgpt-autofill,chatgpt-link-marker,grok-google-auth}.js`. Tách khối AI của `background.js` sang `js/ask-ai/service.js` (nguyên văn) + `handleAskAIMessage`/`ASK_AI_MESSAGE_TYPES` cho 14 message AI ở đúng vị trí router cũ. Cập nhật manifest, `importScripts`, 2 panel HTML; docs `ask-ai.md` mới, viết lại shared/content/background, INDEX, AGENTS module list, README.
+- File: `manifest.json`, `js/ask-ai/**`, `js/background/background.js`, `pages/ai-panel-{chromium,firefox}.html`, `docs/INDEX.md`, `docs/modules/{ask-ai,shared,content,background}.md`, `AGENTS.md`, `README.md`, `PROJECT.md`.
+- Kiểm tra: chỉ có thêm dòng wrapper, không mất dòng code gốc; VM nạp background theo manifest trước/sau — cùng 11 listener, cùng kết quả router, `sidePanel.open` đồng bộ; 19 VM test ngoài repo PASS; syntax, manifest paths/permissions, Firefox transform, `git diff --check`. Browser QA chưa xác nhận.
+- Lưu ý: người dùng nhắc đã chốt 3 việc; bản này là việc 2.
+
+**2026-11-06 | v3.5.111 | Arena.ai Agent sửa:**
+
+- Dọn rác theo yêu cầu: xóa `tests/` khỏi repo (3 file test agent thêm ở v3.5.108–v3.5.110); chuyển ZIP v3.5.107–v3.5.110 nguyên vẹn từ `Keep-it` sang `/home/user/Keepit-zip`. Sửa docs module không còn nhắc `tests/`. Không đổi code chạy.
+- File: `manifest.json`, `tests/` (xóa), `docs/modules/shared.md`, `docs/modules/background.md`, `docs/modules/content.md`, `PROJECT.md`.
+- Kiểm tra: syntax toàn bộ JS, manifest không đổi ngoài version, Firefox transform, `git diff --check`; ZIP không chứa `tests/`.
+- Lưu ý: người dùng nhắc tuyệt đối không bỏ ZIP/rác vào `Keep-it`; AGENTS.md tách thư mục ZIP khỏi thư mục nguồn.
 
 **2026-11-06 | v3.5.110 | Arena.ai Agent sửa:**
 

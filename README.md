@@ -117,6 +117,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `js/translate/`: translation, dictionary, search, and study translation modules.
 - `js/dashboard/`: Dashboard, annotation utilities, flashcard study, account, backup, and flag modules.
 - `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.
+- `js/ask-ai/`: AI panel (ChatGPT, Gemini, Claude) — provider registry, panel, scripts that run on the AI sites, and the background service.
 - `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: styles grouped by surface and shared theme tokens.
 - `assets/icons/` and `assets/fonts/`: local icons and fonts; `vendor/readability/`: Mozilla Readability sources.
 - `licenses/`: third-party license texts; `AGENTS.md`, `PROJECT.md`, and `OPT-ARENA.md`: contributor rules, project handoff, and architecture plan.

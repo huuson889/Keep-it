@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.110",
+  "version": "3.5.112",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -28,7 +28,8 @@
       "js/translate/translate.js",
       "js/background/usage-limits.js",
       "js/background/annotations.js",
-      "js/shared/ai-providers.js",
+      "js/ask-ai/providers.js",
+      "js/ask-ai/service.js",
       "js/background/background.js"
     ]
   },
@@ -107,8 +108,8 @@
       "js": [
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
-        "js/shared/ai-providers.js",
-        "js/content/grok-google-auth.js"
+        "js/ask-ai/providers.js",
+        "js/ask-ai/page/grok-google-auth.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -119,22 +120,7 @@
         "https://chat.openai.com/*"
       ],
       "js": [
-        "js/content/chatgpt-link-marker.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
-    },
-    {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
-      ],
-      "js": [
-        "js/core/browser-polyfill.js",
-        "js/core/messaging.js",
-        "js/shared/ai-providers.js",
-        "js/shared/ai-toolbar.js",
-        "js/content/ai-fill.js"
+        "js/ask-ai/page/chatgpt-link-marker.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -147,8 +133,23 @@
       "js": [
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
-        "js/shared/chatgpt-prompt-format.js",
-        "js/content/chatgpt-autofill.js"
+        "js/ask-ai/providers.js",
+        "js/ask-ai/panel/ai-toolbar.js",
+        "js/ask-ai/page/ai-fill.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
+        "js/ask-ai/chatgpt-prompt-format.js",
+        "js/ask-ai/page/chatgpt-autofill.js"
       ],
       "run_at": "document_idle",
       "all_frames": true
@@ -164,10 +165,10 @@
       "js": [
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
-        "js/shared/ai-providers.js",
-        "js/shared/ai-toolbar.js",
-        "js/content/ai-fill.js",
-        "js/content/ai-provider-workflow.js"
+        "js/ask-ai/providers.js",
+        "js/ask-ai/panel/ai-toolbar.js",
+        "js/ask-ai/page/ai-fill.js",
+        "js/ask-ai/page/ai-provider-workflow.js"
       ],
       "run_at": "document_start",
       "all_frames": true
