@@ -2,7 +2,9 @@
   "use strict";
 
   const HOST_ID = "keepit-chatgpt-ai-toolbar-host";
-  const PAGE_SPACER_ID = "keepit-chatgpt-ai-toolbar-page-spacer";
+  const LEGACY_PAGE_SPACER_ID = "keepit-chatgpt-ai-toolbar-page-spacer";
+  const PAGE_PADDING_ATTR = "data-keepit-ai-toolbar-original-padding-top";
+  const ROOT_TOP_ATTR = "data-keepit-ai-toolbar-original-top";
   const UI_LANGUAGE_KEY = "lhnSettings";
   const SOURCE_LABELS = { en:"Source:", vi:"Nguồn:", ko:"출처:" };
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
@@ -34,22 +36,36 @@
     return Object.hasOwn(SOURCE_LABELS, language) ? language : "en";
   }
 
-  function ensurePageTopSpacer() {
+  function ensurePageTopOffset() {
     const body = document.body;
     if (!body) return;
-    let spacer = document.getElementById(PAGE_SPACER_ID);
-    if (!spacer) {
-      spacer = document.createElement("div");
-      spacer.id = PAGE_SPACER_ID;
-      spacer.setAttribute("aria-hidden", "true");
-      spacer.setAttribute("role", "presentation");
-      spacer.style.cssText = "all:initial!important;display:block!important;position:static!important;box-sizing:border-box!important;flex:0 0 25px!important;grid-column:1/-1!important;width:100%!important;height:25px!important;min-height:25px!important;max-height:25px!important;margin:0!important;padding:0!important;border:0!important;visibility:hidden!important;pointer-events:none!important;";
+
+    // Remove the earlier flow spacer: it can sit beside the app root when body uses flex-row.
+    document.getElementById(LEGACY_PAGE_SPACER_ID)?.remove();
+
+    const appRoot = [...body.children].find(element => !["SCRIPT", "STYLE", "TEMPLATE"].includes(element.tagName));
+    const position = appRoot ? globalThis.getComputedStyle?.(appRoot)?.position : "";
+    if (appRoot && (position === "fixed" || position === "absolute")) {
+      let originalTop = appRoot.getAttribute(ROOT_TOP_ATTR);
+      if (originalTop === null) {
+        originalTop = globalThis.getComputedStyle?.(appRoot)?.top || "0px";
+        appRoot.setAttribute(ROOT_TOP_ATTR, originalTop);
+      }
+      const topOffset = originalTop === "auto" ? "25px" : `calc(${originalTop} + 25px)`;
+      appRoot.style.setProperty("top", topOffset, "important");
+      return;
     }
-    if (spacer.parentNode !== body || body.firstChild !== spacer) body.insertBefore(spacer, body.firstChild);
+
+    let originalPaddingTop = body.getAttribute(PAGE_PADDING_ATTR);
+    if (originalPaddingTop === null) {
+      originalPaddingTop = globalThis.getComputedStyle?.(body)?.paddingTop || "0px";
+      body.setAttribute(PAGE_PADDING_ATTR, originalPaddingTop);
+    }
+    body.style.setProperty("padding-top", `calc(${originalPaddingTop} + 25px)`, "important");
   }
 
   function create({ sourceUrl = "" } = {}) {
-    ensurePageTopSpacer();
+    ensurePageTopOffset();
     let host = document.getElementById(HOST_ID);
     if (!host) {
       host = document.createElement("div");

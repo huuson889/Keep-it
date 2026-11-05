@@ -33,11 +33,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: spacer 25px đầu body đẩy trang AI xuống; tab overlay không tăng chiều cao trang. Bar 25px/divider 66px; tabs 4 cột đều, tab 30px, padding 2px 10px, chữ 10px. Dark row cùng nền bar, active tint link-blue; auto-send dùng setting hiện có.
+- Toolbar: body top padding tăng đúng 25px để đẩy nội dung AI xuống (app root fixed/absolute cũng nhận top offset); tab overlay không tăng page flow. Bar 25px/divider 66px; tabs 4 cột đều, tab 30px, padding 2px 10px, chữ 10px. Dark row cùng nền bar, active tint link-blue; auto-send dùng setting hiện có.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.99 toolbar VM: +25px body padding or fixed/absolute app-root top offset, legacy spacer cleanup, idempotency and layout/provider regression assertions — PASS; browser QA pending.
 - v3.5.98 toolbar VM: 25px flow spacer, overlay tab row, idempotency, source/provider behavior — PASS; browser QA pending.
 - v3.5.90 toolbar VM: font stack, URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
 - v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
