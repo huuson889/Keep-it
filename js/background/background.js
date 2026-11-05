@@ -612,7 +612,7 @@ function makeChatGPTLinkTarget(prompt, requestId, includeQuery = true) {
 function makeChatGPTQuestionPrompt(selectedText, instruction = CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt) {
   return `"${String(selectedText || "").trim()}"\n${normalizeChatGPTInstruction(instruction, CONFIG.DEFAULT_SETTINGS.chatGPTAskPrompt)}`;
 }
-async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText = "" } = {}) {
+async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText = "", focusComposer = false } = {}) {
   const sourceUrl = normalizeChatGPTSourceUrl(tab?.url);
   if (!sourceUrl) return { ok:false, error:"source-url-unavailable" };
   const askingAboutSelection = intent === "ask-selected-text";
@@ -642,6 +642,7 @@ async function queueChatGPTLinkPanelFlow(tab, { intent = "summary", selectedText
     intent:askingAboutSelection ? "ask-selected-text" : "summary",
     targetUrl:savedConversation || "",
     mode:savedConversation ? "reopen" : "new-link",
+    focusComposer:focusComposer === true && !!savedConversation && !askingAboutSelection,
     expiresAt:Date.now() + 60000
   };
   const clearActionRequests = async linkRequestId => {
@@ -720,7 +721,7 @@ async function openChatGPTLinkPanel({ sender, tab, intent = "summary", selectedT
     const panel = await openChatGPTSidePanel({ sender, tab:sourceTab, toggle:intent !== "ask-selected-text" });
     if (!panel?.ok || !panel.opened) return panel;
     if (Number.isInteger(windowId)) await trackChatGPTPanel(windowId, sourceTab.id, true);
-    const flow = await queueChatGPTLinkPanelFlow(sourceTab, { intent, selectedText });
+    const flow = await queueChatGPTLinkPanelFlow(sourceTab, { intent, selectedText, focusComposer:true });
     return { ...panel, ...flow };
   } finally { if (Number.isInteger(windowId)) clearChatGPTExplicitPanelOpen(windowId); }
 }
@@ -900,7 +901,7 @@ function openChatGPTFromCommand() {
     }
     if (tab?.id) {
       await trackChatGPTPanel(tab.windowId, tab.id, true);
-      const queued = await queueChatGPTLinkPanelFlow(tab);
+      const queued = await queueChatGPTLinkPanelFlow(tab, { focusComposer:true });
       if (!queued.ok) {
         try { await browser.tabs.sendMessage(tab.id, { type:"CHATGPT_LINK_PANEL_FAILED" }); } catch {}
       } else {

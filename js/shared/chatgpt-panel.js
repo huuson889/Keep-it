@@ -5,6 +5,7 @@
   const LINK_REQUEST_MARKER = "keepit-chatgpt-link-request";
   const SOURCE_URL_MARKER = "keepit-chatgpt-source-url";
   const CLEAR_COMPOSER_MARKER = "keepit-chatgpt-clear-composer";
+  const FOCUS_COMPOSER_MARKER = "keepit-chatgpt-focus-composer";
   const SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
   const DEFAULT_CHATGPT_URL = "https://chatgpt.com/";
   const frame = document.getElementById("chatgpt-frame");
@@ -59,7 +60,7 @@
     } catch { return ""; }
   }
 
-  function panelUrl(value, linkRequestId = "", sourceUrl = "", clearComposer = false) {
+  function panelUrl(value, linkRequestId = "", sourceUrl = "", clearComposer = false, focusComposer = false) {
     const url = new URL(safePanelTarget(value) || safeConversationUrl(value) || DEFAULT_CHATGPT_URL);
     const params = new URLSearchParams(url.hash.replace(/^#/, ""));
     params.set(PANEL_MARKER, "1");
@@ -69,6 +70,8 @@
     else params.delete(SOURCE_URL_MARKER);
     if (clearComposer) params.set(CLEAR_COMPOSER_MARKER, "1");
     else params.delete(CLEAR_COMPOSER_MARKER);
+    if (focusComposer) params.set(FOCUS_COMPOSER_MARKER, "1");
+    else params.delete(FOCUS_COMPOSER_MARKER);
     url.hash = params.toString();
     return url.href;
   }
@@ -96,6 +99,12 @@
     wakeFollowup(requestId);
     setTimeout(() => wakeFollowup(requestId), 350);
     setTimeout(() => wakeFollowup(requestId), 1100);
+  }
+
+  function wakeComposerFocus(targetRoute) {
+    if (!frame?.isConnected || !frame.contentWindow) return;
+    try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER", targetRoute:String(targetRoute || "") }, "*"); }
+    catch { /* ChatGPT may be navigating */ }
   }
 
   function reloadPanelFrame(targetUrl, onTargetLoad) {
@@ -130,10 +139,12 @@
     const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset.keepitLoaded === "true";
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
     const linkRequestId = requestScopedFlow ? String(request.linkRequestId || "") : "";
+    const focusComposer = request.mode === "reopen" && request.focusComposer === true;
 
     // A same-source/same-route request does not navigate, but explicit Ask AI still replaces/sends its prompt.
     if (sameSourceAndRoute && ["reopen", "context-switch"].includes(request.mode)) {
       handledNavigationIds.add(request.requestId);
+      if (focusComposer) wakeComposerFocus(targetRoute);
       await clearNavigationRequest(request.requestId);
       return true;
     }
@@ -149,7 +160,7 @@
     }
 
     handledNavigationIds.add(request.requestId);
-    const url = panelUrl(target, linkRequestId, request.sourceUrl || "", sourceContextChanged);
+    const url = panelUrl(target, linkRequestId, request.sourceUrl || "", sourceContextChanged, focusComposer);
     const forceSameRouteContextReload = sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset?.keepitLoaded === "true";
     if (frame) {
       if (request.sourceUrl) frame.dataset.keepitSourceUrl = request.sourceUrl;

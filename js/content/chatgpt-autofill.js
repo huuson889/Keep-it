@@ -12,6 +12,7 @@
   const LINK_DIRECT_SESSION_KEY = "keepitChatGPTDirectFollowupRequestId";
   const LINK_Q_SESSION_KEY = "keepitChatGPTLinkQRequestId";
   const LINK_SENT_SESSION_KEY = "keepitChatGPTLinkSentRequestId";
+  const FOCUS_COMPOSER_MARKER = "keepit-chatgpt-focus-composer";
   const LINK_PREPARED_SESSION_KEY = "keepitChatGPTPreparedRequestId";
   const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitChatGPTDraftManualSendRequestId";
   const LINK_MANUAL_SEND_SESSION_KEY = "keepitChatGPTManualLinkSendRequestId";
@@ -27,6 +28,9 @@
   const initialHashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
   const hasUrlMarker = url.searchParams.get(PANEL_MARKER) === "1" || initialHashParams.get(PANEL_MARKER) === "1";
   const initialLinkRequestId = initialHashParams.get(LINK_REQUEST_MARKER) || "";
+  const initialFocusComposer = initialHashParams.get(FOCUS_COMPOSER_MARKER) === "1";
+  const initialFocusComposerRoute = initialFocusComposer && /^\/c\/[A-Za-z0-9_-]+(?:\/|$)/.test(url.pathname)
+    ? `${url.origin}${url.pathname.replace(/\/$/, "")}` : "";
   const safeSourceUrl = value => {
     try { const parsed = new URL(String(value || "")); return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : ""; }
     catch { return ""; }
@@ -83,6 +87,46 @@
     return /[^\s]/.test(composerText(composer));
   }
 
+  function focusComposerAtEnd(composer) {
+    if (!composer) return false;
+    try { window.focus?.(); } catch {}
+    try { composer.focus({ preventScroll:true }); }
+    catch { try { composer.focus(); } catch { return false; } }
+    try {
+      if (typeof composer.setSelectionRange === "function") {
+        const end = String(composer.value || "").length;
+        composer.setSelectionRange(end, end);
+      } else if (composer.isContentEditable) {
+        const range = document.createRange();
+        range.selectNodeContents(composer);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+      return true;
+    } catch { return false; }
+  }
+
+  async function focusComposerWhenReady({ timeoutMs = MAX_WAIT_MS, requireEmpty = false, expectedText = "", targetRoute = "" } = {}) {
+    const started = Date.now();
+    const expectedRoute = canonicalConversationUrl(targetRoute);
+    const sentText = normalizedDraft(expectedText);
+    while (Date.now() - started < timeoutMs) {
+      const composer = findComposer();
+      const currentRoute = expectedRoute ? canonicalConversationUrl(currentConversationUrl()) : "";
+      if (composer && (!expectedRoute || currentRoute === expectedRoute)) {
+        if (requireEmpty && composerHasText(composer) && (!sentText || normalizedDraft(composerText(composer)) === sentText)) {
+          await new Promise(resolve => setTimeout(resolve, 120));
+          continue;
+        }
+        if (!composer.disabled && composer.getAttribute?.("aria-disabled") !== "true") return focusComposerAtEnd(composer);
+      }
+      await new Promise(resolve => setTimeout(resolve, 120));
+    }
+    return false;
+  }
+
   // The side-panel host updates the source context and wakes same-route follow-ups.
   window.addEventListener("message", event => {
     // Chrome may expose MessageEvent.source as null for messages sent by extension pages.
@@ -94,6 +138,10 @@
       chatGPTToolbar?.setSourceUrl(activeSourceUrl);
       try { if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
       void reportPanelRouteContext(currentPanelRouteUrl());
+      return;
+    }
+    if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER") {
+      void focusComposerWhenReady({ targetRoute:event.data.targetRoute || "" });
       return;
     }
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST" && typeof event.data.requestId === "string" && event.data.requestId) {
@@ -666,8 +714,9 @@
   }
 
   async function reportLinkResult(pending, ok, conversationUrl = "", reason = "") {
+    let response = null;
     try {
-      await globalThis.LHN_MESSAGING.sendMessage({
+      response = await globalThis.LHN_MESSAGING.sendMessage({
         type:"CHATGPT_LINK_RESULT",
         requestId:pending?.requestId || "",
         ok:!!ok,
@@ -676,6 +725,9 @@
       });
     } catch (error) { console.warn("Keepit could not report the ChatGPT prompt result", error); }
     clearRequestSessionData(pending?.requestId);
+    if (ok && response?.ok && ["auto-send-link", "auto-send-followup"].includes(pending?.mode)) {
+      void focusComposerWhenReady({ timeoutMs:6000, requireEmpty:true, expectedText:pending.prompt || "" });
+    }
   }
 
   async function processPendingLink() {
@@ -759,6 +811,7 @@
         }
         if (preparedRequestId === pending.requestId) {
           stagedDraftLinkPending = pending;
+          if (composer && normalizedDraft(composerText(composer)) === expectedNormalized) focusComposerAtEnd(composer);
           if (pending.draftReady !== true) {
             try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
             catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
@@ -895,12 +948,14 @@
       }
       if (isDraftOnly) {
         if (isDraftLink) {
+          focusComposerAtEnd(composer);
           try { sessionStorage.setItem(LINK_PREPARED_SESSION_KEY, pending.requestId); } catch {}
           stagedDraftLinkPending = { ...pending, draftReady:true };
           try { await globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_LINK_DRAFT_READY", requestId:pending.requestId }); }
           catch (error) { console.warn("Keepit could not register the manually-sendable ChatGPT draft", error); }
         } else {
           await reportLinkResult(pending, true, conversationUrl || pending.conversationUrl || "");
+          focusComposerAtEnd(composer);
         }
         return;
       }
@@ -958,6 +1013,9 @@
       const displayedRoute = routeKey(currentPanelRouteUrl());
       const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && targetRoute === displayedRoute;
       if (sameSourceAndRoute && ["reopen", "context-switch"].includes(request.mode)) {
+        if (request.mode === "reopen" && request.focusComposer === true) {
+          void focusComposerWhenReady({ targetRoute });
+        }
         if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
         return true;
       }
@@ -983,6 +1041,8 @@
       else params.delete(SOURCE_URL_MARKER);
       if (sourceContextChanged) params.set(CLEAR_COMPOSER_MARKER, "1");
       else params.delete(CLEAR_COMPOSER_MARKER);
+      if (request.mode === "reopen" && request.focusComposer === true) params.set(FOCUS_COMPOSER_MARKER, "1");
+      else params.delete(FOCUS_COMPOSER_MARKER);
       if (["new-link", "followup"].includes(request.mode) && request.linkRequestId) params.set(LINK_REQUEST_MARKER, request.linkRequestId);
       else params.delete(LINK_REQUEST_MARKER);
       target.hash = params.toString();
@@ -1029,6 +1089,7 @@
   };
   void rememberCurrentConversation();
   void processPendingLink();
+  if (initialFocusComposerRoute) void focusComposerWhenReady({ targetRoute:initialFocusComposerRoute });
   const panelPollTimer = setInterval(pollPanel, 1200);
   let lastObservedHref = location.href;
   const routeObserver = new MutationObserver(() => {

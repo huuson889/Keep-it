@@ -20,7 +20,7 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 1. `LHN_MESSAGING.sendMessage` thêm request ID; receiver dispatch theo type và trả response cho đúng request.
 2. `LHN_STORAGE` bọc API browser storage. Callers dùng local cho persistent settings/mapping và session cho tab/window route context.
 3. `LHN_CHATGPT_PANEL` build HTTPS ChatGPT URL, validate `/c/<id>`, exact source mapping, prompt/link và sanitize route metadata.
-4. `LHN_CHATGPT_PROMPT_FORMAT` tạo localized URL header + instruction cho opt-in `?q=` và send-time injection. Content chỉ đọc composer text trong memory; prompt người dùng tự viết không nằm trong background message/storage. Mapping/confirmation vẫn thuộc Background.
+4. `LHN_CHATGPT_PROMPT_FORMAT` tạo localized URL header + instruction cho opt-in `?q=` và send-time injection. Panel host giữ same-source/same-route fast path; explicit mapped reopen gửi `KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER`, còn đổi route mang marker một lần để content focus composer sau khi sẵn sàng. Context switch thụ động không focus. Content chỉ đọc composer text trong memory; prompt người dùng tự viết không nằm trong background message/storage. Mapping/confirmation vẫn thuộc Background.
 5. `LHN_UTILS` và `LHN_SANITIZER` xử lý dữ liệu hiển thị; `HIGHLIGHT_STATE` phát sự kiện thay đổi cho các UI.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -35,6 +35,7 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 
 ## 5. Kiểm tra và xác minh
 
+- v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
 - v3.5.86: Content VM confirms the shared multiline formatter produces the exact localized URL header before manual send; source URL and user-written prompt remain separate, and the user-written body is not persisted. All first-party JS syntax and manifest checks — PASS.
 - Focused panel VM: sanitize source route, không global fallback, same-source/same-route fast path, force reload khác source dù cùng route, one-shot clear marker khi panel mới/context reload, không prompt tự động, giữ explicit `?q=` — PASS.
 - Background VM xác nhận route mapping, request supersession/expiry/close và deadline tab event — PASS.
