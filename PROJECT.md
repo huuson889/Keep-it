@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- v3.5.114: vạch ngang dưới thanh AI panel mỏng còn 1/2 (`.bar::after` giữ 1px + `transform: scaleY(.5)`, gốc `top`); không đổi bố cục khác. Release commit `v3.5.114: Halve AI panel toolbar divider` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.114.zip`.
-- v3.5.113 (một pipeline ChatGPT/Gemini/Claude trong `js/ask-ai/`) người dùng xác nhận luồng chạy hoàn hảo trên trình duyệt thật. Lộ trình 3 bước đã xong.
-- Khoảng trắng dưới thanh trên Claude (Chromium) là đáy header riêng của Claude lộ dưới phần thanh đè; người dùng chọn không xử lý.
+- v3.5.115: sửa Alt+X đôi khi không đóng được panel đang mở và báo "Không mở được AI panel" (Chromium). Nguyên nhân: sau khi service worker khởi động lại, cửa sổ focus nhớ trong bộ nhớ bị mất nên Alt+X dùng `WINDOW_ID_CURRENT` (-2) để đóng → `sidePanel.close`/fallback thất bại. Nay dùng `windowId` của tab đi kèm `onCommand`. Release commit `v3.5.115: Fix Alt+X failing to close the AI panel after worker restart` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.115.zip`.
+- v3.5.114: vạch ngang dưới thanh AI mỏng còn 1/2. v3.5.113 (một pipeline ChatGPT/Gemini/Claude) người dùng xác nhận luồng chạy hoàn hảo.
+- Khoảng trắng dưới thanh trên Claude (Chromium) là header riêng của Claude; người dùng chọn không xử lý.
 - Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### AI panel providers
-- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.115 Alt+X đóng panel sau khi để yên >30 giây; v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
 - v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
 ### Reader ↔ Web TTS shared speed
@@ -160,6 +160,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.115 | Arena.ai Agent sửa:**
+
+- Alt+X đôi khi không đóng được AI panel đang mở mà báo "Không mở được AI panel" (Chromium). Nguyên nhân: service worker MV3 bị tắt khi rảnh; khi chạy lại, trạng thái panel mở được khôi phục từ `storage.session` nhưng `aiPanelFocusedWindowId` (chỉ trong bộ nhớ, cập nhật khi đổi tab/cửa sổ) là null, nên `openAIPanel()` không có tab dùng `WINDOW_ID_CURRENT` (-2) → nhánh đóng gọi `sidePanel.close({windowId:-2})` hoặc fallback `KEEPIT_CLOSE_AI_PANEL` (panel so -2 với id thật) thất bại → `AI_PANEL_OPEN_FAILED`. Biến thể: nếu chính Alt+X đánh thức worker, panel không tắt được.
+- Sửa: listener `onCommand(command, tab)` truyền tab; `openAIPanelFromCommand` gọi `openAIPanel({ tab:{ windowId } })` (chỉ windowId, giữ nguyên luồng khác) và dùng chính tab đó cho flow trang; không có tab thì giữ hành vi cũ. `sidePanel.open()` vẫn gọi đồng bộ trong gesture.
+- File: `manifest.json`, `js/ask-ai/service.js`, `docs/modules/ask-ai.md`, `PROJECT.md`.
+- Kiểm tra (ngoài repo): VM 6 kịch bản Alt+X (panel mở sau restart → đóng đúng cửa sổ; Alt+X đánh thức worker → vẫn đóng; panel đóng → mở đồng bộ + flow; Chromium cũ fallback; không có tab; Firefox toggle) PASS, bản cũ trượt đúng các kịch bản lỗi; service 18/18. Browser QA chưa xác nhận.
 
 **2026-11-06 | v3.5.114 | Arena.ai Agent sửa:**
 

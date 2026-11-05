@@ -865,13 +865,18 @@ async function notifyAILinkDraftReady(message) {
   }
   return { ok:true };
 }
-function openAIPanelFromCommand() {
+function openAIPanelFromCommand(commandTab) {
   // The command id "open-chatgpt-sidepanel" is kept so users' custom shortcuts survive updates.
   // Open/toggle in the command gesture, then pass only the active tab URL to the new flow.
+  // Use the window of the tab the browser passes with the command: after a service-worker
+  // restart the remembered focused window is gone, and WINDOW_ID_CURRENT cannot close the panel.
+  const windowId = Number.isInteger(commandTab?.windowId) && commandTab.windowId >= 0 ? commandTab.windowId : null;
   let togglePromise;
-  try { togglePromise = openAIPanel(); }
+  try { togglePromise = openAIPanel(windowId === null ? {} : { tab:{ windowId } }); }
   catch (error) { togglePromise = Promise.reject(error); }
-  const tabPromise = browser.tabs.query({ active:true, currentWindow:true }).then(tabs => tabs?.[0] || null);
+  const tabPromise = Number.isInteger(commandTab?.id) && windowId !== null
+    ? Promise.resolve(commandTab)
+    : browser.tabs.query({ active:true, currentWindow:true }).then(tabs => tabs?.[0] || null);
   Promise.allSettled([togglePromise, tabPromise]).then(async ([panelResult, tabResult]) => {
     const tab = tabResult.status === "fulfilled" ? tabResult.value : null;
     const panel = panelResult.status === "fulfilled" ? panelResult.value : null;
@@ -896,8 +901,8 @@ function openAIPanelFromCommand() {
     }
   }).catch(error => console.warn("Could not finish the AI panel keyboard command", error));
 }
-browser.commands?.onCommand.addListener(command => {
-  if (command === "open-chatgpt-sidepanel") void openAIPanelFromCommand();
+browser.commands?.onCommand.addListener((command, tab) => {
+  if (command === "open-chatgpt-sidepanel") void openAIPanelFromCommand(tab);
 });
 
 // AI runtime messages (pages, panel and content script) handled by the background router.

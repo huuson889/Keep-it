@@ -37,6 +37,7 @@ Ask AI gom toàn bộ AI panel: provider registry, panel Chromium/Firefox, scrip
 - Message tới content: `AI_PANEL_VISIBILITY`, `AI_PANEL_OPEN_FAILED`, `AI_PANEL_TOGGLED_CLOSED`, `AI_LINK_PANEL_QUEUED`, `AI_LINK_PANEL_FAILED`, `AI_PANEL_RESULT`.
 - Registry sở hữu ID/URL/origin; bridge kiểm tra `event.source`, origin và provider. Request của AI khác bị bỏ qua; kết quả từ AI khác trả `stale` và không map.
 - Generic fill không submit. Gửi chỉ khi editor còn đúng prompt dự kiến sau thời gian ổn định; nếu không, không gửi và không map. Mapping chỉ sau confirmed send; không global last-chat.
+- `Alt+X` dùng cửa sổ của tab mà trình duyệt gửi kèm `onCommand(command, tab)`; không dựa vào cửa sổ focus nhớ trong bộ nhớ (mất khi service worker khởi động lại) hay `WINDOW_ID_CURRENT` (không đóng được panel). `sidePanel.open()` vẫn gọi đồng bộ trong gesture.
 - `service.js` chỉ đọc `CONFIG` khi được gọi; top-level không phụ thuộc biến khai báo trong `background.js`. Danh sách `importScripts` Chromium phải trùng `background.scripts` Firefox.
 - DNR 9002 chỉ áp subframe trên allowlist provider; không thêm quyền, Google auth hay bypass CSP/XFO.
 
