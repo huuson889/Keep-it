@@ -33,12 +33,12 @@ Shared modules cung cấp API/state được dùng qua nhiều context: messagin
 - Prompt/selection của explicit Keepit action có thể lưu tạm theo request ID; manual user-written prompt không được persist, chỉ URL/request metadata tạm giữ mapping lifecycle. Clear khi hoàn tất, cancel/close, source supersession hoặc expiry. Không có per-source composer save/restore.
 - Giữ prompt exact-source, escaped attributes, URL scheme validation và newline behavior; không hạ cấp HTTPS validation.
 - UI-facing text dùng locale/settings hiện có; module helper không được tự thêm setting hay mapping management UI.
-- Toolbar: nền opaque/system, bar tối `#3c3c3c`; tabs phẳng kiểu v3.5.88, 4 cột đều/căn giữa, pill 8px/6px; icon và chữ AI +20%. Dark selected pill xám trung tính, text link rõ. Auto-send đồng bộ `lhnSettings.chatGPTAutoSend`; chữ/icon cùng màu.
+- Toolbar: bar cao 25px, divider tại 66px; tabs phẳng, 4 cột đều/căn giữa, mỗi tab 30px, padding 2px 10px, chữ 10px. Dark AI row dùng v11 colors (`#2e2e2e`, `#333333`, `#3b3b3b`). Auto-send dùng setting hiện có, chữ/icon cùng màu.
 - User text phải đi qua escaping/sanitization trước render HTML; không chuyển page body/title/clipboard thành selection prompt.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.95 toolbar VM: 8px/6px pill gaps, source-left alignment, 20% AI scale, auto-send color match, neutral dark selected color — PASS; browser QA pending.
+- v3.5.96 toolbar VM: bar/tab dimensions, dark v11 row colors, source-left alignment, auto-send color match, provider behavior — PASS; browser QA pending.
 - v3.5.90 toolbar VM: font stack, URL/locale, expanded/chevron, provider and icon loader/fallback — PASS; browser QA pending.
 - v3.5.88 panel VM: same-route mapped reopen posts composer-focus request; changed route carries the one-shot focus marker; passive context switch does not focus — PASS.
 - v3.5.86: Content VM confirms exact localized URL header, mapping/send separation and no user-prompt persistence; JS/manifest checks — PASS.

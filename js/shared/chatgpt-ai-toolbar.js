@@ -81,8 +81,8 @@
           .bar {
             position: relative;
             z-index: 2;
-            height: 29px;
-            padding: 1px 8px;
+            height: 25px;
+            padding: 0 8px;
             color: var(--text);
             background: var(--bar);
             pointer-events: auto;
@@ -104,7 +104,7 @@
           .bar::after {
             position: absolute;
             z-index: 5;
-            top: 70px;
+            top: 66px;
             right: 0;
             left: 0;
             height: 1px;
@@ -117,7 +117,7 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            height: 27px;
+            height: 25px;
             min-width: 0;
           }
           .label {
@@ -220,14 +220,14 @@
             justify-content: center;
             gap: 6px;
             min-width: 0;
-            height: 34px;
-            padding: 8px 10px;
+            height: 30px;
+            padding: 2px 10px;
             border: 0;
             border-radius: 7px;
             color: CanvasText;
             background: transparent;
             font: inherit;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 560;
             white-space: nowrap;
             cursor: pointer;
@@ -239,9 +239,13 @@
             font-weight: 650;
           }
           @media (prefers-color-scheme: dark) {
+            .tabs { background: #2e2e2e; }
+            .tab { color: #a2a2a2; }
+            .tab:hover { color: #f4f4f4; background: #333333; }
             .tab[aria-selected="true"] {
-              color: var(--link);
-              background: color-mix(in srgb, var(--text) 12%, var(--bar));
+              color: #f4f4f4;
+              background: #3b3b3b;
+              font-weight: 700;
             }
           }
           .provider-icon-wrap {
@@ -275,14 +279,14 @@
           .blank-panel {
             position: fixed;
             z-index: 1;
-            inset: 70px 0 0;
+            inset: 66px 0 0;
             display: none;
             color: var(--text);
             background: var(--window);
             pointer-events: auto;
           }
           @media (max-width: 520px) {
-            .tab { gap: 3px; padding-inline: 2px; font-size: 10.8px; }
+            .tab { gap: 3px; padding-inline: 2px; font-size: 10px; }
             .provider-icon-wrap, .provider-icon, .provider-icon-fallback { flex-basis: 15.6px; width: 15.6px; height: 15.6px; }
           }
           @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
