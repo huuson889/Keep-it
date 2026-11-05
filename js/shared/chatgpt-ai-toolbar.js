@@ -161,6 +161,7 @@
           .auto-send.is-enabled { border-color: transparent; background: var(--bar); color: var(--auto-send-brand); }
           .auto-send.is-enabled:hover { border-color: var(--border); background: var(--surface-hover); color: var(--auto-send-brand); }
           .auto-send:disabled { opacity: .65; cursor: wait; }
+          .auto-send-label, .auto-send svg { color: inherit; }
           .auto-send svg { flex: 0 0 12.8px; width: 12.8px; height: 12.8px; }
           .chevron {
             display: grid;
@@ -181,6 +182,7 @@
             outline: 2px solid var(--link);
             outline-offset: 2px;
           }
+          .tab:focus-visible { outline-offset: 1px; }
           .chevron svg { width: 14px; height: 14px; transition: transform .16s ease; }
           .bar.is-expanded .chevron svg { transform: rotate(180deg); }
           .chevron-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -194,7 +196,7 @@
             align-items: center;
             gap: 4px;
             height: 36px;
-            padding: 3px;
+            padding: 1px 3px;
             overflow: hidden;
             scrollbar-width: none;
             background: var(--bar);
@@ -218,7 +220,7 @@
             justify-content: center;
             gap: 6px;
             min-width: 0;
-            padding: 6px 10px;
+            padding: 10px 10px;
             border: 0;
             border-radius: 7px;
             color: CanvasText;
