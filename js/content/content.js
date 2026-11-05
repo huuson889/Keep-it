@@ -26,7 +26,6 @@
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
   let sidebar = null, sidebarOpen = false, sidebarActiveTab = "highlights", sidebarSetActiveTab = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
-  const CHATGPT_CONTEXT = globalThis.LHN_CHATGPT_CONTEXT.create({ document, location, getReadability:() => globalThis.Readability });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
   const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
@@ -1190,41 +1189,6 @@
       ? "* { scrollbar-width: thin !important; }"
       : "*::-webkit-scrollbar { width: 3px !important; height: 3px !important; }";
   }
-  // Legacy v3.5.60 page-text workflow retained but no longer called by the launcher.
-  async function launchChatGPTSidePanelLegacy() {
-    // Send the toggle immediately from the click handler; only copy/fill when it opened.
-    let togglePromise;
-    try { togglePromise = LHN_MESSAGING.sendMessage({ type:"OPEN_CHATGPT_SIDEPANEL" }); }
-    catch (error) { togglePromise = Promise.reject(error); }
-    const toggleResult = await Promise.allSettled([togglePromise]);
-    const result = toggleResult[0].status === "fulfilled" ? toggleResult[0].value : null;
-    const opened = result?.ok === true && result.opened === true;
-    if (!result?.ok) {
-      const reason = toggleResult[0].status === "rejected" ? String(toggleResult[0].reason?.message || toggleResult[0].reason) : result?.reason || result?.error || "unknown-error";
-      console.warn("Could not toggle the ChatGPT side panel from the page launcher", reason);
-      showSidebarToast(() => t("chatGPTPanelOpenFailedToast"));
-      return { opened:false, copied:false };
-    }
-    if (!opened) {
-      showSidebarToast(() => t("chatGPTPanelClosedToast"));
-      return { opened:false, copied:false, closed:true };
-    }
-    if (sidebarOpen) closeSidebar();
-    const copyResult = await CHATGPT_CONTEXT.copyPromptToClipboard();
-    if (!copyResult.ok) {
-      showSidebarToast(() => t("chatGPTCopyFailedToast"));
-      return { opened:true, copied:false };
-    }
-    showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
-    try {
-      await LHN_MESSAGING.sendMessage({ type:"CHATGPT_DRAFT_READY", truncated:copyResult.truncated === true });
-    } catch (error) {
-      console.warn("Could not request ChatGPT draft auto-fill", error);
-      showSidebarToast(() => t("chatGPTAutoFillFailedToast"));
-    }
-    return { opened:true, copied:true, truncated:copyResult.truncated };
-  }
-
   // URL-only summary via Alt+X; the explicit Ask AI icon passes only the selected snippet.
   async function launchChatGPTSidePanel(options = {}) {
     const hasSelection = Object.prototype.hasOwnProperty.call(options, "selectedText");
@@ -1908,21 +1872,10 @@
       if (sidebarOpen) renderSidebar(true);
       return;
     }
-    if (message?.type === "COPY_CHATGPT_CONTEXT") {
-      return CHATGPT_CONTEXT.copyPromptToClipboard().then(result => {
-        if (result.ok) {
-          if (sidebarOpen) closeSidebar();
-          showSidebarToast(() => t(result.truncated ? "chatGPTCopiedTruncatedToast" : "chatGPTCopiedToast"));
-        } else showSidebarToast(() => t("chatGPTCopyFailedToast"));
-        return result;
-      });
-    }
     if (message?.type === "CHATGPT_PANEL_VISIBILITY") { setChatGPTPanelScrollbar(message.open === true); return; }
     if (message?.type === "CHATGPT_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
     if (message?.type === "CHATGPT_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
-    if (message?.type === "CHATGPT_COPY_FAILED") { showSidebarToast(() => t("chatGPTCopyFailedToast")); return; }
     if (message?.type === "CHATGPT_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
-    if (message?.type === "CHATGPT_AUTOFILL_PENDING") { showSidebarToast(() => t("chatGPTAutoFillPendingToast")); return; }
     if (message?.type === "CHATGPT_LINK_PANEL_QUEUED") {
       if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(message.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
       return;

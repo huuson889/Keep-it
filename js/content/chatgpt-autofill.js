@@ -1,5 +1,4 @@
 (async () => {
-  const PENDING_KEY = "keepitChatGPTDraftPending"; // Legacy v3.5.60 draft flow; kept but no longer invoked.
   const LINK_PENDING_KEY = "keepitChatGPTLinkPending";
   const PANEL_NAVIGATION_KEY = "keepitChatGPTPanelNavigationRequest";
   const PANEL_MARKER = "keepit-chatgpt-panel";
@@ -17,14 +16,13 @@
   const LINK_DRAFT_MANUAL_SEND_SESSION_KEY = "keepitChatGPTDraftManualSendRequestId";
   const LINK_MANUAL_SEND_SESSION_KEY = "keepitChatGPTManualLinkSendRequestId";
   const QUERY_REQUEST_KEY = "keepit-chatgpt-query-prefill-request";
-  const PROMPT_PREFIX = "Hãy tóm tắt nội dung ngắn gọn";
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
   const MAX_WAIT_MS = 25000;
   const isFirefox = /Firefox\//i.test(globalThis.navigator?.userAgent || "");
   const isChatGPTPanelRoot = isFirefox ? window.top === window : window.parent === window.top;
   let url;
   try { url = new URL(location.href); } catch { return; }
-  // ChatGPT in an ordinary tab must never read or receive the extension's clipboard draft.
+  // Ordinary ChatGPT tabs must never process extension-panel requests.
   const initialHashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
   const hasUrlMarker = url.searchParams.get(PANEL_MARKER) === "1" || initialHashParams.get(PANEL_MARKER) === "1";
   const initialLinkRequestId = initialHashParams.get(LINK_REQUEST_MARKER) || "";
@@ -61,26 +59,13 @@
   if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
-  const chatGPTToolbar = isFirefox ? globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:activeSourceUrl }) : null;
-  if (isFirefox) {
-    globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_CONTEXT_READY" }).catch(() => {});
-  }
-
-  let processing = false;
-  let retryRequested = false;
-  let lastRequestId = "";
 
   function findComposer() {
-    return document.querySelector("#prompt-textarea")
-      || document.querySelector('[contenteditable="true"][data-testid="prompt-textarea"]')
-      || document.querySelector('[contenteditable="true"][role="textbox"][aria-label*="ChatGPT" i]')
-      || document.querySelector('[contenteditable="true"][role="textbox"]')
-      || document.querySelector('textarea[placeholder*="Message" i]')
-      || document.querySelector('textarea[aria-label*="Message" i]');
+    return globalThis.LHN_AI_FILL?.findEditor() || null;
   }
 
   function composerText(composer) {
-    return String(composer?.isContentEditable ? composer.innerText || composer.textContent : composer?.value || "").replace(/[\u200b\u2060]/g, "");
+    return globalThis.LHN_AI_FILL?.editorText(composer) || "";
   }
 
   function composerHasText(composer) {
@@ -88,24 +73,8 @@
   }
 
   function focusComposerAtEnd(composer) {
-    if (!composer) return false;
     try { window.focus?.(); } catch {}
-    try { composer.focus({ preventScroll:true }); }
-    catch { try { composer.focus(); } catch { return false; } }
-    try {
-      if (typeof composer.setSelectionRange === "function") {
-        const end = String(composer.value || "").length;
-        composer.setSelectionRange(end, end);
-      } else if (composer.isContentEditable) {
-        const range = document.createRange();
-        range.selectNodeContents(composer);
-        range.collapse(false);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
-      return true;
-    } catch { return false; }
+    return globalThis.LHN_AI_FILL?.focusAtEnd(composer) === true;
   }
 
   async function focusComposerWhenReady({ timeoutMs = MAX_WAIT_MS, requireEmpty = false, expectedText = "", targetRoute = "" } = {}) {
@@ -135,7 +104,7 @@
     if (!extensionOrigin || event.origin !== extensionOrigin) return;
     if (event.data?.type === "KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT") {
       activeSourceUrl = safeSourceUrl(event.data.sourceUrl);
-      chatGPTToolbar?.setSourceUrl(activeSourceUrl);
+      globalThis.LHN_AI_FILL?.setSourceUrl(activeSourceUrl);
       try { if (activeSourceUrl) sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl); } catch {}
       void reportPanelRouteContext(currentPanelRouteUrl());
       return;
@@ -154,7 +123,6 @@
   });
 
   const normalizedDraft = value => String(value || "").replace(/[\u200b\u2060]/g, "").replace(/\r\n?/g, "\n").replace(/\s+/g, " ").trim();
-  const isPreparedDraft = value => typeof value === "string" && value.startsWith(PROMPT_PREFIX) && value.includes("Nội dung chính:");
 
   function waitForComposerDraft(text, timeoutMs = 1800) {
     return new Promise(resolve => {
@@ -179,85 +147,15 @@
   }
 
   function waitForComposer() {
-    const initial = findComposer();
-    if (initial) return Promise.resolve(initial);
-    return new Promise(resolve => {
-      let settled = false;
-      const finish = value => {
-        if (settled) return;
-        settled = true;
-        observer.disconnect();
-        clearTimeout(timer);
-        resolve(value);
-      };
-      const observer = new MutationObserver(() => {
-        const composer = findComposer();
-        if (composer) finish(composer);
-      });
-      observer.observe(document.documentElement, { childList:true, subtree:true });
-      const timer = setTimeout(() => finish(null), MAX_WAIT_MS);
-    });
+    return globalThis.LHN_AI_FILL?.waitForEditor(MAX_WAIT_MS) || Promise.resolve(null);
   }
 
   function insertDraft(composer, text, replaceExisting = false) {
-    composer.focus();
-    if (composer.isContentEditable) {
-      if (replaceExisting && !String(text).includes("\n")) {
-        try {
-          const selection = window.getSelection();
-          const range = document.createRange();
-          range.selectNodeContents(composer);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-        } catch { /* the textContent fallback below still replaces the draft */ }
-      }
-      if (String(text).includes("\n")) {
-        // Drafts and the manual-send fallback use the same shared two-line formatter/rendering.
-        // The new-chat ?q= path serializes the exact same formatted string.
-        let inserted = false;
-        try {
-          inserted = globalThis.LHN_CHATGPT_PROMPT_FORMAT?.insertMultilineComposerText(composer, text, replaceExisting) === true;
-        } catch { /* use the safe editor fallback below */ }
-        if (!inserted) {
-          composer.textContent = text;
-          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
-        }
-      } else {
-        let inserted = false;
-        try { inserted = document.execCommand("insertText", false, text); } catch { /* use the safe editor fallback */ }
-        if (!inserted || composerText(composer) !== text.trim()) {
-          composer.textContent = text;
-          composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
-        }
-      }
-    } else {
-      const proto = Object.getPrototypeOf(composer);
-      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
-      if (setter) setter.call(composer, text); else composer.value = text;
-      composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"insertText", data:text }));
-      composer.dispatchEvent(new Event("change", { bubbles:true }));
-    }
-    return composerText(composer) === text.trim();
+    return globalThis.LHN_AI_FILL?.setEditorText(composer, text, replaceExisting) === true;
   }
 
   function clearComposerText(composer) {
-    if (!composer) return false;
-    insertDraft(composer, "", true);
-    if (composerHasText(composer)) {
-      if (composer.isContentEditable) {
-        composer.textContent = "";
-        try { composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"deleteContentBackward", data:null })); }
-        catch { composer.dispatchEvent(new Event("input", { bubbles:true })); }
-      } else {
-        const proto = Object.getPrototypeOf(composer);
-        const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
-        if (setter) setter.call(composer, ""); else composer.value = "";
-        try { composer.dispatchEvent(new InputEvent("input", { bubbles:true, inputType:"deleteContentBackward", data:null })); }
-        catch { composer.dispatchEvent(new Event("input", { bubbles:true })); }
-        composer.dispatchEvent(new Event("change", { bubbles:true }));
-      }
-    }
-    return !composerHasText(composer);
+    return globalThis.LHN_AI_FILL?.clearEditor(composer) === true;
   }
 
   let panelLoadComposerClearPromise = null;
@@ -285,17 +183,6 @@
       })().catch(error => console.warn("Keepit could not clear a stale ChatGPT composer draft", error));
     }
     await panelLoadComposerClearPromise;
-  }
-
-  async function report(pending, ok, reason = "") {
-    try {
-      await globalThis.LHN_MESSAGING.sendMessage({
-        type:"CHATGPT_AUTOFILL_RESULT",
-        requestId:pending?.requestId || "",
-        ok:!!ok,
-        reason
-      });
-    } catch (error) { console.warn("Keepit could not report the ChatGPT draft result", error); }
   }
 
   function notifyPanelHostConversation(conversationUrl) {
@@ -344,102 +231,6 @@
       }
       reportPanelRouteContext(isConversation ? conversationUrl : `${current.origin}/`);
     } catch (error) { lastConversationUrl = ""; console.warn("Keepit could not report the ChatGPT panel route", error); }
-  }
-
-  // Legacy v3.5.60 clipboard/body-text autofill kept only for rollback; no current trigger calls it.
-  async function processPendingDraftLegacy() {
-    if (processing) { retryRequested = true; return; }
-    processing = true;
-    let pending = null;
-    try {
-      const stored = await browserApi.storage.local.get(PENDING_KEY);
-      pending = stored?.[PENDING_KEY];
-      if (!pending || !pending.requestId || pending.requestId === lastRequestId) return;
-      lastRequestId = pending.requestId;
-      if (!Number.isFinite(pending.expiresAt) || pending.expiresAt < Date.now()) {
-        await report(pending, false, "draft-expired");
-        return;
-      }
-      let composer = await waitForComposer();
-      if (!composer) {
-        await report(pending, false, "composer-unavailable");
-        return;
-      }
-      let queryDraft = "";
-      try { queryDraft = new URL(location.href).searchParams.get("q") || ""; } catch {}
-      let queryRequestId = "";
-      try { queryRequestId = sessionStorage.getItem(QUERY_REQUEST_KEY) || ""; } catch {}
-      if (!queryRequestId) queryRequestId = initialHashParams.get("keepit-chatgpt-prefill") || "";
-      let clipboardText = "";
-      try { clipboardText = await navigator.clipboard.readText(); }
-      catch (error) {
-        console.warn("Keepit could not read the prepared ChatGPT draft from the clipboard", error);
-        if (!(queryRequestId === pending.requestId && isPreparedDraft(queryDraft))) {
-          await report(pending, false, "clipboard-read-failed");
-          return;
-        }
-      }
-      if (!isPreparedDraft(clipboardText) && queryRequestId === pending.requestId && isPreparedDraft(queryDraft)) clipboardText = queryDraft;
-      if (!isPreparedDraft(clipboardText)) {
-        await report(pending, false, "prepared-draft-not-found");
-        return;
-      }
-      const queryMatchesDraft = isPreparedDraft(queryDraft) && queryDraft === clipboardText;
-      if (queryMatchesDraft) { try { sessionStorage.setItem(QUERY_REQUEST_KEY, pending.requestId); } catch {} }
-
-      // ChatGPT's q= URL path prefills the composer in Chrome and Firefox. It does not click Send.
-      // Remember the request in sessionStorage so a site redirect that strips q= cannot loop.
-      if (!queryMatchesDraft && queryRequestId !== pending.requestId) {
-        const latestBeforeNavigation = (await browserApi.storage.local.get(PENDING_KEY))?.[PENDING_KEY];
-        if (latestBeforeNavigation?.requestId !== pending.requestId) { retryRequested = true; return; }
-        if (composerHasText(composer)) {
-          await report(pending, false, "composer-not-empty");
-          return;
-        }
-        const nextUrl = new URL(location.href);
-        nextUrl.searchParams.set("q", clipboardText);
-        const nextHashParams = new URLSearchParams(nextUrl.hash.replace(/^#/, ""));
-        nextHashParams.set(PANEL_MARKER, "1");
-        nextHashParams.set("keepit-chatgpt-prefill", pending.requestId);
-        nextUrl.hash = nextHashParams.toString();
-        try { sessionStorage.setItem(QUERY_REQUEST_KEY, pending.requestId); } catch {}
-        location.replace(nextUrl.href);
-        return;
-      }
-
-      if (composerHasText(composer)) {
-        if (normalizedDraft(composerText(composer)) === normalizedDraft(clipboardText)) await report(pending, true);
-        else await report(pending, false, "composer-not-empty");
-        return;
-      }
-      if (queryMatchesDraft) {
-        const queryPrefilledComposer = await waitForComposerDraft(clipboardText);
-        if (queryPrefilledComposer) {
-          await report(pending, true);
-          return;
-        }
-        composer = findComposer() || composer;
-        if (composerHasText(composer)) {
-          await report(pending, false, "composer-not-empty");
-          return;
-        }
-      }
-      const latest = (await browserApi.storage.local.get(PENDING_KEY))?.[PENDING_KEY];
-      if (latest?.requestId !== pending.requestId) { retryRequested = true; return; }
-      // Recheck immediately before filling, so an existing user draft is never replaced.
-      if (composerHasText(composer)) {
-        await report(pending, false, "composer-not-empty");
-        return;
-      }
-      const inserted = insertDraft(composer, clipboardText);
-      await report(pending, inserted, inserted ? "" : "composer-insert-failed");
-    } catch (error) {
-      console.warn("Keepit could not fill the ChatGPT draft", error);
-      if (pending) await report(pending, false, "autofill-failed");
-    } finally {
-      processing = false;
-      if (retryRequested) { retryRequested = false; queueMicrotask(() => void processPendingDraftLegacy()); }
-    }
   }
 
   let linkProcessing = false;
@@ -1021,7 +812,7 @@
       }
       if (sameSourceAndRoute && request.mode === "followup") {
         activeSourceUrl = safeSourceUrl(request.sourceUrl) || activeSourceUrl;
-        chatGPTToolbar?.setSourceUrl(activeSourceUrl);
+        globalThis.LHN_AI_FILL?.setSourceUrl(activeSourceUrl);
         try {
           sessionStorage.setItem(SOURCE_URL_SESSION_KEY, activeSourceUrl);
           sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
@@ -1110,6 +901,5 @@
   window.addEventListener("pagehide", () => {
     clearInterval(panelPollTimer);
     routeObserver.disconnect();
-    if (isFirefox && window.top === window) void globalThis.LHN_MESSAGING.sendMessage({ type:"CHATGPT_PANEL_MAYBE_CLOSED" }).catch(() => {});
   }, { once:true });
 })();

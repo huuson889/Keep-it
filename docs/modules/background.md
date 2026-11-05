@@ -2,42 +2,39 @@
 
 ## 1. Mục đích và phạm vi
 
-Background điều phối runtime, extension storage và tác vụ dùng chung; không đọc page DOM. ChatGPT flow xử lý URL nguồn/mapping, debounce panel context và request metadata tạm cho hành động người dùng.
+Background điều phối runtime, extension storage, panel lifecycle và action request. Nó nhận provider selection theo window, nhưng không đọc AI page DOM, composer draft, page body/title hay clipboard. ChatGPT giữ mapping/route/auto-send workflow; các provider khác chỉ nhận prompt draft để điền.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`manifest.json`](../../manifest.json) | `background` | Khai báo service worker Chromium và Firefox. |
-| [`js/background/background.js`](../../js/background/background.js) | `LHN_MESSAGING.onMessage`, tab/window events | Message routing, ChatGPT panel, dịch vụ runtime. |
+| [`manifest.json`](../../manifest.json) | `background` | Khai báo worker/page và thứ tự nạp registry provider. |
+| [`js/background/background.js`](../../js/background/background.js) | `LHN_MESSAGING.onMessage`, tab/window events | Message routing, provider state, ChatGPT request queue và DNR rule. |
+| [`js/shared/ai-providers.js`](../../js/shared/ai-providers.js) | `LHN_AI_PROVIDERS` | Allowlist provider/host/origin dùng bởi background và UI. |
 | [`js/background/annotations.js`](../../js/background/annotations.js) | `LHN_ANNOTATIONS` | IndexedDB, migration và CRUD annotation. |
 | [`js/background/usage-limits.js`](../../js/background/usage-limits.js) | `LHN_USAGE_LIMITS.create` | Usage state local cho translation/TTS. |
 | [`js/core/messaging.js`](../../js/core/messaging.js) | `LHN_MESSAGING` | Runtime message API dùng chung. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp `background.js`; `importScripts` nạp polyfill và dependencies.
-2. UI gửi message qua `LHN_MESSAGING`; listener định tuyến theo `message.type`.
-3. `OPEN_CHATGPT_LINK_PANEL` đọc exact tab URL và intent. Alt+X giữ toggle; Hỏi AI mở/giữ panel mở. Chỉ Hỏi AI/context menu chuyển `selectionText`; không lấy body/title.
-4. Mapping exact source URL → HTTPS `/c/<id>` quyết định conversation. Auto-send default off cho cài đặt mới; stored preference rõ ràng được giữ. URL chưa map: explicit Keepit sample không có URL khi auto-send off; manual send path nhận exact URL + localized website label, chỉ gửi một lần và chỉ tạo mapping sau route/send confirmation. Auto-send opt-in chỉ cho explicit Keepit actions qua `?q=`. Prompt người dùng tự viết không auto-send; background giữ metadata URL/request ID/window/expiry, không lưu body prompt. URL đã map: Alt+X chỉ reopen; explicit mapped reopen chuyển focus request cho composer khi route sẵn sàng. Hỏi AI dùng selection hiện tại, không lặp URL; câu kết bắt đầu ở dòng kế tiếp sau quote selection.
-5. Tab/source tự đổi có timer riêng mỗi window với deadline 2.000 ms tính từ event. Tab tiếp theo reset; quay lại source đang hiển thị hủy. Khi hết hạn, nạp mapping hoặc blank ChatGPT, không tạo prompt. Context mới hủy request prompt đang chờ của source khác. Alt+X/Hỏi AI/right-click đi thẳng, không debounce.
-6. `storage.session` giữ window IDs, exact source URL và route ChatGPT đã sanitize cho cùng source; route bỏ query/hash. Panel close hủy timer/request. `storage.local` giữ exact mapping và request metadata tạm có hạn.
+1. Manifest và `importScripts` nạp `ai-providers.js` trước background entry; cùng allowlist được dùng để kiểm tra provider ID.
+2. `AI_PANEL_PROVIDER_SELECTED` xác thực ID rồi lưu theo window trong `storage.session`. Khi panel context đổi, background đọc provider hiện hành và đính `providerId` vào navigation request.
+3. `OPEN_CHATGPT_LINK_PANEL` tiếp tục xử lý URL nguồn, selection tường minh, prompt settings và ChatGPT source mapping. Nếu provider là ChatGPT, route, `?q=` và opt-in auto-send vẫn theo luồng cũ.
+4. Với Gemini/Claude/Grok, background không tra hay tạo ChatGPT mapping và không auto-send. Nó tạo prompt localized từ instruction, exact source URL và (chỉ với Ask AI) selection hiện tại, rồi cấp request ID/provider ID cùng prompt draft ngắn hạn; panel/content side điền prompt vào editor. Draft text người dùng đã nhập trực tiếp vào composer không đi qua Background.
+5. Tab/source context switch giữ debounce per-window; khi hết hạn, request điều hướng provider hiện chọn. Panel close, source supersession và expiry dọn pending request.
+6. Chromium DNR rule 9002 chỉ áp response headers cho subframe từ extension initiator trên danh sách host provider; Firefox sidebar điều hướng top-level nên không cần rule này.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Giữ đồng bộ dependency và thứ tự nạp giữa manifest, `importScripts` và entry file; `message.type` là contract giữa context.
-- ChatGPT chỉ nhận exact source URL và selection người dùng chủ động gửi. Không đọc page body/title hoặc clipboard; prompt người dùng tự viết không được persist trong request metadata.
-- Composer text không được lưu/khôi phục theo source URL. Prompt/selection explicit chỉ dùng để hoàn tất action; manual-send user prompt chỉ giữ metadata source/request ID/window/expiry. Xóa khi hoàn tất, close/cancel, source supersession hoặc expiry.
-- `keepitChatGPTConversationBySourceUrl` là exact source URL → validated `/c/<id>`. Không dùng global last-conversation fallback.
-- Route session chỉ chứa exact source URL và HTTPS origin/path ChatGPT; không query/hash/prompt/composer text. Nếu không khớp source thì dùng exact mapping, nếu không có thì blank.
-- Giữ `sidePanel.open()`/`sidebarAction.open()` trong user-gesture turn; Alt+X toggle, Ask AI open-or-keep-open. Chrome DNR chỉ áp dụng ChatGPT subframe do extension khởi tạo.
-- Khi update, xóa `keepitChatGPTPageDraftsBySourceUrl` và global last-conversation key cũ.
+- `message.type`/payload là contract xuyên context. Provider chỉ nhận từ `LHN_AI_PROVIDERS`; window ID phải là integer hợp lệ trước khi lưu session state.
+- ChatGPT map key là exact source URL, value là HTTPS `/c/<id>` đã kiểm tra. Không dùng global last-chat fallback; session route gắn với source, không chứa query/hash/prompt/composer text.
+- Auto-send chỉ áp dụng luồng ChatGPT đã opt-in. Gemini, Claude, Grok chỉ nhận fill/clear/focus; không click Send, Enter hay kích hoạt submit.
+- Request-scoped prompt/selection không phải composer draft. Không persist, khôi phục, đọc hoặc gửi nội dung người dùng tự gõ trong composer.
+- Giữ `sidePanel.open()`/`sidebarAction.open()` trong user-gesture turn; giữ Alt+X toggle và Hỏi AI open-or-keep-open. Firefox sidebar provider state phải gắn đúng window.
+- DNR giữ `initiatorDomains` là extension ID và `resourceTypes` là `sub_frame`; không dùng CSP-removal rule toàn cục.
 
 ## 5. Kiểm tra và xác minh
 
-- v3.5.88: Background queue VM xác nhận explicit mapped Alt+X mới mang focus request; passive/default switch và mapped Ask AI không dùng marker reopen — PASS. Content VM xác nhận auto-send focus sau result accepted, chờ prompt gửi rời composer và không thay chữ đã gõ tiếp — PASS.
-- v3.5.87: Ask AI formatter VM xác nhận quote selection, đúng một newline (không có dòng trống) rồi tới câu kết; custom instruction được chuẩn hóa — PASS.
-- v3.5.86 focused Background VM: missing preference defaults off, explicit `true` remains on, exact mapped URL returns without pending send, manual pending stores URL/request/window/expiry but no user prompt, and an existing same-source draft-link request is reused — PASS. Firefox manifest transform/version/permission checks and all-JS syntax — PASS.
-- Background focused VM: deadline 2 giây tính từ event dù tab lookup trễ 300 ms; exact mapping/no `?q=`, request cũ bị source mới hủy, quay về source hiện tại hủy timer, close hủy request — PASS.
-- v3.5.86 Content VM validates manual click/Enter/submit, URL-at-send exactly once, mapped URL-free send, explicit draft without URL before send, and post-send mapping confirmation — PASS. Broader background debounce/close/source-supersession VMs remain as recorded by prior release tests.
-- Browser QA Chrome/Firefox chưa chạy; cần xác nhận tab switch, panel lifecycle, native `?q=`/composer behavior, mapping/reopen, context menu và scrollbars thật.
+- Đã chạy provider registry/prompt VM với localized generic prompt, selected text và exact source URL — PASS. All-JS `node --check`, manifest parse và `git diff --check` — PASS.
+- Chưa chạy focused Background VM cho provider-selection storage, pending request creation/cleanup, debounce đa provider và ChatGPT mapping/auto-send regression.
+- Browser QA chưa chạy: kiểm tra Chrome provider iframe/DNR, Firefox sidebar, hai window đồng thời, source change, ChatGPT mapping/auto-send và no-submit trên provider khác.

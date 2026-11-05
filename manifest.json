@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.101",
+  "version": "3.5.102",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -12,8 +12,6 @@
     "activeTab",
     "tabs",
     "declarativeNetRequest",
-    "clipboardWrite",
-    "clipboardRead",
     "sidePanel",
     "contextMenus"
   ],
@@ -30,6 +28,7 @@
       "js/translate/translate.js",
       "js/background/usage-limits.js",
       "js/background/annotations.js",
+      "js/shared/ai-providers.js",
       "js/background/background.js"
     ]
   },
@@ -73,7 +72,6 @@
         "js/content/annotation-restore.js",
         "js/shared/thumbnails.js",
         "js/shared/site-icons.js",
-        "js/content/chatgpt-context.js",
         "js/content/content.js",
         "vendor/readability/Readability.js",
         "vendor/readability/Readability-readerable.js",
@@ -121,11 +119,43 @@
       "js": [
         "js/core/browser-polyfill.js",
         "js/core/messaging.js",
+        "js/shared/ai-providers.js",
+        "js/shared/ai-toolbar.js",
+        "js/content/ai-fill.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
         "js/shared/chatgpt-prompt-format.js",
-        "js/shared/chatgpt-ai-toolbar.js",
         "js/content/chatgpt-autofill.js"
       ],
       "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://claude.ai/*",
+        "https://*.claude.ai/*",
+        "https://grok.com/*",
+        "https://*.grok.com/*"
+      ],
+      "js": [
+        "js/core/browser-polyfill.js",
+        "js/core/messaging.js",
+        "js/shared/ai-providers.js",
+        "js/shared/ai-toolbar.js",
+        "js/content/ai-fill.js"
+      ],
+      "run_at": "document_start",
       "all_frames": true
     }
   ],
@@ -171,19 +201,19 @@
     }
   },
   "sidebar_action": {
-    "default_title": "ChatGPT",
-    "default_panel": "pages/chatgpt-firefox-sidebar.html",
+    "default_title": "AI panel",
+    "default_panel": "pages/ai-panel-firefox.html",
     "open_at_install": false
   },
   "side_panel": {
-    "default_path": "pages/chatgpt-chrome-sidepanel.html"
+    "default_path": "pages/ai-panel-chromium.html"
   },
   "commands": {
     "open-chatgpt-sidepanel": {
       "suggested_key": {
         "default": "Alt+X"
       },
-      "description": "Toggle ChatGPT panel and summarize the current page"
+      "description": "Toggle the AI panel and add context from the current page"
     }
   }
 }

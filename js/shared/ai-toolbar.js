@@ -1,14 +1,14 @@
 (() => {
   "use strict";
 
-  const HOST_ID = "keepit-chatgpt-ai-toolbar-host";
+  const HOST_ID = "keepit-ai-toolbar-host";
+  const LEGACY_HOST_ID = "keepit-chatgpt-ai-toolbar-host";
   const LEGACY_PAGE_SPACER_ID = "keepit-chatgpt-ai-toolbar-page-spacer";
   const PAGE_PADDING_ATTR = "data-keepit-ai-toolbar-original-padding-top";
   const ROOT_TOP_ATTR = "data-keepit-ai-toolbar-original-top";
   const UI_LANGUAGE_KEY = "lhnSettings";
   const SOURCE_LABELS = { en:"Source:", vi:"Nguồn:", ko:"출처:" };
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
-  const PANEL_LABELS = { en:"panel", vi:"khung AI", ko:"AI 패널" };
   const CHEVRON_LABELS = { en:"Show or hide AI services", vi:"Hiện/ẩn hàng AI", ko:"AI 서비스 표시/숨기기" };
   const AUTO_SEND_LABELS = { en:"Auto-send", vi:"Tự động gửi", ko:"자동 전송" };
   const AUTO_SEND_STATUS_LABELS = {
@@ -16,14 +16,9 @@
     vi:{ on:"Tự động gửi đang bật", off:"Tự động gửi đang tắt" },
     ko:{ on:"자동 전송 켜짐", off:"자동 전송 꺼짐" },
   };
-  const PROVIDERS = ["chatgpt", "gemini", "claude", "grok"];
-  const PROVIDER_NAMES = { chatgpt:"ChatGPT", gemini:"Gemini", claude:"Claude", grok:"Grok" };
-  const PROVIDER_SITES = {
-    chatgpt:"https://chatgpt.com/",
-    gemini:"https://gemini.google.com/",
-    claude:"https://claude.ai/",
-    grok:"https://grok.com/",
-  };
+  const PROVIDERS = globalThis.LHN_AI_PROVIDERS?.list || [];
+  const PROVIDER_IDS = new Set(PROVIDERS.map(provider => provider.id));
+  const PROVIDER_SITES = Object.fromEntries(PROVIDERS.map(provider => [provider.id, provider.startUrl]));
   const PROVIDER_ICON_DATA = {
     chatgpt:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAYFBMVEX///8AAADz8/O/v7+qqqq4uLj4+Pjo6Oh+fn7h4eHExMSwsLDKysrZ2dmioqImJiYrKytpaWmNjY3T09NMTExCQkJUVFR2dnYbGxszMzOHh4cODg5cXFwhISGUlJQ5OTkNyEhkAAADGElEQVRYhe1X2XbqMAzMQuw4KxBCCKHl///y2pJl5AVKOee+VS/E4JloGckmy/7sP5rqqnJSn6L765aj1f0HcHnLmR2K3+LLPLAuE7LrpneJKnxvq6RU1RkXSPS1TG/gO4jcvU2dPWdO8ie8MNsaFs8YxLP7gaCGmMn6E4Dmoen7bofO1C/xhd5xdYsFEHvnkIJkHF8RDHpDwZ61Dfz3Nvc8jE0rYMGnDoOvhb8BGJ7CO+NzaZ4kxnsmLUuX/Tp0isHvADJbCz94qWNfrCumTPsk/mrrVJCj7j3fXgGP+jHVZIecEezYpupCv9whe0o/VTEeKnbdMQL8Xs2AXVfXWCaG7wgPDVTCByewSshb/Aqha0pMG5Y3IEAlbPg+UcPq0swJgsEKzCNobBvsqQcfjRWFMFqXOQGbKjdSAXE2AV5R0TgBeF92WAOn/yGWd4ZlVwmC4QExeQQrDnxlTWvokkUE1AYCJbZSKmBk+VKqSZ2cgG1R6MTBpsLsmkOCMSLgG4Ls17ntOTIt700QgUwT4GzaGlp7LpQ8iVuZJGgLrKu0b8z5eJVUKAl7TkUbE+henEy/V5QUL4aZANMXUiQJYEwAgdiC0WgqY2fpQAlLEAgiyPZhP6wPfVIHBmX0PIgJeq7wHmebLySf4MKmPxoMsYUmehVL2SNITaWgS45+MwUEQyRm3am4b0+nhnRDEjvbI9CfXwGeRi9r/mlvOZuwjMc8cTZofd9t6LbCw8VF5ROYG8AW4g3B6vzQu5oLK4VHYAdwIgTTUDgv8hl752zDYQQDyCRxxlfUH9NM2VgpoSQkQb8sMd5tMlybKxwmw6zajI7MZzeEEZKAdmTneoPFeJy59ydXrYG/VJAm6ZyH6IxWlufXC7MxILen0WhBenV7Crfno6dwPt1tBC8vadB1BzeqbPCuw2CWijTUGk6C29D1fXlE+Olx2WZT56m5hrA2MsG1SQGHpk4ewcn1rADv3rn7TwuewCPGc257felucBE3QNqE6vrCXru5vXNX94zGK9rv/3hoU7Vrn0/++iBH2Zbdx+g/e8f+AUjCHMA9oP1SAAAAAElFTkSuQmCC',
     gemini:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAABp1BMVEVHcEwks4M2ltktu2/sxyHkVmPkbFyGymJeieuhzlE7if00kO3qXVo7ifxKkez0uhzzqh4St3FLwWsxhv9Fhvj3vBj2R0gxhv8zh//KyTsrvWf6RUMUuWj0VkjxqCTwXU7zXEbsT1f4vRfb0THC1UOtcqnuZE3CaZH1nCCb1FnxSlAxhv+a01klrpoxhv85oc/wgjL4RkWDgdT2SEn6Q0FtyWW91UUxhv8yhv8yh/82h/43ivo+iPw5jfY6kPBHifg8nNNSifI8lOnsUVc8oMf2vhhLr5wUuWeTfMBqhuRJqqo7mNzyS053x2pDpblpw3KEgc1VtY/4RkXWYHZhvns0pLszqKutdKU7luPdW2y10EbCao7MZYOieLHYyi9fuYQetnbqkTLooitgk93nfka4bpmS0Fzysxx3hNlTnsxEunsqr5LTuDJLwG6Ku2aovU9kpLA/tIsxrJ29wT/Tf2q2hY+aiLBMl+GMlq1xmsLRcXjRjVuUrXPlvSW/eY6CjMfPnEvK0TrIrENxjdewqV6skouzm3GQn5R2uHZ2rotqqpoAshpHcEw3yyA9AAAAjXRSTlMA/hL+/v7+/v7+vlT91P0v/S1JLUaB3N7yEtwqgRJMvVNB3dpVSdTa2sV9fdPaha+w8rCFhbCv/////////////////////////////////////////////////////////////////////////////////////////////////////////////////wC9sE0CAAADIElEQVRYhc2V+1vSUBjHj1GghTM1byipaaV2v8LGRUVj3hCdSmVFJmaCoCKi4B0UsP7q3nO24eaVnT1PT9/fP5993/dsZwj972lu1skLgj7DW0F4o0tQLwj1enirIIyNWXUIekAw0KND8AoKDNyi59sJ/7mdWlBP+KnH1AWAx4KvD6kLiPwXygptMv/zI12FU/7bEA3fquAnXmvn2xT80MTSPa28Vc0PD9/QKDCbzVNKvrxcG//oLN/fX6mFbzUbjdvbKr6/97aG5xsxv7+P9y/xvZCSDRfzTqeztCmsxoWFjY2N/WRyc3PiYAnWJ/NOrrGEs2hbIHwS8wcHRxJPcJw71/Evgd/Z2UnmcoQ/KvKcGPvVi7j/AwJ8PpdLpVLAh9S8HefyElVdmD88PMznc4VUKp0OhcoZBW8XY2uovfjpXfM4wB/n84UC4UMM0+sivJ3jWLtssFWe+zSsdXdJ5uez2ezx8W6hsJZOh0NbDONykefbWZaVcZzGJ4oDqap78EtMNBol/O7vP2tr4fDWFuN2ORwceboosJ2m4bk0StUHKXt7YEhkV4GXBR4scMgC29nUqgR7kGgisbq6snICgvFwuA8LXJLAxrKXCPAIN0mCwWBRMDIyHu4b9ZAKHF4ACNSG4gg4TXUEDyYyouD7pHdkfLBv9BOpwJ03qJYoHWNHMJjJJGYrKkySABs87mIFWAHLipLzxyiO0pHJzIJgxXcyrazgkCrIiobLL8hOIjCZfNMXVJDfg6u/p/dgWDT5/NPqLYgG7Lj2VukEwaLP58cCpUFSXPs5w4FUKCsMikeJDbCJUi4UyNNFYpj0FoeQDCVfzN2nFWYUBg3XcreigmRwuzTwMIVcIQAVsMHj1vRjQcjkwxXi3oBsYLTxqAlXiMS964EZ0aD154pqiCC+LhlKOP+zeeePRSLx5fUANrzQziPkj8Wggmig4VENCCJly9hAMQCOJRYxlGHDMzoeKhgMc9hQTSlAFhCAgbYAVMCCubIaagEy8DwI6HnUwoOhRYfgBgh4zS+xMhaet+jh8Qx6JkComuepXwLJoJP/B/kLRT9a7+Axo0UAAAAASUVORK5CYII=',
@@ -64,8 +59,9 @@
     body.style.setProperty("padding-top", `calc(${originalPaddingTop} + 25px)`, "important");
   }
 
-  function create({ sourceUrl = "" } = {}) {
+  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {} } = {}) {
     if (!document.getElementById("keepit-ai-page-offset")) ensurePageTopOffset();
+    document.getElementById(LEGACY_HOST_ID)?.remove();
     let host = document.getElementById(HOST_ID);
     if (!host) {
       host = document.createElement("div");
@@ -307,16 +303,7 @@
             font-size: 9.6px;
             font-weight: 750;
           }
-          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden] { display: none; }
-          .blank-panel {
-            position: fixed;
-            z-index: 1;
-            inset: 66px 0 0;
-            display: none;
-            color: var(--text);
-            background: var(--window);
-            pointer-events: auto;
-          }
+          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden] { display: none; }
           @media (max-width: 520px) {
             .tab { gap: 3px; padding-inline: 2px; font-size: 10px; }
             .provider-icon-wrap, .provider-icon, .provider-icon-fallback { flex-basis: 15.6px; width: 15.6px; height: 15.6px; }
@@ -325,14 +312,8 @@
         </style>
         <div class="bar is-expanded">
           <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
-          <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">
-            <button class="tab" type="button" role="tab" data-provider="chatgpt" aria-selected="true"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">C</span></span><span class="tab-label">ChatGPT</span></button>
-            <button class="tab" type="button" role="tab" data-provider="gemini" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">G</span></span><span class="tab-label">Gemini</span></button>
-            <button class="tab" type="button" role="tab" data-provider="claude" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">C</span></span><span class="tab-label">Claude</span></button>
-            <button class="tab" type="button" role="tab" data-provider="grok" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">G</span></span><span class="tab-label">Grok</span></button>
-          </div>
-        </div>
-        <div class="blank-panel" role="tabpanel" aria-label="AI panel"></div>`;
+          <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">${PROVIDERS.map(provider => `<button class="tab" type="button" role="tab" data-provider="${provider.id}" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">${provider.name.slice(0, 1)}</span></span><span class="tab-label">${provider.name}</span></button>`).join("")}</div>
+        </div>`;
       document.documentElement.append(host);
     }
 
@@ -343,13 +324,12 @@
     const tabs = shadow.querySelector(".tabs");
     const sourceLink = shadow.querySelector(".source-link");
     const emptySource = shadow.querySelector(".empty-source");
-    const blankPanel = shadow.querySelector(".blank-panel");
     const chevron = shadow.querySelector(".chevron");
     const autoSendButton = shadow.querySelector(".auto-send");
     const autoSendLabel = shadow.querySelector(".auto-send-label");
     const providerButtons = [...shadow.querySelectorAll("[data-provider]")];
     let currentSourceUrl = "";
-    let selectedProvider = "chatgpt";
+    let selectedProvider = PROVIDER_IDS.has(initialProvider) ? initialProvider : "chatgpt";
     let expanded = true;
     let autoSendEnabled = false;
     let uiLanguage = supportedLanguage(globalThis.browser?.i18n?.getUILanguage?.());
@@ -381,8 +361,7 @@
         button.setAttribute("aria-selected", String(selected));
         button.tabIndex = selected ? 0 : -1;
       }
-      blankPanel.style.display = selectedProvider === "chatgpt" ? "none" : "block";
-      blankPanel.setAttribute("aria-label", `${PROVIDER_NAMES[selectedProvider]} ${PANEL_LABELS[uiLanguage]}`);
+      autoSendButton.hidden = selectedProvider !== "chatgpt";
     }
 
     function renderAutoSend() {
@@ -403,10 +382,15 @@
       tabs.inert = !expanded;
     }
 
-    function setProvider(provider) {
-      if (!PROVIDERS.includes(provider)) return;
+    function setProvider(provider, { notify = true } = {}) {
+      if (!PROVIDER_IDS.has(provider)) return;
+      const changed = selectedProvider !== provider;
       selectedProvider = provider;
       renderProvider();
+      if (changed && notify) {
+        try { onProviderChange(provider); }
+        catch (error) { console.warn("Keepit could not switch the AI provider", error); }
+      }
     }
 
     function showFallbackIcon(button) {
@@ -515,5 +499,5 @@
     return Object.freeze({ setSourceUrl, setProvider, getProvider:() => selectedProvider });
   }
 
-  globalThis.LHN_CHATGPT_AI_TOOLBAR = Object.freeze({ create });
+  globalThis.LHN_AI_TOOLBAR = Object.freeze({ create });
 })();

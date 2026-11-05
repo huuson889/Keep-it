@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChatGPT</title>
+  <title>Keepit AI panel</title>
   <style>
     :root { color-scheme: light dark; }
     * { box-sizing: border-box; }
@@ -15,10 +15,12 @@
 </head>
 <body>
   <div id="keepit-ai-page-offset" aria-hidden="true"></div>
-  <iframe id="chatgpt-frame" title="ChatGPT" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <iframe id="ai-frame" title="AI panel" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   <script src="../js/core/browser-polyfill.js"></script>
+  <script src="../js/shared/ai-providers.js"></script>
   <script src="../js/shared/site-icons.js"></script>
-  <script src="../js/shared/chatgpt-ai-toolbar.js"></script>
+  <script src="../js/shared/ai-toolbar.js"></script>
+  <script src="../js/shared/ai-panel.js"></script>
   <script src="../js/shared/chatgpt-panel.js"></script>
 </body>
 </html>

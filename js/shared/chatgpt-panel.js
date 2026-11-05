@@ -8,8 +8,8 @@
   const FOCUS_COMPOSER_MARKER = "keepit-chatgpt-focus-composer";
   const SOURCE_CONVERSATIONS_KEY = "keepitChatGPTConversationBySourceUrl";
   const DEFAULT_CHATGPT_URL = "https://chatgpt.com/";
-  const frame = document.getElementById("chatgpt-frame");
-  const panelToolbar = globalThis.LHN_CHATGPT_AI_TOOLBAR?.create({ sourceUrl:"" });
+  const frame = document.getElementById("ai-frame");
+  const aiPanel = globalThis.LHN_AI_PANEL;
   const handledNavigationIds = new Set();
 
   // Chromium versions without sidePanel.close() close the extension page itself as a fallback.
@@ -86,16 +86,16 @@
 
   function sendSourceContext(sourceUrl) {
     if (!sourceUrl) return;
-    panelToolbar?.setSourceUrl(sourceUrl);
-    if (!frame?.contentWindow) return;
-    try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_SOURCE_CONTEXT", sourceUrl:String(sourceUrl) }, "*"); }
-    catch { /* ChatGPT may be navigating */ }
+    aiPanel?.setSourceUrl(sourceUrl);
   }
 
   function wakeFollowup(requestId) {
     if (!frame?.isConnected || !frame.contentWindow || !requestId) return;
-    try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST", requestId:String(requestId) }, "*"); }
-    catch { /* ChatGPT may be navigating */ }
+    try {
+      const target = safePanelTarget(frame.src);
+      if (!target) return;
+      frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOLLOWUP_REQUEST", requestId:String(requestId) }, new URL(target).origin);
+    } catch { /* ChatGPT may be navigating */ }
   }
 
   function wakeFollowupSoon(requestId) {
@@ -106,8 +106,11 @@
 
   function wakeComposerFocus(targetRoute) {
     if (!frame?.isConnected || !frame.contentWindow) return;
-    try { frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER", targetRoute:String(targetRoute || "") }, "*"); }
-    catch { /* ChatGPT may be navigating */ }
+    try {
+      const target = safePanelTarget(frame.src);
+      if (!target) return;
+      frame.contentWindow.postMessage({ type:"KEEPIT_CHATGPT_PANEL_FOCUS_COMPOSER", targetRoute:String(targetRoute || "") }, new URL(target).origin);
+    } catch { /* ChatGPT may be navigating */ }
   }
 
   function reloadPanelFrame(targetUrl, onTargetLoad) {
@@ -130,16 +133,24 @@
       await clearNavigationRequest(request.requestId);
       return false;
     }
+    const requestedProvider = globalThis.LHN_AI_PROVIDERS?.get(request.providerId || "chatgpt");
+    if (requestedProvider && requestedProvider.id !== "chatgpt") {
+      handledNavigationIds.add(request.requestId);
+      const handled = await aiPanel?.navigateRequest(request);
+      if (handled && frame) await clearNavigationRequest(request.requestId);
+      return handled === true;
+    }
     const target = safePanelTarget(request.targetUrl);
     if (!target) {
       await clearNavigationRequest(request.requestId);
       return false;
     }
+    aiPanel?.setActiveProvider("chatgpt");
     const targetRoute = safePanelRoute(target);
     const displayedRoute = safePanelRoute(frame?.dataset?.currentConversationUrl || frame?.src || "");
     const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
     const sourceContextChanged = !!request.sourceUrl && request.sourceUrl !== previousSourceUrl;
-    if (request.sourceUrl) panelToolbar?.setSourceUrl(request.sourceUrl);
+    if (request.sourceUrl) aiPanel?.setSourceUrl(request.sourceUrl);
     const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && displayedRoute === targetRoute && frame?.dataset.keepitLoaded === "true";
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
     const linkRequestId = requestScopedFlow ? String(request.linkRequestId || "") : "";
@@ -219,7 +230,12 @@
         const candidate = new URL(String(activeTabs?.[0]?.url || ""));
         if (["http:", "https:"].includes(candidate.protocol)) sourceUrl = candidate.href;
       } catch {}
-      panelToolbar?.setSourceUrl(sourceUrl);
+      aiPanel?.setSourceUrl(sourceUrl);
+      const selectedProvider = await aiPanel?.getSavedProvider(windowId);
+      if (selectedProvider && selectedProvider !== "chatgpt") {
+        await aiPanel?.setProvider(selectedProvider, { sourceUrl });
+        return;
+      }
       let session = {};
       try {
         if (browser.storage.session?.get) session = await browser.storage.session.get(PANEL_CONTEXTS_KEY);
@@ -277,7 +293,7 @@
       void (async () => {
         try {
           const windowId = await getCurrentWindowId();
-          await browser.runtime.sendMessage({ type:"CHATGPT_PANEL_HOST_CLOSED", windowId });
+          await browser.runtime.sendMessage({ type:"AI_PANEL_HOST_CLOSED", windowId });
         } catch {}
       })();
     }, { once:true });
