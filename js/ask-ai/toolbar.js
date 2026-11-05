@@ -140,6 +140,8 @@
             background: var(--border);
             content: "";
             pointer-events: none;
+            transform: scaleY(.5);
+            transform-origin: top;
           }
           .bar:not(.is-expanded)::after { top: auto; bottom: 0; }
           .source-row {

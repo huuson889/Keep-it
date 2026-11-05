@@ -1,12 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
-- v3.5.113: gộp ChatGPT/Gemini/Claude thành một pipeline theo đúng hành vi ChatGPT trong cây `js/ask-ai/` đã chốt (`providers.js`, `prompt-format.js`, `toolbar.js`, `service.js`, `panel/panel.js`, `page/{composer,send-flow,chatgpt-link-marker,grok-google-auth}.js`); đổi tên file/hàm/message/khóa "ChatGPT" dùng chung sang "AI", giữ nguyên key mapping nên không mất dữ liệu; sửa Firefox background thiếu `prompt-format.js`. Release commit `v3.5.113: Merge ChatGPT/Gemini/Claude into one AI panel pipeline` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.113.zip`.
-- Lộ trình 3 bước đã chốt (v3.5.110 → v3.5.112 → v3.5.113) đã làm xong. Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
+- v3.5.114: vạch ngang dưới thanh AI panel mỏng còn 1/2 (`.bar::after` giữ 1px + `transform: scaleY(.5)`, gốc `top`); không đổi bố cục khác. Release commit `v3.5.114: Halve AI panel toolbar divider` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.114.zip`.
+- v3.5.113 (một pipeline ChatGPT/Gemini/Claude trong `js/ask-ai/`) người dùng xác nhận luồng chạy hoàn hảo trên trình duyệt thật. Lộ trình 3 bước đã xong.
+- Khoảng trắng dưới thanh trên Claude (Chromium) là đáy header riêng của Claude lộ dưới phần thanh đè; người dùng chọn không xử lý.
+- Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### AI panel providers
-- Browser QA chưa chạy: v3.5.113 pipeline chung (mở/đóng, Alt+X, Hỏi AI, context menu, đổi tab AI, đổi source, Send/mapping cho ChatGPT/Gemini/Claude) trên Chromium/Firefox; v3.5.112 chuyển thư mục; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
 - v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
 ### Reader ↔ Web TTS shared speed
@@ -158,6 +160,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.114 | Arena.ai Agent sửa:**
+
+- Vạch ngang dưới thanh AI panel mỏng còn 1/2: `.bar::after` thêm `transform: scaleY(.5)` + `transform-origin: top` (cả lúc mở rộng và thu gọn, Chromium/Firefox). Không đổi chiều cao thanh hay phần đè lên trang AI.
+- Ghi nhận: khoảng trắng dưới vạch trên Claude là header riêng của Claude lộ ra; người dùng chọn chỉ làm mỏng vạch.
+- File: `manifest.json`, `js/ask-ai/toolbar.js`, `PROJECT.md`.
+- Kiểm tra: `node --check`; chưa render được trong sandbox (không có trình duyệt). Browser QA chưa xác nhận.
 
 **2026-11-06 | v3.5.113 | Arena.ai Agent sửa:**
 
