@@ -90,9 +90,11 @@ async function openGrokSignInTabFromEmbeddedAuth(message, sender) {
     return { ok:true, opened:true, tabId:tab.id };
   } finally { GROK_SIGN_IN_TAB_OPENING.delete(windowId); }
 }
+// The AI panel shows the provider page in an iframe in both Chromium (side panel) and Firefox
+// (sidebar), so the same rule lets those provider pages load as sub-frames in both browsers.
 function ensureAIProviderFrameRule(forceUpdate = false) {
-  const dnr = globalThis.chrome?.declarativeNetRequest;
-  if (!globalThis.chrome?.sidePanel || !dnr?.updateDynamicRules || !dnr?.getDynamicRules) return Promise.resolve(false);
+  const dnr = globalThis.chrome?.declarativeNetRequest || globalThis.browser?.declarativeNetRequest;
+  if (!dnr?.updateDynamicRules || !dnr?.getDynamicRules) return Promise.resolve(false);
   return dnr.getDynamicRules().then(rules => {
     const domains = ["chatgpt.com", "chat.openai.com", "gemini.google.com", "claude.ai", "grok.com"];
     const existing = rules.find(rule => rule.id === AI_PROVIDER_FRAME_RULE_ID);
@@ -627,8 +629,12 @@ async function prepareAIManualLinkSend(message, sender) {
   if (currentSource && currentSource !== sourceUrl) return { ok:false, stale:true };
   if (!currentSource) await rememberAIPanelSourceUrl(windowId, sourceUrl);
 
+  // Sending in the mapped chat adds nothing. Sending in any other chat (another conversation or a
+  // new chat) adds the label + URL once, and the confirmed send then maps the source to that chat.
   const mappingData = await browser.storage.local.get(provider.conversationMapKey);
-  if (aiConversationUrl(provider.id, mappingData?.[provider.conversationMapKey]?.[sourceUrl])) {
+  const mappedConversation = aiConversationUrl(provider.id, mappingData?.[provider.conversationMapKey]?.[sourceUrl]);
+  const sendingConversation = aiConversationUrl(provider.id, message?.conversationUrl);
+  if (mappedConversation && mappedConversation === sendingConversation) {
     return { ok:true, mapped:true };
   }
 
@@ -921,7 +927,7 @@ browser.commands?.onCommand.addListener((command, tab) => {
 // AI runtime messages (pages, panel and content script) handled by the background router.
 const ASK_AI_UNHANDLED = Symbol("ask-ai-unhandled");
 const ASK_AI_MESSAGE_TYPES = new Set([
-  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_MAYBE_CLOSED", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL", "TOGGLE_AI_PANEL"
+  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL", "TOGGLE_AI_PANEL"
 ]);
 async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_PANEL_GROK_AUTH_FRAME_DETECTED") return openGrokSignInTabFromEmbeddedAuth(message, sender);
@@ -931,12 +937,14 @@ async function handleAskAIMessage(message, sender) {
     if (!provider || !globalThis.LHN_AI_PROVIDERS?.isPanelProvider(provider.id) || !Number.isInteger(windowId)) return { ok:false, error:"invalid-ai-provider" };
     return { ok:await rememberAIProviderForWindow(windowId, provider.id), providerId:provider.id };
   }
+  // Firefox AI panel host page loaded in the sidebar (Chromium uses sidePanel.onOpened).
   if (message.type === "AI_PANEL_CONTEXT_READY" && typeof browser.sidebarAction?.isOpen === "function") {
     try {
-      const windowId = sender?.tab?.windowId ?? aiPanelFocusedWindowId;
+      const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? aiPanelFocusedWindowId);
       if (await browser.sidebarAction.isOpen(Number.isInteger(windowId) ? { windowId } : {})) {
         const wasOpen = aiPanelOpenWindows.has(windowId);
-        const active = Number.isInteger(sender?.tab?.id) ? sender.tab : (await browser.tabs.query({ active:true, currentWindow:true }))?.[0];
+        const active = Number.isInteger(sender?.tab?.id) ? sender.tab
+          : (await browser.tabs.query(Number.isInteger(windowId) ? { active:true, windowId } : { active:true, currentWindow:true }))?.[0];
         await trackAIPanel(windowId, active?.id, true);
         if (!wasOpen && Number.isInteger(active?.id)) {
           const revision = nextAIPanelContextRevision(windowId);
@@ -958,15 +966,6 @@ async function handleAskAIMessage(message, sender) {
     const currentSource = aiPanelSourceUrls.get(windowId);
     if (currentSource && currentSource !== sourceUrl) return { ok:false, stale:true };
     return { ok:await rememberAIPanelRouteContext(windowId, sourceUrl, provider.id, chatUrl) };
-  }
-  if (message.type === "AI_PANEL_MAYBE_CLOSED") {
-    const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? aiPanelFocusedWindowId);
-    if (Number.isInteger(windowId) && typeof browser.sidebarAction?.isOpen === "function") {
-      try {
-        if (!await browser.sidebarAction.isOpen({ windowId })) await trackAIPanel(windowId, aiPanelSourceTabs.get(windowId), false);
-      } catch {}
-    }
-    return { ok:true };
   }
   if (message.type === "AI_PANEL_HOST_CLOSED") {
     const windowId = Number.isInteger(message.windowId) ? message.windowId : (sender?.tab?.windowId ?? aiPanelFocusedWindowId);

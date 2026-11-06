@@ -9,7 +9,7 @@
 - `PROJECT.md`: handoff hiện tại; mục 1 là snapshot ngắn, mục 2 chỉ giữ việc đang mở, mục 4 là bản đồ kiến trúc, mục 5 là nhật ký thay đổi duy nhất.
 - `README.md`: hướng dẫn/tính năng/giới hạn hướng tới người dùng; không dùng làm nơi giữ trạng thái nội bộ.
 - `docs/INDEX.md` và `docs/modules/*.md`: mục lục và hướng dẫn kỹ thuật nội bộ; không phải tài liệu người dùng hay nguồn sự thật thay cho code.
-- `OPT-ARENA.md`: thiết kế đã chốt, sơ đồ text, mục tiêu/phạm vi và quy trình tối ưu; không ghi trạng thái từng bước hoặc nhật ký hoàn thành.
+- `OPT-ARENA.md`: nhật ký ý tưởng/thiết kế đã chốt qua thảo luận với Arena (mới nhất ở trên): quyết định, sơ đồ text, phương án đã loại và câu hỏi còn mở; không ghi trạng thái triển khai hay nhật ký thay đổi code (thuộc `PROJECT.md`).
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
 
 ## 3. Đường dẫn
@@ -51,7 +51,7 @@
   - **Mục 2 — Việc đang mở:** chỉ liệt kê việc chưa hoàn tất; nhóm theo tính năng/loại việc và ưu tiên. Mỗi gạch đầu dòng nêu hành động, môi trường liên quan và trạng thái thực tế (chưa chạy/đã chạy một phần/đã xác nhận). Không giữ việc đã hoàn tất hoặc chép changelog.
   - Khi rút gọn mục 1/2, **không tự bỏ hoặc đánh dấu xong việc chưa xác nhận**. Gộp các kiểm thử cùng nhóm nhưng giữ điều kiện chấp nhận tối thiểu; nếu checklist chi tiết quá dài, đặt ở tài liệu QA liên quan và dẫn link từ mục 2. `PROJECT.md` vẫn là nguồn duy nhất về trạng thái và danh sách việc đang mở.
   - **Mục 5 — Nhật ký:** lưu lịch sử thay đổi theo version. Ghi thay đổi, file và kiểm tra thực tế; không lặp lại toàn bộ chi tiết lịch sử trong mục 1/2. Việc hiện tại và bước tiếp theo có thể được nhắc ngắn ở mục 1/2 khi cần cho bàn giao.
-  - `OPT-ARENA.md` chỉ giữ thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; `README.md` mô tả cho người dùng.
+  - `OPT-ARENA.md` chỉ giữ nhật ký ý tưởng/thiết kế đã chốt với Arena; `README.md` mô tả cho người dùng.
   - **Quy tắc định dạng nhật ký (bắt buộc):**
     - Tiêu đề mỗi bản ghi phải là một dòng in đậm đứng riêng ở đầu dòng, đúng mẫu `**YYYY-MM-DD | vX.Y.Z | <Tên AI/người thực sự sửa> sửa:**`; không thêm dấu bullet, không thụt lề và không gộp tiêu đề vào nội dung của bản ghi trước.
     - Để một dòng trống sau tiêu đề; mọi thông tin chi tiết là các bullet cấp cao nhất, bắt đầu bằng `- ` ở đầu dòng (không thụt lề thêm một cấp dưới tiêu đề). Dùng các bullet riêng cho tóm tắt, `File:`, `Kiểm tra:` và `Tiếp theo:`/`Lưu ý:` nếu có.

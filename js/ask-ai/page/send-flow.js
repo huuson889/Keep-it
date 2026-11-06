@@ -11,7 +11,6 @@
   const usesQueryPrompt = provider.queryPrompt === true;
 
   const LINK_PENDING_KEY = "keepitAiLinkPending";
-  const PANEL_NAVIGATION_KEY = "keepitAiPanelNavigationRequest";
   const MARKERS = providers.PANEL_MARKERS;
   const SESSION = composerApi.SESSION_KEYS;
   const PANEL_SESSION_KEY = SESSION.panel;
@@ -26,8 +25,8 @@
   const LINK_MANUAL_SEND_SESSION_KEY = "keepitAiManualLinkSendRequestId";
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
   const MAX_WAIT_MS = 25000;
-  const isFirefox = composerApi.isFirefox;
-  const isPanelRoot = isFirefox ? window.top === window : window.parent === window.top;
+  // Same AI panel host in Chromium and Firefox: the provider page is the iframe inside the extension page.
+  const isPanelRoot = window.parent === window.top && window.top !== window;
   const safeSourceUrl = providers.normalizeSourceUrl;
   let url;
   try { url = new URL(location.href); } catch { return; }
@@ -59,7 +58,7 @@
   }
   const hasExtensionReferrer = !!extensionRoot && document.referrer.startsWith(extensionRoot);
   if (hasExtensionReferrer && !hasSessionMarker) { try { sessionStorage.setItem(PANEL_SESSION_KEY, "1"); hasSessionMarker = true; } catch {} }
-  if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || (!isFirefox && window.top === window)) return;
+  if ((!hasUrlMarker && !hasSessionMarker && !hasExtensionReferrer) || !isPanelRoot) return;
   const browserApi = globalThis.browser;
   if (!browserApi?.storage?.local || !globalThis.LHN_MESSAGING?.sendMessage) return;
   if (activeSourceUrl) composerApi.setSourceUrl(activeSourceUrl);
@@ -372,7 +371,9 @@
       preparation = await globalThis.LHN_MESSAGING.sendMessage({
         type:"AI_LINK_PREPARE",
         providerId:provider.id,
-        sourceUrl
+        sourceUrl,
+        // The chat this Send happens in; a chat other than the mapped one takes over the source mapping.
+        conversationUrl:currentConversationUrl()
       });
     } catch (error) {
       console.warn("Keepit could not prepare the source link for this AI send", error);
@@ -765,71 +766,6 @@
     }
   }
 
-  // Firefox shows the provider page itself in the sidebar, so it applies panel navigation requests here.
-  async function processPanelNavigationRequest(request) {
-    if (!isFirefox || window.top !== window || !request || request.expiresAt <= Date.now()) return false;
-    try {
-      const latestAtStart = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
-      if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
-      const requestProvider = providers.get(request.providerId || "chatgpt");
-      if (!requestProvider || !providers.isPanelProvider(requestProvider.id)) return false;
-      const target = providers.panelTarget(requestProvider.id, request.targetUrl);
-      if (!target) return false;
-      const sourceContextChanged = !!request.sourceUrl && safeSourceUrl(request.sourceUrl) !== activeSourceUrl;
-      const linkRequestId = ["new-link", "followup"].includes(request.mode) ? String(request.linkRequestId || "") : "";
-      const focusComposer = request.mode === "reopen" && request.focusComposer === true;
-      const targetUrl = providers.panelUrl(requestProvider.id, target, {
-        linkRequestId,
-        sourceUrl:request.sourceUrl || "",
-        clearComposer:sourceContextChanged,
-        focusComposer
-      });
-      if (requestProvider.id !== provider.id) {
-        // Another AI was selected: open its page in the sidebar with the same request markers.
-        location.replace(targetUrl);
-        await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-        return true;
-      }
-      const targetRoute = providers.panelRoute(provider.id, target);
-      const displayedRoute = currentPanelRouteUrl();
-      const sameSourceAndRoute = !sourceContextChanged && !!targetRoute && targetRoute === displayedRoute;
-      if (sameSourceAndRoute && ["reopen", "context-switch"].includes(request.mode)) {
-        if (focusComposer) void focusComposerWhenReady({ targetRoute });
-        if (latestAtStart?.[PANEL_NAVIGATION_KEY]?.requestId === request.requestId) await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-        return true;
-      }
-      if (sameSourceAndRoute && request.mode === "followup") {
-        setActiveSourceUrl(safeSourceUrl(request.sourceUrl) || activeSourceUrl);
-        try {
-          sessionStorage.setItem(LINK_DIRECT_SESSION_KEY, request.linkRequestId);
-          sessionStorage.setItem(LINK_SESSION_KEY, request.linkRequestId);
-        } catch {}
-        reportPanelRouteContext(currentPanelRouteUrl());
-        await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-        void processPendingLink();
-        return true;
-      }
-
-      const latestBeforeNavigation = await browserApi.storage.local.get(PANEL_NAVIGATION_KEY);
-      if (latestBeforeNavigation?.[PANEL_NAVIGATION_KEY]?.requestId !== request.requestId) return true;
-      const forceSameRouteContextReload = sourceContextChanged && !!targetRoute && targetRoute === displayedRoute;
-      if (forceSameRouteContextReload) {
-        try {
-          history.replaceState(history.state, "", targetUrl);
-          location.reload();
-        } catch (error) {
-          console.warn("Keepit could not reload the Firefox AI panel for a new source page", error);
-          location.replace(targetUrl);
-        }
-      } else location.replace(targetUrl);
-      await browserApi.storage.local.remove(PANEL_NAVIGATION_KEY);
-      return true;
-    } catch (error) {
-      console.warn("Keepit could not navigate the Firefox AI panel", error);
-      return false;
-    }
-  }
-
   browserApi.storage.onChanged?.addListener((changes, areaName) => {
     if (areaName !== "local") return;
     const linkChange = changes?.[LINK_PENDING_KEY];
@@ -840,14 +776,7 @@
       }
       void processPendingLink();
     }
-    const navRequest = changes?.[PANEL_NAVIGATION_KEY]?.newValue;
-    if (navRequest) void processPanelNavigationRequest(navRequest);
   });
-  if (isFirefox && window.top === window) {
-    browserApi.storage.local.get(PANEL_NAVIGATION_KEY).then(stored => {
-      if (stored?.[PANEL_NAVIGATION_KEY]) void processPanelNavigationRequest(stored[PANEL_NAVIGATION_KEY]);
-    }).catch(() => {});
-  }
   const pollPanel = () => {
     if (document.visibilityState === "hidden") return;
     rememberCurrentConversation();

@@ -3,15 +3,13 @@
 
   const HOST_ID = "keepit-ai-toolbar-host";
   const LEGACY_HOST_ID = "keepit-chatgpt-ai-toolbar-host";
-  const LEGACY_PAGE_SPACER_ID = "keepit-chatgpt-ai-toolbar-page-spacer";
-  const PAGE_PADDING_ATTR = "data-keepit-ai-toolbar-original-padding-top";
-  const ROOT_TOP_ATTR = "data-keepit-ai-toolbar-original-top";
   const UI_LANGUAGE_KEY = "lhnSettings";
   const SOURCE_LABELS = { en:"Source:", vi:"Nguồn:", ko:"출처:" };
   const TABS_LABELS = { en:"AI services", vi:"Các AI", ko:"AI 서비스" };
   const CHEVRON_LABELS = { en:"Show or hide AI services", vi:"Hiện/ẩn hàng AI", ko:"AI 서비스 표시/숨기기" };
   const AUTO_SEND_LABELS = { en:"Auto-send", vi:"Tự động gửi", ko:"자동 전송" };
   const COPY_LINK_LABELS = { en:"Copy link", vi:"Sao chép liên kết", ko:"링크 복사" };
+  const NEW_CHAT_LABELS = { en:"New chat", vi:"Chat mới", ko:"새 채팅" };
   const COPY_RESULT_LABELS = {
     en:{ ok:"Link copied", failed:"Could not copy the link" },
     vi:{ ok:"Đã sao chép liên kết", failed:"Không sao chép được liên kết" },
@@ -38,36 +36,8 @@
     return Object.hasOwn(SOURCE_LABELS, language) ? language : "en";
   }
 
-  function ensurePageTopOffset() {
-    const body = document.body;
-    if (!body) return;
-
-    // Remove the earlier flow spacer: it can sit beside the app root when body uses flex-row.
-    document.getElementById(LEGACY_PAGE_SPACER_ID)?.remove();
-
-    const appRoot = [...body.children].find(element => !["SCRIPT", "STYLE", "TEMPLATE"].includes(element.tagName));
-    const position = appRoot ? globalThis.getComputedStyle?.(appRoot)?.position : "";
-    if (appRoot && (position === "fixed" || position === "absolute")) {
-      let originalTop = appRoot.getAttribute(ROOT_TOP_ATTR);
-      if (originalTop === null) {
-        originalTop = globalThis.getComputedStyle?.(appRoot)?.top || "0px";
-        appRoot.setAttribute(ROOT_TOP_ATTR, originalTop);
-      }
-      const topOffset = originalTop === "auto" ? "25px" : `calc(${originalTop} + 25px)`;
-      appRoot.style.setProperty("top", topOffset, "important");
-      return;
-    }
-
-    let originalPaddingTop = body.getAttribute(PAGE_PADDING_ATTR);
-    if (originalPaddingTop === null) {
-      originalPaddingTop = globalThis.getComputedStyle?.(body)?.paddingTop || "0px";
-      body.setAttribute(PAGE_PADDING_ATTR, originalPaddingTop);
-    }
-    body.style.setProperty("padding-top", `calc(${originalPaddingTop} + 25px)`, "important");
-  }
-
-  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {}, onOpenGrokInTab = null } = {}) {
-    if (!document.getElementById("keepit-ai-page-offset")) ensurePageTopOffset();
+  // The AI panel host page (pages/ai-panel.html) owns the 25px row above the provider iframe.
+  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {}, onNewChat = null, onOpenGrokInTab = null } = {}) {
     document.getElementById(LEGACY_HOST_ID)?.remove();
     let host = document.getElementById(HOST_ID);
     if (!host) {
@@ -222,6 +192,22 @@
             cursor: pointer;
           }
           .copy-link:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
+          .new-chat {
+            display: grid;
+            flex: 0 0 25px;
+            place-items: center;
+            width: 25px;
+            height: 25px;
+            margin-right: -5px;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--muted);
+            background: var(--bar);
+            cursor: pointer;
+          }
+          .new-chat:hover { border-color: var(--border); background: var(--surface-hover); color: var(--text); }
+          .new-chat svg { width: 13px; height: 13px; }
           .copy-link:disabled { opacity: .45; cursor: default; }
           .copy-link:disabled:hover { border-color: transparent; background: var(--bar); color: var(--muted); }
           .copy-link svg { grid-area: 1 / 1; width: 13px; height: 13px; transition: opacity .16s ease, transform .2s cubic-bezier(.3, 1.6, .5, 1); }
@@ -398,7 +384,7 @@
             font-size: 9.6px;
             font-weight: 750;
           }
-          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden], .open-grok-tab[hidden] { display: none; }
+          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden], .open-grok-tab[hidden], .new-chat[hidden] { display: none; }
           @media (max-width: 520px) {
             .tab { gap: 3px; padding-inline: 2px; font-size: 10px; }
             .provider-icon-wrap, .provider-icon, .provider-icon-fallback { flex-basis: 15.6px; width: 15.6px; height: 15.6px; }
@@ -406,7 +392,7 @@
           @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
         </style>
         <div class="bar is-expanded">
-          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="copy-link" type="button" aria-label="Sao chép liên kết" title="Sao chép liên kết" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy copy-idle" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check copy-done" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="open-grok-tab" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="source-row" role="region"><span class="label"></span><a class="source-link" target="_blank" rel="noopener noreferrer" hidden></a><span class="empty-source" hidden></span><button class="copy-link" type="button" aria-label="Sao chép liên kết" title="Sao chép liên kết" disabled><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy copy-idle" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check copy-done" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button><button class="new-chat" type="button" aria-label="Chat mới" title="Chat mới" hidden><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg></button><button class="auto-send" type="button" aria-pressed="false" aria-label="Tự động gửi đang tắt" title="Tự động gửi đang tắt" disabled><span class="auto-send-label">Tự động gửi</span><svg xmlns="http://www.w3.org/2000/svg" width="12.8" height="12.8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap" aria-hidden="true"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg></button><button class="open-grok-tab" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5"/></svg></button><button class="chevron" type="button" aria-expanded="true" aria-controls="tabs" title="Hiện/ẩn hàng AI"><span class="chevron-label">Hiện/ẩn hàng AI</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
           <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">${PROVIDERS.map(provider => `<button class="tab" type="button" role="tab" data-provider="${provider.id}" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">${provider.name.slice(0, 1)}</span></span><span class="tab-label">${provider.name}</span></button>`).join("")}</div>
           <div class="copy-toast" role="status" aria-live="polite"></div>
         </div>`;
@@ -425,6 +411,7 @@
     const autoSendLabel = shadow.querySelector(".auto-send-label");
     const openGrokTabButton = shadow.querySelector(".open-grok-tab");
     const copyLinkButton = shadow.querySelector(".copy-link");
+    const newChatButton = shadow.querySelector(".new-chat");
     const copyToast = shadow.querySelector(".copy-toast");
     let copyFeedbackTimer = null;
     let copyToastTimer = null;
@@ -466,6 +453,13 @@
       }
       autoSendButton.hidden = !["chatgpt", "gemini", "claude"].includes(selectedProvider);
       openGrokTabButton.hidden = selectedProvider !== "grok" || typeof onOpenGrokInTab !== "function";
+      newChatButton.hidden = typeof onNewChat !== "function" || !["chatgpt", "gemini", "claude"].includes(selectedProvider);
+    }
+
+    function renderNewChat() {
+      const label = NEW_CHAT_LABELS[uiLanguage];
+      newChatButton.setAttribute("aria-label", label);
+      newChatButton.title = label;
     }
 
     function renderOpenGrokTab() {
@@ -607,6 +601,12 @@
       copyFeedbackTimer = setTimeout(() => copyLinkButton.classList.remove("is-copied"), 1600);
     });
 
+    newChatButton.addEventListener("click", () => {
+      if (newChatButton.hidden || typeof onNewChat !== "function") return;
+      try { onNewChat(); }
+      catch (error) { console.warn("Keepit could not open a new AI chat", error); }
+    });
+
     openGrokTabButton.addEventListener("click", () => {
       if (openGrokTabButton.hidden || typeof onOpenGrokInTab !== "function") return;
       try { Promise.resolve(onOpenGrokInTab()).catch(error => console.warn("Keepit could not open Grok in a tab", error)); }
@@ -645,6 +645,7 @@
       renderAutoSend();
       renderOpenGrokTab();
       renderCopyLink();
+      renderNewChat();
       renderExpansion();
       renderProvider();
     })();
@@ -660,6 +661,7 @@
       renderAutoSend();
       renderOpenGrokTab();
       renderCopyLink();
+      renderNewChat();
       renderExpansion();
       renderProvider();
     });
@@ -667,6 +669,7 @@
     setSourceUrl(sourceUrl);
     renderOpenGrokTab();
     renderCopyLink();
+    renderNewChat();
     renderExpansion();
     renderProvider();
     loadProviderIcons();

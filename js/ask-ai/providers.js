@@ -34,6 +34,12 @@
         { scope:"form", selector:'button[aria-label*="Gửi" i], button[type="submit"]' },
         { scope:"document", selector:'button[aria-label="Gửi" i]' }
       ],
+      // AI panel sign-in (URL only): pages that mean "sign in", and the stable page Keepit opens in a tab.
+      loginUrl:"https://chatgpt.com/auth/login",
+      loginPages:[
+        { hosts:["chatgpt.com", "chat.openai.com"], path:/^\/auth\/(?:login|signup|log-in|sign-up)(?:[/?#]|$)/i },
+        { hosts:["auth.openai.com", "auth0.openai.com"], path:/^\// }
+      ],
       newChatSelectors:[
         'button[data-testid="create-new-chat-button"]',
         'a[data-testid="create-new-chat-button"]',
@@ -60,6 +66,10 @@
       // First enabled match wins.
       sendButtonMatch:"enabled",
       sendButtons:null,
+      loginUrl:"https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fgemini.google.com%2Fapp",
+      loginPages:[
+        { hosts:["accounts.google.com"], path:/^\/(?:ServiceLogin|signin|v3\/signin|AccountChooser|AddSession|InteractiveLogin)(?:[/?#]|$)/i }
+      ],
       newChatSelectors:[
         '[data-test-id="new-chat-button"] button',
         'button[aria-label*="New chat" i]',
@@ -84,6 +94,10 @@
       ],
       sendButtonMatch:"enabled",
       sendButtons:null,
+      loginUrl:"https://claude.ai/login",
+      loginPages:[
+        { hosts:["claude.ai"], path:/^\/(?:login|signup|magic-link)(?:[/?#]|$)/i }
+      ],
       newChatSelectors:[
         'a[href="/new"]',
         'button[aria-label*="New chat" i]',
@@ -137,7 +151,9 @@
     origins:Object.freeze(provider.origins),
     composerSelectors:Object.freeze(provider.composerSelectors),
     sendButtons:Object.freeze((provider.sendButtons || GENERIC_SEND_BUTTONS).map(item => Object.freeze({ ...item }))),
-    newChatSelectors:Object.freeze(provider.newChatSelectors)
+    newChatSelectors:Object.freeze(provider.newChatSelectors),
+    loginUrl:provider.loginUrl || "",
+    loginPages:Object.freeze((provider.loginPages || []).map(page => Object.freeze({ hosts:Object.freeze([...page.hosts]), path:page.path })))
   }));
 
   const byId = new Map(frozenEntries.map(provider => [provider.id, provider]));
@@ -161,6 +177,19 @@
   }
 
   function isPanelProvider(providerId) { return panelIds.includes(get(providerId)?.id || ""); }
+
+  // AI panel sign-in, decided by URL only (never page content): a provider sign-in page, not a sign-out page.
+  function isLoginUrl(providerId, value) {
+    const provider = get(providerId);
+    if (!provider?.loginPages?.length) return false;
+    try {
+      const url = new URL(String(value || ""));
+      if (url.protocol !== "https:" || /log-?out|sign-?out/i.test(url.pathname)) return false;
+      const host = url.hostname.toLowerCase().replace(/\.$/, "");
+      return provider.loginPages.some(page => page.hosts.some(domain => host === domain || host.endsWith(`.${domain}`))
+        && page.path.test(url.pathname));
+    } catch { return false; }
+  }
 
   // Source pages are plain http(s) URLs; the panel never reads page body, title or clipboard.
   function normalizeSourceUrl(value) {
@@ -296,6 +325,7 @@
     fromHost,
     fromUrl,
     isPanelProvider,
+    isLoginUrl,
     normalizeSourceUrl,
     normalizeConversationUrl,
     panelRoute,

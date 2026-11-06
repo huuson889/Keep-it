@@ -1,6 +1,6 @@
 // AI page composer (ChatGPT, Gemini, Claude; editor helpers also load on Grok).
 // Owns: panel marker capture, composer/send/new-chat element access via the provider adapter,
-// live route reporting to the Chromium panel host, and the Firefox in-page toolbar.
+// live route and sign-in page reporting to the AI panel host (same iframe host in Chromium and Firefox).
 // The Send/link/mapping flow itself lives in page/send-flow.js.
 (() => {
   "use strict";
@@ -9,11 +9,9 @@
   if (!providers) return;
   const provider = providers.fromHost(location.hostname);
   if (!provider) return;
-  const isFirefox = /Firefox\//i.test(globalThis.navigator?.userAgent || "");
-  const isRootFrame = isFirefox ? window.top === window : window.parent === window.top;
-  if (!isRootFrame) return;
+  // The provider page itself: a normal tab, or the iframe directly inside the AI panel host.
+  if (window.parent !== window.top) return;
 
-  const PANEL_SOURCE_URLS_KEY = "keepitAiPanelSourceUrlByWindow";
   const SESSION_KEYS = Object.freeze({
     panel:"keepitAiPanelMarker",
     sourceUrl:"keepitAiPanelSourceUrl",
@@ -170,110 +168,84 @@
     extensionOrigin = root.host ? `${root.protocol}//${root.host}` : "";
   } catch {}
 
-  // The Chromium panel cannot read this cross-origin URL, so report the live route whenever the
-  // provider SPA changes it.
+  // The AI panel host (Chromium side panel and Firefox sidebar) cannot read this cross-origin URL,
+  // so report the live route whenever the provider SPA changes it.
+  const inPanelFrame = window.parent !== window && !!extensionOrigin;
+  function isKeepitPanelFrame() {
+    if (!inPanelFrame) return false;
+    try { if (sessionStorage.getItem(SESSION_KEYS.panel) === "1") return true; } catch {}
+    try { if (location.ancestorOrigins?.[0] === extensionOrigin) return true; } catch {}
+    return !!extensionRoot && document.referrer.startsWith(extensionRoot);
+  }
+
+  function postToPanel(message) {
+    try { window.parent.postMessage(message, extensionOrigin); }
+    catch { /* The panel may be closing. */ }
+  }
+
   let lastReportedPanelRoute = null;
   function reportPanelConversation() {
-    if (isFirefox || window.parent === window || !extensionOrigin || !providers.isPanelProvider(provider.id)) return;
+    if (!inPanelFrame || !providers.isPanelProvider(provider.id)) return;
     const routeUrl = providers.panelRoute(provider.id, location.href);
     if (routeUrl === lastReportedPanelRoute) return;
     lastReportedPanelRoute = routeUrl;
-    try {
-      window.parent.postMessage({
-        type:"KEEPIT_AI_PANEL_CONVERSATION",
-        providerId:provider.id,
-        conversationUrl:providers.normalizeConversationUrl(provider.id, location.href),
-        routeUrl
-      }, extensionOrigin);
-    } catch { /* The panel may be closing. */ }
-  }
-  if (!isFirefox && window.parent !== window && extensionOrigin) {
-    reportPanelConversation();
-    setInterval(reportPanelConversation, 700);
-    window.addEventListener("popstate", reportPanelConversation);
-    window.addEventListener("hashchange", reportPanelConversation);
-    window.addEventListener("load", reportPanelConversation);
+    postToPanel({
+      type:"KEEPIT_AI_PANEL_CONVERSATION",
+      providerId:provider.id,
+      conversationUrl:providers.normalizeConversationUrl(provider.id, location.href),
+      routeUrl
+    });
   }
 
-  // Firefox shows the provider page itself in the sidebar, so the toolbar is injected here.
-  let firefoxPanelActive = false;
-  let toolbar = null;
+  // AI panel sign-in. Each AI decides whether sign-in is needed; Keepit only reacts by URL:
+  // - the user clicks a sign-in link/button here: cancel the in-frame navigation (sign-in pages
+  //   refuse embedding) and let the panel open the sign-in page in a new tab;
+  // - the AI itself shows its sign-in page here: tell the panel, which offers a button (never opens a tab by itself).
+  let lastLoginPageState = false;
+  function reportLoginPage() {
+    if (!providers.isPanelProvider(provider.id) || !isKeepitPanelFrame()) return;
+    const onLoginPage = providers.isLoginUrl(provider.id, location.href);
+    if (onLoginPage === lastLoginPageState) return;
+    lastLoginPageState = onLoginPage;
+    postToPanel({ type:"KEEPIT_AI_PANEL_LOGIN", providerId:provider.id, reason:onLoginPage ? "login-page" : "left-login-page" });
+  }
+
+  function watchLoginNavigation() {
+    const navigation = window.navigation;
+    if (!providers.isPanelProvider(provider.id) || typeof navigation?.addEventListener !== "function") return;
+    navigation.addEventListener("navigate", event => {
+      try {
+        if (!event.cancelable || event.hashChange || event.downloadRequest) return;
+        if (!providers.isLoginUrl(provider.id, String(event.destination?.url || ""))) return;
+        // Only a navigation the user just started; an automatic redirect is left to the AI.
+        if (event.userInitiated !== true && navigator.userActivation?.isActive !== true) return;
+        if (!isKeepitPanelFrame()) return;
+        event.preventDefault();
+        postToPanel({ type:"KEEPIT_AI_PANEL_LOGIN", providerId:provider.id, reason:"login-click" });
+      } catch { /* Leave the navigation to the browser. */ }
+    });
+  }
+
+  if (inPanelFrame) {
+    watchLoginNavigation();
+    const pollPanelFrame = () => { reportPanelConversation(); reportLoginPage(); };
+    pollPanelFrame();
+    setInterval(pollPanelFrame, 700);
+    window.addEventListener("popstate", pollPanelFrame);
+    window.addEventListener("hashchange", pollPanelFrame);
+    window.addEventListener("load", pollPanelFrame);
+  }
+
+  // The source URL shown by the panel; the send flow reads it for the label + URL at Send.
   let activeSourceUrl = "";
-
   function setSourceUrl(value) {
     activeSourceUrl = providers.normalizeSourceUrl(value);
-    toolbar?.setSourceUrl(activeSourceUrl);
     return activeSourceUrl;
-  }
-
-  async function reportProviderSelection(providerId) {
-    try { await globalThis.browser?.runtime?.sendMessage?.({ type:"AI_PANEL_PROVIDER_SELECTED", providerId }); }
-    catch { /* The local route still switches if the worker is waking. */ }
-  }
-
-  async function selectFirefoxProvider(providerId) {
-    const next = providers.get(providerId);
-    if (!next || !providers.isPanelProvider(next.id) || next.id === provider.id) return;
-    await reportProviderSelection(next.id);
-    let targetUrl = next.startUrl;
-    if (activeSourceUrl) {
-      try {
-        const stored = await browser.storage.local.get(next.conversationMapKey);
-        targetUrl = providers.normalizeConversationUrl(next.id, stored?.[next.conversationMapKey]?.[activeSourceUrl]) || next.startUrl;
-      } catch {}
-    }
-    location.replace(providers.panelUrl(next.id, targetUrl, { sourceUrl:activeSourceUrl, clearComposer:true }));
-  }
-
-  async function firefoxPanelIsOpen() {
-    if (!isFirefox || window.top !== window || !globalThis.browser?.runtime?.sendMessage) return false;
-    try {
-      const state = await browser.runtime.sendMessage({ type:"AI_PANEL_CONTEXT_READY" });
-      return state?.open === true;
-    } catch { return false; }
-  }
-
-  async function initializeFirefoxToolbar() {
-    if (!isFirefox || window.top !== window || !providers.isPanelProvider(provider.id)) return;
-    const markers = providers.readPanelMarkers(location.href);
-    let hasSessionMarker = false;
-    try { hasSessionMarker = sessionStorage.getItem(SESSION_KEYS.panel) === "1"; } catch {}
-    const hasExtensionReferrer = !!extensionRoot && document.referrer.startsWith(extensionRoot);
-    if (!markers.panel && !hasSessionMarker && !hasExtensionReferrer) return;
-    if (!await firefoxPanelIsOpen()) return;
-    try { sessionStorage.setItem(SESSION_KEYS.panel, "1"); } catch {}
-    firefoxPanelActive = true;
-    if (!document.body) await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve, { once:true }));
-    let sourceUrl = markers.sourceUrl;
-    if (!sourceUrl) {
-      try { sourceUrl = providers.normalizeSourceUrl(sessionStorage.getItem(SESSION_KEYS.sourceUrl)); } catch {}
-    }
-    if (!sourceUrl) {
-      try {
-        const windowInfo = await browser.windows.getCurrent();
-        const stored = await browser.storage.session?.get?.(PANEL_SOURCE_URLS_KEY);
-        sourceUrl = providers.normalizeSourceUrl(stored?.[PANEL_SOURCE_URLS_KEY]?.[String(windowInfo?.id)]);
-      } catch {}
-    }
-    activeSourceUrl = sourceUrl || activeSourceUrl;
-    toolbar = globalThis.LHN_AI_TOOLBAR?.create({
-      sourceUrl:activeSourceUrl,
-      initialProvider:provider.id,
-      onProviderChange:providerId => { void selectFirefoxProvider(providerId); }
-    }) || null;
-  }
-
-  if (isFirefox && window.top === window) {
-    void initializeFirefoxToolbar();
-    window.addEventListener("pagehide", () => {
-      if (firefoxPanelActive) void browser.runtime.sendMessage({ type:"AI_PANEL_MAYBE_CLOSED" }).catch(() => {});
-    }, { once:true });
   }
 
   globalThis.LHN_AI_COMPOSER = Object.freeze({
     provider,
     providerId:provider.id,
-    isFirefox,
     SESSION_KEYS,
     findEditor,
     editorText,

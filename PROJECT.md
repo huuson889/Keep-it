@@ -1,6 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.121: AI panel dùng một trang `pages/ai-panel.html` cho Chromium và Firefox (Firefox chuyển từ top-level sang iframe như Chromium, DNR 9002 áp cả hai). Thêm nút "Chat mới" cho mọi AI; Send ở chat khác chat đã map thì thêm nhãn + URL một lần và map lại sang chat đó (1a). Đăng nhập: bấm đăng nhập trong panel → mở tab mới, phủ panel, tự tải lại sau khi đăng nhập; AI tự mở trang đăng nhập → nút [Mở tab đăng nhập]. Chưa QA trình duyệt thật.
+- v3.5.120 (chỉ tài liệu): `OPT-ARENA.md` đổi thành nhật ký ý tưởng đã chốt với Arena; bản ghi đầu: Luyện viết/Luyện nói trên Dashboard, nguồn đề Google Sheet + Mục lục tự động (Apps Script), nhận dạng giọng nói (Firefox Whisper, Chrome dự phòng). Chưa triển khai code.
 - v3.5.119: Settings → Icon hiển thị có hàng tab "Mặc định khi bấm icon" (Tô sáng mặc định / Dịch / Hỏi AI) cho logo của toolbar chọn chữ; thêm Dạng 3 mới (Micro Badge + Text, hover mở, mặc định cho cài mới); Dạng 3 cũ thành Dạng 4 (người dùng cũ được chuyển tự động, giao diện giữ nguyên). Toolbar trang và preview dùng chung `js/shared/selection-toolbar.js` + `css/shared/selection-toolbar.css`. Release commit `v3.5.119: Selection toolbar logo action and new hover style 3` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.119.zip`.
 - v3.5.118: khi AI panel mở (Chromium) và sidebar Highlight đóng, nút chevron cạnh trang đổi thành nút ẩn AI panel: cùng kiểu dáng, màu xanh, chevron phải, tooltip "Toggle thanh AI (Alt+X)" (phím tắt thật, đa ngôn ngữ); bấm → `TOGGLE_AI_PANEL` đóng panel cùng cửa sổ, toast "Đã đóng AI panel", nút trở lại Highlight. Firefox giữ nút Highlight (sidebarAction cần thao tác trực tiếp). Release commit `v3.5.118: Edge button toggles the AI panel while it is open` + ZIP `/home/user/Keepit-zip/Keepit - Optimize Test-v3.5.118.zip`.
 - v3.5.117: nút sao chép liên kết trên thanh AI. v3.5.116: hàng tab AI +10% (người dùng xác nhận đẹp). v3.5.115: Alt+X dùng `windowId` của tab đi kèm `onCommand`. v3.5.113: một pipeline ChatGPT/Gemini/Claude (người dùng xác nhận).
@@ -8,7 +10,11 @@
 - Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Luyện viết / Luyện nói (ý tưởng)
+- Đã chốt ý tưởng, chưa có spec và chưa code; câu hỏi còn mở ở `OPT-ARENA.md` (bản ghi 2026-11-06 §8). Bước kế tiếp: viết spec để người dùng duyệt.
+
 ### AI panel providers
+- v3.5.121 browser QA chưa chạy (Chrome + Firefox ≥147): Firefox sidebar hiển thị AI trong iframe dưới thanh 25px, đổi tab AI/đổi source/Hỏi AI như Chromium; nút Chat mới cho ChatGPT/Gemini/Claude; Send ở chat mới/chat khác thêm nhãn + URL một lần rồi lần sau mở đúng chat đó; bấm đăng nhập trong panel → tab mới + lớp phủ chờ → tự tải lại khi đăng nhập xong hoặc đóng tab; AI tự hiện trang đăng nhập → lớp phủ có nút, không tự mở tab; Google sign-in của Gemini trong tab mới.
 - v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.119 toolbar chọn chữ (4 dạng, logo theo "Mặc định khi bấm icon", preview hover, migrate Dạng 3→4); v3.5.118 nút cạnh trang ẩn AI panel (Chromium); v3.5.117 nút sao chép liên kết (Chromium panel + Firefox sidebar); v3.5.115 Alt+X đóng panel sau khi để yên >30 giây; v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
 - v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
 
@@ -63,8 +69,7 @@ Keepit - Test/
 ├── scripts/
 │   └── build_firefox.py           # Tạo Firefox build, bỏ permission/key Chrome-only
 ├── pages/
-│   ├── ai-panel-chromium.html      # Chromium panel: shared toolbar host + provider iframe
-│   ├── ai-panel-firefox.html        # Firefox sidebar shell; routes selected provider top-level
+│   ├── ai-panel.html               # AI panel chung (Chromium side panel + Firefox sidebar): toolbar + provider iframe + lớp phủ đăng nhập
 │   ├── dashboard.html             # Giao diện Dashboard (Overview/Dictation/Highlights & Notes, sidebar và ô tìm Settings)
 │   ├── highlights-notes.html      # Bản HTML độc lập của giao diện Highlights & Notes
 │   ├── dictation-stats-popup.html # Popup thống kê Dictation trong iframe cục bộ
@@ -77,7 +82,7 @@ Keepit - Test/
 │   │   ├── service.js             # Background AI: panel lifecycle, provider, mapping, link, Alt+X, DNR 9002
 │   │   ├── prompt-format.js       # Nhãn + URL + prompt formatting (background + trang AI)
 │   │   ├── toolbar.js             # Toolbar AI panel: source link, tabs, auto-send
-│   │   ├── panel/panel.js         # Panel controller chung (Chromium iframe / Firefox top-level)
+│   │   ├── panel/panel.js         # Panel controller chung (iframe cả hai trình duyệt, Chat mới, lớp phủ đăng nhập)
 │   │   └── page/                  # composer.js (editor bridge), send-flow.js (send/link/mapping), chatgpt-link-marker.js, grok-google-auth.js
 │   ├── content/                   # Page interaction content scripts
 │   │   ├── sidebar.js             # Page sidebar tabs and search tools
@@ -130,7 +135,7 @@ TTS engine ── tải audio Google TTS ─────────────
 
 Reader ── Readability ──> chọn nội dung chính của trang
 Content ── Highlighter / Note Composer / Highlight Sidebar ──> giao diện trên trang
-AI panel toolbar ── provider selection per window + last choice ──> Background session/local state ──> Chromium iframe / Firefox top-level provider navigation
+AI panel toolbar ── provider selection per window + last choice ──> Background session/local state ──> provider iframe trong pages/ai-panel.html (Chromium + Firefox)
 Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/service.js` lấy exact tab URL + selection tường minh; AI đang chọn quyết định key mapping; prompt giống nhau cho mọi AI; draft không có URL tới lúc Send; `page/composer.js` điền, `page/send-flow.js` gửi/chèn URL/báo `AI_LINK_RESULT`.
 Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
@@ -161,6 +166,21 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.121 | Arena.ai Agent sửa:**
+
+- AI panel một trang: `pages/ai-panel.html` thay `ai-panel-chromium.html` + `ai-panel-firefox.html`; Firefox sidebar giờ dùng iframe như Chromium (bỏ điều hướng top-level, `location.replace`, toolbar trong trang AI và `ensurePageTopOffset`). `ensureAIProviderFrameRule` (DNR 9002) chạy cả Firefox. Firefox báo panel mở bằng `AI_PANEL_CONTEXT_READY {windowId}`; bỏ `AI_PANEL_MAYBE_CLOSED`. Không hỗ trợ Firefox cũ (<147) cho phần phát hiện bấm đăng nhập (Navigation API); `strict_min_version` giữ 121.
+- Nút "Chat mới" (lucide square-pen, cạnh nút sao chép liên kết, EN/VI/KO) cho ChatGPT/Gemini/Claude: tải trang start của AI đang chọn trong panel; không đổi mapping cho tới khi Send.
+- Mapping 1a: `AI_LINK_PREPARE` gửi kèm `conversationUrl`; chỉ khi chat đang mở trùng chat đã map mới gửi nguyên văn, ngược lại thêm nhãn + URL một lần và `completeAILinkRequest` map lại source sang chat mới sau Send xác nhận.
+- Đăng nhập (phương án 1, mỗi AI tự quyết): registry thêm `loginUrl`/`loginPages` + `isLoginUrl`. Trong iframe panel, `composer.js` chặn cú bấm đăng nhập của người dùng (Navigation API, `userInitiated`/`userActivation`) và báo `KEEPIT_AI_PANEL_LOGIN`; panel mở trang đăng nhập ở tab mới, phủ "Đang chờ…" [Tải lại ngay] [Huỷ], tự tải lại khi tab về trang AI hoặc bị đóng. AI tự chuyển iframe sang trang đăng nhập → lớp phủ [Mở tab đăng nhập] [Tải lại], không tự mở tab. Không tự dò trạng thái đăng xuất.
+- File: `pages/ai-panel.html` (mới), `pages/ai-panel-chromium.html` + `pages/ai-panel-firefox.html` (xoá), `manifest.json`, `js/ask-ai/{providers,toolbar,service}.js`, `js/ask-ai/panel/panel.js`, `js/ask-ai/page/{composer,send-flow}.js`, `docs/modules/ask-ai.md`, `README.md`, `PROJECT.md`.
+- Kiểm tra (ngoài repo, `/tmp/k121`): VM service 7/7 (1a: cùng chat → mapped; chat khác/chat mới → thêm URL + map lại; Send lỗi giữ mapping; DNR 9002 Chromium + Firefox; Firefox open/close state); jsdom panel 6/6 (iframe cả hai trình duyệt, Chat mới, đăng nhập bấm/AI tự mở, origin/AI sai bị bỏ qua, Huỷ); VM `composer.js` 7/7; `isLoginUrl` 10 case; `node --check` toàn bộ JS; `build_firefox.py` (sidebar trỏ `ai-panel.html`, không `sidePanel`). Browser QA: chưa chạy.
+
+**2026-11-06 | v3.5.120 | Arena.ai Agent sửa:**
+
+- Theo yêu cầu người dùng, `OPT-ARENA.md` đổi vai trò thành nhật ký ý tưởng/thiết kế đã chốt với Arena (mới nhất ở trên); xoá toàn bộ nội dung cũ (kế hoạch tối ưu, kiến trúc 27 module, roadmap §8). Bản ghi đầu tiên: trang Luyện viết và Luyện nói trên Dashboard (khung dùng chung, Đề của tôi, Nhờ AI ra đề, gửi AI panel), nguồn đề folder Google Drive + Mục lục tự động bằng Apps Script (đọc CSV theo `gid`, không API key), nhận dạng giọng nói (Chrome: Web Speech qua mạng → trên máy → Whisper; Firefox: Whisper với engine ONNX trong ZIP, model tải về IndexedDB, kiểm tra SHA-256), phương án đã loại và câu hỏi còn mở.
+- Cập nhật mô tả vai trò `OPT-ARENA.md` trong `AGENTS.md` (mục 2 và 5.2) và `README.md`. Không đổi code.
+- File: `OPT-ARENA.md`, `AGENTS.md`, `README.md`, `manifest.json`, `PROJECT.md`.
 
 **2026-11-06 | v3.5.119 | Arena.ai Agent sửa:**
 

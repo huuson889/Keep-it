@@ -1,6 +1,6 @@
-// AI panel host (pages/ai-panel-chromium.html with the provider iframe, and
-// pages/ai-panel-firefox.html which forwards the sidebar to the provider page).
-// One entry and one navigation path for ChatGPT, Gemini and Claude (ChatGPT behavior as standard).
+// AI panel host: pages/ai-panel.html is the same page in the Chromium side panel and the Firefox
+// sidebar (Keepit toolbar above, provider page in an iframe below). One entry and one navigation
+// path for ChatGPT, Gemini and Claude (ChatGPT behavior as standard).
 (() => {
   "use strict";
 
@@ -9,12 +9,20 @@
   const NAVIGATION_KEY = "keepitAiPanelNavigationRequest";
   const PANEL_CONTEXTS_KEY = "keepitAiPanelRouteContextByWindow";
   const frame = document.getElementById("ai-frame");
+  if (!frame) return;
+  const isChromiumPanel = !!globalThis.chrome?.sidePanel;
   const handledNavigationIds = new Set();
   let currentProviderId = "chatgpt";
   let currentSourceUrl = "";
-  const toolbar = frame && globalThis.LHN_AI_TOOLBAR?.create({
+  let panelWindowId;
+  // AI panel sign-in overlay state (see "AI panel sign-in" below).
+  let loginState = null; // { mode:"required"|"waiting", providerId, tabId }
+  let uiLanguage = "en";
+  const loginOverlay = document.getElementById("keepit-ai-login");
+  const toolbar = globalThis.LHN_AI_TOOLBAR?.create({
     initialProvider:"chatgpt",
     onProviderChange:providerId => { void switchProvider(providerId); },
+    onNewChat:() => openNewChat(),
     onOpenGrokInTab:() => openGrokInNewTab()
   });
 
@@ -36,7 +44,7 @@
 
   function openGrokInNewTab() {
     const provider = providers.get("grok");
-    if (!frame || currentProviderId !== "grok" || !provider) return false;
+    if (currentProviderId !== "grok" || !provider) return false;
     try {
       return browser.tabs.create({ url:provider.startUrl, active:true }).then(() => true).catch(error => {
         console.warn("Keepit could not open Grok in a new tab", error);
@@ -81,12 +89,12 @@
   }
 
   function frameProvider() {
-    return frame ? providers.fromUrl(frame.src) : null;
+    return providers.fromUrl(frame.src);
   }
 
   function postToFrame(message) {
     const provider = frameProvider();
-    if (!frame?.isConnected || !frame.contentWindow || !providers.isPanelProvider(provider?.id)) return;
+    if (!frame.isConnected || !frame.contentWindow || !providers.isPanelProvider(provider?.id)) return;
     try { frame.contentWindow.postMessage(message, new URL(frame.src).origin); }
     catch { /* the provider page may be navigating */ }
   }
@@ -128,7 +136,7 @@
   }
 
   function reloadFrame(targetUrl, onTargetLoad) {
-    if (!frame) return false;
+    hideLoginOverlay("required");
     frame.dataset.keepitLoaded = "false";
     delete frame.dataset.currentConversationUrl;
     const loadTargetAfterBlank = () => {
@@ -143,7 +151,6 @@
 
   // Live route reported by the provider page, else the last loaded src.
   function displayedRoute(providerId) {
-    if (!frame) return "";
     return providers.panelRoute(providerId, frame.dataset.currentConversationUrl || "")
       || providers.panelRoute(providerId, frame.src);
   }
@@ -163,14 +170,14 @@
     setActiveProvider(provider.id);
     const targetRoute = providers.panelRoute(provider.id, target);
     const currentRoute = displayedRoute(provider.id);
-    const previousSourceUrl = String(frame?.dataset?.keepitSourceUrl || "");
+    const previousSourceUrl = String(frame.dataset.keepitSourceUrl || "");
     const sourceContextChanged = !!request.sourceUrl && request.sourceUrl !== previousSourceUrl;
     if (request.sourceUrl) setSourceUrl(request.sourceUrl);
     const plan = providers.planPanelNavigation({
       displayedRoute:currentRoute,
       targetRoute,
       sourceChanged:sourceContextChanged,
-      loaded:frame?.dataset?.keepitLoaded === "true"
+      loaded:frame.dataset.keepitLoaded === "true"
     });
     const sameSourceAndRoute = plan === "stay";
     const requestScopedFlow = request.mode === "new-link" || request.mode === "followup";
@@ -203,45 +210,37 @@
       focusComposer
     });
     const forceSameRouteContextReload = plan === "reload";
-    if (frame) {
-      if (request.sourceUrl) frame.dataset.keepitSourceUrl = request.sourceUrl;
-      frame.dataset.keepitProvider = provider.id;
-      if (request.mode === "followup" && linkRequestId) {
-        delete frame.dataset.currentConversationUrl;
-        if (forceSameRouteContextReload) {
-          reloadFrame(url, () => wakeFollowupSoon(linkRequestId));
-        } else {
-          frame.addEventListener("load", () => wakeFollowup(linkRequestId), { once:true });
-          frame.src = url;
-          // Query/hash-only changes may not produce a load event in every embedded browser.
-          wakeFollowupSoon(linkRequestId);
-        }
-      } else if (forceSameRouteContextReload) {
-        reloadFrame(url);
-      } else {
-        frame.src = url;
-      }
-    } else {
+    if (request.sourceUrl) frame.dataset.keepitSourceUrl = request.sourceUrl;
+    frame.dataset.keepitProvider = provider.id;
+    if (request.mode === "followup" && linkRequestId) {
+      delete frame.dataset.currentConversationUrl;
       if (forceSameRouteContextReload) {
-        try {
-          history.replaceState(history.state, "", url);
-          location.reload();
-        } catch (error) {
-          console.warn("Could not reload the Firefox AI panel for a new source page", error);
-          location.replace(url);
-        }
-      } else location.replace(url);
-      await clearNavigationRequest(request.requestId);
-      return true;
+        reloadFrame(url, () => wakeFollowupSoon(linkRequestId));
+      } else {
+        frame.addEventListener("load", () => wakeFollowup(linkRequestId), { once:true });
+        setFrameSrc(url);
+        // Query/hash-only changes may not produce a load event in every embedded browser.
+        wakeFollowupSoon(linkRequestId);
+      }
+    } else if (forceSameRouteContextReload) {
+      reloadFrame(url);
+    } else {
+      setFrameSrc(url);
     }
     await clearNavigationRequest(request.requestId);
     return true;
   }
 
+  function setFrameSrc(url) {
+    hideLoginOverlay("required");
+    frame.src = url;
+  }
+
   // Toolbar choice: open the selected AI on this source's mapped conversation, else its start page.
   async function switchProvider(providerId) {
     const provider = providers.get(providerId);
-    if (!frame || !provider || !providers.isPanelProvider(provider.id)) return false;
+    if (!provider || !providers.isPanelProvider(provider.id)) return false;
+    hideLoginOverlay();
     setActiveProvider(provider.id);
     await rememberProvider(provider.id);
     const target = await mappedConversation(provider, currentSourceUrl) || provider.startUrl;
@@ -249,9 +248,143 @@
     delete frame.dataset.currentConversationUrl;
     frame.dataset.keepitProvider = provider.id;
     if (currentSourceUrl) frame.dataset.keepitSourceUrl = currentSourceUrl;
-    frame.src = providers.panelUrl(provider.id, target, { sourceUrl:currentSourceUrl });
+    setFrameSrc(providers.panelUrl(provider.id, target, { sourceUrl:currentSourceUrl }));
     return true;
   }
+
+  // Toolbar "New chat": the current AI's own new-chat page. The source mapping is unchanged until
+  // the user actually sends there (the send flow then adds the label + URL once and remaps).
+  function openNewChat() {
+    const provider = providers.get(currentProviderId);
+    if (!provider || !providers.isPanelProvider(provider.id)) return false;
+    hideLoginOverlay();
+    frame.dataset.keepitProvider = provider.id;
+    if (currentSourceUrl) frame.dataset.keepitSourceUrl = currentSourceUrl;
+    return reloadFrame(providers.panelUrl(provider.id, provider.startUrl, { sourceUrl:currentSourceUrl }));
+  }
+
+  // Reload the current AI where it was (its conversation, else this source's mapping, else start page).
+  async function reloadCurrentProvider() {
+    const provider = providers.get(currentProviderId);
+    if (!provider || !providers.isPanelProvider(provider.id)) return false;
+    const target = displayedRoute(provider.id) || await mappedConversation(provider, currentSourceUrl) || provider.startUrl;
+    frame.dataset.keepitProvider = provider.id;
+    if (currentSourceUrl) frame.dataset.keepitSourceUrl = currentSourceUrl;
+    return reloadFrame(providers.panelUrl(provider.id, target, { sourceUrl:currentSourceUrl }));
+  }
+
+  // ---- AI panel sign-in --------------------------------------------------------------------
+  // Each AI decides whether sign-in is needed. Keepit reacts only to URLs reported by the provider
+  // page (page/composer.js): a sign-in click opens the sign-in page in a new tab and pauses the
+  // panel; a sign-in page shown by the AI itself gets a button (Keepit never opens a tab by itself).
+  // When that tab returns to the AI after sign-in (or is closed), the panel reloads the AI.
+  const LOGIN_TEXT = {
+    en:{ waiting:"Waiting for you to sign in to {ai} in the new tab…", required:"{ai} needs you to sign in. Sign in in a new tab, then come back here.", open:"Open sign-in tab", reload:"Reload now", reloadShort:"Reload", cancel:"Cancel", failed:"Could not open a new tab." },
+    vi:{ waiting:"Đang chờ bạn đăng nhập {ai} ở tab mới…", required:"{ai} yêu cầu đăng nhập. Hãy đăng nhập ở tab mới rồi quay lại đây.", open:"Mở tab đăng nhập", reload:"Tải lại ngay", reloadShort:"Tải lại", cancel:"Huỷ", failed:"Không mở được tab mới." },
+    ko:{ waiting:"새 탭에서 {ai}에 로그인하기를 기다리는 중…", required:"{ai}에 로그인해야 합니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", open:"로그인 탭 열기", reload:"지금 새로고침", reloadShort:"새로고침", cancel:"취소", failed:"새 탭을 열 수 없습니다." }
+  };
+
+  function pickLanguage(value) {
+    const language = String(value || "").toLowerCase().split(/[-_]/)[0];
+    return Object.hasOwn(LOGIN_TEXT, language) ? language : "en";
+  }
+  async function loadUiLanguage() {
+    let language = "";
+    try { language = (await browser.storage.local.get("lhnSettings"))?.lhnSettings?.language || ""; } catch {}
+    uiLanguage = pickLanguage(language || browser.i18n?.getUILanguage?.());
+    if (loginState) renderLoginOverlay();
+  }
+
+  function renderLoginOverlay() {
+    if (!loginOverlay) return;
+    if (!loginState) {
+      loginOverlay.hidden = true;
+      loginOverlay.replaceChildren();
+      return;
+    }
+    const text = LOGIN_TEXT[uiLanguage];
+    const name = providers.get(loginState.providerId)?.name || "AI";
+    const box = document.createElement("div");
+    box.className = "login-box";
+    box.setAttribute("role", "status");
+    const message = document.createElement("p");
+    message.textContent = (loginState.mode === "waiting" ? text.waiting : text.required).replace("{ai}", name);
+    const actions = document.createElement("div");
+    actions.className = "login-actions";
+    const button = (label, primary, onClick) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.textContent = label;
+      if (primary) element.className = "primary";
+      element.addEventListener("click", onClick);
+      actions.append(element);
+      return element;
+    };
+    if (loginState.mode === "waiting") {
+      button(text.reload, true, () => { hideLoginOverlay(); void reloadCurrentProvider(); });
+      button(text.cancel, false, () => hideLoginOverlay());
+    } else {
+      button(text.open, true, () => { void openLoginTab(loginState?.providerId); });
+      button(text.reloadShort, false, () => { hideLoginOverlay(); void reloadCurrentProvider(); });
+    }
+    box.append(message, actions);
+    if (loginState.error) {
+      const error = document.createElement("p");
+      error.className = "login-error";
+      error.textContent = text.failed;
+      box.append(error);
+    }
+    loginOverlay.replaceChildren(box);
+    loginOverlay.hidden = false;
+  }
+
+  // Hide the overlay (only a given mode when one is passed); a hidden waiting overlay stops watching its tab.
+  function hideLoginOverlay(mode = "") {
+    if (!loginState || (mode && loginState.mode !== mode)) return;
+    loginState = null;
+    renderLoginOverlay();
+  }
+
+  function showLoginRequired(providerId) {
+    if (loginState?.mode === "waiting") return;
+    loginState = { mode:"required", providerId };
+    renderLoginOverlay();
+  }
+
+  async function openLoginTab(providerId) {
+    const provider = providers.get(providerId);
+    if (!provider?.loginUrl) return false;
+    try {
+      const tab = await browser.tabs.create(Number.isInteger(panelWindowId)
+        ? { url:provider.loginUrl, active:true, windowId:panelWindowId }
+        : { url:provider.loginUrl, active:true });
+      loginState = { mode:"waiting", providerId:provider.id, tabId:Number.isInteger(tab?.id) ? tab.id : null };
+    } catch (error) {
+      console.warn("Keepit could not open the AI sign-in tab", error);
+      loginState = { mode:"required", providerId:provider.id, error:true };
+    }
+    renderLoginOverlay();
+    return loginState.mode === "waiting";
+  }
+
+  function finishLoginWait() {
+    if (loginState?.mode !== "waiting") return;
+    hideLoginOverlay();
+    void reloadCurrentProvider();
+  }
+
+  browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+    if (loginState?.mode !== "waiting" || tabId !== loginState.tabId || changeInfo?.status !== "complete") return;
+    const url = String(tab?.url || "");
+    // Signed in: the tab is back on this AI's own pages and no longer on a sign-in page.
+    if (providers.fromUrl(url)?.id === loginState.providerId && !providers.isLoginUrl(loginState.providerId, url)) finishLoginWait();
+  });
+  browser.tabs.onRemoved?.addListener(tabId => {
+    if (loginState?.mode === "waiting" && tabId === loginState.tabId) finishLoginWait();
+  });
+  browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes.lhnSettings) void loadUiLanguage();
+  });
 
   async function openPanelPage() {
     try {
@@ -276,20 +409,16 @@
       // Reopen only this source's route metadata; never restore a global last-chat URL or composer text.
       const target = sessionRoute || await mappedConversation(provider, sourceUrl) || provider.startUrl;
       const targetUrl = providers.panelUrl(provider.id, target, { sourceUrl, clearComposer:true });
-      if (frame) {
-        if (sourceUrl) frame.dataset.keepitSourceUrl = sourceUrl;
-        frame.dataset.keepitProvider = provider.id;
-        frame.src = targetUrl;
-      } else location.replace(targetUrl);
+      if (sourceUrl) frame.dataset.keepitSourceUrl = sourceUrl;
+      frame.dataset.keepitProvider = provider.id;
+      setFrameSrc(targetUrl);
     } catch (error) {
       console.warn("Keepit could not initialize the AI panel", error);
-      const target = providers.panelUrl(currentProviderId, providers.get(currentProviderId)?.startUrl, { clearComposer:true });
-      if (frame) frame.src = target;
-      else location.replace(target);
+      setFrameSrc(providers.panelUrl(currentProviderId, providers.get(currentProviderId)?.startUrl, { clearComposer:true }));
     }
   }
 
-  frame?.addEventListener("load", () => {
+  frame.addEventListener("load", () => {
     const provider = frameProvider();
     if (!providers.isPanelProvider(provider?.id)) return;
     frame.dataset.keepitProvider = provider.id;
@@ -297,12 +426,19 @@
     setActiveProvider(provider.id);
   });
 
-  // The provider page (page/composer.js) reports its live route; the page itself reports
-  // route context to the background, so this only feeds the panel's navigation plan.
+  // The provider page (page/composer.js) reports its live route and sign-in pages; the page itself
+  // reports route context to the background, so the route only feeds the panel's navigation plan.
   window.addEventListener("message", event => {
-    if (!frame || event.source !== frame.contentWindow || event.data?.type !== "KEEPIT_AI_PANEL_CONVERSATION") return;
+    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN"].includes(event.data?.type)) return;
     const provider = providers.get(event.data.providerId);
     if (!providers.isPanelProvider(provider?.id) || frameProvider()?.id !== provider.id || !provider.origins.includes(event.origin)) return;
+    if (event.data.type === "KEEPIT_AI_PANEL_LOGIN") {
+      if (provider.id !== currentProviderId) return;
+      if (event.data.reason === "login-click") void openLoginTab(provider.id);
+      else if (event.data.reason === "login-page") showLoginRequired(provider.id);
+      else if (event.data.reason === "left-login-page") hideLoginOverlay("required");
+      return;
+    }
     const route = providers.panelRoute(provider.id, String(event.data.routeUrl || ""));
     if (route) frame.dataset.currentConversationUrl = route;
     else delete frame.dataset.currentConversationUrl;
@@ -313,16 +449,18 @@
     void navigate(changes[NAVIGATION_KEY].newValue);
   });
 
-  if (globalThis.chrome?.sidePanel) {
-    window.addEventListener("pagehide", () => {
-      void (async () => {
-        try {
-          const windowId = await getCurrentWindowId();
-          await browser.runtime.sendMessage({ type:"AI_PANEL_HOST_CLOSED", windowId });
-        } catch {}
-      })();
-    }, { once:true });
-  }
+  // Panel open/closed state: Chromium reports it through sidePanel.onOpened/onClosed; the Firefox
+  // sidebar page reports that it opened. Both report when the panel page goes away.
+  window.addEventListener("pagehide", () => {
+    try { void browser.runtime.sendMessage({ type:"AI_PANEL_HOST_CLOSED", windowId:panelWindowId }).catch(() => {}); } catch {}
+  }, { once:true });
 
-  void openPanelPage();
+  void (async () => {
+    panelWindowId = await getCurrentWindowId();
+    void loadUiLanguage();
+    if (!isChromiumPanel) {
+      try { await browser.runtime.sendMessage({ type:"AI_PANEL_CONTEXT_READY", windowId:panelWindowId }); } catch {}
+    }
+    await openPanelPage();
+  })();
 })();

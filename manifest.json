@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.119",
+  "version": "3.5.121",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -144,7 +144,6 @@
         "js/core/messaging.js",
         "js/ask-ai/providers.js",
         "js/ask-ai/prompt-format.js",
-        "js/ask-ai/toolbar.js",
         "js/ask-ai/page/composer.js"
       ],
       "run_at": "document_start",
@@ -210,11 +209,11 @@
   },
   "sidebar_action": {
     "default_title": "AI panel",
-    "default_panel": "pages/ai-panel-firefox.html",
+    "default_panel": "pages/ai-panel.html",
     "open_at_install": false
   },
   "side_panel": {
-    "default_path": "pages/ai-panel-chromium.html"
+    "default_path": "pages/ai-panel.html"
   },
   "commands": {
     "open-chatgpt-sidepanel": {
