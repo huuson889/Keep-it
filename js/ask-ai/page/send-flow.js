@@ -92,7 +92,17 @@
     return providers.panelRoute(provider.id, location.href);
   }
 
-  async function focusComposerWhenReady({ timeoutMs = MAX_WAIT_MS, requireEmpty = false, expectedText = "", targetRoute = "" } = {}) {
+  // Explicit Keepit actions focus the draft end ONCE per request; afterwards the user edits freely.
+  let focusedRequestId = "";
+  function focusDraftOnce(requestId, composer) {
+    if (!requestId || focusedRequestId === requestId) return false;
+    focusedRequestId = requestId;
+    const focused = focusComposerAtEnd(composer);
+    composerApi.requestPanelFocus?.();
+    return focused;
+  }
+
+  async function focusComposerWhenReady({ timeoutMs = MAX_WAIT_MS, requireEmpty = false, expectedText = "", targetRoute = "", askPanel = false } = {}) {
     const started = Date.now();
     const expectedRoute = canonicalConversationUrl(targetRoute);
     const sentText = normalizedDraft(expectedText);
@@ -104,7 +114,11 @@
           await new Promise(resolve => setTimeout(resolve, 120));
           continue;
         }
-        if (!composer.disabled && composer.getAttribute?.("aria-disabled") !== "true") return focusComposerAtEnd(composer);
+        if (!composer.disabled && composer.getAttribute?.("aria-disabled") !== "true") {
+          const focused = focusComposerAtEnd(composer);
+          if (askPanel) composerApi.requestPanelFocus?.();
+          return focused;
+        }
       }
       await new Promise(resolve => setTimeout(resolve, 120));
     }
@@ -494,7 +508,7 @@
     } catch (error) { console.warn("Keepit could not report the AI prompt result", error); }
     clearRequestSessionData(pending?.requestId);
     if (ok && response?.ok && ["auto-send-link", "auto-send-followup"].includes(pending?.mode)) {
-      void focusComposerWhenReady({ timeoutMs:6000, requireEmpty:true, expectedText:pending.prompt || "" });
+      void focusComposerWhenReady({ timeoutMs:6000, requireEmpty:true, expectedText:pending.prompt || "", askPanel:true });
     }
   }
 
@@ -588,7 +602,7 @@
         }
         if (preparedRequestId === pending.requestId) {
           stagedDraftLinkPending = pending;
-          if (composer && normalizedDraft(composerText(composer)) === expectedNormalized) focusComposerAtEnd(composer);
+          if (composer && normalizedDraft(composerText(composer)) === expectedNormalized) focusDraftOnce(pending.requestId, composer);
           if (pending.draftReady !== true) await notifyDraftReady(pending);
           return;
         }
@@ -720,13 +734,13 @@
       }
       if (isDraftOnly) {
         if (isDraftLink) {
-          focusComposerAtEnd(composer);
+          focusDraftOnce(pending.requestId, composer);
           try { sessionStorage.setItem(LINK_PREPARED_SESSION_KEY, pending.requestId); } catch {}
           stagedDraftLinkPending = { ...pending, draftReady:true };
           await notifyDraftReady(pending);
         } else {
           await reportLinkResult(pending, true, conversationUrl || pending.conversationUrl || "");
-          focusComposerAtEnd(composer);
+          focusDraftOnce(pending.requestId, composer);
         }
         return;
       }
@@ -782,7 +796,7 @@
   };
   rememberCurrentConversation();
   void processPendingLink();
-  if (initialFocusComposerRoute) void focusComposerWhenReady({ targetRoute:initialFocusComposerRoute });
+  if (initialFocusComposerRoute) void focusComposerWhenReady({ targetRoute:initialFocusComposerRoute, askPanel:true });
   const panelPollTimer = setInterval(pollPanel, 1200);
   let lastObservedHref = location.href;
   const routeObserver = new MutationObserver(() => {

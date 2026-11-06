@@ -342,6 +342,10 @@
     findSendButton,
     findNewChatButton,
     setSourceUrl,
-    getSourceUrl:() => activeSourceUrl
+    getSourceUrl:() => activeSourceUrl,
+    // A cross-origin frame cannot take focus by itself: ask the panel to pass focus down to it.
+    requestPanelFocus:() => {
+      if (inPanelFrame && providers.isPanelProvider(provider.id)) postToPanel({ type:"KEEPIT_AI_PANEL_WANT_FOCUS", providerId:provider.id });
+    }
   });
 })();

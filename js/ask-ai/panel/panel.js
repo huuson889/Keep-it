@@ -434,7 +434,7 @@
   // The provider page (page/composer.js) reports its live route and sign-in pages; the page itself
   // reports route context to the background, so the route only feeds the panel's navigation plan.
   window.addEventListener("message", event => {
-    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN", "KEEPIT_AI_PANEL_HELLO"].includes(event.data?.type)) return;
+    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN", "KEEPIT_AI_PANEL_HELLO", "KEEPIT_AI_PANEL_WANT_FOCUS"].includes(event.data?.type)) return;
     const provider = providers.get(event.data.providerId);
     if (!providers.isPanelProvider(provider?.id) || frameProvider()?.id !== provider.id || !provider.origins.includes(event.origin)) return;
     if (event.data.type === "KEEPIT_AI_PANEL_HELLO") {
@@ -442,6 +442,15 @@
       // without a chat box report their own state when they load.
       frameAnswered = true;
       if (loginState?.mode === "required" && loginState.reason === "left-site") hideLoginOverlay("required");
+      return;
+    }
+    if (event.data.type === "KEEPIT_AI_PANEL_WANT_FOCUS") {
+      // After an explicit Keepit action: the panel takes focus and passes it down to the AI frame
+      // (focus delegation), then the AI page puts the caret at the end of its chat box.
+      if (provider.id !== currentProviderId || loginState) return;
+      try { window.focus(); } catch {}
+      try { frame.focus({ preventScroll:true }); } catch {}
+      wakeComposerFocus("");
       return;
     }
     if (event.data.type === "KEEPIT_AI_PANEL_LOGIN") {
