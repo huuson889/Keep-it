@@ -203,10 +203,12 @@
   // - the AI itself shows its sign-in page here: tell the panel, which offers a button (never opens a tab by itself).
   // - a page that has fully loaded but shows no chat box (and, off chat pages, no New chat button)
   //   for a while: the AI shows its own notice instead (Claude signed out in an embedded view).
-  const NO_COMPOSER_MS = 5000;
+  const NO_COMPOSER_MS = 5000; // the AI app is there (New chat button) but its chat box is slow
+  const NO_APP_MS = 1200; // neither chat box nor New chat button: the AI's own notice page
   let lastSignInState = null; // each new AI document reports its first state, clearing an old overlay
   let composerCheckRoute = "";
   let composerMissingSince = 0;
+  let composerCheckTimer = 0;
 
   function isChatRoute(url) {
     try {
@@ -234,17 +236,26 @@
   // The AI app itself: a chat page, or any page with the AI's own New chat button (settings,
   // projects). A page with neither and no chat box is the AI's own notice (Claude signed out in an
   // embedded view), whatever its URL.
-  function composerMissing(url) {
-    if (hasShownEditor()) return false;
-    return isChatRoute(url) || !findNewChatButton();
+  // Wait (ms) before reporting, or 0 when the page shows the AI's chat box / app.
+  function composerMissingWait(url) {
+    if (hasShownEditor()) return 0;
+    const appShown = !!findNewChatButton();
+    if (!appShown) return NO_APP_MS;
+    return isChatRoute(url) ? NO_COMPOSER_MS : 0;
   }
 
   function composerMissingLongEnough(url) {
     const route = url.origin + url.pathname;
     if (route !== composerCheckRoute) { composerCheckRoute = route; composerMissingSince = 0; }
-    if (document.readyState !== "complete" || !composerMissing(url)) { composerMissingSince = 0; return false; }
+    const wait = document.readyState === "complete" ? composerMissingWait(url) : 0;
+    if (!wait) { composerMissingSince = 0; return false; }
     if (!composerMissingSince) composerMissingSince = Date.now();
-    return Date.now() - composerMissingSince >= NO_COMPOSER_MS;
+    const left = wait - (Date.now() - composerMissingSince);
+    if (left <= 0) return true;
+    // Check again right when the wait ends instead of at the next poll.
+    clearTimeout(composerCheckTimer);
+    composerCheckTimer = setTimeout(reportLoginPage, left + 20);
+    return false;
   }
 
   function reportLoginPage() {
