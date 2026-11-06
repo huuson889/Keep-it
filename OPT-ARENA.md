@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-11-06 | Dịch PDF và OCR
 
-**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.133. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
+**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.134. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
 
 ### 1. Mục tiêu
 - **Dịch PDF:** mở PDF trong Keepit, dịch song ngữ, highlight và ghi chú như trên web.
@@ -41,11 +41,11 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-11-06 | Tên, slogan và mô tả cửa hàng
 
-**Trạng thái:** Đã triển khai ở v3.5.133.
+**Trạng thái:** Đã triển khai ở v3.5.133; phần hiển thị sửa ở v3.5.134.
 
 - **Tên extension:** "Keepit - Translate, Learn, Ask AI" (33 ký tự; Chrome tối đa 75, Firefox 50). Ba từ khóa = ba nhu cầu: dịch, học, AI. Không thêm từ khóa.
 - **Slogan:** "Keep Exploring Everything" (không dấu chấm). Định vị dài hạn: khám phá và học mọi nội dung trên Internet; tên ưu tiên từ khóa tìm kiếm.
-- **Hiển thị:** popup = "Keepit" + slogan; Dashboard, sidebar Highlight = "Keepit"; header AI panel Chrome/Firefox, trang Tiện ích = tên đầy đủ.
+- **Hiển thị (v3.5.134):** popup = "Keepit - Keep Exploring" + slogan; Dashboard (tab, Giới thiệu), sidebar Highlight = "Keepit - Keep Exploring"; nhãn logo Dashboard 2 dòng "Keepit" / "Keep Exploring" (khung ~130px); header AI panel Chrome/Firefox, trang Tiện ích, tooltip toolbar = tên extension "Keepit - Translate, Learn, Ask AI".
 - **Mô tả Chrome (manifest, tối đa 132):** "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards."
 - **Tóm tắt Firefox (AMO, tối đa 250, dán tay):** "Translate web pages side by side. Highlight, take notes, look up words, turn pages into a video player, ask AI, and practice speaking, listening, dictation and flashcards."
 - **Mô tả dài cửa hàng:** theo bản đồ hệ sinh thái, chỉ ghi tính năng đã có.
