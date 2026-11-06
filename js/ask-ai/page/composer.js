@@ -201,13 +201,41 @@
   // - the user clicks a sign-in link/button here: cancel the in-frame navigation (sign-in pages
   //   refuse embedding) and let the panel open the sign-in page in a new tab;
   // - the AI itself shows its sign-in page here: tell the panel, which offers a button (never opens a tab by itself).
-  let lastLoginPageState = false;
+  // - a chat page (new chat or a conversation) that has fully loaded but shows no chat box for a
+  //   while: the AI shows its own notice instead (Claude signed out in an embedded view stays on
+  //   /new). Keepit only checks whether the chat box element exists, never the page text.
+  const NO_COMPOSER_MS = 5000;
+  let lastSignInState = "ok";
+  let composerCheckRoute = "";
+  let composerMissingSince = 0;
+
+  function isChatRoute(url) {
+    try {
+      const start = new URL(provider.startUrl);
+      const trim = path => path.replace(/\/+$/, "") || "/";
+      return trim(url.pathname) === trim(start.pathname) || !!provider.conversationPath?.test(url.pathname);
+    } catch { return false; }
+  }
+
+  function composerMissingLongEnough(url) {
+    const route = url.origin + url.pathname;
+    if (route !== composerCheckRoute) { composerCheckRoute = route; composerMissingSince = 0; }
+    if (document.readyState !== "complete" || !isChatRoute(url) || findEditor()) { composerMissingSince = 0; return false; }
+    if (!composerMissingSince) composerMissingSince = Date.now();
+    return Date.now() - composerMissingSince >= NO_COMPOSER_MS;
+  }
+
   function reportLoginPage() {
     if (!providers.isPanelProvider(provider.id) || !inPanelFrame) return;
-    const onLoginPage = providers.isLoginUrl(provider.id, location.href);
-    if (onLoginPage === lastLoginPageState) return;
-    lastLoginPageState = onLoginPage;
-    postToPanel({ type:"KEEPIT_AI_PANEL_LOGIN", providerId:provider.id, reason:onLoginPage ? "login-page" : "left-login-page" });
+    let state = "ok";
+    try {
+      const url = new URL(location.href);
+      if (providers.isLoginUrl(provider.id, url.href)) state = "login-page";
+      else if (composerMissingLongEnough(url)) state = "no-composer";
+    } catch { /* Keep "ok". */ }
+    if (state === lastSignInState) return;
+    lastSignInState = state;
+    postToPanel({ type:"KEEPIT_AI_PANEL_LOGIN", providerId:provider.id, reason:state === "ok" ? "left-login-page" : state });
   }
 
   function watchLoginNavigation() {

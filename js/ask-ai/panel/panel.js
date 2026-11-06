@@ -283,9 +283,9 @@
   // panel; a sign-in page shown by the AI itself gets a button (Keepit never opens a tab by itself).
   // When that tab returns to the AI after sign-in (or is closed), the panel reloads the AI.
   const LOGIN_TEXT = {
-    en:{ waiting:"Waiting for you to sign in to {ai} in the new tab…", required:"{ai} needs you to sign in. Sign in in a new tab, then come back here.", left:"{ai} moved to a page that can't open in the panel (usually a sign-in page). Sign in in a new tab, then come back here.", open:"Open sign-in tab", reload:"Reload now", reloadShort:"Reload", cancel:"Cancel", failed:"Could not open a new tab." },
-    vi:{ waiting:"Đang chờ bạn đăng nhập {ai} ở tab mới…", required:"{ai} yêu cầu đăng nhập. Hãy đăng nhập ở tab mới rồi quay lại đây.", left:"{ai} đã chuyển sang trang không mở được trong panel (thường là trang đăng nhập). Hãy đăng nhập ở tab mới rồi quay lại đây.", open:"Mở tab đăng nhập", reload:"Tải lại ngay", reloadShort:"Tải lại", cancel:"Huỷ", failed:"Không mở được tab mới." },
-    ko:{ waiting:"새 탭에서 {ai}에 로그인하기를 기다리는 중…", required:"{ai}에 로그인해야 합니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", left:"{ai}이(가) 패널에서 열 수 없는 페이지(보통 로그인 페이지)로 이동했습니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", open:"로그인 탭 열기", reload:"지금 새로고침", reloadShort:"새로고침", cancel:"취소", failed:"새 탭을 열 수 없습니다." }
+    en:{ waiting:"Waiting for you to sign in to {ai} in the new tab…", required:"{ai} needs you to sign in. Sign in in a new tab, then come back here.", left:"{ai} moved to a page that can't open in the panel (usually a sign-in page). Sign in in a new tab, then come back here.", noComposer:"{ai} shows no chat box in the panel (usually because you are not signed in). Sign in in a new tab, then come back here.", open:"Open sign-in tab", reload:"Reload now", reloadShort:"Reload", cancel:"Cancel", failed:"Could not open a new tab." },
+    vi:{ waiting:"Đang chờ bạn đăng nhập {ai} ở tab mới…", required:"{ai} yêu cầu đăng nhập. Hãy đăng nhập ở tab mới rồi quay lại đây.", left:"{ai} đã chuyển sang trang không mở được trong panel (thường là trang đăng nhập). Hãy đăng nhập ở tab mới rồi quay lại đây.", noComposer:"{ai} chưa hiện ô chat trong panel (thường do chưa đăng nhập). Hãy đăng nhập ở tab mới rồi quay lại đây.", open:"Mở tab đăng nhập", reload:"Tải lại ngay", reloadShort:"Tải lại", cancel:"Huỷ", failed:"Không mở được tab mới." },
+    ko:{ waiting:"새 탭에서 {ai}에 로그인하기를 기다리는 중…", required:"{ai}에 로그인해야 합니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", left:"{ai}이(가) 패널에서 열 수 없는 페이지(보통 로그인 페이지)로 이동했습니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", noComposer:"{ai}의 채팅 입력창이 패널에 표시되지 않습니다(보통 로그인하지 않은 경우). 새 탭에서 로그인한 뒤 여기로 돌아오세요.", open:"로그인 탭 열기", reload:"지금 새로고침", reloadShort:"새로고침", cancel:"취소", failed:"새 탭을 열 수 없습니다." }
   };
 
   function pickLanguage(value) {
@@ -312,7 +312,7 @@
     box.className = "login-box";
     box.setAttribute("role", "status");
     const message = document.createElement("p");
-    message.textContent = (loginState.mode === "waiting" ? text.waiting : loginState.reason === "left-site" ? text.left : text.required).replace("{ai}", name);
+    message.textContent = (loginState.mode === "waiting" ? text.waiting : loginState.reason === "left-site" ? text.left : loginState.reason === "no-composer" ? text.noComposer : text.required).replace("{ai}", name);
     const actions = document.createElement("div");
     actions.className = "login-actions";
     const button = (label, primary, onClick) => {
@@ -447,6 +447,7 @@
       if (provider.id !== currentProviderId) return;
       if (event.data.reason === "login-click") void openLoginTab(provider.id);
       else if (event.data.reason === "login-page") showLoginRequired(provider.id);
+      else if (event.data.reason === "no-composer") showLoginRequired(provider.id, "no-composer");
       else if (event.data.reason === "left-login-page") hideLoginOverlay("required");
       return;
     }
