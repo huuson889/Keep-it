@@ -102,7 +102,9 @@
         'a[href="/new"]',
         'button[aria-label*="New chat" i]',
         'a[aria-label*="New chat" i]'
-      ]
+      ],
+      // Claude's own banner when it cannot run signed out in an embedded view.
+      noticeSelectors:['[data-cds="Banner"][role="alert"]']
     },
     {
       id:"grok",
@@ -152,6 +154,7 @@
     composerSelectors:Object.freeze(provider.composerSelectors),
     sendButtons:Object.freeze((provider.sendButtons || GENERIC_SEND_BUTTONS).map(item => Object.freeze({ ...item }))),
     newChatSelectors:Object.freeze(provider.newChatSelectors),
+    noticeSelectors:Object.freeze([...(provider.noticeSelectors || [])]),
     loginUrl:provider.loginUrl || "",
     loginPages:Object.freeze((provider.loginPages || []).map(page => Object.freeze({ hosts:Object.freeze([...page.hosts]), path:page.path })))
   }));

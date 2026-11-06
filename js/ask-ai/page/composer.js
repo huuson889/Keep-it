@@ -236,6 +236,17 @@
   // The AI app itself: a chat page, or any page with the AI's own New chat button (settings,
   // projects). A page with neither and no chat box is the AI's own notice (Claude signed out in an
   // embedded view), whatever its URL.
+  // The AI's own notice banner on a page without its chat box or app (Claude signed out).
+  function hasNoticeBanner() {
+    for (const selector of provider.noticeSelectors || []) {
+      try {
+        const banner = document.querySelector(selector);
+        if (banner && isShown(banner)) return true;
+      } catch {}
+    }
+    return false;
+  }
+
   // Wait (ms) before reporting, or 0 when the page shows the AI's chat box / app.
   function composerMissingWait(url) {
     if (hasShownEditor()) return 0;
@@ -247,6 +258,7 @@
   function composerMissingLongEnough(url) {
     const route = url.origin + url.pathname;
     if (route !== composerCheckRoute) { composerCheckRoute = route; composerMissingSince = 0; }
+    if (!hasShownEditor() && !findNewChatButton() && hasNoticeBanner()) return true;
     const wait = document.readyState === "complete" ? composerMissingWait(url) : 0;
     if (!wait) { composerMissingSince = 0; return false; }
     if (!composerMissingSince) composerMissingSince = Date.now();
@@ -302,6 +314,9 @@
     const pollPanelFrame = () => { reportPanelConversation(); reportLoginPage(); };
     pollPanelFrame();
     setInterval(pollPanelFrame, 700);
+    // Faster sign-in checks while the page is starting (element lookups only).
+    const fastPoll = setInterval(reportLoginPage, 150);
+    setTimeout(() => clearInterval(fastPoll), 4000);
     window.addEventListener("popstate", pollPanelFrame);
     window.addEventListener("hashchange", pollPanelFrame);
     window.addEventListener("load", pollPanelFrame);
