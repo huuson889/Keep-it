@@ -164,8 +164,10 @@
     const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
     const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
-    position(translateIcon, rect.right - 28, rect.bottom);
     const shell = translateIcon.querySelector(".lhn-translate-shell");
+    // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
+    const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
+    position(translateIcon, rect.right - 28, rect.bottom + shellOverflow + 4);
     const actions = translateIcon.querySelector(".lhn-translate-actions");
     const shellWidth = Math.max(shell?.offsetWidth || 0, (actions?.scrollWidth || 0) + 42);
     const launcherLeft = Number.parseFloat(translateIcon.style.left) || 0;
