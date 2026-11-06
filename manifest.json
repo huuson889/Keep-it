@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate & Highlight Notes",
-  "version": "3.5.129",
+  "version": "3.5.130",
   "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -208,7 +208,12 @@
     }
   },
   "sidebar_action": {
-    "default_title": "AI panel",
+    "default_title": "Keepit - Ask AI",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png"
+    },
     "default_panel": "pages/ai-panel.html",
     "open_at_install": false
   },
