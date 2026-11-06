@@ -201,9 +201,8 @@
   // - the user clicks a sign-in link/button here: cancel the in-frame navigation (sign-in pages
   //   refuse embedding) and let the panel open the sign-in page in a new tab;
   // - the AI itself shows its sign-in page here: tell the panel, which offers a button (never opens a tab by itself).
-  // - a chat page (new chat or a conversation) that has fully loaded but shows no chat box for a
-  //   while: the AI shows its own notice instead (Claude signed out in an embedded view stays on
-  //   /new). Keepit only checks whether the chat box element exists, never the page text.
+  // - a page that has fully loaded but shows no chat box (and, off chat pages, no New chat button)
+  //   for a while: the AI shows its own notice instead (Claude signed out in an embedded view).
   const NO_COMPOSER_MS = 5000;
   let lastSignInState = null; // each new AI document reports its first state, clearing an old overlay
   let composerCheckRoute = "";
@@ -217,10 +216,33 @@
     } catch { return false; }
   }
 
+  // Only element presence/size is checked (a hidden chat box does not count), never the page text.
+  function isShown(element) {
+    try { return typeof element.getClientRects !== "function" || element.getClientRects().length > 0; }
+    catch { return true; }
+  }
+
+  function hasShownEditor() {
+    for (const selector of provider.composerSelectors) {
+      try {
+        for (const editor of document.querySelectorAll(selector)) if (isEnabled(editor) && isShown(editor)) return true;
+      } catch { /* A provider may change its editor markup between releases. */ }
+    }
+    return false;
+  }
+
+  // The AI app itself: a chat page, or any page with the AI's own New chat button (settings,
+  // projects). A page with neither and no chat box is the AI's own notice (Claude signed out in an
+  // embedded view), whatever its URL.
+  function composerMissing(url) {
+    if (hasShownEditor()) return false;
+    return isChatRoute(url) || !findNewChatButton();
+  }
+
   function composerMissingLongEnough(url) {
     const route = url.origin + url.pathname;
     if (route !== composerCheckRoute) { composerCheckRoute = route; composerMissingSince = 0; }
-    if (document.readyState !== "complete" || !isChatRoute(url) || findEditor()) { composerMissingSince = 0; return false; }
+    if (document.readyState !== "complete" || !composerMissing(url)) { composerMissingSince = 0; return false; }
     if (!composerMissingSince) composerMissingSince = Date.now();
     return Date.now() - composerMissingSince >= NO_COMPOSER_MS;
   }
