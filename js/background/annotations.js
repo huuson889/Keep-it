@@ -23,7 +23,7 @@
     };
     request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); };
     request.onerror = () => { dbPromise = null; reject(request.error); };
-    request.onblocked = () => { dbPromise = null; reject(new Error("Close other Highlight Notes windows to finish the database upgrade.")); };
+    request.onblocked = () => { dbPromise = null; reject(new Error("Close other Keepit windows to finish the database upgrade.")); };
   });
   return dbPromise;
 }
