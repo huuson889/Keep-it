@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.136: Chuẩn bị duyệt Chrome Web Store/AMO (chưa nộp). Ảnh lofi đóng gói trong `assets/images/` (không gọi Unsplash), bỏ favicon S2 của Google, gecko id cố định `{d3706e53-29aa-4415-b396-c60e6903ec09}` + Firefox ≥147 + `data_collection_permissions`. Chính sách viết lại EN/VI; thêm `DATA-INVENTORY.md`, `STORE-LISTING.md` (nội bộ, bỏ khỏi bản phát hành). Rủi ro: quy tắc 9002 xung đột AMO §4.4 (người dùng chọn giữ). Một ZIP chung Chromium/Firefox. Chưa QA trình duyệt thật.
 - v3.5.135: Chỉ tài liệu. `OPT-ARENA.md` thêm Nguyên tắc dữ liệu chung (kèm bảng dịch vụ bên ngoài), AI composer (Cách B, chưa làm), Ý tưởng khác. Việc mở: đối chiếu `PRIVACY-POLICY.md` với bảng dữ liệu.
 - v3.5.134: Tên hiển thị trong app "Keepit - Keep Exploring": popup (+ slogan "Keep Exploring Everything"), Dashboard (tab, Giới thiệu, logo 2 dòng "Keepit" / "Keep Exploring"), sidebar Highlight. Tên extension vẫn "Keepit - Translate, Learn, Ask AI". Chưa QA trình duyệt thật.
 - v3.5.133: Tên chốt "Keepit - Translate, Learn, Ask AI", slogan "Keep Exploring Everything", mô tả manifest mới (chỉ tính năng đã có). Popup "Keepit" + slogan; Dashboard, sidebar Highlight "Keepit"; header AI panel = tên đầy đủ. Kế hoạch Dịch PDF và OCR ghi trong `OPT-ARENA.md`. Chưa QA trình duyệt thật.
@@ -43,6 +44,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.136 (Chrome + Firefox, ZIP chung): chưa chạy. Sao lưu dữ liệu Firefox trước (đổi gecko id → Firefox coi là extension mới, dữ liệu cũ không tự chuyển). Kiểm: cài được trên Firefox 147+ và hiện khai báo dữ liệu lúc cài; ảnh lofi hiện trên thẻ nguồn web khi trang không có thumbnail và khi thumbnail trang lỗi; Network không còn request Unsplash/S2; favicon Dashboard rơi về icon mặc định khi trang không có favicon; Google Fonts: ghi `Referer` từng request.
 - Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66, v3.5.119 thêm Dạng 4 + "Mặc định khi bấm icon"): browser QA pending — chọn lần lượt Dạng 1/2/3/4, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
 - Hỏi AI / ChatGPT (v3.5.101): browser QA chưa được xác nhận trên Chrome/Firefox. Verify only the approved auto-send setting: defaults off for new installs; preserve explicit saved preferences. Check passive source switch leaves blank composer with no prompt/send; explicit first-use sample has no URL when off; manual click/Enter adds localized label + exact URL once and maps only after confirmed send; user-written prompts remain user-sent (never auto-send); mapped Alt+X only reopens and mapped Hỏi AI is selection-only/URL-free. Check opt-in explicit `?q=` native send and duplicate prevention. Verify localized endings EN/VI/KO, Vietnamese defaults, one real newline directly after the quoted selection (no blank line) and exact source-URL mapping; mapped follow-ups remain URL-free and selection-only; Alt+X on mapped URLs only reopens and focuses the composer when ready; draft caret stays at end; opted-in sends focus the composer only after confirmation without replacing any text already typed. Confirm no composer draft is saved/restored or protected from navigation; reproduce the Tuoi Tre → different source stale-composer case and confirm a source change/recreated panel clears old text while a matching active `?q=` prompt remains; also verify legacy page-draft storage removal on update. Check manual send establishes mapping; 2-second automatic tab/source debounce (reset on further tab changes, cancel when returning to displayed source, no tab-activation prompt), mapped-chat vs blank-chat destination, explicit Alt+X/Hỏi AI/right-click bypass, close cancels pending timer/request, and reopening uses only same-source route metadata then exact mapping then blank ChatGPT. Route metadata must exclude query/hash/prompt/composer text and never fall back to global last chat. Reopen same-source/same-route must avoid navigation when its document lives; a different source forces reload even for a shared `/c/<id>`. Also check right-click on Chromium/Firefox, open/close, pinned source URL/provider tabs, ChatGPT default, q native-send/duplicate prevention, Alt+X toggle, worker restart, Alt+Q/custom `sidebarShortcut`, and two-window concurrent navigation/request isolation (shared pending storage keys remain a risk). Browser QA has not been run.
 - AI toolbar v3.5.102/v3.5.107/v3.5.108 browser QA pending: verify accepted 25px bar/flow, 61px divider, 32px tabs and 30px provider controls; source link, ChatGPT/Gemini/Claude tabs, light/dark theme, auto-send toggle on each visible provider, hidden Grok, and no blank overlay.
@@ -63,7 +65,9 @@
 
 ### Chưa triển khai / trước phát hành
 - Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: phạm vi đã chốt, chưa triển khai; giữ khóa bật/tắt trong code.
-- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` và rà disclosure trước khi phát hành.
+- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` (điền chủ sở hữu, email, URL công khai, ngày hiệu lực, độ tuổi) trước khi phát hành.
+- Trước khi nộp AMO: quyết định cách xử lý quy tắc 9002 (gỡ `X-Frame-Options`/CSP của trang AI, xung đột AMO §4.4); người dùng đã chọn giữ ở v3.5.136.
+- Lúc nộp (người dùng): bản sao ZIP bỏ `DATA-INVENTORY.md`, `STORE-LISTING.md`; ảnh chụp 1280×800; tài khoản CWS/AMO; rà lại form cửa hàng theo `STORE-LISTING.md`.
 
 ## 3. Ràng buộc & quyết định
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
@@ -81,7 +85,7 @@
 Keepit - Test/
 ├── manifest.json                  # Manifest source cho Chromium
 ├── scripts/
-│   └── build_firefox.py           # Tạo Firefox build, bỏ permission/key Chrome-only
+│   └── build_firefox.py           # Tạo Firefox build, bỏ permission/key Chrome-only (không dùng cho phát hành từ v3.5.136: một ZIP chung)
 ├── pages/
 │   ├── ai-panel.html               # AI panel chung (Chromium side panel + Firefox sidebar): toolbar + provider iframe + lớp phủ đăng nhập
 │   ├── dashboard.html             # Giao diện Dashboard (Overview/Dictation/Highlights & Notes, sidebar và ô tìm Settings)
@@ -119,6 +123,7 @@ Keepit - Test/
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
 │   ├── icons/                     # Biểu tượng extension
+│   ├── images/                    # Ảnh đóng gói (web-thumbnail-lofi.webp, ảnh mặc định thẻ nguồn web; khai trong web_accessible_resources)
 │   └── fonts/                     # Font cục bộ
 ├── vendor/readability/            # Mozilla Readability cho Alt+R/Alt+A
 ├── licenses/                      # Văn bản giấy phép bên thứ ba
@@ -126,10 +131,11 @@ Keepit - Test/
 │   ├── INDEX.md                   # Mục lục tài liệu kỹ thuật nội bộ
 │   └── modules/                   # Hướng dẫn cho từng module first-party cấp cao nhất trong js/
 ├── supabase-schema.sql            # Schema Supabase (cloud chưa nối)
+├── DATA-INVENTORY.md, STORE-LISTING.md  # Nội bộ: bảng kê dữ liệu, nội dung cửa hàng (bỏ khỏi ZIP phát hành)
 └── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, SUPABASE_SYNC.md, THIRD_PARTY_NOTICES.md
 ```
 
-`manifest.json` ở gốc repo là bản Chromium; `scripts/build_firefox.py` tạo thư mục Firefox riêng với manifest hợp lệ cho Firefox. Thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
+`manifest.json` ở gốc repo dùng chung Chromium và Firefox (khóa của trình duyệt kia bị bỏ qua; `browser_specific_settings.gecko` giữ id, Firefox ≥147 và `data_collection_permissions`); phát hành một ZIP chung. `scripts/build_firefox.py` vẫn còn nhưng không dùng cho phát hành. Thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
 Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser API/messaging/font; app chính chạy `document_idle` ở top frame; `grok-google-auth.js` chỉ kiểm tra frame `accounts.google.com` cùng ancestor origins; ChatGPT link marker chạy sớm; một entry `document_start` trên host ChatGPT/Gemini/Claude nạp `providers.js`, `prompt-format.js`, `toolbar.js`, `page/composer.js` (editor bridge); một entry `document_idle` nạp `page/send-flow.js` (pipeline Send/link/mapping chung: chèn URL lúc Send, chỉ submit khi Keepit auto-send được opt-in, báo mapping sau confirmed send). Firefox panel toolbar chỉ hiện khi marker hợp lệ và sidebar đang mở. Generic fill không tự submit và không lưu/restore composer draft.
 
@@ -180,6 +186,18 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.136 | Arena.ai Agent sửa:**
+
+- Người dùng duyệt bản chốt v3.5.136 trong `OPT-ARENA.md` ("ok. làm"): chuẩn bị duyệt Chrome Web Store/AMO, không nộp, một ZIP chung, cài đặt Firefox ghi thẳng vào manifest.
+- Ảnh: `assets/images/web-thumbnail-lofi.webp` (ảnh người dùng gửi, cùng ảnh Unsplash cũ) + 1 dòng `web_accessible_resources`; `web.js` lấy ảnh qua `runtime.getURL`. Phát hiện khi làm: `thumbnails.load` lọc qua `safeUrl` (chỉ http/https/data) nên ảnh nội bộ sẽ không hiện → `load` nhận thêm URL của chính extension; `safeUrl` giữ nguyên. Logic dự phòng giữ nguyên.
+- `site-icons.js`: xóa dòng favicon S2 của Google.
+- `manifest.json`: version 3.5.136; gecko id `{d3706e53-29aa-4415-b396-c60e6903ec09}`, `strict_min_version` 147.0, `data_collection_permissions.required` = `websiteContent`, `browsingActivity`.
+- Rà luồng dữ liệu và tuân thủ: `DATA-INVENTORY.md` (loại dữ liệu/bên nhận/mục đích/`file:dòng`), `STORE-LISTING.md` (mục đích duy nhất, giải trình quyền, câu trả lời Dashboard, checklist). Xung đột: quy tắc 9002 gỡ `X-Frame-Options`/CSP của 5 domain AI khi nhúng khung — AMO §4.4; người dùng chọn giữ nguyên. Công khai thêm: dịch song song tới 3 dịch vụ, URL nguồn vào trang AI (phần `#`/`sessionStorage`) trước khi Gửi, Inter từ Google Fonts trên mọi trang (chính sách cũ ghi sai "chỉ khi bật font tùy chỉnh").
+- `PRIVACY-POLICY.md` viết lại EN + VI: tagline, bên nhận theo tên (không ghi endpoint), câu Limited Use, bỏ S2. `THIRD_PARTY_NOTICES.md`: ảnh Unsplash (Unsplash License, chuyển WebP, chưa rõ tác giả). `OPT-ARENA.md`: trạng thái "Đã triển khai ở v3.5.136", một ZIP, mục kết quả. `docs/modules/shared.md`: contract `load`/favicon.
+- File: `manifest.json`, `js/overlay/source/web.js`, `js/shared/thumbnails.js`, `js/shared/site-icons.js`, `assets/images/web-thumbnail-lofi.webp`, `PRIVACY-POLICY.md`, `DATA-INVENTORY.md`, `STORE-LISTING.md`, `THIRD_PARTY_NOTICES.md`, `OPT-ARENA.md`, `docs/modules/shared.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` toàn bộ JS 0 lỗi; manifest JSON hợp lệ, mọi file WAR/content script tồn tại; grep `unsplash`/`s2/favicons` trong code: 0; test ngoài repo `/tmp/k136` 16/16 PASS (load ảnh nội bộ Chrome/Firefox, dự phòng, từ chối URL extension khác và `..`, `safeUrl` không đổi, thứ tự favicon không S2). Bộ 52 test cũ (`/tmp/k121`) đã mất do sandbox reset, không chạy lại. `addons-linter` 10.15.0 trên ZIP: 0 error, 83 warning (`sidePanel`, `background.service_worker` — khóa Chromium, dự kiến; 81 `UNSAFE_VAR_ASSIGNMENT` gán `innerHTML`, chưa xác minh từng chỗ), 1 notice (`scripts/build_firefox.py`). Browser QA: chưa chạy.
+- Lưu ý: đổi gecko id → Firefox coi là extension mới; sao lưu dữ liệu Firefox trước khi cài.
 
 **2026-11-06 | v3.5.135 | Arena.ai Agent sửa:**
 

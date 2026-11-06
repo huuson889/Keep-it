@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.135",
+  "version": "3.5.136",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -168,8 +168,14 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "local-highlight-notes@example.local",
-      "strict_min_version": "121.0"
+      "id": "{d3706e53-29aa-4415-b396-c60e6903ec09}",
+      "strict_min_version": "147.0",
+      "data_collection_permissions": {
+        "required": [
+          "websiteContent",
+          "browsingActivity"
+        ]
+      }
     }
   },
   "icons": {
@@ -183,7 +189,8 @@
     {
       "resources": [
         "assets/icons/icon.svg",
-        "assets/fonts/TwemojiCountryFlags.woff2"
+        "assets/fonts/TwemojiCountryFlags.woff2",
+        "assets/images/web-thumbnail-lofi.webp"
       ],
       "matches": [
         "<all_urls>"

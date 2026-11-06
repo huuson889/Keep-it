@@ -36,7 +36,6 @@
       `${safeOrigin}/favicon.svg`,
       `${safeOrigin}/apple-touch-icon.png`,
       `${safeOrigin}/apple-touch-icon-precomposed.png`,
-      `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(safeOrigin)}&sz=128`,
       `${safeOrigin}/favicon.ico`,
       `${safeOrigin}/favicon.png`,
     ];

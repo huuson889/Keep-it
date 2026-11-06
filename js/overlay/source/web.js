@@ -497,7 +497,10 @@ function markWebReaderCues(cues, language = state.webSourceDetectedLanguage || s
   }));
 }
 
-const WEB_THUMBNAIL_LOFI_URL = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop';
+const WEB_THUMBNAIL_LOFI_URL = (() => {
+  const path = 'assets/images/web-thumbnail-lofi.webp';
+  try { return globalThis.browser?.runtime?.getURL?.(path) || globalThis.chrome?.runtime?.getURL?.(path) || ''; } catch { return ''; }
+})();
 const WEB_THUMBNAIL_THEMES = [
   { id:'gold', main:'#fffbe8', secondary:'#fbbf24', glow:'rgba(251, 191, 36, 0.45)' },
   { id:'cyan', main:'#e0f2fe', secondary:'#38bdf8', glow:'rgba(56, 189, 248, 0.45)' },

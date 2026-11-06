@@ -7,6 +7,82 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-06 | Bản chốt v3.5.136: chuẩn bị gửi duyệt Chrome Web Store và Firefox Add-ons
+
+**Trạng thái:** Đã triển khai ở v3.5.136. Điều chỉnh đã chốt sau khi ghi kế hoạch: một ZIP chung cho Chromium và Firefox; cài đặt Firefox ghi thẳng vào `manifest.json` (không dùng `build_firefox.py`); `addons-linter` chạy trên ZIP chung. Quyết định của người dùng khi triển khai: giữ quy tắc 9002 của AI panel dù xung đột chính sách AMO §4.4 (xem mục 6).
+
+**Mục tiêu:** đáp ứng yêu cầu kỹ thuật, quyền riêng tư và chính sách của cả hai cửa hàng với ít thay đổi nhất, trong một lần phát hành duy nhất là v3.5.136. Không cam kết chắc chắn được duyệt.
+
+### 1. Phần Arena làm
+
+| # | Hạng mục | Công việc |
+|---|---|---|
+| 1 | Manifest | Đặt UUID cố định cho Firefox, phiên bản tối thiểu 147, ghi thẳng vào `browser_specific_settings.gecko` trong `manifest.json` (không sửa `build_firefox.py`). Rà soát manifest và toàn bộ quyền. |
+| 2 | Dữ liệu | Kiểm tra từng luồng: dữ liệu gì, bên nhận, mục đích và mức độ cần thiết. Phân loại từng luồng thành `required` / `optional` / ngừng gửi / `none`. Không mặc định dữ liệu đang gửi là bắt buộc. **Firefox:** khai báo `data_collection_permissions` chính xác theo từng loại dữ liệu. Với dữ liệu `optional`, chỉ gửi sau khi người dùng đồng ý qua `permissions.request()` (trường `data_collection`); lời gọi này chỉ được thực hiện khi người dùng chủ động dùng tính năng tương ứng. **Chrome:** chuẩn bị nội dung khai báo chính xác trên Developer Dashboard; nếu cần cơ chế đồng ý mới phải sửa code, báo người dùng quyết định trước. |
+| 3 | Chính sách quyền riêng tư | Nêu loại dữ liệu, mục đích, bên nhận, cách thu thập, sử dụng, chia sẻ và xử lý. Có tuyên bố khẳng định việc xử lý dữ liệu người dùng tuân thủ Chrome Web Store User Data Policy, bao gồm Limited Use. |
+| 4 | Tuân thủ | Rà soát `<all_urls>`, DNR/CSP, `Referer`, Google Fonts, `postMessage`, `sessionStorage` và URL gửi cho AI. Kiểm tra mã thực thi từ xa trên toàn dự án. Mỗi điểm có kết luận: phù hợp / xung đột (báo người dùng quyết định) / chưa xác minh / không áp dụng. |
+| 5 | Tài nguyên | Xóa dòng S2. Thay ảnh Unsplash bằng ảnh người dùng cung cấp, thêm đúng 1 dòng vào `web_accessible_resources` (đã xác minh là bắt buộc). Giữ nguyên logic dự phòng. |
+| 6 | Kiểm định | Chạy `addons-linter` trên ZIP chung: không còn error; warning cho khóa chỉ dành cho Chromium là dự kiến; mỗi warning được sửa hoặc giải thích kèm căn cứ. `addons-linter` chỉ kiểm tra những vấn đề thuộc phạm vi công cụ, không thay thế việc rà soát toàn bộ chính sách AMO. |
+| 7 | Nội dung cửa hàng | Chuẩn bị tên, mô tả và giải trình từng quyền cho cả hai cửa hàng. Chốt mục đích duy nhất sau khi đối chiếu toàn bộ tính năng; không nới rộng mục đích để hợp thức hóa tính năng không phù hợp. |
+| 8 | Đóng gói | Nâng phiên bản lên v3.5.136, cập nhật `PROJECT.md`, commit. Tạo một ZIP chung cho Chromium và Firefox từ mã đã commit: `Keepit - Optimize Test-v3.5.136.zip`. Kiểm tra lại ZIP sau khi build. |
+
+### 2. Phần người dùng làm
+1. ~~Gửi ảnh thay Unsplash~~ — đã xong (ảnh Unsplash gốc, chuyển WebP, giấy phép Unsplash).
+2. Đăng chính sách quyền riêng tư lên một URL công khai.
+3. Chuẩn bị ảnh chụp màn hình cho hai cửa hàng (Chrome: 1280 × 800).
+4. Hoàn tất tài khoản và thông tin liên hệ trên Chrome Web Store và AMO.
+5. Kiểm thử ZIP trên cả Chrome và Firefox thật: tính năng, Console, Network, từng luồng dữ liệu, Google Fonts, ảnh mới và các trường hợp favicon.
+
+### 3. Thứ tự thực hiện
+1. Arena làm phần kỹ thuật và kiểm tra tuân thủ.
+2. Hoàn tất công việc, commit và tạo một ZIP kiểm thử chung.
+3. Người dùng kiểm thử ZIP trên Chrome và Firefox, ghi lại lỗi kèm bằng chứng.
+4. Nếu kiểm thử đạt:
+   - Giữ nguyên ZIP kiểm thử, không chỉnh sửa hoặc ghi đè.
+   - Tạo bản sao từ ZIP kiểm thử để làm ZIP phát hành.
+   - Xóa bảng kê khai (`DATA-INVENTORY.md`) và ghi chú nội bộ (`STORE-LISTING.md`) khỏi bản sao; không xóa khỏi repo hoặc ZIP kiểm thử.
+   - Kiểm tra lại nội dung ZIP phát hành trước khi nộp.
+   - Mặc định người dùng tự thực hiện bước này; nếu muốn Arena thực hiện thì nói rõ.
+5. Nếu có lỗi:
+   - Báo người dùng mức độ, phạm vi và bằng chứng.
+   - Nếu người dùng duyệt sửa, tạo phiên bản v3.5.137.
+   - Không ghi đè hoặc chỉnh sửa ZIP v3.5.136.
+   - Không tự ý sửa ngoài phạm vi đã được duyệt.
+
+### 4. Quy tắc thực hiện
+- Không tái cấu trúc code, không sửa giao diện, không bỏ tính năng đang chạy nếu chưa có quyết định của người dùng.
+- Mọi kết luận về tuân thủ phải có bằng chứng.
+- Nếu phát hiện xung đột cần thay đổi hành vi, báo người dùng và chờ quyết định.
+- Bảng kê khai dữ liệu nằm trong repo và ZIP kiểm thử, nhưng không có trong ZIP phát hành.
+- Bảng kê khai chỉ ghi loại dữ liệu, bên nhận, mục đích và vị trí `file:dòng`. Không ghi endpoint, payload, token, thông tin xác thực hoặc logic nhạy cảm.
+- Không nộp khi còn lỗi nghiêm trọng, còn luồng dữ liệu chưa xác định hoặc nội dung khai báo không khớp với hành vi thực tế.
+- Hoàn thành phần kỹ thuật không đồng nghĩa với việc chắc chắn được cửa hàng phê duyệt.
+
+### 5. Tiêu chí chi tiết đã thống nhất (áp dụng trong từng hạng mục)
+- **Nhãn trạng thái:** đã xác minh / theo tài liệu bên thứ ba / chưa xác minh / không áp dụng / đã quyết định / dự kiến.
+- **Phân loại dữ liệu:** code đang gửi không có nghĩa phải khai `required`; `optional` không phải giấy phép gửi dữ liệu không cần thiết; khai một nhóm là `required` không hợp thức hóa mọi luồng trong nhóm. URL nguồn thuộc `browsingActivity`, nội dung trang thuộc `websiteContent`.
+- **Quyền tùy chọn:** manifest không có `optional_permissions` / `optional_host_permissions` (đã xác minh). `data_collection_permissions.optional` là cơ chế khác, đánh giá riêng.
+- **Favicon sau khi bỏ S2:** icon tab đã lưu → `favicon.svg` → Apple Touch icon → `.ico` → `.png` → icon mặc định của Keepit (đã xác minh). Trang không có favicon hiện icon mặc định là hành vi dự kiến; không khôi phục S2.
+- **Ảnh thay Unsplash:** WebP hoặc JPG, rộng khoảng 1280–1600px, dưới khoảng 200 KB, đặt trong `assets/images/`. Chỉ đổi nguồn ảnh; ảnh phải có trong ZIP; không còn chuỗi `unsplash` trong mã đóng gói (kiểm sơ bộ, bằng chứng cuối là Network).
+- **Google Fonts:** tách 3 bước: CSS được chèn trên mọi trang (đã xác minh theo manifest) / trình duyệt có thật sự tải font không (chưa xác minh) / request có gửi URL trang qua `Referer` không (chưa xác minh). Kiểm từng request tới `fonts.googleapis.com` và `fonts.gstatic.com`, mỗi request ghi: URL request, giá trị `Referer`, trang thử nghiệm, font có tải hay không. Bảng kê khai có sẵn mẫu ghi.
+- **Nhận dạng giọng nói (Web Speech API, dùng trong Shadowing):** Chrome: âm thanh được gửi tới dịch vụ nhận dạng từ xa (theo MDN), MDN không xác định nhà cung cấp; code không dùng `processLocally` (đã xác minh). Firefox: chưa có trong bản phát hành Firefox 147 (MDN ghi 160 ở trạng thái Preview); đánh giá lại khi Firefox phát hành chính thức. Việc cửa hàng có tính luồng này là dữ liệu do extension thu thập hay không: chưa xác minh; vẫn công khai trong chính sách.
+- **Shadowing và tính năng tương lai:** Shadowing (nhận dạng giọng nói, chỉ Chrome) là tính năng hiện có, nằm trong kiểm thử. Module Luyện viết/nói (Drive/Sheet, Whisper) là tính năng tương lai.
+- **Limited Use:** dùng câu cam kết chung. Câu mẫu về Google APIs của Chrome chỉ thêm khi đã xác minh đúng phạm vi; mặc định không thêm. Các luồng dịch và TTS của Google vẫn khai riêng.
+- **Mục đích duy nhất:** ứng viên ưu tiên "Keepit helps users understand, learn from, and retain information from web content." Không cố đưa mọi tính năng vào câu; tính năng mới không phục vụ mục đích thì đánh giá lại tính năng.
+- **Mã thực thi từ xa:** `eval`, `new Function`, `import()` động, `<script>` nguồn từ xa, module từ CDN, `executeScript` với chuỗi mã và các cơ chế nạp mã khác. Trang AI trong iframe không tính là mã của extension. WASM: chưa phát hiện trong code hiện tại, không áp dụng cho phiên bản này. `importScripts()`: đã xác minh 14 file đều có trong repo và gói, không file nào tự nạp thêm mã; kết luận chỉ giới hạn trong 14 file này.
+- **Đã xác minh:** tên 33 ký tự (Chrome ≤ 75, AMO ≤ 50); mô tả 130 ký tự (≤ 132); ZIP chung giữ khóa của cả hai trình duyệt (Firefox bỏ qua `sidePanel`, `side_panel`, `service_worker`); `vendor/` là Readability không minify, không cần nộp mã nguồn cho AMO.
+- **Ngoài phạm vi sửa code (vẫn đánh giá tuân thủ):** Google Fonts, `postMessage`, `sessionStorage`, luồng URL nguồn, lọc query URL, AI panel.
+- **Khi upload:** các khóa chỉ dành cho Firefox trong ZIP Chrome (`sidebar_action`, `browser_specific_settings`, `background.scripts`) chỉ sửa nếu bị chặn.
+
+### 6. Kết quả triển khai v3.5.136
+- Ảnh: `assets/images/web-thumbnail-lofi.webp` + 1 dòng `web_accessible_resources`; `thumbnails.js` cho phép tải đường dẫn nội bộ của extension (trước đó bị lọc, ảnh sẽ không hiện). S2 đã xóa.
+- Firefox: `data_collection_permissions.required = ["websiteContent", "browsingActivity"]`, không có `optional`.
+- Bảng kê khai: `DATA-INVENTORY.md`; nội dung cửa hàng: `STORE-LISTING.md`; chính sách viết lại EN + VI, không ghi endpoint.
+- **Xung đột đã báo, người dùng chọn giữ nguyên:** quy tắc 9002 gỡ `X-Frame-Options` và `Content-Security-Policy` của 5 domain AI khi tải trong khung, không giới hạn bên khởi tạo. AMO §4.4: "Add-ons must not relax web page security headers". Thu hẹp bằng `initiatorDomains` từng làm hỏng Grok (v3.5.103). Cần phương án riêng trước khi nộp AMO.
+- Công khai trong chính sách: dịch song song tới Google/MyMemory/Lingva; URL nguồn vào trang AI (phần `#` và `sessionStorage`) ngay khi mở panel, trang AI đọc được trước khi Gửi; Inter từ Google Fonts tải trên mọi trang.
+
+---
+
 ## 2026-11-06 | Nguyên tắc dữ liệu chung
 
 **Trạng thái:** Đã chốt (áp dụng cho mọi tính năng, hiện có và sắp làm). Repo đang ở v3.5.135.

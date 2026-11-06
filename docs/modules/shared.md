@@ -27,7 +27,8 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 - Script thường, không dùng `export`; mỗi file đăng ký đúng một global `LHN_*` (custom-font không đăng ký global).
 - `custom-font.js` không áp font khi website bị tắt hoặc chọn `auto`; gỡ stylesheet font khi tắt.
 - Favicon cache có giới hạn số mục và TTL; không gửi dữ liệu trang ngoài URL origin cần tra icon.
-- `thumbnails.js` chỉ nhận URL an toàn; ID YouTube phải khớp mẫu hợp lệ.
+- `thumbnails.js` chỉ nhận URL an toàn; ID YouTube phải khớp mẫu hợp lệ. Riêng `load` nhận thêm URL nội bộ của chính extension (ảnh đóng gói như `assets/images/web-thumbnail-lofi.webp`, cần có trong `web_accessible_resources`); `safeUrl` dùng lọc dữ liệu đã lưu thì không nhận.
+- `site-icons.js` chỉ thử favicon trên chính origin của trang; không dùng dịch vụ favicon bên thứ ba.
 - Thứ tự nạp: `site-icons.js`/`thumbnails.js` phải có trước consumer trong manifest và trang HTML.
 
 ## 5. Kiểm tra và xác minh

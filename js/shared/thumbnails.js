@@ -59,9 +59,16 @@
     image.removeAttribute?.("src");
   }
 
+  function extensionAssetUrl(value) {
+    if (typeof value !== "string") return "";
+    let root = "";
+    try { root = globalThis.browser?.runtime?.getURL?.("") || globalThis.chrome?.runtime?.getURL?.("") || ""; } catch {}
+    return root && value.startsWith(root) && !value.includes("..") ? value : "";
+  }
+
   function load(image, { src = "", fallbackUrl = "", onLoad = null, onError = null } = {}) {
     if (!image) return false;
-    const sources = [...new Set([safeUrl(src), safeUrl(fallbackUrl)].filter(Boolean))];
+    const sources = [...new Set([src, fallbackUrl].map(value => extensionAssetUrl(value) || safeUrl(value)).filter(Boolean))];
     const previous = imageLoads.get(image);
     if (previous && previous.sources.join("\n") === sources.join("\n")) {
       previous.onLoad = onLoad;
