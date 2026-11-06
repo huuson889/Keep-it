@@ -7,9 +7,84 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-06 | Nguyên tắc dữ liệu chung
+
+**Trạng thái:** Đã chốt (áp dụng cho mọi tính năng, hiện có và sắp làm). Repo đang ở v3.5.135.
+
+### 1. Nguyên tắc
+1. **Chỉ đọc khi người dùng chủ động dùng tính năng** (bật dịch, bấm nghe, tra từ, ghi âm, bấm Hỏi AI, bấm AI composer…). Không đọc ngầm.
+2. **Chỉ gửi phần cần cho việc đó.** Mỗi tính năng tự xác định phần cần gửi.
+3. **Không lưu nội dung đã gửi**, trừ những gì người dùng tự lưu (highlight, ghi chú, flashcard…).
+4. **Nói rõ dữ liệu đi đâu** trong `PRIVACY-POLICY.md` và trang cửa hàng.
+- Tính năng tuân thủ 4 điều trên là hợp lệ; không gọi là "ngoại lệ".
+- Thay cho cách hiểu cũ "không đọc nội dung trang": điều đó chỉ là cách Hỏi AI áp dụng nguyên tắc (phần cần thiết = đoạn bôi đen + URL). Quy tắc riêng của Hỏi AI vẫn giữ: không tự gom nội dung/tiêu đề trang vào prompt, không đọc clipboard.
+
+### 2. Bảng dữ liệu gửi ra ngoài (rà theo code v3.5.134)
+
+| Tính năng | Đọc/gửi khi nào | Gửi gì | Gửi cho ai |
+|---|---|---|---|
+| Dịch song ngữ | Người dùng bật dịch | Đoạn văn cần dịch | Google Dịch (`translate.googleapis.com`, `clients5.google.com`); dự phòng MyMemory, Lingva |
+| TTS (đọc to) | Người dùng bấm nghe | Câu/đoạn cần đọc | Google Translate TTS (`translate.google.com/translate_tts`) hoặc giọng đọc của trình duyệt (`speechSynthesis`; có giọng chạy trên máy, có giọng gửi lên máy chủ của trình duyệt) |
+| Từ điển | Người dùng tra từ | Từ cần tra | `api.dictionaryapi.dev`, `api.datamuse.com` |
+| Nhận dạng giọng nói (Shadowing, Speaking) | Người dùng ghi âm | Âm thanh giọng nói | Dịch vụ nhận dạng của trình duyệt (Chrome gửi lên Google) |
+| Phụ đề video | Người dùng mở video trong Keepit | ID video | YouTube (`youtubei/v1/player`, timedtext), chính nơi phát video |
+| Ảnh thu nhỏ video đã lưu | Mở Dashboard | ID video | Máy chủ ảnh YouTube (`i.ytimg.com`) |
+| Tìm video trên Dashboard | Người dùng bấm tìm | Từ khóa | Trang kết quả YouTube (người dùng tự mở) |
+| Hỏi AI | Người dùng bấm Hỏi AI | Đoạn bôi đen + URL nguồn | AI đang chọn (ChatGPT/Gemini/Claude) |
+| AI composer (dự định) | Người dùng bấm nút composer | Mail hoặc chuỗi mail đang mở | AI đang chọn |
+
+- Khi phát hành tính năng mới gửi dữ liệu ra ngoài: thêm dòng vào bảng này và cập nhật `PRIVACY-POLICY.md`.
+- Việc cần làm: đối chiếu `PRIVACY-POLICY.md` với bảng này (chậm nhất khi phát hành AI composer).
+
+---
+
+## 2026-11-06 | AI composer (gợi ý trả lời mail, viết mail)
+
+**Trạng thái:** Đã chốt hướng (Cách B), chưa triển khai, chưa có spec chi tiết.
+
+### 1. Mục tiêu
+- Nút **AI composer** giúp trả lời mail hoặc viết mail mới bằng AI panel (ChatGPT/Gemini/Claude) có sẵn, không cần API key riêng.
+
+### 2. Cách lấy nội dung
+- **Cách B (đã chọn), Gmail/Outlook:** khi người dùng bấm nút composer, Keepit đọc **mail hoặc chuỗi mail đang mở** (chỉ phần đó) để AI gợi ý trả lời. Tuân thủ Nguyên tắc dữ liệu chung.
+- **Cách A, mọi trang khác:** người dùng bôi đen nội dung rồi chọn AI composer (giống Hỏi AI).
+
+### 3. Luồng
+- Nút nhỏ cạnh ô soạn thư Gmail/Outlook; không chèn nút vào mọi ô nhập trên web.
+- Chọn việc: **Trả lời**, **Viết mới từ ý chính**, **Viết lại đoạn đã chọn**, **Dịch sang ngôn ngữ người nhận**; giọng văn: trang trọng / thân thiện / ngắn gọn.
+- Keepit soạn prompt (mail gốc + yêu cầu) → gửi AI panel theo pipeline gửi hiện có (bấm composer là hành động Keepit rõ ràng → theo quy tắc tự gửi opt-in hiện có).
+- Nút **"Chèn vào mail"**: chỉ điền nội dung vào ô soạn thư, **không bao giờ tự bấm gửi mail**.
+
+### 4. Điểm khác biệt
+- "Viết xong thì học luôn": giải thích vì sao AI sửa câu, lưu cụm từ hay thành flashcard, nối với trang Luyện viết.
+
+### 5. Rủi ro
+- Nội dung mail đi qua nhà cung cấp AI → ghi rõ trong giao diện và `PRIVACY-POLICY.md`; Keepit không lưu.
+- Gmail/Outlook hay đổi giao diện → nút cạnh ô soạn thư cần bảo trì.
+
+### 6. Câu hỏi còn mở
+1. Lấy câu trả lời của AI để "Chèn vào mail": đọc trực tiếp từ khung AI hay người dùng tự copy?
+2. Hỗ trợ những dịch vụ mail nào ở bản đầu (Gmail, Outlook web, khác)?
+3. Danh sách việc và giọng văn: cố định hay cho người dùng tự thêm prompt?
+4. Thứ tự đề xuất: AI composer bản tối giản → Dịch PDF → OCR → Luyện viết/nói (người dùng chưa chốt).
+
+---
+
+## 2026-11-06 | Ý tưởng khác (chưa chọn)
+
+**Trạng thái:** Ghi lại để cân nhắc, chưa chốt. Kiểm tra trùng với tính năng hiện có trước khi làm.
+
+1. **Một chạm lưu thành flashcard:** từ trong từ điển, câu đã highlight, cụm từ AI gợi ý → flashcard, kèm câu ví dụ từ chỗ đang đọc.
+2. **Ôn tập mỗi ngày:** nhắc ôn flashcard theo lặp lại ngắt quãng (popup hoặc trang tab mới).
+3. **Xuất sang Anki.**
+4. **Đồng bộ nhiều máy:** sao lưu thư viện vào Google Drive của người dùng.
+5. **Đọc to đoạn đã chọn trên mọi trang:** Keepit đã có TTS; chỉ làm nếu hiện chưa hỗ trợ, bằng cách mở rộng TTS đang có.
+
+---
+
 ## 2026-11-06 | Dịch PDF và OCR
 
-**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.134. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
+**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.135. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
 
 ### 1. Mục tiêu
 - **Dịch PDF:** mở PDF trong Keepit, dịch song ngữ, highlight và ghi chú như trên web.

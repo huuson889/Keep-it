@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.135: Chỉ tài liệu. `OPT-ARENA.md` thêm Nguyên tắc dữ liệu chung (kèm bảng dịch vụ bên ngoài), AI composer (Cách B, chưa làm), Ý tưởng khác. Việc mở: đối chiếu `PRIVACY-POLICY.md` với bảng dữ liệu.
 - v3.5.134: Tên hiển thị trong app "Keepit - Keep Exploring": popup (+ slogan "Keep Exploring Everything"), Dashboard (tab, Giới thiệu, logo 2 dòng "Keepit" / "Keep Exploring"), sidebar Highlight. Tên extension vẫn "Keepit - Translate, Learn, Ask AI". Chưa QA trình duyệt thật.
 - v3.5.133: Tên chốt "Keepit - Translate, Learn, Ask AI", slogan "Keep Exploring Everything", mô tả manifest mới (chỉ tính năng đã có). Popup "Keepit" + slogan; Dashboard, sidebar Highlight "Keepit"; header AI panel = tên đầy đủ. Kế hoạch Dịch PDF và OCR ghi trong `OPT-ARENA.md`. Chưa QA trình duyệt thật.
 - v3.5.132: Đổi thương hiệu: tên extension "Keepit - Keep Exploring", slogan "Keep Explore Everything" (theo đúng chữ người dùng). Popup toolbar: tên + slogan; Dashboard, sidebar Highlight, AI panel (header Chrome/Firefox, tiêu đề trang), tooltip nút toolbar, thông báo tắt website: tên. Chưa QA trình duyệt thật.
@@ -179,6 +180,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-06 | v3.5.135 | Arena.ai Agent sửa:**
+
+- Người dùng: ghi vào OPT nguyên tắc dữ liệu chung và AI composer sau thảo luận (dịch song ngữ, TTS cũng đọc và gửi dữ liệu → nguyên tắc là "chỉ khi người dùng dùng, chỉ phần cần thiết, không lưu, nói rõ", không phải "không đọc trang").
+- `OPT-ARENA.md`: thêm 3 bản ghi: Nguyên tắc dữ liệu chung (bảng rà theo code: Google Dịch/MyMemory/Lingva, Google TTS/speechSynthesis, dictionaryapi.dev/Datamuse, nhận dạng giọng nói, YouTube phụ đề/ảnh/tìm kiếm, Hỏi AI, AI composer); AI composer (Cách B trên Gmail/Outlook, Cách A bôi đen ở trang khác, không tự gửi mail); Ý tưởng khác chưa chọn.
+- File: `OPT-ARENA.md`, `manifest.json` (version), `PROJECT.md`.
+- Kiểm tra: không đổi code. Browser QA: không cần.
 
 **2026-11-06 | v3.5.134 | Arena.ai Agent sửa:**
 
