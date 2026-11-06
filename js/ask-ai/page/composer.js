@@ -203,7 +203,7 @@
   // - the AI itself shows its sign-in page here: tell the panel, which offers a button (never opens a tab by itself).
   let lastLoginPageState = false;
   function reportLoginPage() {
-    if (!providers.isPanelProvider(provider.id) || !isKeepitPanelFrame()) return;
+    if (!providers.isPanelProvider(provider.id) || !inPanelFrame) return;
     const onLoginPage = providers.isLoginUrl(provider.id, location.href);
     if (onLoginPage === lastLoginPageState) return;
     lastLoginPageState = onLoginPage;
@@ -227,6 +227,9 @@
   }
 
   if (inPanelFrame) {
+    // Every AI document in the panel says hello; a frame load without it means the frame left the AI
+    // (for example to a sign-in page that refuses embedding), and the panel offers a sign-in tab.
+    if (providers.isPanelProvider(provider.id)) postToPanel({ type:"KEEPIT_AI_PANEL_HELLO", providerId:provider.id });
     watchLoginNavigation();
     const pollPanelFrame = () => { reportPanelConversation(); reportLoginPage(); };
     pollPanelFrame();

@@ -306,7 +306,9 @@ async function queueAIPanelSourceContext(tab, delayMs = AI_PANEL_CONTEXT_DELAY_M
   const windowId = Number.isInteger(tab?.windowId) ? tab.windowId : null;
   // A panel AI's own pages are never a source context.
   const sourceIsPanelAI = globalThis.LHN_AI_PROVIDERS?.isPanelProvider(globalThis.LHN_AI_PROVIDERS?.fromUrl(sourceUrl)?.id) === true;
-  if (!sourceUrl || sourceIsPanelAI || !Number.isInteger(windowId)) return false;
+  // Nor is a sign-in page (for example the tab the AI panel opened for signing in).
+  const sourceIsSignIn = globalThis.LHN_AI_PROVIDERS?.isLoginUrl?.(null, sourceUrl) === true;
+  if (!sourceUrl || sourceIsPanelAI || sourceIsSignIn || !Number.isInteger(windowId)) return false;
   if (!Number.isInteger(revision)) revision = nextAIPanelContextRevision(windowId);
   await aiPanelStateRestorePromise;
   if (aiPanelContextRevisions.get(windowId) !== revision) return false;

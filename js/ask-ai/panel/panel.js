@@ -16,7 +16,9 @@
   let currentSourceUrl = "";
   let panelWindowId;
   // AI panel sign-in overlay state (see "AI panel sign-in" below).
-  let loginState = null; // { mode:"required"|"waiting", providerId, tabId }
+  let loginState = null; // { mode:"required"|"waiting", providerId, reason, tabId }
+  let frameHelloSeen = false;
+  let frameLeftTimer = 0;
   let uiLanguage = "en";
   const loginOverlay = document.getElementById("keepit-ai-login");
   const toolbar = globalThis.LHN_AI_TOOLBAR?.create({
@@ -231,8 +233,10 @@
     return true;
   }
 
+  // A same-AI change may only touch the URL hash (no new document, so no new sign-in report): keep
+  // the "sign in" overlay; a new AI document clears or re-shows it through its own reports.
   function setFrameSrc(url) {
-    hideLoginOverlay("required");
+    if (loginState?.mode === "required" && providers.fromUrl(url)?.id !== loginState.providerId) hideLoginOverlay("required");
     frame.src = url;
   }
 
@@ -279,9 +283,9 @@
   // panel; a sign-in page shown by the AI itself gets a button (Keepit never opens a tab by itself).
   // When that tab returns to the AI after sign-in (or is closed), the panel reloads the AI.
   const LOGIN_TEXT = {
-    en:{ waiting:"Waiting for you to sign in to {ai} in the new tab…", required:"{ai} needs you to sign in. Sign in in a new tab, then come back here.", open:"Open sign-in tab", reload:"Reload now", reloadShort:"Reload", cancel:"Cancel", failed:"Could not open a new tab." },
-    vi:{ waiting:"Đang chờ bạn đăng nhập {ai} ở tab mới…", required:"{ai} yêu cầu đăng nhập. Hãy đăng nhập ở tab mới rồi quay lại đây.", open:"Mở tab đăng nhập", reload:"Tải lại ngay", reloadShort:"Tải lại", cancel:"Huỷ", failed:"Không mở được tab mới." },
-    ko:{ waiting:"새 탭에서 {ai}에 로그인하기를 기다리는 중…", required:"{ai}에 로그인해야 합니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", open:"로그인 탭 열기", reload:"지금 새로고침", reloadShort:"새로고침", cancel:"취소", failed:"새 탭을 열 수 없습니다." }
+    en:{ waiting:"Waiting for you to sign in to {ai} in the new tab…", required:"{ai} needs you to sign in. Sign in in a new tab, then come back here.", left:"{ai} moved to a page that can't open in the panel (usually a sign-in page). Sign in in a new tab, then come back here.", open:"Open sign-in tab", reload:"Reload now", reloadShort:"Reload", cancel:"Cancel", failed:"Could not open a new tab." },
+    vi:{ waiting:"Đang chờ bạn đăng nhập {ai} ở tab mới…", required:"{ai} yêu cầu đăng nhập. Hãy đăng nhập ở tab mới rồi quay lại đây.", left:"{ai} đã chuyển sang trang không mở được trong panel (thường là trang đăng nhập). Hãy đăng nhập ở tab mới rồi quay lại đây.", open:"Mở tab đăng nhập", reload:"Tải lại ngay", reloadShort:"Tải lại", cancel:"Huỷ", failed:"Không mở được tab mới." },
+    ko:{ waiting:"새 탭에서 {ai}에 로그인하기를 기다리는 중…", required:"{ai}에 로그인해야 합니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", left:"{ai}이(가) 패널에서 열 수 없는 페이지(보통 로그인 페이지)로 이동했습니다. 새 탭에서 로그인한 뒤 여기로 돌아오세요.", open:"로그인 탭 열기", reload:"지금 새로고침", reloadShort:"새로고침", cancel:"취소", failed:"새 탭을 열 수 없습니다." }
   };
 
   function pickLanguage(value) {
@@ -308,7 +312,7 @@
     box.className = "login-box";
     box.setAttribute("role", "status");
     const message = document.createElement("p");
-    message.textContent = (loginState.mode === "waiting" ? text.waiting : text.required).replace("{ai}", name);
+    message.textContent = (loginState.mode === "waiting" ? text.waiting : loginState.reason === "left-site" ? text.left : text.required).replace("{ai}", name);
     const actions = document.createElement("div");
     actions.className = "login-actions";
     const button = (label, primary, onClick) => {
@@ -345,9 +349,9 @@
     renderLoginOverlay();
   }
 
-  function showLoginRequired(providerId) {
+  function showLoginRequired(providerId, reason = "login-page") {
     if (loginState?.mode === "waiting") return;
-    loginState = { mode:"required", providerId };
+    loginState = { mode:"required", providerId, reason };
     renderLoginOverlay();
   }
 
@@ -429,9 +433,16 @@
   // The provider page (page/composer.js) reports its live route and sign-in pages; the page itself
   // reports route context to the background, so the route only feeds the panel's navigation plan.
   window.addEventListener("message", event => {
-    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN"].includes(event.data?.type)) return;
+    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN", "KEEPIT_AI_PANEL_HELLO"].includes(event.data?.type)) return;
     const provider = providers.get(event.data.providerId);
     if (!providers.isPanelProvider(provider?.id) || frameProvider()?.id !== provider.id || !provider.origins.includes(event.origin)) return;
+    if (event.data.type === "KEEPIT_AI_PANEL_HELLO") {
+      // A new AI document: the frame is on the AI again; its own sign-in report follows if needed.
+      frameHelloSeen = true;
+      clearTimeout(frameLeftTimer);
+      hideLoginOverlay("required");
+      return;
+    }
     if (event.data.type === "KEEPIT_AI_PANEL_LOGIN") {
       if (provider.id !== currentProviderId) return;
       if (event.data.reason === "login-click") void openLoginTab(provider.id);
@@ -442,6 +453,21 @@
     const route = providers.panelRoute(provider.id, String(event.data.routeUrl || ""));
     if (route) frame.dataset.currentConversationUrl = route;
     else delete frame.dataset.currentConversationUrl;
+  });
+
+  // URL-independent fallback: each AI document says hello right away; if the frame finishes loading
+  // without one, it left the AI (sign-in page, error page) and the panel offers the sign-in tab.
+  frame.addEventListener("load", () => {
+    clearTimeout(frameLeftTimer);
+    try { if (frame.contentWindow?.location?.href === "about:blank") return; } catch { /* cross-origin: a real page */ }
+    if (frame.getAttribute("src") === "about:blank") return;
+    if (frameHelloSeen) { frameHelloSeen = false; return; }
+    const provider = frameProvider();
+    if (!providers.isPanelProvider(provider?.id) || provider.id !== currentProviderId) return;
+    frameLeftTimer = setTimeout(() => {
+      if (frameHelloSeen || frameProvider()?.id !== provider.id || provider.id !== currentProviderId) return;
+      showLoginRequired(provider.id, "left-site");
+    }, 1500);
   });
 
   browser.storage.onChanged.addListener((changes, areaName) => {

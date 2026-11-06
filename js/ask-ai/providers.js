@@ -178,16 +178,27 @@
 
   function isPanelProvider(providerId) { return panelIds.includes(get(providerId)?.id || ""); }
 
-  // AI panel sign-in, decided by URL only (never page content): a provider sign-in page, not a sign-out page.
+  // AI panel sign-in, decided by URL only (never page content). AIs change their sign-in links, so
+  // besides each provider's known pages, any URL that looks like sign-in counts: a known identity host,
+  // a host starting with accounts./auth./login./..., or a whole path segment such as /login, /signin,
+  // /auth, /oauth2, /sso. Sign-out URLs never count.
+  const IDENTITY_HOSTS = Object.freeze(["accounts.google.com", "appleid.apple.com", "idmsa.apple.com", "login.microsoftonline.com", "login.live.com", "auth.openai.com", "auth0.openai.com"]);
+  const IDENTITY_HOST_LABELS = new Set(["accounts", "auth", "auth0", "login", "signin", "sso", "id", "identity", "oauth"]);
+  const LOGIN_PATH_SEGMENT = /(?:^|\/)(?:log-?in|sign-?in|sign-?up|auth|oauth2?|sso|authorize|accountchooser|servicelogin|interactivelogin|addsession|identifier|magic-link)(?=$|[/.])/i;
+  const LOGOUT_PATH = /(?:^|\/)(?:log-?out|sign-?out|log-?off|sign-?off)(?=$|[/.])/i;
+  const hostMatches = (host, domain) => host === domain || host.endsWith(`.${domain}`);
+
   function isLoginUrl(providerId, value) {
-    const provider = get(providerId);
-    if (!provider?.loginPages?.length) return false;
     try {
       const url = new URL(String(value || ""));
-      if (url.protocol !== "https:" || /log-?out|sign-?out/i.test(url.pathname)) return false;
+      if (url.protocol !== "https:" || LOGOUT_PATH.test(url.pathname)) return false;
       const host = url.hostname.toLowerCase().replace(/\.$/, "");
-      return provider.loginPages.some(page => page.hosts.some(domain => host === domain || host.endsWith(`.${domain}`))
-        && page.path.test(url.pathname));
+      const provider = providerId ? get(providerId) : null;
+      if (provider?.loginPages?.some(page => page.hosts.some(domain => hostMatches(host, domain)) && page.path.test(url.pathname))) return true;
+      if (IDENTITY_HOSTS.some(domain => hostMatches(host, domain))) return true;
+      const labels = host.split(".");
+      if (labels.length >= 3 && IDENTITY_HOST_LABELS.has(labels[0])) return true;
+      return LOGIN_PATH_SEGMENT.test(url.pathname);
     } catch { return false; }
   }
 
