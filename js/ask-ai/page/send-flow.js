@@ -609,12 +609,9 @@
       lastLinkAttemptId = pending.requestId;
 
       // A new URL must not reuse an unrelated existing conversation. Follow-ups are allowed
-      // only on the exact mapped conversation validated above; preserve the existing draft guard.
+      // only on the exact mapped conversation validated above. An explicit Keepit action replaces
+      // any unsent draft, so a draft here does not block the new chat.
       if (!isFollowup && conversationUrl && !queryMatches && !qRequestMatches) {
-        if (composerHasText(composer)) {
-          await reportLinkResult(pending, false, "", "composer-not-empty");
-          return;
-        }
         const newChatButton = composerApi.findNewChatButton();
         if (!newChatButton) {
           await reportLinkResult(pending, false, "", "new-chat-unavailable");
@@ -646,12 +643,9 @@
 
       let text = normalizedDraft(composerText(composer));
       if (isDraftLink || isTypedAutoLink) {
-        if (text && text !== expectedNormalized) {
-          await reportLinkResult(pending, false, "", "composer-not-empty");
-          return;
-        }
-        if (!text) {
-          insertDraft(composer, expectedPrompt);
+        // An explicit Keepit action (Alt+X / Ask AI / context menu) replaces any unsent draft.
+        if (text !== expectedNormalized) {
+          insertDraft(composer, expectedPrompt, true);
           text = normalizedDraft(composerText(composer));
           if (text !== expectedNormalized) {
             await reportLinkResult(pending, false, "", "composer-insert-failed");
@@ -669,9 +663,13 @@
         }
       } else {
         if (text && text !== expectedNormalized) {
-          // Never replace or send an unrelated user draft, even if the ?q= URL is present.
-          await reportLinkResult(pending, false, "", "composer-not-empty");
-          return;
+          // An explicit Keepit action replaces an unsent draft with its ?q= prompt (sent once below).
+          insertDraft(composer, expectedPrompt, true);
+          text = normalizedDraft(composerText(composer));
+          if (text !== expectedNormalized) {
+            await reportLinkResult(pending, false, "", "composer-insert-failed");
+            return;
+          }
         }
         if (!text) {
           // The query parameter is the primary prompt transport. Do not manually type into an
