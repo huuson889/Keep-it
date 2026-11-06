@@ -17,7 +17,8 @@
   let panelWindowId;
   // AI panel sign-in overlay state (see "AI panel sign-in" below).
   let loginState = null; // { mode:"required"|"waiting", providerId, reason, tabId }
-  let frameHelloSeen = false;
+  let frameCheckToken = 0;
+  let frameAnswered = true;
   let frameLeftTimer = 0;
   let uiLanguage = "en";
   const loginOverlay = document.getElementById("keepit-ai-login");
@@ -437,10 +438,10 @@
     const provider = providers.get(event.data.providerId);
     if (!providers.isPanelProvider(provider?.id) || frameProvider()?.id !== provider.id || !provider.origins.includes(event.origin)) return;
     if (event.data.type === "KEEPIT_AI_PANEL_HELLO") {
-      // A new AI document: the frame is on the AI again; its own sign-in report follows if needed.
-      frameHelloSeen = true;
-      clearTimeout(frameLeftTimer);
-      hideLoginOverlay("required");
+      // The frame is on the AI: clear only the "left the AI" overlay. Sign-in pages and pages
+      // without a chat box report their own state when they load.
+      frameAnswered = true;
+      if (loginState?.mode === "required" && loginState.reason === "left-site") hideLoginOverlay("required");
       return;
     }
     if (event.data.type === "KEEPIT_AI_PANEL_LOGIN") {
@@ -456,19 +457,26 @@
     else delete frame.dataset.currentConversationUrl;
   });
 
-  // URL-independent fallback: each AI document says hello right away; if the frame finishes loading
-  // without one, it left the AI (sign-in page, error page) and the panel offers the sign-in tab.
+  // URL-independent fallback: after each frame load (a load can also be only a hash change, with
+  // no new document), ask the page whether Keepit's AI page script is there. No answer means the
+  // frame left the AI (sign-in page, error page): offer the sign-in tab. Any page can receive the
+  // ping (it carries nothing); only the AI's own origin can answer.
   frame.addEventListener("load", () => {
     clearTimeout(frameLeftTimer);
     try { if (frame.contentWindow?.location?.href === "about:blank") return; } catch { /* cross-origin: a real page */ }
     if (frame.getAttribute("src") === "about:blank") return;
-    if (frameHelloSeen) { frameHelloSeen = false; return; }
     const provider = frameProvider();
     if (!providers.isPanelProvider(provider?.id) || provider.id !== currentProviderId) return;
+    const token = ++frameCheckToken;
     frameLeftTimer = setTimeout(() => {
-      if (frameHelloSeen || frameProvider()?.id !== provider.id || provider.id !== currentProviderId) return;
-      showLoginRequired(provider.id, "left-site");
-    }, 1500);
+      if (token !== frameCheckToken) return;
+      frameAnswered = false;
+      try { frame.contentWindow?.postMessage({ type:"KEEPIT_AI_PANEL_PING" }, "*"); } catch { /* frame gone */ }
+      frameLeftTimer = setTimeout(() => {
+        if (token !== frameCheckToken || frameAnswered || frameProvider()?.id !== provider.id || provider.id !== currentProviderId) return;
+        showLoginRequired(provider.id, "left-site");
+      }, 1500);
+    }, 800);
   });
 
   browser.storage.onChanged.addListener((changes, areaName) => {

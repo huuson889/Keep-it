@@ -205,7 +205,7 @@
   //   while: the AI shows its own notice instead (Claude signed out in an embedded view stays on
   //   /new). Keepit only checks whether the chat box element exists, never the page text.
   const NO_COMPOSER_MS = 5000;
-  let lastSignInState = "ok";
+  let lastSignInState = null; // each new AI document reports its first state, clearing an old overlay
   let composerCheckRoute = "";
   let composerMissingSince = 0;
 
@@ -257,7 +257,14 @@
   if (inPanelFrame) {
     // Every AI document in the panel says hello; a frame load without it means the frame left the AI
     // (for example to a sign-in page that refuses embedding), and the panel offers a sign-in tab.
-    if (providers.isPanelProvider(provider.id)) postToPanel({ type:"KEEPIT_AI_PANEL_HELLO", providerId:provider.id });
+    if (providers.isPanelProvider(provider.id)) {
+      postToPanel({ type:"KEEPIT_AI_PANEL_HELLO", providerId:provider.id });
+      // The panel asks again after each frame load (a load may be only a hash change).
+      window.addEventListener("message", event => {
+        if (event.source !== window.parent || event.origin !== extensionOrigin || event.data?.type !== "KEEPIT_AI_PANEL_PING") return;
+        postToPanel({ type:"KEEPIT_AI_PANEL_HELLO", providerId:provider.id });
+      });
+    }
     watchLoginNavigation();
     const pollPanelFrame = () => { reportPanelConversation(); reportLoginPage(); };
     pollPanelFrame();
