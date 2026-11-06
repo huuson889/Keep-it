@@ -365,7 +365,7 @@
     // Same actions for the toolbar buttons and the logo; the logo runs the action chosen in Settings → Icon display.
     const runAction = {
       highlight:() => showComposer(range),
-      translate:() => translateSelectedRange(range, { forcePopup:true }),
+      translate:() => translateSelectedRange(range, { forcePopup:true, allowDictionary:true }),
       ai:() => launchChatGPTSidePanel({ selectedText }),
     };
     const shell = toolbar.build({
@@ -409,12 +409,13 @@
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
   }
-  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null, speakOnOpen = null } = {}) {
+  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null, speakOnOpen = null, allowDictionary = false } = {}) {
     if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range) && !isDictationTextRange(range)) return;
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
-    if (settings.translationPopupEnabled !== false && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
+    // The toolbar Translate action (icon mode, where translationPopupEnabled is off) also opens the full dictionary for one English word.
+    if ((settings.translationPopupEnabled !== false || allowDictionary) && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
       translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
       const shouldSpeak = speakOnOpen === null
         ? settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak
