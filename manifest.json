@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Keepit - Keep Exploring",
-  "version": "3.5.132",
-  "description": "Highlight text, add notes, and organize a local library in English, Vietnamese, or Korean.",
+  "name": "Keepit - Translate, Learn, Ask AI",
+  "version": "3.5.133",
+  "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
   },
@@ -200,7 +200,7 @@
     "https://fonts.gstatic.com/*"
   ],
   "action": {
-    "default_title": "Keepit - Keep Exploring",
+    "default_title": "Keepit - Translate, Learn, Ask AI",
     "default_popup": "pages/popup.html",
     "default_icon": {
       "32": "assets/icons/icon-32.png",
@@ -208,7 +208,7 @@
     }
   },
   "sidebar_action": {
-    "default_title": "Keepit - Keep Exploring",
+    "default_title": "Keepit - Translate, Learn, Ask AI",
     "default_icon": {
       "16": "assets/icons/icon-16.png",
       "32": "assets/icons/icon-32.png",

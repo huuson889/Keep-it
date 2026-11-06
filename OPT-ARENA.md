@@ -7,6 +7,54 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-06 | Dịch PDF và OCR
+
+**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.133. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
+
+### 1. Mục tiêu
+- **Dịch PDF:** mở PDF trong Keepit, dịch song ngữ, highlight và ghi chú như trên web.
+- **OCR:** khoanh một vùng trên trang, nhận dạng chữ trong ảnh, rồi dịch hoặc gửi Ask AI.
+- Thứ tự: v3.5.133 đổi tên → Dịch PDF → OCR (kèm dịch PDF scan). Vị trí so với Luyện viết/nói: người dùng chưa quyết.
+
+### 2. Dịch PDF
+- Extension không chạy được trong trình xem PDF mặc định của Chrome và Firefox → Keepit có **trang xem PDF riêng**, dùng PDF.js đóng gói trong extension (không tải từ CDN).
+- Vào trang Keepit: nút "Mở bằng Keepit" khi gặp PDF. Tự chuyển hướng sang trang Keepit: cần cân nhắc thêm, chưa chốt.
+- Dùng lại bộ dịch song ngữ, highlight, ghi chú hiện có trên lớp chữ của PDF.js.
+- Khó nhất: hiện bản dịch song ngữ không làm vỡ bố cục trang; lưu highlight theo file + trang + vị trí chữ.
+- File trên máy (`file://`) cần người dùng bật quyền truy cập URL tệp.
+- Hạn chế: PDF scan (ảnh) không có lớp chữ → chờ OCR.
+
+### 3. OCR
+- Người dùng khoanh vùng → chụp tab hiện tại (`captureVisibleTab`, quyền `activeTab` đã có) → cắt vùng → nhận dạng → bộ dịch hoặc Ask AI.
+- Engine: Tesseract.js (WASM) chạy trong trình duyệt, ảnh không gửi ra ngoài. CSP cần `'wasm-unsafe-eval'`.
+- Dữ liệu ngôn ngữ (Anh, Việt, Hàn…) tải khi cần, lưu IndexedDB, kiểm tra trước khi dùng, tải lại nếu mất. **Dùng chung bộ tải mô hình với Whisper** (xem bản ghi Luyện viết/nói §6.2).
+- Hạn chế: chữ in rõ tốt; chữ viết tay, cách điệu, ảnh mờ kém.
+- Sau khi có OCR: dịch PDF scan bằng OCR từng trang.
+
+### 4. Câu hỏi còn mở
+1. Làm PDF/OCR trước hay sau Luyện viết/nói?
+2. PDF: chỉ nút "Mở bằng Keepit" hay tự chuyển hướng (có tuỳ chọn tắt)?
+3. PDF: hiện bản dịch kiểu nào (xen dưới đoạn, cột song song, hay bảng bên)?
+4. OCR: phím tắt / nút ở thanh chọn / menu chuột phải; ngôn ngữ OCR mặc định theo ngôn ngữ nguồn?
+
+---
+
+## 2026-11-06 | Tên, slogan và mô tả cửa hàng
+
+**Trạng thái:** Đã triển khai ở v3.5.133.
+
+- **Tên extension:** "Keepit - Translate, Learn, Ask AI" (33 ký tự; Chrome tối đa 75, Firefox 50). Ba từ khóa = ba nhu cầu: dịch, học, AI. Không thêm từ khóa.
+- **Slogan:** "Keep Exploring Everything" (không dấu chấm). Định vị dài hạn: khám phá và học mọi nội dung trên Internet; tên ưu tiên từ khóa tìm kiếm.
+- **Hiển thị:** popup = "Keepit" + slogan; Dashboard, sidebar Highlight = "Keepit"; header AI panel Chrome/Firefox, trang Tiện ích = tên đầy đủ.
+- **Mô tả Chrome (manifest, tối đa 132):** "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards."
+- **Tóm tắt Firefox (AMO, tối đa 250, dán tay):** "Translate web pages side by side. Highlight, take notes, look up words, turn pages into a video player, ask AI, and practice speaking, listening, dictation and flashcards."
+- **Mô tả dài cửa hàng:** theo bản đồ hệ sinh thái, chỉ ghi tính năng đã có.
+- **Quy tắc:** chỉ mô tả tính năng đã phát hành (PDF, DOCX, OCR, dịch ảnh thêm vào khi phát hành); không dùng "&" trong tên (Chrome nuốt ở header side panel); không ghi ChatGPT/Gemini/Claude trong tên.
+- **Đã loại:** "Keepit - Keep Exploring" (không nói tính năng, khó tìm); "Language Learning" trong tên (thu hẹp thành app học ngoại ngữ).
+- Nguồn giới hạn: https://extensionlaunch.com/blog/chrome-extension-manifest-json ; https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/Listing
+
+---
+
 ## 2026-11-06 | Luyện viết, Luyện nói trên Dashboard và nhận dạng giọng nói
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.120.
