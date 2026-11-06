@@ -160,7 +160,9 @@
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
-    const rect = range.getBoundingClientRect();
+    // Anchor under the end of the selection (last non-empty line box), not the right edge of the whole block.
+    const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
+    const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
     position(translateIcon, rect.right - 28, rect.bottom);
     const shell = translateIcon.querySelector(".lhn-translate-shell");
