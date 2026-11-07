@@ -12,7 +12,7 @@
 |---|---|---|
 | [`js/translate/translate.js`](../../js/translate/translate.js) | `LHN_TRANSLATE` | Dịch song ngữ đa provider và phát hiện ngôn ngữ từ Background. |
 | [`js/translate/study-translation.js`](../../js/translate/study-translation.js) | `LHN_STUDY_TRANSLATION.create` | Dịch câu học tập theo queue/rate limit, Google rồi MyMemory fallback. |
-| [`js/translate/dictionary.js`](../../js/translate/dictionary.js) | `LHN_DICTIONARY` | Kiểm tra từ tiếng Anh, translation/IPA, related words, forms và collocations. |
+| [`js/translate/dictionary.js`](../../js/translate/dictionary.js) | `LHN_DICTIONARY` | Kiểm tra từ tiếng Anh, translation/IPA, related words, forms, collocations và câu ví dụ (`examples`, `exampleWordRegExp`). |
 | [`js/translate/search.js`](../../js/translate/search.js) | `LHN_SEARCH` | Xếp hạng trường tìm và tô highlight match. |
 | [`js/background/background.js`](../../js/background/background.js) | message router | Nhận `BILINGUAL_TRANSLATE`, `DETECT_READ_LANGUAGE`, cache và usage message. |
 | [`js/core/cache.js`](../../js/core/cache.js) | `LHN_CACHE` | Cache dịch song ngữ được gọi từ provider trong Background. |
@@ -21,7 +21,7 @@
 
 1. Content/Reader/Dashboard gửi `BILINGUAL_TRANSLATE` qua `LHN_MESSAGING`; Background gọi `LHN_TRANSLATE`, kiểm cache và thử các provider theo code hiện tại.
 2. Câu học tập dùng `LHN_STUDY_TRANSLATION.create({ browser })`; queue giới hạn request, dedupe, lưu cache và dùng MyMemory khi Google lỗi.
-3. Dictionary consumer gọi `LHN_DICTIONARY` trực tiếp cho English word lookup; kết quả phụ như IPA/related words/forms/collocations có thể chạy qua provider phụ.
+3. Dictionary consumer gọi `LHN_DICTIONARY` trực tiếp cho English word lookup; kết quả phụ như IPA/related words/forms/collocations/câu ví dụ có thể chạy qua provider phụ. Câu ví dụ: tối đa 3 câu Free Dictionary, câu chứa từ (kể cả dạng thêm đuôi) xếp trước, mỗi câu dịch bằng `translate`; cache full dict theo prefix `lhnFullDictionary:v3:`.
 4. Search consumer có thể gọi `LHN_SEARCH.rank/highlightMatches`; search index/debounce dùng chung nằm ở `js/shared/search.js`, API khác.
 5. Usage limit chỉ áp dụng ở những provider có gửi `USAGE_CONSUME`; không giả định mọi helper trong thư mục tự đi qua cùng một tầng.
 

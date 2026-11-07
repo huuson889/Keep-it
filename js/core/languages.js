@@ -406,6 +406,10 @@
     chatGPTAskPromptHelp:"선택한 텍스트는 질문에 포함되고 이 문장은 끝에 추가됩니다. 연결된 대화에는 URL을 반복하지 않습니다."
   });
 
+  Object.assign(MESSAGES.en, { dictionaryAddFlashcard:"Add to flashcards", dictionaryFlashcardAdded:"Word added to flashcards" });
+  Object.assign(MESSAGES.vi, { dictionaryAddFlashcard:"Thêm vào flashcard", dictionaryFlashcardAdded:"Từ đã được thêm vào flashcard" });
+  Object.assign(MESSAGES.ko, { dictionaryAddFlashcard:"플래시카드에 추가", dictionaryFlashcardAdded:"단어가 플래시카드에 추가되었습니다" });
+
   function detectLanguage() {
     // Prefer the local time zone as a privacy-friendly regional hint; no location permission or network request is used.
     try {

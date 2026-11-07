@@ -23,14 +23,15 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 
 1. Manifest nạp core, helper content rồi `content.js`; controller chặn nạp lặp bằng cờ trên `window`.
 2. Selection tạo highlight/note qua `web-highlighter.js` và `note-composer.js`, rồi gửi `ADD`/`UPDATE` tới Background.
-3. Khi tải trang hoặc nhận `ANNOTATIONS_CHANGED`/`RESTORE_HIGHLIGHTS`, `annotation-restore.js` tìm lại vị trí và vẽ lại mark.
+3. Khi tải trang hoặc nhận `ANNOTATIONS_CHANGED`/`RESTORE_HIGHLIGHTS`, `annotation-restore.js` tìm lại vị trí và vẽ lại mark; record có `dictionaryOnly:true` bị bỏ qua (không có vị trí trên trang).
 4. Sidebar trang hiển thị danh sách, tìm kiếm và bộ lọc; `page-layout.js` giữ layout trang khi sidebar mở.
 5. Hỏi AI gửi `OPEN_AI_PANEL` với selection tường minh; `AI_PANEL_*`/`AI_LINK_PANEL_*` từ Background chỉ hiện toast, chỉnh scrollbar hoặc đổi nút cạnh trang sang chế độ AI (Chromium, khi AI panel mở và sidebar Highlight đóng; bấm gửi `TOGGLE_AI_PANEL`).
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
 - Không đọc page body/title cho AI; Hỏi AI chỉ gửi selection người dùng chọn và URL hiện tại.
-- Record annotation chỉ chứa field trong `PERSISTED_FIELDS` của `note-composer.js`.
+- Record annotation chỉ chứa field trong `PERSISTED_FIELDS` của `note-composer.js`, ngoại lệ duy nhất là cờ `dictionaryOnly` do nút tim của full dict thêm.
+- Full dict (`#lhn-full-english-dictionary`): nút tim gửi `ADD`/`DELETE`. Từ đang tra đúng là từ bôi trên trang → mark + record; từ/cụm khác → record `dictionaryOnly:true` (vẫn có `url` trang, hiện ở Dashboard/flashcard). Bôi trong câu ví dụ: 1 từ → tra trong dict (có Back), cụm → popup dịch thường; click trong dict chỉ đóng popup dịch đó.
 - Website bị tắt thì không restore highlight và không áp UI trang.
 - Message từ Background phải kiểm tra `type` trước khi xử lý; không thực thi nội dung từ page.
 - Giữ selector/class `lhn-*` để CSS content và sidebar không vỡ.

@@ -28,7 +28,7 @@ Each service below receives only what the feature needs, together with ordinary 
 | Feature (when it runs) | Recipient | Data sent |
 | --- | --- | --- |
 | Translation — when you select text, create a note with auto-translate on, or use Bilingual Reader or translated captions | Google Translate, MyMemory, Lingva (public instances run by independent operators). The same text is sent to these services at the same time and the first answer is used. | The text to translate and the target language |
-| Dictionary — when you look up a word | Google Translate, MyMemory, Free Dictionary API, Datamuse | The word or its root and the language |
+| Dictionary — when you look up a word | Google Translate, MyMemory, Free Dictionary API, Datamuse | The word or its root and the language; the dictionary's example sentences for that word (to translate them) |
 | Flashcard translation — when you study flashcards | Google Translate, MyMemory | The context sentence saved in your note |
 | Read aloud with a Google voice — when you press read | Google | The text to read (up to 500 characters) and its language; a short sample to detect the language |
 | Video captions and thumbnails — when you use the video player or study modes on YouTube | YouTube | The video's ID. The browser is allowed to attach suitable cookies; which cookies are actually sent depends on the browser and your sign-in state. YouTube uses them under its own policy. |
@@ -79,7 +79,7 @@ Mỗi dịch vụ dưới đây chỉ nhận phần dữ liệu tính năng cầ
 | Tính năng (khi nào chạy) | Bên nhận | Dữ liệu gửi |
 | --- | --- | --- |
 | Dịch — khi bạn chọn văn bản, tạo ghi chú có bật tự dịch, dùng Bilingual Reader hoặc phụ đề dịch | Google Translate, MyMemory, Lingva (máy chủ công khai do bên độc lập vận hành). Cùng một đoạn văn được gửi đồng thời tới các dịch vụ này và dùng kết quả về trước. | Văn bản cần dịch và ngôn ngữ đích |
-| Từ điển — khi bạn tra từ | Google Translate, MyMemory, Free Dictionary API, Datamuse | Từ hoặc gốc từ và ngôn ngữ |
+| Từ điển — khi bạn tra từ | Google Translate, MyMemory, Free Dictionary API, Datamuse | Từ hoặc gốc từ và ngôn ngữ; câu ví dụ của từ đó trong từ điển (để dịch) |
 | Dịch flashcard — khi bạn học flashcard | Google Translate, MyMemory | Câu ngữ cảnh lưu trong ghi chú của bạn |
 | Đọc to bằng giọng Google — khi bạn bấm đọc | Google | Văn bản cần đọc (tối đa 500 ký tự) và ngôn ngữ; một đoạn mẫu ngắn để nhận diện ngôn ngữ |
 | Phụ đề và ảnh thu nhỏ video — khi bạn dùng trình phát video hoặc chế độ học trên YouTube | YouTube | Mã video. Trình duyệt được phép đính kèm cookie phù hợp; cookie nào thực sự được gửi phụ thuộc trình duyệt/trạng thái đăng nhập; YouTube dùng theo chính sách riêng. |

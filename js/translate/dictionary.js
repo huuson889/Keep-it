@@ -1,7 +1,7 @@
 (() => {
   const cleanText = value => String(value ?? "").replace(/\s+/g, " ").trim();
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
-  const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  const dictionaryCachePrefix = "lhnFullDictionary:v3:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
   const dictionaryTranslationRequests = new Map(), dictionaryTranslationRequestsBySignal = new WeakMap();
   async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
     const controller = new AbortController(), sourceSignal = options.signal;
@@ -154,6 +154,36 @@
     } catch { return []; }
   }
 
+  // Looked-up word plus common inflections (runs, making, carries, dog's); shared by example ranking and highlighting.
+  function exampleWordRegExp(word) {
+    const base = String(word || "").toLowerCase().replace(/[’']/g, "'").trim();
+    if (!base) return null;
+    const stems = new Set([base]);
+    if (/e$/.test(base)) stems.add(base.slice(0, -1));
+    if (/[^aeiou]y$/.test(base)) stems.add(base.slice(0, -1) + "i");
+    if (/[^aeiou][aeiou][bdgklmnprtvz]$/.test(base)) stems.add(base + base.slice(-1));
+    const reEsc = value => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/'/g, "['’]").replace(/ /g, "\\s+");
+    return new RegExp(`\\b(?:${[...stems].map(reEsc).join("|")})(?:s|es|ed|d|ing|er|ers|est|ly|['’]s)?\\b`, "gi");
+  }
+  // Up to 3 Free Dictionary example sentences, sentences containing the word first, each with a translation.
+  async function dictionaryExamples(word, targetLanguage, signal) {
+    try {
+      const response = await fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`, { signal });
+      if (!response.ok) return [];
+      const data = await response.json(), examples = [];
+      for (const entry of Array.isArray(data) ? data : []) for (const meaning of entry.meanings || []) for (const definition of meaning.definitions || []) {
+        const text = cleanText(definition.example); if (text) examples.push(text);
+      }
+      const unique = [...new Set(examples)], pattern = exampleWordRegExp(word);
+      const hasWord = text => { pattern.lastIndex = 0; return pattern.test(text); };
+      const ranked = [...unique.filter(hasWord), ...unique.filter(text => !hasWord(text))];
+      return Promise.all(ranked.slice(0, 3).map(async text => {
+        try { return { text, meaning:(await dictionaryTranslate(text, targetLanguage, signal)).translatedText }; }
+        catch { return { text, meaning:"" }; }
+      }));
+    } catch { return []; }
+  }
+
   globalThis.LHN_DICTIONARY = Object.freeze({
     isEnglishWord:isEnglishDictionaryWord,
     getCache:getDictionaryCache,
@@ -164,6 +194,8 @@
     fetchIpa,
     relatedWords:dictionaryRelatedWords,
     wordForms:dictionaryWordForms,
-    collocations:dictionaryCollocations
+    collocations:dictionaryCollocations,
+    examples:dictionaryExamples,
+    exampleWordRegExp
   });
 })();
