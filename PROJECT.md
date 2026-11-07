@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.146: Full dict bật: Alt+W (phím dịch) trên 1 từ tiếng Anh mở full dict cả ở chế độ icon (trước chỉ mở popup dịch thường). Chưa QA trình duyệt thật.
 - v3.5.145: Dashboard → Cài đặt → Dịch: nhóm "Bộ nhớ đệm" với nút xóa cache từ điển (từ đã tra + nghĩa chip/cụm), toast xác nhận. Chưa QA trình duyệt thật.
 - v3.5.144: Full dict phòng hờ Datamuse cần key/hết hạn mức: Syn/Ant khi Datamuse lỗi hoặc không có từ → lấy từ Free Dictionary; nguồn nào lỗi thì kết quả vẫn hiện nhưng không lưu cache, lần tra sau tự gọi lại. Chưa QA trình duyệt thật.
 - v3.5.143: Full dict: Syn/Ant tối đa 4 (trước 3), Colloc tối đa 4 = 2 tính từ đứng trước từ + 2 danh từ đứng sau, đúng thứ tự (trước bị ngược: "stop next" → nay "next stop"), không cắt, bỏ trùng; cache dict v4. Chưa QA trình duyệt thật.
@@ -52,6 +53,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.146 (Chrome + Firefox): chưa chạy. Chế độ icon (tắt popup dịch trực tiếp), bật full dict: bôi 1 từ tiếng Anh → Alt+W → full dict + đọc từ; bôi cụm → Alt+W → popup dịch thường; tắt full dict → Alt+W 1 từ → popup dịch thường; dict đang mở → Alt+W đọc lại từ.
 - v3.5.145 (Chrome + Firefox): chưa chạy. Cài đặt → Dịch → "Bộ nhớ đệm" → "Xóa bộ nhớ đệm": toast "Đã xóa bộ nhớ đệm từ điển"; tra lại từ đã tra → gọi mạng lại (thấy request trong Network); highlight/flashcard/cài đặt còn nguyên; sáng/tối; EN/VI/KO; ô tìm "từ điển" ra hàng này.
 - v3.5.144 (Chrome + Firefox): chưa chạy. Chặn `api.datamuse.com` (DevTools → Network → Block request domain), tra "stop": Syn/Ant vẫn có (từ Free Dictionary), Forms/Colloc ẩn, nghĩa/IPA/Example vẫn hiện, không lỗi; bỏ chặn, tra lại "stop" (đóng/mở dict) → đủ Syn/Ant/Forms/Colloc từ Datamuse. Từ có Syn nhưng không có Ant trên Datamuse → Ant lấy từ Free Dictionary.
 - v3.5.143 (Chrome + Firefox): chưa chạy. Full dict "stop": Syn và Ant mỗi loại tối đa 4 chip; Colloc tối đa 4, đúng thứ tự ("next stop", "stop shopping"), nghĩa dịch khớp cụm; bấm chip Colloc ở lại trong dict + Back; từ có ít dữ liệu → hiện ít hơn 4, không lỗi.
@@ -201,6 +203,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.146 | Arena.ai Agent sửa:**
+
+- Lỗi: chế độ icon (popup dịch trực tiếp tắt) + bật full dict, Alt+W trên 1 từ tiếng Anh mở popup dịch thường thay vì full dict. Nguyên nhân: v3.5.139 chỉ thêm cờ `allowDictionary` cho nút Dịch trên toolbar/logo; handler phím dịch (`translateSelectedShortcut`) gọi `translateSelectedRange` không có cờ, nên nhánh full dict chỉ chạy khi popup dịch trực tiếp bật.
+- Sửa: handler phím dịch truyền thêm `allowDictionary:true` (1 dòng `content.js`). Cụm từ, full dict tắt, chế độ popup trực tiếp: không đổi; Alt+W vẫn đọc từ như trước. `docs/modules/content.md` thêm quy tắc.
+- Test: t146 7/7 (code v3.5.145 chạy cùng bài: 6/7, trượt đúng ca icon mode + 1 từ); hồi quy t144 19/19, t143 13/13, t142 21/21, t140 40/40, reg 6/6, bug141 12/12.
 
 **2026-11-07 | v3.5.145 | Arena.ai Agent sửa:**
 

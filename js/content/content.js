@@ -1821,7 +1821,7 @@
       }
       const selection = getSelection();
       const range = selection?.rangeCount && !selection.isCollapsed && cleanText(selection.toString()) && !isEditable(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
-      if (!e.repeat && range && cleanText(range.toString()) && !isEditable(e.target)) { e.preventDefault(); e.stopPropagation(); selectedRange = range.cloneRange(); translateSelectedRange(range, { forcePopup:true, forceSpeak:true }); }
+      if (!e.repeat && range && cleanText(range.toString()) && !isEditable(e.target)) { e.preventDefault(); e.stopPropagation(); selectedRange = range.cloneRange(); translateSelectedRange(range, { forcePopup:true, forceSpeak:true, allowDictionary:true }); }
       return;
     }
     if (notePopupShortcut && pressed === notePopupShortcut) {
