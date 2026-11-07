@@ -3479,6 +3479,8 @@ $("bilingualDisabledReaderWebList").addEventListener("click", async event => {
   }
 });
 $("bilingualClearCache").addEventListener("click", async () => { await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
+// Full dictionary cache: looked-up words (lhnFullDictionary:*, incl. old versions) + their chip/phrase translations (lhnFullDictionaryTranslation:*). Nothing else.
+$("settingsClearDictionaryCache").addEventListener("click", async () => { const all = await browser.storage.local.get(null); await browser.storage.local.remove(Object.keys(all).filter(key => key.startsWith("lhnFullDictionary:") || key.startsWith("lhnFullDictionaryTranslation:"))); toast(t("dictionaryCacheCleared")); });
 document.querySelectorAll("[data-settings-theme]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ sidebarTheme:button.dataset.settingsTheme })));
 document.querySelectorAll("[data-settings-color]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ defaultHighlightColor:button.dataset.settingsColor })));
 $("settingsExportButton").addEventListener("click", event => {

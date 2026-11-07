@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.145: Dashboard → Cài đặt → Dịch: nhóm "Bộ nhớ đệm" với nút xóa cache từ điển (từ đã tra + nghĩa chip/cụm), toast xác nhận. Chưa QA trình duyệt thật.
 - v3.5.144: Full dict phòng hờ Datamuse cần key/hết hạn mức: Syn/Ant khi Datamuse lỗi hoặc không có từ → lấy từ Free Dictionary; nguồn nào lỗi thì kết quả vẫn hiện nhưng không lưu cache, lần tra sau tự gọi lại. Chưa QA trình duyệt thật.
 - v3.5.143: Full dict: Syn/Ant tối đa 4 (trước 3), Colloc tối đa 4 = 2 tính từ đứng trước từ + 2 danh từ đứng sau, đúng thứ tự (trước bị ngược: "stop next" → nay "next stop"), không cắt, bỏ trùng; cache dict v4. Chưa QA trình duyệt thật.
 - v3.5.142: Full dict theo demo v15: brand logo + "Keepit Dictionary" (tím như nhãn Example) luôn ngang hàng dòng cuối của dict, góc phải; hàng chip cuối hết chỗ → chip cuối xuống hàng mới cùng brand; dòng chữ cuối hết chỗ → brand hàng riêng góc phải. Hiệu ứng tim bắn ra không còn bị popup tạo lại che. Chưa QA trình duyệt thật.
@@ -51,6 +52,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.145 (Chrome + Firefox): chưa chạy. Cài đặt → Dịch → "Bộ nhớ đệm" → "Xóa bộ nhớ đệm": toast "Đã xóa bộ nhớ đệm từ điển"; tra lại từ đã tra → gọi mạng lại (thấy request trong Network); highlight/flashcard/cài đặt còn nguyên; sáng/tối; EN/VI/KO; ô tìm "từ điển" ra hàng này.
 - v3.5.144 (Chrome + Firefox): chưa chạy. Chặn `api.datamuse.com` (DevTools → Network → Block request domain), tra "stop": Syn/Ant vẫn có (từ Free Dictionary), Forms/Colloc ẩn, nghĩa/IPA/Example vẫn hiện, không lỗi; bỏ chặn, tra lại "stop" (đóng/mở dict) → đủ Syn/Ant/Forms/Colloc từ Datamuse. Từ có Syn nhưng không có Ant trên Datamuse → Ant lấy từ Free Dictionary.
 - v3.5.143 (Chrome + Firefox): chưa chạy. Full dict "stop": Syn và Ant mỗi loại tối đa 4 chip; Colloc tối đa 4, đúng thứ tự ("next stop", "stop shopping"), nghĩa dịch khớp cụm; bấm chip Colloc ở lại trong dict + Back; từ có ít dữ liệu → hiện ít hơn 4, không lỗi.
 - v3.5.142 (Chrome + Firefox): chưa chạy. Full dict: brand ở góc phải dòng cuối (Colloc/Forms/Syn–Ant, câu dịch Example, loại từ, chỉ nghĩa); list chip dài → chip cuối xuống hàng cùng brand, không che chip/chữ; sáng/tối; tra từ thứ 2 trên cùng trang rồi bấm tim → thấy tim bắn ra quanh nút; ghi chú tự điền/tim không dính chữ brand.
@@ -199,6 +201,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.145 | Arena.ai Agent sửa:**
+
+- Dashboard → Cài đặt → Dịch: thêm nhóm "Bộ nhớ đệm" (dưới "Ngôn ngữ dịch", cùng mẫu nút xóa cache song ngữ). Hàng "Bộ nhớ đệm từ điển" — "Từ đã tra được lưu 7 ngày. Xóa để tra lại từ đầu." + nút "Xóa bộ nhớ đệm" → toast "Đã xóa bộ nhớ đệm từ điển".
+- Xóa mọi key `lhnFullDictionary:*` (cache full dict, kể cả `v3` cũ còn sót) và `lhnFullDictionaryTranslation:*` (nghĩa chip/cụm của dict); không đụng key khác (highlight, flashcard, cài đặt, cache song ngữ).
+- Nhãn mới EN/VI/KO: `dictionaryCacheTitle`, `dictionaryCacheHelp`, `dictionaryCacheCleared`; tiêu đề nhóm và nút dùng lại `bilingualCache`, `bilingualClearCache`. `docs/modules/dashboard.md` cập nhật. Tham chiếu `DATA-INVENTORY.md` không lệch (`dashboard.js:860` giữ nguyên).
+- Test Chromium (extension nạp thật): nhãn đúng 3 ngôn ngữ; bấm nút → 0 key dict còn lại, key khác giữ nguyên, toast đúng; ô tìm cài đặt ("từ điển", "dictionary cache") ra hàng; bố cục trùng nhóm "Ngôn ngữ dịch" (lề, h3, đường kẻ, nút thẳng mép phải ô chọn), sáng/tối đúng màu; 0 lỗi trang. Hồi quy: t144 19/19, t143 13/13, t142 21/21, t140 40/40, reg 6/6, bug141 12/12.
 
 **2026-11-07 | v3.5.144 | Arena.ai Agent sửa:**
 
