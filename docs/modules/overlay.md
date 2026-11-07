@@ -18,6 +18,7 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 | [`js/overlay/study/shadowing/shadowing-activity.js`](../../js/overlay/study/shadowing/shadowing-activity.js), [`shadowing.js`](../../js/overlay/study/shadowing/shadowing.js) | `LHN_SHADOWING_ACTIVITY_FACTORY` | Shadowing recognition, recording, feedback và controls. |
 | [`js/overlay/study/shared/study-score.js`](../../js/overlay/study/shared/study-score.js), [`learning-rules.js`](../../js/overlay/study/shared/learning-rules.js) | `LHN_STUDY_SCORE`, `LHN_STUDY_RULES` | Logic học dùng chung. |
 | [`js/overlay/view/layout-mode.js`](../../js/overlay/view/layout-mode.js), [`cc-mode.js`](../../js/overlay/view/cc-mode.js) | `applyVideoDisplayMode`, `setSubtitleDisplayMode` | Theater/Reading/Combined, sizing và CC modes. |
+| [`js/overlay/view/touch-layout.js`](../../js/overlay/view/touch-layout.js) | `setupTouchOverlayLayout`, `touchOverlayActive` | Bố cục cảm ứng: header, thẻ gọn/mở rộng, nút ⋯ và sheet Thêm. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin. |
 
 ## 3. Luồng chính
@@ -39,7 +40,7 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 - Popup Cài đặt video tăng max-height body từ 520px lên 530px và canh mép phải cách control bar 4px; menu Chế độ xem trên control bar rộng thêm 20px và cũng canh mép phải 4px. Các submenu Cài đặt khác giữ anchor hiện hành.
 - Giữ visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, giảm biên độ 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ.
 - `study/shared/` chỉ chứa logic dùng chung; lifecycle/result branches còn trong Dictation shell cần tách mà không đổi UX. Dashboard chưa có Shadowing practice route.
-- Bố cục dọc: khối "Phone portrait" ở cuối `OVERLAY_CSS` áp cho `(max-width: 599.98px) and (orientation: portrait)` hoặc `(max-width: 899.98px) and (orientation: portrait) and (pointer: coarse)`. Một cột: Đọc = video trên, sidebar dưới; Học = grid 1 cột (`.te-left-section`, `#te-study-center`, `#te-study-notes`, control bar). Panel Học là id (`#te-study-center`, `#te-study-notes`), không phải class. Desktop chuột ≥600px không bị ảnh hưởng.
+- Bố cục cảm ứng (v3.5.150): `touch-layout.js` gắn `te-touch-layout` khi `(max-width: 599.98px) and (orientation: portrait), (max-width: 899.98px) and (orientation: portrait) and (pointer: coarse)`; Video và Web dùng chung một giao diện ở cả Kết hợp/Đọc/Rạp: header 52px, thẻ gọn 78px (`te-touch-compact`, lưu `lhnTouchOverlayCompact`, mặc định gọn; chạm thẻ để mở rộng), câu hiện tại, transcript, thanh dưới 6 nút (trước/phát/sau/CC/tốc độ/⋯). Sheet "Thêm" bấm lại nút gốc (từ vựng, ghi chú, âm thanh, lặp, luyện nói, chính tả, toàn màn hình, cài đặt), nút gốc ẩn/disabled thì bỏ qua. Popup tốc độ/CC và mọi `.te-modal-box` thành bottom sheet. Câu active canh đầu danh sách (`alignActiveTranscriptFocus`, cách 8px). Chế độ học (`te-study-active`) giữ khối một cột riêng. Desktop không có class này.
 
 ## 5. Kiểm tra và xác minh
 

@@ -94,6 +94,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .row svg { color: var(--accent); width: 20px; height: 20px; }
 .backdrop { position: fixed; inset: 0; z-index: 4; background: rgba(15,23,42,.35); opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
 .backdrop.open { opacity: 1; visibility: visible; }
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
+.wrap.notes-open .scrim { opacity: 1; visibility: visible; }
 .backdrop.clear { background: transparent; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; max-height: 80vh; overflow-y: auto; background: var(--panel); border-radius: 22px 22px 0 0; padding: 6px 12px calc(14px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -12px rgba(15,23,42,.3); transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
 .sheet.open { transform: none; }
@@ -136,6 +138,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
     host.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;");
     root = host.attachShadow({ mode:"open" });
     root.innerHTML = `<style>${CSS}</style><div class="wrap">
+      <div class="scrim"></div>
       <div class="backdrop"></div>
       <div class="pop" role="menu"></div>
       <div class="bar" role="toolbar" aria-label="Keepit"></div>
@@ -173,7 +176,9 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   function syncState() {
     if (!mounted) return;
     const wrap = $(".wrap");
-    const yieldNow = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || !!document.querySelector("#lhn-sidebar.lhn-side-visible");
+    const notesOpen = !!document.querySelector("#lhn-sidebar.lhn-side-visible");
+    const yieldNow = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || notesOpen;
+    wrap.classList.toggle("notes-open", notesOpen);
     wrap.classList.toggle("yield", yieldNow);
     $('[data-nav="reader"]')?.classList.toggle("on", !!document.querySelector(".lhn-bilingual-reading"));
     $('[data-nav="notes"]')?.classList.toggle("on", !!document.querySelector("#lhn-sidebar.lhn-side-visible"));
@@ -216,6 +221,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   }, true);
 
   function onClick(event) {
+    if (event.target.classList?.contains("scrim")) { run("notes"); return; }
     const target = event.target.closest("button, .backdrop"); if (!target) return;
     if (target.classList.contains("backdrop")) { closeAll(); return; }
     if (target.classList.contains("fab")) { dismissed = false; render(); showBar(); return; }
@@ -260,19 +266,62 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
     else if (travel < -14) showBar();
   }
 
-  let ticker = 0;
+  // ---------- notes sidebar as a bottom sheet (css/content/content.css): drag its top edge down to close ----------
+  let sheetDrag = null;
+  function onSheetTouchStart(event) {
+    const side = event.target.closest?.("#lhn-sidebar.lhn-side-visible");
+    if (!side || event.touches.length !== 1) return;
+    const y = event.touches[0].clientY, top = side.getBoundingClientRect().top;
+    if (y - top > 64) return;
+    sheetDrag = { side, y, dy:0 };
+  }
+  function onSheetTouchMove(event) {
+    if (!sheetDrag) return;
+    sheetDrag.dy = Math.max(0, event.touches[0].clientY - sheetDrag.y);
+    if (sheetDrag.dy < 6) return;
+    sheetDrag.side.classList.add("lhn-sheet-dragging");
+    sheetDrag.side.style.setProperty("--lhn-sheet-drag", sheetDrag.dy + "px");
+  }
+  function onSheetTouchEnd() {
+    if (!sheetDrag) return;
+    const { side, dy } = sheetDrag; sheetDrag = null;
+    side.classList.remove("lhn-sheet-dragging");
+    side.style.removeProperty("--lhn-sheet-drag");
+    if (dy > 90) run("notes");
+  }
+  let sidebarWatch = null;
+  function watchSidebar() {
+    const side = document.getElementById("lhn-sidebar");
+    if (!side || side === sidebarWatch?.target) return;
+    sidebarWatch?.observer.disconnect();
+    const observer = new MutationObserver(syncState);
+    observer.observe(side, { attributes:true, attributeFilter:["class"] });
+    sidebarWatch = { target:side, observer };
+  }
+
+  let ticker = 0, bodyWatch = null;
   function mount() {
     if (mounted || !document.body) return;
     if (!host) build();
     document.documentElement.appendChild(host);
     mounted = true; render();
     document.addEventListener("scroll", onScroll, { capture:true, passive:true });
-    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); syncState(); }, 700);
+    document.addEventListener("touchstart", onSheetTouchStart, { capture:true, passive:true });
+    document.addEventListener("touchmove", onSheetTouchMove, { capture:true, passive:true });
+    document.addEventListener("touchend", onSheetTouchEnd, true);
+    document.addEventListener("touchcancel", onSheetTouchEnd, true);
+    bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
+    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); syncState(); }, 700);
   }
   function unmount() {
     if (!mounted) return;
     mounted = false; clearInterval(ticker); setPicking(false); closeAll();
     document.removeEventListener("scroll", onScroll, true);
+    document.removeEventListener("touchstart", onSheetTouchStart, true);
+    document.removeEventListener("touchmove", onSheetTouchMove, true);
+    document.removeEventListener("touchend", onSheetTouchEnd, true);
+    document.removeEventListener("touchcancel", onSheetTouchEnd, true);
+    bodyWatch?.disconnect(); bodyWatch = null; sidebarWatch?.observer.disconnect(); sidebarWatch = null;
     host.remove();
   }
   function update() { if (TOUCH.matches) mount(); else unmount(); if (mounted) render(); }

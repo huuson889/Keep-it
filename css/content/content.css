@@ -794,3 +794,16 @@ html.lhn-video-overlay-open body > *:not(#keepit-host){ visibility:hidden !impor
 #lhn-sidebar .lhn-sidebar-tab:hover{ border-color:var(--lhn-sb-active-border) !important; background:var(--lhn-sb-active) !important; color:var(--lhn-sb-brand) !important; }
 #lhn-sidebar .lhn-sidebar-tab.is-active{ border-color:var(--lhn-sb-active-border) !important; background:var(--lhn-sb-active) !important; color:var(--lhn-sb-brand) !important; }
 #lhn-sidebar .lhn-sidebar-tab:focus-visible{ outline:2px solid var(--lhn-sb-brand) !important; outline-offset:2px !important; }
+
+/* Touch devices (phones, touch tablets): the page sidebar is a bottom sheet over the page instead of a right column.
+   page-layout.js skips the page shrink here; js/content/touch-ui.js adds the dimmed backdrop and drag-down to close. */
+@media (pointer: coarse) and (hover: none) {
+  html #lhn-sidebar{ top:auto !important; right:0 !important; bottom:0 !important; left:0 !important; width:100% !important; min-width:0 !important; max-width:760px !important; height:min(74vh, 720px) !important; max-height:calc(100dvh - 40px) !important; margin:0 auto !important; padding-top:16px !important; border:0 !important; border-radius:20px 20px 0 0 !important; box-shadow:0 -14px 40px rgba(0,0,0,.28) !important; opacity:1 !important; transform:translateY(105%) !important; transition:transform .28s cubic-bezier(.2,.8,.2,1) !important; }
+  html #lhn-sidebar.lhn-side-visible{ transform:translateY(var(--lhn-sheet-drag, 0px)) !important; }
+  html #lhn-sidebar.lhn-sheet-dragging{ transition:none !important; }
+  html #lhn-sidebar.lhn-closing{ opacity:1 !important; transform:translateY(105%) !important; }
+  html #lhn-sidebar::before{ content:"" !important; position:absolute !important; top:6px !important; left:50% !important; width:40px !important; height:4px !important; margin-left:-20px !important; border-radius:2px !important; background:rgba(120,120,135,.45) !important; z-index:3 !important; }
+  html #lhn-sidebar .lhn-sidebar-top{ padding-top:8px !important; border-radius:20px 20px 0 0 !important; }
+  html #lhn-sidebar .lhn-sidebar-card{ border-radius:14px !important; }
+  #lhn-sidebar-edge-toggle{ display:none !important; }
+}

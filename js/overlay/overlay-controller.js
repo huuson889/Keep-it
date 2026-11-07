@@ -399,6 +399,7 @@ function buildOverlay() {
     if (state.open) alignActiveTranscriptFocus('auto');
   });
   bindUI();
+  setupTouchOverlayLayout();
   observeTheaterSubtitleLayout();
   refreshOverlayUiLocalization();
   $('te-modal-main').classList.add('hidden');
@@ -1021,6 +1022,8 @@ function seekByTrack(e) {
 // ---------- Đồng bộ phụ đề với video ----------
 function usesViewportTranscriptFocus() {
   const root = overlayEl();
+  // Touch layout: the transcript is always visible (every view mode), so it always follows the active cue.
+  if (root?.classList.contains('te-touch-layout')) return !root.classList.contains('te-study-active');
   return Boolean(root && !root.classList.contains('te-sidebar-hidden') && !root.classList.contains('te-study-active'));
 }
 
@@ -1043,12 +1046,18 @@ function alignActiveTranscriptFocus(behavior = 'smooth') {
   const row = list?.querySelector('.yt-dual-item.active');
   if (!list || !row) return false;
 
-  const viewportHeight = transcriptViewportHeight();
-  const rowRect = row.getBoundingClientRect();
-  const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / viewportHeight);
-  const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio()));
-  state.transcriptFocusRatio = ratio;
-  const delta = calculateTranscriptFocusScrollDelta(row.getBoundingClientRect(), viewportHeight, ratio);
+  let delta;
+  if (overlayEl()?.classList.contains('te-touch-layout')) {
+    // Touch layout: the list starts mid-screen, so keep the active row just below the list's own top edge.
+    delta = row.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
+  } else {
+    const viewportHeight = transcriptViewportHeight();
+    const rowRect = row.getBoundingClientRect();
+    const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / viewportHeight);
+    const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio()));
+    state.transcriptFocusRatio = ratio;
+    delta = calculateTranscriptFocusScrollDelta(row.getBoundingClientRect(), viewportHeight, ratio);
+  }
   const maxScroll = Math.max(0, list.scrollHeight - list.clientHeight);
   const targetScrollTop = Math.max(0, Math.min(maxScroll, list.scrollTop + delta));
   const distance = Math.abs(targetScrollTop - list.scrollTop);

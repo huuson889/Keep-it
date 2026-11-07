@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.150: Overlay trên điện thoại/tablet cảm ứng (và cửa sổ dọc <600px) theo demo: Video và Web cùng một giao diện ở cả 3 chế độ — header, thẻ gọn (ảnh/video thu nhỏ, nguồn, tiêu đề; chạm để mở rộng), câu hiện tại, transcript, thanh dưới 6 nút + sheet "Thêm"; tốc độ/CC/Cài đặt thành bottom sheet; câu dài không còn đè video/thanh điều khiển; câu active luôn ở đầu danh sách. Ghi chú trên cảm ứng là bottom sheet (nền mờ, kéo xuống đóng), trang không bị thu hẹp. `m.youtube.com`: tải phụ đề qua chính `m.youtube.com` (trước gọi `www` → bị chặn, không có transcript). Desktop ≥600px không đổi. Chưa QA trình duyệt thật.
 - v3.5.149: Giao diện tự thích ứng điện thoại/tablet, một ZIP, không có công tắc. Dashboard: điện thoại có thanh tab dưới (Tổng quan · Ôn tập · Ghi chú · Chính tả · Thêm), tablet dọc có rail 72px, desktop ≥900px giữ sidebar 220px như cũ; Ghi chú danh sách → chi tiết; Cài đặt danh sách → từng mục. Trên trang web, thiết bị cảm ứng có thanh Keepit dưới đáy (điện thoại 5 nút + Thêm; tablet thanh nổi 8 nút), vuốt xuống ẩn, vuốt lên hiện; bôi chữ bằng nhấn giữ mở icon/popup như chuột. Overlay video dọc trên điện thoại (và tablet cảm ứng) xếp một cột. Máy tính dùng chuột không đổi. Chưa QA trình duyệt thật.
 - v3.5.148: Overlay video (song ngữ + chép chính tả) nhận cả YouTube bản mobile `m.youtube.com` (trước chỉ `youtube.com`/`www.youtube.com`); URL tải phụ đề không đổi. Bản mobile không có nút Keepit trong player — mở bằng phím tắt hoặc nút của app Android. Chưa QA trình duyệt thật.
 - v3.5.147: Icon khi bôi đen có 8 dạng: 4 dạng vòng mới (logo + 3 nút khung riêng: Tô sáng trái, Dịch dưới, Hỏi AI phải; theo demo radial v3) đứng trước, 4 dạng thanh cũ đánh số lại 5–8. Mặc định Dạng 1 (vòng, icon + chữ, luôn hiện); mọi người dùng cũ về Dạng 1. Chưa QA trình duyệt thật.
@@ -56,6 +57,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.150 (Chrome + Firefox + Edge Android): chưa chạy. Desktop rộng: overlay 3 chế độ như v3.5.149. Cửa sổ hẹp dọc / DevTools 360–820 cảm ứng: Alt+E trên YouTube và trang web → thẻ gọn, chạm thẻ mở rộng, ⋯ mở sheet, tốc độ/CC/Cài đặt là sheet, câu dài không đè; Ghi chú → bottom sheet, chạm nền mờ hoặc kéo xuống để đóng. Edge Android `m.youtube.com`: transcript phải có nội dung (sandbox bị YouTube chặn nên chưa xác nhận được).
 - v3.5.149 (Chrome + Firefox + Edge Android): chưa chạy. Desktop dùng chuột: Dashboard, trang web, overlay giống v3.5.148, không có thanh Keepit dưới đáy. Chrome DevTools → Toggle device toolbar (bật cảm ứng) 360/390/412/768/820/1024: Dashboard tab bar/rail, thanh Keepit trên trang (Song ngữ → Cả trang/Chọn đoạn, Đọc, Overlay, Ghi chú, Thêm), nhấn giữ bôi 1 từ/cụm → icon hoặc popup/full dict; Alt+E/Alt+F trên YouTube → overlay một cột. Edge Android (cài CRX): như trên với ngón tay thật.
 - v3.5.148 (Chrome + Firefox): chưa chạy. `www.youtube.com/watch`: Alt+E / Alt+F / nút Keepit trong player như v3.5.147; trình duyệt Android có extension (Kiwi, Firefox Android) mở `m.youtube.com/watch` → Alt+E (bàn phím ngoài) mở overlay, có phụ đề + bản dịch.
 - v3.5.147 (Chrome + Firefox): chưa chạy. Cập nhật từ bản cũ → Cài đặt → Icon hiển thị: 8 dạng, Dạng 1 được chọn; bôi chữ (chế độ icon): logo dưới chữ cuối, 3 nút có chữ quanh logo (Tô sáng trái, Dịch dưới, Hỏi AI phải), bấm từng nút đúng thao tác; Dạng 2/4: rê vào logo mới mở, di từ logo sang nút không bị đóng, rời ra thì đóng; Dạng 3: 3 icon vuông; bôi chữ sát mép trái/phải → 3 nút vẫn nằm trong màn hình; Dạng 5–8 giống hệt Dạng 1/3/2/4 cũ; giao diện tối.
@@ -137,7 +139,7 @@ Keepit - Test/
 │   │   ├── overlay-template.js    # HTML/CSS of the Shadow DOM
 │   │   ├── source/                # YouTube captions/timing and Reader cues
 │   │   ├── study/                 # Dictation/Typing and Shadowing activities
-│   │   └── view/                  # layout-mode.js, cc-mode.js
+│   │   └── view/                  # layout-mode.js, cc-mode.js, touch-layout.js (bố cục overlay cảm ứng)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # custom-font, icons, search, site-icons, thumbnails
 ├── css/
@@ -210,6 +212,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-08 | v3.5.150 | Arena.ai Agent sửa:**
+
+- Yêu cầu: sửa lỗi overlay v3.5.149 theo 4 ảnh (cửa sổ hẹp chế độ Đọc bị cắt; Edge Android câu dài đè video/thanh/header; `m.youtube.com` không có transcript) và làm overlay cảm ứng giống demo đã chốt; desktop giữ nguyên.
+- Mới `js/overlay/view/touch-layout.js` (manifest sau `cc-mode.js`): class `te-touch-layout`/`te-touch-compact`, header, nguồn trong thẻ, nút ⋯, sheet "Thêm" (bấm nút gốc), nhãn en/vi/ko. `overlay-controller.js`: gọi sau `bindUI()`; focus transcript cảm ứng canh câu active ở đầu danh sách (trước dùng `window.innerHeight` nên câu bị cắt).
+- `overlay-template.js`: thay khối phone v3.5.149 bằng khối học (một cột/tablet) + khối `te-touch-layout` (flex cột, sub tĩnh tối đa 26vh, thanh cố định 64px + safe area, popup/modals thành sheet, nhãn tốc độ thay icon).
+- `source/video.js`: `sameOriginYouTubeUrl` cho `fetchTextDirect` và player API khi ở `m.youtube.com`.
+- Ghi chú cảm ứng: `page-layout.js` bỏ thu hẹp trang khi `(pointer: coarse) and (hover: none)`; `content.css` bottom sheet; `touch-ui.js` nền mờ + kéo xuống đóng.
+- Test (Chromium thật + extension, trang bài viết): 360/390/470/820 cảm ứng và 470 không cảm ứng — 3 chế độ cùng kích thước, câu dài nằm trong vùng câu, thanh 6 nút, active cách đầu danh sách 8px, sheet Thêm 8 mục, tốc độ/Cài đặt là sheet, Chép chính tả mở được; ghi chú sheet mở từ trang và overlay, kéo 160px đóng, chạm nền đóng; desktop 1280 thanh đầy đủ, trang thu hẹp như cũ; `m.youtube.com` request đi `m.youtube.com/youtubei/v1/player` (nội dung phụ đề chưa xác nhận do IP sandbox bị chặn). Không có lỗi trang.
 
 **2026-11-07 | v3.5.149 | Arena.ai Agent sửa:**
 

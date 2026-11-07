@@ -864,8 +864,14 @@ function parseTimedTextXml(xml) {
   return out;
 }
 
+// On m.youtube.com a direct request to www.youtube.com is cross-origin and the browser blocks it
+// ("Failed to fetch"); the same paths are served by m.youtube.com, so stay on the page's own origin.
+function sameOriginYouTubeUrl(url) {
+  return /^m\.youtube\.com$/i.test(location.hostname) ? String(url).replace(/^https:\/\/www\.youtube\.com\//i, `${location.origin}/`) : url;
+}
+
 async function fetchTextDirect(url, init = {}) {
-  const response = await fetch(url, { credentials: 'include', ...init });
+  const response = await fetch(sameOriginYouTubeUrl(url), { credentials: 'include', ...init });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.text();
 }
@@ -949,7 +955,7 @@ async function transcriptFromPlayerApi(videoId, reasons) {
     const html = await fetchTextDirect(`https://www.youtube.com/watch?v=${videoId}`);
     const key = (html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/) || [])[1];
     if (!key) { reasons.push('player: thiếu INNERTUBE_API_KEY'); return []; }
-    const res = await fetch(`${INNERTUBE_PLAYER}?key=${encodeURIComponent(key)}&prettyPrint=false`, {
+    const res = await fetch(`${sameOriginYouTubeUrl(INNERTUBE_PLAYER)}?key=${encodeURIComponent(key)}&prettyPrint=false`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

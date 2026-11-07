@@ -9,6 +9,8 @@
     else el.style.removeProperty(prop);
   }
   function applyPageShrink(width) {
+    // Touch devices show the sidebar as a bottom sheet over the page (css/content/content.css), so the page keeps its width.
+    if (globalThis.matchMedia?.("(pointer: coarse) and (hover: none)").matches) return;
     const root = document.documentElement, body = document.body;
     if (!pageLayoutSnapshot) pageLayoutSnapshot = {
       rootWidth: getInlineStyle(root, "width"), rootMaxWidth: getInlineStyle(root, "max-width"), rootBoxSizing: getInlineStyle(root, "box-sizing"),
