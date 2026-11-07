@@ -22,6 +22,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 | [`js/overlay/study/shared/session-index.js`](../../js/overlay/study/shared/session-index.js), [`css/dashboard/dictation.css`](../../css/dashboard/dictation.css) | `dictation:session-index:v1`, `reconcileYouTubeRecord()` | Chuẩn hóa/đối soát phiên cục bộ với record Dictation theo video và stylesheet của route. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Resolve favicon và cache URL dùng chung cho popup/Highlights & Notes. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS.loadYouTube/loadSource` | Dùng chung thumbnail YouTube và ảnh nguồn/fallback cho Dictation, YouTube content script, Highlights & Notes. |
+| [`css/dashboard/responsive.css`](../../css/dashboard/responsive.css), [`js/dashboard/responsive-nav.js`](../../js/dashboard/responsive-nav.js) | `.rn-*`, `body.rn-hn-detail` | Điện thoại (<600px tab bar + sheet Thêm) và tablet (600–899px rail 72px); Ghi chú danh sách → chi tiết, Cài đặt danh sách → mục. Nạp sau cùng. |
 | [`js/dashboard/backup.js`](../../js/dashboard/backup.js), [`js/dashboard/account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup và profile cục bộ. |
 
 ## 3. Luồng chính
@@ -54,6 +55,7 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 - Popup có chiều cao cố định theo `min(900px, 100vh - 40px)`; header cố định và không còn footer. Chỉ `.results-scroll` cuộn; Chromium/WebKit đặt scrollbar 3px. Firefox dùng native ở light (`scrollbar-width:auto`) và `thin` trong dark.
 - Báo cáo chỉ gồm mục hợp lệ: bỏ `missing`, target 1–3 chữ cái, proper nouns và dấu câu; cùng điều kiện áp dụng cho errors/fixes. Rate là `errors / (errors + fixes)`.
 - Font stack Inter theo tham chiếu v14; UI vẫn có fallback hệ thống. Nguồn và title thực do bridge cung cấp; popup không đọc storage trực tiếp.
+- Responsive: ≥900px không có quy tắc nào của `responsive.css`; `responsive-nav.js` chỉ bấm nút/gọi route có sẵn, không đổi state của `dashboard.js`. Override H&N cần selector có id vì `highlights-notes-embedded.css` dùng id. Nhãn mới phải có en/vi/ko.
 
 ## 5. Kiểm tra và xác minh
 

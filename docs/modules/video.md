@@ -27,6 +27,7 @@ Phần Video sở hữu nguồn YouTube: tìm track, lấy transcript/caption, c
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Trang video YouTube = `youtube.com`, `www.youtube.com` và `m.youtube.com` (`OVERLAY_YOUTUBE_HOST_RE`); URL tải phụ đề luôn là `www.youtube.com`. Nút mở Keepit trong player chỉ gắn khi có `.ytp-right-controls` (bản máy tính); bản mobile mở bằng phím tắt hoặc nút của app Android.
 - Cache transcript YouTube tiếp tục tách khỏi persistent Web Study cue cache; khóa nguồn giữ video ID và track language.
 - Giữ fallback giữa player API, transcript panel và live captions, cùng cleanup/cancel token khi video thay đổi.
 - Cue time phải tăng hợp lệ; xử lý merge/resegment không làm nhảy vị trí transcript hoặc thay video timing.

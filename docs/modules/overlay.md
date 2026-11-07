@@ -39,6 +39,7 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 - Popup Cài đặt video tăng max-height body từ 520px lên 530px và canh mép phải cách control bar 4px; menu Chế độ xem trên control bar rộng thêm 20px và cũng canh mép phải 4px. Các submenu Cài đặt khác giữ anchor hiện hành.
 - Giữ visualizer: Breathing/Pan/Tilt 0.2×–3.0×, không Static/Pulse, giảm biên độ 50%; bốn waveform; bảy hiệu ứng đổi độc lập 30–180 giây; blur 0–10 px; bokeh giữ glow alpha/radius 2× và fade mật độ.
 - `study/shared/` chỉ chứa logic dùng chung; lifecycle/result branches còn trong Dictation shell cần tách mà không đổi UX. Dashboard chưa có Shadowing practice route.
+- Bố cục dọc: khối "Phone portrait" ở cuối `OVERLAY_CSS` áp cho `(max-width: 599.98px) and (orientation: portrait)` hoặc `(max-width: 899.98px) and (orientation: portrait) and (pointer: coarse)`. Một cột: Đọc = video trên, sidebar dưới; Học = grid 1 cột (`.te-left-section`, `#te-study-center`, `#te-study-notes`, control bar). Panel Học là id (`#te-study-center`, `#te-study-notes`), không phải class. Desktop chuột ≥600px không bị ảnh hưởng.
 
 ## 5. Kiểm tra và xác minh
 

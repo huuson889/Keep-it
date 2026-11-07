@@ -10,6 +10,8 @@ const OVERLAY_ID = 'keepit-exact-overlay';
 const SETTINGS_KEY = 'lhnYouTubeSettings';
 const STUDY_TRANSLATION_SETTINGS_KEY = 'lhnStudyTranslationSettings';
 const BATCH_SIZE = 15;
+// YouTube video pages: desktop (www.) and mobile web (m.); both use /watch?v= and the same caption sources.
+const OVERLAY_YOUTUBE_HOST_RE = /^(?:www\.|m\.)?youtube\.com$/i;
 const PENDING = 'Đang dịch...';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const PRESET_VALUES = [80, 100, 130]; // Nhỏ, Trung bình, Lớn
@@ -564,7 +566,7 @@ function closeOverlay() {
 
 async function toggleOverlayViewFromShortcut() {
   if (keepitSiteDisabled) return;
-  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebSourceForShortcut();
+  if (!OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) await prepareWebSourceForShortcut();
   const study = globalThis.LHN_STUDY;
   if (!state.open) {
     openOverlay();
@@ -2025,7 +2027,7 @@ function toggleStudyTypingModeControl() {
 }
 
 async function prepareWebSourceForShortcut() {
-  if (/^(www\.)?youtube\.com$/i.test(location.hostname) || state.sourceType === 'web') return;
+  if (OVERLAY_YOUTUBE_HOST_RE.test(location.hostname) || state.sourceType === 'web') return;
   if (state.open) closeOverlay();
   document.dispatchEvent(new CustomEvent('lhn-bilingual-reader-command', { detail: 'stop-reading' }));
   await prepareWebSource();
@@ -2037,7 +2039,7 @@ async function toggleStudyFromShortcut(event) {
     toggleStudyTypingModeControl();
     return;
   }
-  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) await prepareWebSourceForShortcut();
+  if (!OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) await prepareWebSourceForShortcut();
   const study = globalThis.LHN_STUDY;
   if (pendingStudyShortcut || study?.isOpen?.()) {
     closeOverlay();
@@ -2066,7 +2068,7 @@ function openPendingStudyShortcut() {
 }
 
 async function openStudyFromDashboardIntent() {
-  if (!/^(www\.)?youtube\.com$/i.test(location.hostname)) return;
+  if (!OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) return;
   let targetUrl;
   try { targetUrl = new URL(location.href); } catch { return; }
   if (targetUrl.pathname !== "/watch" || targetUrl.searchParams.get("lhn_open_dictation") !== "1") return;
@@ -2109,7 +2111,7 @@ void Promise.all([restoreSettings(), refreshSubtitleLanguageSettings()]).then(([
   settings = loaded;
   if (overlayEl()) applySettings();
   if (state.open) restorePreferredReadingMode();
-  if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
+  if (OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) {
     setInterval(tick, 1000);
     tick();
     void openStudyFromDashboardIntent();
@@ -2135,7 +2137,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 window.addEventListener('resize', () => { if (state.activeMedia) syncMediaAspect(state.activeMedia); });
 
 // Player discovery and caption polling remain YouTube-specific.
-if (/^(www\.)?youtube\.com$/i.test(location.hostname)) {
+if (OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) {
   observeLauncherChanges();
   document.addEventListener('lhn-dual-captions-updated', openPendingStudyShortcut);
   window.addEventListener('pagehide', () => {

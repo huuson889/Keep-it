@@ -17,6 +17,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 | [`js/content/sentence-note.js`](../../js/content/sentence-note.js) | `LHN_SENTENCE_NOTE` | Lấy ngữ cảnh câu quanh selection. |
 | [`js/content/page-layout.js`](../../js/content/page-layout.js) | `LHN_PAGE_LAYOUT` | Snapshot/khôi phục layout khi mở sidebar. |
 | [`js/content/ui-components.js`](../../js/content/ui-components.js) | `LHN_UI_COMPONENTS` | Tag editor dùng chung. |
+| [`js/content/touch-ui.js`](../../js/content/touch-ui.js) | IIFE, host `#lhn-touch-ui` (shadow) | Thanh Keepit cho thiết bị cảm ứng + cầu nối nhấn giữ bôi chữ → `mouseup`. |
 | [`js/shared/selection-toolbar.js`](../../js/shared/selection-toolbar.js) + [`css/shared/selection-toolbar.css`](../../css/shared/selection-toolbar.css) | `LHN_SELECTION_TOOLBAR` | Toolbar nổi khi chọn chữ (Tô sáng/Dịch/Hỏi AI + logo), dùng chung cho trang và preview Dashboard. |
 
 ## 3. Luồng chính
@@ -38,6 +39,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - Message từ Background phải kiểm tra `type` trước khi xử lý; không thực thi nội dung từ page.
 - Giữ selector/class `lhn-*` để CSS content và sidebar không vỡ.
 - Selection toolbar: chỉ dựng bằng `LHN_SELECTION_TOOLBAR.build()`. 8 dạng (`selectionToolbarStyleV2`, mặc định `1`) = 3 cờ `data-layout` (`radial`/`bar`), `data-labels`, `data-collapsible`: vòng 1 chữ+luôn hiện, 2 chữ+hover, 3 icon+luôn hiện, 4 icon+hover; thanh 5 chữ+mở sẵn, 6 chữ+hover, 7 icon+mở sẵn, 8 icon+hover. CSS chỉ đọc cờ, không đọc số dạng. Vòng: shell chỉ là badge logo 38px, mỗi nút là một khung Keepit riêng (Tô sáng trái, Dịch dưới, Hỏi AI phải, không bao giờ phía trên dòng chữ); dạng luôn hiện mở khi launcher có `lhn-visible`, dạng hover mở theo `:hover/:focus-within` của shell và đóng sau khoảng trễ ngắn. `positionTranslateIcon()` với dạng vòng không lật `lhn-actions-right` mà dời cả cụm vào trong để 3 nút cách mép viewport ≥8px. Logo chạy `selectionToolbarLogoAction` (mặc định Tô sáng), tooltip theo thao tác đó. `content.css` chỉ giữ định vị `#lhn-translate-icon`. Background `onInstalled` (reason `update`) xoá key cũ `selectionToolbarStyle`/`translateIconStyle` → mọi người dùng về dạng 1.
+- Touch UI: chỉ dựng khi `(pointer: coarse) and (hover: none)`; không sửa `content.js` — mọi lệnh là keydown giả trên `body` đúng tổ hợp trong cài đặt/defaults (Alt+A/D/R cố định) hoặc runtime message có sẵn. Nhường chỗ (`.wrap.yield`) khi `#lhn-bilingual-reading-bar.lhn-show`, `html.lhn-video-overlay-open` hoặc `#lhn-sidebar.lhn-side-visible`. Cầu nối bôi chữ chỉ gửi `mouseup` khi ngón tay đã nhấc, vùng chọn đổi và không nằm trong host touch UI. App Android không được chạy song song cầu nối riêng của shim.
 
 ## 5. Kiểm tra và xác minh
 

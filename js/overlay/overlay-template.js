@@ -2291,6 +2291,32 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay .te-study-act.te-dict-ready { background: #f59e0b !important; border-color: #f59e0b !important; color: #000 !important; font-weight: 700; }
 #keepit-exact-overlay .te-dict-act-primary.te-dict-done { background: #6b7280 !important; border-color: #6b7280 !important; color: #fff !important; box-shadow: none !important; }
 #keepit-exact-overlay #te-study-notes.te-study-notes-locked .te-study-note-body > div:not(.te-study-lock) { filter: blur(5px); user-select: none; pointer-events: none; }
+/* Phone portrait (< 600px) and touch tablet portrait (< 900px): one column — video on top, content below,
+   controls scroll sideways. Desktop windows with a mouse at 600px or wider keep the layout above. */
+@media (max-width: 599.98px) and (orientation: portrait), (max-width: 899.98px) and (orientation: portrait) and (pointer: coarse) {
+  #keepit-exact-overlay:not(.te-study-active) { flex-direction: column !important; }
+  #keepit-exact-overlay:not(.te-study-active) > .te-left-section,
+  #keepit-exact-overlay.te-reading-mode.size-s > .te-left-section, #keepit-exact-overlay.te-reading-mode.size-m > .te-left-section, #keepit-exact-overlay.te-reading-mode.size-l > .te-left-section { flex: 0 0 auto !important; width: 100% !important; max-width: none !important; height: auto !important; max-height: 58vh; }
+  #keepit-exact-overlay:not(.te-study-active) > .yt-dual-right-sidebar,
+  #keepit-exact-overlay.te-reading-mode.size-s > .yt-dual-right-sidebar, #keepit-exact-overlay.te-reading-mode.size-m > .yt-dual-right-sidebar, #keepit-exact-overlay.te-reading-mode.size-l > .yt-dual-right-sidebar { position: relative !important; left: auto !important; flex: 1 1 auto !important; width: 100% !important; max-width: none !important; min-height: 0 !important; border-left: 0 !important; }
+  #keepit-exact-overlay.te-study-active { grid-template-columns: 100% !important; grid-template-rows: auto minmax(0, 1fr) auto auto !important; grid-template-areas: none !important; }
+  #keepit-exact-overlay.te-study-active > .te-left-section { grid-column: 1 !important; grid-row: 1 !important; width: 100% !important; height: auto !important; max-height: 30vh; overflow-y: auto !important; }
+  #keepit-exact-overlay.te-study-active > #te-study-center { grid-column: 1 !important; grid-row: 2 !important; width: 100% !important; min-height: 0 !important; overflow-y: auto !important; }
+  #keepit-exact-overlay.te-study-active > #te-study-notes { grid-column: 1 !important; grid-row: 3 !important; width: 100% !important; max-height: 15vh; overflow-y: auto !important; }
+  #keepit-exact-overlay.te-study-active > .te-control-bar { grid-column: 1 !important; grid-row: 4 !important; }
+  #keepit-exact-overlay .te-study-column-splitter, #keepit-exact-overlay .te-study-column-restore { display: none !important; }
+  #keepit-exact-overlay #te-study-center { border-right: 0 !important; }
+  #keepit-exact-overlay #te-dict-hint, #keepit-exact-overlay #te-shadowing-shortcuts, #keepit-exact-overlay .te-control-bar .te-source-title-label { display: none !important; }
+  #keepit-exact-overlay #te-study-notes { border-top: 1px solid rgba(148, 163, 184, .25); }
+  #keepit-exact-overlay .te-control-bar { display: flex !important; align-items: center; justify-content: flex-start !important; gap: 2px !important; padding-left: 6px !important; padding-right: 6px !important; overflow-x: auto !important; overflow-y: hidden !important; scrollbar-width: none; }
+  #keepit-exact-overlay .te-control-bar::-webkit-scrollbar { display: none; }
+  #keepit-exact-overlay .te-control-bar > :not(.te-progress-track) { flex: none !important; min-width: max-content !important; }
+  #keepit-exact-overlay .te-control-bar > #te-control-play { margin: 0 4px; }
+}
+@media (min-width: 600px) and (max-width: 899.98px) and (orientation: portrait) and (pointer: coarse) {
+  #keepit-exact-overlay.te-study-active > .te-left-section { max-height: 44vh; }
+  #keepit-exact-overlay.te-study-active > #te-study-notes { max-height: 20vh; }
+}
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->

@@ -1,6 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.149: Giao diện tự thích ứng điện thoại/tablet, một ZIP, không có công tắc. Dashboard: điện thoại có thanh tab dưới (Tổng quan · Ôn tập · Ghi chú · Chính tả · Thêm), tablet dọc có rail 72px, desktop ≥900px giữ sidebar 220px như cũ; Ghi chú danh sách → chi tiết; Cài đặt danh sách → từng mục. Trên trang web, thiết bị cảm ứng có thanh Keepit dưới đáy (điện thoại 5 nút + Thêm; tablet thanh nổi 8 nút), vuốt xuống ẩn, vuốt lên hiện; bôi chữ bằng nhấn giữ mở icon/popup như chuột. Overlay video dọc trên điện thoại (và tablet cảm ứng) xếp một cột. Máy tính dùng chuột không đổi. Chưa QA trình duyệt thật.
+- v3.5.148: Overlay video (song ngữ + chép chính tả) nhận cả YouTube bản mobile `m.youtube.com` (trước chỉ `youtube.com`/`www.youtube.com`); URL tải phụ đề không đổi. Bản mobile không có nút Keepit trong player — mở bằng phím tắt hoặc nút của app Android. Chưa QA trình duyệt thật.
 - v3.5.147: Icon khi bôi đen có 8 dạng: 4 dạng vòng mới (logo + 3 nút khung riêng: Tô sáng trái, Dịch dưới, Hỏi AI phải; theo demo radial v3) đứng trước, 4 dạng thanh cũ đánh số lại 5–8. Mặc định Dạng 1 (vòng, icon + chữ, luôn hiện); mọi người dùng cũ về Dạng 1. Chưa QA trình duyệt thật.
 - v3.5.146: Full dict bật: Alt+W (phím dịch) trên 1 từ tiếng Anh mở full dict cả ở chế độ icon (trước chỉ mở popup dịch thường). Chưa QA trình duyệt thật.
 - v3.5.145: Dashboard → Cài đặt → Dịch: nhóm "Bộ nhớ đệm" với nút xóa cache từ điển (từ đã tra + nghĩa chip/cụm), toast xác nhận. Chưa QA trình duyệt thật.
@@ -54,6 +56,8 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.149 (Chrome + Firefox + Edge Android): chưa chạy. Desktop dùng chuột: Dashboard, trang web, overlay giống v3.5.148, không có thanh Keepit dưới đáy. Chrome DevTools → Toggle device toolbar (bật cảm ứng) 360/390/412/768/820/1024: Dashboard tab bar/rail, thanh Keepit trên trang (Song ngữ → Cả trang/Chọn đoạn, Đọc, Overlay, Ghi chú, Thêm), nhấn giữ bôi 1 từ/cụm → icon hoặc popup/full dict; Alt+E/Alt+F trên YouTube → overlay một cột. Edge Android (cài CRX): như trên với ngón tay thật.
+- v3.5.148 (Chrome + Firefox): chưa chạy. `www.youtube.com/watch`: Alt+E / Alt+F / nút Keepit trong player như v3.5.147; trình duyệt Android có extension (Kiwi, Firefox Android) mở `m.youtube.com/watch` → Alt+E (bàn phím ngoài) mở overlay, có phụ đề + bản dịch.
 - v3.5.147 (Chrome + Firefox): chưa chạy. Cập nhật từ bản cũ → Cài đặt → Icon hiển thị: 8 dạng, Dạng 1 được chọn; bôi chữ (chế độ icon): logo dưới chữ cuối, 3 nút có chữ quanh logo (Tô sáng trái, Dịch dưới, Hỏi AI phải), bấm từng nút đúng thao tác; Dạng 2/4: rê vào logo mới mở, di từ logo sang nút không bị đóng, rời ra thì đóng; Dạng 3: 3 icon vuông; bôi chữ sát mép trái/phải → 3 nút vẫn nằm trong màn hình; Dạng 5–8 giống hệt Dạng 1/3/2/4 cũ; giao diện tối.
 - v3.5.146 (Chrome + Firefox): chưa chạy. Chế độ icon (tắt popup dịch trực tiếp), bật full dict: bôi 1 từ tiếng Anh → Alt+W → full dict + đọc từ; bôi cụm → Alt+W → popup dịch thường; tắt full dict → Alt+W 1 từ → popup dịch thường; dict đang mở → Alt+W đọc lại từ.
 - v3.5.145 (Chrome + Firefox): chưa chạy. Cài đặt → Dịch → "Bộ nhớ đệm" → "Xóa bộ nhớ đệm": toast "Đã xóa bộ nhớ đệm từ điển"; tra lại từ đã tra → gọi mạng lại (thấy request trong Network); highlight/flashcard/cài đặt còn nguyên; sáng/tối; EN/VI/KO; ô tìm "từ điển" ra hàng này.
@@ -123,10 +127,11 @@ Keepit - Test/
 │   │   └── page/                  # composer.js (editor bridge), send-flow.js (send/link/mapping), chatgpt-link-marker.js, grok-google-auth.js
 │   ├── content/                   # Page interaction content scripts
 │   │   ├── sidebar.js             # Page sidebar tabs and search tools
+│   │   ├── touch-ui.js            # Thanh Keepit cảm ứng (chỉ khi pointer coarse + không hover) + cầu nối nhấn giữ bôi chữ → mouseup
 │   │   └── note-composer.js       # Note form and record normalization
 │   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
 │   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats
+│   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats; responsive-nav.js = điều hướng điện thoại/tablet
 │   ├── overlay/                   # Shared Video/Web overlay, Study engine/activities and View modes
 │   │   ├── overlay-controller.js  # Lifecycle, source/activity routing and bootstrap
 │   │   ├── overlay-template.js    # HTML/CSS of the Shadow DOM
@@ -137,7 +142,7 @@ Keepit - Test/
 │   └── shared/                    # custom-font, icons, search, site-icons, thumbnails
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation, `responsive.css` cho điện thoại/tablet (nạp cuối)
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
@@ -205,6 +210,23 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.149 | Arena.ai Agent sửa:**
+
+- Yêu cầu: đưa 2 demo đã duyệt (mobile responsive v1, Dashboard responsive v1) vào Keepit thật; một ZIP dùng cho desktop, DevTools device mode, Edge mobile (CRX) và làm nguồn cho APK; không công tắc cài đặt; desktop dùng chuột không đổi; không refactor `dashboard.js`/`content.js`.
+- Dashboard: `css/dashboard/responsive.css` + `js/dashboard/responsive-nav.js` (nạp cuối `pages/dashboard.html`). <600px tab bar dưới (badge thẻ đến hạn từ `#overviewDueCount`, tự ẩn khi cuộn xuống), sheet Thêm (Cài đặt, giao diện, Tài khoản, 9 mục "Sắp có"); 600–899px rail 72px có tooltip; ≥900px không đổi. Ghi chú: danh sách → chi tiết có nút Quay lại (history). Cài đặt: 15 mục chia 4 nhóm, danh sách → mục. Ôn tập: chạm thẻ để lật. Chỉ bấm nút/gọi route có sẵn.
+- Trang web: `js/content/touch-ui.js` (cuối `content_scripts[1]`), chỉ dựng khi `(pointer: coarse) and (hover: none)`. Nút gửi đúng phím tắt hiện có (Alt+A/D/R cố định; Alt+E/F/Q/Z đọc từ cài đặt) hoặc message có sẵn (`TOGGLE_AI_PANEL`, `OPEN_DASHBOARD`, `OPEN_DASHBOARD_SETTINGS`). Chọn đoạn: chip, chạm đoạn tiếp theo → Alt+D. Nhường chỗ khi Reader/overlay/sidebar mở; "Ẩn thanh" → nút Keepit nhỏ; trang đã tắt → nút "Bật lại". Nhãn en/vi/ko, theme theo `sidebarTheme`.
+- Cầu nối bôi chữ cảm ứng (trong `touch-ui.js`): nhấn giữ/kéo tay cầm không phát `mouseup` nên icon/popup không mở; khi chọn xong và nhấc tay 450ms → gửi một `mouseup` ở cuối vùng chọn (cùng cách shim APK).
+- Overlay: khối CSS cuối `OVERLAY_CSS` cho dọc <600px (và cảm ứng <900px): một cột — video trên, transcript/câu/ô gõ/ghi chú dưới, thanh điều khiển cuộn ngang; ẩn splitter và dòng gợi ý phím tắt. Không đổi JS overlay.
+- Test (Chromium thật + extension): Dashboard 22/22; thanh cảm ứng điện thoại 23/23, tablet 20/20 (gồm desktop chuột và cửa sổ hẹp không cảm ứng: không có UI mới); bôi chữ cảm ứng mở icon và full dict; overlay 390×844 và 820×1180 đo vị trí từng vùng. APK chưa build lại (shim còn FAB + cầu nối riêng → gỡ ở lần đồng bộ APK).
+
+**2026-11-07 | v3.5.148 | Arena.ai Agent sửa:**
+
+- Yêu cầu: app Android thử nghiệm mở YouTube bằng `m.youtube.com`, overlay video không bật được; người dùng chọn sửa luôn extension.
+- `overlay-controller.js`: 6 chỗ kiểm tra `/^(www\.)?youtube\.com$/` gom về hằng `OVERLAY_YOUTUBE_HOST_RE` = `/^(?:www\.|m\.)?youtube\.com$/i` (thêm `m.`). Phụ đề vẫn tải từ `www.youtube.com` như cũ; `background.js` không đổi. `docs/modules/video.md` thêm quy tắc.
+- `m.youtube.com` (kiểm tra thật): có `#movie_player.html5-video-player`, `video.html5-main-video`, `ytInitialPlayerResponse` có captions; không có `.ytp-right-controls` nên nút Keepit trong player không hiện (đúng thiết kế, không thêm UI).
+- Test: regex 6/6 (youtube.com, www, m đúng; music., evil-youtube.com, m.youtube.com.evil.io sai); app Android (content script thật trên `m.youtube.com` thật, Chromium mobile): overlay mở, video vào overlay, phụ đề `timedtext` + bản dịch hiện.
+
 
 **2026-11-07 | v3.5.147 | Arena.ai Agent sửa:**
 
