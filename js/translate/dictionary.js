@@ -1,7 +1,7 @@
 (() => {
   const cleanText = value => String(value ?? "").replace(/\s+/g, " ").trim();
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
-  const dictionaryCachePrefix = "lhnFullDictionary:v3:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  const dictionaryCachePrefix = "lhnFullDictionary:v4:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
   const dictionaryTranslationRequests = new Map(), dictionaryTranslationRequestsBySignal = new WeakMap();
   async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
     const controller = new AbortController(), sourceSignal = options.signal;
@@ -115,8 +115,8 @@
   async function dictionaryRelatedWords(word, targetLanguage, signal) {
     const escaped = encodeURIComponent(word.toLowerCase());
     const [synonyms, antonyms] = await Promise.all([
-      fetch(`https://api.datamuse.com/words?rel_syn=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : []),
-      fetch(`https://api.datamuse.com/words?rel_ant=${escaped}&max=3`, { signal }).then(response => response.ok ? response.json() : [])
+      fetch(`https://api.datamuse.com/words?rel_syn=${escaped}&max=4`, { signal }).then(response => response.ok ? response.json() : []),
+      fetch(`https://api.datamuse.com/words?rel_ant=${escaped}&max=4`, { signal }).then(response => response.ok ? response.json() : [])
     ]);
     const all = [...synonyms.map(item => ({ ...item, kind:"Syn" })), ...antonyms.map(item => ({ ...item, kind:"Ant" }))];
     const translated = await Promise.all(all.map(async item => {
@@ -146,10 +146,10 @@
     try {
       const escaped = encodeURIComponent(word.toLowerCase());
       const [before, after] = await Promise.all([
-        fetch(`https://api.datamuse.com/words?rel_jja=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : []),
-        fetch(`https://api.datamuse.com/words?rel_jjb=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : [])
+        fetch(`https://api.datamuse.com/words?rel_jjb=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : []),
+        fetch(`https://api.datamuse.com/words?rel_jja=${escaped}&max=2`, { signal }).then(response => response.ok ? response.json() : [])
       ]);
-      const phrases = [...before.map(item => `${item.word} ${word}`), ...after.map(item => `${word} ${item.word}`)].slice(0, 3);
+      const phrases = [...new Set([...before.map(item => `${item.word} ${word}`), ...after.map(item => `${word} ${item.word}`)])]; // jjb adjectives before (next stop), jja nouns after (stop shopping); all shown
       return Promise.all(phrases.map(async phrase => { try { return { word:phrase, meaning:(await dictionaryTranslate(phrase, targetLanguage, signal)).translatedText }; } catch { return { word:phrase, meaning:phrase }; } }));
     } catch { return []; }
   }

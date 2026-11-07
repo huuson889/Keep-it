@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.143: Full dict: Syn/Ant tối đa 4 (trước 3), Colloc tối đa 4 = 2 tính từ đứng trước từ + 2 danh từ đứng sau, đúng thứ tự (trước bị ngược: "stop next" → nay "next stop"), không cắt, bỏ trùng; cache dict v4. Chưa QA trình duyệt thật.
 - v3.5.142: Full dict theo demo v15: brand logo + "Keepit Dictionary" (tím như nhãn Example) luôn ngang hàng dòng cuối của dict, góc phải; hàng chip cuối hết chỗ → chip cuối xuống hàng mới cùng brand; dòng chữ cuối hết chỗ → brand hàng riêng góc phải. Hiệu ứng tim bắn ra không còn bị popup tạo lại che. Chưa QA trình duyệt thật.
 - v3.5.141: Sửa full dict v3.5.140: tim → huỷ → tim lại vẫn highlight trên trang + câu ngữ cảnh trên trang; chip ≥2 từ (và Back về khung cụm) tự phát âm khi bật tự phát âm. Chưa QA trình duyệt thật.
 - v3.5.140: Full dict theo demo v8: mục Example (3 câu Free Dictionary, câu chứa từ xếp trước, tô từ, dịch từng câu); nút tim (từ trên trang → highlight + flashcard; từ/cụm khác → chỉ flashcard, record `dictionaryOnly`) + toast; chip ≥2 từ ở lại trong dict (Ant đổi Syn↔Ant), Back; nháy khi đổi từ; bôi trong câu ví dụ (1 từ → tra, cụm → popup dịch); cỡ chữ/rộng/viền theo demo. Chưa QA trình duyệt thật.
@@ -49,6 +50,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.143 (Chrome + Firefox): chưa chạy. Full dict "stop": Syn và Ant mỗi loại tối đa 4 chip; Colloc tối đa 4, đúng thứ tự ("next stop", "stop shopping"), nghĩa dịch khớp cụm; bấm chip Colloc ở lại trong dict + Back; từ có ít dữ liệu → hiện ít hơn 4, không lỗi.
 - v3.5.142 (Chrome + Firefox): chưa chạy. Full dict: brand ở góc phải dòng cuối (Colloc/Forms/Syn–Ant, câu dịch Example, loại từ, chỉ nghĩa); list chip dài → chip cuối xuống hàng cùng brand, không che chip/chữ; sáng/tối; tra từ thứ 2 trên cùng trang rồi bấm tim → thấy tim bắn ra quanh nút; ghi chú tự điền/tim không dính chữ brand.
 - v3.5.141 (Chrome + Firefox): chưa chạy. Tim → huỷ → tim nhiều lần trên từ bôi ở trang: lần nào cũng highlight, câu ngữ cảnh = câu trên trang; bật tự phát âm → bấm chip ≥2 từ đọc cụm, Back về cụm đọc lại; tắt → im.
 - v3.5.140 (Chrome + Firefox): chưa chạy. Full dict: Example hiện/ẩn đúng, từ được tô; tim trên từ bôi ở trang → highlight + toast, bấm lại → gỡ; tim trên chip/cụm/từ trong câu ví dụ → chỉ vào flashcard (Dashboard thấy, trang không tô, reload không tô nhầm); chip ≥2 từ + Back; bôi 1 từ / cụm trong câu ví dụ; click trong dict chỉ đóng popup dịch; sáng/tối.
@@ -195,6 +197,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.143 | Arena.ai Agent sửa:**
+
+- Full dict: Syn và Ant lấy tối đa 4 từ Datamuse (trước 3); khi Datamuse lỗi, Syn dự phòng từ Free Dictionary cũng tối đa 4.
+- Colloc tối đa 4: 2 tính từ hay đi trước từ (`rel_jjb`, "next stop") + 2 danh từ hay đi sau (`rel_jja`, "stop shopping"). Sửa lỗi ghép ngược có từ bản gốc (trước ra "stop next", "shopping stop"). Chỉ lấy đúng số hiện, không cắt bớt, bỏ trùng; Datamuse trả ít hơn → hiện ít hơn, không bù.
+- Cache dict đổi `v3` → `v4` để từ đã tra không giữ chip cũ; mục `v3` cũ nằm lại trong storage, không đọc tới.
+- `DATA-INVENTORY.md`: sửa tham chiếu `content.js:473` → `:510` (v3.5.142 chèn dòng mà quên cập nhật).
+- Test: t143 13/13 (jsdom), t142 21/21, t140 40/40, reg 6/6, bug141 12/12, k142 23/23 (Chromium); Chromium dữ liệu "stop" thật: Syn 4, Ant 4, Colloc "next stop, first stop, stop shopping, stop shop".
+- Lưu ý: Datamuse bắt buộc API key từ 2027-02-01 (ảnh hưởng Syn/Ant/Forms/Colloc) — chưa xử lý.
 
 **2026-11-07 | v3.5.142 | Arena.ai Agent sửa:**
 

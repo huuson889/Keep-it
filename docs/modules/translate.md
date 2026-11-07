@@ -21,7 +21,7 @@
 
 1. Content/Reader/Dashboard gửi `BILINGUAL_TRANSLATE` qua `LHN_MESSAGING`; Background gọi `LHN_TRANSLATE`, kiểm cache và thử các provider theo code hiện tại.
 2. Câu học tập dùng `LHN_STUDY_TRANSLATION.create({ browser })`; queue giới hạn request, dedupe, lưu cache và dùng MyMemory khi Google lỗi.
-3. Dictionary consumer gọi `LHN_DICTIONARY` trực tiếp cho English word lookup; kết quả phụ như IPA/related words/forms/collocations/câu ví dụ có thể chạy qua provider phụ. Câu ví dụ: tối đa 3 câu Free Dictionary, câu chứa từ (kể cả dạng thêm đuôi) xếp trước, mỗi câu dịch bằng `translate`; cache full dict theo prefix `lhnFullDictionary:v3:`.
+3. Dictionary consumer gọi `LHN_DICTIONARY` trực tiếp cho English word lookup; kết quả phụ như IPA/related words/forms/collocations/câu ví dụ có thể chạy qua provider phụ. Câu ví dụ: tối đa 3 câu Free Dictionary, câu chứa từ (kể cả dạng thêm đuôi) xếp trước, mỗi câu dịch bằng `translate`; Syn/Ant tối đa 4 mỗi loại; collocations tối đa 4 = 2 tính từ đứng trước từ + 2 danh từ đứng sau (đúng thứ tự, bỏ trùng). Cache full dict theo prefix `lhnFullDictionary:v4:`.
 4. Search consumer có thể gọi `LHN_SEARCH.rank/highlightMatches`; search index/debounce dùng chung nằm ở `js/shared/search.js`, API khác.
 5. Usage limit chỉ áp dụng ở những provider có gửi `USAGE_CONSUME`; không giả định mọi helper trong thư mục tự đi qua cùng một tầng.
 
