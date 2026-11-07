@@ -17,18 +17,24 @@
   ]);
   const ACTION_IDS = ACTIONS.map(action => action.id);
 
-  // Every style is a combination of two flags; CSS reads the flags, never the style number.
-  //   1 = labels, always open · 2 = icons, always open · 3 = labels, hover to open · 4 = icons, hover to open
+  // Every style is a combination of three flags; CSS reads the flags, never the style number.
+  // Order: radial before bar; within each, labels before icons; always open before hover to open.
+  //   radial (3 framed buttons around the logo: Highlight left, Translate below, Ask AI right):
+  //     1 = labels, always open · 2 = labels, hover to open · 3 = icons, always open · 4 = icons, hover to open
+  //   bar (actions in a row, logo right):
+  //     5 = labels, always open · 6 = labels, hover to open · 7 = icons, always open · 8 = icons, hover to open
   const STYLES = Object.freeze({
-    1:Object.freeze({ labels:true, collapsible:false }),
-    2:Object.freeze({ labels:false, collapsible:false }),
-    3:Object.freeze({ labels:true, collapsible:true }),
-    4:Object.freeze({ labels:false, collapsible:true })
+    1:Object.freeze({ layout:"radial", labels:true, collapsible:false }),
+    2:Object.freeze({ layout:"radial", labels:true, collapsible:true }),
+    3:Object.freeze({ layout:"radial", labels:false, collapsible:false }),
+    4:Object.freeze({ layout:"radial", labels:false, collapsible:true }),
+    5:Object.freeze({ layout:"bar", labels:true, collapsible:false }),
+    6:Object.freeze({ layout:"bar", labels:true, collapsible:true }),
+    7:Object.freeze({ layout:"bar", labels:false, collapsible:false }),
+    8:Object.freeze({ layout:"bar", labels:false, collapsible:true })
   });
-  const DEFAULT_STYLE = "3";
+  const DEFAULT_STYLE = "1";
   const DEFAULT_LOGO_ACTION = "highlight";
-  // Before v3.5.119 the stored key was translateIconStyle and "3" meant the icon-only badge (now style 4).
-  const LEGACY_STYLE_MAP = Object.freeze({ 1:"1", 2:"2", 3:"4" });
 
   function normalizeStyle(value) {
     const style = String(value ?? "");
@@ -36,9 +42,6 @@
   }
   function normalizeLogoAction(value) {
     return ACTION_IDS.includes(value) ? value : DEFAULT_LOGO_ACTION;
-  }
-  function styleFromLegacy(value) {
-    return LEGACY_STYLE_MAP[String(value ?? "3")] || LEGACY_STYLE_MAP[3];
   }
 
   function logoSvg(idSuffix = "") {
@@ -55,7 +58,7 @@
    * Builds the toolbar shell (actions + logo).
    * @param {object} options
    * @param {Document} options.document
-   * @param {string} options.style        "1".."4"
+   * @param {string} options.style        "1".."8"
    * @param {(key:string) => string} options.t  i18n lookup
    * @param {string} [options.logoAction] action run by the logo
    * @param {(id:string) => void} [options.onAction] called for action buttons and the logo
@@ -70,6 +73,7 @@
     const shell = doc.createElement(preview ? "span" : "div");
     shell.className = "lhn-translate-shell";
     shell.dataset.style = styleId;
+    shell.dataset.layout = flags.layout;
     shell.dataset.labels = String(flags.labels);
     shell.dataset.collapsible = String(flags.collapsible);
 
@@ -119,6 +123,6 @@
 
   globalThis.LHN_SELECTION_TOOLBAR = Object.freeze({
     ACTIONS, ACTION_IDS, ICONS, STYLES, DEFAULT_STYLE, DEFAULT_LOGO_ACTION,
-    normalizeStyle, normalizeLogoAction, styleFromLegacy, logoSvg, build
+    normalizeStyle, normalizeLogoAction, logoSvg, build
   });
 })();

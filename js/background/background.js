@@ -22,16 +22,16 @@ async function resetLegacyDictationWrongWordStats() {
   }
 }
 async function migrateSelectionToolbarStyle() {
-  // v3.5.119 renumbered the selection toolbar: old style 3 (icons, hover to open) is now style 4 and a new style 3 is the default
-  // for fresh installs. Existing users keep the look they had (an unsaved old default was also old style 3).
+  // v3.5.147: 8 toolbar styles (radial 1-4, bar 5-8) under the new key selectionToolbarStyleV2 (default "1"), so every user
+  // starts on style 1 (approved reset). Drop the old keys selectionToolbarStyle (v3.5.119) and translateIconStyle (older).
   const storage = browser?.storage?.local;
   const key = CONFIG?.STORAGE_KEYS?.SETTINGS;
-  const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
-  if (!storage || !key || !toolbar) return;
+  if (!storage || !key) return;
   const data = await storage.get(key);
   const saved = data?.[key] && typeof data[key] === "object" && !Array.isArray(data[key]) ? data[key] : {};
-  if (saved.selectionToolbarStyle) return;
-  await storage.set({ [key]:{ ...saved, selectionToolbarStyle:toolbar.styleFromLegacy(saved.translateIconStyle) } });
+  if (!Object.hasOwn(saved, "selectionToolbarStyle") && !Object.hasOwn(saved, "translateIconStyle")) return;
+  const { selectionToolbarStyle, translateIconStyle, ...rest } = saved;
+  await storage.set({ [key]:rest });
 }
 browser.runtime.onInstalled.addListener(async details => {
   if (details?.reason === "update") {

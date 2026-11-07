@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.147: Icon khi bôi đen có 8 dạng: 4 dạng vòng mới (logo + 3 nút khung riêng: Tô sáng trái, Dịch dưới, Hỏi AI phải; theo demo radial v3) đứng trước, 4 dạng thanh cũ đánh số lại 5–8. Mặc định Dạng 1 (vòng, icon + chữ, luôn hiện); mọi người dùng cũ về Dạng 1. Chưa QA trình duyệt thật.
 - v3.5.146: Full dict bật: Alt+W (phím dịch) trên 1 từ tiếng Anh mở full dict cả ở chế độ icon (trước chỉ mở popup dịch thường). Chưa QA trình duyệt thật.
 - v3.5.145: Dashboard → Cài đặt → Dịch: nhóm "Bộ nhớ đệm" với nút xóa cache từ điển (từ đã tra + nghĩa chip/cụm), toast xác nhận. Chưa QA trình duyệt thật.
 - v3.5.144: Full dict phòng hờ Datamuse cần key/hết hạn mức: Syn/Ant khi Datamuse lỗi hoặc không có từ → lấy từ Free Dictionary; nguồn nào lỗi thì kết quả vẫn hiện nhưng không lưu cache, lần tra sau tự gọi lại. Chưa QA trình duyệt thật.
@@ -53,6 +54,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.147 (Chrome + Firefox): chưa chạy. Cập nhật từ bản cũ → Cài đặt → Icon hiển thị: 8 dạng, Dạng 1 được chọn; bôi chữ (chế độ icon): logo dưới chữ cuối, 3 nút có chữ quanh logo (Tô sáng trái, Dịch dưới, Hỏi AI phải), bấm từng nút đúng thao tác; Dạng 2/4: rê vào logo mới mở, di từ logo sang nút không bị đóng, rời ra thì đóng; Dạng 3: 3 icon vuông; bôi chữ sát mép trái/phải → 3 nút vẫn nằm trong màn hình; Dạng 5–8 giống hệt Dạng 1/3/2/4 cũ; giao diện tối.
 - v3.5.146 (Chrome + Firefox): chưa chạy. Chế độ icon (tắt popup dịch trực tiếp), bật full dict: bôi 1 từ tiếng Anh → Alt+W → full dict + đọc từ; bôi cụm → Alt+W → popup dịch thường; tắt full dict → Alt+W 1 từ → popup dịch thường; dict đang mở → Alt+W đọc lại từ.
 - v3.5.145 (Chrome + Firefox): chưa chạy. Cài đặt → Dịch → "Bộ nhớ đệm" → "Xóa bộ nhớ đệm": toast "Đã xóa bộ nhớ đệm từ điển"; tra lại từ đã tra → gọi mạng lại (thấy request trong Network); highlight/flashcard/cài đặt còn nguyên; sáng/tối; EN/VI/KO; ô tìm "từ điển" ra hàng này.
 - v3.5.144 (Chrome + Firefox): chưa chạy. Chặn `api.datamuse.com` (DevTools → Network → Block request domain), tra "stop": Syn/Ant vẫn có (từ Free Dictionary), Forms/Colloc ẩn, nghĩa/IPA/Example vẫn hiện, không lỗi; bỏ chặn, tra lại "stop" (đóng/mở dict) → đủ Syn/Ant/Forms/Colloc từ Datamuse. Từ có Syn nhưng không có Ant trên Datamuse → Ant lấy từ Free Dictionary.
@@ -203,6 +205,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.147 | Arena.ai Agent sửa:**
+
+- Yêu cầu: đưa 2 kiểu radial (demo v3 đã duyệt) vào Keepit; chọn đánh số 8 dạng, người dùng cũ về mặc định mới.
+- `selection-toolbar.js`: `STYLES` 1–8 thêm cờ `layout` (`radial`/`bar`), `DEFAULT_STYLE "1"`, shell có `data-layout`; bỏ `styleFromLegacy`. Thanh 5/6/7/8 = cờ của dạng cũ 1/3/2/4.
+- `selection-toolbar.css`: khối radial ở cuối file (chỉ thêm, không sửa quy tắc thanh): badge 38px, khung từng nút (viền 1px, padding 4, bo 12, nền .95, bóng như shell app; nền hover chỉ ở phần trong bo 6), vị trí/hiệu ứng như demo v3 (scale .35 → 1, 220ms, lệch 0/30/60ms, đóng trễ ~120ms), vòng sáng tím khi mở, cầu nối vô hình qua khe 6px, preview chừa chỗ.
+- `content.js` `positionTranslateIcon`: dạng vòng dời cả cụm để 3 nút cách mép ≥8px.
+- Key mới `selectionToolbarStyleV2` (mặc định `1`); `background.js` khi update xoá `selectionToolbarStyle`/`translateIconStyle` (giữ nguyên số dòng, ref inventory không đổi). Dashboard 8 lựa chọn + nhãn en/vi/ko.
+- Test: p147 96/96 (Chromium, content script thật: khung = demo v3 tới 0.1px cả 4 dạng vòng, hover/grace/đóng, bấm Dịch, sát mép trái/phải, thanh 5–8 trùng pixel với 1/3/2/4 của v3.5.146 ở sáng/tối/hover); e147 61/61 (extension thật: migration, Dashboard 8 dạng en/vi/ko sáng/tối vừa khung preview, lưu V2, trang thật mặc định Dạng 1).
 
 **2026-11-07 | v3.5.146 | Arena.ai Agent sửa:**
 

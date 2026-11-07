@@ -24,7 +24,7 @@
     hasCustomSpeechRateByLanguage: {},
     inheritedSpeechRateByLanguage: {},
     translateIconEnabled: false,
-    selectionToolbarStyle: "3",
+    selectionToolbarStyleV2: "1", // v3.5.147: 8 styles (radial 1-4, bar 5-8); new key so every user starts on style 1
     selectionToolbarLogoAction: "highlight",
     autoSpeakOnTranslate: true,
     translationPopupEnabled: false,

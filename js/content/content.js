@@ -168,6 +168,18 @@
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
     position(translateIcon, rect.right - 28, rect.bottom + shellOverflow + 4);
+    if (shell?.dataset.layout === "radial") {
+      // Radial: keep the side buttons on screen by sliding the whole group inward (badge centre = launcher right - half badge).
+      const half = (shell.offsetWidth || 38) / 2, labelled = shell.dataset.labels === "true";
+      const side = cls => labelled ? half + 6 + (shell.querySelector(cls)?.offsetWidth || 0) : 44 + half;
+      const centre = (Number.parseFloat(translateIcon.style.left) || 0) + translateIcon.offsetWidth - half;
+      const clamped = Math.max(side(".lhn-action-highlight") + 8, Math.min(centre, innerWidth - side(".lhn-action-ai") - 8));
+      translateIcon.style.left = `${clamped - translateIcon.offsetWidth + half}px`;
+      translateIcon.classList.remove("lhn-actions-right");
+      translateIcon.style.setProperty("left", translateIcon.style.left, "important");
+      translateIcon.style.setProperty("top", translateIcon.style.top, "important");
+      return;
+    }
     const actions = translateIcon.querySelector(".lhn-translate-actions");
     const shellWidth = Math.max(shell?.offsetWidth || 0, (actions?.scrollWidth || 0) + 42);
     const launcherLeft = Number.parseFloat(translateIcon.style.left) || 0;
@@ -541,7 +553,7 @@
     const selectedText = String(window.getSelection()?.toString() || range.toString()).trim();
     translateIcon?.remove();
     const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
-    const style = toolbar.normalizeStyle(settings.selectionToolbarStyle);
+    const style = toolbar.normalizeStyle(settings.selectionToolbarStyleV2);
     const launcher = document.createElement("div");
     launcher.id = "lhn-translate-icon";
     launcher.className = "lhn-translate-launcher";

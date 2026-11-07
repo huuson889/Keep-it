@@ -85,7 +85,7 @@ function syncSelectionToolbarPreviewTheme() {
 function syncSelectionToolbarSettings() {
   const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
   if (!toolbar) return;
-  const style = toolbar.normalizeStyle(dashboardSettings.selectionToolbarStyle);
+  const style = toolbar.normalizeStyle(dashboardSettings.selectionToolbarStyleV2);
   const logoAction = toolbar.normalizeLogoAction(dashboardSettings.selectionToolbarLogoAction);
   document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => { const selected = input.value === style; input.checked = selected; input.closest(".settings-icon-display-option")?.classList.toggle("is-selected", selected); });
   document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => { const selected = input.value === logoAction; input.checked = selected; input.closest(".settings-logo-action-tab")?.classList.toggle("is-selected", selected); });
@@ -3290,7 +3290,7 @@ $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslat
 $("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));
 $("settingsTranslateIconEnabled").addEventListener("change", event => saveDashboardTranslationMode("translateIconEnabled", event.target.checked));
-document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && Object.hasOwn(LHN_SELECTION_TOOLBAR.STYLES, event.target.value)) saveDashboardSettings({ selectionToolbarStyle:event.target.value }); }));
+document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && Object.hasOwn(LHN_SELECTION_TOOLBAR.STYLES, event.target.value)) saveDashboardSettings({ selectionToolbarStyleV2:event.target.value }); }));
 document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && LHN_SELECTION_TOOLBAR.ACTION_IDS.includes(event.target.value)) saveDashboardSettings({ selectionToolbarLogoAction:event.target.value }); }));
 $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDashboardTranslationMode("translationPopupEnabled", event.target.checked));
 $("settingsFullEnglishDictionary").addEventListener("change", event => saveDashboardSettings({ showFullEnglishDictionary:event.target.checked }));
