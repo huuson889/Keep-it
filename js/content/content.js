@@ -218,6 +218,7 @@
         if (previous && typeof previous === "object") {
           dictionaryRequestId++; popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
           popup.dataset.word = previous.word; renderEnglishDictionary(popup, previous.view, false); popup._lhnPhrase = previous.phrase;
+          speakDictionaryTextIfAuto(popup, previous.view?.word);
         } else if (previous) lookupEnglishDictionary(previous, popup._lhnAnchorRange, popup, { recordHistory:false, autoSpeak:true, speakOnOpen:popup._lhnSpeakOnOpen });
       } else if (word && word.split(/\s+/).length >= 2) { popup._lhnPageDir = "next"; showPhraseInDictionary(popup, action, word); }
       else if (word && action.classList.contains("lhn-dict-colloc")) {
@@ -288,10 +289,17 @@
     popup.remove();
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
+  // Same auto-speak rule as a single-word lookup inside the dict (autoSpeak:true).
+  function speakDictionaryTextIfAuto(popup, text) {
+    const speakOnOpen = popup._lhnSpeakOnOpen;
+    const shouldSpeak = speakOnOpen == null ? settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true : speakOnOpen === true;
+    if (shouldSpeak && text) speakHighlightedText(text, "en-US", null, null, true);
+  }
   // A 2+-word chip stays in the dict and only changes the header and meaning; a chip from Ant swaps the Syn and Ant lists.
   async function showPhraseInDictionary(popup, chip, phrase) {
     const view = popup._lhnView;
     if (!view || popup._lhnPhrase === phrase) { popup._lhnPageDir = ""; return; }
+    speakDictionaryTextIfAuto(popup, phrase);
     popup._lhnHistory = popup._lhnHistory || [];
     popup._lhnHistory.push({ view, phrase:popup._lhnPhrase || false, word:popup.dataset.word });
     const requestId = ++dictionaryRequestId;
@@ -360,7 +368,16 @@
       if (saved) {
         await LHN_MESSAGING.sendMessage({ type: "DELETE", id: saved.id });
         pageAnnotationCache.delete(saved.id);
-        document.querySelectorAll(`[data-lhn-id="${CSS.escape(saved.id)}"]`).forEach(n => n.replaceWith(...n.childNodes));
+        const marks = [...document.querySelectorAll(`[data-lhn-id="${CSS.escape(saved.id)}"]`)];
+        const first = marks[0]?.firstChild, last = marks.at(-1)?.lastChild;
+        marks.forEach(n => n.replaceWith(...n.childNodes));
+        // Unwrapping collapses the old anchor range; point it at the restored text so the next heart highlights again.
+        if (saved.onPage && first?.isConnected && last?.isConnected) {
+          const restored = document.createRange();
+          if (first.nodeType === Node.TEXT_NODE) restored.setStart(first, 0); else restored.setStartBefore(first);
+          if (last.nodeType === Node.TEXT_NODE) restored.setEnd(last, last.textContent.length); else restored.setEndAfter(last);
+          popup._lhnAnchorRange = restored;
+        }
         popup._lhnSaved.delete(key);
       } else {
         const range = popup._lhnAnchorRange;

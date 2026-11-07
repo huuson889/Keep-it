@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.141: Sửa full dict v3.5.140: tim → huỷ → tim lại vẫn highlight trên trang + câu ngữ cảnh trên trang; chip ≥2 từ (và Back về khung cụm) tự phát âm khi bật tự phát âm. Chưa QA trình duyệt thật.
 - v3.5.140: Full dict theo demo v8: mục Example (3 câu Free Dictionary, câu chứa từ xếp trước, tô từ, dịch từng câu); nút tim (từ trên trang → highlight + flashcard; từ/cụm khác → chỉ flashcard, record `dictionaryOnly`) + toast; chip ≥2 từ ở lại trong dict (Ant đổi Syn↔Ant), Back; nháy khi đổi từ; bôi trong câu ví dụ (1 từ → tra, cụm → popup dịch); cỡ chữ/rộng/viền theo demo. Chưa QA trình duyệt thật.
 - v3.5.139: Chế độ icon + bật full dict: bấm Dịch trên toolbar (hoặc logo nếu đặt là Dịch) với 1 từ tiếng Anh mở full dict. Chưa QA trình duyệt thật.
 - v3.5.138 (người dùng xác nhận đẹp): icon Keepit khi bôi đen nằm dưới dòng cuối của vùng chọn, dưới chữ cuối, cách 4px.
@@ -47,6 +48,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.141 (Chrome + Firefox): chưa chạy. Tim → huỷ → tim nhiều lần trên từ bôi ở trang: lần nào cũng highlight, câu ngữ cảnh = câu trên trang; bật tự phát âm → bấm chip ≥2 từ đọc cụm, Back về cụm đọc lại; tắt → im.
 - v3.5.140 (Chrome + Firefox): chưa chạy. Full dict: Example hiện/ẩn đúng, từ được tô; tim trên từ bôi ở trang → highlight + toast, bấm lại → gỡ; tim trên chip/cụm/từ trong câu ví dụ → chỉ vào flashcard (Dashboard thấy, trang không tô, reload không tô nhầm); chip ≥2 từ + Back; bôi 1 từ / cụm trong câu ví dụ; click trong dict chỉ đóng popup dịch; sáng/tối.
 - v3.5.139 (Chrome + Firefox): chưa chạy. Chế độ icon, full dict bật: bôi 1 từ tiếng Anh → Dịch → full dict; cụm từ → popup dịch thường; tắt full dict → popup dịch thường; logo đặt Dịch → full dict; nút cụm từ trong full dict vẫn mở popup dịch thường. Vị trí icon v3.5.137/138 đã được người dùng xác nhận.
 - v3.5.136 (Chrome + Firefox, ZIP chung): chưa chạy. Sao lưu dữ liệu Firefox trước (đổi gecko id → Firefox coi là extension mới, dữ liệu cũ không tự chuyển). Kiểm: cài được trên Firefox 147+ và hiện khai báo dữ liệu lúc cài; ảnh lofi hiện trên thẻ nguồn web khi trang không có thumbnail và khi thumbnail trang lỗi; Network không còn request Unsplash/S2; favicon Dashboard rơi về icon mặc định khi trang không có favicon; Google Fonts: ghi `Referer` từng request.
@@ -191,6 +193,14 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.141 | Arena.ai Agent sửa:**
+
+- Người dùng báo 2 lỗi v3.5.140: (1) tim lần 2 trở đi (sau khi huỷ) không highlight trên trang, câu ngữ cảnh sai; (2) bấm chip ≥2 từ không tự phát âm dù bật tự phát âm.
+- Nguyên nhân (1): huỷ tim gỡ mark bằng `replaceWith`, làm range neo của dict (`_lhnAnchorRange`) co về rỗng → lần sau không còn được coi là từ trên trang → lưu `dictionaryOnly` + câu ví dụ. Sửa: sau khi gỡ mark, dựng lại range neo trên đúng đoạn chữ vừa trả về trang.
+- Nguyên nhân (2): `showPhraseInDictionary` không gọi phát âm (chỉ tra 1 từ qua `lookupEnglishDictionary` mới có). Sửa: thêm `speakDictionaryTextIfAuto` dùng đúng quy tắc của tra 1 từ trong dict (`autoSpeakSelectedText`/`autoSpeakOnTranslate`, hoặc `speakOnOpen` của popup); gọi khi bấm chip cụm và khi Back về khung cụm (Back về từ vốn đã đọc).
+- File: `js/content/content.js`, `DATA-INVENTORY.md` (số dòng), `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` OK; test ngoài repo `/tmp/kt` 12/12 PASS (3 vòng tim/huỷ; phát âm bật 2 kiểu cài đặt/tắt; Back về cụm) — cùng test trên v3.5.140: 6/12, trượt đúng 2 lỗi; hồi quy 40/40 + 6/6 PASS; so CSS với demo v8: 0 khác. Browser QA: chưa chạy.
 
 **2026-11-07 | v3.5.140 | Arena.ai Agent sửa:**
 
