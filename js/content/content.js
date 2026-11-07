@@ -261,6 +261,7 @@
     const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
     const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
     popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>${heartButton}<button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${examples}${related}${forms}${collocations}</div>`;
+    placeDictionaryBrand(popup);
     popup._lhnView = data;
     if (popup._lhnPageDir) { popup.querySelector(".lhn-dict-body")?.classList.add(`lhn-dict-page-${popup._lhnPageDir}`); popup._lhnPageDir = ""; }
     fillNoteFromDictionary(popup);
@@ -269,6 +270,7 @@
       return;
     }
     dictionaryPopupAt(popup, popup._lhnAnchorRange);
+    fitDictionaryBrand(popup); requestAnimationFrame(() => fitDictionaryBrand(popup));
   }
   function fillNoteFromDictionary(popup = dictionaryPopup) {
     const popupWord = popup?.dataset.word?.toLowerCase();
@@ -319,6 +321,40 @@
     renderEnglishDictionary(popup, { ...view, word:phrase, ipa:"", ipaApprox:false, exampleWord:view.exampleWord || view.word, related, translation:{ ...view.translation, translatedText } }, false);
     popup._lhnPhrase = phrase;
   }
+  // "Keepit Dictionary" brand on the last line of the dict, at the right. The words are CSS-generated (no text nodes),
+  // so readers of .lhn-dict-translation / example text never pick them up.
+  function placeDictionaryBrand(popup) {
+    const body = popup?.querySelector(".lhn-dict-body"), last = body?.lastElementChild;
+    if (!body) return;
+    const brand = '<span class="lhn-dict-brand" role="img" aria-label="Keepit Dictionary"><span class="lhn-dict-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></span><span class="lhn-dict-brand-name" aria-hidden="true"><b></b><span></span></span></span>';
+    let host = body;
+    if (last?.matches(".lhn-dict-related")) host = last;
+    else if (last?.matches(".lhn-dict-pos-list")) host = last.querySelector(".lhn-dict-pos:last-child") || last;
+    else if (last?.matches(".lhn-dict-examples")) { const example = last.querySelector(".lhn-dict-example:last-child"); host = example?.querySelector(".lhn-dict-example-meaning") || example?.querySelector(".lhn-dict-example-text") || last; }
+    else if (last?.matches(".lhn-dict-translation")) host = last;
+    if (host !== body && !host.matches("section, .lhn-dict-pos")) host.classList.add("lhn-dict-brand-host");
+    // Chip rows: the last chip and the brand wrap together, so the brand never sits alone on a row.
+    const tailChip = host.matches(".lhn-dict-related") ? [...host.querySelectorAll(":scope > .lhn-dict-chip")].pop() : null;
+    if (tailChip) { const tail = document.createElement("span"); tail.className = "lhn-dict-brand-tail"; host.insertBefore(tail, tailChip); tail.append(tailChip); tail.insertAdjacentHTML("beforeend", brand); }
+    else host.insertAdjacentHTML("beforeend", brand);
+  }
+  // Text lines cannot be pushed down: when the brand had to wrap, give it its own row at the bottom right
+  // (keeps the translation bar to the text; a 2-line clamped pos row has no room on its last line).
+  function fitDictionaryBrand(popup) {
+    if (!popup?.isConnected) return;
+    const meaningMark = popup.querySelector(".lhn-dict-example-meaning > .lhn-dict-brand");
+    if (meaningMark) {
+      const meaning = meaningMark.parentElement, range = document.createRange(); range.selectNodeContents(meaning); range.setEndBefore(meaningMark);
+      const lines = [...range.getClientRects()].filter(rect => rect.width > 0), lastLine = lines[lines.length - 1];
+      if (lastLine && meaningMark.getBoundingClientRect().top >= lastLine.bottom - 0.5) { meaning.classList.remove("lhn-dict-brand-host"); meaning.closest(".lhn-dict-examples")?.append(meaningMark); }
+    }
+    const posMark = popup.querySelector(".lhn-dict-pos > .lhn-dict-brand"), words = posMark?.parentElement.querySelector(":scope > b");
+    if (posMark && words) {
+      const range = document.createRange(); range.selectNodeContents(words);
+      const tops = new Set([...range.getClientRects()].filter(rect => rect.width > 0).map(rect => Math.round(rect.top)));
+      if (tops.size > 1 || words.scrollHeight > words.clientHeight + 1) posMark.closest(".lhn-dict-pos-list")?.append(posMark);
+    }
+  }
   // Same heartbeat, two ripples and ten heart particles as the Dashboard favorite button.
   function playDictionaryHeartEffect(button, event) {
     if (!button || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
@@ -326,7 +362,8 @@
     const hasPoint = Number.isFinite(event?.clientX) && (event.clientX || event.clientY);
     const x = hasPoint ? event.clientX : rect.left + rect.width / 2, y = hasPoint ? event.clientY : rect.top + rect.height / 2;
     let layer = document.getElementById("lhn-dict-effect-layer");
-    if (!layer) { layer = document.createElement("div"); layer.id = "lhn-dict-effect-layer"; layer.setAttribute("aria-hidden", "true"); document.documentElement.append(layer); }
+    if (!layer) { layer = document.createElement("div"); layer.id = "lhn-dict-effect-layer"; layer.setAttribute("aria-hidden", "true"); }
+    document.documentElement.append(layer); // keep it above a dict popup re-created later (same z-index), so the burst is never covered
     button.classList.remove("lhn-dict-heart-pulse"); void button.offsetWidth; button.classList.add("lhn-dict-heart-pulse");
     button.addEventListener("animationend", e => { if (e.animationName === "lhn-dict-heartbeat") button.classList.remove("lhn-dict-heart-pulse"); }, { once:true });
     for (let i = 0; i < 2; i++) { const ring = document.createElement("span"); ring.className = "lhn-dict-ripple-ring"; ring.style.setProperty("--effect-color", color); ring.style.left = `${x}px`; ring.style.top = `${y}px`; ring.style.setProperty("--delay", `${i * 100}ms`); layer.append(ring); ring.addEventListener("animationend", () => ring.remove(), { once:true }); }

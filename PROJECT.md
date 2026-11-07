@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.142: Full dict theo demo v15: brand logo + "Keepit Dictionary" (tím như nhãn Example) luôn ngang hàng dòng cuối của dict, góc phải; hàng chip cuối hết chỗ → chip cuối xuống hàng mới cùng brand; dòng chữ cuối hết chỗ → brand hàng riêng góc phải. Hiệu ứng tim bắn ra không còn bị popup tạo lại che. Chưa QA trình duyệt thật.
 - v3.5.141: Sửa full dict v3.5.140: tim → huỷ → tim lại vẫn highlight trên trang + câu ngữ cảnh trên trang; chip ≥2 từ (và Back về khung cụm) tự phát âm khi bật tự phát âm. Chưa QA trình duyệt thật.
 - v3.5.140: Full dict theo demo v8: mục Example (3 câu Free Dictionary, câu chứa từ xếp trước, tô từ, dịch từng câu); nút tim (từ trên trang → highlight + flashcard; từ/cụm khác → chỉ flashcard, record `dictionaryOnly`) + toast; chip ≥2 từ ở lại trong dict (Ant đổi Syn↔Ant), Back; nháy khi đổi từ; bôi trong câu ví dụ (1 từ → tra, cụm → popup dịch); cỡ chữ/rộng/viền theo demo. Chưa QA trình duyệt thật.
 - v3.5.139: Chế độ icon + bật full dict: bấm Dịch trên toolbar (hoặc logo nếu đặt là Dịch) với 1 từ tiếng Anh mở full dict. Chưa QA trình duyệt thật.
@@ -48,6 +49,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.142 (Chrome + Firefox): chưa chạy. Full dict: brand ở góc phải dòng cuối (Colloc/Forms/Syn–Ant, câu dịch Example, loại từ, chỉ nghĩa); list chip dài → chip cuối xuống hàng cùng brand, không che chip/chữ; sáng/tối; tra từ thứ 2 trên cùng trang rồi bấm tim → thấy tim bắn ra quanh nút; ghi chú tự điền/tim không dính chữ brand.
 - v3.5.141 (Chrome + Firefox): chưa chạy. Tim → huỷ → tim nhiều lần trên từ bôi ở trang: lần nào cũng highlight, câu ngữ cảnh = câu trên trang; bật tự phát âm → bấm chip ≥2 từ đọc cụm, Back về cụm đọc lại; tắt → im.
 - v3.5.140 (Chrome + Firefox): chưa chạy. Full dict: Example hiện/ẩn đúng, từ được tô; tim trên từ bôi ở trang → highlight + toast, bấm lại → gỡ; tim trên chip/cụm/từ trong câu ví dụ → chỉ vào flashcard (Dashboard thấy, trang không tô, reload không tô nhầm); chip ≥2 từ + Back; bôi 1 từ / cụm trong câu ví dụ; click trong dict chỉ đóng popup dịch; sáng/tối.
 - v3.5.139 (Chrome + Firefox): chưa chạy. Chế độ icon, full dict bật: bôi 1 từ tiếng Anh → Dịch → full dict; cụm từ → popup dịch thường; tắt full dict → popup dịch thường; logo đặt Dịch → full dict; nút cụm từ trong full dict vẫn mở popup dịch thường. Vị trí icon v3.5.137/138 đã được người dùng xác nhận.
@@ -193,6 +195,14 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.142 | Arena.ai Agent sửa:**
+
+- Full dict theo demo v15: brand logo Keepit 12px + "Keepit Dictionary" 11px, đậm 700, tím `#6d28d9` (tối `#a78bfa`) như nhãn Example; luôn ngang hàng dòng cuối của dict, sát phải. Hàng chip cuối: chip cuối + brand là một cụm (`.lhn-dict-brand-tail`) — hết chỗ thì cùng xuống hàng mới. Dòng chữ cuối (câu dịch Example / câu ví dụ / nghĩa): brand nổi phải ngay trên dòng; hết chỗ thì hàng riêng góc phải (câu dịch: đưa ra ngoài để thanh tím không kéo dài). Hàng loại từ cuối: nghĩa 1 dòng → cùng hàng; 2 dòng "…" → hàng riêng.
+- Chữ brand vẽ bằng CSS `::before` (không có text node) để điền ghi chú/ghi chú của tim (đọc `textContent` của `.lhn-dict-translation`) không dính chữ brand; `role="img"` + `aria-label`.
+- Sửa hiệu ứng tim: lớp `#lhn-dict-effect-layer` chỉ gắn một lần nên popup dict tạo sau (cùng z-index) che các tim bắn ra; nay đưa lớp lên cuối trang mỗi lần bấm.
+- File: `js/content/content.js` (`placeDictionaryBrand`, `fitDictionaryBrand`, `playDictionaryHeartEffect`), `css/content/content.css`, `docs/modules/content.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` OK; jsdom harness `/tmp/kt/t142.js` 21/21 (vị trí brand theo phần cuối, không text node, bản ghi tim không dính brand, chip cuối trong cụm vẫn bấm được, Back, lớp hiệu ứng trên popup mới); Chromium chạy content script thật `/tmp/kt/k142.js` 23/23 (1–8 chip Ant, câu dịch dài dần 0–12 từ thêm, tim trên popup thứ 2); hồi quy `t140` 40/40, `reg` 6/6, `bug141` 12/12. Chưa QA trình duyệt thật có extension.
 
 **2026-11-07 | v3.5.141 | Arena.ai Agent sửa:**
 

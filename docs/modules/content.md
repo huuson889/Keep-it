@@ -32,6 +32,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - Không đọc page body/title cho AI; Hỏi AI chỉ gửi selection người dùng chọn và URL hiện tại.
 - Record annotation chỉ chứa field trong `PERSISTED_FIELDS` của `note-composer.js`, ngoại lệ duy nhất là cờ `dictionaryOnly` do nút tim của full dict thêm.
 - Full dict (`#lhn-full-english-dictionary`): nút tim gửi `ADD`/`DELETE`. Từ đang tra đúng là từ bôi trên trang → mark + record; từ/cụm khác → record `dictionaryOnly:true` (vẫn có `url` trang, hiện ở Dashboard/flashcard). Bôi trong câu ví dụ: 1 từ → tra trong dict (có Back), cụm → popup dịch thường; click trong dict chỉ đóng popup dịch đó.
+- Brand full dict (`placeDictionaryBrand`/`fitDictionaryBrand`): chữ "Keepit Dictionary" vẽ bằng CSS `::before`, không có text node — code đọc `textContent` của `.lhn-dict-translation`/câu ví dụ (điền ghi chú, ghi chú của tim) không được nhận chữ brand. Lớp `#lhn-dict-effect-layer` được đưa lên cuối trang mỗi lần bấm tim để popup tạo lại sau không che hiệu ứng.
 - Website bị tắt thì không restore highlight và không áp UI trang.
 - Message từ Background phải kiểm tra `type` trước khi xử lý; không thực thi nội dung từ page.
 - Giữ selector/class `lhn-*` để CSS content và sidebar không vỡ.
