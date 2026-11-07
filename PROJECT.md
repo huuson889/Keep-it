@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.144: Full dict phòng hờ Datamuse cần key/hết hạn mức: Syn/Ant khi Datamuse lỗi hoặc không có từ → lấy từ Free Dictionary; nguồn nào lỗi thì kết quả vẫn hiện nhưng không lưu cache, lần tra sau tự gọi lại. Chưa QA trình duyệt thật.
 - v3.5.143: Full dict: Syn/Ant tối đa 4 (trước 3), Colloc tối đa 4 = 2 tính từ đứng trước từ + 2 danh từ đứng sau, đúng thứ tự (trước bị ngược: "stop next" → nay "next stop"), không cắt, bỏ trùng; cache dict v4. Chưa QA trình duyệt thật.
 - v3.5.142: Full dict theo demo v15: brand logo + "Keepit Dictionary" (tím như nhãn Example) luôn ngang hàng dòng cuối của dict, góc phải; hàng chip cuối hết chỗ → chip cuối xuống hàng mới cùng brand; dòng chữ cuối hết chỗ → brand hàng riêng góc phải. Hiệu ứng tim bắn ra không còn bị popup tạo lại che. Chưa QA trình duyệt thật.
 - v3.5.141: Sửa full dict v3.5.140: tim → huỷ → tim lại vẫn highlight trên trang + câu ngữ cảnh trên trang; chip ≥2 từ (và Back về khung cụm) tự phát âm khi bật tự phát âm. Chưa QA trình duyệt thật.
@@ -50,6 +51,7 @@
 - Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
+- v3.5.144 (Chrome + Firefox): chưa chạy. Chặn `api.datamuse.com` (DevTools → Network → Block request domain), tra "stop": Syn/Ant vẫn có (từ Free Dictionary), Forms/Colloc ẩn, nghĩa/IPA/Example vẫn hiện, không lỗi; bỏ chặn, tra lại "stop" (đóng/mở dict) → đủ Syn/Ant/Forms/Colloc từ Datamuse. Từ có Syn nhưng không có Ant trên Datamuse → Ant lấy từ Free Dictionary.
 - v3.5.143 (Chrome + Firefox): chưa chạy. Full dict "stop": Syn và Ant mỗi loại tối đa 4 chip; Colloc tối đa 4, đúng thứ tự ("next stop", "stop shopping"), nghĩa dịch khớp cụm; bấm chip Colloc ở lại trong dict + Back; từ có ít dữ liệu → hiện ít hơn 4, không lỗi.
 - v3.5.142 (Chrome + Firefox): chưa chạy. Full dict: brand ở góc phải dòng cuối (Colloc/Forms/Syn–Ant, câu dịch Example, loại từ, chỉ nghĩa); list chip dài → chip cuối xuống hàng cùng brand, không che chip/chữ; sáng/tối; tra từ thứ 2 trên cùng trang rồi bấm tim → thấy tim bắn ra quanh nút; ghi chú tự điền/tim không dính chữ brand.
 - v3.5.141 (Chrome + Firefox): chưa chạy. Tim → huỷ → tim nhiều lần trên từ bôi ở trang: lần nào cũng highlight, câu ngữ cảnh = câu trên trang; bật tự phát âm → bấm chip ≥2 từ đọc cụm, Back về cụm đọc lại; tắt → im.
@@ -197,6 +199,16 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-07 | v3.5.144 | Arena.ai Agent sửa:**
+
+- Phòng hờ Datamuse bắt buộc API key từ 2027-02-01 / hết hạn mức. Trước đây Datamuse trả lỗi (vd 401/429) bị coi như "không có từ": Syn dự phòng không chạy và kết quả trống bị cache 7 ngày.
+- Syn và Ant: Datamuse lỗi (HTTP lỗi, mạng) **hoặc** không có từ → loại đó lấy từ Free Dictionary (`meanings[].synonyms/antonyms` + trong từng định nghĩa), bỏ trùng, bỏ chính từ tra (bản cũ còn lẫn "stop" trong Syn của "stop"), tối đa 4, không bù. Mỗi loại độc lập (Datamuse có Syn mà không có Ant → chỉ Ant dự phòng). Dự phòng chuyển từ `content.js` vào `LHN_DICTIONARY.relatedWords`; trước chỉ có Syn và chỉ khi mất mạng hẳn.
+- Free Dictionary dùng chung 1 request/từ/lượt tra cho câu ví dụ và dự phòng Syn/Ant (không gọi gấp đôi). 404 = không có từ (không phải lỗi).
+- Forms/Colloc chỉ có Datamuse, câu ví dụ chỉ có Free Dictionary — không có nguồn dự phòng trong các dịch vụ hiện có; lỗi → ẩn mục. Google (`dt=ss`/`dt=ex`) không thêm vì sandbox bị chặn, không kiểm chứng được.
+- Không cache khi có nguồn lỗi: Datamuse/Free Dictionary lỗi, dịch chính hoặc dịch chip lỗi (Google + MyMemory), IPA lỗi nguồn, hoặc mục bị bỏ qua (`noRelated` — trước đây dict tra trong lúc ghi chú cùng từ đang mở bị cache thiếu mục). `LHN_DICTIONARY.isIncomplete()` mới. Không thêm bên nhận dữ liệu.
+- `DATA-INVENTORY.md` dòng 3: tham chiếu dòng cập nhật (`dictionary.js:37, :97, :103, :136, :141, :157, :185, :200`), bỏ `content.js:510`. `docs/modules/translate.md` cập nhật.
+- Test: t144 19/19 (code v3.5.143 chạy cùng bài: 9/19); t143 13/13, t142 21/21, t140 40/40, reg 6/6, bug141 12/12, k142 23/23 (Chromium). Mạng thật, chặn Datamuse: "stop" Syn occlusive/plosive/arrest/freeze, Ant continue/move/go/proceed, Forms/Colloc ẩn, 3 Example, không cache, 0 lỗi.
 
 **2026-11-07 | v3.5.143 | Arena.ai Agent sửa:**
 

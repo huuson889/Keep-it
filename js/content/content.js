@@ -504,21 +504,12 @@
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       const [related, forms, collocations, ipaResult, examples] = await Promise.allSettled([...relatedTasks, ipaPromise, examplesPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
-      let fallbackRelated = [];
-      if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
-        try {
-          const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
-          if (response.ok) {
-            const entry = (await response.json())[0];
-            const synonyms = [...new Set((entry?.meanings || []).flatMap(meaning => meaning.synonyms || []))].slice(0, 4);
-            fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await LHN_DICTIONARY.translate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
-          }
-        } catch {}
-      }
       const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
-      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:mainTranslation, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [], examples:examples.status === "fulfilled" ? examples.value : [] };
+      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:mainTranslation, related:related.status === "fulfilled" ? related.value : [], forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [], examples:examples.status === "fulfilled" ? examples.value : [] };
       popup._lhnMainTranslation = result.translation;
-      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
+      // Any failed source (Datamuse/Free Dictionary/translation/IPA error, quota, timeout) or skipped section: show, but do not cache, so the next lookup retries.
+      const incomplete = noRelated || translation.status !== "fulfilled" || [related, forms, collocations, ipaResult, examples].some(item => item.status !== "fulfilled" || LHN_DICTIONARY.isIncomplete(item.value));
+      if (!incomplete && !popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, result, false);
     } catch (error) {
