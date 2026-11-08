@@ -269,7 +269,7 @@
     const examples = (data.examples || []).length ? `<section class="lhn-dict-examples" data-kind="Example" data-label="Example:">${data.examples.map((item, index) => `<div class="lhn-dict-example"><span class="lhn-dict-example-num">${index + 1}.</span><span class="lhn-dict-example-text">${highlightExample(item.text, data.exampleWord || data.word)}</span>${item.meaning ? `<span class="lhn-dict-example-meaning">${esc(item.meaning)}</span>` : ""}</div>`).join("")}</section>` : "";
     const hearted = !!popup._lhnSaved?.has(String(data.word || "").toLowerCase());
     const heartLabel = esc(t("dictionaryAddFlashcard"));
-    const heartButton = `<button class="lhn-dict-heart${hearted ? " is-favorite" : ""}" data-dict-action="heart" aria-label="${heartLabel}" title="${heartLabel}" aria-pressed="${hearted ? "true" : "false"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg></button>`;
+    const heartButton = `<button class="lhn-dict-heart${hearted ? " is-favorite" : ""}" data-dict-action="heart" aria-label="${heartLabel}" title="${heartLabel}" aria-pressed="${hearted ? "true" : "false"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg></button>`;
     const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
     const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
     popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>${heartButton}<button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${examples}${related}${forms}${collocations}</div>`;
@@ -383,7 +383,7 @@
       const particle = document.createElement("span"), angle = Math.PI * 2 * i / 10 + (Math.random() - .5) * .45, distance = 34 + Math.random() * 42;
       particle.className = "lhn-dict-ripple-particle"; particle.style.left = `${x}px`; particle.style.top = `${y}px`; particle.style.setProperty("--effect-color", color);
       particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`); particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`); particle.style.setProperty("--turn", `${Math.round((Math.random() - .5) * 70)}deg`);
-      particle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+      particle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
       layer.append(particle); particle.addEventListener("animationend", () => particle.remove(), { once:true });
     }
   }
@@ -694,7 +694,7 @@
         setDefaultHighlightColor(color);
         requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll:true }); });
       });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>';
+      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
       const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
       option.append(button, star, check); colors.appendChild(option);
     });
@@ -1064,7 +1064,7 @@
         }
       });
       const star = makeButton("", "lhn-color-default-star", e => { e.preventDefault(); e.stopPropagation(); setDefaultHighlightColor(color); });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>`;
+      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>`;
       const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
       option.append(colorButton, star, check); colorGroup.appendChild(option);
     }

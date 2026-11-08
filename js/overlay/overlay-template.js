@@ -2342,45 +2342,205 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay.te-touch-layout.te-touch-compact:not(.te-study-active) .te-player-frame { inset: auto !important; top: 12px !important; left: 12px !important; width: 96px !important; height: 54px !important; border-radius: 10px !important; background: #000; box-shadow: 0 4px 12px rgba(0, 0, 0, .35); pointer-events: none !important; z-index: 3 !important; }
 #keepit-exact-overlay.te-touch-layout.te-touch-compact:not(.te-study-active) .te-player-frame video, #keepit-exact-overlay.te-touch-layout.te-touch-compact:not(.te-study-active) .te-player-frame .te-web-page-thumbnail { object-fit: cover !important; pointer-events: none !important; }
 #keepit-exact-overlay.te-touch-layout.te-touch-compact:not(.te-study-active) .te-web-thumbnail-visualizer { display: none !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-container { position: relative !important; display: block !important; flex: 0 0 auto !important; width: auto !important; max-width: none !important; height: auto !important; min-height: 0 !important; max-height: 26vh !important; margin: 0 !important; padding: 12px 18px 10px !important; inset: auto !important; transform: none !important; overflow-y: auto !important; border-bottom: 1px solid rgba(148, 163, 184, .18) !important; background: transparent !important; text-align: center !important; }
+/* v3.5.151 touch: S = portrait layout, T = phone-landscape theater (touch-theater.js), X = either. The doubled id
+   outranks desktop view-mode rules without !important, so the user's inline subtitle size/colour still wins. */
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(18px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(15px * var(--te-touch-fit, 1)); }
+@media (min-width: 600px) { #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(22px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(17.5px * var(--te-touch-fit, 1)); } }
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-container { position: relative !important; display: flex !important; flex-direction: column !important; justify-content: center !important; flex: 0 0 auto !important; width: auto !important; max-width: none !important; height: clamp(96px, 22vh, 220px) !important; min-height: 0 !important; max-height: none !important; margin: 0 !important; padding: 10px 48px !important; inset: auto !important; transform: none !important; overflow: hidden !important; border-bottom: 1px solid rgba(148, 163, 184, .18) !important; background: transparent !important; text-align: center !important; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-subtitle-content { position: static !important; width: auto !important; max-width: none !important; max-height: none !important; margin: 0 !important; padding: 0 !important; transform: none !important; background: transparent !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-en { font-size: clamp(17px, 4.9vw, 22px) !important; line-height: 1.35 !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-vi { margin-top: 4px !important; font-size: clamp(14px, 4.1vw, 17px) !important; line-height: 1.4 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-en { font-size: var(--te-sub-en-base); line-height: 1.3; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-vi { margin-top: 4px; font-size: var(--te-sub-vi-base); line-height: 1.35; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-theater-subtitle-drag-handle, #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-floating-btn, #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-sidebar-header { display: none !important; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) > .yt-dual-right-sidebar { position: relative !important; display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; width: 100% !important; max-width: none !important; height: auto !important; min-height: 0 !important; max-height: none !important; margin: 0 !important; inset: auto !important; transform: none !important; opacity: 1 !important; visibility: visible !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-transcript-list { flex: 1 1 auto !important; height: auto !important; min-height: 0 !important; max-height: none !important; padding: 8px 10px 12px !important; overflow-y: auto !important; -webkit-mask-image: none !important; mask-image: none !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar { position: fixed !important; inset: auto 0 0 0 !important; display: flex !important; align-items: center !important; justify-content: space-around !important; gap: 0 !important; width: auto !important; height: calc(64px + env(safe-area-inset-bottom, 0px)) !important; margin: 0 !important; padding: 4px 6px env(safe-area-inset-bottom, 0px) !important; transform: none !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; overflow: visible !important; border: 0 !important; border-top: 1px solid rgba(148, 163, 184, .2) !important; border-radius: 0 !important; background: rgba(255, 255, 255, .97) !important; z-index: 6 !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(.te-player-frame, .te-sub-container, .yt-dual-transcript-list) { touch-action: manipulation; }
+
+/* Bar: portrait [CC][speed] · [prev play next] · [repeat][More]; theater adds ♥ before repeat. */
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar { position: fixed !important; inset: auto 0 0 0 !important; display: grid !important; grid-template-columns: 46px 46px 1fr 46px 54px 46px 1fr 46px 46px; align-items: center !important; justify-items: center; gap: 0 2px !important; width: auto !important; height: calc(64px + env(safe-area-inset-bottom, 0px)) !important; margin: 0 !important; padding: 4px 8px env(safe-area-inset-bottom, 0px) !important; transform: none !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; overflow: visible !important; border: 0 !important; border-top: 1px solid rgba(148, 163, 184, .2) !important; border-radius: 0 !important; background: rgba(255, 255, 255, .97) !important; z-index: 6 !important; }
 #keepit-exact-overlay.te-touch-layout.theme-dark:not(.te-study-active) .te-control-bar { background: rgba(17, 17, 22, .97) !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-ctrl-group { display: contents !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-site-icon-box, #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-source-title-label, #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-video-mode-selector,
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-icon-btn:not(#te-control-previous):not(#te-control-next):not(#te-subtitle-mode-trigger):not(#te-control-speed):not(#te-touch-more-btn) { display: none !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-previous { order: 1; } #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-play { order: 2; } #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-next { order: 3; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-subtitle-mode-selector { order: 4; } #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-speed { order: 5; } #keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-touch-more-btn { display: inline-flex !important; order: 6; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-icon-btn { flex: none !important; width: 46px !important; min-width: 46px !important; height: 46px !important; margin: 0 !important; border-radius: 14px !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar .te-icon-btn svg { width: 22px !important; height: 22px !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-play { flex: none !important; width: 54px !important; height: 54px !important; margin: 0 !important; border-radius: 50% !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-play svg { width: 24px !important; height: 24px !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-speed svg { display: none !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-speed-label { order: 5; width: 46px; margin: 0 0 0 -46px !important; font-size: 13px !important; font-weight: 700 !important; text-align: center; pointer-events: none; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar .te-ctrl-group { display: contents !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar :is(.te-site-icon-box, .te-source-title-label, .te-video-mode-selector),
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar .te-icon-btn:not(#te-control-previous):not(#te-control-next):not(#te-subtitle-mode-trigger):not(#te-control-speed):not(#te-control-repeat):not(#te-touch-more-btn):not(#te-touch-bar-fav),
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-touch-bar-fav { display: none !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-subtitle-mode-selector { grid-column: 1; grid-row: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(#te-control-speed, #te-speed-label) { grid-column: 2; grid-row: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-previous { grid-column: 4; grid-row: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-play { grid-column: 5; grid-row: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-next { grid-column: 6; grid-row: 1; }
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-control-repeat { display: inline-flex !important; grid-column: 8; grid-row: 1; }
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) #te-touch-more-btn { display: inline-flex !important; grid-column: 9; grid-row: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar .te-icon-btn { position: relative; flex: none !important; width: 46px !important; min-width: 46px !important; height: 46px !important; margin: 0 !important; border-radius: 14px !important; overflow: visible !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar .te-icon-btn > svg { width: 22px !important; height: 22px !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-play { flex: none !important; width: 54px !important; height: 54px !important; margin: 0 !important; border-radius: 50% !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-play svg { width: 24px !important; height: 24px !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-speed svg { display: none !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-speed-label { width: 46px; margin: 0 !important; font-size: 13px !important; font-weight: 700 !important; text-align: center; pointer-events: none; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track { position: absolute !important; top: -1px !important; left: 0 !important; right: 0 !important; width: auto !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-subtitle-mode-menu, #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-speed-popup { position: fixed !important; inset: auto 12px calc(76px + env(safe-area-inset-bottom, 0px)) 12px !important; width: auto !important; max-width: none !important; transform: none !important; z-index: 8 !important; }
-#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-touch-sheet { display: block; position: fixed; inset: 0; z-index: 9; pointer-events: none; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(.te-subtitle-mode-menu, .te-speed-popup) { position: fixed !important; inset: auto 12px calc(76px + env(safe-area-inset-bottom, 0px)) 12px !important; width: auto !important; max-width: none !important; transform: none !important; z-index: 8 !important; }
+#keepit-exact-overlay.te-touch-theater:not(.te-study-active) :is(.te-subtitle-mode-menu, .te-speed-popup) { inset: auto auto 76px 50% !important; width: min(340px, calc(100% - 24px)) !important; transform: translateX(-50%) !important; }
+#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-subtitle-mode-menu { width: 170px !important; }
+/* Repeat: lucide repeat-1; when on only the icon turns purple (no background or border). ♥ on = pink, filled. */
+#keepit-exact-overlay .te-touch-ico, #keepit-exact-overlay .te-touch-cbtn, #keepit-exact-overlay #te-touch-bar-fav { display: none; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-repeat > svg:not(.te-touch-ico) { display: none !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-repeat > .te-touch-ico { display: block; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(#te-control-repeat.te-active, #te-touch-bar-fav.on) { background: none !important; box-shadow: none !important; border-color: transparent !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-repeat.te-active { color: #a78bfa !important; }
+#keepit-exact-overlay.te-touch-layout.theme-light:not(.te-study-active) #te-control-repeat.te-active { color: #7c3aed !important; }
+#keepit-exact-overlay .te-touch-fav.on { color: #ff2d55 !important; }
+#keepit-exact-overlay .te-touch-fav.on > svg { fill: currentColor; }
+#keepit-exact-overlay.te-touch-no-fav .te-touch-fav { display: none !important; }
+/* Subtitle corners (portrait): ♥ left, Fullscreen right. */
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-touch-cbtn { display: grid; place-items: center; position: absolute; top: 8px; z-index: 2; width: 34px; height: 34px; padding: 0; border: 1px solid #e5e7eb; border-radius: 50%; background: rgba(255, 255, 255, .9); color: #4b5563; cursor: pointer; }
+#keepit-exact-overlay.te-touch-layout.theme-dark:not(.te-study-active) .te-touch-cbtn { border-color: rgba(148, 163, 184, .25); background: rgba(24, 24, 32, .55); color: #d4d4d8; }
+#keepit-exact-overlay .te-touch-cbtn > svg { width: 17px; height: 17px; }
+#keepit-exact-overlay .te-touch-cbtn.te-touch-fav { left: 8px; }
+#keepit-exact-overlay #te-touch-fs-btn { right: 8px; }
+#keepit-exact-overlay#keepit-exact-overlay .te-touch-cbtn.te-touch-fav.on { border-color: rgba(255, 45, 85, .55); background: rgba(255, 45, 85, .15); }
+/* ♥ click: beat + two ripples + ten small hearts (same effect as Dashboard / dictionary hearts). */
+#keepit-exact-overlay .te-touch-beat { animation: te-touch-beat .5s ease; }
+#keepit-exact-overlay .te-touch-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 3; }
+#keepit-exact-overlay .te-touch-burst i { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; color: #f43f5e; animation: te-touch-fly .75s ease-out forwards; }
+#keepit-exact-overlay#keepit-exact-overlay .te-touch-burst i svg { display: block; width: 10px !important; height: 10px !important; fill: currentColor; stroke: none; }
+#keepit-exact-overlay .te-touch-burst b { position: absolute; left: -24px; top: -24px; width: 48px; height: 48px; border: 2px solid #f43f5e; border-radius: 50%; animation: te-touch-ring .6s ease-out forwards; }
+#keepit-exact-overlay .te-touch-burst b + b { animation-delay: .12s; }
+@keyframes te-touch-beat { 0% { transform: scale(1); } 30% { transform: scale(1.22); } 55% { transform: scale(.94); } 100% { transform: scale(1); } }
+@keyframes te-touch-fly { 0% { transform: translate(0, 0) scale(.6); opacity: 1; } 100% { transform: translate(var(--x), var(--y)) scale(1); opacity: 0; } }
+@keyframes te-touch-ring { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.7); opacity: 0; } }
+/* TikTok-style double-tap heart: drawn at full size and only scaled ≤ 1 (sharp), glow spreads and fades. */
+#keepit-exact-overlay .te-tap-heart { position: fixed; z-index: 2147483000; width: 160px; height: 160px; margin: -80px 0 0 -80px; pointer-events: none; animation: te-tk-rise .9s cubic-bezier(.45, 0, .7, 1) forwards; }
+#keepit-exact-overlay .te-tap-heart-glow { position: absolute; inset: -22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 45, 85, .55), rgba(255, 45, 85, .22) 55%, rgba(255, 45, 85, 0)); animation: te-tk-glow .9s ease-out forwards; }
+#keepit-exact-overlay .te-tap-heart-pop { position: absolute; inset: 0; transform: rotate(var(--r)) scale(.625); animation: te-tk-pop .9s linear forwards; will-change: transform; }
+#keepit-exact-overlay .te-tap-heart svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .25)) drop-shadow(0 0 14px rgba(255, 45, 85, .5)); }
+@keyframes te-tk-pop { 0% { transform: rotate(var(--r)) scale(.22); } 9% { transform: rotate(var(--r)) scale(.75); } 18% { transform: rotate(var(--r)) scale(.58); } 27% { transform: rotate(var(--r)) scale(.65); } 34%, 45% { transform: rotate(var(--r)) scale(.625); } 100% { transform: rotate(var(--r)) scale(1); } }
+@keyframes te-tk-rise { 0%, 45% { transform: none; opacity: 1; } 70% { opacity: .85; } 100% { transform: translateY(-150px); opacity: 0; } }
+@keyframes te-tk-glow { 0% { transform: scale(.3); opacity: 0; } 10% { opacity: .9; } 45% { opacity: .6; } 80%, 100% { transform: scale(1.7); opacity: 0; } }
+
+/* More sheet: Study cards + quick tiles. */
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-touch-sheet { display: block; position: fixed; inset: 0; z-index: 9; pointer-events: none; }
 #keepit-exact-overlay .te-touch-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s ease; }
-#keepit-exact-overlay .te-touch-panel { position: absolute; inset: auto 0 0 0; max-height: 75vh; overflow-y: auto; padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: #fff; color: #111827; box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); transform: translateY(105%); transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+#keepit-exact-overlay .te-touch-panel { position: absolute; inset: auto 0 0 0; max-height: 86%; overflow-y: auto; padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px)); border-radius: 22px 22px 0 0; background: #fff; color: #111827; box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); transform: translateY(105%); transition: transform .26s cubic-bezier(.2, .8, .2, 1); }
 #keepit-exact-overlay.theme-dark .te-touch-panel { background: #18181b; color: #f4f4f5; }
 #keepit-exact-overlay .te-touch-sheet.open { pointer-events: auto; }
-#keepit-exact-overlay.te-touch-layout .te-modal-box { top: auto !important; right: 0 !important; bottom: 0 !important; left: 0 !important; width: auto !important; max-width: 560px; margin: 0 auto; border-radius: 20px 20px 0 0 !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
-#keepit-exact-overlay.te-touch-layout .te-modal-backdrop:not(#te-modal-lang) .te-modal-box { max-height: 85vh; overflow-y: auto; }
 #keepit-exact-overlay .te-touch-sheet.open .te-touch-scrim { opacity: 1; }
-#keepit-exact-overlay .te-touch-sheet.open .te-touch-panel { transform: none; }
-#keepit-exact-overlay .te-touch-grip { width: 40px; height: 4px; margin: 2px auto 12px; border-radius: 2px; background: rgba(161, 161, 170, .5); }
-#keepit-exact-overlay .te-touch-sheet-title { padding: 0 4px 8px; color: #6b7280; font-size: 13px; font-weight: 700; }
-#keepit-exact-overlay .te-touch-sheet-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#keepit-exact-overlay .te-touch-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 14px; background: #f8fafc; color: inherit; font: inherit; font-size: 14px; line-height: 1.25; text-align: left; cursor: pointer; }
-#keepit-exact-overlay.theme-dark .te-touch-row { border-color: rgba(148, 163, 184, .2); background: rgba(255, 255, 255, .04); }
-#keepit-exact-overlay .te-touch-row svg { flex: none; width: 20px; height: 20px; }
-#keepit-exact-overlay .te-touch-row.on { border-color: #8b5cf6; background: rgba(139, 92, 246, .14); color: #7c3aed; }
-#keepit-exact-overlay.theme-dark .te-touch-row.on { color: #c4b5fd; }
+#keepit-exact-overlay .te-touch-sheet.open .te-touch-panel { transform: translateY(var(--te-touch-drag, 0px)); }
+#keepit-exact-overlay.te-touch-theater .te-touch-panel { left: 50%; right: auto; width: min(560px, 94%); transform: translate(-50%, 105%); }
+#keepit-exact-overlay.te-touch-theater .te-touch-sheet.open .te-touch-panel { transform: translate(-50%, var(--te-touch-drag, 0px)); }
+#keepit-exact-overlay .te-touch-grip { width: 40px; height: 4px; margin: 2px auto 10px; border-radius: 2px; background: rgba(161, 161, 170, .5); }
+#keepit-exact-overlay .te-touch-sheet-title { padding: 4px 4px 6px; color: #6b7280; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+#keepit-exact-overlay.theme-dark .te-touch-sheet-title { color: #8b8b95; }
+#keepit-exact-overlay .te-touch-study { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+#keepit-exact-overlay .te-touch-scard { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 11px 10px; border: 1px solid #c4b5fd; border-radius: 16px; background: linear-gradient(160deg, #ede9fe, #f5f3ff); box-shadow: 0 1px 2px rgba(15, 23, 42, .05); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .15s; }
+#keepit-exact-overlay.theme-dark .te-touch-scard { border-color: rgba(139, 92, 246, .35); background: linear-gradient(160deg, rgba(139, 92, 246, .22), rgba(79, 70, 229, .08)); box-shadow: none; }
+#keepit-exact-overlay .te-touch-scard .te-touch-ic { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: #8b5cf6; color: #fff; }
+#keepit-exact-overlay .te-touch-scard .te-touch-ic svg { width: 20px; height: 20px; }
+#keepit-exact-overlay .te-touch-scard > span:last-child { min-width: 0; }
+#keepit-exact-overlay .te-touch-scard b { display: block; overflow: hidden; font-size: 14.5px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+#keepit-exact-overlay .te-touch-scard small { display: block; margin-top: 2px; color: #6b7280; font-size: 12.5px; }
+#keepit-exact-overlay.theme-dark .te-touch-scard small { color: #a1a1aa; }
+#keepit-exact-overlay .te-touch-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; padding-top: 4px; }
+#keepit-exact-overlay .te-touch-q { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; padding: 4px 0; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; white-space: normal; cursor: pointer; }
+#keepit-exact-overlay .te-touch-q .te-touch-ic { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid #cbd5e1; border-radius: 16px; background: #f1f5f9; box-shadow: 0 1px 2px rgba(15, 23, 42, .06); color: #1f2937; transition: transform .15s; }
+#keepit-exact-overlay.theme-dark .te-touch-q .te-touch-ic { border-color: rgba(148, 163, 184, .18); background: rgba(255, 255, 255, .06); box-shadow: none; color: #d4d4d8; }
+#keepit-exact-overlay .te-touch-q .te-touch-ic svg { width: 22px; height: 22px; }
+#keepit-exact-overlay .te-touch-q.on .te-touch-ic { border-color: #8b5cf6; background: #ede9fe; color: #6d28d9; }
+#keepit-exact-overlay.theme-dark .te-touch-q.on .te-touch-ic { background: rgba(139, 92, 246, .22); color: #c4b5fd; }
+#keepit-exact-overlay .te-touch-q:active .te-touch-ic, #keepit-exact-overlay .te-touch-scard:active { transform: scale(.96); }
+
+/* Modals as bottom sheets. Video settings on touch: only Click to translate, Speak, Combine sentences, Export. */
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) .te-modal-box { top: auto !important; right: 0 !important; bottom: 0 !important; left: 0 !important; width: auto !important; max-width: 560px; margin: 0 auto; border-radius: 20px 20px 0 0 !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) .te-modal-backdrop:not(#te-modal-lang) .te-modal-box { max-height: 85vh; overflow-y: auto; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-main :is(.te-setting-section-title, #te-reading-width-hint, #te-view-mode-options, .te-divider, #toggle-theme-btn, #open-sub-modal, #open-lang-modal),
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-main .te-menu-row:has(#te-ambient-toggle),
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-main .te-menu-row:has(#te-ambient-toggle) + .te-menu-row { display: none !important; }
+
+/* Subtitle options on touch: preview · tabs (portrait) · size · swatches · background (theater) · Advanced. */
+#keepit-exact-overlay .te-tso, #keepit-exact-overlay .te-tso-adv-toggle { display: none; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-modal-body { display: flex; flex-direction: column; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-modal-body > * { order: 3; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso { display: block; order: 0; padding: 0 16px 4px; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-theater-subtitle-settings { order: 1; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso-adv-toggle { display: flex; order: 2; align-items: center; justify-content: space-between; min-height: 46px; margin: 6px 16px 0; padding: 0 4px; border: 0; background: none; color: #6b7280; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso-adv-toggle svg { width: 18px; height: 18px; transition: transform .2s; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub.te-tso-adv-open .te-tso-adv-toggle svg { transform: rotate(180deg); }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub :is(.te-tso-title, .te-tso-size-original, .te-tso-pill-row),
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub:not(.te-tso-adv-open) :is(.te-tso-font, .te-tso-weight, .te-tso-video-card, .te-sidebar-subtitle-settings),
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub.te-tso-side .te-tso-video-card,
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub:not(.te-tso-side) .te-sidebar-subtitle-settings,
+#keepit-exact-overlay.te-touch-layout #te-modal-sub .te-theater-subtitle-settings,
+#keepit-exact-overlay.te-touch-theater #te-modal-sub .te-tso-tabs { display: none !important; }
+#keepit-exact-overlay.te-touch-theater #te-modal-sub .te-theater-subtitle-settings { display: block !important; }
+#keepit-exact-overlay .te-tso-preview { margin-bottom: 8px; padding: 14px 12px; border: 1px solid rgba(148, 163, 184, .22); border-radius: 14px; background: rgba(148, 163, 184, .08); text-align: center; }
+#keepit-exact-overlay .te-tso-preview.on-video { border-color: transparent; background-color: rgba(0, 0, 0, .4); background-image: linear-gradient(135deg, #1f2937, #0f172a); }
+#keepit-exact-overlay .te-tso-pv-en { line-height: 1.3; }
+#keepit-exact-overlay .te-tso-pv-vi { margin-top: 3px; line-height: 1.35; }
+#keepit-exact-overlay .te-tso-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 6px; padding: 3px; border-radius: 12px; background: rgba(148, 163, 184, .16); }
+#keepit-exact-overlay .te-tso-tabs button { padding: 8px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+#keepit-exact-overlay .te-tso-tabs button.on { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }
+#keepit-exact-overlay.theme-dark .te-tso-tabs button.on { background: #3f3f46; color: #fff; }
+#keepit-exact-overlay .te-tso-label { padding: 10px 2px 6px; color: #6b7280; font-size: 12px; font-weight: 700; }
+#keepit-exact-overlay .te-tso-sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#keepit-exact-overlay .te-tso-sizes button { height: 40px; border: 1px solid rgba(148, 163, 184, .35); border-radius: 12px; background: rgba(148, 163, 184, .08); color: inherit; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+#keepit-exact-overlay .te-tso-sizes button.on { border-color: #8b5cf6; background: #8b5cf6; color: #fff; }
+#keepit-exact-overlay .te-tso-swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 2px; }
+#keepit-exact-overlay .te-tso-sw { width: 32px; height: 32px; padding: 0; border: 1px solid rgba(148, 163, 184, .55); border-radius: 50%; cursor: pointer; }
+#keepit-exact-overlay .te-tso-sw.def { border: 2px dashed rgba(148, 163, 184, .95); }
+#keepit-exact-overlay .te-tso-sw.on { border-color: transparent; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #8b5cf6; }
+#keepit-exact-overlay.theme-dark .te-tso-sw.on { box-shadow: 0 0 0 2px #18181b, 0 0 0 4px #8b5cf6; }
+
+/* Draggable progress bar (all platforms): bigger hit area, knob, tooltip with time and sentence. */
+#keepit-exact-overlay .te-progress-track { cursor: pointer; touch-action: none; }
+#keepit-exact-overlay .te-progress-track::before { content: ""; position: absolute; inset: -8px 0; }
+#keepit-exact-overlay .te-progress-fill { position: relative; }
+#keepit-exact-overlay .te-progress-knob { position: absolute; top: 50%; right: -6px; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: #a78bfa; box-shadow: 0 0 0 3px rgba(139, 92, 246, .28); transform: scale(0); transition: transform .15s; pointer-events: none; }
+#keepit-exact-overlay .te-progress-track:hover .te-progress-knob, #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) .te-progress-knob { transform: scale(1); }
+#keepit-exact-overlay#keepit-exact-overlay .te-progress-track.te-progress-drag { height: 5px; }
+#keepit-exact-overlay#keepit-exact-overlay .te-progress-drag .te-progress-knob { transform: scale(1.4); }
+#keepit-exact-overlay .te-progress-tip { position: absolute; bottom: 14px; left: 0; z-index: 10; max-width: min(260px, 80vw); padding: 7px 10px; border-radius: 10px; background: rgba(24, 24, 27, .96); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); color: #fff; font-size: 12.5px; font-weight: 800; white-space: nowrap; opacity: 0; transform: translateX(-50%); transition: opacity .15s; pointer-events: none; }
+#keepit-exact-overlay .te-progress-tip small { display: block; max-width: 230px; margin-top: 2px; overflow: hidden; color: #c4b5fd; font-size: 11.5px; font-weight: 500; text-overflow: ellipsis; }
+#keepit-exact-overlay .te-progress-tip small:empty { display: none; }
+#keepit-exact-overlay .te-progress-drag .te-progress-tip { opacity: 1; }
+
+/* Phone landscape theater: video fills the screen, subtitles over it, bar and top auto-hide (3 s). */
+#keepit-exact-overlay .te-tt-surface, #keepit-exact-overlay .te-tt-top, #keepit-exact-overlay .te-tt-ring, #keepit-exact-overlay .te-tt-hint { display: none; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) { position: fixed !important; inset: 0 !important; display: block !important; width: auto !important; height: auto !important; padding: 0 !important; overflow: hidden !important; background: #000 !important; --te-sub-en-base: 20px; --te-sub-vi-base: 16px; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) :is(.te-touch-header, .te-study-brand, .te-reading-mini-audio, #te-theater-subtitle-drag-handle, #te-floating-btn, .te-touch-cbtn),
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) > .yt-dual-right-sidebar { display: none !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) > .te-left-section { position: absolute !important; inset: 0 !important; display: block !important; width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; transform: none !important; overflow: hidden !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-player-slot { position: absolute !important; inset: 0 !important; width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: #000 !important; box-shadow: none !important; transform: none !important; overflow: hidden !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-player-frame { display: block !important; position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; transform: none !important; border-radius: 0 !important; clip-path: none !important; overflow: hidden !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-player-frame video { width: 100% !important; height: 100% !important; opacity: 1 !important; object-fit: cover !important; border-radius: 0 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-surface { display: block; position: absolute; inset: 0; z-index: 2; touch-action: none; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-sub-container { position: absolute !important; inset: auto 0 16px 0 !important; z-index: 3 !important; display: flex !important; justify-content: center !important; width: auto !important; max-width: none !important; height: auto !important; min-height: 0 !important; max-height: 45vh !important; margin: 0 !important; padding: 0 20px !important; transform: none !important; overflow: visible !important; border: 0 !important; background: transparent !important; text-align: center !important; pointer-events: none; transition: bottom .2s, opacity .15s; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater.te-tt-ctl:not(.te-study-active) .te-sub-container { bottom: 76px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater.te-tt-ring-on:not(.te-study-active) .te-sub-container { opacity: .18; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-subtitle-content { position: static !important; display: inline-block !important; width: auto !important; max-width: 76% !important; max-height: none !important; margin: 0 auto !important; padding: 3px 12px !important; border-radius: 10px !important; background: var(--te-theater-subtitle-background, rgba(0, 0, 0, .4)) !important; transform: none !important; pointer-events: auto; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-sub-en { color: #ffff00; font-size: var(--te-sub-en-base); line-height: 1.3; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-sub-vi { margin-top: 2px; color: #fff; font-size: var(--te-sub-vi-base); line-height: 1.35; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-control-bar { position: absolute !important; inset: auto 0 0 0 !important; z-index: 4 !important; display: grid !important; grid-template-columns: 46px 46px 1fr 46px 54px 46px 1fr 46px 46px 46px; align-items: center !important; justify-items: center; gap: 0 4px !important; width: auto !important; height: 64px !important; margin: 0 !important; padding: 6px 20px 2px !important; border: 0 !important; border-radius: 0 !important; background: linear-gradient(transparent, rgba(0, 0, 0, .8)) !important; box-shadow: none !important; color: #fff !important; transform: none !important; overflow: visible !important; opacity: 0 !important; visibility: hidden !important; pointer-events: auto !important; transition: opacity .2s, visibility .2s; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-control-bar :is(.te-icon-btn, #te-speed-label) { color: #fff !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) #te-touch-bar-fav { display: inline-flex !important; grid-column: 8; grid-row: 1; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) #te-control-repeat { display: inline-flex !important; grid-column: 9; grid-row: 1; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) #te-touch-more-btn { display: inline-flex !important; grid-column: 10; grid-row: 1; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-progress-track { position: absolute !important; top: -8px !important; left: 20px !important; right: 20px !important; width: auto !important; background: rgba(255, 255, 255, .3) !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-top { display: flex; position: absolute; inset: 0 0 auto 0; z-index: 4; align-items: center; gap: 10px; height: 60px; padding: 0 10px 0 24px; background: linear-gradient(rgba(0, 0, 0, .7), transparent); color: #fff; opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater.te-tt-ctl:not(.te-study-active) :is(.te-control-bar, .te-tt-top) { opacity: 1 !important; visibility: visible !important; }
+#keepit-exact-overlay .te-tt-title { flex: 1; min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+#keepit-exact-overlay#keepit-exact-overlay .te-tt-top .te-touch-hbtn { color: #fff; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-ring { display: flex; position: absolute; top: 50%; left: 50%; z-index: 5; flex-direction: column; align-items: center; gap: 8px; color: #fff; opacity: 0; transform: translate(-50%, -50%); transition: opacity .2s; pointer-events: none; }
+#keepit-exact-overlay .te-tt-ring.show { opacity: 1 !important; }
+#keepit-exact-overlay .te-tt-ring b { padding: 3px 10px; border-radius: 999px; background: rgba(0, 0, 0, .6); font-size: 16px; font-weight: 800; text-shadow: 0 1px 4px rgba(0, 0, 0, .85); }
+#keepit-exact-overlay .te-tt-ring-c { display: grid; position: relative; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: rgba(0, 0, 0, .55); }
+#keepit-exact-overlay .te-tt-ring-c > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+#keepit-exact-overlay .te-tt-trk { fill: none; stroke: rgba(255, 255, 255, .22); stroke-width: 5; }
+#keepit-exact-overlay .te-tt-arc { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; }
+#keepit-exact-overlay .te-tt-ring-ic { display: grid; }
+#keepit-exact-overlay .te-tt-ring-ic svg { width: 30px; height: 30px; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-hint { display: block; position: absolute; inset: 24px 0 0 0; z-index: 5; opacity: 0; transition: opacity .35s; pointer-events: none; }
+#keepit-exact-overlay.te-touch-theater.te-tt-hint-on .te-tt-hint { opacity: 1 !important; }
+#keepit-exact-overlay .te-tt-zone { display: grid; position: absolute; top: 0; bottom: 0; place-items: center; border: 1.5px dashed rgba(255, 255, 255, .45); border-radius: 16px; background: rgba(0, 0, 0, .18); color: rgba(255, 255, 255, .85); font-size: 13px; font-style: normal; font-weight: 700; }
+#keepit-exact-overlay .te-tt-zone.left { left: 24px; width: calc(40% - 24px); }
+#keepit-exact-overlay .te-tt-zone.right { right: 24px; width: calc(40% - 24px); }
+#keepit-exact-overlay .te-tt-hint span { position: absolute; top: 44%; left: 50%; padding: 10px 16px; border-radius: 14px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; transform: translate(-50%, -50%); }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
@@ -2714,7 +2874,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </div>
             <div class="te-setting-item">
               <span style="font-size: 13.5px;">Màu phụ đề chính</span>
-              <span class="te-color-pill" style="background: #ccff00;"></span>
+              <span class="te-color-pill" style="background: #ffff00;"></span>
             </div>
           </div>
 

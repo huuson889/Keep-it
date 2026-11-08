@@ -570,7 +570,7 @@ function onTimeUpdate() {
 
   const dur = v.duration || 0;
   const fill = ui('.te-progress-fill');
-  if (fill) fill.style.width = dur ? `${(v.currentTime / dur) * 100}%` : '0%';
+  if (fill && !fill.parentElement?.classList.contains('te-progress-drag')) fill.style.width = dur ? `${(v.currentTime / dur) * 100}%` : '0%';
 
   if (state.captions.length === 0) return;
 

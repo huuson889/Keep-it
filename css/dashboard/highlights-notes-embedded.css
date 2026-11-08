@@ -2837,3 +2837,7 @@ html.dark #dashboardHighlightsNotesView .lhn-latest-meta-pill { background:#1e2b
   #dashboardHighlightsNotesView .lhn-latest-primary,
   #dashboardHighlightsNotesView .lhn-latest-open-source { font-size:10px; }
 }
+/* v3.5.151: ♥ on the thumbnail of a favourite source (page or video). */
+#dashboardHighlightsNotesView .source-thumb-fav { position:absolute;z-index:3;right:5px;bottom:5px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 1px 3px rgba(15,23,42,.25);color:#f43f5e;pointer-events:none }
+#dashboardHighlightsNotesView .source-thumb-fav .lucide { width:12px;height:12px;fill:currentColor;stroke:currentColor;stroke-width:1.5 }
+html.dark #dashboardHighlightsNotesView .source-thumb-fav { background:rgba(24,24,27,.9) }

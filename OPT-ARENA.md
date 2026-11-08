@@ -7,6 +7,19 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-08 | Overlay cảm ứng theo demo v10 (thanh, sheet ☰, rạp ngang, thả tim, yêu thích video)
+
+**Trạng thái:** Đã triển khai ở v3.5.151.
+
+- Đã chốt qua demo v1–v10 (`keepit-overlay-more-sheet-demo-v10.html`): thanh dọc `[CC][tốc độ] · [trước phát sau] · [lặp][☰]`; ♥ trái / Toàn màn hình phải ở góc ô phụ đề; sheet ☰ 2 thẻ Học + 6 ô; Cài đặt video cảm ứng chỉ 4 mục; Tùy chọn phụ đề cảm ứng (Nền chỉ ở rạp).
+- Rạp ngang điện thoại: video tràn màn hình, thanh tự ẩn 3s, vuốt trái âm lượng / phải độ sáng, đáy = Tự động; tablet ngang giữ desktop. Âm lượng/độ sáng hệ thống chỉ làm được ở APK.
+- Thả tim kiểu TikTok: double-tap video/phụ đề/transcript, mỗi lần chạm một tim, nét rõ (vẽ ở cỡ lớn nhất, scale ≤1) nhưng vẫn phóng to + glow (cân bằng v8/v9). Hiệu ứng nhịp + burst áp dụng cho mọi nút tim.
+- Màu phụ đề chính mặc định vàng `#ffff00` ở mọi nền tảng; palette cảm ứng thêm Tím; light mode thay Trắng bằng Xám.
+- Yêu thích video là khóa riêng `lhnFavoriteVideos` theo video ID (không cần highlight); thanh tiến trình kéo được ở mọi nền tảng.
+- CC và tốc độ giữ nguyên như Keepit hiện tại; mọi thứ không nêu ở trên giữ nguyên.
+
+---
+
 ## 2026-11-06 | Bản chốt v3.5.136: chuẩn bị gửi duyệt Chrome Web Store và Firefox Add-ons
 
 **Trạng thái:** Đã triển khai ở v3.5.136. Điều chỉnh đã chốt sau khi ghi kế hoạch: một ZIP chung cho Chromium và Firefox; cài đặt Firefox ghi thẳng vào `manifest.json` (không dùng `build_firefox.py`); `addons-linter` chạy trên ZIP chung. Quyết định của người dùng khi triển khai: giữ quy tắc 9002 của AI panel dù xung đột chính sách AMO §4.4 (xem mục 6).

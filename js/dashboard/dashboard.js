@@ -6,7 +6,7 @@ const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
-let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, editColor = CONFIG.DEFAULT_COLOR, dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
+let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, editColor = CONFIG.DEFAULT_COLOR, dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
@@ -966,7 +966,7 @@ function applyTranslations() {
   if (typeof activeDashboardView !== "undefined") updateSharedTopbarContent(activeDashboardView);
 }
 async function load() {
-  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
+  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
   if (DASHBOARD_SETTINGS_TAB_NAMES.has(settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY])) lastDashboardSettingsTab = settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY];
   const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
@@ -1056,6 +1056,7 @@ async function load() {
   syncDashboardTheme();
   currentLang = LANGUAGES.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
   favoriteNoteIds = new Set(Array.isArray(settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES] : []);
+  favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos(settingsData[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]);
   applyTranslations();
   syncBilingualPreview();
   annotations = await loadAnnotationsInBatches();
@@ -1116,7 +1117,7 @@ function applyAnnotationChange(change, renderNow = true) {
 let highlightsNotesViewReady = false;
 function syncHighlightsNotesView() {
   if (!highlightsNotesViewReady || !dashboardHighlightsNotesView) return;
-  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-data", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteNoteIds:[...favoriteNoteIds] } }));
+  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-data", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteVideos:favoriteVideos.map(video => ({ ...video })), favoriteNoteIds:[...favoriteNoteIds] } }));
 }
 function replyToHighlightsNotes(requestId, ok, message = "") {
   if (typeof requestId !== "string") return;
@@ -1146,6 +1147,22 @@ async function handleHighlightsNotesAction(data) {
         render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
       }
       case "toggle-page-favorite": {
+        // A YouTube page is favourited by its video id (lhnFavoriteVideos), shared with the ♥ in the touch overlay;
+        // it can be listed with no highlights. Legacy URL favourites of the same video are removed when un-favouriting.
+        const videoId = globalThis.LHN_THUMBNAILS?.youtubeVideoId(key) || "";
+        if (videoId) {
+          const before = { favorites, favoriteVideos }, isFavorite = favoriteVideos.some(video => video.videoId === videoId) || favorites.includes(key);
+          if (isFavorite) {
+            favoriteVideos = favoriteVideos.filter(video => video.videoId !== videoId);
+            favorites = favorites.filter(value => value !== key && globalThis.LHN_THUMBNAILS?.youtubeVideoId(value) !== videoId);
+          } else {
+            const source = annotations.find(annotation => pageKey(annotation) === key);
+            favoriteVideos = [{ videoId, title: String(source?.title || ""), channel: "", addedAt: Date.now() }, ...favoriteVideos];
+          }
+          try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites, [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos }); }
+          catch (error) { ({ favorites, favoriteVideos } = before); throw error; }
+          render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+        }
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
         const wasFavorite = favorites.includes(key);
         favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];
@@ -1807,7 +1824,7 @@ async function downloadJsonExport(pageUrl = null) {
     after = batch.nextAfter;
   } while (true);
   const exportedFavorites = favorites.filter(key => pageKeys.has(key));
-  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds));
+  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds, favoriteVideos));
   const blob = new Blob(parts, { type:"application/json" }), blobUrl = URL.createObjectURL(blob), anchor = document.createElement("a");
   anchor.href = blobUrl; anchor.download = `highlight-notes-${stamp}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(blobUrl), 1200); toast(t("exportStarted"));
 }
@@ -3543,6 +3560,10 @@ $("importFile").addEventListener("change", async e => {
       favorites = [...new Set([...favorites, ...payload.favorites.filter(value => typeof value === "string")])];
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites });
     }
+    if (!payload.isLegacyArray && Array.isArray(payload.favoriteVideos)) {
+      favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos([...favoriteVideos, ...payload.favoriteVideos]);
+      await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos });
+    }
     if (!payload.isLegacyArray && Array.isArray(payload.favoriteNoteIds)) {
       favoriteNoteIds = new Set([...favoriteNoteIds, ...payload.favoriteNoteIds.filter(value => typeof value === "string")]);
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] });
@@ -3574,6 +3595,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
     render();
+    syncHighlightsNotesView();
+  }
+  if (changes[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]) {
+    favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos(changes[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS].newValue);
     syncHighlightsNotesView();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {

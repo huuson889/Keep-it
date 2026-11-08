@@ -24,7 +24,8 @@
       ANNOTATIONS: "annotations",
       SETTINGS: "lhnSettings",
       FAVORITES: "lhnFavorites",
-      NOTE_FAVORITES: "lhnFavoriteNotes"
+      NOTE_FAVORITES: "lhnFavoriteNotes",
+      FAVORITE_VIDEOS: "lhnFavoriteVideos"
     }),
     DEFAULT_SETTINGS,
     DEFAULT_READER_DISABLED_WEBSITES,

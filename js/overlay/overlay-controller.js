@@ -40,6 +40,7 @@ const state = {
   captions: [],
   activeIdx: -1,
   transcriptFocusRatio: 0.4,
+  touchTranscriptFocusRatio: 0.5, // touch layouts: ratio of the transcript list itself (default: middle)
   transcriptManualScrollUntil: 0,
   transcriptManualScrollAt: 0,
   transcriptProgrammaticScrollAt: 0,
@@ -1019,6 +1020,70 @@ function seekByTrack(e) {
   v.currentTime = ratio * v.duration;
 }
 
+// Draggable progress bar (all platforms): press and drag to scrub; a tooltip shows the time and the sentence there.
+function formatProgressTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = String(s % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${r}` : `${m}:${r}`;
+}
+
+function setupProgressDrag(track) {
+  if (!track || track.querySelector('.te-progress-tip')) return;
+  const tip = document.createElement('span');
+  tip.className = 'te-progress-tip';
+  tip.innerHTML = '<b></b><small></small>';
+  const knob = document.createElement('span');
+  knob.className = 'te-progress-knob';
+  track.querySelector('.te-progress-fill')?.append(knob);
+  track.append(tip);
+  let drag = null;
+  const ratioAt = (event) => {
+    const rect = track.getBoundingClientRect();
+    return Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width)));
+  };
+  const preview = (ratio) => {
+    const media = state.activeMedia;
+    if (!media?.duration) return;
+    const time = ratio * media.duration;
+    const fill = track.querySelector('.te-progress-fill');
+    if (fill) fill.style.width = `${ratio * 100}%`;
+    tip.querySelector('b').textContent = `${formatProgressTime(time)} / ${formatProgressTime(media.duration)}`;
+    const caption = state.captions?.[findCaptionIndex(time)];
+    tip.querySelector('small').textContent = caption?.mainText || caption?.text || '';
+    // Keep the tooltip on screen near both ends of the bar.
+    const rect = track.getBoundingClientRect();
+    const half = tip.offsetWidth / 2;
+    const min = 8 + half - rect.left, max = (globalThis.innerWidth || rect.right) - 8 - half - rect.left;
+    tip.style.left = `${min > max ? ratio * rect.width : Math.min(max, Math.max(min, ratio * rect.width))}px`;
+    drag.time = time;
+  };
+  track.addEventListener('pointerdown', (event) => {
+    if (event.button > 0 || !state.activeMedia?.duration) return;
+    event.preventDefault();
+    event.stopPropagation();
+    drag = { pointerId: event.pointerId, time: null };
+    track.setPointerCapture?.(event.pointerId);
+    track.classList.add('te-progress-drag');
+    overlayEl()?.classList.add('te-progress-dragging');
+    preview(ratioAt(event));
+  });
+  track.addEventListener('pointermove', (event) => {
+    if (drag && event.pointerId === drag.pointerId) preview(ratioAt(event));
+  });
+  const finish = (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const { time } = drag;
+    drag = null;
+    track.classList.remove('te-progress-drag');
+    overlayEl()?.classList.remove('te-progress-dragging');
+    if (track.hasPointerCapture?.(event.pointerId)) track.releasePointerCapture(event.pointerId);
+    if (event.type === 'pointerup' && Number.isFinite(time) && state.activeMedia) state.activeMedia.currentTime = time;
+    globalThis.LHN_TOUCH_THEATER?.showControls?.();
+  };
+  track.addEventListener('pointerup', finish);
+  track.addEventListener('pointercancel', finish);
+}
+
 // ---------- Đồng bộ phụ đề với video ----------
 function usesViewportTranscriptFocus() {
   const root = overlayEl();
@@ -1031,13 +1096,22 @@ function transcriptViewportHeight() {
   return Math.max(1, window.innerHeight || document.documentElement.clientHeight || overlayEl()?.clientHeight || 1);
 }
 
-function currentTranscriptFocusRatio() {
-  const ratio = Number(state.transcriptFocusRatio);
+function currentTranscriptFocusRatio(key = 'transcriptFocusRatio') {
+  const ratio = Number(state[key]);
   return Number.isFinite(ratio) ? Math.max(0.03, Math.min(0.97, ratio)) : 0.5;
 }
 
-function calculateTranscriptFocusScrollDelta(rowRect, viewportHeight, ratio) {
-  return rowRect.top + rowRect.height / 2 - viewportHeight * ratio;
+function calculateTranscriptFocusScrollDelta(rowRect, viewportHeight, ratio, viewportTop = 0) {
+  return rowRect.top + rowRect.height / 2 - viewportTop - viewportHeight * ratio;
+}
+
+// The box the focus ratio is measured in: the window, or on touch layouts the transcript list itself
+// (it starts mid-screen), so the default 0.5 keeps the active row in the middle of the visible list.
+function transcriptFocusBox(list) {
+  if (overlayEl()?.classList.contains('te-touch-layout') && list) {
+    return { top: list.getBoundingClientRect().top, height: Math.max(1, list.clientHeight), key: 'touchTranscriptFocusRatio' };
+  }
+  return { top: 0, height: transcriptViewportHeight(), key: 'transcriptFocusRatio' };
 }
 
 function alignActiveTranscriptFocus(behavior = 'smooth') {
@@ -1046,18 +1120,12 @@ function alignActiveTranscriptFocus(behavior = 'smooth') {
   const row = list?.querySelector('.yt-dual-item.active');
   if (!list || !row) return false;
 
-  let delta;
-  if (overlayEl()?.classList.contains('te-touch-layout')) {
-    // Touch layout: the list starts mid-screen, so keep the active row just below the list's own top edge.
-    delta = row.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
-  } else {
-    const viewportHeight = transcriptViewportHeight();
-    const rowRect = row.getBoundingClientRect();
-    const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / viewportHeight);
-    const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio()));
-    state.transcriptFocusRatio = ratio;
-    delta = calculateTranscriptFocusScrollDelta(row.getBoundingClientRect(), viewportHeight, ratio);
-  }
+  const box = transcriptFocusBox(list);
+  const rowRect = row.getBoundingClientRect();
+  const margin = Math.min(0.45, Math.max(12, rowRect.height / 2) / box.height);
+  const ratio = Math.max(margin, Math.min(1 - margin, currentTranscriptFocusRatio(box.key)));
+  state[box.key] = ratio;
+  const delta = calculateTranscriptFocusScrollDelta(rowRect, box.height, ratio, box.top);
   const maxScroll = Math.max(0, list.scrollHeight - list.clientHeight);
   const targetScrollTop = Math.max(0, Math.min(maxScroll, list.scrollTop + delta));
   const distance = Math.abs(targetScrollTop - list.scrollTop);
@@ -1071,10 +1139,10 @@ function alignActiveTranscriptFocus(behavior = 'smooth') {
 function captureTranscriptFocusPosition(list = $('te-transcript-list')) {
   const row = list?.querySelector('.yt-dual-item.active');
   if (!list || !row) return false;
-  const viewportHeight = transcriptViewportHeight();
+  const box = transcriptFocusBox(list);
   const rect = row.getBoundingClientRect();
-  const margin = Math.min(0.45, Math.max(12, rect.height / 2) / viewportHeight);
-  state.transcriptFocusRatio = Math.max(margin, Math.min(1 - margin, (rect.top + rect.height / 2) / viewportHeight));
+  const margin = Math.min(0.45, Math.max(12, rect.height / 2) / box.height);
+  state[box.key] = Math.max(margin, Math.min(1 - margin, (rect.top + rect.height / 2 - box.top) / box.height));
   return true;
 }
 
@@ -1611,6 +1679,7 @@ function bindUI() {
   }, true);
   ctrl('Toàn màn hình').addEventListener('click', toggleFullscreen);
   ui('.te-progress-track').addEventListener('click', seekByTrack);
+  setupProgressDrag(ui('.te-progress-track'));
   ui('#te-reading-media-toggle').addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();

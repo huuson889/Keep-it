@@ -10,7 +10,7 @@ const iconPaths={
  edit:'<path d="m16 4 4 4"/><path d="M4 20l4-.8L19.5 7.7a2.1 2.1 0 0 0-3-3L5 16.2 4 20Z"/>',
  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>',
  volume:'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
- heart:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/>',
+ heart:'<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/>',
  export:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'
 };
 const icon=name=>`<svg class="lucide" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name]||''}</svg>`;
@@ -18,7 +18,7 @@ const $=id=>document.getElementById(id), sourceList=$('sourceList'), notesList=$
 const lhnRevealEffects=globalThis.KeepitDashboardReveal,lhnSourceRevealScope=lhnRevealEffects.createScope(),lhnNotesRevealScope=lhnRevealEffects.createScope(),lhnChartRevealScope=lhnRevealEffects.createScope();
 const text=key=>(labels[currentLanguage]||labels.vi)[key]||labels.vi[key]||key;
 function applyNewLabels(){ document.documentElement.lang=currentLanguage;$('lrDataBadge').textContent=text('dataBadge');$('exportAllText').textContent=text('exportAll');$('exportAllDemoBtn').setAttribute('aria-label',text('exportAll'));$('exportAllDemoBtn').title=text('exportAll');$('statsDataCaption').textContent=text('statsCaption'); }
-let pages=[], annotationRecords=[], favorites=[], favoriteNoteIds=new Set(), selected=null, noteColor='all', scope='filtered', period='365', distMode='tags', quickFilter='all', favoriteNotes=false, viewMode='grid', toastTimer, requestSequence=0, currentLanguage='vi';
+let pages=[], annotationRecords=[], favorites=[], favoriteVideos=[], favoriteNoteIds=new Set(), selected=null, noteColor='all', scope='filtered', period='365', distMode='tags', quickFilter='all', favoriteNotes=false, viewMode='grid', toastTimer, requestSequence=0, currentLanguage='vi';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const validColors=['yellow','green','purple','red','blue','orange'];
 const lhnCounterFormatters=new WeakMap(),lhnCounterFrames=new Map(),lhnCounterTimers=new Map(),lhnChartFrames=new Map(),lhnPanelRevealTimes=new Map();
@@ -131,7 +131,7 @@ function playToolbarActionEffect(button,event,color,particleShape){
  button.classList.remove('toolbar-action-pulse');void button.offsetWidth;button.classList.add('toolbar-action-pulse');
  button.addEventListener('animationend',e=>{if(e.animationName==='favorite-heartbeat')button.classList.remove('toolbar-action-pulse')},{once:true});
  for(let i=0;i<2;i++){const ring=document.createElement('span');ring.className='toolbar-action-ripple-ring';ring.style.setProperty('--effect-color',color);ring.style.left=`${x}px`;ring.style.top=`${y}px`;ring.style.setProperty('--delay',`${i*100}ms`);layer.append(ring);ring.addEventListener('animationend',()=>ring.remove(),{once:true})}
- for(let i=0;i<10;i++){const particle=document.createElement('span'),angle=Math.PI*2*i/10+(Math.random()-.5)*.45,distance=34+Math.random()*42;particle.className=`toolbar-action-ripple-particle${particleShape==='sparkle'?' is-sparkle':''}`;particle.style.left=`${x}px`;particle.style.top=`${y}px`;particle.style.setProperty('--effect-color',color);particle.style.setProperty('--tx',`${Math.cos(angle)*distance}px`);particle.style.setProperty('--ty',`${Math.sin(angle)*distance}px`);particle.style.setProperty('--turn',`${Math.round((Math.random()-.5)*70)}deg`);particle.innerHTML=particleShape==='sparkle'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';layer.append(particle);particle.addEventListener('animationend',()=>particle.remove(),{once:true})}
+ for(let i=0;i<10;i++){const particle=document.createElement('span'),angle=Math.PI*2*i/10+(Math.random()-.5)*.45,distance=34+Math.random()*42;particle.className=`toolbar-action-ripple-particle${particleShape==='sparkle'?' is-sparkle':''}`;particle.style.left=`${x}px`;particle.style.top=`${y}px`;particle.style.setProperty('--effect-color',color);particle.style.setProperty('--tx',`${Math.cos(angle)*distance}px`);particle.style.setProperty('--ty',`${Math.sin(angle)*distance}px`);particle.style.setProperty('--turn',`${Math.round((Math.random()-.5)*70)}deg`);particle.innerHTML=particleShape==='sparkle'?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';layer.append(particle);particle.addEventListener('animationend',()=>particle.remove(),{once:true})}
 }
 function dateMs(value){
  if(value instanceof Date)return value.getTime();
@@ -152,13 +152,26 @@ function setSelectedFavicon(pageUrl){
 }
 function tagsOf(item){const raw=Array.isArray(item.__keepitTags)?item.__keepitTags:Array.isArray(item.tags)?item.tags:typeof item.tags==='string'?item.tags.split(','):[];const seen=new Set();return raw.map(value=>String(value||'').trim()).filter(value=>{const key=value.toLocaleLowerCase();if(!key||seen.has(key))return false;seen.add(key);return true})}
 function hashText(text){let hash=0;for(const char of String(text||''))hash=(hash*31+char.charCodeAt(0))|0;return Math.abs(hash)}
+// A page is a favourite by URL (lhnFavorites) or, for YouTube, by video id (lhnFavoriteVideos, shared with the touch overlay ♥).
+function videoIdOf(url){return globalThis.LHN_THUMBNAILS?.youtubeVideoId(String(url||''))||''}
+function isFavoriteKey(key,url){if(favorites.includes(key))return true;const id=videoIdOf(url||key);return !!id&&favoriteVideos.some(video=>video.videoId===id)}
+// Favourite videos without any highlight are still listed under "Favourites" (no notes, 0 highlights).
+function favoriteVideoPages(visible){
+ const q=$('search').value.trim().toLocaleLowerCase('vi'),site=$('siteFilter').value,date=$('dateFilter').value,now=Date.now();
+ if($('colorFilter').value||$('tagFilter').value||favoriteNotes||(site&&!/(^|\.)youtube\.com$/i.test(site)))return [];
+ const shown=new Set(visible.map(page=>videoIdOf(page.url)).filter(Boolean));
+ return favoriteVideos.filter(video=>!shown.has(video.videoId)).map(video=>{
+  const url=`https://www.youtube.com/watch?v=${encodeURIComponent(video.videoId)}`,at=Number(video.addedAt)||now,title=video.title||url;
+  return {key:url,url,title,site:'www.youtube.com',thumbnailUrl:globalThis.LHN_THUMBNAILS?.youtubeUrl(video.videoId)||'',notes:[],colors:[],tags:[],favorite:true,favoriteVideo:true,createdAtMs:at,editedAtMs:at,created:dateLabel(at),edited:dateLabel(at),date:dateKey(at),thumb:colorPalette[hashText(url)%colorPalette.length],highlights:0,noteCount:0,channel:video.channel||''};
+ }).filter(page=>{const age=Math.floor((now-page.createdAtMs)/86400000);return (!q||`${page.title} ${page.channel} ${page.site}`.toLocaleLowerCase('vi').includes(q))&&(!date||(date==='today'?age===0:age>=0&&age<=Number(date)))});
+}
 function buildPages(items){
  const grouped=new Map();
  for(const item of items){
   if(!item||typeof item!=='object')continue;
   const key=String(item.__keepitPageKey||item.url||item.hostname||item.title||'unknown');
   let page=grouped.get(key);
-  if(!page){const site=String(item.__keepitSite||hostnameOf(item.url,item.hostname||''));page={key,url:String(item.url||key),title:String(item.title||site||'Trang không có tiêu đề'),site,thumbnailUrl:globalThis.LHN_THUMBNAILS?.safeUrl(item.thumbnailUrl,item.url)||'',notes:[],colors:[],tags:[],favorite:favorites.includes(key),createdAtMs:Infinity,editedAtMs:0,created:'',edited:'',date:'',thumb:null,highlights:0,noteCount:0};grouped.set(key,page)}
+  if(!page){const site=String(item.__keepitSite||hostnameOf(item.url,item.hostname||''));page={key,url:String(item.url||key),title:String(item.title||site||'Trang không có tiêu đề'),site,thumbnailUrl:globalThis.LHN_THUMBNAILS?.safeUrl(item.thumbnailUrl,item.url)||'',notes:[],colors:[],tags:[],favorite:isFavoriteKey(key,item.url),createdAtMs:Infinity,editedAtMs:0,created:'',edited:'',date:'',thumb:null,highlights:0,noteCount:0};grouped.set(key,page)}
   if((!page.title||page.title===page.site)&&item.title)page.title=String(item.title);
   if(!page.thumbnailUrl&&item.thumbnailUrl)page.thumbnailUrl=globalThis.LHN_THUMBNAILS?.safeUrl(item.thumbnailUrl,item.url)||'';
   const createdAt=dateMs(item.createdAt),updatedAt=dateMs(item.updatedAt);
@@ -178,7 +191,7 @@ function buildPages(items){
   page.edited=page.editedAtMs?dateLabel(page.editedAtMs):page.created;
   page.date=Number.isFinite(page.createdAtMs)?dateKey(page.createdAtMs):'';
   const colors=colorPalette[hashText(page.key)%colorPalette.length];page.thumb=colors;
-  page.favorite=favorites.includes(page.key);
+  page.favorite=isFavoriteKey(page.key,page.url);
  }
  return [...grouped.values()].sort((a,b)=>b.editedAtMs-a.editedAtMs||a.title.localeCompare(b.title));
 }
@@ -195,7 +208,7 @@ function loadSiteBadgeFavicon(host,pageUrl){
 function filteredRecords(){
  const q=$('search').value.trim().toLocaleLowerCase('vi'),site=$('siteFilter').value,color=$('colorFilter').value,tag=$('tagFilter').value,date=$('dateFilter').value,now=Date.now();
  return annotationRecords.filter(item=>{
-  const key=pageKeyOf(item),itemSite=hostnameOf(item.url,item.hostname||''),tags=tagsOf(item),isNoteFavorite=favoriteNoteIds.has(String(item.id||'')),isPageFavorite=favorites.includes(key);
+  const key=pageKeyOf(item),itemSite=hostnameOf(item.url,item.hostname||''),tags=tagsOf(item),isNoteFavorite=favoriteNoteIds.has(String(item.id||'')),isPageFavorite=isFavoriteKey(key,item.url);
   const text=[item.title,itemSite,item.url,...tags,item.quote,item.note,item.contextNote].map(value=>String(value||'')).join(' ').toLocaleLowerCase('vi');
   const createdAt=dateMs(item.createdAt),age=Number.isFinite(createdAt)?Math.floor((now-createdAt)/86400000):Infinity;
   const quickMatch=quickFilter==='all'||(quickFilter==='notes'?String(item.note||'').trim().length>0:isPageFavorite);
@@ -206,6 +219,7 @@ function allFiltered(){return buildPages(filteredRecords())}
 function showToast(text){toast.textContent=text;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2400)}
 function renderSources(){
  const visible=allFiltered(),order=$('sortBy').value,previousKey=selected?.key;
+ if(quickFilter==='favorites')visible.push(...favoriteVideoPages(visible));
  visible.sort((a,b)=>order==='count'?b.highlights-a.highlights:order==='edited'?b.editedAtMs-a.editedAtMs:b.createdAtMs-a.createdAtMs);
  selected=visible.find(page=>page.key===previousKey)||visible[0]||null;
  setLhnCounter(pageCount,visible.length,value=>`${formatLhnNumber(value)} trang`);
@@ -215,7 +229,7 @@ function renderSources(){
   const row=document.createElement('article');row.className='source-item'+(page===selected?' active':'');row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',page.title);row.dataset.url=page.key;
   const colors=page.colors.map(color=>`<span class="color-dot ${color}" title="${colorNames[color]||color}"></span>`).join('');
   const tags=page.tags.map(tag=>`<span class="tag-chip">${esc(tag)}</span>`).join('');
-  row.innerHTML=`<div class="source-thumb"><img alt="" loading="lazy"><span class="thumb-fallback" aria-hidden="true">${icon('file')}</span><span class="source-thumb-badge"><i class="${thumbnailSiteLabel(page)==='YouTube'?'video':'article'}"></i>${thumbnailSiteLabel(page)}</span><span class="source-thumb-label">${esc(thumbnailCategoryLabel(page))}</span></div><div class="source-info"><div class="source-title">${esc(page.title)}</div><div class="source-host">${siteBadge(page)}<span class="source-host-text">${esc(page.site)}</span></div><div class="source-description">${esc(sourceDescription(page))}</div><div class="source-tags tag-list">${tags}</div><div class="source-meta"><span class="source-date">${esc(sourceDate(page))}</span><span class="source-meta-count">${colors}<span class="source-count-number">${page.highlights}</span><span class="source-count-icon">${icon('square')}</span></span></div></div>`;
+  row.innerHTML=`<div class="source-thumb"><img alt="" loading="lazy">${page.favorite?`<span class="source-thumb-fav" aria-hidden="true">${icon('heart')}</span>`:''}<span class="thumb-fallback" aria-hidden="true">${icon('file')}</span><span class="source-thumb-badge"><i class="${thumbnailSiteLabel(page)==='YouTube'?'video':'article'}"></i>${thumbnailSiteLabel(page)}</span><span class="source-thumb-label">${esc(thumbnailCategoryLabel(page))}</span></div><div class="source-info"><div class="source-title">${esc(page.title)}</div><div class="source-host">${siteBadge(page)}<span class="source-host-text">${esc(page.site)}</span></div><div class="source-description">${esc(sourceDescription(page))}</div><div class="source-tags tag-list">${tags}</div><div class="source-meta"><span class="source-date">${esc(sourceDate(page))}</span><span class="source-meta-count">${colors}<span class="source-count-number">${page.highlights}</span><span class="source-count-icon">${icon('square')}</span></span></div></div>`;
   setLhnCounter(row.querySelector('.source-count-number'),page.highlights);
   const siteIcon=row.querySelector('.source-site-icon.site-favicon');if(siteIcon)loadSiteBadgeFavicon(siteIcon,page.url);
   const image=row.querySelector('.source-thumb img');globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>row.querySelector('.thumb-fallback')?.setAttribute('hidden',''),onError:()=>image.remove()});
@@ -236,7 +250,7 @@ function renderSelected(){
  setSelectedFavicon(selected.url);
  $('selectedMeta').textContent=`Ngày tạo: ${selected.created} · Ngày sửa: ${selected.edited} · ${selected.highlights} highlights`;
  favoriteButton.disabled=false;favoriteButton.classList.toggle('is-favorite',selected.favorite);favoriteButton.setAttribute('aria-pressed',String(selected.favorite));favoriteButton.innerHTML=icon('heart');
- exportButton.disabled=false;deleteButton.disabled=selected.notes.length===0;$('noteColorFilters').hidden=false;renderColorFilters();
+ exportButton.disabled=!!selected.favoriteVideo;deleteButton.disabled=selected.notes.length===0;$('noteColorFilters').hidden=false;renderColorFilters();
  let items=selected.notes.filter(note=>noteColor==='all'||note.color===noteColor);if(favoriteNotes)items=items.filter(note=>note.favorite);
  const q=$('search').value.trim().toLocaleLowerCase('vi');if(q)items=items.filter(note=>`${note.quote} ${note.note} ${note.context} ${note.tags.join(' ')}`.toLocaleLowerCase('vi').includes(q));
  notesList.replaceChildren();items.forEach(item=>{
@@ -337,7 +351,7 @@ function populateFilters(){
  const colorSelect=$('colorFilter'),previous=colorSelect.value;colorSelect.innerHTML='<option value="">Màu: Tất cả</option>'+validColors.map(color=>`<option value="${color}">${colorNames[color]}</option>`).join('');if(validColors.includes(previous))colorSelect.value=previous;
 }
 function applyData(data){
- const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);populateFilters();
+ const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteVideos=Array.isArray(data.favoriteVideos)?data.favoriteVideos:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);populateFilters();
  selected=pages.find(page=>page.key===previousKey)||null;
  if(!selected)selected=allFiltered()[0]||pages[0]||null;
  refresh();
@@ -366,7 +380,7 @@ $('noteColorFilters').addEventListener('click',event=>{const favoriteButton=even
 ['siteFilter','colorFilter','tagFilter','dateFilter','sortBy'].forEach(id=>$(id).addEventListener('change',refresh));$('search').addEventListener('input',refresh);
 $('clearFiltersBtn').addEventListener('click',event=>{playToolbarActionEffect(event.currentTarget,event,'#3b82f6','sparkle');$('search').value='';['siteFilter','colorFilter','tagFilter','dateFilter'].forEach(id=>$(id).value='');$('sortBy').value='created';quickFilter='all';$('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(button=>button.classList.toggle('active',button.dataset.quickFilter==='all'));noteColor='all';favoriteNotes=false;refresh();showToast(text('clearFilters'))});
 $('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(button=>button.addEventListener('click',()=>{quickFilter=button.dataset.quickFilter;$('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(item=>item.classList.toggle('active',item===button));refresh()}));
-$('favoritePageBtn').addEventListener('click',event=>{if(!selected)return;playToolbarActionEffect(event.currentTarget,event,'#f43f5e','heart');const key=selected.key,addingFavorite=!selected.favorite;favorites=addingFavorite?[...favorites,key]:favorites.filter(value=>value!==key);refresh();sendParent('toggle-page-favorite',{pageKey:key});showToast(text(addingFavorite?'pageFavoriteAdded':'pageFavoriteRemoved'))});
+$('favoritePageBtn').addEventListener('click',event=>{if(!selected)return;playToolbarActionEffect(event.currentTarget,event,'#f43f5e','heart');const key=selected.key,addingFavorite=!selected.favorite,videoId=videoIdOf(selected.url);if(videoId){favoriteVideos=addingFavorite?[{videoId,title:selected.title,channel:'',addedAt:Date.now()},...favoriteVideos]:favoriteVideos.filter(video=>video.videoId!==videoId);if(!addingFavorite)favorites=favorites.filter(value=>value!==key&&videoIdOf(value)!==videoId)}else favorites=addingFavorite?[...favorites,key]:favorites.filter(value=>value!==key);refresh();sendParent('toggle-page-favorite',{pageKey:key});showToast(text(addingFavorite?'pageFavoriteAdded':'pageFavoriteRemoved'))});
 $('studyModeBtn').addEventListener('click',()=>selected?sendParent('study',{pageKey:selected.key}):showToast(text('chooseSource')));
 $('exportPageBtn').addEventListener('click',event=>{event.stopPropagation();toggleMenu($('exportPageMenu'),event.currentTarget)});
 $('exportAllDemoBtn').addEventListener('click',event=>{event.stopPropagation();toggleMenu($('exportAllDemoMenu'),event.currentTarget)});

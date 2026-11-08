@@ -139,7 +139,7 @@ Keepit - Test/
 │   │   ├── overlay-template.js    # HTML/CSS of the Shadow DOM
 │   │   ├── source/                # YouTube captions/timing and Reader cues
 │   │   ├── study/                 # Dictation/Typing and Shadowing activities
-│   │   └── view/                  # layout-mode.js, cc-mode.js, touch-layout.js (bố cục overlay cảm ứng)
+│   │   └── view/                  # layout-mode.js, cc-mode.js, touch-layout.js (bố cục overlay cảm ứng), touch-theater.js (rạp ngang điện thoại)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # custom-font, icons, search, site-icons, thumbnails
 ├── css/
@@ -212,6 +212,18 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-08 | v3.5.151 | Arena.ai Agent sửa:**
+
+- Yêu cầu: đưa demo overlay cảm ứng v10 đã duyệt vào Keepit thật; màu phụ đề chính mặc định vàng `#ffff00` mọi nền tảng; thanh tiến trình kéo được mọi nền tảng; giữ ♥ trên thumbnail Dashboard.
+- `touch-layout.js` viết lại: thanh dọc mới, ♥/Toàn màn hình ở góc ô phụ đề, sheet ☰ 8 ô, Cài đặt video rút gọn trên cảm ứng, Tùy chọn phụ đề cảm ứng (xem trước, cỡ chữ, swatch, Nâng cao), tự co chữ phụ đề, double-tap thả tim kiểu TikTok, nhãn en/vi/ko mới.
+- Mới `js/overlay/view/touch-theater.js` (manifest sau `touch-layout.js`): rạp ngang điện thoại, thanh tự ẩn 3s, vuốt âm lượng/độ sáng có vòng Tự động, khôi phục khi thoát.
+- `overlay-controller.js`: `setupProgressDrag`/`formatProgressTime` (kéo + tooltip, giữ trong màn hình); focus transcript cảm ứng theo tỉ lệ (bỏ nhánh "đầu danh sách + 8px"). `source/video.js`, `source/web.js`: không ghi đè fill khi đang kéo.
+- `layout-mode.js`/`overlay-template.js`: màu chính `#ffff00`; cỡ chữ inline theo biến gốc; bỏ các kẹp cỡ chữ `!important` cảm ứng; khối CSS cảm ứng/rạp mới.
+- Tim bo tròn lucide ở mọi nơi (`icons.js`, `note-composer.js`, `content.js`, `highlights-notes.js`, 2 trang HTML).
+- Yêu thích video: khóa mới `lhnFavoriteVideos` (`config.js`), Dashboard lọc Yêu thích hiện video kể cả 0 highlight, ♥ trên thumbnail, sao lưu/khôi phục (`backup.js`, `dashboard.js`). DATA-INVENTORY §2 bổ sung (chỉ lưu trong trình duyệt).
+- Test (Chromium + content scripts thật trên trang YouTube giả lập): dọc 390×844 cảm ứng toàn bộ đạt; rạp ngang 844×390 12/12; desktop 1280×800 7/7 (không có UI cảm ứng, phụ đề vàng, kéo/nhấp seek, tooltip không bị cắt); Dashboard Yêu thích 1280/390 đạt; double-tap transcript đạt.
+- Ghi nhận, chưa sửa (có từ trước): `source/video.js:525` gắn `enforceVideoPause` làm listener `play` nên nhận Event thay vì video → lỗi `video.pause is not a function` khi có lý do tạm dừng.
 
 **2026-11-08 | v3.5.150 | Arena.ai Agent sửa:**
 

@@ -1013,6 +1013,7 @@ function attachWebProgressAnimation(media) {
     if (state.activeMedia !== media) return;
     const fill = ui('.te-progress-fill');
     if (!fill) return;
+    if (fill.parentElement?.classList.contains('te-progress-drag')) return; // the user is scrubbing
     const duration = Number(media.duration) || 0;
     const run = media._activeRun;
     let position = Number(media.currentTime) || 0;

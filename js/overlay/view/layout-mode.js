@@ -1,5 +1,5 @@
 // Overlay layout modes, display sizing, and theater presentation.
-const DEFAULT_HEX = { en: '#ccff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
+const DEFAULT_HEX = { en: '#ffff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
 const THEATER_SUBTITLE_BOTTOM_INSET = 30;
 const THEME_DEFAULT_HEX = {
@@ -439,8 +439,9 @@ function applySettings() {
   setOrRemove(root, '--te-subtitle-vi-weight', settings.sub.bold ? '600' : '');
   setOrRemove(root, '--te-reading-en-color', settings.readingSubtitle.en.color || defaultColorFor('side-en'));
   setOrRemove(root, '--te-reading-vi-color', settings.readingSubtitle.vi.color || defaultColorFor('side-vi'));
-  enEl.style.fontSize = settings.sub.en.pct === 100 ? '' : `calc(24px * ${settings.sub.en.pct / 100})`;
-  viEl.style.fontSize = settings.sub.vi.pct === 100 ? '' : `calc(24px * ${settings.sub.vi.pct / 100})`;
+  // Base sizes are 24px; the touch layouts set smaller bases (and an auto-fit factor) through these variables.
+  enEl.style.fontSize = settings.sub.en.pct === 100 ? '' : `calc(var(--te-sub-en-base, 24px) * ${settings.sub.en.pct / 100})`;
+  viEl.style.fontSize = settings.sub.vi.pct === 100 ? '' : `calc(var(--te-sub-vi-base, 24px) * ${settings.sub.vi.pct / 100})`;
   enEl.style.fontWeight = settings.sub.bold ? '700' : '';
   viEl.style.fontWeight = settings.sub.bold ? '600' : '';
   enEl.style.fontFamily = fam;
