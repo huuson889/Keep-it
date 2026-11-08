@@ -22,7 +22,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 2. Reader đọc liên tục bằng `readerBlocks(true)` để tính lại block hiện hành; API `getTextBlocks()` mặc định có thể dùng cache.
 3. Web Study gọi `getTextBlocks({ forceRefresh:true })` khi tạo snapshot mới. Sau khi reload hoặc URL đổi, Web lại lấy Reader text, kiểm tra persistent cue cache bằng fingerprint, rồi tạo/tái dùng câu nguồn.
 4. Dịch dùng `BILINGUAL_TRANSLATE`; TTS dùng `LHN_TTS`. `LHN_READER_SPEECH_RATE` cung cấp `getRate`/`setRate` cho Web Overlay, dùng cùng resolver Reader và `lhnSettings`.
-5. Thanh điều khiển (v3.5.154): `#lhn-bilingual-reading-bar` là lớp phủ `pointer-events:none`, con là thanh, bảng phím tắt (chỉ máy tính), sheet/popup và toast. Rộng `(min-width:1024px)` = đảo + popup trên nút; hẹp = full-width + bottom sheet. Kéo tiến độ gọi `jumpToBlock(index, resume)`; Lặp lại đoạn làm các nhánh kết thúc gọi `advanceQueue()` đọc lại đoạn hiện tại.
+5. Thanh điều khiển (v3.5.154): `#lhn-bilingual-reading-bar` là lớp phủ `pointer-events:none`, con là thanh, bảng phím tắt (chỉ máy tính), sheet/popup và toast. Rộng `(min-width:1024px)` = đảo + popup trên nút; hẹp = full-width + bottom sheet; popup Giọng đọc/Tốc độ căn mép trái thanh (v3.5.155), ☰ căn trên nút. Kéo tiến độ gọi `jumpToBlock(index, resume)`; Lặp lại đoạn làm các nhánh kết thúc gọi `advanceQueue()` đọc lại đoạn hiện tại.
 6. Lệnh `stop-reading` dừng Reader trước khi mở Web Study; event `lhn-bilingual-reader-started` đóng overlay Web trước khi Reader phát audio. Settings/language được nhận qua storage listeners.
 
 ## 4. Hợp đồng và quy tắc cần giữ

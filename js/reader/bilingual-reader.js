@@ -77,6 +77,7 @@
     #lhn-bilingual-reading-bar .lhn-br-rbar{position:absolute;left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:4px;background:rgba(255,255,255,.97);border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);pointer-events:auto;animation:lhnBrSlide .25s ease}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar{background:rgba(17,17,22,.97);border-color:rgba(148,163,184,.2);box-shadow:0 -6px 18px rgba(0,0,0,.3)}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:16px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-kbd{box-shadow:0 0 2px rgba(15,23,42,.12),0 0 12px rgba(15,23,42,.16)}
     #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-rbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
     #lhn-bilingual-reading-bar .lhn-br-left,#lhn-bilingual-reading-bar .lhn-br-center,#lhn-bilingual-reading-bar .lhn-br-right{display:flex;align-items:center;gap:2px;min-width:0}
     #lhn-bilingual-reading-bar .lhn-br-right{justify-content:flex-end}
@@ -271,8 +272,10 @@
   function syncBarScale() { const width = bar.clientWidth || innerWidth; brRbar.style.zoom = !isWideBar() && width && width < 392 ? String(Math.round(width / 392 * 1000) / 1000) : ""; }
   function anchorPanel() {
     const button = brRbar.querySelector(`[data-sheet="${openSheetName}"]`); if (!button) return;
-    const rect = button.getBoundingClientRect(), top = brRbar.getBoundingClientRect().top, W = bar.clientWidth || innerWidth, H = bar.clientHeight || innerHeight, w = brPanel.offsetWidth;
-    brPanel.style.left = `${Math.max(12, Math.min(W - w - 12, rect.left + rect.width / 2 - w / 2))}px`; brPanel.style.bottom = `${H - top + 14}px`;
+    const rect = button.getBoundingClientRect(), barRect = brRbar.getBoundingClientRect(), top = barRect.top, W = bar.clientWidth || innerWidth, H = bar.clientHeight || innerHeight, w = brPanel.offsetWidth;
+    // Giọng đọc/Tốc độ căn mép trái thanh Reader; ☰ vẫn căn giữa trên nút
+    const left = openSheetName === "voices" || openSheetName === "speed" ? barRect.left : rect.left + rect.width / 2 - w / 2;
+    brPanel.style.left = `${Math.max(12, Math.min(W - w - 12, left))}px`; brPanel.style.bottom = `${H - top + 14}px`;
     brPanel.style.top = "auto"; brPanel.style.right = "auto"; brPanel.style.transform = "none";
   }
   function openSheet(name) {
