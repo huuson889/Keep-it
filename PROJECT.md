@@ -213,6 +213,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-08 | v3.5.153 | Arena.ai Agent sửa:**
+
+- Yêu cầu: 14 góp ý chạm trên overlay v3.5.152 (đã duyệt), cử chỉ phân biệt theo chuyển động ngón tay.
+- Rạp ngang (`touch-theater.js`, `overlay-template.js`): ♥ bật màu `#f43f5e`; hướng dẫn cử chỉ chỉ hiện lần đầu, giữ đến khi chạm (`lhnTouchTheaterHintSeen`, nhãn en/vi/ko mới); cử chỉ bắt ở root (cả khi bắt đầu trên phụ đề): chạm yên phụ đề = phát/dừng, chạm yên video = hiện/ẩn thanh, vuốt dọc = âm lượng/độ sáng, vuốt ngang = tua có giờ đích + câu, vuốt xuống ở giữa = thoát; video `object-fit: contain` căn giữa (bỏ lệch do inline left của trang); ▶ đúng tâm.
+- Dọc (`touch-layout.js`): vuốt lên trên video/thẻ âm thanh = vào rạp; chạm dòng transcript = tua đến dòng và phát (trước đây bị hover-pause kẹt dừng); chạm phụ đề = phát/dừng. `overlay-controller.js`: hover-pause bỏ qua `pointerType === 'touch'` (chuột giữ nguyên).
+- Nhấn giữ ~450ms trên từ (khi bật Nhấn để dịch) chọn từ, kéo để chọn thêm; nhả tay mở từ điển đầy đủ (1 từ) hoặc popup dịch dạng bottom sheet (`content.js` `placeTouchOverlaySheet`, `content.css`), dừng video khi mở và phát lại khi đóng nếu trước đó đang phát, có Phát âm khi dịch.
+- Độ bền chọn từ: `updateVietnameseRow` không vẽ lại dòng không đổi (bản dịch đến muộn không xóa vùng chọn); sự kiện chuột tương thích Chrome gửi sau nhấn giữ bị bỏ ở pha capture của window (mousedown gốc làm mất vùng chọn trước khi `content.js` đọc).
+- CSS: bỏ tô sáng khi chạm trong overlay; nghệ thuật bật thì nút góc ♥/Toàn màn hình không nền/viền; ảnh web nét trên cảm ứng (blur 0, giữ hiệu ứng khác, desktop giữ nguyên); xem trước Tùy chọn phụ đề nền đặc ở tab Phụ đề cuộn (sáng/tối).
+- Test (Chromium, chạm thật CDP, content scripts thật): 23/23 mục dọc 390×844 + ngang 844×390 (chạm dòng, chạm phụ đề, nhấn giữ 1 từ → từ điển sheet, nhấn giữ kéo → popup dịch sheet, đóng sheet phát lại, vuốt lên vào rạp từ video và thẻ, hướng dẫn giữ + lưu cờ, video căn giữa, ▶ tâm 422px, tua ngang, vuốt âm lượng/độ sáng từ phụ đề, chạm video không dừng, ♥ đỏ, nhấn giữ trong rạp, vuốt xuống giữa thoát); web sáng/tối: ảnh nét, nút góc trong suốt, xem trước đặc; hồi quy sheet ☰, double-tap ♥, chạm video phát/dừng đạt; desktop 1366×800: hover-pause chuột vẫn chạy, popup từ điển vẫn nổi cạnh từ.
+- Vẫn chưa sửa (có từ trước): `enforceVideoPause` ở `source/video.js:525`.
+
 **2026-11-08 | v3.5.152 | Arena.ai Agent sửa:**
 
 - Yêu cầu: overlay thật phải giống demo v10 100% (cỡ chữ, ô sheet hoạt động, ♥ có hiệu ứng, toàn màn hình ngang), kể cả nguồn web; test bằng chạm thật.

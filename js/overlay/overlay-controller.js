@@ -227,6 +227,8 @@ function releaseHoverPause(reason) {
 }
 
 function rememberHoverPointer(event) {
+  // Hover pause is a mouse feature; a finger has no hover and would leave the pause stuck after lifting.
+  if (event?.pointerType === 'touch') return false;
   if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return false;
   const moved = !state.hoverPointer
     || state.hoverPointer.x !== event.clientX
@@ -1206,12 +1208,14 @@ function updateVietnameseRow(item) {
   const idx = state.captions.indexOf(item);
   if (idx < 0) return;
   const row = $('te-transcript-list').querySelector(`.yt-dual-item[data-idx="${idx}"]`);
+  // Unchanged lines are not re-rendered, so a word selection on them survives a late translation.
+  const setWords = (el, text) => { const html = renderHoverWords(text); if (el && el.innerHTML !== html) el.innerHTML = html; };
   if (row) {
-    row.querySelector('.yt-dual-item-en').innerHTML = renderHoverWords(item.mainText);
-    row.querySelector('.yt-dual-item-vi').innerHTML = renderHoverWords(item.vi);
+    setWords(row.querySelector('.yt-dual-item-en'), item.mainText);
+    setWords(row.querySelector('.yt-dual-item-vi'), item.vi);
   }
-  if (idx === state.activeIdx) $('te-sub-en-text').innerHTML = renderHoverWords(item.mainText);
-  if (idx === state.activeIdx) $('te-sub-vi-text').innerHTML = renderHoverWords(item.vi);
+  if (idx === state.activeIdx) setWords($('te-sub-en-text'), item.mainText);
+  if (idx === state.activeIdx) setWords($('te-sub-vi-text'), item.vi);
   if (idx === state.activeIdx) scheduleTheaterSubtitleLayout();
 }
 
@@ -1386,10 +1390,12 @@ function bindUI() {
 
   const mainSubtitleText = ui('.te-sub-en');
   mainSubtitleText.addEventListener('pointerover', (event) => {
+    if (event.pointerType === 'touch') return;
     rememberHoverPointer(event);
     if (!mainSubtitleText.contains(event.relatedTarget)) activateHoverPause('subtitle-main-hover');
   });
   mainSubtitleText.addEventListener('pointerout', (event) => {
+    if (event.pointerType === 'touch') return;
     rememberHoverPointer(event);
     if (!mainSubtitleText.contains(event.relatedTarget)) scheduleHoverPauseSync();
   });
@@ -1704,12 +1710,14 @@ function bindUI() {
     transcriptClickTimer = setTimeout(() => onTranscriptClick({ target: timestamp }), 260);
   });
   transcriptList.addEventListener('pointerover', (e) => {
+    if (e.pointerType === 'touch') return;
     rememberHoverPointer(e);
     const item = e.target.closest('.yt-dual-item');
     const previousItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
     if (item && !previousItem) activateHoverPause('subtitle-sidebar-hover');
   });
   transcriptList.addEventListener('pointerout', (e) => {
+    if (e.pointerType === 'touch') return;
     rememberHoverPointer(e);
     const item = e.target.closest('.yt-dual-item');
     const nextItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;

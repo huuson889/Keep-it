@@ -7,6 +7,18 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-08 | 14 góp ý chạm cho overlay (rạp ngang, dọc, nhấn giữ để dịch)
+
+**Trạng thái:** Đã triển khai ở v3.5.153.
+
+- Cử chỉ phân biệt theo chuyển động ngón tay, không theo lớp: chạm yên trên phụ đề = chức năng của phụ đề (phát/dừng); di chuyển dọc >10px = âm lượng/độ sáng kể cả khi bắt đầu trên phụ đề; giữ yên ~450ms = chọn từ.
+- Rạp ngang: chạm video = hiện/ẩn thanh (dừng chỉ bằng ▶), double-tap = tim; vuốt ngang = tua (hiện giờ + câu, áp dụng khi nhả); vuốt xuống ở dải giữa = thoát; hướng dẫn chỉ lần đầu, giữ đến khi chạm; ♥ bật đỏ `#f43f5e`; video và ▶ căn giữa.
+- Dọc: vuốt lên trên video/thẻ âm thanh = vào rạp; chạm dòng transcript = tua và phát, không dừng; xem trước Tùy chọn phụ đề nền đặc; nghệ thuật bật thì nút góc không nền/viền; ảnh web luôn nét trên cảm ứng.
+- Nhấn giữ để dịch (khi bật Nhấn để dịch): kéo để chọn thêm từ; nhả tay mở bottom sheet như Ghi chú (1 từ + từ điển đầy đủ → từ điển, còn lại → popup dịch), dừng video khi mở, phát lại khi đóng nếu trước đó đang phát.
+- Không làm demo mới; desktop giữ nguyên. APK còn cần cầu nối xoay màn hình gốc cho vào/thoát rạp.
+
+---
+
 ## 2026-11-08 | Overlay thật khớp demo v10 100%, kể cả nguồn web
 
 **Trạng thái:** Đã triển khai ở v3.5.152.

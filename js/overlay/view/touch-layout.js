@@ -17,7 +17,7 @@ const TOUCH_OVERLAY_TEXT = {
     shadowing: 'Speaking practice', shadowingSub: 'Listen and repeat', dictation: 'Dictation', dictationSub: 'Listen and type',
     theme: 'Theme', subOptions: 'Subtitle options', subLanguage: 'Subtitle language', notes: 'Notes', art: 'Art mode', settings: 'Settings',
     favorite: 'Favorite', favAdded: 'Added to favorites', favRemoved: 'Removed from favorites', fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen',
-    repeat: 'Repeat sentence', volume: 'Volume', brightness: 'Brightness', auto: 'Auto', gestureHint: 'Swipe left side: volume · right side: brightness',
+    repeat: 'Repeat sentence', volume: 'Volume', brightness: 'Brightness', auto: 'Auto', gestureHint: 'Swipe left side: volume · right side: brightness', gestureHint2: 'Swipe sideways: seek · swipe down in the middle: exit', hintClose: 'Tap to close',
     size: 'Text size', small: 'Small', medium: 'Medium', large: 'Large', mainLine: 'Primary subtitle', translationLine: 'Translated subtitle',
     tabVideo: 'Video subtitles', tabSide: 'Scrolling subtitles', advanced: 'Advanced', white: 'White', grey: 'Grey', yellow: 'Yellow', green: 'Green', cyan: 'Cyan', red: 'Red', pink: 'Pink', purple: 'Purple', defaultColor: 'Default',
     previewMain: 'Keep exploring everything', previewTranslation: 'Translation appears here',
@@ -29,7 +29,7 @@ const TOUCH_OVERLAY_TEXT = {
     shadowing: 'Luyện nói', shadowingSub: 'Nghe và nói lại', dictation: 'Chép chính tả', dictationSub: 'Nghe và gõ lại',
     theme: 'Chủ đề', subOptions: 'Tùy chọn phụ đề', subLanguage: 'Ngôn ngữ phụ đề', notes: 'Ghi chú', art: 'Chế độ nghệ thuật', settings: 'Cài đặt',
     favorite: 'Yêu thích', favAdded: 'Đã thêm vào yêu thích', favRemoved: 'Đã bỏ yêu thích', fullscreen: 'Toàn màn hình', exitFullscreen: 'Thoát toàn màn hình',
-    repeat: 'Lặp lại câu', volume: 'Âm lượng', brightness: 'Độ sáng', auto: 'Tự động', gestureHint: 'Vuốt bên trái: âm lượng · bên phải: độ sáng',
+    repeat: 'Lặp lại câu', volume: 'Âm lượng', brightness: 'Độ sáng', auto: 'Tự động', gestureHint: 'Vuốt bên trái: âm lượng · bên phải: độ sáng', gestureHint2: 'Vuốt ngang: tua · vuốt xuống ở giữa: thoát', hintClose: 'Chạm để đóng',
     size: 'Cỡ chữ', small: 'Nhỏ', medium: 'Trung bình', large: 'Lớn', mainLine: 'Phụ đề chính', translationLine: 'Phụ đề dịch',
     tabVideo: 'Phụ đề video', tabSide: 'Phụ đề cuộn', advanced: 'Nâng cao', white: 'Trắng', grey: 'Xám', yellow: 'Vàng', green: 'Xanh lá', cyan: 'Xanh lơ', red: 'Đỏ', pink: 'Hồng', purple: 'Tím', defaultColor: 'Mặc định',
     previewMain: 'Keep exploring everything', previewTranslation: 'Bản dịch hiển thị ở đây',
@@ -41,7 +41,7 @@ const TOUCH_OVERLAY_TEXT = {
     shadowing: '말하기 연습', shadowingSub: '듣고 따라 말하기', dictation: '받아쓰기', dictationSub: '듣고 입력하기',
     theme: '테마', subOptions: '자막 옵션', subLanguage: '자막 언어', notes: '노트', art: '아트 모드', settings: '설정',
     favorite: '즐겨찾기', favAdded: '즐겨찾기에 추가됨', favRemoved: '즐겨찾기에서 제거됨', fullscreen: '전체 화면', exitFullscreen: '전체 화면 종료',
-    repeat: '문장 반복', volume: '볼륨', brightness: '밝기', auto: '자동', gestureHint: '왼쪽 스와이프: 볼륨 · 오른쪽: 밝기',
+    repeat: '문장 반복', volume: '볼륨', brightness: '밝기', auto: '자동', gestureHint: '왼쪽 스와이프: 볼륨 · 오른쪽: 밝기', gestureHint2: '가로 스와이프: 탐색 · 가운데에서 아래로: 나가기', hintClose: '탭하여 닫기',
     size: '글자 크기', small: '작게', medium: '보통', large: '크게', mainLine: '원문 자막', translationLine: '번역 자막',
     tabVideo: '동영상 자막', tabSide: '스크롤 자막', advanced: '고급', white: '흰색', grey: '회색', yellow: '노랑', green: '초록', cyan: '하늘색', red: '빨강', pink: '분홍', purple: '보라', defaultColor: '기본값',
     previewMain: 'Keep exploring everything', previewTranslation: '번역이 여기에 표시됩니다',
@@ -291,35 +291,215 @@ function touchTapUp(event, single) {
   touchTap.timer = single ? setTimeout(() => { touchTap.timer = 0; single(); }, TOUCH_TAP_GAP) : 0;
 }
 
+// ---------- Long-press word selection (Nhấn để dịch): hold ~450 ms on a word, drag to add words, lift to translate ----------
+const TOUCH_SELECT_MS = 450;
+const TOUCH_SELECT_ZONE = '.te-sub-en, .yt-dual-item-en';
+const touchSelect = { timer: 0, pointerId: null, touch: false, fired: false, active: false, box: null, word: null, first: null, span: null, endedAt: -1e9, dispatching: false, x: 0, y: 0 };
+
+function touchSelectWordAt(x, y) {
+  const word = shadow?.elementFromPoint?.(x, y)?.closest?.('.yt-dual-word');
+  return word && touchSelect.box?.contains(word) ? word : null;
+}
+
+// Offsets of the word inside its span without surrounding punctuation ("channel." → "channel").
+function touchSelectWordEdges(word) {
+  const node = word.firstChild;
+  const text = node?.nodeType === Node.TEXT_NODE ? node.textContent : '';
+  const start = text.search(/[\p{L}\p{N}]/u);
+  if (start < 0) return null;
+  let end = text.length;
+  while (end > start && !/[\p{L}\p{N}]/u.test(text[end - 1])) end -= 1;
+  return { node, start, end };
+}
+
+function touchSelectApply(last) {
+  const words = [...touchSelect.box.querySelectorAll('.yt-dual-word')];
+  if (!touchSelect.first?.isConnected && touchSelect.span) touchSelect.first = words[touchSelect.span[0]] || null;
+  let a = words.indexOf(touchSelect.first), b = words.indexOf(last);
+  if (a < 0 || b < 0) return;
+  if (a > b) [a, b] = [b, a];
+  touchSelect.span = [a, b];
+  touchSelectRange(words, a, b);
+}
+
+// A late translation re-renders the subtitle words; the chosen span is re-selected by word index.
+function touchSelectRange(words, a, b) {
+  let from = null, to = null;
+  for (let i = a; i <= b && !from; i += 1) from = touchSelectWordEdges(words[i]);
+  for (let i = b; i >= a && !to; i -= 1) to = touchSelectWordEdges(words[i]);
+  if (!from || !to) return;
+  const selection = document.getSelection();
+  try { selection.setBaseAndExtent(from.node, from.start, to.node, to.end); } catch {}
+}
+
+function touchSelectClear() {
+  try { shadow?.getSelection?.()?.removeAllRanges?.(); } catch {}
+  try { document.getSelection()?.removeAllRanges(); } catch {}
+}
+
+function touchSelectCancel() {
+  clearTimeout(touchSelect.timer);
+  touchSelect.timer = 0;
+}
+
+function touchSelectDown(event) {
+  touchSelectCancel();
+  touchSelect.fired = false;
+  touchSelect.active = false;
+  touchSelect.pointerId = event.pointerId;
+  touchSelect.touch = event.pointerType === 'touch';
+  const box = event.pointerType === 'touch' && settings?.videoTranslationPopupEnabled !== false ? event.target?.closest?.(TOUCH_SELECT_ZONE) : null;
+  if (!box) return;
+  touchSelect.box = box;
+  touchSelect.word = event.target.closest('.yt-dual-word');
+  touchSelect.x = event.clientX;
+  touchSelect.y = event.clientY;
+  touchSelect.timer = setTimeout(() => {
+    touchSelect.timer = 0;
+    const word = touchSelectWordAt(touchSelect.x, touchSelect.y) || (touchSelect.word?.isConnected ? touchSelect.word : null);
+    if (!word || !touchSelectWordEdges(word)) return;
+    touchSelect.fired = true;
+    touchSelect.active = true;
+    touchSelect.first = word;
+    touchSelect.span = null;
+    clearTimeout(touchTap.timer);
+    touchTap.timer = 0;
+    // Hold the sentence still while choosing words; the translation popup then keeps it paused (app-popup).
+    pauseMediaFor('touch-select');
+    touchSelectApply(word);
+    try { navigator.vibrate?.(12); } catch {}
+  }, TOUCH_SELECT_MS);
+}
+
+function touchSelectMove(event) {
+  if (event.pointerId !== touchSelect.pointerId) return;
+  if (touchSelect.active) {
+    const word = touchSelectWordAt(event.clientX, event.clientY);
+    if (word) touchSelectApply(word);
+  } else if (touchSelect.timer && Math.hypot(event.clientX - touchSelect.x, event.clientY - touchSelect.y) > 10) touchSelectCancel();
+}
+
+function touchSelectUp(event) {
+  touchSelectCancel();
+  if (!touchSelect.active || event.pointerId !== touchSelect.pointerId) return;
+  touchSelect.active = false;
+  touchTap.suppressUntil = performance.now() + 500;
+  const box = touchSelect.box;
+  const words = box ? [...box.querySelectorAll('.yt-dual-word')] : [];
+  if (touchSelect.span && !touchSelect.first?.isConnected && words.length > touchSelect.span[1]) touchSelectRange(words, ...touchSelect.span);
+  // content.js opens the translation popup / full dictionary from a mouseup over a selected subtitle range.
+  touchSelect.endedAt = performance.now();
+  touchSelect.dispatching = true;
+  try {
+    if (box?.isConnected) box.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY }));
+  } finally { touchSelect.dispatching = false; }
+  setTimeout(() => resumeMediaFor('touch-select'), 700);
+}
+
+// True when this finger turned into a word selection (gesture handlers then skip their tap/swipe).
+function touchSelectOwns(event) {
+  return touchSelect.fired && event.pointerId === touchSelect.pointerId;
+}
+
+function setupTouchSelect(root) {
+  root.addEventListener('pointerdown', (event) => { if (touchChromeActive()) touchSelectDown(event); }, true);
+  root.addEventListener('pointermove', touchSelectMove, true);
+  root.addEventListener('pointerup', touchSelectUp, true);
+  root.addEventListener('pointercancel', touchSelectUp, true);
+  // Chrome may still emit compatibility mouse events after the long press; a native mousedown would collapse the
+  // selection before content.js reads it, so they are dropped (our own mouseup above passes).
+  const dropCompat = (event) => {
+    if (touchSelect.dispatching || !touchSelect.fired || performance.now() - touchSelect.endedAt > 800) return;
+    if (!event.composedPath?.().includes(root)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  // Window capture runs before content.js's document listeners (which would also close the new popup).
+  ['mousedown', 'mouseup', 'click'].forEach((type) => window.addEventListener(type, dropCompat, true));
+  // Once selecting, the finger extends the selection instead of scrolling the transcript.
+  root.addEventListener('touchmove', (event) => { if (touchSelect.active && event.cancelable) event.preventDefault(); }, { capture: true, passive: false });
+  // No native long-press selection / callout inside the subtitle zones on touch.
+  const blockNative = (event) => {
+    if (touchChromeActive() && touchSelect.touch && event.target?.closest?.('.te-sub-container, .yt-dual-transcript-list')) event.preventDefault();
+  };
+  root.addEventListener('contextmenu', blockNative, true);
+  root.addEventListener('selectstart', blockNative, true);
+}
+
 function setupTouchDoubleTap(root) {
   const zoneOf = (target) => target?.closest?.('button, a, input, select, textarea, label, .te-touch-sheet, .te-modal-backdrop') ? null
     : target?.closest?.('.te-player-frame, .te-sub-container, .yt-dual-transcript-list');
-  let down = null;
+  const theaterOn = () => Boolean(globalThis.LHN_TOUCH_THEATER?.isActive?.());
+  let down = null, lift = null, popupCloseUntil = 0;
+  // A tap while the translation sheet is open only closes it (content.js closes on mousedown).
+  root.addEventListener('pointerdown', (event) => {
+    if (!touchChromeActive() || typeof hasVisibleAppPopup !== 'function' || !hasVisibleAppPopup()) return;
+    popupCloseUntil = performance.now() + 700;
+    touchSelectClear();
+    event.stopImmediatePropagation();
+  }, true);
+  setupTouchSelect(root);
   root.addEventListener('pointerdown', (event) => {
     down = null;
-    if (!touchChromeActive() || root.classList.contains('te-touch-compact') && event.target.closest?.('.te-player-slot')) return;
+    lift = null;
+    if (!touchChromeActive() || theaterOn()) return;   // the landscape theater handles its own gestures
+    // Swipe up on the video / audio card (portrait) opens the fullscreen theater.
+    if (event.pointerType === 'touch' && touchOverlayActive() && event.target.closest?.('.te-player-slot, .te-reading-mini-audio') && !event.target.closest('button')) {
+      lift = { x: event.clientX, y: event.clientY };
+    }
+    if (root.classList.contains('te-touch-compact') && event.target.closest?.('.te-player-slot')) return;
     if (!zoneOf(event.target)) return;
     if (touchHeartOnDown(event)) return;
-    down = { x: event.clientX, y: event.clientY, t: performance.now(), player: Boolean(event.target.closest('.te-player-frame')) };
+    down = {
+      x: event.clientX, y: event.clientY, t: performance.now(), touch: event.pointerType === 'touch',
+      player: Boolean(event.target.closest('.te-player-frame')),
+      sub: Boolean(event.target.closest('.te-subtitle-content')),
+      row: event.target.closest('.yt-dual-item'),
+    };
   }, true);
   root.addEventListener('pointermove', (event) => {
     if (down && Math.hypot(event.clientX - down.x, event.clientY - down.y) > 10) down = null;
   }, true);
-  root.addEventListener('pointercancel', () => { down = null; }, true);
+  root.addEventListener('pointercancel', () => { down = null; lift = null; }, true);
   root.addEventListener('pointerup', (event) => {
+    const swipe = lift;
+    lift = null;
+    if (swipe && !touchSelectOwns(event)) {
+      const dy = swipe.y - event.clientY;
+      if (dy > 50 && dy > Math.abs(event.clientX - swipe.x) * 1.5) {
+        down = null;
+        touchTap.suppressUntil = performance.now() + 500;
+        popupCloseUntil = performance.now() + 500;
+        globalThis.LHN_TOUCH_THEATER?.enter?.();
+        return;
+      }
+    }
     if (!down) return;
     const tap = down;
     down = null;
-    if (performance.now() - tap.t > 500) return;
-    // On the video a single tap plays/pauses, delayed so a second tap can turn it into a heart.
-    touchTapUp(event, tap.player ? () => { togglePlay(); pulseControl('Phát/Tạm dừng'); } : null);
+    if (performance.now() - tap.t > 500 || touchSelectOwns(event)) return;
+    // Single taps wait TOUCH_TAP_GAP so a second tap can turn them into a heart.
+    // Video: play/pause. Subtitle (touch): its pause function. Transcript row (touch): jump to that line and play.
+    let single = null;
+    if (tap.player || tap.sub && tap.touch) single = () => { togglePlay(); pulseControl('Phát/Tạm dừng'); };
+    else if (tap.row && tap.touch) {
+      const row = tap.row;
+      single = () => { const stamp = row.isConnected && row.querySelector('.yt-dual-timestamp'); if (stamp) onTranscriptClick({ target: stamp }); };
+    }
+    touchTapUp(event, single);
   }, true);
   // The player's own click handler (play/pause) is replaced by the delayed single tap above; the click of a heart tap is swallowed.
   root.addEventListener('click', (event) => {
     if (!touchChromeActive()) return;
+    if (performance.now() < popupCloseUntil) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     const zone = zoneOf(event.target);
     if (!zone) return;
-    if (performance.now() < touchTap.suppressUntil || zone.classList.contains('te-player-frame')) {
+    if (performance.now() < touchTap.suppressUntil || zone.classList.contains('te-player-frame')
+      || event.pointerType === 'touch' && event.target.closest('.yt-dual-timestamp')) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -890,10 +1070,14 @@ function setupTouchOverlayLayout() {
   // Keep the header title and card source current when a new source opens (the title span is localized/updated).
   const title = root.querySelector('.yt-dual-sidebar-header > span');
   if (title && typeof MutationObserver === 'function') new MutationObserver(syncTouchOverlayHeader).observe(title, { childList: true, characterData: true, subtree: true });
+  // content.js turns subtitle word translations into bottom sheets while this class is on <html>.
+  const syncDocClass = () => document.documentElement.classList.toggle('lhn-touch-overlay', touchChromeActive() && !root.classList.contains('te-hidden'));
   new MutationObserver(() => {
+    syncDocClass();
     if (!root.classList.contains('te-hidden')) { syncTouchOverlayHeader(); syncTouchSheetTiles(); }
     else closeTouchOverlaySheet();
   }).observe(root, { attributes: true, attributeFilter: ['class'] });
+  syncDocClass();
   Promise.resolve(globalThis.browser?.storage?.local?.get(TOUCH_OVERLAY_COMPACT_KEY)).then((stored) => {
     if (typeof stored?.[TOUCH_OVERLAY_COMPACT_KEY] === 'boolean') setTouchOverlayCompact(stored[TOUCH_OVERLAY_COMPACT_KEY], false);
   }, () => {});

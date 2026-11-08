@@ -148,9 +148,19 @@
     const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
     el.style.left = left + "px"; el.style.top = top + "px";
   }
+  // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
+  function placeTouchOverlaySheet(popup, anchor) {
+    const anchorNode = anchor?.startContainer || anchor;
+    if (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host") return false;
+    if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
+    popup.classList.add("lhn-touch-sheet");
+    popup.style.removeProperty("left"); popup.style.removeProperty("top");
+    return true;
+  }
   function positionPopupAtAnchor(popup, anchor) {
     const anchorNode = anchor?.startContainer || anchor;
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
+    if (placeTouchOverlaySheet(popup, anchor)) return;
     const rect = anchor.getBoundingClientRect();
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
@@ -197,6 +207,7 @@
     dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
   }
   function dictionaryPopupAt(popup, range) {
+    if (popup?.isConnected && placeTouchOverlaySheet(popup, range)) return;
     const anchorNode = range?.startContainer;
     const anchorRoot = anchorNode?.getRootNode?.();
     const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;

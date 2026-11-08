@@ -2622,6 +2622,32 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-title[data-touch-title]::before { content: attr(data-touch-title); font-size: 14px; }
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar { padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px)) !important; }
 #keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-speed-label { min-width: 46px !important; }
+
+/* v3.5.153: touch feedback — no tap flash, still web art, opaque previews, finger-driven theater gestures. */
+#keepit-exact-overlay, #keepit-exact-overlay * { -webkit-tap-highlight-color: transparent; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) :is(.te-sub-container, .yt-dual-transcript-list) { -webkit-touch-callout: none; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) :is(.te-player-slot, .te-reading-mini-audio) { touch-action: none; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) .te-player-slot .te-web-page-thumbnail.te-web-thumbnail-bg { filter: brightness(.88) !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout.te-ambient-on:not(.te-study-active) .te-touch-cbtn,
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout.te-ambient-on:not(.te-study-active) .te-touch-cbtn.te-touch-fav.on { border-color: transparent; background: transparent; box-shadow: none; }
+#keepit-exact-overlay .te-tss-pv { background: #fff; }
+#keepit-exact-overlay.theme-dark .te-tss-pv { background: #18181b; }
+#keepit-exact-overlay .te-tss-pv.side .te-tss-pv-box { background: #ede7fe; }
+#keepit-exact-overlay.theme-dark .te-tss-pv.side .te-tss-pv-box { background: #2a223e; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-player-frame video { position: absolute !important; inset: 0 !important; left: 0 !important; top: 0 !important; margin: 0 !important; object-fit: contain !important; transform: none !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-control-bar { padding-left: 70px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-control-bar #te-touch-bar-fav.on { color: #f43f5e !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-subtitle-content { touch-action: none; }
+#keepit-exact-overlay .te-tt-seek { display: none; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-seek { display: flex; position: absolute; top: 50%; left: 50%; z-index: 5; flex-direction: column; align-items: center; gap: 6px; max-width: 70%; padding: 10px 18px; border-radius: 16px; background: rgba(0, 0, 0, .62); color: #fff; text-align: center; opacity: 0; transform: translate(-50%, -50%); transition: opacity .15s; pointer-events: none; }
+#keepit-exact-overlay .te-tt-seek.show { opacity: 1 !important; }
+#keepit-exact-overlay .te-tt-seek > div { display: flex; align-items: baseline; gap: 8px; }
+#keepit-exact-overlay .te-tt-seek b { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+#keepit-exact-overlay .te-tt-seek i { color: #c4b5fd; font-size: 14px; font-style: normal; font-weight: 700; }
+#keepit-exact-overlay .te-tt-seek small { display: -webkit-box; overflow: hidden; color: #ffff00; font-size: 14px; font-weight: 600; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+#keepit-exact-overlay .te-tt-seek small:empty { display: none; }
+#keepit-exact-overlay .te-tt-hint span { line-height: 1.6; text-align: center; }
+#keepit-exact-overlay .te-tt-hint em { display: block; margin-top: 4px; color: #c4b5fd; font-size: 12px; font-style: normal; font-weight: 600; }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->
