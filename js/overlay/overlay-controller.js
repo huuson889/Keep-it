@@ -862,7 +862,7 @@ function syncPlayButton(paused = null) {
 }
 
 // ---- Popup tốc độ: nút "Tốc độ" mở popup (không chuyển tuần tự nữa) ----
-const SPEED_MIN = 0.5, SPEED_MAX = 2.0;
+const SPEED_MIN = 0.5, SPEED_MAX = 3.0; // v3.5.157: same 0.5–3x range as Reader
 function isReaderSharedWebTtsRateActive() {
   return Boolean(state.sourceType === 'web' && state.studyActivity === null);
 }
@@ -932,7 +932,7 @@ function syncSpeedPopup() {
   const val = $('te-speed-value');
   if (val) val.textContent = `${sp.toFixed(2)}x`;
   const sl = $('te-speed-slider');
-  if (sl) { sl.max = isReaderSharedWebTtsRateActive() ? '3' : String(SPEED_MAX); sl.value = sp; }
+  if (sl) { sl.max = String(SPEED_MAX); sl.value = sp; }
   uiAll('#te-speed-popup .te-speed-btn').forEach((btn) => btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.speed) - sp) < 0.02));
 }
 // Đặt popup căn giữa phía trên nút "Tốc độ" (trong hệ tọa độ của overlay), kéo vào trong nếu sát mép

@@ -1206,7 +1206,7 @@
       card.textContent = translated; card.dataset.sourceText = text; card.dataset.targetLang = targetLang;
       updateTranslationCardStyle(card, block);
       const speaker = block.querySelector(":scope > .lhn-bilingual-speaker"); speaker ? speaker.after(card) : block.appendChild(card);
-    } catch (error) { console.warn("Bilingual Reader translation failed", error); }
+    } catch (error) { console.warn("Bilingual Reader translation failed", error); if (!navigator.onLine || /fetch|network/i.test(String(error?.message || error))) globalThis.LHN_BAR_HOOKS?.translateOffline?.(); }
     finally { delete block.dataset.lhnBrTranslating; }
   }
   function observeLazy() {
@@ -1430,6 +1430,14 @@
   }
   function notifySpeed(rate) { if (rate !== null) showBarToast(`${popupText("readerSpeedShort")} ${Number(rate).toFixed(2)}x`); }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
+  // Bottom bar long-press Đọc menu (touch-ui.js): read / change the same speed the Reader bar uses.
+  globalThis.LHN_READER_BAR = Object.freeze({
+    rate:() => currentSegmentRate(),
+    stepRate:delta => setSpeechSpeed(currentSegmentRate() + delta),
+    autoVoice:() => settings.autoDetectVoice !== false,
+    webFont:() => settings.webFontFamily === "'Inter', sans-serif",
+    setWebFont:enabled => { saveWebsiteFont(!!enabled); syncToolbar(); }
+  });
   document.addEventListener("lhn-bilingual-reader-command", event => {
     if (event.detail === "stop-reading") { closeReadingBar(); return; }
     if (event.detail === "toggle-lazy" || event.detail === "toggle-near-pointer") sameLangToastShown = false; // cho phép hiện lại toast khi bấm lại Alt+A/Alt+D

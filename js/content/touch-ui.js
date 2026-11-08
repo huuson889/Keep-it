@@ -1,36 +1,244 @@
-// Touch toolbar for phones and tablets (top frame only; shown when the device has a touch screen and no mouse).
-// Desktop keyboard shortcuts have no equivalent on a touch screen, so each button sends the same key event the
-// shortcut would: every check of the extension (site disabled, Reader site list, overlay gate) still applies and no
-// feature logic is duplicated here. Nothing is stored or sent except the existing Dashboard / AI panel messages.
+// Keepit bottom bar (approved demo: keepit-bottom-bar-demo-v8.html) — every device, top frame only.
+// Narrow (phone, tablet portrait): full-width bar · wide (tablet landscape, desktop): floating island.
+// Buttons reuse the real features: the shortcut each button stands for is replayed as the same key event (so every
+// check of the extension — site disabled, Reader site list, overlay gate — still applies), Dashboard / AI panel use the
+// existing messages, and the quick settings write the same settings the toolbar popup writes.
+// Stored locally only (browser.storage.local): bar preferences + recent searches ("lhnBottomBar") and the
+// first-run flag ("touchBarIntroSeen"). Nothing new is sent anywhere; search results open as normal page navigations.
 (() => {
   "use strict";
-  if (window.top !== window || !document.documentElement) return;
+  if (window.top !== window || !document.documentElement || !/^https?:$/.test(location.protocol)) return;
   const TOUCH = matchMedia("(pointer: coarse) and (hover: none)");
-  const WIDE = matchMedia("(min-width: 600px)");
   const DARK_SCHEME = matchMedia("(prefers-color-scheme: dark)");
-  const TEXT = {
-    en:{ bilingual:"Bilingual", page:"Translate page", block:"Paragraph", reader:"Read", overlay:"Overlay", dictation:"Dictation", notes:"Notes", ai:"Ask AI", more:"More", wholePage:"Whole page", pickBlock:"Choose a paragraph", pickHint:"Tap the paragraph to translate", cancel:"Cancel", dashboard:"Open Dashboard", settings:"Settings", siteOff:"Turn off Keepit on this site", hideBar:"Hide toolbar", show:"Keepit tools", offPill:"Keepit is off here", turnOn:"Turn on", close:"Close", aiFailed:"Could not open the AI panel on this browser" },
-    vi:{ bilingual:"Song ngữ", page:"Dịch trang", block:"Dịch đoạn", reader:"Đọc", overlay:"Overlay", dictation:"Chính tả", notes:"Ghi chú", ai:"Hỏi AI", more:"Thêm", wholePage:"Cả trang", pickBlock:"Chọn đoạn", pickHint:"Chạm vào đoạn muốn dịch", cancel:"Huỷ", dashboard:"Mở Dashboard", settings:"Cài đặt", siteOff:"Tắt Keepit trên trang này", hideBar:"Ẩn thanh công cụ", show:"Công cụ Keepit", offPill:"Keepit đang tắt ở trang này", turnOn:"Bật lại", close:"Đóng", aiFailed:"Không mở được AI panel trên trình duyệt này" },
-    ko:{ bilingual:"이중 언어", page:"페이지 번역", block:"문단 번역", reader:"읽기", overlay:"오버레이", dictation:"받아쓰기", notes:"노트", ai:"AI에게 묻기", more:"더보기", wholePage:"전체 페이지", pickBlock:"문단 선택", pickHint:"번역할 문단을 누르세요", cancel:"취소", dashboard:"대시보드 열기", settings:"설정", siteOff:"이 사이트에서 Keepit 끄기", hideBar:"도구 모음 숨기기", show:"Keepit 도구", offPill:"이 사이트에서 Keepit이 꺼져 있음", turnOn:"켜기", close:"닫기", aiFailed:"이 브라우저에서 AI 패널을 열 수 없습니다" }
+  const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+  const STORE_KEY = "lhnBottomBar", INTRO_KEY = "touchBarIntroSeen", DICTATION_KEY = "dictation:session-index:v1";
+
+  // ---------- text (en / vi / ko) ----------
+  const T = {
+    page:["Translate page","Dịch trang","페이지 번역"], block:["Translate paragraph","Dịch đoạn","문단 번역"], reader:["Read","Đọc","읽기"],
+    overlay:["Video mode","Vào video","비디오 모드"], dictation:["Study","Vào học","학습"], notes:["Notes","Ghi chú","노트"], ai:["Ask AI","Hỏi AI","AI에게 묻기"],
+    more:["More","Thêm","더보기"], search:["Search","Tìm kiếm","검색"],
+    sPage:["Translate","Dịch","번역"], sOverlay:["Video","Video","비디오"], sDictation:["Study","Học","학습"],
+    pickHint:["Tap the paragraph to translate","Chạm vào đoạn muốn dịch","번역할 문단을 누르세요"],
+    readerStart:["Reading — the Reader bar takes this bar's place","Bắt đầu đọc — thanh Reader thay chỗ thanh này","읽기 시작 — Reader 바가 이 바를 대신합니다"],
+    trPageOn:["Translated the whole page (bilingual)","Đã dịch song ngữ cả trang","전체 페이지를 이중 언어로 번역했습니다"],
+    trPageOff:["Page translation removed","Đã bỏ dịch trang","페이지 번역을 해제했습니다"],
+    trPageAgain:["Page translated again","Đã dịch lại trang","페이지를 다시 번역했습니다"],
+    paraOn:["Paragraph translated","Đã dịch đoạn","문단을 번역했습니다"], paraOff:["Paragraph translation removed","Đã bỏ dịch đoạn","문단 번역을 해제했습니다"],
+    paraAgain:["Paragraph translated again","Đã dịch lại đoạn","문단을 다시 번역했습니다"], undo:["Undo","Hoàn tác","실행 취소"],
+    offline:["No connection — couldn't translate","Không có mạng — chưa dịch được","인터넷 연결 없음 — 번역하지 못했습니다"], retry:["Retry","Thử lại","다시 시도"],
+    online:["Back online","Đã có mạng lại","다시 연결되었습니다"], translateNow:["Translate now","Dịch ngay","지금 번역"],
+    noBack:["No previous page","Không còn trang trước","이전 페이지가 없습니다"], noFwd:["No next page","Không còn trang sau","다음 페이지가 없습니다"],
+    hiddenDesk:["Bar hidden — hover the line at the bottom to show it","Đã ẩn thanh — rê chuột vào vạch dưới đáy để hiện","바를 숨겼습니다 — 아래쪽 선에 마우스를 올리면 표시됩니다"],
+    hiddenTouch:["Bar hidden — tap the line at the bottom to show it","Đã ẩn thanh — chạm vạch dưới đáy để hiện","바를 숨겼습니다 — 아래쪽 선을 누르면 표시됩니다"],
+    shown:["Bar shown","Đã hiện thanh","바를 표시했습니다"],
+    yieldDesk:["Keepit bar folded so it doesn't cover the page's bar · hover the line to open","Thanh Keepit thu gọn để không che thanh của trang · rê chuột vào vạch để mở","페이지의 바를 가리지 않도록 Keepit 바를 접었습니다 · 선에 마우스를 올리면 열립니다"],
+    yieldTouch:["Keepit bar folded so it doesn't cover the page's bar · tap the line to open","Thanh Keepit thu gọn để không che thanh của trang · chạm vạch để mở","페이지의 바를 가리지 않도록 Keepit 바를 접었습니다 · 선을 누르면 열립니다"],
+    offPill:["Keepit is off on this page","Keepit đang tắt ở trang này","이 페이지에서 Keepit이 꺼져 있음"], turnOn:["Turn on","Bật lại","켜기"],
+    siteOn:["Keepit turned on for this page","Đã bật Keepit trên trang này","이 페이지에서 Keepit을 켰습니다"], siteOff:["Keepit turned off for this page","Đã tắt Keepit trên trang này","이 페이지에서 Keepit을 껐습니다"],
+    aiFailed:["Could not open the AI panel on this browser","Không mở được AI panel trên trình duyệt này","이 브라우저에서 AI 패널을 열 수 없습니다"],
+    showBar:["Show Keepit bar","Hiện thanh Keepit","Keepit 바 표시"], toTop:["Back to top","Lên đầu trang","맨 위로"],
+    qTrPage:["Translate whole page","Dịch cả trang","전체 페이지 번역"], qUntrPage:["Remove page translation","Bỏ dịch cả trang","전체 페이지 번역 해제"],
+    qPick:["Choose a paragraph to translate","Chọn đoạn để dịch","번역할 문단 선택"], qTo:["Translate to","Dịch sang","번역 언어"],
+    qStart:["Start reading","Bắt đầu đọc","읽기 시작"], qSpeed:["Speed","Tốc độ","속도"], slower:["Slower","Giảm tốc độ","느리게"], faster:["Faster","Tăng tốc độ","빠르게"],
+    qVoice:["Voice","Giọng đọc","음성"], auto:["Auto","Tự động","자동"], custom:["Reader setting","Theo cài đặt","설정값"],
+    voiceAuto:["Voice: automatic by page language","Giọng đọc: tự động theo ngôn ngữ trang","음성: 페이지 언어에 따라 자동"],
+    voiceSet:["Voice: as set in Reader","Giọng đọc: theo cài đặt Reader","음성: Reader 설정을 따름"],
+    login:["Sign in","Đăng nhập","로그인"], language:["Language","Ngôn ngữ","언어"], langSearch:["Search languages…","Tìm ngôn ngữ…","언어 검색…"],
+    langNone:["No language found","Không tìm thấy ngôn ngữ","언어를 찾을 수 없습니다"], langSet:["Language: ","Ngôn ngữ: ","언어: "],
+    tools:["Tools","Công cụ","도구"], dashboard:["Dashboard","Bảng quản lý","대시보드"],
+    restore:["Re-highlight","Tô sáng lại","다시 하이라이트"], restoreTip:["Restore highlights on this page","Khôi phục tô sáng trên trang","이 페이지의 하이라이트 복원"],
+    restored:["Highlights restored on this page","Đã tô sáng lại trên trang","이 페이지에 하이라이트를 다시 표시했습니다"],
+    settings:["Settings","Cài đặt","설정"], keys:["Shortcuts","Phím tắt","단축키"], keysTip:["Shortcuts that work on this page","Phím tắt dùng được trên trang này","이 페이지에서 쓸 수 있는 단축키"],
+    gestures:["Gestures","Cử chỉ","제스처"], gesturesTip:["Gestures that work on this page","Cử chỉ dùng được trên trang này","이 페이지에서 쓸 수 있는 제스처"],
+    compact:["Compact bar","Gọn thanh","간단한 바"], compactAuto:["Compact automatically because system text is large","Đang tự gọn vì cỡ chữ hệ thống lớn","시스템 글자가 커서 자동으로 간단히 표시 중"],
+    compactTip:["5-button bar ({0}, Ask AI move to ☰)","Thanh 5 nút ({0}, Hỏi AI vào ☰)","5버튼 바 ({0}, AI에게 묻기는 ☰로 이동)"],
+    compactAutoToast:["The bar is compact because system text is large","Thanh đang tự gọn vì cỡ chữ hệ thống lớn","시스템 글자가 커서 바가 자동으로 간단해졌습니다"],
+    five:["Compact bar: 5 buttons","Thanh gọn: 5 nút","간단한 바: 5버튼"], seven:["Full bar: 7 buttons","Thanh đầy đủ: 7 nút","전체 바: 7버튼"],
+    onSelect:["When selecting text","Khi chọn chữ","텍스트 선택 시"],
+    tIcon:["Keepit icon","Icon Keepit","Keepit 아이콘"], tIconTip:["Show the Keepit icon when selecting text","Hiện biểu tượng Keepit khi chọn chữ","텍스트 선택 시 Keepit 아이콘 표시"],
+    tShow:["Note popup","Popup ghi chú","노트 팝업"], tShowTip:["Auto-open the note popup","Tự động mở popup ghi chú","노트 팝업 자동 열기"],
+    tHl:["Auto highlight","Tự tô sáng","자동 하이라이트"], tHlTip:["Highlight automatically","Tự động tô sáng","자동으로 하이라이트"],
+    tTr:["Translate note","Dịch ghi chú","노트 번역"], tTrTip:["Auto-translate into the note popup","Tự động dịch vào popup ghi chú","노트 팝업에 자동 번역"],
+    tSent:["Sentence note","Ghi chú câu","문장 노트"], tSentTip:["Auto sentence note","Tự động ghi chú câu","문장 노트 자동"],
+    tSpeak:["Auto read","Tự động đọc","자동 읽기"], tSpeakTip:["Read aloud when the popup opens","Tự động đọc khi mở popup","팝업이 열리면 읽어 주기"],
+    tPopup:["Auto translate","Tự động dịch","자동 번역"], tPopupTip:["Show the direct translation popup","Hiện popup dịch trực tiếp","바로 번역 팝업 표시"],
+    tDict:["Full dictionary","Từ điển đủ","전체 사전"], tDictTip:["Select one English word → full dictionary","Chọn 1 từ tiếng Anh → mở từ điển đầy đủ","영어 단어 하나 선택 → 전체 사전"],
+    on:["On: ","Đã bật: ","켬: "], off:["Off: ","Đã tắt: ","끔: "],
+    colors:["Default highlight color","Màu tô sáng mặc định","기본 하이라이트 색상"], colorSet:["Default highlight color: ","Màu tô sáng mặc định: ","기본 하이라이트 색상: "],
+    yellow:["Yellow","Vàng","노랑"], green:["Green","Xanh lá","초록"], purple:["Purple","Tím","보라"], red:["Red","Đỏ","빨강"], blue:["Blue","Xanh dương","파랑"], orange:["Orange","Cam","주황"],
+    lookSite:["Appearance & this page","Giao diện & trang này","화면 및 이 페이지"], theme:["Theme","Chủ đề","테마"],
+    font:["Custom font","Font tùy chỉnh","사용자 글꼴"], fontOn:["Custom font on","Đã bật Font tùy chỉnh","사용자 글꼴 켬"], fontOff:["Custom font off","Đã tắt Font tùy chỉnh","사용자 글꼴 끔"],
+    suggest:["Search suggestions","Gợi ý tìm kiếm","검색 제안"], suggestTip:["Google suggestions while typing (APK only)","Gợi ý từ Google khi gõ (chỉ APK)","입력 시 Google 제안 (APK 전용)"],
+    siteTile:["Site on","Bật trang","사이트 켜기"], siteTip:["Turn Keepit on for this page","Bật Keepit trên trang này","이 페이지에서 Keepit 켜기"],
+    navsite:["Swipe pages","Vuốt trang","페이지 스와이프"], navsiteTip:["Swipe sideways to go back / forward on {0}","Vuốt ngang để lùi / tới trên {0}","{0}에서 옆으로 밀어 뒤로 / 앞으로"],
+    navOffToast:["Back / forward swipe off on ","Đã tắt vuốt lùi / tới trên ","뒤로 / 앞으로 스와이프 끔: "], navOnToast:["Back / forward swipe on on ","Đã bật vuốt lùi / tới trên ","뒤로 / 앞으로 스와이프 켬: "],
+    btopTile:["Top button","Nút lên đầu","맨 위 버튼"], btopTip:["Show a back-to-top button when you scroll far","Hiện nút lên đầu trang khi cuộn xa","멀리 스크롤하면 맨 위로 버튼 표시"],
+    btopOn:["Back-to-top button on — shows after scrolling past 1 screen","Đã bật nút lên đầu trang — hiện khi cuộn quá 1 màn hình","맨 위로 버튼 켬 — 한 화면 넘게 스크롤하면 표시"],
+    btopOff:["Back-to-top button off","Đã tắt nút lên đầu trang","맨 위로 버튼 끔"],
+    hide:["Hide bar","Ẩn thanh","바 숨기기"], show:["Show bar","Hiện thanh","바 표시"], back:["Back","Quay lại","뒤로"], moreBelow:["See more below","Xem thêm bên dưới","아래에 더 보기"],
+    navG:["back / forward swipe","vuốt lùi / tới trang","뒤로 / 앞으로 스와이프"], trG:["translate gestures","cử chỉ dịch","번역 제스처"],
+    gGeneral:["General","Chung","일반"], kSite:["Turn Keepit on/off for the page","Bật/tắt Keepit trên trang","페이지에서 Keepit 켜기/끄기"],
+    kAi:["Open/close AI panel","Mở/đóng AI panel","AI 패널 열기/닫기"], kNotes:["Open/close Notes","Mở/đóng Ghi chú","노트 열기/닫기"],
+    kNotePopup:["Open note popup","Mở popup ghi chú","노트 팝업 열기"],
+    kTranslateSel:["Translate selection (1 English word → full dictionary)","Dịch chữ đã chọn (1 từ tiếng Anh → từ điển đủ)","선택한 텍스트 번역 (영어 단어 하나 → 전체 사전)"],
+    gTrRead:["Translate & read the page","Dịch & đọc trang","페이지 번역 및 읽기"], kLazy:["Bilingual translate the whole page as you scroll","Dịch song ngữ cả trang khi cuộn","스크롤하며 전체 페이지 이중 언어 번역"],
+    kNear:["Translate the paragraph near the pointer","Dịch đoạn gần con trỏ","포인터 근처 문단 번역"], kRead:["Read / stop reading","Đọc / dừng đọc","읽기 / 멈추기"],
+    gReading:["While reading","Khi đang đọc","읽는 중"], kPause:["Pause / resume","Tạm dừng / tiếp tục","일시정지 / 계속"], kPrevNext:["Previous / next paragraph","Đoạn trước / sau","이전 / 다음 문단"],
+    kSpeed:["Faster / slower","Tăng / giảm tốc độ","빠르게 / 느리게"], kVoice:["Choose voice","Chọn giọng đọc","음성 선택"],
+    gVideo:["Video","Video","비디오"], kPlay:["Play / pause","Phát / tạm dừng","재생 / 일시정지"], kPrevS:["Previous sentence","Câu trước","이전 문장"], kNextS:["Next sentence","Câu tiếp theo","다음 문장"],
+    kRate:["Slower / faster by 0.05","Giảm / tăng tốc độ 0,05","0.05씩 느리게 / 빠르게"], kReplay:["Replay sentence","Nghe lại câu","문장 다시 듣기"],
+    gBar:["Keepit bar","Thanh Keepit","Keepit 바"], kPickRes:["Choose a search result","Chọn kết quả tìm kiếm","검색 결과 선택"], kOpenRes:["Open result","Mở kết quả","결과 열기"], kClose:["Close popup","Đóng popup","팝업 닫기"],
+    gTranslate:["Translate","Dịch","번역"], kPara:["Translate / untranslate a paragraph","Dịch / bỏ dịch đoạn văn","문단 번역 / 해제"], vSwipeLeftPara:["Swipe left on the paragraph","Vuốt sang trái trên đoạn","문단에서 왼쪽으로 밀기"],
+    kAll:["Translate / untranslate the article","Dịch / bỏ dịch cả bài","글 전체 번역 / 해제"], vTriple:["Tap 3 times","Nhấn 3 lần","세 번 탭"], vNoPc:["Not on desktop-layout pages","Không dùng trên trang PC","PC 레이아웃 페이지에서는 사용 안 함"],
+    gNav:["Back / forward","Lùi / tới trang","뒤로 / 앞으로"], kPrevPage:["Previous page","Trang trước","이전 페이지"], vSwipeRight:["Swipe right on the page","Vuốt sang phải trên trang","페이지에서 오른쪽으로 밀기"],
+    kNextPage:["Next page","Trang sau","다음 페이지"], vSwipeLeftOut:["Swipe left outside paragraphs","Vuốt sang trái ngoài đoạn văn","문단 밖에서 왼쪽으로 밀기"], vSwipeLeft:["Swipe left on the page","Vuốt sang trái trên trang","페이지에서 왼쪽으로 밀기"],
+    kNavOffHere:["Off on this page","Đang tắt trên trang này","이 페이지에서 꺼짐"], vNavOffHere:["☰ → Swipe pages","☰ → Vuốt trang","☰ → 페이지 스와이프"],
+    kSelIcon:["Select text, show the Keepit icon","Chọn chữ, hiện icon Keepit","텍스트 선택, Keepit 아이콘 표시"], vLongPress:["Long-press on text","Nhấn giữ trên chữ","텍스트 길게 누르기"],
+    gVideoPort:["Video (portrait)","Video (màn hình dọc)","비디오 (세로)"], kTheater:["Theater (full screen)","Vào rạp (toàn màn hình)","극장 (전체 화면)"], vSwipeUpVideo:["Swipe up on the video","Vuốt lên trên video","비디오에서 위로 밀기"],
+    kPlayStop:["Play / pause","Phát / dừng","재생 / 정지"], vTapSub:["Tap a subtitle","Chạm phụ đề","자막 누르기"], kSeekS:["Jump to a sentence","Tua đến câu","문장으로 이동"], vTapLine:["Tap a transcript line","Chạm dòng transcript","스크립트 줄 누르기"],
+    kLookUp:["Look up a word","Tra từ","단어 찾기"], vLongSub:["Long-press a subtitle word","Nhấn giữ trên từ phụ đề","자막 단어 길게 누르기"], kFav:["Add to Favorites ♥","Thêm vào Yêu thích ♥","즐겨찾기 ♥ 추가"], vDouble:["Double-tap","Nhấn đúp","두 번 탭"],
+    gTheater:["Theater (landscape)","Rạp (màn hình ngang)","극장 (가로)"], kControls:["Show / hide controls","Hiện / ẩn thanh điều khiển","컨트롤 표시 / 숨기기"], vTapVideo:["Tap the video","Chạm video","비디오 누르기"],
+    kVolume:["Volume","Âm lượng","볼륨"], vLeftV:["Swipe vertically on the left","Vuốt dọc bên trái","왼쪽에서 세로로 밀기"], kBright:["Brightness","Độ sáng","밝기"], vRightV:["Swipe vertically on the right","Vuốt dọc bên phải","오른쪽에서 세로로 밀기"],
+    kSeek:["Seek","Tua","탐색"], vSwipeH:["Swipe sideways","Vuốt ngang","옆으로 밀기"], kExitTheater:["Exit theater","Thoát rạp","극장 나가기"], vSwipeDownMid:["Swipe down in the middle","Vuốt xuống ở giữa","가운데에서 아래로 밀기"],
+    kPrevNextPage:["Previous / next page","Trang trước / sau","이전 / 다음 페이지"], vSwipeBar:["Swipe sideways on the bar","Vuốt ngang trên thanh","바에서 옆으로 밀기"],
+    kQuick:["Quick options","Tùy chọn nhanh","빠른 옵션"], vHoldTr:["Long-press Translate / Read","Nhấn giữ nút Dịch / Đọc","번역 / 읽기 길게 누르기"],
+    kHideShow:["Hide / show the bar","Ẩn / hiện thanh","바 숨기기 / 표시"], vScroll:["Scroll down / up","Cuộn xuống / lên","아래로 / 위로 스크롤"],
+    kShowHidden:["Show the bar when hidden","Hiện thanh khi đã ẩn","숨긴 바 표시"], vTapLine2:["Tap the line at the bottom","Chạm vạch dưới đáy","아래쪽 선 누르기"],
+    gPopups:["Popups & panels","Popup & bảng","팝업 및 패널"], kExpand:["Expand","Mở rộng","펼치기"], vDragUp:["Drag up","Kéo lên","위로 끌기"],
+    kShrink:["Shrink / close","Thu nhỏ / đóng","줄이기 / 닫기"], vDragDown:["Drag down","Kéo xuống","아래로 끌기"], kCloseP:["Close","Đóng","닫기"], vTapOut:["Tap outside","Chạm ra ngoài","바깥 누르기"],
+    newTag:["New","Mới","새로움"], coachRev:["See gesture tips again","Xem lại mẹo cử chỉ","제스처 팁 다시 보기"], onPage:["On this page: ","Trên trang này: ","이 페이지: "],
+    enableG:["Turn on gestures: ","Bật cử chỉ ","제스처 켜기: "],
+    coachTitle:["Gesture tips","Mẹo cử chỉ","제스처 팁"], coachNew:["New: gestures on the page","Mới: cử chỉ trên trang","새 기능: 페이지 제스처"],
+    cSwipePara:["Swipe left on a paragraph","Vuốt trái trên đoạn","문단에서 왼쪽으로 밀기"], cSwipeLR:["Swipe right / left","Vuốt phải / trái","오른쪽 / 왼쪽으로 밀기"],
+    cHold:["Long-press Translate / Read","Nhấn giữ Dịch / Đọc","번역 / 읽기 길게 누르기"], seeAll:["See all","Xem tất cả","모두 보기"], gotIt:["Got it","Đã hiểu","확인"],
+    introTitle:["Keepit bar","Thanh Keepit","Keepit 바"], introSub:["Keepit tools at the bottom of every web page","Công cụ Keepit ở đáy mọi trang web","모든 웹 페이지 아래쪽의 Keepit 도구"],
+    i1:["Translate, Read, Notes, Ask AI — right on the page","Dịch, Đọc, Ghi chú, Hỏi AI — dùng ngay trên trang","번역, 읽기, 노트, AI에게 묻기 — 페이지에서 바로"],
+    i2:["Purple button: search the dictionary, notes, Google, YouTube","Nút tím: tìm từ điển, ghi chú, Google, YouTube","보라색 버튼: 사전, 노트, Google, YouTube 검색"],
+    i3:["More: language, quick settings, tools","Thêm: ngôn ngữ, cài đặt nhanh, công cụ","더보기: 언어, 빠른 설정, 도구"],
+    i4d:["Hover a button to see its shortcut","Rê chuột lên nút để xem phím tắt","버튼에 마우스를 올리면 단축키 표시"],
+    i5d:["More → Hide bar: a thin line stays, hover it to show","Thêm → Ẩn thanh: còn vạch mỏng, rê chuột vào để hiện","더보기 → 바 숨기기: 얇은 선이 남고, 마우스를 올리면 표시"],
+    i4t:["Swipe sideways on the bar: back / forward","Vuốt ngang trên thanh: lùi / tới trang","바에서 옆으로 밀기: 뒤로 / 앞으로"],
+    i5t:["Scroll down: the bar hides · scroll up: it's back","Cuộn xuống: thanh tự ẩn · cuộn lên: hiện lại","아래로 스크롤: 바 숨김 · 위로 스크롤: 다시 표시"],
+    introAria:["About the Keepit bar","Giới thiệu thanh Keepit","Keepit 바 소개"],
+    sPlaceholder:["Search or type a web address","Tìm hoặc nhập địa chỉ","검색하거나 웹 주소 입력"], clear:["Clear","Xoá","지우기"],
+    scAll:["All","Tất cả","전체"], scDict:["Dictionary","Từ điển","사전"], scNotes:["Notes","Ghi chú","노트"], scLists:["Lists","Danh sách","목록"],
+    recentSec:["Recent","Gần đây","최근"], clearAll:["Clear all","Xoá tất cả","모두 지우기"], rSearch:["Searched","Đã tìm","검색함"], rUrl:["Opened","Đã mở","열었음"],
+    addrSec:["Address","Địa chỉ","주소"], openPage:["Open page","Mở trang","페이지 열기"], openNewTab:["Open in a new tab","Mở trong tab mới","새 탭에서 열기"],
+    lookup:["Look up “{0}”","Tra “{0}”","“{0}” 찾기"], savedWord:["Lists · Saved words","Danh sách · Từ vựng đã lưu","목록 · 저장한 단어"],
+    noteSub:["Notes · {0}","Ghi chú · {0}","노트 · {0}"], hlSub:["Highlight · {0}","Tô sáng · {0}","하이라이트 · {0}"],
+    dictSub:["Lists · Dictation · {0}","Danh sách · Chép chính tả · {0}","목록 · 받아쓰기 · {0}"], sentences:["{0}/{1} sentences","{0}/{1} câu","{0}/{1} 문장"], done:[" · done"," · xong"," · 완료"],
+    notFound:["No “{0}” in {1}","Không tìm thấy “{0}” trong {1}","{1}에서 “{0}”을(를) 찾지 못했습니다"],
+    onGoogle:["Search on Google","Tìm trên Google","Google에서 검색"], onYt:["Search on YouTube","Tìm trên YouTube","YouTube에서 검색"],
+    fillIn:["Fill in the search box","Điền vào ô tìm","검색창에 채우기"], remove:["Remove","Xoá","삭제"],
+    emptyAll:["Search the Keepit Dictionary, Notes, Lists, Google and YouTube — or type a web address.","Tìm trong Từ điển Keepit, Ghi chú, Danh sách, Google và YouTube — hoặc nhập địa chỉ trang web.","Keepit 사전, 노트, 목록, Google, YouTube에서 검색하거나 웹 주소를 입력하세요."],
+    emptyScope:["Type to search {0}.","Nhập từ khoá để tìm trong {0}.","{0}에서 검색할 단어를 입력하세요."],
+    openedTab:["Opened in a new tab","Đã mở trong tab mới","새 탭에서 열었습니다"], openingNote:["Opening the note","Đang mở ghi chú","노트를 여는 중"],
+    noteInPanel:["Opened the note in the Notes panel","Mở ghi chú trong bảng Ghi chú","노트 패널에서 노트를 열었습니다"], hlInPanel:["Opened the highlight in the Notes panel","Mở tô sáng trong bảng Ghi chú","노트 패널에서 하이라이트를 열었습니다"],
+    openingHl:["Opening the highlight","Đang mở tô sáng","하이라이트를 여는 중"], openingDict:["Opening the dictation lesson","Mở bài chép chính tả","받아쓰기 수업을 엽니다"],
+    fSelect:["Select","Chọn","선택"], fOpen:["Open","Mở","열기"], fClose:["Close","Đóng","닫기"], reload:["Reload","Tải lại","새로고침"]
   };
+  const LANG_INDEX = { en:0, vi:1, ko:2 };
+
+  // ---------- icons / flags / domains (same as the demo) ----------
   const P = {
-    lang:'<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
-    para:'<path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h7"/><path d="m15 15 3 6 3-6"/>',
-    read:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
-    overlay:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z"/><path d="M8 21h8"/><path d="M12 17v4"/>',
-    keyboard:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h.01M12 13h.01M16 13h.01M7 16h10"/>',
-    notes:'<path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9.5 8h5M9.5 12H16M9.5 16H14"/>',
-    ai:'<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M19 3v4M17 5h4"/>',
-    more:'<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>',
-    dash:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
-    gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>',
-    power:'<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
-    eyeoff:'<path d="m2 2 20 20"/><path d="M6.7 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 6.4 0 10 7 10 7a17 17 0 0 1-2.2 3.2"/>',
-    x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    logo:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>'
+  lang:'<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
+  para:'<path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h7"/><path d="m15 15 3 6 3-6"/>',
+  read:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  overlay:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  keyboard:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h.01M12 13h.01M16 13h.01M7 16h10"/>',
+  notes:'<path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9.5 8h5M9.5 12H16M9.5 16H14"/>',
+  ai:'<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M19 3v4M17 5h4"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  captions:'<rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/>',
+  cap:'<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+  sparkles:'<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/>',
+  dashboard:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  user:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>',
+  type:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',
+  tquote:'<path d="M17 6H3M21 12H8M21 18H8M3 12v6"/>',
+  tsearch:'<path d="M21 6H3M10 12H3M10 18H3"/><circle cx="17" cy="15" r="3"/><path d="m21 19-1.9-1.9"/>',
+  sticky:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',
+  msgtext:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7M17 12H7"/>',
+  npen:'<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
+  rotate:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="m9 15 3-6 3 6M10 13h4"/>',
+  card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
+  search:'<circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/>',
+  dash:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  power:'<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
+  hand:'<path d="M22 14a8 8 0 0 1-8 8"/><path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1"/><path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  minimize:'<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="m14 10 7-7"/><path d="m3 21 7-7"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="m2 2 20 20"/><path d="M6.7 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 6.4 0 10 7 10 7a17 17 0 0 1-2.2 3.2"/>',
+  pin:'<path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2v2H6v-2z"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  logo:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  restore:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  popup:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  cursor:'<path d="M9 9l5 12 1.8-5.2L21 14z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  hl:'<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>',
+  snote:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><path d="M15 3v5h6"/><path d="M7 13h6M7 17h9"/>',
+  suggest:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  fill:'<path d="M7 17V7h10"/><path d="M17 17 7 7"/>',
+  down:'<path d="m6 9 6 6 6-6"/>', left:'<path d="m15 18-6-6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  reload:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  up:'<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>', bulb:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>', max:'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>', min:'<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>', lr:'<path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="M3 12h18"/>', gauge:'<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>', voice:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',
+  wifioff:'<path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="M19 12.86a10 10 0 0 0-2-1.41"/><path d="M2 8.82a15 15 0 0 1 4.18-2.65"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/><path d="m2 2 20 20"/>',
+  check:'<path d="m5 12 4 4L19 6"/>', star:'<path d="M12 2 15 9l7 .6-5.3 4.7L18.2 22 12 18.3 5.8 22l1.5-7.7L2 9.6 9 9z"/>'
+};
+  const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
+  const FLAG = {
+  en:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#fff"/><g fill="#b22234">' + [0, 2, 4, 6, 8, 10, 12].map(i => `<rect y="${(i * 20 / 13).toFixed(2)}" width="30" height="1.54"/>`).join("") + '</g><rect width="12" height="10.77" fill="#3c3b6e"/><g fill="#fff">' + [[2, 2], [5, 2], [8, 2], [3.5, 4.5], [6.5, 4.5], [9.5, 4.5], [2, 7], [5, 7], [8, 7], [3.5, 9], [6.5, 9]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".6"/>`).join("") + '</g></svg>',
+  vi:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#da251d"/><path fill="#ff0" d="M15 4.4L16.26 8.27H20.33L17.04 10.66L18.29 14.53L15 12.14L11.71 14.53L12.96 10.66L9.67 8.27H13.74Z"/></svg>',
+  ko:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#fff"/><g transform="rotate(33.69 15 10)"><circle cx="15" cy="10" r="5" fill="#0047a0"/><path fill="#cd2e3a" d="M10 10A5 5 0 0 1 20 10A2.5 2.5 0 0 1 15 10A2.5 2.5 0 0 0 10 10Z"/></g><g fill="#000">' + [[6.2, 4.6, -56.3], [23.8, 15.4, -56.3], [23.8, 4.6, 56.3], [6.2, 15.4, 56.3]].map(([x, y, a]) => `<g transform="translate(${x} ${y}) rotate(${a})"><rect x="-2.2" y="-1.9" width="4.4" height=".8"/><rect x="-2.2" y="-.4" width="4.4" height=".8"/><rect x="-2.2" y="1.1" width="4.4" height=".8"/></g>`).join("") + '</g></svg>'
+};
+  const DOMAINS = ["youtube.com", "google.com", "wikipedia.org", "vi.wikipedia.org", "facebook.com", "bbc.com", "bbc.co.uk", "cnn.com", "github.com", "gmail.com", "vnexpress.net", "tuoitre.vn", "thanhnien.vn", "reddit.com", "medium.com", "nytimes.com", "theguardian.com", "translate.google.com", "chatgpt.com", "khanacademy.org", "coursera.org", "ted.com", "netflix.com", "instagram.com", "x.com", "tiktok.com", "zalo.me", "shopee.vn", "tiki.vn", "linkedin.com", "stackoverflow.com", "duolingo.com", "nationalgeographic.com", "cambridge.org", "dictionary.cambridge.org", "oxfordlearnersdictionaries.com"];
+  const DEMO_COLORS = { yellow:"#fff3a6", green:"#c2f0bd", purple:"#d5cbff", red:"#ffc7c7", blue:"#c3e4ff", orange:"#ffd0a3" };
+
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+  const norm = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase().trim();
+
+  let settings = {}, host = null, root = null, mounted = false, picking = false;
+  const S = {
+    hidden:false, peek:false, scrollHide:false, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
+    coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
+    kbd:false, vfs:false, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false
   };
-  const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[name]}</svg>`;
-  // name → { combo (fixed) | setting (configurable shortcut), event fallback when the shortcut was cleared }
+  const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+  const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
+  const langCode = () => { const code = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return code in LANG_INDEX ? code : "en"; };
+  const t = (key, ...args) => { const row = T[key]; let s = row ? row[LANG_INDEX[langCode()]] || row[0] : key; args.forEach((a, i) => { s = s.split(`{${i}}`).join(a); }); return s; };
+  const LANGS = () => (globalThis.LHN_LANGUAGES?.LANGS || [{ code:"en", name:"English", native:"English" }, { code:"vi", name:"Vietnamese", native:"Tiếng Việt" }, { code:"ko", name:"Korean", native:"한국어" }]);
+  const isDark = () => settings.sidebarTheme === "dark" || (settings.sidebarTheme !== "light" && DARK_SCHEME.matches);
+  const isTouch = () => TOUCH.matches;
+  const isDesk = () => !TOUCH.matches;
+  const isApk = () => globalThis.LHN_PLATFORM === "android";
+  const isWide = () => isDesk() ? innerWidth >= 760 : innerWidth >= 900 && innerHeight >= 600;
+  const isPland = () => isTouch() && !isWide() && innerWidth > innerHeight && innerHeight < 500;
+  const isSmall = () => !isWide() && innerWidth < 600;
+  const isFive = () => !isWide() && (S.five || S.autoFive);
+  const smooth = () => REDUCED.matches ? "auto" : "smooth";
+  const hostName = () => websiteKey();
+  const pageMobile = () => /width\s*=\s*device-width/i.test(document.querySelector('meta[name="viewport"]')?.content || "");
+  const isVideoPage = () => /(^|\.)youtube\.com$/.test(location.hostname) && location.pathname === "/watch";
+  const pageTranslated = () => !!window.__lhnBilingualLazy;
+  const $ = id => root?.getElementById(id);
+  const $$ = (sel, r = root) => r ? [...r.querySelectorAll(sel)] : [];
+  const shortcut = (key, fallback) => typeof settings[key] === "string" && settings[key] ? settings[key] : fallback;
+  const readerKey = (key, fallback) => { const v = shortcut(key, fallback); return { Left:"←", Right:"→", Up:"↑", Down:"↓" }[v] || v; };
+
+  // ---------- real commands ----------
   const COMMANDS = {
     "bilingual-page":{ combo:"Alt+A" }, "bilingual-block":{ combo:"Alt+D" }, reader:{ combo:"Alt+R" },
     overlay:{ setting:"dualSubtitlesShortcut", fallback:"Alt+E", event:"lhn-youtube-dual-subtitles-toggle" },
@@ -38,17 +246,6 @@
     notes:{ setting:"sidebarShortcut", fallback:"Alt+Q" },
     "site-toggle":{ setting:"toggleWebsiteShortcut", fallback:"Alt+Z" }
   };
-  const PHONE_NAV = ["bilingual", "reader", "overlay", "notes", "more"];
-  const TABLET_NAV = ["page", "block", "reader", "overlay", "dictation", "notes", "ai", "more"];
-  const NAV_ICON = { bilingual:"lang", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"keyboard", notes:"notes", ai:"ai", more:"more" };
-
-  let settings = {}, host = null, root = null, mounted = false, dismissed = false, picking = false, lastBar = "";
-  const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
-  const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
-  const lang = () => { const code = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return TEXT[code] ? code : "en"; };
-  const tr = key => TEXT[lang()][key] || TEXT.en[key] || key;
-  const isDark = () => settings.sidebarTheme === "dark" || (settings.sidebarTheme !== "light" && DARK_SCHEME.matches);
-
   function keyEventFor(combo) {
     const parts = String(combo || "").split("+").map(part => part.trim()).filter(Boolean);
     if (!parts.length) return null;
@@ -66,212 +263,1154 @@
     if (event) (document.body || document.documentElement).dispatchEvent(event);
     else if (spec.event) document.dispatchEvent(new CustomEvent(spec.event));
   }
-  function send(type) { return globalThis.LHN_MESSAGING?.sendMessage({ type }).catch(() => null); }
-  async function askAI() {
-    const result = await send("TOGGLE_AI_PANEL");
-    if (!result?.ok) toast(tr("aiFailed"));
+  function send(type, extra) { return globalThis.LHN_MESSAGING?.sendMessage({ type, ...(extra || {}) }).catch(() => null); }
+  async function askAI() { const result = await send("TOGGLE_AI_PANEL"); if (!result?.ok) toast(t("aiFailed")); }
+  async function saveSettings(patch) {
+    settings = { ...settings, ...patch };
+    try { await globalThis.LHN_SETTINGS?.save(settings); } catch (error) { console.warn("Keepit bar: could not save settings", error); }
   }
+  let storeTimer = 0;
+  function persist() {
+    clearTimeout(storeTimer);
+    storeTimer = setTimeout(() => {
+      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent } }).catch(() => {});
+    }, 120);
+  }
+  function haptic() { if (isApk()) navigator.vibrate?.(12); }
 
-  const CSS = `
-:host { all: initial; }
-* { box-sizing: border-box; }
-.wrap { --bg: rgba(255,255,255,.95); --panel: #fff; --fg: #1e293b; --muted: #64748b; --line: #e2e8f0; --press: #f1f5f9; --accent: #6d28d9; --soft: #ede9fe; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg); -webkit-text-size-adjust: 100%; }
-.wrap.dark { --bg: rgba(17,24,39,.95); --panel: #111a2b; --fg: #e2e8f0; --muted: #9ca3af; --line: #263247; --press: #1e293b; --accent: #c4b5fd; --soft: rgba(124,58,237,.24); }
-button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
-svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; background: var(--bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
-.bar.hide, .wrap.yield .bar { transform: translateY(calc(100% + 2px)); }
-.wrap.yield .bar { pointer-events: none; }
-.btn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; color: var(--muted); font-size: 11px; font-weight: 600; line-height: 1.15; padding: 3px 1px; cursor: pointer; }
-.btn .ico { width: 54px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background-color .2s; }
-.btn .lb { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.btn:active .ico { background: var(--press); }
-.btn.on { color: var(--accent); }
-.btn.on .ico { background: var(--soft); }
-.pop { position: fixed; left: 8px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 6; min-width: 230px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 6px; box-shadow: 0 16px 40px -12px rgba(15,23,42,.35); opacity: 0; visibility: hidden; transform: translateY(8px) scale(.98); transform-origin: bottom left; transition: opacity .18s, transform .18s, visibility .18s; }
-.pop.open { opacity: 1; visibility: visible; transform: none; }
-.row { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: none; font-size: 15px; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; }
-.row:active { background: var(--press); }
-.row svg { color: var(--accent); width: 20px; height: 20px; }
-.backdrop { position: fixed; inset: 0; z-index: 4; background: rgba(15,23,42,.35); opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
-.backdrop.open { opacity: 1; visibility: visible; }
-.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.4); opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
-.wrap.notes-open .scrim { opacity: 1; visibility: visible; }
-.backdrop.clear { background: transparent; }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; max-height: 80vh; overflow-y: auto; background: var(--panel); border-radius: 22px 22px 0 0; padding: 6px 12px calc(14px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -12px rgba(15,23,42,.3); transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
-.sheet.open { transform: none; }
-.grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 10px; }
-.head { display: flex; align-items: center; gap: 10px; padding: 0 4px 6px; font-weight: 750; font-size: 16px; }
-.logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg,#4f46e5,#8b5cf6); }
-.logo svg { width: 16px; height: 16px; stroke-width: 2.2; }
-.x { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: 16px; background: var(--press); display: grid; place-items: center; cursor: pointer; }
-.x svg { width: 16px; height: 16px; }
-.sep { height: 1px; background: var(--line); margin: 6px 8px; }
-.chip { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; z-index: 7; display: flex; align-items: center; gap: 8px; background: #5b21b6; color: #fff; border-radius: 20px; padding: 8px 8px 8px 14px; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px -8px rgba(91,33,182,.55); transform: translate(-50%, -8px); opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; }
-.chip.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
-.chip button { width: 26px; height: 26px; border: 0; border-radius: 13px; background: rgba(255,255,255,.2); display: grid; place-items: center; cursor: pointer; }
-.chip svg { width: 14px; height: 14px; }
-.fab { position: fixed; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 3; width: 44px; height: 44px; border: 0; border-radius: 22px; display: none; place-items: center; color: #fff; background: linear-gradient(135deg,#4f46e5,#8b5cf6); box-shadow: 0 6px 18px rgba(79,70,229,.38); cursor: pointer; }
-.fab svg { width: 20px; height: 20px; stroke-width: 2.2; }
-.wrap.dismissed .bar, .wrap.off .bar { display: none; }
-.wrap.dismissed:not(.yield) .fab { display: grid; }
-.pill { position: fixed; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 3; display: none; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 8px 24px -10px rgba(15,23,42,.35); font-size: 13px; color: var(--muted); }
-.pill button { border: 0; border-radius: 16px; padding: 7px 12px; background: linear-gradient(135deg,#4f46e5,#8b5cf6); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
-.wrap.off:not(.yield) .pill { display: flex; }
-.wrap.off .fab { display: none; }
-.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 8; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: #1e293b; color: #fff; font-size: 13.5px; transform: translate(-50%, 10px); opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; pointer-events: none; }
-.toast.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
-.wrap.dismissed .toast, .wrap.off .toast, .bar.hide ~ .toast { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
-@media (min-width: 600px) {
-  .bar { left: 50%; right: auto; bottom: 16px; width: min(720px, calc(100% - 32px)); transform: translateX(-50%); border: 1px solid var(--line); border-radius: 22px; padding: 6px; box-shadow: 0 16px 40px -16px rgba(15,23,42,.35); }
-  .bar.hide, .wrap.yield .bar { transform: translate(-50%, calc(100% + 26px)); }
-  .btn { font-size: 12px; }
-  .sheet { left: auto; right: 16px; bottom: 96px; width: 380px; border-radius: 20px; border: 1px solid var(--line); opacity: 0; transform: translateY(12px); transition: transform .22s, opacity .22s, visibility .22s; visibility: hidden; }
-  .sheet.open { opacity: 1; transform: none; visibility: visible; }
-  .grab { display: none; }
-  .head { padding-top: 8px; }
-  .toast { bottom: 100px; }
-}`;
+  // ---------- CSS: the demo's bar CSS + the few rules the real page needs ----------
+  const CSS = `:host{all:initial}
+*{box-sizing:border-box;margin:0}
+button,input{font-family:inherit}
+[hidden]{display:none!important}
+.screen{position:fixed;inset:0;pointer-events:none;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;color:#111827;line-height:normal;text-align:left;-webkit-text-size-adjust:100%;--ts:1}
+.bbar{--accent:#9c27b0;--accent-rgb:156,39,176;position:absolute;left:0;right:0;bottom:0;z-index:6;padding:6px 6px;background:rgba(255,255,255,.97);border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.dark .bbar{background:rgba(17,17,22,.97);border-color:rgba(148,163,184,.2);box-shadow:0 -6px 18px rgba(0,0,0,.3)}
+.bin{display:flex;align-items:center;max-width:560px;margin:0 auto;padding:0 4px;transition:transform .2s}
+.bbar.swiping .bin{transition:none}
+.nb{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:#475569;font-size:11px;font-weight:600;line-height:1.15;padding:3px 1px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dark .nb{color:#a1a1aa}
+.nb .ico{width:48px;height:30px;border-radius:15px;display:grid;place-items:center;transition:background-color .15s,transform .12s}
+.nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bbar.tight .nb{font-size:10px;letter-spacing:-.2px}
+.nb .lb{max-width:calc(100% + 14px);margin:0 -7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb:active .ico{background:rgba(148,163,184,.2);transform:scale(.94)}
+.desk .nb:hover .ico{background:rgba(148,163,184,.16)}
+.nb.on{color:var(--accent)}
+.nb.on .ico{background:rgba(var(--accent-rgb),.12)}
+.dark .nb.on{color:#c4b5fd}
+.dark .nb.on .ico{background:rgba(139,92,246,.2)}
+.sbtn{position:relative;flex:none;width:52px;height:52px;margin:0 4px;border:0;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 12px rgba(var(--accent-rgb),.35);-webkit-tap-highlight-color:transparent;transition:transform .12s,filter .12s}
+.sbtn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.sbtn:active{transform:scale(.93)}
+.desk .sbtn:hover{filter:brightness(1.08)}
+.wide .bbar{left:50%;right:auto;bottom:6px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(148,163,184,.35);border-radius:20px}
+.wide:not(.dark) .bbar{box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)}
+.wide.dark .bbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.wide .bin{max-width:none;gap:4px;padding:0}
+.wide .nb{flex:none;width:74px;font-size:12px}
+.wide .sbtn{width:54px;height:54px;margin:0 8px}
+.bbar.hide{transform:translateY(calc(100% + 2px));pointer-events:none}
+.wide .bbar.hide{transform:translate(-50%,calc(100% + 14px))}
+.bbar.peek{transform:none!important;pointer-events:auto}
+.wide .bbar.peek{transform:translateX(-50%)!important}
+.desk .nb[data-tip]:hover::after,.desk .sbtn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(17,17,22,.94);color:#fff;font-size:12px;font-weight:600;padding:6px 9px;border-radius:8px;pointer-events:none;z-index:3}
+.bbar.swiping .nb::after,.bbar.swiping .sbtn::after{display:none}
+.swi{position:absolute;top:50%;width:40px;height:40px;margin-top:-20px;border-radius:50%;background:rgba(148,163,184,.25);color:#334155;display:grid;place-items:center;opacity:0;transform:scale(.5);pointer-events:none;transition:background .15s,color .15s}
+.dark .swi{color:#e4e4e7}
+.swi svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.swi.l{left:6px}
+.swi.r{right:6px}
+.swi.go{background:var(--accent);color:#fff}
+.swi.no{background:rgba(148,163,184,.25)}
+.hzone{position:absolute;left:50%;bottom:0;width:var(--lw,273px);height:32px;transform:translateX(-50%);z-index:5;display:none;cursor:pointer}
+.hzone i{position:absolute;left:0;right:0;bottom:9px;height:6px;border-radius:3px;background:rgba(0,0,0,.78);transition:opacity .2s}
+.pageDark .hzone i{background:rgba(255,255,255,.82)}
+.hidden .hzone{display:block}
+.hidden.peeking .hzone i{opacity:0}
+.pill{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;display:none;align-items:center;gap:10px;padding:6px 6px 6px 14px;border-radius:22px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.35);box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192);font-size:13px;color:#334155;white-space:nowrap}
+.dark .pill{background:#18181b;border-color:#27272a;color:#d4d4d8}
+.pill button{border:0;border-radius:16px;background:#9c27b0;color:#fff;font-size:12.5px;font-weight:700;padding:7px 12px;cursor:pointer}
+.siteoff .pill{display:flex}
+.siteoff .bbar,.siteoff .hzone{display:none}
+.pop{position:absolute;z-index:8;min-width:200px;padding:6px;border-radius:16px;background:#fff;border:1px solid rgba(148,163,184,.3);box-shadow:0 16px 40px -12px rgba(15,23,42,.35);opacity:0;visibility:hidden;transform:translateY(8px) scale(.98);transform-origin:bottom left;transition:opacity .18s,transform .18s,visibility .18s}
+.pop{color:#1e293b}
+.dark .pop{background:#18181b;border-color:#27272a;color:#f4f4f5}
+.pop.open{opacity:1;visibility:visible;transform:none}
+.row{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:inherit;font-size:14.5px;font-weight:500;padding:11px 12px;border-radius:10px;cursor:pointer;text-align:left}
+.row svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#64748b}
+.row:active,.desk .row:hover{background:rgba(148,163,184,.15)}
+.clear{position:absolute;inset:0;z-index:7;display:none}
+.clear.on{display:block}
+.toast{position:absolute;left:50%;bottom:86px;transform:translate(-50%,8px);z-index:20;max-width:calc(100% - 32px);padding:9px 14px;border-radius:12px;background:rgba(24,24,27,.94);color:#fff;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hidden .toast,.siteoff .toast{bottom:52px}
+.sheet{position:absolute;inset:0;z-index:9;pointer-events:none}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}
+.wide .sheet .scrim{background:transparent}
+.panel{position:absolute;left:50%;bottom:0;width:min(560px,100%);max-height:75%;display:flex;flex-direction:column;padding:8px 14px 16px;border-radius:22px 22px 0 0;background:#fff;color:#111827;box-shadow:0 -10px 30px rgba(0,0,0,.18);transform:translate(-50%,105%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+.dark .panel{background:#18181b;color:#f4f4f5;box-shadow:0 -10px 30px rgba(0,0,0,.4)}
+.sheet.open{pointer-events:auto}
+.sheet.open .scrim{opacity:1}
+.sheet.open .panel{transform:translate(-50%,0)}
+.grip{flex:none;position:relative;width:40px;height:4px;border-radius:2px;background:rgba(148,163,184,.55);margin:2px auto 10px;touch-action:none;cursor:grab}
+.grip::before{content:"";position:absolute;left:-80px;right:-80px;top:-10px;bottom:-10px}
+.screen:not(.desk) .shead,.screen:not(.desk) .dh{touch-action:none}
+.dragging{transition:none!important}
+.panel.full{max-height:96%}
+.pop .grip{margin:2px auto 6px}
+.sbox .grip{margin:8px auto 0}
+.langrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 12px}
+.langrow label{font-size:13px;font-weight:600}
+.lwrap{position:relative;width:62%}
+.lwrap input{width:100%;height:38px;padding:0 31px 0 11px;border:1px solid #d1d9e3;border-radius:10px;outline:none;background:#f8fafd;color:inherit;font-size:13px}
+.lwrap input:focus{border-color:#9c27b0;box-shadow:0 0 0 3px rgba(156,39,176,.12)}
+.lwrap .caret{position:absolute;right:10px;top:11px;width:16px;height:16px;fill:none;stroke:#64748b;stroke-width:2;stroke-linecap:round;pointer-events:none}
+.lopts{position:absolute;z-index:5;top:calc(100% + 4px);left:0;right:0;max-height:190px;overflow:auto;padding:4px;border:1px solid #d1d9e3;border-radius:9px;background:#fff;box-shadow:0 8px 24px rgba(26,43,69,.13);display:none}
+.lopts.open{display:block}
+.lopt{padding:9px 8px;border-radius:6px;font-size:13px;color:#3d4a60;cursor:pointer;outline:0}
+.screen:not(.desk) .lopt{padding:12px 10px}
+.lopt:hover,.lopt:focus,.lopt.on{background:#f6ecfa;color:#9c27b0}
+.lempty{padding:9px;color:#758198;font-size:12px}
+.dark .lwrap input{border-color:#3f3f46;background:#27272a}
+.dark .lopts{border-color:#3f3f46;background:#202024;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.dark .lopt{color:#d4d4d8}
+.dark .lopt:hover,.dark .lopt:focus,.dark .lopt.on{background:rgba(156,39,176,.25);color:#f0abfc}
+.ksub{font-size:12.5px;color:#64748b;margin:0 2px 10px}
+.kgrp{margin-bottom:10px}
+.krow{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid rgba(148,163,184,.3);font-size:13.5px}
+.krow:last-child{border-bottom:0}
+.krow>span{flex:1;min-width:0}
+.krow kbd{flex:none;max-width:56%;text-align:right;font-family:inherit;font-size:12px;font-weight:600;line-height:1.35;background:rgba(148,163,184,.16);border-radius:6px;padding:4px 7px;color:#7c3aed;white-space:normal}
+.dark .krow kbd{color:#c4b5fd}
+.knew{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:#9c27b0;border-radius:5px;padding:1px 5px;margin-left:4px;vertical-align:1px}
+.wide .panel{left:auto;width:400px;max-height:min(640px,84%);border-radius:20px;padding:12px 14px 14px;border:1px solid rgba(148,163,184,.28);box-shadow:0 18px 40px rgba(15,23,42,.18);transform:translateY(10px);opacity:0;transition:transform .2s,opacity .2s}
+.wide.dark .panel{border-color:rgba(148,163,184,.2)}
+.wide .sheet.open .panel{transform:none;opacity:1}
+.desk .grip{display:none}
+.shead{flex:none;display:flex;align-items:center;gap:8px;padding:2px 2px 10px}
+.shead .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;display:grid;place-items:center;flex:none}
+.shead .logo svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+.shead b{font-size:17px;font-weight:800}
+.shead .sp{flex:1}
+.lchip{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px 0 9px;border-radius:16px;border:1px solid rgba(148,163,184,.4);background:none;color:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.lchip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#64748b}
+.lchip:active,.desk .lchip:hover{background:rgba(148,163,184,.15)}
+.lchip .av{width:22px;height:22px;border-radius:50%;background:#e2e8f0;color:#475569;display:grid;place-items:center;margin-left:-5px}
+.dark .lchip .av{background:#3f3f46;color:#e4e4e7}
+.lchip .av svg{width:15px;height:15px;color:inherit}
+.q small{display:block;font-size:11px;font-weight:500;color:#64748b;margin-top:-3px}
+.dark .q small{color:#a1a1aa}
+.sx{width:38px;height:38px;flex:none;border:0;border-radius:10px;background:none;color:#64748b;display:grid;place-items:center;cursor:pointer}
+.dark .sx{color:#a1a1aa}
+.sx:active,.desk .sx:hover{background:rgba(148,163,184,.18)}
+.sx svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.sec{font-size:12px;font-weight:700;color:#64748b;letter-spacing:.02em;margin:6px 2px 8px}
+.dark .sec{color:#a1a1aa}
+.quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:12px 4px;padding:2px 0 10px}
+.q{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:2px 0;border:0;background:none;color:inherit;font-size:12px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.q .ic{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;background:#f1f5f9;border:1px solid #cbd5e1;color:#1f2937;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:transform .15s}
+.dark .q .ic{background:rgba(255,255,255,.06);border-color:rgba(148,163,184,.18);color:#d4d4d8;box-shadow:none}
+.q .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.q.on .ic{background:#f3e8ff;border-color:#9c27b0;color:#9c27b0}
+.dark .q.on .ic{background:rgba(139,92,246,.22);border-color:#8b5cf6;color:#c4b5fd}
+.q:active .ic{transform:scale(.94)}
+.desk .q:hover .ic{filter:brightness(.97)}
+.q span{display:block;max-width:100%}
+.colors{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;margin:0 0 14px;border-radius:16px;background:#f1f5f9;border:1px solid #cbd5e1}
+.dark .colors{background:rgba(255,255,255,.06);border-color:rgba(148,163,184,.18)}
+.panel .sbody{scrollbar-width:none}
+.panel .sbody::-webkit-scrollbar{display:none}
+.panel .sbody.fb{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 48px),transparent)}
+.panel .sbody.ft{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 20px);mask-image:linear-gradient(to bottom,transparent,#000 20px)}
+.panel .sbody.ft.fb{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 20px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(to bottom,transparent,#000 20px,#000 calc(100% - 48px),transparent)}
+.smore{position:absolute;left:50%;bottom:6px;width:44px;height:26px;margin-left:-22px;border:0;border-radius:13px;background:none;color:#9c27b0;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .2s;cursor:pointer;padding:0}
+.smore svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.panel.more-below .smore{opacity:1;pointer-events:auto;animation:nudge 1.4s ease-in-out 3}
+.dark .smore{color:#c4b5fd}
+@keyframes nudge{0%,100%{transform:none}50%{transform:translateY(4px)}}
+.lflag{position:absolute;left:11px;top:12px;width:20px;height:14px;pointer-events:none;z-index:1}
+.flag{display:block;width:20px;height:14px;border-radius:2px;box-shadow:0 0 0 1px rgba(15,23,42,.12);flex:none}
+.lwrap .lflag+input{padding-left:39px}
+.lwrap.open .lflag{display:none}
+.lwrap.open .lflag+input{padding-left:11px}
+.lopt{display:flex;align-items:center;gap:9px}
+.colors span{flex:1;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cdot{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12);cursor:pointer;display:grid;place-items:center;padding:0}
+.cdot svg{width:14px;height:14px;fill:none;stroke:#1f2937;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.cdot.on{border-color:#9c27b0}
+.cdot.on svg{opacity:1}
+.dark .cdot.on{border-color:#c4b5fd}
+.lname{position:absolute;right:31px;top:0;line-height:38px;font-size:12.5px;color:#94a3b8;pointer-events:none;white-space:nowrap}
+.lwrap.open .lname{display:none}
+.lopt .le{margin-left:auto;padding-left:10px;font-size:12.5px;color:#94a3b8;white-space:nowrap}
+.dark .lname,.dark .lopt .le{color:#71717a}
+.sec.ksec{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sw{flex:none;position:relative;width:38px;height:22px;border:0;border-radius:11px;background:#cbd5e1;cursor:pointer;padding:0;transition:background .15s}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.sw.on{background:#9c27b0}
+.sw.on::after{transform:translateX(16px)}
+.dark .sw{background:#3f3f46}
+.dark .sw.on{background:#8b5cf6}
+.kgrp.off{opacity:.45}
+.pswi{position:absolute;top:calc(50% - 22px);z-index:5;width:44px;height:44px;border-radius:50%;background:#fff;color:#334155;box-shadow:0 4px 14px rgba(15,23,42,.25);display:grid;place-items:center;opacity:0;pointer-events:none;transition:background .15s,color .15s}
+.pswi svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.pswi.l{left:8px}
+.pswi.r{right:8px}
+.pswi.go{background:#9c27b0;color:#fff}
+.pswi.no{color:#cbd5e1}
+.dark .pswi{background:#27272a;color:#e4e4e7}
+.dark .pswi.go{background:#8b5cf6;color:#fff}
+.dark .pswi.no{color:#52525b}
+.coach{position:absolute;left:12px;right:12px;bottom:84px;z-index:7;max-width:400px;margin:0 auto;padding:12px 14px 12px;border-radius:16px;background:#fff;color:#1e293b;border:1px solid rgba(148,163,184,.3);box-shadow:0 12px 32px rgba(15,23,42,.22);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
+.wide .coach{bottom:92px}
+.coach.on{opacity:1;transform:none;pointer-events:auto}
+.coach .ch1{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:8px}
+.coach .ch1 svg{width:20px;height:20px;fill:none;stroke:#9c27b0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.coach ul{list-style:none;margin:0 0 10px;padding:0}
+.coach li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid rgba(148,163,184,.3);font-size:13px}
+.coach li:last-child{border-bottom:0}
+.coach li em{font-style:normal;font-weight:600;color:#7c3aed;text-align:right}
+.coach .cb{display:flex;justify-content:flex-end;gap:8px}
+.coach .cb button{height:34px;padding:0 14px;border-radius:17px;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.coach .cb button.pri{border-color:#9c27b0;background:#9c27b0;color:#fff}
+.dark .coach{background:#18181b;color:#f4f4f5;border-color:#27272a}
+.dark .coach li em{color:#c4b5fd}
+.divider{height:1px;background:rgba(148,163,184,.3);margin:2px 0 10px}
+.lsearch{width:100%;height:40px;border-radius:12px;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:14px;padding:0 12px;margin-bottom:8px;outline:none}
+.lsearch:focus{border-color:#9c27b0}
+.lrow{display:flex;align-items:center;width:100%;gap:10px;border:0;background:none;color:inherit;padding:11px 10px;border-radius:10px;font-size:14.5px;cursor:pointer;text-align:left}
+.lrow small{color:#64748b;font-size:12.5px}
+.lrow em{flex:1}
+.lrow.on{background:rgba(156,39,176,.1);color:#9c27b0;font-weight:700}
+.dark .lrow.on{background:rgba(139,92,246,.2);color:#c4b5fd}
+.lrow:active,.desk .lrow:hover{background:rgba(148,163,184,.14)}
+.srch{position:absolute;inset:0;z-index:12;pointer-events:none}
+.srch .scrim2{position:absolute;inset:0;background:rgba(15,23,42,.42);opacity:0;transition:opacity .2s}
+.srch.open{pointer-events:auto}
+.srch.open .scrim2{opacity:1}
+.sbox{position:absolute;left:50%;width:min(600px,calc(100% - 20px));display:flex;flex-direction:column;border-radius:22px;background:#fff;color:#111827;box-shadow:0 24px 60px rgba(15,23,42,.35);transform:translate(-50%,-8px) scale(.98);opacity:0;transition:transform .2s,opacity .2s;overflow:hidden}
+.dark .sbox{background:#18181b;color:#f4f4f5;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.srch.open .sbox{transform:translate(-50%,0);opacity:1}
+.cur{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px 0;font-size:12.5px;color:#64748b}
+.dark .cur{color:#a1a1aa}
+.cur svg{width:13px;height:13px;flex:none;fill:none;stroke:#16a34a;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.cur span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cur button{border:0;background:none;color:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 4px;border-radius:6px;display:flex;align-items:center;gap:4px}
+.cur button svg{stroke:currentColor}
+.sin{flex:none;display:flex;align-items:center;gap:10px;margin:10px 12px 8px;height:50px;padding:0 6px 0 14px;border-radius:16px;background:#f1f5f9;border:2px solid transparent}
+.dark .sin{background:#27272a}
+.sin:focus-within{border-color:#9c27b0;background:none}
+.dark .sin:focus-within{border-color:#8b5cf6}
+.sin>svg{width:20px;height:20px;flex:none;fill:none;stroke:#64748b;stroke-width:2.2;stroke-linecap:round}
+.sin input{flex:1;min-width:0;height:100%;border:0;background:none;color:inherit;font-size:16px;outline:none}
+.sin input::placeholder{color:#94a3b8}
+.sin .sx{width:34px;height:34px}
+.chips{flex:none;display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:30px;padding:0 12px;border-radius:15px;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:#9c27b0;border-color:#9c27b0;color:#fff}
+.dark .chip.on{background:#8b5cf6;border-color:#8b5cf6}
+.res{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:thin}
+.rsec{display:flex;align-items:center;font-size:11.5px;font-weight:700;color:#64748b;letter-spacing:.03em;padding:10px 8px 4px;text-transform:uppercase}
+.rsec span{flex:1}
+.rsec button{border:0;background:none;color:#9c27b0;font-size:12px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0}
+.dark .rsec{color:#a1a1aa}
+.dark .rsec button{color:#c4b5fd}
+.ri{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:7px 8px;border:0;border-radius:12px;background:none;color:inherit;text-align:left;cursor:pointer}
+.ri.act{background:rgba(156,39,176,.08)}
+.dark .ri.act{background:rgba(139,92,246,.16)}
+.desk .ri:hover{background:rgba(148,163,184,.12)}
+.ri .rk{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#f1f5f9;color:#475569}
+.dark .ri .rk{background:#27272a;color:#d4d4d8}
+.ri .rk svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ri .rk.kp{background:#f3e8ff;color:#9c27b0}
+.dark .ri .rk.kp{background:rgba(139,92,246,.2);color:#c4b5fd}
+.ri .rk.g{background:#fff;border:1px solid #e5e7eb;font:800 17px Arial,sans-serif;color:#4285f4}
+.dark .ri .rk.g{background:#fff}
+.ri .rk.yt{background:#fee2e2}
+.ri .rk.yt i{width:20px;height:14px;border-radius:4px;background:#f00;display:grid;place-items:center}
+.ri .rk.yt i::after{content:"";border-left:6px solid #fff;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-left:1px}
+.ri .rk.sg{background:none;color:#94a3b8}
+.ri .rt{flex:1;min-width:0}
+.ri .rt b{display:block;font-size:14.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri .rt b strong{font-weight:800}
+.ri .rt small{display:block;font-size:12.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.dark .ri .rt small{color:#a1a1aa}
+.ri .rt small i{font-style:normal;color:#9c27b0;font-weight:600}
+.dark .ri .rt small i{color:#c4b5fd}
+.ri .ra{flex:none;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#94a3b8}
+.ri .ra svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ri .ra:active,.desk .ri .ra:hover{background:rgba(148,163,184,.2);color:#475569}
+.empty{padding:18px 12px 22px;text-align:center;font-size:13px;color:#64748b;line-height:1.5}
+.sfoot{flex:none;display:flex;gap:14px;justify-content:center;padding:8px 12px 10px;border-top:1px solid rgba(148,163,184,.3);font-size:11.5px;color:#64748b}
+.sfoot kbd{font:700 11px -apple-system,sans-serif;padding:1px 5px;border-radius:5px;border:1px solid rgba(148,163,184,.45);border-bottom-width:2px;color:#9c27b0}
+.dark .sfoot kbd{color:#c4b5fd}
+.srch:not(.deskmode) .sfoot{display:none}
+.screen{--sab:0px;--yb:0px}
+.screen.apk:not(.desk){--sab:20px}
+.bbar{padding-bottom:calc(6px + var(--sab));-webkit-touch-callout:none}
+.wide .bbar{bottom:calc(6px + var(--sab));padding-bottom:6px}
+.wide .bbar.hide{transform:translate(-50%,calc(100% + 14px + var(--sab)))}
+.hzone{bottom:calc(var(--yb) + var(--sab))}
+.toast{bottom:calc(86px + var(--sab))}
+.hidden .toast,.siteoff .toast{bottom:calc(52px + var(--yb) + var(--sab))}
+.coach{bottom:calc(84px + var(--sab))}
+.wide .coach{bottom:calc(92px + var(--sab))}
+.panel{padding-bottom:calc(16px + var(--sab))}
+.wide .panel{padding-bottom:14px}
+.nb{font-size:calc(11px * var(--ts,1))}
+.bbar.tight .nb{font-size:calc(10px * var(--ts,1))}
+.wide .nb{font-size:calc(12px * var(--ts,1))}
+.pland .bbar{padding-top:3px;padding-bottom:calc(3px + var(--sab))}
+.pland .bin{max-width:760px}
+.pland .nb{flex-direction:row;justify-content:center;gap:2px;padding:1px 2px;font-size:calc(12px * var(--ts,1))}
+.pland .nb .ico{width:34px;height:30px}
+.pland .nb .lb{margin:0;max-width:100%}
+.pland .sbtn{width:42px;height:42px}
+.pland .sbtn svg{width:21px;height:21px}
+.pland .toast{bottom:calc(62px + var(--sab))}
+.pland .coach{bottom:calc(58px + var(--sab));max-width:460px}
+.btop{position:absolute;right:16px;bottom:calc(var(--bh,70px) + 16px);z-index:5;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(148,163,184,.3);background:rgba(255,255,255,.97);color:#334155;box-shadow:0 4px 14px rgba(15,23,42,.16);display:grid;place-items:center;cursor:pointer;opacity:0;transform:translateY(10px) scale(.92);pointer-events:none;transition:opacity .2s,transform .2s,bottom .25s;-webkit-tap-highlight-color:transparent}
+.btop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btop.on{opacity:1;transform:none;pointer-events:auto}
+.btop:active{transform:scale(.93)}
+.desk .btop:hover{background:#f1f5f9}
+.btop.low{bottom:calc(var(--yb) + 44px + var(--sab))}
+.wide .btop{right:24px;bottom:calc(18px + var(--sab))}
+.wide .btop.low{bottom:calc(18px + var(--yb) + var(--sab))}
+.dark .btop{background:#27272a;color:#f4f4f5;border-color:#3f3f46}
+.toast{width:max-content;text-align:center}
+.toast.act{display:flex;align-items:center;text-align:left}
+.toast.act.on{pointer-events:auto}
+.toast .tu{margin-left:14px;padding:4px 2px;border:0;background:none;color:#d8b4fe;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer}
+.pop .qh{padding:2px 12px 4px;font-size:12px;font-weight:700;color:#64748b}
+.pop .row small{margin-left:auto;padding-left:12px;color:#64748b;font-size:12.5px;font-weight:600}
+.pop .qspd{cursor:default}
+.pop .qspd:active{background:none}
+.pop .qspd button{flex:none;width:34px;height:34px;padding:0;border-radius:50%;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:18px;line-height:1;cursor:pointer;font-family:inherit}
+.pop .qspd button:first-of-type{margin-left:auto}
+.pop .qrate{min-width:50px;text-align:center;font-variant-numeric:tabular-nums}
+.dark .pop .qh,.dark .pop .row small{color:#a1a1aa}
+.krev{display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 12px;padding:11px 12px;border:1px solid rgba(148,163,184,.3);border-radius:12px;background:rgba(156,39,176,.06);color:inherit;font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+.krev svg{flex:none;width:20px;height:20px;fill:none;stroke:#9c27b0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.krev span{flex:1}
+.krev svg:last-child{width:16px;height:16px;stroke:#94a3b8}
+.dark .krev{background:rgba(196,181,253,.08)}
+.dark .krev svg:first-child{stroke:#c4b5fd}
+@media (prefers-reduced-motion: reduce){
+  .screen *,.screen *::before,.screen *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+.bbar.swiping{overflow:hidden}
+.btop.flat{bottom:calc(16px + var(--sab))}
+.wide .btop.flat{bottom:calc(18px + var(--sab))}
+.toast .tu{flex:none;white-space:nowrap}
+.toast .ti{display:inline-flex;margin-right:8px;vertical-align:-4px}
+.toast .ti svg{width:18px;height:18px;fill:none;stroke:#fca5a5;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.iscrim{position:absolute;left:0;right:0;bottom:0;top:0;z-index:5;background:rgba(15,23,42,.38);opacity:0;pointer-events:none;transition:opacity .25s}
+.introon .iscrim{opacity:1;pointer-events:auto}
+.introon .bbar{box-shadow:0 0 0 3px rgba(156,39,176,.55),0 -6px 18px rgba(15,23,42,.12)!important}
+.intro .ch1 svg{width:22px;height:22px}
+.intro .ch1 small{display:block;font-size:12px;font-weight:500;color:#64748b;margin-top:1px}
+.intro li{justify-content:flex-start;align-items:center;gap:10px}
+.intro li svg{flex:none;width:18px;height:18px;fill:none;stroke:#9c27b0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.intro li span{flex:1}
+.dark .intro .ch1 small{color:#a1a1aa}
+.dark .intro li svg{stroke:#c4b5fd}
+.screen,.screen.apk:not(.desk){--sab:env(safe-area-inset-bottom,0px)}
+.bbar,.hzone,.pill,.pop.open,.clear.on{pointer-events:auto}
+.bbar.hide{pointer-events:none}
+.bbar.peek{pointer-events:auto}
+.nscrim{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.screen.notesopen .nscrim{opacity:1;visibility:visible;pointer-events:auto}
+.screen.extyield .bbar,.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .pill,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
+`;
 
   function build() {
     host = document.createElement("div");
     host.id = "lhn-touch-ui";
     host.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;");
+    host.setAttribute("data-lhn-bilingual-ui", "true");
     root = host.attachShadow({ mode:"open" });
-    root.innerHTML = `<style>${CSS}</style><div class="wrap">
-      <div class="scrim"></div>
-      <div class="backdrop"></div>
-      <div class="pop" role="menu"></div>
-      <div class="bar" role="toolbar" aria-label="Keepit"></div>
-      <div class="sheet" role="dialog" aria-modal="true"></div>
-      <button class="fab" type="button">${icon("logo")}</button>
-      <div class="pill"><span class="pill-t"></span><button type="button" data-cmd="site-toggle"></button></div>
-      <div class="chip"><span class="chip-t"></span><button type="button" data-act="pick-cancel">${icon("x")}</button></div>
-      <div class="toast" role="status"></div></div>`;
-    root.addEventListener("click", onClick);
-    const sheet = root.querySelector(".sheet");
-    let dragY = null;
-    sheet.addEventListener("touchstart", event => { dragY = sheet.scrollTop <= 0 ? event.touches[0].clientY : null; }, { passive:true });
-    sheet.addEventListener("touchmove", event => { if (dragY !== null && !WIDE.matches) { const dy = event.touches[0].clientY - dragY; if (dy > 0) sheet.style.transform = `translateY(${dy}px)`; } }, { passive:true });
-    sheet.addEventListener("touchend", event => { if (dragY === null) return; const dy = event.changedTouches[0].clientY - dragY; dragY = null; sheet.style.transform = ""; if (dy > 90 && !WIDE.matches) closeAll(); });
-  }
-  const $ = selector => root.querySelector(selector);
-
-  function render() {
-    const wrap = $(".wrap");
-    wrap.classList.toggle("dark", isDark());
-    wrap.classList.toggle("off", siteDisabled());
-    wrap.classList.toggle("dismissed", dismissed);
-    const nav = WIDE.matches ? TABLET_NAV : PHONE_NAV, key = nav.join() + lang();
-    if (key !== lastBar) {
-      lastBar = key;
-      $(".bar").innerHTML = nav.map(id => `<button class="btn" type="button" data-nav="${id}" aria-label="${tr(id)}"><span class="ico">${icon(NAV_ICON[id])}</span><span class="lb">${tr(id)}</span></button>`).join("");
-      $(".fab").setAttribute("aria-label", tr("show"));
-      $(".pill-t").textContent = tr("offPill");
-      $(".pill button").textContent = tr("turnOn");
-      $(".chip-t").textContent = tr("pickHint");
-      $(".chip button").setAttribute("aria-label", tr("cancel"));
-    }
-    syncState();
-  }
-  function syncState() {
-    if (!mounted) return;
-    const wrap = $(".wrap");
-    const notesOpen = !!document.querySelector("#lhn-sidebar.lhn-side-visible");
-    const yieldNow = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || notesOpen;
-    wrap.classList.toggle("notes-open", notesOpen);
-    wrap.classList.toggle("yield", yieldNow);
-    $('[data-nav="reader"]')?.classList.toggle("on", !!document.querySelector(".lhn-bilingual-reading"));
-    $('[data-nav="notes"]')?.classList.toggle("on", !!document.querySelector("#lhn-sidebar.lhn-side-visible"));
-    if (yieldNow) closeAll();
+    root.innerHTML = `<style>${CSS}</style><div class="screen" id="screen">
+  <div class="nscrim" id="nscrim"></div>
+  <div class="clear" id="clear"></div>
+  <div class="pop" id="pop"></div>
+  <div class="pswi l" id="pswl">${ic("left")}</div><div class="pswi r" id="pswr">${ic("right")}</div><div class="coach" id="coach" role="dialog"></div>
+  <div class="bbar" id="bar" role="toolbar" aria-label="Keepit"><div class="swi l" id="swl">${ic("left")}</div><div class="swi r" id="swr">${ic("right")}</div><div class="bin" id="bin"></div></div>
+  <div class="hzone" id="hzone"><i></i></div>
+  <button class="btop" id="btop" type="button">${ic("up")}</button>
+  <div class="iscrim" id="iscrim"></div>
+  <div class="coach intro" id="intro" role="dialog"></div>
+  <div class="pill" id="pill"><span id="pillT"></span><button type="button" id="pillOn"></button></div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="sheet" id="sheet"><div class="scrim" id="scrim"></div><div class="panel" id="panel"></div></div>
+  <div class="srch" id="srch"><div class="scrim2" id="scrim2"></div><div class="sbox" id="sbox">
+    <div class="grip" id="sgrip"></div>
+    <div class="cur" id="scur" hidden></div>
+    <div class="sin">${ic("search")}<input id="sq" type="text" autocomplete="off" spellcheck="false"><button class="sx" type="button" id="sqx" hidden>${ic("x")}</button></div>
+    <div class="chips" id="chips"></div>
+    <div class="res" id="res"></div>
+    <div class="sfoot" id="sfoot"></div>
+  </div></div>
+</div>`;
+    wire();
   }
 
-  function openPop() {
-    $(".pop").innerHTML = `<button class="row" type="button" data-cmd="bilingual-page">${icon("lang")}<span>${tr("wholePage")}</span></button><button class="row" type="button" data-act="pick">${icon("para")}<span>${tr("pickBlock")}</span></button>`;
-    $(".pop").classList.add("open"); $(".backdrop").classList.add("open", "clear");
+  // ---------- bar ----------
+  const LABEL = { page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more" };
+  const ICON = { page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu" };
+  const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation" };
+  const tipFor = id => ({
+    page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
+    overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
+    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:t("search")
+  }[id]);
+  const barPrio = () => isVideoPage() ? ["overlay", "dictation", "page"] : ["page", "reader", "overlay"];
+  const spareTool = () => isVideoPage() ? "reader" : "dictation";
+  function navLayout() {
+    const Pr = barPrio();
+    return isWide() ? (isVideoPage() ? [["overlay", "dictation", "page", "block"], ["reader", "notes", "ai", "more"]] : [["page", "block", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
+      : isFive() ? [[Pr[0], Pr[1]], ["notes", "more"]] : [Pr, ["notes", "ai", "more"]];
   }
-  function openSheet() {
-    const phone = !WIDE.matches;
-    $(".sheet").innerHTML = `<div class="grab"></div><div class="head"><span class="logo">${icon("logo")}</span><span>Keepit</span><button class="x" type="button" data-act="close" aria-label="${tr("close")}">${icon("x")}</button></div>
-      ${phone ? `<button class="row" type="button" data-cmd="dictation">${icon("keyboard")}<span>${tr("dictation")}</span></button><button class="row" type="button" data-act="ai">${icon("ai")}<span>${tr("ai")}</span></button><div class="sep"></div>` : ""}
-      <button class="row" type="button" data-act="dashboard">${icon("dash")}<span>${tr("dashboard")}</span></button>
-      <button class="row" type="button" data-act="settings">${icon("gear")}<span>${tr("settings")}</span></button>
-      <div class="sep"></div>
-      <button class="row" type="button" data-cmd="site-toggle">${icon("power")}<span>${tr("siteOff")}</span></button>
-      <button class="row" type="button" data-act="dismiss">${icon("eyeoff")}<span>${tr("hideBar")}</span></button>`;
-    $(".sheet").classList.add("open"); $(".backdrop").classList.add("open"); $(".backdrop").classList.remove("clear");
-  }
-  function closeAll() {
+  function renderBar() {
     if (!root) return;
-    $(".pop").classList.remove("open"); $(".sheet").classList.remove("open"); $(".backdrop").classList.remove("open", "clear");
+    const screen = $("screen");
+    screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland());
+    screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
+    const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
+    const b = id => `<button class="nb${(id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc((isSmall() && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
+    $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
+    $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
+    $("pillT").textContent = t("offPill"); $("pillOn").textContent = t("turnOn");
+    $("intro").setAttribute("aria-label", t("introAria")); $("coach").setAttribute("aria-label", t("coachTitle"));
+    syncBarVis(); fitLabels();
   }
-  let toastTimer = 0;
-  function toast(message) { const el = $(".toast"); el.textContent = message; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2200); }
+  // v6: long labels on a narrow screen — if two labels are < 4px apart or cut with "…", shrink to 10px; still tight → 5 buttons (v7)
+  function fitLabels() {
+    const bar = $("bar"), bin = $("bin");
+    bar.classList.remove("tight"); if (isWide()) return;
+    if (!bar.offsetWidth) { requestAnimationFrame(() => { if (mounted && $("bar").offsetWidth) fitLabels(); }); return; }   // not laid out yet: measure on the next frame
+    const bad = () => { const nbs = [...bin.children]; return nbs.some((b, i) => { const l = b.querySelector(".lb"); if (!l) return false; if (l.scrollWidth > l.clientWidth + 0.5) return true; const n = nbs[i + 1]?.querySelector(".lb"); return n && n.getBoundingClientRect().left - l.getBoundingClientRect().right < 4; }); };
+    if (!bad()) return; bar.classList.add("tight");
+    if (bad() && !isFive()) { S.autoFive = true; renderBar(); }
+  }
+  function syncBarVis() {
+    if (!root) return;
+    const bar = $("bar"), screen = $("screen");
+    const off = S.kbd || S.vfs, barless = S.hidden || S.yieldBar;
+    bar.classList.toggle("hide", off || barless || (S.scrollHide && !S.peek));
+    bar.classList.toggle("peek", barless && S.peek && !off);
+    screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
+    screen.classList.toggle("siteoff", S.siteOff);
+    screen.classList.toggle("extyield", S.extYield);
+    screen.classList.toggle("notesopen", S.notesOn && isTouch());
+    screen.classList.toggle("picking", picking);
+    screen.style.setProperty("--yb", (S.yieldBar ? S.yieldH : 0) + "px");
+    screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px");
+    screen.style.setProperty("--bh", bar.offsetHeight + "px");
+    updBtop();
+  }
+  // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
+  let scroller = null;
+  const scrollTopOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? (document.scrollingElement?.scrollTop || scrollY) : el.scrollTop;
+  const clientHOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? innerHeight : el.clientHeight;
+  function updBtop() {
+    const b = $("btop"); if (!b) return;
+    b.classList.toggle("on", S.btop && scrollTopOf(scroller) > clientHOf(scroller) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
+    b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
+    b.classList.toggle("flat", S.scrollHide && !S.hidden && !S.yieldBar && !S.peek);
+  }
+  // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to the line just above the page's bar
+  let ovRaf = 0;
+  const isOwnUi = el => el === host || !!el.closest?.('#lhn-touch-ui,[data-lhn-bilingual-ui],[id^="lhn-"],#keepit-host,[class*="lhn-"]');
+  function checkOverlap() {
+    if (!mounted) return;
+    let h = 0;
+    if (!S.siteOff && !S.extYield) {
+      const H = innerHeight, W = innerWidth, seen = new Set();
+      for (const x of [W * 0.12, W * 0.5, W * 0.88]) {
+        for (const el of document.elementsFromPoint(x, H - 3).slice(0, 4)) {
+          if (isOwnUi(el) || el === document.documentElement || el === document.body) continue;
+          for (let n = el, depth = 0; n && n !== document.body && n !== document.documentElement && depth < 14; n = n.parentElement, depth++) {
+            if (seen.has(n)) break; seen.add(n);
+            const cs = getComputedStyle(n);
+            if (cs.position !== "fixed" && cs.position !== "sticky") continue;
+            if (cs.visibility === "hidden" || Number(cs.opacity) === 0) break;
+            const r = n.getBoundingClientRect();
+            if (r.height && r.bottom >= H - 2 && r.top < H - 2 && r.height < H * 0.4 && r.width >= W * 0.5) h = Math.max(h, H - r.top);
+            break;
+          }
+        }
+      }
+    }
+    const on = h > 0, was = S.yieldBar; S.yieldBar = on; S.yieldH = Math.round(h);
+    if (on && !was) { S.peek = false; if (!S.yieldToast) { S.yieldToast = true; toast(t(isDesk() ? "yieldDesk" : "yieldTouch")); } }
+    if (on || was) syncBarVis();
+  }
+  const anyOpen = () => $("sheet").classList.contains("open") || $("srch").classList.contains("open") || $("pop").classList.contains("open");
+  function setScrollHide(on) { if (S.scrollHide === on) return; if (on && anyOpen()) return; S.scrollHide = on; syncBarVis(); }
+  function setPeek(on) { S.peek = on; syncBarVis(); }
+  function setHidden(on) { S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
+  let toastT = 0;
+  function toast(text, undo) {
+    const el = $("toast"); if (!el) return;
+    el.textContent = text; if (undo?.icon) el.insertAdjacentHTML("afterbegin", `<span class="ti">${ic(undo.icon)}</span>`); el.classList.toggle("act", !!undo?.fn);
+    if (undo?.fn) { const b = document.createElement("button"); b.type = "button"; b.className = "tu"; b.textContent = undo.label || t("undo"); b.addEventListener("click", () => { clearTimeout(toastT); el.classList.remove("on", "act"); undo.fn(); }); el.append(b); }
+    el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on", "act"), undo?.fn ? 4000 : 1900);
+  }
 
-  function setPicking(on) {
-    picking = on; $(".chip").classList.toggle("show", on);
-    if (on) $(".bar").classList.add("hide");
+  // v8: offline → say so, don't switch translation on; Retry / back online → Translate now (untranslating still works offline)
+  function offlineBlock(retry) {
+    if (!S.offline) return false;
+    S.pendingTr = retry; haptic();
+    toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (S.offline) offlineBlock(retry); else { S.pendingTr = null; retry(); } } });
+    return true;
   }
-  // Paragraph pick: the next tap on the page chooses the paragraph (the tap itself is swallowed so links don't open).
+  function syncTr() { root?.querySelector('[data-nav="page"]')?.classList.toggle("on", pageTranslated()); }
+  function togglePage() {
+    const was = pageTranslated();
+    if (!was && offlineBlock(() => togglePage())) return;
+    run("bilingual-page");
+    setTimeout(() => {
+      const now = pageTranslated(); syncTr();
+      if (!was && now) toast(t("trPageOn"));
+      else if (was && !now) toast(t("trPageOff"), { fn:() => { if (!pageTranslated()) { run("bilingual-page"); syncTr(); if (pageTranslated()) toast(t("trPageAgain")); } } });
+    }, 0);
+  }
+  function setPicking(on) { picking = on; syncBarVis(); }
+  function doNav(id, b) {
+    if (id === "search") return openSearch();
+    if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
+    closePop();
+    if (id === "page") return togglePage();
+    if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
+    if (id === "reader") { run("reader"); setTimeout(() => { if (document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) toast(t("readerStart")); syncState(); }, 300); return; }
+    if (id === "ai") { void askAI(); return; }
+    run(id); setTimeout(syncState, 350);
+  }
+  // Paragraph pick: the next tap/click on the page chooses the paragraph (the tap itself is swallowed so links don't open).
   document.addEventListener("click", event => {
     if (!picking || !mounted || event.composedPath().includes(host)) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    setPicking(false); showBar();
+    setPicking(false);
     document.dispatchEvent(new MouseEvent("mousemove", { clientX:event.clientX, clientY:event.clientY, bubbles:true }));
     run("bilingual-block");
   }, true);
+  addEventListener("keydown", event => { if (picking && event.key === "Escape") setPicking(false); }, true);
 
-  function onClick(event) {
-    if (event.target.classList?.contains("scrim")) { run("notes"); return; }
-    const target = event.target.closest("button, .backdrop"); if (!target) return;
-    if (target.classList.contains("backdrop")) { closeAll(); return; }
-    if (target.classList.contains("fab")) { dismissed = false; render(); showBar(); return; }
-    const nav = target.dataset.nav, cmd = target.dataset.cmd, act = target.dataset.act;
-    if (nav) {
-      if (nav === "bilingual") { $(".pop").classList.contains("open") ? closeAll() : openPop(); return; }
-      if (nav === "more") { openSheet(); return; }
-      closeAll();
-      if (nav === "page") run("bilingual-page");
-      else if (nav === "block") setPicking(true);
-      else if (nav === "ai") void askAI();
-      else run(nav);
-      setTimeout(syncState, 350);
-      return;
+  // ---------- popups (quick options) ----------
+  function openPop(btn, noOn, html) {
+    introDone(); closeSheet(); hideCoach(); $("toast").classList.remove("on", "act");
+    const pop = $("pop");
+    pop.innerHTML = '<div class="grip"></div>' + html;
+    const r = btn.getBoundingClientRect();
+    pop.style.left = clamp(r.left, 8, innerWidth - pop.offsetWidth - 8) + "px";
+    pop.style.bottom = (innerHeight - r.top) + 8 + "px";
+    pop.classList.add("open"); $("clear").classList.add("on"); if (!noOn) btn.classList.add("on");
+  }
+  function closePop() { $("pop")?.classList.remove("open"); $("clear")?.classList.remove("on"); }
+  const readerRate = () => { const r = Number(globalThis.LHN_READER_BAR?.rate?.()); return Number.isFinite(r) && r > 0 ? r : 1; };
+  // v7: long-press 0.45 s on Translate / Read (touch) = quick options
+  function openQuick(nb) {
+    const cur = LANGS().find(l => l.code === langCode()) || LANGS()[0];
+    const html = nb.dataset.nav === "page"
+      ? `<div class="qh">${esc(t("page"))}</div><button class="row" type="button" data-p="tr-page">${ic("lang")}<span>${esc(t(pageTranslated() ? "qUntrPage" : "qTrPage"))}</span></button><button class="row" type="button" data-p="pick">${ic("para")}<span>${esc(t("qPick"))}</span></button><button class="row" type="button" data-p="tr-lang">${ic("globe")}<span>${esc(t("qTo"))}</span><small>${esc(cur.native)}</small></button>`
+      : `<div class="qh">${esc(t("reader"))}</div><button class="row" type="button" data-p="rd-start">${ic("read")}<span>${esc(t("qStart"))}</span></button><div class="row qspd">${ic("gauge")}<span>${esc(t("qSpeed"))}</span><button type="button" data-p="rd-dn" aria-label="${esc(t("slower"))}">−</button><b class="qrate">${readerRate().toFixed(2)}x</b><button type="button" data-p="rd-up" aria-label="${esc(t("faster"))}">+</button></div><button class="row" type="button" data-p="rd-voice">${ic("voice")}<span>${esc(t("qVoice"))}</span><small>${esc(t(globalThis.LHN_READER_BAR?.autoVoice?.() === false ? "custom" : "auto"))}</small></button>`;
+    openPop(nb, true, html);
+  }
+  function onPopClick(e) {
+    const r = e.target.closest("[data-p]"); if (!r) return; const p = r.dataset.p;
+    if (p === "rd-dn" || p === "rd-up") {
+      const next = globalThis.LHN_READER_BAR?.stepRate?.(p === "rd-up" ? 0.05 : -0.05);
+      $("pop").querySelector(".qrate").textContent = (Number.isFinite(Number(next)) && next !== null ? Number(next) : readerRate()).toFixed(2) + "x"; return;
     }
-    if (cmd) { closeAll(); run(cmd); setTimeout(syncState, 350); return; }
-    if (act === "pick") { closeAll(); setPicking(true); }
-    else if (act === "pick-cancel") { setPicking(false); showBar(); }
-    else if (act === "close") closeAll();
-    else if (act === "ai") { closeAll(); void askAI(); }
-    else if (act === "dashboard") { closeAll(); void send("OPEN_DASHBOARD"); }
-    else if (act === "settings") { closeAll(); void send("OPEN_DASHBOARD_SETTINGS"); }
-    else if (act === "dismiss") { closeAll(); dismissed = true; render(); }
+    closePop();
+    if (p === "tr-page") return togglePage();
+    if (p === "tr-lang") return openSheet();
+    if (p === "rd-start") return doNav("reader");
+    if (p === "rd-voice") return toast(t(globalThis.LHN_READER_BAR?.autoVoice?.() === false ? "voiceSet" : "voiceAuto"));
+    if (p === "pick") { if (offlineBlock(() => { setPicking(true); toast(t("pickHint")); })) return; setPicking(true); toast(t("pickHint")); }
   }
 
-  // ---------- hide while scrolling down, show when scrolling up ----------
-  const lastTop = new WeakMap(); let travel = 0;
-  function showBar() { if (root && !picking) $(".bar").classList.remove("hide"); travel = 0; }
+  // ---------- bar swipe: right = previous page, left = next page (touch) · long-press quick options ----------
+  const canGo = back => { const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
+  function go(back) { if (!canGo(back)) return false; if (back) history.back(); else history.forward(); return true; }
+  let sw = null, lpT = 0, lpEat = 0, swallowClick = false;
+  function wireBar() {
+    const bar = $("bar"), bin = $("bin");
+    bin.addEventListener("click", e => {
+      introDone();
+      if (swallowClick) { swallowClick = false; return; }
+      const b = e.target.closest("[data-nav]"); if (!b) return;
+      doNav(b.dataset.nav, b);
+    });
+    bar.addEventListener("pointerdown", e => {
+      if (isDesk() || e.button > 0) return; sw = { x:e.clientX, y:e.clientY, id:e.pointerId, on:false, dx:0 };
+      const nb = e.target.closest('[data-nav="page"],[data-nav="reader"]'); clearTimeout(lpT); lpT = 0;
+      if (nb) lpT = setTimeout(() => { lpT = 0; sw = null; lpEat = Date.now() + 10000; openQuick(nb); haptic(); }, 450);
+    });
+    bar.addEventListener("contextmenu", e => { if (isTouch()) e.preventDefault(); });
+    bar.addEventListener("pointermove", e => {
+      if (!sw || e.pointerId !== sw.id) return;
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (lpT && Math.hypot(dx, dy) > 8) { clearTimeout(lpT); lpT = 0; }
+      if (!sw.on) { if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy)) return; sw.on = true; bar.classList.add("swiping"); try { bar.setPointerCapture(e.pointerId); } catch {} }
+      sw.dx = dx; const W = bar.offsetWidth, need = W * 0.3, p = clamp(Math.abs(dx) / need, 0, 1), back = dx > 0, can = canGo(back);
+      bin.style.transform = `translateX(${clamp(dx, -need, need) * (can ? 0.35 : 0.15)}px)`;
+      const el = back ? $("swl") : $("swr"), other = back ? $("swr") : $("swl");
+      other.style.opacity = 0; el.style.opacity = p; el.style.transform = `scale(${0.5 + 0.5 * p})`;
+      el.classList.toggle("go", p >= 1 && can); el.classList.toggle("no", !can);
+    });
+    const endSwipe = e => {
+      if (lpT) { clearTimeout(lpT); lpT = 0; }
+      if (!sw && lpEat) lpEat = Date.now() + 400;
+      if (!sw || e.pointerId !== sw.id) return;
+      const s = sw; sw = null;
+      if (!s.on) return;
+      swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
+      bar.classList.remove("swiping"); bin.style.transform = "";
+      $$(".swi").forEach(x => { x.style.opacity = 0; x.style.transform = "scale(.5)"; x.classList.remove("go", "no"); });
+      if (Math.abs(s.dx) >= bar.offsetWidth * 0.3 && e.type === "pointerup") { const back = s.dx > 0; if (go(back)) haptic(); else toast(t(back ? "noBack" : "noFwd")); }
+    };
+    bar.addEventListener("pointerup", endSwipe); bar.addEventListener("pointercancel", endSwipe);
+    // release after a long-press: swallow exactly one click (it can land on the button or on the overlay that just opened)
+    $("screen").addEventListener("click", e => { if (lpEat && Date.now() < lpEat) { lpEat = 0; e.stopPropagation(); e.preventDefault(); } }, true);
+    // hidden bar: desktop hover the line 0.3 s → show, leave 0.6 s → hide · touch tap the line
+    let peekT = 0;
+    wireBar.peekLater = () => { clearTimeout(peekT); peekT = setTimeout(() => { if (!anyOpen() && !bar.matches(":hover")) setPeek(false); }, 600); };
+    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(S.hidden || S.yieldBar)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
+    $("hzone").addEventListener("mouseleave", () => { if (!isDesk()) return; clearTimeout(peekT); if (S.peek) wireBar.peekLater(); });
+    $("hzone").addEventListener("click", () => { if ((S.hidden || S.yieldBar) && isTouch()) setPeek(true); });
+    bar.addEventListener("mouseenter", () => { if (isDesk() && S.peek) clearTimeout(peekT); });
+    bar.addEventListener("mouseleave", () => { if (isDesk() && S.peek) wireBar.peekLater(); });
+    $("pillOn").addEventListener("click", () => { run("site-toggle"); setTimeout(() => { syncState(); if (!siteDisabled()) toast(t("siteOn")); }, 250); });
+    $("btop").addEventListener("click", () => {
+      const el = scroller && scroller !== document.body && scroller !== document.documentElement && scroller !== document.scrollingElement && scroller.isConnected ? scroller : null;
+      (el || window).scrollTo({ top:0, behavior:smooth() }); haptic();
+    });
+  }
+
+  // ---------- ☰ sheet ----------
+  const TOG = [["icon", "logo", "tIcon", "tIconTip"], ["showOnSelect", "sticky", "tShow", "tShowTip"], ["autoHighlight", "hl", "tHl", "tHlTip"], ["autoTranslate", "msgtext", "tTr", "tTrTip"], ["sentenceNote", "tquote", "tSent", "tSentTip"], ["autoSpeak", "read", "tSpeak", "tSpeakTip"], ["quickPopup", "lang", "tPopup", "tPopupTip"], ["fullDict", "book", "tDict", "tDictTip"]];
+  const togValue = k => ({ icon:settings.translateIconEnabled === true, showOnSelect:settings.showOnSelect === true, autoHighlight:settings.autoHighlight === true, autoTranslate:settings.autoTranslate !== false, sentenceNote:settings.sentenceNoteEnabled !== false, autoSpeak:settings.autoSpeakSelectedText !== false, quickPopup:settings.translationPopupEnabled === true, fullDict:settings.showFullEnglishDictionary !== false }[k]);
+  // same rules as the toolbar popup (popup.js): Keepit icon / note popup / direct translation popup are mutually exclusive
+  function togPatch(k, on) {
+    if (k === "icon") return on ? { translateIconEnabled:true, showOnSelect:false, translationPopupEnabled:false } : { translateIconEnabled:false };
+    if (k === "showOnSelect") return on ? { showOnSelect:true, translateIconEnabled:false, translationPopupEnabled:false } : { showOnSelect:false };
+    if (k === "quickPopup") return on ? { translationPopupEnabled:true, showOnSelect:false, translateIconEnabled:false } : { translationPopupEnabled:false };
+    if (k === "autoHighlight") return { autoHighlight:on };
+    if (k === "autoTranslate") return { autoTranslate:on };
+    if (k === "sentenceNote") return { sentenceNoteEnabled:on };
+    if (k === "autoSpeak") return { autoSpeakSelectedText:on, autoSpeakOnTranslate:on };
+    if (k === "fullDict") return { showFullEnglishDictionary:on };
+    return {};
+  }
+  const COLORS = ["yellow", "green", "purple", "red", "blue", "orange"];
+  const colorHex = k => globalThis.LHN_CONFIG?.HIGHLIGHT_COLORS?.[k] || DEMO_COLORS[k];
+  const curColor = () => globalThis.LHN_CONFIG?.normalizeColor?.(settings.defaultHighlightColor) || settings.defaultHighlightColor || "yellow";
+  const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z") });
+  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"] };
+  const tile = (act, icon, label, on, tip, val) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span><span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
+  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
+  let fontOn = false;
+  // v7: tapping inside ☰ never jumps to the top — keep the scroll position when the same pane is redrawn
+  let sheetPaneDrawn = "";
+  function renderSheet() {
+    const panel = $("panel"), same = sheetPaneDrawn === S.sheetPane && $("sheet").classList.contains("open"), top = same ? panel.querySelector(".sbody")?.scrollTop || 0 : 0;
+    sheetPaneDrawn = S.sheetPane; renderSheet0();
+    const b = panel.querySelector(".sbody"); if (b && top) { b.scrollTop = top; updFade(); }
+  }
+  function renderSheet0() {
+    const panel = $("panel"), narrow = !isWide(), cur = LANGS().find(l => l.code === langCode()) || LANGS()[0];
+    if (S.sheetPane === "keys") {
+      panel.innerHTML = `<div class="grip"></div><div class="shead"><button class="sx" type="button" data-q="back" aria-label="${esc(t("back"))}">${ic("left")}</button><b>${esc(t(isDesk() ? "keys" : "gestures"))}</b><span class="sp"></span></div><div class="sbody">${keysHTML()}</div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
+      requestAnimationFrame(updFade); return;
+    }
+    const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[2]][1]));
+    panel.innerHTML = `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
+  <div class="sbody">
+    <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
+    <div class="divider"></div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${tile("settings", "settings", t("settings"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="divider"></div>
+    <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
+    <div class="divider"></div>
+    <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
+    <div class="divider"></div>
+    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("site", "power", t("siteTile"), !S.siteOff, t("siteTip"))}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}${S.hidden ? tile("show", "eye", t("show")) : tile("hide", "eyeoff", t("hide"))}</div>
+  </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
+    wireLang(); alignColors(); requestAnimationFrame(updFade);
+  }
+  // v5: the highlight-color frame lines up with the first/last tile of the grid above
+  function alignColors() {
+    const panel = $("panel"), c = panel.querySelector(".colors"), q = c?.previousElementSibling?.previousElementSibling?.previousElementSibling; if (!c || !q?.classList.contains("quick")) return;
+    const ics = [...q.querySelectorAll(".q .ic")]; if (!ics.length) return;
+    const top = ics[0].offsetTop, row = ics.filter(i => Math.abs(i.offsetTop - top) < 2);
+    const qr = q.getBoundingClientRect(), l = row[0].getBoundingClientRect().left, r = Math.max(...row.map(i => i.getBoundingClientRect().right));
+    c.style.marginLeft = (l - qr.left) + "px"; c.style.marginRight = (qr.right - r) + "px";
+  }
+  function updFade() {
+    const panel = $("panel"), b = panel?.querySelector(".sbody"); if (!b) return;
+    const below = b.scrollTop + b.clientHeight < b.scrollHeight - 4, above = b.scrollTop > 4;
+    b.classList.toggle("fb", below); b.classList.toggle("ft", above); panel.classList.toggle("more-below", below);
+  }
+  function wireLang() {
+    const inp = root.getElementById("lsearch"), box = root.getElementById("lopts"); if (!inp) return;
+    const cur = () => LANGS().find(l => l.code === langCode()) || LANGS()[0];
+    const draw = (q = "") => { const n = norm(q), f = LANGS().filter(l => !n || norm(`${l.name} ${l.native} ${l.code}`).includes(n)); box.innerHTML = f.length ? f.map(l => `<div class="lopt${l.code === langCode() ? " on" : ""}" role="option" tabindex="0" aria-selected="${l.code === langCode()}" data-lang="${l.code}">${FLAG[l.code] || ""}<span class="ln">${esc(l.native)}</span><span class="le">${esc(l.name)}</span></div>`).join("") : `<div class="lempty">${esc(t("langNone"))}</div>`; };
+    const wrap = inp.parentElement, lname = wrap.querySelector(".lname"), pad = () => { inp.style.paddingRight = wrap.classList.contains("open") ? "" : lname.offsetWidth + 38 + "px"; }, shut = () => { wrap.classList.remove("open"); setTimeout(pad); box.classList.remove("open"); inp.setAttribute("aria-expanded", "false"); inp.value = cur().native; };
+    pad(); inp.addEventListener("focus", () => { inp.value = ""; draw(); wrap.classList.add("open"); pad(); box.classList.add("open"); inp.setAttribute("aria-expanded", "true"); });
+    inp.addEventListener("input", () => { draw(inp.value); wrap.classList.add("open"); box.classList.add("open"); });
+    inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") { shut(); inp.blur(); } if (e.key === "ArrowDown") { e.preventDefault(); box.querySelector(".lopt")?.focus(); } });
+    box.addEventListener("keydown", e => { e.stopPropagation(); const o = e.target.closest(".lopt"); if (o && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); o.click(); } if (e.key === "Escape") shut(); });
+    inp.addEventListener("blur", () => setTimeout(() => { if (!box.contains(root.activeElement)) shut(); }, 150));
+  }
+  // Gestures (touch) / Shortcuts (desktop) for the current page — README Keyboard shortcuts, overlay-controller.js, dictation.js
+  function keysHTML() {
+    const video = isVideoPage(), art = !video && hasArticle(), G = [];
+    if (isDesk()) {
+      G.push([t("gGeneral"), [[t("kSite"), shortcut("toggleWebsiteShortcut", "Alt+Z")], [t("kAi"), "Alt+X"], [t("kNotes"), shortcut("sidebarShortcut", "Alt+Q")]]]);
+      G.push([t("onSelect"), [[t("kNotePopup"), shortcut("shortcut", "Alt+S")], [t("kTranslateSel"), shortcut("translateSelectedShortcut", "Alt+W")]]]);
+      if (!video) G.push([t("gTrRead"), [[t("kLazy"), "Alt+A"], [t("kNear"), "Alt+D"], [t("kRead"), "Alt+R"]]], [t("gReading"), [[t("kPause"), readerKey("speechPauseShortcut", "Space")], [t("kPrevNext"), `${readerKey("previousReadingShortcut", "Left")} / ${readerKey("nextReadingShortcut", "Right")}`], [t("kSpeed"), `${readerKey("increaseReadingSpeedShortcut", "Up")} / ${readerKey("decreaseReadingSpeedShortcut", "Down")}`], [t("kVoice"), shortcut("selectVoiceShortcut", "Alt+L")]]]);
+      if (video) G.push([t("gVideo"), [[t("overlay"), shortcut("dualSubtitlesShortcut", "Alt+E")], [t("dictation"), shortcut("dictationShortcut", "Alt+F")], [t("kPlay"), "Space / K"], [t("kPrevS"), "← / J"], [t("kNextS"), "→ / L"], [t("kRate"), "< / >"]]], [t("dictation"), [[t("kPlay"), "`"], [t("kReplay"), "Ctrl"]]]);
+      G.push([t("gBar"), [[t("kPickRes"), "↑ / ↓"], [t("kOpenRes"), "Enter"], [t("kClose"), "Esc"]]]);
+    } else {
+      if (art) G.push([t("gTranslate"), [[t("kPara"), t("vSwipeLeftPara"), 1], [t("kAll"), pageMobile() ? t("vTriple") : t("vNoPc"), 1]], "translate"]);
+      G.push([t("gNav"), [[t("kPrevPage"), t("vSwipeRight"), 1], [t("kNextPage"), art && S.gest.translate ? t("vSwipeLeftOut") : t("vSwipeLeft"), 1], ...(S.navOff[hostName()] ? [[t("kNavOffHere"), t("vNavOffHere")]] : [])], "nav"]);
+      G.push([t("onSelect"), [[t("kSelIcon"), t("vLongPress")]]]);
+      if (video) G.push([t("gVideoPort"), [[t("kTheater"), t("vSwipeUpVideo")], [t("kPlayStop"), t("vTapSub")], [t("kSeekS"), t("vTapLine")], [t("kLookUp"), t("vLongSub")], [t("kFav"), t("vDouble")]]], [t("gTheater"), [[t("kControls"), t("vTapVideo")], [t("kVolume"), t("vLeftV")], [t("kBright"), t("vRightV")], [t("kSeek"), t("vSwipeH")], [t("kExitTheater"), t("vSwipeDownMid")]]]);
+      G.push([t("gBar"), [[t("kPrevNextPage"), t("vSwipeBar")], [t("kQuick"), t("vHoldTr"), 1], [t("kHideShow"), t("vScroll")], [t("kShowHidden"), t("vTapLine2")]]]);
+      G.push([t("gPopups"), [[t("kExpand"), t("vDragUp")], [t("kShrink"), t("vDragDown")], [t("kCloseP"), t("vTapOut")]]]);
+    }
+    return (isDesk() ? "" : `<button class="krev" type="button" data-q="coach">${ic("bulb")}<span>${esc(t("coachRev"))}</span>${ic("right")}</button>`) + `<div class="ksub">${esc(t("onPage") + (document.title || hostName()))}</div>` + G.map(([g, rows, sw], gi) => `${gi ? '<div class="divider"></div>' : ""}${sw ? `<div class="sec ksec"><span>${esc(g)}</span><button class="sw${S.gest[sw] ? " on" : ""}" type="button" role="switch" aria-checked="${S.gest[sw]}" aria-label="${esc(t("enableG") + g)}" data-q="g:${sw}"></button></div>` : `<div class="sec">${esc(g)}</div>`}<div class="kgrp${sw && !S.gest[sw] ? " off" : ""}">${rows.map(([a, key, nw]) => `<div class="krow"><span>${esc(a)}${nw ? `<i class="knew">${esc(t("newTag"))}</i>` : ""}</span><kbd>${esc(key)}</kbd></div>`).join("")}</div>`).join("");
+  }
+  function anchorPanel() {
+    const panel = $("panel");
+    if (!isWide()) { panel.style.left = ""; panel.style.bottom = ""; return; }
+    const btn = $("bin").querySelector('[data-nav="more"]'), br = $("bar").getBoundingClientRect(); if (!btn) return;
+    const r = btn.getBoundingClientRect(), w = panel.offsetWidth, W = innerWidth, cx = r.left + r.width / 2;
+    panel.style.left = clamp(cx - w / 2, 12, W - w - 12) + "px";
+    panel.style.bottom = (innerHeight - br.top) + 10 + "px";
+  }
+  function openSheet() {
+    introDone(); closePop(); hideCoach(); S.sheetPane = "main"; const panel = $("panel");
+    panel.classList.remove("full"); panel.style.maxHeight = ""; fontOn = globalThis.LHN_READER_BAR?.webFont?.() ?? fontOn; renderSheet(); setTimeout(updFade, 320);
+    $("sheet").classList.add("open"); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); anchorPanel();
+  }
+  function closeSheet() {
+    if (!$("sheet")?.classList.contains("open")) return;
+    $("sheet").classList.remove("open"); $("bin").querySelector('[data-nav="more"]')?.classList.remove("on");
+    if (S.peek && isDesk()) wireBar.peekLater?.();
+  }
+  async function toggleFont() {
+    const next = !fontOn; fontOn = next;
+    if (globalThis.LHN_READER_BAR?.setWebFont) globalThis.LHN_READER_BAR.setWebFont(next);
+    else {
+      const data = await browser.storage.local.get("lhnBilingualReaderSettings").catch(() => ({}));
+      await browser.storage.local.set({ lhnBilingualReaderSettings:{ ...(globalThis.LHN_DEFAULTS?.reader || {}), ...(data.lhnBilingualReaderSettings || {}), webFontFamily:next ? "'Inter', sans-serif" : "" }, lhnCustomFontSettings:{ customFontEnabled:next, fontKey:next ? "inter" : "auto" } }).catch(() => {});
+    }
+    renderSheet(); toast(t(next ? "fontOn" : "fontOff"));
+  }
+  async function onPanelClick(e) {
+    const panel = $("panel");
+    if (e.target.closest(".smore")) { const b = panel.querySelector(".sbody"); b.scrollBy({ top:b.clientHeight * 0.7, behavior:smooth() }); return; }
+    const c = e.target.closest("[data-color]");
+    if (c) { await saveSettings({ defaultHighlightColor:c.dataset.color }); renderSheet(); toast(t("colorSet") + c.title); return; }
+    const l = e.target.closest("[data-lang]");
+    if (l) { await saveSettings({ language:l.dataset.lang }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t("langSet") + l.querySelector(".ln").textContent); return; }
+    const b = e.target.closest("[data-q]"); if (!b) return;
+    const a = b.dataset.q;
+    if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
+    if (a === "compact") { if (S.autoFive) { toast(t("compactAutoToast")); return; } S.five = !S.five; persist(); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t(S.five ? "five" : "seven")); return; }
+    if (a.startsWith("g:")) { const k = a.slice(2), st = panel.querySelector(".sbody").scrollTop; S.gest[k] = !S.gest[k]; persist(); renderSheet(); panel.querySelector(".sbody").scrollTop = st; toast(t(S.gest[k] ? "on" : "off") + t(k === "nav" ? "navG" : "trG")); return; }
+    if (a.startsWith("t:")) { const k = a.slice(2); if (k === "suggest") return; const on = !togValue(k); await saveSettings(togPatch(k, on)); renderSheet(); toast(t(on ? "on" : "off") + b.textContent.trim()); return; }
+    if (a === "theme") { await saveSettings({ sidebarTheme:isDark() ? "light" : "dark" }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); return; }
+    if (a === "font") { await toggleFont(); return; }
+    if (a === "btop") { S.btop = !S.btop; persist(); renderSheet(); updBtop(); toast(t(S.btop ? "btopOn" : "btopOff")); return; }
+    if (a === "navsite") { const h = hostName(); if (S.navOff[h]) delete S.navOff[h]; else S.navOff[h] = true; persist(); renderSheet(); toast(t(S.navOff[h] ? "navOffToast" : "navOnToast") + h); return; }
+    if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
+    if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
+    if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
+    if (a === "site") { closeSheet(); run("site-toggle"); setTimeout(() => { syncState(); if (siteDisabled()) toast(t("siteOff")); }, 250); return; }
+    if (a === "hide") { closeSheet(); setHidden(true); return; }
+    if (a === "show") { closeSheet(); setHidden(false); return; }
+    closeSheet();
+    if (a === "dashboard") void send("OPEN_DASHBOARD");
+    else if (a === "settings") void send("OPEN_DASHBOARD_SETTINGS");
+    else if (a === "restore") { if (globalThis.LHN_BAR_ACTIONS?.restoreHighlights?.()) toast(t("restored")); }
+  }
+
+  // ---------- touch: every popup — drag up = expand, drag down = shrink / close, from anywhere in it (v7) ----------
+  function dragify(el, o) {
+    let d = null, eat = false;
+    const canY = n => n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY);
+    const scs = t0 => { const a = []; for (let n = t0; n; n = n.parentElement) { if (canY(n)) a.push(n); if (n === el) break; } return a; };
+    const begin = (t0, x, y) => { d = null; if (isDesk() || t0.closest("input,textarea,select,[contenteditable]")) return; d = { t:t0, x, y, on:false, dead:false, dy:0, h:el.getBoundingClientRect().height, hd:!!t0.closest(".grip,.shead") }; };
+    const decide = (dx, dy) => {
+      if (Math.abs(dx) > Math.abs(dy)) return -1;
+      if (d.hd) return 1;
+      const a = scs(d.t);
+      if (dy > 0) return a.some(n => n.scrollTop > 0) ? -1 : 1;
+      if (a.slice(0, -1).some(n => n.scrollTop + n.clientHeight < n.scrollHeight - 1)) return -1;
+      return o.expand && !o.isFull?.() ? 1 : -1;
+    };
+    const move = (x, y) => {
+      if (!d || d.dead) return false; const dx = x - d.x, dy = y - d.y;
+      if (!d.on) { if (Math.hypot(dx, dy) < (d.hd ? 6 : 8)) return false; if (decide(dx, dy) < 0) { d.dead = true; return false; } d.on = true; el.classList.add("dragging"); }
+      d.dy = dy; el.style.translate = `0 ${dy > 0 ? dy : Math.max(dy, -120) * (o.expand ? 0.35 : 0.12)}px`; return true;
+    };
+    const end = up => {
+      const s = d; d = null; if (!s || !s.on) return;
+      eat = true; setTimeout(() => { eat = false; }, 80);
+      el.classList.remove("dragging");
+      const snap = () => { el.style.transition = "translate .2s ease"; el.style.translate = ""; setTimeout(() => { el.style.transition = ""; }, 220); };
+      if (up && o.isFull?.() && s.dy > 40 && s.dy < s.h * 0.5) { o.collapse(); snap(); return; }
+      if (up && s.dy > Math.min(110, s.h * 0.3)) {
+        el.style.transition = "translate .18s ease-in"; el.style.translate = `0 ${s.h + 40}px`;
+        setTimeout(() => { el.style.transition = "none"; o.close(); requestAnimationFrame(() => requestAnimationFrame(() => { el.style.translate = ""; el.style.transition = ""; })); }, 180);
+        return;
+      }
+      if (up && s.dy < -40 && o.expand) o.expand();
+      snap();
+    };
+    el.addEventListener("touchstart", e => { if (e.touches.length !== 1) { d = null; return; } const p = e.touches[0]; begin(e.target, p.clientX, p.clientY); }, { passive:true });
+    el.addEventListener("touchmove", e => {
+      if (!d) return; const p = e.touches[0], was = d.on;
+      if (!move(p.clientX, p.clientY)) return;
+      if (e.cancelable) e.preventDefault();
+      else if (!was) { d.dead = true; d.on = false; el.classList.remove("dragging"); el.style.translate = ""; }
+    }, { passive:false });
+    el.addEventListener("touchend", () => end(true)); el.addEventListener("touchcancel", () => end(false));
+    el.addEventListener("click", e => { if (eat) { e.stopPropagation(); e.preventDefault(); } }, true);
+  }
+
+  // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · tap 3 times = whole page
+  // swipe right anywhere = previous page · swipe left outside paragraphs = next page. Ignored: 24px edges (Android Back),
+  // video/canvas/iframe/inputs/sliders, elements that declare their own touch-action (carousels), horizontal scrollers,
+  // an active text selection, a long-press before moving, pinch-zoomed pages, and gestures the page already handled.
+  const EDGE = 24, PARA_SEL = "p,li,blockquote,dd,dt,figcaption,h1,h2,h3,h4,h5,h6", ART_SEL = PARA_SEL + ",article,main", INTERACTIVE = "a,button,input,textarea,select,label,summary,video,canvas,iframe,[contenteditable],[role=button],[role=link],[role=slider],[role=tab]";
+  const hasArticle = () => [...document.querySelectorAll("p")].slice(0, 40).some(p => (p.textContent || "").trim().length > 60);
+  const hScroll = el => { for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true; return false; };
+  function noSwipe(t0) {
+    if (t0.closest("button,input,textarea,select,canvas,iframe,video,[contenteditable],[role=slider],#movie_player,.html5-video-player")) return true;
+    for (let n = t0; n && n !== document.body && n !== document.documentElement; n = n.parentElement) { const ta = getComputedStyle(n).touchAction; if (ta !== "auto" && !/pan-x|manipulation/.test(ta)) return true; }
+    return hScroll(t0);
+  }
+  const paraOf = t0 => { const p = t0.closest?.(PARA_SEL); return p && !isOwnUi(p) && (p.textContent || "").trim().length >= 2 && !p.closest("nav,header,footer,[role=navigation],[role=menu]") ? p : null; };
+  const hasCard = p => !!p && (p.matches(".lhn-bilingual-card") || !!p.querySelector(":scope > .lhn-bilingual-card") || !!p.closest(".lhn-bilingual-card"));
+  function translateAt(x, y) {
+    document.dispatchEvent(new MouseEvent("mousemove", { clientX:x, clientY:y, bubbles:true }));
+    run("bilingual-block");
+  }
+  function togglePara(p, x, y) {
+    const translated = hasCard(p) || !!p.querySelector?.(".lhn-bilingual-card");
+    if (!translated && offlineBlock(() => togglePara(p, x, y))) return;
+    translateAt(x, y);
+    if (translated) toast(t("paraOff"), { fn:() => { if (!p.isConnected) return; const r = p.getBoundingClientRect(); translateAt(clamp(x, r.left + 2, r.right - 2), clamp(r.top + 4, 0, innerHeight - 1)); toast(t("paraAgain")); } });
+    else toast(t("paraOn"));
+  }
+  let pg = null, taps = [];
+  const paraFx = { el:null, prev:null };
+  function setParaFx(p, dx, go) {
+    if (paraFx.el !== p) { clearParaFx(); paraFx.el = p; paraFx.prev = { translate:p.style.translate, background:p.style.backgroundColor, radius:p.style.borderRadius, transition:p.style.transition }; }
+    p.style.transition = "none"; p.style.translate = `${Math.max(dx, -90) * 0.6}px 0`; p.style.borderRadius = "8px"; p.style.backgroundColor = go ? "rgba(156,39,176,.14)" : "rgba(156,39,176,.06)";
+  }
+  function clearParaFx() {
+    const p = paraFx.el, v = paraFx.prev; paraFx.el = null; if (!p || !v) return;
+    p.style.transition = "translate .2s, background-color .2s"; p.style.translate = v.translate; p.style.backgroundColor = v.background; p.style.borderRadius = v.radius;
+    setTimeout(() => { p.style.transition = v.transition; }, 220);
+  }
+  function navFx(dx) {
+    const W = innerWidth, need = W * 0.3, p = clamp(Math.abs(dx) / need, 0, 1), back = dx > 0, can = canGo(back);
+    const el = back ? $("pswl") : $("pswr"), other = back ? $("pswr") : $("pswl");
+    other.style.opacity = 0; el.style.opacity = p; el.style.transform = `translateX(${(back ? 1 : -1) * p * 20}px) scale(${0.6 + 0.4 * p})`;
+    el.classList.toggle("go", p >= 1 && can); el.classList.toggle("no", !can);
+  }
+  function navFxReset() { $$(".pswi").forEach(x => { x.style.opacity = 0; x.style.transform = ""; x.classList.remove("go", "no"); }); }
+  function gestureAllowed() { return mounted && isTouch() && !S.siteOff && !S.extYield && !S.kbd && !S.vfs && !(visualViewport && visualViewport.scale > 1.05); }
+  function onPageTouchStart(e) {
+    if (e.composedPath().includes(host)) return;
+    if (S.peek) setPeek(false);
+    if (!gestureAllowed() || e.touches.length !== 1) { pg = null; taps = []; return; }
+    const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
+    const para = S.gest.translate ? paraOf(target) : null;
+    pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
+      edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed,
+      nav:S.gest.nav && !S.navOff[hostName()] && !noSwipe(target) };
+  }
+  function onPageTouchMove(e) {
+    if (!pg || pg.edge || pg.dead || e.touches.length !== 1) return;
+    const p0 = e.touches[0], dx = p0.clientX - pg.x, dy = p0.clientY - pg.y;
+    if (e.defaultPrevented && !pg.mode) { pg.dead = true; return; }
+    if (!pg.mode) {
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) { if (Math.abs(dy) > 10) pg.dead = true; return; }
+      if (Date.now() - pg.t > 500) { pg.dead = true; return; }
+      if (dx < 0 && pg.p) pg.mode = "para";
+      else if (pg.nav) pg.mode = "nav";
+      else { pg.dead = true; return; }
+      getSelection().removeAllRanges();
+    }
+    if (pg.mode === "para") { pg.dx = Math.min(0, dx); setParaFx(pg.p, pg.dx, pg.dx <= -60); }
+    else { pg.dx = dx; navFx(dx); }
+  }
+  function onPageTouchEnd(e) {
+    const s = pg; pg = null; if (!s) return;
+    const up = e.type === "touchend", end = e.changedTouches?.[0];
+    if (s.mode === "para") { clearParaFx(); taps = []; if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
+    if (s.mode === "nav") { navFxReset(); taps = []; if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(t(back ? "noBack" : "noFwd")); } return; }
+    if (s.dead || !up || !end || !S.gest.translate || !pageMobile() || !s.target.closest(ART_SEL) || s.target.closest(INTERACTIVE) || isOwnUi(s.target)) { taps = []; return; }
+    if (Math.hypot(end.clientX - s.x, end.clientY - s.y) > 10) { taps = []; return; }
+    const now = Date.now(), last = taps[taps.length - 1];
+    if (last && (now - last.t > 450 || Math.hypot(end.clientX - last.x, end.clientY - last.y) > 40)) taps = [];
+    taps.push({ t:now, x:end.clientX, y:end.clientY }); if (taps.length >= 3) { taps = []; getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); }
+  }
+
+  // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
+  let coachT = 0;
+  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && S.gest.translate) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if (S.gest.nav && !S.navOff[hostName()]) it.push([t("cSwipeLR"), t("kPrevNextPage")]); if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
+  function showCoach() {
+    const it = coachItems(); if (!it.length || !isTouch() || S.kbd || S.vfs || S.siteOff || S.extYield) return;
+    $("coach").innerHTML = `<div class="ch1">${ic("hand")}<b>${esc(t(S.coachRe ? "coachTitle" : "coachNew"))}</b></div><ul>${it.map(([g, r]) => `<li><span>${esc(g)}</span><em>${esc(r)}</em></li>`).join("")}</ul><div class="cb"><button type="button" data-c="all">${esc(t("seeAll"))}</button><button type="button" class="pri" data-c="ok">${esc(t("gotIt"))}</button></div>`;
+    $("coach").classList.add("on");
+  }
+  function hideCoach() { clearTimeout(coachT); $("coach")?.classList.remove("on"); }
+  function coachDone() { if (!S.coachSeen) { S.coachSeen = true; persist(); } hideCoach(); }
+  function scheduleCoach() { hideCoach(); if (isTouch() && !S.coachSeen && S.introSeen && !S.introOn) coachT = setTimeout(() => { if (!anyOpen()) showCoach(); }, 700); }
+
+  // ---------- v8: first-run intro (flag touchBarIntroSeen in storage.local) ----------
+  function introHTML() {
+    const rows = [["lang", t("i1")], ["search", t("i2")], ["menu", t("i3")]];
+    if (isDesk()) rows.push(["keyboard", t("i4d")], ["eyeoff", t("i5d")]);
+    else rows.push(["lr", t("i4t")], ["eyeoff", t("i5t")]);
+    return `<div class="ch1">${ic("logo")}<b>${esc(t("introTitle"))}<small>${esc(t("introSub"))}</small></b></div><ul>${rows.map(([i, s]) => `<li>${ic(i)}<span>${esc(s)}</span></li>`).join("")}</ul><div class="cb"><button type="button" class="pri" data-i="ok">${esc(t("gotIt"))}</button></div>`;
+  }
+  function showIntro() {
+    if (S.introSeen || S.siteOff || S.extYield || S.kbd || S.vfs || anyOpen()) return;
+    hideCoach(); S.introOn = true; S.scrollHide = false; S.peek = S.hidden ? true : S.peek; syncBarVis();
+    $("intro").innerHTML = introHTML(); $("intro").classList.add("on"); $("screen").classList.add("introon");
+  }
+  function introDone() {
+    if (!S.introOn) return; S.introOn = false; S.introSeen = true;
+    browser.storage.local.set({ [INTRO_KEY]:true }).catch(() => {});
+    $("intro").classList.remove("on"); $("screen").classList.remove("introon");
+    if (S.hidden && S.peek) setPeek(false);
+    scheduleCoach();
+  }
+
+  // ---------- search popup ----------
+  const SCOPES = () => [["all", t("scAll")], ["dict", t("scDict")], ["notes", t("scNotes")], ["lists", t("scLists")], ["web", "Google"], ["yt", "YouTube"]];
+  const looksUrl = q => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/i.test(q) && !/\s/.test(q);
+  function hiFrag(text, q) { const s = String(text), i = norm(s).indexOf(norm(q)); if (!q || i < 0) return esc(s); return esc(s.slice(0, i)) + "<strong>" + esc(s.slice(i, i + q.length)) + "</strong>" + esc(s.slice(i + q.length)); }
+  let ROWS = [], DATA = { notes:[], sessions:[] };
+  const hostOf = url => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
+  async function loadSearchData() {
+    try {
+      const [all, store] = await Promise.all([send("GET_ALL"), browser.storage.local.get(DICTATION_KEY)]);
+      DATA = { notes:Array.isArray(all) ? all : [], sessions:Array.isArray(store?.[DICTATION_KEY]?.sessions) ? store[DICTATION_KEY].sessions : [] };
+    } catch { DATA = { notes:[], sessions:[] }; }
+    if ($("srch")?.classList.contains("open")) renderResults();
+  }
+  const isWord = s => /^[a-z][a-z'’-]*$/i.test(String(s || "").trim());
+  function buildRows(q) {
+    const rows = [], nq = norm(q), sc = S.scope, has = s => norm(s).includes(nq);
+    if (!q) {
+      if (sc === "all" && S.recent.length) { rows.push({ sec:t("recentSec"), clear:true }); S.recent.forEach((r, i) => rows.push({ icon:"clock", title:esc(r.q), sub:{ search:t("rSearch"), url:t("rUrl"), dict:"Keepit Dictionary", yt:"YouTube" }[r.k] || "", act:() => runRecent(r), rm:i })); }
+      return rows;
+    }
+    const word = isWord(q);
+    if (sc === "all") {
+      const opens = []; if (looksUrl(q)) opens.push(q.replace(/^https?:\/\//, ""));
+      if (!/\s|\./.test(q) && nq.length >= 2) DOMAINS.filter(d => d.startsWith(nq) || d.replace(/^\w+\./, "").startsWith(nq)).slice(0, 2).forEach(d => { if (!opens.includes(d)) opens.push(d); });
+      if (opens.length) { rows.push({ sec:t("addrSec") }); opens.forEach(u => rows.push({ icon:"globe", title:hiFrag(u, q), sub:t(isApk() ? "openPage" : "openNewTab"), act:() => { addRecent("url", u); openUrl(/^https?:\/\//i.test(q) && u === q.replace(/^https?:\/\//, "") ? q : "https://" + u); } })); }
+    }
+    const kp = [];
+    if ((sc === "all" || sc === "dict") && word) kp.push({ icon:"book", kpc:true, title:esc(t("lookup", q.trim())), sub:"Keepit Dictionary", act:() => { addRecent("dict", q.trim()); openDict(q.trim()); } });
+    const vocab = DATA.notes.filter(n => n && (n.dictionaryOnly || isWord(n.quote)));
+    if (sc === "all" || sc === "lists") {
+      const seen = new Set();
+      vocab.filter(n => has(n.quote || "") && norm(n.quote) !== nq).forEach(n => { const w = String(n.quote).trim(); if (seen.has(norm(w)) || seen.size >= 2) return; seen.add(norm(w)); kp.push({ icon:"star", kpc:true, title:hiFrag(w, q), sub:t("savedWord"), act:() => openDict(w) }); });
+    }
+    if (sc === "all" || sc === "notes") {
+      const max = sc === "notes" ? 6 : 2, items = DATA.notes.filter(n => n && !vocab.includes(n));
+      items.filter(n => String(n.note || "").trim() && has(`${n.quote || ""} ${n.note || ""} ${n.title || ""}`)).slice(0, max).forEach(n => kp.push({ icon:"notes", kpc:true, title:hiFrag(String(n.note || n.quote).slice(0, 160), q), sub:t("noteSub", n.hostname || hostOf(n.url)), act:() => openRecord(n, "openingNote") }));
+      items.filter(n => !String(n.note || "").trim() && has(n.quote || "")).slice(0, sc === "notes" ? 6 : 1).forEach(n => kp.push({ icon:"hl", kpc:true, title:hiFrag(String(n.quote).slice(0, 160), q), sub:t("hlSub", n.hostname || hostOf(n.url)), act:() => openRecord(n, "openingHl") }));
+    }
+    if (sc === "all" || sc === "lists") DATA.sessions.filter(d => d && d.url && has(d.title || "")).slice(0, 2).forEach(d => kp.push({ icon:"keyboard", kpc:true, title:hiFrag(d.title, q), sub:t("dictSub", t("sentences", d.solvedCount || 0, d.totalCount || 0) + (d.status === "complete" ? t("done") : "")), act:() => { addRecent("search", d.title); openUrl(d.url); toast(t("openingDict")); } }));
+    if (kp.length) { rows.push({ sec:"Keepit" }); rows.push(...kp.slice(0, sc === "all" ? 6 : 12)); }
+    else if (sc !== "all" && sc !== "web" && sc !== "yt") rows.push({ empty:esc(t("notFound", q, SCOPES().find(s => s[0] === sc)[1])) });
+    if (sc === "all" || sc === "web" || sc === "yt") {
+      rows.push({ sec:"Web" });
+      if (sc !== "yt") rows.push({ g:true, title:`<strong>${esc(q)}</strong>`, sub:t("onGoogle"), act:() => { addRecent("search", q); openUrl("https://www.google.com/search?q=" + encodeURIComponent(q)); } });
+      if (sc !== "web") rows.push({ yt:true, title:`<strong>${esc(q)}</strong>`, sub:t("onYt"), act:() => { addRecent("yt", q); openUrl("https://www.youtube.com/results?search_query=" + encodeURIComponent(q)); } });
+    }
+    return rows;
+  }
+  function addRecent(k, q) { S.recent = [{ k, q }, ...S.recent.filter(r => r.q !== q)].slice(0, 6); persist(); }
+  function runRecent(r) { if (r.k === "dict") openDict(r.q); else if (r.k === "url") openUrl(/^https?:\/\//i.test(r.q) ? r.q : "https://" + r.q); else if (r.k === "yt") openUrl("https://www.youtube.com/results?search_query=" + encodeURIComponent(r.q)); else openUrl("https://www.google.com/search?q=" + encodeURIComponent(r.q)); }
+  // Extension: new tab · APK: one main view (go forward in history)
+  function openUrl(url) {
+    if (isApk()) { location.href = url; return; }
+    window.open(url, "_blank", "noopener"); toast(t("openedTab"));
+  }
+  // same page → open the Notes panel and jump to it (demo); another page → open that page at the note (OPEN_HIGHLIGHT)
+  const samePage = url => { try { const a = new URL(url), b = new URL(location.href); return a.origin === b.origin && a.pathname === b.pathname && a.search === b.search; } catch { return false; } };
+  function openRecord(n, msg) {
+    if (n.dictionaryOnly || !/^https?:\/\//i.test(n.url || "") || !n.id) { if (isWord(n.quote)) openDict(String(n.quote).trim()); return; }
+    if (samePage(n.url)) { if (!document.querySelector("#lhn-sidebar.lhn-side-visible")) run("notes"); toast(t(msg === "openingNote" ? "noteInPanel" : "hlInPanel")); }
+    else toast(t(msg));
+    void send("OPEN_HIGHLIGHT", { url:n.url, id:String(n.id) });
+  }
+  function openDict(w) { closeSearch(); globalThis.LHN_BAR_ACTIONS?.openDictionary?.(w); }
+  function renderResults() {
+    const sq = $("sq"), res = $("res"), q = sq.value.trim();
+    $("sqx").hidden = !q;
+    ROWS = buildRows(q);
+    const acts = ROWS.filter(r => r.act); S.active = clamp(S.active, 0, Math.max(0, acts.length - 1));
+    let n = 0;
+    res.innerHTML = ROWS.map(r => {
+      if (r.sec) return `<div class="rsec"><span>${esc(r.sec)}</span>${r.clear ? `<button type="button" data-clear>${esc(t("clearAll"))}</button>` : ""}</div>`;
+      if (r.empty) return `<div class="empty">${r.empty}</div>`;
+      const i = n++, rk = r.g ? `<span class="rk g">G</span>` : r.yt ? `<span class="rk yt"><i></i></span>` : `<span class="rk${r.kpc ? " kp" : ""}">${ic(r.icon)}</span>`;
+      const tail = r.rm !== undefined ? `<span class="ra" data-rm="${r.rm}" title="${esc(t("remove"))}">${ic("x")}</span>` : "";
+      return `<button class="ri${i === S.active ? " act" : ""}" type="button" data-i="${i}">${rk}<span class="rt"><b>${r.title}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span>${tail}</button>`;
+    }).join("") || `<div class="empty">${esc(S.scope === "all" ? t("emptyAll") : t("emptyScope", SCOPES().find(s => s[0] === S.scope)[1]))}</div>`;
+  }
+  function renderChips() { $("chips").innerHTML = SCOPES().map(([k, l]) => `<button class="chip${S.scope === k ? " on" : ""}" type="button" data-scope="${k}">${esc(l)}</button>`).join(""); }
+  function layoutSearch() {
+    const vv = window.visualViewport, H = vv ? vv.height : innerHeight, top = vv ? vv.offsetTop : 0;
+    const t0 = isDesk() ? Math.round(innerHeight * 0.12) : 10;
+    const sbox = $("sbox"); sbox.style.top = (top + t0) + "px"; sbox.style.maxHeight = Math.max(160, H - t0 - 10) + "px";
+  }
+  function renderCur() {
+    const cur = $("scur");
+    cur.innerHTML = isApk() ? `${ic("lock")}<span>${esc(location.hostname + location.pathname)}</span><button type="button" data-reload>${ic("reload")}${esc(t("reload"))}</button>` : "";
+    cur.hidden = !isApk();
+  }
+  function openSearch() {
+    introDone(); closePop(); closeSheet(); hideCoach(); S.scope = "all"; S.active = 0; const sq = $("sq"); sq.value = ""; sq.placeholder = t("sPlaceholder");
+    $("sqx").setAttribute("aria-label", t("clear"));
+    $("sfoot").innerHTML = `<span><kbd>↑</kbd> <kbd>↓</kbd> ${esc(t("fSelect"))}</span><span><kbd>Enter</kbd> ${esc(t("fOpen"))}</span><span><kbd>Esc</kbd> ${esc(t("fClose"))}</span>`;
+    renderCur(); renderChips(); renderResults(); void loadSearchData();
+    $("srch").classList.add("open"); $("srch").classList.toggle("deskmode", isDesk());
+    layoutSearch(); requestAnimationFrame(layoutSearch);
+    setTimeout(() => sq.focus({ preventScroll:true }), 30);
+  }
+  function closeSearch() {
+    if (!$("srch")?.classList.contains("open")) return;
+    $("srch").classList.remove("open"); $("sq").blur();
+    if (S.peek && isDesk()) wireBar.peekLater?.();
+  }
+  function runActive() { const r = ROWS.filter(x => x.act)[S.active]; if (!r) return; closeSearch(); r.act(); }
+  function wireSearch() {
+    const sq = $("sq"), res = $("res");
+    $("scrim2").addEventListener("click", closeSearch);
+    sq.addEventListener("input", () => { S.active = 0; renderResults(); });
+    sq.addEventListener("keydown", e => {
+      e.stopPropagation();
+      const n = ROWS.filter(x => x.act).length;
+      if (e.key === "ArrowDown") { e.preventDefault(); S.active = (S.active + 1) % Math.max(1, n); renderResults(); res.querySelector(".ri.act")?.scrollIntoView({ block:"nearest" }); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); S.active = (S.active - 1 + n) % Math.max(1, n); renderResults(); res.querySelector(".ri.act")?.scrollIntoView({ block:"nearest" }); }
+      else if (e.key === "Enter") { e.preventDefault(); runActive(); }
+      else if (e.key === "Escape") { e.preventDefault(); closeSearch(); }
+    });
+    ["keyup", "keypress"].forEach(type => sq.addEventListener(type, e => e.stopPropagation()));
+    $("sqx").addEventListener("click", () => { sq.value = ""; S.active = 0; renderResults(); sq.focus(); });
+    $("chips").addEventListener("click", e => { const c = e.target.closest("[data-scope]"); if (!c) return; S.scope = c.dataset.scope; S.active = 0; renderChips(); renderResults(); sq.focus(); });
+    $("scur").addEventListener("click", e => { if (e.target.closest("[data-reload]")) { closeSearch(); location.reload(); } });
+    res.addEventListener("click", e => {
+      if (e.target.closest("[data-clear]")) { S.recent = []; persist(); renderResults(); sq.focus(); return; }
+      const rm = e.target.closest("[data-rm]"); if (rm) { S.recent.splice(+rm.dataset.rm, 1); persist(); renderResults(); sq.focus(); return; }
+      const r = e.target.closest(".ri"); if (!r) return; S.active = +r.dataset.i; runActive();
+    });
+    res.addEventListener("mousemove", e => { const r = e.target.closest(".ri"); if (r && isDesk() && +r.dataset.i !== S.active) { S.active = +r.dataset.i; $$(".ri", res).forEach(x => x.classList.toggle("act", x === r)); } });
+    dragify($("sbox"), { isFull:() => root.activeElement !== sq, expand:() => { sq.blur(); layoutSearch(); }, collapse:() => { sq.focus(); layoutSearch(); }, close:() => closeSearch() });
+    window.visualViewport?.addEventListener("resize", () => { if ($("srch").classList.contains("open")) layoutSearch(); });
+  }
+
+  function wire() {
+    wireBar(); wireSearch();
+    $("clear").addEventListener("click", closePop);
+    $("nscrim").addEventListener("click", () => run("notes"));   // touch: dim the page behind the Notes bottom sheet, tap to close
+    $("pop").addEventListener("click", onPopClick);
+    $("scrim").addEventListener("click", closeSheet);
+    $("panel").addEventListener("scroll", updFade, true);
+    $("panel").addEventListener("click", e => { void onPanelClick(e); });
+    dragify($("panel"), { isFull:() => $("panel").classList.contains("full"), expand:() => { setTimeout(updFade, 320); const panel = $("panel"); panel.classList.add("full"); if (isWide()) panel.style.maxHeight = (innerHeight - parseFloat(panel.style.bottom || 0) - 12) + "px"; }, collapse:() => { const panel = $("panel"); panel.classList.remove("full"); panel.style.maxHeight = ""; setTimeout(updFade, 320); }, close:() => closeSheet() });
+    dragify($("pop"), { close:() => closePop() });
+    $("coach").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; coachDone(); if (b.dataset.c === "all") { openSheet(); S.sheetPane = "keys"; renderSheet(); anchorPanel(); } });
+    $("intro").addEventListener("click", e => { if (e.target.closest("[data-i]")) introDone(); });
+    $("iscrim").addEventListener("click", introDone);
+    // keys typed into Keepit's own inputs (search, language) must not reach the page's shortcut handlers
+    root.addEventListener("keydown", e => { if (e.target.closest?.("input")) e.stopPropagation(); });
+  }
+  addEventListener("keydown", e => {
+    if (!mounted || e.key !== "Escape") return;
+    if ($("srch").classList.contains("open")) closeSearch();
+    else if ($("sheet").classList.contains("open")) closeSheet();
+    else if ($("pop").classList.contains("open")) closePop();
+    else if (S.introOn) introDone();
+  });
+
+  // ---------- page state: Reader / overlay / notes take the bar's place; site off → pill ----------
+  function syncState() {
+    if (!mounted) return;
+    const notesVisible = !!document.querySelector("#lhn-sidebar.lhn-side-visible");
+    const ext = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || (notesVisible && isTouch());
+    const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
+    S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible;
+    if (ext) { closePop(); closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
+    if (changed) { root.querySelector('[data-nav="notes"]')?.classList.toggle("on", notesVisible); syncBarVis(); }
+    syncTr();
+    const pageDark = pageIsDark(); $("screen").classList.toggle("pageDark", pageDark);
+  }
+  function pageIsDark() {
+    for (const el of [document.body, document.documentElement]) {
+      const m = el && getComputedStyle(el).backgroundColor.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
+      if (!m || (m[4] !== undefined && Number(m[4]) === 0)) continue;
+      return (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) < 110;
+    }
+    return false;
+  }
+  // scroll: touch hides the bar going down, shows it going up · back-to-top tracks the scroller · page bottom bars → yield
+  const lastTop = new WeakMap();
   function onScroll(event) {
-    if (!mounted || picking) return;
-    const target = event.target === document || event.target === window ? document.scrollingElement || document.documentElement : event.target;
-    if (!target || target.nodeType !== 1) return;
-    const top = target.scrollTop, previous = lastTop.has(target) ? lastTop.get(target) : top;
-    lastTop.set(target, top);
-    const delta = top - previous;
-    if (!delta) return;
-    if ((delta > 0) !== (travel > 0)) travel = 0;
-    travel += delta;
-    const nearEnd = target.scrollHeight - target.clientHeight - top < 4;
-    if (top < 8 || nearEnd) showBar();
-    else if (travel > 14) { $(".bar").classList.add("hide"); closeAll(); }
-    else if (travel < -14) showBar();
+    if (!mounted) return;
+    const target = event.target === document ? document.scrollingElement : event.target;
+    if (!(target instanceof Element) || isOwnUi(target)) return;
+    const main = target === document.scrollingElement || target === document.documentElement || target === document.body || target.clientHeight >= innerHeight * 0.5;
+    if (!main) return;
+    scroller = target;
+    const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
+    if (Math.abs(dy) > 6) { if (isTouch()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
+    else if (!lastTop.has(target)) lastTop.set(target, y);
+    updBtop();
+    if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; checkOverlap(); });
   }
+  // keyboard open (focus in a page text field on touch / visual viewport shrinks) or full-screen video → hide bar, line, top button
+  const editable = el => el?.closest?.("input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=color]):not([type=file]),textarea,select,[contenteditable]:not([contenteditable=false])");
+  function onFocusIn(e) { if (!isTouch() || e.composedPath().includes(host) || !editable(e.target)) return; S.kbd = true; hideCoach(); syncBarVis(); }
+  function onFocusOut(e) { if (!S.kbd || e.composedPath().includes(host)) return; setTimeout(() => { if (!editable(document.activeElement)) { S.kbd = false; syncBarVis(); } }, 0); }
+  function onFullscreen() { S.vfs = !!(document.fullscreenElement || document.webkitFullscreenElement); if (S.vfs) { introDone(); hideCoach(); closePop(); } syncBarVis(); }
+  function onNetwork() {
+    const was = S.offline; S.offline = navigator.onLine === false;
+    if (was && !S.offline && S.pendingTr && mounted) toast(t("online"), { label:t("translateNow"), fn:() => { const f = S.pendingTr; S.pendingTr = null; f?.(); } });
+  }
+  let offlineToastAt = 0;
+  globalThis.LHN_BAR_HOOKS = Object.freeze({
+    translateOffline() {
+      if (!mounted || Date.now() - offlineToastAt < 4000) return; offlineToastAt = Date.now();
+      const retry = () => { if (pageTranslated()) { run("bilingual-page"); run("bilingual-page"); } };
+      S.pendingTr = retry; toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (navigator.onLine === false) return toast(t("offline"), { icon:"wifioff" }); S.pendingTr = null; retry(); } });
+    }
+  });
 
-  // ---------- notes sidebar as a bottom sheet (css/content/content.css): drag its top edge down to close ----------
+  // ---------- notes sidebar as a bottom sheet on touch (css/content/content.css): drag its top edge down to close ----------
   let sheetDrag = null;
   function onSheetTouchStart(event) {
     const side = event.target.closest?.("#lhn-sidebar.lhn-side-visible");
-    if (!side || event.touches.length !== 1) return;
+    if (!side || event.touches.length !== 1 || !isTouch()) return;
     const y = event.touches[0].clientY, top = side.getBoundingClientRect().top;
     if (y - top > 64) return;
     sheetDrag = { side, y, dy:0 };
@@ -300,32 +1439,63 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
     sidebarWatch = { target:side, observer };
   }
 
-  let ticker = 0, bodyWatch = null;
+  let ticker = 0, bodyWatch = null, lastLayout = "";
+  const layoutKey = () => [isTouch(), isWide(), isPland(), isSmall(), isVideoPage(), langCode(), isDark()].join("|");
+  function relayout(force) {
+    if (!mounted) return;
+    const key = layoutKey(); if (!force && key === lastLayout) { syncBarVis(); return; }
+    if (key.split("|").slice(0, 4).join() !== lastLayout.split("|").slice(0, 4).join()) { S.autoFive = false; closePop(); closeSheet(); closeSearch(); S.peek = false; }
+    lastLayout = key; renderBar();
+    if ($("sheet").classList.contains("open")) { renderSheet(); anchorPanel(); }
+  }
   function mount() {
     if (mounted || !document.body) return;
     if (!host) build();
     document.documentElement.appendChild(host);
-    mounted = true; render();
-    document.addEventListener("scroll", onScroll, { capture:true, passive:true });
-    document.addEventListener("touchstart", onSheetTouchStart, { capture:true, passive:true });
-    document.addEventListener("touchmove", onSheetTouchMove, { capture:true, passive:true });
+    mounted = true; lastLayout = ""; relayout(true); syncState();
+    const passive = { capture:true, passive:true };
+    document.addEventListener("scroll", onScroll, passive);
+    document.addEventListener("touchstart", onSheetTouchStart, passive);
+    document.addEventListener("touchmove", onSheetTouchMove, passive);
     document.addEventListener("touchend", onSheetTouchEnd, true);
     document.addEventListener("touchcancel", onSheetTouchEnd, true);
+    window.addEventListener("touchstart", onPageTouchStart, { passive:true });
+    window.addEventListener("touchmove", onPageTouchMove, { passive:true });
+    window.addEventListener("touchend", onPageTouchEnd, { passive:true });
+    window.addEventListener("touchcancel", onPageTouchEnd, { passive:true });
+    document.addEventListener("focusin", onFocusIn, true);
+    document.addEventListener("focusout", onFocusOut, true);
+    document.addEventListener("fullscreenchange", onFullscreen); document.addEventListener("webkitfullscreenchange", onFullscreen);
     bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
-    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); syncState(); }, 700);
+    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); syncState(); checkOverlap(); }, 700);
+    requestAnimationFrame(checkOverlap);
+    if (!S.introSeen) setTimeout(showIntro, 500); else scheduleCoach();
   }
-  function unmount() {
-    if (!mounted) return;
-    mounted = false; clearInterval(ticker); setPicking(false); closeAll();
-    document.removeEventListener("scroll", onScroll, true);
-    document.removeEventListener("touchstart", onSheetTouchStart, true);
-    document.removeEventListener("touchmove", onSheetTouchMove, true);
-    document.removeEventListener("touchend", onSheetTouchEnd, true);
-    document.removeEventListener("touchcancel", onSheetTouchEnd, true);
-    bodyWatch?.disconnect(); bodyWatch = null; sidebarWatch?.observer.disconnect(); sidebarWatch = null;
-    host.remove();
+  async function init() {
+    installTouchSelectionBridge();
+    try { settings = await globalThis.LHN_SETTINGS.get(); } catch { settings = {}; }
+    try {
+      const data = await browser.storage.local.get([STORE_KEY, INTRO_KEY]), b = data[STORE_KEY] || {};
+      S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true;
+      S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
+      S.navOff = b.navOff && typeof b.navOff === "object" ? { ...b.navOff } : {};
+      S.recent = Array.isArray(b.recent) ? b.recent.filter(r => r && typeof r.q === "string").slice(0, 6) : [];
+      S.introSeen = data[INTRO_KEY] === true;
+    } catch {}
+    globalThis.LHN_SETTINGS?.subscribe?.(next => { settings = next || {}; if (!mounted) return; syncState(); relayout(true); });
+    browser.storage.onChanged?.addListener((changes, area) => {
+      if (area !== "local" || !mounted) return;
+      if (changes[INTRO_KEY]?.newValue === true && S.introOn) introDone();
+      if (changes[INTRO_KEY]?.newValue === true) S.introSeen = true;
+    });
+    TOUCH.addEventListener("change", () => relayout(true));
+    DARK_SCHEME.addEventListener("change", () => relayout(true));
+    addEventListener("resize", () => { relayout(false); if ($("sheet")?.classList.contains("open")) anchorPanel(); if ($("srch")?.classList.contains("open")) layoutSearch(); if (mounted) checkOverlap(); });
+    addEventListener("online", onNetwork); addEventListener("offline", onNetwork);
+    addEventListener("popstate", () => relayout(false)); setInterval(() => { if (mounted && layoutKey() !== lastLayout) relayout(false); }, 1000);
+    document.fonts?.ready?.then(() => { if (mounted) fitLabels(); });
+    if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount, { once:true });
   }
-  function update() { if (TOUCH.matches) mount(); else unmount(); if (mounted) render(); }
 
   // ---------- touch selection → the mouseup the content scripts listen for ----------
   // Long-press selection (and dragging its handles) fires no mouseup, so the Keepit popup/icon would never open.
@@ -359,14 +1529,5 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
     document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);
   }
 
-  async function init() {
-    installTouchSelectionBridge();
-    try { settings = await globalThis.LHN_SETTINGS.get(); } catch { settings = {}; }
-    globalThis.LHN_SETTINGS?.subscribe?.(next => { settings = next || {}; if (mounted) render(); });
-    TOUCH.addEventListener("change", update);
-    WIDE.addEventListener("change", () => { if (mounted) { closeAll(); render(); } });
-    DARK_SCHEME.addEventListener("change", () => { if (mounted) render(); });
-    if (document.body) update(); else document.addEventListener("DOMContentLoaded", update, { once:true });
-  }
   void init();
 })();

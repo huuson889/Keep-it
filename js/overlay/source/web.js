@@ -131,8 +131,7 @@ function createWebTtsMedia(cues) {
     get paused() { return paused; },
     get playbackRate() { return playbackRate; },
     set playbackRate(value) {
-      const sharedRateActive = globalThis.LHN_OVERLAY_WEB_TTS_USES_READER_RATE?.() !== false;
-      const next = Math.max(0.5, Math.min(sharedRateActive ? 3 : 2, Number(value) || 1));
+      const next = Math.max(0.5, Math.min(3, Number(value) || 1));
       const changed = Math.abs(next - playbackRate) > 0.0001;
       playbackRate = next;
       if (media._currentAudio) {

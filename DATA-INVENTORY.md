@@ -1,4 +1,4 @@
-# Keepit — Data Inventory (internal, v3.5.136)
+# Keepit — Data Inventory (internal, v3.5.158)
 
 > Internal review file for the test ZIP. **Remove from public release copies.** Lists only data type, recipient, purpose and code location — no endpoints, payloads, tokens or internal logic.
 
@@ -20,13 +20,13 @@ Classification: **required** = sent when the user uses the feature (Firefox `req
 | 10 | Microphone audio | The browser's speech-recognition service (Chrome: remote service per MDN; provider not named by MDN). Not available in Firefox 147 | Speaking practice transcript | required (browser API) | — (browser processes; Keepit does not transmit) | Disclose in policy | `js/overlay/study/shadowing/shadowing-activity.js:495` |
 | 11 | IP address and standard request headers; referrer not verified | Google Fonts | Inter font for Keepit's UI styles — **loaded on every page where content scripts run**, plus Dashboard pages; extra fonts when custom font / Bilingual Reader is used | none (no user data payload) — disclosed | — | Disclose in policy | `css/shared/ui-tokens.css:1`, `css/dashboard/dictation-stats-popup.css:2`, `js/shared/custom-font.js:24`, `js/reader/bilingual-reader.js:35` |
 | 12 | Site origin | The visited website itself | Site icon in Dashboard lists (favicon files on the same site) | none | — | — | `js/shared/site-icons.js:32` |
-| 13 | Search word | Google Search (opened as a normal tab by the user) | Definition / video search from Dashboard study views | none (user navigation) | — | — | `js/dashboard/dashboard.js:860`, `js/dashboard/study-view.js:165` |
+| 13 | Search word; text / web address typed in the Keepit bar search box | Google Search; YouTube search; the typed website (each opened as a normal tab — APK: the same view — only when the user picks that row) | Definition / video search from Dashboard study views; Keepit bar search popup (Google / YouTube / address rows). No suggestions are fetched while typing | none (user navigation) | — | — | `js/dashboard/dashboard.js:860`, `js/dashboard/study-view.js:165`, `js/content/touch-ui.js:1226`, `js/content/touch-ui.js:1245`, `js/content/touch-ui.js:1246`, `js/content/touch-ui.js:1253` |
 | 14 | Page URL in icon request | Google favicon service | Dashboard icon fallback | **ngừng gửi** (removed v3.5.136) | — | — | `js/shared/site-icons.js` (line deleted) |
-| 15 | Default thumbnail request | Unsplash | Web source card artwork | **ngừng gửi** (now bundled) | — | — | `js/overlay/source/web.js:500` |
+| 15 | Default thumbnail request | Unsplash | Web source card artwork | **ngừng gửi** (now bundled) | — | — | `js/overlay/source/web.js:499` |
 
 ## 2. Data kept only in the browser (not sent by Keepit)
 
-Highlights, notes, page title/URL of annotations, flashcards/study progress, settings, translation/TTS/transcript caches, URL → AI-conversation mapping (after a confirmed send), panel state, local usage counters, demo profile, diagnostic log (codes only). Favourite videos and web pages (video ID or page URL without fragment, title, channel or site name, time added; `js/overlay/view/touch-layout.js:221`, `js/dashboard/dashboard.js:1162`, `js/dashboard/dashboard.js:1172`). Short speaking recordings stay in memory for playback only (`js/overlay/study/shadowing/shadowing-activity.js:313`).
+Keepit bar preferences (hidden, compact, back-to-top, gesture switches, sites where page swipe is off) and up to 6 recent bar searches in `lhnBottomBar`, plus the first-run flag `touchBarIntroSeen` (`js/content/touch-ui.js:276`, `js/content/touch-ui.js:1196`); the bar search reads saved notes/highlights and dictation sessions locally only (`js/content/touch-ui.js:1210`). Highlights, notes, page title/URL of annotations, flashcards/study progress, settings, translation/TTS/transcript caches, URL → AI-conversation mapping (after a confirmed send), panel state, local usage counters, demo profile, diagnostic log (codes only). Favourite videos and web pages (video ID or page URL without fragment, title, channel or site name, time added; `js/overlay/view/touch-layout.js:221`, `js/dashboard/dashboard.js:1162`, `js/dashboard/dashboard.js:1172`). Short speaking recordings stay in memory for playback only (`js/overlay/study/shadowing/shadowing-activity.js:313`).
 
 ## 3. Network rules that change headers
 

@@ -2913,7 +2913,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
       </div>
       <div class="te-speed-row">
         <button id="te-speed-dec" class="te-speed-step" type="button">-</button>
-        <div class="te-speed-slider-wrap"><input type="range" id="te-speed-slider" min="0.5" max="2" step="0.05" value="1"></div>
+        <div class="te-speed-slider-wrap"><input type="range" id="te-speed-slider" min="0.5" max="3" step="0.05" value="1"></div>
         <button id="te-speed-inc" class="te-speed-step" type="button">+</button>
       </div>
       <div class="te-speed-grid">

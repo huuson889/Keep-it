@@ -19,7 +19,7 @@ This policy covers the Keepit browser extension for Chromium-based browsers and 
 
 ### 2. Data kept in your browser
 
-Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
+Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
 
 ### 3. Data sent to outside services
 
@@ -36,7 +36,7 @@ Each service below receives only what the feature needs, together with ordinary 
 | Speaking practice — when you use the microphone | Your browser's speech-recognition service | Audio is processed by the browser to produce a transcript. Some browsers, such as Chrome, send the audio to a remote recognition service (per MDN); the browser's own terms apply. |
 | Interface font — when Keepit's styles load on a page, and on Dashboard pages | Google Fonts | No page content. Google receives an ordinary font request (IP address, browser information, and possibly referrer information depending on the browser). Extra fonts are requested when you turn on a custom font or use Bilingual Reader. |
 
-Pages you open yourself from Keepit (such as a Google search for a definition) and site icons loaded from the website itself are ordinary page visits, not data sent by Keepit.
+Pages you open yourself from Keepit (such as a Google search for a definition, or a Google / YouTube search or web address you choose in the Keepit bar search box — Keepit fetches no suggestions while you type) and site icons loaded from the website itself are ordinary page visits, not data sent by Keepit.
 
 ### 4. How Keepit uses data
 
@@ -70,7 +70,7 @@ Chính sách này áp dụng cho tiện ích Keepit trên trình duyệt nhân C
 
 ### 2. Dữ liệu giữ trong trình duyệt
 
-Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
+Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
 
 ### 3. Dữ liệu gửi đến dịch vụ bên ngoài
 
@@ -87,7 +87,7 @@ Mỗi dịch vụ dưới đây chỉ nhận phần dữ liệu tính năng cầ
 | Luyện nói — khi bạn dùng micro | Dịch vụ nhận dạng giọng nói của trình duyệt | Trình duyệt xử lý âm thanh để tạo bản chép lời. Một số trình duyệt như Chrome gửi âm thanh tới dịch vụ nhận dạng từ xa (theo MDN); áp dụng điều khoản của trình duyệt. |
 | Phông chữ giao diện — khi kiểu hiển thị của Keepit được tải trên trang, và trên các trang Dashboard | Google Fonts | Không có nội dung trang. Google nhận yêu cầu tải phông thông thường (địa chỉ IP, thông tin trình duyệt, và có thể có thông tin trang giới thiệu tùy trình duyệt). Phông bổ sung được tải khi bạn bật phông tùy chỉnh hoặc dùng Bilingual Reader. |
 
-Trang bạn tự mở từ Keepit (như tìm định nghĩa trên Google) và biểu tượng tải từ chính website đó là lượt truy cập trang thông thường, không phải dữ liệu Keepit gửi đi.
+Trang bạn tự mở từ Keepit (như tìm định nghĩa trên Google, hoặc tìm trên Google / YouTube hay địa chỉ web bạn chọn trong ô tìm kiếm của thanh Keepit — Keepit không lấy gợi ý khi bạn gõ) và biểu tượng tải từ chính website đó là lượt truy cập trang thông thường, không phải dữ liệu Keepit gửi đi.
 
 ### 4. Cách Keepit dùng dữ liệu
 

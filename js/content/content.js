@@ -151,9 +151,10 @@
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
     const anchorNode = anchor?.startContainer || anchor;
-    if (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host") return false;
+    const barSheet = anchorNode?.id === "lhn-bar-dict-anchor" && matchMedia("(pointer: coarse)").matches;
+    if (!barSheet && (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host")) return false;
     if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
-    popup.classList.add("lhn-touch-sheet");
+    popup.classList.add("lhn-touch-sheet"); popup.classList.toggle("lhn-bar-sheet", barSheet);
     popup.style.removeProperty("left"); popup.style.removeProperty("top");
     return true;
   }
@@ -2042,6 +2043,27 @@
     } else {
       startRestoreObserver(); setTimeout(restoreAnnotations, 600);
     }
+  });
+  // Bottom bar (touch-ui.js, same content-script world; pages cannot reach these globals):
+  // Tô sáng lại and the search popup's Keepit Dictionary row reuse the real features.
+  function openBarDictionary(word) {
+    word = cleanText(word);
+    if (!word || websiteDisabled) return false;
+    let anchor = document.getElementById("lhn-bar-dict-anchor");
+    if (!anchor) {
+      anchor = document.createElement("span");
+      anchor.id = "lhn-bar-dict-anchor"; anchor.setAttribute("aria-hidden", "true"); anchor.setAttribute("data-lhn-bilingual-ui", "true");
+      anchor.style.cssText = "all:initial!important;position:fixed!important;left:50%!important;top:12vh!important;width:1px!important;height:1px!important;pointer-events:none!important;opacity:0!important";
+    }
+    if (anchor.parentNode !== document.documentElement) document.documentElement.appendChild(anchor);
+    const range = document.createRange(); range.selectNode(anchor);
+    if (settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(word)) lookupEnglishDictionary(word, range, null, {});
+    else translateSelectedRange(range, { forcePopup:true, textOverride:word });
+    return true;
+  }
+  globalThis.LHN_BAR_ACTIONS = Object.freeze({
+    restoreHighlights:() => websiteDisabled ? false : (restoreAnnotations(), true),
+    openDictionary:openBarDictionary
   });
   LHN_MESSAGING.onMessage.addListener(message => {
     if (message?.type === "ANNOTATIONS_CHANGED") {

@@ -10,7 +10,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `readerBlocks`, `LHN_READER_MAIN_SOURCE`, `LHN_READER_SPEECH_RATE` | Chọn/chuẩn hóa text, Reader controls và API rate cho Web TTS. |
+| [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `readerBlocks`, `LHN_READER_MAIN_SOURCE`, `LHN_READER_SPEECH_RATE`, `LHN_READER_BAR` | Chọn/chuẩn hóa text, Reader controls và API rate cho Web TTS. |
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS` | TTS, chia chunk, voice và language detection. |
 | [`vendor/readability/Readability.js`](../../vendor/readability/Readability.js) | `Readability` | Phân tích main article. |
 | [`js/translate/translate.js`](../../js/translate/translate.js) | `BILINGUAL_TRANSLATE` | Dịch qua Background/cache dùng chung. |
@@ -32,6 +32,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 - Bảo toàn Readability và legacy fallback, `readerDisabledWebsites`, loại trừ extension UI, nội dung ẩn và metadata.
 - Dùng `LHN_TTS` cho language, voice và playback; không tạo TTS engine riêng. Rate Web TTS dùng `LHN_READER_SPEECH_RATE`, cùng giới hạn 0.5×–3×, `lhnSettings` và quy tắc global/per-language của Reader.
 - Translation đi qua `LHN_MESSAGING`/Background để tận dụng provider và cache hiện có.
+- `LHN_READER_BAR` (cho menu nhấn giữ Đọc của thanh Keepit): `rate()`, `stepRate(±0.05)` qua `setSpeechSpeed` (cùng giới hạn 0.5×–3×), `autoVoice()`, `webFont()`/`setWebFont(on)` qua `saveWebsiteFont`. Dịch khối lỗi mạng (offline hoặc `fetch/network`) gọi `LHN_BAR_HOOKS.translateOffline()` nếu có.
 - Giữ `stop-reading` và `lhn-bilingual-reader-started` để Reader/Web Study không phát đồng thời.
 - Giữ id `#lhn-bilingual-reading-bar` và class `lhn-show` (touch-ui.js nhường khi thanh hiện); `#lhn-br-spacer` là UI của Reader, MutationObserver phải bỏ qua. Phút/giờ còn lại định dạng chuẩn tiếng Anh cho mọi ngôn ngữ (`NM`, giờ thập phân `NH`).
 - Request ID, utterance và queue phải ngăn audio cũ tiếp tục sau stop, đổi block hoặc đổi voice; giữ speaker controls ngoài navigation/widget.
