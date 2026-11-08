@@ -22,7 +22,8 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 2. Reader đọc liên tục bằng `readerBlocks(true)` để tính lại block hiện hành; API `getTextBlocks()` mặc định có thể dùng cache.
 3. Web Study gọi `getTextBlocks({ forceRefresh:true })` khi tạo snapshot mới. Sau khi reload hoặc URL đổi, Web lại lấy Reader text, kiểm tra persistent cue cache bằng fingerprint, rồi tạo/tái dùng câu nguồn.
 4. Dịch dùng `BILINGUAL_TRANSLATE`; TTS dùng `LHN_TTS`. `LHN_READER_SPEECH_RATE` cung cấp `getRate`/`setRate` cho Web Overlay, dùng cùng resolver Reader và `lhnSettings`.
-5. Lệnh `stop-reading` dừng Reader trước khi mở Web Study; event `lhn-bilingual-reader-started` đóng overlay Web trước khi Reader phát audio. Settings/language được nhận qua storage listeners.
+5. Thanh điều khiển (v3.5.154): `#lhn-bilingual-reading-bar` là lớp phủ `pointer-events:none`, con là thanh, bảng phím tắt (chỉ máy tính), sheet/popup và toast. Rộng `(min-width:1024px)` = đảo + popup trên nút; hẹp = full-width + bottom sheet. Kéo tiến độ gọi `jumpToBlock(index, resume)`; Lặp lại đoạn làm các nhánh kết thúc gọi `advanceQueue()` đọc lại đoạn hiện tại.
+6. Lệnh `stop-reading` dừng Reader trước khi mở Web Study; event `lhn-bilingual-reader-started` đóng overlay Web trước khi Reader phát audio. Settings/language được nhận qua storage listeners.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
@@ -32,11 +33,13 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 - Dùng `LHN_TTS` cho language, voice và playback; không tạo TTS engine riêng. Rate Web TTS dùng `LHN_READER_SPEECH_RATE`, cùng giới hạn 0.5×–3×, `lhnSettings` và quy tắc global/per-language của Reader.
 - Translation đi qua `LHN_MESSAGING`/Background để tận dụng provider và cache hiện có.
 - Giữ `stop-reading` và `lhn-bilingual-reader-started` để Reader/Web Study không phát đồng thời.
+- Giữ id `#lhn-bilingual-reading-bar` và class `lhn-show` (touch-ui.js nhường khi thanh hiện); `#lhn-br-spacer` là UI của Reader, MutationObserver phải bỏ qua. Phút/giờ còn lại định dạng chuẩn tiếng Anh cho mọi ngôn ngữ (`NM`, giờ thập phân `NH`).
 - Request ID, utterance và queue phải ngăn audio cũ tiếp tục sau stop, đổi block hoặc đổi voice; giữ speaker controls ngoài navigation/widget.
 
 ## 5. Kiểm tra và xác minh
 
 - v3.5.24: Web adapter VM xác nhận `forceRefresh` khi tạo snapshot mới, không gọi lại getter khi đóng/mở cùng document; reload mô phỏng đọc lại Reader rồi hit cache theo fingerprint.
 - v3.5.42: Reader/Web VM checks xác nhận rate API dùng chung, resolver global/per-language và cận 0.5×–3×; browser QA chưa chạy.
+- v3.5.154: Chromium + extension thật, chạm thật ở 6 kích thước (360–1280px): bố cục thanh, hit-test, ☰, Giọng đọc, Tốc độ, Lặp lại, kéo tiến độ, bảng phím tắt/Alt+L/Alt+R — fails 0; trình duyệt thật của người dùng chưa QA.
 - Static: `node --check` toàn bộ JS files, kiểm tra manifest và `git diff --check`.
 - Browser QA chưa chạy: bài viết dài, Readability fallback, Reader Alt+A/Alt+D/Alt+R, start/stop/pause, đổi URL và mutual exclusion với Web Study. Hai test path Reader cũ không tồn tại trong repo.

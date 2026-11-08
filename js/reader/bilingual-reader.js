@@ -64,127 +64,394 @@
     .lhn-bilingual-web-font{font-family:var(--lhn-br-web-font)!important}
     .lhn-bilingual-reading{outline:2px solid var(--lhn-br-accent)!important;outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08)!important;border-radius:6px}
     #lhn-bilingual-reading-bar,#lhn-bilingual-reading-bar *{font-family:var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif)!important}
-    #lhn-bilingual-reading-bar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:2147483646;display:none;align-items:center;gap:6px;padding:7px 10px;border:1px solid rgba(148,163,184,.35);border-radius:999px;background:#fff;color:#334155;font:500 13px/1.2 var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);box-shadow:0 0 10px rgba(15, 23, 42, 0.33);user-select:none}
-    #lhn-bilingual-reading-bar.lhn-show{display:flex;animation:lhnBrSlide .25s ease}
-    .lhn-br-voice-country{display:block;font-weight:600;}
-    #lhn-bilingual-reading-bar button{position:relative;border:0;border-radius:999px;padding:7px;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px}
-    #lhn-bilingual-reading-bar button:hover{background:rgba(148,163,184,.18)}
-    #lhn-bilingual-reading-bar button.lhn-br-key-press{animation:lhnBrButtonPress .18s ease-out}
-    #lhn-bilingual-reading-bar [data-drag]{cursor:grab;touch-action:none}
-    #lhn-bilingual-reading-bar [data-drag]:active{cursor:grabbing}
-    #lhn-bilingual-reading-bar button:disabled{opacity:.35;cursor:default}
-    #lhn-bilingual-reading-bar .lhn-br-play{width:40px;height:40px;background:var(--lhn-br-accent);color:white;box-shadow:0 3px 9px rgba(var(--lhn-br-accent-rgb),.3);transition:filter .15s ease,box-shadow .15s ease,transform .15s ease}
-    #lhn-bilingual-reading-bar button.lhn-br-play:hover{background:var(--lhn-br-accent);filter:brightness(1.04);box-shadow:0 4px 11px rgba(var(--lhn-br-accent-rgb),.36);transform:translateY(-1px)}
-    #lhn-bilingual-reading-bar .lhn-br-speed{font-weight:700;min-width:48px}
-    #lhn-bilingual-reading-bar .lhn-br-time{color:#64748b;min-width:24px;text-align:center}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover]{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);display:none;width:390px;padding:0;border:1px solid #f1f5f9;border-radius:16px;background:#fff!important;color:#1e293b;box-shadow:0 18px 42px rgba(15,23,42,.22);user-select:text;overflow:hidden;opacity:1!important;backdrop-filter:none!important;z-index:3}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover].lhn-open{display:block;overflow-x:hidden}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"]{left:auto;right:0;transform:none}
-    #lhn-bilingual-reading-bar .lhn-br-pop-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #f1f5f9}
-    #lhn-bilingual-reading-bar .lhn-br-pop-title{font-size:18px;font-weight:700;margin:0}
-    #lhn-bilingual-reading-bar .lhn-br-pop-body{padding:12px 16px;max-height:360px;overflow-y:auto;overflow-x:hidden;box-sizing:border-box}
-    #lhn-bilingual-reading-bar input[type=search]{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid transparent;border-radius:11px;background:#f1f5f9;font:inherit;margin-bottom:8px}
-    #lhn-bilingual-reading-bar .lhn-br-pop-body[data-voice-pop-body]{max-height:none;overflow:hidden}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list{max-height:min(300px,calc(100vh - 220px));overflow-y:auto;overflow-x:hidden;direction:ltr;scrollbar-width:thin;scrollbar-color:#cbd5e1 #f1f1f1}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar{width:var(--lhn-scrollbar-width)}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-track{background:#f1f1f1;border-radius:4px}
-    #lhn-bilingual-reading-bar .lhn-br-voice-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
-    #lhn-bilingual-reading-bar .lhn-br-voice{width:100%;height:auto;min-height:58px;justify-content:flex-start;gap:14px;border-radius:16px;text-align:left;padding:9px 12px;font-size:14px;font-weight:700}
-    #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:#f1f3f5;box-shadow:0 2px 5px rgba(15,23,42,.06)}
-    #lhn-bilingual-reading-bar .lhn-br-voice-group{padding:10px 12px 4px;font-size:12px;font-weight:700;color:#64748b}
+    #lhn-bilingual-reading-bar{position:fixed;inset:0;z-index:2147483646;display:none;pointer-events:none;color:#334155;font-size:13px;line-height:normal;text-align:left;direction:ltr;letter-spacing:normal}
+    #lhn-bilingual-reading-bar.lhn-show{display:block}
+    #lhn-bilingual-reading-bar *{box-sizing:border-box}
+    #lhn-bilingual-reading-bar [hidden]{display:none!important}
+    #lhn-bilingual-reading-bar button,#lhn-bilingual-reading-bar input{margin:0;font-size:inherit;font-weight:inherit;line-height:normal;letter-spacing:normal;text-transform:none;text-shadow:none;text-decoration:none;min-width:0;min-height:0;max-width:none;box-shadow:none;outline-offset:2px}
+    #lhn-bilingual-reading-bar svg{display:block;max-width:none}
+    #lhn-bilingual-reading-bar svg[fill="none"]{fill:none}
+    #lhn-bilingual-reading-bar svg[fill="currentColor"]{fill:currentColor}
+    #lhn-bilingual-reading-bar svg[stroke="currentColor"]{stroke:currentColor}
+    #lhn-bilingual-reading-bar svg *{fill:inherit;stroke:inherit}
+    #lhn-bilingual-reading-bar .lhn-br-rbar{position:absolute;left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:4px;background:rgba(255,255,255,.97);border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);pointer-events:auto;animation:lhnBrSlide .25s ease}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar{background:rgba(17,17,22,.97);border-color:rgba(148,163,184,.2);box-shadow:0 -6px 18px rgba(0,0,0,.3)}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:16px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-rbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+    #lhn-bilingual-reading-bar .lhn-br-left,#lhn-bilingual-reading-bar .lhn-br-center,#lhn-bilingual-reading-bar .lhn-br-right{display:flex;align-items:center;gap:2px;min-width:0}
+    #lhn-bilingual-reading-bar .lhn-br-right{justify-content:flex-end}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-center{gap:12px}
+    #lhn-bilingual-reading-bar .lhn-br-btn{position:relative;width:40px;height:44px;flex:none;padding:0;border:0;background:none;color:#334155;display:grid;place-items:center;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,transform .12s}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-btn{color:#d4d4d8}
+    #lhn-bilingual-reading-bar .lhn-br-btn svg{width:22px;height:22px}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-btn{width:46px;height:46px}
+    #lhn-bilingual-reading-bar .lhn-br-btn:active{background:rgba(148,163,184,.18);transform:scale(.94)}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-btn:hover{background:rgba(148,163,184,.16)}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-play{width:52px;height:52px;border-radius:50%;background:var(--lhn-br-accent);color:#fff}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-btn.lhn-br-play{width:54px;height:54px}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-btn.lhn-br-play:hover{background:var(--lhn-br-accent);filter:brightness(1.08)}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-spd{width:auto;min-width:40px;padding:0 5px;font-size:13.5px;white-space:nowrap}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-mins{width:auto;min-width:32px;padding:0 4px;font-size:13.5px;white-space:nowrap;cursor:default}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-btn.lhn-br-spd{width:auto}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-btn.lhn-br-mins{width:auto;min-width:40px}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-mins:active,#lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-btn.lhn-br-mins:hover{background:none;transform:none}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-on{background:rgba(var(--lhn-br-accent-rgb),.12);color:var(--lhn-br-accent)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-btn.lhn-on{background:rgba(139,92,246,.18);color:#c4b5fd}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-rep.lhn-on,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-btn.lhn-br-rep.lhn-on{background:none;color:var(--lhn-br-accent)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-btn.lhn-br-rep.lhn-on{color:#a78bfa}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-btn.lhn-br-rep.lhn-on:hover{background:rgba(148,163,184,.16)}
+    #lhn-bilingual-reading-bar .lhn-br-btn.lhn-br-key-press{animation:lhnBrButtonPress .18s ease-out}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(17,17,22,.94);color:#fff;font-size:12px;font-weight:600;line-height:normal;padding:6px 9px;border-radius:8px;pointer-events:none;z-index:3}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-left .lhn-br-btn[data-tip]:hover::after{left:0;transform:none}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-right .lhn-br-btn[data-tip]:hover::after{left:auto;right:0;transform:none}
+    #lhn-bilingual-reading-bar .lhn-br-rbar.lhn-scrubbing .lhn-br-btn::after{display:none}
+    #lhn-bilingual-reading-bar .lhn-br-flagfont{font-family:"Twemoji Country Flags","Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important}
+    #lhn-bilingual-reading-bar .lhn-br-vflag{position:relative;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;overflow:hidden;font-size:34px;font-weight:400;line-height:1;box-shadow:0 0 0 1.5px rgba(148,163,184,.45)}
+    #lhn-bilingual-reading-bar .lhn-br-vflag>span{display:block;transform:scale(1.25)}
+    #lhn-bilingual-reading-bar .lhn-br-fimg{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);display:block;pointer-events:none}
+    #lhn-bilingual-reading-bar .lhn-br-prog{position:absolute;top:-11px;left:0;right:0;height:22px;cursor:pointer;touch-action:none;z-index:2}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-prog{left:18px;right:18px}
+    #lhn-bilingual-reading-bar .lhn-br-prog::before{content:"";position:absolute;left:0;right:0;top:10px;height:3px;background:rgba(148,163,184,.3);border-radius:2px;transition:top .15s,height .15s}
+    #lhn-bilingual-reading-bar .lhn-br-fill{position:absolute;left:0;top:10px;height:3px;width:0;background:var(--lhn-br-accent);display:block;border-radius:2px;transition:width .35s linear}
+    #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag::before,#lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-fill{top:8.5px;height:5px}
+    #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-fill{transition:none}
+    #lhn-bilingual-reading-bar .lhn-br-knob{position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--lhn-br-accent);box-shadow:0 0 0 3px rgba(var(--lhn-br-accent-rgb),.28);transition:transform .15s}
+    #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-knob{transform:scale(1.5)}
+    #lhn-bilingual-reading-bar .lhn-br-ptip{position:absolute;bottom:26px;left:0;transform:translateX(-50%);background:rgba(24,24,27,.96);color:#fff;font-size:12.5px;font-weight:800;line-height:normal;padding:7px 10px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+    #lhn-bilingual-reading-bar .lhn-br-ptip small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:#e9d5ff;font-size:11.5px;margin-top:2px}
+    #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-ptip{opacity:1}
+    #lhn-bilingual-reading-bar .lhn-br-kbd{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);overflow:hidden;padding:5px 6px 5px 14px;border-radius:12px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.35);box-shadow:0 6px 18px rgba(15,23,42,.1);font-size:12.5px;font-weight:500;color:#475569;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:auto}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-kbd{bottom:76px}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{background:#18181b;border-color:#27272a;color:#d4d4d8}
+    #lhn-bilingual-reading-bar .lhn-br-kbd [data-banner-text]{display:contents}
+    #lhn-bilingual-reading-bar .lhn-br-kbd kbd{font-size:11.5px;font-weight:700;line-height:normal;padding:2px 6px;border-radius:6px;border:1px solid rgba(148,163,184,.45);border-bottom-width:2px;background:rgba(148,163,184,.1);color:var(--lhn-br-accent);margin:0 3px 0 0;box-shadow:none}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd kbd{color:#c4b5fd}
+    #lhn-bilingual-reading-bar .lhn-br-kbd .lhn-br-sep{opacity:.4;margin:0 2px}
+    #lhn-bilingual-reading-bar .lhn-br-kbd button{width:26px;height:26px;flex:none;padding:0;border:0;border-radius:8px;background:none;color:inherit;cursor:pointer;font-size:16px;line-height:1}
+    #lhn-bilingual-reading-bar .lhn-br-kbd button:hover{background:rgba(148,163,184,.18)}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-rbar:hover+.lhn-br-kbd,#lhn-bilingual-reading-bar .lhn-br-kbd.lhn-off{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(8px)}
+    #lhn-bilingual-reading-bar .lhn-br-sheet{position:absolute;inset:0;z-index:9;pointer-events:none}
+    #lhn-bilingual-reading-bar .lhn-br-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .2s}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-scrim{background:transparent}
+    #lhn-bilingual-reading-bar .lhn-br-panel{position:absolute;left:50%;bottom:0;width:min(560px,100%);max-height:88%;display:flex;flex-direction:column;padding:8px 14px 18px;border-radius:22px 22px 0 0;background:#fff;color:#111827;box-shadow:0 -10px 30px rgba(0,0,0,.18);transform:translate(-50%,105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);text-align:left}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-panel{background:#18181b;color:#f4f4f5;box-shadow:0 -10px 30px rgba(0,0,0,.4)}
+    #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open{pointer-events:auto}
+    #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open .lhn-br-scrim{opacity:1}
+    #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open .lhn-br-panel{transform:translate(-50%,var(--lhn-br-drag,0px))}
+    #lhn-bilingual-reading-bar .lhn-br-panel.lhn-dragging{transition:none}
+    #lhn-bilingual-reading-bar .lhn-br-grip{flex:none;width:40px;height:4px;border-radius:2px;background:rgba(148,163,184,.55);margin:2px auto 12px;touch-action:none}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel{width:380px;max-height:min(560px,78%);border-radius:20px;padding:12px 14px 14px;border:1px solid rgba(148,163,184,.28);box-shadow:0 18px 40px rgba(15,23,42,.18);transform:translateY(10px);opacity:0;transition:transform .2s,opacity .2s}
+    #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-panel{border-color:rgba(148,163,184,.2)}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-sheet.lhn-open .lhn-br-panel{transform:none;opacity:1}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-grip{display:none}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel.lhn-br-more,#lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel.lhn-br-speedp{width:340px}
+    #lhn-bilingual-reading-bar .lhn-br-shead{flex:none;display:flex;align-items:center;gap:6px;padding:2px 2px 8px;touch-action:none}
+    #lhn-bilingual-reading-bar .lhn-br-shead .lhn-br-stitle{flex:1;min-width:0;font-size:17px;font-weight:700}
+    #lhn-bilingual-reading-bar .lhn-br-shead .lhn-br-spval{flex:none;font-size:17px;font-weight:800;color:var(--lhn-br-accent);margin-right:4px}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-shead .lhn-br-spval{color:#c4b5fd}
+    #lhn-bilingual-reading-bar .lhn-br-sx{width:38px;height:38px;flex:none;padding:0;border:0;border-radius:10px;background:none;color:#64748b;display:grid;place-items:center;cursor:pointer}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-sx{color:#a1a1aa}
+    #lhn-bilingual-reading-bar .lhn-br-sx:active,#lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-sx:hover{background:rgba(148,163,184,.18)}
+    #lhn-bilingual-reading-bar .lhn-br-sx svg{width:20px;height:20px}
+    #lhn-bilingual-reading-bar .lhn-br-sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+    #lhn-bilingual-reading-bar .lhn-br-pane{display:none}
+    #lhn-bilingual-reading-bar .lhn-br-pane.lhn-on{display:block}
+    #lhn-bilingual-reading-bar .lhn-br-panel.lhn-br-more .lhn-br-shead{display:none}
+    #lhn-bilingual-reading-bar .lhn-br-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px;padding:4px 0 6px}
+    #lhn-bilingual-reading-bar .lhn-br-q{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;padding:4px 0;border:0;background:none;color:inherit;font-size:12.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic{position:relative;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:#f1f5f9;border:1px solid #cbd5e1;color:#1f2937;box-shadow:0 1px 2px rgba(15,23,42,.06);transition:transform .15s}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-ic{background:rgba(255,255,255,.06);border-color:rgba(148,163,184,.18);color:#d4d4d8;box-shadow:none}
+    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic svg{width:23px;height:23px}
+    #lhn-bilingual-reading-bar .lhn-br-q.lhn-on .lhn-br-ic{background:#f3e8ff;border-color:var(--lhn-br-accent);color:var(--lhn-br-accent)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q.lhn-on .lhn-br-ic{background:rgba(139,92,246,.22);border-color:#8b5cf6;color:#c4b5fd}
+    #lhn-bilingual-reading-bar .lhn-br-q:active .lhn-br-ic{transform:scale(.94)}
+    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-icmoon{display:contents}
+    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-icsun{display:none}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-icsun{display:contents}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-icmoon{display:none}
+    #lhn-bilingual-reading-bar .lhn-br-vsearch{flex:none;display:block;width:100%;height:44px;border:1px solid #e2e8f0;border-radius:12px;padding:0 14px;font-size:15px;background:#f8fafc;color:inherit;outline:none;margin:0 0 8px;-webkit-appearance:none;appearance:none}
+    #lhn-bilingual-reading-bar .lhn-br-vsearch:focus{border-color:var(--lhn-br-accent)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vsearch{background:#27272a;border-color:#3f3f46}
+    #lhn-bilingual-reading-bar .lhn-br-voice-group{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b;padding:12px 6px 6px}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice-group{color:#a1a1aa}
+    #lhn-bilingual-reading-bar .lhn-br-voice{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:7px 8px;border:0;border-radius:12px;background:none;color:inherit;font-size:15px;text-align:left;cursor:pointer}
+    #lhn-bilingual-reading-bar .lhn-br-voice:active,#lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-voice:hover{background:rgba(148,163,184,.14)}
+    #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:#f1f3f5}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice.lhn-selected{background:#27272a}
     #lhn-bilingual-reading-bar .lhn-br-voice.lhn-kb-active{background:rgba(148,163,184,.18);box-shadow:inset 0 0 0 2px var(--lhn-br-accent)}
-    #lhn-bilingual-reading-bar .lhn-br-voice>span:first-child{font-size:30px;line-height:1}
-    #lhn-bilingual-reading-bar .lhn-br-voice{direction:ltr}
-    #lhn-bilingual-reading-bar .lhn-br-flag{display:inline-flex;flex:none;width:40px;height:40px;overflow:hidden;border:1px solid #e2e8f0;border-radius:50%;box-shadow:0 1px 2px #0002;align-items:center;justify-content:center;font-family:"Twemoji Country Flags",var(--lhn-app-font-family,"Segoe UI Emoji",sans-serif)!important;font-size:54px!important;line-height:1!important}
-    #lhn-bilingual-reading-bar [data-voices] .lhn-br-flag{width:40px;height:40px}
-    #lhn-bilingual-reading-bar .lhn-br-voice>span:nth-child(2){flex:1}
-    #lhn-bilingual-reading-bar .lhn-br-voice small{display:block;color:#64748b}
-    #lhn-bilingual-reading-bar .lhn-br-account{width:100%;height:auto;justify-content:space-between;border-radius:8px;padding:10px 4px;text-align:left;white-space:normal}
-    #lhn-bilingual-reading-bar [data-shortcut-banner]{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 16px);box-sizing:border-box;padding:0px 12px;border-radius:14px;background:#fff;color:#64748b;font-size:14px;border: 1px solid rgba(124, 124, 124, 0.35);box-shadow:0 0 10px rgba(15, 23, 42, 0.33);display:flex;align-items:center;justify-content:space-between;gap:12px;white-space:nowrap}
-    #lhn-bilingual-reading-bar [data-shortcut-banner] b{color:var(--lhn-br-accent)}
-    #lhn-bilingual-reading-bar [data-hide-banner]{margin:0 -14px}
-    #lhn-bilingual-reading-bar [data-shortcut-banner][hidden]{display:none}
-    #lhn-bilingual-reading-bar.lhn-dark [data-shortcut-banner]{background:#1e293b;color:#cbd5e1}
-    #lhn-bilingual-reading-bar .lhn-br-range{width:100%;accent-color:var(--lhn-br-accent)}
-    #lhn-bilingual-reading-bar .lhn-br-presets{display:flex;gap:4px;justify-content:space-between;margin-top:8px}
-    #lhn-bilingual-reading-bar .lhn-br-presets button{min-width:0;height:auto;padding:6px;font-size:11px}
-    #lhn-bilingual-reading-bar .lhn-br-setting{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-head{padding-bottom:8px}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-body{max-height:min(480px,calc(100vh - 112px));padding:5px 16px;font-size:13px}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting{padding:3px 0;text-align:left}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting>span:first-child{flex:1;text-align:left}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-setting .lhn-br-toggle{flex:none}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-account{padding:4px 0}
-    #lhn-bilingual-reading-bar [data-lhn-br-popover="settings"] .lhn-br-pop-foot{padding-top:4px}
-    #lhn-bilingual-reading-bar .lhn-br-settings-divider{border:0;border-top:1px solid #cbd1d8;}
-    #lhn-bilingual-reading-bar .lhn-br-setting input[type=number]{box-sizing:border-box;width:76px;padding:5px 7px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#1e293b;font:inherit}
-    #lhn-bilingual-reading-bar .lhn-br-toggle{appearance:none;width:42px;height:23px;border-radius:20px;background:#e2e8f0;position:relative;cursor:pointer;transition:background .15s}
-    #lhn-bilingual-reading-bar .lhn-br-toggle:checked{background:var(--lhn-br-accent)}
-    #lhn-bilingual-reading-bar .lhn-br-toggle:after{content:"";position:absolute;width:19px;height:19px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .15s}
-    #lhn-bilingual-reading-bar .lhn-br-toggle:checked:after{transform:translateX(19px)}
-    #lhn-bilingual-reading-bar .lhn-br-pop-foot{padding:10px 16px;background:#f8fafc;border-top:1px solid #f1f5f9;color:#64748b;font-size:11px}
-    #lhn-bilingual-reading-bar.lhn-dark{background:rgba(30,41,59,.97);color:#e2e8f0;border-color:#475569}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-time{color:#94a3b8}
-    #lhn-bilingual-reading-bar.lhn-dark [data-lhn-br-popover]{background:#1e293b!important;color:#e2e8f0;border-color:#475569}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-pop-head,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-pop-foot{border-color:#334155}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-pop-foot{background:#0f172a;color:#94a3b8}
-    #lhn-bilingual-reading-bar.lhn-dark input[type=search]{background:#0f172a;color:#e2e8f0;border-color:#475569}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-setting input[type=number]{background:#0f172a;color:#e2e8f0;border-color:#475569}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice small{color:#94a3b8}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice.lhn-selected{background:#334155}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice-group{color:#94a3b8}
+    #lhn-bilingual-reading-bar .lhn-br-vf{position:relative;flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;font-size:46px;font-weight:400;line-height:1;background:#eef2f7}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vf{background:#27272a}
+    #lhn-bilingual-reading-bar .lhn-br-vf.lhn-br-globe{color:#334155;background:#e2e8f0;box-shadow:inset 0 0 0 1px rgba(148,163,184,.35)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vf.lhn-br-globe{color:#e4e4e7;background:#3f3f46;box-shadow:inset 0 0 0 1px rgba(161,161,170,.25)}
+    #lhn-bilingual-reading-bar .lhn-br-vf.lhn-br-globe svg{width:20px;height:20px}
+    #lhn-bilingual-reading-bar .lhn-br-vt{flex:1;min-width:0}
+    #lhn-bilingual-reading-bar .lhn-br-vt b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #lhn-bilingual-reading-bar .lhn-br-vt small{display:block;font-size:12.5px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vt small{color:#a1a1aa}
+    #lhn-bilingual-reading-bar .lhn-br-ck{flex:none;color:var(--lhn-br-accent);font-weight:800}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-ck{color:#c4b5fd}
+    #lhn-bilingual-reading-bar .lhn-br-pane[data-pane="speed"]{padding:8px 2px 4px}
+    #lhn-bilingual-reading-bar .lhn-br-sprow{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+    #lhn-bilingual-reading-bar .lhn-br-spstep{width:36px;height:36px;flex:none;padding:0;border-radius:50%;border:0;background:#f3f4f6;color:#1f2937;font-weight:700;font-size:18px;cursor:pointer}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spstep{background:#222225;color:#e5e7eb}
+    #lhn-bilingual-reading-bar .lhn-br-range{-webkit-appearance:none;appearance:none;flex:1;min-width:0;background:transparent;margin:0 4px;padding:0;border:0}
+    #lhn-bilingual-reading-bar .lhn-br-range::-webkit-slider-runnable-track{height:6px;border-radius:9999px;background:#e5e7eb}
+    #lhn-bilingual-reading-bar .lhn-br-range::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border:0;border-radius:50%;background:#000;margin-top:-9px;box-shadow:0 4px 6px -1px rgba(0,0,0,.15)}
+    #lhn-bilingual-reading-bar .lhn-br-range::-moz-range-track{height:6px;border-radius:9999px;background:#e5e7eb}
+    #lhn-bilingual-reading-bar .lhn-br-range::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:#000}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-webkit-slider-runnable-track{background:#374151}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-webkit-slider-thumb{background:#fff}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-moz-range-track{background:#374151}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-moz-range-thumb{background:#fff}
+    #lhn-bilingual-reading-bar .lhn-br-spgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    #lhn-bilingual-reading-bar .lhn-br-spgrid button{height:44px;padding:0 4px;border-radius:9999px;border:0;background:#f3f4f6;color:#374151;font-size:12px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;text-align:center}
+    #lhn-bilingual-reading-bar .lhn-br-spgrid button.lhn-br-normal{font-weight:800}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spgrid button{background:#222225;color:#d1d5db}
+    #lhn-bilingual-reading-bar .lhn-br-spgrid button.lhn-active{background:#7000ff;color:#fff}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spgrid button.lhn-active{background:#facc15;color:#000}
+    #lhn-bilingual-reading-bar .lhn-br-toast{position:absolute;left:50%;bottom:84px;width:max-content;max-width:min(330px,calc(100% - 24px));transform:translateX(-50%) translateY(10px);background:rgba(17,17,22,.94);color:#fff;font-size:13px;font-weight:600;line-height:1.35;padding:9px 14px;border-radius:12px;opacity:0;transition:opacity .2s,transform .2s;z-index:20;pointer-events:none;text-align:center}
+    #lhn-bilingual-reading-bar.lhn-br-desk .lhn-br-toast{bottom:144px}
+    #lhn-bilingual-reading-bar .lhn-br-toast.lhn-on{opacity:1;transform:translateX(-50%) translateY(0)}
+    #lhn-br-spacer{display:block!important;width:1px!important;flex:none!important;margin:0!important;padding:0!important;border:0!important;visibility:hidden!important;pointer-events:none!important}
     @keyframes lhnBrFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes lhnBrSlide{from{opacity:0}to{opacity:1}}@keyframes lhnBrButtonPress{35%{transform:scale(.84);background:rgba(148,163,184,.38)}100%{transform:scale(1)}}
   `;
   (document.head || document.documentElement).appendChild(style);
   const bar = document.createElement("div");
   bar.id = "lhn-bilingual-reading-bar"; bar.setAttribute("aria-live", "polite");
   bar.setAttribute("data-lhn-bilingual-ui", "true");
-  bar.innerHTML = `<div data-shortcut-banner><span><b>Space</b> pause · <b>↑/↓</b> speed ±0.15x · <b>←/→</b> previous/next · <b>Alt+R</b> close</span><button type="button" data-hide-banner aria-label="Hide shortcut hint">×</button></div><button type="button" data-drag title="Drag controls" aria-label="Drag controls"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></button><button class="lhn-br-play" type="button" data-play title="Play/Pause"><span data-play-icon>▶</span></button><button type="button" data-prev title="Previous paragraph" aria-label="Previous paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 19-7-7 7-7"/><path d="m20 19-7-7 7-7"/></svg></button><button type="button" data-next title="Next paragraph" aria-label="Next paragraph"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 5 7 7-7 7"/><path d="m13 5 7 7-7 7"/></svg></button><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-voices title="Select voice" aria-label="Select voice">🌐</button><button class="lhn-br-speed" type="button" data-speed title="Playback speed">1.0x</button><span class="lhn-br-time" data-time title="Estimated remaining time">—</span><span style="height:22px;border-left:1px solid #cbd5e1;margin:0 2px"></span><button type="button" data-pdf title="PDF Document View" aria-label="PDF Document View"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></button><button type="button" data-dashboard title="Account / Dashboard" aria-label="Account / Dashboard"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></button><button type="button" data-settings title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button><button type="button" data-close title="Stop reading" aria-label="Stop reading">×</button><section data-lhn-br-popover="voices"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Select Voice</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body" data-voice-pop-body><input type="search" placeholder="Search country / voice" aria-label="Search country / voice"><div class="lhn-br-voice-list"></div></div></section><section data-lhn-br-popover="speed"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Reading Speed <span data-speed-value>1.0x</span></h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><input class="lhn-br-range" type="range" min="0.5" max="3" step="any" value="1" aria-label="Reading speed"><div class="lhn-br-presets">${[0.75,1,1.25,1.5,2].map(value=>`<button type="button" data-preset="${value}">${formatSpeed(value)}</button>`).join("")}</div></div></section><section data-lhn-br-popover="settings"><header class="lhn-br-pop-head"><h4 class="lhn-br-pop-title">Settings</h4><button type="button" data-close-pop aria-label="Close">×</button></header><div class="lhn-br-pop-body"><label class="lhn-br-setting">Auto scroll<input class="lhn-br-toggle" type="checkbox" data-autoscroll></label><label class="lhn-br-setting">Paragraph play buttons<input class="lhn-br-toggle" type="checkbox" data-parabtn></label><label class="lhn-br-setting">Keyboard shortcuts<input class="lhn-br-toggle" type="checkbox" data-shortcuts></label><label class="lhn-br-setting">Auto-detect language<input class="lhn-br-toggle" type="checkbox" data-autolang></label><label class="lhn-br-setting">Read translation with source<input class="lhn-br-toggle" type="checkbox" data-readtranslation></label><label class="lhn-br-setting">Speed step<input type="number" min="0.01" max="2.5" step="0.01" value="0.25" data-speed-step></label><label class="lhn-br-setting">Match theme to background<input class="lhn-br-toggle" type="checkbox" data-theme></label><button type="button" data-br-settings class="lhn-br-account"><span data-br-settings-label>Bilingual Reader settings</span><span>↗</span></button><label class="lhn-br-setting"><span data-webfont-label>Custom website font</span><input class="lhn-br-toggle" type="checkbox" data-webfont></label><hr class="lhn-br-settings-divider"><button type="button" data-account class="lhn-br-account"><span data-account-label>Account / Open Dashboard</span><span>↗</span></button><hr class="lhn-br-settings-divider"></div><footer class="lhn-br-pop-foot"><b>Space</b> pause · <b>← / →</b> previous/next · <b>Alt+R</b> close</footer></section>`;
-  bar.querySelector('[data-lhn-br-popover="voices"]').id = "voice-popup";
-  const popover = name => bar.querySelector(`[data-lhn-br-popover="${name}"]`);
-  // Focus ô tìm kiếm của Select voice trên mọi trình duyệt Chromium (Chrome, Edge, ...) và Firefox: thử lại vài lần vì có trình duyệt chưa nhận focus ngay sau khi popover hiện
+  const BR_ICON = {
+    play:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+    pause:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>',
+    auto:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2Q13 11 22 12Q13 13 12 22Q11 13 2 12Q11 11 12 2Z"/></svg>',
+    close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+  };
+  const brTile = (key, icon, isSwitch = true) => `<button type="button" class="lhn-br-q" data-tile="${key}"${isSwitch ? ' role="switch" aria-checked="false"' : ""}><span class="lhn-br-ic">${icon}</span><span data-tile-label></span></button>`;
+  const brStroke = paths => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  bar.innerHTML = `<div class="lhn-br-rbar" data-rbar><div class="lhn-br-prog" data-prog><span class="lhn-br-fill" data-prog-fill><span class="lhn-br-knob"></span></span><span class="lhn-br-ptip" data-prog-tip></span></div>`
+    + `<div class="lhn-br-left"><button type="button" class="lhn-br-btn" data-voices data-sheet="voices"><span class="lhn-br-vflag lhn-br-flagfont" data-bar-flag></span></button><button type="button" class="lhn-br-btn lhn-br-spd" data-speed data-sheet="speed"><span data-speed-label>1.00X</span></button><span class="lhn-br-btn lhn-br-mins" data-time role="note"></span></div>`
+    + `<div class="lhn-br-center"><button type="button" class="lhn-br-btn" data-prev><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button><button type="button" class="lhn-br-btn lhn-br-play" data-play></button><button type="button" class="lhn-br-btn" data-next><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button></div>`
+    + `<div class="lhn-br-right"><button type="button" class="lhn-br-btn lhn-br-rep" data-repeat aria-pressed="false">${brStroke('<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/>')}</button><button type="button" class="lhn-br-btn" data-close>${BR_ICON.close}</button><button type="button" class="lhn-br-btn" data-more data-sheet="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div></div>`
+    + `<div class="lhn-br-kbd lhn-off" data-shortcut-banner><span data-banner-text></span><button type="button" data-hide-banner>×</button></div>`
+    + `<div class="lhn-br-sheet" data-sheet-root><div class="lhn-br-scrim" data-scrim></div><div class="lhn-br-panel" data-panel role="dialog" aria-modal="true"><div class="lhn-br-grip"></div><div class="lhn-br-shead"><span class="lhn-br-stitle" data-sheet-title></span><span class="lhn-br-spval" data-speed-value hidden>1.00x</span><button type="button" class="lhn-br-sx" data-close-pop>${BR_ICON.close}</button></div><div class="lhn-br-sbody" data-sbody>`
+    + `<div class="lhn-br-pane" data-pane="more"><div class="lhn-br-quick">`
+    + brTile("autoscroll", brStroke('<path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/>'))
+    + brTile("parabtn", brStroke('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>'))
+    + brTile("autolang", BR_ICON.auto)
+    + brTile("readtranslation", brStroke('<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>'))
+    + brTile("theme", `<span class="lhn-br-icmoon">${brStroke('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>')}</span><span class="lhn-br-icsun">${brStroke('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>')}</span>`, false)
+    + brTile("webfont", brStroke('<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>'))
+    + `</div></div><div class="lhn-br-pane" data-pane="speed"><div class="lhn-br-sprow"><button type="button" class="lhn-br-spstep" data-sp="-1">-</button><input class="lhn-br-range" type="range" min="0.5" max="3" step="0.05" value="1"><button type="button" class="lhn-br-spstep" data-sp="1">+</button></div><div class="lhn-br-spgrid">`
+    + [["0.5","0.5x"],["0.75","0.75x"],["0.9","0.9x"],["1.0",""],["1.1","1.1x"],["1.25","1.25x"],["1.5","1.5x"],["2.0","2.0x"]].map(([value, label]) => `<button type="button" data-preset="${value}"${label ? "" : ' class="lhn-br-normal"'}>${label}</button>`).join("")
+    + `</div></div><div class="lhn-br-pane" data-pane="voices"><input class="lhn-br-vsearch" type="search"><div class="lhn-br-voice-list"></div></div></div></div></div><div class="lhn-br-toast" data-toast role="status"></div>`;
+  const $br = selector => bar.querySelector(selector);
+  const brRbar = $br("[data-rbar]"), brSheet = $br("[data-sheet-root]"), brPanel = $br("[data-panel]"), voiceSearch = $br(".lhn-br-vsearch");
+  const brProg = $br("[data-prog]"), brProgFill = $br("[data-prog-fill]"), brProgTip = $br("[data-prog-tip]");
+  const BR_WIDE_QUERY = window.matchMedia?.("(min-width: 1024px)"), BR_DESK_QUERY = window.matchMedia?.("(hover: hover) and (pointer: fine)");
+  const isWideBar = () => !!BR_WIDE_QUERY?.matches, isDeskBar = () => !!BR_DESK_QUERY?.matches;
+  let openSheetName = "", repeatSegment = false, shortcutBannerVisible = true, scrubbing = false, scrubFraction = 0, scrubWasPlaying = false, brToastTimer = 0, flagFontReady = false, flagFontRequested = false, sheetDrag = null;
+  const flagCanvasCache = new Map();
+  // Focus ô tìm kiếm của Select voice trên mọi trình duyệt Chromium (Chrome, Edge, ...) và Firefox: thử lại vài lần vì có trình duyệt chưa nhận focus ngay sau khi sheet hiện
   function focusVoiceSearch() {
-    const input = bar.querySelector('input[type="search"]'); if (!input) return;
     const delays = [30, 100, 250, 500];
     const tryFocus = index => {
-      if (!popover("voices").classList.contains("lhn-open")) return;
-      input.focus({ preventScroll:true });
-      if (input.getRootNode().activeElement === input || index >= delays.length) return;
+      if (openSheetName !== "voices") return;
+      voiceSearch.focus({ preventScroll:true });
+      if (voiceSearch.getRootNode().activeElement === voiceSearch || index >= delays.length) return;
       window.setTimeout(() => tryFocus(index + 1), delays[index]);
     };
     tryFocus(0);
   }
-  const closePopovers = () => bar.querySelectorAll("[data-lhn-br-popover]").forEach(panel => panel.classList.remove("lhn-open"));
-  const animatePlayButton = () => { const button = bar.querySelector("[data-play]"); button.classList.remove("lhn-br-key-press"); void button.offsetWidth; button.classList.add("lhn-br-key-press"); window.setTimeout(() => button.classList.remove("lhn-br-key-press"), 190); };
-  bar.querySelector("[data-play]").addEventListener("click", () => { if (!reading) { animatePlayButton(); startReading(); } else document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:!readingPaused, cancelable:true })); });
-  bar.querySelector("[data-prev]").addEventListener("click", event => moveReading(-1, event));
-  bar.querySelector("[data-next]").addEventListener("click", event => moveReading(1, event));
-  bar.querySelector("[data-close]").addEventListener("click", closeReadingBar);
-  bar.querySelectorAll("[data-voices],[data-speed],[data-settings]").forEach(button => button.addEventListener("click", () => { const name = button.hasAttribute("data-voices") ? "voices" : button.hasAttribute("data-speed") ? "speed" : "settings"; const panel = popover(name), wasOpen = panel.classList.contains("lhn-open"); closePopovers(); panel.classList.toggle("lhn-open", !wasOpen); if (name === "voices" && !wasOpen) { renderVoiceChoices(); focusVoiceSearch(); } }));
-  bar.querySelector("[data-autoscroll]").addEventListener("change", event => saveSpeechSetting({ autoScroll:event.target.checked }));
-  bar.querySelector("[data-webfont]").addEventListener("change", event => saveWebsiteFont(event.target.checked));
-  bar.querySelector("[data-parabtn]").addEventListener("change", event => saveSpeechSetting({ speakerIconVisibility:event.target.checked ? "always" : "hover" }));
-  
-  bar.querySelector("[data-autolang]").addEventListener("change", event => saveSpeechSetting({ autoDetectVoice:event.target.checked }));
-  bar.querySelector("[data-readtranslation]").addEventListener("change", event => { const enabled = event.target.checked; saveSpeechSetting({ readTranslation:enabled }); if (enabled) notifyReadTranslationOn(); else skipBilingualSegment(); });
-  bar.querySelector("[data-speed-step]").addEventListener("change", event => { const value = normalizeSpeedStep(event.target.value); event.target.value = value; saveSpeechSetting({ speechSpeedStep:value }); renderPopupText(); });
-  bar.querySelector("[data-theme]").addEventListener("change", event => saveAddonThemePreference(event.target.checked ? "dark" : "light"));
-  bar.querySelectorAll("[data-close-pop]").forEach(button => button.addEventListener("click", closePopovers));
-  bar.querySelector("[data-dashboard]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-br-settings]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_BILINGUAL_SETTINGS" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-account]").addEventListener("click", () => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_ACCOUNT" }).catch(() => browser.runtime.openOptionsPage?.()));
-  bar.querySelector("[data-hide-banner]").addEventListener("click", () => { const toggle = bar.querySelector("[data-shortcuts]"); toggle.checked = false; bar.querySelector("[data-shortcut-banner]").hidden = true; saveSpeechSetting({ readerShortcutsEnabled:false }); syncToolbar(); });
-  bar.querySelector("[data-shortcuts]").addEventListener("change", event => { saveSpeechSetting({ readerShortcutsEnabled:event.target.checked }); bar.querySelector("[data-shortcut-banner]").hidden = !event.target.checked; syncToolbar(); });
-  bar.querySelector("[data-speed]").addEventListener("click", () => { const rate = currentSegmentRate(); bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); bar.querySelector(".lhn-br-range").value = rate; });
-  bar.querySelector(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
-  bar.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => setSpeechSpeed(Number(button.dataset.preset))));
+  // Giao diện rộng (≥1024px, gồm tablet ngang) = đảo nổi + popup trên nút; hẹp = thanh full-width + bottom sheet. Máy tính (chuột) thêm tooltip + bảng phím tắt.
+  function syncBarLayout() {
+    bar.classList.toggle("lhn-br-wide", isWideBar()); bar.classList.toggle("lhn-br-desk", isDeskBar());
+    if (openSheetName) { brPanel.removeAttribute("style"); if (isWideBar()) anchorPanel(); }
+    syncBarScale(); syncBanner(); syncSpacer();
+  }
+  // Màn hẹp hơn 392px (vd. 360px, 390px): thu nhỏ đều cả thanh theo đúng tỉ lệ thiết kế thay vì bớt khoảng cách, để các nút không đè lên nhau
+  function syncBarScale() { const width = bar.clientWidth || innerWidth; brRbar.style.zoom = !isWideBar() && width && width < 392 ? String(Math.round(width / 392 * 1000) / 1000) : ""; }
+  function anchorPanel() {
+    const button = brRbar.querySelector(`[data-sheet="${openSheetName}"]`); if (!button) return;
+    const rect = button.getBoundingClientRect(), top = brRbar.getBoundingClientRect().top, W = bar.clientWidth || innerWidth, H = bar.clientHeight || innerHeight, w = brPanel.offsetWidth;
+    brPanel.style.left = `${Math.max(12, Math.min(W - w - 12, rect.left + rect.width / 2 - w / 2))}px`; brPanel.style.bottom = `${H - top + 14}px`;
+    brPanel.style.top = "auto"; brPanel.style.right = "auto"; brPanel.style.transform = "none";
+  }
+  function openSheet(name) {
+    openSheetName = name;
+    bar.querySelectorAll("[data-pane]").forEach(pane => pane.classList.toggle("lhn-on", pane.dataset.pane === name));
+    brPanel.classList.toggle("lhn-br-more", name === "more"); brPanel.classList.toggle("lhn-br-speedp", name === "speed");
+    $br("[data-speed-value]").hidden = name !== "speed";
+    $br("[data-sheet-title]").textContent = name === "voices" ? popupText("readerPopupSelectVoice") : name === "speed" ? popupText("readerPopupSpeed") : "";
+    if (name === "voices") { voiceSearch.value = ""; renderVoiceChoices(); }
+    if (name === "speed") renderSpeed(currentSegmentRate());
+    brPanel.removeAttribute("style"); brPanel.style.setProperty("--lhn-br-drag", "0px");
+    brSheet.classList.add("lhn-open"); $br("[data-sbody]").scrollTop = 0;
+    if (isWideBar()) anchorPanel();
+    brRbar.querySelectorAll("[data-sheet]").forEach(button => button.classList.toggle("lhn-on", button.dataset.sheet === name));
+    if (name === "voices" && isDeskBar()) focusVoiceSearch();
+    syncBanner();
+  }
+  function closeSheet() {
+    brSheet.classList.remove("lhn-open"); openSheetName = "";
+    brRbar.querySelectorAll("[data-sheet].lhn-on").forEach(button => button.classList.remove("lhn-on"));
+    syncBanner();
+  }
+  const closePopovers = closeSheet;
+  function toggleSheet(name) { const wasOpen = openSheetName === name; closeSheet(); if (!wasOpen) openSheet(name); }
+  function syncBanner() { $br("[data-shortcut-banner]").classList.toggle("lhn-off", !(isDeskBar() && shortcutBannerVisible && !openSheetName && !scrubbing)); }
+  // Khoảng trống đáy cố định khi Reader mở để thanh luôn hiện mà không che chữ cuối trang
+  function syncSpacer() {
+    let spacer = document.getElementById("lhn-br-spacer");
+    if (!bar.classList.contains("lhn-show") || !document.body) { spacer?.remove(); return; }
+    if (!spacer) { spacer = document.createElement("div"); spacer.id = "lhn-br-spacer"; spacer.setAttribute("aria-hidden", "true"); spacer.setAttribute("data-lhn-bilingual-ui", "true"); }
+    if (spacer.parentNode !== document.body) document.body.appendChild(spacer);
+    spacer.style.setProperty("height", `${isDeskBar() && shortcutBannerVisible ? 160 : isWideBar() ? 116 : 100}px`, "important");
+  }
+  function showBarToast(text) {
+    const toast = $br("[data-toast]"); toast.textContent = text; toast.classList.add("lhn-on");
+    clearTimeout(brToastTimer); brToastTimer = setTimeout(() => toast.classList.remove("lhn-on"), 1700);
+  }
+  // Cờ: vẽ lên canvas, đo vùng có màu thật rồi cắt sát mép để cờ cao đúng bằng vòng tròn và căn giữa tuyệt đối. Font chưa tải được thì dùng ký tự cờ.
+  function flagCanvasFor(region) {
+    if (flagCanvasCache.has(region)) return flagCanvasCache.get(region);
+    let result = null;
+    try {
+      const N = 220, source = document.createElement("canvas"); source.width = source.height = N;
+      const context = source.getContext("2d", { willReadFrequently:true });
+      context.font = '160px "Twemoji Country Flags"'; context.textAlign = "center"; context.textBaseline = "middle";
+      context.fillText(flagEmojiForRegion(region), N / 2, N / 2);
+      const data = context.getImageData(0, 0, N, N).data; let x0 = N, y0 = N, x1 = -1, y1 = -1;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (data[(y * N + x) * 4 + 3] > 200) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 - x0 >= 20 && y1 - y0 >= 20) {
+        x0 += 1; y0 += 1; x1 -= 1; y1 -= 1;
+        const bw = x1 - x0 + 1, bh = y1 - y0 + 1, H = 96, output = document.createElement("canvas");
+        output.height = H; output.width = Math.round(H * bw / bh);
+        const out = output.getContext("2d"); out.imageSmoothingQuality = "high"; out.drawImage(source, x0, y0, bw, bh, 0, 0, output.width, H);
+        result = output;
+      }
+    } catch {}
+    flagCanvasCache.set(region, result);
+    return result;
+  }
+  function renderFlag(container, region) {
+    const key = String(region || "").toUpperCase(), state = `${key}|${flagFontReady}`;
+    if (!container || container.dataset.flagState === state) return;
+    container.dataset.flagState = state;
+    const source = flagFontReady ? flagCanvasFor(key) : null;
+    if (source) {
+      const canvas = document.createElement("canvas"); canvas.width = source.width; canvas.height = source.height; canvas.className = "lhn-br-fimg"; canvas.setAttribute("aria-hidden", "true");
+      canvas.getContext("2d")?.drawImage(source, 0, 0); container.replaceChildren(canvas);
+    } else { const span = document.createElement("span"); span.textContent = flagEmojiForRegion(key); container.replaceChildren(span); }
+  }
+  async function prepareFlagFont() {
+    try { await document.fonts.load('160px "Twemoji Country Flags"', "🇺🇸"); } catch {}
+    try { flagFontReady = [...document.fonts].some(face => face.family.replace(/["']/g, "") === "Twemoji Country Flags" && face.status === "loaded"); } catch { flagFontReady = false; }
+    if (!flagFontReady) return;
+    syncToolbar(); if (openSheetName === "voices") renderVoiceChoices();
+  }
+  const countWords = text => String(text || "").split(/\s+/).filter(Boolean).length;
+  // Số phút/giờ theo chuẩn tiếng Anh cho mọi ngôn ngữ: dưới 60 phút "45M"; từ 60 phút là giờ thập phân tối đa 2 số lẻ "1H", "1.5H", "3.13H"
+  const formatLeft = minutes => minutes < 60 ? `${minutes}M` : `${Math.round(minutes / 60 * 100) / 100}H`;
+  function minutesLeftFrom(index) {
+    let words = 0;
+    for (let i = Math.max(0, index); i < queue.length; i++) {
+      const block = queue[i]; if (!block) continue;
+      words += countWords(rawText(block, true));
+      if (settings.readTranslation) words += countWords(block.querySelector(":scope > .lhn-bilingual-card")?.textContent);
+    }
+    return words ? Math.max(1, Math.ceil(words / (220 * currentSegmentRate()))) : 0;
+  }
+  function updateProgress() {
+    if (scrubbing) return;
+    const total = queue.length, fraction = currentReadText ? Math.min(1, currentReadCharIndex / currentReadText.length) : 0;
+    const value = !total ? 0 : reading ? (Math.min(queueIndex, total) + fraction) / total : queueIndex >= total ? 1 : 0;
+    brProgFill.style.width = `${Math.min(100, value * 100)}%`;
+  }
+  function shortcutLabel(key, fallback) {
+    const value = String(dashboardShortcuts[key] ?? fallback);
+    return ({ Up:"↑", Down:"↓", Left:"←", Right:"→" })[value] || value;
+  }
+  function setTile(key, on) { const tile = $br(`[data-tile="${key}"]`); if (!tile) return; tile.classList.toggle("lhn-on", on); tile.setAttribute("aria-checked", String(on)); }
+  function markReadingBlock(block) {
+    document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
+    document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
+    block.classList.add("lhn-bilingual-reading"); block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
+    if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+  // Kéo thanh tiến độ: tạm dừng, xem đoạn đích, thả tay thì nhảy tới đoạn đó và đọc tiếp nếu trước đó đang đọc
+  function jumpToBlock(index, resume) {
+    if (!queue.length) return;
+    const target = Math.max(0, Math.min(queue.length - 1, index));
+    if (!reading) { startReading(queue[target]); return; }
+    speechDetectionRequest++; utterance = null; resumeText = ""; readingSegment = null; lastAppliedSegmentRate = null; cancelGoogle();
+    queueIndex = target;
+    if (resume) { readingPaused = false; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(); return; }
+    currentReadText = ""; currentReadCharIndex = 0;
+    markReadingBlock(queue[target]); syncToolbar();
+  }
+  function advanceQueue() { if (!repeatSegment) queueIndex++; speakNext(); }
+  const scrubIndex = () => Math.min(queue.length - 1, Math.floor(scrubFraction * queue.length));
+  function moveScrub(event) {
+    const rect = brProg.getBoundingClientRect();
+    scrubFraction = Math.max(0, Math.min(1, (event.clientX - rect.left) / (rect.width || 1)));
+    brProgFill.style.width = `${scrubFraction * 100}%`;
+    if (!queue.length) return;
+    const index = scrubIndex(), small = document.createElement("small");
+    small.textContent = rawText(queue[index], true).trim();
+    brProgTip.replaceChildren(document.createTextNode(popupText("readerScrubTip", { i:index + 1, n:queue.length, time:formatLeft(minutesLeftFrom(index)) })), small);
+    const tipWidth = brProgTip.offsetWidth, width = brProg.offsetWidth;
+    brProgTip.style.left = `${Math.max(tipWidth / 2, Math.min(width - tipWidth / 2, scrubFraction * width))}px`;
+  }
+  brProg.addEventListener("pointerdown", event => {
+    if (event.button > 0 || !queue.length) return;
+    event.preventDefault(); event.stopPropagation(); brProg.setPointerCapture?.(event.pointerId);
+    scrubWasPlaying = reading && !readingPaused;
+    if (scrubWasPlaying) document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:true, cancelable:true }));
+    scrubbing = true; brProg.classList.add("lhn-drag"); brRbar.classList.add("lhn-scrubbing"); moveScrub(event); syncBanner();
+  });
+  brProg.addEventListener("pointermove", event => { if (scrubbing) moveScrub(event); });
+  const endScrub = () => { if (!scrubbing) return; scrubbing = false; brProg.classList.remove("lhn-drag"); brRbar.classList.remove("lhn-scrubbing"); syncBanner(); jumpToBlock(scrubIndex(), scrubWasPlaying); updateProgress(); };
+  brProg.addEventListener("pointerup", endScrub); brProg.addEventListener("pointercancel", endScrub);
+  const animatePlayButton = () => { const button = $br("[data-play]"); button.classList.remove("lhn-br-key-press"); void button.offsetWidth; button.classList.add("lhn-br-key-press"); window.setTimeout(() => button.classList.remove("lhn-br-key-press"), 190); };
+  brRbar.addEventListener("click", event => {
+    const button = event.target.closest("button"); if (!button || !brRbar.contains(button)) return;
+    if (button.hasAttribute("data-play")) { if (!reading) { animatePlayButton(); startReading(); } else document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:!readingPaused, cancelable:true })); }
+    else if (button.hasAttribute("data-prev")) moveReading(-1, event);
+    else if (button.hasAttribute("data-next")) moveReading(1, event);
+    else if (button.hasAttribute("data-close")) closeReadingBar();
+    else if (button.hasAttribute("data-repeat")) { repeatSegment = !repeatSegment; syncToolbar(); showBarToast(popupText(repeatSegment ? "readerRepeatOn" : "readerRepeatOff")); }
+    else if (button.dataset.sheet) toggleSheet(button.dataset.sheet);
+  });
+  $br("[data-scrim]").addEventListener("click", closeSheet);
+  $br("[data-close-pop]").addEventListener("click", closeSheet);
+  brPanel.addEventListener("pointerdown", event => { if (isWideBar() || !event.target.closest(".lhn-br-grip,.lhn-br-shead") || event.target.closest("button")) return; sheetDrag = { y:event.clientY }; brPanel.classList.add("lhn-dragging"); });
+  window.addEventListener("pointermove", event => { if (sheetDrag) brPanel.style.setProperty("--lhn-br-drag", `${Math.max(0, event.clientY - sheetDrag.y)}px`); }, { passive:true });
+  const endSheetDrag = event => { if (!sheetDrag) return; const distance = event.clientY - sheetDrag.y; sheetDrag = null; brPanel.classList.remove("lhn-dragging"); if (distance > 90) closeSheet(); else brPanel.style.setProperty("--lhn-br-drag", "0px"); };
+  window.addEventListener("pointerup", endSheetDrag); window.addEventListener("pointercancel", endSheetDrag);
+  $br(".lhn-br-quick").addEventListener("click", event => {
+    const tile = event.target.closest("[data-tile]"); if (!tile) return;
+    const key = tile.dataset.tile;
+    if (key === "theme") { saveAddonThemePreference(bar.classList.contains("lhn-dark") ? "light" : "dark"); return; }
+    const on = tile.getAttribute("aria-checked") !== "true";
+    if (key === "autoscroll") saveSpeechSetting({ autoScroll:on });
+    else if (key === "parabtn") saveSpeechSetting({ speakerIconVisibility:on ? "always" : "hover" });
+    else if (key === "autolang") saveSpeechSetting({ autoDetectVoice:on });
+    else if (key === "readtranslation") { saveSpeechSetting({ readTranslation:on }); if (on) notifyReadTranslationOn(); else skipBilingualSegment(); }
+    else if (key === "webfont") saveWebsiteFont(on);
+    syncToolbar();
+  });
+  $br('[data-pane="speed"]').addEventListener("click", event => {
+    const step = event.target.closest("[data-sp]");
+    if (step) { setSpeechSpeed(Math.round((currentSegmentRate() + .05 * Number(step.dataset.sp)) / .05) * .05); return; }
+    const preset = event.target.closest("[data-preset]");
+    if (preset) setSpeechSpeed(Number(preset.dataset.preset));
+  });
+  $br(".lhn-br-range").addEventListener("input", event => setSpeechSpeed(Number(event.target.value)));
+  $br("[data-hide-banner]").addEventListener("click", () => { shortcutBannerVisible = false; syncBanner(); syncSpacer(); showBarToast(popupText("readerBannerHidden")); });
   const debouncedRenderVoiceChoices = LHN_INDEX_SEARCH.debounce(() => {
-    if (LHN_INDEX_SEARCH.normalize(bar.querySelector("input[type=search]").value) === lastVoiceQuery) return;
+    if (LHN_INDEX_SEARCH.normalize(voiceSearch.value) === lastVoiceQuery) return;
     renderVoiceChoices();
   }, 200);
-  bar.querySelector("input[type=search]").addEventListener("input", debouncedRenderVoiceChoices);
-  bar.addEventListener("click", event => { if (!event.target.closest("[data-lhn-br-popover]") && !event.target.closest("[data-voices],[data-speed],[data-settings]")) closePopovers(); });
-  document.addEventListener("pointerdown", event => { if (!bar.contains(event.target)) closePopovers(); }, true);
+  voiceSearch.addEventListener("input", debouncedRenderVoiceChoices);
   const voiceItems = () => Array.from(bar.querySelectorAll(".lhn-br-voice-list .lhn-br-voice"));
   function setVoiceKb(index) {
     const items = voiceItems(); items.forEach(item => item.classList.remove("lhn-kb-active"));
@@ -193,7 +460,10 @@
     items[voiceKbIndex].classList.add("lhn-kb-active"); items[voiceKbIndex].scrollIntoView({ block:"nearest" });
   }
   window.addEventListener("keydown", event => {
-    if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !popover("voices").classList.contains("lhn-open")) return;
+    if (event.key === "Escape" && openSheetName && bar.classList.contains("lhn-show")) { event.preventDefault(); event.stopImmediatePropagation(); closeSheet(); return; }
+    const voiceShortcut = String(dashboardShortcuts.selectVoiceShortcut ?? "Alt+L").toLowerCase();
+    if (openSheetName === "voices" && event.target === voiceSearch && voiceShortcut && !event.isComposing && String(globalThis.LHN_SHORTCUTS?.fromEvent?.(event) || "").toLowerCase() === voiceShortcut) { event.preventDefault(); event.stopImmediatePropagation(); closeSheet(); return; }
+    if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || openSheetName !== "voices") return;
     const editableInPath = (event.composedPath?.() || []).some(node => node?.matches?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])"));
     if (!bar.contains(event.target) && (event.target?.closest?.("input,textarea,select,[contenteditable]:not([contenteditable='false'])") || editableInPath)) return;
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -206,10 +476,10 @@
       event.preventDefault(); event.stopImmediatePropagation(); voiceKbIndex = -1; item.click();
     }
   }, true);
-  const dragHandle = bar.querySelector("[data-drag]");
-  let lastDragPointerDown = 0;
-  dragHandle.addEventListener("pointerdown", event => { if (event.button !== 0) return; event.preventDefault(); const now = performance.now(); if (event.detail >= 2 || now - lastDragPointerDown < 350) { lastDragPointerDown = 0; bar.style.removeProperty("left"); bar.style.removeProperty("top"); bar.style.removeProperty("bottom"); bar.style.removeProperty("transform"); return; } lastDragPointerDown = now; const rect = bar.getBoundingClientRect(), pointerOffsetX = event.clientX - rect.left, pointerOffsetY = event.clientY - rect.top; bar.style.left = `${rect.left}px`; bar.style.top = `${rect.top}px`; bar.style.bottom = "auto"; bar.style.transform = "none"; dragHandle.setPointerCapture(event.pointerId); const move = e => { bar.style.left = `${Math.max(8,Math.min(innerWidth-rect.width-8,e.clientX-pointerOffsetX))}px`; bar.style.top = `${Math.max(8,Math.min(innerHeight-rect.height-8,e.clientY-pointerOffsetY))}px`; }; const end = () => { dragHandle.removeEventListener("pointermove",move); dragHandle.removeEventListener("pointerup",end); dragHandle.removeEventListener("pointercancel",end); }; dragHandle.addEventListener("pointermove",move); dragHandle.addEventListener("pointerup",end); dragHandle.addEventListener("pointercancel",end); });
+  BR_WIDE_QUERY?.addEventListener?.("change", syncBarLayout); BR_DESK_QUERY?.addEventListener?.("change", syncBarLayout);
+  window.addEventListener("resize", () => { syncBarScale(); if (openSheetName && isWideBar()) anchorPanel(); }, { passive:true });
   (document.body || document.documentElement).appendChild(bar);
+  syncBarLayout();
   function saveSpeechSetting(patch) { settings = { ...settings, ...patch }; browser.storage.local.get(SETTINGS_KEY).then(data => browser.storage.local.set({ [SETTINGS_KEY]:{ ...DEFAULTS, ...(data[SETTINGS_KEY] || {}), ...patch } })).catch(() => {}); }
   // Chọn voice: đổi cờ ngay (kể cả lúc pause), bỏ ngôn ngữ của đoạn đang đọc cũ; sau khi lưu xong cờ tự theo cài đặt mới
   function previewVoiceFlag(lang) { readingSegment = null; voiceFlagOverride = lang || ""; syncToolbar(); }
@@ -235,73 +505,58 @@
     browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), sidebarTheme:theme } })).catch(error => console.warn("Could not save shared theme", error));
   }
   function syncToolbar() {
-    bar.querySelector("[data-play-icon]").textContent = reading && !readingPaused ? "Ⅱ" : "▶";
-    bar.querySelector("[data-play]").title = popupText(reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    bar.querySelector("[data-speed]").textContent = formatSpeed(currentSegmentRate());
-    bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
-    bar.querySelector("[data-autoscroll]").checked = !!settings.autoScroll;
-    bar.querySelector("[data-parabtn]").checked = settings.speakerIconVisibility === "always";
-    bar.querySelector("[data-shortcuts]").checked = settings.readerShortcutsEnabled !== false;
-    const accountLabel = bar.querySelector("[data-account-label]");
-    if (accountProfile) { const name = accountProfile.displayName || accountProfile.username || "Account"; const email = accountProfile.email || ""; accountLabel.textContent = email ? `${name} · ${email}` : name; bar.querySelector("[data-account]").title = email ? `${name} (${email})` : name; } else { accountLabel.textContent = popupText("readerPopupSignIn"); bar.querySelector("[data-account]").title = popupText("readerPopupSignIn"); }
-    bar.querySelector("[data-autolang]").checked = settings.autoDetectVoice !== false;
-    bar.querySelector("[data-readtranslation]").checked = !!settings.readTranslation;
-    bar.querySelector("[data-speed-step]").value = settings.speechSpeedStep;
-    const totalWords = queue.map(block => rawText(block,true)).join(" ").split(/\s+/).filter(Boolean).length;
-    const minutes = Math.max(1,Math.ceil(totalWords / (220 * baseRate())));
-    bar.querySelector("[data-time]").textContent = totalWords ? `${minutes}${popupText("readerPopupMinute")}` : "—";
+    const playing = reading && !readingPaused, play = $br("[data-play]");
+    if (play.dataset.state !== String(playing)) { play.dataset.state = String(playing); play.innerHTML = playing ? BR_ICON.pause : BR_ICON.play; }
+    const playLabel = popupText(playing ? "readerPopupPause" : "readerPopupPlay"), pauseKey = shortcutLabel("speechPauseShortcut", "Space");
+    play.setAttribute("aria-label", playLabel); play.dataset.tip = pauseKey ? `${playLabel} (${pauseKey})` : playLabel;
+    const rate = currentSegmentRate();
+    $br("[data-speed-label]").textContent = `${Number(rate).toFixed(2)}X`;
+    if (openSheetName === "speed") renderSpeed(rate);
+    const minutes = minutesLeftFrom(reading ? queueIndex : 0);
+    $br("[data-time]").textContent = minutes ? formatLeft(minutes) : "—";
+    const repeat = $br("[data-repeat]"); repeat.classList.toggle("lhn-on", repeatSegment); repeat.setAttribute("aria-pressed", String(repeatSegment));
+    updateProgress();
+    setTile("autoscroll", !!settings.autoScroll);
+    setTile("parabtn", settings.speakerIconVisibility === "always");
+    setTile("autolang", settings.autoDetectVoice !== false);
+    setTile("readtranslation", !!settings.readTranslation);
+    setTile("webfont", settings.webFontFamily === "'Inter', sans-serif");
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
-    bar.querySelector("[data-voices]").innerHTML = `<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span>`;
-    bar.querySelector("[data-voices]").title = (activeVoice || selectedVoice) ? `${(activeVoice || selectedVoice).name} (${(activeVoice || selectedVoice).lang})` : (settings.voiceMode !== "browser" && settings.readLanguage ? `${readLanguageName(settings.readLanguage)} (${LHN_TTS.normalizeLanguage(settings.readLanguage)})` : popupText("readerPopupSelectVoice"));
+    renderFlag($br("[data-bar-flag]"), region);
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
-    bar.querySelector("[data-theme]").checked = isDark;
   }
   function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
   function popupText(key, vars = {}) { return globalThis.LHN_LANGUAGES?.t?.(key, vars, displayLang) || key; }
   function renderPopupText() {
-    const setAttr = (selector, attr, key) => { const element = bar.querySelector(selector); if (element) element.setAttribute(attr, popupText(key)); };
-    const setText = (selector, key) => { const element = bar.querySelector(selector); if (element) element.textContent = popupText(key); };
-    setAttr("[data-drag]", "title", "readerPopupDrag"); setAttr("[data-drag]", "aria-label", "readerPopupDrag");
-    setAttr("[data-play]", "title", reading && !readingPaused ? "readerPopupPause" : "readerPopupPlay");
-    setAttr("[data-prev]", "title", "readerPopupPrevious"); setAttr("[data-prev]", "aria-label", "readerPopupPrevious");
-    setAttr("[data-next]", "title", "readerPopupNext"); setAttr("[data-next]", "aria-label", "readerPopupNext");
-    setAttr("[data-voices]", "aria-label", "readerPopupSelectVoice"); setAttr("[data-speed]", "title", "readerPopupSpeed"); setAttr("[data-time]", "title", "readerPopupTime");
-    setAttr("[data-pdf]", "title", "readerPopupPdf"); setAttr("[data-pdf]", "aria-label", "readerPopupPdf");
-    setAttr("[data-dashboard]", "title", "readerPopupDashboard"); setAttr("[data-dashboard]", "aria-label", "readerPopupDashboard");
-    setAttr("[data-settings]", "title", "readerPopupSettings"); setAttr("[data-settings]", "aria-label", "readerPopupSettings");
-    setAttr("[data-close]", "title", "readerPopupStop"); setAttr("[data-close]", "aria-label", "readerPopupStop");
-    setAttr("[data-hide-banner]", "aria-label", "readerPopupHideHint");
-    setText('[data-lhn-br-popover="voices"] .lhn-br-pop-title', "readerPopupSelectVoice");
-    setText('[data-lhn-br-popover="settings"] .lhn-br-pop-title', "readerPopupSettings");
-    setText("[data-br-settings-label]", "readerPopupBilingualSettings");
-    setText("[data-webfont-label]", "readerPopupCustomWebsiteFont");
-    setAttr("[data-br-settings]", "aria-label", "readerPopupBilingualSettings");
-    bar.querySelector("[data-webfont]").checked = settings.webFontFamily === "'Inter', sans-serif";
-    const speedTitle = popover("speed").querySelector(".lhn-br-pop-title"); if (speedTitle?.firstChild) speedTitle.firstChild.textContent = `${popupText("readerPopupSpeed") } `;
-    setAttr('input[type="search"]', "placeholder", "readerPopupSearch"); setAttr('input[type="search"]', "aria-label", "readerPopupSearch");
-    setAttr(".lhn-br-range", "aria-label", "readerPopupSpeed");
-    for (const [selector, key] of [["[data-autoscroll]","readerPopupAutoScroll"],["[data-parabtn]","bilingualSpeakerIcon"],["[data-shortcuts]","readerPopupShortcuts"],["[data-autolang]","readerPopupAutoDetect"],["[data-readtranslation]","bilingualReadTranslation"],["[data-speed-step]","readerPopupSpeedStep"],["[data-theme]","readerPopupDarkMode"]]) {
-      const label = bar.querySelector(selector)?.closest("label"); if (label?.firstChild) label.firstChild.textContent = `${popupText(key)} `;
+    const tip = (selector, key, shortcut = "") => { const element = $br(selector); if (!element) return; const label = popupText(key); element.setAttribute("aria-label", label); element.dataset.tip = shortcut ? `${label} (${shortcut})` : label; };
+    const up = shortcutLabel("increaseReadingSpeedShortcut", "Up"), down = shortcutLabel("decreaseReadingSpeedShortcut", "Down"), left = shortcutLabel("previousReadingShortcut", "Left"), right = shortcutLabel("nextReadingShortcut", "Right"), voiceKey = shortcutLabel("selectVoiceShortcut", "Alt+L"), pauseKey = shortcutLabel("speechPauseShortcut", "Space");
+    tip("[data-voices]", "readerPopupSelectVoice", voiceKey);
+    tip("[data-speed]", "readerSpeedShort", up && down ? `${up} / ${down}` : up || down);
+    tip("[data-time]", "readerRemainingTime");
+    tip("[data-prev]", "readerPopupPrevious", left);
+    tip("[data-next]", "readerPopupNext", right);
+    tip("[data-repeat]", "readerRepeatSegment");
+    tip("[data-close]", "readerPopupStop", "Alt+R");
+    tip("[data-more]", "readerMore");
+    for (const [key, label] of [["autoscroll","readerPopupAutoScroll"],["parabtn","bilingualSpeakerIcon"],["autolang","readerTileAutoLang"],["readtranslation","readerTileReadTranslation"],["theme","readerTileTheme"],["webfont","readerTileCustomFont"]]) {
+      const element = $br(`[data-tile="${key}"] [data-tile-label]`); if (element) element.textContent = popupText(label);
     }
-    const shortcutLabel = (key, fallback) => {
-      const value = String(dashboardShortcuts[key] ?? fallback);
-      if (!value) return "Off";
-      if (value === "Up") return "↑"; if (value === "Down") return "↓"; if (value === "Left") return "←"; if (value === "Right") return "→";
-      return value.replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
-    };
-    const renderShortcutHint = key => popupText(key).replace(/\{step\}/g, formatSpeed(settings.speechSpeedStep))
-      .replace(/<b>Space<\/b>/g, `<b>${shortcutLabel("speechPauseShortcut", "Space")}</b>`)
-      .replace(/<b>↑\s*\/\s*↓<\/b>/g, `<b>${shortcutLabel("increaseReadingSpeedShortcut", "Up")}</b>/<b>${shortcutLabel("decreaseReadingSpeedShortcut", "Down")}</b>`)
-      .replace(/<b>←\s*\/\s*→<\/b>/g, `<b>${shortcutLabel("previousReadingShortcut", "Left")}</b>/<b>${shortcutLabel("nextReadingShortcut", "Right")}</b>`);
-    const banner = bar.querySelector("[data-shortcut-banner] span"); if (banner) banner.innerHTML = renderShortcutHint("readerPopupShortcutBanner");
-    const footer = popover("settings").querySelector(".lhn-br-pop-foot"); if (footer) footer.innerHTML = renderShortcutHint("readerPopupShortcutFooter");
-    const accountLabel = bar.querySelector("[data-account-label]");
-    if (!accountProfile && accountLabel) { accountLabel.textContent = popupText("readerPopupSignIn"); setAttr("[data-account]", "title", "readerPopupSignIn"); }
-    bar.querySelectorAll("[data-close-pop]").forEach(button => button.setAttribute("aria-label", popupText("readerPopupClose")));
-    const voiceHeadingClose = popover("voices").querySelector("[data-close-pop]"); if (voiceHeadingClose) voiceHeadingClose.setAttribute("aria-label", popupText("readerPopupClose"));
-    if (popover("voices").classList.contains("lhn-open")) renderVoiceChoices();
+    $br('[data-preset="1.0"]').textContent = popupText("videoNormal");
+    voiceSearch.placeholder = popupText("readerPopupSearch"); voiceSearch.setAttribute("aria-label", popupText("readerPopupSearch"));
+    $br(".lhn-br-range").setAttribute("aria-label", popupText("readerPopupSpeed"));
+    $br("[data-close-pop]").setAttribute("aria-label", popupText("readerPopupClose"));
+    const hide = $br("[data-hide-banner]"); hide.setAttribute("aria-label", popupText("readerHideBanner")); hide.title = popupText("readerHideBanner");
+    const banner = $br("[data-banner-text]"); banner.replaceChildren();
+    [[[pauseKey], "readerPopupPause"], [[up, down], "readerSpeedShort"], [[left, right], "readerBannerPrevNext"], [[voiceKey], "readerBannerVoice"], [["Alt+R"], "readerPopupClose"]].forEach(([keys, label], index) => {
+      if (index) { const sep = document.createElement("span"); sep.className = "lhn-br-sep"; sep.textContent = "·"; banner.appendChild(sep); }
+      const item = document.createElement("span");
+      keys.forEach(value => { const kbd = document.createElement("kbd"); kbd.textContent = value || "Off"; item.appendChild(kbd); });
+      item.appendChild(document.createTextNode(popupText(label))); banner.appendChild(item);
+    });
+    if (openSheetName === "voices") { $br("[data-sheet-title]").textContent = popupText("readerPopupSelectVoice"); renderVoiceChoices(); }
+    if (openSheetName === "speed") $br("[data-sheet-title]").textContent = popupText("readerPopupSpeed");
   }
   renderPopupText();
   var voiceSearchCache = { signature: "", lang: "", index: null };
@@ -324,17 +579,20 @@
   }
   function renderVoiceChoices() {
     voiceKbIndex = -1;
-    lastVoiceQuery = LHN_INDEX_SEARCH.normalize(bar.querySelector("input[type=search]").value);
+    lastVoiceQuery = LHN_INDEX_SEARCH.normalize(voiceSearch.value);
     systemVoices = synth?.getVoices?.() || systemVoices;
-    const query = bar.querySelector("input[type=search]").value.trim().toLocaleLowerCase();
-    const list = bar.querySelector(".lhn-br-voice-list"); list.replaceChildren();
-    const autoMatches = !query || "auto auto-detect language".includes(query);
+    const query = voiceSearch.value.trim().toLocaleLowerCase();
+    const list = $br(".lhn-br-voice-list"); list.replaceChildren();
+    const plainQuery = plainText(query);
+    const escVoiceHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const check = selected => selected ? '<span class="lhn-br-ck">✓</span>' : "";
+    const autoMatches = !query || "auto auto-detect language".includes(query) || plainText(popupText("readerVoiceAuto")).includes(plainQuery);
     if (autoMatches) {
       const autoSelected = settings.voiceMode !== "browser" && !settings.readLanguage;
-      const auto = document.createElement("button"); auto.type="button"; auto.className=`lhn-br-voice${autoSelected ? " lhn-selected" : ""}`; auto.innerHTML=`<span>🌐</span><span>${popupText("readerPopupAutoDetect")}<small>${popupText("readerPopupAutoDescription")}</small></span>${autoSelected ? "✓" : ""}`;
+      const auto = document.createElement("button"); auto.type="button"; auto.className=`lhn-br-voice${autoSelected ? " lhn-selected" : ""}`;
+      auto.innerHTML=`<span class="lhn-br-vf lhn-br-globe">${BR_ICON.auto}</span><span class="lhn-br-vt"><b>${escVoiceHtml(popupText("readerVoiceAuto"))}</b><small>${escVoiceHtml(popupText("readerPopupAutoDescription"))}</small></span>${check(autoSelected)}`;
       auto.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(autoFlagLang()); void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
-    const plainQuery = plainText(query);
     const groupHeading = key => { const heading = document.createElement("div"); heading.className = "lhn-br-voice-group"; heading.setAttribute("role", "presentation"); heading.textContent = popupText(key); list.appendChild(heading); };
     let languageGroupShown = false, browserGroupShown = false;
     READ_LANGUAGE_CODES.forEach(code => {
@@ -345,28 +603,26 @@
       if (!languageGroupShown) { languageGroupShown = true; groupHeading("readerPopupGroupLanguages"); }
       const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
       const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
-      button.innerHTML=`<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span>${name.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${native !== name ? native.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char])) + " · " : ""}${tag}</small></span>${isSelected?"✓":""}`;
+      button.innerHTML=`<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(name)}</b><small>${native !== name ? escVoiceHtml(native) + " · " : ""}${tag}</small></span>${check(isSelected)}`;
+      renderFlag(button.firstElementChild, region);
       button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
     });
     const flagMissLogged = new Set(); // debug: log một lần cho mỗi vùng thiếu cờ
-    const escVoiceHtml = (text) => String(text).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     let voiceRegionNames = null, voiceLangNames = null;
     try { voiceRegionNames = new Intl.DisplayNames([displayLang], { type:"region" }); voiceLangNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
     LHN_INDEX_SEARCH.search(getVoiceIndex(), query).forEach(voice => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
-      const country = region ? new Intl.DisplayNames([displayLang], { type:"region" }).of(region) : "";
       if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
-      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.innerHTML=`<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span>${`${voice.name} (${popupText("readerPopupBrowserTag")})`.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}<small>${country}${country && voice.lang ? " · " : ""}${voice.lang || ""}</small></span>${isSelected?"✓":""}`;
-      {
-        const baseLang = (voice.lang || "").split(/[-_]/)[0].toLowerCase();
-        let langLabel = baseLang; try { langLabel = voiceLangNames?.of(baseLang) || baseLang; } catch {}
-        let countryLabel = region || langLabel; try { if (region) countryLabel = voiceRegionNames?.of(region) || region; } catch {}
-        const shortVoice = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name;
-        button.innerHTML = `<span class="lhn-br-flag">${flagEmojiForRegion(region)}</span><span class="lhn-br-voice-text"><span class="lhn-br-voice-country">${escVoiceHtml(countryLabel)}</span><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${isSelected ? "✓" : ""}`;
-        button.title = `${voice.name} · ${voice.lang}`;
-      }
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
+      const baseLang = (voice.lang || "").split(/[-_]/)[0].toLowerCase();
+      let langLabel = baseLang; try { langLabel = voiceLangNames?.of(baseLang) || baseLang; } catch {}
+      let countryLabel = region || langLabel; try { if (region) countryLabel = voiceRegionNames?.of(region) || region; } catch {}
+      const shortVoice = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name;
+      button.innerHTML = `<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(countryLabel)}</b><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${check(isSelected)}`;
+      renderFlag(button.firstElementChild, region);
+      button.title = `${voice.name} · ${voice.lang}`;
       button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
@@ -412,7 +668,7 @@
     dashboardShortcuts = { ...dashboardShortcuts, speechRate:rate };
     browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), speechRate:rate } })).catch(() => {});
   }
-  function renderSpeed(rate) { bar.querySelector(".lhn-br-range").value = rate; bar.querySelector("[data-speed-value]").textContent = formatSpeed(rate); }
+  function renderSpeed(rate) { const value = Number(rate) || 1; $br(".lhn-br-range").value = value; $br("[data-speed-value]").textContent = `${value.toFixed(2)}x`; bar.querySelectorAll("[data-preset]").forEach(button => button.classList.toggle("lhn-active", Math.abs(Number(button.dataset.preset) - value) < 0.001)); }
   function baseRate() { const shared = clampSpeechRate(dashboardShortcuts?.speechRate); return shared === null ? 1 : shared; }
   function applySharedSpeechRate() {
     const rate = currentSegmentRate();
@@ -431,8 +687,7 @@
     if (googleToken) { if (googleAudio) googleAudio.playbackRate = rate; } else if (reading&&!readingPaused) restartCurrentSpeech();
     return rate;
   }
-  function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
-  synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.browserVoiceURI)||selectedVoice; syncToolbar(); if(popover("voices").classList.contains("lhn-open")) renderVoiceChoices();});
+  synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.browserVoiceURI)||selectedVoice; syncToolbar(); if(openSheetName === "voices") renderVoiceChoices();});
   function applySettings(next) {
     const wasReaderActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     settings = { ...DEFAULTS, ...(next || {}) };
@@ -963,7 +1218,7 @@
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
-  function closeReadingBar() { stopReading(); bar.classList.remove("lhn-show"); }
+  function closeReadingBar() { stopReading(); closeSheet(); bar.classList.remove("lhn-show"); syncSpacer(); }
   function stopReading() {
     speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
   }
@@ -985,7 +1240,7 @@
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) { queueIndex++; speakNext(); } return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) { queueIndex++; speakNext(); } };
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) advanceQueue(); return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) advanceQueue(); };
     readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
@@ -1070,8 +1325,8 @@
     if (!selectedVoice && activeVoice?.lang) activeSpeechLang = activeVoice.lang;
     if (!activeVoice) { stopReading(); document.dispatchEvent(new CustomEvent("lhn-browser-voice-unavailable")); return; }
     const current = new SpeechSynthesisUtterance(currentReadText); current.rate = segmentRate(activeSpeechLang); lastAppliedSegmentRate = current.rate; current.lang = selectedVoice?.lang || activeSpeechLang; if (activeVoice) current.voice=activeVoice; utterance = current;
-    current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) currentReadCharIndex = event.charIndex; };
-    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { if (!translationIncluded) { const pending = pendingTranslationFor(block); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } queueIndex++; speakNext(); } };
+    current.onboundary = event => { if (utterance === current && Number.isFinite(event.charIndex)) { currentReadCharIndex = event.charIndex; updateProgress(); } };
+    const finish = () => { if (utterance !== current) return; utterance = null; if (reading) { if (!translationIncluded) { const pending = pendingTranslationFor(block); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } advanceQueue(); } };
     current.onend = finish; current.onerror = event => { if (utterance !== current) return; console.warn("Bilingual Reader speech synthesis failed", event?.error || event); if (!["canceled", "interrupted"].includes(event?.error)) showReaderToast(popupText("readerToastBrowserVoiceFailed")); finish(); }; syncToolbar(); if (synth?.paused) synth.resume(); synth?.speak(current);
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
@@ -1101,7 +1356,7 @@
     cancelGoogle();
     resumeText = "";
     readingSegment = null; lastAppliedSegmentRate = null;
-    queueIndex = Math.min(queue.length, queueIndex + 1);
+    if (!repeatSegment) queueIndex = Math.min(queue.length, queueIndex + 1);
     if (wasPaused) { syncToolbar(); return; }
     speakAfterCancel();
   }
@@ -1111,7 +1366,6 @@
     const translated = settings.readTranslation && card ? card.textContent.trim() : "";
     return translated ? `${source}\n${translated}` : source;
   }
-  let readTranslationToastTimer = null;
   let readerErrorToastTimer = null;
   function showReaderToast(text) {
     let toast = document.getElementById("lhn-sidebar-toast");
@@ -1121,14 +1375,8 @@
     clearTimeout(readerErrorToastTimer);
     readerErrorToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
   }
-  function notifyReadTranslationOn() {
-    let toast = document.getElementById("lhn-sidebar-toast");
-    if (!toast) { toast = document.createElement("div"); toast.id = "lhn-sidebar-toast"; toast.setAttribute("role", "status"); document.documentElement.appendChild(toast); }
-    toast.textContent = popupText("readTranslationOnToast");
-    toast.classList.add("is-visible");
-    clearTimeout(readTranslationToastTimer);
-    readTranslationToastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
-  }
+  function notifyReadTranslationOn() { showBarToast(popupText("readTranslationOnToast")); }
+
   function startReading(fromBlock, interruptCurrent = false) {
     if (websiteDisabled) { console.warn("[Keepit Reader] Không đọc: website đang bị tắt cho trang này"); return; }
     if (isReaderDisabledOnThisWebsite()) { console.warn("[Keepit Reader] Không đọc: website nằm trong danh sách tắt Reader", location.hostname); return; }
@@ -1142,14 +1390,15 @@
     else if (cancelPendingSpeech) { utterance = null; cancelGoogle(); }
     queue = nextQueue;
     readingPaused = false; resumeText = ""; queueIndex = fromBlock ? queue.indexOf(fromBlock) : 0;
-    reading = true; readingPaused = false; syncPauseShortcutState(); bar.querySelector("[data-shortcut-banner]").hidden = false; bar.classList.add("lhn-show"); syncToolbar();
+    reading = true; readingPaused = false; syncPauseShortcutState(); shortcutBannerVisible = true; bar.classList.add("lhn-show"); syncBarLayout(); syncToolbar();
+    if (!flagFontRequested) { flagFontRequested = true; void prepareFlagFont(); }
     document.dispatchEvent(new Event("lhn-bilingual-reader-started"));
     if (cancelPendingSpeech) speakAfterCancel(); else speakNext();
   }
   function moveReading(delta, event) {
     if (!reading) return;
     event.preventDefault();
-    const navigationButton = bar.querySelector(delta < 0 ? "[data-prev]" : "[data-next]");
+    const navigationButton = $br(delta < 0 ? "[data-prev]" : "[data-next]");
     navigationButton.classList.remove("lhn-br-key-press"); void navigationButton.offsetWidth; navigationButton.classList.add("lhn-br-key-press");
     window.setTimeout(() => navigationButton.classList.remove("lhn-br-key-press"), 190);
     const nextIndex = queueIndex + delta;
@@ -1176,6 +1425,7 @@
     const block = getBlockNearPointer(); if (!block) return;
     const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.remove() : translateBlock(block);
   }
+  function notifySpeed(rate) { if (rate !== null) showBarToast(`${popupText("readerSpeedShort")} ${Number(rate).toFixed(2)}x`); }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
   document.addEventListener("lhn-bilingual-reader-command", event => {
     if (event.detail === "stop-reading") { closeReadingBar(); return; }
@@ -1185,9 +1435,9 @@
     if (event.detail === "toggle-reading") reading ? closeReadingBar() : startReading();
     if (event.detail === "previous-reading-block") moveReading(-1, event);
     if (event.detail === "next-reading-block") moveReading(1, event);
-    if (settings.readerShortcutsEnabled !== false && event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() + normalizeSpeedStep(settings.speechSpeedStep)); }
-    if (settings.readerShortcutsEnabled !== false && event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) setSpeechSpeed(currentSegmentRate() - normalizeSpeedStep(settings.speechSpeedStep)); }
-    if (settings.readerShortcutsEnabled !== false && event.detail === "open-voice-select" && reading && bar.classList.contains("lhn-show")) { event.preventDefault(); bar.querySelector("[data-voices]").click(); }
+    if (event.detail === "increase-reading-speed") { event.preventDefault(); if (reading) notifySpeed(setSpeechSpeed(currentSegmentRate() + normalizeSpeedStep(settings.speechSpeedStep))); }
+    if (event.detail === "decrease-reading-speed") { event.preventDefault(); if (reading) notifySpeed(setSpeechSpeed(currentSegmentRate() - normalizeSpeedStep(settings.speechSpeedStep))); }
+    if (event.detail === "open-voice-select" && reading && bar.classList.contains("lhn-show")) { event.preventDefault(); toggleSheet("voices"); }
   });
   document.addEventListener("lhn-bilingual-reader-pause", event => {
     if (!reading) return;
@@ -1287,7 +1537,7 @@
   }
   const pageObserver = new MutationObserver(records => {
     if (!shouldObserveReaderMutations()) return;
-    const isOwn = node => node?.nodeType === 1 && (node.matches?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style") || node.closest?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style"));
+    const isOwn = node => node?.nodeType === 1 && (node.matches?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-br-spacer,#lhn-bilingual-reader-debug-style") || node.closest?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style"));
     const hasPageChange = records.some(record => !isOwn(record.target) && [...record.addedNodes, ...record.removedNodes].some(node => !isOwn(node)));
     if (!hasPageChange) return;
     clearTimeout(pageMutationTimer);

@@ -7,6 +7,20 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-08 | Thanh Bilingual Reader theo demo v16
+
+**Trạng thái:** Đã triển khai ở v3.5.154.
+
+- Một giao diện cho cảm ứng và máy tính, thanh luôn hiện: `[cờ giọng][1.00X][phút] · [⏮ ▶ ⏭] · [Lặp lại][✕][☰]`. Hẹp (điện thoại, tablet dọc) full-width sát đáy; rộng ≥1024px (máy tính, tablet ngang) đảo 560px bo góc cách đáy 16px.
+- Phút còn lại là nhãn riêng, chuẩn tiếng Anh cho mọi ngôn ngữ: `45M`; từ 60 phút là giờ thập phân tối đa 2 số lẻ (`1H`, `1.5H`, `3.13H`). Tốc độ trên thanh `X` hoa, trong sheet `x` thường.
+- Thanh tiến độ kéo được như overlay; Tốc độ mở giống Giọng đọc (sheet khi hẹp, popup khi rộng); tối theo bảng màu zinc của overlay.
+- ☰: Tự cuộn, Hiện icon đọc, Ngôn ngữ tự động, Đọc song ngữ, Chủ đề, Font tùy chỉnh. Không có ô Phím tắt; máy tính có bảng phím tắt phía trên thanh, hiện lại mỗi lần bắt đầu đọc, × chỉ ẩn trong lần đọc đó.
+- Bỏ: kéo thanh, PDF, Bảng điều khiển, Cài đặt (Phím tắt, Bước nhảy tùy chỉnh, Cài đặt Bilingual Reader, Đăng nhập, footer), dòng "còn N phút" dài, vuốt ẩn thanh. Không đưa ♥, CC, rạp, cử chỉ âm lượng/độ sáng vào Reader.
+- Màn hẹp hơn thiết kế 390px (vd. 360px) thu nhỏ đều cả thanh theo tỉ lệ; không bớt khoảng cách (người dùng đã từ chối).
+- Còn mở: tốc độ tối đa 3x hay 2x, màu mức tốc độ đang chọn, thống nhất bảng màu tối.
+
+---
+
 ## 2026-11-08 | 14 góp ý chạm cho overlay (rạp ngang, dọc, nhấn giữ để dịch)
 
 **Trạng thái:** Đã triển khai ở v3.5.153.
