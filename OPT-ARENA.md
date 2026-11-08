@@ -7,6 +7,17 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-08 | Overlay thật khớp demo v10 100%, kể cả nguồn web
+
+**Trạng thái:** Đã triển khai ở v3.5.152.
+
+- Overlay thật phải giống demo v10 hoàn toàn (cỡ chữ, sheet, ♥, rạp ngang) cho cả video và web source; kiểm tra bằng chạm thật và ảnh so sánh, không chỉ `.click()` bằng JS.
+- Cài đặt / Tùy chọn phụ đề / Ngôn ngữ phụ đề trên cảm ứng dùng một bottom sheet như demo `#sset`, ghi qua điều khiển gốc; desktop giữ modal gốc.
+- ♥ trên web source lưu theo URL trong `lhnFavoriteVideos`; Dashboard liệt kê và bỏ yêu thích được.
+- Danh sách phông giữ đủ như Keepit (cuộn ngang), không rút về 3 phông của demo.
+
+---
+
 ## 2026-11-08 | Overlay cảm ứng theo demo v10 (thanh, sheet ☰, rạp ngang, thả tim, yêu thích video)
 
 **Trạng thái:** Đã triển khai ở v3.5.151.

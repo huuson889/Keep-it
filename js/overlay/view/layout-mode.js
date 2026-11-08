@@ -393,6 +393,10 @@ function saveSettings() {
 
 function updateSidebarTranscriptFontSize(root) {
   if (!root) return;
+  // Touch layout: transcript = 15px/13px × the user's own percentage (demo v10), without the desktop size factor.
+  const touchSide = root.classList.contains('te-reading-mode') ? settings.readingSubtitle : settings.side;
+  root.style.setProperty('--te-side-en-scale', String(touchSide.en.pct / 100));
+  root.style.setProperty('--te-side-vi-scale', String(touchSide.vi.pct / 100));
   if (root.classList.contains('te-reading-mode')) {
     // Preserve the v3.4.904 Reading defaults (18px / 16.2px), with shared scale and Reading-only controls.
     const sharedScale = settings.sub.en.pct / 100;

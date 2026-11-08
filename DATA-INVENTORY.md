@@ -26,7 +26,7 @@ Classification: **required** = sent when the user uses the feature (Firefox `req
 
 ## 2. Data kept only in the browser (not sent by Keepit)
 
-Highlights, notes, page title/URL of annotations, flashcards/study progress, settings, translation/TTS/transcript caches, URL → AI-conversation mapping (after a confirmed send), panel state, local usage counters, demo profile, diagnostic log (codes only). Favourite videos (video ID, title, channel, time added; `js/overlay/view/touch-layout.js:189`, `js/dashboard/dashboard.js:1162`). Short speaking recordings stay in memory for playback only (`js/overlay/study/shadowing/shadowing-activity.js:313`).
+Highlights, notes, page title/URL of annotations, flashcards/study progress, settings, translation/TTS/transcript caches, URL → AI-conversation mapping (after a confirmed send), panel state, local usage counters, demo profile, diagnostic log (codes only). Favourite videos and web pages (video ID or page URL without fragment, title, channel or site name, time added; `js/overlay/view/touch-layout.js:221`, `js/dashboard/dashboard.js:1162`, `js/dashboard/dashboard.js:1172`). Short speaking recordings stay in memory for playback only (`js/overlay/study/shadowing/shadowing-activity.js:313`).
 
 ## 3. Network rules that change headers
 

@@ -213,6 +213,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
 
+**2026-11-08 | v3.5.152 | Arena.ai Agent sửa:**
+
+- Yêu cầu: overlay thật phải giống demo v10 100% (cỡ chữ, ô sheet hoạt động, ♥ có hiệu ứng, toàn màn hình ngang), kể cả nguồn web; test bằng chạm thật.
+- Lỗi gốc v3.5.151: rule mở sheet (`.te-touch-sheet.open`) thua specificity rule nền nên sheet không nhận chạm; ♥ và rạp ngang bị tắt cho web source; cỡ chữ/màu transcript, thẻ mini, thanh dưới chưa đo theo demo.
+- `overlay-template.js`: sửa specificity sheet; khối "demo v10 parity" (ô phụ đề 22%, EN 600, VI trắng, thẻ mini, transcript theo `--te-side-*-scale`, thanh, vùng chạm thanh tiến trình 22px); CSS sheet cài đặt `.te-tss-*`; menu CC 170px không hiện phím số, popup tốc độ ≤340px trên điện thoại; nút thoát rạp 20px; tiêu đề thẻ mini đọc được ở giao diện sáng. `layout-mode.js`: biến `--te-side-en/vi-scale`. `overlay-controller.js`: `data-touch-title` cho tiêu đề thẻ.
+- `touch-layout.js`: sheet cài đặt cảm ứng mới `.te-touch-set` (Cài đặt video / Tùy chọn phụ đề / Ngôn ngữ phụ đề theo DOM demo, mọi điều khiển ghi qua điều khiển gốc), thay phần chỉnh modal gốc `.te-tso-*`; nhãn en/vi/ko mới; ♥ cho web source (`touchFavoritePageUrl`). `touch-theater.js`: rạp ngang cho cả web source.
+- Yêu thích web: `lhnFavoriteVideos` thêm mục theo URL; Dashboard liệt kê, bỏ yêu thích được (`dashboard.js`, `highlights-notes.js`), sao lưu/khôi phục (`backup.js`). DATA-INVENTORY §2 cập nhật.
+- `touch-ui.js`: thanh công cụ cảm ứng của trang không nhận chạm khi đang nhường chỗ cho overlay (trước đó nuốt chạm trong lúc trượt ra).
+- Test (Chromium, chạm thật `touchscreen.tap`, content scripts thật): video/web × dọc 390×844 / ngang 844×390 — sheet ☰, Cài đặt (công tắc, Xuất phụ đề, quay lại), Tùy chọn phụ đề (màu, cỡ, Nền, −/+, độ đậm, phông, tab cuộn, Đặt lại), Ngôn ngữ (radio), CC, tốc độ đều đạt, không lỗi trang; ảnh so sánh demo/thật khớp cho main, sheet, Tùy chọn phụ đề, Nâng cao, Ngôn ngữ, Cài đặt, CC, tốc độ, rạp ngang, giao diện sáng; Dashboard liệt kê + bỏ yêu thích mục web đạt; desktop 1366×800 không có UI cảm ứng, modal gốc như cũ.
+- Vẫn chưa sửa (có từ trước): `enforceVideoPause` ở `source/video.js:525`.
+
 **2026-11-08 | v3.5.151 | Arena.ai Agent sửa:**
 
 - Yêu cầu: đưa demo overlay cảm ứng v10 đã duyệt vào Keepit thật; màu phụ đề chính mặc định vàng `#ffff00` mọi nền tảng; thanh tiến trình kéo được mọi nền tảng; giữ ♥ trên thumbnail Dashboard.

@@ -1163,6 +1163,16 @@ async function handleHighlightsNotesAction(data) {
           catch (error) { ({ favorites, favoriteVideos } = before); throw error; }
           render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
         }
+        // A web page favourited from the touch overlay ♥ is kept by URL (it may have no highlights).
+        const pageUrl = LHN_BACKUP.favoritePageUrl(key);
+        if (pageUrl && favoriteVideos.some(video => video.url === pageUrl)) {
+          const before = { favorites, favoriteVideos };
+          favoriteVideos = favoriteVideos.filter(video => video.url !== pageUrl);
+          favorites = favorites.filter(value => value !== key);
+          try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites, [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos }); }
+          catch (error) { ({ favorites, favoriteVideos } = before); throw error; }
+          render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+        }
         if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
         const wasFavorite = favorites.includes(key);
         favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];

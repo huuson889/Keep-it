@@ -774,7 +774,7 @@ function setSourceTitle() {
     }
   }
   const miniTitle = ui('.te-reading-mini-title');
-  if (miniTitle) miniTitle.textContent = `Keepit - ${t}`;
+  if (miniTitle) { miniTitle.textContent = `Keepit - ${t}`; miniTitle.dataset.touchTitle = t; }
   const miniSource = ui('.te-reading-mini-source');
   if (miniSource) miniSource.textContent = overlayT('dictationAudioSource');
   const miniThumb = ui('.te-reading-mini-thumb');

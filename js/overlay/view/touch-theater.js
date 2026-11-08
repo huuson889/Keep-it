@@ -138,7 +138,7 @@ function syncTouchTheater() {
   if (!touchTheater.query?.matches) touchTheater.dismissed = false;
   const root = touchTheater.root;
   if (root?.classList.contains('te-hidden')) touchTheater.forced = false;
-  setTouchTheaterActive(Boolean(root && touchTheaterWanted() && state?.sourceType !== 'web'
+  setTouchTheaterActive(Boolean(root && touchTheaterWanted()
     && !root.classList.contains('te-study-active') && !root.classList.contains('te-hidden')));
 }
 

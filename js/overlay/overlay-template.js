@@ -2344,8 +2344,8 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay.te-touch-layout.te-touch-compact:not(.te-study-active) .te-web-thumbnail-visualizer { display: none !important; }
 /* v3.5.151 touch: S = portrait layout, T = phone-landscape theater (touch-theater.js), X = either. The doubled id
    outranks desktop view-mode rules without !important, so the user's inline subtitle size/colour still wins. */
-#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(18px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(15px * var(--te-touch-fit, 1)); }
-@media (min-width: 600px) { #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(22px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(17.5px * var(--te-touch-fit, 1)); } }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(18px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(16.6667px * var(--te-touch-fit, 1)); }
+@media (min-width: 600px) { #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) { --te-sub-en-base: calc(22px * var(--te-touch-fit, 1)); --te-sub-vi-base: calc(19.4444px * var(--te-touch-fit, 1)); } }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-container { position: relative !important; display: flex !important; flex-direction: column !important; justify-content: center !important; flex: 0 0 auto !important; width: auto !important; max-width: none !important; height: clamp(96px, 22vh, 220px) !important; min-height: 0 !important; max-height: none !important; margin: 0 !important; padding: 10px 48px !important; inset: auto !important; transform: none !important; overflow: hidden !important; border-bottom: 1px solid rgba(148, 163, 184, .18) !important; background: transparent !important; text-align: center !important; }
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-subtitle-content { position: static !important; width: auto !important; max-width: none !important; max-height: none !important; margin: 0 !important; padding: 0 !important; transform: none !important; background: transparent !important; }
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-en { font-size: var(--te-sub-en-base); line-height: 1.3; }
@@ -2420,7 +2420,7 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay .te-touch-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity .2s ease; }
 #keepit-exact-overlay .te-touch-panel { position: absolute; inset: auto 0 0 0; max-height: 86%; overflow-y: auto; padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px)); border-radius: 22px 22px 0 0; background: #fff; color: #111827; box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); transform: translateY(105%); transition: transform .26s cubic-bezier(.2, .8, .2, 1); }
 #keepit-exact-overlay.theme-dark .te-touch-panel { background: #18181b; color: #f4f4f5; }
-#keepit-exact-overlay .te-touch-sheet.open { pointer-events: auto; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-touch-sheet.open { pointer-events: auto; }
 #keepit-exact-overlay .te-touch-sheet.open .te-touch-scrim { opacity: 1; }
 #keepit-exact-overlay .te-touch-sheet.open .te-touch-panel { transform: translateY(var(--te-touch-drag, 0px)); }
 #keepit-exact-overlay.te-touch-theater .te-touch-panel { left: 50%; right: auto; width: min(560px, 94%); transform: translate(-50%, 105%); }
@@ -2453,39 +2453,80 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-main .te-menu-row:has(#te-ambient-toggle),
 #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-main .te-menu-row:has(#te-ambient-toggle) + .te-menu-row { display: none !important; }
 
-/* Subtitle options on touch: preview · tabs (portrait) · size · swatches · background (theater) · Advanced. */
-#keepit-exact-overlay .te-tso, #keepit-exact-overlay .te-tso-adv-toggle { display: none; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-modal-body { display: flex; flex-direction: column; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-modal-body > * { order: 3; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso { display: block; order: 0; padding: 0 16px 4px; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-theater-subtitle-settings { order: 1; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso-adv-toggle { display: flex; order: 2; align-items: center; justify-content: space-between; min-height: 46px; margin: 6px 16px 0; padding: 0 4px; border: 0; background: none; color: #6b7280; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub .te-tso-adv-toggle svg { width: 18px; height: 18px; transition: transform .2s; }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub.te-tso-adv-open .te-tso-adv-toggle svg { transform: rotate(180deg); }
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub :is(.te-tso-title, .te-tso-size-original, .te-tso-pill-row),
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub:not(.te-tso-adv-open) :is(.te-tso-font, .te-tso-weight, .te-tso-video-card, .te-sidebar-subtitle-settings),
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub.te-tso-side .te-tso-video-card,
-#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater) #te-modal-sub:not(.te-tso-side) .te-sidebar-subtitle-settings,
-#keepit-exact-overlay.te-touch-layout #te-modal-sub .te-theater-subtitle-settings,
-#keepit-exact-overlay.te-touch-theater #te-modal-sub .te-tso-tabs { display: none !important; }
-#keepit-exact-overlay.te-touch-theater #te-modal-sub .te-theater-subtitle-settings { display: block !important; }
-#keepit-exact-overlay .te-tso-preview { margin-bottom: 8px; padding: 14px 12px; border: 1px solid rgba(148, 163, 184, .22); border-radius: 14px; background: rgba(148, 163, 184, .08); text-align: center; }
-#keepit-exact-overlay .te-tso-preview.on-video { border-color: transparent; background-color: rgba(0, 0, 0, .4); background-image: linear-gradient(135deg, #1f2937, #0f172a); }
-#keepit-exact-overlay .te-tso-pv-en { line-height: 1.3; }
-#keepit-exact-overlay .te-tso-pv-vi { margin-top: 3px; line-height: 1.35; }
-#keepit-exact-overlay .te-tso-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 6px; padding: 3px; border-radius: 12px; background: rgba(148, 163, 184, .16); }
-#keepit-exact-overlay .te-tso-tabs button { padding: 8px; border: 0; border-radius: 9px; background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-#keepit-exact-overlay .te-tso-tabs button.on { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }
-#keepit-exact-overlay.theme-dark .te-tso-tabs button.on { background: #3f3f46; color: #fff; }
-#keepit-exact-overlay .te-tso-label { padding: 10px 2px 6px; color: #6b7280; font-size: 12px; font-weight: 700; }
-#keepit-exact-overlay .te-tso-sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-#keepit-exact-overlay .te-tso-sizes button { height: 40px; border: 1px solid rgba(148, 163, 184, .35); border-radius: 12px; background: rgba(148, 163, 184, .08); color: inherit; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-#keepit-exact-overlay .te-tso-sizes button.on { border-color: #8b5cf6; background: #8b5cf6; color: #fff; }
-#keepit-exact-overlay .te-tso-swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 2px; }
-#keepit-exact-overlay .te-tso-sw { width: 32px; height: 32px; padding: 0; border: 1px solid rgba(148, 163, 184, .55); border-radius: 50%; cursor: pointer; }
-#keepit-exact-overlay .te-tso-sw.def { border: 2px dashed rgba(148, 163, 184, .95); }
-#keepit-exact-overlay .te-tso-sw.on { border-color: transparent; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #8b5cf6; }
-#keepit-exact-overlay.theme-dark .te-tso-sw.on { box-shadow: 0 0 0 2px #18181b, 0 0 0 4px #8b5cf6; }
+/* Settings sheet on touch (demo #sset): Video settings · Subtitle options · Subtitle language. */
+#keepit-exact-overlay .te-touch-set [hidden] { display: none !important; }
+#keepit-exact-overlay .te-tss-head { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; }
+#keepit-exact-overlay .te-tss-title { flex: 1; font-size: 16px; font-weight: 700; }
+#keepit-exact-overlay .te-tss-x { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 10px; background: none; color: #a1a1aa; cursor: pointer; }
+#keepit-exact-overlay .te-tss-x svg { width: 18px; height: 18px; }
+#keepit-exact-overlay .te-tss-reset { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border: 0; border-radius: 9px; background: none; color: #6b7280; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+#keepit-exact-overlay.theme-dark .te-tss-reset { color: #a1a1aa; }
+#keepit-exact-overlay .te-tss-reset svg { width: 14px; height: 14px; }
+#keepit-exact-overlay .te-tss-reset:active { background: rgba(148, 163, 184, .15); }
+#keepit-exact-overlay .te-tss-tg { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 0 4px; border: 0; background: none; color: inherit; font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+#keepit-exact-overlay .te-tss-tg span { flex: 1; }
+#keepit-exact-overlay .te-tss-sw { position: relative; flex: none; width: 46px; height: 28px; border-radius: 14px; background: #d4d4d8; transition: background .2s; }
+#keepit-exact-overlay.theme-dark .te-tss-sw { background: #3f3f46; }
+#keepit-exact-overlay .te-tss-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .2s; }
+#keepit-exact-overlay .te-tss-tg[aria-checked="true"] .te-tss-sw { background: #8b5cf6; }
+#keepit-exact-overlay .te-tss-tg[aria-checked="true"] .te-tss-sw::after { transform: translateX(18px); }
+#keepit-exact-overlay .te-tss-srow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 0 4px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .12); background: none; color: inherit; font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; }
+#keepit-exact-overlay .te-tss-srow span { flex: 1; }
+#keepit-exact-overlay .te-tss-pv { position: sticky; top: -8px; z-index: 2; margin: 0 -14px 10px; padding: 10px 14px; background: inherit; border-bottom: 1px solid rgba(148, 163, 184, .14); }
+#keepit-exact-overlay .te-tss-pv-box { padding: 12px; border: 1px solid #e5e7eb; border-radius: 14px; background: linear-gradient(160deg, #eef2ff, #fff); text-align: center; }
+#keepit-exact-overlay.theme-dark .te-tss-pv-box { border: 0; background: radial-gradient(120% 90% at 30% 0%, #2c3b2a, #141417); }
+#keepit-exact-overlay .te-tss-pv.on-video .te-tss-pv-box { border: 0; background: radial-gradient(120% 90% at 30% 0%, #3b3428, #141417); }
+#keepit-exact-overlay .te-tss-pv.side .te-tss-pv-box { border: 0; text-align: left; background: rgba(139, 92, 246, .16); box-shadow: inset 3px 0 0 #8b5cf6; }
+#keepit-exact-overlay .te-tss-pv-en { line-height: 1.3; }
+#keepit-exact-overlay .te-tss-pv-vi { margin-top: 3px; line-height: 1.35; }
+#keepit-exact-overlay .te-tss-pv span { padding: 1px 6px; border-radius: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+#keepit-exact-overlay .te-tss-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 6px; padding: 4px; border-radius: 13px; background: rgba(148, 163, 184, .14); }
+#keepit-exact-overlay .te-tss-tabs button { padding: 9px; border: 0; border-radius: 10px; background: none; color: inherit; font: inherit; font-size: 13.5px; font-weight: 700; opacity: .7; cursor: pointer; }
+#keepit-exact-overlay .te-tss-tabs button.on { background: #fff; opacity: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+#keepit-exact-overlay.theme-dark .te-tss-tabs button.on { background: #27272a; }
+#keepit-exact-overlay .te-tss-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 0 4px; font-size: 14px; }
+#keepit-exact-overlay .te-tss-mini { display: inline-flex; padding: 3px; border-radius: 11px; background: rgba(148, 163, 184, .14); }
+#keepit-exact-overlay .te-tss-field > span { white-space: nowrap; }
+#keepit-exact-overlay .te-tss-mini[data-tss-pick="font"] { max-width: 68%; overflow-x: auto; scrollbar-width: none; }
+#keepit-exact-overlay .te-tss-mini[data-tss-pick="font"]::-webkit-scrollbar { display: none; }
+#keepit-exact-overlay .te-tss-mini button { flex: none; }
+#keepit-exact-overlay .te-tss-mini.wide { display: flex; }
+#keepit-exact-overlay .te-tss-mini.wide button { flex: 1; }
+#keepit-exact-overlay .te-tss-mini button { padding: 7px 10px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; font-size: 12.5px; font-weight: 700; opacity: .75; cursor: pointer; }
+#keepit-exact-overlay .te-tss-mini button.on { background: #8b5cf6; color: #fff; opacity: 1; }
+#keepit-exact-overlay .te-tss-grp { padding: 12px 4px; border-bottom: 1px solid rgba(148, 163, 184, .12); }
+#keepit-exact-overlay .te-tss-gh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+#keepit-exact-overlay .te-tss-gh b { font-size: 14px; }
+#keepit-exact-overlay .te-tss-gh small { color: #8b8b95; font-size: 11.5px; font-weight: 500; text-align: right; }
+#keepit-exact-overlay .te-tss-sws { display: flex; flex-wrap: wrap; gap: 10px; }
+#keepit-exact-overlay .te-tss-sw2 { position: relative; width: 34px; height: 34px; padding: 0; border: 2px solid rgba(148, 163, 184, .35); border-radius: 50%; background: var(--c); font: inherit; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; }
+#keepit-exact-overlay .te-tss-sw2.on { border-color: transparent; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #8b5cf6; }
+#keepit-exact-overlay.theme-dark .te-tss-sw2.on { box-shadow: 0 0 0 2px #18181b, 0 0 0 4px #8b5cf6; }
+#keepit-exact-overlay .te-tss-step { display: inline-flex; align-items: center; border-radius: 11px; background: rgba(148, 163, 184, .14); }
+#keepit-exact-overlay .te-tss-step button { width: 34px; height: 32px; border: 0; background: none; color: inherit; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer; }
+#keepit-exact-overlay .te-tss-step output { min-width: 46px; font-size: 13px; font-weight: 700; text-align: center; }
+#keepit-exact-overlay .te-tss-adv { margin-top: 4px; }
+#keepit-exact-overlay .te-tss-adv summary { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 4px; color: #6b7280; font-size: 14px; font-weight: 700; list-style: none; cursor: pointer; }
+#keepit-exact-overlay.theme-dark .te-tss-adv summary { color: #a1a1aa; }
+#keepit-exact-overlay .te-tss-adv summary::-webkit-details-marker { display: none; }
+#keepit-exact-overlay .te-tss-adv summary i { font-style: normal; transition: transform .2s; }
+#keepit-exact-overlay .te-tss-adv[open] summary i { transform: rotate(180deg); }
+#keepit-exact-overlay .te-tss-lbl { padding: 4px 4px 6px; color: #6b7280; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+#keepit-exact-overlay.theme-dark .te-tss-lbl { color: #8b8b95; }
+#keepit-exact-overlay .te-tss-radios { display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(148, 163, 184, .18); border-radius: 14px; }
+#keepit-exact-overlay .te-tss-radio { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .12); background: none; color: inherit; font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; }
+#keepit-exact-overlay .te-tss-radio:last-child { border-bottom: 0; }
+#keepit-exact-overlay .te-tss-fl { flex: 0 0 24px; width: 24px; font-size: 17px; text-align: center; }
+#keepit-exact-overlay .te-tss-radio span + span { flex: 1; }
+#keepit-exact-overlay .te-tss-ck { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid rgba(148, 163, 184, .5); border-radius: 50%; box-sizing: border-box; }
+#keepit-exact-overlay .te-tss-radio.on { background: rgba(139, 92, 246, .1); }
+#keepit-exact-overlay .te-tss-radio.on .te-tss-ck { border-color: #8b5cf6; background: #8b5cf6; }
+#keepit-exact-overlay .te-tss-radio.on .te-tss-ck::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+
+/* CC menu and speed popup on phones: anchored above their buttons like the demo (menu 170px, speed ≤340px). */
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-subtitle-mode-menu { right: auto !important; width: 170px !important; }
+#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-speed-popup { right: auto !important; width: min(340px, calc(100% - 24px)) !important; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-subtitle-mode-menu kbd { display: none !important; }
 
 /* Draggable progress bar (all platforms): bigger hit area, knob, tooltip with time and sentence. */
 #keepit-exact-overlay .te-progress-track { cursor: pointer; touch-action: none; }
@@ -2502,7 +2543,7 @@ const OVERLAY_CSS = `
 
 /* Phone landscape theater: video fills the screen, subtitles over it, bar and top auto-hide (3 s). */
 #keepit-exact-overlay .te-tt-surface, #keepit-exact-overlay .te-tt-top, #keepit-exact-overlay .te-tt-ring, #keepit-exact-overlay .te-tt-hint { display: none; }
-#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) { position: fixed !important; inset: 0 !important; display: block !important; width: auto !important; height: auto !important; padding: 0 !important; overflow: hidden !important; background: #000 !important; --te-sub-en-base: 20px; --te-sub-vi-base: 16px; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) { position: fixed !important; inset: 0 !important; display: block !important; width: auto !important; height: auto !important; padding: 0 !important; overflow: hidden !important; background: #000 !important; --te-sub-en-base: 20px; --te-sub-vi-base: 17.7778px; }
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) :is(.te-touch-header, .te-study-brand, .te-reading-mini-audio, #te-theater-subtitle-drag-handle, #te-floating-btn, .te-touch-cbtn),
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) > .yt-dual-right-sidebar { display: none !important; }
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) > .te-left-section { position: absolute !important; inset: 0 !important; display: block !important; width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; margin: 0 !important; padding: 0 !important; transform: none !important; overflow: hidden !important; }
@@ -2526,6 +2567,7 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-theater.te-tt-ctl:not(.te-study-active) :is(.te-control-bar, .te-tt-top) { opacity: 1 !important; visibility: visible !important; }
 #keepit-exact-overlay .te-tt-title { flex: 1; min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 #keepit-exact-overlay#keepit-exact-overlay .te-tt-top .te-touch-hbtn { color: #fff; }
+#keepit-exact-overlay .te-tt-top .te-touch-hbtn svg { width: 20px; height: 20px; }
 #keepit-exact-overlay#keepit-exact-overlay.te-touch-theater:not(.te-study-active) .te-tt-ring { display: flex; position: absolute; top: 50%; left: 50%; z-index: 5; flex-direction: column; align-items: center; gap: 8px; color: #fff; opacity: 0; transform: translate(-50%, -50%); transition: opacity .2s; pointer-events: none; }
 #keepit-exact-overlay .te-tt-ring.show { opacity: 1 !important; }
 #keepit-exact-overlay .te-tt-ring b { padding: 3px 10px; border-radius: 999px; background: rgba(0, 0, 0, .6); font-size: 16px; font-weight: 800; text-shadow: 0 1px 4px rgba(0, 0, 0, .85); }
@@ -2541,6 +2583,45 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay .te-tt-zone.left { left: 24px; width: calc(40% - 24px); }
 #keepit-exact-overlay .te-tt-zone.right { right: 24px; width: calc(40% - 24px); }
 #keepit-exact-overlay .te-tt-hint span { position: absolute; top: 44%; left: 50%; padding: 10px 16px; border-radius: 14px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; transform: translate(-50%, -50%); }
+
+/* v3.5.152: demo v10 parity — values measured from keepit-overlay-more-sheet-demo-v10.html at 390x844. */
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-sub-container { height: calc((100dvh - 64px - env(safe-area-inset-bottom, 0px)) * .22) !important; padding: 10px 48px !important; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-sub-en { font-weight: var(--te-subtitle-en-weight, 600); }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).theme-dark .te-sub-vi { color: #fff; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-reading-mini-audio { border: 1px solid rgba(255, 255, 255, .08) !important; border-radius: 16px !important; background: rgba(24, 24, 32, .92) !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .28) !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).theme-light .te-reading-mini-audio { border-color: #e5e7eb !important; background: #fff !important; box-shadow: 0 6px 18px rgba(15, 23, 42, .08) !important; color: #111827 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-touch-source { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).theme-light.te-touch-compact .te-touch-source { color: #7c3aed; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-title { margin-top: 2px !important; color: inherit !important; font-weight: 700 !important; line-height: 1.25 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-play { width: 46px !important; height: 46px !important; min-width: 46px !important; border: 0 !important; border-radius: 50% !important; background: #8b5cf6 !important; color: #fff !important; box-shadow: none !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-play svg { width: 20px !important; height: 20px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-transcript-list { padding: 6px 12px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item { gap: 12px !important; margin-bottom: 4px !important; padding: 9px 10px !important; border-radius: 12px !important; box-shadow: none !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item:hover { background-color: transparent; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item.active { background-color: rgba(139, 92, 246, .16) !important; box-shadow: inset 3px 0 0 #8b5cf6 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-timestamp { min-width: 34px !important; padding-top: 2px; color: #8b5cf6; font-size: 11px !important; font-weight: 700; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item-en { margin-bottom: 0; font-size: calc(15px * var(--te-side-en-scale, 1)); line-height: 1.38; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item-vi { margin-top: 2px; font-size: calc(13px * var(--te-side-vi-scale, .9)); line-height: 1.4; }
+@media (min-width: 600px) {
+  #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item-en { font-size: calc(17px * var(--te-side-en-scale, 1)); }
+  #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .yt-dual-item-vi { font-size: calc(14.5px * var(--te-side-vi-scale, .9)); }
+}
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar :is(.te-icon-btn, #te-speed-label) { color: #d4d4d8 !important; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active).theme-light .te-control-bar :is(.te-icon-btn, #te-speed-label) { color: #374151 !important; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-control-bar #te-control-play { color: #fff !important; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-control-repeat.te-active { color: #a78bfa !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).theme-light #te-control-repeat.te-active { color: #7c3aed !important; }
+/* Progress: 22px touch target around a 3px line (5px while dragging), like the demo. */
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track { top: -11px !important; height: 22px !important; background: transparent !important; z-index: 2; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 3px; background: rgba(148, 163, 184, .3); transition: top .15s, height .15s; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-fill { position: absolute !important; left: 0; top: 10px !important; height: 3px !important; background: #8b5cf6 !important; transition: none !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track.te-progress-drag { height: 22px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track.te-progress-drag::before, #keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-track.te-progress-drag .te-progress-fill { top: 8.5px !important; height: 5px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-progress-tip { bottom: 26px; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-title[data-touch-title] { font-size: 0 !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active).te-touch-compact .te-reading-mini-title[data-touch-title]::before { content: attr(data-touch-title); font-size: 14px; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-control-bar { padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px)) !important; }
+#keepit-exact-overlay#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) #te-speed-label { min-width: 46px !important; }
 `;
 const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
     <!-- Ambient mode: lớp phát sáng nằm dưới mọi thành phần -->

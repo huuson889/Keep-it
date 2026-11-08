@@ -81,6 +81,7 @@ button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent
 svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; background: var(--bg); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
 .bar.hide, .wrap.yield .bar { transform: translateY(calc(100% + 2px)); }
+.wrap.yield .bar { pointer-events: none; }
 .btn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; color: var(--muted); font-size: 11px; font-weight: 600; line-height: 1.15; padding: 3px 1px; cursor: pointer; }
 .btn .ico { width: 54px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background-color .2s; }
 .btn .lb { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
