@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại (sửa đè)
+- v3.5.156: Máy tính/tablet ngang — bóng chế độ sáng quanh thanh Reader/thanh phím tắt đậm hơn 20%; thanh Reader cách đáy 6px (thanh phím tắt và khoảng trống cuối trang hạ theo). Chưa QA trình duyệt thật.
 - v3.5.155: Người dùng xác nhận thanh Reader v3.5.154 "rất đẹp và chuẩn". Máy tính/tablet ngang: bảng Chọn giọng đọc và Tốc độ căn mép trái thanh Reader (☰ vẫn trên nút); chế độ sáng có bóng đều 4 hướng, tỏa gần quanh thanh Reader và thanh phím tắt. Chưa QA trình duyệt thật.
 - v3.5.154: Thanh Bilingual Reader theo demo v16 (một giao diện cho cảm ứng và máy tính): `[cờ giọng][1.00X][phút] · [⏮ ▶ ⏭] · [Lặp lại][✕][☰]`, luôn hiện; điện thoại/tablet dọc full-width sát đáy, máy tính/tablet ngang đảo 560px cách đáy 16px; thanh tiến độ kéo được; Giọng đọc/Tốc độ/☰ là bottom sheet (hẹp) hoặc popup trên nút (rộng); ☰ có 6 ô (Tự cuộn, Hiện icon đọc, Ngôn ngữ tự động, Đọc song ngữ, Chủ đề, Font tùy chỉnh); máy tính thêm tooltip kèm phím tắt và bảng phím tắt hiện lại mỗi lần bắt đầu đọc. Số phút/giờ chuẩn tiếng Anh cho mọi ngôn ngữ (`45M`, `1.5H`). Chưa QA trình duyệt thật.
 - v3.5.150: Overlay trên điện thoại/tablet cảm ứng (và cửa sổ dọc <600px) theo demo: Video và Web cùng một giao diện ở cả 3 chế độ — header, thẻ gọn (ảnh/video thu nhỏ, nguồn, tiêu đề; chạm để mở rộng), câu hiện tại, transcript, thanh dưới 6 nút + sheet "Thêm"; tốc độ/CC/Cài đặt thành bottom sheet; câu dài không còn đè video/thanh điều khiển; câu active luôn ở đầu danh sách. Ghi chú trên cảm ứng là bottom sheet (nền mờ, kéo xuống đóng), trang không bị thu hẹp. `m.youtube.com`: tải phụ đề qua chính `m.youtube.com` (trước gọi `www` → bị chặn, không có transcript). Desktop ≥600px không đổi. Chưa QA trình duyệt thật.
@@ -214,6 +215,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký dự án (mới nhất → cũ nhất)
+
+**2026-11-08 | v3.5.156 | Arena.ai Agent sửa:**
+
+- Yêu cầu: bóng đậm hơn 20%; thanh Reader cách đáy 6px (máy tính/tablet ngang).
+- `bilingual-reader.js`: bóng `.lhn-br-wide:not(.lhn-dark)` → `0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)`; `.lhn-br-wide .lhn-br-rbar` `bottom:16px` → `6px`; `.lhn-br-kbd` `bottom:92px` → `82px` (giữ khe 12px trên thanh); spacer rộng 116 → 106px, có bảng phím tắt 160 → 150px. Giao diện hẹp không đổi.
+- Test (Chromium, extension thật): 1280×800, 1180×820 — cách đáy 6px, khe bảng phím tắt 12px, bóng mới, popup Giọng đọc/Tốc độ vẫn căn trái thanh, đoạn cuối trang không bị che; 390×844 không đổi — fails 0.
 
 **2026-11-08 | v3.5.155 | Arena.ai Agent sửa:**
 

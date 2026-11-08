@@ -76,8 +76,8 @@
     #lhn-bilingual-reading-bar svg *{fill:inherit;stroke:inherit}
     #lhn-bilingual-reading-bar .lhn-br-rbar{position:absolute;left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:4px;background:rgba(255,255,255,.97);border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);pointer-events:auto;animation:lhnBrSlide .25s ease}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar{background:rgba(17,17,22,.97);border-color:rgba(148,163,184,.2);box-shadow:0 -6px 18px rgba(0,0,0,.3)}
-    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:16px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
-    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-kbd{box-shadow:0 0 2px rgba(15,23,42,.12),0 0 12px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:6px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-kbd{box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)}
     #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-rbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
     #lhn-bilingual-reading-bar .lhn-br-left,#lhn-bilingual-reading-bar .lhn-br-center,#lhn-bilingual-reading-bar .lhn-br-right{display:flex;align-items:center;gap:2px;min-width:0}
     #lhn-bilingual-reading-bar .lhn-br-right{justify-content:flex-end}
@@ -121,7 +121,7 @@
     #lhn-bilingual-reading-bar .lhn-br-ptip{position:absolute;bottom:26px;left:0;transform:translateX(-50%);background:rgba(24,24,27,.96);color:#fff;font-size:12.5px;font-weight:800;line-height:normal;padding:7px 10px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 6px 16px rgba(0,0,0,.35)}
     #lhn-bilingual-reading-bar .lhn-br-ptip small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:#e9d5ff;font-size:11.5px;margin-top:2px}
     #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-ptip{opacity:1}
-    #lhn-bilingual-reading-bar .lhn-br-kbd{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);overflow:hidden;padding:5px 6px 5px 14px;border-radius:12px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.35);box-shadow:0 6px 18px rgba(15,23,42,.1);font-size:12.5px;font-weight:500;color:#475569;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:auto}
+    #lhn-bilingual-reading-bar .lhn-br-kbd{position:absolute;left:50%;bottom:82px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);overflow:hidden;padding:5px 6px 5px 14px;border-radius:12px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.35);box-shadow:0 6px 18px rgba(15,23,42,.1);font-size:12.5px;font-weight:500;color:#475569;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:auto}
     #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-kbd{bottom:76px}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{background:#18181b;border-color:#27272a;color:#d4d4d8}
     #lhn-bilingual-reading-bar .lhn-br-kbd [data-banner-text]{display:contents}
@@ -307,7 +307,7 @@
     if (!bar.classList.contains("lhn-show") || !document.body) { spacer?.remove(); return; }
     if (!spacer) { spacer = document.createElement("div"); spacer.id = "lhn-br-spacer"; spacer.setAttribute("aria-hidden", "true"); spacer.setAttribute("data-lhn-bilingual-ui", "true"); }
     if (spacer.parentNode !== document.body) document.body.appendChild(spacer);
-    spacer.style.setProperty("height", `${isDeskBar() && shortcutBannerVisible ? 160 : isWideBar() ? 116 : 100}px`, "important");
+    spacer.style.setProperty("height", `${isDeskBar() && shortcutBannerVisible ? 150 : isWideBar() ? 106 : 100}px`, "important");
   }
   function showBarToast(text) {
     const toast = $br("[data-toast]"); toast.textContent = text; toast.classList.add("lhn-on");

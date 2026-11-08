@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-11-08 | Thanh Reader: căn trái popup, bóng chế độ sáng
 
-**Trạng thái:** Đã triển khai ở v3.5.155.
+**Trạng thái:** Đã triển khai ở v3.5.155; v3.5.156 bóng đậm hơn 20% và thanh cách đáy 6px.
 
 - Người dùng duyệt thanh Reader v3.5.154 ("rất rất đẹp và chuẩn").
 - Máy tính/tablet ngang: popup Chọn giọng đọc và Tốc độ căn mép trái thanh Reader; ☰ vẫn bật trên nút.
