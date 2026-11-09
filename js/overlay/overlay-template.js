@@ -2125,7 +2125,7 @@ const OVERLAY_CSS = `
   z-index: 5;
 }
 #keepit-exact-overlay.te-study-active .te-study-primary-group .te-site-icon-box,
-#keepit-exact-overlay.te-study-active .te-study-primary-group #te-control-add-vocabulary,
+#keepit-exact-overlay.te-study-active .te-study-primary-group #te-control-fav,
 #keepit-exact-overlay.te-study-active .te-study-primary-group #te-notes-sidebar-toggle { display: none !important; }
 #keepit-exact-overlay .te-study-toolbar-tools { display: none; align-items: center; gap: 8px; }
 #keepit-exact-overlay.te-study-active .te-study-toolbar-tools { display: flex; }
@@ -2567,6 +2567,8 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay #te-speed-popup { z-index: 1000006; }
 #keepit-exact-overlay #te-subtitle-mode-menu { z-index: 1000006; }
 #keepit-exact-overlay #te-speed-popup:not(.hidden) + .te-psheet-scrim, #keepit-exact-overlay #te-subtitle-mode-menu:not([hidden]) + .te-psheet-scrim { display: block; }
+/* v3.5.169: desktop subtitle-mode popover stays inside the overlay (JS sets --te-sub-menu-dx / max-height on open). */
+#keepit-exact-overlay:not(.te-touch-layout):not(.te-touch-theater) #te-subtitle-mode-menu { transform: translateX(calc(-50% + var(--te-sub-menu-dx, 0px))); overflow-y: auto; overscroll-behavior: contain; }
 @keyframes te-psheet-up { from { translate: 0 100%; } to { translate: 0 0; } }
 #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(#te-speed-popup, #te-subtitle-mode-menu) { position: fixed !important; inset: auto 0 0 0 !important; left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important; width: min(560px, 100%) !important; max-width: none !important; max-height: 88% !important; overflow-y: auto !important; overscroll-behavior: contain; margin: 0 auto !important; transform: none !important; border-width: 0 !important; border-radius: 22px 22px 0 0 !important; padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px)) !important; box-shadow: 0 -10px 30px rgba(0,0,0,.18) !important; z-index: 1000006 !important; animation: te-psheet-up .26s cubic-bezier(.2,.8,.2,1) both; }
 #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-psheet-grip { display: block; }
@@ -2745,13 +2747,13 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
             </svg>
             <span class="te-source-title-label"><span class="te-source-title-text">The Power Of Practice | You Become What You Practice |...</span></span>
           </div>
-          <button class="te-icon-btn" id="te-control-add-vocabulary" title="Thêm vào từ vựng"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
-          <button class="te-icon-btn" id="te-notes-sidebar-toggle" title="Mở thanh bên ghi chú" aria-label="Mở thanh bên ghi chú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>
+          <button class="te-icon-btn te-touch-fav" id="te-control-fav" type="button" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg></button>
+          <button class="te-icon-btn" id="te-notes-sidebar-toggle" title="Mở thanh bên ghi chú" aria-label="Mở thanh bên ghi chú"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9.5 8h5M9.5 12H16M9.5 16H14"/></svg></button>
         </div>
 
         <div class="te-ctrl-group te-control-transport-left">
           <button class="te-icon-btn" id="te-control-audio" title="Audio"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2 preview-icon" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg></button>
-          <button class="te-icon-btn" id="te-control-repeat" title="Lặp lại câu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></button>
+          <button class="te-icon-btn" id="te-control-repeat" title="Lặp lại câu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></svg></button>
           <button class="te-icon-btn" id="te-control-previous" title="Câu trước"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
         </div>
 

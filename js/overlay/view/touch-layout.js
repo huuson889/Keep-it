@@ -1021,6 +1021,9 @@ function buildTouchOverlayChrome(root) {
     if (typeof ResizeObserver === 'function') new ResizeObserver(scheduleTouchSubtitleFit).observe(subBox);
   }
 
+  // Desktop/tablet bar ♥ (replaces the old add-to-vocabulary button): same favourites as the touch ♥.
+  root.querySelector('#te-control-fav')?.addEventListener('click', onTouchFavoriteClick);
+
   // Bar: repeat shows lucide repeat-1 on touch; ♥ (theater only) and ☰ More are new.
   const repeat = root.querySelector('#te-control-repeat');
   if (repeat && !repeat.querySelector('.te-touch-ico')) {

@@ -204,6 +204,25 @@ function setSubtitleModeMenuOpen(open) {
   if (!menu || !trigger) return;
   menu.hidden = !open;
   trigger.setAttribute('aria-expanded', String(open));
+  if (open) placeSubtitleModeMenu();
+}
+
+// Desktop popover: shift it sideways / cap its height so it stays inside the overlay (touch layouts use the bottom sheet).
+function placeSubtitleModeMenu() {
+  const root = overlayEl();
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  if (!root || !menu || !trigger || menu.hidden) return;
+  menu.style.removeProperty('--te-sub-menu-dx');
+  menu.style.removeProperty('max-height');
+  if (root.classList.contains('te-touch-layout') || root.classList.contains('te-touch-theater')) return;
+  const rr = root.getBoundingClientRect(), br = trigger.getBoundingClientRect();
+  menu.style.maxHeight = `${Math.max(120, Math.floor(br.top - rr.top - 18))}px`;
+  const mr = menu.getBoundingClientRect();
+  let dx = 0;
+  if (mr.right > rr.right - 8) dx = rr.right - 8 - mr.right;
+  if (mr.left + dx < rr.left + 8) dx = rr.left + 8 - mr.left;
+  if (dx) menu.style.setProperty('--te-sub-menu-dx', `${Math.round(dx)}px`);
 }
 
 async function refreshSubtitleLanguageSettings() {

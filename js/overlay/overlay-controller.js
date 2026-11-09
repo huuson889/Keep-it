@@ -431,6 +431,7 @@ function buildOverlay() {
   window.addEventListener('resize', () => {
     syncTheaterFrame();
     if (state.open) alignActiveTranscriptFocus('auto');
+    placeSubtitleModeMenu();
   });
   bindUI();
   setupTouchOverlayLayout();
