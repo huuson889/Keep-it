@@ -13,6 +13,7 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 | [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | `normalize`, `createIndex`, `search`, `debounce`. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin với cache `storage.local` và TTL. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/source thumbnail URL, fallback SVG, image loading. |
+| [`js/shared/sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach(el,o)` / `sync()` / `locked()` / `detach(el)` | (v3.5.161) Hành vi chung của mọi sheet/popover Keepit: khóa cuộn trang, kéo/vuốt đóng, bước half→full. Nạp `document_start` cùng `touch-ui.js`, dùng chung isolated world cho overlay, Reader, content.js. |
 
 ## 3. Luồng chính
 
@@ -30,6 +31,8 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 - `thumbnails.js` chỉ nhận URL an toàn; ID YouTube phải khớp mẫu hợp lệ. Riêng `load` nhận thêm URL nội bộ của chính extension (ảnh đóng gói như `assets/images/web-thumbnail-lofi.webp`, cần có trong `web_accessible_resources`); `safeUrl` dùng lọc dữ liệu đã lưu thì không nhận.
 - `site-icons.js` chỉ thử favicon trên chính origin của trang; không dùng dịch vụ favicon bên thứ ba.
 - Thứ tự nạp: `site-icons.js`/`thumbnails.js` phải có trước consumer trong manifest và trang HTML.
+
+- `sheet-kit.js` (v3.5.161): `attach(el, {isOpen(), close(), watch?, drag?:false, scroller?(), onDrag?(on), grow?:{isFull(), cap(), setH(px|null), release(expand), collapse(), half?()}})` — gọi lại `attach` cùng phần tử chỉ cập nhật tùy chọn. MutationObserver trên `watch` (class/hidden/style/open) gọi `sync()`; chỉ khi có sheet mở mới gắn listener cửa sổ (touch capture, wheel non-passive bỏ qua `ctrlKey`, phím cuộn ngoài ô nhập) + poll 600ms. Quyết định **một lần mỗi cử chỉ** khi đi ≥6px: ngang → native nếu trên range/ô nhập/vùng cuộn ngang còn chỗ; xuống → native nếu có vùng cuộn trong chuỗi đang `scrollTop>0`, không thì kéo sheet; lên → lớn lên (nếu chưa full) rồi cuộn nội dung liền một cử chỉ, hết chỗ thì giãn nhẹ; ngoài sheet → chặn (trang đứng yên). Thả: sheet hai bước đang full về bước gần nhất (vị trí thả + quán tính 140ms: full / half `collapse()` / đóng); sheet thường đóng khi kéo > `min(110px,30%)` hoặc vuốt nhanh (>0.6px/ms và >24px), còn lại bật về. `translate`/`transition` inline đặt `!important` (thắng animation `fill:both` của sheet content.js). Click ngay sau khi kéo bị bỏ 90ms. Không dùng `overflow:hidden` trên html (giật layout desktop).
 
 ## 5. Kiểm tra và xác minh
 

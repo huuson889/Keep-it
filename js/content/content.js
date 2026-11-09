@@ -150,13 +150,22 @@
   }
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
-    const anchorNode = anchor?.startContainer || anchor;
+    // a Range made with selectNode() starts at the parent — the selected node itself is childNodes[startOffset]
+    const anchorNode = anchor?.startContainer?.childNodes?.[anchor.startOffset]?.id === "lhn-bar-dict-anchor" ? anchor.startContainer.childNodes[anchor.startOffset] : anchor?.startContainer || anchor;
     const barSheet = anchorNode?.id === "lhn-bar-dict-anchor" && matchMedia("(pointer: coarse)").matches;
     if (!barSheet && (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host")) return false;
     if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
     popup.classList.add("lhn-touch-sheet"); popup.classList.toggle("lhn-bar-sheet", barSheet);
     popup.style.removeProperty("left"); popup.style.removeProperty("top");
+    // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js) — drag down from anywhere (scrolled
+    // content back to its top first), the page behind does not scroll while it is open
+    globalThis.LHN_SHEET?.attach(popup, { isOpen:() => popup.isConnected && popup.classList.contains("lhn-touch-sheet"), close:() => closeTouchSheetPopup(popup), watch:popup });
     return true;
+  }
+  function closeTouchSheetPopup(popup) {
+    if (popup === translationPopup) removeTranslationUI();
+    else if (popup === dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
+    else popup.remove();
   }
   function positionPopupAtAnchor(popup, anchor) {
     const anchorNode = anchor?.startContainer || anchor;

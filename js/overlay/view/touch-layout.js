@@ -602,20 +602,10 @@ function buildTouchSheet(root) {
     event.stopPropagation();
     runTouchSheetAction(button.dataset.touchAct);
   }));
-  let dragStart = null;
+  // v3.5.161: shared sheet behaviour (js/shared/sheet-kit.js) — drag down from anywhere, list back to top first, nothing
+  // behind the sheet scrolls
   const panel = sheet.querySelector('.te-touch-panel');
-  panel.addEventListener('touchstart', (event) => { dragStart = panel.scrollTop > 0 ? null : event.touches[0].clientY; }, { passive: true });
-  panel.addEventListener('touchmove', (event) => {
-    if (dragStart === null) return;
-    const dy = Math.max(0, event.touches[0].clientY - dragStart);
-    panel.style.setProperty('--te-touch-drag', `${dy}px`);
-  }, { passive: true });
-  panel.addEventListener('touchend', (event) => {
-    const dy = dragStart === null ? 0 : event.changedTouches[0].clientY - dragStart;
-    dragStart = null;
-    panel.style.removeProperty('--te-touch-drag');
-    if (dy > 70) closeTouchOverlaySheet();
-  });
+  globalThis.LHN_SHEET?.attach(panel, { isOpen: () => sheet.classList.contains('open'), close: closeTouchOverlaySheet, watch: sheet });
   root.append(sheet);
 }
 
@@ -938,23 +928,9 @@ function buildTouchSettingsSheet(root) {
     runTouchSettingsAction(event.target);
   });
   sheet.querySelector('.te-tss-x').setAttribute('aria-label', touchOverlayText('close'));
-  // Drag the grip / header down to close, like the More sheet.
+  // v3.5.161: shared sheet behaviour (js/shared/sheet-kit.js), like every Keepit sheet — drag down from anywhere.
   const panel = sheet.querySelector('.te-touch-panel');
-  let dragStart = null;
-  panel.addEventListener('touchstart', (event) => {
-    const top = panel.getBoundingClientRect().top;
-    dragStart = panel.scrollTop > 0 || event.touches[0].clientY - top > 56 ? null : event.touches[0].clientY;
-  }, { passive: true });
-  panel.addEventListener('touchmove', (event) => {
-    if (dragStart === null) return;
-    panel.style.setProperty('--te-touch-drag', `${Math.max(0, event.touches[0].clientY - dragStart)}px`);
-  }, { passive: true });
-  panel.addEventListener('touchend', (event) => {
-    const dy = dragStart === null ? 0 : event.changedTouches[0].clientY - dragStart;
-    dragStart = null;
-    panel.style.removeProperty('--te-touch-drag');
-    if (dy > 70) closeTouchSettingsSheet();
-  });
+  globalThis.LHN_SHEET?.attach(panel, { isOpen: () => sheet.classList.contains('open'), close: closeTouchSettingsSheet, watch: sheet });
   root.append(sheet);
   // Back from Export returns to this sheet on touch instead of the desktop settings popup.
   root.querySelector('#back-export')?.addEventListener('click', (event) => {

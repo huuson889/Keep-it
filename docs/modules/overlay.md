@@ -52,6 +52,8 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 - Yêu thích video: ♥ và double-tap (video/phụ đề/transcript, 280ms/60px, chuỗi 650ms) ghi `lhnFavoriteVideos` [{`videoId`, title, channel, `addedAt`}] theo video ID chuẩn; với web source (v3.5.152) ghi [{`url` (http/https, bỏ #, ≤2048), title, channel = tên miền, `addedAt`}]; Dashboard lọc Yêu thích hiện cả video chưa có highlight; có trong sao lưu/khôi phục.
 - Thanh tiến trình kéo được ở mọi nền tảng (`setupProgressDrag`): tooltip thời gian + câu, seek khi nhả.
 
+- v3.5.161: popup tốc độ (`#te-speed-popup`) và menu chế độ phụ đề (`#te-subtitle-mode-menu`) giống sheet tốc độ của Reader. Máy tính: popover 340px bo 20, đầu = tiêu đề 17/700 · giá trị (tím, tối `#c4b5fd`) · ✕ 38px; giữ phím 1–4. Cảm ứng (`te-touch-layout`/`te-touch-theater`): bottom sheet `min(560px,100%)` bo 22 22 0 0, thanh kéo, trượt lên, lớp mờ `.te-psheet-scrim` (anh em ngay sau popup; desktop trong suốt nhưng vẫn bắt click). ✕/lớp mờ có `data-psheet-close="speed|sub"`; tiêu đề menu phụ đề lấy `t('videoSubtitleMode')` trong `updateSubtitleDisplayModeLabels`. Cả hai cùng sheet More/Cài đặt cảm ứng (`touch-layout.js`) gắn `LHN_SHEET` (kéo đóng, khóa cuộn). `#te-video-mode-menu` giữ nguyên.
+
 ## 5. Kiểm tra và xác minh
 
 - v3.5.54: `node --check` JS Overlay sửa, `git diff --check` và focused checks cho popup anchor/size, Theater + Large 26/20px ở 100% và giới hạn frame 98% đạt; browser QA chưa chạy.

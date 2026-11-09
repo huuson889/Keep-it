@@ -138,7 +138,7 @@
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-panel{background:#18181b;color:#f4f4f5;box-shadow:0 -10px 30px rgba(0,0,0,.4)}
     #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open{pointer-events:auto}
     #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open .lhn-br-scrim{opacity:1}
-    #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open .lhn-br-panel{transform:translate(-50%,var(--lhn-br-drag,0px))}
+    #lhn-bilingual-reading-bar .lhn-br-sheet.lhn-open .lhn-br-panel{transform:translate(-50%,0)}
     #lhn-bilingual-reading-bar .lhn-br-panel.lhn-dragging{transition:none}
     #lhn-bilingual-reading-bar .lhn-br-grip{flex:none;width:40px;height:4px;border-radius:2px;background:rgba(148,163,184,.55);margin:2px auto 12px;touch-action:none}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel{width:380px;max-height:min(560px,78%);border-radius:20px;padding:12px 14px 14px;border:1px solid rgba(148,163,184,.28);box-shadow:0 18px 40px rgba(15,23,42,.18);transform:translateY(10px);opacity:0;transition:transform .2s,opacity .2s}
@@ -267,7 +267,7 @@
   const brProg = $br("[data-prog]"), brProgFill = $br("[data-prog-fill]"), brProgTip = $br("[data-prog-tip]");
   const BR_WIDE_QUERY = window.matchMedia?.("(min-width: 1024px)"), BR_DESK_QUERY = window.matchMedia?.("(hover: hover) and (pointer: fine)");
   const isWideBar = () => !!BR_WIDE_QUERY?.matches, isDeskBar = () => !!BR_DESK_QUERY?.matches;
-  let openSheetName = "", repeatSegment = false, shortcutBannerVisible = true, scrubbing = false, scrubFraction = 0, scrubWasPlaying = false, brToastTimer = 0, flagFontReady = false, flagFontRequested = false, sheetDrag = null;
+  let openSheetName = "", repeatSegment = false, shortcutBannerVisible = true, scrubbing = false, scrubFraction = 0, scrubWasPlaying = false, brToastTimer = 0, flagFontReady = false, flagFontRequested = false;
   const flagCanvasCache = new Map();
   // Focus ô tìm kiếm của Select voice trên mọi trình duyệt Chromium (Chrome, Edge, ...) và Firefox: thử lại vài lần vì có trình duyệt chưa nhận focus ngay sau khi sheet hiện
   function focusVoiceSearch() {
@@ -304,7 +304,7 @@
     $br("[data-sheet-title]").textContent = name === "voices" ? popupText("readerPopupSelectVoice") : name === "speed" ? popupText("readerPopupSpeed") : "";
     if (name === "voices") { voiceSearch.value = ""; renderVoiceChoices(); }
     if (name === "speed") renderSpeed(currentSegmentRate());
-    brPanel.removeAttribute("style"); brPanel.style.setProperty("--lhn-br-drag", "0px");
+    brPanel.removeAttribute("style");
     brSheet.classList.add("lhn-open"); $br("[data-sbody]").scrollTop = 0;
     if (isWideBar()) anchorPanel();
     brRbar.querySelectorAll("[data-sheet]").forEach(button => button.classList.toggle("lhn-on", button.dataset.sheet === name));
@@ -441,15 +441,14 @@
     else if (button.hasAttribute("data-close")) closeReadingBar();
     else if (button.hasAttribute("data-repeat")) { repeatSegment = !repeatSegment; syncToolbar(); showBarToast(popupText(repeatSegment ? "readerRepeatOn" : "readerRepeatOff")); }
     // v3.5.160 touch: Reader ☰ opens the Keepit main sheet (its Trình đọc row holds these tiles; theme / Font tùy chỉnh are there too)
-    else if (button.dataset.sheet === "more" && !isDeskBar() && globalThis.LHN_BAR_HOOKS?.openMainSheet) { closeSheet(); globalThis.LHN_BAR_HOOKS.openMainSheet(button.getBoundingClientRect()); }
+    else if (button.dataset.sheet === "more" && globalThis.LHN_BAR_HOOKS?.openMainSheet) { closeSheet(); globalThis.LHN_BAR_HOOKS.openMainSheet(button.getBoundingClientRect()); }   // v3.5.161 every device
     else if (button.dataset.sheet) toggleSheet(button.dataset.sheet);
   });
   $br("[data-scrim]").addEventListener("click", closeSheet);
   $br("[data-close-pop]").addEventListener("click", closeSheet);
-  brPanel.addEventListener("pointerdown", event => { if (isWideBar() || !event.target.closest(".lhn-br-grip,.lhn-br-shead") || event.target.closest("button")) return; sheetDrag = { y:event.clientY }; brPanel.classList.add("lhn-dragging"); });
-  window.addEventListener("pointermove", event => { if (sheetDrag) brPanel.style.setProperty("--lhn-br-drag", `${Math.max(0, event.clientY - sheetDrag.y)}px`); }, { passive:true });
-  const endSheetDrag = event => { if (!sheetDrag) return; const distance = event.clientY - sheetDrag.y; sheetDrag = null; brPanel.classList.remove("lhn-dragging"); if (distance > 90) closeSheet(); else brPanel.style.setProperty("--lhn-br-drag", "0px"); };
-  window.addEventListener("pointerup", endSheetDrag); window.addEventListener("pointercancel", endSheetDrag);
+  // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js): page locked while open, drag down from
+  // anywhere closes (the voice list scrolls back to its top first), wheel / scroll keys never reach the page
+  globalThis.LHN_SHEET?.attach(brPanel, { isOpen:() => brSheet.classList.contains("lhn-open"), close:() => closeSheet(), watch:brSheet });
   $br(".lhn-br-quick").addEventListener("click", event => {
     const tile = event.target.closest("[data-tile]"); if (!tile) return;
     const key = tile.dataset.tile;

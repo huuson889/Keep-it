@@ -796,11 +796,10 @@ html.lhn-video-overlay-open body > *:not(#keepit-host){ visibility:hidden !impor
 #lhn-sidebar .lhn-sidebar-tab:focus-visible{ outline:2px solid var(--lhn-sb-brand) !important; outline-offset:2px !important; }
 
 /* Touch devices (phones, touch tablets): the page sidebar is a bottom sheet over the page instead of a right column.
-   page-layout.js skips the page shrink here; js/content/touch-ui.js adds the dimmed backdrop and drag-down to close. */
+   page-layout.js skips the page shrink here; js/content/touch-ui.js adds the dimmed backdrop; drag-down to close = js/shared/sheet-kit.js (v3.5.161). */
 @media (pointer: coarse) and (hover: none) {
   html #lhn-sidebar{ top:auto !important; right:0 !important; bottom:0 !important; left:0 !important; width:100% !important; min-width:0 !important; max-width:760px !important; height:min(74vh, 720px) !important; max-height:calc(100dvh - 40px) !important; margin:0 auto !important; padding-top:16px !important; border:0 !important; border-radius:20px 20px 0 0 !important; box-shadow:0 -14px 40px rgba(0,0,0,.28) !important; opacity:1 !important; transform:translateY(105%) !important; transition:transform .28s cubic-bezier(.2,.8,.2,1) !important; }
-  html #lhn-sidebar.lhn-side-visible{ transform:translateY(var(--lhn-sheet-drag, 0px)) !important; }
-  html #lhn-sidebar.lhn-sheet-dragging{ transition:none !important; }
+  html #lhn-sidebar.lhn-side-visible{ transform:none !important; }
   /* v3.5.159: a scroll that reaches the end of a list inside the sheet stops there instead of scrolling the page behind */
   html #lhn-sidebar, html #lhn-sidebar *{ overscroll-behavior:contain !important; }
   html #lhn-sidebar.lhn-closing{ opacity:1 !important; transform:translateY(105%) !important; }

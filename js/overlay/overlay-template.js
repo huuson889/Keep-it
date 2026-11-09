@@ -2528,6 +2528,39 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay.te-touch-layout:not(.te-study-active) .te-speed-popup { right: auto !important; width: min(340px, calc(100% - 24px)) !important; }
 #keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-subtitle-mode-menu kbd { display: none !important; }
 
+/* v3.5.161: the speed popup and the subtitle-mode menu look and behave like the Reader's speed sheet —
+   desktop: popover (title · value · ✕); touch: bottom sheet with grip and dimmed scrim (js/shared/sheet-kit.js gestures). */
+#keepit-exact-overlay #te-speed-popup, #keepit-exact-overlay #te-subtitle-mode-menu { width: 340px; max-width: calc(100vw - 24px); padding: 12px 14px 14px; border-radius: 20px; border: 1px solid rgba(148,163,184,.28); background: #fff; color: #111827; box-shadow: 0 18px 40px rgba(15,23,42,.18); text-align: left; box-sizing: border-box; }
+#keepit-exact-overlay.theme-dark #te-speed-popup, #keepit-exact-overlay.theme-dark #te-subtitle-mode-menu { background: #18181b; color: #f4f4f5; border-color: rgba(148,163,184,.2); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+#keepit-exact-overlay #te-subtitle-mode-menu { display: block; }
+#keepit-exact-overlay #te-subtitle-mode-menu[hidden] { display: none !important; }
+#keepit-exact-overlay .te-psheet-grip { display: none; width: 40px; height: 4px; border-radius: 2px; background: rgba(148,163,184,.55); margin: 2px auto 12px; }
+#keepit-exact-overlay .te-psheet-head { display: flex; align-items: center; gap: 6px; padding: 2px 2px 8px; margin: 0; }
+#keepit-exact-overlay .te-psheet-head .te-psheet-title { flex: 1; min-width: 0; font-size: 17px; font-weight: 700; color: inherit; }
+#keepit-exact-overlay #te-speed-popup #te-speed-value { flex: none; font-size: 17px; font-weight: 800; letter-spacing: 0; color: var(--lhn-br-accent, #9c27b0); margin-right: 4px; }
+#keepit-exact-overlay.theme-dark #te-speed-popup #te-speed-value { color: #c4b5fd; }
+#keepit-exact-overlay .te-psheet-x { width: 38px; height: 38px; flex: none; padding: 0; border: 0; border-radius: 10px; background: none; color: #64748b; display: grid; place-items: center; cursor: pointer; }
+#keepit-exact-overlay.theme-dark .te-psheet-x { color: #a1a1aa; }
+#keepit-exact-overlay .te-psheet-x:hover, #keepit-exact-overlay .te-psheet-x:active { background: rgba(148,163,184,.18); }
+#keepit-exact-overlay #te-speed-popup .te-speed-row { margin: 8px 2px 20px; }
+#keepit-exact-overlay #te-speed-popup .te-speed-grid { padding: 0 2px 4px; }
+#keepit-exact-overlay.theme-light #te-speed-popup .te-speed-title { color: inherit; }
+#keepit-exact-overlay #te-subtitle-mode-menu .te-subtitle-mode-option { min-height: 48px; padding: 7px 10px; gap: 12px; border-radius: 12px; font-size: 15px; }
+#keepit-exact-overlay #te-subtitle-mode-menu .te-subtitle-mode-option:hover { background: rgba(148,163,184,.14); }
+#keepit-exact-overlay #te-subtitle-mode-menu .te-subtitle-mode-option.is-selected { background: #f1f3f5; font-weight: 600; }
+#keepit-exact-overlay.theme-dark #te-subtitle-mode-menu .te-subtitle-mode-option.is-selected { background: #27272a; }
+#keepit-exact-overlay #te-subtitle-mode-menu .te-subtitle-mode-option.is-selected .te-subtitle-mode-check { color: var(--lhn-br-accent, #9c27b0); }
+#keepit-exact-overlay.theme-dark #te-subtitle-mode-menu .te-subtitle-mode-option.is-selected .te-subtitle-mode-check { color: #c4b5fd; }
+#keepit-exact-overlay.theme-dark #te-subtitle-mode-menu .te-subtitle-mode-option kbd { border-color: #525252; background: rgba(255,255,255,.06); color: #d4d4d4; }
+#keepit-exact-overlay .te-psheet-scrim { display: none; position: fixed; inset: 0; z-index: 1000005; background: transparent; }
+#keepit-exact-overlay #te-speed-popup { z-index: 1000006; }
+#keepit-exact-overlay #te-subtitle-mode-menu { z-index: 1000006; }
+#keepit-exact-overlay #te-speed-popup:not(.hidden) + .te-psheet-scrim, #keepit-exact-overlay #te-subtitle-mode-menu:not([hidden]) + .te-psheet-scrim { display: block; }
+@keyframes te-psheet-up { from { translate: 0 100%; } to { translate: 0 0; } }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) :is(#te-speed-popup, #te-subtitle-mode-menu) { position: fixed !important; inset: auto 0 0 0 !important; left: 0 !important; right: 0 !important; top: auto !important; bottom: 0 !important; width: min(560px, 100%) !important; max-width: none !important; max-height: 88% !important; overflow-y: auto !important; overscroll-behavior: contain; margin: 0 auto !important; transform: none !important; border-width: 0 !important; border-radius: 22px 22px 0 0 !important; padding: 8px 14px calc(18px + env(safe-area-inset-bottom, 0px)) !important; box-shadow: 0 -10px 30px rgba(0,0,0,.18) !important; z-index: 1000006 !important; animation: te-psheet-up .26s cubic-bezier(.2,.8,.2,1) both; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-psheet-grip { display: block; }
+#keepit-exact-overlay:is(.te-touch-layout, .te-touch-theater):not(.te-study-active) .te-psheet-scrim { background: rgba(0,0,0,.45); }
+
 /* Draggable progress bar (all platforms): bigger hit area, knob, tooltip with time and sentence. */
 #keepit-exact-overlay .te-progress-track { cursor: pointer; touch-action: none; }
 #keepit-exact-overlay .te-progress-track::before { content: ""; position: absolute; inset: -8px 0; }
@@ -2726,6 +2759,8 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-closed-caption preview-icon" aria-hidden="true"><path d="M10 9.17a3 3 0 1 0 0 5.66"/><path d="M17 9.17a3 3 0 1 0 0 5.66"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
             </button>
             <div class="te-subtitle-mode-menu" id="te-subtitle-mode-menu" role="menu" hidden>
+              <div class="te-psheet-grip" aria-hidden="true"></div>
+              <div class="te-psheet-head"><span class="te-psheet-title" id="te-subtitle-mode-title">Chế độ phụ đề</span><button class="te-psheet-x" type="button" data-psheet-close="sub" aria-label="Đóng"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
               <button class="te-subtitle-mode-option is-selected" type="button" role="menuitemradio" aria-checked="true" data-subtitle-mode="bilingual">
                 <svg class="te-subtitle-mode-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
                 <span class="te-subtitle-mode-label">Song ngữ</span><kbd>1</kbd>
@@ -2743,6 +2778,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
                 <span class="te-subtitle-mode-label">Ẩn</span><kbd>4</kbd>
               </button>
             </div>
+            <div class="te-psheet-scrim" data-psheet-close="sub" aria-hidden="true"></div>
           </div>
           <div class="te-video-mode-selector">
             <button class="te-icon-btn" id="te-video-mode-trigger" type="button" data-video-mode="combined" title="Chế độ xem" aria-label="Chế độ xem" aria-haspopup="menu" aria-expanded="false">
@@ -2907,9 +2943,11 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
 
     <!-- Popup tốc độ (từ speed_control_component) -->
     <div id="te-speed-popup" class="te-speed-popup hidden">
-      <div class="te-speed-head">
-        <span class="te-speed-title">Tốc độ</span>
+      <div class="te-psheet-grip" aria-hidden="true"></div>
+      <div class="te-speed-head te-psheet-head">
+        <span class="te-speed-title te-psheet-title">Tốc độ</span>
         <span id="te-speed-value">1.00x</span>
+        <button class="te-psheet-x" type="button" data-psheet-close="speed" aria-label="Đóng"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="te-speed-row">
         <button id="te-speed-dec" class="te-speed-step" type="button">-</button>
@@ -2927,6 +2965,7 @@ const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light">
         <button class="te-speed-btn" type="button" data-speed="2.0">2.0x</button>
       </div>
     </div>
+    <div class="te-psheet-scrim" data-psheet-close="speed" aria-hidden="true"></div>
 
     <!-- Modal 2: Tùy chọn phụ đề -->
     <div class="te-modal-backdrop hidden" id="te-modal-sub">

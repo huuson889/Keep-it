@@ -746,7 +746,7 @@ button,input{font-family:inherit}
     screen.classList.toggle("extyield", S.extYield);
     screen.classList.toggle("notesopen", S.notesOn && isTouch()); syncScrollLock();
     screen.classList.toggle("picking", picking);
-    screen.style.setProperty("--yb", (S.yieldBar ? S.yieldH : 0) + "px");
+    screen.style.setProperty("--yb", "0px");   // v3.5.161: folded = the one line at the bottom edge (never lifted above a page bar)
     screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px");
     screen.style.setProperty("--bh", bar.offsetHeight + "px");
     updBtop();
@@ -761,7 +761,7 @@ button,input{font-family:inherit}
     b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
     b.classList.toggle("flat", S.scrollHide && !S.hidden && !S.yieldBar && !S.peek);
   }
-  // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to the line just above the page's bar
+  // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
   const isOwnUi = el => el === host || !!el.closest?.('#lhn-touch-ui,[data-lhn-bilingual-ui],[id^="lhn-"],#keepit-host,[class*="lhn-"]');
   function checkOverlap() {
@@ -995,10 +995,10 @@ button,input{font-family:inherit}
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
-  // v3.5.160 touch: Trình đọc row = the Reader's own ☰ switches (bilingual-reader.js LHN_READER_BAR.tileOn / toggleTile)
+  // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
   const RDT = [["autoscroll", "rdscroll", "rdAutoscroll"], ["parabtn", "read", "rdIcon"], ["autolang", "rdauto", "rdLang"], ["readtranslation", "rdbook", "rdBi"]];
   function readerRowHTML() {
-    const rb = globalThis.LHN_READER_BAR; if (isDesk() || !rb?.tileOn) return "";
+    const rb = globalThis.LHN_READER_BAR; if (!rb?.tileOn) return "";
     return `<div class="divider"></div><div class="sec" data-sec="rd">${esc(t("rdSec"))}</div><div class="quick">${RDT.map(([k, i, l]) => tile("rd:" + k, i, t(l), rb.tileOn(k))).join("")}</div>`;
   }
   // v5: the highlight-color frame lines up with the first/last tile of the grid above
@@ -1101,63 +1101,6 @@ button,input{font-family:inherit}
     if (a === "dashboard") void send("OPEN_DASHBOARD");
     else if (a === "settings") void send("OPEN_DASHBOARD_SETTINGS");
     else if (a === "restore") { if (globalThis.LHN_BAR_ACTIONS?.restoreHighlights?.()) toast(t("restored")); }
-  }
-
-  // ---------- touch: every popup — drag up = expand, drag down = shrink / close, from anywhere in it (v7) ----------
-  function dragify(el, o) {
-    let d = null, eat = false;
-    const canY = n => n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY);
-    const scs = t0 => { const a = []; for (let n = t0; n; n = n.parentElement) { if (canY(n)) a.push(n); if (n === el) break; } return a; };
-    const begin = (t0, x, y) => { d = null; if (isDesk() || t0.closest("input,textarea,select,[contenteditable]")) return; d = { t:t0, x, y, on:false, dead:false, dy:0, h:el.getBoundingClientRect().height, hd:!!t0.closest(".grip,.shead") }; };
-    const decide = (dx, dy) => {
-      if (Math.abs(dx) > Math.abs(dy)) return -1;
-      if (d.hd) return 1;
-      const a = scs(d.t);
-      if (dy > 0) return a.some(n => n.scrollTop > 0) ? -1 : 1;
-      if (a.slice(0, -1).some(n => n.scrollTop + n.clientHeight < n.scrollHeight - 1)) return -1;
-      return o.expand && !o.isFull?.() ? 1 : -1;
-    };
-    const move = (x, y) => {
-      if (!d || d.dead) return false; const dx = x - d.x, dy = y - d.y;
-      if (!d.on) { if (Math.hypot(dx, dy) < (d.hd ? 6 : 8)) return false; if (decide(dx, dy) < 0) { d.dead = true; return false; } d.on = true; el.classList.add("dragging"); }
-      d.dy = dy;
-      // v3.5.159: a sheet with a taller step grows from its top edge while pulled up (its bottom stays on the screen edge, no gap)
-      if (o.expand && dy < 0) {
-        el.classList.add("growing"); el.style.translate = "";
-        const cap = isWide() ? innerHeight - (parseFloat(el.style.bottom) || 0) - 12 : innerHeight * 0.96;
-        el.style.maxHeight = Math.min(cap, d.h - dy) + "px"; return true;
-      }
-      if (el.classList.contains("growing")) { el.classList.remove("growing"); el.style.maxHeight = ""; }
-      el.style.translate = `0 ${dy > 0 ? dy : Math.max(dy, -120) * 0.12}px`; return true;
-    };
-    const end = up => {
-      const s = d; d = null; if (!s || !s.on) return;
-      eat = true; setTimeout(() => { eat = false; }, 80);
-      el.classList.remove("dragging");
-      if (el.classList.contains("growing")) {
-        el.classList.remove("growing"); el.style.transition = "max-height .2s ease";
-        el.style.maxHeight = ""; if (up && s.dy < -40) o.expand();
-        setTimeout(() => { el.style.transition = ""; }, 220); return;
-      }
-      const snap = () => { el.style.transition = "translate .2s ease"; el.style.translate = ""; setTimeout(() => { el.style.transition = ""; }, 220); };
-      if (up && o.isFull?.() && s.dy > 40 && s.dy < s.h * 0.5) { o.collapse(); snap(); return; }
-      if (up && s.dy > Math.min(110, s.h * 0.3)) {
-        el.style.transition = "translate .18s ease-in"; el.style.translate = `0 ${s.h + 40}px`;
-        setTimeout(() => { el.style.transition = "none"; o.close(); requestAnimationFrame(() => requestAnimationFrame(() => { el.style.translate = ""; el.style.transition = ""; })); }, 180);
-        return;
-      }
-      if (up && s.dy < -40 && o.expand) o.expand();
-      snap();
-    };
-    el.addEventListener("touchstart", e => { if (e.touches.length !== 1) { d = null; return; } const p = e.touches[0]; begin(e.target, p.clientX, p.clientY); }, { passive:true });
-    el.addEventListener("touchmove", e => {
-      if (!d) return; const p = e.touches[0], was = d.on;
-      if (!move(p.clientX, p.clientY)) return;
-      if (e.cancelable) e.preventDefault();
-      else if (!was) { d.dead = true; d.on = false; el.classList.remove("dragging"); el.style.translate = ""; }
-    }, { passive:false });
-    el.addEventListener("touchend", () => end(true)); el.addEventListener("touchcancel", () => end(false));
-    el.addEventListener("click", e => { if (eat) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
 
   // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · tap 3 times = whole page
@@ -1399,7 +1342,6 @@ button,input{font-family:inherit}
       const r = e.target.closest(".ri"); if (!r) return; S.active = +r.dataset.i; runActive();
     });
     res.addEventListener("mousemove", e => { const r = e.target.closest(".ri"); if (r && isDesk() && +r.dataset.i !== S.active) { S.active = +r.dataset.i; $$(".ri", res).forEach(x => x.classList.toggle("act", x === r)); } });
-    dragify($("sbox"), { isFull:() => root.activeElement !== sq, expand:() => { sq.blur(); layoutSearch(); }, collapse:() => { sq.focus(); layoutSearch(); }, close:() => closeSearch() });
     window.visualViewport?.addEventListener("resize", () => { if ($("srch").classList.contains("open")) layoutSearch(); });
   }
 
@@ -1411,9 +1353,7 @@ button,input{font-family:inherit}
     $("scrim").addEventListener("click", closeSheet);
     $("panel").addEventListener("scroll", updFade, true);
     $("panel").addEventListener("click", e => { void onPanelClick(e); });
-    dragify($("panel"), { isFull:() => $("panel").classList.contains("full"), expand:() => { setTimeout(updFade, 320); const panel = $("panel"); panel.classList.add("full"); if (isWide()) panel.style.maxHeight = (innerHeight - parseFloat(panel.style.bottom || 0) - 12) + "px"; }, collapse:() => { const panel = $("panel"); panel.classList.remove("full"); panel.style.maxHeight = ""; setTimeout(updFade, 320); }, close:() => closeSheet() });
-    dragify($("pop"), { close:() => closePop() });
-    for (const id of ["sheet", "srch"]) new MutationObserver(syncScrollLock).observe($(id), { attributes:true, attributeFilter:["class"] });
+    attachSheets();
     $("coach").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; coachDone(); if (b.dataset.c === "all") { openSheet(); S.sheetPane = "keys"; renderSheet(); anchorPanel(); } });
     $("intro").addEventListener("click", e => { if (e.target.closest("[data-i]")) introDone(); });
     $("iscrim").addEventListener("click", introDone);
@@ -1475,13 +1415,17 @@ button,input{font-family:inherit}
   }
   let offlineToastAt = 0;
   globalThis.LHN_BAR_HOOKS = Object.freeze({
-    // v3.5.160 touch: the Reader's ☰ opens this main sheet (above the Reader bar), scrolled to its Trình đọc row
+    // the Reader's ☰ opens this main sheet above the Reader bar (v3.5.160 touch; v3.5.161 every device) with its
+    // Trình đọc row in the vertical middle of the sheet
     openMainSheet(fromRect) {
-      if (!mounted || !isTouch()) return;
+      if (!mounted) return;
       S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
       host.style.zIndex = "2147483647"; openSheet();
       const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
-      if (b && sec) { b.scrollTop += sec.getBoundingClientRect().top - b.getBoundingClientRect().top - 4; updFade(); }
+      if (b && sec) {
+        const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += (top + bottom) / 2 - (br.top + br.height / 2); updFade(); };
+        center(); requestAnimationFrame(center);
+      }
     },
     translateOffline() {
       if (!mounted || Date.now() - offlineToastAt < 4000) return; offlineToastAt = Date.now();
@@ -1490,76 +1434,28 @@ button,input{font-family:inherit}
     }
   });
 
-  // ---------- v3.5.159: while a sheet is open on touch (☰, search, Notes) the page behind must not scroll ----------
-  // A finger move is let through only when an element under it inside the sheet can still scroll that way; anything else
-  // (scrim, sheet header, list already at its end) is cancelled, so Chrome/Edge neither scroll the page nor slide their toolbars.
-  let lockOn = false, lockPt = null;
-  const lockStart = e => { const p = e.touches[0]; lockPt = p ? { x:p.clientX, y:p.clientY } : null; };
-  function canScrollToward(n, vert, d) {
-    const cs = getComputedStyle(n);
-    if (vert) {
-      if (!/auto|scroll/.test(cs.overflowY) || n.scrollHeight <= n.clientHeight + 1) return false;
-      return d < 0 ? n.scrollTop + n.clientHeight < n.scrollHeight - 1 : n.scrollTop > 0;
-    }
-    if (!/auto|scroll/.test(cs.overflowX) || n.scrollWidth <= n.clientWidth + 1) return false;
-    return d < 0 ? n.scrollLeft + n.clientWidth < n.scrollWidth - 1 : n.scrollLeft > 0;
-  }
-  function lockMove(e) {
-    if (sheetDragMove(e)) return;
-    if (!lockPt || e.touches.length !== 1 || !e.cancelable) return;
-    const p = e.touches[0], dx = p.clientX - lockPt.x, dy = p.clientY - lockPt.y;
-    lockPt = { x:p.clientX, y:p.clientY };
-    if (!dx && !dy) return;
-    const vert = Math.abs(dy) >= Math.abs(dx);
-    for (const n of e.composedPath()) {
-      if (!(n instanceof Element) || n === host || n === document.body || n === document.documentElement) break;
-      if (n.matches("input,textarea,select,[contenteditable]:not([contenteditable=false])")) return;
-      if (canScrollToward(n, vert, vert ? dy : dx)) return;
-    }
-    e.preventDefault();
-  }
-  function syncScrollLock() {
-    const on = !!(mounted && isTouch() && ($("sheet")?.classList.contains("open") || $("srch")?.classList.contains("open") || $("screen")?.classList.contains("notesopen")));
-    if (on === lockOn) return; lockOn = on; lockPt = null;
-    const f = on ? addEventListener : removeEventListener;
-    f("touchstart", lockStart, { capture:true, passive:true });
-    f("touchmove", lockMove, { capture:true, passive:false });
+  // ---------- v3.5.161: every sheet behaves the same (js/shared/sheet-kit.js LHN_SHEET) — page locked while one is open
+  // (touch, wheel, scroll keys), drag down from anywhere closes, a scrolled list scrolls back first, the ☰ sheet grows while
+  // pulled up and keeps scrolling in the same gesture; Notes (touch bottom sheet) is attached in watchSidebar.
+  const SK = () => globalThis.LHN_SHEET;
+  function syncScrollLock() { SK()?.sync(); }
+  function attachSheets() {
+    const panel = $("panel");
+    const capH = () => isWide() ? innerHeight - (parseFloat(panel.style.bottom) || 0) - 12 : innerHeight * 0.96;
+    const expand = () => { setTimeout(updFade, 320); panel.classList.add("full"); if (isWide()) panel.style.maxHeight = capH() + "px"; };
+    SK()?.attach(panel, { isOpen:() => $("sheet").classList.contains("open"), close:() => closeSheet(), watch:$("sheet"), scroller:() => panel.querySelector(".sbody"),
+      grow:{ isFull:() => panel.classList.contains("full"), cap:capH,
+        setH:px => { if (px === null) { panel.classList.remove("growing"); panel.style.maxHeight = panel.classList.contains("full") && isWide() ? capH() + "px" : ""; } else { panel.classList.add("growing"); panel.style.maxHeight = px + "px"; } },
+        release:grow => { const keep = panel.scrollHeight; panel.classList.remove("growing"); panel.style.transition = "max-height .2s ease"; panel.style.maxHeight = ""; if (grow) expand(); setTimeout(() => { panel.style.transition = ""; updFade(); }, 220); return keep; },
+        collapse:() => { panel.classList.remove("full"); panel.style.maxHeight = ""; setTimeout(updFade, 320); } } });
+    SK()?.attach($("pop"), { isOpen:() => $("pop").classList.contains("open"), close:() => closePop(), watch:$("pop") });
+    // search: its taller step = keyboard down (more results); pulled down from there = keyboard back; further = closed
+    const sq = $("sq");
+    SK()?.attach($("sbox"), { isOpen:() => $("srch").classList.contains("open"), close:() => closeSearch(), watch:$("srch"), scroller:() => $("res"),
+      grow:{ isFull:() => !isTouch() || root.activeElement !== sq, cap:() => $("sbox").getBoundingClientRect().height, setH:() => {},
+        release:grow => { if (grow) { sq.blur(); layoutSearch(); } }, collapse:() => { sq.focus(); layoutSearch(); } } });
   }
 
-  // ---------- notes sidebar as a bottom sheet on touch (css/content/content.css) ----------
-  // v3.5.160: like the other sheets — drag down from anywhere on it; inside a list that is scrolled down, the list scrolls
-  // back to its top first and only then the sheet follows the finger. Released past min(110px, 30%) → closes.
-  let sheetDrag = null, sheetEat = false;
-  function onSheetTouchStart(event) {
-    const side = event.target.closest?.("#lhn-sidebar.lhn-side-visible");
-    if (!side || event.touches.length !== 1 || !isTouch() || editable(event.target)) { sheetDrag = null; return; }
-    const p = event.touches[0];
-    sheetDrag = { side, t:event.target, x:p.clientX, y:p.clientY, dy:0, on:false, dead:false };
-  }
-  // called from lockMove (non-passive, active while Notes is open); true = this move belongs to the sheet drag
-  function sheetDragMove(event) {
-    const d = sheetDrag; if (!d || d.dead || event.touches.length !== 1) return false;
-    const p = event.touches[0], dx = p.clientX - d.x, dy = p.clientY - d.y;
-    if (!d.on) {
-      if (Math.hypot(dx, dy) < 8) return false;
-      if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) { d.dead = true; return false; }
-      for (let n = d.t; n && n !== d.side.parentElement; n = n.parentElement) {
-        if (n.scrollTop > 0 && n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY)) { d.dead = true; return false; }
-      }
-      d.on = true; d.side.classList.add("lhn-sheet-dragging");
-    }
-    d.dy = Math.max(0, dy); d.side.style.setProperty("--lhn-sheet-drag", d.dy + "px");
-    if (event.cancelable) event.preventDefault();
-    return true;
-  }
-  function onSheetTouchEnd(event) {
-    const d = sheetDrag; sheetDrag = null; if (!d?.on) return;
-    sheetEat = true; setTimeout(() => { sheetEat = false; }, 80);
-    const { side, dy } = d, h = side.getBoundingClientRect().height;
-    side.classList.remove("lhn-sheet-dragging");
-    if (event.type === "touchend" && dy > Math.min(110, h * 0.3)) { run("notes"); setTimeout(() => side.style.removeProperty("--lhn-sheet-drag"), 320); }
-    else side.style.removeProperty("--lhn-sheet-drag");
-  }
   let sidebarWatch = null;
   function watchSidebar() {
     const side = document.getElementById("lhn-sidebar");
@@ -1568,6 +1464,7 @@ button,input{font-family:inherit}
     const observer = new MutationObserver(syncState);
     observer.observe(side, { attributes:true, attributeFilter:["class"] });
     sidebarWatch = { target:side, observer };
+    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible"), close:() => run("notes"), watch:side });
   }
 
   let ticker = 0, bodyWatch = null, lastLayout = "";
@@ -1586,12 +1483,8 @@ button,input{font-family:inherit}
     mounted = true; lastLayout = ""; relayout(true); syncState();
     const passive = { capture:true, passive:true };
     document.addEventListener("scroll", onScroll, passive);
-    document.addEventListener("touchstart", onSheetTouchStart, passive);
-    document.addEventListener("click", e => { if (sheetEat) { e.stopPropagation(); e.preventDefault(); } }, true);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshTabs(); });
     refreshTabs();
-    document.addEventListener("touchend", onSheetTouchEnd, true);
-    document.addEventListener("touchcancel", onSheetTouchEnd, true);
     window.addEventListener("touchstart", onPageTouchStart, { passive:true });
     window.addEventListener("touchmove", onPageTouchMove, { passive:true });
     window.addEventListener("touchend", onPageTouchEnd, { passive:true });
@@ -1602,13 +1495,19 @@ button,input{font-family:inherit}
     bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
     ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); syncState(); checkOverlap(); }, 700);
     requestAnimationFrame(checkOverlap);
+    // mounted before the page's styles/content finished loading: re-read page colours, video layout and page bars then
+    const settle = () => { if (!mounted) return; syncState(); relayout(false); checkOverlap(); };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", settle, { once:true });
+    if (document.readyState !== "complete") addEventListener("load", settle, { once:true });
     if (!S.introSeen) setTimeout(showIntro, 500); else scheduleCoach();
   }
   async function init() {
     installTouchSelectionBridge();
-    try { settings = await globalThis.LHN_SETTINGS.get(); } catch { settings = {}; }
+    // v3.5.161: both reads at once (document_start: the bar should be ready by the page's first frame)
+    const [loaded, stored] = await Promise.all([globalThis.LHN_SETTINGS.get().catch(() => ({})), browser.storage.local.get([STORE_KEY, INTRO_KEY]).catch(() => null)]);
+    settings = loaded || {};
     try {
-      const data = await browser.storage.local.get([STORE_KEY, INTRO_KEY]), b = data[STORE_KEY] || {};
+      const data = stored || {}, b = data[STORE_KEY] || {};
       S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true;
       S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
       S.navOff = b.navOff && typeof b.navOff === "object" ? { ...b.navOff } : {};
@@ -1627,7 +1526,14 @@ button,input{font-family:inherit}
     addEventListener("online", onNetwork); addEventListener("offline", onNetwork);
     addEventListener("popstate", () => relayout(false)); setInterval(() => { if (mounted && layoutKey() !== lastLayout) relayout(false); }, 1000);
     document.fonts?.ready?.then(() => { if (mounted) fitLabels(); });
-    if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount, { once:true });
+    // v3.5.161: loaded at document_start → draw the bar as soon as <body> exists, so it is in the new page's first frame
+    // (Chromium keeps the previous page on screen until then, so the bar does not blink or reload between pages)
+    if (document.body) mount();
+    else {
+      const early = new MutationObserver(() => { if (document.body) { early.disconnect(); mount(); } });
+      early.observe(document.documentElement, { childList:true });
+      document.addEventListener("DOMContentLoaded", () => { early.disconnect(); mount(); }, { once:true });
+    }
   }
 
   // ---------- touch selection → the mouseup the content scripts listen for ----------

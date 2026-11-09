@@ -132,6 +132,9 @@ function updateSubtitleDisplayModeLabels() {
     const label = option.querySelector('.te-subtitle-mode-label');
     if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
   });
+  const title = menu.querySelector('.te-psheet-title');
+  if (title) title.textContent = t('videoSubtitleMode');
+  menu.querySelector('.te-psheet-x')?.setAttribute('aria-label', t('close'));
   setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
 }
 

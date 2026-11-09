@@ -1626,6 +1626,16 @@ function bindUI() {
     if (e.target.closest('#te-speed-popup') || ctrl('Tốc độ')?.contains(e.target)) return;
     ui('#te-speed-popup')?.classList.add('hidden');
   });
+  // v3.5.161: ✕ / scrim of the speed and subtitle-mode sheets (Reader-style); shared sheet gestures + page lock
+  uiAll('[data-psheet-close]').forEach((el) => el.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (el.dataset.psheetClose === 'speed') ui('#te-speed-popup')?.classList.add('hidden');
+    else setSubtitleModeMenuOpen(false);
+  }));
+  const speedPopup = ui('#te-speed-popup'), subMenu = $('te-subtitle-mode-menu');
+  if (speedPopup) globalThis.LHN_SHEET?.attach(speedPopup, { isOpen: () => !speedPopup.classList.contains('hidden'), close: () => speedPopup.classList.add('hidden'), watch: speedPopup });
+  if (subMenu) globalThis.LHN_SHEET?.attach(subMenu, { isOpen: () => !subMenu.hidden, close: () => setSubtitleModeMenuOpen(false), watch: subMenu });
   ctrl('Audio').addEventListener('click', toggleMute);
   const videoModeSelector = $('te-video-mode-trigger')?.parentElement;
   const videoModeTrigger = $('te-video-mode-trigger');
