@@ -49,3 +49,4 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 
 - Đã chạy: `node --check` cho các file content trong đợt chuyển Ask AI (logic content không đổi).
 - Đề xuất: tạo/sửa/xóa highlight, restore sau reload, sidebar trang, Hỏi AI và toast trên Chromium/Firefox.
+- v3.5.164: lớp z — công cụ chọn chữ và popup nổi của `content.js` (`#lhn-translate-icon`, `#lhn-direct-translation`, `#lhn-note-pop`, `#lhn-panel`, `#lhn-highlight-actions`, `#lhn-full-english-dictionary`, `#lhn-selection-overlay`) dùng `FLOAT_Z` 2147482900, dưới host `#lhn-touch-ui` (2147483000) nên thanh/sheet/tìm kiếm Keepit luôn che chúng; `placeTouchOverlaySheet` đặt lại 2147483647 cho bottom sheet. `touch-ui.js`: Ghi chú mở = `#lhn-sidebar.lhn-side-visible:not(.lhn-closing)`; tắt trang hiện `#offdot` (logo kéo được, vị trí `lhnBottomBar.offPos = {side:"l"|"r", y:0..1}`) thay pill; cử chỉ dịch cả trang = chạm 3 ngón; máy tính Alt+Space (capture) mở/đóng tìm kiếm.

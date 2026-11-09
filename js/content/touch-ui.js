@@ -38,8 +38,6 @@
     shown:["Bar shown","Đã hiện thanh","바를 표시했습니다"],
     yieldDesk:["Keepit bar folded so it doesn't cover the page's bar · hover the line to open","Thanh Keepit thu gọn để không che thanh của trang · rê chuột vào vạch để mở","페이지의 바를 가리지 않도록 Keepit 바를 접었습니다 · 선에 마우스를 올리면 열립니다"],
     yieldTouch:["Keepit bar folded so it doesn't cover the page's bar · tap the line to open","Thanh Keepit thu gọn để không che thanh của trang · chạm vạch để mở","페이지의 바를 가리지 않도록 Keepit 바를 접었습니다 · 선을 누르면 열립니다"],
-    offPill:["Keepit is off on this page","Keepit đang tắt ở trang này","이 페이지에서 Keepit이 꺼져 있음"], turnOn:["Turn on","Bật lại","켜기"],
-    siteOn:["Keepit turned on for this page","Đã bật Keepit trên trang này","이 페이지에서 Keepit을 켰습니다"], siteOff:["Keepit turned off for this page","Đã tắt Keepit trên trang này","이 페이지에서 Keepit을 껐습니다"],
     aiFailed:["Could not open the AI panel on this browser","Không mở được AI panel trên trình duyệt này","이 브라우저에서 AI 패널을 열 수 없습니다"],
     showBar:["Show Keepit bar","Hiện thanh Keepit","Keepit 바 표시"], toTop:["Back to top","Lên đầu trang","맨 위로"],
     qTrPage:["Translate whole page","Dịch cả trang","전체 페이지 번역"], qUntrPage:["Remove page translation","Bỏ dịch cả trang","전체 페이지 번역 해제"],
@@ -74,7 +72,7 @@
     lookSite:["Appearance & this page","Giao diện & trang này","화면 및 이 페이지"], theme:["Theme","Chủ đề","테마"],
     font:["Custom font","Font tùy chỉnh","사용자 글꼴"], fontOn:["Custom font on","Đã bật Font tùy chỉnh","사용자 글꼴 켬"], fontOff:["Custom font off","Đã tắt Font tùy chỉnh","사용자 글꼴 끔"],
     suggest:["Search suggestions","Gợi ý tìm kiếm","검색 제안"], suggestTip:["Google suggestions while typing (APK only)","Gợi ý từ Google khi gõ (chỉ APK)","입력 시 Google 제안 (APK 전용)"],
-    siteTile:["Site on","Bật trang","사이트 켜기"], siteTip:["Turn Keepit on for this page","Bật Keepit trên trang này","이 페이지에서 Keepit 켜기"],
+    siteTile:["Site off","Tắt trang","사이트 끄기"], siteTip:["Turn Keepit off for this page","Tắt Keepit trên trang này","이 페이지에서 Keepit 끄기"], offDot:["Keepit is off on this page · tap to turn it back on","Keepit đang tắt ở trang này · chạm để bật lại","이 페이지에서 Keepit이 꺼져 있음 · 탭하여 다시 켜기"],
     navsite:["Swipe pages","Vuốt trang","페이지 스와이프"], navsiteTip:["Swipe sideways to go back / forward on {0}","Vuốt ngang để lùi / tới trên {0}","{0}에서 옆으로 밀어 뒤로 / 앞으로"],
     navOffToast:["Back / forward swipe off on ","Đã tắt vuốt lùi / tới trên ","뒤로 / 앞으로 스와이프 끔: "], navOnToast:["Back / forward swipe on on ","Đã bật vuốt lùi / tới trên ","뒤로 / 앞으로 스와이프 켬: "],
     btopTile:["Top button","Nút lên đầu","맨 위 버튼"], btopTip:["Show a back-to-top button when you scroll far","Hiện nút lên đầu trang khi cuộn xa","멀리 스크롤하면 맨 위로 버튼 표시"],
@@ -94,7 +92,7 @@
     kRate:["Slower / faster by 0.05","Giảm / tăng tốc độ 0,05","0.05씩 느리게 / 빠르게"], kReplay:["Replay sentence","Nghe lại câu","문장 다시 듣기"],
     gBar:["Keepit bar","Thanh Keepit","Keepit 바"], kPickRes:["Choose a search result","Chọn kết quả tìm kiếm","검색 결과 선택"], kOpenRes:["Open result","Mở kết quả","결과 열기"], kClose:["Close popup","Đóng popup","팝업 닫기"],
     gTranslate:["Translate","Dịch","번역"], kPara:["Translate / untranslate a paragraph","Dịch / bỏ dịch đoạn văn","문단 번역 / 해제"], vSwipeLeftPara:["Swipe left on the paragraph","Vuốt sang trái trên đoạn","문단에서 왼쪽으로 밀기"],
-    kAll:["Translate / untranslate the article","Dịch / bỏ dịch cả bài","글 전체 번역 / 해제"], vTriple:["Tap 3 times","Nhấn 3 lần","세 번 탭"], vNoPc:["Not on desktop-layout pages","Không dùng trên trang PC","PC 레이아웃 페이지에서는 사용 안 함"],
+    kAll:["Translate / untranslate the article","Dịch / bỏ dịch cả bài","글 전체 번역 / 해제"], vTriple:["Tap with 3 fingers","Chạm 3 ngón tay","세 손가락으로 탭"], vNoPc:["Not on desktop-layout pages","Không dùng trên trang PC","PC 레이아웃 페이지에서는 사용 안 함"],
     gNav:["Back / forward","Lùi / tới trang","뒤로 / 앞으로"], kPrevPage:["Previous page","Trang trước","이전 페이지"], vSwipeRight:["Swipe right on the page","Vuốt sang phải trên trang","페이지에서 오른쪽으로 밀기"],
     kNextPage:["Next page","Trang sau","다음 페이지"], vSwipeLeftOut:["Swipe left outside paragraphs","Vuốt sang trái ngoài đoạn văn","문단 밖에서 왼쪽으로 밀기"], vSwipeLeft:["Swipe left on the page","Vuốt sang trái trên trang","페이지에서 왼쪽으로 밀기"],
     kNavOffHere:["Off on this page","Đang tắt trên trang này","이 페이지에서 꺼짐"], vNavOffHere:["☰ → Swipe pages","☰ → Vuốt trang","☰ → 페이지 스와이프"],
@@ -220,7 +218,7 @@
   const S = {
     hidden:false, peek:false, scrollHide:false, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
-    kbd:false, vfs:false, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false
+    kbd:false, vfs:false, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
@@ -280,7 +278,7 @@
   function persist() {
     clearTimeout(storeTimer);
     storeTimer = setTimeout(() => {
-      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent } }).catch(() => {});
+      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent, offPos:S.offPos } }).catch(() => {});
     }, 120);
   }
   function haptic() { if (isApk()) navigator.vibrate?.(12); }
@@ -314,8 +312,8 @@ button,input{font-family:inherit}
 .wide .bbar{left:50%;right:auto;bottom:6px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(148,163,184,.35);border-radius:20px}
 .wide:not(.dark) .bbar{box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)}
 .wide.dark .bbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.wide .bin{max-width:none;gap:4px;padding:0}
-.wide .nb{flex:none;width:74px;font-size:12px}
+.wide .bin{max-width:none;gap:2px;padding:0}
+.wide .nb{flex:none;width:58px;font-size:12px}
 .wide .sbtn{width:54px;height:54px;margin:0 8px}
 .bbar.hide{transform:translateY(calc(100% + 2px));pointer-events:none}
 .wide .bbar.hide{transform:translate(-50%,calc(100% + 14px))}
@@ -335,10 +333,14 @@ button,input{font-family:inherit}
 .pageDark .hzone i{background:rgba(255,255,255,.82)}
 .hidden .hzone{display:block}
 .hidden.peeking .hzone i{opacity:0}
-.pill{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;display:none;align-items:center;gap:10px;padding:6px 6px 6px 14px;border-radius:22px;background:rgba(255,255,255,.97);border:1px solid rgba(148,163,184,.35);box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192);font-size:13px;color:#334155;white-space:nowrap}
-.dark .pill{background:#18181b;border-color:#27272a;color:#d4d4d8}
-.pill button{border:0;border-radius:16px;background:#9c27b0;color:#fff;font-size:12.5px;font-weight:700;padding:7px 12px;cursor:pointer}
-.siteoff .pill{display:flex}
+/* v3.5.164: site off → one small Keepit logo on a side edge (every device), drag it anywhere along either side, tap = turn back on */
+.offdot{position:fixed;left:0;top:calc(50% - 22px);z-index:6;display:none;place-items:center;width:44px;height:44px;margin:0;padding:0 2px 0 0;border:0;border-radius:0 14px 14px 0;background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;box-shadow:0 2px 10px rgba(76,29,149,.32);opacity:.9;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:left .22s,top .22s,border-radius .22s,opacity .15s,transform .12s}
+.offdot.r{padding:0 0 0 2px;border-radius:14px 0 0 14px}
+.offdot svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
+.offdot.drag{transition:none;border-radius:14px;opacity:1;transform:scale(1.06)}
+.desk .offdot:hover{opacity:1}
+.offdot:focus-visible{outline:3px solid rgba(156,39,176,.45);outline-offset:2px}
+.siteoff .offdot{display:grid}
 .siteoff .bbar,.siteoff .hzone{display:none}
 .pop{position:absolute;z-index:8;min-width:200px;padding:6px;border-radius:16px;background:#fff;border:1px solid rgba(148,163,184,.3);box-shadow:0 16px 40px -12px rgba(15,23,42,.35);opacity:0;visibility:hidden;transform:translateY(8px) scale(.98);transform-origin:bottom left;transition:opacity .18s,transform .18s,visibility .18s}
 .pop{color:#1e293b}
@@ -602,6 +604,7 @@ button,input{font-family:inherit}
 .wide .btop{right:24px;bottom:calc(18px + var(--sab))}
 .wide .btop.low{bottom:calc(18px + var(--yb) + var(--sab))}
 .dark .btop{background:#27272a;color:#f4f4f5;border-color:#3f3f46}
+.desk.dark .btop:hover{background:#3f3f46}
 .toast{width:max-content;text-align:center}
 .toast.act{display:flex;align-items:center;text-align:left}
 .toast.act.on{pointer-events:auto}
@@ -640,16 +643,16 @@ button,input{font-family:inherit}
 .dark .intro .ch1 small{color:#a1a1aa}
 .dark .intro li svg{stroke:#c4b5fd}
 .screen,.screen.apk:not(.desk){--sab:env(safe-area-inset-bottom,0px)}
-.bbar,.hzone,.pill,.pop.open,.clear.on{pointer-events:auto}
+.bbar,.hzone,.offdot,.pop.open,.clear.on{pointer-events:auto}
 .bbar.hide{pointer-events:none}
 .bbar.peek{pointer-events:auto}
 .nscrim{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.4);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
 .screen.notesopen .nscrim{opacity:1;visibility:visible;pointer-events:auto}
 .screen.extyield .bbar{opacity:0;visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),opacity .22s,visibility 0s .26s}
-.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .pill,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
+.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .offdot,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
 /* v3.5.159: boxes pinned to the bottom are fixed to the viewport bottom themselves, so Chrome/Edge Android move them together with the
    browser's own toolbars while those slide (a box inside the top-anchored .screen only followed after the scroll ended → gap). */
-.bbar,.hzone,.pill,.toast,.coach,.btop,.pop,.panel{position:fixed}
+.bbar,.hzone,.offdot,.toast,.coach,.btop,.pop,.panel{position:fixed}
 .sheet .scrim,.srch .scrim2,.iscrim,.nscrim{top:-120px;bottom:-120px}
 .sheet:not(.open) .panel{visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s}
 .wide .sheet:not(.open) .panel{transition:transform .2s,opacity .2s,visibility 0s .2s}
@@ -671,8 +674,6 @@ button,input{font-family:inherit}
 .screen.pland .toast{bottom:calc(72px + var(--sab))}
 .screen.pland .coach{bottom:calc(68px + var(--sab))}
 .screen.hidden .toast,.screen.siteoff .toast{bottom:calc(52px + var(--yb) + var(--sab))}
-/* v3.5.160: desktop / tablet landscape show no "Keepit is off on this page" pill */
-.screen.wide.siteoff .pill{display:none}
 /* v3.5.160: touch search circle 20% smaller (icon size kept); the row keeps the bar height, the tablet island keeps its width */
 .screen:not(.desk) .sbtn{width:50px;height:50px}
 .screen:not(.desk) .bin{min-height:62px}
@@ -697,7 +698,7 @@ button,input{font-family:inherit}
   <button class="btop" id="btop" type="button">${ic("up")}</button>
   <div class="iscrim" id="iscrim"></div>
   <div class="coach intro" id="intro" role="dialog"></div>
-  <div class="pill" id="pill"><span id="pillT"></span><button type="button" id="pillOn"></button></div>
+  <button class="offdot" id="offdot" type="button">${ic("logo")}</button>
   <div class="toast" id="toast" role="status"></div>
   <div class="sheet" id="sheet"><div class="scrim" id="scrim"></div><div class="panel" id="panel"></div></div>
   <div class="srch" id="srch"><div class="scrim2" id="scrim2"></div><div class="sbox" id="sbox">
@@ -719,7 +720,7 @@ button,input{font-family:inherit}
   const tipFor = id => ({
     page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
-    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:t("search")
+    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (Alt+Space)`
   }[id]);
   const barPrio = () => isVideoPage() ? ["overlay", "dictation", "page"] : ["page", "reader", "overlay"];
   const spareTool = () => isVideoPage() ? "reader" : "dictation";
@@ -737,7 +738,7 @@ button,input{font-family:inherit}
     const b = id => `<button class="nb${(id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc((isSmall() && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
-    $("pillT").textContent = t("offPill"); $("pillOn").textContent = t("turnOn");
+    $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
     $("intro").setAttribute("aria-label", t("introAria")); $("coach").setAttribute("aria-label", t("coachTitle"));
     syncBarVis(); fitLabels();
   }
@@ -772,7 +773,7 @@ button,input{font-family:inherit}
   const clientHOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? innerHeight : el.clientHeight;
   function updBtop() {
     const b = $("btop"); if (!b) return;
-    b.classList.toggle("on", S.btop && scrollTopOf(scroller) > clientHOf(scroller) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
+    b.classList.toggle("on", S.btop && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
     b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
     b.classList.toggle("flat", S.scrollHide && !S.hidden && !S.yieldBar && !S.peek);
   }
@@ -951,7 +952,7 @@ button,input{font-family:inherit}
     $("hzone").addEventListener("click", () => { if ((S.hidden || S.yieldBar) && isTouch()) setPeek(true); });
     bar.addEventListener("mouseenter", () => { if (isDesk() && S.peek) clearTimeout(peekT); });
     bar.addEventListener("mouseleave", () => { if (isDesk() && S.peek) wireBar.peekLater(); });
-    $("pillOn").addEventListener("click", () => { run("site-toggle"); setTimeout(() => { syncState(); if (!siteDisabled()) toast(t("siteOn")); }, 250); });
+    wireOffDot();
     $("btop").addEventListener("click", () => {
       const el = scroller && scroller !== document.body && scroller !== document.documentElement && scroller !== document.scrollingElement && scroller.isConnected ? scroller : null;
       (el || window).scrollTo({ top:0, behavior:smooth() }); haptic();
@@ -1010,7 +1011,7 @@ button,input{font-family:inherit}
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), !S.siteOff, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1112,7 +1113,7 @@ button,input{font-family:inherit}
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
-    if (a === "site") { closeSheet(); run("site-toggle"); setTimeout(() => { syncState(); if (siteDisabled()) toast(t("siteOff")); }, 250); return; }
+    if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
     if (a === "hide") { closeSheet(); setHidden(true); return; }
     if (a === "show") { closeSheet(); setHidden(false); return; }
     closeSheet();
@@ -1121,7 +1122,7 @@ button,input{font-family:inherit}
     else if (a === "restore") { if (globalThis.LHN_BAR_ACTIONS?.restoreHighlights?.()) toast(t("restored")); }
   }
 
-  // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · tap 3 times = whole page
+  // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · 3-finger tap = whole page
   // swipe right anywhere = previous page · swipe left outside paragraphs = next page. Ignored: 24px edges (Android Back),
   // video/canvas/iframe/inputs/sliders, elements that declare their own touch-action (carousels), horizontal scrollers,
   // an active text selection, a long-press before moving, pinch-zoomed pages, and gestures the page already handled.
@@ -1142,11 +1143,14 @@ button,input{font-family:inherit}
   function togglePara(p, x, y) {
     const translated = hasCard(p) || !!p.querySelector?.(".lhn-bilingual-card");
     if (!translated && offlineBlock(() => togglePara(p, x, y))) return;
-    translateAt(x, y);
+    // v3.5.164: the paragraph is still shifted by the swipe — aim inside its current box (was: the start point, often past
+    // its right edge after a natural right-to-left swipe, so the Reader picked the next paragraph instead)
+    const r0 = p.getBoundingClientRect();
+    translateAt(clamp(x, r0.left + 4, r0.right - 4), clamp(y, Math.max(r0.top + 2, 0), Math.min(r0.bottom - 2, innerHeight - 1)));
     if (translated) toast(t("paraOff"), { fn:() => { if (!p.isConnected) return; const r = p.getBoundingClientRect(); translateAt(clamp(x, r.left + 2, r.right - 2), clamp(r.top + 4, 0, innerHeight - 1)); toast(t("paraAgain")); } });
     else toast(t("paraOn"));
   }
-  let pg = null, taps = [];
+  let pg = null, tri = null;
   const paraFx = { el:null, prev:null };
   function setParaFx(p, dx, go) {
     if (paraFx.el !== p) { clearParaFx(); paraFx.el = p; paraFx.prev = { translate:p.style.translate, background:p.style.backgroundColor, radius:p.style.borderRadius, transition:p.style.transition }; }
@@ -1168,7 +1172,10 @@ button,input{font-family:inherit}
   function onPageTouchStart(e) {
     if (e.composedPath().includes(host)) return;
     if (S.peek) setPeek(false);
-    if (!gestureAllowed() || e.touches.length !== 1) { pg = null; taps = []; return; }
+    // v3.5.164: three fingers tapping together = translate / untranslate the whole page (was: tap 3 times)
+    if (e.touches.length === 3 && !tri && gestureAllowed() && S.gest.translate && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
+    else if (e.touches.length > 3 || e.touches.length === 1) tri = null;
+    if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
     const para = S.gest.translate ? paraOf(target) : null;
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
@@ -1176,6 +1183,7 @@ button,input{font-family:inherit}
       nav:S.gest.nav && !S.navOff[hostName()] && !noSwipe(target) };
   }
   function onPageTouchMove(e) {
+    if (tri && [...e.touches].some(o => { const q = tri.pts.get(o.identifier); return q && Math.hypot(o.clientX - q[0], o.clientY - q[1]) > 24; })) tri.moved = true;
     if (!pg || pg.edge || pg.dead || e.touches.length !== 1) return;
     const p0 = e.touches[0], dx = p0.clientX - pg.x, dy = p0.clientY - pg.y;
     if (e.defaultPrevented && !pg.mode) { pg.dead = true; return; }
@@ -1191,15 +1199,11 @@ button,input{font-family:inherit}
     else { pg.dx = dx; navFx(dx); }
   }
   function onPageTouchEnd(e) {
+    if (tri && e.touches.length === 0) { const g = tri; tri = null; if (e.type === "touchend" && !g.moved && Date.now() - g.t < 450) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
     const s = pg; pg = null; if (!s) return;
     const up = e.type === "touchend", end = e.changedTouches?.[0];
-    if (s.mode === "para") { clearParaFx(); taps = []; if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
-    if (s.mode === "nav") { navFxReset(); taps = []; if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(noGoText(back)); } return; }
-    if (s.dead || !up || !end || !S.gest.translate || !pageMobile() || !s.target.closest(ART_SEL) || s.target.closest(INTERACTIVE) || isOwnUi(s.target)) { taps = []; return; }
-    if (Math.hypot(end.clientX - s.x, end.clientY - s.y) > 10) { taps = []; return; }
-    const now = Date.now(), last = taps[taps.length - 1];
-    if (last && (now - last.t > 450 || Math.hypot(end.clientX - last.x, end.clientY - last.y) > 40)) taps = [];
-    taps.push({ t:now, x:end.clientX, y:end.clientY }); if (taps.length >= 3) { taps = []; getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); }
+    if (s.mode === "para") { clearParaFx(); if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
+    if (s.mode === "nav") { navFxReset(); if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(noGoText(back)); } return; }
   }
 
   // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
@@ -1293,7 +1297,7 @@ button,input{font-family:inherit}
   const samePage = url => { try { const a = new URL(url), b = new URL(location.href); return a.origin === b.origin && a.pathname === b.pathname && a.search === b.search; } catch { return false; } };
   function openRecord(n, msg) {
     if (n.dictionaryOnly || !/^https?:\/\//i.test(n.url || "") || !n.id) { if (isWord(n.quote)) openDict(String(n.quote).trim()); return; }
-    if (samePage(n.url)) { if (!document.querySelector("#lhn-sidebar.lhn-side-visible")) run("notes"); toast(t(msg === "openingNote" ? "noteInPanel" : "hlInPanel")); }
+    if (samePage(n.url)) { if (!document.querySelector("#lhn-sidebar.lhn-side-visible:not(.lhn-closing)")) run("notes"); toast(t(msg === "openingNote" ? "noteInPanel" : "hlInPanel")); }
     else toast(t(msg));
     void send("OPEN_HIGHLIGHT", { url:n.url, id:String(n.id) });
   }
@@ -1378,6 +1382,14 @@ button,input{font-family:inherit}
     // keys typed into Keepit's own inputs (search, language) must not reach the page's shortcut handlers
     root.addEventListener("keydown", e => { if (e.target.closest?.("input")) e.stopPropagation(); });
   }
+  // v3.5.164: Alt+Space opens / closes the bar search on desktop (capture: also from inside the search box; not while typing in the page)
+  addEventListener("keydown", e => {
+    if (!mounted || !isDesk() || e.code !== "Space" || !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || S.siteOff || e.repeat) return;
+    const tg = e.composedPath()[0], own = tg instanceof Node && tg.getRootNode() === root;
+    if (!own && tg instanceof Element && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
+    e.preventDefault(); e.stopPropagation();
+    if ($("srch").classList.contains("open")) closeSearch(); else openSearch();
+  }, true);
   addEventListener("keydown", e => {
     if (!mounted || e.key !== "Escape") return;
     if ($("srch").classList.contains("open")) closeSearch();
@@ -1386,7 +1398,7 @@ button,input{font-family:inherit}
     else if (S.introOn) introDone();
   });
 
-  // ---------- page state: Reader / overlay / notes take the bar's place; site off → pill ----------
+  // ---------- page state: Reader / overlay take the bar's place; site off → logo on a side edge ----------
   const readerShown = () => !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show:not(.lhn-hiding)");
   // v3.5.163: the bar reacts the same frame the Reader / overlay opens or closes (was: up to 700ms later via the ticker)
   let readerWatch = null, htmlWatch = null, overlayWas = null;
@@ -1402,9 +1414,47 @@ button,input{font-family:inherit}
       htmlWatch.observe(document.documentElement, { attributes:true, attributeFilter:["class"] });
     }
   }
+  // v3.5.164: site-off logo — sits on the left edge (vertical centre) until moved; drag anywhere, it snaps to the nearer side
+  // edge and keeps that place (lhnBottomBar.offPos = { side:"l"|"r", y:0..1 of the free height }); tap / Enter = turn Keepit back on
+  function placeOffDot() {
+    const d = root && $("offdot"); if (!d || d.classList.contains("drag")) return;
+    const pos = S.offPos || { side:"l", y:0.5 }, H = d.offsetHeight || 44, W = d.offsetWidth || 44;
+    d.classList.toggle("r", pos.side === "r");
+    d.style.left = (pos.side === "r" ? innerWidth - W : 0) + "px";
+    d.style.top = Math.round(8 + pos.y * Math.max(0, innerHeight - H - 16)) + "px";
+  }
+  function wireOffDot() {
+    const d = $("offdot"); let g = null, eatClick = false;
+    const turnOn = () => { if (!siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); };
+    d.addEventListener("pointerdown", e => {
+      if (e.button !== 0) return;
+      const r = d.getBoundingClientRect(); g = { id:e.pointerId, x:e.clientX, y:e.clientY, ox:e.clientX - r.left, oy:e.clientY - r.top, moved:false };
+      try { d.setPointerCapture(e.pointerId); } catch {}
+    });
+    d.addEventListener("pointermove", e => {
+      if (!g || e.pointerId !== g.id) return;
+      if (!g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 6) return;
+      g.moved = true; d.classList.add("drag");
+      d.style.left = clamp(e.clientX - g.ox, 0, innerWidth - d.offsetWidth) + "px";
+      d.style.top = clamp(e.clientY - g.oy, 8, innerHeight - d.offsetHeight - 8) + "px";
+    });
+    const end = e => {
+      if (!g || e.pointerId !== g.id) return;
+      const was = g; g = null;
+      if (!was.moved) return;
+      eatClick = true; setTimeout(() => { eatClick = false; }, 350);
+      const r = d.getBoundingClientRect();
+      S.offPos = { side:r.left + r.width / 2 > innerWidth / 2 ? "r" : "l", y:clamp((r.top - 8) / Math.max(1, innerHeight - r.height - 16), 0, 1) };
+      d.classList.remove("drag"); placeOffDot(); persist();
+    };
+    d.addEventListener("pointerup", end); d.addEventListener("pointercancel", end);
+    d.addEventListener("click", e => { e.stopPropagation(); if (eatClick) { eatClick = false; return; } turnOn(); });
+    addEventListener("resize", placeOffDot, { passive:true });
+    placeOffDot();
+  }
   function syncState() {
     if (!mounted) return;
-    const notesVisible = !!document.querySelector("#lhn-sidebar.lhn-side-visible");
+    const notesVisible = !!document.querySelector("#lhn-sidebar.lhn-side-visible:not(.lhn-closing)");
     // v3.5.163: Notes no longer folds the bar — it stays under the dim like with ☰, so closing Notes never flashes it back in
     const ext = readerShown() || document.documentElement.classList.contains("lhn-video-overlay-open");
     const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
@@ -1498,7 +1548,7 @@ button,input{font-family:inherit}
     const observer = new MutationObserver(syncState);
     observer.observe(side, { attributes:true, attributeFilter:["class"] });
     sidebarWatch = { target:side, observer };
-    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible"), close:() => run("notes"), watch:side });
+    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close:() => run("notes"), watch:side });
   }
 
   let ticker = 0, bodyWatch = null, lastLayout = "";
@@ -1543,7 +1593,7 @@ button,input{font-family:inherit}
     settings = loaded || {};
     try {
       const data = stored || {}, b = data[STORE_KEY] || {};
-      S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true;
+      S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true; S.offPos = b.offPos && typeof b.offPos.y === "number" ? { side:b.offPos.side === "r" ? "r" : "l", y:clamp(b.offPos.y, 0, 1) } : null; placeOffDot();
       S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
       S.navOff = b.navOff && typeof b.navOff === "object" ? { ...b.navOff } : {};
       S.recent = Array.isArray(b.recent) ? b.recent.filter(r => r && typeof r.q === "string").slice(0, 6) : [];

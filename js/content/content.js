@@ -51,6 +51,8 @@
   globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
+  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (touch-ui host 2147483000)
+  const FLOAT_Z = "2147482900";
   function animateRemove(el) {
     if (!el) return;
     el.classList.add("lhn-closing");
@@ -156,6 +158,7 @@
     if (!barSheet && (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host")) return false;
     if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
     popup.classList.add("lhn-touch-sheet"); popup.classList.toggle("lhn-bar-sheet", barSheet);
+    popup.style.setProperty("z-index", "2147483647", "important");   // a bottom sheet stays above the Keepit bar
     popup.style.removeProperty("left"); popup.style.removeProperty("top");
     // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js) — drag down from anywhere (scrolled
     // content back to its top first), the page behind does not scroll while it is open
@@ -606,7 +609,7 @@
     launcher.classList.toggle("lhn-ui-light", !isSidebarDark());
     document.documentElement.appendChild(launcher);
     translateIcon = launcher;
-    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:"2147483646", width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:FLOAT_Z, width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
     requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
@@ -631,7 +634,7 @@
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
     // Keep host-page rules from hiding or restyling this extension-owned popup.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionPopupAtAnchor(popup, range);
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
@@ -1124,7 +1127,7 @@
     tooltip.addEventListener("mouseenter", () => clearTimer("dismiss")); tooltip.addEventListener("mouseleave", scheduleTooltipClose);
     tooltip.addEventListener("mousedown", e => e.stopPropagation()); tooltip.addEventListener("click", e => e.stopPropagation());
     document.documentElement.appendChild(tooltip);
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     updateDefaultColorIndicators();
     requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, anchor); } });
   }

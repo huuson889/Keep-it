@@ -822,3 +822,6 @@ html.lhn-touch-overlay #lhn-full-english-dictionary.lhn-touch-sheet{font-size:14
 #lhn-direct-translation.lhn-touch-sheet.lhn-bar-sheet{align-items:center!important;gap:10px!important;font-size:17px!important;line-height:1.5!important;}
 #lhn-full-english-dictionary.lhn-touch-sheet.lhn-bar-sheet{font-size:14px!important;}
 @media (orientation:landscape){#lhn-direct-translation.lhn-touch-sheet.lhn-bar-sheet,#lhn-full-english-dictionary.lhn-touch-sheet.lhn-bar-sheet{width:min(560px,94vw)!important;margin:0 auto!important;border-width:1px 1px 0!important;}}
+/* v3.5.164: selection tools and floating popups stay under the Keepit bar, its sheets and search (touch-ui host z 2147483000);
+   bottom sheets (.lhn-touch-sheet) keep the top layer */
+#lhn-selection-overlay,#lhn-panel,#lhn-note-pop,#lhn-highlight-actions,#lhn-direct-translation:not(.lhn-touch-sheet),#lhn-full-english-dictionary:not(.lhn-touch-sheet){z-index:2147482900!important;}
