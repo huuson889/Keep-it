@@ -1481,7 +1481,16 @@
     setWebFont:enabled => { saveWebsiteFont(!!enabled); syncToolbar(); },
     // v3.5.160: the Trình đọc row of the Keepit main sheet (touch) — same switches as the Reader's own ☰ tiles
     tileOn:key => readerTileOn(key),
-    toggleTile:key => { const on = !readerTileOn(key); setReaderTile(key, on); return on; }
+    toggleTile:key => { const on = !readerTileOn(key); setReaderTile(key, on); return on; },
+    // v3.5.165: the block "Dịch đoạn" would translate under a finger (touch-ui swipe-left) — same test as the Reader's own
+    // blocks (isTextBlock: p/li/h*/…, leaf div/section text, any element with its own text); a point in the gap between two
+    // paragraphs takes the nearer one (±8 / ±16px)
+    blockAt:(x, y) => {
+      for (const dy of [0, -8, 8, -16, 16]) {
+        for (let el = document.elementFromPoint(x, y + dy); el && el !== document.body && el !== document.documentElement; el = el.parentElement) if (isTextBlock(el)) return el;
+      }
+      return null;
+    }
   });
   document.addEventListener("lhn-bilingual-reader-command", event => {
     if (event.detail === "stop-reading") { closeReadingBar(); return; }

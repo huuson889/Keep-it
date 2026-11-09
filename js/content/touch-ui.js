@@ -235,6 +235,7 @@
   const isFive = () => !isWide() && (S.five || S.autoFive);
   const smooth = () => REDUCED.matches ? "auto" : "smooth";
   const hostName = () => websiteKey();
+  const IS_MAC = /mac/i.test(navigator.userAgentData?.platform || navigator.platform || ""), SEARCH_KEY = IS_MAC ? "Alt+Space" : "Ctrl+Space";
   const pageMobile = () => /width\s*=\s*device-width/i.test(document.querySelector('meta[name="viewport"]')?.content || "");
   const isVideoPage = () => /(^|\.)youtube\.com$/.test(location.hostname) && location.pathname === "/watch";
   const pageTranslated = () => !!window.__lhnBilingualLazy;
@@ -334,11 +335,11 @@ button,input{font-family:inherit}
 .hidden .hzone{display:block}
 .hidden.peeking .hzone i{opacity:0}
 /* v3.5.164: site off → one small Keepit logo on a side edge (every device), drag it anywhere along either side, tap = turn back on */
-.offdot{position:fixed;left:0;top:calc(50% - 22px);z-index:6;display:none;place-items:center;width:44px;height:44px;margin:0;padding:0 2px 0 0;border:0;border-radius:0 14px 14px 0;background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;box-shadow:0 2px 10px rgba(76,29,149,.32);opacity:.9;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:left .22s,top .22s,border-radius .22s,opacity .15s,transform .12s}
-.offdot.r{padding:0 0 0 2px;border-radius:14px 0 0 14px}
-.offdot svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
-.offdot.drag{transition:none;border-radius:14px;opacity:1;transform:scale(1.06)}
-.desk .offdot:hover{opacity:1}
+.offdot{position:fixed;left:0;top:calc(50% - 22px);z-index:6;display:none;place-items:center;box-sizing:border-box;width:35px;height:44px;margin:0;padding:0 1px 0 0;border:1px solid rgba(255,255,255,.55);border-radius:0 12px 12px 0;background:linear-gradient(145deg,rgba(100,116,139,.78),rgba(71,85,105,.78));color:#fff;box-shadow:0 3px 10px rgba(71,85,105,.22);opacity:.85;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:left .22s,top .22s,border-radius .22s,opacity .15s,transform .12s}
+.offdot.r{padding:0 0 0 1px;border-radius:12px 0 0 12px}
+.offdot svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
+.offdot.drag{transition:none;border-radius:12px;opacity:1;transform:scale(1.06)}
+.desk .offdot:hover{opacity:1;filter:brightness(1.06);box-shadow:0 4px 13px rgba(71,85,105,.3)}
 .offdot:focus-visible{outline:3px solid rgba(156,39,176,.45);outline-offset:2px}
 .siteoff .offdot{display:grid}
 .siteoff .bbar,.siteoff .hzone{display:none}
@@ -720,7 +721,7 @@ button,input{font-family:inherit}
   const tipFor = id => ({
     page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
-    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (Alt+Space)`
+    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`
   }[id]);
   const barPrio = () => isVideoPage() ? ["overlay", "dictation", "page"] : ["page", "reader", "overlay"];
   const spareTool = () => isVideoPage() ? "reader" : "dictation";
@@ -1134,7 +1135,13 @@ button,input{font-family:inherit}
     for (let n = t0; n && n !== document.body && n !== document.documentElement; n = n.parentElement) { const ta = getComputedStyle(n).touchAction; if (ta !== "auto" && !/pan-x|manipulation/.test(ta)) return true; }
     return hScroll(t0);
   }
-  const paraOf = t0 => { const p = t0.closest?.(PARA_SEL); return p && !isOwnUi(p) && (p.textContent || "").trim().length >= 2 && !p.closest("nav,header,footer,[role=navigation],[role=menu]") ? p : null; };
+  // v3.5.165: a paragraph = what the Reader's "Dịch đoạn" translates there (also leaf <div> text, gaps between paragraphs);
+  // was: only p/li/h*/… under the finger, so other text blocks and the gaps fell through to the page swipe (arrow)
+  const paraOf = (t0, x, y) => {
+    let p = t0.closest?.(PARA_SEL);
+    if (!p && x !== undefined) { const b = globalThis.LHN_READER_BAR?.blockAt?.(x, y); if (b && !b.closest(INTERACTIVE) && b !== document.body) p = b; }
+    return p && !isOwnUi(p) && (p.textContent || "").trim().length >= 2 && !p.closest("nav,header,footer,[role=navigation],[role=menu]") ? p : null;
+  };
   const hasCard = p => !!p && (p.matches(".lhn-bilingual-card") || !!p.querySelector(":scope > .lhn-bilingual-card") || !!p.closest(".lhn-bilingual-card"));
   function translateAt(x, y) {
     document.dispatchEvent(new MouseEvent("mousemove", { clientX:x, clientY:y, bubbles:true }));
@@ -1177,7 +1184,7 @@ button,input{font-family:inherit}
     else if (e.touches.length > 3 || e.touches.length === 1) tri = null;
     if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
-    const para = S.gest.translate ? paraOf(target) : null;
+    const para = S.gest.translate ? paraOf(target, p0.clientX, p0.clientY) : null;
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
       edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed,
       nav:S.gest.nav && !S.navOff[hostName()] && !noSwipe(target) };
@@ -1199,7 +1206,9 @@ button,input{font-family:inherit}
     else { pg.dx = dx; navFx(dx); }
   }
   function onPageTouchEnd(e) {
-    if (tri && e.touches.length === 0) { const g = tri; tri = null; if (e.type === "touchend" && !g.moved && Date.now() - g.t < 450) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
+    // v3.5.165: also on touchcancel — phones with system 3-finger gestures (Oppo ColorOS, Xiaomi…) cancel the page's touches
+    // as soon as the third finger lands, so no touchend ever comes; window 450 → 600ms
+    if (tri && (e.touches.length === 0 || e.type === "touchcancel")) { const g = tri; tri = null; if (!g.moved && Date.now() - g.t < 600) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
     const s = pg; pg = null; if (!s) return;
     const up = e.type === "touchend", end = e.changedTouches?.[0];
     if (s.mode === "para") { clearParaFx(); if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
@@ -1382,9 +1391,12 @@ button,input{font-family:inherit}
     // keys typed into Keepit's own inputs (search, language) must not reach the page's shortcut handlers
     root.addEventListener("keydown", e => { if (e.target.closest?.("input")) e.stopPropagation(); });
   }
-  // v3.5.164: Alt+Space opens / closes the bar search on desktop (capture: also from inside the search box; not while typing in the page)
+  // v3.5.165: bar search shortcut on desktop (capture: also from inside the search box; not while typing in the page).
+  // macOS: Alt(Option)+Space. Windows / Linux: Windows hands Alt+Space to the window's system menu (GNOME / KDE take it too)
+  // before any page or extension sees it, so Ctrl+Space is the working key there; Alt+Space still works wherever it gets through.
   addEventListener("keydown", e => {
-    if (!mounted || !isDesk() || e.code !== "Space" || !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || S.siteOff || e.repeat) return;
+    if (!mounted || !isDesk() || e.code !== "Space" || e.metaKey || e.shiftKey || S.siteOff || e.repeat) return;
+    if (!((e.altKey && !e.ctrlKey) || (!IS_MAC && e.ctrlKey && !e.altKey))) return;
     const tg = e.composedPath()[0], own = tg instanceof Node && tg.getRootNode() === root;
     if (!own && tg instanceof Element && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName))) return;
     e.preventDefault(); e.stopPropagation();
@@ -1418,7 +1430,7 @@ button,input{font-family:inherit}
   // edge and keeps that place (lhnBottomBar.offPos = { side:"l"|"r", y:0..1 of the free height }); tap / Enter = turn Keepit back on
   function placeOffDot() {
     const d = root && $("offdot"); if (!d || d.classList.contains("drag")) return;
-    const pos = S.offPos || { side:"l", y:0.5 }, H = d.offsetHeight || 44, W = d.offsetWidth || 44;
+    const pos = S.offPos || { side:"l", y:0.5 }, H = d.offsetHeight || 44, W = d.offsetWidth || 35;
     d.classList.toggle("r", pos.side === "r");
     d.style.left = (pos.side === "r" ? innerWidth - W : 0) + "px";
     d.style.top = Math.round(8 + pos.y * Math.max(0, innerHeight - H - 16)) + "px";
