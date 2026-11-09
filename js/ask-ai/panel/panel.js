@@ -400,7 +400,9 @@
       ]);
       const request = stored?.[NAVIGATION_KEY];
       if (request && await navigate(request)) return;
-      const sourceUrl = providers.normalizeSourceUrl(activeTabs?.[0]?.url);
+      // Opened as a tab (browsers without a side panel): the source page comes in ?src=.
+      const tabSource = new URLSearchParams(location.search).get("src");
+      const sourceUrl = providers.normalizeSourceUrl(tabSource || activeTabs?.[0]?.url);
       const provider = providers.get(await getSavedProvider(windowId)) || providers.get("chatgpt");
       setActiveProvider(provider.id);
       setSourceUrl(sourceUrl);

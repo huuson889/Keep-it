@@ -33,3 +33,4 @@ Background điều phối runtime messages cho annotation, usage, TTS, cache, Yo
 
 - Đã chạy (ngoài repo): VM nạp background theo manifest trước/sau khi tách Ask AI — cùng 11 listener, cùng kết quả router, `sidePanel.open` gọi đồng bộ.
 - Đề xuất: QA Chromium/Firefox cho highlight/annotation, TTS, mở Dashboard và AI panel sau khi worker restart.
+- v3.5.166: `OPEN_HOME` (thanh Keepit ☰ → Trang chủ): `tabs.update(sender.tab.id, {url})` với `about:home` (Firefox, có `runtime.getBrowserInfo`) hoặc `chrome://newtab/` (Chromium/Edge) → `{ok}`; không đọc/lưu/gửi dữ liệu.

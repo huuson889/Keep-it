@@ -497,10 +497,29 @@ globalThis.chrome?.sidePanel?.onClosed?.addListener(async info => {
   const tabId = info?.tabId ?? (Number.isInteger(windowId) ? aiPanelSourceTabs.get(windowId) : null);
   await trackAIPanel(windowId, tabId, false);
 });
-async function openAIPanel({ sender, tab, toggle = true } = {}) {
+// Browsers without a side panel / sidebar (Edge and Chrome on Android, Firefox Android): the Keepit bar's Ask AI
+// opens the AI panel page as a tab next to the page (reused if already open). The page link travels in ?src= and is
+// only added to the message on Send, exactly like the side panel.
+const aiIsMobile = () => globalThis.navigator?.userAgentData?.mobile === true || /Android|Mobile/i.test(globalThis.navigator?.userAgent || "");
+async function openAIPanelTab(sourceTab) {
+  try {
+    const base = browser.runtime.getURL("pages/ai-panel.html");
+    const src = normalizeAISourceUrl(sourceTab?.url);
+    const url = base + (src ? "?src=" + encodeURIComponent(src) : "");
+    const inWindow = Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : { currentWindow:true };
+    const existing = (await browser.tabs.query(inWindow)).find(t => String(t.url || "").startsWith(base));
+    if (existing) await browser.tabs.update(existing.id, { url, active:true });
+    else await browser.tabs.create({ url, active:true, ...(Number.isInteger(sourceTab?.index) ? { index:sourceTab.index + 1 } : {}), ...(Number.isInteger(sourceTab?.id) ? { openerTabId:sourceTab.id } : {}), ...(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}) });
+    return { ok:true, browser:"tab", opened:true, tab:true };
+  } catch (error) {
+    return { ok:false, error:"panel-tab-failed", reason:String(error?.message || error || "unknown-error") };
+  }
+}
+async function openAIPanel({ sender, tab, toggle = true, tabFallback = false } = {}) {
   const sourceTab = tab || sender?.tab;
   const windowId = aiPanelWindowId(sourceTab);
   const chromePanel = globalThis.chrome?.sidePanel;
+  if (tabFallback && typeof chromePanel?.open !== "function" && typeof globalThis.browser?.sidebarAction?.toggle !== "function") return openAIPanelTab(sourceTab);
   if (typeof chromePanel?.open === "function") {
     try {
       const alreadyOpen = aiPanelIsOpen(windowId);
@@ -538,6 +557,7 @@ async function openAIPanel({ sender, tab, toggle = true } = {}) {
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
       console.warn("Could not open the AI panel in Chromium", reason);
+      if (tabFallback && aiIsMobile()) return openAIPanelTab(sourceTab);
       return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
@@ -568,6 +588,7 @@ async function openAIPanel({ sender, tab, toggle = true } = {}) {
     } catch (error) {
       const reason = String(error?.message || error || "unknown-error");
       console.warn("Could not open the AI panel in the Firefox sidebar", reason);
+      if (tabFallback && aiIsMobile()) return openAIPanelTab(sourceTab);
       return { ok:false, error:"panel-toggle-failed", reason };
     }
   }
@@ -979,6 +1000,6 @@ async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_LINK_DRAFT_READY") return notifyAILinkDraftReady(message);
   if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
   // Page edge button shown while the panel is open: same toggle as Alt+X, in the sender's window.
-  if (message.type === "TOGGLE_AI_PANEL") return openAIPanel({ sender, toggle:true });
+  if (message.type === "TOGGLE_AI_PANEL") return openAIPanel({ sender, toggle:true, tabFallback:message.tabFallback === true });
   return ASK_AI_UNHANDLED;
 }

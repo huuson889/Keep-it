@@ -78,6 +78,7 @@
     btopTile:["Top button","Nút lên đầu","맨 위 버튼"], btopTip:["Show a back-to-top button when you scroll far","Hiện nút lên đầu trang khi cuộn xa","멀리 스크롤하면 맨 위로 버튼 표시"],
     btopOn:["Back-to-top button on — shows after scrolling past 1 screen","Đã bật nút lên đầu trang — hiện khi cuộn quá 1 màn hình","맨 위로 버튼 켬 — 한 화면 넘게 스크롤하면 표시"],
     btopOff:["Back-to-top button off","Đã tắt nút lên đầu trang","맨 위로 버튼 끔"],
+    home:["Home","Trang chủ","홈"], homeTip:["Open the browser's start page in this tab","Mở trang khởi động của trình duyệt trong tab này","이 탭에서 브라우저 시작 페이지 열기"], homeFailed:["Could not open the start page","Không mở được trang khởi động","시작 페이지를 열 수 없습니다"],
     hide:["Hide bar","Ẩn thanh","바 숨기기"], show:["Show bar","Hiện thanh","바 표시"], back:["Back","Quay lại","뒤로"], moreBelow:["See more below","Xem thêm bên dưới","아래에 더 보기"],
     navG:["back / forward swipe","vuốt lùi / tới trang","뒤로 / 앞으로 스와이프"], trG:["translate gestures","cử chỉ dịch","번역 제스처"],
     gGeneral:["General","Chung","일반"], kSite:["Turn Keepit on/off for the page","Bật/tắt Keepit trên trang","페이지에서 Keepit 켜기/끄기"],
@@ -176,6 +177,7 @@
   eyeoff:'<path d="m2 2 20 20"/><path d="M6.7 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 6.4 0 10 7 10 7a17 17 0 0 1-2.2 3.2"/>',
   pin:'<path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2v2H6v-2z"/>',
   x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  home:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   logo:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
   restore:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
@@ -270,7 +272,7 @@
     else if (spec.event) document.dispatchEvent(new CustomEvent(spec.event));
   }
   function send(type, extra) { return globalThis.LHN_MESSAGING?.sendMessage({ type, ...(extra || {}) }).catch(() => null); }
-  async function askAI() { const result = await send("TOGGLE_AI_PANEL"); if (!result?.ok) toast(t("aiFailed")); }
+  async function askAI() { const result = await send("TOGGLE_AI_PANEL", { tabFallback:true }); if (!result?.ok) toast(t("aiFailed")); }
   async function saveSettings(patch) {
     settings = { ...settings, ...patch };
     try { await globalThis.LHN_SETTINGS?.save(settings); } catch (error) { console.warn("Keepit bar: could not save settings", error); }
@@ -313,8 +315,8 @@ button,input{font-family:inherit}
 .wide .bbar{left:50%;right:auto;bottom:6px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(148,163,184,.35);border-radius:20px}
 .wide:not(.dark) .bbar{box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)}
 .wide.dark .bbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
-.wide .bin{max-width:none;gap:2px;padding:0}
-.wide .nb{flex:none;width:58px;font-size:12px}
+.wide .bin{max-width:none;gap:3px;padding:0}
+.wide .nb{flex:none;width:66px;font-size:12px}
 .wide .sbtn{width:54px;height:54px;margin:0 8px}
 .bbar.hide{transform:translateY(calc(100% + 2px));pointer-events:none}
 .wide .bbar.hide{transform:translate(-50%,calc(100% + 14px))}
@@ -681,6 +683,13 @@ button,input{font-family:inherit}
 .screen.pland .sbtn{width:40px;height:40px}
 .screen.pland .bin{min-height:50px}
 .screen.wide:not(.desk) .sbtn{margin:0 14px}
+/* v3.5.166: touch bar icons 10% larger (buttons and bar height unchanged); ☰ footer = 4 equal columns, icon above label */
+.screen:not(.desk) .nb svg{width:28.6px;height:28.6px}
+.screen:not(.desk) .sbtn svg{width:32px;height:32px}
+.screen.pland .sbtn svg{width:27.5px;height:27.5px}
+.mfoot{grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.fq,.fq:nth-child(n){justify-self:stretch;flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:4px 2px;font-size:12px}
+.fq span{max-width:100%}
 `;
 
   function build() {
@@ -1012,7 +1021,7 @@ button,input{font-family:inherit}
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
+  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1115,6 +1124,7 @@ button,input{font-family:inherit}
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
     if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
+    if (a === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
     if (a === "hide") { closeSheet(); setHidden(true); return; }
     if (a === "show") { closeSheet(); setHidden(false); return; }
     closeSheet();

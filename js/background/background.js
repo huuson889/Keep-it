@@ -189,6 +189,12 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
+  // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
+  if (message.type === "OPEN_HOME") {
+    if (!Number.isInteger(sender?.tab?.id)) return { ok: false };
+    const url = typeof browser.runtime.getBrowserInfo === "function" ? "about:home" : "chrome://newtab/";
+    try { await browser.tabs.update(sender.tab.id, { url }); return { ok: true }; } catch (error) { return { ok: false, error: String(error?.message || error) }; }
+  }
  if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
   if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
