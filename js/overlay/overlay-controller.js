@@ -384,6 +384,37 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// Desktop control bar: four equal tracks keep play centred, but when the left column is narrow (1024px tablet /
+// small window: ~600px bar) the 6-button trailing group overflows onto 1.00x and the title shrinks to nothing.
+// Only when the equal tracks would really collide, the bar switches to content-sized tracks (te-bar-tight).
+let controlBarObserver = null;
+function fitControlBar() {
+  const bar = ui('.te-control-bar');
+  if (!bar || !bar.clientWidth) return;
+  // Measure in the normal layout (tight mode uses smaller gaps), so the decision does not flip back and forth.
+  bar.classList.remove('te-bar-tight');
+  const contentWidth = (group) => {
+    if (!group) return 0;
+    const kids = [...group.children].filter((kid) => kid.offsetWidth > 0);
+    const gap = parseFloat(getComputedStyle(group).columnGap) || 0;
+    return kids.reduce((sum, kid) => { const cs = getComputedStyle(kid); return sum + kid.offsetWidth + (parseFloat(cs.marginLeft) || 0) + (parseFloat(cs.marginRight) || 0); }, 0) + gap * Math.max(0, kids.length - 1);
+  };
+  const cs = getComputedStyle(bar);
+  const colGap = parseFloat(cs.columnGap) || 0;
+  const inner = bar.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  const track = (inner - 34 - 4 * colGap) / 4;
+  const trailing = contentWidth(bar.querySelector('.te-control-trailing-group'));
+  const right = contentWidth(bar.querySelector('.te-control-transport-right'));
+  const left = contentWidth(bar.querySelector('.te-control-transport-left'));
+  bar.classList.toggle('te-bar-tight', trailing - track > track - right + colGap - 2 || left > track + 1);
+}
+function watchControlBar() {
+  const bar = ui('.te-control-bar');
+  if (!bar || controlBarObserver || typeof ResizeObserver !== 'function') return;
+  controlBarObserver = new ResizeObserver(() => fitControlBar());
+  controlBarObserver.observe(bar);
+}
+
 function buildOverlay() {
   const host = document.createElement('div');
   host.id = HOST_ID;
@@ -491,6 +522,25 @@ function observeLauncherChanges() {
   document.addEventListener('fullscreenchange', scheduleLauncherRefresh);
 }
 
+// Mobile Chrome zooms a device-width page out when its content is wider than the screen (tuoitre: 1210px on a
+// 1024px tablet), and the 100vw/100vh overlay then covers only part of the screen. While the overlay is open the
+// page's viewport meta gets minimum-scale=1 (scale clamps back to 1); closing restores the page's own meta.
+let savedOverlayViewportMeta = null;
+function lockOverlayViewportScale() {
+  if (savedOverlayViewportMeta) return;
+  const meta = document.querySelector('meta[name="viewport"]');
+  const content = meta?.getAttribute('content') || '';
+  if (!/width\s*=\s*device-width/i.test(content) || /minimum-scale\s*=\s*1(\.0*)?(\s*[,;]|\s*$)/i.test(content)) return;
+  savedOverlayViewportMeta = { meta, content };
+  meta.setAttribute('content', content.replace(/,?\s*minimum-scale\s*=\s*[^,;]*/ig, '') + ', minimum-scale=1');
+}
+function restoreOverlayViewportScale() {
+  if (!savedOverlayViewportMeta) return;
+  const { meta, content } = savedOverlayViewportMeta;
+  savedOverlayViewportMeta = null;
+  if (meta.isConnected) meta.setAttribute('content', content);
+}
+
 function hideOverlayPageScrollbar() {
   if (savedOverlayPageScrollStyles) return;
   const html = document.documentElement;
@@ -527,6 +577,7 @@ function openOverlay() {
   }
   document.documentElement.classList.add('lhn-video-overlay-open');
   hideOverlayPageScrollbar();
+  lockOverlayViewportScale();
   overlayEl().classList.toggle('te-study-entry-pending', pendingStudyShortcut);
   overlayEl().classList.remove('te-hidden');
   shadow.host.style.display = '';
@@ -545,6 +596,8 @@ function openOverlay() {
   extendLoadedWindow();
   if (state.sourceType !== 'web' && state.captions.length === 0 && state.loadingFor !== state.sourceId) loadCaptions();
   applyDefaultSubtitleDisplayMode();
+  watchControlBar();
+  fitControlBar();
 }
 
 function closeOverlay() {
@@ -558,6 +611,7 @@ function closeOverlay() {
   overlayEl()?.classList.remove('te-study-entry-pending');
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
+  restoreOverlayViewportScale();
   clearHoverPauseState();
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';

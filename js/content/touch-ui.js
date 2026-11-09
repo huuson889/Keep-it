@@ -272,7 +272,7 @@
     else if (spec.event) document.dispatchEvent(new CustomEvent(spec.event));
   }
   function send(type, extra) { return globalThis.LHN_MESSAGING?.sendMessage({ type, ...(extra || {}) }).catch(() => null); }
-  async function askAI() { const result = await send("TOGGLE_AI_PANEL", { tabFallback:true }); if (!result?.ok) toast(t("aiFailed")); }
+  async function askAI() { const result = await send("TOGGLE_AI_PANEL"); if (!result?.ok) toast(t("aiFailed")); }
   async function saveSettings(patch) {
     settings = { ...settings, ...patch };
     try { await globalThis.LHN_SETTINGS?.save(settings); } catch (error) { console.warn("Keepit bar: could not save settings", error); }

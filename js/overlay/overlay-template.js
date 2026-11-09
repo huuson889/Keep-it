@@ -200,6 +200,10 @@ const OVERLAY_CSS = `
 
     .te-control-leading-group { grid-column: 1; min-width: 0; }
     .te-control-transport-left { grid-column: 2; justify-content: flex-end; min-width: 0; }
+    /* v3.5.167: narrow desktop bar (fitControlBar) — tracks never smaller than their buttons; only the title shrinks. */
+    #keepit-exact-overlay:not(.te-touch-layout):not(.te-touch-theater):not(.te-study-active) .te-control-bar.te-bar-tight { grid-template-columns: minmax(0, 1fr) minmax(min-content, 1fr) 34px minmax(min-content, 1fr) minmax(min-content, 1fr); column-gap: 4px; padding: 0 12px; }
+    #keepit-exact-overlay:not(.te-touch-layout):not(.te-touch-theater):not(.te-study-active) .te-control-bar.te-bar-tight .te-ctrl-group { gap: 4px; }
+    #keepit-exact-overlay:not(.te-touch-layout):not(.te-touch-theater):not(.te-study-active) .te-control-bar.te-bar-tight .te-site-icon-box { min-width: 22px; }
     #te-control-play { grid-column: 3; justify-self: center; }
     .te-control-transport-right { grid-column: 4; justify-content: flex-start; min-width: 0; }
     .te-control-trailing-group { grid-column: 5; justify-content: flex-end; min-width: 0; }
