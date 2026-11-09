@@ -585,6 +585,14 @@
     shell.querySelector(".lhn-translate-actions")?.setAttribute("aria-label", t("translateSelectedText"));
     launcher.appendChild(shell);
     launcher.addEventListener("mousedown", event => event.stopPropagation());
+    // v3.5.159 touch: Android keeps its own Copy/Share menu over the toolbar. Re-applying the same selection from script
+    // dismisses that menu (it only follows selections made by the finger); the text stays selected.
+    launcher.addEventListener("touchstart", () => {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || selection.isCollapsed) return;
+      const current = selection.getRangeAt(0).cloneRange();
+      selection.removeAllRanges(); selection.addRange(current);
+    }, { passive:true });
     launcher.classList.toggle("lhn-ui-dark", isSidebarDark());
     launcher.classList.toggle("lhn-ui-light", !isSidebarDark());
     document.documentElement.appendChild(launcher);

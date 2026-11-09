@@ -215,6 +215,19 @@
     #lhn-bilingual-reading-bar .lhn-br-toast.lhn-on{opacity:1;transform:translateX(-50%) translateY(0)}
     #lhn-br-spacer{display:block!important;width:1px!important;flex:none!important;margin:0!important;padding:0!important;border:0!important;visibility:hidden!important;pointer-events:none!important}
     @keyframes lhnBrFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes lhnBrSlide{from{opacity:0}to{opacity:1}}@keyframes lhnBrButtonPress{35%{transform:scale(.84);background:rgba(148,163,184,.38)}100%{transform:scale(1)}}
+    /* v3.5.159: bar, panels and banner are fixed to the viewport bottom themselves, so Chrome/Edge Android slide them with their own toolbars */
+    #lhn-bilingual-reading-bar .lhn-br-rbar,#lhn-bilingual-reading-bar .lhn-br-panel,#lhn-bilingual-reading-bar .lhn-br-kbd,#lhn-bilingual-reading-bar .lhn-br-toast{position:fixed}
+    #lhn-bilingual-reading-bar .lhn-br-sheet .lhn-br-scrim{top:-120px;bottom:-120px}
+    /* v3.5.159: touch bar 20% taller with 20% larger icons; button widths unchanged so the row still fits a 392px phone */
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-rbar{height:77px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-btn{height:53px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-btn.lhn-br-play{height:52px}
+    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-btn.lhn-br-play{height:54px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-btn svg{width:26px;height:26px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-vflag{width:34px;height:34px;font-size:41px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-kbd{bottom:89px}
+    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-kbd{bottom:95px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-toast{bottom:97px}
   `;
   (document.head || document.documentElement).appendChild(style);
   const bar = document.createElement("div");

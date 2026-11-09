@@ -625,6 +625,30 @@ button,input{font-family:inherit}
 .nscrim{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
 .screen.notesopen .nscrim{opacity:1;visibility:visible;pointer-events:auto}
 .screen.extyield .bbar,.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .pill,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
+/* v3.5.159: boxes pinned to the bottom are fixed to the viewport bottom themselves, so Chrome/Edge Android move them together with the
+   browser's own toolbars while those slide (a box inside the top-anchored .screen only followed after the scroll ended → gap). */
+.bbar,.hzone,.pill,.toast,.coach,.btop,.pop,.panel{position:fixed}
+.sheet .scrim,.srch .scrim2,.iscrim,.nscrim{top:-120px;bottom:-120px}
+.sheet:not(.open) .panel{visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s}
+.wide .sheet:not(.open) .panel{transition:transform .2s,opacity .2s,visibility 0s .2s}
+.panel.growing{transition:none}
+/* v3.5.159: touch bar 20% taller with 20% larger icons (desktop unchanged) */
+.screen:not(.desk) .bbar{padding-top:7.5px;padding-bottom:calc(7.5px + var(--sab))}
+.screen.wide:not(.desk) .bbar{padding-top:8.8px;padding-bottom:8.8px}
+.screen:not(.desk) .nb .ico{height:36px;border-radius:18px}
+.screen:not(.desk) .nb svg{width:26px;height:26px}
+.screen:not(.desk) .sbtn{width:62px;height:62px}
+.screen:not(.desk) .sbtn svg{width:29px;height:29px}
+.screen:not(.desk) .toast{bottom:calc(99px + var(--sab))}
+.screen:not(.desk) .coach{bottom:calc(97px + var(--sab))}
+.screen.wide:not(.desk) .coach{bottom:calc(106px + var(--sab))}
+.screen.pland .bbar{padding-top:4px;padding-bottom:calc(4px + var(--sab))}
+.screen.pland .nb .ico{height:36px}
+.screen.pland .sbtn{width:50px;height:50px}
+.screen.pland .sbtn svg{width:25px;height:25px}
+.screen.pland .toast{bottom:calc(72px + var(--sab))}
+.screen.pland .coach{bottom:calc(68px + var(--sab))}
+.screen.hidden .toast,.screen.siteoff .toast{bottom:calc(52px + var(--yb) + var(--sab))}
 `;
 
   function build() {
@@ -705,7 +729,7 @@ button,input{font-family:inherit}
     screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
     screen.classList.toggle("siteoff", S.siteOff);
     screen.classList.toggle("extyield", S.extYield);
-    screen.classList.toggle("notesopen", S.notesOn && isTouch());
+    screen.classList.toggle("notesopen", S.notesOn && isTouch()); syncScrollLock();
     screen.classList.toggle("picking", picking);
     screen.style.setProperty("--yb", (S.yieldBar ? S.yieldH : 0) + "px");
     screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px");
@@ -807,7 +831,9 @@ button,input{font-family:inherit}
     pop.innerHTML = '<div class="grip"></div>' + html;
     const r = btn.getBoundingClientRect();
     pop.style.left = clamp(r.left, 8, innerWidth - pop.offsetWidth - 8) + "px";
-    pop.style.bottom = (innerHeight - r.top) + 8 + "px";
+    // v3.5.159: measured from the bar's top edge (+6px = the demo's bar padding), so the taller touch bar keeps the demo's gap
+    const bar = $("bar"), top = bar.contains(btn) ? bar.getBoundingClientRect().top + 6 : r.top;
+    pop.style.bottom = (innerHeight - top) + 8 + "px";
     pop.classList.add("open"); $("clear").classList.add("on"); if (!noOn) btn.classList.add("on");
   }
   function closePop() { $("pop")?.classList.remove("open"); $("clear")?.classList.remove("on"); }
@@ -1059,12 +1085,25 @@ button,input{font-family:inherit}
     const move = (x, y) => {
       if (!d || d.dead) return false; const dx = x - d.x, dy = y - d.y;
       if (!d.on) { if (Math.hypot(dx, dy) < (d.hd ? 6 : 8)) return false; if (decide(dx, dy) < 0) { d.dead = true; return false; } d.on = true; el.classList.add("dragging"); }
-      d.dy = dy; el.style.translate = `0 ${dy > 0 ? dy : Math.max(dy, -120) * (o.expand ? 0.35 : 0.12)}px`; return true;
+      d.dy = dy;
+      // v3.5.159: a sheet with a taller step grows from its top edge while pulled up (its bottom stays on the screen edge, no gap)
+      if (o.expand && dy < 0) {
+        el.classList.add("growing"); el.style.translate = "";
+        const cap = isWide() ? innerHeight - (parseFloat(el.style.bottom) || 0) - 12 : innerHeight * 0.96;
+        el.style.maxHeight = Math.min(cap, d.h - dy) + "px"; return true;
+      }
+      if (el.classList.contains("growing")) { el.classList.remove("growing"); el.style.maxHeight = ""; }
+      el.style.translate = `0 ${dy > 0 ? dy : Math.max(dy, -120) * 0.12}px`; return true;
     };
     const end = up => {
       const s = d; d = null; if (!s || !s.on) return;
       eat = true; setTimeout(() => { eat = false; }, 80);
       el.classList.remove("dragging");
+      if (el.classList.contains("growing")) {
+        el.classList.remove("growing"); el.style.transition = "max-height .2s ease";
+        el.style.maxHeight = ""; if (up && s.dy < -40) o.expand();
+        setTimeout(() => { el.style.transition = ""; }, 220); return;
+      }
       const snap = () => { el.style.transition = "translate .2s ease"; el.style.translate = ""; setTimeout(() => { el.style.transition = ""; }, 220); };
       if (up && o.isFull?.() && s.dy > 40 && s.dy < s.h * 0.5) { o.collapse(); snap(); return; }
       if (up && s.dy > Math.min(110, s.h * 0.3)) {
@@ -1339,6 +1378,7 @@ button,input{font-family:inherit}
     $("panel").addEventListener("click", e => { void onPanelClick(e); });
     dragify($("panel"), { isFull:() => $("panel").classList.contains("full"), expand:() => { setTimeout(updFade, 320); const panel = $("panel"); panel.classList.add("full"); if (isWide()) panel.style.maxHeight = (innerHeight - parseFloat(panel.style.bottom || 0) - 12) + "px"; }, collapse:() => { const panel = $("panel"); panel.classList.remove("full"); panel.style.maxHeight = ""; setTimeout(updFade, 320); }, close:() => closeSheet() });
     dragify($("pop"), { close:() => closePop() });
+    for (const id of ["sheet", "srch"]) new MutationObserver(syncScrollLock).observe($(id), { attributes:true, attributeFilter:["class"] });
     $("coach").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; coachDone(); if (b.dataset.c === "all") { openSheet(); S.sheetPane = "keys"; renderSheet(); anchorPanel(); } });
     $("intro").addEventListener("click", e => { if (e.target.closest("[data-i]")) introDone(); });
     $("iscrim").addEventListener("click", introDone);
@@ -1405,6 +1445,41 @@ button,input{font-family:inherit}
       S.pendingTr = retry; toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (navigator.onLine === false) return toast(t("offline"), { icon:"wifioff" }); S.pendingTr = null; retry(); } });
     }
   });
+
+  // ---------- v3.5.159: while a sheet is open on touch (☰, search, Notes) the page behind must not scroll ----------
+  // A finger move is let through only when an element under it inside the sheet can still scroll that way; anything else
+  // (scrim, sheet header, list already at its end) is cancelled, so Chrome/Edge neither scroll the page nor slide their toolbars.
+  let lockOn = false, lockPt = null;
+  const lockStart = e => { const p = e.touches[0]; lockPt = p ? { x:p.clientX, y:p.clientY } : null; };
+  function canScrollToward(n, vert, d) {
+    const cs = getComputedStyle(n);
+    if (vert) {
+      if (!/auto|scroll/.test(cs.overflowY) || n.scrollHeight <= n.clientHeight + 1) return false;
+      return d < 0 ? n.scrollTop + n.clientHeight < n.scrollHeight - 1 : n.scrollTop > 0;
+    }
+    if (!/auto|scroll/.test(cs.overflowX) || n.scrollWidth <= n.clientWidth + 1) return false;
+    return d < 0 ? n.scrollLeft + n.clientWidth < n.scrollWidth - 1 : n.scrollLeft > 0;
+  }
+  function lockMove(e) {
+    if (!lockPt || e.touches.length !== 1 || !e.cancelable) return;
+    const p = e.touches[0], dx = p.clientX - lockPt.x, dy = p.clientY - lockPt.y;
+    lockPt = { x:p.clientX, y:p.clientY };
+    if (!dx && !dy) return;
+    const vert = Math.abs(dy) >= Math.abs(dx);
+    for (const n of e.composedPath()) {
+      if (!(n instanceof Element) || n === host || n === document.body || n === document.documentElement) break;
+      if (n.matches("input,textarea,select,[contenteditable]:not([contenteditable=false])")) return;
+      if (canScrollToward(n, vert, vert ? dy : dx)) return;
+    }
+    e.preventDefault();
+  }
+  function syncScrollLock() {
+    const on = !!(mounted && isTouch() && ($("sheet")?.classList.contains("open") || $("srch")?.classList.contains("open") || $("screen")?.classList.contains("notesopen")));
+    if (on === lockOn) return; lockOn = on; lockPt = null;
+    const f = on ? addEventListener : removeEventListener;
+    f("touchstart", lockStart, { capture:true, passive:true });
+    f("touchmove", lockMove, { capture:true, passive:false });
+  }
 
   // ---------- notes sidebar as a bottom sheet on touch (css/content/content.css): drag its top edge down to close ----------
   let sheetDrag = null;
@@ -1500,6 +1575,9 @@ button,input{font-family:inherit}
   // ---------- touch selection → the mouseup the content scripts listen for ----------
   // Long-press selection (and dragging its handles) fires no mouseup, so the Keepit popup/icon would never open.
   // When the selection settles after the finger lifts, send one mouseup at the end of the selection.
+  // v3.5.159: dragging Android's selection handles sends selectionchange but no touch events, so a short pause mid-drag used to
+  // open the popup again and again. Android Chrome fires contextmenu when a drag-selection is finished (finger lifted) → open
+  // right then; otherwise wait until the selection has been still for SETTLE ms (single word long-pressed, other browsers).
   function installTouchSelectionBridge() {
     let touching = false, timer = 0, lastKey = "";
     const selectionKey = () => {
@@ -1521,7 +1599,10 @@ button,input{font-family:inherit}
       if (host && target && host.contains(target)) return;
       (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
     }
-    const schedule = () => { if (!TOUCH.matches) return; clearTimeout(timer); timer = setTimeout(fire, 450); };
+    const SETTLE = 900;
+    const schedule = () => { if (!TOUCH.matches) return; clearTimeout(timer); timer = setTimeout(fire, SETTLE); };
+    // contextmenu while the finger is still down = the long press that starts a selection (more may follow) → keep waiting
+    document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
     document.addEventListener("touchstart", () => { touching = true; }, { capture:true, passive:true });
     document.addEventListener("touchend", () => { touching = false; schedule(); }, { capture:true, passive:true });
     document.addEventListener("touchcancel", () => { touching = false; schedule(); }, { capture:true, passive:true });
