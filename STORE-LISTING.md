@@ -32,7 +32,7 @@
 | Host `<all_urls>` / content scripts on all sites | Highlighting, notes, translation, dictionary and Ask AI work on any page the user chooses to read; the user decides where to use them. |
 | Named translation hosts, Google Fonts hosts | Translation requests and the interface font. |
 | `storage`, `unlimitedStorage` | Store highlights, notes, flashcards, settings and translation/caption caches locally; libraries can exceed the default quota. |
-| `activeTab`, `tabs` | Know the current page's address and title for notes and the AI panel, open the Dashboard, and switch to the correct tab. |
+| `activeTab`, `tabs` | Know the current page's address and title for notes and the AI panel, open the Dashboard, switch to the correct tab, and — on touch screens — move to the previous / next tab when a back / forward swipe goes past the page history. |
 | `sidePanel` | Show the AI panel in Chrome's side panel. |
 | `contextMenus` | Right-click "Ask AI" on selected text. |
 | `declarativeNetRequest` | (1) Set the Referer on Google text-to-speech requests so read-aloud works; (2) allow the user-chosen AI websites to display inside the AI panel by removing their frame-protection headers when framed. |

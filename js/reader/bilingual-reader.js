@@ -228,6 +228,11 @@
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-kbd{bottom:89px}
     #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-kbd{bottom:95px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-toast{bottom:97px}
+    /* v3.5.160 phone / tablet portrait: the flag sits as far from the left edge as the ☰ lines from the right edge (≈15px);
+       the flag button (2px) and the speed button (7px of side padding) give the room back so the time box stays where it was */
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-left{padding-left:9px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-btn[data-voices]{width:38px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-btn.lhn-br-spd{padding:0 1.5px}
   `;
   (document.head || document.documentElement).appendChild(style);
   const bar = document.createElement("div");
@@ -435,6 +440,8 @@
     else if (button.hasAttribute("data-next")) moveReading(1, event);
     else if (button.hasAttribute("data-close")) closeReadingBar();
     else if (button.hasAttribute("data-repeat")) { repeatSegment = !repeatSegment; syncToolbar(); showBarToast(popupText(repeatSegment ? "readerRepeatOn" : "readerRepeatOff")); }
+    // v3.5.160 touch: Reader ☰ opens the Keepit main sheet (its Trình đọc row holds these tiles; theme / Font tùy chỉnh are there too)
+    else if (button.dataset.sheet === "more" && !isDeskBar() && globalThis.LHN_BAR_HOOKS?.openMainSheet) { closeSheet(); globalThis.LHN_BAR_HOOKS.openMainSheet(button.getBoundingClientRect()); }
     else if (button.dataset.sheet) toggleSheet(button.dataset.sheet);
   });
   $br("[data-scrim]").addEventListener("click", closeSheet);
@@ -447,14 +454,24 @@
     const tile = event.target.closest("[data-tile]"); if (!tile) return;
     const key = tile.dataset.tile;
     if (key === "theme") { saveAddonThemePreference(bar.classList.contains("lhn-dark") ? "light" : "dark"); return; }
-    const on = tile.getAttribute("aria-checked") !== "true";
+    setReaderTile(key, tile.getAttribute("aria-checked") !== "true");
+  });
+  function readerTileOn(key) {
+    if (key === "autoscroll") return !!settings.autoScroll;
+    if (key === "parabtn") return settings.speakerIconVisibility === "always";
+    if (key === "autolang") return settings.autoDetectVoice !== false;
+    if (key === "readtranslation") return !!settings.readTranslation;
+    if (key === "webfont") return settings.webFontFamily === "'Inter', sans-serif";
+    return false;
+  }
+  function setReaderTile(key, on) {
     if (key === "autoscroll") saveSpeechSetting({ autoScroll:on });
     else if (key === "parabtn") saveSpeechSetting({ speakerIconVisibility:on ? "always" : "hover" });
     else if (key === "autolang") saveSpeechSetting({ autoDetectVoice:on });
     else if (key === "readtranslation") { saveSpeechSetting({ readTranslation:on }); if (on) notifyReadTranslationOn(); else skipBilingualSegment(); }
     else if (key === "webfont") saveWebsiteFont(on);
     syncToolbar();
-  });
+  }
   $br('[data-pane="speed"]').addEventListener("click", event => {
     const step = event.target.closest("[data-sp]");
     if (step) { setSpeechSpeed(Math.round((currentSegmentRate() + .05 * Number(step.dataset.sp)) / .05) * .05); return; }
@@ -1449,7 +1466,10 @@
     stepRate:delta => setSpeechSpeed(currentSegmentRate() + delta),
     autoVoice:() => settings.autoDetectVoice !== false,
     webFont:() => settings.webFontFamily === "'Inter', sans-serif",
-    setWebFont:enabled => { saveWebsiteFont(!!enabled); syncToolbar(); }
+    setWebFont:enabled => { saveWebsiteFont(!!enabled); syncToolbar(); },
+    // v3.5.160: the Trình đọc row of the Keepit main sheet (touch) — same switches as the Reader's own ☰ tiles
+    tileOn:key => readerTileOn(key),
+    toggleTile:key => { const on = !readerTileOn(key); setReaderTile(key, on); return on; }
   });
   document.addEventListener("lhn-bilingual-reader-command", event => {
     if (event.detail === "stop-reading") { closeReadingBar(); return; }

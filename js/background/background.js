@@ -113,6 +113,21 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   return existing;
 }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+// v3.5.160 touch bar: back / forward swipe past this tab's history → previous / next tab of the same window.
+// Only tab order (index, id) of the sender's window is used; nothing is stored or sent anywhere.
+async function tabNeighbors(message, sender) {
+  const tab = sender?.tab;
+  if (!tab || typeof tab.index !== "number") return { prev: false, next: false };
+  const tabs = await browser.tabs.query({ windowId: tab.windowId });
+  const prev = tabs.find(candidate => candidate.index === tab.index - 1), next = tabs.find(candidate => candidate.index === tab.index + 1);
+  if (message.type === "SWITCH_TAB") {
+    const target = message.dir < 0 ? prev : next;
+    if (!target?.id) return { ok: false };
+    await browser.tabs.update(target.id, { active: true });
+    return { ok: true };
+  }
+  return { prev: !!prev, next: !!next };
+}
 async function openHighlight(url, id) {
   if (typeof url !== "string" || !/^https?:\/\//i.test(url) || typeof id !== "string" || !id) return { found: false };
   const tabs = await browser.tabs.query({});
@@ -176,6 +191,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
  if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
+  if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
   if (message.type === "GET_ALL") return ANNOTATIONS.getAll();
   if (message.type === "GET_BATCH") return ANNOTATIONS.getBatch(message);
   if (message.type === "GET_PAGE") return ANNOTATIONS.getPage(message.url);

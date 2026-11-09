@@ -29,6 +29,10 @@
     offline:["No connection — couldn't translate","Không có mạng — chưa dịch được","인터넷 연결 없음 — 번역하지 못했습니다"], retry:["Retry","Thử lại","다시 시도"],
     online:["Back online","Đã có mạng lại","다시 연결되었습니다"], translateNow:["Translate now","Dịch ngay","지금 번역"],
     noBack:["No previous page","Không còn trang trước","이전 페이지가 없습니다"], noFwd:["No next page","Không còn trang sau","다음 페이지가 없습니다"],
+    rdSec:["Reader","Trình đọc","리더"], rdAutoscroll:["Auto scroll","Tự cuộn","자동 스크롤"], rdIcon:["Show reading icon","Hiện icon đọc","읽기 아이콘 표시"],
+    rdLang:["Auto language","Ngôn ngữ tự động","언어 자동"], rdBi:["Bilingual reading","Đọc song ngữ","이중 언어 읽기"],
+    noBackTab:["No previous page or tab","Không còn trang hay tab trước","이전 페이지나 탭이 없습니다"], noFwdTab:["No next page or tab","Không còn trang hay tab sau","다음 페이지나 탭이 없습니다"],
+    kPrevPageTab:["Previous page / tab","Trang / tab trước","이전 페이지 / 탭"], kNextPageTab:["Next page / tab","Trang / tab sau","다음 페이지 / 탭"], kPrevNextPageTab:["Previous / next page or tab","Trang / tab trước, sau","이전 / 다음 페이지·탭"],
     hiddenDesk:["Bar hidden — hover the line at the bottom to show it","Đã ẩn thanh — rê chuột vào vạch dưới đáy để hiện","바를 숨겼습니다 — 아래쪽 선에 마우스를 올리면 표시됩니다"],
     hiddenTouch:["Bar hidden — tap the line at the bottom to show it","Đã ẩn thanh — chạm vạch dưới đáy để hiện","바를 숨겼습니다 — 아래쪽 선을 누르면 표시됩니다"],
     shown:["Bar shown","Đã hiện thanh","바를 표시했습니다"],
@@ -187,6 +191,9 @@
   globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  rdscroll:'<path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/>',
+  rdauto:'<path d="M12 2Q13 11 22 12Q13 13 12 22Q11 13 2 12Q11 11 12 2Z"/>',
+  rdbook:'<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   fill:'<path d="M7 17V7h10"/><path d="M17 17 7 7"/>',
   down:'<path d="m6 9 6 6 6-6"/>', left:'<path d="m15 18-6-6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>',
@@ -649,6 +656,14 @@ button,input{font-family:inherit}
 .screen.pland .toast{bottom:calc(72px + var(--sab))}
 .screen.pland .coach{bottom:calc(68px + var(--sab))}
 .screen.hidden .toast,.screen.siteoff .toast{bottom:calc(52px + var(--yb) + var(--sab))}
+/* v3.5.160: desktop / tablet landscape show no "Keepit is off on this page" pill */
+.screen.wide.siteoff .pill{display:none}
+/* v3.5.160: touch search circle 20% smaller (icon size kept); the row keeps the bar height, the tablet island keeps its width */
+.screen:not(.desk) .sbtn{width:50px;height:50px}
+.screen:not(.desk) .bin{min-height:62px}
+.screen.pland .sbtn{width:40px;height:40px}
+.screen.pland .bin{min-height:50px}
+.screen.wide:not(.desk) .sbtn{margin:0 14px}
 `;
 
   function build() {
@@ -861,8 +876,18 @@ button,input{font-family:inherit}
   }
 
   // ---------- bar swipe: right = previous page, left = next page (touch) · long-press quick options ----------
-  const canGo = back => { const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
-  function go(back) { if (!canGo(back)) return false; if (back) history.back(); else history.forward(); return true; }
+  // v3.5.160: past the first / last page of this tab's history, a back / forward swipe moves to the previous / next tab
+  // of the window (background.js TAB_NEIGHBORS / SWITCH_TAB: tab order only, nothing stored or sent out). APK = one view.
+  const tabNb = { prev:false, next:false };
+  function refreshTabs() { if (isApk() || !isTouch()) return; send("TAB_NEIGHBORS").then(r => { if (r && typeof r === "object") { tabNb.prev = !!r.prev; tabNb.next = !!r.next; } }); }
+  const histCan = back => { const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
+  const canGo = back => histCan(back) || (!isApk() && tabNb[back ? "prev" : "next"]);
+  function go(back) {
+    if (histCan(back)) { if (back) history.back(); else history.forward(); return true; }
+    if (!isApk() && tabNb[back ? "prev" : "next"]) { void send("SWITCH_TAB", { dir:back ? -1 : 1 }); return true; }
+    return false;
+  }
+  const noGoText = back => t(isApk() ? (back ? "noBack" : "noFwd") : (back ? "noBackTab" : "noFwdTab"));
   let sw = null, lpT = 0, lpEat = 0, swallowClick = false;
   function wireBar() {
     const bar = $("bar"), bin = $("bin");
@@ -873,7 +898,7 @@ button,input{font-family:inherit}
       doNav(b.dataset.nav, b);
     });
     bar.addEventListener("pointerdown", e => {
-      if (isDesk() || e.button > 0) return; sw = { x:e.clientX, y:e.clientY, id:e.pointerId, on:false, dx:0 };
+      if (isDesk() || e.button > 0) return; sw = { x:e.clientX, y:e.clientY, id:e.pointerId, on:false, dx:0 }; refreshTabs();
       const nb = e.target.closest('[data-nav="page"],[data-nav="reader"]'); clearTimeout(lpT); lpT = 0;
       if (nb) lpT = setTimeout(() => { lpT = 0; sw = null; lpEat = Date.now() + 10000; openQuick(nb); haptic(); }, 450);
     });
@@ -898,7 +923,7 @@ button,input{font-family:inherit}
       swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
       bar.classList.remove("swiping"); bin.style.transform = "";
       $$(".swi").forEach(x => { x.style.opacity = 0; x.style.transform = "scale(.5)"; x.classList.remove("go", "no"); });
-      if (Math.abs(s.dx) >= bar.offsetWidth * 0.3 && e.type === "pointerup") { const back = s.dx > 0; if (go(back)) haptic(); else toast(t(back ? "noBack" : "noFwd")); }
+      if (Math.abs(s.dx) >= bar.offsetWidth * 0.3 && e.type === "pointerup") { const back = s.dx > 0; if (go(back)) haptic(); else toast(noGoText(back)); }
     };
     bar.addEventListener("pointerup", endSwipe); bar.addEventListener("pointercancel", endSwipe);
     // release after a long-press: swallow exactly one click (it can land on the button or on the overlay that just opened)
@@ -962,12 +987,19 @@ button,input{font-family:inherit}
     <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${tile("settings", "settings", t("settings"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
+    ${readerRowHTML()}
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("site", "power", t("siteTile"), !S.siteOff, t("siteTip"))}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}${S.hidden ? tile("show", "eye", t("show")) : tile("hide", "eyeoff", t("hide"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
+  }
+  // v3.5.160 touch: Trình đọc row = the Reader's own ☰ switches (bilingual-reader.js LHN_READER_BAR.tileOn / toggleTile)
+  const RDT = [["autoscroll", "rdscroll", "rdAutoscroll"], ["parabtn", "read", "rdIcon"], ["autolang", "rdauto", "rdLang"], ["readtranslation", "rdbook", "rdBi"]];
+  function readerRowHTML() {
+    const rb = globalThis.LHN_READER_BAR; if (isDesk() || !rb?.tileOn) return "";
+    return `<div class="divider"></div><div class="sec" data-sec="rd">${esc(t("rdSec"))}</div><div class="quick">${RDT.map(([k, i, l]) => tile("rd:" + k, i, t(l), rb.tileOn(k))).join("")}</div>`;
   }
   // v5: the highlight-color frame lines up with the first/last tile of the grid above
   function alignColors() {
@@ -1004,10 +1036,10 @@ button,input{font-family:inherit}
       G.push([t("gBar"), [[t("kPickRes"), "↑ / ↓"], [t("kOpenRes"), "Enter"], [t("kClose"), "Esc"]]]);
     } else {
       if (art) G.push([t("gTranslate"), [[t("kPara"), t("vSwipeLeftPara"), 1], [t("kAll"), pageMobile() ? t("vTriple") : t("vNoPc"), 1]], "translate"]);
-      G.push([t("gNav"), [[t("kPrevPage"), t("vSwipeRight"), 1], [t("kNextPage"), art && S.gest.translate ? t("vSwipeLeftOut") : t("vSwipeLeft"), 1], ...(S.navOff[hostName()] ? [[t("kNavOffHere"), t("vNavOffHere")]] : [])], "nav"]);
+      G.push([t("gNav"), [[t(isApk() ? "kPrevPage" : "kPrevPageTab"), t("vSwipeRight"), 1], [t(isApk() ? "kNextPage" : "kNextPageTab"), art && S.gest.translate ? t("vSwipeLeftOut") : t("vSwipeLeft"), 1], ...(S.navOff[hostName()] ? [[t("kNavOffHere"), t("vNavOffHere")]] : [])], "nav"]);
       G.push([t("onSelect"), [[t("kSelIcon"), t("vLongPress")]]]);
       if (video) G.push([t("gVideoPort"), [[t("kTheater"), t("vSwipeUpVideo")], [t("kPlayStop"), t("vTapSub")], [t("kSeekS"), t("vTapLine")], [t("kLookUp"), t("vLongSub")], [t("kFav"), t("vDouble")]]], [t("gTheater"), [[t("kControls"), t("vTapVideo")], [t("kVolume"), t("vLeftV")], [t("kBright"), t("vRightV")], [t("kSeek"), t("vSwipeH")], [t("kExitTheater"), t("vSwipeDownMid")]]]);
-      G.push([t("gBar"), [[t("kPrevNextPage"), t("vSwipeBar")], [t("kQuick"), t("vHoldTr"), 1], [t("kHideShow"), t("vScroll")], [t("kShowHidden"), t("vTapLine2")]]]);
+      G.push([t("gBar"), [[t(isApk() ? "kPrevNextPage" : "kPrevNextPageTab"), t("vSwipeBar")], [t("kQuick"), t("vHoldTr"), 1], [t("kHideShow"), t("vScroll")], [t("kShowHidden"), t("vTapLine2")]]]);
       G.push([t("gPopups"), [[t("kExpand"), t("vDragUp")], [t("kShrink"), t("vDragDown")], [t("kCloseP"), t("vTapOut")]]]);
     }
     return (isDesk() ? "" : `<button class="krev" type="button" data-q="coach">${ic("bulb")}<span>${esc(t("coachRev"))}</span>${ic("right")}</button>`) + `<div class="ksub">${esc(t("onPage") + (document.title || hostName()))}</div>` + G.map(([g, rows, sw], gi) => `${gi ? '<div class="divider"></div>' : ""}${sw ? `<div class="sec ksec"><span>${esc(g)}</span><button class="sw${S.gest[sw] ? " on" : ""}" type="button" role="switch" aria-checked="${S.gest[sw]}" aria-label="${esc(t("enableG") + g)}" data-q="g:${sw}"></button></div>` : `<div class="sec">${esc(g)}</div>`}<div class="kgrp${sw && !S.gest[sw] ? " off" : ""}">${rows.map(([a, key, nw]) => `<div class="krow"><span>${esc(a)}${nw ? `<i class="knew">${esc(t("newTag"))}</i>` : ""}</span><kbd>${esc(key)}</kbd></div>`).join("")}</div>`).join("");
@@ -1015,6 +1047,7 @@ button,input{font-family:inherit}
   function anchorPanel() {
     const panel = $("panel");
     if (!isWide()) { panel.style.left = ""; panel.style.bottom = ""; return; }
+    if (S.sheetFrom) { const r = S.sheetFrom, w = panel.offsetWidth; panel.style.left = clamp(r.left + r.width / 2 - w / 2, 12, innerWidth - w - 12) + "px"; panel.style.bottom = (innerHeight - r.top) + 14 + "px"; return; }
     const btn = $("bin").querySelector('[data-nav="more"]'), br = $("bar").getBoundingClientRect(); if (!btn) return;
     const r = btn.getBoundingClientRect(), w = panel.offsetWidth, W = innerWidth, cx = r.left + r.width / 2;
     panel.style.left = clamp(cx - w / 2, 12, W - w - 12) + "px";
@@ -1028,6 +1061,7 @@ button,input{font-family:inherit}
   function closeSheet() {
     if (!$("sheet")?.classList.contains("open")) return;
     $("sheet").classList.remove("open"); $("bin").querySelector('[data-nav="more"]')?.classList.remove("on");
+    if (S.sheetFrom) { S.sheetFrom = null; setTimeout(() => { if (!$("sheet").classList.contains("open")) host.style.zIndex = "2147483000"; }, 300); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }
   async function toggleFont() {
@@ -1051,6 +1085,7 @@ button,input{font-family:inherit}
     if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
     if (a === "compact") { if (S.autoFive) { toast(t("compactAutoToast")); return; } S.five = !S.five; persist(); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t(S.five ? "five" : "seven")); return; }
     if (a.startsWith("g:")) { const k = a.slice(2), st = panel.querySelector(".sbody").scrollTop; S.gest[k] = !S.gest[k]; persist(); renderSheet(); panel.querySelector(".sbody").scrollTop = st; toast(t(S.gest[k] ? "on" : "off") + t(k === "nav" ? "navG" : "trG")); return; }
+    if (a.startsWith("rd:")) { const on = globalThis.LHN_READER_BAR?.toggleTile?.(a.slice(3)); renderSheet(); toast(t(on ? "on" : "off") + b.textContent.trim()); return; }
     if (a.startsWith("t:")) { const k = a.slice(2); if (k === "suggest") return; const on = !togValue(k); await saveSettings(togPatch(k, on)); renderSheet(); toast(t(on ? "on" : "off") + b.textContent.trim()); return; }
     if (a === "theme") { await saveSettings({ sidebarTheme:isDark() ? "light" : "dark" }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); return; }
     if (a === "font") { await toggleFont(); return; }
@@ -1187,7 +1222,7 @@ button,input{font-family:inherit}
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) { if (Math.abs(dy) > 10) pg.dead = true; return; }
       if (Date.now() - pg.t > 500) { pg.dead = true; return; }
       if (dx < 0 && pg.p) pg.mode = "para";
-      else if (pg.nav) pg.mode = "nav";
+      else if (pg.nav) { pg.mode = "nav"; refreshTabs(); }
       else { pg.dead = true; return; }
       getSelection().removeAllRanges();
     }
@@ -1198,7 +1233,7 @@ button,input{font-family:inherit}
     const s = pg; pg = null; if (!s) return;
     const up = e.type === "touchend", end = e.changedTouches?.[0];
     if (s.mode === "para") { clearParaFx(); taps = []; if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
-    if (s.mode === "nav") { navFxReset(); taps = []; if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(t(back ? "noBack" : "noFwd")); } return; }
+    if (s.mode === "nav") { navFxReset(); taps = []; if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(noGoText(back)); } return; }
     if (s.dead || !up || !end || !S.gest.translate || !pageMobile() || !s.target.closest(ART_SEL) || s.target.closest(INTERACTIVE) || isOwnUi(s.target)) { taps = []; return; }
     if (Math.hypot(end.clientX - s.x, end.clientY - s.y) > 10) { taps = []; return; }
     const now = Date.now(), last = taps[taps.length - 1];
@@ -1400,7 +1435,8 @@ button,input{font-family:inherit}
     const ext = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || (notesVisible && isTouch());
     const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
     S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible;
-    if (ext) { closePop(); closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
+    if (ext) { closePop(); if (!S.sheetFrom) closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
+    if (S.sheetFrom && !document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) closeSheet(); // Reader closed under its ☰ sheet
     if (changed) { root.querySelector('[data-nav="notes"]')?.classList.toggle("on", notesVisible); syncBarVis(); }
     syncTr();
     const pageDark = pageIsDark(); $("screen").classList.toggle("pageDark", pageDark);
@@ -1439,6 +1475,14 @@ button,input{font-family:inherit}
   }
   let offlineToastAt = 0;
   globalThis.LHN_BAR_HOOKS = Object.freeze({
+    // v3.5.160 touch: the Reader's ☰ opens this main sheet (above the Reader bar), scrolled to its Trình đọc row
+    openMainSheet(fromRect) {
+      if (!mounted || !isTouch()) return;
+      S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
+      host.style.zIndex = "2147483647"; openSheet();
+      const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
+      if (b && sec) { b.scrollTop += sec.getBoundingClientRect().top - b.getBoundingClientRect().top - 4; updFade(); }
+    },
     translateOffline() {
       if (!mounted || Date.now() - offlineToastAt < 4000) return; offlineToastAt = Date.now();
       const retry = () => { if (pageTranslated()) { run("bilingual-page"); run("bilingual-page"); } };
@@ -1461,6 +1505,7 @@ button,input{font-family:inherit}
     return d < 0 ? n.scrollLeft + n.clientWidth < n.scrollWidth - 1 : n.scrollLeft > 0;
   }
   function lockMove(e) {
+    if (sheetDragMove(e)) return;
     if (!lockPt || e.touches.length !== 1 || !e.cancelable) return;
     const p = e.touches[0], dx = p.clientX - lockPt.x, dy = p.clientY - lockPt.y;
     lockPt = { x:p.clientX, y:p.clientY };
@@ -1481,28 +1526,39 @@ button,input{font-family:inherit}
     f("touchmove", lockMove, { capture:true, passive:false });
   }
 
-  // ---------- notes sidebar as a bottom sheet on touch (css/content/content.css): drag its top edge down to close ----------
-  let sheetDrag = null;
+  // ---------- notes sidebar as a bottom sheet on touch (css/content/content.css) ----------
+  // v3.5.160: like the other sheets — drag down from anywhere on it; inside a list that is scrolled down, the list scrolls
+  // back to its top first and only then the sheet follows the finger. Released past min(110px, 30%) → closes.
+  let sheetDrag = null, sheetEat = false;
   function onSheetTouchStart(event) {
     const side = event.target.closest?.("#lhn-sidebar.lhn-side-visible");
-    if (!side || event.touches.length !== 1 || !isTouch()) return;
-    const y = event.touches[0].clientY, top = side.getBoundingClientRect().top;
-    if (y - top > 64) return;
-    sheetDrag = { side, y, dy:0 };
+    if (!side || event.touches.length !== 1 || !isTouch() || editable(event.target)) { sheetDrag = null; return; }
+    const p = event.touches[0];
+    sheetDrag = { side, t:event.target, x:p.clientX, y:p.clientY, dy:0, on:false, dead:false };
   }
-  function onSheetTouchMove(event) {
-    if (!sheetDrag) return;
-    sheetDrag.dy = Math.max(0, event.touches[0].clientY - sheetDrag.y);
-    if (sheetDrag.dy < 6) return;
-    sheetDrag.side.classList.add("lhn-sheet-dragging");
-    sheetDrag.side.style.setProperty("--lhn-sheet-drag", sheetDrag.dy + "px");
+  // called from lockMove (non-passive, active while Notes is open); true = this move belongs to the sheet drag
+  function sheetDragMove(event) {
+    const d = sheetDrag; if (!d || d.dead || event.touches.length !== 1) return false;
+    const p = event.touches[0], dx = p.clientX - d.x, dy = p.clientY - d.y;
+    if (!d.on) {
+      if (Math.hypot(dx, dy) < 8) return false;
+      if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) { d.dead = true; return false; }
+      for (let n = d.t; n && n !== d.side.parentElement; n = n.parentElement) {
+        if (n.scrollTop > 0 && n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY)) { d.dead = true; return false; }
+      }
+      d.on = true; d.side.classList.add("lhn-sheet-dragging");
+    }
+    d.dy = Math.max(0, dy); d.side.style.setProperty("--lhn-sheet-drag", d.dy + "px");
+    if (event.cancelable) event.preventDefault();
+    return true;
   }
-  function onSheetTouchEnd() {
-    if (!sheetDrag) return;
-    const { side, dy } = sheetDrag; sheetDrag = null;
+  function onSheetTouchEnd(event) {
+    const d = sheetDrag; sheetDrag = null; if (!d?.on) return;
+    sheetEat = true; setTimeout(() => { sheetEat = false; }, 80);
+    const { side, dy } = d, h = side.getBoundingClientRect().height;
     side.classList.remove("lhn-sheet-dragging");
-    side.style.removeProperty("--lhn-sheet-drag");
-    if (dy > 90) run("notes");
+    if (event.type === "touchend" && dy > Math.min(110, h * 0.3)) { run("notes"); setTimeout(() => side.style.removeProperty("--lhn-sheet-drag"), 320); }
+    else side.style.removeProperty("--lhn-sheet-drag");
   }
   let sidebarWatch = null;
   function watchSidebar() {
@@ -1531,7 +1587,9 @@ button,input{font-family:inherit}
     const passive = { capture:true, passive:true };
     document.addEventListener("scroll", onScroll, passive);
     document.addEventListener("touchstart", onSheetTouchStart, passive);
-    document.addEventListener("touchmove", onSheetTouchMove, passive);
+    document.addEventListener("click", e => { if (sheetEat) { e.stopPropagation(); e.preventDefault(); } }, true);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshTabs(); });
+    refreshTabs();
     document.addEventListener("touchend", onSheetTouchEnd, true);
     document.addEventListener("touchcancel", onSheetTouchEnd, true);
     window.addEventListener("touchstart", onPageTouchStart, { passive:true });
