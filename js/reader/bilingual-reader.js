@@ -66,6 +66,12 @@
     #lhn-bilingual-reading-bar,#lhn-bilingual-reading-bar *{font-family:var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif)!important}
     #lhn-bilingual-reading-bar{position:fixed;inset:0;z-index:2147483646;display:none;pointer-events:none;color:#334155;font-size:13px;line-height:normal;text-align:left;direction:ltr;letter-spacing:normal}
     #lhn-bilingual-reading-bar.lhn-show{display:block}
+    #lhn-bilingual-reading-bar.lhn-show .lhn-br-rbar{animation:lhnBrBarIn .26s cubic-bezier(.2,.8,.2,1)}
+    #lhn-bilingual-reading-bar.lhn-hiding{pointer-events:none}
+    #lhn-bilingual-reading-bar.lhn-hiding .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-hiding .lhn-br-kbd{animation:lhnBrBarOut .22s cubic-bezier(.4,0,1,1) forwards}
+    @keyframes lhnBrBarIn{from{translate:0 calc(100% + 12px);opacity:0}to{translate:0 0;opacity:1}}
+    @keyframes lhnBrBarOut{from{translate:0 0;opacity:1}to{translate:0 calc(100% + 12px);opacity:0}}
+    @media (prefers-reduced-motion:reduce){#lhn-bilingual-reading-bar .lhn-br-rbar,#lhn-bilingual-reading-bar .lhn-br-kbd{animation:none!important}}
     #lhn-bilingual-reading-bar *{box-sizing:border-box}
     #lhn-bilingual-reading-bar [hidden]{display:none!important}
     #lhn-bilingual-reading-bar button,#lhn-bilingual-reading-bar input{margin:0;font-size:inherit;font-weight:inherit;line-height:normal;letter-spacing:normal;text-transform:none;text-shadow:none;text-decoration:none;min-width:0;min-height:0;max-width:none;box-shadow:none;outline-offset:2px}
@@ -1250,7 +1256,14 @@
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
   }
-  function closeReadingBar() { stopReading(); closeSheet(); bar.classList.remove("lhn-show"); syncSpacer(); }
+  // v3.5.163: the bar slides out (the Keepit bar slides back in at the same time) instead of vanishing
+  let barHideTimer = 0;
+  function closeReadingBar() {
+    stopReading(); closeSheet();
+    if (!bar.classList.contains("lhn-show") || bar.classList.contains("lhn-hiding")) return;
+    bar.classList.add("lhn-hiding"); clearTimeout(barHideTimer);
+    barHideTimer = setTimeout(() => { bar.classList.remove("lhn-show", "lhn-hiding"); syncSpacer(); }, 220);
+  }
   function stopReading() {
     speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
   }
@@ -1422,7 +1435,7 @@
     else if (cancelPendingSpeech) { utterance = null; cancelGoogle(); }
     queue = nextQueue;
     readingPaused = false; resumeText = ""; queueIndex = fromBlock ? queue.indexOf(fromBlock) : 0;
-    reading = true; readingPaused = false; syncPauseShortcutState(); shortcutBannerVisible = true; bar.classList.add("lhn-show"); syncBarLayout(); syncToolbar();
+    reading = true; readingPaused = false; syncPauseShortcutState(); shortcutBannerVisible = true; clearTimeout(barHideTimer); bar.classList.remove("lhn-hiding"); bar.classList.add("lhn-show"); syncBarLayout(); syncToolbar();
     if (!flagFontRequested) { flagFontRequested = true; void prepareFlagFont(); }
     document.dispatchEvent(new Event("lhn-bilingual-reader-started"));
     if (cancelPendingSpeech) speakAfterCancel(); else speakNext();

@@ -114,14 +114,8 @@
       if (done && s.sc && s.h - d > s.cap && v < -0.05) startFling(s.sc, -v);
       return;
     }
-    // a full two-step sheet lands on the nearest step (release point + momentum): full / half (collapse) / closed
-    const fullGrow = done && d > 0 && o.grow?.isFull();
-    const halfH = fullGrow ? Math.min(s.h, o.grow.half?.() || s.h * 0.75) : 0, toHalf = s.h - halfH, proj = d + Math.max(0, v) * 140;
-    if (fullGrow && proj <= toHalf + halfH * 0.45) {
-      if (proj > Math.max(40, toHalf * 0.5)) { setTr(el, null); o.grow.collapse(); snap(); return; }
-      setTr(el, null); snap(); return;
-    }
-    if (done && (fullGrow || d > Math.min(110, s.h * 0.3) || (v > 0.6 && d > 24))) {
+    // v3.5.163: pulled down = closed, from any step (no stop at half): past min(110px, 30%) or a quick flick; else back
+    if (done && (d > Math.min(110, s.h * 0.3) || (v > 0.6 && d > 24))) {
       setTr(el, "translate .18s ease-in"); setT(el, s.h + 40);
       setTimeout(() => {
         setTr(el, "none"); try { o.close(); } catch {}
@@ -167,7 +161,7 @@
     if (!want) { g = null; stopFling(); }
   }
   // el = the moving sheet/popover; o = { isOpen(), close(), watch?: Element|Element[], drag?: false, scroller?(),
-  //   grow?: { isFull(), cap(), setH(px|null), release(expand: pulled up > 40px), collapse(), half?() (px, default 75%) }, onDrag?(on) }
+  //   grow?: { isFull(), cap(), setH(px|null), release(expand: pulled up > 40px), collapse?() (unused since v3.5.163: a pull down closes) }, onDrag?(on) }
   function attach(el, o) {
     if (!el || !o) return;
     const known = entries.has(el); entries.set(el, o);

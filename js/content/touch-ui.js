@@ -485,6 +485,20 @@ button,input{font-family:inherit}
 .dark .coach{background:#18181b;color:#f4f4f5;border-color:#27272a}
 .dark .coach li em{color:#c4b5fd}
 .divider{height:1px;background:rgba(148,163,184,.3);margin:2px 0 10px}
+.mfoot{flex:none;position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:2px;margin:6px -14px calc(-16px - var(--sab));padding:6px 4px calc(6px + var(--sab));border-top:1px solid rgba(148,163,184,.3);background:#f8fafc;border-radius:0}
+.dark .mfoot{background:#1f1f23}
+.wide .mfoot{margin:6px -14px -14px;padding:4px;border-radius:0 0 20px 20px}
+.fq{display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%;min-height:48px;padding:0 8px;border:0;border-radius:12px;background:none;color:inherit;font-family:inherit;font-size:14px;font-weight:600;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fq:nth-child(1){justify-self:start}.fq:nth-child(2){justify-self:center}.fq:nth-child(3){justify-self:end}
+.fq span{overflow:hidden;text-overflow:ellipsis}
+.fq svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#475569}
+.dark .fq svg{color:#a1a1aa}
+.fq.on svg{color:#9c27b0}.dark .fq.on svg{color:#c4b5fd}
+.fq:hover{background:rgba(148,163,184,.14)}.fq:active{background:rgba(148,163,184,.22)}
+.fq:focus-visible{outline:2px solid #9c27b0;outline-offset:-2px}
+.panel .smore{bottom:calc(66px + var(--sab))}
+.wide .panel .smore{bottom:62px}
+
 .lsearch{width:100%;height:40px;border-radius:12px;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:14px;padding:0 12px;margin-bottom:8px;outline:none}
 .lsearch:focus{border-color:#9c27b0}
 .lrow{display:flex;align-items:center;width:100%;gap:10px;border:0;background:none;color:inherit;padding:11px 10px;border-radius:10px;font-size:14.5px;cursor:pointer;text-align:left}
@@ -629,9 +643,10 @@ button,input{font-family:inherit}
 .bbar,.hzone,.pill,.pop.open,.clear.on{pointer-events:auto}
 .bbar.hide{pointer-events:none}
 .bbar.peek{pointer-events:auto}
-.nscrim{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.nscrim{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.4);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
 .screen.notesopen .nscrim{opacity:1;visibility:visible;pointer-events:auto}
-.screen.extyield .bbar,.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .pill,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
+.screen.extyield .bbar{opacity:0;visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),opacity .22s,visibility 0s .26s}
+.screen.extyield .hzone,.screen.extyield .btop,.screen.extyield .pill,.screen.extyield .coach,.screen.extyield .iscrim{display:none}
 /* v3.5.159: boxes pinned to the bottom are fixed to the viewport bottom themselves, so Chrome/Edge Android move them together with the
    browser's own toolbars while those slide (a box inside the top-anchored .screen only followed after the scroll ended → gap). */
 .bbar,.hzone,.pill,.toast,.coach,.btop,.pop,.panel{position:fixed}
@@ -739,7 +754,7 @@ button,input{font-family:inherit}
     if (!root) return;
     const bar = $("bar"), screen = $("screen");
     const off = S.kbd || S.vfs, barless = S.hidden || S.yieldBar;
-    bar.classList.toggle("hide", off || barless || (S.scrollHide && !S.peek));
+    bar.classList.toggle("hide", off || barless || S.extYield || (S.scrollHide && !S.peek));
     bar.classList.toggle("peek", barless && S.peek && !off);
     screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
     screen.classList.toggle("siteoff", S.siteOff);
@@ -965,6 +980,8 @@ button,input{font-family:inherit}
   const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"] };
   const tile = (act, icon, label, on, tip, val) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span><span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
+  // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
+  const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
   // v7: tapping inside ☰ never jumps to the top — keep the scroll position when the same pane is redrawn
   let sheetPaneDrawn = "";
@@ -984,15 +1001,16 @@ button,input{font-family:inherit}
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${tile("settings", "settings", t("settings"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     ${readerRowHTML()}
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("site", "power", t("siteTile"), !S.siteOff, t("siteTip"))}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}${S.hidden ? tile("show", "eye", t("show")) : tile("hide", "eyeoff", t("hide"))}</div>
-  </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
+    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}</div>
+  </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), !S.siteOff, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1369,14 +1387,31 @@ button,input{font-family:inherit}
   });
 
   // ---------- page state: Reader / overlay / notes take the bar's place; site off → pill ----------
+  const readerShown = () => !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show:not(.lhn-hiding)");
+  // v3.5.163: the bar reacts the same frame the Reader / overlay opens or closes (was: up to 700ms later via the ticker)
+  let readerWatch = null, htmlWatch = null, overlayWas = null;
+  function watchExt() {
+    const rb = document.getElementById("lhn-bilingual-reading-bar");
+    if (rb && rb !== readerWatch?.target) {
+      readerWatch?.observer.disconnect();
+      const observer = new MutationObserver(syncState); observer.observe(rb, { attributes:true, attributeFilter:["class"] });
+      readerWatch = { target:rb, observer };
+    }
+    if (!htmlWatch) {
+      htmlWatch = new MutationObserver(() => { const on = document.documentElement.classList.contains("lhn-video-overlay-open"); if (on !== overlayWas) { overlayWas = on; syncState(); } });
+      htmlWatch.observe(document.documentElement, { attributes:true, attributeFilter:["class"] });
+    }
+  }
   function syncState() {
     if (!mounted) return;
     const notesVisible = !!document.querySelector("#lhn-sidebar.lhn-side-visible");
-    const ext = !!document.querySelector("#lhn-bilingual-reading-bar.lhn-show") || document.documentElement.classList.contains("lhn-video-overlay-open") || (notesVisible && isTouch());
+    // v3.5.163: Notes no longer folds the bar — it stays under the dim like with ☰, so closing Notes never flashes it back in
+    const ext = readerShown() || document.documentElement.classList.contains("lhn-video-overlay-open");
     const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
+    if (notesVisible && !S.notesOn && isTouch()) { closePop(); closeSheet(); closeSearch(); hideCoach(); }   // Notes sheet opening: nothing else stays open
     S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible;
     if (ext) { closePop(); if (!S.sheetFrom) closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
-    if (S.sheetFrom && !document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) closeSheet(); // Reader closed under its ☰ sheet
+    if (S.sheetFrom && !readerShown()) closeSheet(); // Reader closed under its ☰ sheet
     if (changed) { root.querySelector('[data-nav="notes"]')?.classList.toggle("on", notesVisible); syncBarVis(); }
     syncTr();
     const pageDark = pageIsDark(); $("screen").classList.toggle("pageDark", pageDark);
@@ -1446,14 +1481,13 @@ button,input{font-family:inherit}
     SK()?.attach(panel, { isOpen:() => $("sheet").classList.contains("open"), close:() => closeSheet(), watch:$("sheet"), scroller:() => panel.querySelector(".sbody"),
       grow:{ isFull:() => panel.classList.contains("full"), cap:capH,
         setH:px => { if (px === null) { panel.classList.remove("growing"); panel.style.maxHeight = panel.classList.contains("full") && isWide() ? capH() + "px" : ""; } else { panel.classList.add("growing"); panel.style.maxHeight = px + "px"; } },
-        release:grow => { const keep = panel.scrollHeight; panel.classList.remove("growing"); panel.style.transition = "max-height .2s ease"; panel.style.maxHeight = ""; if (grow) expand(); setTimeout(() => { panel.style.transition = ""; updFade(); }, 220); return keep; },
-        collapse:() => { panel.classList.remove("full"); panel.style.maxHeight = ""; setTimeout(updFade, 320); } } });
+        release:grow => { const keep = panel.scrollHeight; panel.classList.remove("growing"); panel.style.transition = "max-height .2s ease"; panel.style.maxHeight = ""; if (grow) expand(); setTimeout(() => { panel.style.transition = ""; updFade(); }, 220); return keep; } } });
     SK()?.attach($("pop"), { isOpen:() => $("pop").classList.contains("open"), close:() => closePop(), watch:$("pop") });
     // search: its taller step = keyboard down (more results); pulled down from there = keyboard back; further = closed
     const sq = $("sq");
     SK()?.attach($("sbox"), { isOpen:() => $("srch").classList.contains("open"), close:() => closeSearch(), watch:$("srch"), scroller:() => $("res"),
       grow:{ isFull:() => !isTouch() || root.activeElement !== sq, cap:() => $("sbox").getBoundingClientRect().height, setH:() => {},
-        release:grow => { if (grow) { sq.blur(); layoutSearch(); } }, collapse:() => { sq.focus(); layoutSearch(); } } });
+        release:grow => { if (grow) { sq.blur(); layoutSearch(); } } } });
   }
 
   let sidebarWatch = null;
@@ -1493,7 +1527,8 @@ button,input{font-family:inherit}
     document.addEventListener("focusout", onFocusOut, true);
     document.addEventListener("fullscreenchange", onFullscreen); document.addEventListener("webkitfullscreenchange", onFullscreen);
     bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
-    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); syncState(); checkOverlap(); }, 700);
+    watchExt();
+    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); watchExt(); syncState(); checkOverlap(); }, 700);
     requestAnimationFrame(checkOverlap);
     // mounted before the page's styles/content finished loading: re-read page colours, video layout and page bars then
     const settle = () => { if (!mounted) return; syncState(); relayout(false); checkOverlap(); };

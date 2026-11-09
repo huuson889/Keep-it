@@ -79,6 +79,8 @@ Chromium-based browsers (Chrome, Edge, Brave, …):
 2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
 3. Click **Load unpacked** and select the folder that contains `manifest.json`.
 
+Edge on Android (Edge Canary): Settings → About → tap the version number to open Developer options → **Extension install by crx** → pick the `.crx` that ships next to each test ZIP. The CRX holds the same files as the ZIP; build both with `python3 scripts/build_release.py --key <private key .pem>` (keep the key outside the repository; the same key keeps the same extension ID). Stores take the ZIP, not the CRX.
+
 Firefox-based browsers (Firefox, Zen, Floorp,..) (121 or later):
 1. From the repository, run `python scripts/build_firefox.py` (or pass `--output /path/to/folder`). This creates a Firefox-ready copy outside the repository, removes Chromium-only `sidePanel` entries, and sets `sidebar_action.open_at_install` to `false`.
 2. Open `about:debugging#/runtime/this-firefox`.
@@ -106,7 +108,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Project structure
 
-- `manifest.json`: Chromium source manifest; `scripts/build_firefox.py` emits a Firefox-ready copy with unsupported Chromium-only keys removed.
+- `manifest.json`: Chromium source manifest; `scripts/build_firefox.py` emits a Firefox-ready copy with unsupported Chromium-only keys removed; `scripts/build_release.py` builds the test ZIP and the matching signed CRX from a git revision.
 - `pages/`: `dashboard.html` and `popup.html` UI entry points, plus `ai-panel.html`, the AI panel page shared by the Chromium side panel and the Firefox sidebar (Keepit toolbar above, AI site in an iframe below).
 - `js/core/`: browser polyfill, shared configuration, languages, settings, messaging, cache, and shortcuts.
 - `js/background/`: background service worker, annotation storage, usage limits, and error logging.
