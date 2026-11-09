@@ -6,6 +6,7 @@
 // Controls in the More sheet click the original buttons, so no feature or handler is duplicated; only ♥ is new.
 const TOUCH_OVERLAY_QUERY = '(max-width: 599.98px) and (orientation: portrait), (max-width: 899.98px) and (orientation: portrait) and (pointer: coarse)';
 const TOUCH_OVERLAY_COMPACT_KEY = 'lhnTouchOverlayCompact';
+const TOUCH_OVERLAY_SUB_HIDDEN_KEY = 'lhnTouchOverlaySubHidden';   // v3.5.168: chevron between ♥ and Fullscreen folds the subtitle box
 const TOUCH_TAP_GAP = 280;     // ms between taps that make a double tap (heart)
 const TOUCH_TAP_SLOP = 60;     // px between the two taps
 const TOUCH_STREAK_GAP = 650;  // ms: further taps after a heart keep adding hearts (TikTok streak)
@@ -16,6 +17,7 @@ const TOUCH_OVERLAY_TEXT = {
     more: 'More', close: 'Close', enlarge: 'Show video', shrink: 'Shrink video', study: 'Study',
     shadowing: 'Speaking practice', shadowingSub: 'Listen and repeat', dictation: 'Dictation', dictationSub: 'Listen and type',
     theme: 'Theme', subOptions: 'Subtitle options', subLanguage: 'Subtitle language', notes: 'Notes', art: 'Art mode', settings: 'Settings',
+    hideSubs: 'Hide subtitles', showSubs: 'Show subtitles',
     favorite: 'Favorite', favAdded: 'Added to favorites', favRemoved: 'Removed from favorites', fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen',
     repeat: 'Repeat sentence', volume: 'Volume', brightness: 'Brightness', auto: 'Auto', gestureHint: 'Swipe left side: volume · right side: brightness', gestureHint2: 'Swipe sideways: seek · swipe down in the middle: exit', hintClose: 'Tap to close',
     size: 'Text size', small: 'Small', medium: 'Medium', large: 'Large', mainLine: 'Primary subtitle', translationLine: 'Translated subtitle',
@@ -28,6 +30,7 @@ const TOUCH_OVERLAY_TEXT = {
     more: 'Thêm', close: 'Đóng', enlarge: 'Phóng to video', shrink: 'Thu nhỏ video', study: 'Học',
     shadowing: 'Luyện nói', shadowingSub: 'Nghe và nói lại', dictation: 'Chép chính tả', dictationSub: 'Nghe và gõ lại',
     theme: 'Chủ đề', subOptions: 'Tùy chọn phụ đề', subLanguage: 'Ngôn ngữ phụ đề', notes: 'Ghi chú', art: 'Chế độ nghệ thuật', settings: 'Cài đặt',
+    hideSubs: 'Ẩn phụ đề', showSubs: 'Hiện phụ đề',
     favorite: 'Yêu thích', favAdded: 'Đã thêm vào yêu thích', favRemoved: 'Đã bỏ yêu thích', fullscreen: 'Toàn màn hình', exitFullscreen: 'Thoát toàn màn hình',
     repeat: 'Lặp lại câu', volume: 'Âm lượng', brightness: 'Độ sáng', auto: 'Tự động', gestureHint: 'Vuốt bên trái: âm lượng · bên phải: độ sáng', gestureHint2: 'Vuốt ngang: tua · vuốt xuống ở giữa: thoát', hintClose: 'Chạm để đóng',
     size: 'Cỡ chữ', small: 'Nhỏ', medium: 'Trung bình', large: 'Lớn', mainLine: 'Phụ đề chính', translationLine: 'Phụ đề dịch',
@@ -40,6 +43,7 @@ const TOUCH_OVERLAY_TEXT = {
     more: '더보기', close: '닫기', enlarge: '영상 크게 보기', shrink: '영상 작게 보기', study: '학습',
     shadowing: '말하기 연습', shadowingSub: '듣고 따라 말하기', dictation: '받아쓰기', dictationSub: '듣고 입력하기',
     theme: '테마', subOptions: '자막 옵션', subLanguage: '자막 언어', notes: '노트', art: '아트 모드', settings: '설정',
+    hideSubs: '자막 숨기기', showSubs: '자막 표시',
     favorite: '즐겨찾기', favAdded: '즐겨찾기에 추가됨', favRemoved: '즐겨찾기에서 제거됨', fullscreen: '전체 화면', exitFullscreen: '전체 화면 종료',
     repeat: '문장 반복', volume: '볼륨', brightness: '밝기', auto: '자동', gestureHint: '왼쪽 스와이프: 볼륨 · 오른쪽: 밝기', gestureHint2: '가로 스와이프: 탐색 · 가운데에서 아래로: 나가기', hintClose: '탭하여 닫기',
     size: '글자 크기', small: '작게', medium: '보통', large: '크게', mainLine: '원문 자막', translationLine: '번역 자막',
@@ -71,6 +75,7 @@ const TOUCH_OVERLAY_ICONS = {
   chevron: '<path d="m6 9 6 6 6-6"/>',
 };
 let touchOverlayCompact = true;
+let touchSubHidden = false;
 let touchFavoriteIds = new Set();
 let touchSubTab = 'video';
 
@@ -116,6 +121,8 @@ function syncTouchOverlayHeader() {
     const button = root.querySelector(selector);
     if (button) { button.title = touchOverlayText(key); button.setAttribute('aria-label', button.title); }
   }
+  const subButton = root.querySelector('#te-touch-sub-btn');
+  if (subButton) { subButton.title = touchOverlayText(touchSubHidden ? 'showSubs' : 'hideSubs'); subButton.setAttribute('aria-label', subButton.title); }
   syncTouchFavoriteButtons();
   const source = root.querySelector('.te-touch-source');
   if (source) {
@@ -130,6 +137,21 @@ function setTouchOverlayCompact(compact, persist = true) {
   overlayEl()?.classList.toggle('te-touch-compact', touchOverlayCompact);
   syncTouchOverlayHeader();
   if (persist) globalThis.browser?.storage?.local?.set({ [TOUCH_OVERLAY_COMPACT_KEY]: touchOverlayCompact }).catch?.(() => {});
+  requestAnimationFrame(() => { if (state?.open) { fitTouchSubtitle(); alignActiveTranscriptFocus('auto'); } });
+}
+
+// Chevron (portrait): fold the subtitle box under the video to its button row so the transcript gets the space.
+function setTouchSubHidden(hidden, persist = true) {
+  touchSubHidden = Boolean(hidden);
+  const root = overlayEl();
+  root?.classList.toggle('te-touch-sub-hidden', touchSubHidden);
+  const button = root?.querySelector('#te-touch-sub-btn');
+  if (button) {
+    button.title = touchOverlayText(touchSubHidden ? 'showSubs' : 'hideSubs');
+    button.setAttribute('aria-label', button.title);
+    button.setAttribute('aria-expanded', String(!touchSubHidden));
+  }
+  if (persist) globalThis.browser?.storage?.local?.set({ [TOUCH_OVERLAY_SUB_HIDDEN_KEY]: touchSubHidden }).catch?.(() => {});
   requestAnimationFrame(() => { if (state?.open) { fitTouchSubtitle(); alignActiveTranscriptFocus('auto'); } });
 }
 
@@ -980,8 +1002,15 @@ function buildTouchOverlayChrome(root) {
   const subBox = root.querySelector('.te-sub-container');
   if (subBox && !subBox.querySelector('#te-touch-fav-btn')) {
     subBox.insertAdjacentHTML('beforeend', `<button type="button" class="te-touch-cbtn te-touch-fav" id="te-touch-fav-btn" aria-pressed="false">${touchOverlayIcon('heart')}</button>`
+      + `<button type="button" class="te-touch-cbtn" id="te-touch-sub-btn" aria-expanded="true">${touchOverlayIcon('chevron')}</button>`
       + `<button type="button" class="te-touch-cbtn" id="te-touch-fs-btn">${touchOverlayIcon('fullscreen')}</button>`);
     subBox.querySelector('#te-touch-fav-btn').addEventListener('click', onTouchFavoriteClick);
+    subBox.querySelector('#te-touch-sub-btn').addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setTouchSubHidden(!touchSubHidden);
+    });
+    setTouchSubHidden(touchSubHidden, false);
     subBox.querySelector('#te-touch-fs-btn').addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1054,6 +1083,9 @@ function setupTouchOverlayLayout() {
     else closeTouchOverlaySheet();
   }).observe(root, { attributes: true, attributeFilter: ['class'] });
   syncDocClass();
+  Promise.resolve(globalThis.browser?.storage?.local?.get(TOUCH_OVERLAY_SUB_HIDDEN_KEY)).then((stored) => {
+    if (typeof stored?.[TOUCH_OVERLAY_SUB_HIDDEN_KEY] === 'boolean') setTouchSubHidden(stored[TOUCH_OVERLAY_SUB_HIDDEN_KEY], false);
+  }).catch?.(() => {});
   Promise.resolve(globalThis.browser?.storage?.local?.get(TOUCH_OVERLAY_COMPACT_KEY)).then((stored) => {
     if (typeof stored?.[TOUCH_OVERLAY_COMPACT_KEY] === 'boolean') setTouchOverlayCompact(stored[TOUCH_OVERLAY_COMPACT_KEY], false);
   }, () => {});

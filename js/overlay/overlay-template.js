@@ -2399,6 +2399,13 @@ const OVERLAY_CSS = `
 #keepit-exact-overlay .te-touch-cbtn > svg { width: 17px; height: 17px; }
 #keepit-exact-overlay .te-touch-cbtn.te-touch-fav { left: 8px; }
 #keepit-exact-overlay #te-touch-fs-btn { right: 8px; }
+/* v3.5.168: chevron centred between ♥ and Fullscreen; points up (fold) while subtitles show, down when folded. */
+#keepit-exact-overlay #te-touch-sub-btn { left: calc(50% - 17px); }
+#keepit-exact-overlay #te-touch-sub-btn > svg { width: 19px; height: 19px; transform: rotate(180deg); transition: transform .2s; }
+#keepit-exact-overlay.te-touch-sub-hidden #te-touch-sub-btn > svg { transform: none; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout:not(.te-study-active):not(.te-touch-theater) .te-sub-container { padding: 44px 48px 10px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout.te-touch-sub-hidden:not(.te-study-active):not(.te-touch-theater) .te-sub-container { height: 50px !important; padding: 0 48px !important; }
+#keepit-exact-overlay#keepit-exact-overlay.te-touch-layout.te-touch-sub-hidden:not(.te-study-active):not(.te-touch-theater) .te-sub-container .te-subtitle-content { display: none !important; }
 #keepit-exact-overlay#keepit-exact-overlay .te-touch-cbtn.te-touch-fav.on { border-color: rgba(255, 45, 85, .55); background: rgba(255, 45, 85, .15); }
 /* ♥ click: beat + two ripples + ten small hearts (same effect as Dashboard / dictionary hearts). */
 #keepit-exact-overlay .te-touch-beat { animation: te-touch-beat .5s ease; }
