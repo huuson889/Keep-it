@@ -193,6 +193,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       return changed;
     }
     // ---------- state ----------
+    const SUB_SZ = [0.86, 1, 1.18]; // subtitle size steps: Nhỏ · Trung bình · Lớn
     const S = {
       realFs: false,
       w: innerWidth, h: innerHeight, input: 'mouse', theme: 'dark', scale: 1,
@@ -230,7 +231,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
     // ---------- static pieces ----------
-    $('#logo').innerHTML = ic('logo');
+    $('#logo').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>'; // same mark as assets/icons/icon.svg
     $('#btnClose').innerHTML = ic('close');
     $('#vplay').innerHTML = ic('play');
     $('#wave').innerHTML = Array.from({ length: 46 }, (_, i) => `<i style="animation-delay:${(i * 37 % 100) / 100}s"></i>`).join('');
@@ -777,19 +778,20 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function armChrome() {
       clearTimeout(chromeT);
       if (S.tab !== 'view' || curView() !== 'theater') return;
-      chromeT = setTimeout(() => { if (S.playing && !$('#layer').children.length && !prog.classList.contains('drag')) setChrome(false); }, 2600);
+      chromeT = setTimeout(() => { if (S.tab === 'view' && curView() === 'theater' && S.playing && !$('#layer').children.length && !prog.classList.contains('drag')) setChrome(false); }, 2600);
     }
     ov.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && curView() === 'theater' && S.tab === 'view') { if (S.chromeOff) setChrome(true); armChrome(); } });
 
     // ---------- generic panel (popover on wide, sheet on compact) ----------
     const layer = $('#layer');
     let panelKind = '', panelAnchor = null;
-    function closePanel() { layer.innerHTML = ''; panelKind = ''; panelAnchor = null; $$('.wd.on').forEach((w) => w.classList.remove('on')); if (curView() === 'theater') armChrome(); }
+    const dropSheet = () => { const o = layer.querySelector('.pnl'); if (o) globalThis.LHN_SHEET?.detach?.(o); };
+    function closePanel() { dropSheet(); layer.innerHTML = ''; panelKind = ''; panelAnchor = null; $$('.wd.on').forEach((w) => w.classList.remove('on')); if (curView() === 'theater') armChrome(); }
     function openPanel(kind, anchor, opt = {}) {
       if (kind === 'summary') hideStudyToast(true);
       if (panelKind === kind && !opt.keep) { closePanel(); return; }
       const same = panelKind === kind && opt.keep, old = layer.querySelector('.pnl'), keepTop = same && old ? old.scrollTop : 0, keepTf = same && old ? old.style.transform : '';
-      layer.innerHTML = '';
+      dropSheet(); layer.innerHTML = '';
       panelKind = kind; panelAnchor = anchor || panelAnchor;
       const sheet = sheetMode() && !opt.center;
       const scrim = document.createElement('div'); scrim.className = 'scrim' + (sheet || opt.center ? ' dim' : '');
@@ -826,8 +828,12 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       else { p.style.top = `${abot + 10}px`; p.style.maxHeight = `${H - abot - 18}px`; }
     }
     function attachSheetDrag(p) {
+      // touch: the shared Keepit sheet rule (js/shared/sheet-kit.js) — drag down from anywhere closes, a scrolled list returns to its top first,
+      // the page behind never scrolls; same as the Keepit bar sheets. Mouse / pen ("Chạm" mode on a desktop) keep the pointer drag below.
+      const kit = globalThis.LHN_SHEET;
+      if (kit) kit.attach(p, { isOpen: () => p.isConnected && p.classList.contains('sheet'), close: () => { if (p.isConnected) closePanel(); } });
       let y0 = null, dy = 0;
-      p.addEventListener('pointerdown', (e) => { if (e.target.closest('input,textarea,select,.rng') || p.scrollTop > 0) return; y0 = e.clientY; dy = 0; });
+      p.addEventListener('pointerdown', (e) => { if ((kit && e.pointerType === 'touch') || e.target.closest('input,textarea,select,.rng') || p.scrollTop > 0) return; y0 = e.clientY; dy = 0; });
       p.addEventListener('pointermove', (e) => { if (y0 == null) return; dy = Math.max(0, (e.clientY - y0) / S.scale); if (dy > 4) { p.style.transition = 'none'; p.style.translate = `0 ${dy}px`; } });
       const end = () => { if (y0 == null) return; y0 = null; if (dy > Math.min(110, p.offsetHeight * 0.3)) closePanel(); else { p.style.transition = 'translate .2s'; p.style.translate = '0 0'; } };
       p.addEventListener('pointerup', end); p.addEventListener('pointercancel', end);
@@ -908,7 +914,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const en = st.en === 'def' ? subDefault(S.subTab, 'en') : st.en, vi = st.vi === 'def' ? subDefault(S.subTab, 'vi') : st.vi;
         return `${head('Phụ đề', '', 'set')}
         <div class="seg" style="width:100%;margin-bottom:10px"><button data-subtab="video" class="${S.subTab === 'video' ? 'on' : ''}">Phụ đề video</button><button data-subtab="side" class="${S.subTab === 'side' ? 'on' : ''}">Phụ đề cuộn</button></div>
-        <div class="prev"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500}">Keep exploring everything</div><div class="b" style="color:${vi}">Bản dịch hiện ở đây</div></div>
+        <div class="prev ${S.subTab === 'video' ? `bg-${st.bg}` : ''}" style="font-family:${subFam(st.font) || 'inherit'}"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500};font-size:${Math.round((S.subTab === 'video' ? 18 : 15.5) * SUB_SZ[st.size] * 10) / 10}px"><span>Keep exploring everything</span></div><div class="b" style="color:${vi};font-size:${Math.round((S.subTab === 'video' ? 14 : 13) * SUB_SZ[st.size] * 10) / 10}px"><span>Bản dịch hiện ở đây</span></div></div>
         <div class="srow"><div class="l">Cỡ chữ</div><div class="seg">${['Nhỏ', 'Trung bình', 'Lớn'].map((l, i) => `<button data-fsz="${i}" class="${st.size === i ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <div class="sec">Màu phụ đề chính</div>${swatch('en')}
         <div class="sec">Màu phụ đề dịch</div>${swatch('vi')}
@@ -1052,12 +1058,12 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.split) { setSplit(+t.dataset.split, true); return openPanel('set', null, { keep: true, wide: true }); }
         if (t.dataset.theme) { S.theme = t.dataset.theme; apply(); return openPanel('theme', null, { keep: true }); }
         if (t.dataset.subtab) { S.subTab = t.dataset.subtab; return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.fsz) { S.subStyle[S.subTab].size = +t.dataset.fsz; applySubStyle(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.color) { const [g, c] = t.dataset.color.split(':'); S.subStyle[S.subTab][g] = c; applySubStyle(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.bold) { S.subStyle[S.subTab].bold = t.dataset.bold === '1'; applySubStyle(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.font) { S.subStyle[S.subTab].font = t.dataset.font; applySubStyle(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.bg) { S.subStyle[S.subTab].bg = t.dataset.bg; applySubStyle(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.act === 'subreset') { S.subStyle[S.subTab] = { size: 1, en: 'def', vi: 'def', bold: S.subTab === 'video', font: 'def', bg: S.subTab === 'video' ? 'soft' : 'none' }; applySubStyle(); toast('Đã đặt lại'); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.fsz) { S.subStyle[S.subTab].size = +t.dataset.fsz; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.color) { const [g, c] = t.dataset.color.split(':'); S.subStyle[S.subTab][g] = c; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.bold) { S.subStyle[S.subTab].bold = t.dataset.bold === '1'; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.font) { S.subStyle[S.subTab].font = t.dataset.font; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.bg) { S.subStyle[S.subTab].bg = t.dataset.bg; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.act === 'subreset') { S.subStyle[S.subTab] = { size: 1, en: 'def', vi: 'def', bold: S.subTab === 'video', font: 'def', bg: S.subTab === 'video' ? 'soft' : 'none' }; applySubStyle(); saveUi(); toast('Đã đặt lại'); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.src) { S.srcLang = t.dataset.src; B.setLanguage('source', S.srcLang); return openPanel('sublang', null, { keep: true, wide: true }); }
         if (t.dataset.dst) { S.dstLang = t.dataset.dst; B.setLanguage('target', S.dstLang); toast(`Dịch sang ${langName(S.dstLang)}`); return openPanel('sublang', null, { keep: true, wide: true }); }
         if (t.dataset.fmt) { S.exp.fmt = t.dataset.fmt; saveUi(); return openPanel('export', null, { keep: true, wide: true }); }
@@ -1095,10 +1101,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (wClass() === 'e' && roomNotes()) { S.colNotes = !S.colNotes; apply(); return; }
       openPanel('notes', anchor, { wide: true });
     }
+    function subFam(f) { return f === 'serif' ? 'Georgia,serif' : f === 'mono' ? 'ui-monospace,Menlo,monospace' : ''; }
     function applySubStyle() {
       const v = S.subStyle.video, s = S.subStyle.side;
-      const fam = (f) => (f === 'serif' ? 'Georgia,serif' : f === 'mono' ? 'ui-monospace,Menlo,monospace' : '');
-      const sz = [0.86, 1, 1.18];
+      const fam = subFam, sz = SUB_SZ;
       ov.style.setProperty('--fs-en', `${19 * sz[v.size]}px`); ov.style.setProperty('--fs-vi', `${15.5 * sz[v.size]}px`);
       ov.style.setProperty('--fs-sen', `${15.5 * sz[s.size]}px`); ov.style.setProperty('--fs-svi', `${13 * sz[s.size]}px`);
       const st = ov.style;
@@ -1106,10 +1112,11 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (s.en !== 'def') st.setProperty('--sen', s.en); else st.removeProperty('--sen');
       if (s.vi !== 'def') st.setProperty('--svi', s.vi); else st.removeProperty('--svi');
       $$('.sub-en,.tsub .a').forEach((e) => { e.style.fontFamily = fam(v.font); e.style.fontWeight = v.bold ? '' : '500'; });
+      $$('.sub-vi,.tsub .b').forEach((e) => { e.style.fontFamily = fam(v.font); });
       $$('.tsub .b').forEach((e) => { e.style.color = v.vi !== 'def' ? v.vi : ''; });
       $$('.tsub .a').forEach((e) => { e.style.color = v.en !== 'def' ? v.en : ''; });
       $('#tsub').className = `tsub bg-${v.bg}`;
-      $('#list').style.fontFamily = fam(s.font);
+      $('#list').style.fontFamily = fam(s.font); $('#list').classList.toggle('sbold', !!s.bold);
     }
 
     // ---------- dock actions ----------

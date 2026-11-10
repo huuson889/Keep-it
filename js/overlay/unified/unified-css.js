@@ -28,8 +28,8 @@ const UNIFIED_OVERLAY_CSS = String.raw`*{box-sizing:border-box}
 /* header */
 .hd{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--bd);background:var(--bg);z-index:6;transition:opacity .3s,transform .3s}
 .brand{display:flex;align-items:center;gap:8px;min-width:0}
-.logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#a855f7,#6d28d9);display:grid;place-items:center;flex:none;color:#fff}
-.logo svg{width:17px;height:17px}
+.logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(45deg,#4f46e5,#8b5cf6);display:grid;place-items:center;flex:none;color:#fff;box-shadow:0 2px 3px rgba(0,0,0,.2)}
+.logo svg{width:17.5px;height:17.5px}
 .bname{font-weight:700;white-space:nowrap}
 .bsrc{color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tabs{position:relative;display:inline-grid;grid-template-columns:repeat(3,1fr);background:var(--pn2);border-radius:13px;padding:3px;justify-self:center}
@@ -85,6 +85,11 @@ const UNIFIED_OVERLAY_CSS = String.raw`*{box-sizing:border-box}
 .tsub .a{color:#fff;font-weight:800;font-size:calc(clamp(15px,min(2.9cqw,5.4cqh),34px) * var(--tfit,1));line-height:1.18;text-shadow:0 2px 8px rgba(0,0,0,.85)}
 .tsub .b{color:#ffff00;font-weight:600;font-size:calc(clamp(12px,min(2cqw,3.8cqh),23px) * var(--tfit,1));margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.85)}
 .tsub.bg-soft .a,.tsub.bg-soft .b{background:rgba(0,0,0,.45);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
+.tsub.bg-solid .a,.tsub.bg-solid .b{background:rgba(0,0,0,.88);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
+.prev.bg-soft .a span,.prev.bg-soft .b span{background:rgba(0,0,0,.45);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
+.prev.bg-solid .a span,.prev.bg-solid .b span{background:#000;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
+.prev.bg-soft,.prev.bg-solid{background:linear-gradient(135deg,#3b3f4a,#1c1f26)}
+.list.sbold .row .en{font-weight:700}
 .cinfo{display:none}
 .vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;opacity:0;transition:.2s;pointer-events:none}
 .vplay svg{width:28px;height:28px}
