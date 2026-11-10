@@ -1,6 +1,7 @@
 // Giao diện keepit: CSS và markup lấy từ file UI gốc (chỉ thêm phần bổ sung chức năng và sidebar v1.4)
 const OVERLAY_CSS = `
-    * {
+    /* The unified overlay (.ov, js/overlay/unified) keeps its own reset and font. */
+    *:not(:is(.ov, .ov *)) {
       box-sizing: border-box;
       margin: 0;
       padding: 0;

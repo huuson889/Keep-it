@@ -224,7 +224,7 @@
     const anchorNode = range?.startContainer;
     const anchorRoot = anchorNode?.getRootNode?.();
     const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
-    if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi")) {
+    if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi, .ov .sub-en, .ov .sub-vi")) {
       const rect = range.getBoundingClientRect();
       if (rect.width || rect.height) {
         position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
@@ -1619,7 +1619,9 @@
     return getSelection();
   }
   const VIDEO_INTERFACE_SELECTOR = "#te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .yt-dual-item, .te-sub-container";
-  const PRIMARY_VIDEO_TRANSCRIPT_SELECTOR = ".te-sub-en, .yt-dual-item-en";
+  // [data-lhn-primary] / [data-lhn-secondary]: the unified overlay (js/overlay/unified) marks its source / translated lines.
+  const PRIMARY_VIDEO_TRANSCRIPT_SELECTOR = ".te-sub-en, .yt-dual-item-en, [data-lhn-primary]";
+  const VIDEO_SUBTITLE_LINE_SELECTOR = ".te-sub-en, .ov .sub-en";
   function selectionElement(node) { return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement; }
   function isVideoInterfaceNode(node) {
     const root = node?.getRootNode?.();
@@ -1634,10 +1636,10 @@
     if (!range) return false;
     const start = selectionElement(range.startContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
     const end = selectionElement(range.endContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
-    if (!start || !end || start.matches(".te-sub-en") !== end.matches(".te-sub-en")) return false;
+    if (!start || !end || start.matches(VIDEO_SUBTITLE_LINE_SELECTOR) !== end.matches(VIDEO_SUBTITLE_LINE_SELECTOR)) return false;
     try {
       const treeRoot = start.getRootNode();
-      const translatedLines = treeRoot.querySelectorAll?.(".te-sub-vi, .yt-dual-item-vi") || [];
+      const translatedLines = treeRoot.querySelectorAll?.(".te-sub-vi, .yt-dual-item-vi, [data-lhn-secondary]") || [];
       if ([...translatedLines].some((line) => range.intersectsNode(line))) return false;
     } catch { return false; }
     return true;

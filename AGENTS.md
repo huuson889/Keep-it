@@ -9,6 +9,7 @@
 - `PROJECT.md`: handoff hiện tại; mục 1 là snapshot ngắn, mục 2 chỉ giữ việc đang mở, mục 4 là bản đồ kiến trúc, mục 5 là nhật ký thay đổi duy nhất.
 - `README.md`: hướng dẫn/tính năng/giới hạn hướng tới người dùng; không dùng làm nơi giữ trạng thái nội bộ.
 - `docs/INDEX.md` và `docs/modules/*.md`: mục lục và hướng dẫn kỹ thuật nội bộ; không phải tài liệu người dùng hay nguồn sự thật thay cho code.
+- `docs/ui-layout.md`: nguyên tắc giao diện chung (dọc/ngang, chạm/chuột) — mọi thay đổi giao diện phải theo; chỉ đọc khi sửa giao diện.
 - `OPT-ARENA.md`: nhật ký ý tưởng/thiết kế đã chốt qua thảo luận với Arena (mới nhất ở trên): quyết định, sơ đồ text, phương án đã loại và câu hỏi còn mở; không ghi trạng thái triển khai hay nhật ký thay đổi code (thuộc `PROJECT.md`).
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
 
@@ -71,6 +72,7 @@
 
 **5.2.1. Tài liệu kỹ thuật nội bộ (`docs/`)**
   - Phạm vi module là các thư mục first-party cấp cao nhất hiện có dưới `js/`: `ask-ai`, `background`, `content`, `core`, `dashboard`, `overlay`, `popup`, `reader`, `shared`, `translate`. Mỗi module có một trang `docs/modules/<slug>.md`; module mới phải thêm trang tương ứng và cập nhật `docs/INDEX.md`. Không tạo tài liệu riêng cho từng file mã nguồn hoặc cho `vendor/`.
+  - Ngoại lệ: trang dùng chung nhiều module đặt tại `docs/<tên>.md` (hiện có `docs/ui-layout.md`), không theo mẫu 5 H2 của trang module, vẫn tối đa 700 từ và phải có trong `docs/INDEX.md`.
   - `docs/INDEX.md` là mục lục duy nhất, dùng bảng đúng 3 cột: `Tài liệu | Phạm vi | Đọc khi`; chỉ đọc trang có liên quan tới yêu cầu, không nạp toàn bộ docs mặc định.
   - Mọi trang module phải có đúng một H1 theo mẫu `# <Tên module> — Hướng dẫn kỹ thuật`, tiếp theo đúng năm H2, cùng tên và thứ tự sau; không thêm H2 khác:
     - `## 1. Mục đích và phạm vi`

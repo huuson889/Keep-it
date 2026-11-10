@@ -4,6 +4,7 @@
 
 | Tài liệu | Phạm vi | Đọc khi |
 |---|---|---|
+| [Nguyên tắc giao diện](ui-layout.md) | Bố cục dọc/ngang, chạm/chuột, dồn nút vào ☰, kiểu menu/popup cho mọi module | Sửa giao diện, bố cục, responsive, thanh Keepit, menu/sheet, popup dịch/từ điển, Overlay, Reader hoặc Dashboard. |
 | [Ask AI](modules/ask-ai.md) | AI panel ChatGPT/Gemini/Claude: providers, panel, script trong trang AI, background service | Sửa AI panel, chọn provider, route/mapping, prompt/Send hoặc Alt+X/Hỏi AI. |
 | [Background](modules/background.md) | Service worker, runtime router, IndexedDB annotations, usage, TTS | Sửa router message, annotation storage, usage hoặc TTS. |
 | [Content](modules/content.md) | Tương tác trang: highlight, note, Sidebar trang, selection, restore | Sửa luồng website, DOM observer, sidebar trang hoặc annotation UI. |

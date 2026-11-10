@@ -127,6 +127,8 @@ const ctrl = (title) => {
 };
 
 function refreshOverlayUiLocalization() {
+  globalThis.LHN_UNIFIED_TEXT?.refresh?.();
+  globalThis.LHN_UNIFIED_OVERLAY?.refreshTitle?.();
   const launcher = document.getElementById(LAUNCHER_ID);
   launcher?.setAttribute('title', overlayT('videoOpenKeepit'));
   launcher?.setAttribute('aria-label', overlayT('videoOpenKeepit'));
@@ -423,7 +425,12 @@ function buildOverlay() {
   host.style.setProperty('--lhn-scrollbar-width', sharedScrollbarWidth);
   document.body.appendChild(host);
   shadow = host.attachShadow({ mode: 'open' });
-  shadow.innerHTML = `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
+  const unified = unifiedUiAvailable();
+  // Unified UI (docs/ui-layout.md): the legacy markup stays mounted but hidden — its engines (captions, transcript,
+  // study, menus) keep running and the unified UI drives them through LHN_UNIFIED_BRIDGE.
+  shadow.innerHTML = unified
+    ? `<style>${OVERLAY_CSS}</style><style>${UNIFIED_OVERLAY_CSS}#${OVERLAY_ID}{display:none!important}</style>${OVERLAY_HTML}${UNIFIED_OVERLAY_HTML}`
+    : `<style>${OVERLAY_CSS}</style>${OVERLAY_HTML}`;
   const brandIcon = ui('.te-study-brand img');
   const runtime = globalThis.browser || globalThis.chrome;
   if (brandIcon && runtime?.runtime?.getURL) brandIcon.src = runtime.runtime.getURL('assets/icons/icon.svg');
@@ -434,8 +441,9 @@ function buildOverlay() {
     placeSubtitleModeMenu();
   });
   bindUI();
-  setupTouchOverlayLayout();
+  if (!unified) setupTouchOverlayLayout();
   observeTheaterSubtitleLayout();
+  if (unified) globalThis.LHN_UNIFIED_OVERLAY.mount(shadow, host);
   refreshOverlayUiLocalization();
   $('te-modal-main').classList.add('hidden');
 
@@ -570,7 +578,7 @@ function restoreOverlayPageScrollbar() {
 function openOverlay() {
   if (!overlayEl()) buildOverlay();
   const media = state.sourceType === 'web' ? state.activeMedia : (document.querySelector('#movie_player video.html5-main-video') || document.querySelector('video.html5-main-video') || document.querySelector('video'));
-  const slot = ui('.te-player-slot');
+  const slot = unifiedUi() ? globalThis.LHN_UNIFIED_OVERLAY.slot() : ui('.te-player-slot');
   if (!media || !slot) {
     if (state.sourceType === 'web') reportWebIssue('The shared overlay could not find its media frame.', null, { level: 'error' });
     else alert(overlayT('videoNoVideoFound'));
@@ -599,9 +607,11 @@ function openOverlay() {
   applyDefaultSubtitleDisplayMode();
   watchControlBar();
   fitControlBar();
+  if (unifiedUi()) globalThis.LHN_UNIFIED_OVERLAY.open({ tab: 'view' });
 }
 
 function closeOverlay() {
+  if (unifiedUi()) globalThis.LHN_UNIFIED_OVERLAY.close();
   pendingStudyShortcut = false;
   pendingStudyOpenImmediately = false;
   pendingStudyMode = 'typing';
@@ -789,6 +799,7 @@ function drawAmbient() {
 }
 function startAmbient() {
   stopAmbient();
+  if (unifiedUi()) return; // the unified UI draws its own ambient light
   overlayEl()?.classList.toggle('te-ambient-mode-2', isEdgeAmbient());
   const root = overlayEl(), canvas = ui('.te-ambient'), slot = ui('.te-player-slot');
   if (!root || !canvas || !slot || settings.ambient === false || globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
@@ -879,6 +890,7 @@ function pulseControl(title) {
 }
 
 function handlePlayerClick(event) {
+  if (unifiedUi()) return; // the unified player handles its own taps / clicks
   event.preventDefault();
   event.stopPropagation();
   window.getSelection?.()?.removeAllRanges?.();
@@ -1243,11 +1255,13 @@ function setStatus(text, languageKey = '', languageVars = {}) {
   $('te-sub-vi-text').textContent = '';
   const list = $('te-transcript-list');
   list.innerHTML = text ? `<div class="yt-dual-empty">${escapeHtml(text)}</div>` : '';
+  globalThis.LHN_UNIFIED_OVERLAY?.onStatus?.(text);
 }
 
 // ---------- Transcript ----------
 function renderTranscriptList() {
   const list = $('te-transcript-list');
+  if (!list) return; // a background prefetch can land before the overlay is built
   list.innerHTML = state.captions.map((c, i) => `
     <div class="yt-dual-item" data-idx="${i}">
       <div class="yt-dual-timestamp">${formatTime(c.start)}</div>
@@ -1257,6 +1271,7 @@ function renderTranscriptList() {
       </div>
     </div>`).join('');
   state.activeIdx = -1;
+  globalThis.LHN_UNIFIED_OVERLAY?.onCaptions?.();
 }
 
 function updateVietnameseRow(item) {
@@ -1272,6 +1287,7 @@ function updateVietnameseRow(item) {
   if (idx === state.activeIdx) setWords($('te-sub-en-text'), item.mainText);
   if (idx === state.activeIdx) setWords($('te-sub-vi-text'), item.vi);
   if (idx === state.activeIdx) scheduleTheaterSubtitleLayout();
+  globalThis.LHN_UNIFIED_OVERLAY?.onTranslated?.(item);
 }
 
 // Bỏ cue rỗng và gộp các cue trùng khít nội dung liền kề (cùng câu lặp lại, cùng timestamp).
@@ -2023,7 +2039,7 @@ function showViewToast(message) {
 }
 
 function handleOverlayShortcut(event) {
-  if (!state.open || event.isComposing) return;
+  if (!state.open || event.isComposing || unifiedUi()) return; // unified UI: its own shortcuts (unified-ui.js)
   const editable = isEditableOverlayShortcutTarget(event);
 
   // Shared Alt+1–3 view modes.
@@ -2097,6 +2113,58 @@ function handleOverlayShortcut(event) {
   action[1]();
   pulseControl(action[0]);
 }
+
+// Unified overlay UI (js/overlay/unified). Available when its scripts loaded; active once mounted in buildOverlay.
+function unifiedUiAvailable() {
+  return typeof UNIFIED_OVERLAY_HTML === 'string' && typeof UNIFIED_OVERLAY_CSS === 'string' && Boolean(globalThis.LHN_UNIFIED_OVERLAY?.mount);
+}
+function unifiedUi() { return Boolean(globalThis.LHN_UNIFIED_OVERLAY?.isActive?.()); }
+
+// With the unified UI, every Study entry (shortcuts, Dashboard intent, popup, legacy buttons) opens the Nói / Chép
+// tabs instead of the legacy Study panel; without it LHN_STUDY is the legacy API unchanged.
+(() => {
+  const legacy = globalThis.LHN_STUDY;
+  if (!legacy) return;
+  const U = () => globalThis.LHN_UNIFIED_OVERLAY;
+  const tabOf = (mode) => (mode === 'speaking' ? 'speak' : 'write');
+  const modeOf = (tab) => (tab === 'speak' ? 'speaking' : tab === 'write' ? 'typing' : null);
+  let waitingTab = '';
+  const studyOpen = () => unifiedUi() && U().isOpen() && U().tab() !== 'view';
+  const proxy = Object.freeze({
+    ...legacy,
+    toggle(...args) {
+      if (!unifiedUi()) return legacy.toggle?.(...args);
+      if (studyOpen()) return proxy.close();
+      return proxy.open({ waitForCaptions: true, mode: preferredLearningMode() });
+    },
+    open(opts = {}) {
+      if (!unifiedUi()) return legacy.open?.(opts);
+      if (!state.open) { openOverlay(); if (!state.open) return; }
+      const tab = tabOf(opts.mode);
+      // captions still loading: switch as soon as they arrive (the legacy panel waited the same way)
+      if (opts.waitForCaptions && !getStudyCues().length && state.loadingFor === state.sourceId) { waitingTab = tab; return; }
+      waitingTab = '';
+      U().setTab(tab);
+    },
+    close(opts) {
+      waitingTab = '';
+      if (!unifiedUi()) return legacy.close?.(opts);
+      if (studyOpen()) U().setTab('view'); // back to Xem (closing the overlay closes the UI first)
+    },
+    isOpen: () => (unifiedUi() ? studyOpen() || Boolean(waitingTab) : Boolean(legacy.isOpen?.())),
+    getMode: () => (unifiedUi() ? (studyOpen() ? modeOf(U().tab()) : waitingTab ? modeOf(waitingTab) : null) : legacy.getMode?.() ?? null),
+    getActivity: () => (unifiedUi() ? (studyOpen() ? (U().tab() === 'speak' ? 'shadowing' : 'dictation') : null) : legacy.getActivity?.() ?? null),
+    refreshLanguage: () => { legacy.refreshLanguage?.(); globalThis.LHN_UNIFIED_TEXT?.refresh?.(); },
+  });
+  document.addEventListener('lhn-dual-captions-updated', () => {
+    if (!waitingTab || !unifiedUi() || !state.open) return;
+    if (!getStudyCues().length && state.loadingFor === state.sourceId) return;
+    const tab = waitingTab; waitingTab = '';
+    U().setTab(tab);
+  });
+  globalThis.LHN_STUDY = proxy;
+  globalThis.LHN_DICTATION = proxy;
+})();
 
 // Study typing/Shadowing routing and overlay API for the Study engine under js/overlay/study.
 let pendingStudyShortcut = false;
