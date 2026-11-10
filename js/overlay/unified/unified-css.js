@@ -289,6 +289,18 @@ const UNIFIED_OVERLAY_CSS = String.raw`*{box-sizing:border-box}
 /* ---------- study card ---------- */
 .scard{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--pn);border:1px solid var(--bd);border-radius:20px;overflow:hidden;touch-action:pan-y;transition:transform .25s,opacity .25s}
 .scard.drag{transition:none}
+.scard.drag{user-select:none;-webkit-user-select:none}
+.scard.sw-in{animation:swIn .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes swIn{from{opacity:0;transform:translateX(var(--sx,0))}}
+.ov.gdrag .player{z-index:6;will-change:transform}
+.ov.gdrag:not(.chrome-off) .hd,.ov.gdrag:not(.chrome-off) .dock,.ov.gdrag .subbox,.ov.gdrag .side,.ov.gdrag .tsub{opacity:var(--gfade,1)}
+.player.g-in{animation:gIn .28s cubic-bezier(.2,.8,.3,1)}
+@keyframes gIn{from{transform:translateY(var(--gy,0)) scale(var(--gs,.9));opacity:.5}}
+.player.card .vid>.te-web-page-thumbnail.te-web-thumbnail-bg{filter:none!important;transform:none!important;will-change:auto!important}
+.ov.ambient.dark:not([data-tab=view][data-view=theater]) .tab-ind{background:color-mix(in srgb,var(--tx) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tx) 9%,transparent)}
+.ov.ambient.light:not([data-tab=view][data-view=theater]) .tab-ind{background:color-mix(in srgb,var(--pn) 62%,transparent);box-shadow:0 1px 3px rgba(15,23,42,.1)}
+.kpscrim{position:fixed;inset:0;z-index:2147483645;background:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent}
+.kpscrim[hidden]{display:none}
 .sbody.sx-out{opacity:0;transform:translateX(var(--sx,0px));transition:opacity 80ms ease-in,transform 80ms ease-in}
 .sbody.sx-in{animation:sxin .16s cubic-bezier(.2,.8,.2,1)}
 @keyframes sxin{from{opacity:0;transform:translateX(var(--sx,0px))}to{opacity:1;transform:none}}

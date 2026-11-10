@@ -1795,6 +1795,8 @@
     if ((outsideMouseDown?.wasOpen || outsideMouseDown?.dismissPopup) && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) suppressMouseUp = true;
     outsideMouseDown = null;
   }, true);
+  // the unified overlay (Xem · Ghi chú) opens / closes the page notes like the Keepit bar does (v3.5.173)
+  document.addEventListener("lhn-toggle-notes-sidebar", () => toggleSidebarToTab("highlights"));
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
     const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);

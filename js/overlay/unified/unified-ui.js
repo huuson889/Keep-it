@@ -48,6 +48,7 @@ const UNIFIED_OVERLAY_HTML = `
   <div class="layer" id="layer"></div>
   <div class="toast" id="toast"></div>
 </div>
+<div class="kpscrim" id="kpscrim" hidden></div><slot name="kpside"></slot>
 `;
 
 // Engines live in the other overlay scripts (classic content scripts share one global scope). Resolved on call,
@@ -73,7 +74,7 @@ const LHN_UNIFIED_BRIDGE = Object.freeze({
   popupOpen: () => Boolean(document.querySelector(APP_POPUP_SELECTOR)),
   setActivity: (activity) => { try { setOverlayStudyActivity(activity); } catch (_) {} },
   exportAs: (format, opts) => exportAs(format, opts),
-  openNotes: () => overlayEl()?.querySelector('#te-notes-sidebar-toggle')?.click(),
+  openNotes: () => document.dispatchEvent(new CustomEvent('lhn-toggle-notes-sidebar')), // the page notes sheet / panel (content.js), same as the Keepit bar
   setLanguage: (kind, code) => overlayEl()?.querySelector(`#te-lang-${kind}-options [data-language-value="${code}"]`)?.click(),
   close: () => closeOverlay(),
 });
@@ -532,10 +533,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const max = $('#player').clientHeight * 0.4; let f = 1;
       while (f > 0.6 && t.offsetHeight > max) { f -= 0.05; t.style.setProperty('--tfit', f.toFixed(2)); }
     }
+    let subAnim = false, subAnimT = 0;
     function fitSub() {
       const box = $('#subbox');
+      if (subAnim) return; // folding / unfolding: the text keeps its size, one fit when the box has settled
+      if (S.subHidden[sizeKey()]) { if (box.style.height) { box.dataset.h = box.style.height; box.style.height = ''; } return; } // folded: keep the last fit
+      box.style.transition = 'none'; requestAnimationFrame(() => { box.style.transition = ''; }); // measuring never animates the box
       box.style.height = ''; ov.style.setProperty('--fit', 1);
-      if (S.subHidden[sizeKey()] || !box.offsetParent || isStudy() || curView() === 'theater') return;
+      if (!box.offsetParent || isStudy() || curView() === 'theater') return;
       const over = () => box.scrollHeight > box.clientHeight + 1;
       const shrink = (min) => { let f = +ov.style.getPropertyValue('--fit') || 1; while (f > min && over()) { f -= 0.03; ov.style.setProperty('--fit', f.toFixed(2)); } };
       shrink(0.62);
@@ -652,7 +657,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function setColVars() { ov.style.setProperty('--colL', `${S.colW.l}px`); ov.style.setProperty('--colR', `${S.colW.r}px`); }
     function setSplitVar() { setColVars(); ov.style.setProperty('--split', `${S.split}%`); ov.style.setProperty('--rz', S.split <= 45 ? 1.18 : 1); }
-    function setSubHidden(on) { S.subHidden[sizeKey()] = on; apply(); }
+    function setSubHidden(on) {
+      const box = $('#subbox');
+      if (on) { if (box.style.height) box.dataset.h = box.style.height; box.style.height = ''; }
+      else if (box.dataset.h) box.style.height = box.dataset.h; // unfold straight to the last fitted height
+      subAnim = true; clearTimeout(subAnimT);
+      S.subHidden[sizeKey()] = on; apply();
+      subAnimT = setTimeout(() => { subAnim = false; fitSub(); }, 300); // .subbox height transition = .25s
+    }
     (() => { // grip: tap = fold/unfold, drag down = fold, drag up = unfold
       const g = $('#grip'); let y0 = null, moved = false;
       g.addEventListener('pointerdown', (e) => { y0 = e.clientY; moved = false; g.setPointerCapture(e.pointerId); e.stopPropagation(); });
@@ -694,6 +706,31 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       };
       const hideSeek = () => { seekBox.classList.remove('show'); ov.classList.remove('tt-ring-on'); };
       ttReset = () => { S.bri = 0; applyBri(); };
+      // like YouTube: while the finger drags, the video follows it (grows on the way into Rạp, shrinks on the way out) and
+      // the rest of the screen fades; on release it carries on into the new layout, or springs back
+      const rapDoc = () => curView() === 'theater' && !S.rot && sizeKey() !== 's' && wClass() === 'c';
+      const fxMove = (kind, d) => {
+        if (reduceMotion()) return;
+        const p = Math.min(1, Math.abs(d) / ((ov.clientHeight || 700) * 0.45));
+        ov.classList.add('gdrag'); pl.style.transition = 'none';
+        pl.style.transform = kind === 'enter' ? `translateY(${(d * 0.35).toFixed(1)}px) scale(${(1 + p * 0.14).toFixed(3)})` : `translateY(${(d * 0.55).toFixed(1)}px) scale(${(1 - p * 0.16).toFixed(3)})`;
+        ov.style.setProperty('--gfade', (1 - p * 0.75).toFixed(3));
+      };
+      const fxDone = () => { pl.style.transform = ''; pl.style.opacity = ''; ov.classList.remove('gdrag'); ov.style.removeProperty('--gfade'); };
+      const fxEnd = (commit, kind, d, action) => {
+        if (!ov.classList.contains('gdrag') || reduceMotion()) { fxDone(); pl.style.transition = ''; if (commit) action(); return; }
+        if (!commit) { pl.style.transition = 'transform .24s cubic-bezier(.3,.7,.4,1)'; fxDone(); setTimeout(() => { pl.style.transition = ''; }, 260); return; }
+        const dir = d < 0 ? -1 : 1;
+        pl.style.transition = 'transform .14s ease-in, opacity .14s';
+        pl.style.transform = kind === 'enter' ? `translateY(${dir * 24}px) scale(1.2)` : `translateY(${dir * 90}px) scale(.8)`;
+        if (kind === 'exit') pl.style.opacity = '.35';
+        setTimeout(() => {
+          pl.style.transition = 'none'; fxDone(); action();
+          pl.style.setProperty('--gy', `${kind === 'enter' ? 0 : -dir * 40}px`); pl.style.setProperty('--gs', kind === 'enter' ? '.86' : '1.06');
+          pl.classList.remove('g-in'); void pl.offsetWidth; pl.classList.add('g-in');
+          setTimeout(() => { pl.classList.remove('g-in'); pl.style.transition = ''; }, 320);
+        }, 140);
+      };
       ov.addEventListener('pointerdown', () => { if (ov.classList.contains('tt-hint-on')) { ov.classList.remove('tt-hint-on'); S.ttHint = true; } }, true);
       pl.addEventListener('pointerdown', (e) => {
         g = null;
@@ -714,28 +751,30 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           if (g.zone === 'xem') g.mode = 'xem';
           else if (!g.zone) g.mode = 'move';
           else if (Math.abs(dx) > Math.abs(dy)) Object.assign(g, { mode: 'seek', from: S.t, target: S.t, x: e.clientX, span: Math.min(DUR, 120) });
-          else if (g.zone === 'mid') g.mode = dy < 0 ? 'exit' : 'move';
+          else if (g.zone === 'mid') { g.both = rapDoc(); g.mode = dy < 0 || g.both ? 'exit' : 'move'; } // Rạp dọc: up or down = back
           else { g.mode = 'swipe'; g.y = e.clientY; }
           return;
         }
         if (g.mode === 'seek') { g.target = Math.min(DUR, Math.max(0, g.from + (e.clientX - g.x) / g.W * g.span)); showSeek(); return; }
+        if (g.mode === 'xem') { const d = e.clientY - g.y0; if (wClass() === 'c' && Math.abs(d) > Math.abs(e.clientX - g.x)) fxMove('enter', d / S.scale); else if (ov.classList.contains('gdrag')) fxMove('enter', 0); return; }
+        if (g.mode === 'exit') { const d = (e.clientY - g.y0) / S.scale; fxMove('exit', g.both ? d : Math.max(0, d)); return; }
         if (g.mode !== 'swipe') return;
         const span = g.H * 0.75;
         if (g.zone === 'vol') { S.vol = Math.min(100, Math.max(0, g.start + dy / span * 100)); S.muted = false; }
         else S.bri = Math.min(BRI_MAX, Math.max(0, g.start + dy / span * BRI_MAX));
         showRing(g.zone);
       });
-      pl.addEventListener('pointercancel', () => { if (g?.mode === 'swipe') hideRing(); if (g?.mode === 'seek') hideSeek(); g = null; });
+      pl.addEventListener('pointercancel', () => { if (g?.mode === 'swipe') hideRing(); if (g?.mode === 'seek') hideSeek(); if (g?.mode === 'xem' || g?.mode === 'exit') fxEnd(false); g = null; });
       pl.addEventListener('pointerup', (e) => {
         if (!g || e.pointerId !== g.id) return; const was = g; g = null;
         if (was.mode) swallow();
         if (was.mode === 'swipe') { hideRing(); S.vol = Math.round(S.vol); return; }
         if (was.mode === 'seek') { hideSeek(); if (Math.abs(was.target - was.from) >= 0.5) seek(was.target); return; }
-        if (was.mode === 'exit') { if ((e.clientY - was.y0) / S.scale > 60) exitTheater(); return; }
+        if (was.mode === 'exit') { const d = (e.clientY - was.y0) / S.scale; fxEnd(was.both ? Math.abs(d) > 60 : d > 60, 'exit', d, exitTheater); return; }
         if (was.mode !== 'xem') return;
         const dy = e.clientY - was.y0, dx = e.clientX - was.x;
-        if (Math.abs(dy) < 40 || Math.abs(dy) < Math.abs(dx) * 1.3 || wClass() !== 'c') return;
-        if (dy < 0) rotateLand(); else setView('theater');
+        if (Math.abs(dy) < 40 || Math.abs(dy) < Math.abs(dx) * 1.3 || wClass() !== 'c') { fxEnd(false); return; }
+        fxEnd(true, 'enter', dy, () => { if (dy < 0) rotateLand(); else setView('theater'); });
       });
     })();
     let ctlT = 0;
@@ -926,7 +965,6 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       sublang: () => `${head('Ngôn ngữ', '', 'set')}<div class="sec">Ngôn ngữ video</div>${LANGS.map(([c, n, e]) => `<button class="lrow ${S.srcLang === c ? 'sel' : ''}" data-src="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${n}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}<div class="sec">Dịch sang</div>${LANGS.filter((l) => l[0] !== 'auto').map(([c, n, e]) => `<button class="lrow ${S.dstLang === c ? 'sel' : ''}" data-dst="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${n}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}`,
       export: () => `${head('Xuất phụ đề', '', 'set')}<div class="srow"><div class="l">Định dạng</div><div class="seg">${['srt', 'txt', 'csv', 'pdf'].map((f) => `<button data-fmt="${f}" class="${S.exp.fmt === f ? 'on' : ''}">.${f}</button>`).join('')}</div></div><div class="srow"><div class="l">Song ngữ</div>${sw2('exp.bi', S.exp.bi)}</div><div class="srow"><div class="l">Hiển thị thời gian</div>${sw2('exp.time', S.exp.time)}</div><button class="btnw" data-act="export">${ic('export')}Xuất phụ đề</button>`,
       notes: () => `${head('Ghi chú bài học')}${lessonInner('p')}`,
-      kpnotes: () => `${head('Ghi chú')}<div class="kpn">${ic('notes')}<b>Thanh bên ghi chú Keepit</b><p class="help">Mở thanh bên ghi chú hiện có của Keepit (ghi chú theo trang, đồng bộ với Bảng điều khiển).</p><button class="btnw" data-act="kpopen">${ic('panelR')}Mở thanh bên ghi chú</button></div>`,
       slist: () => { const d = doneCount(); return `${head(`Câu ${S.si[S.tab] + 1}/${SENT.length}`, `Đã làm ${d}/${SENT.length}`)}<div class="list" id="sheetList" style="max-height:none;-webkit-mask-image:none;mask-image:none;padding:0"></div><button class="btnw sec2" data-act="summary">${ic('trophy')}Kết thúc phiên</button>`; },
       summary: () => {
         const r = S.res[S.tab]; const vals = Object.values(r); const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
@@ -1070,7 +1108,6 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.act === 'export') { closePanel(); saveUi(); B.exportAs(S.exp.fmt.toUpperCase(), { onlySubs: false, includeVi: !!S.exp.bi, showTime: !!S.exp.time }); return; }
         if (t.dataset.act === 'summary') { openPanel('summary', null, { keep: true, center: !sheetMode() }); return; }
         if (t.dataset.act === 'saveweak') { S.lessonNote = (S.lessonNote ? S.lessonNote + '\n' : '') + `Từ cần luyện: ${[...S.weak].join(', ')}`; renderNotesCol(); queueStudySave(); closePanel(); toast('Đã thêm vào Ghi chú bài học'); return; }
-        if (t.dataset.act === 'kpopen') { closePanel(); B.openNotes(); return; }
         if (t.dataset.act === 'retryweak') { const low = SENT.map((_, i) => i).find((i) => (S.res[S.tab][i] ?? 0) < 85); closePanel(); if (low != null) setStudyIndex(low); return; }
       });
       p.addEventListener('input', (e) => {
@@ -1096,8 +1133,23 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (id === 'notes') return notesAction(anchor);
       dockAction(id, anchor);
     }
+    // Xem (dọc, ngang, Rạp): Ghi chú = the Keepit notes sheet / panel of the page, the same one the Keepit bar opens.
+    // In the fullscreen Rạp only the host is drawn, so the sheet is slotted into the host while it is open (and goes back after).
+    let kpT = 0, kpHome = null, kpMo = null;
+    function kpNotes() { closePanel(); B.openNotes(); let n = 0; clearInterval(kpT); kpT = setInterval(() => { kpSync(); if (++n > 40) clearInterval(kpT); }, 50); }
+    function kpSync(leave) {
+      const s = document.getElementById('lhn-sidebar'), h = hostEl(); if (!h) return;
+      const fs = !leave && !ov.hidden && document.fullscreenElement === h;
+      if (s && fs && s.parentNode !== h) { kpHome = s.parentNode; s.slot = 'kpside'; h.appendChild(s); }
+      else if (s && !fs && s.parentNode === h) { s.removeAttribute('slot'); (kpHome?.isConnected ? kpHome : document.documentElement).appendChild(s); }
+      const inHost = !!s && s.parentNode === h, on = inHost && s.classList.contains('lhn-side-visible') && !s.classList.contains('lhn-closing');
+      R.getElementById('kpscrim').hidden = !(on && matchMedia('(pointer: coarse) and (hover: none)').matches); // the bar's dim is outside the fullscreen element
+      if (inHost && !kpMo) { kpMo = new MutationObserver(() => kpSync()); kpMo.observe(h, { childList: true }); kpMo.observe(s, { attributes: true, attributeFilter: ['class'] }); }
+      else if (!inHost && kpMo) { kpMo.disconnect(); kpMo = null; }
+    }
+    R.getElementById('kpscrim').addEventListener('click', () => B.openNotes());
     function notesAction(anchor) {
-      if (!isStudy()) return openPanel('kpnotes', anchor);
+      if (!isStudy()) { kpNotes(); return; }
       if (wClass() === 'e' && roomNotes()) { S.colNotes = !S.colNotes; apply(); return; }
       openPanel('notes', anchor, { wide: true });
     }
@@ -1198,14 +1250,33 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       sp.addEventListener('pointerup', end); sp.addEventListener('pointercancel', end);
       sp.addEventListener('dblclick', () => { S.colW[side] = side === 'l' ? 290 : 300; setColVars(); placeAmb(); });
     });
-    // portrait: scrolling the list folds the video into the bar; pulling down at the top (or tapping the bar) brings it back
+    // portrait: the list scrolls freely; pulling on past its top turns the bar back into the video, pushing on past its end
+    // folds the video into the bar (tapping the bar still brings the video back)
     (() => {
-      const l = $('#list'); let y0 = null;
+      const l = $('#list'); let last = null, ey = null, dir = 0, done = false, edgeAt = 0, acc = 0, accT = 0;
       const ok = () => S.tab === 'view' && wClass() === 'c' && curView() !== 'theater';
-      l.addEventListener('wheel', (e) => { if (!ok()) return; if (e.deltaY > 8 && !S.mini.c) setMini(true); else if (e.deltaY < -8 && l.scrollTop <= 0 && S.mini.c) setMini(false); }, { passive: true });
-      l.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
-      l.addEventListener('touchmove', (e) => { if (y0 == null || !ok()) return; const dy = e.touches[0].clientY - y0; if (dy < -30 && !S.mini.c) { setMini(true); y0 = null; } else if (dy > 40 && l.scrollTop <= 0 && S.mini.c) { setMini(false); y0 = null; } }, { passive: true });
-      l.addEventListener('touchend', () => (y0 = null));
+      const atTop = () => l.scrollTop <= 0, atEnd = () => l.scrollTop + l.clientHeight >= l.scrollHeight - 1;
+      const PULL = 56;
+      l.addEventListener('scroll', () => { if (atTop() || atEnd()) { if (!edgeAt) edgeAt = performance.now(); } else edgeAt = 0; }, { passive: true });
+      l.addEventListener('wheel', (e) => {
+        if (!ok()) return;
+        const now = performance.now(); if (now - accT > 400) acc = 0; accT = now;
+        const up = e.deltaY < 0, edge = up ? atTop() && S.mini.c : atEnd() && !S.mini.c;
+        if (!edge || (edgeAt && now - edgeAt < 250)) { acc = 0; return; } // momentum that just reached the edge does not count
+        acc += Math.abs(e.deltaY); if (acc < 80) return; acc = 0;
+        setMini(!up);
+      }, { passive: true });
+      l.addEventListener('touchstart', (e) => { last = e.touches[0].clientY; ey = null; dir = 0; done = false; }, { passive: true });
+      l.addEventListener('touchmove', (e) => {
+        if (last == null || done || !ok()) return;
+        const y = e.touches[0].clientY, d = y - last; last = y; if (!d) return;
+        const pullDown = d > 0 && atTop() && S.mini.c, pushUp = d < 0 && atEnd() && !S.mini.c;
+        if (!pullDown && !pushUp) { ey = null; dir = 0; return; }
+        const nd = pullDown ? 1 : -1; if (dir !== nd) { dir = nd; ey = y; return; }
+        if (Math.abs(y - ey) / S.scale >= PULL) { done = true; setMini(!pullDown); }
+      }, { passive: true });
+      l.addEventListener('touchend', () => { last = null; });
+      l.addEventListener('touchcancel', () => { last = null; });
     })();
 
     // ---------- tabs / study ----------
@@ -1239,8 +1310,16 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (swipe) { // finger swipe keeps the original effect: the whole card follows the finger and slides away
         const card = $('#scard');
         if (goPend) { clearTimeout(goPend.t); goPend = null; }
-        if (anim && card) { card.style.transform = `translateX(${d > 0 ? -40 : 40}px)`; card.style.opacity = '0'; goPend = { i, t: setTimeout(() => { goPend = null; setStudyIndex(i); }, 160) }; }
-        else setStudyIndex(i);
+        if (anim && card && !reduceMotion()) {
+          const dir = d > 0 ? -1 : 1, w = card.offsetWidth || 360; // carries on from where the finger let go
+          card.classList.remove('drag'); card.style.transition = 'transform .2s cubic-bezier(.3,.7,.4,1), opacity .2s';
+          card.style.transform = `translateX(${Math.round(dir * w * 1.05)}px) rotate(${dir * 7}deg)`; card.style.opacity = '0';
+          goPend = { i, t: setTimeout(() => {
+            goPend = null; setStudyIndex(i);
+            const nc = $('#scard'); if (!nc) return;
+            nc.style.setProperty('--sx', `${-dir * 40}px`); nc.classList.add('sw-in'); nc.addEventListener('animationend', () => nc.classList.remove('sw-in'), { once: true });
+          }, 190) };
+        } else setStudyIndex(i);
         return;
       }
       // demo v16 · cách A: the card frame, buttons and input stay put; only the sentence content fades out (80ms)
@@ -1364,12 +1443,61 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'word') { const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length; S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; renderStudy(); const ta = $('#wta'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return; }
     });
     function bindSwipe(card) {
+      // the whole card follows the finger (tilt) and slides away (demo v17); a swipe may start anywhere on the card on touch —
+      // buttons and the answer box too (a tap stays a tap). Touch = touch events (they keep coming past the card edge and the
+      // browser never cancels them); mouse / pen ("Chạm" mode) = pointer events, not from buttons / fields (clicks, selection).
       if (!card) return;
-      let x0 = null, y0 = 0, dx = 0;
-      card.addEventListener('pointerdown', (e) => { if (e.target.closest('button,textarea,input')) return; x0 = e.clientX; y0 = e.clientY; dx = 0; });
-      card.addEventListener('pointermove', (e) => { if (x0 == null) return; dx = (e.clientX - x0) / S.scale; const dy = (e.clientY - y0) / S.scale; if (Math.abs(dy) > 40 && Math.abs(dx) < 30) { x0 = null; card.style.transform = ''; return; } if (Math.abs(dx) > 8) { card.classList.add('drag'); card.style.transform = `translateX(${dx * 0.6}px) rotate(${dx * 0.01}deg)`; } });
-      const end = () => { if (x0 == null) return; x0 = null; card.classList.remove('drag'); if (Math.abs(dx) > 70) { vib(8); studyGo(dx < 0 ? 1 : -1, true, true); } else card.style.transform = ''; };
-      card.addEventListener('pointerup', end); card.addEventListener('pointercancel', end); card.addEventListener('pointerleave', end);
+      let g = null, eatClick = 0;
+      const W = () => card.offsetWidth || 360;
+      const begin = (x, y, touch, tgt) => {
+        g = null;
+        if (tgt.closest('input[type=range],.rng')) return;
+        if (!touch && tgt.closest('button,textarea,input,select,a')) return;
+        if (touch && tgt.closest('textarea') === R.activeElement && tgt.selectionStart !== tgt.selectionEnd) return; // selecting text
+        g = { x, y, dx: 0, mode: '', s: [{ t: performance.now(), x }] };
+      };
+      const move = (x, y) => {
+        if (!g) return false;
+        const dx = (x - g.x) / S.scale, dy = (y - g.y) / S.scale;
+        g.s.push({ t: performance.now(), x }); if (g.s.length > 8) g.s.shift();
+        if (!g.mode) {
+          if (Math.hypot(dx, dy) < 8) return false;
+          g.mode = Math.abs(dx) > Math.abs(dy) * 1.15 ? 'h' : 'v';
+          if (g.mode === 'v') { g = null; return false; }
+          card.classList.add('drag'); card.style.transition = 'none';
+        }
+        const cur = S.si[S.tab], edge = (dx > 0 && cur <= 0), fx = edge ? dx * 0.3 : dx; // nothing before the first sentence: rubber band
+        g.dx = dx;
+        card.style.transform = `translateX(${fx.toFixed(1)}px) rotate(${(fx / W() * 7).toFixed(2)}deg)`;
+        card.style.opacity = String((1 - Math.min(0.35, Math.abs(fx) / W() * 0.45)).toFixed(3));
+        return true;
+      };
+      const back = () => {
+        card.classList.remove('drag'); card.style.transition = 'transform .24s cubic-bezier(.3,.7,.4,1), opacity .24s';
+        card.style.transform = ''; card.style.opacity = '';
+        setTimeout(() => { if (!card.classList.contains('drag')) card.style.transition = ''; }, 260);
+      };
+      const end = (cancel) => {
+        const s0 = g; g = null; if (!s0 || s0.mode !== 'h') return;
+        eatClick = Date.now() + 350;
+        if (cancel) { back(); return; }
+        const now = performance.now(), pts = s0.s.filter((p) => now - p.t < 120);
+        const v = pts.length > 1 ? (pts[pts.length - 1].x - pts[0].x) / Math.max(1, pts[pts.length - 1].t - pts[0].t) / S.scale : 0;
+        const d = s0.dx < 0 ? 1 : -1, target = S.si[S.tab] + d;
+        const go = Math.abs(s0.dx) > Math.min(90, W() * 0.25) || (Math.abs(v) > 0.45 && Math.abs(s0.dx) > 30 && Math.sign(v) === Math.sign(s0.dx));
+        if (go && target >= 0 && target < SENT.length) { vib(8); studyGo(d, true, true); return; }
+        back();
+        if (go && target >= SENT.length) studyGo(d); // past the last sentence: the summary, like the next button
+      };
+      card.addEventListener('touchstart', (e) => { if (e.touches.length !== 1) { if (g?.mode === 'h') end(true); g = null; return; } const t = e.touches[0]; begin(t.clientX, t.clientY, true, e.target); }, { passive: true });
+      card.addEventListener('touchmove', (e) => { if (!g || e.touches.length !== 1) return; const t = e.touches[0]; if (move(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+      card.addEventListener('touchend', () => end(false));
+      card.addEventListener('touchcancel', () => end(true));
+      card.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' || e.button > 0) return; begin(e.clientX, e.clientY, false, e.target); if (g) g.pid = e.pointerId; });
+      card.addEventListener('pointermove', (e) => { if (!g || e.pointerType === 'touch' || e.pointerId !== g.pid) return; if (move(e.clientX, e.clientY) && !g.cap) { g.cap = true; try { card.setPointerCapture(e.pointerId); } catch (_) {} } });
+      card.addEventListener('pointerup', (e) => { if (e.pointerType !== 'touch') end(false); });
+      card.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') end(true); });
+      card.addEventListener('click', (e) => { if (Date.now() < eatClick) { e.stopPropagation(); e.preventDefault(); } }, true);
     }
     // ---------- Nói: microphone recording + speech recognition (same rules as study/shadowing/shadowing-activity.js) ----------
     const SPK = { rec: null, recorder: null, stream: null, chunks: [], url: '', audio: null, gen: 0, finals: [], timer: 0, stopping: false, err: '', live: '' };
@@ -1639,7 +1767,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (own && document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
     function onFs() {
-      const fs = !!document.fullscreenElement; S.realFs = fs;
+      const fs = !!document.fullscreenElement; S.realFs = fs; kpSync();
       if (!fs && fsOwned) { // left with the browser's own Esc / back gesture
         fsOwned = false;
         if (S.rot) { exitTheater(); return; }
@@ -1861,7 +1989,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       closePanel(); hideStudyToast(true);
       window.removeEventListener('keydown', onKey, true); window.removeEventListener('keyup', onKeyUp, true);
       window.removeEventListener('resize', kbSync); window.visualViewport?.removeEventListener('resize', kbSync); window.visualViewport?.removeEventListener('scroll', kbSync);
-      document.removeEventListener('fullscreenchange', onFs);
+      document.removeEventListener('fullscreenchange', onFs); clearInterval(kpT); kpSync(true);
       if (S.rot) { S.view.c = S.rot.prev || 'normal'; S.view.e = 'normal'; S.rot = null; }
       exitFs(); ttReset(); ov.classList.remove('tt-hint-on');
       ov.hidden = true; syncDocClass();
