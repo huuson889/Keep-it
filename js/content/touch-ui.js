@@ -764,6 +764,25 @@ button,input{font-family:inherit}
 .dark .lchip{border-color:rgba(255,255,255,.18)}
 .dark .lchip svg{color:#b4b4bc}
 .dark .sx{color:#d4d4d8}
+/* v3.5.190: light theme harmonised the same way — white glass 78% + blur 24 (as dark), darker labels / icons that stay
+   clear when a dark page shows through, translucent tiles / language box / footer instead of solid grey blocks. The
+   .dark rules above are more specific, so the dark theme is untouched. */
+.bbar,.panel,.btop{background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6)}
+.desk .btop:hover{background:rgba(255,255,255,.9)}
+.nb{color:#334155}
+.btop{color:#1f2937}
+.sec,.rsec{color:#52525b}
+.q .ic{background:rgba(255,255,255,.55);border-color:rgba(15,23,42,.12);color:#1f2937;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.q small{color:#52525b}
+.mfoot{background:rgba(255,255,255,.35);border-top-color:rgba(15,23,42,.1)}
+.fq{color:#1f2937}
+.fq svg{color:#334155}
+.lwrap input{background:rgba(255,255,255,.6);border-color:rgba(15,23,42,.14)}
+.lwrap .caret{stroke:#52525b}
+.lname{color:#71717a}
+.lchip{border-color:rgba(15,23,42,.16)}
+.lchip svg{color:#52525b}
+.sx{color:#52525b}
 `;
 
   function build() {

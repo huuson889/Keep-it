@@ -70,3 +70,4 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - v3.5.187: `settleOff()` dùng `lastDir` (dấu của lần cuộn cuối) → `max` hoặc 0.
 - v3.5.188: khối CSS `.dark` cuối `touch-ui.js` (tương phản chủ đề tối); chỉ màu.
 - v3.5.189: `.dark .bbar/.panel/.btop` = `rgba(24,24,28,.78)` + `blur(24px) saturate(1.6)`.
+- v3.5.190: khối CSS chủ đề sáng cuối `touch-ui.js` (sau khối `.dark`; các luật `.dark` cụ thể hơn nên vẫn thắng).
