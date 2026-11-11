@@ -95,7 +95,7 @@
     kRate:["Slower / faster by 0.05","Giảm / tăng tốc độ 0,05","0.05씩 느리게 / 빠르게"], kReplay:["Replay sentence","Nghe lại câu","문장 다시 듣기"],
     gBar:["Keepit bar","Thanh Keepit","Keepit 바"], kPickRes:["Choose a search result","Chọn kết quả tìm kiếm","검색 결과 선택"], kOpenRes:["Open result","Mở kết quả","결과 열기"], kClose:["Close popup","Đóng popup","팝업 닫기"],
     gTranslate:["Translate","Dịch","번역"], kPara:["Translate / untranslate a paragraph","Dịch / bỏ dịch đoạn văn","문단 번역 / 해제"], vSwipeLeftPara:["Swipe left on the paragraph","Vuốt sang trái trên đoạn","문단에서 왼쪽으로 밀기"],
-    kAll:["Translate / untranslate the article","Dịch / bỏ dịch cả bài","글 전체 번역 / 해제"], vTriple:["Tap with 3 fingers","Chạm 3 ngón tay","세 손가락으로 탭"], vNoPc:["Not on desktop-layout pages","Không dùng trên trang PC","PC 레이아웃 페이지에서는 사용 안 함"],
+    kAll:["Translate / untranslate the article","Dịch / bỏ dịch cả bài","글 전체 번역 / 해제"], vTriple:["Tap with 2 fingers","Chạm 2 ngón tay","두 손가락으로 탭"], vNoPc:["Not on desktop-layout pages","Không dùng trên trang PC","PC 레이아웃 페이지에서는 사용 안 함"],
     gNav:["Back / forward","Lùi / tới trang","뒤로 / 앞으로"], kPrevPage:["Previous page","Trang trước","이전 페이지"], vSwipeRight:["Swipe right on the page","Vuốt sang phải trên trang","페이지에서 오른쪽으로 밀기"],
     kNextPage:["Next page","Trang sau","다음 페이지"], vSwipeLeftOut:["Swipe left outside paragraphs","Vuốt sang trái ngoài đoạn văn","문단 밖에서 왼쪽으로 밀기"], vSwipeLeft:["Swipe left on the page","Vuốt sang trái trên trang","페이지에서 왼쪽으로 밀기"],
     kNavOffHere:["Off on this page","Đang tắt trên trang này","이 페이지에서 꺼짐"], vNavOffHere:["☰ → Swipe pages","☰ → Vuốt trang","☰ → 페이지 스와이프"],
@@ -485,15 +485,6 @@ button,input{font-family:inherit}
 .dark .sw{background:#3f3f46}
 .dark .sw.on{background:#8b5cf6}
 .kgrp.off{opacity:.45}
-.pswi{position:absolute;top:calc(50% - 22px);z-index:5;width:44px;height:44px;border-radius:50%;background:#fff;color:#334155;box-shadow:0 4px 14px rgba(15,23,42,.25);display:grid;place-items:center;opacity:0;pointer-events:none;transition:background .15s,color .15s}
-.pswi svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.pswi.l{left:8px}
-.pswi.r{right:8px}
-.pswi.go{background:#9c27b0;color:#fff}
-.pswi.no{color:#cbd5e1}
-.dark .pswi{background:#27272a;color:#e4e4e7}
-.dark .pswi.go{background:#8b5cf6;color:#fff}
-.dark .pswi.no{color:#52525b}
 .coach{position:absolute;left:12px;right:12px;bottom:84px;z-index:7;max-width:400px;margin:0 auto;padding:12px 14px 12px;border-radius:16px;background:#fff;color:#1e293b;border:1px solid rgba(148,163,184,.3);box-shadow:0 12px 32px rgba(15,23,42,.22);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
 .wide .coach{bottom:92px}
 .coach.on{opacity:1;transform:none;pointer-events:auto}
@@ -733,18 +724,19 @@ button,input{font-family:inherit}
 .dark .panel{background:rgba(30,30,35,.68)}
 .mfoot{background:rgba(248,250,252,.45);border-top-color:rgba(15,23,42,.08)}
 .dark .mfoot{background:rgba(255,255,255,.03);border-top-color:rgba(255,255,255,.09)}
-.screen .bbar{left:10px;right:10px;bottom:calc(14px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16)}
+.screen .bbar{left:10px;right:10px;bottom:calc(4px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16)}
 .screen.dark .bbar{border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .screen .bbar.hide{transform:translateY(calc(100% + 64px + var(--sab)));box-shadow:none}
 .screen .bin{min-height:58px}
 .screen .nb .ico{height:30px}
-.screen.wide .bbar{left:50%;right:auto;bottom:calc(14px + var(--sab));border-radius:26px;padding:6px 10px!important}
+.screen.wide .bbar{left:50%;right:auto;bottom:calc(4px + var(--sab));border-radius:26px;padding:6px 10px!important}
 .screen.wide .bbar.hide{transform:translate(-50%,calc(100% + 64px + var(--sab)))}
-.screen.pland .bbar{left:10px;right:10px;bottom:calc(11px + var(--sab));padding:3px 4px!important;border-radius:22px}
+.screen.pland .bbar{left:10px;right:10px;bottom:calc(4px + var(--sab));padding:3px 4px!important;border-radius:22px}
 .screen.pland .bin{min-height:46px}
 .screen .bbar.peek{box-shadow:0 10px 30px rgba(15,23,42,.16)}
 .screen.dark .bbar.peek{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .screen.hidden .hzone i{background:rgba(139,92,246,.85)}
+.screen .hzone i{bottom:4px}
 .screen:not(.wide) .btop:not(.low){bottom:calc(var(--bh,70px) + 30px + var(--sab))}
 .screen.pland .btop:not(.low){bottom:calc(var(--bh,58px) + 24px + var(--sab))}
 `;
@@ -759,7 +751,7 @@ button,input{font-family:inherit}
   <div class="nscrim" id="nscrim"></div>
   <div class="clear" id="clear"></div>
   <div class="pop" id="pop"></div>
-  <div class="pswi l" id="pswl">${ic("left")}</div><div class="pswi r" id="pswr">${ic("right")}</div><div class="coach" id="coach" role="dialog"></div>
+  <div class="coach" id="coach" role="dialog"></div>
   <div class="bbar" id="bar" role="toolbar" aria-label="Keepit"><div class="swi l" id="swl">${ic("left")}</div><div class="swi r" id="swr">${ic("right")}</div><div class="bin" id="bin"></div></div>
   <div class="hzone" id="hzone"><i></i></div>
   <button class="btop" id="btop" type="button">${ic("totop")}</button>
@@ -872,9 +864,13 @@ button,input{font-family:inherit}
     if (on || was) syncBarVis();
   }
   const anyOpen = () => $("sheet").classList.contains("open") || $("srch").classList.contains("open") || $("pop").classList.contains("open");
-  function setScrollHide(on) { if (S.scrollHide === on) return; if (on && anyOpen()) return; S.scrollHide = on; syncBarVis(); }
+  function setScrollHide(on) { if (S.scrollHide === on) return; if (on && (anyOpen() || Date.now() < showHold)) return; S.scrollHide = on; syncBarVis(); }
+  // v3.5.185: overlay / Reader closed, or ☰ hide → show: the bar is back even if scrolling had hidden it before; the page's own
+  // scroll restore right after (overlay close) must not hide it again → 800ms hold
+  let showHold = 0;
+  function barBack() { showHold = Date.now() + 800; S.scrollHide = false; }
   function setPeek(on) { S.peek = on; syncBarVis(); }
-  function setHidden(on) { S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
+  function setHidden(on) { if (!on) barBack(); S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
   let toastT = 0;
   function toast(text, undo) {
     const el = $("toast"); if (!el) return;
@@ -975,11 +971,30 @@ button,input{font-family:inherit}
   const tabNb = { prev:false, next:false };
   function refreshTabs() { if (isApk() || !isTouch()) return; send("TAB_NEIGHBORS").then(r => { if (r && typeof r === "object") { tabNb.prev = !!r.prev; tabNb.next = !!r.next; } }); }
   const histCan = back => { const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
-  const canGo = back => histCan(back) || (!isApk() && tabNb[back ? "prev" : "next"]);
+  // v3.5.182: navigation.canGoBack / canGoForward only know pages of the same site, so a previous / next page of another
+  // site (or the Keepit home page) counted as "no history" and the swipe jumped to a tab. Rule now (browser only):
+  // back / forward always tries this tab's history first; the browser starting to leave the page (beforeunload /
+  // pagehide) or a same-page step (popstate / currententrychange) = it moved; nothing within 450 ms = no more history
+  // → back = previous tab (left), forward = next tab (right). Every page of the tab counts, the Keepit home page too
+  // (v3.5.183: the v3.5.182 "pass through the home page" step is gone).
+  const canGo = back => histCan(back) || (!isApk() && (history.length > 1 || tabNb[back ? "prev" : "next"]));
+  let goBusy = 0;
   function go(back) {
-    if (histCan(back)) { if (back) history.back(); else history.forward(); return true; }
-    if (!isApk() && tabNb[back ? "prev" : "next"]) { void send("SWITCH_TAB", { dir:back ? -1 : 1 }); return true; }
-    return false;
+    if (isApk()) { if (!histCan(back)) return false; if (back) history.back(); else history.forward(); return true; }
+    if (Date.now() < goBusy) return true;
+    goBusy = Date.now() + 700;
+    let moved = false;
+    const mark = () => { moved = true; }, evs = ["beforeunload", "pagehide", "popstate"], nav = window.navigation;
+    evs.forEach(n => addEventListener(n, mark, { once:true })); nav?.addEventListener?.("currententrychange", mark, { once:true });
+    try { if (back) history.back(); else history.forward(); } catch {}
+    setTimeout(() => {
+      evs.forEach(n => removeEventListener(n, mark)); nav?.removeEventListener?.("currententrychange", mark);
+      if (moved) return;
+      goBusy = 0;
+      if (tabNb[back ? "prev" : "next"]) void send("SWITCH_TAB", { dir:back ? -1 : 1 });
+      else toast(noGoText(back));
+    }, 450);
+    return true;
   }
   const noGoText = back => t(isApk() ? (back ? "noBack" : "noFwd") : (back ? "noBackTab" : "noFwdTab"));
   let sw = null, lpT = 0, lpEat = 0, swallowClick = false;
@@ -1085,7 +1100,7 @@ button,input{font-family:inherit}
     <div class="divider"></div>
     <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${tile("hist", "hist", t("hist"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome"))}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !home && !S.navOff[hostName()], home ? t("navG") : t("navsiteTip", hostName())) : ""}</div>
+    <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome"))}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     <div class="divider"></div>
@@ -1105,7 +1120,7 @@ button,input{font-family:inherit}
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
+    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
   <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
@@ -1151,7 +1166,6 @@ button,input{font-family:inherit}
       G.push([t("gBar"), [[t("kPickRes"), "↑ / ↓"], [t("kOpenRes"), "Enter"], [t("kClose"), "Esc"]]]);
     } else {
       if (art) G.push([t("gTranslate"), [[t("kPara"), t("vSwipeLeftPara"), 1], [t("kAll"), pageMobile() ? t("vTriple") : t("vNoPc"), 1]], "translate"]);
-      G.push([t("gNav"), [[t(isApk() ? "kPrevPage" : "kPrevPageTab"), t("vSwipeRight"), 1], [t(isApk() ? "kNextPage" : "kNextPageTab"), art && S.gest.translate ? t("vSwipeLeftOut") : t("vSwipeLeft"), 1], ...(S.navOff[hostName()] ? [[t("kNavOffHere"), t("vNavOffHere")]] : [])], "nav"]);
       G.push([t("onSelect"), [[t("kSelIcon"), t("vLongPress")]]]);
       if (video) G.push([t("gVideoPort"), [[t("kTheater"), t("vSwipeUpVideo")], [t("kPlayStop"), t("vTapSub")], [t("kSeekS"), t("vTapLine")], [t("kLookUp"), t("vLongSub")], [t("kFav"), t("vDouble")]]], [t("gTheater"), [[t("kControls"), t("vTapVideo")], [t("kVolume"), t("vLeftV")], [t("kBright"), t("vRightV")], [t("kSeek"), t("vSwipeH")], [t("kExitTheater"), t("vSwipeDownMid")]]]);
       G.push([t("gBar"), [[t(isApk() ? "kPrevNextPage" : "kPrevNextPageTab"), t("vSwipeBar")], [t("kQuick"), t("vHoldTr"), 1], [t("kHideShow"), t("vScroll")], [t("kShowHidden"), t("vTapLine2")]]]);
@@ -1210,9 +1224,8 @@ button,input{font-family:inherit}
     if (a === "theme") { await saveSettings({ sidebarTheme:isDark() ? "light" : "dark" }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); return; }
     if (a === "font") { await toggleFont(); return; }
     if (a === "btop") { S.btop = !S.btop; persist(); renderSheet(); updBtop(); toast(t(S.btop ? "btopOn" : "btopOff")); return; }
-    if (home0 && ["reload", "share", "mark", "addhome", "navsite", "site", "restore"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
+    if (home0 && ["reload", "share", "mark", "addhome", "site", "restore"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
     if (a === "pdark") { const on = !!AUI()?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
-    if (a === "navsite") { const h = hostName(); if (S.navOff[h]) delete S.navOff[h]; else S.navOff[h] = true; persist(); renderSheet(); toast(t(S.navOff[h] ? "navOffToast" : "navOnToast") + h); return; }
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
@@ -1233,18 +1246,13 @@ button,input{font-family:inherit}
     else if (a === "zoom") AUI()?.zoom?.();
   }
 
-  // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · 3-finger tap = whole page
-  // swipe right anywhere = previous page · swipe left outside paragraphs = next page. Ignored: 24px edges (Android Back),
+  // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · 2-finger tap = whole page
+  // v3.5.184: no back / forward swipe on the page any more (back / forward = swipe on the bar, Android Back, the browser);
+  // a right swipe on the page does nothing (free for selecting text); 3-finger tap → 2-finger tap. Ignored: 24px edges (Android Back),
   // video/canvas/iframe/inputs/sliders, elements that declare their own touch-action (carousels), horizontal scrollers,
   // an active text selection, a long-press before moving, pinch-zoomed pages, and gestures the page already handled.
   const EDGE = 24, PARA_SEL = "p,li,blockquote,dd,dt,figcaption,h1,h2,h3,h4,h5,h6", ART_SEL = PARA_SEL + ",article,main", INTERACTIVE = "a,button,input,textarea,select,label,summary,video,canvas,iframe,[contenteditable],[role=button],[role=link],[role=slider],[role=tab]";
   const hasArticle = () => [...document.querySelectorAll("p")].slice(0, 40).some(p => (p.textContent || "").trim().length > 60);
-  const hScroll = el => { for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true; return false; };
-  function noSwipe(t0) {
-    if (t0.closest("button,input,textarea,select,canvas,iframe,video,[contenteditable],[role=slider],#movie_player,.html5-video-player")) return true;
-    for (let n = t0; n && n !== document.body && n !== document.documentElement; n = n.parentElement) { const ta = getComputedStyle(n).touchAction; if (ta !== "auto" && !/pan-x|manipulation/.test(ta)) return true; }
-    return hScroll(t0);
-  }
   // v3.5.165: a paragraph = what the Reader's "Dịch đoạn" translates there (also leaf <div> text, gaps between paragraphs);
   // was: only p/li/h*/… under the finger, so other text blocks and the gaps fell through to the page swipe (arrow)
   const paraOf = (t0, x, y) => {
@@ -1267,7 +1275,7 @@ button,input{font-family:inherit}
     if (translated) toast(t("paraOff"), { fn:() => { if (!p.isConnected) return; const r = p.getBoundingClientRect(); translateAt(clamp(x, r.left + 2, r.right - 2), clamp(r.top + 4, 0, innerHeight - 1)); toast(t("paraAgain")); } });
     else toast(t("paraOn"));
   }
-  let pg = null, tri = null;
+  let pg = null, tri = null, t1 = 0;
   const paraFx = { el:null, prev:null };
   function setParaFx(p, dx, go) {
     if (paraFx.el !== p) { clearParaFx(); paraFx.el = p; paraFx.prev = { translate:p.style.translate, background:p.style.backgroundColor, radius:p.style.borderRadius, transition:p.style.transition }; }
@@ -1278,29 +1286,24 @@ button,input{font-family:inherit}
     p.style.transition = "translate .2s, background-color .2s"; p.style.translate = v.translate; p.style.backgroundColor = v.background; p.style.borderRadius = v.radius;
     setTimeout(() => { p.style.transition = v.transition; }, 220);
   }
-  function navFx(dx) {
-    const W = innerWidth, need = W * 0.3, p = clamp(Math.abs(dx) / need, 0, 1), back = dx > 0, can = canGo(back);
-    const el = back ? $("pswl") : $("pswr"), other = back ? $("pswr") : $("pswl");
-    other.style.opacity = 0; el.style.opacity = p; el.style.transform = `translateX(${(back ? 1 : -1) * p * 20}px) scale(${0.6 + 0.4 * p})`;
-    el.classList.toggle("go", p >= 1 && can); el.classList.toggle("no", !can);
-  }
-  function navFxReset() { $$(".pswi").forEach(x => { x.style.opacity = 0; x.style.transform = ""; x.classList.remove("go", "no"); }); }
   function gestureAllowed() { return mounted && isTouch() && !S.siteOff && !S.extYield && !S.kbd && !S.vfs && !(visualViewport && visualViewport.scale > 1.05); }
   function onPageTouchStart(e) {
     if (e.composedPath().includes(host)) return;
     if (S.peek) setPeek(false);
-    // v3.5.164: three fingers tapping together = translate / untranslate the whole page (was: tap 3 times)
-    if (e.touches.length === 3 && !tri && gestureAllowed() && S.gest.translate && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
-    else if (e.touches.length > 3 || e.touches.length === 1) tri = null;
+    // v3.5.184: two fingers tapping together (landing ≤ 300ms apart, not moving) = translate / untranslate the whole page;
+    // moving them = the browser's pinch zoom as usual (was v3.5.164: three fingers, clashed with phones' 3-finger screenshot)
+    if (e.touches.length === 1) { tri = null; t1 = Date.now(); }
+    else if (e.touches.length === 2 && !tri && Date.now() - t1 < 300 && gestureAllowed() && S.gest.translate && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
+    else tri = null;
     if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
     const para = S.gest.translate ? paraOf(target, p0.clientX, p0.clientY) : null;
+    if (!para) { pg = null; return; }
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
-      edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed,
-      nav:S.gest.nav && !S.navOff[hostName()] && !noSwipe(target) };
+      edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed };
   }
   function onPageTouchMove(e) {
-    if (tri && [...e.touches].some(o => { const q = tri.pts.get(o.identifier); return q && Math.hypot(o.clientX - q[0], o.clientY - q[1]) > 24; })) tri.moved = true;
+    if (tri && [...e.touches].some(o => { const q = tri.pts.get(o.identifier); return q && Math.hypot(o.clientX - q[0], o.clientY - q[1]) > 16; })) tri.moved = true;
     if (!pg || pg.edge || pg.dead || e.touches.length !== 1) return;
     const p0 = e.touches[0], dx = p0.clientX - pg.x, dy = p0.clientY - pg.y;
     if (e.defaultPrevented && !pg.mode) { pg.dead = true; return; }
@@ -1308,26 +1311,22 @@ button,input{font-family:inherit}
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) { if (Math.abs(dy) > 10) pg.dead = true; return; }
       if (Date.now() - pg.t > 500) { pg.dead = true; return; }
       if (dx < 0 && pg.p) pg.mode = "para";
-      else if (pg.nav) { pg.mode = "nav"; refreshTabs(); }
       else { pg.dead = true; return; }
       getSelection().removeAllRanges();
     }
-    if (pg.mode === "para") { pg.dx = Math.min(0, dx); setParaFx(pg.p, pg.dx, pg.dx <= -60); }
-    else { pg.dx = dx; navFx(dx); }
+    pg.dx = Math.min(0, dx); setParaFx(pg.p, pg.dx, pg.dx <= -60);
   }
   function onPageTouchEnd(e) {
-    // v3.5.165: also on touchcancel — phones with system 3-finger gestures (Oppo ColorOS, Xiaomi…) cancel the page's touches
-    // as soon as the third finger lands, so no touchend ever comes; window 450 → 600ms
-    if (tri && (e.touches.length === 0 || e.type === "touchcancel")) { const g = tri; tri = null; if (!g.moved && Date.now() - g.t < 600) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
+    // two-finger tap ends when both fingers are up (or the touches are cancelled before moving); within 500ms
+    if (tri && (e.touches.length === 0 || e.type === "touchcancel")) { const g = tri; tri = null; if (!g.moved && Date.now() - g.t < 500) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
     const s = pg; pg = null; if (!s) return;
     const up = e.type === "touchend", end = e.changedTouches?.[0];
     if (s.mode === "para") { clearParaFx(); if (s.dx <= -60 && up) { togglePara(s.p, s.x, s.y); haptic(); coachDone(); } return; }
-    if (s.mode === "nav") { navFxReset(); if (Math.abs(s.dx) >= innerWidth * 0.3 && up) { const back = s.dx > 0; if (go(back)) { haptic(); coachDone(); } else toast(noGoText(back)); } return; }
   }
 
   // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
   let coachT = 0;
-  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && S.gest.translate) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if (S.gest.nav && !S.navOff[hostName()]) it.push([t("cSwipeLR"), t("kPrevNextPage")]); if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
+  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && S.gest.translate) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
   function showCoach() {
     const it = coachItems(); if (!it.length || !isTouch() || S.kbd || S.vfs || S.siteOff || S.extYield) return;
     $("coach").innerHTML = `<div class="ch1">${ic("hand")}<b>${esc(t(S.coachRe ? "coachTitle" : "coachNew"))}</b></div><ul>${it.map(([g, r]) => `<li><span>${esc(g)}</span><em>${esc(r)}</em></li>`).join("")}</ul><div class="cb"><button type="button" data-c="all">${esc(t("seeAll"))}</button><button type="button" class="pri" data-c="ok">${esc(t("gotIt"))}</button></div>`;
@@ -1581,6 +1580,7 @@ button,input{font-family:inherit}
     const ext = readerShown() || document.documentElement.classList.contains("lhn-video-overlay-open");
     const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
     if (notesVisible && !S.notesOn && isTouch()) { closePop(); closeSheet(); closeSearch(); hideCoach(); }   // Notes sheet opening: nothing else stays open
+    if (S.extYield && !ext) barBack();
     S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible;
     if (ext) { closePop(); if (!S.sheetFrom) closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
     if (S.sheetFrom && !readerShown()) closeSheet(); // Reader closed under its ☰ sheet

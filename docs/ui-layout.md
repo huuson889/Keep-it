@@ -34,7 +34,7 @@
 | Nút 44px | Nút 36px |
 | Chạm thay cho rê chuột | Rê chuột hiện chú thích, xem trước |
 | Nhấn giữ = chuột phải | Chuột phải |
-| Vuốt: đóng sheet, đổi câu, dịch đoạn, 3 ngón dịch trang | Phím tắt |
+| Vuốt: đóng sheet, đổi câu, vuốt trái dịch đoạn, chạm 2 ngón dịch trang (v3.5.184: không còn vuốt trang để lùi/tới — chỉ vuốt trên thanh) | Phím tắt |
 | Thanh Keepit ẩn khi cuộn | Thanh Keepit ẩn thành vạch, rê chuột để hiện |
 
 ## 5. Ngoại lệ duy nhất: điện thoại ngang (màn ngang, cao < 500px)
