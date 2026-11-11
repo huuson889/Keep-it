@@ -742,6 +742,27 @@ button,input{font-family:inherit}
 .btop.snap{transition:opacity .2s,transform .2s,bottom .25s,translate .24s cubic-bezier(.2,.8,.2,1)}
 .screen:not(.wide) .btop:not(.low){bottom:calc(var(--bh,70px) + 30px + var(--sab))}
 .screen.pland .btop:not(.low){bottom:calc(var(--bh,58px) + 24px + var(--sab))}
+/* v3.5.188: dark theme contrast — the 68% glass turned muddy grey over light pages with grey (#a1a1aa) labels and a black
+   language box. Now: deep charcoal glass (88%), near-white labels / icons, light-tinted tiles and language box. Light theme
+   unchanged. */
+.dark .bbar,.dark .panel,.dark .btop{background:rgba(24,24,28,.88)}
+.desk.dark .btop:hover{background:rgba(40,40,46,.92)}
+.dark .panel{color:#f4f4f5}
+.dark .nb{color:#e4e4e7}
+.dark .nb.on{color:#c4b5fd}
+.dark .sec,.dark .rsec{color:#b4b4bc}
+.dark .q .ic{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:#f4f4f5}
+.dark .q small{color:#b4b4bc}
+.dark .mfoot{background:rgba(255,255,255,.04);border-top-color:rgba(255,255,255,.1)}
+.dark .fq{color:#e4e4e7}
+.dark .fq svg{color:#e4e4e7}
+.dark .lwrap input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:#f4f4f5}
+.dark .lwrap .caret{stroke:#b4b4bc}
+.dark .lname,.dark .lopt .le{color:#a1a1aa}
+.dark .lopts{background:#26262b;border-color:rgba(255,255,255,.12)}
+.dark .lchip{border-color:rgba(255,255,255,.18)}
+.dark .lchip svg{color:#b4b4bc}
+.dark .sx{color:#d4d4d8}
 `;
 
   function build() {
