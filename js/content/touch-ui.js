@@ -231,7 +231,7 @@
 
   let settings = {}, host = null, root = null, mounted = false, picking = false;
   const S = {
-    hidden:false, peek:false, scrollHide:false, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
+    hidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
     kbd:false, vfs:false, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
@@ -737,6 +737,9 @@ button,input{font-family:inherit}
 .screen.dark .bbar.peek{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .screen.hidden .hzone i{background:rgba(139,92,246,.85)}
 .screen .hzone i{bottom:4px}
+.screen .bbar.shid{box-shadow:none;pointer-events:none}
+.bbar.snap{transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s,translate .24s cubic-bezier(.2,.8,.2,1)}
+.btop.snap{transition:opacity .2s,transform .2s,bottom .25s,translate .24s cubic-bezier(.2,.8,.2,1)}
 .screen:not(.wide) .btop:not(.low){bottom:calc(var(--bh,70px) + 30px + var(--sab))}
 .screen.pland .btop:not(.low){bottom:calc(var(--bh,58px) + 24px + var(--sab))}
 `;
@@ -814,7 +817,7 @@ button,input{font-family:inherit}
     if (!root) return;
     const bar = $("bar"), screen = $("screen");
     const off = S.kbd || S.vfs, barless = S.hidden || S.yieldBar;
-    bar.classList.toggle("hide", off || barless || S.extYield || (S.scrollHide && !S.peek));
+    bar.classList.toggle("hide", off || barless || S.extYield);
     bar.classList.toggle("peek", barless && S.peek && !off);
     screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
     screen.classList.toggle("siteoff", S.siteOff);
@@ -824,7 +827,22 @@ button,input{font-family:inherit}
     screen.style.setProperty("--yb", "0px");   // v3.5.161: folded = the one line at the bottom edge (never lifted above a page bar)
     screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px");
     screen.style.setProperty("--bh", bar.offsetHeight + "px");
-    updBtop();
+    updBtop(); applyOff(false);
+  }
+  // v3.5.186: scrolling moves the bar by the same distance (was: all-or-nothing after 6px). S.sOff = px pushed down,
+  // 0 … offMax() (bar height + its 4px gap + safe area + 2); full = hidden (S.scrollHide). The back-to-top button follows
+  // down to its old "bar hidden" spot. Peek (hidden mode) shows the bar whole.
+  let snapT = 0;
+  const offMax = () => { const bar = $("bar"); return bar ? bar.offsetHeight + (parseFloat(getComputedStyle(bar).bottom) || 0) + 2 : 80; };
+  function applyOff(anim) {
+    const bar = $("bar"), b = $("btop"); if (!bar) return;
+    const max = offMax(); S.sOff = clamp(S.sOff, 0, max);
+    const o = S.peek ? 0 : S.sOff, low = (S.hidden || S.yieldBar) && !S.peek;
+    S.scrollHide = o >= max;
+    if (anim) { bar.classList.add("snap"); b?.classList.add("snap"); clearTimeout(snapT); snapT = setTimeout(() => { bar.classList.remove("snap"); b?.classList.remove("snap"); }, 280); }
+    bar.style.translate = o ? `0 ${o}px` : ""; bar.classList.toggle("shid", S.scrollHide);
+    const d = !b || low || isWide() ? 0 : Math.min(o, bar.offsetHeight + (isPland() ? 8 : 14));
+    if (b) b.style.translate = d ? `0 ${d}px` : "";
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
   let scroller = null;
@@ -834,7 +852,6 @@ button,input{font-family:inherit}
     const b = $("btop"); if (!b) return;
     b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
     b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
-    b.classList.toggle("flat", S.scrollHide && !S.hidden && !S.yieldBar && !S.peek);
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
@@ -864,11 +881,26 @@ button,input{font-family:inherit}
     if (on || was) syncBarVis();
   }
   const anyOpen = () => $("sheet").classList.contains("open") || $("srch").classList.contains("open") || $("pop").classList.contains("open");
-  function setScrollHide(on) { if (S.scrollHide === on) return; if (on && (anyOpen() || Date.now() < showHold)) return; S.scrollHide = on; syncBarVis(); }
+  // scroll by dy at y: follow it 1:1; near the top always whole; stops half-way → settles to the nearer end after the finger
+  // is up and scrolling stopped (160ms)
+  let settleT = 0, touching = false;
+  function scrollOff(dy, y) {
+    const top = y <= (isPland() ? 16 : 40), was = S.sOff;
+    if (top) S.sOff = 0;
+    else if (dy > 0 && (anyOpen() || Date.now() < showHold)) return;
+    else S.sOff = clamp(S.sOff + dy, 0, offMax());
+    if (S.sOff !== was) applyOff(top && was > 0);
+    clearTimeout(settleT); settleT = setTimeout(settleOff, 160);
+  }
+  function settleOff() {
+    if (touching) { settleT = setTimeout(settleOff, 160); return; }
+    const max = offMax(); if (S.sOff <= 0 || S.sOff >= max) return;
+    S.sOff = S.sOff > max / 2 ? max : 0; applyOff(true);
+  }
   // v3.5.185: overlay / Reader closed, or ☰ hide → show: the bar is back even if scrolling had hidden it before; the page's own
   // scroll restore right after (overlay close) must not hide it again → 800ms hold
   let showHold = 0;
-  function barBack() { showHold = Date.now() + 800; S.scrollHide = false; }
+  function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; }
   function setPeek(on) { S.peek = on; syncBarVis(); }
   function setHidden(on) { if (!on) barBack(); S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
   let toastT = 0;
@@ -1288,6 +1320,7 @@ button,input{font-family:inherit}
   }
   function gestureAllowed() { return mounted && isTouch() && !S.siteOff && !S.extYield && !S.kbd && !S.vfs && !(visualViewport && visualViewport.scale > 1.05); }
   function onPageTouchStart(e) {
+    touching = true;
     if (e.composedPath().includes(host)) return;
     if (S.peek) setPeek(false);
     // v3.5.184: two fingers tapping together (landing ≤ 300ms apart, not moving) = translate / untranslate the whole page;
@@ -1317,6 +1350,7 @@ button,input{font-family:inherit}
     pg.dx = Math.min(0, dx); setParaFx(pg.p, pg.dx, pg.dx <= -60);
   }
   function onPageTouchEnd(e) {
+    if (!e.touches?.length) touching = false;
     // two-finger tap ends when both fingers are up (or the touches are cancelled before moving); within 500ms
     if (tri && (e.touches.length === 0 || e.type === "touchcancel")) { const g = tri; tri = null; if (!g.moved && Date.now() - g.t < 500) { getSelection().removeAllRanges(); togglePage(); haptic(); coachDone(); } }
     const s = pg; pg = null; if (!s) return;
@@ -1345,7 +1379,7 @@ button,input{font-family:inherit}
   }
   function showIntro() {
     if (S.introSeen || S.siteOff || S.extYield || S.kbd || S.vfs || anyOpen()) return;
-    hideCoach(); S.introOn = true; S.scrollHide = false; S.peek = S.hidden ? true : S.peek; syncBarVis();
+    hideCoach(); S.introOn = true; S.scrollHide = false; S.sOff = 0; S.peek = S.hidden ? true : S.peek; syncBarVis();
     $("intro").innerHTML = introHTML(); $("intro").classList.add("on"); $("screen").classList.add("introon");
   }
   function introDone() {
@@ -1606,8 +1640,8 @@ button,input{font-family:inherit}
     if (!main) return;
     scroller = target;
     const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
-    if (Math.abs(dy) > 6) { if (!onHome()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
-    else if (!lastTop.has(target)) lastTop.set(target, y);
+    if (dy && !onHome()) scrollOff(dy, y);
+    lastTop.set(target, y);
     updBtop();
     if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; checkOverlap(); });
   }
