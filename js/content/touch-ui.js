@@ -728,6 +728,11 @@ button,input{font-family:inherit}
 /* v3.5.180 (demo "Kính nổi", every device): the bar floats — 10px from both sides, 14px above the bottom (the browser's own
    toolbar), radius 26, glass border + shadow. Hidden = moved fully below the screen together with its shadow (no strip
    left at the bottom); the folded line stays at the bottom edge as in v3.5.174. */
+/* v3.5.181: the ☰ sheet uses the bar's frosted glass */
+.panel{background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
+.dark .panel{background:rgba(30,30,35,.68)}
+.mfoot{background:rgba(248,250,252,.45);border-top-color:rgba(15,23,42,.08)}
+.dark .mfoot{background:rgba(255,255,255,.03);border-top-color:rgba(255,255,255,.09)}
 .screen .bbar{left:10px;right:10px;bottom:calc(14px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16)}
 .screen.dark .bbar{border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .screen .bbar.hide{transform:translateY(calc(100% + 64px + var(--sab)));box-shadow:none}
@@ -1102,7 +1107,7 @@ button,input{font-family:inherit}
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
+  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1591,7 +1596,7 @@ button,input{font-family:inherit}
     }
     return false;
   }
-  // scroll: touch hides the bar going down, shows it going up · back-to-top tracks the scroller · page bottom bars → yield
+  // scroll: the bar hides going down, shows going up — every device since v3.5.181 (was touch only) · back-to-top tracks the scroller · page bottom bars → yield
   const lastTop = new WeakMap();
   function onScroll(event) {
     if (!mounted) return;
@@ -1601,7 +1606,7 @@ button,input{font-family:inherit}
     if (!main) return;
     scroller = target;
     const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
-    if (Math.abs(dy) > 6) { if (isTouch() && !onHome()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
+    if (Math.abs(dy) > 6) { if (!onHome()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
     else if (!lastTop.has(target)) lastTop.set(target, y);
     updBtop();
     if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; checkOverlap(); });
