@@ -745,7 +745,8 @@ button,input{font-family:inherit}
 /* v3.5.188: dark theme contrast — the 68% glass turned muddy grey over light pages with grey (#a1a1aa) labels and a black
    language box. Now: deep charcoal glass (88%), near-white labels / icons, light-tinted tiles and language box. Light theme
    unchanged. */
-.dark .bbar,.dark .panel,.dark .btop{background:rgba(24,24,28,.88)}
+.dark .bbar,.dark .panel,.dark .btop{background:rgba(24,24,28,.78);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6)}
+/* v3.5.189: 88% → 78% + blur 24 — frosted like the light theme again; near-white labels keep ≈6.5:1 over white pages */
 .desk.dark .btop:hover{background:rgba(40,40,46,.92)}
 .dark .panel{color:#f4f4f5}
 .dark .nb{color:#e4e4e7}

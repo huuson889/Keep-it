@@ -69,3 +69,4 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - v3.5.186: `S.sOff` (px) thay cho ẩn/hiện bật-tắt: `scrollOff(dy, y)` theo từng sự kiện cuộn, `applyOff(anim)` đặt `translate` cho `.bbar` và `.btop`, `.shid` khi ẩn hẳn (`S.scrollHide` = ẩn hẳn), `settleOff()` sau 160ms không cuộn và không chạm. `.bbar.hide` chỉ còn cho bàn phím / video toàn màn hình / ẩn thanh / nhường thanh trang / overlay-Reader. Bỏ `setScrollHide` và lớp `.btop.flat`.
 - v3.5.187: `settleOff()` dùng `lastDir` (dấu của lần cuộn cuối) → `max` hoặc 0.
 - v3.5.188: khối CSS `.dark` cuối `touch-ui.js` (tương phản chủ đề tối); chỉ màu.
+- v3.5.189: `.dark .bbar/.panel/.btop` = `rgba(24,24,28,.78)` + `blur(24px) saturate(1.6)`.
