@@ -45,3 +45,5 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 - v3.5.154: Chromium + extension thật, chạm thật ở 6 kích thước (360–1280px): bố cục thanh, hit-test, ☰, Giọng đọc, Tốc độ, Lặp lại, kéo tiến độ, bảng phím tắt/Alt+L/Alt+R — fails 0; trình duyệt thật của người dùng chưa QA.
 - Static: `node --check` toàn bộ JS files, kiểm tra manifest và `git diff --check`.
 - Browser QA chưa chạy: bài viết dài, Readability fallback, Reader Alt+A/Alt+D/Alt+R, start/stop/pause, đổi URL và mutual exclusion với Web Study. Hai test path Reader cũ không tồn tại trong repo.
+- v3.5.177: cờ giọng đọc: chưa có font `Twemoji Country Flags` thì cờ emoji hệ thống (nếu có màu) được vẽ lên canvas, cắt sát rồi lấy phần giữa (bỏ mép gợn sóng của cờ Android); không có cờ màu thì giữ ký tự.
+- v3.5.179: code về lại v3.5.174 (các mục v3.5.176–177 phía trên không còn); `sheet-kit.js` giữ `grow.mid` / `collapse` của v3.5.175, chỉ ☰ của Keepit cho Android dùng.

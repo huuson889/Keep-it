@@ -1425,8 +1425,7 @@
   function startReading(fromBlock, interruptCurrent = false) {
     if (websiteDisabled) { console.warn("[Keepit Reader] Không đọc: website đang bị tắt cho trang này"); return; }
     if (isReaderDisabledOnThisWebsite()) { console.warn("[Keepit Reader] Không đọc: website nằm trong danh sách tắt Reader", location.hostname); return; }
-    // v3.5.176: the Google voice plays audio and needs no speechSynthesis (Android WebView has none); only a browser voice does
-    if (!settings.enableTTS || ((settings.voiceMode || "google") === "browser" && (!synth || !window.SpeechSynthesisUtterance))) { console.warn("[Keepit Reader] Không đọc: TTS bị tắt hoặc trình duyệt không hỗ trợ", { enableTTS:settings.enableTTS, synth:Boolean(synth), utterance:Boolean(window.SpeechSynthesisUtterance) }); return; }
+    if (!settings.enableTTS || !synth || !window.SpeechSynthesisUtterance) { console.warn("[Keepit Reader] Không đọc: TTS bị tắt hoặc trình duyệt không hỗ trợ", { enableTTS:settings.enableTTS, synth:Boolean(synth), utterance:Boolean(window.SpeechSynthesisUtterance) }); return; }
     speechDetectionRequest++;
     let nextQueue = readerBlocks(true);
     if (fromBlock && !nextQueue.includes(fromBlock)) nextQueue = [fromBlock];

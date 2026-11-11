@@ -13,7 +13,7 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 | [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | `normalize`, `createIndex`, `search`, `debounce`. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin với cache `storage.local` và TTL. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/source thumbnail URL, fallback SVG, image loading. |
-| [`js/shared/sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach(el,o)` / `sync()` / `locked()` / `detach(el)` | (v3.5.161) Hành vi chung của mọi sheet/popover Keepit: khóa cuộn trang, kéo/vuốt đóng (kéo xuống là đóng hẳn), bước half→full chỉ khi kéo lên; v3.5.175: `grow.mid()` + `grow.collapse()` (☰) = từ mức hết kéo xuống về mức giữa, kéo tiếp mới đóng. Nạp `document_start` cùng `touch-ui.js`, dùng chung isolated world cho overlay, Reader, content.js. |
+| [`js/shared/sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach(el,o)` / `sync()` / `locked()` / `detach(el)` | (v3.5.161) Hành vi chung của mọi sheet/popover Keepit: khóa cuộn trang, kéo/vuốt đóng (kéo xuống là đóng hẳn), bước half→full chỉ khi kéo lên; v3.5.175: `grow.mid()` + `grow.collapse()` (☰) = từ mức hết kéo xuống về mức giữa, kéo tiếp mới đóng; v3.5.177: độ dời tính theo đơn vị CSS của chính sheet (lớp thanh Keepit có thể được phóng về 1px màn hình). Nạp `document_start` cùng `touch-ui.js`, dùng chung isolated world cho overlay, Reader, content.js. |
 
 ## 3. Luồng chính
 
@@ -38,3 +38,4 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 
 - Đã chạy: `node --check` cho các file shared trong đợt chuyển Ask AI (không đổi logic shared).
 - Đề xuất: mở Dashboard/Popup/Sidebar xác nhận favicon, thumbnail, tìm kiếm và font tùy chỉnh trên Chromium/Firefox.
+- v3.5.179: code về lại v3.5.174 (các mục v3.5.176–177 phía trên không còn); `sheet-kit.js` giữ `grow.mid` / `collapse` của v3.5.175, chỉ ☰ của Keepit cho Android dùng.
