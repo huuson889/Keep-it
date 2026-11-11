@@ -192,7 +192,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
   if (message.type === "OPEN_HOME") {
     if (!Number.isInteger(sender?.tab?.id)) return { ok: false };
-    const url = typeof browser.runtime.getBrowserInfo === "function" ? "about:home" : "chrome://newtab/";
+    const url = browser.runtime.getURL("pages/home.html");   // v3.5.180: the Keepit home page (was the browser start page)
     try { await browser.tabs.update(sender.tab.id, { url }); return { ok: true }; } catch (error) { return { ok: false, error: String(error?.message || error) }; }
   }
  if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");

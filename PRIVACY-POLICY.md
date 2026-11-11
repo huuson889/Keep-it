@@ -19,7 +19,7 @@ This policy covers the Keepit browser extension for Chromium-based browsers and 
 
 ### 2. Data kept in your browser
 
-Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
+Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
 
 ### 3. Data sent to outside services
 
@@ -70,7 +70,7 @@ Chính sách này áp dụng cho tiện ích Keepit trên trình duyệt nhân C
 
 ### 2. Dữ liệu giữ trong trình duyệt
 
-Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
+Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, các lối tắt bạn giữ trên trang chủ Keepit, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
 
 ### 3. Dữ liệu gửi đến dịch vụ bên ngoài
 

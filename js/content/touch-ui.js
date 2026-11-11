@@ -7,7 +7,9 @@
 // first-run flag ("touchBarIntroSeen"). Nothing new is sent anywhere; search results open as normal page navigations.
 (() => {
   "use strict";
-  if (window.top !== window || !document.documentElement || !/^https?:$/.test(location.protocol)) return;
+  // v3.5.180: also on the Keepit home page (pages/home.html, js/home/home-ui.js), where page commands wait for a web page
+  const HOMEPAGE = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/home\.html$/.test(location.pathname);
+  if (window.top !== window || !document.documentElement || (!HOMEPAGE && !/^https?:$/.test(location.protocol))) return;
   const TOUCH = matchMedia("(pointer: coarse) and (hover: none)");
   const DARK_SCHEME = matchMedia("(prefers-color-scheme: dark)");
   const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
@@ -78,7 +80,7 @@
     btopTile:["Top button","Nút lên đầu","맨 위 버튼"], btopTip:["Show a back-to-top button when you scroll far","Hiện nút lên đầu trang khi cuộn xa","멀리 스크롤하면 맨 위로 버튼 표시"],
     btopOn:["Back-to-top button on — shows after scrolling past 1 screen","Đã bật nút lên đầu trang — hiện khi cuộn quá 1 màn hình","맨 위로 버튼 켬 — 한 화면 넘게 스크롤하면 표시"],
     btopOff:["Back-to-top button off","Đã tắt nút lên đầu trang","맨 위로 버튼 끔"],
-    home:["Home","Trang chủ","홈"], homeTip:["Open the browser's start page in this tab","Mở trang khởi động của trình duyệt trong tab này","이 탭에서 브라우저 시작 페이지 열기"], homeFailed:["Could not open the start page","Không mở được trang khởi động","시작 페이지를 열 수 없습니다"],
+    home:["Home","Trang chủ","홈"], homeTip:["Open the Keepit home page in this tab","Mở trang chủ Keepit trong tab này","이 탭에서 Keepit 홈 열기"], homeFailed:["Could not open the home page","Không mở được trang chủ","홈을 열 수 없습니다"],
     hide:["Hide bar","Ẩn thanh","바 숨기기"], show:["Show bar","Hiện thanh","바 표시"], back:["Back","Quay lại","뒤로"], moreBelow:["See more below","Xem thêm bên dưới","아래에 더 보기"],
     navG:["back / forward swipe","vuốt lùi / tới trang","뒤로 / 앞으로 스와이프"], trG:["translate gestures","cử chỉ dịch","번역 제스처"],
     gGeneral:["General","Chung","일반"], kSite:["Turn Keepit on/off for the page","Bật/tắt Keepit trên trang","페이지에서 Keepit 켜기/끄기"],
@@ -245,7 +247,7 @@
   // v3.5.179: the Keepit for Android browser adds its own tiles/dialogs (History, Bookmark, Add to Home screen, Text size,
   // Dark pages) through LHN_ANDROID_UI (APK asset android/browser-ui.js); on the APK start/offline page, page commands wait
   const AUI = () => isApk() ? globalThis.LHN_ANDROID_UI || null : null;
-  const onHome = () => !!AUI()?.onHome?.();
+  const onHome = () => HOMEPAGE || !!AUI()?.onHome?.();
   const isWide = () => isDesk() ? innerWidth >= 760 : innerWidth >= 900 && innerHeight >= 600;
   const isPland = () => isTouch() && !isWide() && innerWidth > innerHeight && innerHeight < 500;
   const isSmall = () => !isWide() && innerWidth < 600;
@@ -708,8 +710,7 @@ button,input{font-family:inherit}
 .fq,.fq:nth-child(n){justify-self:stretch;flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:4px 2px;font-size:12px}
 .fq span{max-width:100%}
 /* v3.5.179 (approved demo keepit-apk-home-demo-v12.html) — the bar's look everywhere: frosted glass, accent = the logo's
-   indigo → violet, solid round gradient search button, glass back-to-top with a chevron. In the browser it keeps its v3.5.174
-   place (docked at the bottom, on top of the browser's own toolbar); only Keepit for Android floats it ("Kính nổi"). */
+   indigo → violet, solid round gradient search button, glass back-to-top with a chevron. */
 .bbar{--accent:#7c3aed;--accent-rgb:124,58,237;background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);border-color:rgba(15,23,42,.08)}
 .dark .bbar{background:rgba(30,30,35,.68);border-color:rgba(255,255,255,.09)}
 .nb{color:#5b6475}
@@ -724,20 +725,23 @@ button,input{font-family:inherit}
 .btop{width:46px;height:46px;background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16);color:#334155}
 .dark .btop{background:rgba(30,30,35,.68);border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);color:#f4f4f5}
 .desk .btop:hover{background:rgba(255,255,255,.88)}.desk.dark .btop:hover{background:rgba(48,48,56,.78)}
-/* Keepit for Android only: the floating bar off the edges (radius 26) */
-.screen.apk .bbar{left:10px;right:10px;bottom:calc(14px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16)}
-.screen.apk.dark .bbar{border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
-.screen.apk .bbar.hide{transform:translateY(calc(100% + 24px + var(--sab)))}
-.screen.apk .bin{min-height:58px}
-.screen.apk .nb .ico{height:30px}
-.screen.apk.wide .bbar{left:50%;right:auto;bottom:calc(14px + var(--sab));border-radius:26px;padding:6px 10px!important}
-.screen.apk.wide .bbar.hide{transform:translate(-50%,calc(100% + 24px + var(--sab)))}
-.screen.apk.pland .bbar{left:10px;right:10px;bottom:calc(11px + var(--sab));padding:3px 4px!important;border-radius:22px}
-.screen.apk.pland .bin{min-height:46px}
-.screen.apk.hidden .hzone i{background:rgba(139,92,246,.85)}
-.screen.apk .hzone{bottom:calc(14px + var(--sab))}
-.screen.apk .hzone i{bottom:0}
-.screen.apk.pland .hzone{bottom:calc(11px + var(--sab))}
+/* v3.5.180 (demo "Kính nổi", every device): the bar floats — 10px from both sides, 14px above the bottom (the browser's own
+   toolbar), radius 26, glass border + shadow. Hidden = moved fully below the screen together with its shadow (no strip
+   left at the bottom); the folded line stays at the bottom edge as in v3.5.174. */
+.screen .bbar{left:10px;right:10px;bottom:calc(14px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16)}
+.screen.dark .bbar{border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+.screen .bbar.hide{transform:translateY(calc(100% + 64px + var(--sab)));box-shadow:none}
+.screen .bin{min-height:58px}
+.screen .nb .ico{height:30px}
+.screen.wide .bbar{left:50%;right:auto;bottom:calc(14px + var(--sab));border-radius:26px;padding:6px 10px!important}
+.screen.wide .bbar.hide{transform:translate(-50%,calc(100% + 64px + var(--sab)))}
+.screen.pland .bbar{left:10px;right:10px;bottom:calc(11px + var(--sab));padding:3px 4px!important;border-radius:22px}
+.screen.pland .bin{min-height:46px}
+.screen .bbar.peek{box-shadow:0 10px 30px rgba(15,23,42,.16)}
+.screen.dark .bbar.peek{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+.screen.hidden .hzone i{background:rgba(139,92,246,.85)}
+.screen:not(.wide) .btop:not(.low){bottom:calc(var(--bh,70px) + 30px + var(--sab))}
+.screen.pland .btop:not(.low){bottom:calc(var(--bh,58px) + 24px + var(--sab))}
 `;
 
   function build() {
@@ -1201,7 +1205,7 @@ button,input{font-family:inherit}
     if (a === "theme") { await saveSettings({ sidebarTheme:isDark() ? "light" : "dark" }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); return; }
     if (a === "font") { await toggleFont(); return; }
     if (a === "btop") { S.btop = !S.btop; persist(); renderSheet(); updBtop(); toast(t(S.btop ? "btopOn" : "btopOff")); return; }
-    if (home0 && ["reload", "share", "mark", "addhome", "navsite"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
+    if (home0 && ["reload", "share", "mark", "addhome", "navsite", "site", "restore"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
     if (a === "pdark") { const on = !!AUI()?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
     if (a === "navsite") { const h = hostName(); if (S.navOff[h]) delete S.navOff[h]; else S.navOff[h] = true; persist(); renderSheet(); toast(t(S.navOff[h] ? "navOffToast" : "navOnToast") + h); return; }
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }

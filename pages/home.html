@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Keepit</title>
+<!-- Keepit home page (v3.5.180, demo apk-home v12, same start page as Keepit for Android). Drawn by js/home/home-ui.js;
+     the Keepit bar is the real one (js/content/touch-ui.js), loaded here because content scripts do not run on extension pages. -->
+<style>
+  html, body { margin:0; min-height:100%; background:#0e0e11; }
+  @media (prefers-color-scheme: light) { html, body { background:#f6f7fb; } }
+  #keepit-home { display:block; min-height:100vh; }
+</style>
+</head>
+<body>
+<div id="keepit-home"></div>
+<script src="../js/core/browser-polyfill.js"></script>
+<script src="../js/core/messaging.js"></script>
+<script src="../js/core/defaults.js"></script>
+<script src="../js/core/config.js"></script>
+<script src="../js/core/settings.js"></script>
+<script src="../js/core/languages.js"></script>
+<script src="../js/shared/sheet-kit.js"></script>
+<script src="../js/content/touch-ui.js"></script>
+<script src="../js/home/home-ui.js"></script>
+</body>
+</html>
