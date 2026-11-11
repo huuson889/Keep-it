@@ -881,11 +881,11 @@ button,input{font-family:inherit}
     if (on || was) syncBarVis();
   }
   const anyOpen = () => $("sheet").classList.contains("open") || $("srch").classList.contains("open") || $("pop").classList.contains("open");
-  // scroll by dy at y: follow it 1:1; near the top always whole; stops half-way → settles to the nearer end after the finger
-  // is up and scrolling stopped (160ms)
-  let settleT = 0, touching = false;
+  // scroll by dy at y: follow it 1:1; near the top always whole; stops half-way → after the finger is up and scrolling
+  // stopped (160ms) it glides on in the direction of the last scroll (v3.5.187; was: to the nearer end)
+  let settleT = 0, touching = false, lastDir = 0;
   function scrollOff(dy, y) {
-    const top = y <= (isPland() ? 16 : 40), was = S.sOff;
+    const top = y <= (isPland() ? 16 : 40), was = S.sOff; lastDir = dy > 0 ? 1 : -1;
     if (top) S.sOff = 0;
     else if (dy > 0 && (anyOpen() || Date.now() < showHold)) return;
     else S.sOff = clamp(S.sOff + dy, 0, offMax());
@@ -895,7 +895,7 @@ button,input{font-family:inherit}
   function settleOff() {
     if (touching) { settleT = setTimeout(settleOff, 160); return; }
     const max = offMax(); if (S.sOff <= 0 || S.sOff >= max) return;
-    S.sOff = S.sOff > max / 2 ? max : 0; applyOff(true);
+    S.sOff = lastDir > 0 ? max : 0; applyOff(true);
   }
   // v3.5.185: overlay / Reader closed, or ☰ hide → show: the bar is back even if scrolling had hidden it before; the page's own
   // scroll restore right after (overlay close) must not hide it again → 800ms hold
