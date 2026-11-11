@@ -94,7 +94,7 @@
   - manifest.json nằm ở gốc zip, không kèm thư mục .git.
   - Zip PHẢI chứa AGENTS.md và PROJECT.md bản mới nhất.
   - Không bao gồm sync-watch.ps1, sync-state.txt, sync-watch.log.
-  - Mỗi lần tạo ZIP thì tạo luôn CRX cùng tên ("Keepit - Optimize Test-v<version>.crx") bằng `python3 scripts/build_release.py` (đóng ZIP từ git HEAD + ký CRX3, cùng bộ file). Khoá `.pem` ký CRX để NGOÀI repo (`--key` hoặc biến `KEEPIT_CRX_KEY`), tuyệt đối không commit, không đưa vào ZIP/CRX; luôn ký bằng cùng một khoá để ID tiện ích không đổi.
+  - Mỗi lần tạo ZIP thì tạo luôn CRX cùng tên ("Keepit - Optimize Test-v<version>.crx") bằng `python3 scripts/build_release.py` (đóng ZIP từ git HEAD + ký CRX3, cùng bộ file; ZIP vào thư mục `Keepit-Zip`, CRX vào `Keepit-Crx`, ZIP source APK để riêng ở `Keepit-Apk-Zip`). Khoá `.pem` ký CRX để NGOÀI repo (`--key` hoặc biến `KEEPIT_CRX_KEY`), tuyệt đối không commit, không đưa vào ZIP/CRX; luôn ký bằng cùng một khoá để ID tiện ích không đổi.
 
 **5.5. Báo cáo**
   - Báo lại: file đã đổi, lỗi đã sửa, kết quả kiểm tra thực tế.

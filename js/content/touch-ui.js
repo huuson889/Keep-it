@@ -139,7 +139,13 @@
     openedTab:["Opened in a new tab","Đã mở trong tab mới","새 탭에서 열었습니다"], openingNote:["Opening the note","Đang mở ghi chú","노트를 여는 중"],
     noteInPanel:["Opened the note in the Notes panel","Mở ghi chú trong bảng Ghi chú","노트 패널에서 노트를 열었습니다"], hlInPanel:["Opened the highlight in the Notes panel","Mở tô sáng trong bảng Ghi chú","노트 패널에서 하이라이트를 열었습니다"],
     openingHl:["Opening the highlight","Đang mở tô sáng","하이라이트를 여는 중"], openingDict:["Opening the dictation lesson","Mở bài chép chính tả","받아쓰기 수업을 엽니다"],
-    fSelect:["Select","Chọn","선택"], fOpen:["Open","Mở","열기"], fClose:["Close","Đóng","닫기"], reload:["Reload","Tải lại","새로고침"]
+    fSelect:["Select","Chọn","선택"], fOpen:["Open","Mở","열기"], fClose:["Close","Đóng","닫기"], reload:["Reload","Tải lại","새로고침"],
+    // v3.5.175 (approved demo keepit-apk-home-demo-v12.html): ☰ "This page" / "Appearance" groups + APK browser tiles
+    pageSec:["This page","Trang này","이 페이지"], lookSec:["Appearance","Giao diện","화면"],
+    brShare:["Share link","Chia sẻ liên kết","링크 공유"], brCopied:["Link copied","Đã sao chép liên kết","링크를 복사했습니다"], brCopyFail:["Could not copy the link","Không sao chép được liên kết","링크를 복사하지 못했습니다"],
+    brMark:["Bookmark","Đánh dấu","북마크"], brHome:["Add to Home screen","Thêm màn hình","홈 화면에 추가"], brNeed:["Open a web page first","Hãy mở một trang web trước","먼저 웹 페이지를 여세요"],
+    hist:["History","Lịch sử","방문 기록"], zoom:["Text size","Cỡ chữ","글자 크기"], zoomTip:["Make text on web pages bigger or smaller","Phóng to / thu nhỏ chữ trên trang web","웹 페이지 글자를 크게 / 작게"],
+    pdark:["Dark pages","Trang tối","어두운 페이지"], pdarkTip:["Darken web pages when the app theme is dark","Làm tối trang web khi app ở Chủ đề tối","앱 테마가 어두우면 웹 페이지도 어둡게"], pdarkLight:["Dark pages work with the dark theme","Trang tối có tác dụng khi Chủ đề tối","어두운 페이지는 어두운 테마에서 작동합니다"]
   };
   const LANG_INDEX = { en:0, vi:1, ko:2 };
 
@@ -201,6 +207,11 @@
   reload:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   up:'<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>', bulb:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>', max:'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>', min:'<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>', lr:'<path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="M3 12h18"/>', gauge:'<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>', voice:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',
   wifioff:'<path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="M19 12.86a10 10 0 0 0-2-1.41"/><path d="M2 8.82a15 15 0 0 1 4.18-2.65"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/><path d="m2 2 20 20"/>',
+  totop:'<path d="m6 15 6-6 6 6"/>', barhide:'<rect x="3" y="5" width="18" height="7" rx="3.5"/><path d="m8 16 4 4 4-4"/>', barshow:'<rect x="3" y="13" width="18" height="7" rx="3.5"/><path d="m8 8 4-4 4 4"/>',
+  hist:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>', tsize:'<path d="M4 18 8.5 6h1L14 18M5.6 14h6.8"/><path d="M15.5 18l3-8h1l3 8M16.5 15.5h5"/>',
+  pdark:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M14.5 15.5A3.5 3.5 0 0 1 10 11a3.5 3.5 0 1 0 4.5 4.5z"/>',
+  addhome:'<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 8.5v6M9 11.5h6M11 18.5h2"/>', share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="m16 6-4-4-4 4M12 2v13"/>',
+  starOn:'<path d="M12 2 15 9l7 .6-5.3 4.7L18.2 22 12 18.3 5.8 22l1.5-7.7L2 9.6 9 9z" fill="currentColor"/>',
   check:'<path d="m5 12 4 4L19 6"/>', star:'<path d="M12 2 15 9l7 .6-5.3 4.7L18.2 22 12 18.3 5.8 22l1.5-7.7L2 9.6 9 9z"/>'
 };
   const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
@@ -231,6 +242,10 @@
   const isTouch = () => TOUCH.matches;
   const isDesk = () => !TOUCH.matches;
   const isApk = () => globalThis.LHN_PLATFORM === "android";
+  // v3.5.175: the Keepit for Android browser adds its own tiles/dialogs (History, Bookmark, Add to Home screen, Text size,
+  // Dark pages) through LHN_ANDROID_UI (APK asset android/browser-ui.js); on the APK start/offline page, page commands wait
+  const AUI = () => isApk() ? globalThis.LHN_ANDROID_UI || null : null;
+  const onHome = () => !!AUI()?.onHome?.();
   const isWide = () => isDesk() ? innerWidth >= 760 : innerWidth >= 900 && innerHeight >= 600;
   const isPland = () => isTouch() && !isWide() && innerWidth > innerHeight && innerHeight < 500;
   const isSmall = () => !isWide() && innerWidth < 600;
@@ -370,6 +385,8 @@ button,input{font-family:inherit}
 .screen:not(.desk) .shead,.screen:not(.desk) .dh{touch-action:none}
 .dragging{transition:none!important}
 .panel.full{max-height:96%}
+.screen:not(.wide) .panel{max-height:58%}
+.screen:not(.wide) .panel.full{max-height:96%}
 .pop .grip{margin:2px auto 6px}
 .sbox .grip{margin:8px auto 0}
 .langrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 12px}
@@ -690,6 +707,35 @@ button,input{font-family:inherit}
 .mfoot{grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
 .fq,.fq:nth-child(n){justify-self:stretch;flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:4px 2px;font-size:12px}
 .fq span{max-width:100%}
+/* v3.5.175 (approved demo keepit-apk-home-demo-v12.html): "Kính nổi" — frosted floating bar off the edges, radius 26,
+   accent = the logo's indigo → violet; search button stays the solid round gradient; back-to-top = same glass + chevron */
+.bbar{--accent:#7c3aed;--accent-rgb:124,58,237}
+.nb{color:#5b6475}
+.dark .nb{color:#a1a1aa}
+.nb.on{color:#6d28d9}
+.dark .nb.on{color:#c4b5fd}
+.nb svg{stroke-width:1.8}
+.sbtn{background:linear-gradient(135deg,#4f46e5,#8b5cf6)}
+.screen .bbar{left:10px;right:10px;bottom:calc(14px + var(--sab));padding:6px 4px!important;border-radius:26px;border:1px solid rgba(15,23,42,.08);
+  background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 10px 30px rgba(15,23,42,.16)}
+.screen.dark .bbar{background:rgba(30,30,35,.68);border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
+.screen .bbar.hide{transform:translateY(calc(100% + 24px + var(--sab)))}
+.screen .bin{min-height:58px}
+.screen .nb .ico{width:46px;height:30px;border-radius:12px}
+.screen .nb.on .ico{background:rgba(124,58,237,.12)}
+.screen.dark .nb.on .ico{background:rgba(139,92,246,.22)}
+.screen .sbtn{border-radius:50%;box-shadow:0 4px 14px rgba(99,70,229,.42)}
+.screen.wide .bbar{left:50%;right:auto;bottom:calc(14px + var(--sab));border-radius:26px;padding:6px 10px!important}
+.screen.wide .bbar.hide{transform:translate(-50%,calc(100% + 24px + var(--sab)))}
+.screen.pland .bbar{left:10px;right:10px;bottom:calc(11px + var(--sab));padding:3px 4px!important;border-radius:22px}
+.screen.pland .bin{min-height:46px}
+.screen.hidden .hzone i{background:rgba(139,92,246,.85)}
+.screen .hzone{bottom:calc(14px + var(--sab))}
+.screen .hzone i{bottom:0}
+.screen.pland .hzone{bottom:calc(11px + var(--sab))}
+.screen .btop{width:46px;height:46px;background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);border:1px solid rgba(15,23,42,.08);box-shadow:0 10px 30px rgba(15,23,42,.16);color:#334155}
+.screen.dark .btop{background:rgba(30,30,35,.68);border-color:rgba(255,255,255,.09);box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);color:#f4f4f5}
+.desk .btop:hover{background:rgba(255,255,255,.88)}.desk.dark .btop:hover{background:rgba(48,48,56,.78)}
 `;
 
   function build() {
@@ -705,7 +751,7 @@ button,input{font-family:inherit}
   <div class="pswi l" id="pswl">${ic("left")}</div><div class="pswi r" id="pswr">${ic("right")}</div><div class="coach" id="coach" role="dialog"></div>
   <div class="bbar" id="bar" role="toolbar" aria-label="Keepit"><div class="swi l" id="swl">${ic("left")}</div><div class="swi r" id="swr">${ic("right")}</div><div class="bin" id="bin"></div></div>
   <div class="hzone" id="hzone"><i></i></div>
-  <button class="btop" id="btop" type="button">${ic("up")}</button>
+  <button class="btop" id="btop" type="button">${ic("totop")}</button>
   <div class="iscrim" id="iscrim"></div>
   <div class="coach intro" id="intro" role="dialog"></div>
   <button class="offdot" id="offdot" type="button">${ic("logo")}</button>
@@ -783,7 +829,7 @@ button,input{font-family:inherit}
   const clientHOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? innerHeight : el.clientHeight;
   function updBtop() {
     const b = $("btop"); if (!b) return;
-    b.classList.toggle("on", S.btop && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
+    b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
     b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
     b.classList.toggle("flat", S.scrollHide && !S.hidden && !S.yieldBar && !S.peek);
   }
@@ -827,8 +873,18 @@ button,input{font-family:inherit}
   }
 
   // v8: offline → say so, don't switch translation on; Retry / back online → Translate now (untranslating still works offline)
+  // v3.5.175 (demo v12): the offline page (js/content/offline-page.js, style A/B at random per page, review card) replaces
+  // the toast; back online it says so and the waiting action runs; Close = keep reading, "Saved notes" = Notes sheet
+  function offlinePage(retry) {
+    const O = globalThis.LHN_OFFLINE; if (!O) return false;
+    S.pendingTr = retry; haptic();
+    O.show({ key:location.href, lang:langCode(), dark:isDark(), onBack:() => { S.pendingTr = null; retry(); },
+      onNotes:() => { O.hide(); doNav("notes"); } });
+    return true;
+  }
   function offlineBlock(retry) {
     if (!S.offline) return false;
+    if (offlinePage(retry)) return true;
     S.pendingTr = retry; haptic();
     toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (S.offline) offlineBlock(retry); else { S.pendingTr = null; retry(); } } });
     return true;
@@ -849,6 +905,7 @@ button,input{font-family:inherit}
     if (id === "search") return openSearch();
     if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
     closePop();
+    if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
     if (id === "reader") { run("reader"); setTimeout(() => { if (document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) toast(t("readerStart")); syncState(); }, 300); return; }
@@ -906,10 +963,12 @@ button,input{font-family:inherit}
   // of the window (background.js TAB_NEIGHBORS / SWITCH_TAB: tab order only, nothing stored or sent out). APK = one view.
   const tabNb = { prev:false, next:false };
   function refreshTabs() { if (isApk() || !isTouch()) return; send("TAB_NEIGHBORS").then(r => { if (r && typeof r === "object") { tabNb.prev = !!r.prev; tabNb.next = !!r.next; } }); }
-  const histCan = back => { const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
+  // v3.5.176: Keepit for Android asks the WebView (its start page / offline page are another origin, so the Navigation API
+  // of a page never sees them and the start page saw no history at all)
+  const histCan = back => { if (typeof AUI()?.canGo === "function") return AUI().canGo(back); const nav = window.navigation; if (back) return nav?.canGoBack ?? history.length > 1; return nav?.canGoForward ?? true; };
   const canGo = back => histCan(back) || (!isApk() && tabNb[back ? "prev" : "next"]);
   function go(back) {
-    if (histCan(back)) { if (back) history.back(); else history.forward(); return true; }
+    if (histCan(back)) { if (typeof AUI()?.go === "function") AUI().go(back); else if (back) history.back(); else history.forward(); return true; }
     if (!isApk() && tabNb[back ? "prev" : "next"]) { void send("SWITCH_TAB", { dir:back ? -1 : 1 }); return true; }
     return false;
   }
@@ -1008,20 +1067,24 @@ button,input{font-family:inherit}
       requestAnimationFrame(updFade); return;
     }
     const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[2]][1]));
+    // v3.5.175 (demo v8+ order): Công cụ · Trang này · Khi chọn chữ · Màu · Trình đọc · Giao diện; APK browser tiles via LHN_ANDROID_UI
+    const A = AUI(), home = onHome(), marked = !home && !!A?.isMarked?.(), zoom = Number(A?.zoomValue?.()) || 100;
     panel.innerHTML = `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${A ? tile("hist", "hist", t("hist")) : ""}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
+    <div class="divider"></div>
+    <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${A ? tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome")) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !home && !S.navOff[hostName()], home ? t("navG") : t("navsiteTip", hostName())) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
-    ${readerRowHTML()}
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
+    ${readerRowHTML()}
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${isTouch() && S.gest.nav ? tile("navsite", "lr", t("navsite"), !S.navOff[hostName()], t("navsiteTip", hostName())) : ""}${tile("btop", "up", t("btopTile"), S.btop, t("btopTip"))}</div>
+    <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${A ? tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkTip")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip")) : ""}${tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "eye", t("show")) : foot("hide", "eyeoff", t("hide"))}</div>`;
+  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1093,6 +1156,14 @@ button,input{font-family:inherit}
     if (S.sheetFrom) { S.sheetFrom = null; setTimeout(() => { if (!$("sheet").classList.contains("open")) host.style.zIndex = "2147483000"; }, 300); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }
+  // v3.5.175: ☰ › Chia sẻ liên kết outside the APK = copy the page address (user gesture; no clipboard permission needed)
+  async function copyLink() {
+    const url = location.href;
+    try { await navigator.clipboard.writeText(url); toast(t("brCopied")); return; } catch {}
+    const ta = document.createElement("textarea"); ta.value = url; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:0;top:0;opacity:0";
+    root.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch {} ta.remove();
+    toast(t(ok ? "brCopied" : "brCopyFail"));
+  }
   async function toggleFont() {
     const next = !fontOn; fontOn = next;
     if (globalThis.LHN_READER_BAR?.setWebFont) globalThis.LHN_READER_BAR.setWebFont(next);
@@ -1103,6 +1174,11 @@ button,input{font-family:inherit}
     renderSheet(); toast(t(next ? "fontOn" : "fontOff"));
   }
   async function onPanelClick(e) {
+    if (e.target.closest?.(".grip") && !isWide()) {   // v3.5.175: tap the grip = switch between the 2 steps
+      const panel = $("panel"), on = !panel.classList.contains("full");
+      panel.style.transition = "max-height .22s ease"; panel.classList.toggle("full", on); panel.style.maxHeight = "";
+      setTimeout(() => { panel.style.transition = ""; updFade(); }, 240); return;
+    }
     const panel = $("panel");
     if (e.target.closest(".smore")) { const b = panel.querySelector(".sbody"); b.scrollBy({ top:b.clientHeight * 0.7, behavior:smooth() }); return; }
     const c = e.target.closest("[data-color]");
@@ -1110,7 +1186,7 @@ button,input{font-family:inherit}
     const l = e.target.closest("[data-lang]");
     if (l) { await saveSettings({ language:l.dataset.lang }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t("langSet") + l.querySelector(".ln").textContent); return; }
     const b = e.target.closest("[data-q]"); if (!b) return;
-    const a = b.dataset.q;
+    const a = b.dataset.q, home0 = onHome();
     if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
     if (a === "compact") { if (S.autoFive) { toast(t("compactAutoToast")); return; } S.five = !S.five; persist(); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t(S.five ? "five" : "seven")); return; }
     if (a.startsWith("g:")) { const k = a.slice(2), st = panel.querySelector(".sbody").scrollTop; S.gest[k] = !S.gest[k]; persist(); renderSheet(); panel.querySelector(".sbody").scrollTop = st; toast(t(S.gest[k] ? "on" : "off") + t(k === "nav" ? "navG" : "trG")); return; }
@@ -1119,6 +1195,8 @@ button,input{font-family:inherit}
     if (a === "theme") { await saveSettings({ sidebarTheme:isDark() ? "light" : "dark" }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); return; }
     if (a === "font") { await toggleFont(); return; }
     if (a === "btop") { S.btop = !S.btop; persist(); renderSheet(); updBtop(); toast(t(S.btop ? "btopOn" : "btopOff")); return; }
+    if (home0 && ["reload", "share", "mark", "addhome", "navsite"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
+    if (a === "pdark") { const on = !!AUI()?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
     if (a === "navsite") { const h = hostName(); if (S.navOff[h]) delete S.navOff[h]; else S.navOff[h] = true; persist(); renderSheet(); toast(t(S.navOff[h] ? "navOffToast" : "navOnToast") + h); return; }
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
@@ -1131,6 +1209,12 @@ button,input{font-family:inherit}
     if (a === "dashboard") void send("OPEN_DASHBOARD");
     else if (a === "settings") void send("OPEN_DASHBOARD_SETTINGS");
     else if (a === "restore") { if (globalThis.LHN_BAR_ACTIONS?.restoreHighlights?.()) toast(t("restored")); }
+    else if (a === "reload") location.reload();
+    else if (a === "share") { if (AUI()?.share) AUI().share(); else void copyLink(); }
+    else if (a === "hist") AUI()?.history?.();
+    else if (a === "mark") AUI()?.bookmark?.();
+    else if (a === "addhome") AUI()?.addHome?.();
+    else if (a === "zoom") AUI()?.zoom?.();
   }
 
   // ---------- page gestures (touch): swipe left on a paragraph = translate / untranslate it · 3-finger tap = whole page
@@ -1141,7 +1225,7 @@ button,input{font-family:inherit}
   const hasArticle = () => [...document.querySelectorAll("p")].slice(0, 40).some(p => (p.textContent || "").trim().length > 60);
   const hScroll = el => { for (let n = el; n && n !== document.body && n !== document.documentElement; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true; return false; };
   function noSwipe(t0) {
-    if (t0.closest("button,input,textarea,select,canvas,iframe,video,[contenteditable],[role=slider],#movie_player,.html5-video-player")) return true;
+    if (t0.closest("button,input,textarea,select,canvas,iframe,video,[contenteditable],[role=slider],#movie_player,.html5-video-player,[data-lhn-noswipe]")) return true;
     for (let n = t0; n && n !== document.body && n !== document.documentElement; n = n.parentElement) { const ta = getComputedStyle(n).touchAction; if (ta !== "auto" && !/pan-x|manipulation/.test(ta)) return true; }
     return hScroll(t0);
   }
@@ -1208,7 +1292,7 @@ button,input{font-family:inherit}
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) { if (Math.abs(dy) > 10) pg.dead = true; return; }
       if (Date.now() - pg.t > 500) { pg.dead = true; return; }
       if (dx < 0 && pg.p) pg.mode = "para";
-      else if (pg.nav) { pg.mode = "nav"; refreshTabs(); }
+      else if (pg.nav && !pg.target.closest?.("[data-lhn-noswipe]")) { pg.mode = "nav"; refreshTabs(); }
       else { pg.dead = true; return; }
       getSelection().removeAllRanges();
     }
@@ -1344,7 +1428,7 @@ button,input{font-family:inherit}
   function renderCur() {
     const cur = $("scur");
     cur.innerHTML = isApk() ? `${ic("lock")}<span>${esc(location.hostname + location.pathname)}</span><button type="button" data-reload>${ic("reload")}${esc(t("reload"))}</button>` : "";
-    cur.hidden = !isApk();
+    cur.hidden = !isApk() || onHome();   // v3.5.175: no address row on the APK start / offline page
   }
   function openSearch() {
     introDone(); closePop(); closeSheet(); hideCoach(); S.scope = "all"; S.active = 0; const sq = $("sq"); sq.value = ""; sq.placeholder = t("sPlaceholder");
@@ -1506,7 +1590,7 @@ button,input{font-family:inherit}
     if (!main) return;
     scroller = target;
     const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
-    if (Math.abs(dy) > 6) { if (isTouch()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
+    if (Math.abs(dy) > 6) { if (isTouch() && !onHome()) setScrollHide(dy > 0 && y > (isPland() ? 16 : 40)); lastTop.set(target, y); }
     else if (!lastTop.has(target)) lastTop.set(target, y);
     updBtop();
     if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; checkOverlap(); });
@@ -1518,10 +1602,16 @@ button,input{font-family:inherit}
   function onFullscreen() { S.vfs = !!(document.fullscreenElement || document.webkitFullscreenElement); if (S.vfs) { introDone(); hideCoach(); closePop(); } syncBarVis(); }
   function onNetwork() {
     const was = S.offline; S.offline = navigator.onLine === false;
-    if (was && !S.offline && S.pendingTr && mounted) toast(t("online"), { label:t("translateNow"), fn:() => { const f = S.pendingTr; S.pendingTr = null; f?.(); } });
+    if (was && !S.offline && S.pendingTr && mounted && !globalThis.LHN_OFFLINE?.isOpen()) toast(t("online"), { label:t("translateNow"), fn:() => { const f = S.pendingTr; S.pendingTr = null; f?.(); } });
   }
   let offlineToastAt = 0;
   globalThis.LHN_BAR_HOOKS = Object.freeze({
+    // v3.5.175 (Keepit for Android browser-ui.js): start-page search box / offline "Saved notes" use the bar's own actions;
+    // pull-to-refresh waits while a Keepit sheet, search or the keyboard is open; ☰ redraws when bookmarks change
+    nav(id) { if (mounted && ["search", "notes", "more"].includes(id)) doNav(id); },
+    busy() { return !mounted || anyOpen() || S.kbd || S.vfs || S.extYield || picking || !!globalThis.LHN_SHEET?.locked?.(); },
+    refresh() { if (mounted && $("sheet").classList.contains("open")) renderSheet(); },
+    toast(text) { if (mounted) toast(String(text || "")); },
     // the Reader's ☰ opens this main sheet above the Reader bar (v3.5.160 touch; v3.5.161 every device) with its
     // Trình đọc row in the vertical middle of the sheet
     openMainSheet(fromRect) {
@@ -1537,6 +1627,7 @@ button,input{font-family:inherit}
     translateOffline() {
       if (!mounted || Date.now() - offlineToastAt < 4000) return; offlineToastAt = Date.now();
       const retry = () => { if (pageTranslated()) { run("bilingual-page"); run("bilingual-page"); } };
+      if (navigator.onLine === false && offlinePage(retry)) return;
       S.pendingTr = retry; toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (navigator.onLine === false) return toast(t("offline"), { icon:"wifioff" }); S.pendingTr = null; retry(); } });
     }
   });
@@ -1553,6 +1644,9 @@ button,input{font-family:inherit}
     SK()?.attach(panel, { isOpen:() => $("sheet").classList.contains("open"), close:() => closeSheet(), watch:$("sheet"), scroller:() => panel.querySelector(".sbody"),
       grow:{ isFull:() => panel.classList.contains("full"), cap:capH,
         setH:px => { if (px === null) { panel.classList.remove("growing"); panel.style.maxHeight = panel.classList.contains("full") && isWide() ? capH() + "px" : ""; } else { panel.classList.add("growing"); panel.style.maxHeight = px + "px"; } },
+        // v3.5.175 ☰ 2 steps on phones (demo v12): opens at the middle step (58%), pulled up = full, pulled down = middle, further = closed
+        mid:() => isWide() ? 0 : Math.round(innerHeight * 0.58),
+        collapse:() => { panel.style.transition = "max-height .22s ease"; panel.classList.remove("full", "growing"); panel.style.maxHeight = ""; setTimeout(() => { panel.style.transition = ""; updFade(); }, 240); },
         release:grow => { const keep = panel.scrollHeight; panel.classList.remove("growing"); panel.style.transition = "max-height .2s ease"; panel.style.maxHeight = ""; if (grow) expand(); setTimeout(() => { panel.style.transition = ""; updFade(); }, 220); return keep; } } });
     SK()?.attach($("pop"), { isOpen:() => $("pop").classList.contains("open"), close:() => closePop(), watch:$("pop") });
     // search: its taller step = keyboard down (more results); pulled down from there = keyboard back; further = closed

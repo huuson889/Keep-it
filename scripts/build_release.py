@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Build the test release files from a git revision: the ZIP and the matching signed CRX (CRX3).
 
-    python3 scripts/build_release.py                      # HEAD -> ../Keepit-zip
-    python3 scripts/build_release.py --key "path/to/key.pem" --out "dir" --ref HEAD
+    python3 scripts/build_release.py                      # HEAD -> ../Keepit-Zip (ZIP) + ../Keepit-Crx (CRX)
+    python3 scripts/build_release.py --key "path/to/key.pem" --out "zip dir" --crx-out "crx dir" --ref HEAD
 
 Output: "Keepit - Optimize Test-v<version>.zip" and ".crx" (same files; the CRX payload is the ZIP itself).
+ZIPs and CRXs live in separate folders next to the repo (APK source ZIPs go to ../Keepit-Apk-Zip, not built here).
 The private key never belongs in this repo (it is public): default location ../Keepit-key/Keepit - Test.pem,
 or set KEEPIT_CRX_KEY. Pure Python, no packages needed (RSA PKCS#1 v1.5 / SHA-256 signing done here).
 Stores (Chrome Web Store, Edge Add-ons, AMO) take the ZIP; the CRX is for sideloading, e.g. Edge Android
@@ -147,7 +148,8 @@ def build_crx(zip_bytes: bytes, key: Path) -> tuple[bytes, str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
     ap.add_argument("--ref", default="HEAD", help="git revision to package (default HEAD)")
-    ap.add_argument("--out", default=str(ROOT.parent / "Keepit-zip"), help="output folder")
+    ap.add_argument("--out", default=str(ROOT.parent / "Keepit-Zip"), help="ZIP output folder")
+    ap.add_argument("--crx-out", default=str(ROOT.parent / "Keepit-Crx"), help="CRX output folder")
     ap.add_argument("--key", default=os.environ.get("KEEPIT_CRX_KEY", str(ROOT.parent / "Keepit-key" / "Keepit - Test.pem")),
                     help="CRX private key (.pem), kept outside the repo")
     ap.add_argument("--no-crx", action="store_true", help="ZIP only")
@@ -168,8 +170,10 @@ def main() -> int:
         print(f"ERROR: CRX key not found: {key} (use --key, KEEPIT_CRX_KEY, or --no-crx)", file=sys.stderr)
         return 1
     crx, ext_id = build_crx(zip_bytes, key)
-    (out / f"{base}.crx").write_bytes(crx)
-    print(f"CRX  {out / (base + '.crx')}  ({len(crx):,} bytes, extension ID {ext_id})")
+    crx_out = Path(a.crx_out).expanduser().resolve()
+    crx_out.mkdir(parents=True, exist_ok=True)
+    (crx_out / f"{base}.crx").write_bytes(crx)
+    print(f"CRX  {crx_out / (base + '.crx')}  ({len(crx):,} bytes, extension ID {ext_id})")
     return 0
 
 

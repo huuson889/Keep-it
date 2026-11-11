@@ -5,7 +5,7 @@
 //  · touch: drag down from anywhere on a sheet to close it; inside a list that is scrolled down the list scrolls back to its
 //    top first (the decision is made once per gesture, so a first jitter in the other direction never blocks the scroll);
 //  · a sheet with a taller step (the ☰ sheet) grows while pulled up and the same gesture goes on scrolling its list once it
-//    reaches the top step; dragging down passes the steps in one motion (released low or flicked down = closed);
+//    reaches the top step; v3.5.175: with grow.mid a pull down from the top step returns to the middle step, further = closed;
 //  · tapping outside still closes (each sheet keeps its own scrim / outside-click handler).
 // Content-script world only; nothing is stored or sent.
 (() => {
@@ -96,6 +96,9 @@
       return;
     }
     if (g.mode === "grow") o.grow.setH(null);
+    // v3.5.175: a 2-step sheet (grow.mid) pulled down from the top step first shrinks to the middle step, then slides away
+    const mid = g.mode === "drag" && d > 0 && o.grow?.mid && o.grow.isFull() ? o.grow.mid() : 0;
+    if (mid) { const room = Math.max(0, g.h - mid); if (d <= room) { o.grow.setH(g.h - d); setT(el, null); } else { o.grow.setH(mid); setT(el, d - room); } return; }
     setT(el, d > 0 ? d : Math.max(d, -120) * 0.12);
   }
   function reset(hit) {
@@ -114,8 +117,17 @@
       if (done && s.sc && s.h - d > s.cap && v < -0.05) startFling(s.sc, -v);
       return;
     }
-    // v3.5.163: pulled down = closed, from any step (no stop at half): past min(110px, 30%) or a quick flick; else back
-    if (done && (d > Math.min(110, s.h * 0.3) || (v > 0.6 && d > 24))) {
+    // v3.5.175: 2-step sheet from its top step: below the middle step past min(110px, 30%) or flicked = closed;
+    // pulled > 56px or flicked down = middle step; else back to the top step
+    const mid = d > 0 && o.grow?.mid && o.grow.isFull() ? o.grow.mid() : 0;
+    const ex = mid ? d - Math.max(0, s.h - mid) : d, closeAt = Math.min(110, (mid || s.h) * 0.3);
+    if (mid && !(done && ex > 0 && (ex > closeAt || (v > 0.6 && ex > 24)))) {
+      setTr(el, null);
+      if (done && (d > 56 || v > 0.5)) { o.grow.collapse?.(); setT(el, null); } else { o.grow.setH(null); snap(); }
+      return;
+    }
+    // v3.5.163: pulled down = closed (from the middle step): past min(110px, 30%) or a quick flick; else back
+    if (done && (ex > closeAt || (v > 0.6 && ex > 24))) {
       setTr(el, "translate .18s ease-in"); setT(el, s.h + 40);
       setTimeout(() => {
         setTr(el, "none"); try { o.close(); } catch {}
@@ -161,7 +173,7 @@
     if (!want) { g = null; stopFling(); }
   }
   // el = the moving sheet/popover; o = { isOpen(), close(), watch?: Element|Element[], drag?: false, scroller?(),
-  //   grow?: { isFull(), cap(), setH(px|null), release(expand: pulled up > 40px), collapse?() (unused since v3.5.163: a pull down closes) }, onDrag?(on) }
+  //   grow?: { isFull(), cap(), setH(px|null), release(expand: pulled up > 40px), mid?() (px of the middle step: v3.5.175 2-step sheet), collapse?() (back to the middle step) }, onDrag?(on) }
   function attach(el, o) {
     if (!el || !o) return;
     const known = entries.has(el); entries.set(el, o);

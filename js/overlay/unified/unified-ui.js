@@ -1759,7 +1759,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const h = hostEl();
       const lockIt = () => { if (lock) try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch (_) {} };
       if (document.fullscreenElement || !h?.requestFullscreen) { lockIt(); return; }
-      h.requestFullscreen({ navigationUI: 'hide' }).then(() => { fsOwned = true; lockIt(); }).catch(() => {});
+      h.requestFullscreen({ navigationUI: 'hide' }).then(() => { fsOwned = true; lockIt(); }).catch(lockIt); // in-app WebView: lock even if fullscreen is refused
     }
     function exitFs() {
       try { screen.orientation?.unlock?.(); } catch (_) {}
