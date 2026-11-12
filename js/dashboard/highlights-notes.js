@@ -146,7 +146,9 @@ function pageKeyOf(item){return String(item.__keepitPageKey||item.url||item.host
 function normalizedColor(value){return validColors.includes(String(value||'').toLowerCase())?String(value).toLowerCase():'yellow'}
 function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:'#'}catch{return '#'}}
 function setSelectedFavicon(pageUrl){
- const host=$('selectedFavicon');host.innerHTML=icon('file');
+ const host=$('selectedFavicon'),brand=siteBrandOf(pageUrl);
+ if(brand){host.innerHTML=`<span class="site-brand-tile" style="background:${brand.bg}">${brand.svg}</span>`;return}
+ host.innerHTML=siteLetterTile(pageUrl);
  const fallback=host.firstElementChild,img=document.createElement('img');img.alt='';img.hidden=true;host.append(img);
  if(window.LHN_SITE_ICONS)void window.LHN_SITE_ICONS.load(img,pageUrl,{fallbackElement:fallback});
 }
@@ -201,7 +203,10 @@ function thumbnailSiteLabel(page){return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i
 function thumbnailCategoryLabel(page){return (page.tags.length?page.tags.slice(0,3).join(' · '):page.site).toUpperCase()}
 function sourceDescription(page){const quote=page.notes.find(note=>note.quote)?.quote||'';return quote.length>112?`${quote.slice(0,109)}…`:quote}
 function sourceDate(page){if(!page.date)return 'Không rõ ngày';const today=dateKey(new Date()),yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);if(page.date===today)return 'Hôm nay';if(page.date===dateKey(yesterday))return 'Hôm qua';const time=dateMs(page.date+'T12:00:00');return Number.isFinite(time)?dateLabel(time):'Không rõ ngày'}
-function siteBadge(page){const site=page.site.toLocaleLowerCase();if(/(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(site))return '<span class="source-site-icon youtube" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/></svg></span>';if(site==='medium.com')return '<span class="source-site-icon medium" aria-hidden="true">M</span>';if(site==='bbc.co.uk')return '<span class="source-site-icon bbc" aria-hidden="true">BBC</span>';if(site==='nationalgeographic.com')return '<span class="source-site-icon natgeo" aria-hidden="true"><i></i></span>';return `<span class="source-site-icon site-favicon" aria-hidden="true"><img alt="" hidden><span class="site-favicon-fallback">${esc(page.site.slice(0,1).toUpperCase())}</span></span>`}
+// v3.5.210: biểu tượng trang giống Trang chủ (js/shared/site-brands.js): trang quen = icon thương hiệu; trang khác = favicon thật, không có thì ô chữ cái màu.
+function siteBrandOf(url,site){const SB=globalThis.LHN_SITE_BRANDS;if(!SB)return null;const host=String(site||SB.hostOf(url)).toLocaleLowerCase();return SB.byHost(host)||(/(^|\.)youtu\.be$/.test(host)?SB.SITES.find(item=>item.id==='yt'):null)}
+function siteLetterTile(url,site){const SB=globalThis.LHN_SITE_BRANDS,key=url||site||'';return `<span class="site-letter" style="background:${SB?SB.colour(key):'#7c3aed'}">${esc(SB?SB.letter('',key):String(site||'?').slice(0,1).toUpperCase())}</span>`}
+function siteBadge(page){const brand=siteBrandOf(page.url,page.site);if(brand)return `<span class="source-site-icon site-brand" aria-hidden="true" style="background:${brand.bg}">${brand.svg}</span>`;return `<span class="source-site-icon site-favicon" aria-hidden="true"><img alt="" hidden><span class="site-favicon-fallback">${siteLetterTile(page.url,page.site)}</span></span>`}
 function loadSiteBadgeFavicon(host,pageUrl){
  const image=host.querySelector('img'),fallback=host.querySelector('.site-favicon-fallback');
  if(!image||!fallback||!window.LHN_SITE_ICONS)return;

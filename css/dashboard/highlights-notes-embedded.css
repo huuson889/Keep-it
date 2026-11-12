@@ -2841,3 +2841,12 @@ html.dark #dashboardHighlightsNotesView .lhn-latest-meta-pill { background:#1e2b
 #dashboardHighlightsNotesView .source-thumb-fav { position:absolute;z-index:3;right:5px;bottom:5px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 1px 3px rgba(15,23,42,.25);color:#f43f5e;pointer-events:none }
 #dashboardHighlightsNotesView .source-thumb-fav .lucide { width:12px;height:12px;fill:currentColor;stroke:currentColor;stroke-width:1.5 }
 html.dark #dashboardHighlightsNotesView .source-thumb-fav { background:rgba(24,24,27,.9) }
+
+/* v3.5.210: biểu tượng trang giống Trang chủ (icon thương hiệu / ô chữ cái màu) */
+#dashboardHighlightsNotesView .source-site-icon.site-brand { overflow:hidden;box-shadow:inset 0 0 0 1px rgba(127,127,127,.18) }
+#dashboardHighlightsNotesView .source-site-icon.site-brand svg,
+#dashboardHighlightsNotesView .site-brand-tile svg { width:100%;height:100%;display:block }
+#dashboardHighlightsNotesView .source-site-icon .site-letter { position:absolute;inset:0;display:grid;place-items:center;border-radius:inherit;color:#fff;font-size:11px;font-weight:800 }
+#dashboardHighlightsNotesView .selected-favicon .site-brand-tile,
+#dashboardHighlightsNotesView .selected-favicon .site-letter { position:absolute;inset:0;display:grid;place-items:center;border-radius:inherit;color:#fff;font-size:18px;font-weight:800;font-family:system-ui,sans-serif }
+#dashboardHighlightsNotesView .selected-favicon .site-letter[hidden] { display:none }

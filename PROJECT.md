@@ -199,6 +199,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.210 | Arena.ai Agent sửa:**
+
+- ☰ → Khi chọn chữ → ô "Icon Keepit" về lại icon nét như trước v3.5.204 (đồng bộ các ô khác). Logo màu mới vẫn ở đầu ☰, chấm nổi, icon khi chọn chữ.
+- Dashboard → Highlights & Notes: biểu tượng trang giống Trang chủ. Trang quen (YouTube, Wikipedia, BBC, CNN, Guardian, Tuổi Trẻ) dùng đúng icon thương hiệu của Trang chủ; trang khác favicon thật, không có thì ô chữ cái màu như Trang chủ (thay chữ mờ / icon tệp). Áp dụng ở danh sách nguồn và đầu trang đang chọn. Bỏ 3 huy hiệu riêng cũ (Medium, BBC chữ, NatGeo) — giờ theo quy tắc chung.
+- Danh sách icon chuyển ra file dùng chung `js/shared/site-brands.js` (`LHN_SITE_BRANDS`); `home-ui.js` dùng lại file này nên Trang chủ không đổi.
+- File: `js/shared/site-brands.js` (mới), `js/home/home-ui.js`, `pages/home.html`, `js/dashboard/highlights-notes.js`, `pages/dashboard.html`, `pages/highlights-notes.html`, `css/dashboard/highlights-notes-embedded.css`, `js/content/keepit-bar.js`, `manifest.json`, `docs/INDEX.md`, `docs/modules/shared.md`, `docs/modules/dashboard.md`.
+- Kiểm tra: Chromium + extension thật, 10 trang mẫu: 6 trang quen hiện icon thương hiệu (danh sách + đầu trang), GitHub/Medium/NYTimes favicon thật, example.org ô chữ "E" màu; Trang chủ vẫn đủ icon; ô Icon Keepit hiện icon nét. 0 lỗi trang.
+
 **2026-10-23 | v3.5.209 | Arena.ai Agent sửa:**
 
 - Trang tối bỏ qua trang web đang tự hiện dark mode. Trước: chỉ xem nền `body`/`html`, nên trang tối để body trong suốt (nền ở khung bên trong, kiểu SPA) bị coi là trắng và bị đảo thành sáng. Giờ lấy mẫu nền thật ở 9 điểm trên màn hình (bỏ phần tử Keepit), tính cả nền body tràn màn hình và `color-scheme: dark` của trang; đa số tối thì để nguyên.

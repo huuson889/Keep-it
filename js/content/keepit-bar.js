@@ -60,6 +60,7 @@
   popup:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
   cursor:'<path d="M9 9l5 12 1.8-5.2L21 14z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/>',
   zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  selicon:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>', // ô "Icon Keepit" trong ☰: icon nét như trước v3.5.204 (logo màu giữ cho đầu ☰ / chấm nổi)
   hl:'<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>',
   snote:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><path d="M15 3v5h6"/><path d="M7 13h6M7 17h9"/>',
   suggest:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/>',
@@ -517,7 +518,7 @@
   }
 
   // ---------- ☰ sheet ----------
-  const TOG = [["icon", "logo", "tIcon", "tIconTip"], ["showOnSelect", "sticky", "tShow", "tShowTip"], ["autoHighlight", "hl", "tHl", "tHlTip"], ["autoTranslate", "msgtext", "tTr", "tTrTip"], ["sentenceNote", "tquote", "tSent", "tSentTip"], ["autoSpeak", "read", "tSpeak", "tSpeakTip"], ["quickPopup", "lang", "tPopup", "tPopupTip"], ["fullDict", "book", "tDict", "tDictTip"]];
+  const TOG = [["icon", "selicon", "tIcon", "tIconTip"], ["showOnSelect", "sticky", "tShow", "tShowTip"], ["autoHighlight", "hl", "tHl", "tHlTip"], ["autoTranslate", "msgtext", "tTr", "tTrTip"], ["sentenceNote", "tquote", "tSent", "tSentTip"], ["autoSpeak", "read", "tSpeak", "tSpeakTip"], ["quickPopup", "lang", "tPopup", "tPopupTip"], ["fullDict", "book", "tDict", "tDictTip"]];
   const togValue = k => ({ icon:settings.translateIconEnabled === true, showOnSelect:settings.showOnSelect === true, autoHighlight:settings.autoHighlight === true, autoTranslate:settings.autoTranslate !== false, sentenceNote:settings.sentenceNoteEnabled !== false, autoSpeak:settings.autoSpeakSelectedText !== false, quickPopup:settings.translationPopupEnabled === true, fullDict:settings.showFullEnglishDictionary !== false }[k]);
   // same rules as the toolbar popup (popup.js): Keepit icon / note popup / direct translation popup are mutually exclusive
   function togPatch(k, on) {

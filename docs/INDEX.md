@@ -44,6 +44,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Overlay: cài đặt, chế độ phụ đề/xem, hàng đợi dịch phụ đề, yêu thích | `js/overlay/overlay-engine.js` |
 | AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
+| Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
 | Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |
