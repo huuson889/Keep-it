@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.213 | Arena.ai Agent sửa:**
+
+- Trang tối trên edition.cnn.com vẫn lỗi ở v3.5.212: cuộn tới dải đen / chân trang thì Trang tối tự tắt (cả trang về màu gốc), và khi bật thì các dải vốn đen bị lật thành trắng. Nguyên nhân: v3.5.209 đo lại sáng/tối theo phần đang hiện trên màn hình mỗi khi trang đổi class/style (CNN đổi liên tục).
+- Sửa: quyết định theo nền gốc của trang (CNN: body trắng → trang sáng) và giữ quyết định; chỉ xét lại khi trang thật sự đổi giao diện (nền html/body, `color-scheme`, `data-theme`…). Khối lớn vốn tối (dải đen, chân trang, thanh quảng cáo đầu trang) được đảo lại nên giữ màu tối gốc; ảnh trong đó vẫn đúng màu.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: (1) Chromium + extension thật, 9 trang mẫu: trang trắng / thẻ sáng → làm tối; SPA tối, chỉ `color-scheme: dark`, body tối → giữ nguyên; trang tự chuyển sáng → tối → sáng → đổi theo; trang kiểu CNN (body đổi class liên tục) → cuộn đầu / dải đen / chân trang đều giữ Trang tối, dải đen + chân trang được đánh dấu giữ màu, ảnh đúng màu ở mọi chỗ. 0 lỗi trang. (2) Chrome 157 thật của người dùng (CDP qua cloudflared), CNN: tiêm đúng CSS + cách đánh dấu mới → cả trang tối, ảnh đúng màu, dải "More from CNN"/chân trang/thanh quảng cáo đầu giữ tối.
+
 **2026-10-23 | v3.5.212 | Arena.ai Agent sửa:**
 
 - Trang tối trên edition.cnn.com (v3.5.211 chưa sửa được): ảnh thành ô tối trơn. Nguyên nhân thật: filter đặt trên `<picture>` làm nó thành khung chứa của `<img>` (CNN đặt `<img position:absolute>` trong `<picture>` cao 0px) → ảnh co mất. Trước v3.5.211 cả `<picture>` và `<img>` đều bị đảo → ảnh âm bản. Sửa: không đảo `<picture>`, chỉ đảo `<img>`.

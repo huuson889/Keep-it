@@ -2,7 +2,7 @@
 // Chỉ có tác dụng khi Chủ đề Keepit là tối. Một lớp phủ toàn màn hình đảo màu phần trang bên dưới (giữ sắc độ);
 // ảnh/video được đảo lại nên giữ màu thật. Lớp phủ nằm dưới thanh Keepit, Ghi chú, popup và hộp thoại của Keepit nên
 // chúng giữ màu riêng; trên trang chỉ ảnh/video có filter, nên header cố định của trang vẫn chạy đúng.
-// Trang đang tự hiện giao diện tối thì để nguyên (v3.5.209: lấy mẫu nền thật trên màn hình, theo dõi khi trang tự đổi). Tắt khi overlay video mở.
+// Trang đang tự hiện giao diện tối thì để nguyên (v3.5.213: theo nền gốc, giữ quyết định; khối vốn tối giữ màu gốc). Tắt khi overlay video mở.
 // Bật/tắt: ☰ → Giao diện → Trang tối (js/content/keepit-bar.js). Lưu: storage.local `lhnPageDark` (mặc định tắt).
 // Trong APK (LHN_PLATFORM = "android") app tự làm việc này, file này không làm gì.
 (() => {
@@ -15,7 +15,9 @@
   // v3.5.212: KHÔNG đặt filter lên <picture> — filter biến nó thành khung chứa của <img position:absolute> bên trong; CNN
   // dùng <picture> cao 0px nên ảnh co mất, chỉ còn ô tối. Ảnh của <picture> luôn là <img> nên đảo <img> là đủ.
   const MEDIA = 'img,video,canvas,iframe,embed,object,svg image,[style*="url("]';
-  const DARK_CSS = `:is(${MEDIA}){filter:invert(1) hue-rotate(180deg)!important}:is(${MEDIA}) :is(${MEDIA}){filter:none!important}`;
+  // v3.5.213: khối lớn vốn tối trên trang sáng (CNN: dải đen, chân trang) cũng đảo lại → giữ màu gốc (`data-keepit-pd`).
+  const KEEP = "[data-keepit-pd]", ALL = MEDIA + "," + KEEP;
+  const DARK_CSS = `:is(${ALL}){filter:invert(1) hue-rotate(180deg)!important}:is(${ALL}) :is(${ALL}){filter:none!important}`;
   let on = false, theme = "", darkStyle = null, darkVeil = null, loaded = false;
   // Chủ đề Keepit đọc giống thanh Keepit (settings đã qua LHN_SETTINGS.resolve).
   const themeOf = raw => String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw || {}).sidebarTheme || "");
@@ -37,20 +39,49 @@
     // html không có nền thì nền body phủ cả màn hình (kể cả phần dưới body ngắn).
     return (document.body && lumOf(getComputedStyle(document.body).backgroundColor)) ?? canvasLum();
   }
-  function pageIsDark() {
+  // v3.5.213: quyết định theo nền gốc (html, không có thì body) và GIỮ quyết định; trước đây đo lại theo phần đang hiện
+  // nên cuộn tới dải đen (CNN) là Trang tối tự tắt. Nền gốc trong suốt → lấy mẫu màn hình như v3.5.209.
+  let decided = null, decidedSig = "";
+  const rootSig = () => { const h = document.documentElement, b = document.body, ch = getComputedStyle(h); return [ch.backgroundColor, b && getComputedStyle(b).backgroundColor, ch.colorScheme, ...["data-theme", "data-color-mode", "data-bs-theme", "data-mode", "dark", "theme"].map(a => h.getAttribute(a))].join("|"); };
+  function decideDark() {
+    const sig = rootSig();
+    if (decided !== null && sig === decidedSig) return decided;
+    const first = decided === null;
+    const rootL = lumOf(getComputedStyle(document.documentElement).backgroundColor) ?? lumOf(getComputedStyle(document.body).backgroundColor);
+    if (rootL === null) decided = pageIsDark(0.5);
+    else if (rootL < 0.45) decided = true;
+    else decided = first && scrollY < innerHeight ? pageIsDark(8 / 9) : false; // nền gốc sáng: chỉ coi là tối nếu gần kín màn hình tối lúc mở
+    decidedSig = sig; return decided;
+  }
+  function pageIsDark(share) {
     const vals = [];
     for (const fy of [0.2, 0.45, 0.7]) for (const fx of [0.2, 0.5, 0.8]) {
       const el = document.elementsFromPoint(innerWidth * fx, innerHeight * fy).find(e => !e.closest(KEEPIT));
       if (el) vals.push(bgLumAt(el));
     }
     if (!vals.length) { const b = lumOf(getComputedStyle(document.body).backgroundColor) ?? lumOf(getComputedStyle(document.documentElement).backgroundColor); vals.push(b ?? canvasLum()); }
-    vals.sort((a, b) => a - b);
-    return vals[Math.floor(vals.length / 2)] < 0.45; // trung vị: đa số màn hình là nền tối
+    return vals.filter(v => v < 0.45).length >= vals.length * share; // share 0.5 = đa số màn hình là nền tối
   }
-  function remove() { darkStyle?.remove(); darkVeil?.remove(); }
+  // Đánh dấu khối lớn vốn tối (rộng ≥ 40% màn hình, cao ≥ 40px, nền đặc độ sáng < 0.3) — không lồng nhau. Gộp ≥ 800ms.
+  let scanT = 0, scanAt = 0;
+  function markDarkBlocks() {
+    scanAt = Date.now(); const minW = innerWidth * 0.4, found = [];
+    for (const el of document.body.querySelectorAll("*")) {
+      if (el.closest(KEEPIT)) continue;
+      const r = el.getBoundingClientRect(); if (r.width < minW || r.height < 40) continue;
+      const l = lumOf(getComputedStyle(el).backgroundColor); if (l === null || l >= 0.3) continue;
+      if (found.some(f => f.contains(el))) continue;
+      found.push(el);
+    }
+    document.querySelectorAll(KEEP).forEach(el => { if (!found.includes(el)) el.removeAttribute("data-keepit-pd"); });
+    found.forEach(el => el.setAttribute("data-keepit-pd", ""));
+  }
+  const scanSoon = () => { if (!darkStyle?.isConnected) return; clearTimeout(scanT); scanT = setTimeout(markDarkBlocks, Math.max(250, 800 - (Date.now() - scanAt))); };
+  addEventListener("scroll", scanSoon, { passive:true });
+  function remove() { darkStyle?.remove(); darkVeil?.remove(); document.querySelectorAll(KEEP).forEach(el => el.removeAttribute("data-keepit-pd")); }
   function apply() {
     if (!loaded || isApk() || !/^https?:$/.test(location.protocol) || !document.body) return;
-    const want = on && isDark() && !pageIsDark();
+    const want = on && isDark() && !decideDark();
     if (want && !darkStyle?.isConnected) {
       darkStyle = document.createElement("style"); darkStyle.id = "keepit-page-dark"; darkStyle.textContent = DARK_CSS; (document.head || document.documentElement).appendChild(darkStyle);
       darkVeil = document.createElement("div"); darkVeil.id = "keepit-page-dark-veil";
@@ -60,6 +91,7 @@
     else if (want && darkVeil && !darkVeil.isConnected) document.documentElement.appendChild(darkVeil);
     // Overlay video phủ kín trang và có giao diện tối riêng: tạm ẩn lớp phủ khi overlay mở.
     if (darkVeil) darkVeil.style.setProperty("display", overlayOpen() ? "none" : "block");
+    if (want) scanSoon();
   }
   browser.storage.local.get([KEY, SETTINGS_KEY]).then(got => {
     on = got[KEY] === true; theme = themeOf(got[SETTINGS_KEY]); loaded = true; apply();
