@@ -56,7 +56,7 @@ browser.runtime.onStartup?.addListener(() => {
 // cho mọi trang http(s) trừ các trang đã biết là vốn tối (`lhnPageDarkNative`, do js/content/page-dark.js báo), Chủ đề
 // Tự động thì CSS chỉ có tác dụng khi máy đang tối; (2) Chủ đề Tối: js/content/page-dark-main.js (world MAIN) báo cho trang
 // "máy đang tối" để trang có dark mode riêng tự bật. Tắt Trang tối / Chủ đề sáng → gỡ đăng ký.
-const PAGE_DARK_IDS = ["keepit-page-dark-early", "keepit-page-dark-main"];
+const PAGE_DARK_IDS = ["keepit-page-dark-early", "keepit-page-dark-main", "keepit-page-dark-native"];
 const PAGE_DARK_NATIVE_KEY = "lhnPageDarkNative", PAGE_DARK_NATIVE_MAX = 200;
 const pageDarkHostOk = host => typeof host === "string" && host.length <= 253 && /^[a-z0-9-]+(\.[a-z0-9-]+)*$/.test(host);
 let pageDarkSync = Promise.resolve(), pageDarkSig = null;
@@ -79,6 +79,8 @@ function syncPageDarkScripts(force = false) {
     const scripts = [{ id:PAGE_DARK_IDS[0], matches, css:[theme === "dark" ? "css/content/page-dark-early.css" : "css/content/page-dark-early-auto.css"], runAt:"document_start", allFrames:false, persistAcrossSessions:true }];
     if (native.length) scripts[0].excludeMatches = native.map(h => `*://${h}/*`);
     if (theme === "dark") scripts.push({ id:PAGE_DARK_IDS[1], matches, js:["js/content/page-dark-main.js"], runAt:"document_start", world:"MAIN", allFrames:false, persistAcrossSessions:true });
+    // v3.5.220: trang vốn tối (không có lớp nạp sẵn) — nền mặc định tối trước khi trang vẽ xong, không chớp trắng.
+    if (native.length) scripts.push({ id:PAGE_DARK_IDS[2], matches:native.map(h => `*://${h}/*`), css:[theme === "dark" ? "css/content/page-dark-native.css" : "css/content/page-dark-native-auto.css"], runAt:"document_start", allFrames:false, persistAcrossSessions:true });
     await api.registerContentScripts(scripts);
   }).catch(error => { pageDarkSig = null; console.warn("Could not register the dark-pages scripts", error); });
   return pageDarkSync;

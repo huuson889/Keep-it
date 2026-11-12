@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.220 | Arena.ai Agent sửa:**
+
+- Nút về đầu trang: chỗ nào đang cách đáy dưới 60px (máy tính, khi thanh ẩn, khi nhường thanh của trang) giờ đều 60px; chỗ vốn cao hơn giữ nguyên.
+- Trang tối: trang đã nhớ là vốn tối (vd Google đang ở giao diện tối của tài khoản) không còn chớp trắng khi mở lại — trước đây các trang này không nhận lớp tối nạp sẵn nên trong lúc chờ trang vẽ, trình duyệt hiện nền trắng mặc định. Giờ các trang đó được nền mặc định tối (`color-scheme: dark`) ngay từ đầu, gỡ khi trang đã hiện.
+- File: `js/content/keepit-bar-css.js`, `js/background/background.js`, `js/content/page-dark.js`, `css/content/page-dark-native.css`, `css/content/page-dark-native-auto.css` (mới), `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật: trang vốn tối tải chậm, lúc đang chờ `color-scheme` = dark (v3.5.219: normal = nền trắng); sau khi hiện thì gỡ, trang giữ giao diện tối của nó; trang trong danh sách nay đã sáng → làm tối đúng + tự bỏ khỏi danh sách; nút về đầu trang trên máy tính cách đáy 60px; bộ kiểm tra v3.5.215 vẫn đúng.
+
 **2026-10-23 | v3.5.219 | Arena.ai Agent sửa:**
 
 - Trang tối: video / ảnh trong trình phát dạng web component (shadow DOM — nytimes.com `nyt-betamax`, `nyt-video-feed`) không còn bị âm bản. Nguyên nhân: CSS đảo lại ảnh / video của Keepit nằm ở trang, không vào được bên trong shadow DOM. Giờ chèn CSS đó vào từng shadow root (cả loại đóng, cả lồng nhau); phần tử chủ đã nằm trong khối bị đảo thì không chèn (không đảo hai lần); tắt Trang tối gỡ hết.

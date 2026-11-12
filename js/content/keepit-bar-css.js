@@ -302,9 +302,9 @@ button,input{font-family:inherit}
 .btop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .btop.on{opacity:1;transform:none;pointer-events:auto}
 .btop:active{transform:scale(.93)}
-.btop.low{bottom:calc(var(--yb) + 44px + var(--sab))}
-.wide .btop{right:24px;bottom:calc(18px + var(--sab))}
-.wide .btop.low{bottom:calc(18px + var(--yb) + var(--sab))}
+.btop.low{bottom:max(60px, calc(var(--yb) + 44px + var(--sab)))}
+.wide .btop{right:24px;bottom:max(60px, calc(18px + var(--sab)))}
+.wide .btop.low{bottom:max(60px, calc(18px + var(--yb) + var(--sab)))}
 .dark .btop{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .toast.act{display:flex;align-items:center;text-align:left}
 .toast.act.on{pointer-events:auto}
@@ -327,8 +327,9 @@ button,input{font-family:inherit}
   .screen *,.screen *::before,.screen *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 .bbar.swiping{overflow:hidden}
-.btop.flat{bottom:calc(16px + var(--sab))}
-.wide .btop.flat{bottom:calc(18px + var(--sab))}
+/* v3.5.220: nút về đầu trang luôn cách đáy ≥ 60px */
+.btop.flat{bottom:max(60px, calc(16px + var(--sab)))}
+.wide .btop.flat{bottom:max(60px, calc(18px + var(--sab)))}
 .toast .ti{display:inline-flex;margin-right:8px;vertical-align:-4px}
 .toast .ti svg{width:18px;height:18px;fill:none;stroke:#fca5a5;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .iscrim{position:absolute;left:0;right:0;z-index:5;background:rgba(15,23,42,.38);opacity:0;pointer-events:none;transition:opacity .25s}

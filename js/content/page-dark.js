@@ -215,6 +215,13 @@
   function apply() {
     if (!loaded || isApk() || !/^https?:$/.test(location.protocol) || !document.body) return;
     if (emuWanted()) emuScan(); else if (emu.rules.length || emu.attrs.length) emuRevert();
+    // Lớp nạp sẵn (css/content/page-dark-early*.css) / nền tối mặc định của trang vốn tối (page-dark-native*.css) đã xong
+    // việc → tắt TRƯỚC khi xét sáng / tối (color-scheme:dark làm nền mặc định tối, sẽ khiến trang sáng bị coi là tối).
+    // Cùng một tác vụ với việc tạo lớp tối thật bên dưới nên không có khung hình nào lọt giữa.
+    let firstRun = false;
+    if (!document.documentElement.hasAttribute("data-keepit-pd-off")) {
+      earlySeen = earlyOn(); document.documentElement.setAttribute("data-keepit-pd-off", ""); document.documentElement.style.removeProperty("--keepit-pd-clip"); firstRun = true;
+    }
     const want = on && isDark() && !decideDark();
     if (want && !darkStyle?.isConnected) {
       darkStyle = document.createElement("style"); darkStyle.id = "keepit-page-dark"; darkStyle.textContent = DARK_CSS; (document.head || document.documentElement).appendChild(darkStyle);
@@ -228,10 +235,9 @@
     if (want && !darkVeil.__keepitScanned) { darkVeil.__keepitScanned = true; markDarkBlocks(); } // cùng khung hình với việc tắt lớp nạp sẵn
     if (want) scanSoon();
     // Lớp tối nạp sẵn (css/content/page-dark-early*.css) đã làm xong việc → tắt nó; từ đây chỉ dùng quyết định ở trên.
-    if (!document.documentElement.hasAttribute("data-keepit-pd-off")) {
-      earlySeen = earlyOn(); document.documentElement.setAttribute("data-keepit-pd-off", ""); document.documentElement.style.removeProperty("--keepit-pd-clip");
-      if (!want) clearShadow();
-      if (!want) document.querySelectorAll(KEEP + "," + VIVID + "," + BGIMG).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); el.removeAttribute("data-keepit-pdm"); });
+    if (firstRun && !want) {
+      clearShadow();
+      document.querySelectorAll(KEEP + "," + VIVID + "," + BGIMG).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); el.removeAttribute("data-keepit-pdm"); });
     }
   }
   // Sau khi trang nạp xong: dark mode của trang chỉ đổi được một phần → hoàn tác; rồi báo background trang này vốn tối
