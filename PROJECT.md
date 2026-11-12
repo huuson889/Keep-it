@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.206 | Arena.ai Agent sửa:**
+
+- Overlay: Phụ đề cuộn (tab Xem) theo cùng Chế độ phụ đề với phụ đề video (Song ngữ · Bản gốc · Bản dịch · Ẩn, cả phím 1–4). Bản dịch: câu chưa có bản dịch vẫn hiện dòng gốc. Ẩn: chỉ còn mốc thời gian (vẫn bấm để nhảy câu). Tab Nói/Chép giữ nguyên. Chỉ thêm CSS, không đổi logic/lưu trữ.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`, `docs/modules/overlay.md`.
+- Kiểm tra: Chromium, CSS overlay thật (kèm `theme-tokens.js`) + dòng mẫu (1 câu chưa dịch): Xem × 4 chế độ đúng như trên; Nói × Bản gốc/Ẩn vẫn hiện 2 dòng.
+
 **2026-10-23 | v3.5.205 | Arena.ai Agent sửa:**
 
 - Đóng Ghi chú trên máy tính bị giật: Ghi chú trượt ra 0,15s nhưng trang giãn 0,26s (lộ dải trống), trang giãn tới `100vw` (rộng hơn khung nhìn) rồi cuối cùng bật về bề rộng/lề gốc. Giờ giống demo v2: Ghi chú và trang cùng 0,26s cùng đường cong; `page-layout.js` đo bề rộng + lề thật (px) của trang và trượt giữa đúng hai giá trị đó, mở không nhảy khung đầu, đóng xong trả kiểu gốc mà không còn gì đổi trên màn hình; trả cả `box-sizing` của body (trước đây sót).

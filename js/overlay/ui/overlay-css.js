@@ -120,6 +120,12 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .ov[data-cc=pri] .sub-vi,.ov[data-cc=pri] .tsub .b{display:none}
 .ov[data-cc=tr] .sub-en,.ov[data-cc=tr] .tsub .a{display:none}
 .ov[data-cc=off] .sub-en,.ov[data-cc=off] .sub-vi,.ov[data-cc=off] .tsub{display:none!important}
+/* v3.5.206: Phụ đề cuộn (tab Xem) theo cùng Chế độ phụ đề với phụ đề video. Bản dịch: câu chưa có bản dịch vẫn hiện dòng gốc. Ẩn: chỉ còn mốc thời gian. */
+.ov[data-tab=view][data-cc=pri] #list .row .vi{display:none}
+.ov[data-tab=view][data-cc=tr] #list .row:has(.vi:not(:empty)) .en{display:none}
+.ov[data-tab=view][data-cc=tr] #list .row .vi{margin-top:0}
+.ov[data-tab=view][data-cc=off] #list .row .en,.ov[data-tab=view][data-cc=off] #list .row .vi{display:none}
+.ov[data-tab=view][data-cc=off] #list .row .rhd{margin-bottom:0}
 /* compact subtitle box: ♥ · ⌄ · ⛶ row (approved v3.5.168) */
 /* compact subtitle box: thin grip on top (tap/drag folds); ♥ ⛶ sit on the video */
 .ov[data-w=c] .subbox{height:clamp(124px,calc(var(--bdH,700px) * .26 - 26px),204px);padding:18px 14px 12px;min-height:0}
