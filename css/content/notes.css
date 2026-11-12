@@ -30,7 +30,7 @@
 
 /* ---------- khung */
 #lhn-sidebar{
-  all:revert; position:fixed; z-index:2147483646; top:0; right:0; bottom:0; display:flex; flex-direction:column; box-sizing:border-box; margin:0; padding:0;
+  all:revert; zoom:var(--keepit-uiz,1); /* v3.5.221: same size at any page zoom (js/content/keepit-bar.js LHN_UI_ZOOM) */ position:fixed; z-index:2147483646; top:0; right:0; bottom:0; display:flex; flex-direction:column; box-sizing:border-box; margin:0; padding:0;
   color:var(--nt-tx); font:13px/1.5 var(--nt-f); text-align:left; direction:ltr;
   background:linear-gradient(180deg,var(--nt-sheen) 0,rgba(255,255,255,0) 34%),var(--nt-g);
   -webkit-backdrop-filter:blur(30px) saturate(1.8); backdrop-filter:blur(30px) saturate(1.8);
@@ -125,13 +125,13 @@
 /* ---------- điện thoại / máy tính bảng: sheet chuẩn như ☰ (kéo, chạm ngoài để đóng, khoá cuộn trang: js/shared/sheet-kit.js) */
 @media (pointer: coarse) and (hover: none) {
   #lhn-sidebar{ --nt-g:rgba(246,246,248,.74); --nt-tile:rgba(255,255,255,.55);
-    top:auto; left:0; right:0; bottom:0; width:auto!important; height:min(74vh,720px); max-height:96vh; padding-top:12px;
+    top:auto; left:0; right:0; bottom:0; width:auto!important; height:min(calc(74vh / var(--keepit-uiz,1)),720px); max-height:calc(96vh / var(--keepit-uiz,1)); padding-top:12px;
     border:0; border-top:1px solid var(--nt-edge); border-radius:22px 22px 0 0; box-shadow:inset 0 1px 0 var(--nt-hi),0 -10px 30px rgba(0,0,0,.25);
     transform:translateY(105%); transition:transform .26s cubic-bezier(.2,.8,.2,1),translate .2s ease; -webkit-user-select:none; user-select:none; }
   #lhn-sidebar.lhn-theme-dark{ --nt-g:rgba(36,36,42,.76); --nt-tile:rgba(255,255,255,.08); --nt-line:rgba(255,255,255,.11); box-shadow:inset 0 1px 0 var(--nt-hi),0 -10px 30px rgba(0,0,0,.45); }
   #lhn-sidebar.lhn-side-visible{ transform:none; }
   #lhn-sidebar.lhn-closing{ transform:translateY(105%); }
-  #lhn-sidebar.lhn-sheet-full{ height:96vh; }
+  #lhn-sidebar.lhn-sheet-full{ height:calc(96vh / var(--keepit-uiz,1)); }
   #lhn-sidebar.lhn-sheet-growing{ transition:none; }
   #lhn-sidebar.lhn-sheet-snap{ transition:height .22s ease,transform .26s cubic-bezier(.2,.8,.2,1),translate .2s ease; }
   #lhn-sidebar::before{ all:revert; content:""; position:absolute; top:6px; left:50%; width:38px; height:5px; margin-left:-19px; border-radius:3px; background:var(--nt-tx2); opacity:.45; }
@@ -146,7 +146,7 @@
 
 /* ---------- hộp sửa ghi chú: cùng bộ màu */
 #lhn-sidebar-edit-dialog{
-  all:revert; position:fixed; inset:0; margin:auto; box-sizing:border-box; width:min(420px,calc(100vw - 24px)); max-height:calc(100vh - 32px); overflow:auto; padding:16px;
+  all:revert; zoom:var(--keepit-uiz,1); position:fixed; inset:0; margin:auto; box-sizing:border-box; width:min(420px,calc(100vw / var(--keepit-uiz,1) - 24px)); max-height:calc(100vh / var(--keepit-uiz,1) - 32px); overflow:auto; padding:16px;
   color:var(--nt-tx); font:13px/1.5 var(--nt-f); text-align:left;
   background:var(--nt-solid); border:1px solid var(--nt-line); border-radius:16px; box-shadow:inset 0 1px 0 var(--nt-hi),0 18px 40px rgba(0,0,0,.3); color-scheme:light;
 }

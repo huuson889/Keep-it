@@ -18,7 +18,7 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     .lhn-bilingual-web-font{font-family:var(--lhn-br-web-font)!important}
     .lhn-bilingual-reading{outline:2px solid var(--lhn-br-accent)!important;outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08)!important;border-radius:6px}
     #lhn-bilingual-reading-bar,#lhn-bilingual-reading-bar *{font-family:var(--lhn-app-font-family,'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif)!important}
-    #lhn-bilingual-reading-bar{position:fixed;inset:0;z-index:2147483646;display:none;pointer-events:none;color:#334155;font-size:13px;line-height:normal;text-align:left;direction:ltr;letter-spacing:normal}
+    #lhn-bilingual-reading-bar{zoom:var(--keepit-uiz,1);position:fixed;inset:0;z-index:2147483646;display:none;pointer-events:none;color:#334155;font-size:13px;line-height:normal;text-align:left;direction:ltr;letter-spacing:normal}
     #lhn-bilingual-reading-bar.lhn-show{display:block}
     #lhn-bilingual-reading-bar.lhn-show .lhn-br-rbar{animation:lhnBrBarIn .26s cubic-bezier(.2,.8,.2,1)}
     #lhn-bilingual-reading-bar.lhn-hiding{pointer-events:none}

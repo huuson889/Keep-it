@@ -46,7 +46,7 @@
     if (globalThis.matchMedia?.("(pointer: coarse) and (hover: none)").matches) return;
     const root = document.documentElement, body = document.body;
     clearTimeout(pageRestoreTimer); pageRestoreTimer = 0;
-    const target = `calc(100vw - ${width}px)`;
+    const target = `calc(100vw - ${width}px * var(--keepit-uiz,1))`;   // v3.5.221: the sidebar keeps its size at any page zoom
     if (!pageLayoutSnapshot) {
       pageLayoutSnapshot = takeSnapshot(root, body);
       if (body) {

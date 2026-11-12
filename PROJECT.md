@@ -199,6 +199,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.221 | Arena.ai Agent sửa:**
+
+- Cỡ chữ trang: thanh main, mọi sheet, nút về đầu trang, ô tìm kiếm, thông báo của thanh, thanh Reader + sheet Reader, sidebar Ghi chú (cả hộp sửa, nút mép, thông báo) giữ nguyên kích thước ở mọi mức thu phóng (50–200 %, cả Ctrl +/−), kể cả trong lúc kéo — như thanh công cụ của trình duyệt. Nội dung trang và thẻ bản dịch của Reader vẫn to nhỏ theo trang.
+- Sheet Cỡ chữ: nút − / + (44px, mỗi lần 10 %, mờ ở 50 % / 200 %) thay hai chữ A ở hai đầu thanh trượt; chữ mẫu luôn bằng đúng cỡ chữ trang (trước đây trên máy tính bị phóng hai lần).
+- Cách làm: `LHN_UI_ZOOM` (keepit-bar.js) đặt `--keepit-uiz = 1 / zoom` lên `<html>` (zoom = `tabs.getZoom`, khi devicePixelRatio đổi thì cập nhật ngay cùng khung hình rồi hỏi lại background); các thành phần trên dùng CSS `zoom:var(--keepit-uiz,1)`; vị trí tính bằng JS đổi sang px của UI (page px × zoom); `vh/vw` trong CSS Ghi chú chia cho `--keepit-uiz`; trang chừa chỗ cho Ghi chú = `width × --keepit-uiz`.
+- File: `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/shared/sheet-kit.js`, `js/reader/bilingual-reader.js`, `js/reader/reader-css.js`, `css/content/notes.css`, `css/content/content.css`, `js/content/page-layout.js`, `js/content/content.js`, `js/core/languages.js` (`bar_zoomOut`, `bar_zoomIn`), `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra (Chromium máy tính + extension thật, đo theo điểm ảnh thật): ở 50/100/150/200 % sheet rộng 400, thanh main 644×72, thanh Reader 560×64, sidebar 384 — không đổi; chữ mẫu = chữ trang (7.5/15/22.5/30); sheet vẫn mở suốt khi đổi mức, đóng/mở lại bình thường; − mờ ở 50 %, + mờ ở 200 %; nút về đầu trang cách đáy ~60; trang thu hẹp đúng tới mép sidebar; không lỗi trang. Điện thoại (Edge Android) chưa kiểm tra.
+
 **2026-10-23 | v3.5.220 | Arena.ai Agent sửa:**
 
 - Nút về đầu trang: chỗ nào đang cách đáy dưới 60px (máy tính, khi thanh ẩn, khi nhường thanh của trang) giờ đều 60px; chỗ vốn cao hơn giữ nguyên.

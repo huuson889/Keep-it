@@ -86,8 +86,9 @@
     }
     e.preventDefault();
     if (g.mode === "block") return;
-    const [el, o] = g.entry, d = p.clientY - g.y0;
-    if (!g.h) { const r = el.getBoundingClientRect(); g.h = r.height; g.cap = o.grow?.cap?.() || g.h; g.st0 = g.sc?.scrollTop || 0; setTr(el, "none"); o.onDrag?.(true); }
+    // v3.5.221: Keepit sheets keep their size at any page zoom (CSS zoom = 1 / page zoom) → touch px × k = the sheet's own px
+    const [el, o] = g.entry, k = g.k ??= 1 / (el.currentCSSZoom || 1), d = (p.clientY - g.y0) * k;
+    if (!g.h) { const r = el.getBoundingClientRect(); g.h = r.height * k; g.cap = o.grow?.cap?.() || g.h; g.st0 = g.sc?.scrollTop || 0; setTr(el, "none"); o.onDrag?.(true); }
     g.dy = d;
     if (g.mode === "grow" && d < 0) {
       setT(el, null); const want = g.h - d;
@@ -108,7 +109,7 @@
   function onEnd(e) {
     const s = g; g = null; if (!s || !s.h || (s.mode !== "drag" && s.mode !== "grow")) return;
     eatUntil = Date.now() + 90;
-    const [el, o] = s.entry, d = s.dy, v = velocity(s.s), done = e.type === "touchend";
+    const [el, o] = s.entry, d = s.dy, v = velocity(s.s) * (s.k || 1), done = e.type === "touchend";
     o.onDrag?.(false);
     const snap = () => { setTr(el, "translate .2s ease"); setT(el, null); setTimeout(() => setTr(el, null), 220); };
     if (s.mode === "grow" && d < 0) {

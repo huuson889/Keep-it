@@ -103,9 +103,14 @@ button,input{font-family:inherit}
 .zprev{display:flex;align-items:center;min-height:96px;margin:2px 0 14px;padding:14px 16px;border-radius:16px;border:1px solid var(--kp-line-l);background:var(--kp-tile-l);color:var(--kp-tx-strong-l);line-height:1.45}
 .dark .zprev{border-color:var(--kp-line-d);background:var(--kp-tile-d);color:var(--kp-tx-strong-d)}
 .zrow{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.zrow span{flex:none;font-weight:700;color:#64748b}
-.dark .zrow span{color:#a1a1aa}
-.zrow input{flex:1;min-width:0;height:28px;margin:0;accent-color:#7c3aed}
+.zrow{gap:8px}
+.zpm{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(148,163,184,.4);background:none;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.dark .zpm{border-color:rgba(255,255,255,.18)}
+.zpm svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.desk .zpm:not(:disabled):hover{background:rgba(124,58,237,.1)}
+.zpm:not(:disabled):active{transform:scale(.94)}
+.zpm:disabled{opacity:.35;cursor:default}
+.zrow input{flex:1;min-width:0;height:28px;margin:0 4px;accent-color:#7c3aed}
 .zrow output{flex:none;width:48px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 .zact{display:flex;align-items:center;gap:10px;padding-bottom:4px}
 .zact .sp{flex:1}

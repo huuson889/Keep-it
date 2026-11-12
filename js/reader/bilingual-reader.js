@@ -70,8 +70,11 @@
   const $br = selector => bar.querySelector(selector);
   const brRbar = $br("[data-rbar]"), brSheet = $br("[data-sheet-root]"), brPanel = $br("[data-panel]"), voiceSearch = $br(".lhn-br-vsearch");
   const brProg = $br("[data-prog]"), brProgFill = $br("[data-prog-fill]"), brProgTip = $br("[data-prog-tip]");
-  const BR_WIDE_QUERY = window.matchMedia?.("(min-width: 1024px)"), BR_DESK_QUERY = window.matchMedia?.("(hover: hover) and (pointer: fine)");
-  const isWideBar = () => !!BR_WIDE_QUERY?.matches, isDeskBar = () => !!BR_DESK_QUERY?.matches;
+  const BR_DESK_QUERY = window.matchMedia?.("(hover: hover) and (pointer: fine)");
+  // v3.5.221: the Reader bar and its sheets keep their size at any page zoom (reader-css: zoom:var(--keepit-uiz)) → "wide" is
+  // measured in the bar's own px (page px × zoom); rects (page px) × uiK() = the bar's px. The translation cards follow the page.
+  const uiK = () => globalThis.LHN_UI_ZOOM?.get?.() || 1;
+  const isWideBar = () => innerWidth * uiK() >= 1024, isDeskBar = () => !!BR_DESK_QUERY?.matches;
   let openSheetName = "", repeatSegment = false, shortcutBannerVisible = true, scrubbing = false, scrubFraction = 0, scrubWasPlaying = false, brToastTimer = 0, flagFontReady = false, flagFontRequested = false;
   const flagCanvasCache = new Map();
   // Focus ô tìm kiếm của Select voice trên mọi trình duyệt Chromium (Chrome, Edge, ...) và Firefox: thử lại vài lần vì có trình duyệt chưa nhận focus ngay sau khi sheet hiện
@@ -95,9 +98,9 @@
   function syncBarScale() { const width = bar.clientWidth || innerWidth; brRbar.style.zoom = !isWideBar() && width && width < 392 ? String(Math.round(width / 392 * 1000) / 1000) : ""; }
   function anchorPanel() {
     const button = brRbar.querySelector(`[data-sheet="${openSheetName}"]`); if (!button) return;
-    const rect = button.getBoundingClientRect(), barRect = brRbar.getBoundingClientRect(), top = barRect.top, W = bar.clientWidth || innerWidth, H = bar.clientHeight || innerHeight, w = brPanel.offsetWidth;
+    const k = uiK(), rect = button.getBoundingClientRect(), barRect = brRbar.getBoundingClientRect(), top = barRect.top * k, W = bar.clientWidth || innerWidth * k, H = bar.clientHeight || innerHeight * k, w = brPanel.offsetWidth;
     // Giọng đọc/Tốc độ căn mép trái thanh Reader; ☰ vẫn căn giữa trên nút
-    const left = openSheetName === "voices" || openSheetName === "speed" ? barRect.left : rect.left + rect.width / 2 - w / 2;
+    const left = openSheetName === "voices" || openSheetName === "speed" ? barRect.left * k : (rect.left + rect.width / 2) * k - w / 2;
     brPanel.style.left = `${Math.max(12, Math.min(W - w - 12, left))}px`; brPanel.style.bottom = `${H - top + 14}px`;
     brPanel.style.top = "auto"; brPanel.style.right = "auto"; brPanel.style.transform = "none";
   }
@@ -133,7 +136,7 @@
     if (!bar.classList.contains("lhn-show") || !document.body) { spacer?.remove(); return; }
     if (!spacer) { spacer = document.createElement("div"); spacer.id = "lhn-br-spacer"; spacer.setAttribute("aria-hidden", "true"); spacer.setAttribute("data-lhn-bilingual-ui", "true"); }
     if (spacer.parentNode !== document.body) document.body.appendChild(spacer);
-    spacer.style.setProperty("height", `${isDeskBar() && shortcutBannerVisible ? 150 : isWideBar() ? 106 : 100}px`, "important");
+    spacer.style.setProperty("height", `${Math.round((isDeskBar() && shortcutBannerVisible ? 150 : isWideBar() ? 106 : 100) / uiK())}px`, "important");
   }
   function showBarToast(text) {
     const toast = $br("[data-toast]"); toast.textContent = text; toast.classList.add("lhn-on");
@@ -310,8 +313,9 @@
       event.preventDefault(); event.stopImmediatePropagation(); voiceKbIndex = -1; item.click();
     }
   }, true);
-  BR_WIDE_QUERY?.addEventListener?.("change", syncBarLayout); BR_DESK_QUERY?.addEventListener?.("change", syncBarLayout);
-  window.addEventListener("resize", () => { syncBarScale(); if (openSheetName && isWideBar()) anchorPanel(); }, { passive:true });
+  BR_DESK_QUERY?.addEventListener?.("change", syncBarLayout);
+  window.addEventListener("resize", () => { if (bar.classList.contains("lhn-br-wide") !== isWideBar()) syncBarLayout(); syncBarScale(); if (openSheetName && isWideBar()) anchorPanel(); }, { passive:true });
+  window.addEventListener("keepit-ui-zoom", () => { if (bar.isConnected) syncBarLayout(); });
   (document.body || document.documentElement).appendChild(bar);
   syncBarLayout();
   function saveSpeechSetting(patch) { settings = { ...settings, ...patch }; browser.storage.local.get(SETTINGS_KEY).then(data => browser.storage.local.set({ [SETTINGS_KEY]:{ ...DEFAULTS, ...(data[SETTINGS_KEY] || {}), ...patch } })).catch(() => {}); }

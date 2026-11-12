@@ -723,6 +723,8 @@
   MESSAGES.en.bar_hist = "History"; MESSAGES.vi.bar_hist = "Lịch sử"; MESSAGES.ko.bar_hist = "방문 기록";
   MESSAGES.en.bar_zoomT = "Page text size"; MESSAGES.vi.bar_zoomT = "Cỡ chữ trang"; MESSAGES.ko.bar_zoomT = "페이지 글자 크기";
   MESSAGES.en.bar_zoomPrev = "Keep exploring everything. Drag the slider to make this page bigger or smaller."; MESSAGES.vi.bar_zoomPrev = "Keep exploring everything. Kéo thanh trượt để phóng to hoặc thu nhỏ trang này."; MESSAGES.ko.bar_zoomPrev = "Keep exploring everything. 슬라이더를 끌어 이 페이지를 크게 또는 작게 하세요.";
+  MESSAGES.en.bar_zoomOut = "Smaller"; MESSAGES.vi.bar_zoomOut = "Nhỏ hơn"; MESSAGES.ko.bar_zoomOut = "작게";
+  MESSAGES.en.bar_zoomIn = "Bigger"; MESSAGES.vi.bar_zoomIn = "To hơn"; MESSAGES.ko.bar_zoomIn = "크게";
   MESSAGES.en.bar_zoomReset = "Reset"; MESSAGES.vi.bar_zoomReset = "Đặt lại"; MESSAGES.ko.bar_zoomReset = "초기화";
   MESSAGES.en.bar_zoomDone = "Done"; MESSAGES.vi.bar_zoomDone = "Xong"; MESSAGES.ko.bar_zoomDone = "완료";
   MESSAGES.en.bar_zoomFail = "This browser can't change the page size"; MESSAGES.vi.bar_zoomFail = "Trình duyệt này không cho đổi cỡ trang"; MESSAGES.ko.bar_zoomFail = "이 브라우저에서는 페이지 크기를 바꿀 수 없습니다";

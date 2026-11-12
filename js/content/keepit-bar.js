@@ -10,6 +10,31 @@
   // v3.5.180: also on the Keepit home page (pages/home.html, js/home/home-ui.js), where page commands wait for a web page
   const HOMEPAGE = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/home\.html$/.test(location.pathname);
   if (window.top !== window || !document.documentElement || (!HOMEPAGE && !/^https?:$/.test(location.protocol))) return;
+  // v3.5.221: Keepit's own bars, sheets and panels keep their size at every page zoom (Cỡ chữ trang, Ctrl +/-), like the
+  // browser's own toolbar: <html> gets --keepit-uiz = 1 / zoom and the bar host, the Reader bar/sheets and the notes sidebar use
+  // CSS zoom:var(--keepit-uiz). Inside them lengths are "UI px" = page px × zoom (innerWidth, clientX, getBoundingClientRect
+  // stay page px) → VW()/VH()/Z() below. Zoom = tabs.getZoom (PAGE_ZOOM_GET); a devicePixelRatio change (zoom applied) is
+  // answered in the same frame from the last known ratio, then confirmed by the background.
+  const UIZ = globalThis.LHN_UI_ZOOM = (() => {
+    let z = 1, base = 0, mq = null;
+    function set(v) {
+      v = Math.round(Math.min(5, Math.max(0.25, Number(v) || 1)) * 1000) / 1000; base = devicePixelRatio / v;
+      const st = document.documentElement.style;
+      if (v === z && (v === 1 || st.getPropertyValue("--keepit-uiz"))) return;
+      z = v; if (v === 1) st.removeProperty("--keepit-uiz"); else st.setProperty("--keepit-uiz", String(Math.round(1e4 / v) / 1e4));
+      dispatchEvent(new CustomEvent("keepit-ui-zoom", { detail:{ zoom:v } }));
+    }
+    const query = async () => { const r = await globalThis.LHN_MESSAGING?.sendMessage({ type:"PAGE_ZOOM_GET" }).catch(() => null); if (r?.ok && r.value) set(r.value / 100); };
+    function watch() { mq?.removeEventListener?.("change", onDpr); mq = matchMedia(`(resolution: ${devicePixelRatio}dppx)`); mq.addEventListener?.("change", onDpr); }
+    function onDpr() { if (base) set(Math.round(devicePixelRatio / base * 100) / 100); watch(); void query(); }
+    // the resize of a zoom change comes before the media-query event: catch up first (registered before every other
+    // resize listener), else the bar would measure the new innerWidth with the old zoom (and close an open sheet)
+    function sync() { if (base && Math.abs(devicePixelRatio / base - z) > 0.004) onDpr(); }
+    watch(); void query(); addEventListener("resize", sync);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") void query(); });
+    return { get:() => (sync(), z), set };
+  })();
+  const Z = () => UIZ.get(), VW = () => innerWidth * Z(), VH = () => innerHeight * Z();
   const TOUCH = matchMedia("(pointer: coarse) and (hover: none)");
   const DARK_SCHEME = matchMedia("(prefers-color-scheme: dark)");
   const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
@@ -119,9 +144,9 @@
   const AUI = () => isApk() ? globalThis.LHN_ANDROID_UI || null : null;
   const PD = () => isApk() ? null : globalThis.LHN_PAGE_DARK || null; // Trang tối của extension (js/content/page-dark.js)
   const onHome = () => HOMEPAGE || !!AUI()?.onHome?.();
-  const isWide = () => isDesk() ? innerWidth >= 760 : innerWidth >= 900 && innerHeight >= 600;
-  const isPland = () => isTouch() && !isWide() && innerWidth > innerHeight && innerHeight < 500;
-  const isSmall = () => !isWide() && innerWidth < 600;
+  const isWide = () => isDesk() ? VW() >= 760 : VW() >= 900 && VH() >= 600;
+  const isPland = () => isTouch() && !isWide() && VW() > VH() && VH() < 500;
+  const isSmall = () => !isWide() && VW() < 600;
   const isFive = () => !isWide() && (S.five || S.autoFive);
   const smooth = () => REDUCED.matches ? "auto" : "smooth";
   const hostName = () => websiteKey();
@@ -180,7 +205,7 @@
   function build() {
     host = document.createElement("div");
     host.id = "lhn-touch-ui";
-    host.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;");
+    host.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;zoom:var(--keepit-uiz,1);");
     host.setAttribute("data-lhn-bilingual-ui", "true");
     root = host.attachShadow({ mode:"open" });
     root.innerHTML = `<style>${CSS}</style><div class="screen" id="screen">
@@ -321,7 +346,7 @@
     const top = y <= (isPland() ? 16 : 40), was = S.sOff; lastDir = dy > 0 ? 1 : -1;
     if (top) S.sOff = 0;
     else if (dy > 0 && (anyOpen() || Date.now() < showHold)) return;
-    else S.sOff = clamp(S.sOff + dy, 0, offMax());
+    else S.sOff = clamp(S.sOff + dy * Z(), 0, offMax());
     if (S.sOff !== was) applyOff(top && was > 0);
     clearTimeout(settleT); settleT = setTimeout(settleOff, 160);
   }
@@ -400,10 +425,10 @@
     const pop = $("pop");
     pop.innerHTML = '<div class="grip"></div>' + html;
     const r = btn.getBoundingClientRect();
-    pop.style.left = clamp(r.left, 8, innerWidth - pop.offsetWidth - 8) + "px";
+    pop.style.left = clamp(r.left * Z(), 8, VW() - pop.offsetWidth - 8) + "px";
     // v3.5.159: measured from the bar's top edge (+6px = the demo's bar padding), so the taller touch bar keeps the demo's gap
     const bar = $("bar"), top = bar.contains(btn) ? bar.getBoundingClientRect().top + 6 : r.top;
-    pop.style.bottom = (innerHeight - top) + 8 + "px";
+    pop.style.bottom = (innerHeight - top) * Z() + 8 + "px";
     pop.classList.add("open"); $("clear").classList.add("on"); if (!noOn) btn.classList.add("on");
   }
   function closePop() { $("pop")?.classList.remove("open"); $("clear")?.classList.remove("on"); }
@@ -479,7 +504,7 @@
     bar.addEventListener("contextmenu", e => { if (isTouch()) e.preventDefault(); });
     bar.addEventListener("pointermove", e => {
       if (!sw || e.pointerId !== sw.id) return;
-      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      const dx = (e.clientX - sw.x) * Z(), dy = (e.clientY - sw.y) * Z();
       if (lpT && Math.hypot(dx, dy) > 8) { clearTimeout(lpT); lpT = 0; }
       if (!sw.on) { if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy)) return; sw.on = true; bar.classList.add("swiping"); try { bar.setPointerCapture(e.pointerId); } catch {} }
       sw.dx = dx; const W = bar.offsetWidth, need = W * 0.3, p = clamp(Math.abs(dx) / need, 0, 1), back = dx > 0, can = canGo(back);
@@ -546,18 +571,19 @@
   // v3.5.208: Cỡ chữ (extension) = Cỡ chữ trang của APK: 50–200 %, bước 10, có xem trước và Đặt lại.
   // Extension không có textZoom của WebView nên dùng mức thu phóng của trình duyệt cho tab này (background PAGE_ZOOM_*).
   let extZoom = 100, zoomT = 0;
-  async function readZoom() { const r = await send("PAGE_ZOOM_GET"); if (r?.ok && r.value !== extZoom) { extZoom = r.value; if ($("sheet")?.classList.contains("open")) renderSheet(); } }
+  async function readZoom() { const r = await send("PAGE_ZOOM_GET"); if (r?.ok) UIZ.set(r.value / 100); if (r?.ok && r.value !== extZoom) { extZoom = r.value; if ($("sheet")?.classList.contains("open")) renderSheet(); } }
   function setZoom(v) {
     extZoom = Math.min(200, Math.max(50, Math.round(v / 10) * 10)); clearTimeout(zoomT);
-    zoomT = setTimeout(async () => { const r = await send("PAGE_ZOOM_SET", { value:extZoom }); if (!r?.ok) toast(t("zoomFail")); }, 60);
+    zoomT = setTimeout(async () => { const r = await send("PAGE_ZOOM_SET", { value:extZoom }); if (!r?.ok) toast(t("zoomFail")); else UIZ.set(r.value / 100); }, 60);
   }
   function zoomPaneSync() {
     const panel = $("panel"), r = panel.querySelector("#zr"); if (!r) return;
     r.value = extZoom; panel.querySelector("#zo").textContent = extZoom + "%"; panel.querySelector("#zp").style.fontSize = (15 * extZoom / 100) + "px";
+    panel.querySelector('[data-q="zminus"]').disabled = extZoom <= 50; panel.querySelector('[data-q="zplus"]').disabled = extZoom >= 200;
   }
   function zoomHTML() {
     return `<div class="zprev" id="zp">${esc(t("zoomPrev"))}</div>
-    <div class="zrow"><span style="font-size:13px">A</span><input id="zr" type="range" min="50" max="200" step="10" value="${extZoom}" aria-label="${esc(t("zoomT"))}"><span style="font-size:21px">A</span><output id="zo">${extZoom}%</output></div>
+    <div class="zrow"><button class="zpm" type="button" data-q="zminus" title="${esc(t("zoomOut"))}" aria-label="${esc(t("zoomOut"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button><input id="zr" type="range" min="50" max="200" step="10" value="${extZoom}" aria-label="${esc(t("zoomT"))}"><button class="zpm" type="button" data-q="zplus" title="${esc(t("zoomIn"))}" aria-label="${esc(t("zoomIn"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button><output id="zo">${extZoom}%</output></div>
     <div class="zact"><button class="zbtn" type="button" data-q="zreset">${esc(t("zoomReset"))}</button><span class="sp"></span><button class="zbtn pri" type="button" data-q="back">${esc(t("zoomDone"))}</button></div>`;
   }
   let sheetPaneDrawn = "";
@@ -663,11 +689,12 @@
   function anchorPanel() {
     const panel = $("panel");
     if (!isWide()) { panel.style.left = ""; panel.style.bottom = ""; return; }
-    if (S.sheetFrom) { const r = S.sheetFrom, w = panel.offsetWidth; panel.style.left = clamp(r.left + r.width / 2 - w / 2, 12, innerWidth - w - 12) + "px"; panel.style.bottom = (innerHeight - r.top) + 14 + "px"; return; }
+    const k = Z(); // rects = page px, panel = UI px
+    if (S.sheetFrom) { const r = S.sheetFrom, w = panel.offsetWidth; panel.style.left = clamp((r.left + r.width / 2) * k - w / 2, 12, VW() - w - 12) + "px"; panel.style.bottom = (innerHeight - r.top) * k + 14 + "px"; return; }
     const btn = $("bin").querySelector('[data-nav="more"]'), br = $("bar").getBoundingClientRect(); if (!btn) return;
-    const r = btn.getBoundingClientRect(), w = panel.offsetWidth, W = innerWidth, cx = r.left + r.width / 2;
+    const r = btn.getBoundingClientRect(), w = panel.offsetWidth, W = VW(), cx = (r.left + r.width / 2) * k;
     panel.style.left = clamp(cx - w / 2, 12, W - w - 12) + "px";
-    panel.style.bottom = (innerHeight - br.top) + 10 + "px";
+    panel.style.bottom = (innerHeight - br.top) * k + 10 + "px";
   }
   function openSheet() {
     introDone(); closePop(); hideCoach(); S.sheetPane = "main"; const panel = $("panel");
@@ -709,6 +736,7 @@
     if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
     if (a === "zoom" && !AUI()) { S.sheetPane = "zoom"; renderSheet(); anchorPanel(); void readZoom(); return; }
     if (a === "zreset") { setZoom(100); zoomPaneSync(); return; }
+    if (a === "zminus" || a === "zplus") { setZoom(extZoom + (a === "zplus" ? 10 : -10)); zoomPaneSync(); return; }
     if (a === "compact") { if (S.autoFive) { toast(t("compactAutoToast")); return; } S.five = !S.five; persist(); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t(S.five ? "five" : "seven")); return; }
     if (a.startsWith("g:")) { const k = a.slice(2), st = panel.querySelector(".sbody").scrollTop; S.gest[k] = !S.gest[k]; persist(); renderSheet(); panel.querySelector(".sbody").scrollTop = st; toast(t(S.gest[k] ? "on" : "off") + t(k === "nav" ? "navG" : "trG")); return; }
     if (a.startsWith("rd:")) { const on = globalThis.LHN_READER_BAR?.toggleTile?.(a.slice(3)); renderSheet(); toast(t(on ? "on" : "off") + b.textContent.trim()); return; }
@@ -930,8 +958,8 @@
   }
   function renderChips() { $("chips").innerHTML = SCOPES().map(([k, l]) => `<button class="chip${S.scope === k ? " on" : ""}" type="button" data-scope="${k}">${esc(l)}</button>`).join(""); }
   function layoutSearch() {
-    const vv = window.visualViewport, H = vv ? vv.height : innerHeight, top = vv ? vv.offsetTop : 0;
-    const t0 = isDesk() ? Math.round(innerHeight * 0.12) : 10;
+    const vv = window.visualViewport, H = (vv ? vv.height : innerHeight) * Z(), top = (vv ? vv.offsetTop : 0) * Z();
+    const t0 = isDesk() ? Math.round(VH() * 0.12) : 10;
     const sbox = $("sbox"); sbox.style.top = (top + t0) + "px"; sbox.style.maxHeight = Math.max(160, H - t0 - 10) + "px";
   }
   function renderCur() {
@@ -1035,8 +1063,8 @@
     const d = root && $("offdot"); if (!d || d.classList.contains("drag")) return;
     const pos = S.offPos || { side:"l", y:0.5 }, H = d.offsetHeight || 44, W = d.offsetWidth || 35;
     d.classList.toggle("r", pos.side === "r");
-    d.style.left = (pos.side === "r" ? innerWidth - W : 0) + "px";
-    d.style.top = Math.round(8 + pos.y * Math.max(0, innerHeight - H - 16)) + "px";
+    d.style.left = (pos.side === "r" ? VW() - W : 0) + "px";
+    d.style.top = Math.round(8 + pos.y * Math.max(0, VH() - H - 16)) + "px";
   }
   function wireOffDot() {
     const d = $("offdot"); let g = null, eatClick = false;
@@ -1050,16 +1078,16 @@
       if (!g || e.pointerId !== g.id) return;
       if (!g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 6) return;
       g.moved = true; d.classList.add("drag");
-      d.style.left = clamp(e.clientX - g.ox, 0, innerWidth - d.offsetWidth) + "px";
-      d.style.top = clamp(e.clientY - g.oy, 8, innerHeight - d.offsetHeight - 8) + "px";
+      d.style.left = clamp((e.clientX - g.ox) * Z(), 0, VW() - d.offsetWidth) + "px";
+      d.style.top = clamp((e.clientY - g.oy) * Z(), 8, VH() - d.offsetHeight - 8) + "px";
     });
     const end = e => {
       if (!g || e.pointerId !== g.id) return;
       const was = g; g = null;
       if (!was.moved) return;
       eatClick = true; setTimeout(() => { eatClick = false; }, 350);
-      const r = d.getBoundingClientRect();
-      S.offPos = { side:r.left + r.width / 2 > innerWidth / 2 ? "r" : "l", y:clamp((r.top - 8) / Math.max(1, innerHeight - r.height - 16), 0, 1) };
+      const r = d.getBoundingClientRect(), k = Z();
+      S.offPos = { side:r.left + r.width / 2 > innerWidth / 2 ? "r" : "l", y:clamp((r.top * k - 8) / Math.max(1, VH() - r.height * k - 16), 0, 1) };
       d.classList.remove("drag"); placeOffDot(); persist();
     };
     d.addEventListener("pointerup", end); d.addEventListener("pointercancel", end);
@@ -1130,7 +1158,7 @@
       host.style.zIndex = "2147483647"; openSheet();
       const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
       if (b && sec) {
-        const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += (top + bottom) / 2 - (br.top + br.height / 2); updFade(); };
+        const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += ((top + bottom) / 2 - (br.top + br.height / 2)) * Z(); updFade(); };
         center(); requestAnimationFrame(center);
       }
     },
@@ -1149,20 +1177,20 @@
   function syncScrollLock() { SK()?.sync(); }
   function attachSheets() {
     const panel = $("panel");
-    const capH = () => isWide() ? innerHeight - (parseFloat(panel.style.bottom) || 0) - 12 : innerHeight * 0.96;
+    const capH = () => isWide() ? VH() - (parseFloat(panel.style.bottom) || 0) - 12 : VH() * 0.96;
     const expand = () => { setTimeout(updFade, 320); panel.classList.add("full"); if (isWide()) panel.style.maxHeight = capH() + "px"; };
     SK()?.attach(panel, { isOpen:() => $("sheet").classList.contains("open"), close:() => closeSheet(), watch:$("sheet"), scroller:() => panel.querySelector(".sbody"),
       grow:{ isFull:() => panel.classList.contains("full"), cap:capH,
         setH:px => { if (px === null) { panel.classList.remove("growing"); panel.style.maxHeight = panel.classList.contains("full") && isWide() ? capH() + "px" : ""; } else { panel.classList.add("growing"); panel.style.maxHeight = px + "px"; } },
         // v3.5.179 Keepit for Android ☰ 2 steps on phones (demo v12): middle step (58%), pulled up = full, pulled down = middle, further = closed
-        mid:() => isWide() || !isApk() ? 0 : Math.round(innerHeight * 0.58),
+        mid:() => isWide() || !isApk() ? 0 : Math.round(VH() * 0.58),
         collapse:() => { panel.style.transition = "max-height .22s ease"; panel.classList.remove("full", "growing"); panel.style.maxHeight = ""; setTimeout(() => { panel.style.transition = ""; updFade(); }, 240); },
         release:grow => { const keep = panel.scrollHeight; panel.classList.remove("growing"); panel.style.transition = "max-height .2s ease"; panel.style.maxHeight = ""; if (grow) expand(); setTimeout(() => { panel.style.transition = ""; updFade(); }, 220); return keep; } } });
     SK()?.attach($("pop"), { isOpen:() => $("pop").classList.contains("open"), close:() => closePop(), watch:$("pop") });
     // search: its taller step = keyboard down (more results); pulled down from there = keyboard back; further = closed
     const sq = $("sq");
     SK()?.attach($("sbox"), { isOpen:() => $("srch").classList.contains("open"), close:() => closeSearch(), watch:$("srch"), scroller:() => $("res"),
-      grow:{ isFull:() => !isTouch() || root.activeElement !== sq, cap:() => $("sbox").getBoundingClientRect().height, setH:() => {},
+      grow:{ isFull:() => !isTouch() || root.activeElement !== sq, cap:() => $("sbox").getBoundingClientRect().height * Z(), setH:() => {},
         release:grow => { if (grow) { sq.blur(); layoutSearch(); } } } });
   }
 
@@ -1178,7 +1206,7 @@
     const snap = () => { side.classList.add("lhn-sheet-snap"); setTimeout(() => side.classList.remove("lhn-sheet-snap"), 260); };
     SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close:() => run("notes"), watch:side,
       scroller:() => side.querySelector("#lhn-sidebar-list"),
-      grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => innerHeight * 0.96, mid:() => Math.round(Math.min(innerHeight * 0.74, 720)),
+      grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => VH() * 0.96, mid:() => Math.round(Math.min(VH() * 0.74, 720)),
         setH:px => { if (px === null) { side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); } else { side.classList.add("lhn-sheet-growing"); side.style.setProperty("height", px + "px", "important"); } },
         collapse:() => { snap(); side.classList.remove("lhn-sheet-full", "lhn-sheet-growing"); side.style.removeProperty("height"); },
         release:grow => { snap(); side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); if (grow) side.classList.add("lhn-sheet-full"); } } });
@@ -1240,6 +1268,7 @@
     });
     TOUCH.addEventListener("change", () => relayout(true));
     DARK_SCHEME.addEventListener("change", () => relayout(true));
+    addEventListener("keepit-ui-zoom", () => { relayout(false); if ($("sheet")?.classList.contains("open")) anchorPanel(); if ($("srch")?.classList.contains("open")) layoutSearch(); placeOffDot(); });
     addEventListener("resize", () => { relayout(false); if ($("sheet")?.classList.contains("open")) anchorPanel(); if ($("srch")?.classList.contains("open")) layoutSearch(); if (mounted) checkOverlap(); });
     addEventListener("online", onNetwork); addEventListener("offline", onNetwork);
     addEventListener("popstate", () => relayout(false)); setInterval(() => { if (mounted && layoutKey() !== lastLayout) relayout(false); }, 1000);

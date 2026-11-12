@@ -1489,7 +1489,8 @@
     if (sidebarOpen && !rebuild) { await renderSidebar(); return; }
     const previousSidebar = sidebarOpen && rebuild ? sidebar : null;
     if (!sidebarOpen) sidebarOpen = true;
-    const width = previousSidebar ? (Number.parseFloat(previousSidebar.style.width) || Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)))) : Math.min(400, Math.max(280, Math.floor(innerWidth * 0.32)));
+    const uiW = innerWidth * (globalThis.LHN_UI_ZOOM?.get?.() || 1); // v3.5.221: the sidebar's own px (same size at any page zoom)
+    const width = previousSidebar ? (Number.parseFloat(previousSidebar.style.width) || Math.min(400, Math.max(280, Math.floor(uiW * 0.32)))) : Math.min(400, Math.max(280, Math.floor(uiW * 0.32)));
     // Reserve space for the sidebar by narrowing the page content area.
     LHN_PAGE_LAYOUT.applyPageShrink(width);
     const shell = SIDEBAR.createShell({
