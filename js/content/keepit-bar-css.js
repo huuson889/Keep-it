@@ -199,7 +199,7 @@ button,input{font-family:inherit}
 .dark .coach{background:#18181b;color:#f4f4f5;border-color:#27272a}
 .dark .coach li em{color:#c4b5fd}
 .divider{height:1px;background:rgba(148,163,184,.3);margin:2px 0 10px}
-.mfoot{flex:none;position:relative;display:grid;align-items:center;margin:6px -14px calc(-16px - var(--sab));padding:6px 4px calc(6px + var(--sab));border-top:1px solid rgba(148,163,184,.3);border-radius:0;grid-template-columns:repeat(4,minmax(0,1fr))}
+.mfoot{flex:none;position:relative;display:grid;align-items:center;margin:6px -14px calc(-16px - var(--sab));padding:6px 4px calc(6px + var(--sab));border-top:1px solid rgba(148,163,184,.3);border-radius:0;grid-template-columns:repeat(3,minmax(0,1fr))}
 .wide .mfoot{margin:6px -14px -14px;padding:4px;border-radius:0 0 20px 20px}
 .fq{display:inline-flex;align-items:center;min-width:0;max-width:100%;border:0;border-radius:12px;background:none;font-family:inherit;font-weight:600;line-height:1.2;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fq:nth-child(1){justify-self:start}.fq:nth-child(2){justify-self:center}.fq:nth-child(3){justify-self:end}

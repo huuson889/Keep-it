@@ -234,11 +234,11 @@
   }
 
   // ---------- bar ----------
-  const LABEL = { page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more" };
-  const ICON = { page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu" };
+  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more" };
+  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu" };
   const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation" };
   const tipFor = id => ({
-    page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
+    home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
     notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`
   }[id]);
@@ -246,8 +246,9 @@
   const spareTool = () => isVideoPage() ? "reader" : "dictation";
   function navLayout() {
     const Pr = barPrio();
-    return isWide() ? (isVideoPage() ? [["overlay", "dictation", "page", "block"], ["reader", "notes", "ai", "more"]] : [["page", "block", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
-      : isFive() ? [[Pr[0], Pr[1]], ["notes", "more"]] : [Pr, ["notes", "ai", "more"]];
+    // v3.5.222: Trang chủ = always the first button of the bar (was: ☰ footer)
+    return isWide() ? (isVideoPage() ? [["home", "overlay", "dictation", "page", "block"], ["reader", "notes", "ai", "more"]] : [["home", "page", "block", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
+      : isFive() ? [["home", Pr[0], Pr[1]], ["notes", "more"]] : [["home", ...Pr], ["notes", "ai", "more"]];
   }
   function renderBar() {
     if (!root) return;
@@ -255,7 +256,7 @@
     screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland());
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
-    const b = id => `<button class="nb${(id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc((isSmall() && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
+    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc((isSmall() && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
@@ -402,6 +403,7 @@
     if (id === "search") return openSearch();
     if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
     closePop();
+    if (id === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
     if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
@@ -622,7 +624,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
@@ -635,7 +637,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta"))}${tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)

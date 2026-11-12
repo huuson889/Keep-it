@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.222 | Arena.ai Agent sửa:**
+
+- Thanh main: nút Trang chủ luôn là nút đầu tiên bên trái ở mọi bố cục (điện thoại, chế độ gọn, máy tính, điện thoại ngang); bỏ khỏi chân sheet ☰ (chân còn 3 nút: Cài đặt · Bật trang · Ẩn/Hiện thanh, chia 3 cột). Bấm = mở trang chủ Keepit trong tab này như trước; đang ở trang chủ thì nút sáng; máy tính có tooltip "Mở trang chủ Keepit trong tab này".
+- File: `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra (Chromium + extension thật): máy tính 1200px: home đứng đầu, bấm → `pages/home.html`, ở đó nút sáng; chân sheet = settings, site, hide. Điện thoại tiếng Việt 360/412px: đủ 7 nút + tìm kiếm, chữ không bị cắt. Tiếng Anh 360px: chữ không đủ chỗ nên thanh tự sang chế độ gọn (Video, Hỏi AI vào ☰) — v3.5.221 ở 360px tiếng Anh vẫn đủ; 412px tiếng Anh đủ. Không lỗi trang.
+
 **2026-10-23 | v3.5.221 | Arena.ai Agent sửa:**
 
 - Cỡ chữ trang: thanh main, mọi sheet, nút về đầu trang, ô tìm kiếm, thông báo của thanh, thanh Reader + sheet Reader, sidebar Ghi chú (cả hộp sửa, nút mép, thông báo) giữ nguyên kích thước ở mọi mức thu phóng (50–200 %, cả Ctrl +/−), kể cả trong lúc kéo — như thanh công cụ của trình duyệt. Nội dung trang và thẻ bản dịch của Reader vẫn to nhỏ theo trang.
