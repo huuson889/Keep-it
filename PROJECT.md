@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.225 | Arena.ai Agent sửa:**
+
+- Nhãn tiếng Anh và tiếng Hàn trên thanh main và sheet ☰ đổi tương ứng v3.5.224: "Translate page" → "Translate", "Video mode" → "Video"; "페이지 번역" → "번역", "비디오 모드" → "비디오" ("Study" / "학습" vốn đã ngắn).
+- File: `js/core/languages.js` (`bar_page`, `bar_overlay` en/ko), `manifest.json`.
+- Kiểm tra (Chromium + extension thật, máy tính): en = Home · Translate · Read · Video · Study · Notes · Ask AI · More; ko = 홈 · 번역 · 읽기 · 비디오 · 학습 · 노트 · AI에게 묻기 · 더보기; không nhãn nào bị cắt; không lỗi trang.
+
 **2026-10-23 | v3.5.224 | Arena.ai Agent sửa:**
 
 - Nhãn tiếng Việt trên thanh main và sheet ☰ (bố cục giữ như v3.5.223): "Dịch trang" → "Dịch", "Vào video" → "Video", "Vào học" → "Học" (cả chú thích rê chuột). Tiếng Anh, tiếng Hàn giữ nguyên.
