@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version 3.5.193 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
-- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193; bước kế tiếp: bước 3.
-- Overlay: giao diện mới `js/overlay/unified/` chạy trên engine cũ; giao diện cũ (`overlay-template.js`, `view/`) vẫn dựng nhưng ẩn, không sửa giao diện ở đó.
+- Version 3.5.196 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
+- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193, bước 3 ở v3.5.194, bước 4 ở v3.5.195, bước 5a (xoá panel Study cũ, hover-pause) ở v3.5.196; bước kế tiếp: 5b (markup cũ và chỗ controller/engine ghi vào đó).
+- Overlay: giao diện mới `js/overlay/unified/` chạy trên engine cũ; markup cũ (`OVERLAY_HTML`) vẫn dựng nhưng ẩn vì engine còn ghi vào đó; CSS cũ và `view/` đã bỏ ở v3.5.195.
 - Kiểm thử: các bản gần đây thử bằng Chromium headless với extension thật; nhiều mục trên máy thật vẫn chưa chạy (mục 2).
 - Nhật ký: mục 5 chỉ giữ ~30 bản mới nhất; bản cũ hơn ở `docs/changelog/`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Tái cấu trúc cây thư mục (đang làm)
-- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193. Người dùng nói "làm hết đi": làm tiếp bước 3–5; bước 3 phải chờ người dùng duyệt các mục "bỏ" trước khi bước 4 xoá gì.
+- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193; bước 3 (danh sách tính năng overlay cũ ↔ mới, trong bản ghi OPT) ở v3.5.194; người dùng duyệt bỏ cả 5 mục; bước 4 (CSS overlay cũ, `overlay-engine.js`, xoá `view/`) ở v3.5.195. Bước 5 chia 5a–5d vì luật "không vừa chuyển file vừa xoá code": 5a (xoá `study/dictation/`, `study/shadowing/`, `createStudyUi`, hover-pause) ở v3.5.196; còn 5b markup cũ + chỗ ghi vào đó, 5c nhãn sang `languages.js` (`unified-text.js`, `offline-page.js`), 5d đổi tên thư mục + gộp `dictation.md`.
 
 ### Áp dụng nguyên tắc giao diện (`docs/ui-layout.md`)
 - (1) Overlay: xong ở v3.5.171 (demo v18). Còn lại, mỗi bước 1 bản: (2) Reader + thanh Keepit; (3) Dashboard + popup dịch/từ điển dạng sheet. Ghi chú cũ: Thứ tự đề xuất, mỗi bước 1 bản: (1) Overlay — demo overlay đồng bộ v2 theo nguyên tắc (demo v1 `keepit-overlay-unified-demo-v1.html` còn 3 lớp bề rộng, chưa duyệt) + tim nhấp đúp video trên máy tính; (2) Reader + thanh Keepit; (3) Dashboard (bỏ mức tablet) + popup dịch/từ điển dạng sheet khi màn dọc trên mọi trang.
@@ -30,7 +30,7 @@
 
 ### Study activity refactor
 - Browser QA pending cho source/activity state names, selector/UI wiring, `LHN_STUDY` với alias cũ và Web shared-rate bridge; xác nhận Web 0.5×–3×, YouTube và Dictation replay giữ nguyên. Static/VM checks v3.5.43 đạt.
-- Đã thay bằng kế hoạch tái cấu trúc (OPT-ARENA 2026-10-23): `dictation.js` và `shadowing/` thuộc giao diện cũ, sẽ bị xoá ở bước 5, không tách tiếp. Ghi chú cũ: Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
+- Đã xong ở v3.5.196: `dictation.js` và `shadowing/` (giao diện cũ) đã xoá. Ghi chú cũ: Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
 
 ### Kiểm thử trình duyệt
 - v3.5.162: chưa chạy trên máy thật. Edge Canary Android: Cài đặt → Giới thiệu → chạm số phiên bản 5 lần → Developer options → Extension install by crx → chọn file `.crx`; tiện ích hiện tên "Keepit - Translate, Learn, Ask AI" v3.5.162, thanh Keepit chạy trên trang. Lưu ý: bản CRX có ID khác bản nạp thư mục (dữ liệu hai bản tách riêng).
@@ -121,11 +121,11 @@ Keepit - Test/
 │   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats; responsive-nav.js = điều hướng điện thoại/tablet
 │   ├── overlay/                   # Shared Video/Web overlay, Study engine/activities and View modes
 │   │   ├── overlay-controller.js  # Lifecycle, source/activity routing and bootstrap
-│   │   ├── overlay-template.js    # Giao diện overlay CŨ (HTML/CSS + createStudyUi): vẫn dựng nhưng ẩn; không sửa giao diện ở đây (xoá ở bước 4–5 tái cấu trúc)
+│   │   ├── overlay-template.js    # Markup overlay CŨ (`OVERLAY_HTML`, ẩn) + 2 quy tắc CSS chung; không sửa giao diện ở đây (xoá ở bước 5b)
 │   │   ├── unified/               # Giao diện overlay ĐANG DÙNG (demo v18): unified-ui.js, unified-css.js, unified-text.js (nhãn en/ko tạm, sẽ chuyển vào languages.js)
 │   │   ├── source/                # YouTube captions/timing and Reader cues
-│   │   ├── study/                 # Dictation/Typing and Shadowing activities
-│   │   └── view/                  # layout-mode.js, cc-mode.js, touch-layout.js (bố cục overlay cảm ứng), touch-theater.js (rạp ngang điện thoại)
+│   │   ├── study/shared/          # study-score, learning-rules, session-index (chấm điểm, luật, chỉ mục cho Dashboard)
+│   │   ├── overlay-engine.js      # Cài đặt, chế độ xem/phụ đề, hàng đợi dịch phụ đề, yêu thích (từ view/ cũ, v3.5.195)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
 ├── css/
@@ -186,9 +186,9 @@ Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (
 Dashboard Settings (`dualSubtitlesShortcut` Alt+E / `dictationShortcut` Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dual-subtitles-toggle` / `lhn-youtube-dictation-toggle` ──> `js/overlay/overlay-controller.js` ──> shared overlay cho YouTube hoặc Web
 `lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
 Reader (`LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh:true})`) ──> `js/overlay/source/web.js` (`sourceType: web`) ──> content-hash sentence cues: same-document memory snapshot + `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` (7-day sliding TTL) ──> lazy `LHN_TTS`/`BILINGUAL_TRANSLATE` existing caches + `LHN_THUMBNAILS` ──> Overlay/Study Dictation UI/engine; reload/URL change refreshes Reader source, unchanged source can reuse persistent cues; YouTube cache stays separate. `view/cc-mode.js` applies cue-language default (same→primary; different/unknown→bilingual; manual choice wins). Reader stop/start exclusivity, shortcuts, controls and Ambient behavior unchanged
-Web TTS (`source/web.js`) ──> `study/shadowing/shadowing.js` playback controls ──> existing `LHN_TTS` chunk callbacks + retained Audio/SpeechSynthesis handle; live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
+Web TTS (`source/web.js`) ──> `overlay-controller.js` playback controls (`startWebTtsInViewMode`, `syncReadingAudioControls`; từ `study/shadowing/shadowing.js`, v3.5.196) ──> existing `LHN_TTS` chunk callbacks + retained Audio/SpeechSynthesis handle; live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
 Video source (`js/overlay/source/video.js`: `state.allCues`, `sourceLanguage`, video-specific transcript/cache) ──> `overlay-controller.js` / View
-  └── `overlay-controller.js` (`LHN_OVERLAY_API`, `LHN_STUDY` activity routing; `LHN_DICTATION` compatibility alias) ──> `study/dictation/dictation.js` session shell/Typing; `study/shadowing/` Speaking behavior and Web TTS entry
+  └── `overlay-controller.js` (`LHN_OVERLAY_API`, `LHN_STUDY` activity routing; `LHN_DICTATION` compatibility alias) ──> tab Nói/Chép của `unified/unified-ui.js` (panel Study cũ đã xoá ở v3.5.196)
                                   ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
                                   └── browser.storage.local → solved / notes / bản dịch theo source+câu + thống kê từ sai theo video/từ/vị trí
 Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
@@ -199,6 +199,27 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-10-23 | v3.5.196 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5a (không đổi giao diện/hành vi). Bước 5 được chia 5a–5d vì điều kiện "không vừa chuyển file vừa xoá code trong cùng phiên bản"; cây đích không đổi (đã ghi vào `OPT-ARENA.md`).
+- Xoá panel Study cũ (ẩn từ v3.5.171): `study/dictation/dictation.js`, `study/shadowing/shadowing-activity.js`, `study/shadowing/shadowing.js`, `createStudyUi` trong `overlay-template.js`. Bốn hàm `shadowing.js` còn được gọi (`startWebTtsInViewMode`, `syncReadingAudioControls`, `setReadingAudioCompact`, `toggleReadingAudioCompact`) chuyển nguyên văn vào controller. `LHN_STUDY` viết lại không còn trải `...legacy`, vẫn mở tab Nói/Chép như trước.
+- Bỏ hover-pause (mục "bỏ" số 1): trạng thái `hoverPause*`/`hoverPointer*`, 11 hàm và các listener trên `.te-sub-en` / `.yt-dual-item` / root cũ (đều nằm trong markup ẩn nên không bao giờ chạy).
+- Khoá `dictation:progress-sync:v1` và `dictation:translation-visibility:v1` chỉ panel cũ ghi; không còn code đọc, dữ liệu cũ vẫn để nguyên.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/overlay-engine.js`, `js/overlay/overlay-template.js`, `js/overlay/study/dictation/*` và `js/overlay/study/shadowing/*` (xoá), `manifest.json`, `OPT-ARENA.md`, `PROJECT.md`, `DATA-INVENTORY.md`, `docs/modules/overlay.md`, `docs/modules/dictation.md`.
+- Kiểm tra: `node --check` đạt. Đồ thị tham chiếu (acorn, toàn bộ content script) không còn tên bị treo, không thêm khai báo chết. Chromium headless, extension thật, v3.5.195 vs v3.5.196: 9 lối vào Study (phím tắt học, lặp lại, phím tắt xem, `typing-control`, chuyển giữa Xem/Nói/Chép, đóng) cho trạng thái giống hệt; gõ câu ở tab Chép lưu bản ghi `dictation:web-…` giống hệt; danh sách khoá lưu trữ giống hệt; không lỗi trang. Ảnh 8 trạng thái overlay (điện thoại tối vi, máy tính sáng vi): computed style và HTML giống hệt, ảnh chỉ khác ở vùng nhiễu đã biết (nền video, sheet ☰). `build_firefox.py` đạt. Chưa thử YouTube thật và máy thật.
+
+**2026-10-23 | v3.5.195 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 4 (không đổi giao diện/hành vi; người dùng đã duyệt bỏ cả 5 mục của bước 3): `OVERLAY_CSS` từ 197,7 KB còn 2 quy tắc chung (`*:not(:is(.ov, .ov *))`, `:host`). 1204 quy tắc và 15 `@keyframes` chỉ trúng markup cũ đang ẩn đã bỏ; phân loại theo token class/id chỉ có ở phía cũ, tính cả combinator. `js/overlay/overlay-engine.js` = `view/layout-mode.js` + `view/cc-mode.js` nguyên văn + phần yêu thích của `view/touch-layout.js` (13 khai báo nguyên văn). Xoá `view/touch-layout.js` và `view/touch-theater.js` (chỉ chạy khi không có UI mới), rồi xoá thư mục `view/`. Bỏ 2 lời gọi chết trong controller (`setupTouchOverlayLayout`, `LHN_TOUCH_THEATER?.showControls`).
+- File: `js/overlay/overlay-template.js`, `js/overlay/overlay-engine.js` (mới), `js/overlay/view/*` (xoá), `js/overlay/overlay-controller.js`, `manifest.json`, `OPT-ARENA.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `DATA-INVENTORY.md`, `docs/INDEX.md`, `docs/modules/overlay.md`, `docs/modules/video.md`.
+- Kiểm tra: `node --check` đạt. `layout-mode`/`cc-mode` có mặt nguyên văn trong engine. Đồ thị gọi hàm (acorn): ngoài lời gọi chết, không file nào gọi 96 tên bị xoá. Chromium headless, extension thật, overlay Web mở từ thanh, v3.5.194 vs v3.5.195. Trạng thái: Xem, ☰, Cài đặt, Phụ đề, Tốc độ, Nói, Chép, Toàn màn hình × (điện thoại tối vi, điện thoại sáng ko, máy tính tối en, máy tính sáng vi). Kết quả: computed style mọi phần tử của giao diện mới (trừ nền video động `#vid`/`#amb`/`#wave`) và HTML giống hệt; ảnh chỉ khác ở nền video (độ mờ ngẫu nhiên, chạy bản cũ hai lần cũng khác). Không lỗi console. Bấm ♥ ghi `lhnFavoriteVideos`, bật/tắt Kết hợp câu ghi `lhnYouTubeSettings.splitSentences`: giống bản cũ. Chưa thử overlay YouTube thật và máy thật.
+
+**2026-10-23 | v3.5.194 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 3 (chỉ tài liệu, không đổi code chạy): thêm mục "Bước 3: tính năng overlay cũ ↔ mới" vào bản ghi `OPT-ARENA.md` 2026-10-23. Gồm 17 tính năng đã có ở giao diện mới, 5 mục "bỏ" chờ duyệt (đều đã không chạy/không hiện từ v3.5.171) và danh sách chỗ giao diện mới còn dựa vào DOM cũ phải thay ở bước 4–5.
+- File: `OPT-ARENA.md`, `manifest.json` (version), `PROJECT.md`.
+- Kiểm tra: đối chiếu bằng source (`OVERLAY_HTML`, `bindUI`, `runExport`, `exportAs`, `LHN_UNIFIED_BRIDGE`, `pullSettings`/`persistSettings`, `onKey`, proxy `LHN_STUDY`). `unified-ui.js` không gọi `dictation.js`, `shadowing*`, `createStudyUi`, `view/touch-*`; `setupTouchOverlayLayout` chỉ chạy khi `!unified`. Manifest parse đạt, `git diff --check` đạt. Không chạy thử trình duyệt vì không đổi code.
 
 **2026-10-23 | v3.5.193 | Arena.ai Agent sửa:**
 

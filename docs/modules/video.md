@@ -31,7 +31,7 @@ Phần Video sở hữu nguồn YouTube: tìm track, lấy transcript/caption, c
 - Cache transcript YouTube tiếp tục tách khỏi persistent Web Study cue cache; khóa nguồn giữ video ID và track language.
 - Giữ fallback giữa player API, transcript panel và live captions, cùng cleanup/cancel token khi video thay đổi.
 - Cue time phải tăng hợp lệ; xử lý merge/resegment không làm nhảy vị trí transcript hoặc thay video timing.
-- Track language và CC default policy được tiêu thụ bởi `view/cc-mode.js`; lựa chọn thủ công vẫn áp dụng cho video hiện tại.
+- Track language và CC default policy được tiêu thụ bởi `overlay-engine.js` (phần cc-mode); lựa chọn thủ công vẫn áp dụng cho video hiện tại.
 - Không di chuyển UI/template vào Video source. Các selectors, events và `LHN_OVERLAY_API` thuộc shared Overlay contract.
 - Khung video YouTube và thumbnail Web dùng cursor mặc định; click xóa text selection ở document/ShadowRoot rồi vẫn gọi hành vi phát/tạm dừng hiện có.
 

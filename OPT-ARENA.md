@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
 
-**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193.
+**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196.
 
 > **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
 
@@ -127,8 +127,53 @@ Keep-it/
 1. **Dọn tài liệu:** `INDEX.md` thêm bảng "sửa X → file Y"; cắt `PROJECT.md`, lịch sử sang `docs/changelog/`; chuyển Supabase; gộp `search.js`; ghi luật vào `AGENTS.md`.
 2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`; chuyển bảng nhãn `T` của thanh sang `languages.js` (khoá `bar_<tên>`; người dùng duyệt thêm, "làm hết đi").
 3. **Danh sách tính năng overlay cũ ↔ mới:** chỉ là tài liệu. Mỗi tính năng của giao diện cũ được đánh dấu "đã có trong giao diện mới" hoặc "bỏ". Người dùng duyệt các mục "bỏ".
-4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`.
-5. **Overlay B:** bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
+4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`. (v3.5.195: `layout-mode.js` + `cc-mode.js` + phần yêu thích của `touch-layout.js` ghép nguyên văn; phần UI cũ còn lẫn trong đó gỡ ở bước 5 cùng các chỗ controller gọi.)
+5. **Overlay B** (chia 4 phiên bản vì điều kiện "không vừa chuyển file vừa xoá code"; cây đích không đổi): **5a** xoá `dictation/`, `shadowing/`, `createStudyUi`, hover-pause (v3.5.196); **5b** xoá HTML cũ và các chỗ controller/engine ghi vào đó; **5c** chuyển nhãn `unified-text.js` + `offline-page.js` sang `languages.js`, xoá `unified-text.js`; **5d** đổi `unified/` → `ui/`, `study/shared/*` → `study/`, gộp `dictation.md`. Nội dung gốc: bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
+
+### Bước 3: tính năng overlay cũ ↔ mới (lập ở v3.5.194)
+
+Đối chiếu `OVERLAY_HTML` (`overlay-template.js`), `view/`, `study/dictation/`, `study/shadowing/` với `unified-ui.js` + controller. Giao diện cũ bị ẩn bằng `#keepit-exact-overlay{display:none!important}` từ v3.5.171 (`buildOverlay`), nên mọi thứ chỉ có ở giao diện cũ đã không hiện với người dùng từ đó.
+
+| Tính năng cũ | Ở giao diện mới | Kết luận |
+|---|---|---|
+| Phát/dừng, câu trước/sau, lặp câu, tốc độ 0.5–3x + nút sẵn | thanh dưới + bảng `speed`, `rep` | Có |
+| Âm lượng / tắt tiếng | bảng `vol` | Có |
+| Yêu thích ♥ | `data-act="fav"` → `B.setFavorite` (`lhnFavoriteVideos`) | Có |
+| Thanh bên ghi chú | `B.openNotes` | Có |
+| Chế độ phụ đề Song ngữ/Chính/Dịch/Ẩn, phím 1–4 | bảng `cc`, `onKey` | Có |
+| Chế độ xem Rạp/Đọc/Thường, Alt+1/2/3 | Xem (Đọc 34% / Xem 60%, kéo vạch chia) + Rạp, Alt+1/2/3 | Có (đã gộp từ demo v6–v18) |
+| Kích thước xem S/M/L | Cột video + nút Phóng to/Thu nhỏ (`btnSize`) | Có (dạng mới) |
+| Toàn màn hình, Rạp ngang điện thoại (vuốt âm lượng/độ sáng/tua) | `data-act="theater"`, `#ttring` `#ttseek` `#tthint` | Có |
+| Luyện nói / Chép chính tả (panel Study cũ, `createStudyUi`) | tab Nói · Chép: chấm bằng `LHN_STUDY_SCORE`, luật `LHN_STUDY_RULES`, tự ghi `dictation:<sourceId>` + `LHN_STUDY_SESSION_INDEX` | Có. Panel cũ chỉ chạy khi không có UI mới |
+| Mở bài học từ phím tắt / Dashboard / popup | proxy `LHN_STUDY.open` → tab Nói/Chép | Có |
+| Nhấn để dịch, Phát âm khi dịch, Kết hợp câu, Hiệu ứng nền, Ẩn thanh điều khiển, Chủ đề | bảng `set`, `theme` | Có |
+| Ngôn ngữ phụ đề nguồn/dịch | bảng `sublang` → `B.setLanguage` | Có (đang bấm nút trong DOM cũ, xem dưới) |
+| Xuất phụ đề SRT/CSV/PDF, song ngữ, thời gian | bảng `export` (srt/txt/csv/pdf) → `exportAs` / `printPdf` | Có (thêm TXT) |
+| Nút phát nhỏ khi thu nhỏ video | `#cplay` (`setMini`) | Có |
+| Thanh tiến trình kéo + tooltip | `#prog` `#ptip` | Có |
+| Chọn từ để tra | chạm/nhấp `.wd` → `mouseup` cho `content.js` | Có |
+| Phím Space/`, < >, Enter, Esc, N, Ctrl | `onKey` / `onKeyUp` | Có |
+
+**Mục "bỏ": người dùng đã duyệt bỏ cả 5 (sau v3.5.194).** Tất cả đã không chạy hoặc không hiện từ v3.5.171:
+1. Rê chuột lên phụ đề thì tạm dừng (`hoverPause*` trong controller). Chỉ gắn với `.te-sub-en` / `.yt-dual-item` của DOM cũ.
+2. Kéo dời ô phụ đề ở Rạp (`#te-theater-subtitle-drag-handle`, `theaterSubtitle*` trong `layout-mode.js`).
+3. Tuỳ chọn phụ đề chi tiết cũ:
+   - Cỡ chính/dịch theo % (±10), cỡ phụ đề thanh bên.
+   - Màu nền ô phụ đề + độ trong suốt.
+   - Phông Inter/Roboto/Arial.
+   - Giao diện mới có: Cỡ chữ Nhỏ/Trung bình/Lớn, Màu, Độ đậm, Phông Mặc định/Serif/Mono, Nền Không/Nhẹ/Đặc (riêng video / cuộn). `unified-ui.js` không đọc các khoá cũ.
+4. Ô chọn khi xuất: "Xuất từ đã lưu", "Hiển thị từ đánh dấu" (`runExport` chưa từng đọc 2 ô này), "Chỉ xuất phụ đề".
+5. Thành phần chỉ của giao diện cũ: toast, menu Chế độ xem, popup tốc độ, các modal Cài đặt, bố cục cảm ứng `view/touch-layout.js` và `view/touch-theater.js` (chỉ dựng khi `!unified`).
+
+**Phụ thuộc vào DOM cũ phải thay trước khi xoá HTML cũ (bước 4–5):**
+- `B.getCc` đọc class `te-subtitle-mode-*` trên `#keepit-exact-overlay`.
+- `B.setLanguage` bấm `#te-lang-*-options [data-language-value]`.
+- `renderTranscriptList`, `updateVietnameseRow`, `setStatus` ghi vào DOM cũ rồi mới gọi hook `onCaptions` / `onTranslated` / `onStatus`.
+- `openOverlay`: chỗ đặt media dự phòng `.te-player-slot`.
+- `buildOverlay`: `bindUI()`, `refreshOverlayUiLocalization`, ô chọn phông, nút kích thước.
+- (Đã làm ở v3.5.196) `LHN_STUDY` proxy trải `...legacy` từ `dictation.js`.
+- Bảng nhãn riêng `TOUCH_OVERLAY_TEXT` / `touchOverlayText` (nay nằm trong `overlay-engine.js`, phần yêu thích): bước 5 chuyển sang `languages.js` hoặc xoá cùng `syncTouchFavoriteButtons` (chỉ ghi vào nút cũ).
+- (Đã làm ở v3.5.195) `view/layout-mode.js`, `view/cc-mode.js` lẫn phần engine (mặc định/gộp/khôi phục/lưu cài đặt, hàng đợi dịch `translateOne` `queueCue` `translateWindow`, cài đặt ngôn ngữ phụ đề, `setSubtitleDisplayModeByUser`) với phần UI cũ. Phần engine chuyển sang `overlay-engine.js`.
 
 ### Điều kiện chấp nhận mỗi bước
 - Không đổi giao diện và hành vi. Ảnh chụp trước/sau giống hệt từng điểm ảnh: sáng/tối, điện thoại/máy tính, trang trắng/tối. Overlay chụp thêm vi/en/ko.

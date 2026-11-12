@@ -4,22 +4,19 @@
 
 ## 1. Mục đích và phạm vi
 
-Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều phối source/activity; `source/`, `study/` và `view/` lần lượt xử lý cues/media, hoạt động học và layout/caption. Reader, TTS, translation và cache vẫn thuộc module riêng.
+Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều phối source/activity; `source/`, `study/` và `overlay-engine.js` lần lượt xử lý cues/media, hoạt động học và layout/caption. Reader, TTS, translation và cache vẫn thuộc module riêng.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
 | [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `openOverlay`, `LHN_OVERLAY_SET_STUDY_ACTIVITY` | Lifecycle, routing và bootstrap cuối. |
-| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Shadow DOM markup/CSS. |
+| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `OVERLAY_HTML`, `OVERLAY_CSS` | Markup cũ (ẩn; engine còn đọc/ghi) + 2 quy tắc CSS chung (`:host`, reset ngoài `.ov`). v3.5.195 bỏ ~196 KB CSS cũ. |
 | [`js/overlay/source/video.js`](../../js/overlay/source/video.js) | `loadCaptions`, `onTimeUpdate` | YouTube captions, cache và cue timing. |
 | [`js/overlay/source/web.js`](../../js/overlay/source/web.js) | `prepareWebSource`, `createWebTtsMedia` | Reader cues, Web media và thumbnail visualizer. |
-| [`js/overlay/study/dictation/dictation.js`](../../js/overlay/study/dictation/dictation.js) | `LHN_STUDY.open` | Shared Study shell và Dictation/Typing. |
-| [`js/overlay/study/shadowing/shadowing-activity.js`](../../js/overlay/study/shadowing/shadowing-activity.js), [`shadowing.js`](../../js/overlay/study/shadowing/shadowing.js) | `LHN_SHADOWING_ACTIVITY_FACTORY` | Shadowing recognition, recording, feedback và controls. |
+| [`js/overlay/unified/unified-ui.js`](../../js/overlay/unified/unified-ui.js) | `LHN_UNIFIED_OVERLAY` | Giao diện đang dùng; tab Nói (ghi âm, nhận dạng giọng) và Chép (chấm, lưu `dictation:<sourceId>`). Panel Study cũ (`study/dictation/`, `study/shadowing/`) đã xoá ở v3.5.196; `LHN_STUDY` (controller) chỉ chuyển sang tab Nói/Chép. |
 | [`js/overlay/study/shared/study-score.js`](../../js/overlay/study/shared/study-score.js), [`learning-rules.js`](../../js/overlay/study/shared/learning-rules.js) | `LHN_STUDY_SCORE`, `LHN_STUDY_RULES` | Logic học dùng chung. |
-| [`js/overlay/view/layout-mode.js`](../../js/overlay/view/layout-mode.js), [`cc-mode.js`](../../js/overlay/view/cc-mode.js) | `applyVideoDisplayMode`, `setSubtitleDisplayMode` | Theater/Reading/Combined, sizing và CC modes. |
-| [`js/overlay/view/touch-layout.js`](../../js/overlay/view/touch-layout.js) | `setupTouchOverlayLayout`, `touchOverlayActive` | Bố cục cảm ứng: header, thẻ gọn/mở rộng, nút ⋯ và sheet Thêm. |
-| [`js/overlay/view/touch-theater.js`](../../js/overlay/view/touch-theater.js) | `LHN_TOUCH_THEATER` (`setup`, `isActive`, `enter`, `exit`, `showControls`) | Rạp ngang điện thoại: video tràn màn hình, thanh tự ẩn, vuốt âm lượng/độ sáng. |
+| [`js/overlay/overlay-engine.js`](../../js/overlay/overlay-engine.js) | `settings`/`saveSettings`, `applyVideoDisplayMode`, `setSubtitleDisplayModeByUser`, `translateOne`/`queueCue`, `setTouchFavorite`/`loadTouchFavorites` | (v3.5.195) Ghép nguyên văn `view/layout-mode.js` + `view/cc-mode.js` + phần yêu thích của `view/touch-layout.js`: cài đặt, chế độ xem/phụ đề, hàng đợi dịch, yêu thích. `view/` đã xoá; bố cục cảm ứng cũ (`touch-layout`, `touch-theater`) chỉ chạy khi không có UI mới nên bỏ. |
 | [`js/overlay/unified/unified-ui.js`](../../js/overlay/unified/unified-ui.js), [`unified-css.js`](../../js/overlay/unified/unified-css.js), [`unified-text.js`](../../js/overlay/unified/unified-text.js) | `LHN_UNIFIED_OVERLAY` (`mount`, `open`, `close`, `slot`, `setTab`, `onCaptions`, `onTranslated`, `onStatus`), `LHN_UNIFIED_BRIDGE`, `LHN_UNIFIED_TEXT` | Giao diện thống nhất (v3.5.171, demo v18): một UI Dọc/Ngang cho Video và Web, tab Xem · Nói · Chép. |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin. |
 

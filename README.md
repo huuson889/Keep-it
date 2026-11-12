@@ -114,7 +114,7 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 - `js/background/`: background service worker, annotation storage, usage limits, and error logging.
 - `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.
 - `js/reader/`: Bilingual Reader, TTS engine, and reader voice flags.
-- `js/overlay/`: shared Video/Web overlay, organized into `source/`, `study/`, and `view/`, with the controller and template.
+- `js/overlay/`: shared Video/Web overlay, organized into `source/` and `study/`, with the controller, engine (`overlay-engine.js`) and template.
 - `js/overlay/study/`: distinct Dictation/Writing and Shadowing/Speaking activities, with shared scoring/rules/session helpers in `shared/`; Study markup/CSS belongs to `js/overlay/overlay-template.js`. Reader, TTS, translation, and cache engines remain external shared modules.
 - `js/translate/`: translation, dictionary, search, and study translation modules.
 - `js/dashboard/`: Dashboard, annotation utilities, flashcard study, account, backup, and flag modules.

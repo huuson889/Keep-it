@@ -10,21 +10,18 @@ Study luyện câu từ YouTube captions hoặc Reader Web cues trong Overlay hi
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/overlay/study/dictation/dictation.js`](../../js/overlay/study/dictation/dictation.js) | `LHN_DICTATION.open` | Dictation entry, shared Study shell/session và Typing behavior. |
-| [`js/overlay/study/shadowing/shadowing-activity.js`](../../js/overlay/study/shadowing/shadowing-activity.js) | `LHN_SHADOWING_ACTIVITY_FACTORY.create` | Speaking recognition, recording, replay, feedback và Escape flow. |
-| [`js/overlay/study/shadowing/shadowing.js`](../../js/overlay/study/shadowing/shadowing.js) | `onShadowingControlClick` | Shadowing entry và Web TTS controls; practice ở Overlay. |
+| [`js/overlay/unified/unified-ui.js`](../../js/overlay/unified/unified-ui.js) | tab `speak` / `write` | Nói: ghi âm, nhận dạng giọng, chấm, phát lại. Chép: chấm, gợi ý, lưu `dictation:<sourceId>` (`progressByMode`, `unifiedScores`, `lessonNote`, `notes`). Panel Study cũ (`study/dictation/`, `study/shadowing/`, `createStudyUi`) đã xoá ở v3.5.196 (ẩn từ v3.5.171). |
 | [`js/overlay/study/shared/study-score.js`](../../js/overlay/study/shared/study-score.js) | `LHN_DICTATION_SCORE` | Shared tokenization, score, diff và prefix progress. |
 | [`js/overlay/study/shared/learning-rules.js`](../../js/overlay/study/shared/learning-rules.js) | `LHN_DICTATION_RULES` | Shared hints, eligibility và error categories. |
 | [`js/overlay/study/shared/session-index.js`](../../js/overlay/study/shared/session-index.js) | `LHN_DICTATION_SESSION_INDEX` | Provider-neutral session metadata dùng bởi Dashboard Dictation. |
-| [`js/overlay/overlay-template.js`](../../js/overlay/overlay-template.js) | `LHN_OVERLAY_TEMPLATE.createStudyUi` | Static Study DOM structure and CSS; activity modules bind behavior. |
-| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `createDictationOverlayApi`, `beginDictationMode` | Overlay API, source/activity selection và bootstrap cuối. |
+| [`js/overlay/overlay-controller.js`](../../js/overlay/overlay-controller.js) | `createStudyOverlayApi`, `beginStudyMode`, `LHN_STUDY` | Overlay API; mọi lối vào Study (phím tắt, Dashboard, popup) mở tab Nói/Chép. |
 
 ## 3. Luồng chính
 
 1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; YouTube dùng caption cues, Web dùng Reader sentence cues. Caption refresh đến qua `lhn-dual-captions-updated`.
-2. `overlay-controller.js` mở Study panel hiện có và chọn Typing/Speaking. `LHN_OVERLAY_TEMPLATE.createStudyUi()` dựng markup; session engine gắn listeners và cập nhật nội dung động.
+2. `overlay-controller.js` (`LHN_STUDY.open`) mở overlay rồi chuyển sang tab Nói (Speaking) hoặc Chép (Typing) của `unified-ui.js`; nếu phụ đề còn đang tải thì chờ `lhn-dual-captions-updated`.
 3. Typing chấm qua `LHN_DICTATION_SCORE`; chỉ 100% là pass. Enter chuyển câu sau pass; Esc reveal/reset, backtick play/pause và Ctrl replay.
-4. Shadowing giao nhận diện và ghi/phát lại giọng người dùng cho `shadowing-activity.js`. Auto-record mặc định bật; recognition rearm sau `onend`, gộp interim/final text và chấm sau 1,5 giây im lặng. Manual mode giữ continuous recognition và full replay; pass từ 70% và không tự chuyển câu.
+4. Tab Nói (`unified-ui.js`) ghi âm và nhận dạng giọng (SpeechRecognition + getUserMedia), chấm bằng `LHN_STUDY_SCORE`.
 5. `dictation:<sourceId>` lưu progress, notes, translations, title và thống kê lỗi theo mode. Session index lưu source ID/URL YouTube hoặc Web, được dùng cả bởi Dashboard Dictation. Dashboard chưa có Shadowing route; practice vẫn ở Overlay.
 6. Web TTS, translation, cue cache, thumbnails và language labels tiếp tục dùng modules hiện có. Quyền microphone do browser quản lý; thiếu MediaRecorder thì recognition vẫn có thể chạy nhưng không có own-recording replay.
 
@@ -32,10 +29,8 @@ Study luyện câu từ YouTube captions hoặc Reader Web cues trong Overlay hi
 
 - Giữ YouTube English-caption gate và Web detected/page language. Web tiếp tục dùng Reader cues, URL thật và virtual media hiện có.
 - Scoring, tokenization, learning rules và session metadata nằm trong `study/shared/`; không nhân bản hoặc chuyển Reader/TTS/translation/cache vào Study.
-- Giữ Overlay UI/selectors và inner Typing/Speaking switch. Shared session state/persistence/playback vẫn ở Dictation shell; tách dần mode-specific branches mà không đổi UX.
 - Progress sync mặc định bật; nếu tắt, Typing/Speaking giữ snapshot riêng. Notes/translations dùng chung; wrong-word statistics tách theo mode.
 - Bảo toàn Speaking one-shot/rearm, grace im lặng 1,5 giây, recording replay cutoff, unsupported-recognition fallback và retry/feedback. Bảo toàn Typing pass 100%, hints, punctuation normalization và missing-word marks.
-- Giữ learning columns (25:50:25 mặc định, bounds/persistence), repeat count mỗi mode, translation preference và video/player restoration; không resize video thật.
 
 ## 5. Kiểm tra và xác minh
 

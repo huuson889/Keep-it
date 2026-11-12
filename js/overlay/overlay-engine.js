@@ -1,3 +1,10 @@
+// Overlay engine (tái cấu trúc bước 4, v3.5.195): ghép NGUYÊN VĂN từ js/overlay/view/ cũ, theo đúng thứ tự nạp cũ.
+//   1. layout-mode.js — cài đặt (mặc định/gộp/khôi phục/lưu), chế độ xem, kích thước, rạp.
+//   2. cc-mode.js     — chế độ phụ đề, ngôn ngữ phụ đề, hàng đợi dịch (translateOne, queueCue, translateWindow…).
+//   3. touch-layout.js (chỉ phần yêu thích) — touchVideoMeta, loadTouchFavorites, setTouchFavorite… (lhnFavoriteVideos).
+// Các hàm còn ghi vào markup cũ đang ẩn sẽ được gỡ ở bước 5. Giao diện đang dùng: js/overlay/unified/.
+
+// ===== 1. layout-mode =====
 // Overlay layout modes, display sizing, and theater presentation.
 const DEFAULT_HEX = { en: '#ffff00', vi: '#ffffff', 'side-en': '#e5e7eb', 'side-vi': '#9ca3af' };
 const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
@@ -90,7 +97,6 @@ function setVideoSidebarHidden(hidden) {
   const wasTheaterLarge = isTheaterLargeActive(root);
   const sidebarHidden = Boolean(hidden);
   const modeChanged = root.classList.contains('te-sidebar-hidden') !== sidebarHidden;
-  if (modeChanged) suppressHoverPauseForModeChange();
   root.classList.toggle('te-sidebar-hidden', sidebarHidden);
   syncViewSizeClasses(root);
   const isTheaterLarge = isTheaterLargeActive(root);
@@ -108,7 +114,6 @@ function setVideoSidebarHidden(hidden) {
     setVideoDisplayModeSelection(sidebarHidden ? 'theater' : 'combined');
   }
   if (!sidebarHidden && !root.classList.contains('te-study-active')) alignActiveTranscriptFocus('auto');
-  scheduleHoverPauseSync({ modeChange: modeChanged });
   return sidebarHidden;
 }
 
@@ -536,14 +541,12 @@ function setReadingMode(enabled, { persist = false } = {}) {
   }
   const wasReading = root.classList.contains('te-reading-mode');
   const modeChanged = wasReading !== active;
-  if (modeChanged) suppressHoverPauseForModeChange();
   if (modeChanged) root.classList.remove('te-reading-audio-compact');
   root.classList.toggle('te-reading-mode', active);
   applySettings();
   setVideoDisplayModeSelection(active ? 'reading' : root.classList.contains('te-sidebar-hidden') ? 'theater' : 'combined');
   syncReadingAudioControls();
   if (modeChanged && !root.classList.contains('te-study-active')) alignActiveTranscriptFocus('auto');
-  scheduleHoverPauseSync({ modeChange: modeChanged });
   return active;
 }
 
@@ -584,4 +587,467 @@ function syncTheaterFrame() {
   frame.style.width = `${Math.round(w)}px`;
   frame.style.height = `${Math.round(h)}px`;
   scheduleTheaterSubtitleLayout(root);
+}
+
+// ===== 2. cc-mode =====
+// Caption display modes, language policy, and shared translation queue.
+let subtitleModeManuallySelectedFor = null;
+
+const TRANSLATE_WINDOW_AHEAD = 8;
+const TRANSLATE_WINDOW_BEHIND = 2;
+const TRANSLATE_CONCURRENCY = 2;
+const translateInflight = new Map();
+let translateQueue = [];
+let translateActive = 0;
+let translationSettingsRevision = 0;
+
+function translationCacheKey(text, targetLanguage = state.targetLanguage) {
+  return `${targetLanguage}:${text}`;
+}
+
+async function translateOne(text, targetLanguage = state.targetLanguage) {
+  const cacheKey = translationCacheKey(text, targetLanguage);
+  if (state.viCache.has(cacheKey)) return state.viCache.get(cacheKey);
+  if (translateInflight.has(cacheKey)) return translateInflight.get(cacheKey);
+  const job = (async () => {
+    try {
+      const res = await globalThis.LHN_MESSAGING.sendMessage({ type: 'BILINGUAL_TRANSLATE', text, targetLang: targetLanguage });
+      const out = res?.translated || '(không dịch được)';
+      if (!res?.translated) reportWebTranslationIssue(new Error('The translation response did not contain translated text.'));
+      state.viCache.set(cacheKey, out);
+      return out;
+    } catch (error) {
+      reportWebTranslationIssue(error);
+      return '(không dịch được)';
+    } finally {
+      translateInflight.delete(cacheKey);
+    }
+  })();
+  translateInflight.set(cacheKey, job);
+  return job;
+}
+
+function pumpTranslateQueue() {
+  while (translateActive < TRANSLATE_CONCURRENCY && translateQueue.length) {
+    const item = translateQueue.shift();
+    if (!item || item.cue[item.field] !== PENDING) continue;
+    translateActive++;
+    translateOne(item.text, item.targetLanguage)
+      .then((translated) => {
+        if (item.revision !== translationSettingsRevision || item.token !== state.loadToken) return;
+        item.cue[item.field] = translated;
+        if (item.token === state.loadToken) updateVietnameseRow(item.cue);
+      })
+      .finally(() => { translateActive--; pumpTranslateQueue(); });
+  }
+}
+
+function queueCueTranslation(cue, token, field, text, targetLanguage) {
+  if (!cue || cue[field] !== PENDING || !text || !targetLanguage) return;
+  if (translateQueue.some((q) => q.cue === cue && q.field === field && q.targetLanguage === targetLanguage)) return;
+  translateQueue.push({ cue, token, field, text, targetLanguage, revision:translationSettingsRevision });
+}
+
+function queueCue(cue, token) {
+  if (!cue) return;
+  if (cue.mainNeedsTranslation) queueCueTranslation(cue, token, 'mainText', cue.mainTranslationInput || cue.en, state.mainLanguage);
+  if (cue.secondaryNeedsTranslation) queueCueTranslation(cue, token, 'vi', cue.secondaryTranslationInput || cue.en, state.targetLanguage);
+}
+
+function translateWindow(centerIdx, token = state.loadToken) {
+  if (!state.captions.length) return;
+  const index = Number.isFinite(centerIdx) ? centerIdx : 0;
+  const from = Math.max(0, index - TRANSLATE_WINDOW_BEHIND);
+  const to = Math.min(state.captions.length, index + TRANSLATE_WINDOW_AHEAD);
+  for (let i = from; i < to; i++) queueCue(state.captions[i], token);
+  pumpTranslateQueue();
+}
+
+function translateVisibleRows() {
+  const list = $('te-transcript-list');
+  if (!list || !state.captions.length) return;
+  const top = list.scrollTop;
+  const bottom = top + list.clientHeight;
+  state.captions.forEach((cue, i) => {
+    const row = list.querySelector(`.yt-dual-item[data-idx="${i}"]`);
+    if (!row) return;
+    if (row.offsetTop + row.offsetHeight >= top && row.offsetTop <= bottom) queueCue(cue, state.loadToken);
+  });
+  pumpTranslateQueue();
+}
+
+function updateSubtitleLanguageLabels() {
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const fill = (picker, valueNode, menu, value, labelKey) => {
+    if (!picker || !valueNode || !menu) return;
+    const options = [['auto', t('autoLanguage')]];
+    for (const language of languages?.LANGS || []) {
+      const labelKey = { en: 'languageEnglish', vi: 'languageVietnamese', ko: 'languageKorean' }[language.code];
+      options.push([language.code, `${language.flag} ${t(labelKey || language.code)}`]);
+    }
+    const selected = value === 'same' ? 'auto' : value;
+    const selectedLabel = options.find(([code]) => code === selected)?.[1] || options[0][1];
+    picker.setAttribute('aria-label', t(labelKey));
+    picker.dataset.value = selected;
+    valueNode.textContent = selectedLabel;
+    menu.replaceChildren(...options.map(([code, label]) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'te-language-picker-option';
+      option.dataset.languageValue = code;
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', String(code === selected));
+      option.textContent = label;
+      return option;
+    }));
+  };
+  fill($('te-lang-source-picker'), $('te-lang-source-value'), $('te-lang-source-options'), state.sourceLanguageSetting, 'sourceLanguage');
+  fill($('te-lang-target-picker'), $('te-lang-target-value'), $('te-lang-target-options'), state.targetLanguageSetting, 'targetLanguage');
+  updateVideoDisplayModeLabels();
+  updateSubtitleDisplayModeLabels();
+}
+
+function updateSubtitleDisplayModeLabels() {
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  if (!menu || !trigger) return;
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const keys = {
+    bilingual: 'videoSubtitleBilingual',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
+  };
+  menu.querySelectorAll('[data-subtitle-mode]').forEach((option) => {
+    const label = option.querySelector('.te-subtitle-mode-label');
+    if (label) label.textContent = t(keys[option.dataset.subtitleMode] || 'videoSubtitleBilingual');
+  });
+  const title = menu.querySelector('.te-psheet-title');
+  if (title) title.textContent = t('videoSubtitleMode');
+  menu.querySelector('.te-psheet-x')?.setAttribute('aria-label', t('close'));
+  setSubtitleDisplayMode(trigger.dataset.subtitleMode || 'bilingual');
+}
+
+function setSubtitleDisplayMode(mode) {
+  const root = overlayEl();
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  const modes = ['bilingual', 'primary', 'translation', 'hidden'];
+  if (!root || !menu || !trigger || !modes.includes(mode)) return false;
+  modes.forEach((name) => root.classList.remove(`te-subtitle-mode-${name}`));
+  root.classList.add(`te-subtitle-mode-${mode}`);
+  root.classList.toggle('te-subs-hidden', mode === 'hidden');
+  const option = menu.querySelector(`[data-subtitle-mode="${mode}"]`);
+  menu.querySelectorAll('[data-subtitle-mode]').forEach((item) => {
+    const selected = item === option;
+    item.classList.toggle('is-selected', selected);
+    item.setAttribute('aria-checked', String(selected));
+  });
+  const keys = {
+    bilingual: 'videoSubtitleBilingual',
+    primary: 'videoSubtitlePrimary',
+    translation: 'videoSubtitleTranslation',
+    hidden: 'videoSubtitleHidden',
+  };
+  const languages = globalThis.LHN_LANGUAGES;
+  const t = (key) => languages?.t?.(key, {}, state.displayLanguage) || key;
+  const label = t(keys[mode]);
+  const selectorLabel = t('videoSubtitleMode');
+  trigger.dataset.subtitleMode = mode;
+  trigger.title = `${selectorLabel}: ${label}`;
+  trigger.setAttribute('aria-label', `${selectorLabel}: ${label}`);
+  return true;
+}
+
+function subtitleModeContextKey() {
+  return String(state.sourceType === 'web' ? webSourcePageCacheUrl() : state.sourceId || location.href || '');
+}
+
+function baseLanguageCode(language) {
+  return String(language || '').trim().replace(/_/g, '-').toLowerCase().split('-')[0];
+}
+
+function defaultSubtitleDisplayMode() {
+  const detectedCueLanguage = state.sourceType === 'web'
+    ? (state.webSourceCueLanguageKnown ? state.webSourceDetectedLanguage : '')
+    : state.sourceLanguage;
+  const cueLanguage = baseLanguageCode(detectedCueLanguage);
+  const displayLanguage = baseLanguageCode(state.displayLanguage);
+  return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
+}
+
+function applyDefaultSubtitleDisplayMode() {
+  const contextKey = subtitleModeContextKey();
+  if (contextKey && subtitleModeManuallySelectedFor === contextKey) return false;
+  return setSubtitleDisplayMode(defaultSubtitleDisplayMode());
+}
+
+function setSubtitleDisplayModeByUser(mode) {
+  if (!setSubtitleDisplayMode(mode)) return false;
+  subtitleModeManuallySelectedFor = subtitleModeContextKey() || null;
+  return true;
+}
+
+function setSubtitleModeMenuOpen(open) {
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  if (!menu || !trigger) return;
+  menu.hidden = !open;
+  trigger.setAttribute('aria-expanded', String(open));
+  if (open) placeSubtitleModeMenu();
+}
+
+// Desktop popover: shift it sideways / cap its height so it stays inside the overlay (touch layouts use the bottom sheet).
+function placeSubtitleModeMenu() {
+  const root = overlayEl();
+  const menu = $('te-subtitle-mode-menu');
+  const trigger = $('te-subtitle-mode-trigger');
+  if (!root || !menu || !trigger || menu.hidden) return;
+  menu.style.removeProperty('--te-sub-menu-dx');
+  menu.style.removeProperty('max-height');
+  if (root.classList.contains('te-touch-layout') || root.classList.contains('te-touch-theater')) return;
+  const rr = root.getBoundingClientRect(), br = trigger.getBoundingClientRect();
+  menu.style.maxHeight = `${Math.max(120, Math.floor(br.top - rr.top - 18))}px`;
+  const mr = menu.getBoundingClientRect();
+  let dx = 0;
+  if (mr.right > rr.right - 8) dx = rr.right - 8 - mr.right;
+  if (mr.left + dx < rr.left + 8) dx = rr.left + 8 - mr.left;
+  if (dx) menu.style.setProperty('--te-sub-menu-dx', `${Math.round(dx)}px`);
+}
+
+async function refreshSubtitleLanguageSettings() {
+  let sourceLanguageSetting = state.sourceLanguageSetting;
+  let targetLanguageSetting = state.targetLanguageSetting;
+  let displayLanguage = state.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
+  try {
+    const settingsKey = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings';
+    const keys = [STUDY_TRANSLATION_SETTINGS_KEY, settingsKey];
+    const stored = await browser.storage.local.get(keys);
+    const translation = stored[STUDY_TRANSLATION_SETTINGS_KEY] || {};
+    sourceLanguageSetting = ['auto', 'en', 'vi', 'ko'].includes(translation.sourceLanguage) ? translation.sourceLanguage : 'auto';
+    targetLanguageSetting = ['auto', 'same', 'en', 'vi', 'ko'].includes(translation.targetLanguage) ? translation.targetLanguage : 'auto';
+    const displaySettings = stored[settingsKey] || {};
+    const declaredDisplayLanguage = String(displaySettings.language || '').trim().toLowerCase().replace('_', '-').split('-')[0];
+    displayLanguage = globalThis.LHN_LANGUAGES?.LANGS?.some((item) => item.code === declaredDisplayLanguage)
+      ? declaredDisplayLanguage
+      : globalThis.LHN_LANGUAGES?.detectLanguage?.() || displayLanguage;
+  } catch (error) {
+    console.warn('Could not read shared subtitle language settings', error);
+  }
+  const targetLanguage = ['auto', 'same'].includes(targetLanguageSetting) ? displayLanguage : targetLanguageSetting;
+
+  const sourceChanged = sourceLanguageSetting !== state.sourceLanguageSetting;
+  const targetSettingChanged = targetLanguageSetting !== state.targetLanguageSetting;
+  const targetChanged = targetLanguage !== state.targetLanguage;
+  const displayChanged = displayLanguage !== state.displayLanguage;
+  state.displayLanguage = displayLanguage;
+  if (!sourceChanged && !targetSettingChanged && !targetChanged) {
+    updateSubtitleLanguageLabels();
+    refreshOverlayUiLocalization();
+    if (displayChanged && state.open) applyDefaultSubtitleDisplayMode();
+    return;
+  }
+  state.sourceLanguageSetting = sourceLanguageSetting;
+  state.targetLanguageSetting = targetLanguageSetting;
+  state.targetLanguage = targetLanguage;
+  state.mainLanguage = sourceLanguageSetting === 'auto' ? (state.sourceLanguage || 'en') : sourceLanguageSetting;
+  translationSettingsRevision++;
+  translateQueue = [];
+  updateSubtitleLanguageLabels();
+  refreshOverlayUiLocalization();
+  if (state.sourceType === 'web') {
+    if (state.rawCues.length) {
+      const language = state.webSourceDetectedLanguage || state.sourceLanguage || state.webSourceLanguageHint;
+      const refreshedCues = markWebReaderCues(state.rawCues, language);
+      state.rawCues = refreshedCues; state.allCues = refreshedCues; state.captions = refreshedCues;
+      state.activeIdx = -1;
+      if (state.open) { renderTranscriptList(); onTimeUpdate(); }
+    }
+    if (state.open) applyDefaultSubtitleDisplayMode();
+    return;
+  }
+  if (displayChanged && !sourceChanged && state.open) applyDefaultSubtitleDisplayMode();
+
+  if ((sourceChanged || targetSettingChanged || targetChanged) && state.sourceId) {
+    state.loadToken++;
+    prefetchToken++;
+    state.loadingFor = null;
+    state.rawCues = [];
+    state.allCues = [];
+    state.captions = [];
+    state.activeIdx = -1;
+    loadedUntil = 0;
+    if (state.open) loadCaptions();
+    else schedulePrefetch(state.sourceId);
+    return;
+  }
+
+  if ((targetChanged || sourceChanged || targetSettingChanged) && state.rawCues.length) {
+    const activeIndex = state.activeIdx;
+    state.captions = [];
+    buildCaptions();
+    translateWindow(Math.max(0, activeIndex));
+  }
+}
+
+
+// ---------- Cài đặt (mặc định ở js/core/defaults.js, lưu bằng browser.storage như các module khác) ----------
+const VI_HIDDEN_KEY = 'yt-dual-hide-vi';
+
+function isVietnameseHidden() {
+  try { return localStorage.getItem(VI_HIDDEN_KEY) === '1'; } catch { return false; }
+}
+
+function setVietnameseHidden(v) {
+  try { localStorage.setItem(VI_HIDDEN_KEY, v ? '1' : '0'); } catch {}
+  applySettings();
+}
+
+function toggleVietnamese() {
+  try { localStorage.setItem(VI_HIDDEN_KEY, isVietnameseHidden() ? '0' : '1'); } catch {}
+  applySettings();
+}
+
+// ---------- Xuất phụ đề ----------
+
+// ===== 3. yêu thích (từ touch-layout) =====
+const TOUCH_OVERLAY_TEXT = {
+  en: {
+    more: 'More', close: 'Close', enlarge: 'Show video', shrink: 'Shrink video', study: 'Study',
+    shadowing: 'Speaking practice', shadowingSub: 'Listen and repeat', dictation: 'Dictation', dictationSub: 'Listen and type',
+    theme: 'Theme', subOptions: 'Subtitle options', subLanguage: 'Subtitle language', notes: 'Notes', art: 'Art mode', settings: 'Settings',
+    hideSubs: 'Hide subtitles', showSubs: 'Show subtitles',
+    favorite: 'Favorite', favAdded: 'Added to favorites', favRemoved: 'Removed from favorites', fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen',
+    repeat: 'Repeat sentence', volume: 'Volume', brightness: 'Brightness', auto: 'Auto', gestureHint: 'Swipe left side: volume · right side: brightness', gestureHint2: 'Swipe sideways: seek · swipe down in the middle: exit', hintClose: 'Tap to close',
+    size: 'Text size', small: 'Small', medium: 'Medium', large: 'Large', mainLine: 'Primary subtitle', translationLine: 'Translated subtitle',
+    tabVideo: 'Video subtitles', tabSide: 'Scrolling subtitles', advanced: 'Advanced', white: 'White', grey: 'Grey', yellow: 'Yellow', green: 'Green', cyan: 'Cyan', red: 'Red', pink: 'Pink', purple: 'Purple', defaultColor: 'Default',
+    previewMain: 'Keep exploring everything', previewTranslation: 'Translation appears here',
+    videoSettings: 'Video settings', reset: 'Reset', mainColor: 'Primary subtitle color', trColor: 'Translated subtitle color',
+    background: 'Background', bgNote: 'Applies in fullscreen', bgNone: 'None', bgSoft: 'Soft', bgSolid: 'Solid', font: 'Font', weight: 'Weight',
+  },
+  vi: {
+    more: 'Thêm', close: 'Đóng', enlarge: 'Phóng to video', shrink: 'Thu nhỏ video', study: 'Học',
+    shadowing: 'Luyện nói', shadowingSub: 'Nghe và nói lại', dictation: 'Chép chính tả', dictationSub: 'Nghe và gõ lại',
+    theme: 'Chủ đề', subOptions: 'Tùy chọn phụ đề', subLanguage: 'Ngôn ngữ phụ đề', notes: 'Ghi chú', art: 'Chế độ nghệ thuật', settings: 'Cài đặt',
+    hideSubs: 'Ẩn phụ đề', showSubs: 'Hiện phụ đề',
+    favorite: 'Yêu thích', favAdded: 'Đã thêm vào yêu thích', favRemoved: 'Đã bỏ yêu thích', fullscreen: 'Toàn màn hình', exitFullscreen: 'Thoát toàn màn hình',
+    repeat: 'Lặp lại câu', volume: 'Âm lượng', brightness: 'Độ sáng', auto: 'Tự động', gestureHint: 'Vuốt bên trái: âm lượng · bên phải: độ sáng', gestureHint2: 'Vuốt ngang: tua · vuốt xuống ở giữa: thoát', hintClose: 'Chạm để đóng',
+    size: 'Cỡ chữ', small: 'Nhỏ', medium: 'Trung bình', large: 'Lớn', mainLine: 'Phụ đề chính', translationLine: 'Phụ đề dịch',
+    tabVideo: 'Phụ đề video', tabSide: 'Phụ đề cuộn', advanced: 'Nâng cao', white: 'Trắng', grey: 'Xám', yellow: 'Vàng', green: 'Xanh lá', cyan: 'Xanh lơ', red: 'Đỏ', pink: 'Hồng', purple: 'Tím', defaultColor: 'Mặc định',
+    previewMain: 'Keep exploring everything', previewTranslation: 'Bản dịch hiển thị ở đây',
+    videoSettings: 'Cài đặt video', reset: 'Đặt lại', mainColor: 'Màu phụ đề chính', trColor: 'Màu phụ đề dịch',
+    background: 'Nền', bgNote: 'Áp dụng khi xem toàn màn hình', bgNone: 'Không', bgSoft: 'Mờ', bgSolid: 'Đậm', font: 'Phông chữ', weight: 'Độ đậm',
+  },
+  ko: {
+    more: '더보기', close: '닫기', enlarge: '영상 크게 보기', shrink: '영상 작게 보기', study: '학습',
+    shadowing: '말하기 연습', shadowingSub: '듣고 따라 말하기', dictation: '받아쓰기', dictationSub: '듣고 입력하기',
+    theme: '테마', subOptions: '자막 옵션', subLanguage: '자막 언어', notes: '노트', art: '아트 모드', settings: '설정',
+    hideSubs: '자막 숨기기', showSubs: '자막 표시',
+    favorite: '즐겨찾기', favAdded: '즐겨찾기에 추가됨', favRemoved: '즐겨찾기에서 제거됨', fullscreen: '전체 화면', exitFullscreen: '전체 화면 종료',
+    repeat: '문장 반복', volume: '볼륨', brightness: '밝기', auto: '자동', gestureHint: '왼쪽 스와이프: 볼륨 · 오른쪽: 밝기', gestureHint2: '가로 스와이프: 탐색 · 가운데에서 아래로: 나가기', hintClose: '탭하여 닫기',
+    size: '글자 크기', small: '작게', medium: '보통', large: '크게', mainLine: '원문 자막', translationLine: '번역 자막',
+    tabVideo: '동영상 자막', tabSide: '스크롤 자막', advanced: '고급', white: '흰색', grey: '회색', yellow: '노랑', green: '초록', cyan: '하늘색', red: '빨강', pink: '분홍', purple: '보라', defaultColor: '기본값',
+    previewMain: 'Keep exploring everything', previewTranslation: '번역이 여기에 표시됩니다',
+    videoSettings: '동영상 설정', reset: '초기화', mainColor: '원문 자막 색상', trColor: '번역 자막 색상',
+    background: '배경', bgNote: '전체 화면에서 적용', bgNone: '없음', bgSoft: '연하게', bgSolid: '진하게', font: '글꼴', weight: '굵기',
+  },
+};
+
+let touchFavoriteIds = new Set();
+
+function touchOverlayText(key) {
+  const lang = state?.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || 'en';
+  return (TOUCH_OVERLAY_TEXT[lang] || TOUCH_OVERLAY_TEXT.en)[key] ?? TOUCH_OVERLAY_TEXT.en[key] ?? key;
+}
+
+function touchFavoriteStorageKey() {
+  return globalThis.LHN_CONFIG?.STORAGE_KEYS?.FAVORITE_VIDEOS || 'lhnFavoriteVideos';
+}
+
+function touchVideoId() {
+  if (state?.sourceType === 'web') return '';
+  return globalThis.LHN_THUMBNAILS?.youtubeVideoId?.(location.href) || '';
+}
+
+function touchFavoritePageUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    if (!/^https?:$/.test(url.protocol)) return '';
+    url.hash = '';
+    return url.href.slice(0, 2048);
+  } catch { return ''; }
+}
+
+function touchFavoriteKey() {
+  return touchVideoId() || (state?.sourceType === 'web' ? touchFavoritePageUrl(state.webSourceUrl || location.href) : '');
+}
+
+function touchFavoriteEntryKey(entry) {
+  return entry?.videoId || entry?.url || '';
+}
+
+function touchVideoTitle() {
+  const clean = (value) => String(value || '').replace(/\s+/g, ' ').replace(/\s*[-|]\s*YouTube\s*$/i, '').trim();
+  const heading = clean(document.querySelector('h1.ytd-watch-metadata, ytd-watch-metadata h1, .slim-video-information-title, ytm-slim-video-metadata-section-renderer h2')?.textContent);
+  const title = heading || clean(document.title);
+  return /^(youtube|keepit)$/i.test(title) ? '' : title;
+}
+
+function touchVideoMeta() {
+  if (!touchVideoId()) {
+    const url = touchFavoritePageUrl(state?.webSourceUrl || location.href);
+    let site = '';
+    try { site = new URL(url).hostname; } catch {}
+    const title = String(state?.webSourceTitle || document.title || '').replace(/^\s*Keepit\s*-\s*/i, '').replace(/\s+/g, ' ').trim();
+    return { url, title: title.slice(0, 300), channel: site.slice(0, 200) };
+  }
+  const title = touchVideoTitle();
+  const channel = document.querySelector('ytd-watch-metadata ytd-channel-name a, #owner ytd-channel-name a, .slim-owner-channel-name, ytm-slim-owner-renderer .slim-owner-channel-name')?.textContent?.trim() || '';
+  return { title: title.slice(0, 300), channel: channel.slice(0, 200) };
+}
+
+function syncTouchFavoriteButtons(beat = false) {
+  const root = overlayEl();
+  if (!root) return;
+  const id = touchFavoriteKey();
+  const on = Boolean(id && touchFavoriteIds.has(id));
+  root.classList.toggle('te-touch-no-fav', !id);
+  root.querySelectorAll('.te-touch-fav').forEach((button) => {
+    button.classList.toggle('on', on);
+    button.setAttribute('aria-pressed', String(on));
+    button.title = touchOverlayText('favorite');
+    button.setAttribute('aria-label', button.title);
+    if (beat) { button.classList.remove('te-touch-beat'); void button.offsetWidth; button.classList.add('te-touch-beat'); }
+  });
+}
+
+async function loadTouchFavorites() {
+  const key = touchFavoriteStorageKey();
+  try {
+    const stored = await globalThis.browser?.storage?.local?.get(key);
+    const list = Array.isArray(stored?.[key]) ? stored[key] : [];
+    touchFavoriteIds = new Set(list.map(touchFavoriteEntryKey).filter(Boolean));
+  } catch { touchFavoriteIds = new Set(); }
+  syncTouchFavoriteButtons();
+}
+
+async function setTouchFavorite(on) {
+  const id = touchFavoriteKey();
+  if (!id) return false;
+  const key = touchFavoriteStorageKey();
+  const stored = await globalThis.browser.storage.local.get(key);
+  const list = Array.isArray(stored?.[key]) ? stored[key] : [];
+  const has = list.some((entry) => touchFavoriteEntryKey(entry) === id);
+  if (has !== on) {
+    const rest = list.filter((entry) => touchFavoriteEntryKey(entry) !== id);
+    const entry = touchVideoId() ? { videoId: id, ...touchVideoMeta(), addedAt: Date.now() } : { ...touchVideoMeta(), addedAt: Date.now() };
+    const next = on ? [entry, ...rest] : rest;
+    await globalThis.browser.storage.local.set({ [key]: next });
+    touchFavoriteIds = new Set(next.map(touchFavoriteEntryKey).filter(Boolean));
+    showViewToast(touchOverlayText(on ? 'favAdded' : 'favRemoved'));
+  }
+  syncTouchFavoriteButtons(on);
+  return true;
 }

@@ -58,13 +58,6 @@ const state = {
   loadingFor: null,
   loop: false,
   pauseReasons: new Set(),
-  hoverPauseReasons: new Set(),
-  hoverPauseSuppressionActive: false,
-  hoverPauseSuppressionRevision: null,
-  hoverPointer: null,
-  hoverPointerRevision: 0,
-  hoverPauseModeChangeRevision: null,
-  hoverPauseSyncFrame: null,
   managedPauseMedia: null,
   popupObserver: null,
   sourceType: 'video',
@@ -200,127 +193,6 @@ function resumeMediaFor(reason) {
   if (media?.paused) media.play().catch(() => {});
 }
 
-const HOVER_PAUSE_ZONES = [
-  { reason: 'subtitle-main-hover', selector: '.te-sub-en' },
-  { reason: 'subtitle-sidebar-hover', selector: '.yt-dual-item' },
-];
-
-function activateHoverPause(reason) {
-  if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.has(reason)) return;
-  if (state.hoverPauseModeChangeRevision === state.hoverPointerRevision) {
-    beginHoverPauseSuppression();
-    return;
-  }
-  state.hoverPauseReasons.add(reason);
-  pauseMediaFor(reason);
-}
-
-function beginHoverPauseSuppression({ requirePauseZone = false } = {}) {
-  if (requirePauseZone && !getHoverPauseReasonsAtPointer().size) return false;
-  state.hoverPauseSuppressionActive = true;
-  state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
-  for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
-  return true;
-}
-
-function releaseHoverPause(reason) {
-  if (!state.hoverPauseReasons.delete(reason)) return;
-  resumeMediaFor(reason);
-}
-
-function rememberHoverPointer(event) {
-  // Hover pause is a mouse feature; a finger has no hover and would leave the pause stuck after lifting.
-  if (event?.pointerType === 'touch') return false;
-  if (!Number.isFinite(event?.clientX) || !Number.isFinite(event?.clientY)) return false;
-  const moved = !state.hoverPointer
-    || state.hoverPointer.x !== event.clientX
-    || state.hoverPointer.y !== event.clientY;
-  state.hoverPointer = { x: event.clientX, y: event.clientY };
-  if (moved) {
-    state.hoverPointerRevision += 1;
-    state.hoverPauseModeChangeRevision = false;
-    syncHoverPauseAtPointer();
-  }
-  return moved;
-}
-
-function getHoverPauseReasonsAtPointer() {
-  const pointer = state.hoverPointer;
-  if (!state.open || !pointer || typeof shadow?.elementFromPoint !== 'function') return new Set();
-  const target = shadow.elementFromPoint(pointer.x, pointer.y);
-  if (!target || typeof target.closest !== 'function') return new Set();
-  return new Set(HOVER_PAUSE_ZONES
-    .filter(({ selector }) => target.closest(selector))
-    .map(({ reason }) => reason));
-}
-
-function syncHoverPauseAtPointer(suppressCurrent = false) {
-  const nextReasons = getHoverPauseReasonsAtPointer();
-  if (suppressCurrent) {
-    if (state.hoverPauseSuppressionActive || state.hoverPauseReasons.size || nextReasons.size) {
-      beginHoverPauseSuppression();
-    }
-    return;
-  }
-
-  if (state.hoverPauseSuppressionActive) {
-    if (state.hoverPointerRevision !== state.hoverPauseSuppressionRevision) {
-      if (nextReasons.size) state.hoverPauseSuppressionRevision = state.hoverPointerRevision;
-      else {
-        state.hoverPauseSuppressionActive = false;
-        state.hoverPauseSuppressionRevision = null;
-      }
-    }
-    if (state.hoverPauseSuppressionActive) {
-      for (const reason of [...state.hoverPauseReasons]) releaseHoverPause(reason);
-      return;
-    }
-  }
-
-  // Activate the next zone first so crossing between pause zones never resumes the video briefly.
-  for (const reason of nextReasons) activateHoverPause(reason);
-  for (const reason of [...state.hoverPauseReasons]) {
-    if (!nextReasons.has(reason)) releaseHoverPause(reason);
-  }
-}
-
-function suppressHoverPauseForModeChange() {
-  state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
-  const isOverPauseZone = state.hoverPauseSuppressionActive
-    || state.hoverPauseReasons.size > 0
-    || getHoverPauseReasonsAtPointer().size > 0;
-  if (isOverPauseZone) beginHoverPauseSuppression();
-}
-
-function scheduleHoverPauseSync({ modeChange = false } = {}) {
-  if (!state.open) return;
-  if (modeChange) state.hoverPauseModeChangeRevision = state.hoverPointerRevision;
-  if (state.hoverPauseSyncFrame !== null) return;
-  state.hoverPauseSyncFrame = requestAnimationFrame(() => {
-    state.hoverPauseSyncFrame = null;
-    const suppressCurrent = typeof state.hoverPauseModeChangeRevision === 'number'
-      && state.hoverPauseModeChangeRevision === state.hoverPointerRevision;
-    state.hoverPauseModeChangeRevision = null;
-    syncHoverPauseAtPointer(suppressCurrent);
-  });
-}
-
-function clearHoverPauseState() {
-  if (state.hoverPauseSyncFrame !== null) {
-    cancelAnimationFrame(state.hoverPauseSyncFrame);
-    state.hoverPauseSyncFrame = null;
-  }
-  state.hoverPointer = null;
-  state.hoverPointerRevision = 0;
-  state.hoverPauseModeChangeRevision = null;
-  state.hoverPauseSuppressionActive = false;
-  state.hoverPauseSuppressionRevision = null;
-  for (const { reason } of HOVER_PAUSE_ZONES) {
-    state.hoverPauseReasons.delete(reason);
-    resumeMediaFor(reason);
-  }
-}
-
 function enforceVideoPause(video) {
   if (!state.pauseReasons.size || video.paused) return;
   state.managedPauseMedia = video;
@@ -441,7 +313,6 @@ function buildOverlay() {
     placeSubtitleModeMenu();
   });
   bindUI();
-  if (!unified) setupTouchOverlayLayout();
   observeTheaterSubtitleLayout();
   if (unified) globalThis.LHN_UNIFIED_OVERLAY.mount(shadow, host);
   refreshOverlayUiLocalization();
@@ -623,7 +494,6 @@ function closeOverlay() {
   document.documentElement.classList.remove('lhn-video-overlay-open');
   restoreOverlayPageScrollbar();
   restoreOverlayViewportScale();
-  clearHoverPauseState();
   overlayEl()?.classList.add('te-hidden');
   if (shadow) shadow.host.style.display = 'none';
   uiAll('.te-modal-backdrop').forEach((m) => m.classList.add('hidden'));
@@ -1147,7 +1017,6 @@ function setupProgressDrag(track) {
     overlayEl()?.classList.remove('te-progress-dragging');
     if (track.hasPointerCapture?.(event.pointerId)) track.releasePointerCapture(event.pointerId);
     if (event.type === 'pointerup' && Number.isFinite(time) && state.activeMedia) state.activeMedia.currentTime = time;
-    globalThis.LHN_TOUCH_THEATER?.showControls?.();
   };
   track.addEventListener('pointerup', finish);
   track.addEventListener('pointercancel', finish);
@@ -1299,7 +1168,6 @@ function onTranscriptClick(e) {
   const index = Number(row.dataset.idx);
   const cap = state.captions[index];
   if (!cap) return;
-  beginHoverPauseSuppression({ requirePauseZone: true });
   translateWindow(index);
   v.currentTime = cap.start;
   v.play().catch(() => {});
@@ -1415,7 +1283,6 @@ function bindUI() {
   const modalExport = $('te-modal-export');
   const settingsBtn = $('te-settings-btn');
   const floatingBtn = $('te-floating-btn');
-  root?.addEventListener('pointermove', rememberHoverPointer, true);
 
   const theaterSubtitleHandle = ui('#te-theater-subtitle-drag-handle');
   const theaterSubtitlePanel = ui('.te-sub-container');
@@ -1458,18 +1325,6 @@ function bindUI() {
       saveSettings();
     });
   }
-
-  const mainSubtitleText = ui('.te-sub-en');
-  mainSubtitleText.addEventListener('pointerover', (event) => {
-    if (event.pointerType === 'touch') return;
-    rememberHoverPointer(event);
-    if (!mainSubtitleText.contains(event.relatedTarget)) activateHoverPause('subtitle-main-hover');
-  });
-  mainSubtitleText.addEventListener('pointerout', (event) => {
-    if (event.pointerType === 'touch') return;
-    rememberHoverPointer(event);
-    if (!mainSubtitleText.contains(event.relatedTarget)) scheduleHoverPauseSync();
-  });
 
   // Định vị popup Cài đặt theo mép phải control bar; các submenu giữ anchor cũ.
   const positionModal = (modalEl) => {
@@ -1790,20 +1645,6 @@ function bindUI() {
     clearTimeout(transcriptClickTimer);
     transcriptClickTimer = setTimeout(() => onTranscriptClick({ target: timestamp }), 260);
   });
-  transcriptList.addEventListener('pointerover', (e) => {
-    if (e.pointerType === 'touch') return;
-    rememberHoverPointer(e);
-    const item = e.target.closest('.yt-dual-item');
-    const previousItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
-    if (item && !previousItem) activateHoverPause('subtitle-sidebar-hover');
-  });
-  transcriptList.addEventListener('pointerout', (e) => {
-    if (e.pointerType === 'touch') return;
-    rememberHoverPointer(e);
-    const item = e.target.closest('.yt-dual-item');
-    const nextItem = e.relatedTarget instanceof Element ? e.relatedTarget.closest('.yt-dual-item') : null;
-    if (item && !nextItem) scheduleHoverPauseSync();
-  });
   // Dịch lười và ghi nhận vị trí focus mới khi người dùng tự cuộn transcript.
   let scrollRaf = 0;
   const markManualTranscriptScroll = () => markTranscriptManualScroll();
@@ -2114,47 +1955,96 @@ function handleOverlayShortcut(event) {
   pulseControl(action[0]);
 }
 
+// Web TTS start + Reading-mode audio controls (moved from study/shadowing/shadowing.js in v3.5.196).
+function startWebTtsInViewMode() {
+  if (state.sourceType !== 'web' || !state.open || !state.activeMedia?.paused) return;
+  try {
+    const playback = state.activeMedia.play?.();
+    playback?.catch?.((error) => reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' }));
+  } catch (error) {
+    reportWebIssue('Could not start Web TTS playback.', error, { level: 'error' });
+  }
+}
+
+function syncReadingAudioControls() {
+  const root = overlayEl();
+  const toggle = ui('#te-reading-media-toggle');
+  const bar = ui('.te-reading-mini-audio');
+  const play = ui('#te-reading-mini-play');
+  if (!root || !toggle || !bar || !play) return;
+  const reading = isReadingModeActive();
+  const compact = reading && root.classList.contains('te-reading-audio-compact');
+  toggle.disabled = !reading;
+  toggle.setAttribute('aria-pressed', String(compact));
+  const toggleLabel = overlayT(compact ? 'dictationExpandVideo' : 'dictationCompactVideo');
+  toggle.title = toggleLabel;
+  toggle.setAttribute('aria-label', toggleLabel);
+  const videoIcon = '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>';
+  const audioIcon = '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>';
+  toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${compact ? audioIcon : videoIcon}</svg>`;
+  bar.setAttribute('aria-hidden', String(!compact));
+  bar.setAttribute('aria-label', overlayT('dictationAudioTitle'));
+  const playing = Boolean(state.activeMedia && !state.activeMedia.paused);
+  bar.classList.toggle('playing', playing);
+  const playLabel = overlayT(playing ? 'dictationMiniPause' : 'dictationMiniPlay');
+  play.title = playLabel;
+  play.setAttribute('aria-label', playLabel);
+  play.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${playing ? PAUSE_PATH : PLAY_PATH}</svg>`;
+}
+
+function setReadingAudioCompact(compact) {
+  const root = overlayEl();
+  if (!root || !isReadingModeActive()) return false;
+  const nextCompact = Boolean(compact);
+  const modeChanged = root.classList.contains('te-reading-audio-compact') !== nextCompact;
+  root.classList.toggle('te-reading-audio-compact', nextCompact);
+  syncReadingAudioControls();
+  return nextCompact;
+}
+
+function toggleReadingAudioCompact() {
+  if (!isReadingModeActive()) return false;
+  return setReadingAudioCompact(!overlayEl().classList.contains('te-reading-audio-compact'));
+}
+
 // Unified overlay UI (js/overlay/unified). Available when its scripts loaded; active once mounted in buildOverlay.
 function unifiedUiAvailable() {
   return typeof UNIFIED_OVERLAY_HTML === 'string' && typeof UNIFIED_OVERLAY_CSS === 'string' && Boolean(globalThis.LHN_UNIFIED_OVERLAY?.mount);
 }
 function unifiedUi() { return Boolean(globalThis.LHN_UNIFIED_OVERLAY?.isActive?.()); }
 
-// With the unified UI, every Study entry (shortcuts, Dashboard intent, popup, legacy buttons) opens the Nói / Chép
-// tabs instead of the legacy Study panel; without it LHN_STUDY is the legacy API unchanged.
+// Every Study entry (shortcuts, Dashboard intent, popup) opens the Nói / Chép tabs of the unified UI.
+// The legacy Study panel (study/dictation, study/shadowing) was removed in v3.5.196.
 (() => {
-  const legacy = globalThis.LHN_STUDY;
-  if (!legacy) return;
   const U = () => globalThis.LHN_UNIFIED_OVERLAY;
   const tabOf = (mode) => (mode === 'speaking' ? 'speak' : 'write');
   const modeOf = (tab) => (tab === 'speak' ? 'speaking' : tab === 'write' ? 'typing' : null);
   let waitingTab = '';
   const studyOpen = () => unifiedUi() && U().isOpen() && U().tab() !== 'view';
   const proxy = Object.freeze({
-    ...legacy,
-    toggle(...args) {
-      if (!unifiedUi()) return legacy.toggle?.(...args);
+    toggle() {
+      if (!unifiedUi()) return;
       if (studyOpen()) return proxy.close();
       return proxy.open({ waitForCaptions: true, mode: preferredLearningMode() });
     },
     open(opts = {}) {
-      if (!unifiedUi()) return legacy.open?.(opts);
+      if (!unifiedUi()) return;
       if (!state.open) { openOverlay(); if (!state.open) return; }
       const tab = tabOf(opts.mode);
-      // captions still loading: switch as soon as they arrive (the legacy panel waited the same way)
+      // captions still loading: switch as soon as they arrive
       if (opts.waitForCaptions && !getStudyCues().length && state.loadingFor === state.sourceId) { waitingTab = tab; return; }
       waitingTab = '';
       U().setTab(tab);
     },
-    close(opts) {
+    close() {
       waitingTab = '';
-      if (!unifiedUi()) return legacy.close?.(opts);
+      if (!unifiedUi()) return;
       if (studyOpen()) U().setTab('view'); // back to Xem (closing the overlay closes the UI first)
     },
-    isOpen: () => (unifiedUi() ? studyOpen() || Boolean(waitingTab) : Boolean(legacy.isOpen?.())),
-    getMode: () => (unifiedUi() ? (studyOpen() ? modeOf(U().tab()) : waitingTab ? modeOf(waitingTab) : null) : legacy.getMode?.() ?? null),
-    getActivity: () => (unifiedUi() ? (studyOpen() ? (U().tab() === 'speak' ? 'shadowing' : 'dictation') : null) : legacy.getActivity?.() ?? null),
-    refreshLanguage: () => { legacy.refreshLanguage?.(); globalThis.LHN_UNIFIED_TEXT?.refresh?.(); },
+    isOpen: () => unifiedUi() && (studyOpen() || Boolean(waitingTab)),
+    getMode: () => (unifiedUi() ? (studyOpen() ? modeOf(U().tab()) : waitingTab ? modeOf(waitingTab) : null) : null),
+    getActivity: () => (unifiedUi() && studyOpen() ? (U().tab() === 'speak' ? 'shadowing' : 'dictation') : null),
+    refreshLanguage: () => { globalThis.LHN_UNIFIED_TEXT?.refresh?.(); },
   });
   document.addEventListener('lhn-dual-captions-updated', () => {
     if (!waitingTab || !unifiedUi() || !state.open) return;
