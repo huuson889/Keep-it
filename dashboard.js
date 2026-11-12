@@ -964,12 +964,17 @@ function applyAnnotationChange(change, renderNow = true) {
       for (let i = index; i < annotations.length; i++) annotationPositionById.set(annotations[i].id, i);
     }
   } else if (change.type === "deletePage" && typeof change.url === "string") {
-    let changed = false;
-    for (let i = annotations.length - 1; i >= 0; i--) {
-      if (pageKey(annotations[i]) !== change.url) continue;
-      annotationById.delete(annotations[i].id); annotationPositionById.delete(annotations[i].id); annotations.splice(i, 1); changed = true;
+    let changed = false, write = 0;
+    for (let read = 0; read < annotations.length; read++) {
+      const item = annotations[read];
+      if (pageKey(item) === change.url) {
+        annotationById.delete(item.id); annotationPositionById.delete(item.id); changed = true;
+        continue;
+      }
+      if (write !== read) annotations[write] = item;
+      annotationPositionById.set(item.id, write++);
     }
-    if (changed) annotations.forEach((item, index) => annotationPositionById.set(item.id, index));
+    if (changed) annotations.length = write;
   } else return false;
   profileDataCache = null;
   filterOptionsCache = null;

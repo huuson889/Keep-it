@@ -355,6 +355,7 @@ const FLAG_SVGS = {
   function formatSpeed(value) { return `${Number(value || 1).toFixed(2).replace(/\.?0+$/,"")}x`; }
   synth?.addEventListener?.("voiceschanged",()=>{systemVoices=synth.getVoices(); selectedVoice=systemVoices.find(voice=>voice.voiceURI===settings.browserVoiceURI)||selectedVoice; syncToolbar(); if(popover("voices").classList.contains("lhn-open")) renderVoiceChoices();});
   function applySettings(next) {
+    const wasReaderActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     settings = { ...DEFAULTS, ...(next || {}) };
     settings.speechSpeed = Math.max(.5, Math.min(3, Math.round((Number(settings.speechSpeed) || 1) * 100) / 100));
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
@@ -368,8 +369,9 @@ const FLAG_SVGS = {
     document.documentElement.style.setProperty("--lhn-br-translation-color", getTranslationColor());
     document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, card.parentElement));
     applyWebFont();
-    if (!settings.enableTTS || isReaderDisabledOnThisWebsite()) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); bar.classList.remove("lhn-show"); }
-    else updateSpeakers();
+    const readerActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
+    if (!readerActive) { stopReading(); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.remove()); bar.classList.remove("lhn-show"); }
+    else { if (!wasReaderActive) mainBlocksDirty = true; updateSpeakers(); }
   }
   function isReaderDisabledOnThisWebsite() {
     const hostname = location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -387,8 +389,10 @@ const FLAG_SVGS = {
       return;
     }
     try {
-      await Promise.race([ensureWebFontStylesheet(), new Promise(resolve => setTimeout(resolve, 700))]);
-      await Promise.race([document.fonts.load(`16px ${family}`), new Promise(resolve => setTimeout(resolve, 1200))]);
+      if (family !== "system-ui, -apple-system, sans-serif") {
+        await Promise.race([ensureWebFontStylesheet(), new Promise(resolve => setTimeout(resolve, 700))]);
+        await Promise.race([document.fonts.load(`16px ${family}`), new Promise(resolve => setTimeout(resolve, 1200))]);
+      }
     } catch {}
     if (requestId !== webFontRequestId || settings.webFontFamily !== family) return;
     loadedWebFontFamily = family;
@@ -1032,8 +1036,9 @@ const FLAG_SVGS = {
       document.querySelectorAll(".lhn-bilingual-web-font").forEach(node => node.classList.remove("lhn-bilingual-web-font"));
       bar.classList.remove("lhn-show");
     } else {
+      mainBlocksDirty = true;
       applyWebFont();
-      if (settings.enableTTS) updateSpeakers();
+      if (settings.enableTTS && !isReaderDisabledOnThisWebsite()) updateSpeakers();
       if (window.__lhnBilingualLazy) observeLazy();
     }
   });
@@ -1081,12 +1086,22 @@ const FLAG_SVGS = {
   }).catch(() => applySettings(DEFAULTS));
   window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", syncToolbar);
   let pageMutationTimer = 0;
+  function shouldObserveReaderMutations() {
+    return !websiteDisabled && ((settings.enableTTS && !isReaderDisabledOnThisWebsite()) || Boolean(window.__lhnBilingualLazy));
+  }
   const pageObserver = new MutationObserver(records => {
+    if (!shouldObserveReaderMutations()) return;
     const isOwn = node => node?.nodeType === 1 && (node.matches?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style") || node.closest?.(".lhn-bilingual-card,.lhn-bilingual-speaker,#lhn-bilingual-reading-bar,#lhn-bilingual-reader-debug-style"));
     const hasPageChange = records.some(record => !isOwn(record.target) && [...record.addedNodes, ...record.removedNodes].some(node => !isOwn(node)));
     if (!hasPageChange) return;
     clearTimeout(pageMutationTimer);
-    mainBlocksDirty = true; pageMutationTimer = setTimeout(() => { readerBlocks(true); if (settings.enableTTS) updateSpeakers(); if (window.__lhnBilingualLazy) observeLazy(); syncToolbar(); }, 900);
+    mainBlocksDirty = true; pageMutationTimer = setTimeout(() => {
+      if (!shouldObserveReaderMutations()) return;
+      readerBlocks(true);
+      if (settings.enableTTS && !isReaderDisabledOnThisWebsite()) updateSpeakers();
+      if (window.__lhnBilingualLazy) observeLazy();
+      syncToolbar();
+    }, 900);
   });
   pageObserver.observe(document.documentElement, { childList:true, subtree:true });
 })();

@@ -24,7 +24,8 @@
   let translateIcon = null, translationPopup = null, translationRequestId = 0, dictionaryPopup = null, dictionaryRequestId = 0;
   let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
-  let sidebar = null, sidebarOpen = false, pageLayoutSnapshot = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0;
+  let sidebar = null, sidebarOpen = false, pageLayoutSnapshot = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
+  const sidebarSearchMetadata = new WeakMap();
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
   const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
@@ -185,6 +186,7 @@
   }
   const isEnglishDictionaryWord = text => /^[A-Za-z]+(?:['’][A-Za-z]+)?$/.test(cleanText(text));
   const dictionaryCachePrefix = "lhnFullDictionary:v2:", dictionaryTranslationCachePrefix = "lhnFullDictionaryTranslation:v1:", DICTIONARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+  const dictionaryTranslationRequests = new Map(), dictionaryTranslationRequestsBySignal = new WeakMap();
   async function getDictionaryCache(key, legacyKey) {
     try {
       const entry = (await browser.storage.local.get(key))[key];
@@ -241,28 +243,40 @@
   }
   async function dictionaryTranslate(text, targetLanguage, signal) {
     const cacheKey = dictionaryTranslationCacheKey(text, targetLanguage);
-    try {
-      const cached = (await browser.storage.local.get(cacheKey))[cacheKey];
-      if (cached && Date.now() - cached.timestamp < DICTIONARY_CACHE_TTL && cached.data?.translatedText) return cached.data;
-      if (cached) await browser.storage.local.remove(cacheKey);
-    } catch (error) { console.warn("Could not read related-word translation cache", error); }
-    let result;
-    try {
-      const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
-      if (!response.ok) throw new Error("Google Translate unavailable");
-      const data = await response.json();
-      result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
-    } catch (error) {
-      if (signal?.aborted) throw error;
-      const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
-      if (!response.ok) throw new Error("Dictionary translation unavailable");
-      const data = await response.json();
-      if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
-      result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
+    let requests = dictionaryTranslationRequests;
+    if (signal && typeof signal === "object") {
+      requests = dictionaryTranslationRequestsBySignal.get(signal);
+      if (!requests) { requests = new Map(); dictionaryTranslationRequestsBySignal.set(signal, requests); }
     }
-    try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
-    catch (error) { console.warn("Could not save related-word translation cache", error); }
-    return result;
+    const pending = requests.get(cacheKey);
+    if (pending) return pending;
+    const request = (async () => {
+      try {
+        const cached = (await browser.storage.local.get(cacheKey))[cacheKey];
+        if (cached && Date.now() - cached.timestamp < DICTIONARY_CACHE_TTL && cached.data?.translatedText) return cached.data;
+        if (cached) await browser.storage.local.remove(cacheKey);
+      } catch (error) { console.warn("Could not read related-word translation cache", error); }
+      let result;
+      try {
+        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
+        if (!response.ok) throw new Error("Google Translate unavailable");
+        const data = await response.json();
+        result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
+        if (!response.ok) throw new Error("Dictionary translation unavailable");
+        const data = await response.json();
+        if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
+        result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
+      }
+      try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
+      catch (error) { console.warn("Could not save related-word translation cache", error); }
+      return result;
+    })();
+    requests.set(cacheKey, request);
+    try { return await request; }
+    finally { if (requests.get(cacheKey) === request) requests.delete(cacheKey); }
   }
   const IPA_TIMEOUT_MS = 3000;
   async function fetchIpaSource(url, signal, read) {
@@ -608,6 +622,11 @@
     for (let i = Math.max(start, end - 1); i < text.length; i++) if (isTerminal(i)) { sentenceEnd = i + 1; break; }
     return cleanText(text.slice(sentenceStart, sentenceEnd));
   }
+  function sameAnnotationContent(existing, next) {
+    if (!existing || !next) return false;
+    const persistedFields = ["quote", "note", "contextNote", "url", "title", "hostname", "thumbnailUrl", "prefix", "suffix", "createdAt", "color", "tags"];
+    return persistedFields.every(key => JSON.stringify(existing[key]) === JSON.stringify(next[key]));
+  }
   function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
     if (!websiteSettingsReady || websiteDisabled) return;
     const selectedBeforeComposer = cleanText(range?.toString());
@@ -704,12 +723,15 @@
     requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); position(panel, rect ? rect.left : innerWidth / 2 - 140, rect ? rect.bottom + 8 : innerHeight / 2); } });
     // The temporary inline wrappers keep the selected text visible after focus moves to the note field.
     requestAnimationFrame(() => { if (panel && textarea.isConnected) textarea.focus({ preventScroll: true }); }) ;
+    let saveInFlight = false;
     async function save() {
-      if (!panel) return;
+      if (!panel || saveInFlight) return;
       const q = existing?.quote || selectedQuote;
       if (!q) { removeComposer(); return; }
       const context = selectedContext;
       const item = { quote: q, note: textarea.value.trim(), contextNote: selectedSentence || existing?.contextNote || "", tags: tagEditor.getTags(), color: selectedColor, url: existing?.url || pageUrl(), title: existing?.title || pageTitle(), hostname: existing?.hostname || location.hostname, thumbnailUrl: existing?.thumbnailUrl || pageThumbnailUrl(), prefix: context.prefix || existing?.prefix || "", suffix: context.suffix || existing?.suffix || "", createdAt: existing?.createdAt };
+      if (sameAnnotationContent(existing, item)) { removeComposer(); return; }
+      saveInFlight = true;
       let persisted = false;
       try {
         if (existing) {
@@ -1409,12 +1431,14 @@
   }
   function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
   function closeSidebar() {
+    clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
     sidebarOpen = false;
     if (sidebar) { const old = sidebar; sidebar = null; animateRemove(old); }
     restorePageWidth();
     syncSidebarEdgeToggle();
   }
   async function openSidebar(rebuild = false) {
+    clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
     await loadSettings();
     if (sidebarOpen && !rebuild) { await renderSidebar(); return; }
     const previousSidebar = sidebarOpen && rebuild ? sidebar : null;
@@ -1461,7 +1485,11 @@
     const searchHandle = document.createElementNS("http://www.w3.org/2000/svg", "path"); searchHandle.setAttribute("d", "m20 20-4-4"); searchIcon.append(searchCircle, searchHandle);
     const search = document.createElement("input"); search.type = "search"; search.className = "lhn-sidebar-search"; search.placeholder = t("sidebarSearchPlaceholder"); search.setAttribute("aria-label", t("sidebarSearchPlaceholder")); search.value = sidebarSearchQuery;
     searchWrap.append(searchIcon, search);
-    search.addEventListener("input", () => { sidebarSearchQuery = search.value; renderSidebar(true); });
+    search.addEventListener("input", () => {
+      sidebarSearchQuery = search.value;
+      clearTimeout(sidebarSearchTimer);
+      sidebarSearchTimer = setTimeout(() => { sidebarSearchTimer = 0; renderSidebar(true); }, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS);
+    });
     const filters = document.createElement("div"); filters.className = "lhn-sidebar-filters"; filters.setAttribute("aria-label", t("filterColor"));
     const filterOptions = [{ id: "all", label: t("all") }, ...COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
     filterOptions.forEach(option => {
@@ -1498,6 +1526,19 @@
     syncSidebarFooter();
     syncSidebarEdgeToggle();
     await renderSidebar();
+  }
+  function sidebarSearchFields(item) {
+    let fields = sidebarSearchMetadata.get(item);
+    if (fields) return fields;
+    const tags = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
+    fields = {
+      quote: String(item.quote || "").toLocaleLowerCase(),
+      note: String(item.note || "").toLocaleLowerCase(),
+      contextNote: String(item.contextNote || "").toLocaleLowerCase(),
+      tags: tags.toLocaleLowerCase()
+    };
+    sidebarSearchMetadata.set(item, fields);
+    return fields;
   }
   async function renderSidebar(useCachedItems = false) {
     if (!sidebarOpen || !sidebar || websiteDisabled) return;
@@ -1546,14 +1587,15 @@
     const visible = current.filter(item => {
       if (sidebarFilter !== "all" && CONFIG.normalizeColor(item.color) !== sidebarFilter) return false;
       if (!query) return true;
-      const tags = Array.isArray(item.tags) ? item.tags.join(" ") : String(item.tags || "");
-      return [item.quote, item.note, item.contextNote, tags].some(value => String(value || "").toLocaleLowerCase().includes(query));
+      const fields = sidebarSearchFields(item);
+      return [fields.quote, fields.note, fields.contextNote, fields.tags].some(value => value.includes(query));
     });
     if (query) {
       const rank = item => {
-        if (String(item.quote || "").toLocaleLowerCase().includes(query)) return 0;
-        if (String(item.note || "").toLocaleLowerCase().includes(query)) return 1;
-        if (String(item.contextNote || "").toLocaleLowerCase().includes(query)) return 2;
+        const fields = sidebarSearchFields(item);
+        if (fields.quote.includes(query)) return 0;
+        if (fields.note.includes(query)) return 1;
+        if (fields.contextNote.includes(query)) return 2;
         return 3;
       };
       visible.sort((a, b) => rank(a) - rank(b));
@@ -1927,6 +1969,7 @@
       const currentUrl = pageUrl();
       const current = items.filter(x => x && x.url === currentUrl && x.quote && x.id);
       cachePageAnnotations(currentUrl, current);
+      if (!current.length) { restoreRetryCount = 0; return; }
       // Snapshot existing marks once. Querying the whole page for every note made
       // restoration scale as notes × DOM nodes on pages with many highlights.
       const existingMarksById = new Map();

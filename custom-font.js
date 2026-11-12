@@ -48,7 +48,10 @@
       return;
     }
     const family = FONT_OPTIONS[fontKey];
-    attachFontStylesheet();
+    if (fontKey === "system") {
+      document.querySelectorAll('link[data-lhn-bilingual-fonts]').forEach(link => link.remove());
+      if (fontStylesheet.isConnected) fontStylesheet.remove();
+    } else attachFontStylesheet();
     document.documentElement?.setAttribute("data-lhn-custom-font", fontKey);
     const pageText = `body, body :not(#lhn-panel):not(#lhn-panel *):not(#lhn-note-pop):not(#lhn-note-pop *):not(#lhn-sidebar):not(#lhn-sidebar *):not(#lhn-direct-translation):not(#lhn-direct-translation *):not(#lhn-full-english-dictionary):not(#lhn-full-english-dictionary *):not(#lhn-translate-icon):not(#lhn-highlight-actions):not(#lhn-bilingual-reading-bar):not(.lhn-bilingual-card):not(.lhn-bilingual-card *):not(.lhn-bilingual-speaker):not(.lhn-bilingual-speaker *)`;
     style.textContent = `html[data-lhn-custom-font="${fontKey}"] ${pageText}{font-family:${family}!important}`;
