@@ -2317,7 +2317,7 @@ function resetFlashcardLanguageRatesToDashboard() {
   const customRates = { ...(flashcardTranslateSettings.hasCustomFlashcardLanguageSpeechRate || {}) };
   for (const language of ["en", "vi", "ko"]) {
     const storedRate = Number(dashboardSettings.speechRateByLanguage?.[language]);
-    const defaultRate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[language]) || 1.25;
+    const defaultRate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[language]) || 1.5;
     languageRates[language] = Number.isFinite(storedRate) ? Math.min(2, Math.max(.5, storedRate)) : defaultRate;
     customRates[language] = false;
   }
@@ -3325,7 +3325,7 @@ $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboar
 $("settingsAutoSpeakSelectedText").addEventListener("change", event => saveDashboardSettings({ autoSpeakSelectedText:event.target.checked }));
 $("settingsSpeechVoice").addEventListener("change", event => { const voiceMode = event.target.value === "browser" ? "browser" : "google"; saveDashboardSettings({ voiceMode, speechVoice:voiceMode }); });
 function normalizeSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(2, Math.max(.5, rate)) * 10) / 10 : 1; }
-function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(3, Math.max(.5, rate)) * 20) / 20 : 1.25; }
+function normalizeLanguageSpeechRate(value) { const rate = Number(value); return Number.isFinite(rate) ? Math.round(Math.min(3, Math.max(.5, rate)) * 20) / 20 : 1.5; }
 function formatLanguageSpeechRate(value) { const rate = normalizeLanguageSpeechRate(value); return Math.abs(rate * 10 - Math.round(rate * 10)) < 1e-8 ? rate.toFixed(1) : rate.toFixed(2); }
 $("settingsSpeechRate").addEventListener("input", event => { const rate = normalizeSpeechRate(event.target.value); $("settingsSpeechRateValue").value = rate.toFixed(1); if (!$("settingsUseLanguageSpeechRate").checked) { $("settingsLanguageSpeechRate").value = String(rate); $("settingsLanguageSpeechRateValue").value = rate.toFixed(1); } });
 $("settingsSpeechRate").addEventListener("change", event => saveDashboardSettings({ speechRate:normalizeSpeechRate(event.target.value) }));
@@ -3360,7 +3360,7 @@ $("settingsLanguageSpeechRate").addEventListener("change", event => saveLanguage
 $("settingsLanguageSpeechRateValue").addEventListener("input", event => { if (event.target.value !== "") $("settingsLanguageSpeechRate").value = String(normalizeLanguageSpeechRate(event.target.value)); });
 $("settingsLanguageSpeechRateValue").addEventListener("change", event => { const rate = normalizeLanguageSpeechRate(event.target.value); event.target.value = formatLanguageSpeechRate(rate); $("settingsLanguageSpeechRate").value = String(rate); saveLanguageSpeechRate(rate); });
 $("resetLanguageSpeechRate").addEventListener("click", () => {
-  const rate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || 1.25;
+  const rate = Number(CONFIG.DEFAULT_SETTINGS.speechRateByLanguage?.[currentLang]) || 1.5;
   $("settingsLanguageSpeechRate").value = String(rate);
   $("settingsLanguageSpeechRateValue").value = formatLanguageSpeechRate(rate);
   saveLanguageSpeechRate(rate).then(saved => { if (saved) toast(t("settingsReset")); });

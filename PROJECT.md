@@ -199,6 +199,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.217 | Arena.ai Agent sửa:**
+
+- Ô Trang tối: chú thích khi rê chuột rút gọn thành "Làm tối trang web, bản Beta có thể lỗi" (en/vi/ko).
+- Trang tối: ảnh nền đặt bằng CSS (ảnh thu nhỏ, khung ảnh) không còn bị đảo màu; khung video / ảnh nền tối không còn thành khung trắng; hoạ tiết nền lặp vẫn làm tối.
+- Trang tối: header màu rực (tuoitre.vn) không còn chớp hồng nhạt trước khi về đỏ — được nhận ra ngay trong lúc trang đang tải.
+- Reader: mở sheet ☰ (menu Keepit) thì tạm ẩn thanh phím tắt, đóng thì hiện lại.
+- Giọng đọc ngôn ngữ hiển thị mặc định 1.5 (trước 1.25). Sửa kèm: đọc trên trang trước đây rơi về tốc độ chung 1.0, Reader lấy tốc độ đã lưu dù người dùng chưa tự chỉnh — giờ đều theo mặc định 1.5 cho tới khi người dùng tự chỉnh.
+- File: `js/content/page-dark.js`, `css/content/page-dark-early.css`, `css/content/page-dark-early-auto.css`, `js/core/languages.js`, `js/content/keepit-bar.js`, `js/reader/bilingual-reader.js`, `js/core/defaults.js`, `js/content/content.js`, `js/dashboard/dashboard.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật: trang tải chậm có header gradient đỏ → đỏ ngay khi đang tải; ảnh nền CSS giữ màu, khung đen có ảnh giữ đen, hoạ tiết lặp làm tối; Reader: thanh phím tắt hiện → mở ☰ ẩn → đóng hiện; tốc độ Reader ngôn ngữ hiển thị = 1.5; tooltip đúng; bộ kiểm tra v3.5.215 vẫn đúng.
+
 **2026-10-23 | v3.5.216 | Arena.ai Agent sửa:**
 
 - Trang tối: header / dải lớn màu đậm, rực (ví dụ header đỏ chữ trắng của tuoitre.vn) giữ nguyên màu gốc, không còn thành hồng nhạt chữ đen. Lớp tối được khoét lỗ đúng chỗ khối đó (chạy theo khi cuộn), nên màu đỏ tươi và logo trắng hiện đúng 100%. Nền nhạt (hồng phấn, vàng kem) và màu quá sáng (vàng tươi) vẫn làm tối như cũ.

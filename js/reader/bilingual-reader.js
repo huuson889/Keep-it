@@ -131,7 +131,10 @@
   }
   const closePopovers = closeSheet;
   function toggleSheet(name) { const wasOpen = openSheetName === name; closeSheet(); if (!wasOpen) openSheet(name); }
-  function syncBanner() { $br("[data-shortcut-banner]").classList.toggle("lhn-off", !(isDeskBar() && shortcutBannerVisible && !openSheetName && !scrubbing)); }
+  // v3.5.217: sheet ☰ chính của Keepit (mở từ nút ☰ của Reader) đang mở → tạm ẩn thanh phím tắt như khi rê vào thanh Reader.
+  let mainSheetOpen = false;
+  document.addEventListener("lhn-main-sheet", event => { mainSheetOpen = event.detail?.open === true; syncBanner(); });
+  function syncBanner() { $br("[data-shortcut-banner]")?.classList.toggle("lhn-off", !(isDeskBar() && shortcutBannerVisible && !openSheetName && !scrubbing && !mainSheetOpen)); }
   // Khoảng trống đáy cố định khi Reader mở để thanh luôn hiện mà không che chữ cuối trang
   function syncSpacer() {
     let spacer = document.getElementById("lhn-br-spacer");
@@ -489,16 +492,19 @@
   function normalizeSpeechLang(value) { return String(value || "").trim().toLowerCase().replace(/_/g, "-").split("-")[0]; }
   function isDisplaySpeechLang(lang) { const target = normalizeSpeechLang(lang); return Boolean(target) && target === normalizeSpeechLang(displayLang); }
   function activeSegmentLang() { return (reading || readingPaused) ? (readingSegment?.lang || activeSpeechLang || "") : ""; }
+  // v3.5.217: chưa lưu lựa chọn → theo mặc định (bật), giống Dashboard; trước coi như tắt → giọng ngôn ngữ hiển thị đọc tốc độ chung.
+  const useLangRate = () => (dashboardShortcuts?.useLanguageSpeechRate ?? globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.useLanguageSpeechRate) === true;
   function segmentRate(lang) {
-    if (dashboardShortcuts?.useLanguageSpeechRate !== true || !isDisplaySpeechLang(lang)) return baseRate();
-    const custom = Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]);
-    if (Number.isFinite(custom)) return clampSpeechRate(custom) ?? 1.25;
+    if (!useLangRate() || !isDisplaySpeechLang(lang)) return baseRate();
+    // v3.5.217: chỉ dùng tốc độ đã lưu khi người dùng tự chỉnh (giống Dashboard / content.js); chưa chỉnh → mặc định 1.5.
+    const custom = dashboardShortcuts?.hasCustomSpeechRateByLanguage?.[displayLang] === true ? Number(dashboardShortcuts?.speechRateByLanguage?.[displayLang]) : NaN;
+    if (Number.isFinite(custom)) return clampSpeechRate(custom) ?? 1.5;
     const inherited = Number(dashboardShortcuts?.inheritedSpeechRateByLanguage?.[displayLang]);
-    if (Number.isFinite(inherited)) return clampSpeechRate(inherited) ?? 1.25;
-    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang])) ?? 1.25;
+    if (Number.isFinite(inherited)) return clampSpeechRate(inherited) ?? 1.5;
+    return clampSpeechRate(Number(globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLang])) ?? 1.5;
   }
   function currentSegmentRate() { return segmentRate(activeSegmentLang()); }
-  function editingLanguageRate(lang = activeSegmentLang()) { return dashboardShortcuts?.useLanguageSpeechRate === true && isDisplaySpeechLang(lang); }
+  function editingLanguageRate(lang = activeSegmentLang()) { return useLangRate() && isDisplaySpeechLang(lang); }
   function writeLanguageSpeechRate(rate) {
     const patch = {
       speechRateByLanguage:{ ...(dashboardShortcuts.speechRateByLanguage || {}), [displayLang]:rate },

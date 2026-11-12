@@ -15,7 +15,8 @@
     const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
     const customRate = settings.useLanguageSpeechRate === true && speechLanguage === displayLanguage
-      ? settings.hasCustomSpeechRateByLanguage?.[displayLanguage] === true ? settings.speechRateByLanguage?.[displayLanguage] : settings.inheritedSpeechRateByLanguage?.[displayLanguage]
+      ? settings.hasCustomSpeechRateByLanguage?.[displayLanguage] === true ? settings.speechRateByLanguage?.[displayLanguage]
+        : settings.inheritedSpeechRateByLanguage?.[displayLanguage] ?? globalThis.LHN_CONFIG?.DEFAULT_SETTINGS?.speechRateByLanguage?.[displayLanguage] // v3.5.217: chưa chỉnh → mặc định (1.5), trước rơi về tốc độ chung
       : undefined;
     const rate = Number(customRate ?? settings.speechRate);
     return Number.isFinite(rate) ? Math.min(3, Math.max(.5, rate)) : 1;

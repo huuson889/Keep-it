@@ -673,11 +673,13 @@
     introDone(); closePop(); hideCoach(); S.sheetPane = "main"; const panel = $("panel");
     panel.classList.remove("full"); panel.style.maxHeight = ""; fontOn = globalThis.LHN_READER_BAR?.webFont?.() ?? fontOn; renderSheet(); setTimeout(updFade, 320);
     $("sheet").classList.add("open"); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); anchorPanel();
+    document.dispatchEvent(new CustomEvent("lhn-main-sheet", { detail:{ open:true } })); // v3.5.217: Reader ẩn thanh phím tắt
     if (!AUI()) void readZoom();
   }
   function closeSheet() {
     if (!$("sheet")?.classList.contains("open")) return;
     $("sheet").classList.remove("open"); $("bin").querySelector('[data-nav="more"]')?.classList.remove("on");
+    document.dispatchEvent(new CustomEvent("lhn-main-sheet", { detail:{ open:false } }));
     if (S.sheetFrom) { S.sheetFrom = null; setTimeout(() => { if (!$("sheet").classList.contains("open")) host.style.zIndex = "2147483000"; }, 300); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }

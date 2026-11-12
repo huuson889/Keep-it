@@ -20,7 +20,7 @@
     speechVoice: "google",
     speechRate: 1,
     useLanguageSpeechRate: true,
-    speechRateByLanguage: { en: 1.25, vi: 1.25, ko: 1.25 },
+    speechRateByLanguage: { en: 1.5, vi: 1.5, ko: 1.5 }, // v3.5.217: 1.25 → 1.5
     hasCustomSpeechRateByLanguage: {},
     inheritedSpeechRateByLanguage: {},
     translateIconEnabled: false,
