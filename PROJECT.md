@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.211 | Arena.ai Agent sửa:**
+
+- Trang tối trên edition.cnn.com: ảnh bị âm bản và khu "More from CNN" sáng ngược lại kèm ảnh/chữ đen. Nguyên nhân: (1) ảnh trong `<picture>` bị đảo 2 lần (khung + ảnh); (2) mọi khối có chữ "background-image" trong style (kể cả `background-image:none`) bị đảo cả khu. Sửa: chỉ đảo khối có ảnh nền thật (`url(`); khung ảnh lồng nhau chỉ đảo 1 lần.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật, trang mẫu theo cấu trúc CNN (`<picture><img>`, khu `background-image:none` có ảnh, khối ảnh nền có ảnh con): mọi ảnh giữ màu thật, khu nền sáng được làm tối. 0 lỗi trang. CNN thật chặn trình duyệt thử nên chưa thử trực tiếp.
+
 **2026-10-23 | v3.5.210 | Arena.ai Agent sửa:**
 
 - ☰ → Khi chọn chữ → ô "Icon Keepit" về lại icon nét như trước v3.5.204 (đồng bộ các ô khác). Logo màu mới vẫn ở đầu ☰, chấm nổi, icon khi chọn chữ.

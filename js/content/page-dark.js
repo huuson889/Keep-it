@@ -9,7 +9,11 @@
   if (window.top !== window || globalThis.LHN_PAGE_DARK) return;
   const KEY = "lhnPageDark", SETTINGS_KEY = "lhnSettings";
   const DARK_Q = matchMedia("(prefers-color-scheme: dark)");
-  const DARK_CSS = `img,video,picture,canvas,iframe,embed,object,svg image,[style*="background-image"]{filter:invert(1) hue-rotate(180deg)!important}`;
+  // Ảnh/video được đảo lại 1 lần để giữ màu thật. v3.5.211: chỉ khối có ảnh nền thật (`url(`), không bắt mọi style có chữ
+  // "background-image" (CNN: cả khu lớn có `background-image:none` → cả khu sáng lại); khung ảnh lồng trong khung ảnh
+  // (`<picture><img>`, ảnh trong khối ảnh nền) không đảo thêm, nếu không ảnh thành âm bản.
+  const MEDIA = 'img,video,picture,canvas,iframe,embed,object,svg image,[style*="url("]';
+  const DARK_CSS = `:is(${MEDIA}){filter:invert(1) hue-rotate(180deg)!important}:is(${MEDIA}) :is(${MEDIA}){filter:none!important}`;
   let on = false, theme = "", darkStyle = null, darkVeil = null, loaded = false;
   // Chủ đề Keepit đọc giống thanh Keepit (settings đã qua LHN_SETTINGS.resolve).
   const themeOf = raw => String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw || {}).sidebarTheme || "");
