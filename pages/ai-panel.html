@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keepit</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --login-bg: #2b2b2b;
+      --login-text: #f4f4f4;
+      --login-muted: #b5b5b5;
+      --login-border: #4a4a4a;
+      --login-button: #3c3c3c;
+      --login-button-hover: #4a4a4a;
+      --login-primary: #5145e8;
+      --login-primary-hover: #6157f0;
+      --login-error: #f87171;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --login-bg: #ffffff;
+        --login-text: #253348;
+        --login-muted: #687990;
+        --login-border: #d8e0eb;
+        --login-button: #f6f8fc;
+        --login-button-hover: #edf2f8;
+        --login-primary: #4f46e5;
+        --login-primary-hover: #4338ca;
+        --login-error: #dc2626;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { display: flex; flex-direction: column; background: Canvas; }
+    #keepit-ai-page-offset { flex: 0 0 25px; width: 100%; height: 25px; }
+    iframe { display: block; flex: 1 1 auto; width: 100%; min-height: 0; border: 0; background: Canvas; }
+    #keepit-ai-login {
+      position: fixed;
+      z-index: 10;
+      inset: 25px 0 0 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: color-mix(in srgb, Canvas 82%, transparent);
+      font: 13px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #keepit-ai-login[hidden] { display: none; }
+    .login-box {
+      width: min(100%, 340px);
+      padding: 14px 16px;
+      border: 1px solid var(--login-border);
+      border-radius: 12px;
+      color: var(--login-text);
+      background: var(--login-bg);
+      box-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+    }
+    .login-box p { margin: 0 0 12px; }
+    .login-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .login-actions button {
+      flex: 1 1 auto;
+      min-height: 32px;
+      padding: 6px 12px;
+      border: 1px solid var(--login-border);
+      border-radius: 8px;
+      color: var(--login-text);
+      background: var(--login-button);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .login-actions button:hover { background: var(--login-button-hover); }
+    .login-actions button.primary { border-color: var(--login-primary); color: #ffffff; background: var(--login-primary); }
+    .login-actions button.primary:hover { background: var(--login-primary-hover); }
+    .login-box .login-error { margin: 10px 0 0; color: var(--login-error); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="keepit-ai-page-offset" aria-hidden="true"></div>
+  <iframe id="ai-frame" title="AI panel" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <div id="keepit-ai-login" hidden></div>
+  <script src="../js/core/browser-polyfill.js"></script>
+  <script src="../js/ask-ai/providers.js"></script>
+  <script src="../js/shared/site-icons.js"></script>
+  <script src="../js/ask-ai/toolbar.js"></script>
+  <script src="../js/ask-ai/panel/panel.js"></script>
+</body>
+</html>

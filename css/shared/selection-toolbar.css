@@ -1,0 +1,95 @@
+/* Floating selection toolbar: one stylesheet for the page launcher (#lhn-translate-icon) and Dashboard previews (.lhn-sel-preview).
+   Variants are driven only by two flags set by js/shared/selection-toolbar.js:
+     data-labels="true|false"       icon + text vs. icon only
+     data-collapsible="true|false"  always open vs. logo badge that opens on hover/focus
+     data-layout="radial|bar"       3 framed buttons around the logo badge vs. one row with the logo on the right (radial rules are the last block and override the bar rules)
+   Placement of the page launcher (absolute positioning next to the selection) stays in css/content/content.css. */
+
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell{ all:initial !important; display:inline-flex !important; flex:0 0 auto !important; align-items:center !important; gap:4px !important; box-sizing:border-box !important; width:max-content !important; margin:0 !important; padding:4px !important; overflow:visible !important; border:1px solid #e2e8f0 !important; border-radius:12px !important; background:rgba(255,255,255,.95) !important; color:#1e293b !important; box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1) !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; font:500 12px/16px ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji" !important; white-space:nowrap !important; transition:max-width 200ms ease-out,background-color 150ms ease,border-color 150ms ease,box-shadow 150ms ease !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-shell{ border-color:#1e293b !important; background:rgba(15,23,42,.95) !important; color:#f1f5f9 !important; box-shadow:0 25px 50px -12px rgba(0,0,0,.25) !important; }
+
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-actions{ all:initial !important; position:static !important; display:flex !important; flex:0 0 auto !important; align-items:center !important; justify-content:flex-start !important; gap:4px !important; box-sizing:border-box !important; width:max-content !important; max-width:none !important; margin:0 !important; padding:0 !important; overflow:visible !important; border:0 !important; background:transparent !important; opacity:1 !important; visibility:visible !important; pointer-events:auto !important; transition:max-width 200ms ease-out,opacity 200ms ease-out,padding 200ms ease-out !important; }
+
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-action{ all:initial !important; appearance:none !important; display:inline-flex !important; flex:0 0 auto !important; align-items:center !important; justify-content:center !important; gap:6px !important; box-sizing:border-box !important; min-width:0 !important; margin:0 !important; padding:4px 8px !important; border:0 !important; border-radius:6px !important; background:transparent !important; color:#334155 !important; font:500 12px/16px ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji" !important; letter-spacing:0 !important; text-align:center !important; white-space:nowrap !important; cursor:pointer !important; transition:background-color 120ms ease,color 120ms ease !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-action:hover,:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-action:focus-visible{ background:#f1f5f9 !important; outline:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-action{ color:#e2e8f0 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-action:hover,:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-action:focus-visible{ background:#1e293b !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-action svg{ display:block !important; flex:0 0 16px !important; width:16px !important; height:16px !important; fill:none !important; stroke:currentColor !important; stroke-width:2 !important; stroke-linecap:round !important; stroke-linejoin:round !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-label{ all:initial !important; display:inline !important; color:inherit !important; font:inherit !important; white-space:nowrap !important; cursor:inherit !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-action-highlight{ color:#d97706 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-action-highlight{ color:#fbbf24 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-action-translate{ color:#0284c7 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-action-translate{ color:#38bdf8 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-action-ai{ color:#059669 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-action-ai{ color:#34d399 !important; }
+
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-separator{ all:initial !important; display:block !important; flex:0 0 1px !important; width:1px !important; height:14px !important; margin:0 !important; background:#e2e8f0 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-separator{ background:#1e293b !important; }
+
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-logo{ all:initial !important; appearance:none !important; display:flex !important; flex:0 0 28px !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; width:28px !important; height:28px !important; margin:0 0 0 2px !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; cursor:pointer !important; transition:transform 150ms ease !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-logo:hover{ transform:scale(1.05) !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-logo>svg{ display:block !important; flex:none !important; width:28px !important; height:28px !important; overflow:visible !important; }
+
+/* Icon only (styles 2 and 4). */
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"]{ gap:2px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"] .lhn-translate-actions{ gap:2px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"] .lhn-translate-action{ gap:0 !important; padding:6px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"] .lhn-translate-label,
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"] .lhn-translate-separator{ display:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"] .lhn-translate-logo{ margin-left:4px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-labels="false"][data-collapsible="false"]{ border-radius:8px !important; }
+
+/* Hover to open (styles 3 and 4): only the logo is visible until hover/focus. */
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-collapsible="true"]{ gap:0 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-collapsible="true"] .lhn-translate-actions{ max-width:0 !important; padding:0 !important; overflow:hidden !important; opacity:0 !important; pointer-events:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-collapsible="true"] .lhn-translate-logo{ margin-left:0 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-collapsible="true"]:is(:hover,:focus-within) .lhn-translate-actions{ max-width:480px !important; padding-right:6px !important; opacity:1 !important; pointer-events:auto !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-collapsible="true"][data-labels="false"]:is(:hover,:focus-within) .lhn-translate-actions{ max-width:320px !important; padding-right:4px !important; }
+
+/* Settings preview: in-flow, same look as the page toolbar. */
+.lhn-sel-preview{ display:inline-flex; align-items:center; justify-content:center; }
+.lhn-sel-preview .lhn-translate-shell{ position:static !important; }
+
+/* Radial (styles 1-4): the shell is only the logo badge; each action is its own Keepit frame (1px border, 4px padding, 12px radius, white .95, shadow)
+   around a Keepit action (icon 16px; icon-only 28x28; icon + text 24px high, 4px 8px; radius 6px). Highlight left, Translate below, Ask AI right, never above the selected line.
+   ::before = the inner action surface (hover/focus colour); ::after = invisible bridge over the 6px gap to the logo so hover never drops. */
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"]{ gap:0 !important; transition:box-shadow 160ms ease,background-color 150ms ease,border-color 150ms ease !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-logo{ margin:0 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-separator{ display:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-actions,
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"]:is(:hover,:focus-within) .lhn-translate-actions{ position:absolute !important; left:50% !important; top:50% !important; display:block !important; width:0 !important; height:0 !important; max-width:none !important; padding:0 !important; overflow:visible !important; opacity:1 !important; pointer-events:none !important; transition:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action{ position:absolute !important; left:0 !important; top:0 !important; isolation:isolate !important; padding:8px 12px !important; border:1px solid #e2e8f0 !important; border-radius:12px !important; background:rgba(255,255,255,.95) !important; box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1) !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important;
+  --lhn-radial-x:-50%; --lhn-radial-y:-50%; --lhn-radial-dx:0px; --lhn-radial-dy:0px;
+  opacity:0 !important; visibility:hidden !important; pointer-events:none !important; transform:translate(var(--lhn-radial-x),var(--lhn-radial-y)) scale(.35) !important;
+  transition:transform 160ms ease 120ms,opacity 140ms ease 120ms,visibility 0s linear 260ms !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action::before{ all:initial !important; content:"" !important; position:absolute !important; inset:4px !important; z-index:-1 !important; border-radius:6px !important; background:transparent !important; transition:background-color 120ms ease !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action::after{ all:initial !important; content:"" !important; position:absolute !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action:is(:hover,:focus-visible){ background:rgba(255,255,255,.95) !important; outline:none !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action:is(:hover,:focus-visible)::before{ background:#f1f5f9 !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-shell[data-layout="radial"] .lhn-translate-action{ border-color:#1e293b !important; background:rgba(15,23,42,.95) !important; box-shadow:0 25px 50px -12px rgba(0,0,0,.25) !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-ui-dark .lhn-translate-shell[data-layout="radial"] .lhn-translate-action:is(:hover,:focus-visible)::before{ background:#1e293b !important; }
+
+/* Positions around the badge centre: icons on a 44px radius (38px frames); labelled frames start 6px from the badge edge, icon next to the logo. */
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="false"] .lhn-translate-action{ padding:10px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="false"] .lhn-action-highlight{ --lhn-radial-dx:-44px; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="false"] .lhn-action-translate{ --lhn-radial-dy:44px; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="false"] .lhn-action-ai{ --lhn-radial-dx:44px; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="true"] .lhn-action-highlight{ --lhn-radial-x:-100%; --lhn-radial-dx:-25px; flex-direction:row-reverse !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="true"] .lhn-action-translate{ --lhn-radial-y:0%; --lhn-radial-dy:25px; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-labels="true"] .lhn-action-ai{ --lhn-radial-x:0%; --lhn-radial-dx:25px; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-action-highlight::after{ top:0 !important; bottom:0 !important; left:100% !important; width:8px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-action-translate::after{ left:0 !important; right:0 !important; bottom:100% !important; height:8px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-action-ai::after{ top:0 !important; bottom:0 !important; right:100% !important; width:8px !important; }
+
+/* Open: always-open styles (1, 3) pop out when the page launcher appears (settings previews show them open); hover styles (2, 4) open on hover/focus and close after a short grace. */
+:is(#lhn-translate-icon.lhn-visible,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="false"] .lhn-translate-action,
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="true"]:is(:hover,:focus-within) .lhn-translate-action{ opacity:1 !important; visibility:visible !important; pointer-events:auto !important; transform:translate(var(--lhn-radial-x),var(--lhn-radial-y)) translate(var(--lhn-radial-dx),var(--lhn-radial-dy)) !important; transition:transform 220ms cubic-bezier(.34,1.56,.64,1),opacity 140ms ease,visibility 0s !important; }
+:is(#lhn-translate-icon.lhn-visible,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="false"] .lhn-action-translate,:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="true"]:is(:hover,:focus-within) .lhn-action-translate{ transition-delay:30ms,30ms,0s !important; }
+:is(#lhn-translate-icon.lhn-visible,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="false"] .lhn-action-ai,:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="true"]:is(:hover,:focus-within) .lhn-action-ai{ transition-delay:60ms,60ms,0s !important; }
+:is(#lhn-translate-icon.lhn-visible,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="false"],
+:is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"][data-collapsible="true"]:is(:hover,:focus-within){ box-shadow:0 0 0 4px rgba(139,92,246,.18),0 10px 15px -3px rgba(0,0,0,.12) !important; }
+
+/* Settings preview: reserve the space the radial buttons cover so the card does not jump on hover. */
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-sel-preview .lhn-translate-shell[data-layout="radial"][data-labels="false"]{ margin:0 44px 44px !important; }
+:is(#lhn-translate-icon,.lhn-sel-preview).lhn-sel-preview .lhn-translate-shell[data-layout="radial"][data-labels="true"]{ margin:0 112px 40px !important; }
+@media (prefers-reduced-motion:reduce){ :is(#lhn-translate-icon,.lhn-sel-preview) .lhn-translate-shell[data-layout="radial"] .lhn-translate-action{ transition:none !important; } }

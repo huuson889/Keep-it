@@ -1,24 +1,29 @@
 const $ = id => document.getElementById(id);
+const dashboardRevealEffects = globalThis.KeepitDashboardReveal;
 const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 const STUDY_UTILS = globalThis.LHN_STUDY_UTILS;
 const STUDY_TRANSLATOR = globalThis.LHN_STUDY_TRANSLATION.create({ browser });
 CONFIG.applyHighlightColors();
 const DASHBOARD_INSTANCE_ID = crypto.randomUUID();
-let annotations = [], favorites = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, noteColorFilter = "all", editColor = CONFIG.DEFAULT_COLOR, favoritesOnly = false, favoriteNotesOnly = false, viewMode = "grid", dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
+let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new Set(), editingId = null, currentLang = "en", selectedUrl = null, editColor = CONFIG.DEFAULT_COLOR, dashboardSettings = {}, dashboardSettingsChangedWhileOpen = false;
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
+const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
-let demoProfile = null, profileDataCache = null, profileAuthMode = "login", profileChipMode = "domains", profileActivityRange = "all";
+let demoProfile = null, profileAuthMode = "login";
+let overviewSessionsReady = false, overviewSessionsLoading = false;
 let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
 const annotationById = new Map();
 const annotationPositionById = new Map();
-const LIBRARY = globalThis.LHN_LIBRARY.create({ unknownSite:() => t("unknownWebsite") });
-let filterOptionsCache = null;
+const ANNOTATION_UTILS = globalThis.LHN_ANNOTATION_UTILS.create({ unknownSite:() => t("unknownWebsite") });
+let annotationDataRevision = 0;
 let studyQueue = [], studyQueueHead = 0, studyHistory = [], studyReviewed = 0, studyRemembered = 0, studyAutoSpeak = true, studySpeechToken = 0, studyPlayAllSources = false, studySourceKey = null, studySpeakAfterSettingsClose = false, studyTypedAnswer = "", studyTypedAnswerForId = null, studySettingsTab = "study";
 let annotationsChangedDuringStudy = false;
 const studyCompletedIds = new Set();
@@ -47,33 +52,8 @@ const EXPORTS = [
 ];
 
 function icon(name, cls = "") { return LHN_ICONS.render(name, cls); }
-function updateViewModeButton() { const button = $("viewModeBtn"); if (!button) return; const isGrid = viewMode === "grid"; button.innerHTML = isGrid ? icon("grid") : '<svg class="lucide preview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 4h7"/><path d="M14 9h7"/><path d="M14 15h7"/><path d="M14 20h7"/></svg>'; button.title = t(isGrid ? "gridViewLabel" : "listViewLabel"); button.setAttribute("aria-label", button.title); button.setAttribute("aria-pressed", String(isGrid)); $("notesList").classList.toggle("is-grid-view", isGrid); }
 
-function playToolbarActionEffect(button, event, color, particleShape) {
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-  const rect = button.getBoundingClientRect();
-  const x = Number.isFinite(event.clientX) && (event.clientX || event.clientY) ? event.clientX : rect.left + rect.width / 2;
-  const y = Number.isFinite(event.clientY) && (event.clientX || event.clientY) ? event.clientY : rect.top + rect.height / 2;
-  let layer = $("toolbarActionEffectLayer");
-  if (!layer) { layer = document.createElement("div"); layer.id = "toolbarActionEffectLayer"; layer.setAttribute("aria-hidden", "true"); document.body.appendChild(layer); }
-  button.classList.remove("toolbar-action-pulse"); void button.offsetWidth; button.classList.add("toolbar-action-pulse");
-  button.addEventListener("animationend", event => { if (event.animationName === "favorite-heartbeat") button.classList.remove("toolbar-action-pulse"); }, { once:true });
-  for (let index = 0; index < 2; index++) {
-    const ring = document.createElement("span"); ring.className = "toolbar-action-ripple-ring"; ring.style.setProperty("--effect-color", color);
-    ring.style.left = `${x}px`; ring.style.top = `${y}px`; ring.style.setProperty("--delay", `${index * 100}ms`);
-    layer.appendChild(ring); ring.addEventListener("animationend", () => ring.remove(), { once:true });
-  }
-  for (let index = 0; index < 10; index++) {
-    const particle = document.createElement("span"), angle = Math.PI * 2 * index / 10 + (Math.random() - .5) * .45, distance = 34 + Math.random() * 42;
-    particle.className = `toolbar-action-ripple-particle${particleShape === "sparkle" ? " is-sparkle" : ""}`; particle.style.left = `${x}px`; particle.style.top = `${y}px`; particle.style.setProperty("--effect-color", color);
-    particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`); particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`);
-    particle.style.setProperty("--turn", `${Math.round((Math.random() - .5) * 70)}deg`);
-    particle.innerHTML = particleShape === "sparkle"
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/></svg>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-    layer.appendChild(particle); particle.addEventListener("animationend", () => particle.remove(), { once:true });
-  }
-}
+
 
 function t(key, vars = {}, language = currentLang) { return LANGUAGES.t(key, vars, language); }
 const disabledTooltipTitles = new WeakMap();
@@ -89,17 +69,60 @@ function setDisabledTooltip(control, anchor = control, reason = "") {
   }
 }
 function profileUsername(profile = demoProfile) { return String(profile?.username || "huson").replace(/^@+/, "").split("@")[0]; }
+function profileDisplayName(profile = demoProfile) {
+  const displayName = String(profile?.displayName || "").trim();
+  if (displayName) return displayName;
+  const username = String(profile?.username || "").trim().replace(/^@+/, "");
+  const email = String(profile?.email || "").trim();
+  return (username || email).split("@")[0] || t("profileGuest");
+}
 function profilePictureMarkup(profile = demoProfile, fallback = "") { return profile?.avatarDataUrl ? `<img class="profile-picture-img" src="${escapeHtml(profile.avatarDataUrl)}" alt="">` : fallback; }
+// Settings → Icon display: radios, logo-action tabs and live previews built by the shared toolbar module (same DOM/CSS as the page).
+function syncSelectionToolbarPreviewTheme() {
+  const dark = document.documentElement.classList.contains("dark");
+  document.querySelectorAll(".lhn-sel-preview").forEach(stage => { stage.classList.toggle("lhn-ui-dark", dark); stage.classList.toggle("lhn-ui-light", !dark); });
+}
+function syncSelectionToolbarSettings() {
+  const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
+  if (!toolbar) return;
+  const style = toolbar.normalizeStyle(dashboardSettings.selectionToolbarStyleV2);
+  const logoAction = toolbar.normalizeLogoAction(dashboardSettings.selectionToolbarLogoAction);
+  document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => { const selected = input.value === style; input.checked = selected; input.closest(".settings-icon-display-option")?.classList.toggle("is-selected", selected); });
+  document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => { const selected = input.value === logoAction; input.checked = selected; input.closest(".settings-logo-action-tab")?.classList.toggle("is-selected", selected); });
+  document.querySelectorAll("[data-selection-toolbar-icon]").forEach(icon => { if (!icon.firstElementChild) icon.innerHTML = toolbar.ICONS[icon.dataset.selectionToolbarIcon] || ""; });
+  document.querySelectorAll("[data-selection-toolbar-preview]").forEach(stage => {
+    const previewStyle = stage.dataset.selectionToolbarPreview;
+    stage.replaceChildren(toolbar.build({ document, style:previewStyle, t, logoAction, preview:true, idSuffix:`Preview${previewStyle}` }));
+  });
+  syncSelectionToolbarPreviewTheme();
+}
 function syncDashboardTheme() {
   const preference = dashboardSettings.sidebarTheme;
   const dark = preference === "dark" || (preference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
-  document.documentElement.classList.toggle("dark", dark);
+  const root = document.documentElement;
+  root.classList.toggle("dark", dark);
+  syncSelectionToolbarPreviewTheme();
+  if (root.classList.contains("dashboard-theme-pending")) {
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("dashboard-theme-pending")));
+  }
   const state = $("profileAppearanceState");
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
+  const sidebarThemeLabel = $("dashboardSidebarThemeText"), sidebarThemeButton = $("dashboardSidebarThemeToggle");
+  if (sidebarThemeLabel) sidebarThemeLabel.textContent = dark ? "Giao diện tối" : "Giao diện sáng";
+  if (sidebarThemeButton) {
+    const label = dark ? "Giao diện tối" : "Giao diện sáng";
+    sidebarThemeButton.setAttribute("aria-pressed", String(dark));
+    sidebarThemeButton.setAttribute("aria-label", label);
+    sidebarThemeButton.title = "Đổi giao diện Sáng / Tối";
+  }
 }
 function showDashboardSettingsPanel(name) {
-  document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === name; panel.hidden = !active; panel.classList.toggle("is-active", active); });
-  document.querySelectorAll("[data-settings-tab]").forEach(button => button.classList.toggle("is-active", button.dataset.settingsTab === name));
+  const requestedPanel = DASHBOARD_SETTINGS_TAB_NAMES.has(name) ? name : "account";
+  const panelName = !demoProfile && requestedPanel === "upgrade" ? "account" : requestedPanel;
+  lastDashboardSettingsTab = panelName;
+  browser.storage.local.set({ [LAST_DASHBOARD_SETTINGS_TAB_KEY]:panelName }).catch(() => {});
+  document.querySelectorAll("[data-settings-panel]").forEach(panel => { const active = panel.dataset.settingsPanel === panelName; panel.hidden = !active; panel.classList.toggle("is-active", active); });
+  document.querySelectorAll("[data-settings-tab]").forEach(button => button.classList.toggle("is-active", button.dataset.settingsTab === panelName));
 }
 function renderPronunciationDictionary() {
   const container = $("pronunciationLanguageCards");
@@ -137,6 +160,7 @@ function renderPronunciationDictionary() {
 }
 const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
 SETTINGS_UI.initLanguagePicker();
+SETTINGS_UI.initSettingsSearch();
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
@@ -147,10 +171,14 @@ function refreshDashboardSettings() {
   renderDisabledWebsiteList();
   renderDisabledReaderWebsiteList();
   syncBilingualReaderControls();
+  $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend === true;
+  $("settingsChatGPTSummaryPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTSummaryPrompt", dashboardSettings.chatGPTSummaryPrompt);
+  $("settingsChatGPTAskPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTAskPrompt", dashboardSettings.chatGPTAskPrompt);
   $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
   $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
+  syncSelectionToolbarSettings();
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
   $("settingsFullEnglishDictionary").checked = dashboardSettings.showFullEnglishDictionary !== false;
   $("settingsAutoTranslatePopup").checked = dashboardSettings.autoTranslate !== false;
@@ -212,16 +240,17 @@ function refreshDashboardSettings() {
   $("settingsTranslateShortcut").value = dashboardSettings.translateSelectedShortcut ?? CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut;
   $("settingsWebsiteShortcut").value = dashboardSettings.toggleWebsiteShortcut ?? CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut;
   $("settingsDualSubtitlesShortcut").value = dashboardSettings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut;
+  $("settingsDictationShortcut").value = dashboardSettings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut;
   $("settingsSpeechPauseShortcut").value = dashboardSettings.speechPauseShortcut ?? CONFIG.DEFAULT_SETTINGS.speechPauseShortcut;
   $("settingsPreviousReadingShortcut").value = dashboardSettings.previousReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.previousReadingShortcut;
   $("settingsNextReadingShortcut").value = dashboardSettings.nextReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.nextReadingShortcut;
   $("settingsIncreaseReadingSpeedShortcut").value = dashboardSettings.increaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.increaseReadingSpeedShortcut;
   $("settingsDecreaseReadingSpeedShortcut").value = dashboardSettings.decreaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.decreaseReadingSpeedShortcut;
   $("settingsSelectVoiceShortcut").value = dashboardSettings.selectVoiceShortcut ?? CONFIG.DEFAULT_SETTINGS.selectVoiceShortcut;
-  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
-  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
+  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsDictationShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
+  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "dictationShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
   $("settingsVersion").textContent = `v${browser.runtime.getManifest().version}`;
-  const displayName = demoProfile?.displayName || t("profileGuest"), email = demoProfile ? (demoProfile.email || "huuson889@gmail.com") : t("profileLocal");
+  const displayName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest"), email = demoProfile ? String(demoProfile.email || "").trim() : t("profileLocal");
   $("settingsProfileName").textContent = displayName;
   $("settingsProfileEmail").textContent = email;
   const upgradeTab = document.querySelector('[data-settings-tab="upgrade"]');
@@ -241,7 +270,7 @@ function refreshDashboardSettings() {
     const picturePreview = accountState.querySelector("#settingsAccountPicturePreview");
     if (picturePreview) picturePreview.innerHTML = profilePictureMarkup(demoProfile, escapeHtml(String(displayName).slice(0, 1).toLocaleUpperCase()));
     const emailField = accountState.querySelector("#settingsAccountEmail");
-    emailField.value = demoProfile.email || "huuson889@gmail.com";
+    emailField.value = String(demoProfile.email || "").trim();
     emailField.disabled = emailField.dataset.editing !== "true";
     setDisabledTooltip(emailField, emailField.closest(".settings-account-controls"), emailField.disabled ? t("disabledEmail") : "");
   }
@@ -351,15 +380,37 @@ async function restoreAddonSettings() {
     toast(t("restoreSettingsFailed"));
   }
 }
-function renderProfileSidebar() {
-  const profileHeader = $("profileHeaderSection"), actionHost = $("actionButtonsSection"), metaHost = $("metaInfoSection");
+function renderProfileMenu() {
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
+  const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
+  const activeEmail = String(demoProfile?.email || "").trim();
+  const activeName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest");
+  if (menuToggleName) menuToggleName.textContent = activeName;
+  if (popoverName) popoverName.textContent = activeName;
+  for (const emailNode of [menuToggleEmail, popoverEmail]) {
+    if (!emailNode) continue;
+    emailNode.textContent = activeEmail;
+    emailNode.hidden = !demoProfile || !activeEmail;
+  }
+  if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
+  if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
+  if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
+  for (const item of [syncMenuItem, helpMenuItem]) if (item) item.hidden = !demoProfile;
+  if (logoutMenuItem) logoutMenuItem.hidden = !demoProfile;
+  if (guestLoginItem) guestLoginItem.hidden = Boolean(demoProfile);
   const guestAvatar = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
-  const syncTooltip = escapeHtml(t(demoProfile ? "profileLocal" : "profileNotSynced"));
+  const syncStatusLabel = t(demoProfile ? "profileLocal" : "profileNotSynced");
   const syncIcon = demoProfile
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud preview-icon" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-off preview-icon" aria-hidden="true"><path d="M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"/><path d="M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"/><path d="m2 2 20 20"/></svg>';
-  const syncStatusIcon = `<button type="button" class="profile-sync-status menu-item item-free" data-tooltip="${syncTooltip}" aria-label="${syncTooltip}">${syncIcon}</button>`;
+  if (popoverSyncButton) {
+    popoverSyncButton.hidden = false;
+    popoverSyncButton.innerHTML = syncIcon;
+    popoverSyncButton.title = syncStatusLabel;
+    popoverSyncButton.setAttribute("aria-label", syncStatusLabel);
+    if (demoProfile) popoverSyncButton.removeAttribute("data-profile-menu-action");
+    else popoverSyncButton.dataset.profileMenuAction = "login";
+  }
   if (menuAvatar) {
     menuAvatar.classList.toggle("profile-avatar-guest", !demoProfile);
     menuAvatar.innerHTML = demoProfile ? profilePictureMarkup(demoProfile, escapeHtml(String(demoProfile.displayName || demoProfile.username || "H").slice(0, 1).toLocaleUpperCase())) : guestAvatar;
@@ -375,58 +426,7 @@ function renderProfileSidebar() {
     if (!demoProfile) accountHost.innerHTML = `<button id="profileMenuSignIn" class="profile-menu-item profile-menu-sign-in" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span>${escapeHtml(t("profileLogin"))}</span></span></button>`;
   }
   if (signOutButton) signOutButton.hidden = !demoProfile;
-  if (demoProfile) {
-    const name = escapeHtml(demoProfile.displayName || "Huson"), username = escapeHtml(profileUsername());
-    profileHeader.innerHTML = `<div class="profile-avatar">${profilePictureMarkup(demoProfile, name.slice(0,1).toLocaleUpperCase())}</div><div class="profile-name"><h2>${name}</h2><span>@${username}</span></div>${syncStatusIcon}`;
-    actionHost.innerHTML = `<button id="profileAskAIAction" class="profile-action-primary" type="button"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2m16 0h2M9 13h.01M15 13h.01M9 17h6"/></svg><span>${escapeHtml(t("profileAskAI"))}</span></button><button id="profileEditAction" class="profile-action-secondary" type="button">${icon("edit")}<span>${escapeHtml(t("profileEdit"))}</span></button>`;
-    const joined = demoProfile.createdAt ? new Intl.DateTimeFormat(currentLang, { dateStyle:"medium" }).format(new Date(demoProfile.createdAt)) : "—";
-    metaHost.innerHTML = `<div>◷ <span>${escapeHtml(t("profileJoined", { date:joined }))}</span></div><div><span><strong>0</strong> ${escapeHtml(t("profileFollowing"))}</span><span><strong>0</strong> ${escapeHtml(t("profileFollowers"))}</span></div>`;
-    metaHost.hidden = false;
-  } else {
-    profileHeader.innerHTML = `<div class="profile-avatar profile-avatar-guest">${guestAvatar}</div><div class="profile-name"><h2>${escapeHtml(t("profileGuest"))}</h2><span>${escapeHtml(t("profileSignInToSync"))}</span></div>${syncStatusIcon}`;
-    actionHost.innerHTML = `<button id="profileLoginAction" class="profile-login-action" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span>${escapeHtml(t("profileLoginRegister"))}</span></span></button>`;
-    metaHost.hidden = true;
-  }
-  if (!profileDataCache || profileDataCache.source !== annotations) {
-    profileDataCache = globalThis.LHN_PROFILE_STATS.build(annotations, { tagsOf, siteOf, pageKey, dateValue });
-  }
-  const { pageCount, noteCount, tagCounts, siteCounts, dailyCounts, needLearnCount } = profileDataCache;
-  $("profilePageTotal").textContent = pageCount.toLocaleString(currentLang);
-  $("profileNoteTotal").textContent = noteCount.toLocaleString(currentLang);
-  $("profileNeedLearnTotal").textContent = needLearnCount.toLocaleString(currentLang);
-  const heatmap = $("profileHeatmap"), today = new Date(); today.setHours(0, 0, 0, 0);
-  let days = profileActivityRange === "weekly" ? 7 : profileActivityRange === "yearly" ? 364 : 84;
-  if (profileActivityRange === "all" && dailyCounts.size) {
-    const first = [...dailyCounts.keys()].sort()[0], firstDate = new Date(`${first}T00:00:00`);
-    days = Math.min(364, Math.max(84, Math.floor((today - firstDate) / 86400000) + 1));
-  }
-  const start = new Date(today); start.setDate(today.getDate() - days + 1);
-  const monthLabels = $("profileMonthLabels");
-  const months = [];
-  for (let offset = 3; offset >= 0; offset--) { const date = new Date(today.getFullYear(), today.getMonth() - offset, 1); months.push(new Intl.DateTimeFormat(currentLang, { month:"short" }).format(date)); }
-  monthLabels.replaceChildren(...months.map(label => { const span = document.createElement("span"); span.textContent = label; return span; }));
-  const maxDaily = Math.max(1, [...dailyCounts.values()].reduce((max, count) => Math.max(max, count), 0)); let activeDays = 0;
-  const cells = [];
-  for (let day = 0; day < days; day++) {
-    const date = new Date(start); date.setDate(start.getDate() + day);
-    const key = date.toISOString().slice(0, 10), count = dailyCounts.get(key) || 0;
-    if (count) activeDays++;
-    const level = count ? Math.min(4, Math.ceil(count / maxDaily * 4)) : 0;
-    cells.push(`<i class="profile-heat-cell level-${level}" title="${escapeHtml(new Intl.DateTimeFormat(currentLang, { dateStyle:"medium" }).format(date))}: ${count}" aria-label="${count}"></i>`);
-  }
-  heatmap.innerHTML = cells.join("");
-  $("profileActivityTotal").textContent = activeDays.toLocaleString(currentLang);
-  const allActiveWeeks = new Set([...dailyCounts.keys()].map(key => { const date = new Date(`${key}T00:00:00`); date.setDate(date.getDate() - date.getDay()); return date.toISOString().slice(0,10); }));
-  $("profileTotalDays").textContent = dailyCounts.size.toLocaleString(currentLang);
-  $("profileTotalWeeks").textContent = allActiveWeeks.size.toLocaleString(currentLang);
-  $("profileTagTotal").textContent = `(${tagCounts.size.toLocaleString(currentLang)})`;
-  $("profileDomainTotal").textContent = `(${siteCounts.size.toLocaleString(currentLang)})`;
-  const tagsTab = $("profileTagsTab"), domainsTab = $("profileDomainsTab");
-  tagsTab.classList.toggle("is-active", profileChipMode === "tags"); domainsTab.classList.toggle("is-active", profileChipMode === "domains");
-  const entries = [...(profileChipMode === "tags" ? tagCounts : siteCounts)].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], currentLang)).slice(0, 12);
-  const chips = $("profileChips"); chips.replaceChildren(...entries.map(([name, count]) => { const chip = document.createElement("button"); chip.type = "button"; chip.className = "profile-chip"; const label = document.createElement("span"); label.className = "profile-chip-name"; label.textContent = name; const total = document.createElement("span"); total.className = "profile-chip-count"; total.textContent = `(${count.toLocaleString(currentLang)})`; chip.append(label, total); chip.title = `${name} · ${count.toLocaleString(currentLang)}`; chip.dataset.name = name; return chip; }));
-  if (!entries.length) { const empty = document.createElement("span"); empty.className = "profile-chip-empty"; empty.textContent = "—"; chips.appendChild(empty); }
-  document.querySelectorAll("[data-profile-range]").forEach(button => button.classList.toggle("is-active", button.dataset.profileRange === profileActivityRange));
+
 }
 function setProfileAuthMode(mode) {
   const isRegister = mode === "register";
@@ -444,14 +444,14 @@ function openProfileAuth(mode = "login") { setProfileAuthMode(mode); $("profileA
 async function finishProfileAuth(profile) {
   demoProfile = profile;
   await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-  $("profileAuthDialog").close(); renderProfileSidebar();
+  $("profileAuthDialog").close(); renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 async function signOutDemoProfile() {
   await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
   closeMenus();
-  renderProfileSidebar();
+  renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
 }
 function setStudyQueue(items) { studyQueue = items; studyQueueHead = 0; }
@@ -484,8 +484,6 @@ function appendContextSentence(host, sentence, quote) {
   const strong = document.createElement("strong"); strong.textContent = match[0]; host.append(strong);
   host.append(document.createTextNode(text.slice(at + length)));
 }
-function searchRank(item, query) { return LHN_SEARCH.rank(LIBRARY.searchFields(item), query); }
-function highlightSearchMatches(root, query) { LHN_SEARCH.highlightMatches(root, query, ".card-actions, .lhn-search-match"); }
 function slightlyDarkerHighlight(hex) {
   const match = /^#([\da-f]{6})$/i.exec(String(hex || ""));
   if (!match) return hex;
@@ -522,9 +520,8 @@ function toast(message) {
     if (activeToastElement === el) activeToastElement = null;
   }, CONFIG.TIMINGS.TOAST_MS);
 }
-function annotationMeta(item) { return LIBRARY.metadata(item); }
-function siteOf(item) { return LIBRARY.siteOf(item); }
-function tagsOf(item) { return LIBRARY.tagsOf(item); }
+function siteOf(item) { return ANNOTATION_UTILS.siteOf(item); }
+function tagsOf(item) { return ANNOTATION_UTILS.tagsOf(item); }
 function parseTags(value) { return tagsOf({ tags: String(value || "").split(",") }); }
 function tagsEqual(a, b) { return JSON.stringify(tagsOf({ tags: a })) === JSON.stringify(tagsOf({ tags: b })); }
 function setupTagEditor(host, initialTags = []) {
@@ -575,51 +572,7 @@ function setupTagEditor(host, initialTags = []) {
   host.onclick = () => input.focus({ preventScroll: true }); render();
   return { getTags: () => normalize(tags.map(tag => tag === editingTag && input.value.trim() ? input.value : tag.value).concat(editingTag === null ? [input.value] : [])) };
 }
-function dateFilterCutoff(range) {
-  if (!range) return null;
-  if (range === "today") { const start = new Date(); start.setHours(0, 0, 0, 0); return start.getTime(); }
-  const days = Number(range);
-  return Number.isFinite(days) ? Date.now() - days * 86400000 : NaN;
-}
-function matchesDate(item, cutoff) {
-  if (cutoff === null) return true;
-  const created = dateValue(item, "createdAt");
-  return created > 0 && created >= cutoff;
-}
-function pageKey(item) { return globalThis.LHN_LIBRARY.pageKey ? globalThis.LHN_LIBRARY.pageKey(item) : String(item.url || item.hostname || item.title || "unknown"); }
-function dateValue(item, field) { const n = Number(item?.[field] || 0); return Number.isFinite(n) ? n : 0; }
-const incrementalListObservers = new WeakMap();
-function renderIncrementalList(host, items, createNode, { initial, batch } = {}) {
-  const pageSize = initial ?? CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL;
-  const batchSize = batch ?? CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH;
-  incrementalListObservers.get(host)?.disconnect();
-  host.replaceChildren();
-  if (!items.length) return;
-  if (!("IntersectionObserver" in window)) {
-    const fragment = document.createDocumentFragment();
-    for (const item of items) fragment.appendChild(createNode(item));
-    host.appendChild(fragment);
-    return;
-  }
-  let offset = 0, observer;
-  const sentinel = document.createElement("div");
-  sentinel.className = "dashboard-list-sentinel";
-  sentinel.setAttribute("aria-hidden", "true");
-  const appendBatch = () => {
-    const fragment = document.createDocumentFragment();
-    const end = Math.min(items.length, offset + (offset === 0 ? pageSize : batchSize));
-    for (; offset < end; offset++) fragment.appendChild(createNode(items[offset]));
-    host.insertBefore(fragment, sentinel);
-    if (offset >= items.length) { observer?.disconnect(); sentinel.remove(); incrementalListObservers.delete(host); }
-  };
-  observer = new IntersectionObserver(entries => {
-    if (entries.some(entry => entry.isIntersecting)) appendBatch();
-  }, { root: host, rootMargin: `${CONFIG.LIMITS.DASHBOARD_LIST_PREFETCH_PX}px 0px` });
-  host.appendChild(sentinel);
-  incrementalListObservers.set(host, observer);
-  appendBatch();
-  if (offset < items.length) observer.observe(sentinel);
-}
+function pageKey(item) { return ANNOTATION_UTILS.pageKey(item); }
 function fmtDate(value) { if (!value) return t("dateUnknown"); try { return new Intl.DateTimeFormat(currentLang === "vi" ? "vi-VN" : currentLang === "ko" ? "ko-KR" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(value)); } catch { return t("dateUnknown"); } }
 function populateStudyLanguageOptions(select, autoValue, selectedValue) {
   if (!select) return;
@@ -719,6 +672,283 @@ function refreshFlashcardTranslateSettingsUI() {
     row.classList.toggle("is-disabled", sharedSpeech);
   });
 }
+let dictationSourceFilter = "all", dictationViewInitialized = false, dictationSortMode = "recent";
+let dictationSelectedSessionId = "", dictationErrorSummarySequence = 0;
+function dictationSourceLabel(session) {
+  if (session?.sourceType === "youtube") return "YouTube";
+  if (session?.sourceType === "web") return t("ovSourceWeb");
+  return String(session?.sourceType || "");
+}
+function dictationSessionUrl(session) {
+  try {
+    const url = new URL(String(session?.url || ""));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch { return ""; }
+}
+function dictationSessionTitle(session) {
+  return String(session?.title || "").trim() || String(session?.sourceId || "").trim() || t("dictationUntitledSession");
+}
+function sortedDictationSessions() {
+  const sessions = [...(overviewSessionEntries || [])];
+  if (dictationSortMode === "title") sessions.sort((a,b) => dictationSessionTitle(a).localeCompare(dictationSessionTitle(b), currentLang));
+  else if (dictationSortMode === "progress") sessions.sort((a,b) => {
+    const progress = x => x.totalCount > 0 ? x.solvedCount / x.totalCount : x.solvedCount;
+    return progress(b) - progress(a) || b.updatedAt - a.updatedAt;
+  });
+  else sessions.sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId));
+  return sessions;
+}
+function renderDictationSessionCards() {
+  const grid = $("dictationSessionGrid");
+  if (!grid) return;
+  const sessions = sortedDictationSessions();
+  grid.innerHTML = sessions.map(session => {
+    const title = dictationSessionTitle(session), source = dictationSourceLabel(session);
+    const url = dictationSessionUrl(session), domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return session.sourceId || source; } })();
+    const total = Math.max(0, Number(session.totalCount) || 0), solved = Math.max(0, Number(session.solvedCount) || 0);
+    const progress = total ? Math.min(100, Math.round(solved / total * 100)) : 0;
+    const progressText = total ? `${overviewFormatCount(solved)} / ${overviewFormatCount(total)}` : overviewFormatCount(solved);
+    const sourceType = String(session.sourceType || "").toLowerCase();
+    const artClass = sourceType === "web" ? "article" : "habits";
+    const videoId = String(session.sourceId || "");
+    const thumbnail = sourceType === "youtube" && globalThis.LHN_THUMBNAILS?.youtubeVideoId(videoId)
+      ? `<img class="dictation-thumb-image" data-video-id="${escapeHtml(videoId)}" alt="" loading="lazy" decoding="async">`
+      : "";
+    const isComplete = session.status === "complete";
+    const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
+    return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
+      <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+    </article>`;
+  }).join("");
+  grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
+    globalThis.LHN_THUMBNAILS?.loadYouTube(image, image.dataset.videoId, { onError:() => image.remove() });
+  });
+  refreshDictationView({ animateCounters:true });
+  observeDictationSessionCards();
+}
+function updateDictationContinueThumbnail(session) {
+  const art = document.querySelector("#dashboardDictationView .continue-art");
+  const image = art?.querySelector(".dictation-continue-thumb");
+  const thumbnails = globalThis.LHN_THUMBNAILS;
+  if (!art || !image) return;
+  const videoId = String(session?.sourceType === "youtube" ? session.sourceId || "" : "");
+  if (!thumbnails?.youtubeVideoId(videoId)) {
+    image.hidden = true;
+    thumbnails?.clear(image);
+    art.classList.remove("has-thumbnail");
+    return;
+  }
+  image.hidden = false;
+  if (image.getAttribute("src") !== thumbnails.youtubeUrl(videoId)) art.classList.remove("has-thumbnail");
+  thumbnails.loadYouTube(image, videoId, {
+    onLoad:() => art.classList.add("has-thumbnail"),
+    onError:() => { image.hidden = true; art.classList.remove("has-thumbnail"); },
+  });
+}
+function renderDictationContinueCard() {
+  const session = [...(overviewSessionEntries || [])]
+    .filter(item => item.status !== "complete")
+    .sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId))[0] || null;
+  updateDictationContinueThumbnail(session);
+  const title = $("dictationContinueTitle"), description = $("dictationContinueDescription"), meta = $("dictationContinueMeta");
+  const actions = $("dictationContinueActions"), continueButton = $("dictationContinueButton"), sourceButton = $("dictationOpenSourceButton");
+  if (!title || !description || !meta || !actions) return;
+  if (!session) {
+    title.textContent = t("dictationContinueEmptyTitle");
+    description.textContent = t("dictationContinueEmptyDescription");
+    meta.replaceChildren(); actions.hidden = true;
+    continueButton?.removeAttribute("data-dictation-open"); continueButton?.removeAttribute("data-dictation-auto-open");
+    sourceButton?.removeAttribute("data-dictation-open"); sourceButton?.removeAttribute("data-dictation-auto-open");
+    return;
+  }
+  const current = Math.max(1, (Number(session.currentIndex) || 0) + 1);
+  title.textContent = dictationSessionTitle(session);
+  description.textContent = session.totalCount > 0
+    ? t("dictationContinuePosition", { current:overviewFormatCount(current), total:overviewFormatCount(session.totalCount) })
+    : t("dictationContinueCurrent", { current:overviewFormatCount(current) });
+  const metaParts = [dictationSourceLabel(session), t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }), session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown")];
+  meta.innerHTML = metaParts.map(value => `<span class="meta-pill">${escapeHtml(value)}</span>`).join("");
+  for (const button of [continueButton, sourceButton]) if (button) button.dataset.dictationOpen = session.sessionId;
+  if (continueButton) continueButton.dataset.dictationAutoOpen = "true";
+  sourceButton?.removeAttribute("data-dictation-auto-open");
+  actions.hidden = false;
+}
+function syncDictationSessionSelection() {
+  const cards = [...document.querySelectorAll("#dashboardDictationView #dictationSessionGrid .session-card")];
+  const selectedCard = dictationSelectedSessionId
+    ? cards.find(card => card.dataset.sessionId === dictationSelectedSessionId && !card.hidden) || null
+    : null;
+  if (dictationSelectedSessionId && !selectedCard) dictationSelectedSessionId = "";
+  for (const card of cards) {
+    const selected = card === selectedCard;
+    card.classList.toggle("is-selected", selected);
+    if (selected) card.setAttribute("aria-current", "true");
+    else card.removeAttribute("aria-current");
+  }
+  document.querySelector("#dashboardDictationView .stats-panel")?.classList.toggle("has-session-selection", Boolean(selectedCard));
+  const showAll = $("dictationShowAllSessions");
+  if (showAll) showAll.hidden = !selectedCard;
+  return selectedCard;
+}
+function clearDictationSessionSelection() {
+  if (!dictationSelectedSessionId) return;
+  dictationSelectedSessionId = "";
+  syncDictationSessionSelection();
+  void renderDictationErrorSummary();
+}
+function refreshDictationView({ animateCounters = false } = {}) {
+  const input = $("dictationSessionSearch");
+  if (!input) return;
+  const query = input.value.trim(), normalizedQuery = query.toLocaleLowerCase(currentLang);
+  const cards = [...document.querySelectorAll("#dashboardDictationView .session-card")];
+  let visible = 0;
+  cards.forEach(card => {
+    const matchesSource = dictationSourceFilter === "all" || card.dataset.source === dictationSourceFilter;
+    const cardText = `${card.dataset.search || ""} ${card.textContent}`.toLocaleLowerCase(currentLang);
+    const matchesText = !normalizedQuery || cardText.includes(normalizedQuery);
+    card.hidden = !(matchesSource && matchesText);
+    if (!card.hidden) visible++;
+  });
+  const status = $("dictationSearchStatus"), actions = $("dictationExternalActions"), noResults = $("dictationNoResults"), count = $("dictationVisibleCount"), empty = $("dictationEmptyState");
+  const hasSessions = cards.length > 0;
+  if (status) status.textContent = query ? t("dictationSearchResults", { count:visible, query }) : t("dictationSearchEmpty");
+  actions?.classList.toggle("visible", Boolean(query));
+  const youtubeText = $("dictationYoutubeSearchText"), googleText = $("dictationGoogleSearchText");
+  if (youtubeText) youtubeText.textContent = query ? t("dictationSearchYoutubeQuery", { query }) : t("dictationSearchYoutube");
+  if (googleText) googleText.textContent = query ? t("dictationSearchGoogleQuery", { query }) : t("dictationSearchGoogle");
+  if (count) setDictationCounter(count, visible, value => t("dictationVisibleCount", { count:overviewFormatCount(value) }), { animate:animateCounters });
+  const filterCounts = {
+    all:cards.length,
+    youtube:cards.filter(card => card.dataset.source === "youtube").length,
+    web:cards.filter(card => card.dataset.source === "web").length,
+  };
+  for (const [source, id] of [["all","dictationFilterAllCount"],["youtube","dictationFilterYoutubeCount"],["web","dictationFilterWebCount"]]) {
+    const node = $(id); if (node) setDictationCounter(node, filterCounts[source], overviewFormatCount, { animate:animateCounters });
+  }
+  if (empty) {
+    if (!overviewSessionsReady) empty.textContent = t("dictationSessionsLoading");
+    else if (!hasSessions) empty.textContent = t("dictationEmptyState");
+    empty.hidden = hasSessions;
+    empty.classList.toggle("visible", !hasSessions);
+  }
+  if (noResults) { noResults.hidden = !hasSessions || visible > 0; noResults.classList.toggle("visible", hasSessions && visible === 0); }
+  syncDictationSessionSelection();
+  void renderDictationErrorSummary();
+}
+function initDictationView() {
+  if (dictationViewInitialized) return;
+  const input = $("dictationSessionSearch");
+  if (!input) return;
+  dictationViewInitialized = true;
+  input.addEventListener("input", refreshDictationView);
+  $("dictationSortSelect")?.addEventListener("change", event => { dictationSortMode = event.target.value || "recent"; renderDictationSessionCards(); });
+  document.querySelectorAll("#dashboardDictationView .filters [data-filter]").forEach(button => button.addEventListener("click", () => {
+    dictationSourceFilter = button.dataset.filter || "all";
+    document.querySelectorAll("#dashboardDictationView .filters [data-filter]").forEach(filter => {
+      const active = filter === button;
+      filter.classList.toggle("active", active);
+      filter.setAttribute("aria-pressed", String(active));
+    });
+    refreshDictationView();
+  }));
+  document.querySelectorAll("#dashboardDictationView [data-engine]").forEach(button => button.addEventListener("click", async () => {
+    const query = input.value.trim();
+    if (!query) { input.focus(); toast(t("dictationEnterSearch")); return; }
+    const url = button.dataset.engine === "YouTube"
+      ? `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
+      : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    try { await browser.tabs.create({ url }); } catch (error) { console.warn("Could not open Dictation search", error); }
+  }));
+  const openSession = async (sessionId, { autoOpenDictation = false } = {}) => {
+    const session = overviewSessionEntries.find(item => item.sessionId === sessionId);
+    const url = dictationSessionUrl(session);
+    if (!url) { toast(t("dictationSourceUnavailable")); return; }
+    let targetUrl = url;
+    const sourceType = String(session?.sourceType || "").toLowerCase();
+    const videoId = String(session?.sourceId || "");
+    if (autoOpenDictation && sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(videoId)) {
+      const youtubeUrl = new URL("https://www.youtube.com/watch");
+      youtubeUrl.searchParams.set("v", videoId);
+      youtubeUrl.searchParams.set("lhn_open_dictation", "1");
+      targetUrl = youtubeUrl.href;
+    }
+    try { await browser.tabs.create({ url:targetUrl, active:true }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
+  };
+  const dictationView = $("dashboardDictationView");
+  dictationView.addEventListener("click", event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest("[data-dictation-open]");
+    if (button?.dataset.dictationOpen) {
+      void openSession(button.dataset.dictationOpen, { autoOpenDictation:button.dataset.dictationAutoOpen === "true" });
+      return;
+    }
+    const card = target?.closest("#dictationSessionGrid .session-card");
+    if (!card || card.hidden) return;
+    dictationSelectedSessionId = card.dataset.sessionId || "";
+    syncDictationSessionSelection();
+    void renderDictationErrorSummary();
+  });
+  document.addEventListener("click", event => {
+    if (!dictationSelectedSessionId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("#dashboardDictationView #dictationSessionGrid .session-card:not([hidden])")) return;
+    clearDictationSessionSelection();
+  });
+  document.addEventListener("keydown", event => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !$("dashboardDictationView").hidden) { event.preventDefault(); input.focus(); }
+    if (event.key === "Escape" && document.activeElement === input) { input.value = ""; refreshDictationView(); input.blur(); }
+  });
+  refreshDictationView();
+}
+function dictationSafeCount(value) { const number = Number(value); return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0; }
+async function renderDictationErrorSummary() {
+  const renderSequence = ++dictationErrorSummarySequence;
+  const wordCount = $("dictationWrongWordsCount"), recoveryRate = $("dictationRecoveryRate"), list = $("dictationMistakeList"), empty = $("dictationStatsEmpty");
+  if (!wordCount || !recoveryRate || !list || !empty) return;
+  try {
+    const cards = [...document.querySelectorAll("#dashboardDictationView #dictationSessionGrid .session-card")].filter(card => !card.hidden);
+    const selectedCard = syncDictationSessionSelection();
+    const scopedCards = selectedCard ? [selectedCard] : cards;
+    const sourceIds = new Set(scopedCards.map(card => String(card.dataset.sourceId || "")).filter(Boolean));
+    const titleBySource = new Map((overviewSessionEntries || []).map(session => [session.sourceId, dictationSessionTitle(session)]));
+    const data = await browser.storage.local.get(null);
+    if (renderSequence !== dictationErrorSummarySequence) return;
+    const grouped = new Map();
+    for (const [storageKey, record] of Object.entries(data || {})) {
+      const match = storageKey.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
+      if (!match || !sourceIds.has(match[1]) || record?.wrongWordStats?.version !== 3 || !record.wrongWordStats.words || typeof record.wrongWordStats.words !== "object") continue;
+      const sourceId = match[1], sourceTitle = titleBySource.get(sourceId) || sourceId;
+      for (const item of Object.values(record.wrongWordStats.words)) {
+        const word = String(item?.word || "").trim(), errors = dictationSafeCount(item?.errors), fixes = dictationSafeCount(item?.corrections);
+        if (!word || !errors) continue;
+        const key = word.toLocaleLowerCase();
+        let aggregate = grouped.get(key);
+        if (!aggregate) { aggregate = { word, errors:0, fixes:0, sources:new Set(), lastAt:0 }; grouped.set(key, aggregate); }
+        aggregate.errors += errors; aggregate.fixes += fixes; aggregate.sources.add(sourceTitle);
+        aggregate.lastAt = Math.max(aggregate.lastAt, dictationSafeCount(item?.lastAt));
+      }
+    }
+    if (renderSequence !== dictationErrorSummarySequence) return;
+    const words = [...grouped.values()].sort((a,b) => b.errors - a.errors || b.lastAt - a.lastAt || a.word.localeCompare(b.word));
+    const totalErrors = words.reduce((sum, item) => sum + item.errors, 0), totalFixes = words.reduce((sum, item) => sum + item.fixes, 0);
+    setDictationCounter(wordCount, words.length);
+    if (totalErrors) setDictationCounter(recoveryRate, Math.round(totalFixes / totalErrors * 100));
+    else clearDictationCounter(recoveryRate, "—");
+    list.innerHTML = words.map(item => `<div class="mistake-row"><div><div class="word-pair"><span class="right-word">${escapeHtml(item.word)}</span></div><div class="mistake-source">${escapeHtml([...item.sources].slice(0, 2).join(" · "))}</div></div><span class="mistake-count"><span class="mistake-count-number">${overviewFormatCount(item.errors)}</span> <i>${escapeHtml(t("dictationWrongStatsTimes"))}</i></span></div>`).join("");
+    list.querySelectorAll(".mistake-count-number").forEach((node, index) => {
+      if (index < 3) setDictationCounter(node, words[index].errors);
+      else node.textContent = overviewFormatCount(words[index].errors);
+    });
+    empty.hidden = words.length > 0;
+  } catch (error) {
+    if (renderSequence !== dictationErrorSummarySequence) return;
+    clearDictationCounter(wordCount, "—"); clearDictationCounter(recoveryRate, "—"); list.replaceChildren();
+    empty.hidden = false;
+    console.warn("Could not load saved Dictation error summary", error);
+  }
+}
+
 function applyTranslations() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -732,9 +962,12 @@ function applyTranslations() {
   document.title = `${t("appName")} — ${currentLang === "vi" ? "Bảng quản lý" : currentLang === "ko" ? "대시보드" : "Dashboard"}`;
   refreshFlashcardTranslateSettingsUI();
   renderExportMenus();
+  refreshDictationView();
+  if (typeof activeDashboardView !== "undefined") updateSharedTopbarContent(activeDashboardView);
 }
 async function load() {
-  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY]);
+  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
+  if (DASHBOARD_SETTINGS_TAB_NAMES.has(settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY])) lastDashboardSettingsTab = settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY];
   const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
   const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
@@ -823,15 +1056,17 @@ async function load() {
   syncDashboardTheme();
   currentLang = LANGUAGES.languageFor(dashboardSettings); favorites = Array.isArray(settingsData[CONFIG.STORAGE_KEYS.FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.FAVORITES] : [];
   favoriteNoteIds = new Set(Array.isArray(settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) ? settingsData[CONFIG.STORAGE_KEYS.NOTE_FAVORITES] : []);
-  syncNoteFavoriteFilters();
+  favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos(settingsData[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]);
   applyTranslations();
   syncBilingualPreview();
   annotations = await loadAnnotationsInBatches();
+  invalidateAnnotationCaches();
   annotationById.clear();
   annotationPositionById.clear();
   annotations.forEach((item, index) => { if (item?.id) { annotationById.set(item.id, item); annotationPositionById.set(item.id, index); } });
-  filterOptionsCache = null;
   render();
+  syncHighlightsNotesView();
+  if (!overviewSessionsReady) void loadOverviewDictationSessions();
   if ($("dashboardSettingsDialog")?.open) refreshDashboardSettings();
 }
 async function loadAnnotationsInBatches() {
@@ -874,211 +1109,688 @@ function applyAnnotationChange(change, renderNow = true) {
     }
     if (changed) annotations.length = write;
   } else return false;
-  profileDataCache = null;
-  filterOptionsCache = null;
+  invalidateAnnotationCaches();
   if (renderNow) render();
+  syncHighlightsNotesView();
   return true;
 }
-function getFilteredAnnotations() {
-  const query = $("search").value.trim().toLocaleLowerCase(), site = $("siteFilter").value, color = $("colorFilter").value, tag = $("tagFilter").value, dateRange = $("dateFilter").value;
-  const dateCutoff = dateFilterCutoff(dateRange), normalizedTag = tag.toLocaleLowerCase();
-  const filtered = annotations.filter(a => (!site || siteOf(a) === site) && (!color || CONFIG.normalizeColor(a.color) === color) && (!tag || tagsOf(a).some(value => value.toLocaleLowerCase() === normalizedTag)) && matchesDate(a, dateCutoff) && (!favoriteNotesOnly || favoriteNoteIds.has(a.id)) && (!query || searchRank(a, query) < Number.MAX_SAFE_INTEGER));
-  if (query) filtered.sort((a, b) => searchRank(a, query) - searchRank(b, query));
-  return filtered;
+let highlightsNotesViewReady = false;
+function syncHighlightsNotesView() {
+  if (!highlightsNotesViewReady || !dashboardHighlightsNotesView) return;
+  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-data", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_DATA", version:1, language:currentLang, items:annotations, favorites:[...favorites], favoriteVideos:favoriteVideos.map(video => ({ ...video })), favoriteNoteIds:[...favoriteNoteIds] } }));
 }
-function syncNoteFavoriteFilters() {
-  const button = $("favoriteNotesOnly");
-  if (!button) return;
-  button.classList.toggle("is-active", favoriteNotesOnly);
-  button.setAttribute("aria-pressed", String(favoriteNotesOnly));
+function replyToHighlightsNotes(requestId, ok, message = "") {
+  if (typeof requestId !== "string") return;
+  window.dispatchEvent(new CustomEvent("keepit:highlights-notes-result", { detail:{ type:"KEEPIT_HIGHLIGHTS_NOTES_RESULT", requestId, ok:!!ok, message } }));
 }
-async function toggleNoteFavorite(item, button, event) {
-  const wasFavorite = favoriteNoteIds.has(item.id);
-  playToolbarActionEffect(button, event, "#f43f5e", "heart");
-  if (wasFavorite) favoriteNoteIds.delete(item.id);
-  else favoriteNoteIds.add(item.id);
-  render();
+async function handleHighlightsNotesAction(data) {
+  const requestId = typeof data.requestId === "string" ? data.requestId : "";
+  const item = typeof data.itemId === "string" ? annotationById.get(data.itemId) || annotations.find(annotation => annotation.id === data.itemId) : null;
+  const key = typeof data.pageKey === "string" ? data.pageKey : "";
   try {
-    await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]: [...favoriteNoteIds] });
-  } catch (error) {
-    if (wasFavorite) favoriteNoteIds.add(item.id);
-    else favoriteNoteIds.delete(item.id);
-    render();
-    console.warn("Could not save note favorite", error);
-  }
-}
-function dashboardFilterOptions() {
-  if (filterOptionsCache?.source === annotations && filterOptionsCache.language === currentLang) return filterOptionsCache;
-  const sites = new Set(), tags = new Set();
-  for (const item of annotations) {
-    sites.add(siteOf(item));
-    for (const tag of tagsOf(item)) tags.add(tag);
-  }
-  filterOptionsCache = { source:annotations, language:currentLang, sites:[...sites].sort((a, b) => a.localeCompare(b)), tags:[...tags].sort((a, b) => a.localeCompare(b, currentLang)) };
-  return filterOptionsCache;
-}
-function buildPages(items) {
-  return LHN_LIBRARY.groupPages(items, {
-    pageKey, siteOf, searchRank, searchQuery:$('search').value.trim().toLocaleLowerCase(),
-    normalizeColor:color => CONFIG.normalizeColor(color), favorites, showFavorites:favoritesOnly, sort:$('sortBy').value
-  });
-}function render({ preserveSources = false } = {}) {
-  renderProfileSidebar();
-  const siteValue = $("siteFilter").value, colorValue = $("colorFilter").value, tagValue = $("tagFilter").value;
-  const { sites, tags } = dashboardFilterOptions();
-  $("siteFilter").innerHTML = `<option value="">${escapeHtml(t("allWebsites"))}</option>` + sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-  if (sites.includes(siteValue)) $("siteFilter").value = siteValue;
-  $("colorFilter").innerHTML = `<option value="">${escapeHtml(t("allColors"))}</option>` + CONFIG.COLORS.map(color => `<option value="${color}">${escapeHtml(t(CONFIG.colorLabelKey(color)))}</option>`).join("");
-  if (CONFIG.COLORS.includes(colorValue)) $("colorFilter").value = colorValue;
-  $("tagFilter").innerHTML = `<option value="">${escapeHtml(t("allTags"))}</option>` + tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("");
-  if (tags.some(tag => tag.toLocaleLowerCase() === tagValue.toLocaleLowerCase())) $("tagFilter").value = tagValue;
-  const filtered = getFilteredAnnotations();
-  const pages = buildPages(filtered);
-  const selectedStillVisible = pages.some(p => p.key === selectedUrl);
-  if (!selectedStillVisible) selectedUrl = pages[0]?.key || null;
-  $("count").textContent = t("notesCount", { count: filtered.length });
-  $("pageCount").textContent = t("pagesCount", { count: pages.length });
-  if (preserveSources) {
-    $("sourceList").querySelectorAll(".source-item").forEach(row => row.classList.toggle("active", row.dataset.url === selectedUrl));
-  } else renderSources(pages);
-  const selected = pages.find(p => p.key === selectedUrl) || null;
-  renderNoteColorFilters(selected);
-  renderSelectedPage(selected, filtered);
-  $("empty").hidden = filtered.length > 0 || !!selectedUrl;
-  $("selectPrompt").hidden = !!selected || filtered.length === 0;
-}
-function renderSources(pages) {
-  const host = $("sourceList");
-  if (!pages.length) { incrementalListObservers.get(host)?.disconnect(); host.innerHTML = `<div class="source-empty">${escapeHtml(t("noMatchingPages"))}</div>`; return; }
-  renderIncrementalList(host, pages, p => {
-    const row = document.createElement("article"); row.className = `source-item${p.key === selectedUrl ? " active" : ""}`; row.dataset.url = p.key; row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", p.title || p.site);
-    row.innerHTML = `<div class="source-thumb">${p.thumbnailUrl ? `<img src="${escapeHtml(p.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="thumb-fallback" aria-hidden="true">${icon("file")}</span></div><div class="source-info"><div class="source-title">${escapeHtml(p.title || p.site)}</div><div class="source-host">${escapeHtml(p.site)}</div><div class="source-meta"><span class="source-date">${escapeHtml(fmtDate(p.createdAt))}</span><span class="source-meta-count">${p.colors.map(c => `<span class="color-dot ${c}" title="${escapeHtml(t(`color${c[0].toUpperCase()}${c.slice(1)}`))}"></span>`).join("")}<span class="source-count-number">${p.items.length}</span><span class="source-count-icon">${icon("square-text")}</span></span></div></div>`;
-    const sourceQuery = $("search").value.trim();
-    highlightSearchMatches(row.querySelector(".source-title"), sourceQuery);
-    highlightSearchMatches(row.querySelector(".source-host"), sourceQuery);
-    const img = row.querySelector("img");
-    if (img) {
-      const fallback = row.querySelector(".thumb-fallback");
-      img.addEventListener("load", () => { if (fallback) fallback.hidden = true; }, { once: true });
-      img.addEventListener("error", () => { img.remove(); }, { once: true });
-      if (img.complete && img.naturalWidth > 0 && fallback) fallback.hidden = true;
+    switch (data.action) {
+      case "edit-note":
+        if (!item) throw new Error("Highlight not found");
+        openEditDialog(item); replyToHighlightsNotes(requestId, true); return;
+      case "delete-note":
+        if (!item) throw new Error("Highlight not found");
+        if (!confirm(t("deleteAnnotationConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
+        await LHN_MESSAGING.sendMessage({ type:"DELETE", id:item.id, origin:DASHBOARD_INSTANCE_ID });
+        applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted"));
+        replyToHighlightsNotes(requestId, true); return;
+      case "toggle-note-favorite": {
+        if (!item) throw new Error("Highlight not found");
+        const wasFavorite = favoriteNoteIds.has(item.id);
+        if (wasFavorite) favoriteNoteIds.delete(item.id); else favoriteNoteIds.add(item.id);
+        try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] }); }
+        catch (error) { if (wasFavorite) favoriteNoteIds.add(item.id); else favoriteNoteIds.delete(item.id); throw error; }
+        render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+      }
+      case "toggle-page-favorite": {
+        // A YouTube page is favourited by its video id (lhnFavoriteVideos), shared with the ♥ in the touch overlay;
+        // it can be listed with no highlights. Legacy URL favourites of the same video are removed when un-favouriting.
+        const videoId = globalThis.LHN_THUMBNAILS?.youtubeVideoId(key) || "";
+        if (videoId) {
+          const before = { favorites, favoriteVideos }, isFavorite = favoriteVideos.some(video => video.videoId === videoId) || favorites.includes(key);
+          if (isFavorite) {
+            favoriteVideos = favoriteVideos.filter(video => video.videoId !== videoId);
+            favorites = favorites.filter(value => value !== key && globalThis.LHN_THUMBNAILS?.youtubeVideoId(value) !== videoId);
+          } else {
+            const source = annotations.find(annotation => pageKey(annotation) === key);
+            favoriteVideos = [{ videoId, title: String(source?.title || ""), channel: "", addedAt: Date.now() }, ...favoriteVideos];
+          }
+          try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites, [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos }); }
+          catch (error) { ({ favorites, favoriteVideos } = before); throw error; }
+          render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+        }
+        // A web page favourited from the touch overlay ♥ is kept by URL (it may have no highlights).
+        const pageUrl = LHN_BACKUP.favoritePageUrl(key);
+        if (pageUrl && favoriteVideos.some(video => video.url === pageUrl)) {
+          const before = { favorites, favoriteVideos };
+          favoriteVideos = favoriteVideos.filter(video => video.url !== pageUrl);
+          favorites = favorites.filter(value => value !== key);
+          try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites, [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos }); }
+          catch (error) { ({ favorites, favoriteVideos } = before); throw error; }
+          render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+        }
+        if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
+        const wasFavorite = favorites.includes(key);
+        favorites = wasFavorite ? favorites.filter(value => value !== key) : [...favorites, key];
+        try { await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites }); }
+        catch (error) { favorites = wasFavorite ? [...favorites, key] : favorites.filter(value => value !== key); throw error; }
+        render(); syncHighlightsNotesView(); replyToHighlightsNotes(requestId, true); return;
+      }
+      case "delete-page": {
+        if (!key) throw new Error("Source page not found");
+        const pageItems = annotations.filter(annotation => pageKey(annotation) === key);
+        if (!pageItems.length) throw new Error("Source page not found");
+        if (!confirm(t("deletePageConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
+        const result = await LHN_MESSAGING.sendMessage({ type:"DELETE_PAGE", url:key, origin:DASHBOARD_INSTANCE_ID });
+        applyAnnotationChange({ type:"deletePage", url:key });
+        try {
+          const tabs = await browser.tabs.query({});
+          await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type:"REMOVE_HIGHLIGHT_PAGE", url:key }).catch(() => null)));
+        } catch (error) { console.warn("Could not remove visible page highlights", error); }
+        toast(t("deletePageDone", { count:result?.deletedCount ?? pageItems.length }));
+        replyToHighlightsNotes(requestId, true); return;
+      }
+      case "export": {
+        const format = ["txt","csv","md","json"].includes(data.format) ? data.format : null;
+        if (!format || !["page","all"].includes(data.scope)) throw new Error("Unsupported export request");
+        const pageUrl = data.scope === "page" ? key : null;
+        if (data.scope === "page" && (!pageUrl || !annotations.some(annotation => pageKey(annotation) === pageUrl))) throw new Error("Source page not found");
+        const exportItems = pageUrl ? annotations.filter(annotation => pageKey(annotation) === pageUrl) : annotations;
+        if (format === "json") await downloadJsonExport(pageUrl); else downloadExport(format, exportItems);
+        replyToHighlightsNotes(requestId, true); return;
+      }
+      case "study": {
+        if (!key || !annotations.some(annotation => pageKey(annotation) === key)) throw new Error("Source page not found");
+        const previousUrl = selectedUrl; selectedUrl = key;
+        try { startStudySession(); } finally { selectedUrl = previousUrl; }
+        replyToHighlightsNotes(requestId, true); return;
+      }
+      case "jump-to-highlight": {
+        if (!item) throw new Error("Highlight not found");
+        const result = await LHN_MESSAGING.sendMessage({ type:"OPEN_HIGHLIGHT", url:item.url, id:item.id });
+        replyToHighlightsNotes(requestId, !!result?.found, result?.found ? "" : t("highlightNotFound")); return;
+      }
+      case "speak-highlight":
+        if (!item?.quote) throw new Error("Highlight not found");
+        speakText(item.quote, detectLanguage(item.quote, item.url));
+        replyToHighlightsNotes(requestId, true); return;
+      default: throw new Error("Unsupported Highlights & Notes action");
     }
-    const choose = () => { selectedUrl = p.key; render({ preserveSources: true }); };
-    row.addEventListener("click", choose); row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } }); return row;
-  }, { initial: CONFIG.LIMITS.DASHBOARD_SOURCE_INITIAL, batch: CONFIG.LIMITS.DASHBOARD_SOURCE_BATCH });
-}
-function refreshFavoriteDashboard() {
-  const pages = buildPages(getFilteredAnnotations());
-  if (!pages.some(page => page.key === selectedUrl)) { render(); return; }
-  renderSources(pages);
-  const page = pages.find(item => item.key === selectedUrl);
-  const button = $("favoritePageBtn"), isFavorite = favorites.includes(page.key);
-  button.disabled = false;
-  button.classList.toggle("is-favorite", isFavorite);
-  button.classList.toggle("is-active", isFavorite);
-  button.title = isFavorite ? t("removeFavorite") : t("addFavorite");
-  button.setAttribute("aria-label", button.title);
-}
-function renderNoteColorFilters(page) {
-  const host = $("noteColorFilters");
-  const options = [{ id: "all", label: t("all") }, ...CONFIG.COLORS.map(color => ({ id: color, label: t(CONFIG.colorLabelKey(color)) }))];
-  if (!page) noteColorFilter = "all";
-  const total = page?.items.length || 0;
-  const counts = Object.fromEntries(CONFIG.COLORS.map(color => [color, 0]));
-  for (const item of page?.items || []) counts[CONFIG.normalizeColor(item.color)]++;
-  host.innerHTML = options.map(option => {
-    const countLabel = option.id === "all" ? `${total}` : `${counts[option.id]}/${total}`;
-    return `<button type="button" class="note-color-filter${noteColorFilter === option.id ? " is-active" : ""}" data-filter="${option.id}" aria-pressed="${noteColorFilter === option.id}">${option.id === "all" ? "" : `<span class="lhn-filter-swatch lhn-swatch-${option.id}"></span>`}<span>${escapeHtml(option.label)}</span><span class="filter-count">${countLabel}</span></button>`;
-  }).join("");
-  host.hidden = !page;
-}
-
-function setSelectedFavicon(pageUrl) {
-  const host = $("selectedFavicon");
-  let origin = "";
-  try { origin = new URL(pageUrl).origin; } catch { host.innerHTML = icon("file"); return; }
-  const img = document.createElement("img");
-  const direct = `${origin}/favicon.ico`;
-  const fallback = `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(pageUrl)}&sz=64`;
-  img.alt = ""; img.referrerPolicy = "no-referrer";
-  img.addEventListener("error", () => {
-    if (!img.dataset.fallbackUsed) { img.dataset.fallbackUsed = "1"; img.src = fallback; }
-    else host.innerHTML = icon("file");
-  });
-  host.replaceChildren(img); img.src = direct;
-}
-
-function renderSelectedPage(page, filtered) {
-  const header = $("notesHeader"), list = $("notesList"), empty = $("empty"), prompt = $("selectPrompt");
-  incrementalListObservers.get(list)?.disconnect();
-  list.innerHTML = "";
-  updateViewModeButton();
-  if (!page) {
-    $("selectedTitle").textContent = t("selectSource"); $("selectedUrl").textContent = ""; $("selectedUrl").removeAttribute("href"); $("selectedMeta").textContent = ""; $("selectedFavicon").innerHTML = icon("file");
-    $("favoritePageBtn").disabled = true; $("exportPageBtn").disabled = true; $("deletePageBtn").disabled = true; $("favoritePageBtn").classList.remove("is-favorite", "is-active");
-    setDisabledTooltip($("favoritePageBtn"), $("favoritePageBtn"), t("disabledNoPage"));
-    setDisabledTooltip($("exportPageBtn"), $("exportPageBtn"), t("disabledNoPage"));
-    setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), t("disabledNoPage"));
-    header.classList.add("no-selection"); empty.hidden = filtered.length > 0; prompt.hidden = filtered.length === 0; return;
+  } catch (error) {
+    console.warn("Highlights & Notes action failed", data.action, error);
+    syncHighlightsNotesView();
+    replyToHighlightsNotes(requestId, false);
   }
-  header.classList.remove("no-selection"); prompt.hidden = true; empty.hidden = true;
-  $("selectedTitle").textContent = page.title || page.site;
-  const link = $("selectedUrl"); link.textContent = page.url; link.href = page.url;
-  $("selectedMeta").textContent = `${t("createdLabel")}: ${fmtDate(page.createdAt)} · ${t("editedLabel")}: ${fmtDate(page.updatedAt)} · ${page.items.length} ${t("highlightsShort")}`;
-  setSelectedFavicon(page.url);
-  const fav = favorites.includes(page.key), favBtn = $("favoritePageBtn"); favBtn.disabled = false; setDisabledTooltip(favBtn, favBtn, ""); favBtn.classList.toggle("is-favorite", fav); favBtn.innerHTML = icon("heart"); favBtn.classList.toggle("is-active", fav); favBtn.title = fav ? t("removeFavorite") : t("addFavorite"); favBtn.setAttribute("aria-label", favBtn.title);
-  $("exportPageBtn").disabled = false; setDisabledTooltip($("exportPageBtn"), $("exportPageBtn"), "");
-  $("deletePageBtn").disabled = page.items.length === 0;
-  if (!$("deletePageBtn").disabled) setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), "");
-  $("deletePageBtn").title = t("deletePageButton"); $("deletePageBtn").setAttribute("aria-label", t("deletePageButton"));
-  setDisabledTooltip($("deletePageBtn"), $("deletePageBtn"), $("deletePageBtn").disabled ? t("disabledEmptyPage") : "");
-  // Match the on-page order used by the sidebar. Older annotations without
-  // pageOrder retain a stable creation-date fallback until the page is visited.
-  const query = $("search").value.trim().toLocaleLowerCase();
-  const allNotes = page.items.slice().sort((a, b) => {
-    if (query) { const relevance = searchRank(a, query) - searchRank(b, query); if (relevance) return relevance; }
-    const orderA = Number.isFinite(a.pageOrder) ? a.pageOrder : Infinity;
-    const orderB = Number.isFinite(b.pageOrder) ? b.pageOrder : Infinity;
-    return orderA - orderB || (dateValue(a, "createdAt") || 0) - (dateValue(b, "createdAt") || 0);
-  });
-  const notes = noteColorFilter === "all" ? allNotes : allNotes.filter(a => CONFIG.normalizeColor(a.color) === noteColorFilter);
-  if (!notes.length && noteColorFilter !== "all") {
-    list.innerHTML = `<div class="empty color-filter-empty">${escapeHtml(t("noColorHighlights"))}</div>`;
+}
+window.addEventListener("keepit:highlights-notes-ready", () => {
+  highlightsNotesViewReady = true;
+  syncHighlightsNotesView();
+});
+window.addEventListener("keepit:highlights-notes-action", event => {
+  const data = event.detail;
+  if (!data || data.type !== "HIGHLIGHTS_NOTES_ACTION" || data.version !== 1) return;
+  void handleHighlightsNotesAction(data);
+});
+const STUDY_SESSION_INDEX = globalThis.LHN_STUDY_SESSION_INDEX;
+const OVERVIEW_STUDY_SESSION_INDEX_KEY = STUDY_SESSION_INDEX.STORAGE_KEY;
+let overviewSessionEntries = [];
+let overviewSummaryCache = null;
+let overviewSummaryCacheRevision = -1;
+function invalidateAnnotationCaches() { annotationDataRevision++; }
+
+const overviewCounterFormatters = new WeakMap();
+const dictationCounterFormatters = new WeakMap();
+const dictationCounterFrames = new Map();
+const dictationCounterDelayTimers = new Map();
+let dictationCounterCycle = 0;
+let dictationCounterEntranceActive = false;
+const overviewChartAnimationFrames = new WeakMap();
+const overviewRevealScope = dashboardRevealEffects.createScope();
+let overviewEffectsWatch = null;
+let overviewEffectCycle = 0;
+let overviewInitialDataReady = false;
+function overviewSetText(id, value) {
+  const node = $(id);
+  if (node) node.textContent = String(value ?? "");
+}
+function overviewFormatCount(value) { return Math.max(0, Number(value) || 0).toLocaleString(currentLang); }
+let overviewCounterMeasureContext = null;
+function overviewReserveCounterSpace(node, finalText) {
+  const text = String(finalText ?? "");
+  const numeric = /^[\d.,\u00a0\u202f]+$/.test(text.trim());
+  node.style.whiteSpace = "nowrap";
+  node.style.fontVariantNumeric = "tabular-nums";
+  if (numeric) {
+    node.style.minWidth = `${Math.max(5, Array.from(text).length)}ch`;
+    node.style.flexShrink = "0";
     return;
   }
-  renderIncrementalList(list, notes, a => {
-    const card = document.createElement("article"); card.className = "lhn-sidebar-card card";
-    const tagsHtml = tagsOf(a).map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`).join("");
-    const isNoteFavorite = favoriteNoteIds.has(a.id), favoriteLabel = t(isNoteFavorite ? "removeFavorite" : "addFavorite"), escapedId = escapeHtml(a.id);
-    card.classList.toggle("has-note-favorite", isNoteFavorite);
-    card.innerHTML = `${isNoteFavorite ? `<button class="note-favorite-corner" data-action="favorite-note" data-id="${escapedId}" title="${escapeHtml(favoriteLabel)}" aria-label="${escapeHtml(favoriteLabel)}">${icon("heart")}</button>` : ""}<div class="lhn-sidebar-quote-row"><span class="lhn-sidebar-swatch lhn-swatch-${escapeHtml(CONFIG.normalizeColor(a.color))}"></span><div class="lhn-sidebar-quote">${escapeHtml(a.quote)}</div></div><div class="lhn-sidebar-note">${escapeHtml(a.note || t("noNoteAdded"))}</div><div class="lhn-sidebar-context-note"></div>${tagsHtml ? `<div class="tag-list">${tagsHtml}</div>` : ""}<div class="lhn-sidebar-actions card-actions"><button class="lhn-side-btn" data-action="jump" data-id="${escapedId}" title="${escapeHtml(t("jumpToHighlight"))}" aria-label="${escapeHtml(t("jumpToHighlight"))}">${icon("external")}</button><button class="lhn-side-btn" data-action="edit" data-id="${escapedId}" title="${escapeHtml(t("edit"))}" aria-label="${escapeHtml(t("edit"))}">${icon("edit")}</button><button class="lhn-side-btn" data-action="delete" data-id="${escapedId}" title="${escapeHtml(t("delete"))}" aria-label="${escapeHtml(t("delete"))}">${icon("trash")}</button><button class="lhn-side-btn" data-action="speak" data-id="${escapedId}" title="${escapeHtml(t("speakHighlightTooltip"))}" aria-label="${escapeHtml(t("speakHighlightTooltip"))}">${icon("volume")}</button><button class="lhn-side-btn note-favorite-btn${isNoteFavorite ? " is-favorite" : ""}" data-action="favorite-note" data-id="${escapedId}" title="${escapeHtml(favoriteLabel)}" aria-label="${escapeHtml(favoriteLabel)}">${icon("heart")}</button></div>`;
-    if (a.contextNote) appendContextSentence(card.querySelector(".lhn-sidebar-context-note"), a.contextNote, a.quote);
-    else card.querySelector(".lhn-sidebar-context-note")?.remove();
-    highlightSearchMatches(card, query);
-    return card;
-  }, { initial: CONFIG.LIMITS.DASHBOARD_NOTE_INITIAL, batch: CONFIG.LIMITS.DASHBOARD_NOTE_BATCH });
+  try {
+    const style = getComputedStyle(node);
+    overviewCounterMeasureContext ||= document.createElement("canvas").getContext("2d");
+    if (overviewCounterMeasureContext) {
+      overviewCounterMeasureContext.font = style.font;
+      node.style.minWidth = `${Math.ceil(overviewCounterMeasureContext.measureText(text).width + 6)}px`;
+      return;
+    }
+  } catch { /* use the character-width fallback below */ }
+  node.style.minWidth = `${Math.max(1, Array.from(text).length)}ch`;
+}
+function overviewPrefersReducedMotion() { return dashboardRevealEffects.prefersReducedMotion(); }
+function overviewCounterText(node, value) {
+  return (overviewCounterFormatters.get(node) || overviewFormatCount)(value);
+}
+function queueOverviewCounter(node) {
+  const cycle = overviewEffectCycle;
+  const pendingCycle = node.dataset.ovCounterPendingCycle;
+  if (pendingCycle === String(cycle)) return;
+  const pendingId = Number(node.dataset.ovCounterDelayId);
+  if (pendingId) clearTimeout(pendingId);
+  if (overviewPrefersReducedMotion()) { animateOverviewCounter(node); return; }
+  node.dataset.ovCounterPendingCycle = String(cycle);
+  node.dataset.ovCounterDelayId = String(window.setTimeout(() => {
+    delete node.dataset.ovCounterDelayId;
+    delete node.dataset.ovCounterPendingCycle;
+    if (cycle !== overviewEffectCycle || activeDashboardView !== "overview") return;
+    animateOverviewCounter(node);
+  }, 300));
+}
+function animateOverviewCounter(node) {
+  if (!node?.isConnected) return;
+  const target = Number(node.dataset.ovCounterTarget) || 0;
+  const finalText = node.dataset.ovCounterFinal || overviewCounterText(node, target);
+  const frameId = Number(node.dataset.ovAnimationFrame);
+  if (frameId) cancelAnimationFrame(frameId);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    node.textContent = finalText;
+    node.dataset.ovDisplayed = String(target);
+    node.dataset.ovCounterCycle = String(overviewEffectCycle);
+    delete node.dataset.ovAnimationFrame;
+    return;
+  }
+  const cycle = overviewEffectCycle;
+  const startValue = Math.max(0, Number(node.dataset.ovDisplayed) || 0);
+  const frameDuration = 1000 / 60;
+  const totalFrames = Math.round(2000 / frameDuration);
+  let frame = 0;
+  const tick = () => {
+    if (cycle !== overviewEffectCycle || activeDashboardView !== "overview" || !node.isConnected) return;
+    frame++;
+    const progress = Math.min(1, frame / totalFrames);
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+    const value = Math.round(startValue + (target - startValue) * eased);
+    node.textContent = progress >= 1 ? finalText : overviewCounterText(node, value);
+    node.dataset.ovDisplayed = String(progress >= 1 ? target : value);
+    if (frame < totalFrames) node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
+    else delete node.dataset.ovAnimationFrame;
+  };
+  node.dataset.ovCounterCycle = String(cycle);
+  node.dataset.ovAnimationFrame = String(requestAnimationFrame(tick));
+}
+function animateOverviewChartFill(node) {
+  if (!node?.isConnected) return;
+  if (activeDashboardView !== "overview") { node.style.transform = "scaleX(1)"; return; }
+  const previousFrame = overviewChartAnimationFrames.get(node);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    node.style.transform = "scaleX(1)";
+    return;
+  }
+  const startedAt = performance.now();
+  const tick = now => {
+    const progress = Math.min(1, (now - startedAt) / 2000);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    node.style.transform = `scaleX(${eased})`;
+    if (progress < 1) overviewChartAnimationFrames.set(node, requestAnimationFrame(tick));
+    else overviewChartAnimationFrames.delete(node);
+  };
+  node.style.transform = "scaleX(0)";
+  overviewChartAnimationFrames.set(node, requestAnimationFrame(tick));
+}
+function animateOverviewHeatmap(heatmap) {
+  if (!heatmap?.isConnected) return;
+  if (activeDashboardView !== "overview") {
+    heatmap.style.setProperty("--ov-chart-progress", "1");
+    heatmap.style.setProperty("--ov-chart-opacity", "1");
+    heatmap.style.setProperty("--ov-chart-scale", "1");
+    return;
+  }
+  const previousFrame = overviewChartAnimationFrames.get(heatmap);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  const setHeatmapProgress = value => {
+    heatmap.style.setProperty("--ov-chart-progress", String(value));
+    heatmap.style.setProperty("--ov-chart-opacity", String(.3 + .7 * value));
+    heatmap.style.setProperty("--ov-chart-scale", String(.55 + .45 * value));
+  };
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame) {
+    setHeatmapProgress(1);
+    return;
+  }
+  const startedAt = performance.now();
+  const tick = now => {
+    const progress = Math.min(1, (now - startedAt) / 1800);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    setHeatmapProgress(eased);
+    if (progress < 1) overviewChartAnimationFrames.set(heatmap, requestAnimationFrame(tick));
+    else overviewChartAnimationFrames.delete(heatmap);
+  };
+  setHeatmapProgress(0);
+  overviewChartAnimationFrames.set(heatmap, requestAnimationFrame(tick));
+}
+function overviewAnimateChartsWithin(element) {
+  const heatmap = element.matches?.(".ov-heatmap") ? element : element.querySelector(".ov-heatmap");
+  if (heatmap) animateOverviewHeatmap(heatmap);
+  const bars = [];
+  if (element.matches?.(".ov-today-meter span, .ov-meter span, .ov-dist-track span")) bars.push(element);
+  bars.push(...element.querySelectorAll(".ov-today-meter span, .ov-meter span, .ov-dist-track span"));
+  bars.forEach(animateOverviewChartFill);
 }
 
-$("selectedUrl").addEventListener("click", async event => {
-  const href = event.currentTarget.href;
-  if (!href || href === "#") return;
-  event.preventDefault();
-  const normalizeUrl = value => { try { return new URL(value).href; } catch { return ""; } };
-  const targetUrl = normalizeUrl(href);
-  if (!targetUrl) return;
-  try {
-    const tabs = await browser.tabs.query({});
-    const existing = tabs.find(tab => normalizeUrl(tab.url || tab.pendingUrl) === targetUrl);
-    if (existing?.id != null) {
-      await browser.tabs.update(existing.id, { active: true });
-      if (existing.windowId != null) await browser.windows.update(existing.windowId, { focused: true });
-    } else {
-      await browser.tabs.create({ url: targetUrl, active: true });
+function overviewSetCounterNode(node, value, formatter = overviewFormatCount) {
+  if (!node) return;
+  const numeric = Number(value);
+  const target = Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+  const previousTarget = node.dataset.ovCounterTarget;
+  const targetString = String(target);
+  const finalText = formatter(target);
+  overviewCounterFormatters.set(node, formatter);
+  overviewReserveCounterSpace(node, finalText);
+  node.dataset.ovCounterTarget = targetString;
+  node.dataset.ovCounterFinal = finalText;
+  node.setAttribute("aria-label", finalText);
+  const reveal = node.closest(".ov-reveal");
+  const overviewActive = activeDashboardView === "overview" && document.body.classList.contains("dashboard-overview-active");
+  if (!overviewActive) {
+    node.textContent = finalText;
+    node.dataset.ovDisplayed = targetString;
+    return;
+  }
+  if (reveal?.classList.contains("ov-revealed")) {
+    if (node.dataset.ovCounterCycle !== String(overviewEffectCycle) || previousTarget !== targetString) queueOverviewCounter(node);
+  } else {
+    node.textContent = formatter(0);
+    node.dataset.ovDisplayed = "0";
+    node.dataset.ovCounterCycle = String(overviewEffectCycle);
+  }
+}
+function overviewSetCounter(id, value, formatter = overviewFormatCount) {
+  overviewSetCounterNode($(id), value, formatter);
+}
+function overviewAnimateCountersWithin(element) {
+  const counters = [];
+  if (element.matches?.("[data-ov-counter-target]")) counters.push(element);
+  counters.push(...element.querySelectorAll("[data-ov-counter-target]"));
+  for (const counter of counters) queueOverviewCounter(counter);
+}
+function cancelDictationCounterEntranceEffects() {
+  dictationCounterCycle++;
+  for (const frame of dictationCounterFrames.values()) cancelAnimationFrame(frame);
+  dictationCounterFrames.clear();
+  for (const timer of dictationCounterDelayTimers.values()) clearTimeout(timer);
+  dictationCounterDelayTimers.clear();
+  dictationCounterEntranceActive = false;
+}
+function animateDictationCounter(node) {
+  if (!node?.isConnected) return;
+  const target = Math.max(0, Number(node.dataset.dictationCounterTarget) || 0);
+  const finalText = node.dataset.dictationCounterFinal || overviewFormatCount(target);
+  const formatter = dictationCounterFormatters.get(node) || overviewFormatCount;
+  const previousFrame = dictationCounterFrames.get(node);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+  if (overviewPrefersReducedMotion() || !window.requestAnimationFrame || activeDashboardView !== "dictation") {
+    node.textContent = finalText;
+    node.dataset.dictationCounterDisplayed = String(target);
+    dictationCounterFrames.delete(node);
+    return;
+  }
+  const cycle = dictationCounterCycle;
+  const startValue = Math.max(0, Number(node.dataset.dictationCounterDisplayed) || 0);
+  const totalFrames = Math.round(2000 / (1000 / 60));
+  let frame = 0;
+  const tick = () => {
+    if (cycle !== dictationCounterCycle || activeDashboardView !== "dictation" || !node.isConnected) {
+      dictationCounterFrames.delete(node);
+      return;
     }
-  } catch (error) { console.warn("Could not activate the source tab", error); }
-});
+    frame++;
+    const progress = Math.min(1, frame / totalFrames);
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+    const value = Math.round(startValue + (target - startValue) * eased);
+    node.textContent = progress >= 1 ? finalText : formatter(value);
+    node.dataset.dictationCounterDisplayed = String(progress >= 1 ? target : value);
+    if (frame < totalFrames) dictationCounterFrames.set(node, requestAnimationFrame(tick));
+    else dictationCounterFrames.delete(node);
+  };
+  dictationCounterFrames.set(node, requestAnimationFrame(tick));
+}
+function queueDictationCounter(node, delay = 300) {
+  const previousTimer = dictationCounterDelayTimers.get(node);
+  if (previousTimer) clearTimeout(previousTimer);
+  if (overviewPrefersReducedMotion()) { animateDictationCounter(node); return; }
+  const cycle = dictationCounterCycle;
+  const timer = window.setTimeout(() => {
+    dictationCounterDelayTimers.delete(node);
+    if (cycle !== dictationCounterCycle || !dictationCounterEntranceActive || activeDashboardView !== "dictation") return;
+    animateDictationCounter(node);
+  }, delay);
+  dictationCounterDelayTimers.set(node, timer);
+}
+function setDictationCounter(node, value, formatter = overviewFormatCount, { animate = true } = {}) {
+  if (!node) return;
+  const numeric = Number(value);
+  const target = Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
+  const previousTarget = node.dataset.dictationCounterTarget;
+  const targetString = String(target), finalText = formatter(target);
+  dictationCounterFormatters.set(node, formatter);
+  node.style.fontVariantNumeric = "tabular-nums";
+  overviewReserveCounterSpace(node, finalText);
+  node.dataset.dictationCounterTarget = targetString;
+  node.dataset.dictationCounterFinal = finalText;
+  node.setAttribute("aria-label", finalText);
+  if (animate && dictationCounterEntranceActive && activeDashboardView === "dictation") {
+    if (previousTarget === targetString && (dictationCounterFrames.has(node) || dictationCounterDelayTimers.has(node) || Number(node.dataset.dictationCounterDisplayed) === target)) return;
+    const previousTimer = dictationCounterDelayTimers.get(node);
+    if (previousTimer) clearTimeout(previousTimer);
+    dictationCounterDelayTimers.delete(node);
+    animateDictationCounter(node);
+  } else {
+    const previousFrame = dictationCounterFrames.get(node);
+    if (previousFrame) cancelAnimationFrame(previousFrame);
+    dictationCounterFrames.delete(node);
+    const previousTimer = dictationCounterDelayTimers.get(node);
+    if (previousTimer) clearTimeout(previousTimer);
+    dictationCounterDelayTimers.delete(node);
+    node.textContent = finalText;
+    node.dataset.dictationCounterDisplayed = targetString;
+  }
+}
+function clearDictationCounter(node, value = "—") {
+  if (!node) return;
+  const frame = dictationCounterFrames.get(node), timer = dictationCounterDelayTimers.get(node);
+  if (frame) cancelAnimationFrame(frame);
+  if (timer) clearTimeout(timer);
+  dictationCounterFrames.delete(node);
+  dictationCounterDelayTimers.delete(node);
+  delete node.dataset.dictationCounterTarget;
+  delete node.dataset.dictationCounterFinal;
+  delete node.dataset.dictationCounterDisplayed;
+  dictationCounterFormatters.delete(node);
+  node.textContent = value;
+  node.removeAttribute("aria-label");
+}
+function resetDictationCounterEntranceEffects() {
+  cancelDictationCounterEntranceEffects();
+  dictationCounterEntranceActive = activeDashboardView === "dictation";
+  if (!dictationCounterEntranceActive) return;
+  const counters = dashboardDictationView.querySelectorAll("[data-dictation-counter-target]");
+  for (const node of counters) {
+    const formatter = dictationCounterFormatters.get(node) || overviewFormatCount;
+    node.textContent = formatter(0);
+    node.dataset.dictationCounterDisplayed = "0";
+    queueDictationCounter(node);
+  }
+}
+function overviewSetMeter(id, ratio) {
+  const node = $(id);
+  if (!node) return;
+  node.style.width = `${Math.min(100, Math.max(0, Number(ratio) || 0))}%`;
+  if (node.closest(".ov-chart-running")) animateOverviewChartFill(node);
+}
+function renderOverviewActivityCalendar(model) {
+  const heatmap = $("overviewHeatmap"), monthHost = $("overviewMonthLabels");
+  if (!heatmap || !monthHost) return;
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start = new Date(today);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 51 * 7);
+  const windowActiveDays = new Set(), windowActiveWeeks = new Set(), cells = document.createDocumentFragment();
+  const formatter = new Intl.DateTimeFormat(currentLang === "vi" ? "vi-VN" : currentLang === "ko" ? "ko-KR" : "en-US", { month:"short" });
+  const months = [];
+  const monthCursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const lastMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  while (monthCursor <= lastMonth) {
+    months.push(new Date(monthCursor));
+    monthCursor.setMonth(monthCursor.getMonth() + 1);
+  }
+  for (let index = 0; index < 364; index++) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + index);
+    const key = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.localDayKey(day.getTime());
+    const count = day <= today ? Number(model.dailyCounts.get(key) || 0) : 0;
+    if (count > 0) {
+      windowActiveDays.add(key);
+      windowActiveWeeks.add(globalThis.LHN_DASHBOARD_OVERVIEW_DATA.localWeekKey(day.getTime()));
+    }
+    const cell = document.createElement("span");
+    cell.className = "ov-heat-cell";
+    cell.dataset.level = String(Math.min(4, count));
+    cell.setAttribute("aria-hidden", "true");
+    cell.title = `${formatter.format(day)} ${day.getDate()}, ${day.getFullYear()}: ${t("ovHeatActivityCount", { count })}`;
+    cells.appendChild(cell);
+  }
+  heatmap.replaceChildren(cells);
+  if (heatmap.closest(".ov-chart-running")) animateOverviewHeatmap(heatmap);
+  monthHost.replaceChildren(...months.map(date => {
+    const label = document.createElement("span");
+    label.textContent = formatter.format(date);
+    return label;
+  }));
+  monthHost.style.gridTemplateColumns = `repeat(${Math.max(1, months.length)}, minmax(0, 1fr))`;
+  overviewSetCounter("overviewActiveDays", windowActiveDays.size, count => t("ovActiveDays", { count:overviewFormatCount(count) }));
+  overviewSetCounter("overviewTotalDays", windowActiveDays.size);
+  overviewSetCounter("overviewTotalWeeks", windowActiveWeeks.size);
+}
+function renderOverviewTags(model) {
+  const host = $("overviewTopTags");
+  if (!host) return;
+  host.replaceChildren();
+  const tags = model.topTags.slice(0, 5);
+  if (!tags.length) {
+    const empty = document.createElement("div");
+    empty.className = "ov-empty";
+    empty.textContent = t("ovNoTags");
+    host.appendChild(empty);
+    return;
+  }
+  const maxCount = tags[0][1] || 1;
+  for (const [name, count] of tags) {
+    const row = document.createElement("div");
+    row.className = "ov-dist-row";
+    const label = document.createElement("span");
+    label.className = "ov-dist-label";
+    label.textContent = name;
+    const track = document.createElement("span");
+    track.className = "ov-dist-track";
+    const fill = document.createElement("span");
+    fill.style.width = `${Math.max(3, Math.round(count / maxCount * 100))}%`;
+    track.appendChild(fill);
+    const value = document.createElement("span");
+    value.className = "ov-dist-count";
+    row.append(label, track, value);
+    host.appendChild(row);
+    overviewSetCounterNode(value, count);
+    if (host.closest(".ov-chart-running")) animateOverviewChartFill(fill);
+  }
+}
+function renderOverviewRecentItems(model) {
+  const host = $("overviewRecentItems");
+  if (!host) return;
+  host.replaceChildren();
+  const items = model.recentItems.slice(0, 4);
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "ov-empty";
+    empty.textContent = t("ovNoRecentItems");
+    host.appendChild(empty);
+    return;
+  }
+  for (const { item, timestamp } of items) {
+    const row = document.createElement("div");
+    row.className = "ov-activity";
+    const itemText = [item?.note, item?.quote, item?.selectedText, item?.text].find(value => typeof value === "string" && value.trim()) || "";
+    const titleText = String(item?.title || item?.hostname || siteOf(item) || t("unknownWebsite"));
+    const detailText = itemText.trim().replace(/\s+/g, " ").slice(0, 112) || String(item?.url || "");
+    const iconNode = document.createElement("span");
+    iconNode.className = "ov-activity-icon";
+    iconNode.textContent = item?.note ? "🗒️" : "📚";
+    const textWrap = document.createElement("span");
+    const title = document.createElement("span");
+    title.className = "ov-activity-title";
+    title.textContent = titleText;
+    const detail = document.createElement("span");
+    detail.className = "ov-activity-sub";
+    detail.textContent = detailText || t("ovNoNotes");
+    textWrap.append(title, detail);
+    const when = document.createElement("span");
+    when.className = "ov-activity-time";
+    when.textContent = fmtDate(timestamp);
+    row.append(iconNode, textWrap, when);
+    host.appendChild(row);
+  }
+}
+function normalizeOverviewSessionIndex(value) { return STUDY_SESSION_INDEX.normalizeIndex(value); }
+function mergeOverviewSessions(...groups) { return STUDY_SESSION_INDEX.mergeSessions(...groups); }
+function migrateLegacyDictationRecords(storageData, existingSessions) {
+  const indexedById = new Map((existingSessions || []).map(session => [session.sessionId, session]));
+  const titleByVideoId = new Map();
+  for (const item of annotations) {
+    const id = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.youtubeVideoId(item?.url);
+    if (id && !titleByVideoId.has(id) && item?.title) titleByVideoId.set(id, String(item.title));
+  }
+  const reconciled = [];
+  for (const [key, record] of Object.entries(storageData || {})) {
+    const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
+    if (!match || !record || typeof record !== "object") continue;
+    const sourceId = match[1];
+    const session = STUDY_SESSION_INDEX.reconcileYouTubeRecord(
+      sourceId, record, indexedById.get(`youtube:${sourceId}`), { title:titleByVideoId.get(sourceId) || "" }
+    );
+    if (session) reconciled.push(session);
+  }
+  return reconciled;
+}
+function overviewSessionsNeedReconciliation(indexedSessions, reconciledSessions) {
+  const indexedById = new Map((indexedSessions || []).map(session => [session.sessionId, session]));
+  return (reconciledSessions || []).some(session => {
+    const previous = indexedById.get(session.sessionId);
+    if (!previous) return true;
+    return ["title", "url", "currentIndex", "totalCount", "solvedCount", "status"].some(key => previous[key] !== session[key]);
+  });
+}
+async function loadOverviewDictationSessions() {
+  if (overviewSessionsReady || overviewSessionsLoading) return;
+  overviewSessionsLoading = true;
+  try {
+    const allData = await browser.storage.local.get(null);
+    const index = normalizeOverviewSessionIndex(allData?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
+    const reconciledSessions = migrateLegacyDictationRecords(allData, index.sessions);
+    const sessions = mergeOverviewSessions(index.sessions, reconciledSessions);
+    overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, sessions);
+    if (!index.legacyMigrationComplete || overviewSessionsNeedReconciliation(index.sessions, reconciledSessions)) {
+      const migrated = { version:1, updatedAt:Date.now(), legacyMigrationComplete:true, sessions:overviewSessionEntries };
+      try {
+        const recheck = await browser.storage.local.get(OVERVIEW_STUDY_SESSION_INDEX_KEY);
+        const concurrent = normalizeOverviewSessionIndex(recheck?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
+        migrated.sessions = mergeOverviewSessions(concurrent.sessions, overviewSessionEntries);
+        await browser.storage.local.set({ [OVERVIEW_STUDY_SESSION_INDEX_KEY]:migrated });
+      } catch (error) {
+        console.warn("Could not persist Dictation session index reconciliation", error);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not load local Dictation session index or records", error);
+  } finally {
+    overviewSessionsLoading = false;
+    overviewSessionsReady = true;
+  }
+  renderOverviewDictationSessions();
+  void renderDictationErrorSummary();
+}
+function chooseOverviewDictationSession() {
+  const sessions = overviewSessionEntries;
+  const datedInProgress = sessions.filter(item => item.updatedAt > 0 && item.status !== "complete").sort((a, b) => b.updatedAt - a.updatedAt);
+  if (datedInProgress.length) return datedInProgress[0];
+  const dated = sessions.filter(item => item.updatedAt > 0).sort((a, b) => b.updatedAt - a.updatedAt);
+  if (dated.length) return dated[0];
+  const plausibleLegacy = sessions.filter(item => item.legacy && (item.currentIndex > 0 || item.solvedCount > 0));
+  if (plausibleLegacy.length === 1) return plausibleLegacy[0];
+  return null;
+}
+function renderOverviewDictationSessions() {
+  const session = chooseOverviewDictationSession();
+  const titleNode = $("overviewSessionTitle");
+  const detailNode = $("overviewSessionDetail");
+  const metaNode = $("overviewSessionMeta");
+  const selectedTitle = session?.title || (session?.sourceType === "youtube" ? `${t("ovSourceYoutube")} · ${session.sourceId}` : session?.sourceType === "web" ? t("ovSourceWeb") : "");
+  const sourceLabel = session?.sourceType === "youtube" ? "YouTube" : session?.sourceType === "web" ? t("ovSourceWeb") : session?.sourceType || "";
+  if (session) {
+    const current = session.currentIndex + 1;
+    titleNode.textContent = selectedTitle || t("ovNoDictationSession");
+    detailNode.textContent = session.totalCount > 0
+      ? t("ovSessionPosition", { current:overviewFormatCount(current), total:overviewFormatCount(session.totalCount) })
+      : t("ovSessionCurrentSentence", { current:overviewFormatCount(current) });
+    const metaParts = [sourceLabel, t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }), session.updatedAt ? t("ovSessionSaved", { date:fmtDate(session.updatedAt) }) : t("ovSessionLegacy")];
+    metaNode.replaceChildren(...metaParts.map(value => { const span=document.createElement("span"); span.textContent=value; return span; }));
+    overviewSetText("overviewModeDictationProgress", session.totalCount > 0 ? `${overviewFormatCount(current)} / ${overviewFormatCount(session.totalCount)}` : overviewFormatCount(current));
+    overviewSetText("overviewModeDictationSolved", t("ovSessionSolvedCount", { count:overviewFormatCount(session.solvedCount) }));
+    overviewSetText("overviewModeDictationTitle", selectedTitle || session.sourceId);
+    overviewSetText("overviewModeDictationSource", sourceLabel);
+    const progress = session.totalCount > 0 ? session.solvedCount / session.totalCount : 0;
+    overviewSetMeter("overviewDictationMeter", progress * 100);
+    const modeTitle = $("overviewModeDictationTitle");
+    if (modeTitle) modeTitle.title = selectedTitle || session.sourceId;
+  } else {
+    const legacyCount = overviewSessionEntries.filter(item => item.legacy).length;
+    titleNode.textContent = legacyCount > 1 ? t("ovMultipleLegacySessions", { count:overviewFormatCount(legacyCount) }) : t("ovNoDictationSession");
+    detailNode.textContent = legacyCount > 1 ? t("ovLegacySessionHelp") : t("ovNoDictationSession");
+    metaNode.replaceChildren();
+    overviewSetText("overviewModeDictationProgress", "—");
+    overviewSetText("overviewModeDictationSolved", "");
+    overviewSetText("overviewModeDictationTitle", t("ovNoSessionMode"));
+    overviewSetText("overviewModeDictationSource", "");
+    overviewSetMeter("overviewDictationMeter", 0);
+  }
+  renderDictationSessionCards();
+  renderDictationContinueCard();
+}
+function renderDashboardOverview() {
+  const overview = globalThis.LHN_DASHBOARD_OVERVIEW_DATA;
+  if (!overview) return;
+  if (overviewSummaryCacheRevision !== annotationDataRevision) {
+    overviewSummaryCache = overview.build(annotations, { pageKey, siteOf, tagsOf, reviewTimestamp:lastStudyReviewAt });
+    overviewSummaryCacheRevision = annotationDataRevision;
+  }
+  const model = overviewSummaryCache;
+  overviewSetCounter("overviewPillPages", model.sourcePageCount);
+  overviewSetCounter("overviewPillHighlights", model.highlightCount);
+  overviewSetCounter("overviewPillNotes", model.notesCount);
+  overviewSetCounter("overviewSourcePageCount", model.sourcePageCount);
+  overviewSetCounter("overviewHighlightCount", model.highlightCount);
+  overviewSetCounter("overviewDueCount", model.dueCount);
+  overviewSetCounter("overviewNoteCount", model.notesCount);
+  overviewSetText("overviewQuickDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
+  overviewSetText("overviewModeDue", t("ovDueCardsCount", { count:overviewFormatCount(model.dueCount) }));
+  overviewSetText("overviewLibraryCardTotal", t("ovSavedAnnotationsCount", { count:overviewFormatCount(model.highlightCount) }));
+  overviewSetCounter("overviewTodayReviewCount", model.reviewedToday, count => t("ovTodayReviewValue", { count:overviewFormatCount(count) }));
+  overviewSetCounter("overviewModeReviewedToday", model.reviewedToday);
+  overviewSetCounter("overviewReviewedCards", model.reviewedCardCount);
+  overviewSetMeter("overviewTodayReviewMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
+  overviewSetMeter("overviewFlashcardMeter", model.highlightCount ? model.reviewedToday / model.highlightCount * 100 : 0);
+  renderOverviewActivityCalendar(model);
+  renderOverviewTags(model);
+  renderOverviewRecentItems(model);
+  renderOverviewDictationSessions();
+}
+
+function render() {
+  renderProfileMenu();
+  renderDashboardOverview();
+}
 function renderExportMenus() {
-  for (const menuId of ["exportAllMenu", "exportPageMenu", "settingsBackupExportMenu"]) {
+  for (const menuId of ["exportAllMenu", "settingsBackupExportMenu"]) {
     const menu = $(menuId); if (!menu) continue;
     menu.innerHTML = EXPORTS.map(f => `<button class="export-option" data-export="${f.id}"><span class="file-icon ${f.id}">${icon(f.icon)}</span><span>${escapeHtml(t(f.labelKey))} <span class="export-ext">(.${f.ext})</span></span></button>`).join("");
   }
@@ -1122,25 +1834,15 @@ async function downloadJsonExport(pageUrl = null) {
     after = batch.nextAfter;
   } while (true);
   const exportedFavorites = favorites.filter(key => pageKeys.has(key));
-  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds));
+  parts.push(LHN_BACKUP.createJsonFooter(exportedFavorites, exportedFavoriteNoteIds, favoriteVideos));
   const blob = new Blob(parts, { type:"application/json" }), blobUrl = URL.createObjectURL(blob), anchor = document.createElement("a");
   anchor.href = blobUrl; anchor.download = `highlight-notes-${stamp}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(blobUrl), 1200); toast(t("exportStarted"));
 }
 function closeMenus() {
-  $("exportAllMenu").hidden = true; $("exportPageMenu").hidden = true; $("settingsBackupExportMenu").hidden = true; $("profileMenu").hidden = true;
-  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false"); $("exportPageBtn").setAttribute("aria-expanded", "false");
+  $("exportAllMenu").hidden = true; $("settingsBackupExportMenu").hidden = true; $("profileMenu").hidden = true;
+  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false");
   $("settingsExportButton").setAttribute("aria-expanded", "false");
 }
-$("sourceList").addEventListener("click", e => { if (e.target.closest("button")) return; });
-$("notesList").addEventListener("click", async e => {
-  const b = e.target.closest("button[data-action]"); if (!b) return; const item = annotations.find(a => a.id === b.dataset.id); if (!item) return;
-  if (b.dataset.action === "favorite-note") { await toggleNoteFavorite(item, b, e); return; }
-  if (b.dataset.action === "jump") { const result = await LHN_MESSAGING.sendMessage({ type: "OPEN_HIGHLIGHT", url: item.url, id: item.id }); if (!result?.found) toast(t("highlightNotFound")); return; }
-  if (b.dataset.action === "edit") { openEditDialog(item); }
-  if (b.dataset.action === "delete" && confirm(t("deleteAnnotationConfirm"))) { await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id, origin: DASHBOARD_INSTANCE_ID }); applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted")); }
-  if (b.dataset.action === "speak") { const card = b.closest(".card"); if (!item.quote || !card) return; card.classList.add("lhn-reading-text"); speakText(item.quote, detectLanguage(item.quote, item.url), () => card.classList.remove("lhn-reading-text")); }
-});
-
 function detectLanguage(text, url) {
   const s = String(text || "");
   if (/[\uAC00-\uD7AF]/.test(s)) return "ko-KR";
@@ -1368,36 +2070,6 @@ $("editDialog").addEventListener("click", async e => {
 });
 $("editDialog").addEventListener("cancel", e => { e.preventDefault(); $("editDialog").close(); });
 $("editForm").addEventListener("submit", e => { e.preventDefault(); saveEdit(); });
-$("noteColorFilters").addEventListener("click", e => {
-  const button = e.target.closest("button[data-filter]");
-  if (!button || !e.currentTarget.contains(button)) return;
-  e.preventDefault(); e.stopPropagation();
-  noteColorFilter = button.dataset.filter;
-  render();
-});
-$("actionButtonsSection").addEventListener("click", event => {
-  if (event.target.closest("#profileEditAction")) openDashboardSettings();
-});
-let dashboardSearchTimer = 0;
-$("search").addEventListener("input", () => {
-  clearTimeout(dashboardSearchTimer);
-  dashboardSearchTimer = setTimeout(render, CONFIG.TIMINGS.DASHBOARD_SEARCH_DEBOUNCE_MS);
-});
-$("siteFilter").addEventListener("change", render); $("colorFilter").addEventListener("change", render); $("tagFilter").addEventListener("change", render); $("dateFilter").addEventListener("change", render); $("sortBy").addEventListener("change", render);
-document.addEventListener("keydown", e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-    if (document.querySelector("dialog[open]")) return;
-    e.preventDefault(); e.stopPropagation();
-    const search = $("search"); search.focus(); search.setSelectionRange(search.value.length, search.value.length);
-    return;
-  }
-  if (e.key === "Escape" && !document.querySelector("dialog[open]")) {
-    e.preventDefault(); e.stopPropagation(); $("clearFiltersBtn").click();
-  }
-}, true);
-$("favoritesOnly").addEventListener("click", () => { favoritesOnly = !favoritesOnly; $("favoritesOnly").classList.toggle("is-active", favoritesOnly); $("favoritesOnly").setAttribute("aria-pressed", String(favoritesOnly)); render(); });
-$("favoriteNotesOnly").addEventListener("click", () => { favoriteNotesOnly = !favoriteNotesOnly; syncNoteFavoriteFilters(); render(); });
-$("clearFiltersBtn").addEventListener("click", event => { playToolbarActionEffect(event.currentTarget, event, "#3b82f6", "sparkle"); $("search").value = ""; $("siteFilter").value = ""; $("colorFilter").value = ""; $("tagFilter").value = ""; $("dateFilter").value = ""; favoritesOnly = false; favoriteNotesOnly = false; noteColorFilter = "all"; $("favoritesOnly").classList.remove("is-active"); $("favoritesOnly").setAttribute("aria-pressed", "false"); syncNoteFavoriteFilters(); render(); });
 function renderStudyCard({ autoSpeak = true, showAnswer = false } = {}) {
   const item = currentStudyCard();
   if (item?.id !== studyTypedAnswerForId) { studyTypedAnswerForId = item?.id || null; studyTypedAnswer = ""; }
@@ -1417,24 +2089,20 @@ function renderStudyCard({ autoSpeak = true, showAnswer = false } = {}) {
     STUDY_TRANSLATOR.prefetch(nextItem.contextNote, { sourceLanguage:flashcardTranslation.sourceLanguage, targetLanguage }).catch(() => {});
   }
 }
-function startStudySession() {
+function startStudySession({ allSources = false } = {}) {
   stopStudySpeech();
-  studySourceKey = selectedUrl; studyPlayAllSources = studyPreferences.alwaysPlayAll; studyAutoSpeak = studyPreferences.alwaysAutoSpeak; studyFocusMode = studyPreferences.alwaysFocusMode; studyCompletedIds.clear();
+  studySourceKey = allSources ? null : selectedUrl; studyPlayAllSources = allSources || studyPreferences.alwaysPlayAll; studyAutoSpeak = studyPreferences.alwaysAutoSpeak; studyFocusMode = studyPreferences.alwaysFocusMode; studyCompletedIds.clear();
   const deck = getStudyCandidates({ sourceKey: studyPlayAllSources ? null : studySourceKey });
   setStudyQueue(deck); studyHistory = []; studyReviewed = 0; studyRemembered = 0; syncStudyScopeButton(); updateStudyAutoSpeakButton(); updateStudyFocusButton();
   studyTypedAnswerForId = null; studyTypedAnswer = "";
   $("studyCard").hidden = false; $("studyComplete").hidden = true; $("studyDialog").showModal(); renderStudyCard({ showAnswer:false }); focusStudyPrimaryAction();
 }
 function getStudyCandidates({ sourceKey = null } = {}) {
-  const candidates = getFilteredAnnotations(), favoritePages = favoritesOnly ? new Set(favorites) : null, now = Date.now();
-  let count = 0;
-  for (const item of candidates) {
+  const now = Date.now();
+  return annotations.filter(item => {
     const dueAt = Number(item.review?.dueAt) || 0;
-    if ((favoritePages && !favoritePages.has(pageKey(item))) || studyCompletedIds.has(item.id) || (dueAt && dueAt > now) || (sourceKey && pageKey(item) !== sourceKey)) continue;
-    candidates[count++] = item;
-  }
-  candidates.length = count;
-  return candidates;
+    return !studyCompletedIds.has(item.id) && (!dueAt || dueAt <= now) && (!sourceKey || pageKey(item) === sourceKey);
+  });
 }
 function syncStudyScopeButton() { const button = $("studyPlayAll"); if (!button) return; button.classList.toggle("is-active", studyPlayAllSources); button.setAttribute("aria-pressed", String(studyPlayAllSources)); button.title = t("playAllTooltip"); }
 function setStudyScope(enabled) {
@@ -1478,8 +2146,8 @@ async function gradeStudyCard(grade) {
   studyHistory.push({ item: current, previousReview, grade });
   if (grade === "again") studyQueue.push(current);
   else { studyRemembered++; studyCompletedIds.add(current.id); }
-  profileDataCache = null;
-  renderProfileSidebar();
+  invalidateAnnotationCaches();
+  renderDashboardOverview();
   renderStudyCard(); if (studyQueueLength()) focusStudyPrimaryAction();
 }
 async function returnToPreviousStudyCard() {
@@ -1495,19 +2163,20 @@ async function returnToPreviousStudyCard() {
     if (!savedCard?.id) throw new Error("Could not restore previous card");
   } catch (error) { toast(t("studySaveFailed")); return; }
   studyHistory.pop();
-  const existingCard = annotationById.get(savedCard.id);
-  if (existingCard) Object.assign(existingCard, savedCard);
-  else { annotationPositionById.set(savedCard.id, annotations.length); annotations.push(savedCard); annotationById.set(savedCard.id, savedCard); }
-  profileDataCache = null;
+  const existingIndex = annotationPositionById.get(savedCard.id);
+  if (Number.isInteger(existingIndex)) annotations[existingIndex] = savedCard;
+  else { annotationPositionById.set(savedCard.id, annotations.length); annotations.push(savedCard); }
+  annotationById.set(savedCard.id, savedCard);
+  invalidateAnnotationCaches();
+  renderDashboardOverview();
   setStudyQueue(studyQueueItems().filter(item => item.id !== savedCard.id));
-  returnStudyCardToFront(existingCard || savedCard);
+  returnStudyCardToFront(savedCard);
   if (previous.grade !== "again") studyRemembered = Math.max(0, studyRemembered - 1);
   studyReviewed = Math.max(0, studyReviewed - 1);
   studyCompletedIds.delete(savedCard.id);
   renderStudyCard({ autoSpeak: studyAutoSpeak });
   focusStudyPrimaryAction();
 }
-$("studyModeBtn").addEventListener("click", startStudySession);
 async function openStudyDefinitionSearch(url) {
   const switchToSearchTab = studyPreferences.switchToDefinitionTab !== false;
   studyDefinitionTabQueue = studyDefinitionTabQueue.catch(() => {}).then(async () => {
@@ -1832,11 +2501,11 @@ $("resetStudyProgress").addEventListener("click", async () => {
     if (!result?.updated) throw new Error("Could not reset study progress");
     const idSet = new Set(ids);
     annotations.forEach(item => { if (idSet.has(item.id)) delete item.review; });
-    profileDataCache = null;
+    invalidateAnnotationCaches();
+    renderDashboardOverview();
     studyCompletedIds.clear(); studyHistory = [];
     setStudyQueue(getStudyCandidates({ sourceKey: studyPlayAllSources ? null : studySourceKey }));
     studyReviewed = 0; studyRemembered = 0;
-    renderProfileSidebar();
     renderStudyCard({ autoSpeak: false });
     toast(t("studyResetDone", { count: result.resetCount || ids.length }));
     studySpeakAfterSettingsClose = studyAutoSpeak && studyQueueLength() > 0;
@@ -2002,44 +2671,465 @@ $("profileAuthForm").addEventListener("submit", async event => {
   const displayName = username.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
   await finishProfileAuth({ username:username.split("@")[0], email:username, displayName, createdAt:Date.now() });
 });
-$("actionButtonsSection").addEventListener("click", async event => {
-  if (event.target.closest("#profileLoginAction")) { openProfileAuth("login"); return; }
-});
-$("profileTagsTab").addEventListener("click", () => { profileChipMode = "tags"; renderProfileSidebar(); });
-$("profileDomainsTab").addEventListener("click", () => { profileChipMode = "domains"; renderProfileSidebar(); });
-$("profileChips").addEventListener("click", event => {
-  const chip = event.target.closest(".profile-chip"); if (!chip) return;
-  if (profileChipMode === "tags") $("tagFilter").value = chip.dataset.name;
-  else $("siteFilter").value = chip.dataset.name;
-  render();
-});
-document.querySelectorAll("[data-profile-range]").forEach(button => button.addEventListener("click", () => { profileActivityRange = button.dataset.profileRange; renderProfileSidebar(); }));
-$("viewModeBtn").addEventListener("click", () => { viewMode = viewMode === "list" ? "grid" : "list"; updateViewModeButton(); });
-$("favoritePageBtn").addEventListener("click", async event => {
-  if (!selectedUrl) return;
-  const addingFavorite = !favorites.includes(selectedUrl);
-  playToolbarActionEffect(event.currentTarget, event, "#f43f5e", "heart");
-  favorites = addingFavorite ? [...favorites, selectedUrl] : favorites.filter(x => x !== selectedUrl);
-  await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]: favorites });
-  refreshFavoriteDashboard();
-});
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
-$("exportPageBtn").addEventListener("click", e => { e.stopPropagation(); if (!selectedUrl) return; const menu = $("exportPageMenu"); const open = menu.hidden; closeMenus(); menu.hidden = !open; $("exportPageBtn").setAttribute("aria-expanded", String(open)); });
-$("deletePageBtn").addEventListener("click", async () => {
-  if (!selectedUrl) return;
-  const pageItems = annotations.filter(a => pageKey(a) === selectedUrl);
-  if (!pageItems.length) return;
-  if (!confirm(t("deletePageConfirm"))) return;
-  const result = await LHN_MESSAGING.sendMessage({ type: "DELETE_PAGE", url: selectedUrl, origin: DASHBOARD_INSTANCE_ID });
-  // Remove visible marks from any currently open tab for this exact URL too.
-  const tabs = await browser.tabs.query({});
-  await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type: "REMOVE_HIGHLIGHT_PAGE", url:selectedUrl }).catch(() => null)));
-  applyAnnotationChange({ type:"deletePage", url:selectedUrl });
-  toast(t("deletePageDone", { count: result?.deletedCount ?? ids.length }));
+document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
+const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin"), dashboardSidebarTooltip = $("dashboardSidebarTooltip");
+let dashboardSidebarTooltipTimer = 0, dashboardSidebarTooltipTarget = null;
+function dashboardSidebarTooltipItem(target) { return target?.closest?.(".reference-nav-item, .reference-footer-button") || null; }
+function dashboardSidebarTooltipLabel(item) {
+  if (item?.classList.contains("reference-nav-item")) return item.querySelector(".nav-label")?.textContent.trim() || item.getAttribute("aria-label") || item.title || "";
+  if (item?.id === "dashboardSidebarThemeToggle") return item.querySelector("#dashboardSidebarThemeText")?.textContent.trim() || item.getAttribute("aria-label") || "";
+  return item?.getAttribute("aria-label") || item?.title || item?.querySelector(".nav-label")?.textContent.trim() || "";
+}
+function hideDashboardSidebarTooltip() {
+  window.clearTimeout(dashboardSidebarTooltipTimer);
+  dashboardSidebarTooltipTimer = 0;
+  dashboardSidebarTooltipTarget = null;
+  dashboardSidebarTooltip?.classList.remove("is-visible");
+}
+function scheduleDashboardSidebarTooltip(item, delay = 140) {
+  if (!item || dashboardSidebar.classList.contains("sidebar-pinned")) { hideDashboardSidebarTooltip(); return; }
+  const label = dashboardSidebarTooltipLabel(item);
+  if (!label) { hideDashboardSidebarTooltip(); return; }
+  if (dashboardSidebarTooltipTarget === item && dashboardSidebarTooltip.classList.contains("is-visible")) return;
+  window.clearTimeout(dashboardSidebarTooltipTimer);
+  dashboardSidebarTooltipTarget = item;
+  dashboardSidebarTooltip.classList.remove("is-visible");
+  dashboardSidebarTooltip.textContent = label;
+  dashboardSidebarTooltipTimer = window.setTimeout(() => {
+    if (dashboardSidebarTooltipTarget !== item || dashboardSidebar.classList.contains("sidebar-pinned")) { hideDashboardSidebarTooltip(); return; }
+    const itemRect = item.getBoundingClientRect(), sidebarRect = dashboardSidebar.getBoundingClientRect();
+    dashboardSidebarTooltip.style.top = `${itemRect.top - sidebarRect.top + itemRect.height / 2}px`;
+    dashboardSidebarTooltip.classList.add("is-visible");
+  }, delay);
+}
+dashboardSidebar.addEventListener("pointerover", event => {
+  if (event.pointerType === "touch") return;
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (!item || (event.relatedTarget && item.contains(event.relatedTarget))) return;
+  scheduleDashboardSidebarTooltip(item);
 });
-document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const page = option.closest("#exportPageMenu"), format = option.dataset.export; if (format === "json") downloadJsonExport(page ? selectedUrl : null).catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else { const items = page ? annotations.filter(a => pageKey(a) === selectedUrl) : annotations; downloadExport(format, items); } closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
-document.querySelector(".menu-item.item-free").addEventListener("click", event => event.preventDefault());
+dashboardSidebar.addEventListener("pointerout", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (!item || (event.relatedTarget && item.contains(event.relatedTarget))) return;
+  if (dashboardSidebarTooltipTarget === item) hideDashboardSidebarTooltip();
+});
+dashboardSidebar.addEventListener("focusin", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (item?.matches(":focus-visible")) scheduleDashboardSidebarTooltip(item, 0);
+});
+dashboardSidebar.addEventListener("focusout", event => {
+  const item = dashboardSidebarTooltipItem(event.target);
+  if (item && !(event.relatedTarget && item.contains(event.relatedTarget)) && dashboardSidebarTooltipTarget === item) hideDashboardSidebarTooltip();
+});
+dashboardSidebar.addEventListener("click", hideDashboardSidebarTooltip);
+dashboardSidebar.querySelector(".dashboard-reference-nav")?.addEventListener("scroll", hideDashboardSidebarTooltip, { passive:true });
+window.addEventListener("resize", hideDashboardSidebarTooltip, { passive:true });
+function togglePin() {
+  const pinned = !dashboardSidebar.classList.contains("sidebar-pinned");
+  dashboardSidebar.classList.toggle("sidebar-pinned", pinned);
+  document.body.classList.toggle("dashboard-sidebar-pinned", pinned);
+  dashboardSidebarPin.setAttribute("aria-pressed", String(pinned));
+  dashboardSidebarPin.setAttribute("aria-expanded", String(pinned));
+  const label = pinned ? "Bỏ ghim thanh bên" : "Ghim thanh bên";
+  dashboardSidebarPin.title = label;
+  dashboardSidebarPin.setAttribute("aria-label", label);
+}
+dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardDictationView = $("dashboardDictationView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
+const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2";
+const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
+const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1";
+const LEGACY_OVERVIEW_SCROLL_POSITION_KEY = "keepitDashboardOverviewScrollV2";
+let dashboardScrollSaveTimer = null, dashboardScrollRestoring = true;
+function readDashboardScrollPositions() {
+  try {
+    const value = JSON.parse(sessionStorage.getItem(DASHBOARD_SCROLL_POSITIONS_KEY) || "null");
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      if (!Object.hasOwn(value, "dictation") && Object.hasOwn(value, "listening")) value.dictation = value.listening;
+      return value;
+    }
+    const legacy = JSON.parse(sessionStorage.getItem(DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY) || "{}");
+    const notesScroll = Number(legacy?.["highlights-notes"]);
+    const dictationScroll = Number(legacy?.dictation ?? legacy?.listening);
+    return {
+      ...(Number.isFinite(notesScroll) && notesScroll > 0 ? { "highlights-notes":notesScroll } : {}),
+      ...(Number.isFinite(dictationScroll) && dictationScroll > 0 ? { dictation:dictationScroll } : {}),
+    };
+  } catch { return {}; }
+}
+function dashboardScrollTargetForView(view) {
+  if (view === "overview") return dashboardOverviewView;
+  return view === "dictation" ? dashboardDictationView : dashboardScroller;
+}
+function readDashboardScrollPosition(view) {
+  const positions = readDashboardScrollPositions();
+  const value = Number(positions[view]);
+  if (Number.isFinite(value) && value > 0) return value;
+  if (view === "overview") {
+    try { const legacy = Number(sessionStorage.getItem(LEGACY_OVERVIEW_SCROLL_POSITION_KEY)); return Number.isFinite(legacy) && legacy > 0 ? legacy : 0; }
+    catch { return 0; }
+  }
+  return 0;
+}
+function saveDashboardScrollPosition(view = activeDashboardView) {
+  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "dictation", "highlights-notes"].includes(view)) return;
+  const positions = readDashboardScrollPositions();
+  positions[view] = Math.max(0, dashboardScrollTargetForView(view).scrollTop);
+  try {
+    sessionStorage.setItem(DASHBOARD_SCROLL_POSITIONS_KEY, JSON.stringify(positions));
+    if (view === "overview") sessionStorage.setItem(LEGACY_OVERVIEW_SCROLL_POSITION_KEY, String(positions[view]));
+  } catch { /* session storage may be unavailable */ }
+}
+function saveDashboardScrollState() {
+  if (activeDashboardView) {
+    saveDashboardScrollPosition(activeDashboardView);
+    try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, activeDashboardView); } catch { /* session storage may be unavailable */ }
+  }
+}
+function scheduleDashboardScrollPositionSave() {
+  if (dashboardScrollRestoring) return;
+  if (dashboardScrollSaveTimer !== null) clearTimeout(dashboardScrollSaveTimer);
+  dashboardScrollSaveTimer = window.setTimeout(() => { dashboardScrollSaveTimer = null; saveDashboardScrollPosition(); }, 100);
+}
+dashboardScroller.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+dashboardOverviewView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+dashboardDictationView.addEventListener("scroll", scheduleDashboardScrollPositionSave, { passive:true });
+window.addEventListener("pagehide", saveDashboardScrollState);
+window.addEventListener("beforeunload", saveDashboardScrollState);
+const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
+const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
+let activeDashboardView = null, parentTopbarCompact = false, parentTopbarScrollTarget = null;
+function updateSharedTopbarContent(view) {
+  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
+  const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
+  const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
+  const labelKey = sidebarLabel || fallbackKey;
+  if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
+  const inHighlightsNotes = view === "highlights-notes";
+  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
+  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
+  if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
+  if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
+    const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
+    if (actions && actions.parentElement !== dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.append(actions);
+  }
+}
+function closeSharedTopbarExportMenu() {
+  const menu = dashboardSharedTopbar?.querySelector("#exportAllDemoMenu");
+  const button = dashboardSharedTopbar?.querySelector("#exportAllDemoBtn");
+  if (menu) menu.hidden = true;
+  if (button) button.setAttribute("aria-expanded", "false");
+}
+function unbindParentTopbarScrollTarget() {
+  parentTopbarScrollTarget?.removeEventListener("scroll", updateParentTopbarCompact);
+  parentTopbarScrollTarget = null;
+}
+function bindParentTopbarScrollTarget() {
+  unbindParentTopbarScrollTarget();
+  if (!dashboardSharedTopbar || !dashboardScroller) return;
+  parentTopbarScrollTarget = ["overview", "dictation"].includes(activeDashboardView) ? dashboardScrollTargetForView(activeDashboardView) : dashboardScroller;
+  parentTopbarScrollTarget.addEventListener("scroll", updateParentTopbarCompact, { passive:true });
+  updateParentTopbarCompact();
+}
+function mountSharedTopbarInParent(view) {
+  closeSharedTopbarExportMenu();
+  dashboardSharedTopbar?.classList.remove("is-compact");
+  parentTopbarCompact = false;
+  updateSharedTopbarContent(view);
+  if (dashboardSharedTopbar && dashboardSharedTopbar.parentElement !== dashboardSharedTopbarPortal) dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
+  bindParentTopbarScrollTarget();
+}
+function updateParentTopbarCompact() {
+  if (!dashboardSharedTopbar || dashboardSharedTopbar.ownerDocument !== document) return;
+  const next = ["overview", "dictation"].includes(activeDashboardView)
+    ? dashboardScrollTargetForView(activeDashboardView).scrollTop > 1
+    : dashboardSharedTopbar.getBoundingClientRect().top <= 1;
+  if (next === parentTopbarCompact) return;
+  parentTopbarCompact = next;
+  dashboardSharedTopbar.classList.toggle("is-compact", parentTopbarCompact);
+}
+window.addEventListener("resize", bindParentTopbarScrollTarget, { passive:true });
+function overviewRevealTargets() {
+  return [dashboardSharedTopbar, ...dashboardOverviewView.querySelectorAll([
+    ".ov-welcome",
+    ".ov-quick-panel",
+    ".ov-stats > .ov-stat",
+    ".ov-resume",
+    ".ov-progress",
+    ".ov-section > .ov-section-title",
+    ".ov-section > .ov-section-sub",
+    ".ov-mode-grid > .ov-mode",
+    ".ov-lower > .ov-panel",
+    ".ov-footer"
+  ].join(","))].filter(Boolean);
+}
+function overviewRevealTarget(target, revealDelay = 100) {
+  target.style.setProperty("--ov-reveal-delay", `${revealDelay}ms`);
+  target.classList.add("ov-revealed");
+  overviewRevealScope.schedule(revealDelay, () => {
+    target.style.removeProperty("--ov-reveal-delay");
+    if (!target.classList.contains("ov-revealed") || activeDashboardView !== "overview") return;
+    if (target.querySelector(".ov-heatmap, .ov-meter span, .ov-today-meter span, .ov-dist-track span")) {
+      target.classList.add("ov-chart-running");
+      overviewAnimateChartsWithin(target);
+    }
+    overviewAnimateCountersWithin(target);
+  }, () => target.isConnected && activeDashboardView === "overview", target);
+}
+function primeDashboardRevealTargets(targets) {
+  const inlineTransitions = targets.map(target => ({
+    value:target.style.getPropertyValue("transition"),
+    priority:target.style.getPropertyPriority("transition")
+  }));
+  targets.forEach(target => target.style.setProperty("transition", "none", "important"));
+  void dashboardScroller.offsetHeight;
+  targets.forEach((target, index) => {
+    const { value, priority } = inlineTransitions[index];
+    if (value) target.style.setProperty("transition", value, priority);
+    else target.style.removeProperty("transition");
+  });
+}
+function resetOverviewEntranceEffects() {
+  overviewRevealScope.cancel();
+  overviewEffectsWatch = null;
+  overviewEffectCycle++;
+  for (const node of dashboardOverviewView.querySelectorAll("[data-ov-counter-target]")) {
+    const frameId = Number(node.dataset.ovAnimationFrame);
+    const delayId = Number(node.dataset.ovCounterDelayId);
+    if (frameId) cancelAnimationFrame(frameId);
+    if (delayId) clearTimeout(delayId);
+    node.textContent = overviewCounterText(node, 0);
+    delete node.dataset.ovCounterDelayId;
+    delete node.dataset.ovCounterPendingCycle;
+    node.dataset.ovDisplayed = "0";
+    delete node.dataset.ovAnimationFrame;
+    delete node.dataset.ovCounterCycle;
+  }
+  const targets = overviewRevealTargets();
+  for (const chart of dashboardOverviewView.querySelectorAll(".ov-heatmap, .ov-today-meter span, .ov-meter span, .ov-dist-track span")) {
+    const chartFrame = overviewChartAnimationFrames.get(chart);
+    if (chartFrame) cancelAnimationFrame(chartFrame);
+    overviewChartAnimationFrames.delete(chart);
+    if (chart.matches(".ov-heatmap")) {
+      chart.style.removeProperty("--ov-chart-progress");
+      chart.style.removeProperty("--ov-chart-opacity");
+      chart.style.removeProperty("--ov-chart-scale");
+    } else chart.style.transform = "scaleX(0)";
+  }
+  for (const target of [...dashboardOverviewView.querySelectorAll(".ov-reveal"), dashboardSharedTopbar].filter(Boolean)) {
+    target.classList.remove("ov-reveal", "ov-revealed", "ov-chart-running");
+    target.style.removeProperty("--ov-reveal-delay");
+  }
+  targets.forEach(target => target.classList.add("ov-reveal"));
+  primeDashboardRevealTargets(targets);
+  overviewEffectsWatch = overviewRevealScope.observe({
+    root:dashboardScroller, targets, threshold:0.12, rootMargin:"0px 0px -5% 0px",
+    key:"overview-panels", step:80, lead:100,
+    isEligible:target => !target.classList.contains("ov-revealed"),
+    onTarget:overviewRevealTarget
+  });
+}
+const dashboardPanelRevealScope = dashboardRevealEffects.createScope();
+let dashboardPanelRevealWatch = null;
+const dictationSessionCardRevealScope = dashboardRevealEffects.createScope();
+let dictationSessionCardRevealWatch = null;
+const DICTATION_SESSION_CARD_AFTER_PANEL_DELAY = 250;
+let dictationSessionCardRevealIds = new Set();
+function cancelDictationSessionCardRevealObserver({ reset = false } = {}) {
+  dictationSessionCardRevealWatch?.disconnect();
+  dictationSessionCardRevealWatch = null;
+  if (reset) dictationSessionCardRevealScope.cancel();
+}
+function revealDictationSessionCard(card, sessionId, delay) {
+  dictationSessionCardRevealIds.add(sessionId);
+  card.style.setProperty("--dictation-card-reveal-delay", `${delay}ms`);
+  dictationSessionCardRevealScope.frame(() => {
+    if (activeDashboardView === "dictation" && card.isConnected) card.classList.add("dictation-session-revealed");
+  }, () => activeDashboardView === "dictation" && card.isConnected);
+}
+function observeDictationSessionCards({ reset = false } = {}) {
+  if (reset) {
+    cancelDictationSessionCardRevealObserver({ reset:true });
+    dictationSessionCardRevealIds.clear();
+  } else {
+    dictationSessionCardRevealWatch?.disconnect();
+    dictationSessionCardRevealWatch = null;
+  }
+  if (activeDashboardView !== "dictation") return;
+  const librarySection = dashboardDictationView.querySelector(".library-section");
+  if (!librarySection?.classList.contains("dashboard-revealed")) return;
+  const libraryPanelRevealAt = Number(librarySection.dataset.dictationLibraryRevealAt) || 0;
+  const cards = [...dashboardDictationView.querySelectorAll(".session-grid .session-card")];
+  const pending = [];
+  cards.forEach((card, index) => {
+    const sessionId = card.dataset.sessionId || `dictation-card-${index}`;
+    card.classList.add("dictation-session-reveal");
+    card.style.removeProperty("--dictation-card-reveal-delay");
+    if (dictationSessionCardRevealIds.has(sessionId)) card.classList.add("dictation-session-revealed");
+    else {
+      card.classList.remove("dictation-session-revealed");
+      pending.push(card);
+    }
+  });
+  if (!pending.length) return;
+  if (dashboardRevealEffects.prefersReducedMotion()) {
+    pending.forEach((card,index) => revealDictationSessionCard(card,card.dataset.sessionId||`dictation-card-${index}`,0));
+    return;
+  }
+  dictationSessionCardRevealWatch=dictationSessionCardRevealScope.observe({
+    root:dashboardDictationView,targets:pending,threshold:0.12,rootMargin:"0px 0px -5% 0px",
+    key:"dictation-session-cards",step:80,lead:0,
+    startAt:()=>libraryPanelRevealAt+DICTATION_SESSION_CARD_AFTER_PANEL_DELAY,
+    isEligible:(card,index)=>!dictationSessionCardRevealIds.has(card.dataset.sessionId||`dictation-card-${index}`),
+    onTarget:(card,delay,index)=>revealDictationSessionCard(card,card.dataset.sessionId||`dictation-card-${index}`,Math.round(delay))
+  });
+}
+function resetDictationSessionCardEntranceEffects() {
+  observeDictationSessionCards({ reset:true });
+}
+function dashboardPanelRevealTargets(view) {
+  if (view === "dictation") return [...dashboardDictationView.querySelectorAll([
+    ".dictation-hero-row > .hero", ".dictation-hero-row > .continue-card", ".search-panel", ".library-section", ".layout > .aside"
+  ].join(","))];
+  if (view === "highlights-notes") return [...dashboardHighlightsNotesView.querySelectorAll(".dashboard-reveal")];
+  return [];
+}
+function resetDashboardPanelEntranceEffects(view) {
+  dashboardPanelRevealScope.cancel();
+  dashboardPanelRevealWatch = null;
+  const routeTargets = dashboardPanelRevealTargets(view);
+  if (view === "highlights-notes") window.dispatchEvent(new CustomEvent("keepit:highlights-notes-entrance-reset"));
+  if (dashboardSharedTopbar) {
+    dashboardSharedTopbar.classList.add("ov-reveal");
+    dashboardSharedTopbar.classList.remove("ov-revealed");
+    dashboardSharedTopbar.style.removeProperty("--ov-reveal-delay");
+  }
+  const targets = [...[dashboardSharedTopbar].filter(Boolean), ...routeTargets];
+  const alwaysRevealTargets = view === "highlights-notes"
+    ? routeTargets.filter(target => target.matches(".sources-panel, .notes-panel"))
+    : [];
+  const observedTargets = targets.filter(target => !alwaysRevealTargets.includes(target));
+  for (const target of routeTargets) {
+    target.classList.remove("dashboard-revealed");
+    target.style.removeProperty("--ov-reveal-delay");
+    delete target.dataset.dictationLibraryRevealAt;
+    delete target.dataset.lhnPanelRevealAt;
+  }
+  if (view === "dictation") {
+    resetDictationCounterEntranceEffects();
+    resetDictationSessionCardEntranceEffects();
+  }
+  primeDashboardRevealTargets(targets);
+  if (!targets.length) return;
+  const reveal = (target, delay, index, revealAt = performance.now() + delay) => {
+    target.style.setProperty("--ov-reveal-delay", `${delay}ms`);
+    if (view === "dictation" && target.matches(".library-section")) target.dataset.dictationLibraryRevealAt = String(revealAt);
+    if (view === "highlights-notes") {
+      target.dataset.lhnPanelRevealAt = String(revealAt);
+      window.dispatchEvent(new CustomEvent("keepit:highlights-notes-panel-reveal", { detail:{ target, revealAt } }));
+    }
+    if (target === dashboardSharedTopbar) target.classList.add("ov-revealed");
+    else target.classList.add("dashboard-revealed");
+    if (view === "dictation" && target.matches(".library-section")) observeDictationSessionCards();
+    dashboardPanelRevealScope.schedule(delay + 850, () => {
+      target.style.removeProperty("--ov-reveal-delay");
+      delete target.dataset.dictationLibraryRevealAt;
+      delete target.dataset.lhnPanelRevealAt;
+    }, () => target.isConnected, target);
+  };
+  if (!("IntersectionObserver" in window)) {
+    dashboardPanelRevealScope.sequence(targets, { key:`panel-fallback:${view}`, step:80, lead:100, onTarget:reveal });
+    return;
+  }
+  dashboardPanelRevealScope.sequence(alwaysRevealTargets, { key:`panel-always:${view}`, step:80, lead:100, onTarget:reveal });
+  if (!observedTargets.length) return;
+  dashboardPanelRevealWatch = dashboardPanelRevealScope.observe({
+    root:dashboardScroller,targets:observedTargets,threshold:0.12,rootMargin:"0px 0px -5% 0px",
+    key:`dashboard-panels:${view}`,step:80,lead:100,
+    isEligible:target=>!(target===dashboardSharedTopbar?target.classList.contains("ov-revealed"):target.classList.contains("dashboard-revealed")),
+    onTarget:reveal
+  });
+}
+function savedDashboardView() {
+  try {
+    const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY);
+    const migrated = saved === "listening" ? "dictation" : saved;
+    return ["overview", "dictation", "highlights-notes"].includes(migrated) ? migrated : "overview";
+  } catch { return "overview"; }
+}
+let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
+function cancelDashboardEntranceEffects() {
+  cancelDictationCounterEntranceEffects();
+  cancelDictationSessionCardRevealObserver({ reset:true });
+  overviewRevealScope.cancel();overviewEffectsWatch=null;
+  dashboardPanelRevealScope.cancel();dashboardPanelRevealWatch=null;
+}
+function restoreDashboardViewAndReveal(view, switchCycle) {
+  const restoreCycle = ++dashboardRestoreCycle;
+  dashboardScrollRestoring = true;
+  const savedScrollTop = readDashboardScrollPosition(view);
+  const scrollTarget = dashboardScrollTargetForView(view);
+  dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
+  scrollTarget.scrollTop = savedScrollTop;
+  requestAnimationFrame(() => {
+    if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
+    dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
+    scrollTarget.scrollTop = savedScrollTop;
+    requestAnimationFrame(() => {
+      if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
+      dashboardScrollRestoring = false;
+      if (!overviewInitialDataReady) return;
+      if (view === "overview") resetOverviewEntranceEffects();
+      else resetDashboardPanelEntranceEffects(view);
+    });
+  });
+}
+function setDashboardView(view) {
+  hideDashboardSidebarTooltip();
+  if (!["overview", "dictation", "highlights-notes"].includes(view)) view = "overview";
+  const previousView = activeDashboardView;
+  if (previousView && previousView !== view && !dashboardScrollRestoring) {
+    if (dashboardScrollSaveTimer !== null) { clearTimeout(dashboardScrollSaveTimer); dashboardScrollSaveTimer = null; }
+    saveDashboardScrollPosition(previousView);
+  }
+  activeDashboardView = view;
+  const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
+  dashboardOverviewView.hidden = !showOverview;
+  dashboardDictationView.hidden = !showDictation;
+  dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
+  document.body.classList.toggle("dashboard-overview-active", showOverview);
+  try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }
+  cancelDashboardEntranceEffects();
+  const switchCycle = ++dashboardViewSwitchCycle;
+  mountSharedTopbarInParent(view);
+  restoreDashboardViewAndReveal(view, switchCycle);
+  if (showHighlightsNotes) syncHighlightsNotesView();
+  dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => {
+    const active = link.dataset.dashboardView === view;
+    link.classList.toggle("is-active", active);
+    if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+  });
+}
+dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
+document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventListener("click", event => { event.preventDefault(); setDashboardView("highlights-notes"); });
+dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
+  event.preventDefault();
+  startStudySession({ allSources:true });
+});
+setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
+$("profileMenu").addEventListener("click", async event => {
+  const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;
+  if (!action) return;
+  event.preventDefault();
+  if (action === "account") openDashboardSettings("account");
+  else if (action === "settings") openDashboardSettings(lastDashboardSettingsTab);
+  else if (action === "appearance") openDashboardSettings("appearance");
+  else if (action === "shortcuts") openDashboardSettings("shortcuts");
+  else if (action === "login") { closeMenus(); openProfileAuth("login"); }
+  else if (action === "logout") await signOutDemoProfile();
+});
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
 $("settingsAccountState").addEventListener("click", async event => {
@@ -2053,21 +3143,21 @@ $("settingsAccountState").addEventListener("click", async event => {
     if (!demoProfile || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     demoProfile = { ...demoProfile, email };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    delete field.dataset.editing; refreshDashboardSettings(); renderProfileSidebar(); toast(t("settingsSaved")); return;
+    delete field.dataset.editing; refreshDashboardSettings(); renderProfileMenu(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveName")) {
     const displayName = $("settingsAccountState").querySelector("#settingsAccountDisplayName").value.trim();
     if (!demoProfile || !displayName) return;
     demoProfile = { ...demoProfile, displayName };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountSaveUsername")) {
     const username = $("settingsAccountState").querySelector("#settingsAccountUsername").value.trim().replace(/^@+/, "");
     if (!demoProfile || !username) return;
     demoProfile = { ...demoProfile, username };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountDelete")) {
     if (!demoProfile || !confirm(t("accountDeleteConfirm"))) return;
@@ -2085,7 +3175,7 @@ $("settingsAccountState").addEventListener("change", async event => {
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
     demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84) };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileSidebar(); refreshDashboardSettings(); toast(t("settingsSaved"));
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved"));
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
 });
@@ -2202,7 +3292,7 @@ $("settingsLanguageSelect").addEventListener("change", async event => {
   dashboardSettingsChangedWhileOpen = true;
   currentLang = event.target.value;
   dashboardSettings = { ...dashboardSettings, language:currentLang };
-  applyTranslations(); render(); renderProfileSidebar(); refreshDashboardSettings(); syncBilingualPreview();
+  applyTranslations(); render(); refreshDashboardSettings(); syncBilingualPreview();
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { console.warn("Could not save dashboard language", error); }
 });
@@ -2213,10 +3303,22 @@ function saveDashboardTranslationMode(settingKey, enabled) {
   else if (enabled && settingKey === "translationPopupEnabled") Object.assign(updates, { showOnSelect:false, translateIconEnabled:false });
   return saveDashboardSettings(updates);
 }
+$("settingsChatGPTAutoSend").addEventListener("change", event => saveDashboardSettings({ chatGPTAutoSend:event.target.checked }));
+function saveChatGPTPromptSetting(input, key) {
+  const fallback = LHN_CHATGPT_PROMPTS.defaultFor(currentLang, key);
+  const value = String(input.value || "").replace(/\s+/g, " ").trim().slice(0, 500);
+  if (!value) { input.value = LHN_CHATGPT_PROMPTS.resolve(currentLang, key, dashboardSettings[key]) || fallback; return; }
+  input.value = value;
+  void saveDashboardSettings({ [key]:value });
+}
+$("settingsChatGPTSummaryPrompt").addEventListener("change", event => saveChatGPTPromptSetting(event.target, "chatGPTSummaryPrompt"));
+$("settingsChatGPTAskPrompt").addEventListener("change", event => saveChatGPTPromptSetting(event.target, "chatGPTAskPrompt"));
 $("settingsAutoPopup").addEventListener("change", event => saveDashboardTranslationMode("showOnSelect", event.target.checked));
 $("settingsAutoHighlight").addEventListener("change", event => saveDashboardSettings({ autoHighlight:event.target.checked }));
 $("settingsAutoSentence").addEventListener("change", event => saveDashboardSettings({ sentenceNoteEnabled:event.target.checked }));
 $("settingsTranslateIconEnabled").addEventListener("change", event => saveDashboardTranslationMode("translateIconEnabled", event.target.checked));
+document.querySelectorAll("input[name=selectionToolbarStyle]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && Object.hasOwn(LHN_SELECTION_TOOLBAR.STYLES, event.target.value)) saveDashboardSettings({ selectionToolbarStyleV2:event.target.value }); }));
+document.querySelectorAll("input[name=selectionToolbarLogoAction]").forEach(input => input.addEventListener("change", event => { if (event.target.checked && LHN_SELECTION_TOOLBAR.ACTION_IDS.includes(event.target.value)) saveDashboardSettings({ selectionToolbarLogoAction:event.target.value }); }));
 $("settingsTranslationPopupEnabled").addEventListener("change", event => saveDashboardTranslationMode("translationPopupEnabled", event.target.checked));
 $("settingsFullEnglishDictionary").addEventListener("change", event => saveDashboardSettings({ showFullEnglishDictionary:event.target.checked }));
 $("settingsAutoTranslatePopup").addEventListener("change", event => saveDashboardSettings({ autoTranslate:event.target.checked }));
@@ -2404,6 +3506,8 @@ $("bilingualDisabledReaderWebList").addEventListener("click", async event => {
   }
 });
 $("bilingualClearCache").addEventListener("click", async () => { await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
+// Full dictionary cache: looked-up words (lhnFullDictionary:*, incl. old versions) + their chip/phrase translations (lhnFullDictionaryTranslation:*). Nothing else.
+$("settingsClearDictionaryCache").addEventListener("click", async () => { const all = await browser.storage.local.get(null); await browser.storage.local.remove(Object.keys(all).filter(key => key.startsWith("lhnFullDictionary:") || key.startsWith("lhnFullDictionaryTranslation:"))); toast(t("dictionaryCacheCleared")); });
 document.querySelectorAll("[data-settings-theme]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ sidebarTheme:button.dataset.settingsTheme })));
 document.querySelectorAll("[data-settings-color]").forEach(button => button.addEventListener("click", () => saveDashboardSettings({ defaultHighlightColor:button.dataset.settingsColor })));
 $("settingsExportButton").addEventListener("click", event => {
@@ -2432,6 +3536,7 @@ setupDashboardShortcut("settingsSidebarShortcut", "sidebarShortcut");
 setupDashboardShortcut("settingsTranslateShortcut", "translateSelectedShortcut");
 setupDashboardShortcut("settingsWebsiteShortcut", "toggleWebsiteShortcut");
 setupDashboardShortcut("settingsDualSubtitlesShortcut", "dualSubtitlesShortcut");
+setupDashboardShortcut("settingsDictationShortcut", "dictationShortcut");
 setupDashboardShortcut("settingsSpeechPauseShortcut", "speechPauseShortcut");
 setupDashboardShortcut("settingsPreviousReadingShortcut", "previousReadingShortcut");
 setupDashboardShortcut("settingsNextReadingShortcut", "nextReadingShortcut");
@@ -2444,6 +3549,7 @@ $("resetDashboardShortcuts").addEventListener("click", () => saveDashboardSettin
   translateSelectedShortcut:CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut,
   toggleWebsiteShortcut:CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut,
   dualSubtitlesShortcut:CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut,
+  dictationShortcut:CONFIG.DEFAULT_SETTINGS.dictationShortcut,
   speechPauseShortcut:CONFIG.DEFAULT_SETTINGS.speechPauseShortcut,
   previousReadingShortcut:CONFIG.DEFAULT_SETTINGS.previousReadingShortcut,
   nextReadingShortcut:CONFIG.DEFAULT_SETTINGS.nextReadingShortcut,
@@ -2464,6 +3570,10 @@ $("importFile").addEventListener("change", async e => {
       favorites = [...new Set([...favorites, ...payload.favorites.filter(value => typeof value === "string")])];
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITES]:favorites });
     }
+    if (!payload.isLegacyArray && Array.isArray(payload.favoriteVideos)) {
+      favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos([...favoriteVideos, ...payload.favoriteVideos]);
+      await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]:favoriteVideos });
+    }
     if (!payload.isLegacyArray && Array.isArray(payload.favoriteNoteIds)) {
       favoriteNoteIds = new Set([...favoriteNoteIds, ...payload.favoriteNoteIds.filter(value => typeof value === "string")]);
       await browser.storage.local.set({ [CONFIG.STORAGE_KEYS.NOTE_FAVORITES]:[...favoriteNoteIds] });
@@ -2472,13 +3582,14 @@ $("importFile").addEventListener("change", async e => {
   } catch (error) { alert(t("importFailed", { error:error.message })); }
   e.target.value = "";
 });
-$("profileAppearanceToggle").addEventListener("click", async () => {
+async function toggleDashboardTheme() {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
-  dashboardSettings = { ...dashboardSettings, sidebarTheme: wasDark ? "light" : "dark" };
+  dashboardSettings = { ...dashboardSettings, sidebarTheme:wasDark ? "light" : "dark" };
   syncDashboardTheme();
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
-});
+}
+$("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardTheme);
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();
@@ -2487,12 +3598,18 @@ browser.storage.onChanged.addListener((changes, area) => {
     dashboardSettings = changes[CONFIG.STORAGE_KEYS.SETTINGS].newValue || {};
     currentLang = LANGUAGES.languageFor(dashboardSettings);
     syncDashboardTheme();
-    if (currentLang !== previousLanguage) { applyTranslations(); render(); syncBilingualPreview(); }
-    else refreshDashboardSettings();
+    if (currentLang !== previousLanguage) { applyTranslations(); render(); void renderDictationErrorSummary(); syncBilingualPreview(); }
+    refreshDashboardSettings();
+    syncHighlightsNotesView();
   }
   if (changes[CONFIG.STORAGE_KEYS.FAVORITES]) {
     favorites = Array.isArray(changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.FAVORITES].newValue : [];
-    refreshFavoriteDashboard();
+    render();
+    syncHighlightsNotesView();
+  }
+  if (changes[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS]) {
+    favoriteVideos = LHN_BACKUP.sanitizeFavoriteVideos(changes[CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS].newValue);
+    syncHighlightsNotesView();
   }
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) {
     const saved = changes[STUDY_TRANSLATION_SETTINGS_KEY].newValue || {};
@@ -2507,6 +3624,23 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES]) {
     favoriteNoteIds = new Set(Array.isArray(changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue) ? changes[CONFIG.STORAGE_KEYS.NOTE_FAVORITES].newValue : []);
     render();
+    syncHighlightsNotesView();
+  }
+  if (changes[OVERVIEW_STUDY_SESSION_INDEX_KEY]) {
+    const index = normalizeOverviewSessionIndex(changes[OVERVIEW_STUDY_SESSION_INDEX_KEY].newValue);
+    overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, index.sessions);
+    overviewSessionsReady = true;
+    renderOverviewDictationSessions();
+    void renderDictationErrorSummary();
+  }
+  const changedDictationRecords = Object.entries(changes).filter(([key, change]) => /^dictation:[A-Za-z0-9_-]{6,}$/.test(key) && change?.newValue && typeof change.newValue === "object");
+  if (changedDictationRecords.length) {
+    const reconciled = migrateLegacyDictationRecords(Object.fromEntries(changedDictationRecords.map(([key, change]) => [key, change.newValue])), overviewSessionEntries);
+    if (reconciled.length) {
+      overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, reconciled);
+      renderOverviewDictationSessions();
+    }
+    void renderDictationErrorSummary();
   }
   if (changes[CONFIG.STORAGE_KEYS.ANNOTATIONS]) {
     if ($("studyDialog").open) { annotationsChangedDuringStudy = true; return; }
@@ -2546,6 +3680,11 @@ $("exportErrorLog")?.addEventListener("click", async () => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
+  overviewInitialDataReady = true;
+  const loadedView = activeDashboardView;
+  const loadCycle = dashboardViewSwitchCycle;
+  restoreDashboardViewAndReveal(loadedView, loadCycle);
+  initDictationView();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

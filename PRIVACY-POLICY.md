@@ -1,148 +1,110 @@
 # Keepit Privacy Policy — Draft / Chính sách quyền riêng tư Keepit — Bản nháp
 
-> **DRAFT — NOT FOR PUBLICATION.** Prepared 24 October 2026 for Keepit extension version 3.4.553. Complete every bracketed field, verify the live data flows and obtain appropriate legal review before publishing or submitting to a browser store.
+> **DRAFT — NOT FOR PUBLICATION.** Updated 7 November 2026 for Keepit version 3.5.136. Fill in the bracketed fields and review before publishing or submitting to a store.
 >
-> **Controller / owner:** `[LEGAL NAME OF THE PERSON OR ENTITY RESPONSIBLE FOR KEEPIT]`  
+> **Owner / controller:** `[LEGAL NAME]`  
 > **Privacy contact:** `[PRIVACY CONTACT EMAIL]`  
 > **Public policy URL:** `[PUBLIC HTTPS URL]`  
-> **Effective date:** `[DATE THIS POLICY IS ADOPTED]`
-
-This document covers the current extension and describes planned account/cloud features in a separately labelled section. Planned features are **not active** in the current version. This draft is not legal advice and does not replace store-specific disclosures, consent flows, or a review of the laws applicable to the operator and users.
+> **Effective date:** `[DATE]`
 
 ---
 
 ## English
 
-### 1. Scope and current service status
+**Keepit only sends the data that is needed to outside services when you use the matching feature. Keepit does not sell users' personal data.**
 
-This policy applies to the Keepit browser extension/add-on for Chromium-based browsers and Firefox-based browsers, including its Dashboard, page features, translation, dictionary, text-to-speech, Bilingual Reader, flashcards, and diagnostics.
+### 1. Scope
 
-In version 3.4.553, Keepit does not operate an account server, cloud-sync service, remote Keepit database, or real payment service. The Dashboard's account and billing screens are local prototypes. Notes and settings are stored in the browser profile. The future cloud section below is a description of a plan, not a statement that Keepit currently collects or stores data in the cloud.
+This policy covers the Keepit browser extension for Chromium-based browsers and Firefox: page highlighting and notes, translation and Bilingual Reader, dictionary, read-aloud, video player and study modes (dictation, speaking practice, flashcards), the Dashboard, and the AI panel. Keepit does not run its own server, account system, cloud sync or payment service in this version; Keepit itself does not receive your data.
 
-### 2. Information handled by the current extension
+### 2. Data kept in your browser
 
-**Information stored in the browser profile.** Keepit stores information needed for the features you use, such as highlights, note text, quoted/context text, page title and URL associated with an annotation, colors, tags, favorites, flashcard/study data, extension settings, and local feature/cache/usage state. If you create or edit the Dashboard's demo profile, its display name, username, email address, and avatar image data (if supplied) are also stored locally; this is not a real online account. Annotation data is stored in extension IndexedDB; settings and other local state use the browser's extension storage. Keepit does not currently send this local library, demo profile, or settings to a Keepit-operated server.
+Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
 
-**Page content.** The extension's content scripts run on supported web pages to provide highlighting, notes, translation, dictionary, and Reader features. Page text is processed in the browser to provide those features. Keepit does not currently upload whole browsing sessions to a Keepit server. When you invoke a feature that needs an outside service, the relevant word, selected text, or Reader passage may be sent to that service as described below.
+### 3. Data sent to outside services
 
-**Local usage prototype.** Current usage-limit and billing logic is a local prototype. Its counters and prototype state are stored in the browser profile; the current build does not send those counters to a Keepit billing server and does not process real payments.
+Each service below receives only what the feature needs, together with ordinary connection information (such as IP address and browser type). Each service handles data under its own terms and privacy policy.
 
-**Diagnostic error log.** Keepit stores up to 200 classified technical entries in browser extension storage. Each entry contains a timestamp, component, severity, and category code. It does not store the original console message, stack trace, page URL, page contents, selected text, or account details. The log is not automatically uploaded to Keepit. A JSON file is created only when you explicitly choose **Export log** in Dashboard > Settings > About and is then handled by your browser as a download.
-
-### 3. Information sent to outside services
-
-Keepit uses outside services to provide features. The service receives the information needed for the request and may also receive ordinary connection/request information such as an IP address, browser/device information, and request metadata. The provider's own terms and privacy policy govern its handling after it receives a request; Keepit does not control the provider's retention or infrastructure. We will add verified links to each provider's current privacy information before publication.
-
-| Feature or request | Recipient(s) in the current build | Information sent / reason |
+| Feature (when it runs) | Recipient | Data sent |
 | --- | --- | --- |
-| Translation, including Bilingual Reader and flashcard translation | Google translation endpoints (`translate.googleapis.com`, `clients5.google.com`); MyMemory (`api.mymemory.translated.net`); the configured Lingva instances (`lingva.ml`, `lingva.thedaviddelta.com`) | The text or passage being translated and the relevant language parameters, to return a translation. Reader passages may be sent when you start or use translation features. The service selected by the feature/fallback may vary. |
-| Dictionary, IPA, synonyms, antonyms, word forms, and collocations | `api.dictionaryapi.dev`; `api.datamuse.com`; Google translation endpoint for a fallback IPA lookup; MyMemory where translation is requested | The word/root or lookup query and language information needed to return the requested definition or related-word data. |
-| Google text-to-speech | `translate.google.com/translate_tts` | The text to be spoken and its language, so Google can return audio. If you choose a browser/system voice, Keepit does not use this Google TTS request path; the browser or operating system may process speech according to its own settings and privacy terms. |
-| Custom web fonts | Google Fonts (`fonts.googleapis.com` and `fonts.gstatic.com`) | The font stylesheet/assets, requested when you enable and select a custom web font. When custom fonts are off or the website is disabled in Keepit, the stylesheet is not attached. Google may receive normal network/request information and browser-provided referrer information. |
-| Dashboard favicon fallback | Google S2 Favicon (`www.google.com/s2/favicons`) | If the page's direct `/favicon.ico` request fails, the Dashboard requests a fallback icon and includes the page URL in the `domain_url` query parameter. |
-| Definition search opened by the user | Google Search (`www.google.com/search`) | The word/query is included in the search URL when you choose the definition-search feature. |
+| Translation — when you select text, create a note with auto-translate on, or use Bilingual Reader or translated captions | Google Translate, MyMemory, Lingva (public instances run by independent operators). The same text is sent to these services at the same time and the first answer is used. | The text to translate and the target language |
+| Dictionary — when you look up a word | Google Translate, MyMemory, Free Dictionary API, Datamuse | The word or its root and the language; the dictionary's example sentences for that word (to translate them) |
+| Flashcard translation — when you study flashcards | Google Translate, MyMemory | The context sentence saved in your note |
+| Read aloud with a Google voice — when you press read | Google | The text to read (up to 500 characters) and its language; a short sample to detect the language |
+| Video captions and thumbnails — when you use the video player or study modes on YouTube | YouTube | The video's ID. The browser is allowed to attach suitable cookies; which cookies are actually sent depends on the browser and your sign-in state. YouTube uses them under its own policy. |
+| AI panel / Ask AI — when you open it from a page | ChatGPT (OpenAI), Gemini (Google), Claude (Anthropic) | Your selected text is placed in the AI's message box and is sent when you press Send (or automatically, only if you turned auto-send on). When the page has no linked conversation yet, the page's address and a label are added to the message at Send. When the panel opens, the page's address is also passed to the AI page inside the browser, so the AI page can read it before you press Send. |
+| Speaking practice — when you use the microphone | Your browser's speech-recognition service | Audio is processed by the browser to produce a transcript. Some browsers, such as Chrome, send the audio to a remote recognition service (per MDN); the browser's own terms apply. |
+| Interface font — when Keepit's styles load on a page, and on Dashboard pages | Google Fonts | No page content. Google receives an ordinary font request (IP address, browser information, and possibly referrer information depending on the browser). Extra fonts are requested when you turn on a custom font or use Bilingual Reader. |
 
-Keepit uses these requests to provide the requested extension features. Keepit does not use the text sent for these features for advertising or sell it to data brokers. This statement does not control how a third-party provider handles a request under its own terms.
+Pages you open yourself from Keepit (such as a Google search for a definition, or a Google / YouTube search or web address you choose in the Keepit bar search box — Keepit fetches no suggestions while you type) and site icons loaded from the website itself are ordinary page visits, not data sent by Keepit.
 
-### 4. Storage, retention, export, and deletion
+### 4. How Keepit uses data
 
-Local extension data remains in the browser profile until it is deleted through the extension/browser controls or removed by the browser. You can export supported library data from the Dashboard and delete annotations/pages using the available Dashboard controls. Export important data before uninstalling or clearing browser extension data; exact removal behavior depends on the browser.
+Data is used only to provide the feature you are using. Keepit does not sell data, does not use it for advertising, credit or lending decisions, and does not transfer it except to the services listed above to provide the feature.
 
-The local diagnostic log is capped at 200 entries; when new entries exceed that limit, older entries are dropped. It is not currently automatically uploaded, and the current UI provides export but not a dedicated clear-log button. Temporary translation/dictionary caches are stored locally to avoid repeat requests and are managed by the extension's cache behavior.
+**Chrome Web Store:** The use of information received from Keepit adheres to the [Chrome Web Store User Data Policy](https://developer.chrome.com/docs/webstore/program-policies/), including the Limited Use requirements.
 
-Keepit cannot delete information retained by an outside provider after you have sent a request to that provider. To exercise controls over provider-held data, contact that provider under its own privacy process.
+**Firefox:** Keepit declares the data categories "website content" and "browsing activity" as required for its features.
 
-### 5. Permissions and access
+### 5. Permissions
 
-The extension requests browser permissions for storage, larger local storage, active-tab/tab functions, and a network-request rule used for Google TTS. Content scripts are configured to run on supported websites because highlighting, notes, translation, and Reader features need access to page content. Host access also supports the named translation, dictionary, font, and favicon services. These permissions do not mean that Keepit sends every page to a Keepit server; the transmissions described above occur to provide specific extension features. The policy and any in-product disclosures must remain consistent with the actual manifest and behavior.
+Keepit asks for access to all websites because highlighting, notes, translation, dictionary and the AI panel work on any page you choose. It uses browser storage, tab information (to know the current page), the side panel / sidebar, a context menu item for Ask AI, and network rules. To show AI websites inside the AI panel, a network rule removes those AI websites' frame-protection headers when they load inside a frame. Keepit requests no clipboard or cookie permission; the copy-link button only writes the page address when you click it.
 
-### 6. Security and international processing
+### 6. Retention and deletion
 
-Current user-created content and settings are stored in the browser profile; Keepit does not currently maintain a cloud copy. Keepit does not add its own encryption layer to browser-profile storage. Protect your device and browser profile, and use the browser's security controls. Requests to the listed HTTPS services are handled by those providers, which may process them in countries other than yours under their own terms.
+Browser data remains until you delete it in the Dashboard, clear extension data or uninstall Keepit. Export your data first if you need it. Data already sent to an outside service is held by that service under its own policy; Keepit cannot delete it.
 
-### 7. Planned account and cloud features — NOT ACTIVE
+### 7. Children, changes and contact
 
-The following describes a product plan only. None of these cloud/account operations is active in version 3.4.553. Before enabling them, Keepit will update this policy, confirm the service providers and data locations, explain the data in the product, and implement the required controls and consent.
-
-If launched, account/cloud services are expected to process account/identity details, user-created annotations and settings selected for sync, flashcard/Dictation progress, sync status, and plan/usage entitlements. A server-side service provider has not yet been finalized. The current plan is for a 7-day Ultra trial with sync, followed by Free with no new sync and any existing cloud data in read-only/export mode; plan quotas and payment providers remain undecided. The product plan also calls for advance notices 30 and 7 days before cloud data is progressively removed after 12 months without meaningful activity, with an opportunity to export. These are planned rules, not current data practices, and may change before launch.
-
-### 8. Children, contact, and policy changes
-
-**Children:** `[CONFIRM THE INTENDED AGE RANGE AND ANY CHILD-SPECIFIC RULES BEFORE PUBLICATION; DO NOT PUBLISH THIS PLACEHOLDER.]`
-
-For privacy questions or requests, contact `[PRIVACY CONTACT EMAIL]` and identify the information or request involved. Do not send passwords, payment-card details, or unnecessary sensitive information by email.
-
-We will update this policy when the extension's data practices change. Material changes must also be reflected in relevant store disclosures and, where required, in-product notice/consent before the new practice begins. The published version should show its effective date and a change history.
-
-### 9. Store-disclosure checklist (publisher use)
-
-Before publication, complete the controller/contact/date/URL fields; verify every network endpoint and provider; link each provider's current privacy information; decide the children's-privacy statement and the language version(s); and ensure the Chrome Web Store privacy fields, any required prominent in-product disclosure/consent, and Firefox's manifest data-collection declaration match actual behavior. This checklist is not a substitute for those disclosures.
+**Children:** `[CONFIRM AGE POLICY BEFORE PUBLISHING]`. We will update this policy and the store disclosures before any data practice changes. Contact: `[PRIVACY CONTACT EMAIL]`.
 
 ---
 
 ## Tiếng Việt
 
-### 1. Phạm vi và trạng thái hiện tại
+**Keepit chỉ truyền dữ liệu cần thiết đến các dịch vụ bên ngoài khi người dùng sử dụng tính năng tương ứng. Keepit không bán dữ liệu cá nhân của người dùng.**
 
-Chính sách này áp dụng cho tiện ích Keepit trên các trình duyệt nhân Chromium và Firefox, gồm Dashboard, tính năng trên trang, dịch, từ điển, chuyển văn bản thành giọng nói, Bilingual Reader, flashcard và nhật ký chẩn đoán.
+### 1. Phạm vi
 
-Trong phiên bản 3.4.553, Keepit chưa vận hành máy chủ tài khoản, dịch vụ đồng bộ cloud, cơ sở dữ liệu Keepit từ xa hoặc thanh toán thật. Các màn hình tài khoản và thanh toán trong Dashboard chỉ là bản mẫu local. Ghi chú và cài đặt được lưu trong hồ sơ trình duyệt. Phần cloud bên dưới chỉ mô tả kế hoạch, không có nghĩa Keepit đang thu thập/lưu dữ liệu cloud.
+Chính sách này áp dụng cho tiện ích Keepit trên trình duyệt nhân Chromium và Firefox: tô sáng và ghi chú, dịch và Bilingual Reader, từ điển, đọc to, trình phát video và các chế độ học (chép chính tả, luyện nói, flashcard), Dashboard và AI panel. Bản này không có máy chủ, tài khoản, đồng bộ cloud hay thanh toán của Keepit; bản thân Keepit không nhận dữ liệu của bạn.
 
-### 2. Thông tin được xử lý trong bản hiện tại
+### 2. Dữ liệu giữ trong trình duyệt
 
-**Thông tin lưu trong hồ sơ trình duyệt.** Keepit lưu dữ liệu cần cho tính năng bạn sử dụng, ví dụ phần tô sáng, nội dung ghi chú, câu trích/ngữ cảnh, tiêu đề và URL trang gắn với ghi chú, màu, tag, mục yêu thích, dữ liệu flashcard/ôn tập, cài đặt extension và trạng thái cache/sử dụng local. Nếu bạn tạo hoặc sửa hồ sơ demo trong Dashboard, tên hiển thị, username, email và dữ liệu ảnh đại diện (nếu có) cũng được lưu local; đây không phải tài khoản trực tuyến thật. Dữ liệu annotation lưu trong IndexedDB của extension; cài đặt và trạng thái local khác dùng bộ nhớ extension của trình duyệt. Hiện Keepit không gửi thư viện local, hồ sơ demo hoặc cài đặt đến máy chủ do Keepit vận hành.
+Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, các lối tắt bạn giữ trên trang chủ Keepit, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
 
-**Nội dung trang.** Content script chạy trên website được hỗ trợ để cung cấp tô sáng, ghi chú, dịch, từ điển và Reader. Nội dung trang được xử lý trong trình duyệt để cung cấp các tính năng đó. Hiện Keepit không tải toàn bộ lịch sử duyệt web lên máy chủ Keepit. Khi bạn dùng tính năng cần dịch vụ bên ngoài, từ/câu/đoạn liên quan có thể được gửi đến dịch vụ đó như mô tả bên dưới.
+### 3. Dữ liệu gửi đến dịch vụ bên ngoài
 
-**Bản mẫu hạn mức local.** Logic hạn mức và billing hiện tại là bản mẫu chạy local. Bộ đếm và trạng thái mẫu được lưu trong hồ sơ trình duyệt; bản hiện tại không gửi số liệu này đến máy chủ billing của Keepit và không xử lý thanh toán thật.
+Mỗi dịch vụ dưới đây chỉ nhận phần dữ liệu tính năng cần, kèm thông tin kết nối thông thường (như địa chỉ IP, loại trình duyệt). Mỗi dịch vụ xử lý dữ liệu theo điều khoản và chính sách quyền riêng tư của riêng họ.
 
-**Nhật ký lỗi local.** Keepit lưu tối đa 200 mục kỹ thuật đã phân loại trong bộ nhớ extension. Mỗi mục chỉ có thời điểm, thành phần, mức độ và mã loại lỗi. Log không lưu nguyên văn thông báo console, stack trace, URL trang, nội dung trang, text đã chọn hoặc thông tin tài khoản. Log không tự động được tải lên Keepit. Chỉ tạo file JSON khi bạn chủ động bấm **Export log** trong Dashboard > Settings > About; trình duyệt sẽ xử lý file đó như một lượt tải xuống.
-
-### 3. Thông tin gửi đến dịch vụ bên ngoài
-
-Keepit dùng dịch vụ bên ngoài để cung cấp tính năng. Dịch vụ nhận thông tin cần cho request và có thể nhận thông tin kết nối/request thông thường như địa chỉ IP, thông tin trình duyệt/thiết bị và metadata request. Sau khi nhận request, nhà cung cấp xử lý theo điều khoản và chính sách riêng của họ; Keepit không kiểm soát thời hạn lưu hay hạ tầng của họ. Trước khi công bố, cần bổ sung liên kết đã xác minh đến thông tin quyền riêng tư hiện hành của từng nhà cung cấp.
-
-| Tính năng/request | Bên nhận trong bản hiện tại | Thông tin gửi / mục đích |
+| Tính năng (khi nào chạy) | Bên nhận | Dữ liệu gửi |
 | --- | --- | --- |
-| Dịch, gồm Bilingual Reader và dịch flashcard | Google (`translate.googleapis.com`, `clients5.google.com`); MyMemory (`api.mymemory.translated.net`); các máy chủ Lingva đang cấu hình (`lingva.ml`, `lingva.thedaviddelta.com`) | Văn bản/đoạn cần dịch và tham số ngôn ngữ để trả kết quả. Đoạn Reader có thể được gửi khi bạn bắt đầu hoặc dùng tính năng dịch. Nhà cung cấp cụ thể có thể thay đổi theo tính năng/fallback. |
-| Từ điển, IPA, từ đồng nghĩa/trái nghĩa, dạng từ và collocation | `api.dictionaryapi.dev`; `api.datamuse.com`; Google làm nguồn IPA dự phòng; MyMemory khi có yêu cầu dịch | Từ, gốc từ hoặc truy vấn cùng thông tin ngôn ngữ cần thiết để trả dữ liệu tra cứu. |
-| Google text-to-speech | `translate.google.com/translate_tts` | Văn bản cần đọc và ngôn ngữ để Google tạo audio. Nếu chọn giọng trình duyệt/hệ thống, Keepit không dùng đường request Google TTS này; trình duyệt/hệ điều hành có thể xử lý theo cài đặt và chính sách riêng của họ. |
-| Font web tùy chỉnh | Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`) | Stylesheet/font chỉ được yêu cầu khi bạn bật và chọn custom web font. Khi custom font tắt hoặc website bị tắt trong Keepit, stylesheet không được gắn vào trang. Google có thể nhận thông tin mạng/request thông thường và thông tin referrer do trình duyệt gửi. |
-| Fallback favicon trong Dashboard | Google S2 Favicon (`www.google.com/s2/favicons`) | Nếu request trực tiếp tới `/favicon.ico` của trang lỗi, Dashboard gọi Google để lấy icon dự phòng và gửi URL trang trong tham số `domain_url`. |
-| Tra cứu định nghĩa do người dùng mở | Google Search (`www.google.com/search`) | Từ/truy vấn được đưa vào URL tìm kiếm khi bạn chọn tính năng tra cứu định nghĩa. |
+| Dịch — khi bạn chọn văn bản, tạo ghi chú có bật tự dịch, dùng Bilingual Reader hoặc phụ đề dịch | Google Translate, MyMemory, Lingva (máy chủ công khai do bên độc lập vận hành). Cùng một đoạn văn được gửi đồng thời tới các dịch vụ này và dùng kết quả về trước. | Văn bản cần dịch và ngôn ngữ đích |
+| Từ điển — khi bạn tra từ | Google Translate, MyMemory, Free Dictionary API, Datamuse | Từ hoặc gốc từ và ngôn ngữ; câu ví dụ của từ đó trong từ điển (để dịch) |
+| Dịch flashcard — khi bạn học flashcard | Google Translate, MyMemory | Câu ngữ cảnh lưu trong ghi chú của bạn |
+| Đọc to bằng giọng Google — khi bạn bấm đọc | Google | Văn bản cần đọc (tối đa 500 ký tự) và ngôn ngữ; một đoạn mẫu ngắn để nhận diện ngôn ngữ |
+| Phụ đề và ảnh thu nhỏ video — khi bạn dùng trình phát video hoặc chế độ học trên YouTube | YouTube | Mã video. Trình duyệt được phép đính kèm cookie phù hợp; cookie nào thực sự được gửi phụ thuộc trình duyệt/trạng thái đăng nhập; YouTube dùng theo chính sách riêng. |
+| AI panel / Hỏi AI — khi bạn mở từ một trang | ChatGPT (OpenAI), Gemini (Google), Claude (Anthropic) | Văn bản bạn chọn được đặt vào ô soạn tin của AI và chỉ gửi khi bạn bấm Gửi (hoặc tự gửi, chỉ khi bạn đã bật tự gửi). Nếu trang chưa có cuộc trò chuyện liên kết, địa chỉ trang và nhãn được thêm vào tin nhắn lúc Gửi. Khi panel mở, địa chỉ trang cũng được chuyển vào trang AI ngay trong trình duyệt, nên trang AI có thể đọc được trước khi bạn bấm Gửi. |
+| Luyện nói — khi bạn dùng micro | Dịch vụ nhận dạng giọng nói của trình duyệt | Trình duyệt xử lý âm thanh để tạo bản chép lời. Một số trình duyệt như Chrome gửi âm thanh tới dịch vụ nhận dạng từ xa (theo MDN); áp dụng điều khoản của trình duyệt. |
+| Phông chữ giao diện — khi kiểu hiển thị của Keepit được tải trên trang, và trên các trang Dashboard | Google Fonts | Không có nội dung trang. Google nhận yêu cầu tải phông thông thường (địa chỉ IP, thông tin trình duyệt, và có thể có thông tin trang giới thiệu tùy trình duyệt). Phông bổ sung được tải khi bạn bật phông tùy chỉnh hoặc dùng Bilingual Reader. |
 
-Keepit dùng các request này để cung cấp tính năng tương ứng. Keepit không dùng văn bản gửi qua các tính năng này cho quảng cáo và không bán dữ liệu cho data broker. Cam kết này không kiểm soát cách nhà cung cấp bên thứ ba xử lý request theo điều khoản riêng của họ.
+Trang bạn tự mở từ Keepit (như tìm định nghĩa trên Google, hoặc tìm trên Google / YouTube hay địa chỉ web bạn chọn trong ô tìm kiếm của thanh Keepit — Keepit không lấy gợi ý khi bạn gõ) và biểu tượng tải từ chính website đó là lượt truy cập trang thông thường, không phải dữ liệu Keepit gửi đi.
 
-### 4. Lưu trữ, thời hạn, export và xóa
+### 4. Cách Keepit dùng dữ liệu
 
-Dữ liệu extension local tiếp tục nằm trong hồ sơ trình duyệt cho đến khi bạn xóa bằng tính năng của extension/trình duyệt hoặc dữ liệu bị trình duyệt xóa. Bạn có thể export dữ liệu thư viện được hỗ trợ từ Dashboard và xóa annotation/trang bằng các điều khiển hiện có. Hãy export dữ liệu quan trọng trước khi gỡ extension hoặc xóa dữ liệu extension trong trình duyệt; cách xóa chính xác phụ thuộc trình duyệt.
+Dữ liệu chỉ dùng để cung cấp tính năng bạn đang dùng. Keepit không bán dữ liệu, không dùng cho quảng cáo, xét tín dụng hay cho vay, và không chuyển cho ai ngoài các dịch vụ nêu trên để cung cấp tính năng.
 
-Nhật ký lỗi local giới hạn ở 200 mục; khi vượt giới hạn, mục cũ bị loại bỏ. Hiện log không tự động được upload; giao diện có chức năng export nhưng chưa có nút xóa log riêng. Cache dịch/từ điển tạm thời được lưu local để giảm request lặp và được quản lý theo cơ chế cache của extension.
+**Chrome Web Store:** Việc sử dụng thông tin Keepit nhận được tuân thủ [Chrome Web Store User Data Policy](https://developer.chrome.com/docs/webstore/program-policies/), bao gồm các yêu cầu Limited Use.
 
-Keepit không thể xóa dữ liệu mà nhà cung cấp bên ngoài đã lưu sau khi nhận request. Muốn thực hiện quyền kiểm soát dữ liệu do nhà cung cấp giữ, bạn cần liên hệ với nhà cung cấp đó theo quy trình riêng của họ.
+**Firefox:** Keepit khai báo các loại dữ liệu "nội dung website" và "hoạt động duyệt web" là bắt buộc cho tính năng.
 
-### 5. Quyền và truy cập
+### 5. Quyền truy cập
 
-Extension yêu cầu quyền trình duyệt cho bộ nhớ, dung lượng local mở rộng, tab đang hoạt động/các thao tác tab và quy tắc request dùng cho Google TTS. Content script được cấu hình chạy trên website được hỗ trợ vì các tính năng tô sáng, ghi chú, dịch và Reader cần truy cập nội dung trang. Quyền host cũng phục vụ các dịch vụ dịch, từ điển, font và favicon nêu trên. Các quyền này không có nghĩa Keepit gửi mọi trang đến máy chủ Keepit; việc truyền dữ liệu bên ngoài xảy ra để cung cấp các tính năng cụ thể đã mô tả. Chính sách và mọi thông báo trong ứng dụng phải khớp với manifest và hành vi thật.
+Keepit xin quyền trên mọi website vì tô sáng, ghi chú, dịch, từ điển và AI panel hoạt động trên bất kỳ trang nào bạn chọn. Keepit dùng bộ nhớ trình duyệt, thông tin tab (để biết trang hiện tại), side panel / sidebar, một mục menu chuột phải cho Hỏi AI, và quy tắc mạng. Để hiện website AI bên trong AI panel, một quy tắc mạng gỡ các header chống nhúng khung của các website AI đó khi chúng được tải trong khung. Keepit không xin quyền clipboard hay cookie; nút sao chép liên kết chỉ ghi địa chỉ trang khi bạn bấm.
 
-### 6. Bảo mật và xử lý quốc tế
+### 6. Thời hạn và xóa
 
-Nội dung người dùng và cài đặt hiện lưu trong hồ sơ trình duyệt; Keepit chưa giữ bản sao cloud. Keepit không tự thêm lớp mã hóa riêng cho dữ liệu trong bộ nhớ hồ sơ trình duyệt. Hãy bảo vệ thiết bị và hồ sơ trình duyệt bằng các cơ chế bảo mật của trình duyệt. Request đến dịch vụ HTTPS bên ngoài được xử lý bởi nhà cung cấp đó và có thể được xử lý tại quốc gia khác theo điều khoản của họ.
+Dữ liệu trong trình duyệt còn đến khi bạn xóa trong Dashboard, xóa dữ liệu tiện ích hoặc gỡ Keepit. Hãy xuất dữ liệu trước nếu cần. Dữ liệu đã gửi tới dịch vụ bên ngoài do dịch vụ đó giữ theo chính sách riêng; Keepit không xóa được.
 
-### 7. Tài khoản và cloud dự kiến — CHƯA HOẠT ĐỘNG
+### 7. Trẻ em, thay đổi và liên hệ
 
-Phần này chỉ mô tả kế hoạch sản phẩm. Các hoạt động tài khoản/cloud dưới đây **chưa hoạt động trong phiên bản 3.4.553**. Trước khi bật, Keepit sẽ cập nhật chính sách, xác nhận nhà cung cấp/vị trí dữ liệu, giải thích dữ liệu ngay trong sản phẩm và triển khai các kiểm soát/đồng ý cần thiết.
-
-Nếu ra mắt, tài khoản/cloud dự kiến xử lý thông tin tài khoản/định danh, annotation và cài đặt người dùng chọn đồng bộ, tiến độ flashcard/Dictation, trạng thái sync và quyền lợi/hạn mức gói. Nhà cung cấp server chưa được chọn cuối cùng. Kế hoạch hiện tại là dùng thử Ultra 7 ngày có sync; sau đó Free không tạo sync mới và dữ liệu cloud đã có chuyển sang chỉ đọc/xuất. Hạn mức gói và nhà cung cấp thanh toán còn chưa chốt. Kế hoạch cũng dự kiến gửi nhắc trước 30 và 7 ngày khi dữ liệu cloud dần bị xóa sau 12 tháng không có hoạt động có ý nghĩa, đồng thời cho phép export. Đây là quy tắc dự kiến, không phải thực hành xử lý dữ liệu hiện tại, và có thể thay đổi trước khi ra mắt.
-
-### 8. Trẻ em, liên hệ và thay đổi chính sách
-
-**Trẻ em:** `[XÁC NHẬN ĐỘ TUỔI MỤC TIÊU VÀ QUY ĐỊNH RIÊNG TRƯỚC KHI CÔNG BỐ; KHÔNG ĐỂ NGUYÊN PLACEHOLDER NÀY.]`
-
-Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, liên hệ `[EMAIL LIÊN HỆ QUYỀN RIÊNG TƯ]` và mô tả dữ liệu/yêu cầu cần xử lý. Không gửi mật khẩu, thông tin thẻ thanh toán hoặc dữ liệu nhạy cảm không cần thiết qua email.
-
-Keepit sẽ cập nhật chính sách khi thực hành dữ liệu thay đổi. Thay đổi quan trọng cũng phải được cập nhật trong thông tin trên store và, khi cần, có thông báo/đồng ý trong sản phẩm trước khi thực hành mới bắt đầu. Bản công bố cần ghi ngày hiệu lực và lịch sử thay đổi.
-
-### 9. Checklist cho nhà phát hành trước khi công bố
-
-Điền chủ thể/email/ngày/URL; xác minh mọi endpoint và nhà cung cấp; thêm link chính sách quyền riêng tư hiện hành của từng bên; chốt tuyên bố về trẻ em và ngôn ngữ policy; bảo đảm trường Privacy trên Chrome Web Store, thông báo/đồng ý nổi bật trong sản phẩm khi được yêu cầu, và khai báo data collection trong manifest Firefox khớp hành vi thật. Checklist này không thay thế các thông báo đó.
+**Trẻ em:** `[XÁC NHẬN CHÍNH SÁCH ĐỘ TUỔI TRƯỚC KHI ĐĂNG]`. Chúng tôi sẽ cập nhật chính sách này và phần khai báo trên cửa hàng trước khi thay đổi cách xử lý dữ liệu. Liên hệ: `[PRIVACY CONTACT EMAIL]`.

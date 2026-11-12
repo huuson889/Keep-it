@@ -1,82 +1,306 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dashboard-theme-pending">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Highlight Notes Dashboard</title><link rel="icon" type="image/svg+xml" href="../assets/icons/icon.svg"><link rel="stylesheet" href="../css/shared/ui-tokens.css"><link rel="stylesheet" href="../css/dashboard/dashboard.css"><link rel="stylesheet" href="../css/shared/ui-theme.css"><link rel="stylesheet" href="../css/shared/flags.css">
+<title>Keepit - Keep Exploring</title><link rel="icon" type="image/svg+xml" href="../assets/icons/icon.svg"><link rel="stylesheet" href="../css/shared/ui-tokens.css"><link rel="stylesheet" href="../css/shared/selection-toolbar.css"><link rel="stylesheet" href="../css/dashboard/dashboard.css"><link rel="stylesheet" href="../css/shared/ui-theme.css"><link rel="stylesheet" href="../css/shared/flags.css"><link rel="stylesheet" href="../css/dashboard/overview.css"><link rel="stylesheet" href="../css/dashboard/dictation.css"><link rel="stylesheet" href="../css/dashboard/highlights-notes-embedded.css"><link rel="stylesheet" href="../css/dashboard/responsive.css">
 </head>
-<body>
-<header>
-  <div class="brand"><img class="brand-logo" src="../assets/icons/icon.svg" alt=""><div><h1 data-i18n="appName">Keepit - Highlight Notes</h1><p data-i18n="dashboardSubtitle">Keep learning everything</p></div></div>
-  <div class="top-actions">
-    <a href="#" class="menu-item item-free" data-i18n-aria-label="freePlan">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/>
-      </svg>
-      <span data-i18n="freePlan">Free</span>
-    </a>
-    <div class="profile-menu-wrap">
-      <button id="profileMenuToggle" class="profile-avatar-button" type="button" data-i18n-aria-label="profileMenuLabel" data-i18n-title="profileMenuLabel" aria-label="Profile menu" title="Profile menu" aria-haspopup="true" aria-expanded="false">
-        <span id="profileMenuAvatar" class="profile-avatar profile-avatar-guest profile-menu-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+<body class="dashboard-overview-active dashboard-sidebar-pinned">
+
+<aside id="dashboardSidebar" class="dashboard-reference-sidebar sidebar-pinned" aria-label="Điều hướng">
+  <div class="dashboard-reference-header">
+    <div class="dashboard-reference-brand">
+      <span class="dashboard-reference-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg></span>
+      <span class="dashboard-reference-brand-copy nav-label"><strong>Keepit</strong><span>Keep Exploring</span></span>
+    </div>
+    <button id="dashboardSidebarPin" class="dashboard-reference-pin toggle-btn-expanded" type="button" title="Bỏ ghim thanh bên" aria-label="Bỏ ghim thanh bên" aria-pressed="true" aria-expanded="true"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" />
+  <path d="M9 3v18" />
+  <path d="m16 15-3-3 3-3" /></svg></button>
+  </div>
+  <nav class="dashboard-reference-nav" aria-label="Menu chính">
+    <a href="#" class="reference-nav-item is-active" data-dashboard-view="overview" data-i18n-aria-label="ovNavOverview" aria-current="page"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="nav-label" data-i18n="ovNavOverview">Tổng quan</span></a>
+    <a href="#" class="reference-nav-item" data-dashboard-view="dictation" data-i18n-aria-label="ovMenuDictation"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="nav-label" data-i18n="ovMenuDictation">Chép chính tả</span></a>
+    <a href="#" class="reference-nav-item" data-dashboard-action="flashcards" data-i18n-aria-label="navFlashcards" aria-haspopup="dialog"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><rect width="14" height="17" x="3" y="4" rx="2"/><path d="M7 8h6M7 12h6"/><path d="M16 8h2a2 2 0 0 1 2 2v10H8"/></svg></span><span class="nav-label" data-i18n="navFlashcards">Ôn tập Flashcards</span></a>
+            <a href="#" class="reference-nav-item" data-dashboard-view="highlights-notes" data-i18n-aria-label="ovMenuHighlightsNotes"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+  <path d="M4 22h16" />
+  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg></span><span class="nav-label" data-i18n="ovMenuHighlightsNotes">Tô sáng &amp; Ghi chú</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Luyện đề SW"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+  <line x1="12" x2="12" y1="19" y2="22" /></svg></span><span class="nav-label">Luyện đề SW</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Luyện viết"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z" />
+  <path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18" />
+  <path d="m2.3 2.3 7.286 7.286" />
+  <circle cx="11" cy="11" r="2" /></svg></span><span class="nav-label">Luyện viết</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Luyện nói Shadowing"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg></span><span class="nav-label">Luyện nói Shadowing</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Từ vựng"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg></span><span class="nav-label">Từ vựng</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Luyện đọc"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M10 2v8l3-3 3 3V2" />
+  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" /></svg></span><span class="nav-label">Luyện đọc</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Bảng tin"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <circle cx="9" cy="7" r="4" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></span><span class="nav-label">Bảng tin</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Tin nhắn"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg></span><span class="nav-label">Tin nhắn</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Affiliate"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" />
+  <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+  <path d="M7 6h1v4" />
+  <path d="m16.71 13.88.7.71-2.82 2.82" /></svg></span><span class="nav-label">Affiliate</span></a>
+    <a href="#" class="reference-nav-item" aria-label="Dành cho giáo viên"><span class="reference-nav-icon"><svg viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1" />
+  <rect width="7" height="5" x="14" y="3" rx="1" />
+  <rect width="7" height="9" x="14" y="12" rx="1" />
+  <rect width="7" height="5" x="3" y="16" rx="1" /></svg></span><span class="nav-label">Dành cho giáo viên</span></a>
+  </nav>
+  <div class="dashboard-reference-footer">
+    <button id="dashboardSidebarThemeToggle" class="reference-footer-button" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối"><span class="reference-nav-icon"><svg class="dashboard-theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg><svg class="dashboard-theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span id="dashboardSidebarThemeText" class="nav-label">Giao diện tối</span></button>
+    <div class="profile-menu-wrap dashboard-reference-profile-wrap">
+      <button id="profileMenuToggle" class="reference-footer-button dashboard-reference-avatar-button" type="button" title="Cài đặt & Tài khoản" aria-label="Cài đặt & Tài khoản" aria-haspopup="true" aria-expanded="false">
+        <span class="reference-nav-icon"><span id="profileMenuToggleAvatar" class="reference-avatar-letter">B</span></span>
+        <span class="nav-label dashboard-reference-user-copy"><strong id="profileMenuToggleName">Bạn</strong><span id="profileMenuToggleEmail" hidden></span></span>
+        <span id="profileMenuTogglePlan" class="nav-label dashboard-profile-free-badge menu-item item-free" data-i18n-aria-label="freePlan" aria-label="Miễn phí"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3zm0 2.18l6 2.25v4.57c0 4.54-3.2 8.91-6 10.08-2.8-1.17-6-5.54-6-10.08V6.43l6-2.25z" fill="currentColor"/></svg><span data-i18n="freePlan">Miễn phí</span></span>
       </button>
-      <div id="profileMenu" class="profile-menu" hidden>
-        <div id="profileMenuIdentity" class="profile-menu-identity"></div>
-        <div class="profile-menu-divider"></div>
-        <div id="profileMenuAccountHost" class="profile-menu-account-host"></div>
-        <button id="profileOpenSettings" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="settings">Settings</span></span></button>
-        <button id="profileAppearanceToggle" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-1.5a1.5 1.5 0 0 1-1.2-2.4A2 2 0 0 0 14.7 4 8.8 8.8 0 0 0 12 3Z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span data-i18n="appearance">Appearance</span></span><span id="profileAppearanceState" class="profile-menu-value">Light</span></button>
-        <div class="profile-menu-divider"></div>
-        <div class="profile-menu-export-wrap">
-          <button id="exportAllBtn" class="profile-menu-item" type="button" aria-haspopup="true" aria-expanded="false"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="export">Export</span></span><span class="profile-menu-chevron">›</span></button>
-          <div id="exportAllMenu" class="export-menu profile-export-menu" hidden></div>
+      <div id="profileMenu" class="dashboard-avatar-popover" hidden>
+        <div class="dashboard-avatar-identity">
+          <div class="dashboard-avatar-identity-copy"><strong id="profilePopoverName">Bạn</strong><span id="profilePopoverStatus" data-i18n="profileSignInToSync">Đăng nhập để đồng bộ</span><span id="profilePopoverEmail" hidden></span><span id="profileMenuPlan" class="dashboard-reference-plan" hidden>Keepit Pro</span></div>
+          <button id="profilePopoverSyncButton" class="dashboard-avatar-sync-button" type="button" data-profile-menu-action="login" aria-label="Đăng nhập để đồng bộ" title="Đăng nhập để đồng bộ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"/><path d="M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"/><path d="m2 2 20 20"/></svg></button>
         </div>
-        <button id="profileImportJson" class="profile-menu-item" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg><span data-i18n="importJson">Import JSON</span></span></button>
-        <div class="profile-menu-divider"></div>
-        <button id="profileMenuSignOut" class="profile-menu-item profile-menu-sign-out" type="button" hidden><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg><span data-i18n="profileLogout">Sign out</span></span></button>
+        <div class="dashboard-avatar-options">
+          <a href="#" class="dashboard-avatar-item" data-profile-menu-action="account"><svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+  <circle cx="12" cy="7" r="4" /></svg><span>Hồ sơ cá nhân</span></a>
+          <a href="#" class="dashboard-avatar-item" data-profile-menu-action="settings"><svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+  <circle cx="12" cy="12" r="3" /></svg><span>Cài đặt tiện ích</span></a>
+          <button id="profileAppearanceToggle" class="dashboard-avatar-item" type="button" data-profile-menu-action="appearance"><svg viewBox="0 0 24 24"><path d="M12 8a2.83 2.83 0 0 0 4 4 4 4 0 1 1-4-4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.9 4.9 1.4 1.4" />
+  <path d="m17.7 17.7 1.4 1.4" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.3 17.7-1.4 1.4" />
+  <path d="m19.1 4.9-1.4 1.4" /></svg><span>Giao diện</span></button>
+          <a href="#" class="dashboard-avatar-item" data-profile-menu-action="shortcuts"><svg viewBox="0 0 24 24"><path d="M10 8h.01" />
+  <path d="M12 12h.01" />
+  <path d="M14 8h.01" />
+  <path d="M16 12h.01" />
+  <path d="M18 8h.01" />
+  <path d="M6 8h.01" />
+  <path d="M7 16h10" />
+  <path d="M8 12h.01" />
+  <rect width="20" height="16" x="2" y="4" rx="2" /></svg><span>Phím tắt</span></a>
+          <a id="profileMenuSyncItem" href="#" class="dashboard-avatar-item" hidden><svg viewBox="0 0 24 24"><path d="m17 18-1.535 1.605a5 5 0 0 1-8-1.5" />
+  <path d="M17 22v-4h-4" />
+  <path d="M20.996 15.251A4.5 4.5 0 0 0 17.495 8h-1.79a7 7 0 1 0-12.709 5.607" />
+  <path d="M7 10v4h4" />
+  <path d="m7 14 1.535-1.605a5 5 0 0 1 8 1.5" /></svg><span>Đồng bộ dữ liệu</span></a>
+          <a id="profileMenuHelpItem" href="#" class="dashboard-avatar-item" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" />
+  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+  <path d="M12 17h.01" /></svg><span>Trợ giúp &amp; Phản hồi</span></a>
+        </div>
+        <div class="dashboard-avatar-logout"><a id="profileMenuLogoutAction" href="#" class="dashboard-avatar-item" data-profile-menu-action="logout" hidden><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+  <polyline points="16 17 21 12 16 7" />
+  <line x1="21" x2="9" y1="12" y2="12" /></svg><span>Đăng xuất</span></a><button id="profileMenuGuestLogin" class="dashboard-avatar-item dashboard-avatar-guest-login" type="button" data-profile-menu-action="login"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span data-i18n="profileLogin">Đăng nhập</span></button></div>
       </div>
     </div>
   </div>
-  <input id="importFile" type="file" accept="application/json,.json" hidden>
-</header>
-<main>
-  <aside id="profileSidebar" class="profile-sidebar" data-i18n-aria-label="profileSidebarLabel" aria-label="Local profile">
-    <section class="profile-card">
-      <div id="profileHeaderSection" class="profile-identity"></div>
-      <div id="actionButtonsSection" class="profile-actions"></div>
-      <div id="metaInfoSection" class="profile-meta"></div>
-      <hr class="profile-divider">
-      <div class="profile-stat-grid">
-        <div><strong id="profilePageTotal">0</strong><span data-i18n="sourcePages">Pages</span></div>
-        <div><strong id="profileNoteTotal">0</strong><span data-i18n="highlightsShort">Highlights</span></div>
-        <div><strong id="profileNeedLearnTotal">0</strong><span data-i18n="profileNeedLearn">Need learn</span></div>
-      </div>
-      <div class="profile-activity" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"><div class="profile-section-title"><span data-i18n="profileActivity">Recent activity</span><span id="profileActivityTotal">0</span></div><div id="profileMonthLabels" class="profile-month-labels"></div><div class="profile-heatmap-row"><div class="profile-weekday-labels"><span>M</span><span>W</span><span>F</span></div><div id="profileHeatmap" class="profile-heatmap" data-i18n-aria-label="recentActivityLabel" aria-label="Recent annotation activity"></div></div><div class="profile-heatmap-legend"><span data-i18n="profileLess">Less</span><i></i><i></i><i></i><i></i><i></i><span data-i18n="profileMore">More</span></div></div>
-      <div class="profile-periods"><button type="button" data-profile-range="all" class="is-active" data-i18n="profilePeriodAll">All</button><span>/</span><button type="button" data-profile-range="weekly" data-i18n="profilePeriodWeekly">Weekly</button><span>/</span><button type="button" data-profile-range="yearly" data-i18n="profilePeriodYearly">Yearly</button></div>
-      <div class="profile-streaks"><div><span data-i18n="profileTotalDays">Total Days:</span><strong id="profileTotalDays">0</strong><span>💐</span></div><div><span data-i18n="profileTotalWeeks">Total Weeks:</span><strong id="profileTotalWeeks">0</strong><span>💐</span></div></div>
-      <hr class="profile-divider">
-      <div class="profile-segmented"><button id="profileTagsTab" type="button" class="is-active"><span data-i18n="profileTags">Tags</span> <span id="profileTagTotal">(0)</span></button><button id="profileDomainsTab" type="button"><span data-i18n="profileDomains">Domains</span> <span id="profileDomainTotal">(0)</span></button></div>
-      <div id="profileChips" class="profile-chips"></div>
-    </section>
-  </aside>
-  <section class="toolbar" data-i18n-aria-label="libraryControlsLabel" aria-label="Library controls">
-    <button id="clearFiltersBtn" type="button" class="secondary clear-filters-button dashboard-control" aria-label="Clear filters" data-i18n-title="clearFilters" title="Clear filters"><svg class="lucide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22a3 3 0 01-3-3"/><path d="M10 22c2.761 0 5-1.79 5-4-4.42 0-4.08-5-8.5-5a4.501 4.501 0 000 9z"/><path d="M10 3H8"/><path d="M12.5 11.5 22 2"/><path d="M20 13v4"/><path d="M22 15h-4"/><path d="M4 5v4"/><path d="M6 7H2"/><path d="m6.98 13.02 2.665-2.664a1.21 1.21 0 011.71 0l2.29 2.288a1.21 1.21 0 010 1.712l-2.088 2.087"/><path d="M9 2v2"/></svg></button>
-    <select id="siteFilter" class="dashboard-control" data-i18n-aria-label="websiteFilterLabel" aria-label="Website filter"><option value="" data-i18n="allWebsites">All websites</option></select>
-    <select id="colorFilter" class="dashboard-control" aria-label="Highlight color filter"><option value="" data-i18n="allColors">All colors</option></select>
-    <select id="tagFilter" class="dashboard-control" aria-label="Tag filter"><option value="" data-i18n="allTags">All tags</option></select>
-    <select id="dateFilter" class="dashboard-control" aria-label="Date filter"><option value="" data-i18n="dateAll">Any date</option><option value="today" data-i18n="dateToday">Today</option><option value="7" data-i18n="date7Days">Last 7 days</option><option value="30" data-i18n="date30Days">Last 30 days</option><option value="365" data-i18n="dateYear">Last year</option></select>
-    <select id="sortBy" class="dashboard-control" aria-label="Sort pages"><option value="created" data-i18n="sortCreated">Date created</option><option value="edited" data-i18n="sortEdited">Date edited</option><option value="count" data-i18n="sortCount">Highlight count</option></select>
-    <button id="favoritesOnly" type="button" class="favorite-filter dashboard-control" aria-pressed="false" title="Show favorite pages only"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg><span data-i18n="favoritesOnly">Favorite pages</span></button>
-    <button id="favoriteNotesOnly" type="button" class="favorite-filter dashboard-control" aria-pressed="false" data-i18n-title="favoriteNotesOnly" title="Favorite notes"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg><span data-i18n="favoriteNotesOnly">Favorite notes</span></button>
-    <label class="search-box dashboard-control"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Search notes, text, websites…"></label>
+  <div class="dashboard-legacy-controls" hidden>
+    <a href="#" class="menu-item item-free">Free</a>
+    <span id="profileMenuAvatar" class="profile-avatar profile-avatar-guest"></span><div id="profileMenuIdentity"></div><div id="profileMenuAccountHost"></div>
+    <button id="profileMenuSignOut" type="button"></button><button id="profileOpenSettings" type="button"></button><button id="exportAllBtn" type="button"></button><div id="exportAllMenu" hidden></div><button id="profileImportJson" type="button"></button><input id="importFile" type="file" accept="application/json,.json" hidden>
+  </div>
+  <div id="dashboardSidebarTooltip" class="dashboard-sidebar-tooltip" aria-hidden="true"></div>
+</aside>
+
+<div id="dashboardScroller" class="dashboard-scroller">
+  <div id="dashboardSharedTopbarPortal" class="dashboard-shared-topbar-host">
+  <div id="dashboardSharedTopbar" class="ov-topbar ov-reveal">
+  <div class="ov-crumb" id="dashboardSharedTopbarCrumb"><strong>Keepit Smart Learner</strong><span id="dashboardSharedTopbarSlash">/</span><span id="dashboardSharedTopbarLabel">Tổng quan</span></div>
+  <div class="dashboard-shared-topbar-right"><div id="dashboardSharedTopbarStatus" class="ov-demo">✨ <span id="dashboardSharedTopbarStatusText">Dữ liệu cục bộ</span></div><div id="dashboardSharedTopbarActionsSlot" hidden></div></div>
+</div>
+  </div>
+<main id="dashboardOverviewView" class="dashboard-overview-view" aria-label="Tổng quan" data-i18n-aria-label="ovNavOverview">
+<div class="ov-content">
+
+  <section class="ov-intro-row" aria-label="Chào mừng và bắt đầu nhanh" data-i18n-aria-label="ovIntroAria">
+    <div class="ov-welcome ov-reveal"><div class="ov-welcome-copy"><div class="ov-kicker"><span class="ov-spark">✦</span> <span data-i18n="ovWelcomeKicker">Chào mừng trở lại</span></div><h1><span data-i18n="ovGreeting">Chào mừng trở lại!</span> <span class="ov-heart" aria-hidden="true">💗</span></h1><p data-i18n="ovWelcomeBody">Chúc bạn có một buổi học tập vui vẻ và hiệu quả cùng Keepit!</p><div class="ov-pills"><span>📚 <b id="overviewPillPages">0</b> <span data-i18n="ovSourcePages">trang nguồn</span></span><span>✨ <b id="overviewPillHighlights">0</b> <span data-i18n="ovHighlights">highlights</span></span><span>🗒️ <b id="overviewPillNotes">0</b> <span data-i18n="ovNotes">ghi chú</span></span></div></div><aside class="ov-today-card"><div class="ov-mascot" aria-hidden="true">🐱</div><div><div class="ov-today-label" data-i18n="ovTodayLabel">Thẻ đã ôn hôm nay</div><div class="ov-today-value" id="overviewTodayReviewCount">0</div><div class="ov-today-meter" aria-hidden="true"><span id="overviewTodayReviewMeter"></span></div></div></aside></div>
+    <article class="ov-panel ov-quick-panel ov-reveal"><div class="ov-section-head"><h2 data-i18n="ovQuickStart">Bắt đầu nhanh</h2><span class="ov-demo-note" data-i18n="ovUiOnly">LOCAL</span></div><div class="ov-quick-list"><button class="ov-quick-item" type="button"><span class="ov-quick-icon" style="background:#f1eeff">🃏</span><span><span class="ov-quick-title" data-i18n="ovQuickFlashcards">Ôn Flashcards</span><span class="ov-quick-sub" id="overviewQuickDue">0</span></span><span class="ov-arrow">›</span></button><button class="ov-quick-item" type="button"><span class="ov-quick-icon" style="background:#edf5ff">🎧</span><span><span class="ov-quick-title" data-i18n="ovQuickDictation">Dictation Video</span><span class="ov-quick-sub" data-i18n="ovQuickDictationSub">Luyện nghe chép câu</span></span><span class="ov-arrow">›</span></button><button class="ov-quick-item" type="button" data-dashboard-action="highlights-notes"><span class="ov-quick-icon" style="background:#eaf8f3">📚</span><span><span class="ov-quick-title" data-i18n="ovMenuHighlightsNotes">Tô sáng &amp; Ghi chú</span><span class="ov-quick-sub" data-i18n="ovQuickLibrarySub">Trang, highlights, notes</span></span><span class="ov-arrow">›</span></button></div></article>
   </section>
-  <section class="workspace">
-    <aside class="sources-panel" aria-label="Source pages">
+  <section class="ov-stats" aria-label="Chỉ số thư viện" data-i18n-aria-label="ovStatsAria"><article class="ov-stat ov-reveal"><div class="ov-stat-head"><span class="ov-stat-label" data-i18n="ovStatSources">Trang nguồn</span><span class="ov-stat-icon" style="background:#f1eeff">🌐</span></div><div class="ov-stat-value" id="overviewSourcePageCount">0</div><div class="ov-stat-foot" data-i18n="ovTotalPagesLabel">Số trang đã lưu</div></article><article class="ov-stat ov-reveal"><div class="ov-stat-head"><span class="ov-stat-label" data-i18n="ovStatHighlights">Highlights</span><span class="ov-stat-icon" style="background:#fff0f5">📝</span></div><div class="ov-stat-value" id="overviewHighlightCount">0</div><div class="ov-stat-foot" data-i18n="ovSavedLibrary">Đã lưu trong thư viện</div></article><article class="ov-stat ov-reveal"><div class="ov-stat-head"><span class="ov-stat-label" data-i18n="ovStatDue">Thẻ cần ôn</span><span class="ov-stat-icon" style="background:#edf5ff">⏰</span></div><div class="ov-stat-value" id="overviewDueCount">0</div><div class="ov-stat-foot" data-i18n="ovDueToday">Cần làm hôm nay</div></article><article class="ov-stat ov-reveal"><div class="ov-stat-head"><span class="ov-stat-label" data-i18n="ovStatNotes">Ghi chú</span><span class="ov-stat-icon" style="background:#eaf8f3">🌱</span></div><div class="ov-stat-value" id="overviewNoteCount">0</div><div class="ov-stat-foot" data-i18n="ovPersonalLibrary">Trong thư viện cá nhân</div></article></section>
+  <section class="ov-resume-progress" aria-label="Hoạt động thư viện và tiến độ" data-i18n-aria-label="ovProgressAria">
+    <article class="ov-resume ov-reveal"><div class="ov-resume-copy"><div class="ov-resume-badge" id="overviewSessionBadge" data-i18n="ovResumeBadge">⚡ Tiến độ Dictation</div><h2 id="overviewSessionTitle">Chưa có phiên Dictation</h2><p id="overviewSessionDetail">Chưa có dữ liệu tiến độ Dictation.</p><div class="ov-meta" id="overviewSessionMeta"></div><button class="ov-cta" type="button"><span data-i18n="ovContinue">Tiếp tục học ngay</span> <span>→</span></button></div><div class="ov-resume-art" aria-hidden="true"><div class="ov-book-cat">📖</div></div></article>
+    <article class="ov-panel ov-progress ov-reveal"><div class="ov-progress-head"><div><h2 data-i18n="ovProgressTitle">Hoạt động thư viện 📊</h2><p data-i18n="ovProgressSubtitle">Tô sáng và ghi chú được tạo trong 52 tuần qua.</p></div><span class="ov-active-days" id="overviewActiveDays">0 ngày hoạt động</span></div><div class="ov-periods"><button class="ov-period is-active" type="button" data-i18n="ovPeriodAll">Tất cả</button><button class="ov-period" type="button" data-i18n="ovPeriod7">7 ngày</button><button class="ov-period" type="button" data-i18n="ovPeriod30">30 ngày</button><button class="ov-period" type="button" data-i18n="ovPeriodYear">Hàng năm</button></div><div class="ov-heat-scroll"><div class="ov-months" id="overviewMonthLabels"></div><div class="ov-heat-layout"><div class="ov-weekdays"><span></span><span data-i18n="ovMonday">T2</span><span></span><span data-i18n="ovWednesday">T4</span><span></span><span data-i18n="ovFriday">T6</span><span></span></div><div class="ov-heatmap" id="overviewHeatmap" aria-label="Activity from saved annotations" data-i18n-aria-label="ovHeatmapAria"></div></div></div><div class="ov-legend"><span data-i18n="ovLess">Ít</span><i></i><i></i><i></i><i></i><i></i><span data-i18n="ovMore">Nhiều</span></div><div class="ov-totals"><span class="ov-total"><span data-i18n="ovTotalDays">Tổng số ngày:</span><strong id="overviewTotalDays">0</strong></span><span class="ov-total"><span data-i18n="ovTotalWeeks">Tổng số tuần:</span><strong id="overviewTotalWeeks">0</strong></span><span class="ov-total"><span data-i18n="ovTotalReviewedCards">Thẻ đã ôn:</span><strong id="overviewReviewedCards">0</strong></span><span class="ov-demo-note" data-i18n="ovSampleNumbers">DỮ LIỆU CỤC BỘ</span></div></article>
+  </section>
+  <section class="ov-section"><h2 class="ov-section-title ov-reveal" data-i18n="ovModesTitle">Tiến độ theo chế độ học</h2><p class="ov-section-sub ov-reveal" data-i18n="ovModesSubtitle">Tiếp tục đúng hoạt động bạn đang làm.</p><div class="ov-mode-grid"><article class="ov-mode ov-reveal"><div class="ov-mode-head"><span class="ov-mode-icon" style="background:#f1eeff">🃏</span><span><span class="ov-mode-name" data-i18n="ovModeFlashcards">Ôn Flashcards</span><span class="ov-mode-sub" data-i18n="ovFromHighlights">Từ highlights và notes</span></span></div><div class="ov-mode-value"><strong id="overviewModeReviewedToday">0</strong><span data-i18n="ovReviewedToday">đã ôn hôm nay</span></div><div class="ov-meter"><span id="overviewFlashcardMeter"></span></div><div class="ov-mode-foot"><span id="overviewModeDue">0 thẻ đến hạn</span><span id="overviewLibraryCardTotal">0 thẻ</span></div></article><article class="ov-mode ov-reveal"><div class="ov-mode-head"><span class="ov-mode-icon" style="background:#edf5ff">🎧</span><span><span class="ov-mode-name" data-i18n="ovModeDictation">Dictation</span><span class="ov-mode-sub" data-i18n="ovYoutubePractice">Luyện nghe theo video</span></span></div><div class="ov-mode-value"><strong id="overviewModeDictationProgress">—</strong><span id="overviewModeDictationSolved"></span></div><div class="ov-meter"><span id="overviewDictationMeter"></span></div><div class="ov-mode-foot"><span id="overviewModeDictationTitle">Chưa có phiên</span><span id="overviewModeDictationSource"></span></div></article><article class="ov-mode ov-mode-shadow ov-reveal"><div class="ov-mode-head"><span class="ov-mode-icon" style="background:#fff0f5">🌱</span><span><span class="ov-mode-name" data-i18n="ovModeShadowing">Shadowing</span><span class="ov-mode-sub" data-i18n="ovShadowingIdea">Ý tưởng luyện nghe-nói</span></span></div><div class="ov-mode-value"><strong data-i18n="ovNoData">Chưa có dữ liệu</strong></div><div class="ov-meter"><span style="width:0%;background:#e4bd7d"></span></div><div class="ov-mode-note" data-i18n="ovShadowingNote">Shadowing chưa có schema lưu trong app; đây chỉ là placeholder thiết kế.</div></article></div></section>
+  <section class="ov-lower"><article class="ov-panel ov-reveal"><div class="ov-section-head"><div><h2 data-i18n="ovLibraryDistribution">Thẻ phổ biến 📁</h2><p class="ov-section-sub" data-i18n="ovLibrarySubtitle">Số lượng annotations theo tag.</p></div><span class="ov-demo-note" data-i18n="ovDemo">LOCAL</span></div><div class="ov-dist-list" id="overviewTopTags"></div><p class="ov-muted" data-i18n="ovLibraryDemoNote">Hiển thị từ tag đã lưu trong annotations.</p></article><article class="ov-panel ov-reveal"><div class="ov-section-head"><div><h2 data-i18n="ovRecentActivity">Gần đây trong thư viện 🕒</h2><p class="ov-section-sub" data-i18n="ovActivitySubtitle">Annotations mới nhất theo thời gian tạo/sửa.</p></div><span class="ov-demo-note" data-i18n="ovDemo">LOCAL</span></div><div class="ov-activity-list" id="overviewRecentItems"></div></article></section>
+  <div class="ov-footer ov-reveal"><span data-i18n="ovFooterTitle">Keepit · Giao diện Tổng quan</span><span data-i18n="ovFooterNote">Số liệu lấy từ thư viện cục bộ; tiến độ Dictation lấy từ các phiên đã lưu.</span></div>
+</div>
+</main>
+<main aria-label="Chép chính tả" class="dashboard-dictation-view" data-i18n-aria-label="ovMenuDictation" hidden="" id="dashboardDictationView"><div class="dictation-root"><div class="app"><svg aria-hidden="true" class="icon-defs" xmlns="http://www.w3.org/2000/svg">
+<symbol id="dictation-i-grid" viewbox="0 0 24 24"><rect height="8" rx="1.5" width="7" x="3" y="3"></rect><rect height="5" rx="1.5" width="7" x="14" y="3"></rect><rect height="10" rx="1.5" width="7" x="14" y="11"></rect><rect height="7" rx="1.5" width="7" x="3" y="14"></rect></symbol>
+<symbol id="dictation-i-headphones" viewbox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path></symbol>
+<symbol id="dictation-i-cards" viewbox="0 0 24 24"><rect height="16" rx="2" width="14" x="3" y="4"></rect><path d="M7 8h6M7 12h6M17 8h2a2 2 0 0 1 2 2v10H9"></path></symbol>
+<symbol id="dictation-i-book" viewbox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v19H6.5A2.5 2.5 0 0 1 4 18.5z"></path><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20M8 6h8M8 10h7"></path></symbol>
+<symbol id="dictation-i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="dictation-i-user" viewbox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></symbol>
+<symbol id="dictation-i-search" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
+<symbol id="dictation-i-spark" viewbox="0 0 24 24"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"></path><path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14Z"></path></symbol>
+<symbol id="dictation-i-play" viewbox="0 0 24 24"><path d="m8 5 12 7-12 7z"></path></symbol>
+<symbol id="dictation-i-clock" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
+<symbol id="dictation-i-check" viewbox="0 0 24 24"><path d="m5 12 4 4L19 6"></path></symbol>
+<symbol id="dictation-i-globe" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"></path></symbol>
+<symbol id="dictation-i-arrow" viewbox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"></path></symbol>
+<symbol id="dictation-i-volume" viewbox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path></symbol>
+<symbol id="dictation-i-youtube" viewbox="0 0 24 24"><path d="M22 12s0-4-1-5-9-1-9-1-8 0-9 1-1 5-1 5 0 4 1 5 9 1 9 1 8 0 9-1 1-5 1-5Z"></path><path d="m10 9 5 3-5 3z"></path></symbol>
+<symbol id="dictation-i-file" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6M8 13h8M8 17h8"></path></symbol>
+<symbol id="dictation-i-info" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 11v5M12 8h.01"></path></symbol>
+<symbol id="dictation-i-trend" viewbox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"></path><path d="M15 7h6v6"></path></symbol>
+<symbol id="dictation-i-bookmark" viewbox="0 0 24 24"><path d="M19 21 12 17l-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></symbol>
+</svg><div class="content">
+<div class="dictation-hero-row"><section aria-labelledby="dictationPageTitle" class="hero dashboard-reveal">
+<div class="hero-copy">
+<div class="eyebrow"><svg class="icon"><use href="#dictation-i-spark"></use></svg><span data-i18n="dictationKicker">Góc luyện nghe</span></div>
+<h1 data-i18n="dictationTitle" id="dictationPageTitle">Dictation, theo nhịp của bạn</h1>
+<p data-i18n="dictationBody">Tiếp tục một bài đang luyện, tìm nội dung mới hoặc xem lại những từ bạn muốn luyện thêm.</p>
+<div class="hero-tags">
+<span class="hero-tag"><svg class="icon"><use href="#dictation-i-headphones"></use></svg><span data-i18n="dictationTagAudio">Luyện nghe chủ động</span></span>
+<span class="hero-tag"><svg class="icon"><use href="#dictation-i-bookmark"></use></svg><span data-i18n="dictationTagLocal">Lưu trên thiết bị</span></span>
+</div>
+</div>
+<div aria-hidden="true" class="hero-art"><div class="hero-art-inner"><svg class="icon"><use href="#dictation-i-headphones"></use></svg></div></div>
+</section><article class="continue-card dashboard-reveal" id="dictationContinueCard">
+<div class="continue-copy">
+<div class="section-eyebrow"><svg class="icon"><use href="#dictation-i-play"></use></svg><span data-i18n="dictationContinueLabel">Continue Dictation</span></div>
+<h2 id="dictationContinueTitle" data-i18n="dictationContinueEmptyTitle">No recent session</h2>
+<p id="dictationContinueDescription" data-i18n="dictationContinueEmptyDescription">Saved progress will appear here after you practice.</p>
+<div class="continue-meta" id="dictationContinueMeta"></div>
+<div class="continue-actions" id="dictationContinueActions" hidden>
+<button class="primary-btn" id="dictationContinueButton" type="button"><svg class="icon"><use href="#dictation-i-play"></use></svg><span data-i18n="dictationContinueAction">Continue Dictation</span></button>
+<button class="text-btn" id="dictationOpenSourceButton" type="button"><span data-i18n="dictationOpenVideo">Open source</span><span aria-hidden="true">↗</span></button>
+</div>
+</div>
+<div aria-hidden="true" class="continue-art">
+<img alt="" class="dictation-continue-thumb" hidden><div class="mountain"></div><span class="continue-art-label" data-i18n="dictationTagAudio">DICTATION</span>
+</div>
+</article></div>
+<section aria-label="Tìm kiếm bài Dictation" class="search-panel dashboard-reveal" data-i18n-aria-label="dictationSearchPlaceholder">
+<label class="search-row" for="dictationSessionSearch">
+<svg class="icon"><use href="#dictation-i-search"></use></svg>
+<input aria-label="Tìm trong các bài Dictation đã lưu" autocomplete="off" data-i18n-aria-label="dictationSearchPlaceholder" data-i18n-placeholder="dictationSearchPlaceholder" id="dictationSessionSearch" placeholder="Tìm trong các bài Dictation đã lưu…" type="search"/>
+<span class="key-hint">⌘ K</span>
+</label>
+<div class="search-help">
+<span aria-live="polite" data-i18n="dictationSearchEmpty" id="dictationSearchStatus">Tìm trong bài đã lưu; nhập từ khóa để tìm nhanh.</span>
+<div aria-live="polite" class="external-actions" id="dictationExternalActions">
+<span class="external-label" data-i18n="dictationSearchNew">Tìm nội dung mới:</span>
+<button class="external-btn" data-engine="YouTube" data-dictation-engine="YouTube" type="button"><span class="yt-mini"><svg class="icon"><use href="#dictation-i-play"></use></svg></span><span data-i18n="dictationSearchYoutube" id="dictationYoutubeSearchText">Tìm trên YouTube</span></button>
+<button class="external-btn" data-engine="Google" data-dictation-engine="Google" type="button"><span class="google-g">G</span><span data-i18n="dictationSearchGoogle" id="dictationGoogleSearchText">Tìm trên Google</span></button>
+</div>
+<span class="search-note" data-i18n="dictationSearchRightNote">Search opens results in a new tab.</span>
+</div>
+</section>
+<div class="layout">
+<div class="primary-column">
+
+<section aria-labelledby="dictationLibraryTitle" class="library-section dashboard-reveal">
+<div class="section-head">
+<div><h2 data-i18n="dictationLibraryTitle" id="dictationLibraryTitle">Bài đã Dictation</h2><p data-i18n="dictationLibrarySubtitle">Các phiên luyện đã lưu trên thiết bị này.</p></div>
+<span class="count-badge" data-i18n="dictationVisibleCount" id="dictationVisibleCount">0 phiên đã lưu</span>
+</div>
+<div class="library-tools">
+<div aria-label="Lọc theo nguồn" class="filters" role="group">
+<button aria-pressed="true" class="filter active" data-filter="all" type="button"><span data-i18n="dictationFilterAll">Tất cả</span><span class="num" id="dictationFilterAllCount">0</span></button>
+<button aria-pressed="false" class="filter" data-filter="youtube" type="button"><span data-i18n="dictationFilterYouTube">YouTube</span><span class="num" id="dictationFilterYoutubeCount">0</span></button>
+<button aria-pressed="false" class="filter" data-filter="web" type="button"><span data-i18n="dictationFilterWeb">Web</span><span class="num" id="dictationFilterWebCount">0</span></button>
+</div>
+<select aria-label="Sắp xếp bài" class="sort-select" id="dictationSortSelect"><option value="recent" data-i18n="dictationSortRecent">Gần đây nhất</option><option value="title" data-i18n="dictationSortTitle">Tiêu đề A–Z</option><option value="progress" data-i18n="dictationSortProgress">Tiến độ</option></select>
+</div>
+<div class="session-grid" id="dictationSessionGrid" aria-live="polite"></div>
+<div class="no-results visible" id="dictationEmptyState" data-i18n="dictationSessionsLoading">Loading saved Dictation sessions…</div>
+<div class="no-results" data-i18n="dictationNoResults" id="dictationNoResults">Không tìm thấy bài nào khớp. Thử từ khóa khác hoặc tìm nội dung mới bằng YouTube / Google ở phía trên.</div>
+</section>
+</div>
+<aside aria-label="Thống kê và tìm nội dung" class="aside dashboard-reveal" data-i18n-aria-label="dictationStatsAside">
+<section class="panel stats-panel">
+<div class="panel-head">
+<div><h2 data-i18n="dictationWrongStatsTitle">Thống kê từ sai</h2><p data-i18n="dictationWrongStatsSummary">Tổng hợp lỗi chính tả</p></div>
+<span class="panel-icon"><svg class="icon"><use href="#dictation-i-trend"></use></svg></span>
+</div>
+<div class="stat-grid">
+<div class="mini-stat"><span class="mini-label" data-i18n="dictationStatsWords">Distinct words with saved errors</span><div class="mini-value"><span id="dictationWrongWordsCount">0</span> <span class="mini-unit" data-i18n="dictationWrongStatsWord">words</span></div><div class="mini-foot" data-i18n="dictationSavedStatsLabel">From saved attempts</div></div>
+<div class="mini-stat"><span class="mini-label" data-i18n="dictationStatsRecovery">Recovery rate</span><div class="mini-value"><span id="dictationRecoveryRate">—</span><span class="mini-unit">%</span></div><div class="mini-foot" data-i18n="dictationSavedStatsLabel">From saved attempts</div></div>
+</div>
+<div class="stats-divider"></div>
+<div class="mistake-head"><h3 data-i18n="dictationMostMistakes">Most recorded errors</h3><span id="dictationMistakeCount" data-i18n="dictationSavedStatsLabel">From saved attempts</span><button id="dictationShowAllSessions" class="mistake-all-sessions" data-i18n="dictationShowAllSessions" type="button" hidden>All sessions</button></div>
+<div class="mistake-list" id="dictationMistakeList" aria-live="polite"></div>
+<div class="stats-note" id="dictationStatsEmpty" data-i18n="dictationStatsEmpty">No saved Dictation error attempts yet.</div>
+<button id="dictationDetailedStatsBtn" class="all-mistakes" type="button" aria-haspopup="dialog" aria-controls="dictationStatsPopupFrame"><span data-i18n="dictationViewStats">Xem thống kê chi tiết</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>
+<div class="stats-note"><svg class="icon"><use href="#dictation-i-info"></use></svg><span data-i18n="dictationStatsNote">Detailed error statistics use eligible attempts saved on this device.</span></div>
+</section>
+<section class="search-elsewhere">
+<h2 data-i18n="dictationFindNewTitle">Tìm nội dung mới</h2>
+<p data-i18n="dictationFindNewHelp">Nhập từ khóa ở ô tìm kiếm phía trên, rồi chọn nơi bạn muốn tìm.</p>
+<button class="engine-link" data-engine="YouTube" data-dictation-engine="YouTube" type="button"><span class="engine-icon"><svg class="icon"><use href="#dictation-i-youtube"></use></svg></span><span data-i18n="dictationFindYouTube">Tìm video trên YouTube</span><span class="engine-arrow">›</span></button>
+<button class="engine-link" data-engine="Google" data-dictation-engine="Google" type="button"><span class="engine-icon web"><svg class="icon"><use href="#dictation-i-globe"></use></svg></span><span data-i18n="dictationFindGoogle">Tìm bài viết trên Google</span><span class="engine-arrow">›</span></button>
+<div class="tiny-warning" data-i18n="dictationGoogleNote">Google opens web results. Dictation directly from articles is not currently supported.</div>
+</section>
+</aside>
+</div>
+<footer class="footer"><span data-i18n="dictationFooterTitle">Keepit · Dictation</span><span data-i18n="dictationFooterNote">Sessions and progress are stored on this device.</span></footer>
+</div></div></div></main>
+
+
+<main id="dashboardHighlightsNotesView" class="dashboard-highlights-notes-view" data-i18n-aria-label="ovMenuHighlightsNotes" aria-label="Tô sáng &amp; Ghi chú" hidden>
+
+<div id="dashboardSharedTopbarActionsSource" hidden><div class="demo-topbar-actions" id="dashboardSharedTopbarActions"><div class="menu-wrap"><button id="exportAllDemoBtn" type="button" class="demo-export-all" aria-label="Xuất toàn bộ dữ liệu" title="Xuất toàn bộ dữ liệu" aria-haspopup="true" aria-expanded="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span id="exportAllText">Xuất toàn bộ</span></button><div id="exportAllDemoMenu" class="export-menu align-right" hidden></div></div><span class="demo-badge"><i></i><span id="lrDataBadge">DỮ LIỆU KEEPIT</span></span></div></div>
+<div class="lhn-intro-row"><section class="demo-hero dashboard-reveal" aria-label="Thư viện của bạn"><div class="demo-hero-copy"><div class="demo-eyebrow"><span>✦</span> THƯ VIỆN CỦA BẠN</div><h1>Trang, highlights và ghi chú đã lưu</h1><p>Tìm lại những nội dung bạn đã đánh dấu, xem ghi chú và quản lý nguồn học tập trong cùng một nơi.</p><div class="demo-hero-tags"><span>▤ Lưu cục bộ trên thiết bị</span><span>✦ Tìm kiếm và lọc nhanh</span></div></div><div class="demo-hero-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22z"/><path d="M4 5.5v14A2.5 2.5 0 0 1 6.5 17H20M8 7h8M8 11h8"/></svg></div></section>
+<article class="lhn-latest-card dashboard-reveal" id="lhnLatestHighlightCard" aria-labelledby="lhnLatestHighlightHeading">
+  <div class="lhn-latest-copy">
+    <div class="lhn-latest-eyebrow"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h9l5 5V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20z"/><path d="M14 3.5V9h5M8 13h8M8 16.5h8"/></svg><span id="lhnLatestHighlightLabel">Mới highlight</span></div>
+    <h2 id="lhnLatestHighlightHeading">Chưa có highlight nào</h2>
+    <p id="lhnLatestHighlightDescription">Bài bạn vừa highlight sẽ xuất hiện ở đây.</p>
+    <div class="lhn-latest-meta" id="lhnLatestHighlightMeta"></div>
+    <div class="lhn-latest-actions" id="lhnLatestHighlightActions" hidden>
+      <button class="lhn-latest-primary" id="lhnLatestOpenNotes" type="button">Xem ghi chú</button>
+      <a class="lhn-latest-open-source" id="lhnLatestOpenSource" href="#" target="_blank" rel="noreferrer">Mở bài viết <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+  <div class="lhn-latest-art" id="lhnLatestHighlightArt" aria-hidden="true">
+    <img id="lhnLatestHighlightThumb" alt="" hidden>
+    <div class="lhn-latest-mountain"></div>
+    <span class="lhn-latest-art-label" id="lhnLatestHighlightArtLabel">KEEPIT</span>
+  </div>
+</article></div>
+
+  <section class="library-demo-stats dashboard-reveal" aria-label="Thống kê thư viện">
+  <div class="old-stats-header"><div><div class="old-stats-title"><h2>Thống kê</h2><span aria-hidden="true">📊</span></div><p id="statsSubtitleOld">Tính trên tập đang lọc</p></div><button class="old-stats-close" type="button" aria-label="Thu gọn bảng thống kê" title="Thu gọn">×</button></div>
+  <div class="old-stats-scope" role="group" aria-label="Phạm vi thống kê"><button type="button" data-stats-scope="all">Toàn bộ</button><button class="active" type="button" data-stats-scope="filtered">Đang lọc</button></div>
+  <div class="old-metric-grid"><div class="old-metric"><strong id="demoMetricPages">0</strong><span>Trang nguồn</span></div><div class="old-metric"><strong id="demoMetricHighlights">0</strong><span>Highlights</span></div><div class="old-metric"><strong id="demoMetricNotes">0</strong><span>Ghi chú</span></div></div>
+  <section class="old-stats-section old-activity dashboard-reveal"><div class="old-activity-head"><h3>Hoạt động</h3><span id="demoActiveDays">0 ngày</span></div><div class="old-periods" role="group" aria-label="Khoảng thời gian"><button type="button" data-heat-period="all">Tất cả</button><button type="button" data-heat-period="7">7 ngày</button><button type="button" data-heat-period="30">30 ngày</button><button class="active" type="button" data-heat-period="365">Năm</button></div><div class="old-heat-scroll"><div class="old-heat-layout"><div class="old-weekdays" aria-hidden="true"><span></span><span>T2</span><span></span><span>T4</span><span></span><span>T6</span><span></span></div><div id="demoHeatmap" class="old-heatmap" aria-label="Hoạt động lưu annotation"></div></div></div><div class="old-heat-legend"><span>Ít</span><i></i><i></i><i></i><i></i><span>Nhiều</span></div><div class="old-activity-totals"><span>Tổng ngày <b id="demoTotalDays">0</b></span><span>Tổng tuần <b id="demoActiveWeeks">0</b></span><span>Mục đã lưu <b id="demoActiveItems">0</b></span></div></section>
+  <section class="old-stats-section old-distribution dashboard-reveal"><div class="old-dist-head"><h3>Phân bố</h3><span>Theo số highlights</span></div><div class="old-dist-tabs" role="tablist" aria-label="Phân bố"><button class="active" type="button" data-demo-dist="tags" role="tab" aria-selected="true">Thẻ</button><button type="button" data-demo-dist="domains" role="tab" aria-selected="false">Tên miền</button></div><div id="demoDistribution" class="old-dist-list"></div><p class="old-dist-note">Phân bố được tính từ các trang trong phạm vi chọn.</p></section>
+  <div id="statsDataCaption" class="old-sample-label">TỔNG HỢP TỪ ANNOTATION CỤC BỘ</div>
+</section>
+<section class="toolbar demo-library-toolbar dashboard-reveal" aria-label="Tìm kiếm và lọc thư viện">
+  <div class="demo-search-row">
+    <label class="search-box dashboard-control"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" type="search" placeholder="Tìm theo tiêu đề, tên miền, highlight hoặc ghi chú…" autocomplete="off"></label>
+    <select id="sortBy" class="dashboard-control" aria-label="Sắp xếp"><option value="created">Sắp xếp: Mới lưu</option><option value="edited">Sắp xếp: Ngày sửa</option><option value="count">Sắp xếp: Nhiều highlights</option></select>
+    <button id="clearFiltersBtn" type="button" class="secondary dashboard-control demo-clear-button" aria-label="Xóa lọc">Xóa lọc</button>
+  </div>
+  <div class="demo-filter-row">
+    <div class="demo-quick-filters" role="group" aria-label="Lọc nhanh"><button type="button" class="active" data-quick-filter="all">Tất cả</button><button type="button" data-quick-filter="notes">Có ghi chú</button><button type="button" data-quick-filter="favorites">Yêu thích</button></div>
+    <select id="siteFilter" class="dashboard-control" aria-label="Lọc theo website"><option value="">Nguồn: Tất cả</option></select>
+    <select id="colorFilter" class="dashboard-control" aria-label="Lọc theo màu"><option value="">Màu: Tất cả</option></select>
+    <select id="tagFilter" class="dashboard-control" aria-label="Lọc theo thẻ"><option value="">Thẻ: Tất cả</option></select>
+    <select id="dateFilter" class="dashboard-control" aria-label="Lọc theo ngày"><option value="">Ngày: Tất cả</option><option value="today">Hôm nay</option><option value="7">7 ngày qua</option><option value="30">30 ngày qua</option><option value="365">Năm nay</option></select>
+  </div>
+</section>
+<section class="workspace">
+    <aside class="sources-panel dashboard-reveal" aria-label="Source pages">
       <div class="panel-heading"><div><h2 data-i18n="sourcePages">Source pages</h2><p><span id="pageCount">0 pages</span><span aria-hidden="true">, </span><span id="count">0 notes</span></p></div><button id="studyModeBtn" type="button" class="secondary study-mode-button"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg><span data-i18n="studyModeButton">Study flashcard</span></button></div>
       <div id="sourceList" class="source-list"></div>
     </aside>
-    <section class="notes-panel" aria-label="Highlights and notes">
+    <section class="notes-panel dashboard-reveal" aria-label="Highlights and notes">
       <div id="notesHeader" class="notes-header">
         <div class="selected-page-info"><div id="selectedFavicon" class="selected-favicon" aria-hidden="true"></div><div class="selected-page-text"><h2 id="selectedTitle" data-i18n="selectSource">Select a source page</h2><a id="selectedUrl" href="#" target="_blank" rel="noreferrer"></a><p id="selectedMeta"></p></div></div>
-        <div class="page-actions"><button id="viewModeBtn" class="icon-button view-mode-button" type="button" title="List view" aria-label="List view" aria-pressed="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button><button id="favoritePageBtn" class="icon-button" title="Add to favorites" aria-label="Add to favorites" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg></button><div class="menu-wrap"><button id="exportPageBtn" class="icon-button" aria-label="Export this page" title="Export this page" aria-haspopup="true" aria-expanded="false" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg></button><div id="exportPageMenu" class="export-menu align-right" hidden></div></div><button id="deletePageBtn" class="icon-button delete-page-button" title="Delete all highlights on this page" aria-label="Delete all highlights on this page" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div>
+        <div class="page-actions"><button id="viewModeBtn" class="icon-button view-mode-button" type="button" title="List view" aria-label="List view" aria-pressed="false"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button><button id="favoritePageBtn" class="icon-button" title="Add to favorites" aria-label="Add to favorites" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg></button><div class="menu-wrap"><button id="exportPageBtn" class="icon-button" aria-label="Export this page" title="Export this page" aria-haspopup="true" aria-expanded="false" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg></button><div id="exportPageMenu" class="export-menu align-right" hidden></div></div><button id="deletePageBtn" class="icon-button delete-page-button" title="Delete all highlights on this page" aria-label="Delete all highlights on this page" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div>
       </div>
       <div id="noteColorFilters" class="note-color-filters" aria-label="Filter highlights by color"></div>
       <div id="notesList" class="notes-list"></div>
@@ -84,7 +308,11 @@
       <section id="selectPrompt" class="empty select-prompt"><div class="empty-icon"><svg class="lucide large" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 3 14 9-7 1-3 7L5 3Z"/><path d="m12 13 5 6"/></svg></div><h2 data-i18n="selectSource">Select a source page</h2><p data-i18n="selectSourceHelp">Choose a page from the left to see its highlights and notes.</p></section>
     </section>
   </section>
+
+<div id="libraryDemoToast" class="ld-demo-toast" role="status" aria-live="polite"></div>
 </main>
+</div>
+<iframe id="dictationStatsPopupFrame" src="dictation-stats-popup.html" title="Thống kê chi tiết Dictation" data-i18n-title="dictationStatsPopupTitle" aria-hidden="true" hidden></iframe>
 <dialog id="profileAuthDialog" class="profile-auth-dialog">
   <form id="profileAuthForm" method="dialog">
     <div class="profile-auth-tabs"><button id="profileLoginTab" type="button" class="is-active" data-i18n="profileLogin">Đăng nhập</button><button id="profileRegisterTab" type="button" data-i18n="profileRegister">Đăng ký</button><button id="profileAuthClose" type="button" aria-label="Close">×</button></div>
@@ -115,6 +343,8 @@
           <button class="settings-nav-item is-active" type="button" data-settings-tab="account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><span data-i18n="account">Account</span></button>
           <button class="settings-nav-item" type="button" data-settings-tab="notes"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg><span data-i18n="settingsHighlightsNotes">Highlight &amp; Notes</span></button>
           <button class="settings-nav-item" type="button" data-settings-tab="translate"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span data-i18n="translateTab">Translate</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="iconDisplay"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 8h10M7 12h6M7 16h3"/></svg><span data-i18n="iconDisplayTab">Icon display</span></button>
+          <button class="settings-nav-item" type="button" data-settings-tab="askAI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg><span data-i18n="chatGPTSettingsTab">Hỏi AI</span></button>
           <button class="settings-nav-item" type="button" data-settings-tab="speech"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg><span data-i18n="speechTab">Speech</span></button>
           <button class="settings-nav-item" type="button" data-settings-tab="bilingualReader"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8 12v-2a4 4 0 0 1 8 0v2"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/></svg><span data-i18n="bilingualReaderTab">Bilingual Reader</span></button>
           <button class="settings-nav-item" type="button" data-settings-tab="appearance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-1.5a1.5 1.5 0 0 1-1.2-2.4A2 2 0 0 0 14.7 4 8.8 8.8 0 0 0 12 3Z"/><circle cx="7.5" cy="12" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><span data-i18n="appearance">Appearance</span></button>
@@ -128,6 +358,8 @@
         </nav>
       </aside>
       <main class="settings-window-content">
+        <div class="settings-search"><svg class="settings-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="settingsSearch" class="settings-language-search" type="search" autocomplete="off" data-i18n-placeholder="settingsSearchPlaceholder" placeholder="Search settings…"></div>
+        <p id="settingsSearchEmpty" class="settings-disabled-web-empty" data-i18n="settingsSearchNoResults" hidden>No settings found</p>
         <section class="settings-panel-page is-active" data-settings-panel="account">
           <div class="settings-panel-heading"><h2 data-i18n="account">Account</h2><p data-i18n="accountHelp">Manage the local profile shown in this dashboard.</p></div>
           <div id="settingsAccountState"></div>
@@ -136,7 +368,7 @@
             <div class="settings-account-row settings-picture-row"><span><strong data-i18n="accountProfilePicture">Profile picture</strong><small data-i18n="accountProfilePictureHelp">Choose an image for your profile.</small></span><div class="settings-account-controls settings-picture-controls"><span id="settingsAccountPicturePreview" class="settings-picture-preview" aria-hidden="true"></span><button id="settingsChangeProfilePicture" type="button" class="settings-action-button" data-i18n="change">Change</button><input id="settingsProfilePictureFile" type="file" accept="image/*" hidden></div></div>
             <div class="settings-account-row"><span><strong data-i18n="accountDisplayName">Display name</strong><small data-i18n="accountDisplayNameHelp">The name shown in your profile.</small></span><div class="settings-account-controls"><input id="settingsAccountDisplayName" type="text" autocomplete="name"><button id="settingsAccountSaveName" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
             <div class="settings-account-row"><span><strong data-i18n="accountUsername">Username</strong><small data-i18n="accountUsernameHelp">Your public username shown with @ in your profile.</small></span><div class="settings-account-controls"><input id="settingsAccountUsername" type="text" autocomplete="username"><button id="settingsAccountSaveUsername" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
-            <div class="settings-account-row"><span><strong data-i18n="accountEmail">Email</strong><small data-i18n="accountEmailHelp">The email address you signed up with. You can change it here — we'll send a link to your new address to set a new password.</small></span><div class="settings-account-controls"><input id="settingsAccountEmail" type="email" value="huuson889@gmail.com" disabled><button id="settingsAccountChangeEmail" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
+            <div class="settings-account-row"><span><strong data-i18n="accountEmail">Email</strong><small data-i18n="accountEmailHelp">The email address you signed up with. You can change it here — we'll send a link to your new address to set a new password.</small></span><div class="settings-account-controls"><input id="settingsAccountEmail" type="email" disabled><button id="settingsAccountChangeEmail" type="button" class="settings-action-button" data-i18n="change">Change</button></div></div>
             <section class="settings-linked-account"><div class="settings-linked-top"><span><strong data-i18n="accountLinked">Linked account</strong><small data-i18n="accountLinkedHelp">Use the following service to sign in into your account.</small></span><span class="settings-account-provider"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.7-5H1.3v3.2A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.2a7.2 7.2 0 0 1 0-4.4V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.2Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8L20 3.2A11.7 11.7 0 0 0 12 0 12 12 0 0 0 1.2 6.6l4.1 3.2c1-2.9 3.6-5 6.7-5Z"/></svg><span>Google</span></span></div><div class="settings-linked-note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i18n="accountLinkedPasswordHelp">If you want to set a password for your account, please go to the login page and click "Forgot password" and set a password by clicking the link in the email.</span></div></section>
             <div class="settings-account-row"><span><strong data-i18n="profileLogout">Sign out</strong><small data-i18n="accountSignOutHelp">Sign out of this local profile.</small></span><button id="settingsAccountSignOut" type="button" class="settings-action-button" data-i18n="profileLogout">Sign out</button></div>
             <section class="settings-danger-zone"><div class="settings-danger-heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span data-i18n="accountDangerZone">Danger Zone</span></div><div class="settings-danger-row"><span><strong data-i18n="accountDeleteTitle">Delete local account</strong><small data-i18n="accountDeleteHelp">Removes this demo profile. Your saved highlights and notes stay on this device.</small></span><button id="settingsAccountDelete" type="button" class="settings-danger-button" data-i18n="accountDeleteButton">Delete account</button></div></section>
@@ -168,9 +400,82 @@
                 <label class="settings-preference-row"><span><strong data-i18n="targetLanguage">Target language</strong></span><select id="settingsPopupTranslationTarget"></select></label>
               </div>
             </section>
+            <section class="settings-subsection study-translate-options"><h3 data-i18n="bilingualCache">Cache</h3>
+              <div class="settings-preference-list settings-translate-language-list">
+                <div class="settings-preference-row"><span><strong data-i18n="dictionaryCacheTitle">Dictionary cache</strong><small data-i18n="dictionaryCacheHelp">Looked-up words are saved for 7 days. Clear to fetch them again.</small></span><button id="settingsClearDictionaryCache" class="settings-action-button" type="button" data-i18n="bilingualClearCache">Clear cache</button></div>
+              </div>
+            </section>
           </section>
         </section>
-        <section class="settings-panel-page" data-settings-panel="speech" hidden>
+<section class="settings-panel-page" data-settings-panel="iconDisplay" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="iconDisplayTab">Icon display</h2><p data-i18n="iconDisplayHelp">Choose how the floating Keepit toolbar appears. Preview cards follow the selected light or dark theme.</p></div>
+          <section class="settings-subsection settings-logo-action-section">
+            <h3 data-i18n="iconLogoActionTitle">Default action when clicking the icon</h3>
+            <p data-i18n="iconLogoActionHelp">The Keepit logo on the toolbar runs this action. Applies to every style.</p>
+            <div class="settings-logo-action-tabs" role="radiogroup" data-i18n-aria-label="iconLogoActionTitle" aria-label="Default action when clicking the icon">
+              <label class="settings-logo-action-tab lhn-action-highlight"><input class="settings-logo-action-radio" type="radio" name="selectionToolbarLogoAction" value="highlight"><span class="settings-logo-action-icon" data-selection-toolbar-icon="highlight" aria-hidden="true"></span><span data-i18n="toolbarHighlight">Highlight</span></label>
+              <label class="settings-logo-action-tab lhn-action-translate"><input class="settings-logo-action-radio" type="radio" name="selectionToolbarLogoAction" value="translate"><span class="settings-logo-action-icon" data-selection-toolbar-icon="translate" aria-hidden="true"></span><span data-i18n="toolbarTranslate">Translate</span></label>
+              <label class="settings-logo-action-tab lhn-action-ai"><input class="settings-logo-action-radio" type="radio" name="selectionToolbarLogoAction" value="ai"><span class="settings-logo-action-icon" data-selection-toolbar-icon="ai" aria-hidden="true"></span><span data-i18n="toolbarAskAI">Ask AI</span></label>
+            </div>
+          </section>
+          <div class="settings-icon-display-options" role="radiogroup" data-i18n-aria-label="iconDisplayTab" aria-label="Icon display">
+            <label class="settings-icon-display-option" data-icon-style-option="1">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="1">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle1Title">Radial Icons + Text (always shown)</strong><small data-i18n="iconStyle1Help">Three labelled buttons always shown around the logo.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="1"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="2">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="2">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle2Title">Radial Icons + Text (hover to open)</strong><small data-i18n="iconStyle2Help">Hover over the logo to reveal three labelled buttons around it.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="2"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="3">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="3">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle3Title">Radial Icons (always shown)</strong><small data-i18n="iconStyle3Help">Three icon buttons always shown around the logo.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="3"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="4">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="4">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle4Title">Radial Icons (hover to open)</strong><small data-i18n="iconStyle4Help">Hover over the logo to reveal three icon buttons around it.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="4"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="5">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="5">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle5Title">Compact Icon + Text (logo right)</strong><small data-i18n="iconStyle5Help">Clear labels and easy to tap.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="5"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="6">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="6">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle6Title">Micro Badge + Text (hover to open)</strong><small data-i18n="iconStyle6Help">Hover over the logo to reveal the labelled toolbar.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="6"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="7">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="7">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle7Title">Only Icons (logo right)</strong><small data-i18n="iconStyle7Help">A very compact icon-only toolbar.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="7"></span></span>
+            </label>
+            <label class="settings-icon-display-option" data-icon-style-option="8">
+              <input class="settings-icon-style-radio" type="radio" name="selectionToolbarStyle" value="8">
+              <span class="settings-icon-style-copy"><strong data-i18n="iconStyle8Title">Micro Badge (hover to open)</strong><small data-i18n="iconStyle8Help">Hover over the logo to reveal the toolbar.</small></span>
+              <span class="settings-icon-preview-stage" aria-hidden="true"><span class="lhn-sel-preview" data-selection-toolbar-preview="8"></span></span>
+            </label>
+          </div>
+        </section>
+        <section class="settings-panel-page" data-settings-panel="askAI" hidden>
+          <div class="settings-panel-heading"><h2 data-i18n="chatGPTSettingsTab">Hỏi AI</h2><p data-i18n="chatGPTSettingsHelp">Customize how Keepit prepares ChatGPT prompts.</p></div>
+          <section class="settings-subsection settings-chatgpt-section">
+            <div class="settings-preference-list">
+              <label class="settings-preference-row"><span><strong data-i18n="chatGPTAutoSendLabel">Auto-send explicit Keepit prompts</strong><small data-i18n="chatGPTAutoSendHelp">Off for new installs. When off, an unmapped source URL is added only when you send; mapped chats omit it.</small></span><span class="settings-switch"><input id="settingsChatGPTAutoSend" type="checkbox"><i></i></span></label>
+            </div>
+          </section>
+          <section class="settings-subsection settings-chatgpt-section">
+            <h3 data-i18n="chatGPTPromptTemplates">Prompt templates</h3>
+            <p data-i18n="chatGPTPromptTemplatesHelp">Keepit preserves the Website URL line and adds your sentence at the end.</p>
+            <label class="settings-chatgpt-prompt-field"><span><strong data-i18n="chatGPTFirstOpenPromptLabel">First time opening the side panel</strong><small data-i18n="chatGPTFirstOpenPromptHelp">Default: Hãy tóm tắt web này</small></span><input id="settingsChatGPTSummaryPrompt" class="settings-chatgpt-prompt-input" type="text" maxlength="500" autocomplete="off"></label>
+            <label class="settings-chatgpt-prompt-field"><span><strong data-i18n="chatGPTAskPromptLabel">When clicking Hỏi AI</strong><small data-i18n="chatGPTAskPromptHelp">The selected text stays in the question; this sentence is added at the end.</small></span><input id="settingsChatGPTAskPrompt" class="settings-chatgpt-prompt-input" type="text" maxlength="500" autocomplete="off"></label>
+          </section>
+        </section>
+                <section class="settings-panel-page" data-settings-panel="speech" hidden>
           <div class="settings-panel-heading"><h2 data-i18n="speechTab">Speech</h2><p data-i18n="pronunciationDictionaryHelp">Manage custom pronunciations used by Google and browser voices.</p></div>
           <section class="settings-subsection study-translate-options"><h3 data-i18n="flashcardVoice">Voice</h3>
             <div class="settings-preference-list">
@@ -239,6 +544,7 @@
             <label class="settings-shortcut-row"><span><strong data-i18n="translateSelectedText">Translate selected text</strong></span><input id="settingsTranslateShortcut" readonly></label>
             <label class="settings-shortcut-row"><span><strong data-i18n="toggleWebsiteShortcutLabel">Toggle enable on this website</strong></span><input id="settingsWebsiteShortcut" readonly></label>
             <label class="settings-shortcut-row"><span><strong data-i18n="toggleDualSubtitlesShortcutLabel">Toggle dual subtitles</strong></span><input id="settingsDualSubtitlesShortcut" readonly></label>
+            <label class="settings-shortcut-row"><span><strong data-i18n="dictationShortcutLabel">Toggle Dictation</strong></span><input id="settingsDictationShortcut" readonly></label>
             <label class="settings-shortcut-row"><span><strong data-i18n="speechPauseShortcutLabel">Pause or resume speech</strong></span><input id="settingsSpeechPauseShortcut" readonly></label>
             <label class="settings-shortcut-row"><span><strong data-i18n="previousReadingShortcutLabel">Read previous paragraph</strong></span><input id="settingsPreviousReadingShortcut" readonly></label>
             <label class="settings-shortcut-row"><span><strong data-i18n="nextReadingShortcutLabel">Read next paragraph</strong></span><input id="settingsNextReadingShortcut" readonly></label>
@@ -314,7 +620,7 @@
           </section>
         </section>
         <section class="settings-panel-page" data-settings-panel="about" hidden>
-          <div class="settings-panel-heading"><h2 data-i18n="about">About</h2><p data-i18n="appName">Keepit - Highlight Notes</p></div>
+          <div class="settings-panel-heading"><h2 data-i18n="about">About</h2><p data-i18n="appName">Keepit - Keep Exploring</p></div>
           <div class="settings-backup-row"><span><strong data-i18n="version">Version</strong><small data-i18n="settingsLocalOnly">Highlights and notes are stored locally in this Firefox profile.</small></span><strong id="settingsVersion"></strong></div>
           <div class="settings-backup-row"><span><strong data-i18n="errorLogTitle">Error log</strong><small data-i18n="errorLogHelp">Export up to 200 technical entries. Page URLs and selected text are not included.</small></span><button id="exportErrorLog" type="button" class="settings-action-button" data-i18n="exportErrorLog">Export log</button></div>
         </section>
@@ -447,6 +753,6 @@
   </div>
 </dialog>
 <dialog id="editDialog" class="composer-dialog"><form id="editForm"><h2 data-i18n="editAnnotation">Edit annotation</h2><div id="editQuotePreview" class="composer-quote"></div><div class="composer-toolbar"><div id="editColors" class="composer-colors" role="group" aria-label="Highlight color"><button type="button" class="composer-color" data-color="yellow"></button><button type="button" class="composer-color" data-color="green"></button><button type="button" class="composer-color" data-color="purple"></button><button type="button" class="composer-color" data-color="red"></button><button type="button" class="composer-color" data-color="blue"></button><button type="button" class="composer-color" data-color="orange"></button></div><button id="closeEdit" type="button" class="composer-close" data-i18n-title="cancel" data-i18n-aria-label="cancel" aria-label="Cancel" title="Cancel">×</button></div><label class="composer-field"><span data-i18n="noteLabel">Note</span><div class="composer-input-wrap"><span class="composer-note-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg></span><textarea id="editNote" rows="4" data-i18n-placeholder="addNote" placeholder="Add a note…"></textarea></div></label><label class="composer-field"><span data-i18n="sentenceNote">Sentence note</span><div class="composer-input-wrap"><span class="composer-note-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg></span><textarea id="editContextNote" rows="4" data-i18n-placeholder="sentenceNotePlaceholder" placeholder="Sentence containing the highlight…"></textarea></div></label><label class="composer-field"><span data-i18n="tagsLabel">Tags</span><div id="editTags" class="tag-editor"></div></label></form></dialog>
-<dialog id="toast" role="status" aria-live="polite"></dialog><script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/error-logger.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/dashboard/flags.js"></script><script src="../js/dashboard/study-utils.js"></script><script src="../js/translate/study-translation.js"></script><script src="../js/dashboard/study-view.js"></script><script src="../js/dashboard/settings-ui.js"></script><script src="../js/dashboard/profile-stats.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/translate/search.js"></script><script src="../js/shared/icons.js"></script><script src="../js/core/shortcuts.js"></script><script src="../js/dashboard/backup.js"></script><script src="../js/dashboard/library.js"></script><script src="../js/dashboard/account.js"></script><script src="../js/dashboard/dashboard.js"></script>
+<dialog id="toast" role="status" aria-live="polite"></dialog><script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/error-logger.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/dashboard/flags.js"></script><script src="../js/dashboard/study-utils.js"></script><script src="../js/translate/study-translation.js"></script><script src="../js/dashboard/study-view.js"></script><script src="../js/shared/search.js"></script><script src="../js/dashboard/settings-ui.js"></script><script src="../js/overlay/study/session-index.js"></script><script src="../js/dashboard/overview-data.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/shared/icons.js"></script><script src="../js/core/shortcuts.js"></script><script src="../js/dashboard/backup.js"></script><script src="../js/dashboard/annotation-utils.js"></script><script src="../js/dashboard/account.js"></script><script src="../js/shared/thumbnails.js"></script><script src="../js/dashboard/reveal-effects.js"></script><script src="../js/shared/selection-toolbar.js"></script><script src="../js/dashboard/dashboard.js"></script><script src="../js/shared/site-icons.js"></script><script src="../js/dashboard/highlights-notes.js"></script><script src="../js/dashboard/dictation-stats-popup-bridge.js"></script><script src="../js/dashboard/responsive-nav.js"></script>
 </body></html>
 

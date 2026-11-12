@@ -1,85 +1,155 @@
 # Keepit - Hồ sơ dự án
 
-## 1. Trạng thái hiện tại (sửa đè)
-- Version hiện tại: v3.4.631; một codebase Manifest V3 cho Chrome và Firefox. Mã nguồn được nhóm theo vai trò trong `js/` và `css/`, giao diện trong `pages/`, tài nguyên trong `assets/` và thư viện bên thứ ba trong `vendor/`. Các module gồm nền tảng, dịch, Reader, Highlighter, khôi phục annotation, Sidebar, Note Composer, Dashboard Settings, thống kê hồ sơ, Flashcards, Usage, Diagnostics và YouTube Dual Sub. Entry points vẫn điều phối state và vòng đời.
-- Phần tối ưu code theo OPT đã rà/triển khai: Bước 1.1–1.3; 2.1–2.3; 3.1–3.2; 4.1–4.5; OPT 3.2 Flags và 5.3 Fonts/Reader/Translate/Highlighter. Kiểm tra v3.4.599: `node --check` 39/39 JS, script paths hợp lệ, mô phỏng thứ tự nạp core script đạt, `git diff --check` đạt; ZIP hiện hành có `manifest.json` ở gốc và `js/core/defaults.js`. Người dùng đã xác nhận trên trình duyệt: sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source", icon loa không trùng, và Reader đọc lại bình thường sau khi sửa `importScripts`. Log watcher ghi "LỖI push GitHub" nhưng commit thực tế đã lên remote (đã kiểm bằng `git ls-remote`).
-- Bản sửa tải Google Fonts theo nhu cầu trong v3.4.555 đã được người dùng xác nhận; v3.4.554 là bản kiểm tra không đạt. Trình duyệt cụ thể chưa được ghi nhận; xem các mục nhật ký v3.4.555 bên dưới để biết tóm tắt thay đổi.
-- **v3.4.600 — YouTube song ngữ:** tính năng ban đầu được tích hợp từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip`; giao diện overlay được giữ nguyên. Nguồn phụ đề đã được thay đổi ở các phiên bản sau; cách triển khai hiện hành xem mục 24 và nhật ký v3.4.605 trở đi.
-- Một số hành vi TTS/Reader **khác** còn chờ xác nhận thực tế trên trình duyệt; xem danh sách việc đang mở bên dưới. Không suy ra audio hoặc hành vi runtime đã được xác nhận chỉ từ code/mock/request HTTP.
-- `LICENSE` và `PRIVACY-POLICY.md` vẫn là bản nháp có placeholder; rà soát pháp lý/store còn mở. Quyết định và chi tiết ở `OPT-ARENA.md`.
-- Chưa nối Supabase/cloud sync hoặc xử lý thanh toán thật; xác nhận chi tiết tính năng hiện hành trong README và mã nguồn.
+## 1. Trạng thái hiện tại
+- Version 3.5.197 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
+- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193, bước 3 ở v3.5.194, bước 4 ở v3.5.195, bước 5a (xoá panel Study cũ, hover-pause) ở v3.5.196, bước 5b (xoá markup overlay cũ) ở v3.5.197, bước 5c (nhãn sang `languages.js`) ở v3.5.198, bước 5d (đổi tên thư mục overlay) ở v3.5.199 — xong cả 5 bước.
+- Overlay (9 file): giao diện `js/overlay/ui/` chạy trên engine (controller/engine/source); markup cũ đã xoá ở v3.5.197, chỉ còn gốc trạng thái ẩn `#keepit-exact-overlay`; CSS cũ và `view/` đã bỏ ở v3.5.195.
+- Kiểm thử: các bản gần đây thử bằng Chromium headless với extension thật; nhiều mục trên máy thật vẫn chưa chạy (mục 2).
+- Nhật ký: mục 5 chỉ giữ ~30 bản mới nhất; bản cũ hơn ở `docs/changelog/`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-24. [Kiểm tra] YouTube song ngữ v3.4.622: Dual Sub đọc khóa qua `globalThis.LHN_CONFIG`; Auto đích theo ngôn ngữ giao diện. Hai bộ chọn dùng chung `lhnStudyTranslationSettings`; mỗi dòng ưu tiên track khớp, nếu thiếu dùng track gốc và dịch sang ngôn ngữ dòng đó. Khi bật Kết hợp câu, cả nội dung track dịch cũng được chia/gộp theo câu. “Hiện popup dịch trực tiếp” dùng `lhnSettings.translationPopupEnabled` với Dashboard; overlay tạm bật tùy chọn này và khôi phục trạng thái trước đó khi đóng nếu người dùng không đổi. Bộ giải mã transcript xử lý entity HTML lồng nhau; thanh điều khiển neo đáy overlay. Nút điều khiển dùng đúng hiệu ứng nhấn Bilingual Reader khi click/shortcut; click video toggle play/pause. Mục Chế độ xem nằm đầu Cài đặt video. Mặc định shortcut Dual Sub là Alt+E. Cần xác nhận hiển thị/hover pause trên Chromium/Firefox.
-19. [Tiếp tục kiến trúc OPT] Rà soát phần điều phối còn lại trong `content.js` và `dashboard.js`; các entry points hiện vẫn giữ state/vòng đời. Chỉ tách tiếp khi ranh giới chức năng rõ, ít phụ thuộc và giúp agent mới theo luồng dễ hơn.
-17. [Kiểm thử hồi quy trước phát hành] Chrome/Firefox: Bilingual Reader retry sau fallback, cache hit và Clear Cache; TTS phát lại audio cache và LRU khi vượt ngưỡng. Chưa chạy kiểm thử trình duyệt.
-18. [Kiểm thử UI theo OPT 3.2] Menu Language v3.4.571 (không đổi từ v3.4.564): kiểm tra hai mép ô/menu, mở/đóng, lọc/chọn/lưu và bàn phím trên Chrome/Edge; chưa có kết quả trình duyệt.
-16. [Hoàn thiện trước phát hành] `LICENSE`/`PRIVACY-POLICY.md` còn placeholders: xác nhận chủ thể quyền, privacy email, URL/ngày hiệu lực; rà phiên bản/provider; rà soát Chrome store disclosures và Firefox data-collection declaration trong manifest. Chưa công bố.
-15. [Kiểm tra] Toast "Mạng chậm, đang tải âm thanh" khi Google TTS lỗi trên Chrome/Firefox (Speak popup, Bilingual Reader). Chưa nối cho flashcard Dashboard.
-14. [Kiểm tra] Full dict IPA trên Chrome/Firefox: từ có IPA, từ chỉ có nguồn Google (gần đúng), từ không có IPA (không hiện dòng); đọc từ và chip Colloc dùng en.
-13. [Kiểm tra] Focus ô search của Select Voice trên Edge (bản retry chưa thử trên Edge thật); Alt+L và dòng Select voice reader trong Dashboard.
-12. [Kiểm tra] Cờ lhn-br-flag đổi ngay khi chọn voice lúc đang đọc/pause trên Chrome/Firefox. [Chưa làm] Pause với Google rồi đổi giọng: Play vẫn tiếp tục audio cũ.
-11. [Kiểm tra] Giọng trình duyệt đã chọn phải đọc đúng giọng (Chrome: Google Bahasa Indonesia); thiếu giọng thì toast + dừng (Firefox/Android). Theo dõi giọng Google mạng dừng giữa chừng với đoạn dài.
-9. [Kiểm tra] Dashboard TTS: xác nhận tốc độ riêng ngôn ngữ hiển thị mặc định 1.25×, slider/ô số/reset đều chính xác; global giữ 1.0×; giá trị riêng đã lưu không bị ghi đè; flashcard-only default vẫn 1.2×.
-8. [Kiểm tra] Xác nhận 27 website Reader mặc định được seed vào cài đặt hiện có, website con cũng bị tắt, và domain người dùng đã xóa không tự xuất hiện lại.
-7. [Kiểm tra] Xác nhận Reader settings gộp một mục, disabled/gray và không nhận chuột khi Enable reader tắt trên Firefox/Chrome.
-10. [Kiểm tra] Đo thực tế độ trễ dịch Bilingual Reader trên Firefox/Chrome sau khi các engine được gọi đồng thời.
+### Tái cấu trúc cây thư mục (xong ở v3.5.199)
+- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193; bước 3 (danh sách tính năng overlay cũ ↔ mới, trong bản ghi OPT) ở v3.5.194; người dùng duyệt bỏ cả 5 mục; bước 4 (CSS overlay cũ, `overlay-engine.js`, xoá `view/`) ở v3.5.195. Bước 5 chia 5a–5d vì luật "không vừa chuyển file vừa xoá code": 5a (xoá `study/dictation/`, `study/shadowing/`, `createStudyUi`, hover-pause) ở v3.5.196; 5b (markup cũ + chỗ ghi vào đó) ở v3.5.197; 5c (nhãn `unified-text.js`, `offline-page.js` sang `languages.js`) ở v3.5.198; 5d (đổi tên thư mục, gộp `dictation.md`) ở v3.5.199.
 
-1. [Kiểm tra] Google TTS trên Chrome: xác nhận nghe được audio. Ví dụ request đã thấy: translate.google.com/translate_tts?ie=UTF-8&q=...&tl=en&client=tw-ob, GET, 200 OK.
-2. [Kiểm tra] Đọc đoạn dài bằng chia đoạn 180 ký tự (đã có trong code, chưa xác nhận trên máy). Background vẫn giới hạn 500 ký tự mỗi request.
-3. [Làm một phần] Chuỗi dự phòng TTS: Google -> giọng trình duyệt theo từng đoạn đã có; Speak popup/Bilingual Reader có toast khi Google audio lỗi, nhưng Dashboard flashcard chưa nối toast. Chờ kiểm tra trình duyệt.
-4. [Kiểm tra] Firefox MV3: background có unload khi rảnh làm mất tin nhắn không.
-6. [Kiểm tra] Xác nhận nhận diện ngôn ngữ, migration voiceMode/browserVoiceURI, chọn Browser voice và Google voice trên Chrome/Firefox.
+### Áp dụng nguyên tắc giao diện (`docs/ui-layout.md`)
+- (1) Overlay: xong ở v3.5.171 (demo v18). Còn lại, mỗi bước 1 bản: (2) Reader + thanh Keepit; (3) Dashboard + popup dịch/từ điển dạng sheet. Ghi chú cũ: Thứ tự đề xuất, mỗi bước 1 bản: (1) Overlay — demo overlay đồng bộ v2 theo nguyên tắc (demo v1 `keepit-overlay-unified-demo-v1.html` còn 3 lớp bề rộng, chưa duyệt) + tim nhấp đúp video trên máy tính; (2) Reader + thanh Keepit; (3) Dashboard (bỏ mức tablet) + popup dịch/từ điển dạng sheet khi màn dọc trên mọi trang.
+
+### Luyện viết / Luyện nói (ý tưởng)
+- Đã chốt ý tưởng, chưa có spec và chưa code; câu hỏi còn mở ở `OPT-ARENA.md` (bản ghi 2026-11-06 §8). Bước kế tiếp: viết spec để người dùng duyệt.
+
+### AI panel providers
+- v3.5.134 browser QA chưa chạy: popup "Keepit - Keep Exploring" + slogan; Dashboard tab/Giới thiệu "Keepit - Keep Exploring", logo "Keepit" / "Keep Exploring"; sidebar Highlight "Keepit - Keep Exploring" không bị cắt. v3.5.133 browser QA chưa chạy: popup "Keepit" + "Keep Exploring Everything"; Dashboard (logo, tab, Giới thiệu) và sidebar Highlight "Keepit"; header AI panel Chrome/Firefox, tooltip nút toolbar, trang Tiện ích "Keepit - Translate, Learn, Ask AI"; mô tả mới ở trang Tiện ích. v3.5.132 browser QA chưa chạy: popup toolbar hiện "Keepit - Keep Exploring" + "Keep Explore Everything"; Dashboard (logo, tab trình duyệt, Giới thiệu), header sidebar Highlight, header AI panel Chrome/Firefox, tooltip nút toolbar, trang Tiện ích đều dùng tên mới; chữ không bị tràn. v3.5.131 browser QA chưa chạy: header AI panel Chrome và Firefox đều hiện logo Keepit + "Keepit - Translate and Highlight Notes" (không mất chữ giữa "Translate" và "Highlight"). v3.5.130: người dùng yêu cầu Chrome/Firefox đồng bộ. v3.5.129 browser QA chưa chạy: Hỏi AI/Alt+X (panel đang mở và vừa mở) → caret nhấp nháy ở cuối nháp, gõ được ngay; sau đó Ctrl+A, phím mũi tên, click giữa nháp không bị kéo về cuối; 3 AI. v3.5.128: người dùng xác nhận ghi đè nháp đúng. v3.5.128 browser QA chưa chạy: gõ nháp vào ô chat (ChatGPT/Gemini/Claude) → Alt+X đóng/mở hoặc Hỏi AI → nháp bị thay bằng prompt mới, không còn toast "Composer… đã có nội dung"; đổi tab/source bị động không tạo prompt. v3.5.127 browser QA chưa chạy: Claude chưa đăng nhập → lớp phủ gần như ngay khi banner lỗi nhúng hiện; Claude đã đăng nhập có banner cảnh báo (giới hạn dùng…) → không bị lớp phủ. v3.5.126: người dùng xác nhận đúng, Claude chậm hơn 2 AI kia. v3.5.126 browser QA chưa chạy: Claude chưa đăng nhập → lớp phủ khoảng 1 giây sau khi trang thông báo tải xong; Claude đã đăng nhập, mạng chậm → không nháy lớp phủ nhầm. v3.5.125: người dùng xác nhận hoạt động đúng, chỉ Claude chậm. v3.5.125 browser QA chưa chạy: Claude chưa đăng nhập → ~5 giây có lớp phủ "chưa hiện ô chat" + [Mở tab đăng nhập] → đăng nhập xong tự tải lại, lớp phủ tắt; 3 AI đã đăng nhập, mở trang cài đặt/dự án trong panel → không bị lớp phủ. v3.5.124: người dùng xác nhận ChatGPT/Gemini hết lớp phủ nhầm; Claude chưa đăng nhập không có lớp phủ (sửa ở v3.5.125). v3.5.123: người dùng báo lớp phủ `left-site` nhầm trên cả 3 AI đã đăng nhập (đã sửa ở v3.5.124). v3.5.123 browser QA chưa chạy: Claude chưa đăng nhập trong panel → sau ~5 giây có lớp phủ "chưa hiện ô chat" + [Mở tab đăng nhập] → đăng nhập xong panel tự tải lại; ChatGPT/Gemini đã đăng nhập hoặc khách không bị lớp phủ nhầm; trang cài đặt/dự án không bị. v3.5.122: người dùng xác nhận ChatGPT và Gemini đăng nhập đúng. v3.5.121 (người dùng: ChatGPT đúng) phần còn lại chưa chạy (Chrome + Firefox ≥147): Firefox sidebar hiển thị AI trong iframe dưới thanh 25px, đổi tab AI/đổi source/Hỏi AI như Chromium; nút Chat mới cho ChatGPT/Gemini/Claude; Send ở chat mới/chat khác thêm nhãn + URL một lần rồi lần sau mở đúng chat đó; bấm đăng nhập trong panel → tab mới + lớp phủ chờ → tự tải lại khi đăng nhập xong hoặc đóng tab; AI tự hiện trang đăng nhập → lớp phủ có nút, không tự mở tab; Google sign-in của Gemini trong tab mới.
+- v3.5.113 pipeline chung: người dùng xác nhận luồng chạy đúng. Browser QA chưa chạy: v3.5.119 toolbar chọn chữ (4 dạng, logo theo "Mặc định khi bấm icon", preview hover, migrate Dạng 3→4); v3.5.118 nút cạnh trang ẩn AI panel (Chromium); v3.5.117 nút sao chép liên kết (Chromium panel + Firefox sidebar); v3.5.115 Alt+X đóng panel sau khi để yên >30 giây; v3.5.114 độ dày vạch ngang; v3.5.110 nhớ provider sau refresh/restart; v3.5.109 Firefox route, Claude embed Chromium. Kết quả trình duyệt thật của người dùng là nguồn sự thật.
+- v3.5.106 Google auth-frame browser behavior vẫn chưa xác nhận; không thêm quyền, DNR scope hoặc bypass auth.
+
+### Reader ↔ Web TTS shared speed
+- Browser QA pending: đổi tốc độ ở Reader rồi mở Web TTS và đổi ngược lại; xác nhận 0.5×/3×, global/per-language và persistence sau reload; xác nhận YouTube, Dictation slow replay 0.6× và Flashcard không đổi. Static/VM checks v3.5.42 đã đạt.
+
+### Web Overlay progress
+- Browser QA pending: xác nhận thanh tiến độ chạy trong cue theo tốc độ đọc, dừng/tiếp đúng khi Pause/Play và sang cue kế tiếp; Video không đổi. Web progress VM smoke test v3.5.44 đạt.
+
+### Study activity refactor
+- Browser QA pending cho source/activity state names, selector/UI wiring, `LHN_STUDY` với alias cũ và Web shared-rate bridge; xác nhận Web 0.5×–3×, YouTube và Dictation replay giữ nguyên. Static/VM checks v3.5.43 đạt.
+- Đã xong ở v3.5.196: `dictation.js` và `shadowing/` (giao diện cũ) đã xoá. Ghi chú cũ: Tiếp tục tách mode-dependent `submit`, cue/progress, keyboard và open/close branches khỏi `js/overlay/study/dictation/dictation.js` sang activity modules/shared shell phù hợp; giữ UI, selectors, behavior và public Overlay contracts. Hiện đã tách DOM/CSS và phần lớn Speaking recognition/recording/feedback; logic lifecycle chung còn trộn với mode handling. Chưa chạy browser QA.
+
+### Kiểm thử trình duyệt
+- v3.5.162: chưa chạy trên máy thật. Edge Canary Android: Cài đặt → Giới thiệu → chạm số phiên bản 5 lần → Developer options → Extension install by crx → chọn file `.crx`; tiện ích hiện tên "Keepit - Translate, Learn, Ask AI" v3.5.162, thanh Keepit chạy trên trang. Lưu ý: bản CRX có ID khác bản nạp thư mục (dữ liệu hai bản tách riêng).
+- v3.5.161 (mọi thiết bị): chưa chạy trên máy thật. Điện thoại: mở ☰ → vuốt lên một hơi (sheet lên full rồi danh sách cuộn tiếp, không khựng); vuốt xuống: danh sách về đầu trước, rồi sheet theo tay, thả xa thì về half / đóng; vuốt trang ngoài sheet → trang không cuộn. Lặp lại với tìm kiếm, Ghi chú, sheet Reader, Từ điển (ô tìm kiếm → dòng Keepit Dictionary), overlay (tốc độ, chế độ phụ đề, Thêm). Chuyển qua lại vài trang: thanh không chớp/nạp lại. Trang có banner cookie ở đáy: thanh lui thành vạch ở đáy. Máy tính: ☰ có hàng Trình đọc, lăn chuột ngoài popover không cuộn trang; Reader ☰ mở popover chính có Trình đọc ở giữa; overlay tốc độ/phụ đề có ✕.
+- v3.5.160 (Edge Android / DevTools cảm ứng): chưa chạy. Mở Reader: cờ và ☰ cách hai mép bằng nhau, chữ thời gian không chạm ⏮. Mở 2–3 tab, ở tab vừa mở vuốt thanh sang phải → về tab trước; ở tab đầu không lịch sử → toast "Không còn trang hay tab trước"; tab có lịch sử thì lùi trang trước rồi mới sang tab. Nút 🔍 nhỏ hơn, icon như cũ. Mở Ghi chú có nhiều mục: cuộn xuống rồi vuốt xuống giữa danh sách → danh sách cuộn lên; ở đầu danh sách vuốt xuống → sheet theo tay và đóng; kéo ít → bật về. ☰ → hàng Trình đọc, bật/tắt khớp với ☰ trong Reader. Trong Reader chạm ☰ → hiện sheet ☰ chính (cuộn tới Trình đọc), chạm vùng mờ đóng, Reader vẫn chạy. Máy tính/tablet ngang: tắt trang → không có hộp "đang tắt".
+- v3.5.159 (Edge Android): người dùng xác nhận đã sửa hết. Trước đó: Cuộn lên/xuống liên tục → thanh Keepit (và thanh Reader khi đang đọc) luôn dính sát thanh của Edge, không thấy dải tối/khe hở ở đáy. Mở Thêm → kéo tay cầm lên: sheet dài ra, đáy không hở; vuốt trong sheet và trên vùng mờ: trang phía sau đứng yên. Mở Ghi chú → cuộn danh sách tới cuối và vuốt tiếp: trang phía sau đứng yên. Nhấn giữ chọn chữ rồi kéo tay nắm qua lại nhiều lần, dừng giữa chừng: icon/popup chỉ hiện một lần sau khi thả tay. Chạm icon Keepit/thanh công cụ: menu Sao chép/Chia sẻ của Android biến mất, chữ vẫn được chọn (nếu menu vẫn còn: báo lại để đổi cách). Thanh dưới và thanh Reader cao hơn, icon to hơn, không nút nào bị cắt.
+- v3.5.158 (Chrome + Firefox máy tính, DevTools cảm ứng 390/820/1180, Edge Android): chưa chạy. Lần đầu: thẻ "Thanh Keepit" → Đã hiểu → (cảm ứng) Mẹo cử chỉ. Bấm từng nút thanh: Dịch trang bật/tắt + Hoàn tác; Dịch đoạn → chạm đoạn; Đọc → thanh Reader thay chỗ; Vào video/Vào học trên YouTube; Ghi chú; Hỏi AI. 🔍: gõ 1 từ tiếng Anh → Tra → Keepit Dictionary; ghi chú/tô sáng đã lưu; Google/YouTube mở tab mới; ↑↓ Enter Esc. ☰: mọi ô Khi chọn chữ đổi đúng cài đặt popup; ngôn ngữ, màu, chủ đề, Font tùy chỉnh, Bật trang → nhãn "Keepit đang tắt ở trang này" → Bật lại; Ẩn thanh → vạch (máy tính rê 0,3s hiện, rời 0,6s ẩn; cảm ứng chạm vạch). Cảm ứng: vuốt trái trên đoạn, nhấn 3 lần (trang mobile), vuốt phải/trái lùi/tới, vuốt ngang trên thanh, nhấn giữ Dịch/Đọc, kéo popup lên/xuống, cuộn xuống ẩn thanh, ô nhập của trang → thanh ẩn, video toàn màn hình → thanh ẩn. Tắt mạng → Dịch báo "Không có mạng" + Thử lại; có mạng → Dịch ngay. Trang có thanh cookie/giỏ hàng ở đáy → thanh Keepit thu thành vạch ngay trên.
+- v3.5.157 (Chrome + Firefox, YouTube thật): chưa chạy. Overlay → Tốc độ: kéo thanh trượt / bấm + tới 3.00x, video phát đúng 3x và YouTube không tự đặt lại tốc độ; `>`/`<` bước 0,05 trong 0.5–3x; chế độ học (Vào học) và Web TTS cũng tới 3x.
+- v3.5.150 (Chrome + Firefox + Edge Android): chưa chạy. Desktop rộng: overlay 3 chế độ như v3.5.149. Cửa sổ hẹp dọc / DevTools 360–820 cảm ứng: Alt+E trên YouTube và trang web → thẻ gọn, chạm thẻ mở rộng, ⋯ mở sheet, tốc độ/CC/Cài đặt là sheet, câu dài không đè; Ghi chú → bottom sheet, chạm nền mờ hoặc kéo xuống để đóng. Edge Android `m.youtube.com`: transcript phải có nội dung (sandbox bị YouTube chặn nên chưa xác nhận được).
+- v3.5.149 (Chrome + Firefox + Edge Android): chưa chạy. Desktop dùng chuột: Dashboard, trang web, overlay giống v3.5.148, không có thanh Keepit dưới đáy. Chrome DevTools → Toggle device toolbar (bật cảm ứng) 360/390/412/768/820/1024: Dashboard tab bar/rail, thanh Keepit trên trang (Song ngữ → Cả trang/Chọn đoạn, Đọc, Overlay, Ghi chú, Thêm), nhấn giữ bôi 1 từ/cụm → icon hoặc popup/full dict; Alt+E/Alt+F trên YouTube → overlay một cột. Edge Android (cài CRX): như trên với ngón tay thật.
+- v3.5.148 (Chrome + Firefox): chưa chạy. `www.youtube.com/watch`: Alt+E / Alt+F / nút Keepit trong player như v3.5.147; trình duyệt Android có extension (Kiwi, Firefox Android) mở `m.youtube.com/watch` → Alt+E (bàn phím ngoài) mở overlay, có phụ đề + bản dịch.
+- v3.5.147 (Chrome + Firefox): chưa chạy. Cập nhật từ bản cũ → Cài đặt → Icon hiển thị: 8 dạng, Dạng 1 được chọn; bôi chữ (chế độ icon): logo dưới chữ cuối, 3 nút có chữ quanh logo (Tô sáng trái, Dịch dưới, Hỏi AI phải), bấm từng nút đúng thao tác; Dạng 2/4: rê vào logo mới mở, di từ logo sang nút không bị đóng, rời ra thì đóng; Dạng 3: 3 icon vuông; bôi chữ sát mép trái/phải → 3 nút vẫn nằm trong màn hình; Dạng 5–8 giống hệt Dạng 1/3/2/4 cũ; giao diện tối.
+- v3.5.146 (Chrome + Firefox): chưa chạy. Chế độ icon (tắt popup dịch trực tiếp), bật full dict: bôi 1 từ tiếng Anh → Alt+W → full dict + đọc từ; bôi cụm → Alt+W → popup dịch thường; tắt full dict → Alt+W 1 từ → popup dịch thường; dict đang mở → Alt+W đọc lại từ.
+- v3.5.145 (Chrome + Firefox): chưa chạy. Cài đặt → Dịch → "Bộ nhớ đệm" → "Xóa bộ nhớ đệm": toast "Đã xóa bộ nhớ đệm từ điển"; tra lại từ đã tra → gọi mạng lại (thấy request trong Network); highlight/flashcard/cài đặt còn nguyên; sáng/tối; EN/VI/KO; ô tìm "từ điển" ra hàng này.
+- v3.5.144 (Chrome + Firefox): chưa chạy. Chặn `api.datamuse.com` (DevTools → Network → Block request domain), tra "stop": Syn/Ant vẫn có (từ Free Dictionary), Forms/Colloc ẩn, nghĩa/IPA/Example vẫn hiện, không lỗi; bỏ chặn, tra lại "stop" (đóng/mở dict) → đủ Syn/Ant/Forms/Colloc từ Datamuse. Từ có Syn nhưng không có Ant trên Datamuse → Ant lấy từ Free Dictionary.
+- v3.5.143 (Chrome + Firefox): chưa chạy. Full dict "stop": Syn và Ant mỗi loại tối đa 4 chip; Colloc tối đa 4, đúng thứ tự ("next stop", "stop shopping"), nghĩa dịch khớp cụm; bấm chip Colloc ở lại trong dict + Back; từ có ít dữ liệu → hiện ít hơn 4, không lỗi.
+- v3.5.142 (Chrome + Firefox): chưa chạy. Full dict: brand ở góc phải dòng cuối (Colloc/Forms/Syn–Ant, câu dịch Example, loại từ, chỉ nghĩa); list chip dài → chip cuối xuống hàng cùng brand, không che chip/chữ; sáng/tối; tra từ thứ 2 trên cùng trang rồi bấm tim → thấy tim bắn ra quanh nút; ghi chú tự điền/tim không dính chữ brand.
+- v3.5.141 (Chrome + Firefox): chưa chạy. Tim → huỷ → tim nhiều lần trên từ bôi ở trang: lần nào cũng highlight, câu ngữ cảnh = câu trên trang; bật tự phát âm → bấm chip ≥2 từ đọc cụm, Back về cụm đọc lại; tắt → im.
+- v3.5.140 (Chrome + Firefox): chưa chạy. Full dict: Example hiện/ẩn đúng, từ được tô; tim trên từ bôi ở trang → highlight + toast, bấm lại → gỡ; tim trên chip/cụm/từ trong câu ví dụ → chỉ vào flashcard (Dashboard thấy, trang không tô, reload không tô nhầm); chip ≥2 từ + Back; bôi 1 từ / cụm trong câu ví dụ; click trong dict chỉ đóng popup dịch; sáng/tối.
+- v3.5.139 (Chrome + Firefox): chưa chạy. Chế độ icon, full dict bật: bôi 1 từ tiếng Anh → Dịch → full dict; cụm từ → popup dịch thường; tắt full dict → popup dịch thường; logo đặt Dịch → full dict; nút cụm từ trong full dict vẫn mở popup dịch thường. Vị trí icon v3.5.137/138 đã được người dùng xác nhận.
+- v3.5.136 (Chrome + Firefox, ZIP chung): chưa chạy. Sao lưu dữ liệu Firefox trước (đổi gecko id → Firefox coi là extension mới, dữ liệu cũ không tự chuyển). Kiểm: cài được trên Firefox 147+ và hiện khai báo dữ liệu lúc cài; ảnh lofi hiện trên thẻ nguồn web khi trang không có thumbnail và khi thumbnail trang lỗi; Network không còn request Unsplash/S2; favicon Dashboard rơi về icon mặc định khi trang không có favicon; Google Fonts: ghi `Referer` từng request.
+- Biểu tượng dịch và tab “Icon hiển thị” (v3.5.66, v3.5.119 thêm Dạng 4 + "Mặc định khi bấm icon"): browser QA pending — chọn lần lượt Dạng 1/2/3/4, xác nhận lưu và restore sau reload; xem preview/popup ở light, dark và system; bật/tắt “Hiện biểu tượng dịch Keepit”; so sánh ba kiểu với HTML tham chiếu (Dạng 1 nhãn, Dạng 2 icon-only, Dạng 3 hover expand), xác nhận đúng nguyên bản ba SVG, logo bên phải, màu/spacing/radius/shadow; kiểm tra action và các luồng không liên quan.
+- Hỏi AI / ChatGPT (v3.5.101): browser QA chưa được xác nhận trên Chrome/Firefox. Verify only the approved auto-send setting: defaults off for new installs; preserve explicit saved preferences. Check passive source switch leaves blank composer with no prompt/send; explicit first-use sample has no URL when off; manual click/Enter adds localized label + exact URL once and maps only after confirmed send; user-written prompts remain user-sent (never auto-send); mapped Alt+X only reopens and mapped Hỏi AI is selection-only/URL-free. Check opt-in explicit `?q=` native send and duplicate prevention. Verify localized endings EN/VI/KO, Vietnamese defaults, one real newline directly after the quoted selection (no blank line) and exact source-URL mapping; mapped follow-ups remain URL-free and selection-only; Alt+X on mapped URLs only reopens and focuses the composer when ready; draft caret stays at end; opted-in sends focus the composer only after confirmation without replacing any text already typed. Confirm no composer draft is saved/restored or protected from navigation; reproduce the Tuoi Tre → different source stale-composer case and confirm a source change/recreated panel clears old text while a matching active `?q=` prompt remains; also verify legacy page-draft storage removal on update. Check manual send establishes mapping; 2-second automatic tab/source debounce (reset on further tab changes, cancel when returning to displayed source, no tab-activation prompt), mapped-chat vs blank-chat destination, explicit Alt+X/Hỏi AI/right-click bypass, close cancels pending timer/request, and reopening uses only same-source route metadata then exact mapping then blank ChatGPT. Route metadata must exclude query/hash/prompt/composer text and never fall back to global last chat. Reopen same-source/same-route must avoid navigation when its document lives; a different source forces reload even for a shared `/c/<id>`. Also check right-click on Chromium/Firefox, open/close, pinned source URL/provider tabs, ChatGPT default, q native-send/duplicate prevention, Alt+X toggle, worker restart, Alt+Q/custom `sidebarShortcut`, and two-window concurrent navigation/request isolation (shared pending storage keys remain a risk). Browser QA has not been run.
+- AI toolbar v3.5.102/v3.5.107/v3.5.108 browser QA pending: verify accepted 25px bar/flow, 61px divider, 32px tabs and 30px provider controls; source link, ChatGPT/Gemini/Claude tabs, light/dark theme, auto-send toggle on each visible provider, hidden Grok, and no blank overlay.
+- Overlay popup + Theater/Large subtitle (v3.5.54): browser QA pending — Cài đặt body tối đa 530px; popup Cài đặt và menu Chế độ xem đều cách mép phải control bar 4px; menu rộng hơn 20px; ở Theater + Large, mức 100% cho EN 26px/VI 20px, mức khác không đổi; hộp phụ đề wrap trong tối đa 98% chiều rộng `.te-player-frame`.
+- Theater + Large subtitle reset/default (v3.5.53): browser QA pending — double-click trong nội dung và trên handle đều reset được; khi bar ẩn, mép dưới box cách frame 30 px; khi bar hiện, clamp tạm thời rồi trả lại đúng vị trí sau khi ẩn.
+- Theater + Large subtitle handle/position (v3.5.52): browser QA pending — xác nhận handle 54×20 px, icon 14×14, overlap 10 px, hit area thêm 4× width mỗi bên; kéo được gần bottom↔top; double-click reset mép dưới cách 80 px; control bar hiện chỉ clamp khi chồng lấn, opacity về 0 thì vị trí đã lưu trở lại; legacy y=82 nhận default mới, custom y vẫn giữ.
+- Theater + Large light subtitle (v3.5.51): browser QA pending — main mặc định vàng `#ffff00` như dark mode; bản dịch giữ màu hiện hành; light mode ở các kích cỡ khác vẫn tím app; dark mode không đổi.
+- Theater + Large subtitle (v3.5.49/v3.5.54): browser QA pending — xác nhận hộp tăng tới 98% `.te-player-frame` trước khi main/bản dịch wrap; từng dòng ngắn hơn giới hạn giữ một dòng; dòng dài hơn wrap bên trong hộp; đổi kích thước cửa sổ/video không giới hạn nhầm theo viewport.
+- Toast "Bạn đang ở (tên chế độ) rồi" (v3.5.47): browser QA pending — bấm Alt+1/2/3 đúng chế độ xem đang mở thì hiện toast đúng tên mode và ngôn ngữ (EN/VI/KO), tự ẩn sau ~2.4s; bấm khác mode vẫn chuyển như cũ; đang mở Study thì không toast và vẫn chuyển mode; menu chế độ xem đang mở vẫn đóng lại; không ảnh hưởng phím Alt+1–3 khi đang nhập liệu.
+- Kích thước xem Normal/Theater độc lập (v3.5.46): browser QA pending — chọn S/M/L ở Normal không đổi cỡ Theater và ngược lại; chuyển Normal ↔ Theater áp ngay kích thước riêng của mode đích, không thừa hưởng cỡ mode trước và không tự ẩn controls sai; Reading/Study giữ key riêng; auto-hide controls khi chọn L ở Theater vẫn hoạt động; giá trị giữ sau reload và khi mở lại overlay.
+- Ảnh người dùng v3.4.967: chuyển Rạp + Lớn → Luyện nói/Dictation làm layout Theater còn áp dụng vào grid học; đã sửa ở v3.4.968, cần chạy lại đúng luồng trên YouTube để xác nhận.
+- Overlay favicon: xác nhận `.te-yt-logo-box` dùng đúng favicon trang cho Web và YouTube, giữ 22×22px/tiêu đề/bố cục, fallback globe khi không có icon; browser QA pending.
+- YouTube: xác nhận `.te-sub-en`/`.yt-dual-item-en` và vùng Dictation allowlist mở đúng popup/Full Dict; các dòng dịch/control khác bị chặn; hai tùy chọn popup/đọc riêng; Theater + Large: nếu auto-hide khi trước đó tắt, mọi exit kể cả `pagehide` phải giữ hide-controls off; manual hide vẫn được giữ. Normal + Large phải giữ thanh control hiện như Small/Medium; mock v3.5.29 pass. v3.5.30: kiểm tra cursor thường và click xóa selection trên YouTube video/Web thumbnail, playback không đổi; browser QA pending.
+- Web-study/video UI v3.5.25 behavior / v3.5.28 relocation / v3.5.29 control-bar UI fix / v3.5.30 frame interaction / v3.5.32 thumbnail visualizer / v3.5.33 exact waveform port: browser QA pending xác nhận Web TTS đổi tốc độ ngay giữa cue và Pause/Play tiếp đúng vị trí trên Google audio/browser voice, gồm pause giữa chunks và seek khi pause; cùng xác nhận clipping cho Web thumbnail/video thật và visualizer cover/Lo-fi fallback, motion Breathing/Pan/Tilt (0,2×–3,0×; bỏ Static/Pulse; biên độ giảm 50%), bốn waveform, năm palettes, metadata; bảy hiệu ứng random riêng mỗi 30–180s; blur 0–10px; bokeh dùng glow alpha và radius 2× theo tham chiếu, darkness/bokeh giữ giới hạn ở normal, Theater + Large, Reading và Dictation; giữ frame size/ratio/position; tiếp tục kiểm tra cho Dictation repeat phát lại đúng cue/count trên Web (không bị nhảy sang câu sau), mọi video shortcut (Alt+E/F, Alt+1–3, 1–4, Space/K, arrows/J/L, </>, Escape) trên Web; xác nhận Web view và Bilingual Reader loại trừ nhau hai chiều; giữ controls hiện trong Web view và ẩn trong learning; Ambient dùng thumbnail (công tắc, ảnh tải muộn, on/off và cleanup); Reading + Ambient cần xác nhận control bar dùng chung nền/blur/viền/bóng ở theme sáng/tối, Ambient tắt không đổi nền, geometry fixed chỉ ở Rạp + Lớn; transcript focus ở Normal/Reading tại 40vh mặc định, scroll tay giữ offset qua cue kế tiếp/mode switch, cue đầu/cuối clamp ở natural boundary như v3.5.20, cue cuộn được căn 40vh; Theater/Dictation không đổi; cùng QA các phím Typing sau khi đạt 100% (v3.5.8), shared subtitle translation trên Web (Reader text primary, BILINGUAL_TRANSLATE secondary, bilingual/translation modes, đổi target language), Reader sentence cues, đa ngôn ngữ TTS/SpeechRecognition, Typing/Speaking, session web mở đúng URL, page thumbnail/SVG fallback, navigation cleanup và toast/log lỗi dịch; xác nhận trực quan góc Web frame v3.5.5; Web cue cache trên Tuổi Trẻ/VnExpress: lần đầu lấy Reader mới, đóng/mở cùng document nhiều lần giữ nguyên cue, reload trích xuất lại, persistent cache hit khi source hash trùng, mục không dùng hết hạn sau 7 ngày và được dọn khi cache được dùng lại; CC mặc định `primary` khi cue cùng ngôn ngữ giao diện, `bilingual` khi khác/chưa rõ, và giữ lựa chọn thủ công. Chưa browser-test.
+- Dashboard & Highlights/Notes (Chrome/Firefox, desktop và màn hình hẹp): xác nhận route/scroll restore, event bus, annotations/favorites/CRUD/export/study, theme/responsive, favicon, reveal/count-up/reduced-motion và nested scrolling. Các hành vi này chưa xác nhận trên trình duyệt thật.
+- Dictation, Reading và YouTube overlay: kiểm tra typing colors 70/40/0 với chỉ 100% đạt, nút Hiện bản dịch on/off/tải, `te-dict-stats-host` font sizes theo ngưỡng ≤10px +2px/>10px +1px, font chữ UI overlay dùng token mặc định trong mọi mode còn phụ đề/transcript giữ font tùy chỉnh, bố cục học mặc định 25:50:25 và giữ kích thước cột tùy chỉnh khi nạp preference cũ, typing answer stack lệch -50px khi lần gõ hiện tại chưa pass; sau khi đạt 100%, Enter trong `te-dict-input` chuyển câu kế tiếp ở Web/YouTube; Esc vẫn hiện đáp án/làm lại, ` vẫn phát/tạm dừng, Ctrl vẫn nghe lại; phím nhập thường đầu tiên trở về nhập ngay (kể cả input trống với điểm lưu/hiển thị 100%), về 0px chỉ sau khi pass 100%, bật lại khi sửa/reset/chuyển câu; Typing thiếu từ trước từ kế tiếp đúng: mọi từ thiếu gạch đỏ, một space mỗi bên; Backspace/Delete trong slot hoặc Backspace từ space sau slot xóa gọn một lần; hint theo “Hiện gợi ý”, browser QA pending; vị trí trên kết quả spelling, Speaking tiers 70/40/0 và Next không tự chuyển; Thống kê từ sai: summary theo mode, dữ liệu Typing/Speaking tách riêng và giữ qua reload; recognition/MediaRecorder permission, auto-record: replay attempt khi bật bỏ 1,5 giây grace cuối; khi tắt replay đủ audio; khi bật, mic auto/manual one-shot `continuous=false`/`onend` rồi playback-before-grade; khi tắt, manual continuous Enter; cue cuối +1s start; sau `onend` khởi động lại nhận diện, gộp transcript và chấm một lần sau 1,5s im lặng (reset timer khi có speech); sau chấm sai phát cue một lần rồi auto-mic sau 1s; own-voice playback, lời nhắc idle EN/VI/KO, icon audio-lines + pulse tím theo mini-play khi phát bản ghi, nút chấm điểm ẩn toàn bộ trong Speaking và hiện bình thường trong Typing, bốn nút trước/phát lại/nghe chậm/tiếp dàn đều theo chiều ngang trong Speaking, video Dictation compact toggle hiện headphones và expanded hiện icon video; video Reading toggle trước X đổi mini-audio/video, play/pause cùng player, restore khi rời mode; ambient “Chế độ nghệ thuật” có switch trực tiếp ngay trên dòng menu (không mở modal), on Ambient 3/off tắt; control bar: play button đúng tâm, các nhóm không chồng lấn, `.te-yt-logo-box` co khi thiếu chỗ (kể cả Dictation expanded); hover ở `.te-sub-en`/`.yt-dual-item`: mode transition và transcript click dùng suppression chung, resume nếu hover gây pause, giữ manual pause khi đổi mode, rời cả hai vùng mới re-arm; Dictation learning: xác nhận auto-record nằm trái translation, màu/size/active state đồng nhất; audio card giảm height 20%, font giữ nguyên; S/M/L lần lượt đủ cột/ẩn trái/ẩn trái+phải, không resize video; Speaking `.te-dict-work` spacing/toast khớp v3.4.938, `.te-dict-translation` rộng bằng câu EN và ở dưới hint; bản dịch mặc định bật và nhớ tùy chọn; mic auto chỉ còn vòng tím trong cùng; nhãn/toast ghi âm suốt lượt; auto-record rearm qua `onend`, reset grace 1,5s theo speech và grade một lần; manual flow khi tắt; sai thì cue một lần rồi auto-mic sau 1s. Theater + Lớn: xác nhận fixed bar blur ở đáy, tùy chọn chỉ hiện đúng mode, căn theo frame, swatch màu nền khớp 2 swatch subtitle và gap 10px; migrate Y, reset, color/opacity/drag-key, controls tự ẩn/manual, responsive và mode switch; browser QA pending. Video settings padding/hint/order/label; size S/M/L label “Vừa” và ratios cột video/giữa 32/35, 26/45, 20/60; `.te-dict-brand` scale theo chiều rộng video ở Reading/Dictation expanded; xác nhận một node dùng chung; feedback Speaking pass/warn/fail: VI-only popup top-center có ring%, copy 15 mốc và màu tier hiện tại, Spring Pop, ẩn sau 6s hoặc Enter; EN/KO giữ card inline gồm câu đích và accuracy, retry, Escape reveal/reset/100%-then-next, unsupported/failure cleanup, progress, mode transitions, layout/scroll và reload trên Chromium/Firefox/Edge. Chưa browser-test.
+- Reader/TTS/Settings/voice: kiểm tra cache/retry/fallback, audio dài, voice/tốc độ, Reader domains, search/menu language/keyboard, IPA, network messaging, translation latency, Firefox MV3 và Twemoji trên trang thật; một số chỉ headless-test, chưa xác nhận trong extension.
+
+### Chưa triển khai / trước phát hành
+- Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: phạm vi đã chốt, chưa triển khai; giữ khóa bật/tắt trong code.
+- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` (điền chủ sở hữu, email, URL công khai, ngày hiệu lực, độ tuổi) trước khi phát hành.
+- Trước khi nộp AMO: quyết định cách xử lý quy tắc 9002 (gỡ `X-Frame-Options`/CSP của trang AI, xung đột AMO §4.4); người dùng đã chọn giữ ở v3.5.136.
+- Lúc nộp (người dùng): bản sao ZIP bỏ `DATA-INVENTORY.md`, `STORE-LISTING.md`; ảnh chụp 1280×800; tài khoản CWS/AMO; rà lại form cửa hàng theo `STORE-LISTING.md`.
 
 ## 3. Ràng buộc & quyết định
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
+- Khi phát hiện tên file/đường dẫn sai hoặc không nhất quán, báo người dùng và nêu rõ phạm vi trước khi sửa; nếu chỉ yêu cầu đổi tên, giữ nguyên logic bên trong.
 - Mọi API dùng browser.* (đã có polyfill).
-- Không có sidebar_action; popup và dashboard mở trong tab/popup.
-- Thư mục nguồn là nguồn duy nhất; zip do Arena đóng gói vào D:\Keepit.
+- Chromium dùng `side_panel`/`sidePanel`; Firefox build qua `scripts/build_firefox.py` bỏ các key Chrome-only và dùng `sidebar_action`. Popup và Dashboard giữ entry hiện tại.
+- Thư mục nguồn là nguồn duy nhất; Firefox manifest là build output bên ngoài repo; zip do Arena đóng gói vào D:\Keepit.
 - AGENTS.md và PROJECT.md nằm trong zip và được commit vào Git. Trước khi nộp store, người dùng tự xóa hai file này khỏi zip.
 - Thay đổi lớn nêu rõ trong commit message.
+- Khoảng trắng dưới thanh trên Claude (Chromium) là header riêng của Claude; người dùng chọn không xử lý.
+- Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 4. Cấu trúc và kiến trúc dự án
 
 ### 4.1. Bản đồ file
 ```text
 Keepit - Test/
-├── manifest.json                  # Quyền và entry points của extension
+├── manifest.json                  # Manifest source cho Chromium
+├── scripts/
+│   └── build_firefox.py           # Tạo Firefox build, bỏ permission/key Chrome-only (không dùng cho phát hành từ v3.5.136: một ZIP chung)
 ├── pages/
-│   ├── dashboard.html             # Giao diện Dashboard
+│   ├── ai-panel.html               # AI panel chung (Chromium side panel + Firefox sidebar): toolbar + provider iframe + lớp phủ đăng nhập
+│   ├── dashboard.html             # Giao diện Dashboard (Overview/Dictation/Highlights & Notes, sidebar và ô tìm Settings)
+│   ├── highlights-notes.html      # Bản HTML độc lập của giao diện Highlights & Notes
+│   ├── dictation-stats-popup.html # Popup thống kê Dictation trong iframe cục bộ
 │   └── popup.html                 # Popup toolbar
 ├── js/
 │   ├── core/                      # defaults, browser-polyfill, config, languages, messaging, settings, cache, shortcuts
-│   ├── background/                # background.js (entry), annotations, usage-limits, error-logger
-│   ├── content/                   # content.js (entry), web-highlighter, sentence-note, sidebar, note-composer, page-layout, ui-components, annotation-restore
-│   │   ├── sidebar.js             # Khung, thẻ và tiện ích tìm kiếm Sidebar
-│   │   ├── note-composer.js       # Dựng form và tạo/canonicalize record note
-│   │   └── annotation-restore.js  # Chuẩn hóa text và tìm range để khôi phục annotation
-│   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
-│   ├── translate/                 # translate, dictionary, search, study translation
-│   ├── dashboard/                 # dashboard.js (entry), settings-ui, study-view, study-utils, library, backup, account, profile-stats, flags
-│   │   ├── settings-ui.js         # Bộ chọn ngôn ngữ, danh sách website, trạng thái Reader
-│   │   └── profile-stats.js       # Tổng hợp số liệu hồ sơ từ annotations
-│   ├── video/                     # overlay-template.js (CSS/HTML overlay), dual-subtitles.js (adapter YouTube song ngữ)
+│   ├── background/                # background.js (entry, router; nạp ask-ai/service.js), annotations, usage-limits
+│   ├── ask-ai/                    # AI panel ChatGPT/Gemini/Claude (Grok ẩn)
+│   │   ├── providers.js           # Registry + selector/URL theo AI, panelRoute/planPanelNavigation, pickSelectedProvider
+│   │   ├── service.js             # Background AI: panel lifecycle, provider, mapping, link, Alt+X, DNR 9002
+│   │   ├── prompt-format.js       # Nhãn + URL + prompt formatting (background + trang AI)
+│   │   ├── toolbar.js             # Toolbar AI panel: source link, tabs, auto-send
+│   │   ├── panel/panel.js         # Panel controller chung (iframe cả hai trình duyệt, Chat mới, lớp phủ đăng nhập)
+│   │   └── page/                  # composer.js (editor bridge), send-flow.js (send/link/mapping), chatgpt-link-marker.js, grok-google-auth.js
+│   ├── content/                   # Page interaction content scripts
+│   │   ├── sidebar.js             # Page sidebar tabs and search tools
+│   │   ├── keepit-bar.js          # Thanh Keepit + ☰ mọi thiết bị: cuộn ẩn/hiện, vuốt thanh lùi/tới/sang tab, cử chỉ trang (vuốt trái dịch đoạn, chạm 2 ngón dịch trang), nhấn giữ bôi chữ; nhãn ở languages.js (bar_<tên>)
+│   │   ├── keepit-bar-css.js      # CSS thanh + ☰ (LHN_BAR_CSS), màu kính qua var(--kp-…)
+│   │   └── note-composer.js       # Note form and record normalization
+│   ├── reader/                    # bilingual-reader, reader-css (CSS Reader), TTS engine, reader voice flags
+│   ├── translate/                 # translate (chạy nền), dictionary, study translation
+│   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats; responsive-nav.js = điều hướng điện thoại/tablet
+│   ├── overlay/                   # Shared Video/Web overlay, Study engine/activities and View modes
+│   │   ├── overlay-controller.js  # Lifecycle, source/activity routing and bootstrap
+│   │   ├── ui/                    # Giao diện overlay (demo v18): overlay-ui.js, overlay-css.js (nhãn: khoá `ov_*` trong languages.js)
+│   │   ├── source/                # YouTube captions/timing and Reader cues
+│   │   ├── study/                 # study-score, learning-rules, session-index (chấm điểm, luật, chỉ mục cho Dashboard)
+│   │   ├── overlay-engine.js      # Cài đặt, chế độ xem/phụ đề, hàng đợi dịch phụ đề, yêu thích (từ view/ cũ, v3.5.195)
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # helpers như custom-font và icons
+│   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
 ├── css/
 │   ├── content/                   # CSS của content script
-│   ├── dashboard/                 # CSS Dashboard
+│   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation, `responsive.css` cho điện thoại/tablet (nạp cuối)
 │   ├── popup/                     # CSS popup toolbar
 │   └── shared/                    # theme tokens, theme và flags
 ├── assets/
 │   ├── icons/                     # Biểu tượng extension
+│   ├── images/                    # Ảnh đóng gói (web-thumbnail-lofi.webp, ảnh mặc định thẻ nguồn web; khai trong web_accessible_resources)
 │   └── fonts/                     # Font cục bộ
 ├── vendor/readability/            # Mozilla Readability cho Alt+R/Alt+A
 ├── licenses/                      # Văn bản giấy phép bên thứ ba
-├── supabase-schema.sql            # Schema Supabase (cloud chưa nối)
-└── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, SUPABASE_SYNC.md, THIRD_PARTY_NOTICES.md
+├── docs/
+│   ├── INDEX.md                   # Mục lục tài liệu kỹ thuật nội bộ
+│   ├── modules/                   # Hướng dẫn cho từng module first-party cấp cao nhất trong js/
+│   ├── changelog/                 # Nhật ký cũ (chuyển nguyên văn từ PROJECT.md), chỉ đọc khi cần tra lịch sử
+│   └── supabase/                  # SUPABASE_SYNC.md + supabase-schema.sql (cloud chưa nối)
+├── DATA-INVENTORY.md, STORE-LISTING.md  # Nội bộ: bảng kê dữ liệu, nội dung cửa hàng (bỏ khỏi ZIP phát hành)
+└── AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md, PRIVACY-POLICY.md, THIRD_PARTY_NOTICES.md
 ```
 
-`manifest.json` luôn ở gốc; thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
+`manifest.json` ở gốc repo dùng chung Chromium và Firefox (khóa của trình duyệt kia bị bỏ qua; `browser_specific_settings.gecko` giữ id, Firefox ≥147 và `data_collection_permissions`); phát hành một ZIP chung. `scripts/build_firefox.py` vẫn còn nhưng không dùng cho phát hành. Thứ tự script trong manifest và HTML là thứ tự nạp cần giữ.
 
-Có 2 entry `content_scripts`: entry `document_start`/`all_frames` chỉ nạp browser API, messaging, error-logger và custom-font; app chính chạy `document_idle` ở top frame.
+Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser API/messaging/font; app chính chạy `document_idle` ở top frame; `grok-google-auth.js` chỉ kiểm tra frame `accounts.google.com` cùng ancestor origins; ChatGPT link marker chạy sớm; một entry `document_start` trên host ChatGPT/Gemini/Claude nạp `providers.js`, `prompt-format.js`, `toolbar.js`, `page/composer.js` (editor bridge); một entry `document_idle` nạp `page/send-flow.js` (pipeline Send/link/mapping chung: chèn URL lúc Send, chỉ submit khi Keepit auto-send được opt-in, báo mapping sau confirmed send). Firefox panel toolbar chỉ hiện khi marker hợp lệ và sidebar đang mở. Generic fill không tự submit và không lưu/restore composer draft.
 
 ### 4.2. Luồng tương tác giữa các module
 ```text
@@ -96,1845 +166,144 @@ TTS engine ── tải audio Google TTS ─────────────
                                                        └── mở tab/đi tới highlight
 
 Reader ── Readability ──> chọn nội dung chính của trang
-Content ── Highlighter / Note Composer / Sidebar ──> giao diện trên trang
-Dashboard ── Settings UI / Library / Flashcards / Account / Backup ──> giao diện quản lý
+Content ── Highlighter / Note Composer / Highlight Sidebar ──> giao diện trên trang
+AI panel toolbar ── provider selection per window + last choice ──> Background session/local state ──> provider iframe trong pages/ai-panel.html (Chromium + Firefox)
+Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/service.js` lấy exact tab URL + selection tường minh; AI đang chọn quyết định key mapping; prompt giống nhau cho mọi AI; draft không có URL tới lúc Send; `page/composer.js` điền, `page/send-flow.js` gửi/chèn URL/báo `AI_LINK_RESULT`.
+Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
+Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
+Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
+Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
+Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
+Overlay Web + YouTube title bar ──> shared/site-icons.js (LHN_SITE_ICONS) ──> same origin favicon, 22×22 toolbar slot
+Dictation YouTube/Web + Dashboard Dictation + Highlights & Notes sources ──> shared/thumbnails.js (LHN_THUMBNAILS) ──> shared URL/fallback/load logic
+Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
+Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
+                      └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
+                           trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
+                           không đổi `hidden` hay state; Esc, đổi tab, đóng hộp thoại thì gỡ mark và xóa class
+Dashboard Settings (`dualSubtitlesShortcut` Alt+E / `dictationShortcut` Alt+F) ── storage ──> Content keydown ── `lhn-youtube-dual-subtitles-toggle` / `lhn-youtube-dictation-toggle` ──> `js/overlay/overlay-controller.js` ──> shared overlay cho YouTube hoặc Web
+`lhnSettings.language` storage change ──> `refreshSubtitleLanguageSettings` ──> overlay labels + open Dictation labels
+Reader (`LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh:true})`) ──> `js/overlay/source/web.js` (`sourceType: web`) ──> content-hash sentence cues: same-document memory snapshot + `WEB_STUDY_CUE_CACHE_GET/SAVE/TOUCH` (7-day sliding TTL) ──> lazy `LHN_TTS`/`BILINGUAL_TRANSLATE` existing caches + `LHN_THUMBNAILS` ──> Overlay/Study Dictation UI/engine; reload/URL change refreshes Reader source, unchanged source can reuse persistent cues; YouTube cache stays separate. `view/cc-mode.js` applies cue-language default (same→primary; different/unknown→bilingual; manual choice wins). Reader stop/start exclusivity, shortcuts, controls and Ambient behavior unchanged
+Web TTS (`source/web.js`) ──> `overlay-controller.js` playback controls (`startWebTtsInViewMode`, `syncReadingAudioControls`; từ `study/shadowing/shadowing.js`, v3.5.196) ──> existing `LHN_TTS` chunk callbacks + retained Audio/SpeechSynthesis handle; live speed update and same-position Pause/Play; YouTube and Reader consumers unchanged
+Video source (`js/overlay/source/video.js`: `state.allCues`, `sourceLanguage`, video-specific transcript/cache) ──> `overlay-controller.js` / View
+  └── `overlay-controller.js` (`LHN_OVERLAY_API`, `LHN_STUDY` activity routing; `LHN_DICTATION` compatibility alias) ──> tab Nói/Chép của `unified/unified-ui.js` (panel Study cũ đã xoá ở v3.5.196)
+                                  ├── BILINGUAL_TRANSLATE → câu VI chỉ sau khi đúng
+                                  └── browser.storage.local → solved / notes / bản dịch theo source+câu + thống kê từ sai theo video/từ/vị trí
+Popup / Reader (chọn giọng) / Dashboard Settings (chọn ngôn ngữ, ô tìm) ── dùng chung ──> shared/search
 ```
 
-Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background.
-
-## 5. Nhật ký dự án (mới nhất → cũ nhất)
-
-- **2026-10-25 | v3.4.631 | Claude sửa:**
-  - Tối ưu hiệu năng overlay video (không đổi UI): (2) cache nút transcript khi còn kết nối; (3) throttle sự kiện cuộn danh sách bằng requestAnimationFrame; (5) bỏ qua cập nhật phụ đề khi dòng đang hiển thị không đổi; (6) cache tham chiếu `ui()` còn kết nối.
-  - Chưa làm: (1) dựng danh sách theo cửa sổ ảo; (4) gộp hai bộ đếm thời gian; (7) chuyển inline style sang class; (8) gộp selector theme trùng. Lý do: cần kiểm thử thủ công và xác nhận hiển thị trước.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.630 | Claude sửa:**
-  - Xóa ảnh placeholder cứng (SVG chữ "They want a better future…") khỏi `.te-video-slot` của overlay video. Vùng trống khi video chờ tải hoặc 4:3 nay là nền `#111` ở cả dark và light mode.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.629 | Claude sửa:**
-  - Gỡ thử nghiệm bo 4 góc popup trên Chromium (v3.4.628): không đạt và giới hạn khung cửa sổ thuộc trình duyệt. Popup trở về như v3.4.627.
-  - File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.628 | Claude sửa:**
-  - Popup toolbar trên Chromium (Edge) không bo 4 góc như Firefox. Thêm class `is-chromium` (popup.js, chỉ khi không phải Firefox) và bo góc nội dung 14px chỉ cho class này. Firefox không đổi.
-  - Giới hạn: khung cửa sổ popup của Chromium là hình chữ nhật; CSS chỉ bo nội dung, góc có thể vẫn thấy nền trình duyệt. Chưa xác nhận trên Edge.
-  - File: `js/popup/popup.js`, `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/popup/popup.js` — đạt. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.627 | Claude sửa:**
-  - Popup toolbar (Edge/Chromium): thanh cuộn vẫn hiện kiểu mặc định dù đã có biến 3px. Đặt `scrollbar-width`/`scrollbar-color` về `auto` và áp `::-webkit-scrollbar` rõ ràng cho `html`, `body`, `.popup-main` theo `--lhn-scrollbar-width`. Chưa xác nhận nguyên nhân gốc.
-  - File: `css/popup/popup.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: không có JS thay đổi. Trên Edge: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.626 | Claude sửa:**
-  - Toàn app: thanh cuộn rộng/cao theo một biến duy nhất `--lhn-scrollbar-width: 3px` (`css/shared/ui-tokens.css`). Áp cho popup, dashboard, UI Keepit (`[id^="lhn-"]`), khung Cài đặt video và overlay phụ đề. Không áp cho thanh cuộn của website.
-  - Các thanh cuộn dùng `scrollbar-color`/`scrollbar-width` (sidebar, popup dark, toolbar dashboard) chuyển về `auto` để quy tắc WebKit có tác dụng; màu thumb giữ như cũ.
-  - Giới hạn: Firefox không đặt được độ rộng bằng px; thanh vẫn theo kiểu `thin` của trình duyệt.
-  - File: `css/shared/ui-tokens.css`, `css/content/content.css`, `css/popup/popup.css`, `css/dashboard/dashboard.css`, `js/reader/bilingual-reader.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` các file JS đã sửa — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.625 | Claude sửa:**
-  - Thanh cuộn Cài đặt video (`.te-modal-body`) cố định 3px, bỏ đổi kích thước khi rê chuột (bỏ hai quy tắc `:hover`).
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.624 | Claude sửa:**
-  - Thanh cuộn Cài đặt video (`.te-modal-body`) vẫn hiện dày và xám dù đã có quy tắc WebKit. Giả thuyết: Chromium bỏ qua `::-webkit-scrollbar` khi `scrollbar-color`/`scrollbar-width` được kế thừa không phải `auto`. Đặt lại hai thuộc tính này về `auto` cho `.te-modal-body`, để quy tắc 2px/4px có hiệu lực.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy (giả thuyết chưa xác nhận).
-
-
-- **2026-10-25 | v3.4.623 | Claude sửa:**
-  - Làm lại từ v3.4.622: hoàn tác thử nghiệm trên danh sách phụ đề (v3.4.623 cũ). Thanh cuộn của khung Cài đặt video (`.te-modal-body`) nay rộng 2px khi không rê chuột, 4px khi rê vào khung. Không tạo thanh tự vẽ.
-  - Giới hạn: CSS không đo được rê riêng lên thanh, nên 4px kích hoạt khi rê vào khung Cài đặt. Firefox không đổi được độ rộng thanh cuộn bằng CSS, giữ nguyên.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.624 | Claude sửa:**
-  - Sửa thử nghiệm thanh cuộn mảnh: v3.4.623 áp nhầm vùng (`.te-transcript-scroll`). Thanh cuộn của khung Cài đặt video là `.te-modal-body`; nay áp cùng kiểu mảnh/tím cho vùng này. Không đổi bố cục.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.623 | Claude sửa:**
-  - Thử nghiệm thanh cuộn mảnh trên overlay video (Dual Sub): áp CSS thuần cho `.te-transcript-scroll` (scrollbar-width thin cho Firefox; ::-webkit-scrollbar 4px cho Chromium, nở khi rê). Không thêm DOM, không đổi bố cục.
-  - Giới hạn: Firefox không có hiệu ứng nở khi rê và không tự ẩn; chưa có thanh tự vẽ bằng JS như scrollbar-demo.html.
-  - File: `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/overlay-template.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-**2026-10-25 | v3.4.622 | Codex sửa:**
-
-- Đồng bộ hiệu ứng nhấn nút Dual Sub với Bilingual Reader: cùng keyframe, scale, màu và thời lượng 190 ms.
-- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` cho hai file JS và `git diff --check` đạt. Chưa kiểm thử trên trình duyệt.
-
-**2026-10-25 | v3.4.621 | Codex sửa:**
-
-- Thêm hiệu ứng nhấn cho các nút thanh điều khiển khi click/shortcut; click video toggle play/pause và làm nổi nút tương ứng. Chuyển “Chế độ đọc” lên đầu “Cài đặt video” và đổi nhãn thành “Chế độ xem”.
-- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` cho hai file JavaScript, parse manifest v3.4.621, xác nhận vị trí “Chế độ xem” và wiring click/shortcut, cùng `git diff --check` — đạt. Chưa kiểm thử tương tác trên trình duyệt.
-
-**2026-10-25 | v3.4.620 | Codex sửa:**
-
-- Transcript Dual Sub giải mã entity HTML lồng nhau để dấu câu hiển thị đúng như phụ đề YouTube; thanh điều khiển neo cố định dưới overlay. Khi mở overlay, “Hiện popup dịch trực tiếp” được bật tạm và trở về trạng thái cũ lúc đóng nếu người dùng không đổi. Shortcut mặc định đã là Alt+E nên giữ nguyên cấu hình và các lựa chọn tùy chỉnh.
-- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` cho hai file JavaScript, parse manifest v3.4.620, cấu hình mặc định Alt+E, decoder với entity quote/apostrophe lồng nhau, mô phỏng bật tạm/khôi phục và giữ thay đổi người dùng, cùng `git diff --check` — đạt. Chưa kiểm thử trình duyệt.
-
-**2026-10-25 | v3.4.619 | Codex sửa:**
-
-- Khi mở overlay, ưu tiên video chính của YouTube và ép video hiển thị dù đang pause/play. Nếu thời điểm phát chưa nằm trong cue nào, kích hoạt câu đầu tiên. Hover phụ đề chính dùng pointer events và pause luôn tác động lên video đang phát.
-- File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` cho hai file JavaScript, parse `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
-
-**2026-10-25 | v3.4.618 | Codex sửa:**
-
-- Khi click ngoài popup dịch/Full Dict để đóng, mouseup cùng thao tác không xử lý lại vùng chọn cũ khiến popup bật lại.
-- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
-
-**2026-10-25 | v3.4.617 | Codex sửa:**
-
-- Khi tắt “Hiện popup dịch trực tiếp”, chọn từ không còn mở Full Dict trực tiếp, gồm chọn từ trong Dual Sub; luồng tra từ trong note được giữ nguyên.
-- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
-
-**2026-10-25 | v3.4.616 | Codex sửa:**
-
-- Đổi nhãn “Di chuột để dịch” thành “Hiện popup dịch trực tiếp” trong Cài đặt video. Công tắc đọc/ghi khóa chung `lhnSettings.translationPopupEnabled`, đồng bộ trực tiếp với Dashboard; khi bật áp dụng quy tắc loại trừ hai chế độ dịch khác như Dashboard.
-- File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chưa chạy.
-
-- **2026-10-25 | v3.4.615 | Codex sửa:**
-  - Khi bật **Kết hợp câu**, ghép các mảnh phụ đề của cả dòng chính và dòng dịch; giữ bản dịch track riêng tương ứng với câu được gộp.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: fixture Node xác nhận hai mảnh nguồn và hai mảnh dịch được ghép đồng bộ thành một câu; `node --check` cho ba file JavaScript, parse manifest/version và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
-
-- **2026-10-25 | v3.4.614 | Codex sửa:**
-  - Sửa nguyên nhân Auto đích cứ thành English: `CONFIG` không có trong phạm vi `dual-subtitles.js`, nên đọc `lhnSettings.language` lỗi và rơi về dự phòng; listener thay đổi Dashboard cũng không chạy đúng. Đọc khóa qua `globalThis.LHN_CONFIG` và giữ nguyên thiết lập ngôn ngữ dùng chung.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho `dual-subtitles.js`, `overlay-template.js`, `dashboard.js`; parse manifest/version, không còn tham chiếu `CONFIG` ngoài phạm vi và `git diff --check` đạt. Chưa kiểm thử trình duyệt.
-
-- **2026-10-25 | v3.4.613 | Codex sửa:**
-  - Gộp xử lý chọn ngôn ngữ Dual Sub còn một hàm lưu, bỏ lỗi khai báo trùng khiến script hỏng. Chọn ngôn ngữ cập nhật phụ đề ngay và lưu vào đúng `lhnStudyTranslationSettings` đang dùng bởi Dashboard; Auto đích theo ngôn ngữ giao diện.
-  - File: `js/video/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho các file JavaScript liên quan, parse manifest và `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
-
-- **2026-10-25 | v3.4.611 | Codex sửa:**
-  - Sửa Auto của phụ đề dịch để lấy chính xác mã `language` đã lưu trong `lhnSettings` (có chuẩn hóa mã vùng), thay vì fallback không khớp tùy chọn ngôn ngữ Dashboard. Tăng độ tin cậy khi chọn ở Dual Sub: xử lý `input` và `change`, tuần tự hóa thao tác lưu hai trường, và cho menu lựa chọn thoát khỏi vùng bị cắt của modal.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba file JavaScript, parse `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Dual Sub giờ có thể chỉnh Ngôn ngữ phụ đề chính và dịch ngay trong menu; hai bộ chọn ghi thẳng vào thiết lập dịch dùng chung với Dashboard, đổi ở Dashboard cũng cập nhật Dual Sub. Auto đích lấy ngôn ngữ hiển thị đã chọn trong Dashboard, tránh rơi về English khi giao diện đang là tiếng Việt/Hàn. Các lựa chọn khớp Dashboard.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/dashboard/dashboard.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Sửa mapping phụ đề: dòng chính dùng Ngôn ngữ nguồn, dòng dịch dùng Ngôn ngữ đích. Tìm track riêng cho từng ngôn ngữ; nếu thiếu track thì lấy track gốc/mặc định và dịch riêng sang ngôn ngữ cần hiển thị. Cache transcript tách theo cả hai ngôn ngữ.
-  - File: `js/video/dual-subtitles.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js` và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Kết nối Ngôn ngữ phụ đề với Dashboard > Dịch > Ngôn ngữ nguồn. Cả hai dòng phụ đề dùng ngôn ngữ nguồn; ưu tiên transcript track khớp, nếu thiếu dùng track gốc/mặc định và dịch sang ngôn ngữ nguồn. Đổi thiết lập sẽ tải lại track hoặc dịch lại theo ngôn ngữ mới; cache được tách theo ngôn ngữ.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` hai file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên Chrome/Firefox.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Chỉ hover pause/nền xanh nhạt trên phụ đề gốc tiếng Anh, không áp dụng câu dịch; Full Dict từ Dual Sub đọc theo thiết lập Auto speak; double-click sidebar hủy click đơn nên video không seek/đổi focus cue, đồng thời vẫn tạm dừng video.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` cho ba file JavaScript và `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Dual Sub: neo Full Dict phía trên từ được chọn trong phụ đề dưới video; hover phụ đề chính hoặc chữ trong sidebar để pause/resume; hover từng từ có nền xanh nhạt; mở popup Full Dict, dịch hoặc note sẽ pause video cho đến khi đóng.
-  - File: `js/video/dual-subtitles.js`, `js/video/overlay-template.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Chỉ trong Dual Sub: hover vùng phụ đề chính sẽ pause video và rời vùng sẽ tiếp tục; chọn từ tiếng Anh ở phụ đề dưới video sẽ mở Full Dict neo theo chữ đã chọn; double-click phụ đề bên sidebar sẽ pause video.
-  - File: `js/video/dual-subtitles.js`, `js/content/content.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/video/dual-subtitles.js`, `node --check js/content/content.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Đổi tên thư mục module từ `js/youtube/` thành `js/video/` và CSS từ `youtube.css` thành `video.css`; cập nhật đường dẫn nạp trong manifest. Giữ nguyên tên file, nội dung và hành vi.
-  - File: `js/video/overlay-template.js`, `js/video/dual-subtitles.js`, `css/content/video.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: Chưa chạy.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Thêm shortcut mặc định `Alt+C` để bật/tắt dual subtitles, cho phép đổi trong Dashboard > Shortcut; `Escape` đóng dual subtitles, không thêm trường cài đặt riêng.
-  - File: `js/core/defaults.js`, `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `js/content/content.js`, `js/youtube/dual-subtitles.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check` năm file JavaScript, xác thực JSON `manifest.json`, `git diff --check` — đạt. Chưa kiểm thử trong trình duyệt.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Đặt mặc định phụ đề song ngữ YouTube ở giao diện tối và kích thước xem vừa; chỉ đổi giá trị mặc định, cài đặt đã lưu của người dùng vẫn được giữ.
-  - File: `js/core/defaults.js`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/core/defaults.js` và `git diff --check` — đạt.
-
-- **2026-10-25 | v3.4.610 | Codex sửa:**
-  - Khắc phục chữ và khoảng cách full dict bị thu nhỏ trên một số trang: các đơn vị `rem` trong riêng popup phụ thuộc cỡ chữ gốc trang (YouTube có thể đặt root nhỏ hơn). Đổi sang kích thước `px` tương đương ở nền 16px. Đối chiếu CSS với v3.5.3 cho thấy stylesheet giống hệt; khác biệt là cỡ chữ root của trang nơi popup được mở.
-  - File: `css/content/content.css`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `git diff --check` đạt; chưa kiểm thử trên trình duyệt.
-
-- **2026-10-25 | v3.4.609 | Codex sửa:**
-  - Sửa chọn chữ trong phụ đề YouTube song ngữ: ngoài listener trên `document`, gắn listener `mouseup` trực tiếp vào shadow root `#trancy-host` khi host xuất hiện. Dùng `WeakSet` chống xử lý trùng khi sự kiện đồng thời nổi lên `document`; popup dịch và full dict tiếp tục dùng chung luồng chọn chữ hiện có.
-  - File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/content/content.js`, `node --check js/youtube/dual-subtitles.js`, `git diff --check` — đạt. Chưa kiểm thử trên trình duyệt.
-
-- **2026-10-25 | v3.4.608 | Codex sửa:**
-  - Đối chiếu nguồn phụ đề YouTube trong `dual-subtitles.js` và làm rõ `PROJECT.md`: mô tả v3.4.600 là cách triển khai ban đầu; trạng thái hiện hành là player API ANDROID + XML, DOM transcript, watch-page timedtext và live caption dự phòng. `get_transcript` trong nhật ký v3.4.605 là thay đổi lịch sử, không còn được gọi trong code hiện tại.
-  - File: `PROJECT.md`.
-  - Kiểm tra: đối chiếu code bằng `rg` và đọc các luồng lấy transcript; `git diff --check` chạy sau chỉnh sửa. Không sửa code.
-
-- **2026-10-25 | v3.4.608 | Claude sửa:**
-  - Sửa lỗi popup dịch và full dict không hiện khi chọn chữ trong phụ đề YouTube (overlay nằm trong shadow root `#trancy-host`). Trình nghe chọn chữ (`js/content/content.js`) nay lấy vùng chọn từ shadow root trước (`ShadowRoot.getSelection()`), nếu không có thì dùng `document` như cũ.
-  - Ngoài YouTube và Firefox (không có API shadow selection) hành vi giữ nguyên.
-  - File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/content/content.js` — đạt. Trên trình duyệt: Chưa chạy.
-  - Tiếp theo: kiểm tra trên Chromium (bôi đen phụ đề khi bật dual sub) và kiểm tra Firefox xem `ShadowRoot.getSelection` có tồn tại không.
-
-
-- **2026-10-25 | v3.4.607 | Claude sửa:**
-  - Hoàn tác (5) của v3.4.606: chọn caption track luôn ưu tiên tiếng Anh (manual trước, rồi tự động), vì nguồn của phụ đề song ngữ Anh–Việt phải là tiếng Anh. Không dùng ngôn ngữ gốc của video để chọn track (video thử nghiệm đã chọn nhầm tiếng Albania).
-  - Giữ (1) gate tab, (3) cache lỗi 10 phút, (7) khôi phục CC.
-  - File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-
-
-- **2026-10-25 | v3.4.606 | Claude sửa:**
-  - YouTube song ngữ: (1) chỉ prefetch khi tab đang hiển thị; (3) cache lỗi prefetch 10 phút theo videoId; (5) chọn caption track theo ngôn ngữ gốc của audio track mặc định của video, không có thì ưu tiên `en`; (7) khi dừng caption trực tiếp, đưa CC về trạng thái trước nếu Keepit là bên bật.
-  - Chưa làm: (4) cache khoá theo ngôn ngữ (cần biết ngôn ngữ track trước khi fetch); (6) panel ngầm (không đổi UI, chờ quyết định).
-  - File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-  - Kiểm tra: `node --check js/youtube/dual-subtitles.js` — đạt. Trên trình duyệt: Chưa chạy.
-  - Lưu ý: khôi phục CC chạy khi `stopLiveCaptionCapture` được gọi; khi bắt đầu lại caption trực tiếp có thể CC tắt rồi bật lại.
-
-**2026-10-25 | v3.4.605 | DeepSeek sửa:**
-
-- Trả lại chất lượng dữ liệu như bản tham chiếu: thêm nguồn **`youtubei/v1/get_transcript`** (đúng endpoint panel bản ghi của YouTube dùng) trả về `transcriptCueRenderer` có `startOffsetMs`/`durationMs`/`cue` nên danh sách sạch, đủ, timestamp thật. Background thêm message `YOUTUBE_API` (POST JSON, chỉ cho youtube.com).
-- Đổi thứ tự nguồn: innertube transcript → panel "Hiển thị bản ghi" trên trang → timedtext (đã bị chặn) → đọc caption trực tiếp (nguồn cuối). Nhờ vậy nguồn rối chỉ dùng khi cả ba nguồn sạch đều hỏng.
-- Thêm log `[Trancy] Nguồn phụ đề đã dùng: <số cue> | <lý do>` để biết ngay đang lấy từ đâu.
-- File: `js/youtube/dual-subtitles.js`, `js/background/background.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; thử endpoint từ PowerShell bên ngoài bị YouTube trả 400 (không có cookie phiên) nên **chưa xác nhận được trong trình duyệt**. Chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.604 | DeepSeek sửa:**
-
-- Fix trùng timestamp và lặp một câu 2 lần trong danh sách bản ghi (ảnh người dùng): nguồn "đọc caption trực tiếp" đọc container của YouTube vốn **cộng dồn** chữ nên mỗi lần poll lại sinh cue mới, và khi video đứng ở 0s nhiều cue ra cùng timestamp. Nay text phải **ổn định 2 lần poll (~0.8s)** mới chốt, và nếu text mới chỉ là phần nối dài của cue trước thì **mở rộng cue đó** thay vì tạo cue mới (commitLiveCue); bỏ qua trường hợp text co lại và trùng khít cue đã chốt.
-- Thêm `dedupeSentences()` trong `buildCaptions()`: bỏ cue rỗng và gộp cue liền kề trùng khít nội dung với timestamp cách nhau < 1.5s.
-- File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/youtube/dual-subtitles.js` đạt; không còn tham chiếu `appendLiveCue`/`liveLastText`. Chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.603 | DeepSeek sửa:**
-
-- Khung video YouTube: bỏ ép `aspect-ratio: 16 / 9` cố định, chuyển sang `aspect-ratio: var(--te-video-aspect, 16 / 9)`; thêm `syncVideoAspect()` set biến theo `video.videoWidth/videoHeight` khi gắn video, khi `loadedmetadata` và khi resize cửa sổ (chưa có metadata thì dùng 16:9). Bỏ `margin: auto` để khung bám trên, nhường chỗ dưới cho phụ đề.
-- `.te-sub-container` thêm `flex: 1` và đổi `justify-content: center` → `flex-start`: phụ đề nằm ngay dưới video và tràn hết phần còn lại, không còn căn giữa khoảng trống. Giữ `min-height: 140px` và `max-height: calc(100vh - 200px)` của khung video để phụ đề + control bar luôn đủ chỗ.
-- File: `js/youtube/dual-subtitles.js`, `js/youtube/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; sửa luôn lỗi BOM do PowerShell ghi vào `manifest.json` (đã kiểm `JSON.parse` OK). Chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: bốn mục nhật ký của đợt YouTube trước đây bị ghi sai tên version (`3.5.0`–`3.5.3`), đã đổi lại theo mạch patch là `3.4.600`–`3.4.603` theo yêu cầu người dùng. Từ nay mỗi thay đổi phát hành tăng patch (`3.4.604`, `3.4.605`, …), chỉ tăng minor khi người dùng yêu cầu.
-
-**2026-10-25 | v3.4.602 | DeepSeek sửa:**
-
-- Fix sidebar bản ghi (`yt-dual-right-sidebar`) không đổi màu ở light mode: các class `.yt-dual-*` hardcode màu tối và không nằm trong bộ rule `.theme-light`. Thêm khối override light mode cho sidebar/header/nút đóng/hàng/empty; màu chữ đi qua biến `--te-side-en-color`/`--te-side-vi-color` nên màu người dùng tự chọn (inline style) vẫn thắng.
-- Dịch chậm: bỏ hẳn batch `translate_a/single` tự viết trong `dual-subtitles.js`, chuyển sang **module translate của Keepit** (`BILINGUAL_TRANSLATE` → `LHN_TRANSLATE` + `LHN_CACHE`) và dịch **lười**: cửa sổ 2 cue trước / 8 cue sau quanh vị trí đang phát, thêm các dòng đang nhìn thấy khi cuộn (`translateVisibleRows`), và dịch ngay cue được bấm; concurrency 2, khử trùng theo text + `viCache` hai lớp.
-- Khi xuất phụ đề, cue chưa kịp dịch ghi chuỗi rỗng (`viForExport`) thay vì "Đang dịch...".
-- File: `js/youtube/dual-subtitles.js`, `js/youtube/overlay-template.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; rà không còn tham chiếu `translateAll`/`translateBatch`/`translateRaw`. Chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.601 | DeepSeek sửa:**
-
-- Người dùng báo lỗi "Không thể tải phụ đề… timedtext rỗng | DOM: đã bấm nút bản ghi nhưng panel không hiện các đoạn". Kiểm tra trực tiếp ngoài extension (PowerShell, tải `watch?v=dQw4w9WgXcQ`): `timedtext` trả **HTTP 200 nhưng 0 byte** với cả `fmt=json3` và `fmt=srv3` → YouTube đã chặn bằng proof-of-origin token, nên nguồn dữ liệu của bản tham chiếu không còn dùng được.
-- Thay nguồn dữ liệu trong `js/youtube/dual-subtitles.js` (UI giữ nguyên): panel bản ghi chuyển sang bộ selector mở (`ytd-transcript-segment-renderer`, `transcript-segment-view-model`, `[class*="transcript-segment"]`) và đọc segment tổng quát (tách timestamp bằng regex thay vì phụ thuộc `.segment-timestamp`); thêm nguồn **đọc caption đang hiển thị** (`.ytp-caption-segment`, tự bấm bật CC nếu đang tắt, gom cue 400ms/lần, ghép dần vào panel và dịch ngay cue mới).
-- Dọn nguồn live khi đóng overlay, khi đổi video và khi rời trang.
-- File: `js/youtube/dual-subtitles.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` đạt; đã xác minh nguyên nhân timedtext bằng request thật; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.600 | DeepSeek sửa:**
-
-- Tích hợp tính năng **YouTube song ngữ** từ extension tham chiếu `youtube-dual-subtitles-extension-v1.12.zip` (người dùng cung cấp). Copy nguyên văn UI: `js/youtube/overlay-template.js` và `css/content/youtube.css` có hash SHA-256 trùng bản gốc; controller copy sang `js/youtube/dual-subtitles.js` rồi chỉ sửa các đường nối.
-- Ánh xạ sang module Keepit: `fetchText` dùng `LHN_MESSAGING` với message mới `YOUTUBE_FETCH_TEXT` ở background (allowlist `youtube.com` + `translate.googleapis.com`, giữ `credentials: include` cho YouTube); cài đặt overlay chuyển từ `localStorage` sang `browser.storage.local` key `lhnYouTubeSettings`; bộ default chuyển vào `LHN_DEFAULTS.youtube`; thêm guard chỉ chạy trên `youtube.com` và tôn trọng danh sách `disabledWebsites` (Alt+Z).
-- File: `js/youtube/overlay-template.js` (mới), `js/youtube/dual-subtitles.js` (mới), `css/content/youtube.css` (mới), `js/core/defaults.js`, `js/background/background.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` toàn bộ JS đạt; `manifest.json` parse hợp lệ; 45 path trong manifest đều tồn tại; default `youtube` đọc đúng. Chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: overlay dùng chuỗi tiếng Việt của bản gốc (chưa qua `languages.js`) để giữ nguyên 100% UI; cần bước i18n riêng nếu muốn en/ko. Bản tham chiếu đọc `ytInitialPlayerResponse` + `timedtext` — khác điều khoản "không dùng endpoint transcript nội bộ" trong `OPT-ARENA.md` 8.1.1.
-
-**2026-10-25 | v3.4.599 | DeepSeek sửa:**
-
-- Người dùng xác nhận đạt trên trình duyệt các mục 20–23, nên xoá khỏi "Việc đang mở": sentence note không dính bản dịch, cache Reader dùng chung `Alt+A`/`Alt+D`, tốc độ đọc theo ngôn ngữ đoạn, toggle "Read translation with source" trên thanh đọc.
-- Cập nhật snapshot mục 1 theo v3.4.599 (kiểm tra `node --check` 39/39, mô phỏng thứ tự nạp core script, ZIP có `defaults.js`), ghi nhận các mục đã được xác nhận trên trình duyệt, và sửa lại ghi chú push GitHub cho đúng thực tế (log báo lỗi nhưng commit đã lên remote).
-- File: `PROJECT.md`.
-- Kiểm tra: chỉ sửa tài liệu, không đổi code.
-
-**2026-10-25 | v3.4.599 | DeepSeek sửa:**
-
-- Nguyên nhân Reader im tiếng từ v3.4.595 (và cả cấu hình sai khi tìm lỗi): `js/background/background.js` nạp core script bằng `importScripts(...)` với **danh sách cứng**, không phải qua `manifest.json`. Khi gom default ở v3.4.595 tôi chỉ thêm `js/core/defaults.js` vào `manifest.json` và hai file HTML, **quên danh sách `importScripts`**. Chrome MV3 chỉ chạy `service_worker`, nên `config.js` được nạp trước khi có `LHN_DEFAULTS` → ném lỗi ngay khi khởi động service worker → hỏng mọi thứ phụ thuộc background: dịch, audio Google TTS, annotations, usage. Reader không phát tiếng chính vì vậy.
-- Sửa: thêm `/js/core/defaults.js` ngay trước `/js/core/config.js` trong `importScripts`.
-- Thêm guard trong `config.js`: nếu thiếu `LHN_DEFAULTS` thì báo rõ cần nạp `defaults.js` trước, kèm nơi cần kiểm tra.
-- File: `js/background/background.js`, `js/core/config.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; mô phỏng thứ tự nạp trong Node — nạp `config.js` khi thiếu `defaults.js` thì báo đúng lỗi guard, nạp đủ theo thứ tự mới thì `LHN_CONFIG.DEFAULT_SETTINGS` có 29 khóa; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.598 | DeepSeek sửa:**
-
-- Reader vẫn không đọc sau khi hoàn nguyên 3.4.596; thêm cảnh báo `console.warn` ở các nhánh `startReading` thoát sớm để biết nguyên nhân thật: website bị tắt, website nằm trong danh sách tắt Reader, TTS bị tắt/không hỗ trợ (kèm giá trị `enableTTS`, `synth`, `SpeechSynthesisUtterance`), và danh sách đoạn đọc rỗng.
-- Chỉ thêm log, không đổi hành vi. File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` đạt; chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: đọc cảnh báo trong Console của trang để xác định nguyên nhân rồi mới sửa.
-
-**2026-10-25 | v3.4.597 | DeepSeek sửa:**
-
-- Hoàn nguyên toàn bộ thay đổi của v3.4.596 trong `js/reader/bilingual-reader.js` (đưa file về đúng bản v3.4.595) vì người dùng báo Reader không đọc được đoạn nào sau bản đó; bản 3.4.596 là bản duy nhất trong ba bản 3.4.594–596 đụng vào luồng đọc (thêm `ownChild`, đổi truy vấn `.lhn-bilingual-card` từ `:scope >` sang tìm trong đoạn, đổi cách tra icon).
-- Giữ lại **duy nhất** phần sửa icon trùng: bỏ qua đoạn lồng trong đoạn khác khi gắn icon loa và dọn icon thừa ở đoạn lồng. Diff so với v3.4.595 chỉ có 4 dòng này.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` đạt; `git diff 32ee053` xác nhận chỉ còn thay đổi ở `updateSpeakers`; chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: người dùng xác nhận Reader đọc lại được; nếu vẫn im lặng thì cần log lỗi console của trang để tìm nguyên nhân thật.
-
-**2026-10-25 | v3.4.596 | DeepSeek sửa:**
-
-- Fix một số đoạn hiện 2 icon loa (ảnh tiêu đề trang tin): `updateSpeakers` coi cả `<a>` kiểu block nằm trong `<h2>` là một đoạn riêng nên tạo icon cho cả hai. Nay đoạn lồng trong đoạn khác bị bỏ qua (chỉ đoạn ngoài cùng nhận icon) và icon cũ của đoạn lồng được dọn.
-- Thêm `ownChild()`: nếu trang web bọc node của Keepit vào phần tử khác thì đưa nó về cấp con trực tiếp thay vì tạo bản trùng; xoá icon trùng còn sót trong cùng đoạn; các chỗ tra `.lhn-bilingual-card` đổi từ `:scope >` sang tìm trong đoạn để không bỏ sót card bị bọc.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.595 | DeepSeek sửa:**
-
-- Gom toàn bộ giá trị mặc định về một file duy nhất `js/core/defaults.js` (`LHN_DEFAULTS`: `settings`, `reader`, `studyTranslation`, `flashcard`, `readerDisabledWebsites`); `config.js`, `bilingual-reader.js`, `dashboard.js` đọc từ đó thay vì tự khai báo. Trước đây Reader và Dashboard giữ hai bản default của cùng một bộ cài đặt và đã lệch nhau (bản Dashboard thiếu `speechSpeedStep`, `voiceMode`, `browserVoiceURI`, `readerShortcutsEnabled`, `autoDetectVoice`, `widgetDarkMode`).
-- Thêm `js/core/defaults.js` vào `manifest.json` (background + content script) và `pages/dashboard.html`, `pages/popup.html`, đặt ngay trước `config.js`.
-- File: `js/core/defaults.js` (mới), `js/core/config.js`, `js/reader/bilingual-reader.js`, `js/dashboard/dashboard.js`, `manifest.json`, `pages/dashboard.html`, `pages/popup.html`, `PROJECT.md`.
-- Kiểm tra: `node --check` 5 file JS đạt; `manifest.json` parse hợp lệ; 38 script trong manifest và 21+9 script trong hai HTML đều tồn tại; không còn literal default lặp lại; chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: chưa đổi cách lưu settings (vẫn ghi cả bộ), nên đổi default vẫn cần migration cho máy đã dùng — bước đó là giai đoạn sau.
-
-**2026-10-25 | v3.4.594 | DeepSeek sửa:**
-
-- "Read translation with source" chuyển sang **mặc định bật**: `DEFAULTS` của Reader và `DEFAULT_BILINGUAL_READER_SETTINGS` của Dashboard đổi `readTranslation:true`.
-- Thêm migration một lần bằng cờ `readTranslationDefaultOn` ở cả Reader và Dashboard, vì các bản lưu trước đã ghi cứng `readTranslation:false` (khi lưu bất kỳ cài đặt Reader nào) nên chỉ đổi default sẽ không có tác dụng.
-- Bỏ toast "Reading source and translation is on" lúc bắt đầu đọc (mặc định bật thì sẽ hiện mọi lần); vẫn hiện toast khi người dùng tự bật trong popover.
-- File: `js/reader/bilingual-reader.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.593 | DeepSeek sửa:**
-
-- Tắt "Read translation with source" giữa lúc đang đọc giờ có hiệu lực ngay: nếu đang đọc bản dịch của đoạn hiện tại thì `skipBilingualSegment()` cắt audio bản dịch (`cancelGoogle`), bỏ phần còn lại và sang đoạn kế; nếu đang đọc bản gốc mà `then` đã gắn sẵn từ đầu đoạn thì chặn không đọc bản dịch nữa.
-- Sửa phụ: khi resume mà không còn phần đọc dở thì `speakAfterCancel(null)` để đọc đoạn kế, tránh đọc chuỗi rỗng.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: với giọng trình duyệt, bản dịch được ghép chung vào text của đoạn nên tắt giữa đoạn gốc chưa cắt được phần đã ghép; cần xử lý riêng nếu người dùng cần.
-
-**2026-10-25 | v3.4.592 | DeepSeek sửa:**
-
-- Sửa lỗi bật "Read translation with source" giữa lúc đang đọc: đoạn đang đọc vẫn chỉ đọc bản gốc vì danh sách đọc (`readSegmentsFor`) được chốt lúc bắt đầu đoạn. Thêm `pendingTranslationFor(block)` kiểm tra lại ngay khi đoạn gốc đọc xong, cho cả nhánh Google TTS và giọng trình duyệt: có bản dịch thì đọc liền rồi mới sang đoạn kế.
-- `readSegmentsFor` fallback `lang` về ngôn ngữ hiển thị khi card thiếu `data-target-lang`, tránh đọc lặp bản dịch vô hạn.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.591 | DeepSeek sửa:**
-
-- Đổi alias `I18N` → `LANGUAGES` trong `dashboard.js` và `popup.js` cho khớp tên module `js/core/languages.js` (chỉ đổi tên biến, không đổi hành vi). Giữ nguyên thuộc tính DOM `data-i18n`/`data-lhn-i18n` vì chúng là hợp đồng với HTML và không phải tên module.
-- File: `js/dashboard/dashboard.js`, `js/popup/popup.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file đạt; rà `\bI18N\b` trong `js/` chỉ còn thuộc tính `data-i18n`; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.590 | DeepSeek sửa:**
-
-- Thêm tuỳ chọn "Read translation with source" vào popover Settings của thanh đọc (`[data-readtranslation]`), dùng chung khóa `readTranslation` với Dashboard > Bilingual Reader; nhãn lấy từ khóa i18n có sẵn `bilingualReadTranslation` (en/vi/ko) nên không phát sinh chuỗi mới; trạng thái checkbox đồng bộ trong `syncToolbar`; bật thì hiện toast như khi bắt đầu đọc.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.589 | DeepSeek sửa:**
-
-- Sửa tiêu chí chọn tốc độ: trước đó code phân biệt "đoạn dịch hay đoạn gốc", sai với luật thực tế là **ngôn ngữ của đoạn đang đọc**. Custom rate bật → đoạn thuộc ngôn ngữ hiển thị dùng "Your speed", đoạn ngôn ngữ khác dùng "Global speech rate"; Custom tắt → mọi đoạn dùng Global.
-- Thêm `normalizeSpeechLang`, `isDisplaySpeechLang`, `activeSegmentLang`, `currentSegmentRate`; `segmentRate(lang)` nhận ngôn ngữ đoạn; `editingLanguageRate()` so ngôn ngữ thay vì cờ `translation`. Mọi đường đọc (Google audio, giọng trình duyệt, nhãn thanh đọc, preset, `↑/↓`, ước tính thời gian) dùng chung một hàm.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; xác nhận chỉ còn một khai báo `segmentRate`; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.588 | DeepSeek sửa:**
-
-- Bỏ hẳn tốc độ riêng của Reader để chỉ còn một nguồn: xoá `speechSpeed` khỏi `DEFAULTS`/settings Reader, thêm `baseRate()` đọc trực tiếp `lhnSettings.speechRate`. Thanh đọc, nhãn `x.x`, `↑/↓`, preset, ước tính thời gian còn lại và `segmentRate` đều lấy từ nguồn này; sửa tốc độ chỉ ghi `speechRate` (hoặc `speechRateByLanguage[displayLang]` khi Custom rate bật và đang đọc bản dịch).
-- Migration một lần: Reader còn `speechSpeed` cũ và Dashboard đang mặc định 1.0 thì chuyển sang `speechRate`, sau đó xoá khóa cũ khỏi settings Reader.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; rà `grep speechSpeed` chỉ còn tên hàm và nhánh migration; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.587 | DeepSeek sửa:**
-
-- Sửa luật đồng bộ tốc độ cho đúng "Custom rate for display language": khi toggle bật và đang đọc bản dịch của ngôn ngữ hiển thị, sửa tốc độ trên thanh đọc chỉ ghi `speechRateByLanguage[displayLang]` + `hasCustomSpeechRateByLanguage[displayLang]=true` và xoá inherited của ngôn ngữ đó, không đổi `speechRate`. Đọc đoạn gốc hoặc toggle tắt thì vẫn ghi `speechRate`.
-- `segmentRate` chuyển sang thẩm quyền tuyệt đối của tốc độ riêng ngôn ngữ (bỏ công thức cộng dồn `base + (custom - global)`), áp cho cả giọng Google và giọng trình duyệt; thanh đọc, phím `↑/↓` và popover tốc độ lấy theo đoạn đang đọc.
-- Cho phép lưu tốc độ tới 3.0 (JS clamp 2 → 3 ở global, per-language và TTS trong trang); control Dashboard vẫn giới hạn 2, không đổi HTML.
-- File: `js/reader/bilingual-reader.js`, `js/dashboard/dashboard.js`, `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` ba file JS đạt; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-25 | v3.4.586 | DeepSeek sửa:**
-
-- Đồng bộ tốc độ đọc giữa thanh đọc Reader và Dashboard Settings: Reader chỉ ghi `lhnBilingualReaderSettings.speechSpeed`, Dashboard đọc/ghi `lhnSettings.speechRate`, nên sửa bên nào cũng chỉ bên đó biết. Thêm `writeSharedSpeechRate` (ghi `speechRate` mỗi lần đổi tốc độ ở thanh đọc), `applySharedSpeechRate` (nhận `speechRate` khi storage đổi: cập nhật slider, nhãn và `playbackRate`/đọc lại đoạn), và đồng bộ lúc tải trang kèm migration một lần `speechSpeedSynced` để không ghi đè tốc độ người dùng đã đặt ở Reader.
-- Dashboard hiển thị đúng giá trị dùng chung (tới 3) trong khi control vẫn giới hạn 0.5–2; không đổi HTML/UI.
-- File: `js/reader/bilingual-reader.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file JS đạt; chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: `speechRate` là tốc độ dùng chung nên đổi trên thanh đọc cũng đổi tốc độ đọc to của popup và Dashboard.
-
-**2026-10-25 | v3.4.585 | DeepSeek sửa:**
-
-- `Alt+A`/lazy và `Alt+D` trước đây lấy text khác nhau cho cùng một đoạn: `visibleReaderText` (chuẩn hóa `\s+` → khoảng trắng) so với `clone.innerText` (giữ `\n`), nên sinh 2 khóa cache khác nhau và gọi dịch 2 lần. Đổi `rawText` về một đường dùng `visibleReaderText` cho cả hai, nên hai phím dùng chung cache Reader.
-- File: `js/reader/bilingual-reader.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/reader/bilingual-reader.js` đạt; chưa kiểm thử trên Chrome/Firefox.
-- Lưu ý: mục cache cũ do `Alt+D` tạo (khóa theo `innerText`) không còn khớp, sẽ tự hết hạn sau 7 ngày hoặc bị LRU đẩy ra.
-
-**2026-10-25 | v3.4.584 | DeepSeek sửa:**
-
-- Fix Auto sentence note lấy kèm bản dịch khi Bilingual Reader mở: `getContext` dùng `block.textContent` nên gồm cả `.lhn-bilingual-card` và `.lhn-bilingual-speaker` mà Reader chèn vào trong đoạn; bộ lọc cũ chỉ loại class của Immersive Translate. Đổi `isImmersiveTranslation` → `isTranslationElement`, mở rộng nhánh lọc offset cho 2 class này: câu tự động chỉ còn chữ gốc, chọn chữ trong card bản dịch trả về rỗng.
-- File: `js/content/sentence-note.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: `node --check js/content/sentence-note.js` đạt; `git diff --check` đạt; chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: người dùng test `Alt+A`/`Alt+D` rồi chọn chữ trong đoạn gốc và trong card bản dịch.
-
-**2026-10-25 | v3.4.583 | DeepSeek sửa:**
-
-- Đồng bộ bản đồ file mục 4.1 với code thật: nêu tên module của `content/` và `dashboard/`; thêm `PRIVACY-POLICY.md`, `SUPABASE_SYNC.md`, `supabase-schema.sql`; ghi rõ 2 entry `content_scripts` (`document_start`/`all_frames` và `document_idle`/top frame).
-- File: `PROJECT.md`.
-- Kiểm tra: đối chiếu cây file với `manifest.json`, `pages/popup.html`, `pages/dashboard.html` bằng liệt kê file và grep danh sách script — khớp; chưa kiểm thử trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Kiro sửa:**
-
-- Sửa bug auto translate không chạy khi Direct translation popup tắt và Full Dict popup bật.
-- Bug: `skipAutoTranslate = true` luôn được set khi chọn từ tiếng Anh, bất kể `autoTranslate` bật/tắt.
-- Fix: Đổi thành `skipAutoTranslate = skipAutoTranslate || settings.autoTranslate === false;` để chỉ skip khi user TẮT auto translate.
-- File: `js/content/content.js`, `PROJECT.md`.
-- Kiểm tra: PowerShell sửa dòng 410, xác nhận `skipAutoTranslate = skipAutoTranslate || settings.autoTranslate === false;`.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Fix full dict kẹt loading: `content.js` còn tham chiếu biến `dictionaryCachePrefix` đã bị đóng scope trong module Dictionary, gây `ReferenceError` trước khi gọi dịch. Chuyển tạo cache key qua `LHN_DICTIONARY.cacheKey()`.
-- File: `js/content/content.js`, `js/translate/dictionary.js`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file JS, `git diff --check` và Node smoke test `LHN_DICTIONARY.cacheKey("Success", "vi")` → `lhnFullDictionary:v2:vi:success` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Full dict render nghĩa chính ngay khi dịch xong, không đợi Syn/Ant, Forms, Colloc hoặc IPA; giới hạn mỗi request dịch Google/MyMemory ở 5 giây để backup hoặc trả kết quả dự phòng khi mạng treo.
-- File: `js/content/content.js`, `js/translate/dictionary.js`, `PROJECT.md`.
-- Kiểm tra: `node --check` hai file JS và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Khôi phục dựng giao diện `#lhn-panel` trực tiếp trong content script như trước khi tách Note Composer; giữ luồng lưu note và hỗ trợ mở sau khi settings tải xong.
-- File: `js/content/content.js`, `PROJECT.md`.
-- Kiểm tra: `node --check js/content/content.js` và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Sửa race lúc khởi động: giữ xử lý chọn chữ và Alt+S trong khi settings đang tải; sau khi tải xong chỉ mở `#lhn-panel` nếu website không bị tắt.
-- File: `js/content/content.js`, `PROJECT.md`.
-- Kiểm tra: `node --check js/content/content.js` và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Mở popup nhập note trước khi chạy preview highlight để lỗi preview không chặn popup; giữ cách hiển thị và vị trí hiện tại.
-- File: `js/content/content.js`, `PROJECT.md`.
-- Kiểm tra: `node --check js/content/content.js` và `git diff --check` đạt; chưa kiểm tra trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Khi chọn ngôn ngữ trong Dashboard Settings, đóng danh sách và bỏ focus khỏi `settingsLanguageSearch`, tương tự toolbar.
-- File: `js/dashboard/settings-ui.js`, `PROJECT.md`.
-- Kiểm tra: `node --check js/dashboard/settings-ui.js` và `git diff --check` đạt; chưa kiểm tra trực tiếp trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Tách tìm lại vùng chữ của annotation đã lưu sang `annotation-restore.js`; tách phép tổng hợp thống kê hồ sơ sang `profile-stats.js`. Giữ vòng đời khôi phục DOM và phần render hồ sơ trong entry point.
-- File: `js/content/content.js`, `js/content/annotation-restore.js`, `js/dashboard/dashboard.js`, `js/dashboard/profile-stats.js`, `manifest.json`, `pages/dashboard.html`, `PROJECT.md`.
-- Kiểm tra: `node --check` đạt 38/38 JavaScript; tham chiếu trong manifest và dashboard HTML hợp lệ; `git diff --check` đạt. Không có phiên Chrome/Firefox điều khiển được qua Computer Use để kiểm tra giao diện/runtime.
-- Lưu ý: watcher đã commit và cập nhật ZIP v3.4.583; log watcher báo lỗi push GitHub.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Tách dựng khung và thẻ Sidebar vào `sidebar.js`, dựng form vào `note-composer.js`, và bộ chọn ngôn ngữ/danh sách website cài đặt vào `settings-ui.js`; giữ state, lưu trữ và điều phối trong entry points.
-- File: `js/content/content.js`, `js/content/sidebar.js`, `js/content/note-composer.js`, `js/dashboard/dashboard.js`, `js/dashboard/settings-ui.js`, `pages/dashboard.html`, `PROJECT.md`.
-- Kiểm tra: `node --check` đạt 36/36 JavaScript; tham chiếu trong manifest và dashboard HTML hợp lệ; `git diff --check` đạt. Chưa kiểm tra runtime trên Chrome/Firefox.
-- Lưu ý: watcher đã commit và cập nhật ZIP v3.4.583; lần push GitHub gần nhất báo lỗi.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Đổi mục 4 thành “Cấu trúc và kiến trúc dự án”; phân chia cây thư mục và sơ đồ tương tác thành 4.1 và 4.2.
-- File: PROJECT.md.
-- Kiểm tra: `git diff --check`.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Thêm sơ đồ tương tác runtime giữa Popup, Dashboard, Content, Reader, TTS và Background vào PROJECT.md.
-- File: PROJECT.md.
-- Kiểm tra: `git diff --check`.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Đổi mục Bản đồ file trong PROJECT.md sang sơ đồ cây, ghi chú entry points và vai trò từng nhóm thư mục.
-- File: PROJECT.md.
-- Kiểm tra: `git diff --check`.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Gom mã nguồn theo vai trò: JavaScript vào `js/`, CSS vào `css/`, trang vào `pages/`, icon/font vào `assets/` và Readability vào `vendor/`; cập nhật đường dẫn nạp và giữ nguyên thứ tự script.
-- File: manifest.json, pages/, js/, css/, assets/, vendor/readability/, README.md, THIRD_PARTY_NOTICES.md, OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: manifest paths 48/48 hợp lệ; HTML 2/2, CSS 7/7 paths hợp lệ; `node --check` 37/37 JS đạt; `git diff --check` đạt. Chưa kiểm thử trên trình duyệt.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Đồng bộ ô `settingsLanguageSearch` trong Dashboard Settings với ô chọn ngôn ngữ ở toolbar: kích thước, kiểu chữ, viền, danh sách, mục chọn và thao tác bàn phím.
-- File: dashboard.css, dashboard.js, PROJECT.md.
-- Kiểm tra: `node --check dashboard.js` đạt; `git diff --check` đạt trước commit. Chưa kiểm tra giao diện trên trình duyệt. Watcher đã commit `1e75c0f` và cập nhật ZIP v3.4.583; push GitHub thất bại.
-
-**2026-10-24 | v3.4.583 | Codex sửa:**
-
-- Bước Cache/LRU: chuyển IndexedDB TTS audio cache (trim, LRU touch, budget check, read/write) sang `cache.js` (`LHN_CACHE`); giữ database/store/key, 200 mục, 50 mục trim trigger và luồng TTS.
-- File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 35/35 JS; manifest/HTML script paths hợp lệ; Cache API smoke đạt; `git diff --check` đạt; ZIP 72 mục, manifest gốc, version 3.4.583, cache.js và background.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: rà toàn bộ module và chạy hồi quy tĩnh cuối.
-
-**2026-10-24 | v3.4.582 | Codex sửa:**
-
-- Bước 3 — Note Composer: tách dựng bản ghi annotation và so sánh nội dung không đổi sang `note-composer.js` (`LHN_NOTE_COMPOSER`); giao diện, tự dịch và thao tác lưu vẫn do content script quản lý.
-- File: note-composer.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 35/35 JS; script paths hợp lệ; mock tạo/so sánh bản ghi đạt; `git diff --check` đạt; ZIP 72 mục, manifest gốc, version 3.4.582 và note-composer.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: rà các module còn lại và hoàn tất hồi quy.
-
-**2026-10-24 | v3.4.581 | Codex sửa:**
-
-- Bước 4 — Sidebar: tách tạo nút, render câu trích dẫn, cache trường tìm kiếm và tô khớp kết quả sang `sidebar.js` (`LHN_SIDEBAR`); điều phối/mount Sidebar vẫn ở content script.
-- File: sidebar.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 34/34 JS; manifest/HTML paths hợp lệ; mock helper cache/render Sidebar đạt; `git diff --check` đạt; ZIP 71 mục, manifest gốc, version 3.4.581 và sidebar.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: hoàn thiện Sidebar/Note Composer còn lại và rà các module OPT.
-
-**2026-10-24 | v3.4.580 | Codex sửa:**
-
-- Account: tách lưu/xóa hồ sơ demo cục bộ sang `account.js` (`LHN_ACCOUNT`); giữ nguyên storage key, trường dữ liệu và giao diện tài khoản.
-- File: account.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 33/33 JS; script paths hợp lệ; mock local save/remove đạt; `git diff --check` đạt; ZIP 70 mục, manifest gốc, version 3.4.580 và account.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: Sidebar và Note Composer.
-
-**2026-10-24 | v3.4.579 | Codex sửa:**
-
-- Bước 4 — Library: tách cache metadata annotation và gom/sắp xếp trang nguồn sang `library.js` (`LHN_LIBRARY`); Dashboard tiếp tục điều khiển bộ lọc và hiển thị như hiện tại.
-- File: library.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 32/32 JS; manifest/HTML paths hợp lệ; mock grouping, thứ tự, favorites và metadata cache đạt; `git diff --check` đạt; ZIP 69 mục, manifest gốc, version 3.4.579 và library.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: Sidebar, Account và Note Composer.
-
-**2026-10-24 | v3.4.578 | Codex sửa:**
-
-- Bước 4 — Backup: tách nhận dạng JSON nhập/xuất và đóng gói favorites sang `backup.js` (`LHN_BACKUP`); Dashboard giữ thao tác file và thông báo hiện có.
-- File: backup.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 31/31 JS; script paths hợp lệ; mock JSON envelope/parse đạt; `git diff --check` đạt; ZIP 68 mục, manifest gốc, version 3.4.578 và backup.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: Library, Sidebar, Account và Note Composer.
-
-**2026-10-24 | v3.4.577 | Codex sửa:**
-
-- Bước 1 — Shortcuts: dùng chung chuẩn hóa phím sự kiện trong `shortcuts.js` (`LHN_SHORTCUTS`) giữa content và Dashboard shortcut settings; không đổi mapping, nhãn hay xử lý phím flashcard.
-- File: shortcuts.js, content.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 30/30 JS; script paths hợp lệ; mock Alt+A, Space và Left đạt; `git diff --check` đạt; ZIP 67 mục, manifest gốc, version 3.4.577 và shortcuts.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: tiếp tục Sidebar, Library/Backup, Account và Note Composer.
-
-**2026-10-24 | v3.4.576 | Codex sửa:**
-
-- Bước 1 — Icons: chuyển bộ đường dẫn SVG dự phòng và hàm tạo markup của Dashboard sang `icons.js` (`LHN_ICONS`); giữ nguyên thứ tự ưu tiên icon và HTML trả về.
-- File: icons.js, dashboard.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 29/29 JS; đường dẫn script hợp lệ; mock markup icon đạt; `git diff --check` đạt; ZIP 66 mục có manifest gốc, version 3.4.576 và icons.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: tiếp tục Shortcuts, Sidebar, Library/Backup, Account và Note Composer.
-
-**2026-10-24 | v3.4.575 | Codex sửa:**
-
-- Bước 4 — Page Layout: tách lưu/khôi phục inline style và thu hẹp trang khi mở Sidebar sang `page-layout.js` (`LHN_PAGE_LAYOUT`); giữ nguyên kích thước và thuộc tính style hiện hành.
-- File: page-layout.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 28/28 JS; script paths hợp lệ; mock thu hẹp/khôi phục trang đạt; `git diff --check` đạt; ZIP 65 mục có manifest gốc và page-layout.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: Icons, Shortcuts và các module Bước 4.
-**2026-10-24 | v3.4.574 | Codex sửa:**
-
-- Bước 3 — UI Components: tách trình chỉnh sửa tag dùng chung sang `ui-components.js` (`LHN_UI_COMPONENTS`) cho note composer và sidebar editor; giữ chuẩn hóa, phím tắt, nút xóa và nhãn dịch hiện tại.
-- File: ui-components.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 27/27 JS; manifest/HTML paths hợp lệ; mock chuẩn hóa tag `Alpha/alpha/beta` đạt; `git diff --check` đạt; ZIP 64 mục, manifest gốc, version 3.4.574 và ui-components.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: hoàn thiện Note Composer/Highlighter rồi Bước 4.
-
-**2026-10-24 | v3.4.573 | Codex sửa:**
-
-- Bước 3 — SentenceNote: tách trích câu chứa vùng chọn (kể cả bỏ qua text Immersive Translate) sang `sentence-note.js` (`LHN_SENTENCE_NOTE`); content script truyền hàm chuẩn hóa text hiện có, giữ nguyên kết quả và UI.
-- File: sentence-note.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 26/26 JS; đường dẫn manifest/HTML hợp lệ; smoke `getContext(null)` đạt; `git diff --check` đạt; ZIP 63 mục có manifest gốc, version 3.4.573 và sentence-note.js. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: tiếp tục Highlighter/Note Composer và Bước 4.
-
-**2026-10-24 | v3.4.572 | Codex sửa:**
-
-- Bước 3 — Annotations: tách IndexedDB, migration, CRUD, phân trang, import/export, tiến độ ôn tập và thông báo thay đổi sang `annotations.js` (`LHN_ANNOTATIONS`); giữ message type và cấu trúc dữ liệu hiện hành.
-- File: annotations.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script manifest/HTML hợp lệ; mock API Annotations và Search rank đạt; `git diff --check` đạt; ZIP 62 mục, manifest gốc, version 3.4.572 và annotations.js. Chưa kiểm thử Chrome/Firefox.
-- Tiếp theo: tiếp tục Bước 3–4.
-
-**2026-10-24 | v3.4.571 | Codex sửa:**
-
-- Bước 2 — Search: gom ranking và tô khớp kết quả dùng chung vào `search.js` (`LHN_SEARCH`), nối Library Dashboard và Sidebar; giữ nguyên trường tìm, thứ tự xếp hạng, selector loại trừ và kiểu mark hiện tại.
-- File: search.js, dashboard.js, content.js, dashboard.html, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: toàn bộ `node --check` đạt; đường dẫn script hợp lệ; mock Search rank đạt; `git diff --check` đạt; ZIP 61 mục, manifest gốc, version 3.4.571 và search.js. Chưa kiểm thử trình duyệt.
-- Tiếp theo: Bước 3 Annotations, Highlighter, SentenceNote và Note Composer.
-**2026-10-24 | v3.4.570 | Codex sửa:**
-
-- Bước 2 — Dictionary: tách kiểm tra từ tiếng Anh, cache/migration, dịch Google→MyMemory, IPA, synonyms/antonyms, forms và collocations sang `dictionary.js` (`LHN_DICTIONARY`); content giữ phần popup/rendering và gọi API module.
-- File: dictionary.js, content.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 25/25 JS; đường dẫn script hợp lệ; mock Dictionary provider/dedupe/cache đạt; ZIP 60 mục, manifest gốc, version 3.4.570 và dictionary.js. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tách Search và tiếp tục Bước 3–4.
-**2026-10-24 | v3.4.569 | Codex sửa:**
-
-- Bước 2 — Translate: tách provider pipeline Bilingual Reader và nhận diện ngôn ngữ từ `background.js` sang `translate.js` (`LHN_TRANSLATE`); giữ nguyên thứ tự engine/fallback, timeout, Promise dedupe, cache API và message contract.
-- File: translate.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 25/25 JS; manifest/HTML script paths tồn tại; mock Translate provider/dedupe/cache reuse đạt; `git diff --check` đạt; ZIP 59 mục có manifest gốc, translate.js và version 3.4.569. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tách Dictionary và Search, rồi các module nghiệp vụ theo Bước 3–4.
-**2026-10-24 | v3.4.568 | Codex sửa:**
-
-- Bước 1 — Cache/lưu trữ: tách cache bản dịch Bilingual Reader khỏi `background.js` vào `cache.js` (`LHN_CACHE`), giữ nguyên key, TTL 7 ngày, touch 6 giờ, dọn 24 giờ, giới hạn 500/LRU và không cache fallback.
-- File: cache.js, background.js, manifest.json, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 23/23 JS; manifest/HTML script paths tồn tại; mock Cache prepare/hit/fallback miss/clear đạt; `git diff --check` đạt; ZIP 58 mục có manifest gốc, cache.js và version 3.4.568. Chưa kiểm thử trình duyệt.
-- Tiếp theo: rà Settings/Cache còn lại, rồi Bước 2 Translate/Dictionary/Search.
-**2026-10-24 | v3.4.567 | Codex sửa:**
-
-- Bước 1 — Settings: nối dashboard vào `LHN_SETTINGS.save` để thống nhất lưu cài đặt nền cùng popup/content; sửa helper để giữ nguyên chính xác cấu trúc object mà caller lưu, tránh tự thêm default vào dữ liệu hiện có.
-- File: settings.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; Messaging calls tập trung; mock Settings resolve/get/save/subscribe đạt và xác nhận cấu trúc lưu không đổi; `git diff --check` đạt; ZIP 57 mục có manifest gốc, ba module nền tảng và version 3.4.567. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tách Cache/lưu trữ trong Bước 1.
-**2026-10-24 | v3.4.566 | Codex sửa:**
-
-- Bước 1 — Settings: thêm module `LHN_SETTINGS` cho resolve defaults, đọc/ghi cấu hình chung và đăng ký lắng nghe thay đổi; nối popup và content script vào helper mà không đổi UI hay tên storage key.
-- File: settings.js, manifest.json, background.js, popup.html, dashboard.html, popup.js, content.js, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 22/22 JS; manifest/HTML script paths tồn tại; mock Settings get/save/resolve/subscribe đạt; `git diff --check` đạt; ZIP 57 mục có manifest gốc, `settings.js` và version 3.4.566. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tách Cache/lưu trữ trong Bước 1, sau đó tiếp tục các dịch vụ theo thứ tự OPT.
-**2026-10-24 | v3.4.565 | Codex sửa:**
-
-- Bước 1 — Messaging: thêm lớp transport dùng chung `LHN_MESSAGING` cho gửi/nhận runtime message; nạp trước consumer ở background, content, popup và dashboard. Message type/handler và xử lý nghiệp vụ giữ nguyên.
-- File: messaging.js, manifest.json, background.js, content.js, dashboard.js, popup.js, error-logger.js, tts-engine.js, study-translation.js, bilingual-reader.js, popup.html, dashboard.html, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 21/21 JS; manifest/HTML script paths tồn tại; Messaging được nạp trước consumer; `git diff --check` đạt; ZIP 56 mục có manifest gốc, `messaging.js` và version 3.4.565. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tách Settings và Cache/lưu trữ trong Bước 1.
-**2026-10-24 | v3.4.564 | Codex sửa:**
-
-- Bước 1 — Languages: đổi tên module `i18n.js` thành `languages.js`, chuyển global nội bộ sang `LHN_LANGUAGES` và cập nhật các entry point/consumer; giữ nguyên bộ EN/VI/KO và chuỗi hiển thị.
-- File: languages.js (đổi tên), manifest.json, popup.html, dashboard.html, popup.js, dashboard.js, content.js, bilingual-reader.js, README.md, PROJECT.md.
-- Kiểm tra: `node --check` 20/20 JS; manifest/HTML tham chiếu script tồn tại; không còn tham chiếu code cũ; `git diff --check` đạt; ZIP 55 mục có manifest gốc, `languages.js` và version 3.4.564. Chưa kiểm thử trình duyệt.
-- Tiếp theo: tiếp tục tách các module nền tảng còn gắn trong entry point; đây chưa phải hoàn tất kiến trúc 27 module.
-
-**2026-10-24 | v3.4.563 | Arena sửa:**
-
-- Theo ảnh: ô Language hẹp hơn menu vì menu tự giãn theo option. Chỉ chỉnh width trong Dashboard Settings: control lấp phần còn lại của hàng, popover rộng 100% theo control để hai mép trùng nhau. Không đổi toolbar, flashcard, style option hay logic combobox.
-- File: dashboard.css, manifest.json, PROJECT.md.
-- Kiểm tra: sẽ xác minh CSS, source, cú pháp và ZIP sau đóng gói; chờ user xác nhận trực quan trên Chrome/Edge.
-
-**2026-10-24 | v3.4.562 | Arena sửa:**
-
-- Người dùng xác nhận menu v3.4.561 chưa giống các menu khác. Thay riêng Dashboard Settings control bằng cùng pattern của toolbar popup: input/combobox tìm kiếm và list `.language-option` căn trái, cùng trạng thái dark theme. Giữ hidden native select làm nguồn giá trị và dispatch change qua luồng lưu/ngôn ngữ hiện có. Không sửa toolbar, flashcard hay select khác.
-- File: dashboard.html, dashboard.js, dashboard.css, flags.css, manifest.json, PROJECT.md.
-- Kiểm tra: HTML/ID duy nhất, pattern/wiring/keyboard/dark CSS, CSS parse, node --check 20/20 và git diff --check đạt. Cần người dùng xác nhận trực quan trên Chrome/Edge; sandbox không có browser executable. ZIP v3.4.562 đóng gói và kiểm tra integrity đạt.
-
-**2026-10-24 | v3.4.561 | Arena sửa:**
-
-- Chrome/Edge bỏ qua `text-align:right` trên `<option>` của menu native; v3.4.560 vì vậy không xử lý được dropdown đang mở. Thay riêng language picker của Dashboard Settings bằng custom listbox căn phải, hỗ trợ click/ArrowUp/Down/Home/End/Enter/Escape/Tab, focus và đóng khi click ngoài. Native `settingsLanguageSelect` được giữ ẩn làm nguồn giá trị; custom lựa chọn dispatch `change` để giữ nguyên lưu settings và đổi ngôn ngữ. Không sửa toolbar, flashcard hay các select khác.
-- File: dashboard.html, dashboard.js, dashboard.css, flags.css, manifest.json, PROJECT.md.
-- Kiểm tra: HTML/ID duy nhất, keyboard/dispatch wiring, CSS parse, node --check 20/20, git diff --check và ZIP integrity đạt. Cần người dùng test thực tế giao diện, bàn phím và lưu lựa chọn trên Chrome/Edge; sandbox không có browser executable.
-
-**2026-10-24 | v3.4.560 | Arena sửa:**
-
-- Theo xác nhận mới: dark mode và các select khác đều đạt; option list của Dashboard Settings vẫn căn trái khi mở trên Chrome/Edge. Thêm `text-align:right` chỉ cho `.settings-language-row select option`; không đổi selected value, dark-mode colors, toolbar hay flashcard.
-- File: dashboard.css, manifest.json, PROJECT.md.
-- Kiểm tra: sẽ xác minh CSS/source/ZIP sau đóng gói; cần user retest menu mở trên Chrome/Edge vì sandbox không có browser executable.
-
-**2026-10-24 | v3.4.559 | Arena sửa:**
-
-- Theo phản hồi Firefox: cờ đã render đúng nhưng giá trị đóng của language select căn trái; menu native không theo dark mode ứng dụng. Thêm `text-align-last:right` cho selected value, bật `color-scheme:dark` và màu nền/chữ/selected cho option trong dark mode. Chỉ scope `.settings-language-row`; không sửa toolbar/flashcard đã đạt.
-- File: dashboard.css, manifest.json, PROJECT.md.
-- Kiểm tra: source/CSS tĩnh và ZIP sẽ được xác minh sau đóng gói; cần người dùng retest trực quan trên Firefox vì sandbox không có browser executable.
-
-**2026-10-24 | v3.4.558 | Arena cập nhật kiểm thử:**
-
-- Người dùng xác nhận custom flag font/fallback đúng trên Chrome và Edge cho các vị trí vừa sửa. Chưa thử các trình duyệt Chromium khác; Firefox chưa có kết quả xác nhận.
-- File: manifest.json, PROJECT.md. Không đổi code chức năng; tăng patch version theo quy ước và tạo ZIP v3.4.558.
-- Kiểm tra: manifest MV3 v3.4.558, ZIP 55 mục và integrity đạt; không commit hoặc phát hành.
-
-**2026-10-24 | v3.4.557 | Arena sửa:**
-
-- Theo ảnh kiểm tra Chrome: Dashboard Settings đã đúng; cờ ở nhãn flashcard không dùng font fallback như các option; toolbar popup là combobox tùy biến chưa nạp asset cờ. Mở rộng CSS local để áp font lên nhãn cờ flashcard và input/options của popup; nạp chung `flags.css` + detector `flags.js` trong popup. Không đổi UI, text option hay hành vi chọn.
-- File: manifest.json, flags.css, popup.html, PROJECT.md.
-- Kiểm tra: parse popup/dashboard HTML; xác nhận popup nạp flags.css và flags.js trước popup.js, các selector CSS bao phủ #languageSearch, #languageOptions .language-option và nhãn cờ flashcard; node --check 20/20 JS, git diff --check và ZIP 55 file MV3 v3.4.557 integrity đạt. Cần người dùng retest trực quan trên Chrome; sandbox không có trình duyệt.
-
-**2026-10-24 | v3.4.556 | Arena sửa:**
-
-- Tăng patch version theo quy tắc phát hành sau khi phát hiện ZIP chứa toàn bộ thay đổi nhưng vẫn mang version cũ. Khôi phục ZIP `v3.4.555` từ Git baseline ban đầu và tạo ZIP hiện hành `v3.4.556` từ source tối ưu; không thay đổi version cũ.
-- File: manifest.json, PROJECT.md, ZIP v3.4.555 và ZIP v3.4.556.
-- Kiểm tra: baseline v3.4.555 có 51 mục, manifest MV3 v3.4.555; ZIP v3.4.556 có 55 mục, manifest MV3 v3.4.556 và chứa PROJECT/flags mới nhất. Integrity hai ZIP đạt. Không commit hoặc phát hành.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- OPT 3.2 Flags: native language selects được kiểm tra bằng canvas; chỉ khi trình duyệt có color emoji nhưng thiếu flag glyph mới bật CSS cục bộ. Đóng gói `TwemojiCountryFlags.woff2` (79.5 KB), giới hạn font face vào codepoints cờ và chỉ áp lên native selects trên Dashboard; không CDN, không cài font, không sửa nội dung option. Thêm giấy phép/attribution MIT + CC BY 4.0 vào `THIRD_PARTY_NOTICES.md` và `licenses/`.
-- File: dashboard.html, flags.js, flags.css, fonts/TwemojiCountryFlags.woff2, licenses/LICENSE-TWEMOJI-COUNTRY-FLAGS.md, THIRD_PARTY_NOTICES.md, PROJECT.md.
-- Kiểm tra: `node --check flags.js`, parse HTML, mock detection (native flags không bật fallback; thiếu flags thì bật), xác nhận CSS trỏ local và `unicode-range` giới hạn cờ. Chưa xác nhận hình ảnh giá trị đang chọn/menu mở trên Chrome, Firefox, Edge thực tế.
-- Tiếp theo: chạy kiểm tra tổng thể; không commit, tăng version, ZIP hoặc phát hành.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- OPT 5.3 Fonts: font stack `system-ui` là font cục bộ nhưng trước đây cả `custom-font.js` lẫn Reader vẫn gắn/tải stylesheet Google Fonts. Nay stack system vẫn áp dụng như cũ nhưng không tải stylesheet/font từ mạng; nếu chuyển từ hosted font sang system, stylesheet cũ được gỡ. Font Google được chọn vẫn tải theo nhu cầu và dùng chung link hiện có; tắt font vẫn không tải.
-- File: custom-font.js, bilingual-reader.js, PROJECT.md.
-- Kiểm tra: cú pháp và `git diff --check` đạt; mock xác nhận system không tải stylesheet/FontFaceSet, hosted font tạo một link, disabled không tải, Reader system áp dụng stack mà không gọi tải font. Chưa kiểm thử mạng/font rendering thực tế trên Chrome/Firefox/Edge.
-- Tiếp theo: kiểm tra tổng thể sau các bước tối ưu; không commit, tăng version, ZIP hoặc phát hành.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 4.5 Backup: import lọc trực tiếp các cửa sổ tối đa 500 item từ mảng đầu vào thay vì tạo thêm mảng `incoming` toàn cục rồi cắt batch; giữ thứ tự, tiêu chí bỏ bản ghi lỗi, xử lý trùng ID và một thông báo refresh. JSON export đã stream theo batch nên giữ nguyên.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check background.js` và `git diff --check` đạt; mock 1.005 dòng xác nhận batch ≤500, 995 bản ghi hợp lệ nhập đúng thứ tự, bản ghi lỗi bỏ qua, ID trùng xử lý và chỉ một refresh. Chưa kiểm thử file lớn/runtime trên Chrome/Firefox.
-- Tiếp theo: rà mục Fonts trong OPT 5.3, rồi kiểm tra tổng thể dự án.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 4.4 Library: `applyAnnotationChange(deletePage)` compact danh sách annotations còn lại trong một lượt thay vì gọi `splice` lặp lại cho từng mục bị xóa; giữ thứ tự ổn định, xóa ID đã xóa và cập nhật vị trí ID trong cùng O(n).
-- File: dashboard.js, PROJECT.md.
-- Kiểm tra: `node --check dashboard.js` và `git diff --check` đạt; mock xác nhận thứ tự, hai index ID/vị trí, vô hiệu cache và render giữ đúng; nhánh xóa trang không còn `splice` lặp. Chưa kiểm thử Library thực tế trên Chrome/Firefox. (Một assert harness ban đầu quá rộng vì bắt nhầm `splice` của nhánh xóa một item; harness đã thu hẹp đúng nhánh và PASS.)
-- Tiếp theo: rà Backup theo OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 4.3 Flashcards: chuyển kiểm tra request dịch câu đang in-flight lên trước `storage.local.get`; `renderStudyCard` có thể prefetch lại cùng câu kế tiếp khi vẽ lại, nên các lần đó nay dùng chung Promise mà không đọc storage thêm. Cache, quota, queue và giới hạn tốc độ không đổi.
-- File: study-translation.js, PROJECT.md.
-- Kiểm tra: `node --check study-translation.js` và `git diff --check` đạt; mock xác nhận hai caller đang chạy chia sẻ một provider/quota, chỉ một storage read, kết quả được persist một lần và lần sau dùng memory cache. Chưa kiểm thử UI/runtime trên Chrome/Firefox.
-- Tiếp theo: rà Library rồi Backup theo OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 4.2 Sidebar: input Search debounce theo 80 ms đã dùng chung trong cấu hình; trường tìm kiếm của mỗi object annotation được chuẩn hóa/lowercase một lần và WeakMap tái sử dụng khi lọc/xếp hạng trên các lần gõ tiếp theo. Không đổi markup/thứ tự/UI.
-- File: content.js, PROJECT.md.
-- Kiểm tra: `node --check content.js` và `git diff --check` đạt; mock xác nhận trường tìm kiếm được cache theo object, dùng lại cùng tham chiếu và làm mới với object annotation mới. Chưa kiểm thử tương tác thực tế trên Chrome/Firefox.
-- Tiếp theo: rà Flashcards trong Bước 4, rồi Library và Backup theo OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 3.2 SentenceNote/Note Composer: giữ nguyên cách trích sentence theo DOM hiện tại (chỉ chạy khi bật và mở composer; không cache DOM động). Composer bỏ qua `UPDATE` chỉ khi mọi trường được ghi (quote, note, sentence, metadata trang, context, color, tags, createdAt) trùng chính xác và chặn submit trùng trong lúc lưu.
-- File: content.js, PROJECT.md.
-- Kiểm tra: `node --check content.js` và `git diff --check` đạt; mock xác nhận cùng nội dung được nhận diện là no-op, thay đổi từng trường được giữ lại để lưu và guard chống submit trùng hiện diện. Chưa kiểm thử runtime trên Chrome/Firefox.
-- Tiếp theo: rà Sidebar trong Bước 4, rồi Flashcards, Library và Backup theo OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 4.1 Reader: `pageObserver` không còn đánh dấu cache và quét lại khung DOM khi TTS/site Reader tắt và Lazy Translate không hoạt động; giữ debounce 900 ms khi tính năng cần thiết hoạt động, đồng thời hủy lần quét đã đặt lịch nếu site bị tắt trước khi timer chạy. Khi Reader được bật lại, cache được đánh dấu dirty để lần đọc kế tiếp thấy nội dung mới. Lazy Translate vẫn độc lập với danh sách website tắt Reader.
-- File: bilingual-reader.js, PROJECT.md.
-- Kiểm tra: `node --check bilingual-reader.js` và `git diff --check` đạt; mock observer đạt các nhánh idle, TTS, site/global-disable, Lazy-only và timer bị hủy. Chưa kiểm thử runtime trên Chrome/Firefox.
-- Tiếp theo: hoàn tất rà SentenceNote/Note Composer trong Bước 3, rồi tiếp tục Sidebar, Flashcards, Library và Backup theo OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 3.1: `getBatch` dùng `IDBKeyRange.lowerBound` cho phân trang toàn cục để bắt đầu sau ID cuối thay vì quét rồi bỏ qua các trang trước; truy vấn theo URL giữ nguyên. Highlighter trả về sớm khi trang không có annotation cần khôi phục, tránh truy vấn DOM marks không cần thiết.
-- File: background.js, content.js, PROJECT.md.
-- Kiểm tra: mock IndexedDB xác nhận global cursor bắt đầu trực tiếp sau ID và URL pagination giữ bộ lọc/thứ tự; `node --check` background.js/content.js đạt. Chưa kiểm thử hiệu năng hoặc runtime trên Chrome/Firefox.
-- Tiếp theo: hoàn tất rà SentenceNote/Note Composer trong Bước 3.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 2.3: gộp Dictionary translation đang chạy theo khóa text/đích trong cùng AbortSignal; các popup/request có signal khác nhau vẫn độc lập để giữ hành vi hủy an toàn. Rà Search: Dashboard đã debounce input và tái sử dụng metadata tìm kiếm, không cần sửa.
-- File: content.js, PROJECT.md.
-- Kiểm tra: `node --check content.js` đạt; mock xác nhận request trùng cùng signal chỉ gọi provider một lần, signal khác không bị gộp, kết quả cache vẫn tái sử dụng. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: rà Bước 3 (Annotations, Highlighter, SentenceNote, Note Composer); tiếp tục tự chủ theo chỉ đạo người dùng.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 2.2: gộp request TTS audio đang chạy theo khóa language/voice/text đã chuẩn hóa, tránh gọi Google và trừ quota lặp; voice hoặc text khác vẫn là request riêng.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock concurrency xác nhận hai caller cùng request chỉ tạo một fetch và một lần consume quota, request sau dùng cache, voice khác tạo fetch riêng. `git diff --check` đạt. Chưa kiểm thử audio runtime trên Chrome/Firefox.
-- Tiếp theo: tiếp tục rà TTS, Dictionary và Search; không phát hành hoặc tăng version giữa các bước.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 2.1: gộp các yêu cầu dịch Bilingual Reader đang chạy có cùng ngôn ngữ/text vào một Promise; nội dung khác nhau vẫn chạy độc lập, fallback không được lưu và request được xóa khỏi Map sau khi hoàn thành.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock xác nhận hai yêu cầu trùng chỉ tạo một lượt provider, nội dung khác tạo lượt riêng, fallback vẫn retry và cache/LRU không bị ảnh hưởng. `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: tiếp tục rà TTS, Dictionary và Search theo Bước 2; không phát hành hoặc tăng version giữa các bước.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước 1.3: đặt ngân sách độc lập cho cache dịch (500 mục; khi vượt 550, LRU giảm về 500; TTL trượt 7 ngày) và audio TTS (200 mục; khi vượt 250, LRU giảm về 200). Cập nhật dấu dùng gần nhất tối đa mỗi 6 giờ; giữ UI không đổi.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock dịch xác nhận touch/TTL, dọn hết hạn, eviction LRU và Clear Cache; mock IndexedDB xác nhận TTS trim 251 mục về 200 và bỏ mục ít dùng nhất. `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: tiếp tục Bước 2; kiểm thử trình duyệt vẫn cần ở đợt hồi quy trước phát hành.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước tối ưu 1.2: chuyển cache Bilingual Reader từ một object lớn sang storage key riêng cho từng bản dịch; key băm có độ dài cố định, bản ghi xác thực khóa gốc. Xóa object cache cũ một lần (theo lựa chọn của người dùng), giữ TTL 7 ngày, dọn mục hết hạn theo chu kỳ 24 giờ và cập nhật Clear Cache để xóa cả key cũ lẫn key mới.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check` đạt cho 19 file JavaScript; mock harness đạt cho xóa cache cũ nhưng giữ settings, key độc lập/cache hit, fallback không được lưu, dọn mục hết hạn và Clear Cache; `git diff --check` đạt. Manifest vẫn MV3 v3.4.555. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: người dùng đã cho phép tiếp tục tự chủ; kiểm thử Chrome/Firefox vẫn chưa chạy.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bước tối ưu 1.1: Bilingual Reader vẫn trả fallback khi các engine dịch lỗi nhưng không lưu fallback mới; các fallback hợp lệ đã lưu trước đây bị bỏ qua để thử dịch lại. Bản dịch thành công vẫn cache như trước.
-- File: background.js, PROJECT.md.
-- Kiểm tra: `node --check background.js` đạt; mock harness xác nhận bỏ qua fallback cũ, không lưu fallback khi tất cả engine lỗi, vẫn lưu và tái sử dụng bản dịch thành công; `git diff --check` đạt. Chưa kiểm thử trên Chrome/Firefox.
-- Tiếp theo: người dùng chấp thuận tiếp tục sang Bước 1.2; chưa kiểm thử trên Chrome/Firefox.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bỏ bullet trước tiêu đề các mục 5.1–5.5, khôi phục dấu chấm sau số và giữ phần nội dung thụt vào bên dưới.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận tiêu đề không còn bullet đầu dòng, nội dung bắt đầu ở dòng kế tiếp; không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bỏ dấu chấm thừa sau số ở tiêu đề các tiểu mục 5.1–5.5 trong `AGENTS.md`.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận cách viết số mục mới và giữ nguyên nội dung; không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Định dạng lại các mục 5.1–5.5 trong `AGENTS.md`: tiêu đề ngắn in đậm, canh hàng; nội dung xuống dòng và thụt vào bên dưới.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận các mục thẳng hàng và giữ nguyên quy tắc watcher, đường dẫn, version/đóng gói.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Đánh số phân cấp các mục trong `AGENTS.md`: sáu mục lớn và năm tiểu mục quy trình.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận số mục tăng đúng thứ tự và nội dung quy tắc được giữ; không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Làm rõ cách tham khảo `OPT-ARENA.md`: đọc phần liên quan khi sửa; chỉ đọc toàn bộ khi cần đối chiếu tính nhất quán, không bắt buộc đọc lại mỗi bước.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận câu hướng dẫn mới và giữ nguyên version/lịch sử.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Đồng bộ quy tắc AGENTS với phân vai tài liệu: không bắt buộc đọc lại toàn bộ OPT mỗi bước; PROJECT giữ trạng thái và tóm tắt kiểm thử, OPT chỉ giữ thiết kế/phạm vi/quy trình.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận quy tắc đọc file và nguồn nội dung; giữ nguyên watcher/đường dẫn Windows, không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Rút gọn phần diễn giải trong `OPT-ARENA.md`, giữ đủ ý chính và toàn bộ sơ đồ text.
-- File: OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: 213 → 198 dòng; 7 sơ đồ giữ nguyên từng byte; 22 tiêu đề vẫn đánh số phân cấp.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Gom thiết kế tính năng đã chốt và ý tưởng tham khảo vào mục `Kế hoạch sắp tới` ở cuối `OPT-ARENA.md`; đánh số phân cấp mọi tiêu đề.
-- File: OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: đối chiếu đủ 7 sơ đồ text, thứ tự mục và cấp số; không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Tóm lược phần diễn giải trong `OPT-ARENA.md` để dễ đọc lại; giữ nguyên toàn bộ sơ đồ text và các thiết kế, mục tiêu/phạm vi, quy trình.
-- File: OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: 7 sơ đồ giữ nguyên từng byte; file rút từ 252 xuống 209 dòng; không còn nhật ký bước hoàn tất trong OPT.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Làm rõ định dạng năm mục là yêu cầu báo cáo trên khung chat, không yêu cầu ghi từng báo cáo bước vào biên bản `OPT-ARENA.md`.
-- File: OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: xác nhận câu mới thay đúng câu cũ, giữ nguyên các mục nhật ký; không đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Chuẩn hóa vai trò tài liệu: OPT-ARENA chỉ còn thiết kế, sơ đồ, mục tiêu/phạm vi và quy trình; bỏ trạng thái bước cùng nhật ký hoàn thành, không tạo archive mới.
-- File: AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md.
-- Kiểm tra: xác nhận phần thiết kế/quy trình được giữ, log tiến độ chỉ ở PROJECT, README không chứa theo dõi nội bộ; kiểm tra diff/ZIP, không tăng version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Phân vai tài liệu: AGENTS quy định workflow/nguồn sự thật; PROJECT giữ handoff ngắn; README hướng người dùng; OPT-ARENA lưu chi tiết tối ưu và bằng chứng.
-- File: AGENTS.md, PROJECT.md, README.md, OPT-ARENA.md.
-- Kiểm tra: đối chiếu ranh giới/nội dung, giữ nguyên việc đang mở và lịch sử; kiểm tra diff/ZIP, không tăng version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Đánh số hai tiêu đề cuối trong `PROJECT.md` thành mục 4 (Bản đồ file) và mục 5 (Nhật ký dự án) để khớp thứ tự 1–5.
-- File: PROJECT.md, OPT-ARENA.md.
-- Kiểm tra: xác nhận thứ tự tiêu đề, bảo toàn các mục nhật ký cũ và kiểm tra ZIP; không tăng version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Sắp xếp bốn mục trạng thái, việc đang mở, ràng buộc và bản đồ file lên trước nhật ký để agents thấy thông tin hành động trước; giữ nhật ký liên tục mới nhất → cũ nhất.
-- File: PROJECT.md, OPT-ARENA.md.
-- Kiểm tra: so sánh nội dung bốn mục và thứ tự toàn bộ lịch sử; kiểm tra diff/ZIP, không tăng version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Làm rõ quy tắc phải ghi đúng tên tác nhân thực hiện từng thay đổi, gồm các ví dụ AI và trường hợp Huuson trực tiếp sửa.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận câu mới, thứ tự nhật ký, diff và ZIP; không thay đổi version.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Mở rộng quy định tăng version trong `AGENTS.md` để áp dụng với thay đổi phát hành của bất kỳ tác nhân nào.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: xác nhận câu hướng dẫn mới, giữ nguyên version và lịch sử nhật ký; xác minh diff/ZIP.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Bổ sung vào `AGENTS.md` quy định dùng một mẫu nhật ký thống nhất, in đậm tiêu đề và ghi đúng AI/người thực hiện.
-- File: AGENTS.md, PROJECT.md.
-- Kiểm tra: rà soát mẫu bắt buộc, attribution đúng tác nhân, giữ lịch sử cũ và xác minh diff/ZIP.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Gom nhật ký về một mục duy nhất ở đầu `PROJECT.md`, xếp mới → cũ; chuyển trạng thái, việc đang mở và các mục tham khảo xuống dưới.
-- File: PROJECT.md, OPT-ARENA.md.
-- Kiểm tra: rà soát thứ tự thời gian, loại mục trùng và giữ nguyên tác giả lịch sử; xác minh diff và ZIP sau khi đóng gói.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Khôi phục lịch sử còn thiếu từ file PROJECT.md bạn gửi: hai mục gần đây, 30 changelog v3.4.533–v3.4.501 và mục lịch sử ZIP/trước Git; giữ nguyên tác giả lịch sử.
-- File: PROJECT.md, OPT-ARENA.md.
-- Kiểm tra: 301 dòng thêm, không xóa dòng; diff check và ZIP v3.4.555 integrity đạt.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Đổi tên nhật ký thành `OPT-ARENA.md`, cập nhật tham chiếu và quy tắc nhãn sửa.
-- File: AGENTS.md, OPT-ARENA.md, PROJECT.md.
-- Kiểm tra: xác nhận tên file/tham chiếu; ZIP v3.4.555 gồm 51 file, integrity đạt; ZIP v3.4.554 giữ nguyên.
-
-**2026-10-24 | v3.4.555 | Arena sửa:**
-
-- Reader chỉ tải stylesheet web font khi có font được chọn; `custom-font.js` dùng chung link và gỡ khi tắt.
-- File: bilingual-reader.js, custom-font.js, manifest.json, PROJECT.md, OPT-ARENA.md.
-- Kiểm tra: mock hai thứ tự khởi tạo, syntax JS, manifest, diff và ZIP integrity đạt; người dùng xác nhận v3.4.555 đúng, chưa nêu trình duyệt.
-
-**2026-10-24 | v3.4.554 | Arena sửa:**
-
-- Chỉ gắn Google Fonts khi custom font được bật/chọn; gỡ stylesheet khi tắt hoặc site bị disable.
-- File: custom-font.js, README.md, PRIVACY-POLICY.md, OPT-ARENA.md, PROJECT.md, manifest.json.
-- Kiểm tra: mock DOM/storage, syntax JS, manifest, diff; ZIP thử 51 file đã tạo. Chưa thử Chrome/Firefox thật.
-
-**2026-10-24 | v3.4.553 | Arena sửa:**
-
-- Soạn LICENSE độc quyền và Privacy Policy EN/VI; gom license bên thứ ba, thêm Apache-2.0 cho Readability và cập nhật README.
-- File: LICENSE, PRIVACY-POLICY.md, THIRD_PARTY_NOTICES.md, licenses/*, README.md, PROJECT.md.
-- Kiểm tra: link, license, coverage policy, syntax JS, manifest và diff đạt; còn placeholder, chưa rà soát store/trình duyệt.
-
-**2026-10-24 | v3.4.553 | Arena sửa:**
-
-- Đặt tốc độ riêng cho ngôn ngữ hiển thị mặc định 1.25×; global 1.0×, flashcard độc lập 1.2×.
-- File: config.js, dashboard.js, dashboard.html, PROJECT.md.
-- Kiểm tra: syntax JS, manifest, mock giá trị/biên/format và diff đạt; chưa kiểm tra trên trình duyệt.
-
-**2026-10-23 | v3.4.553 | Claude sửa:**
-
-- Khi dùng giọng Google, mỗi lần tải hoặc phát âm thanh lỗi (trừ lỗi hết lượt) hiện toast đen "Mạng chậm, đang tải âm thanh" (EN/VI/KO, key googleAudioSlowToast). tts-engine.js thêm hook onGoogleAudioSlow, chỉ gọi khi lượt đọc còn active; content.js (Speak popup) dùng showSidebarToast, bilingual-reader.js dùng showReaderToast. Không đổi UI/CSS, dashboard (flashcard) chưa nối.
-- File: tts-engine.js, content.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check 4 file và test mock engine 4 ca (không strict, strict 3 lần, đã dừng, hết lượt); chưa kiểm tra trên trình duyệt.
-- Tiếp theo: tắt mạng/giả lập mạng chậm rồi bấm đọc để xem toast.
-- Lưu ý: ở chế độ không strict, toast hiện rồi đoạn đó đọc bằng giọng trình duyệt.
-
-**2026-10-23 | v3.4.552 | Claude sửa:**
-
-- Full dict tách IPA thành fetchIpa(word, lang, signal) chạy song song với dịch và Datamuse (không chờ Datamuse). Nguồn 1 dictionaryapi.dev phonetics[].text; nguồn 2 Google dt=rm đổi sang IPA bằng convertGoogleToIPA (tiện ích trong content.js, globalThis.LHN_IPA_UTILS); timeout 3 giây mỗi nguồn, dùng AbortSignal của popup. Chọn nguồn 1, không có thì nguồn 2 (lưu ipaApprox, gắn data-approx, không đổi giao diện), không có thì không vẽ .lhn-dict-ipa. Bỏ audio. Ngôn ngữ nguồn full dict ép en (đọc từ, chip Colloc), không dùng auto. Cache giữ nguyên key/TTL; mục cache cũ có ipa trùng từ sẽ bị ẩn.
-- File: content.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và test mock (đổi ký âm, 6 ca fetchIpa gồm timeout 3s và abort); chưa chạy trên trình duyệt thật, chưa gọi mạng thật.
-- Tiếp theo: tra thử từ trên Chrome/Firefox, xem IPA và từ không có IPA.
-
-**2026-10-23 | v3.4.551 | Claude sửa:**
-
-- (1) Select Voice: ô tìm kiếm tự focus trên mọi trình duyệt Chromium (Chrome, Edge,...) và Firefox bằng cách thử focus lại tối đa 5 lần (30/100/250/500ms) cho tới khi nhận được; chưa tái hiện được lỗi Edge nên chưa biết nguyên nhân gốc. (2) Thêm phím Alt+L (selectVoiceShortcut, mặc định Alt+L, đổi được) bấm vào icon cờ để mở Select Voice trên thanh đọc, chỉ khi đang đọc và thanh hiện, tuân theo công tắc Keyboard shortcuts của Reader; thêm dòng "Select voice reader" (EN/VI/KO) dưới Decrease reading speed ở Dashboard > Settings > Keyboard shortcuts, cùng markup với các dòng cũ, có trong Reset. (3) AGENTS.md: đổi tiêu đề thành "Keepit Working Rules for all AI (Codex/Claude,..)", thêm giới thiệu dự án và quy tắc UI mới phải giống giao diện tổng thể. (4) Viết lại README.md (tiếng Anh) theo hiện trạng dự án.
-- File: bilingual-reader.js, content.js, config.js, dashboard.html, dashboard.js, i18n.js, manifest.json, AGENTS.md, README.md, PROJECT.md.
-- Kiểm tra: Đã chạy node --check 5 file JS, parse manifest, test mock focus (3 ca) và handler Alt+L (3 ca); chưa kiểm tra trên trình duyệt thật.
-- Tiếp theo: thử focus ô search trên Edge/Chrome/Firefox; thử Alt+L và dòng cài đặt mới trên Dashboard.
-
-**2026-10-23 | v3.4.550 | Claude sửa:**
-
-- Select Voice của Bilingual Reader đổi cờ (lhn-br-flag) và tooltip ngay khi bấm chọn Auto, ngôn ngữ Google hoặc giọng trình duyệt, kể cả lúc pause/play, không chờ lưu xong hay đoạn kế tiếp. Nguyên nhân cũ: ngôn ngữ đoạn Google đang đọc (readingSegment) luôn thắng nên cờ đứng yên, và nhánh giọng trình duyệt không xóa nó. Thêm voiceFlagOverride (xóa sau khi lưu xong hoặc lưu lỗi), speakNext nhánh giọng trình duyệt xóa readingSegment; không động vào settings trước khi lưu nên restart khi đổi giọng giữ nguyên. Không đổi UI.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và test mock 6 ca đổi cờ (Google đang đọc, pause, browser sang Google, Google sang browser, Auto, lưu lỗi) cùng 6 ca speakNext; chưa kiểm tra trên trình duyệt.
-- Tiếp theo: xác nhận cờ đổi ngay trên Chrome/Firefox khi đang đọc, pause và dừng.
-- Lưu ý: đang pause với Google, đổi giọng rồi Play vẫn tiếp tục audio cũ (resumeGoogle), chưa xử lý.
-
-**2026-10-23 | v3.4.549 | Claude sửa:**
-
-- Bilingual Reader với giọng trình duyệt đã chọn luôn dùng đúng giọng đó, không còn tự đổi sang giọng US theo ngôn ngữ đoạn (kể cả khi Auto-detect bật). Khớp theo voiceURI rồi theo tên (không phân biệt hoa thường); chờ voiceschanged tối đa 1s trước khi kết luận thiếu. Không có giọng thì ghi console.error, dừng đọc, hiện toast "Giọng “{name}” không có trên trình duyệt này" (EN/VI/KO), không đổi giọng. Không đổi UI; không chia đoạn cho giọng trình duyệt.
-- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check, parse manifest và test mock 6 ca (có giọng, khớp theo tên, thiếu, xuất hiện sau voiceschanged, không chọn giọng, request cũ); chưa kiểm tra trên trình duyệt.
-- Tiếp theo: chọn Google Bahasa Indonesia trên Chrome và xem có đọc được không; trên Firefox xác nhận toast khi thiếu giọng; để ý giọng Google mạng dừng giữa chừng với đoạn dài.
-
-**2026-10-23 | v3.4.548 | Claude sửa:**
-
-- Select Voice chia hai nhóm có tiêu đề: "Ngôn ngữ (Google TTS)" (21 ngôn ngữ) và "Giọng trình duyệt" (giọng hệ thống, tên thêm hậu tố "(Browser)"); Auto đứng đầu không thuộc nhóm; nhóm rỗng khi tìm kiếm thì ẩn tiêu đề; phím Up/Down bỏ qua tiêu đề. Thêm toast đen của app (#lhn-sidebar-toast) khi: Google voice lỗi sau 3 lần thử (dừng đọc), hết lượt Google (chuyển sang giọng trình duyệt), giọng trình duyệt lỗi phát. Toast có 3 ngôn ngữ EN/VI/KO.
-- File: bilingual-reader.js, tts-engine.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check, kiểm tra i18n 3 ngôn ngữ, test mock 10 ca vẽ danh sách/tìm kiếm, 5 ca strictVoice, 1 ca thông báo hết lượt một lần; chưa kiểm tra giao diện trên trình duyệt. Chưa có toast cho lỗi dịch (translateBlock chỉ console.warn).
-- Tiếp theo: xác nhận giao diện nhóm và toast trên Chrome/Firefox; xem lỗi thật của giọng Google Bahasa Indonesia qua toast/console.
-
-**2026-10-23 | v3.4.547 | Claude sửa:**
-
-- Bilingual Reader với voice Google không còn tự chuyển sang giọng trình duyệt khi một đoạn Google TTS lỗi: thử lại Google tối đa 3 lần (chờ 0,5s rồi 1s); vẫn lỗi thì dừng đọc và ghi console.error, không đổi giọng. Chỉ chuyển sang giọng trình duyệt khi hết lượt dùng (lỗi usage limit). Cờ strictVoice chỉ bật ở Bilingual Reader; chọn text và flashcard giữ nguyên cách cũ.
-- File: tts-engine.js, bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và test mock 5 ca (Google OK, lỗi tạm thời, lỗi kéo dài, hết lượt, nhánh không strict); chưa kiểm tra trên trình duyệt. CHƯA xác định nguyên nhân thật khiến Google TTS lỗi với tiếng Indonesia.
-- Tiếp theo: chọn Indonesian khi đang đọc, nếu dừng thì xem console.error để biết lỗi (HTTP/Referer/audio); quyết định có áp dụng strict cho popup chọn text không.
-
-**2026-10-23 | v3.4.546 | Claude sửa:**
-
-- Select Voice của Bilingual Reader dùng bàn phím: khi popover đang mở, Up/Down di chuyển mục đang chọn trong danh sách (kẹp ở đầu/cuối, bắt đầu từ mục đang dùng), Enter chọn mục đó. Chỉ khi Select Voice mở mới chặn Up/Down, nên phím chỉnh tốc độ giữ nguyên ở lúc khác. Mục đang chọn bằng phím có nền hover và viền accent (class lhn-kb-active).
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và test mock logic phím (8 ca); chưa kiểm tra trên trình duyệt.
-- Tiếp theo: xác nhận Up/Down/Enter trong Select Voice trên Chrome/Firefox, kể cả khi con trỏ đang ở ô tìm kiếm.
-
-**2026-10-23 | v3.4.545 | Claude sửa:**
-
-- AGENTS.md thêm quy tắc ghi rõ người sửa (Claude/Codex/Huuson) trong mỗi mục nhật ký. Select Voice của Bilingual Reader có đủ 21 ngôn ngữ kèm cờ (gồm Việt Nam), tìm theo tên/bản địa/mã/quốc gia, không phân biệt dấu. Chọn ngôn ngữ giữ voiceMode=google và đặt ngôn ngữ đọc (readLanguage); cờ ở thanh dưới đổi theo. Chọn Auto hoặc giọng trình duyệt thì xóa readLanguage.
-- File: tts-engine.js, bilingual-reader.js, AGENTS.md, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và test mock (lưu/đọc readLanguage, 21 cờ, tìm kiếm); chưa kiểm tra UI trên trình duyệt.
-- Tiếp theo: xác nhận chọn Vietnamese đọc đúng tiếng Việt và cờ VN đổi theo trên Chrome/Firefox.
-
-**2026-10-23 | v3.4.534 | Codex sửa:**
-
-- Bilingual Reader chạy đồng thời các engine dịch và dùng bản dịch thành công đầu tiên, tránh chờ timeout tuần tự từng engine.
-- File: background.js, manifest.json, PROJECT.md.
-- Kiểm tra: Đã chạy node --check và git diff --check; chưa đo trực tiếp độ trễ trên trình duyệt.
-- Tiếp theo: kiểm tra thời gian Alt+A/Alt+D trên trang thực tế.
-
-**2026-10-23 | v3.4.533 | Codex sửa:**
-
-- Thêm Auto highlight vào Toolbar settings, dùng chung `autoHighlight` với Dashboard > Highlights & Notes; mặc định tắt ở cài đặt mới.
-- File: config.js, popup.html, popup.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check cho config.js, popup.js, dashboard.js và git diff --check; chưa kiểm tra UI trên trình duyệt.
-
-**2026-10-23 | v3.4.532 | Codex sửa:**
-
-- Giá trị khởi tạo Your speed cho Custom rate for display language là 1.2; giữ ưu tiên tốc độ riêng đã lưu.
-- File: dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, git diff --check và tính toán mặc định; chưa kiểm tra UI trên trình duyệt.
-
-**2026-10-23 | v3.4.531 | Codex sửa:**
-
-- Đồng bộ khoảng cách mô tả Disable reader on websites với form thêm domain thành 16px.
-- File: dashboard.css, manifest.json, PROJECT.md.
-- Kiểm tra: git diff --check; chưa kiểm tra UI trên trình duyệt.
-
-**2026-10-23 | v3.4.530 | Codex sửa:**
-
-- Seed danh sách 27 website mặc định tắt Reader một lần, hợp nhất với danh sách hiện có và giữ domain người dùng đã xóa.
-- File: config.js, dashboard.js, bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, git diff --check và 3 ca migration; chưa kiểm tra trên trình duyệt.
-
-**2026-10-23 | v3.4.529 | Codex sửa:**
-
-- Gộp Reader settings thành một mục; khi Enable reader tắt, các tùy chọn phụ bị mờ và khóa tương tác.
-- File: dashboard.html, dashboard.js, dashboard.css, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, cấu trúc/ID UI và git diff --check; chưa kiểm tra trên trình duyệt.
-
-**2026-10-23 | v3.4.528 | Codex sửa:**
-
-- Thêm Enable reader và danh sách website tắt Reader có thể thêm, sửa, xóa; vô hiệu hóa các tùy chọn liên quan khi reader tắt.
-- File: dashboard.html, dashboard.js, bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check 3 JS, liên kết UI và git diff --check; chưa kiểm tra trên trình duyệt.
-
-**2026-10-23 | v3.4.527 | Codex sửa:**
-
-- Thu hẹp dải ký tự nhận dạng Bengali và Devanagari, ưu tiên Bengali trước Hindi.
-- File: tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, kiểm tra dải ký tự và git diff --check; chưa kiểm tra TTS trên trình duyệt.
-
-**2026-10-23 | v3.4.526 | Codex sửa:**
-
-- Hợp nhất voiceMode/browserVoiceURI cho chọn text và Bilingual Reader; thêm nhận dạng cục bộ và nhận diện Google nền cho Latin; giữ thiết lập giọng flashcard nguyên trạng.
-- File: tts-engine.js, background.js, content.js, bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, 12 câu mẫu, cache/fallback, manifest và git diff --check; chưa kiểm tra Chrome/Firefox.
-
-**2026-10-23 | v3.4.525 | Codex sửa:**
-
-- Lớp phủ absolute có z-index và các dialog/listbox/menu/tooltip được nhận diện ngoài fixed/sticky; nền lớp phủ giữ đục theo theme để nội dung phía sau không xuyên qua.
-- File: custom-font.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google Search.
-
-- Sửa layer nổi fixed/sticky bị trong suốt bằng nhận diện vị trí từ computed style và gán nền theo theme; thêm Default/Dracula trong dashboard, ba ngôn ngữ.
-- File: custom-font.js, dashboard.html, dashboard.js, i18n.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest JSON, git diff --check; chưa kiểm tra trực quan trên website.
-
-- File: custom-font.js, dashboard.js, bilingual-reader.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check và git diff --check; chưa kiểm tra trực quan trên Google/trang web.
-
-- File: dashboard.html, dashboard.js, i18n.js, bilingual-reader.js, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest JSON và git diff --check; chưa kiểm tra trực quan trên trình duyệt.
-
-- Browser TTS không phát khi thiếu voice cùng ngôn ngữ; hiện toast “Trình duyệt bạn không hỗ trợ ngôn ngữ này”. Engine dừng phần còn lại của yêu cầu.
-- File: content.js, dashboard.js, bilingual-reader.js, tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check các script, parse manifest JSON và git diff --check đều đạt; chưa xác nhận trên trình duyệt.
-
-**2026-10-23 | v3.4.524 | Codex sửa:**
-
-- TTS engine đọc `lhnSettings.speechVoice`; Browser voice phát từng đoạn bằng giọng trình duyệt, không gọi Google TTS.
-- File: tts-engine.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check và test mock xác nhận browser voice bỏ qua API Google; chưa thử trên trình duyệt.
-- Tiếp theo: xác nhận phát âm thật trên Chrome/Firefox.
-
-**2026-10-23 | v3.4.523 | Codex sửa:**
-
-- Sửa nhận diện paragraph có chữ nằm trong inline element; ép câu hỏi phỏng vấn VnExpress vào main reader queue.
-- Hover hiện icon cho đoạn chữ ở mọi chế độ; icon ngoài main chỉ đọc block đã bấm.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: kiểm tra DOM thật, node --check, parse manifest, git diff --check; chưa phát TTS thực tế.
-
-**2026-10-23 | v3.4.522 | Codex sửa:**
-
-- Thêm đoạn question trong `.fck_detail` vào queue main; semantic paragraphs có inline text vẫn nhận icon; hover hiện icon ở mọi chế độ.
-- Bấm icon ngoài main đọc riêng block được chọn; trong main giữ queue hiện tại.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: node --check, parse manifest, git diff --check và markup DOM; chưa phát thử trên trình duyệt.
-
-**2026-10-23 | v3.4.521 | Codex sửa:**
-
-- Giữ câu hỏi phỏng vấn italic kết thúc bằng dấu hỏi; icon ngoài main hiện khi hover ở mọi chế độ và chỉ đọc block được bấm.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử phát trên trình duyệt.
-- Tiếp theo: xác nhận trên trang VnExpress.
-
-**2026-10-23 | v3.4.520 | Codex sửa:**
-
-- Alt+A/Alt+R đưa headline `.title_post` và sapo `.lead_post_detail` của VnExpress vào queue khi cùng khối bài viết.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: xác nhận selector/markup trên HTML trang; đã chạy node --check, parse manifest JSON, git diff --check; chưa thử trình duyệt.
-- Tiếp theo: xác nhận Alt+R đọc đủ phần mở đầu và body.
-
-**2026-10-23 | v3.4.519 | Codex sửa:**
-
-- Alt+A/Alt+R loại khối đọc gần phủ toàn màn hình, tránh tô tím toàn trang.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: chạy node --check, parse manifest JSON, git diff --check; chưa thử trên trình duyệt.
-- Tiếp theo: xác nhận trên trang gặp lỗi.
-
-**2026-10-23 | v3.4.518 | Codex sửa:**
-
-- Alt+A/Alt+R đọc các khối chữ nhìn thấy trong vùng nội dung; giữ đoạn dài, lọc rác ở đoạn ngắn, Google Search ưu tiên vùng kết quả/AI Overview.
-- Debug console: xanh = đọc, đỏ = bỏ; xem lý do trong console.table.
-- File: bilingual-reader.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trình duyệt.
-- Tiếp theo: kiểm tra các trang thực tế qua debug mode.
-
-**2026-10-23 | v3.4.517 | Codex sửa:**
-
-- Watcher tự commit khi lưu file trong thư mục nguồn; cập nhật ZIP cùng version. (Watcher nằm ngoài repo.)
-- File: manifest.json, PROJECT.md, D:\Keepit\sync-watch.ps1.
-- Kiểm tra: watcher ghi log cho commit/ZIP; chưa xác nhận tự chạy sau khi khởi động lại Windows.
-
-**2026-10-23 | v3.4.516 | Codex sửa:**
-
-- Reader: mặc định Show on hover; Always visible chỉ luôn hiện trong vùng Alt+R, ngoài vùng hiện khi hover.
-- File: bilingual-reader.js, dashboard.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check, parse manifest và kiểm tra selector/default; chưa chạy trên trình duyệt.
-- Tiếp theo: kiểm tra trực quan các chế độ icon đọc trong trang.
-
-**2026-10-22 | v3.4.515 | Codex sửa:**
-
-- Thêm bước nhảy tốc độ tùy chỉnh cho phím Up/Down, mặc định 0.25; banner cập nhật theo thiết lập.
-- File: bilingual-reader.js, i18n.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và test bước nhảy; chưa chạy trên trình duyệt.
-- Tiếp theo: kiểm tra nhập bước nhảy và Up/Down trong Speak popup.
-
-**2026-10-22 | v3.4.514 | Codex sửa:**
-
-- Gói Free (không key/không đăng nhập) dùng Translate và Google TTS không giới hạn.
-- File: usage-limits.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và test quota Free/key; đều đạt.
-- Tiếp theo: xác nhận các provider không tự giới hạn request.
-
-**2026-10-22 | v3.4.513 | Codex sửa:**
-
-- Alt+R và Alt+A dùng chung một vùng nội dung chính (Readability từ bilingual-reader 1.0.1; bỏ ngày giờ, tác giả, tin liên quan, chia sẻ...). Alt+D vẫn trên toàn trang. Không tìm được nội dung chính thì dùng lại cách cũ.
-- File: bilingual-reader.js (readerBlocks mới, cache), lib/Readability.js, lib/Readability-readerable.js, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy node --check và parse manifest JSON; chưa chạy trên trình duyệt thật.
-- Tiếp theo: thử vài trang tin (VnExpress, Dân trí, BBC) để xem Alt+A/Alt+R có cùng vùng.
-
-**2026-10-22 | v3.4.512 | Codex sửa:**
-
-- Watcher refresh Explorer khi có file mới/đổi tên ở D:\Keepit và sau khi xử lý ZIP.
-- File: D:\Keepit\sync-watch.ps1, manifest.json, PROJECT.md.
-- Kiểm tra: đã chạy PowerShell parser và gọi SHChangeNotify; chưa kiểm tra Explorer tự sắp xếp.
-- Tiếp theo: xác nhận refresh/sắp xếp trong Explorer khi ZIP mới xuất hiện.
-
-**2026-10-22 | v3.4.511 | Codex sửa:**
-
-- Thiết lập phiên bản mới theo quy tắc AGENTS.md và PROJECT.md; không đổi chức năng addon.
-- File: manifest.json, AGENTS.md, PROJECT.md.
-- Kiểm tra: đã chạy parse manifest JSON; chưa chạy kiểm tra chức năng addon.
-- Tiếp theo: xử lý các mục đang mở ở mục 2.
-
-**2026-10-22 | v3.4.510 | ZIP sync — người sửa không xác định:**
-
-- ZIP ghi nhận `bilingual-reader.js` gọi `LHN_TTS`; commit chỉ đồng bộ ZIP nên không gán thay đổi cho Codex.
-- File: `bilingual-reader.js` được nêu trong snapshot ZIP; không có sửa đổi source được gán.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
-
-**2026-10-22 | v3.4.509 | Codex sửa:**
-
-- Trả audio TTS dạng Base64 qua runtime message để tương thích Chrome; dùng cho cả audio cache và audio mới.
-- File: background.js, tts-engine.js, manifest.json.
-- Kiểm tra: Không ghi nhận trong lịch sử gốc.
-
-**2026-10-22 | v3.4.508 | Codex sửa:**
-
-- Dùng chung `LHN_TTS` cho chọn text và Bilingual Reader; chuyển Bilingual Reader sang Google TTS, giữ pause/resume và đổi tốc độ khi phát.
-- File: tts-engine.js, content.js, bilingual-reader.js, dashboard.js, manifest.json.
-- Kiểm tra: Không ghi nhận trong lịch sử gốc.
-
-**2026-10-22 | v3.4.506 | ZIP sync — người sửa không xác định:**
-
-- Đồng bộ ZIP; commit cập nhật version và bỏ AGENTS.md/PROJECT.md khỏi snapshot. Không gán thay đổi này cho Codex.
-- File: Không có file source được xác nhận; đây là mục đồng bộ ZIP.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
-
-**2026-10-22 | v3.4.505 | Codex sửa:**
-
-- Chia văn bản TTS dài thành đoạn ngắn để phát nối tiếp.
-- File: content.js, manifest.json, PROJECT.md.
-- Kiểm tra: Không ghi nhận trong lịch sử gốc.
-
-**2026-10-22 | v3.4.504 | Codex sửa:**
-
-- Chuyển sang Manifest V3 dùng chung cho Chromium và Firefox; sửa Google TTS trên Chrome.
-- File: manifest.json, background.js, popup.html, dashboard.html, browser-polyfill.js, LICENSE-WEBEXTENSION-POLYFILL.txt.
-- Kiểm tra: Không ghi nhận trong lịch sử gốc.
-
-**2026-10-22 | v3.4.501 | Codex sửa (Git baseline):**
-
-- ZIP Codex đã xuất ghi nhận đồng bộ shortcut trong banner và Settings với giá trị đã lưu; banner cập nhật ngay khi shortcut đổi, shortcut chưa gán hiện là Off.
-- Đây là baseline đầu tiên có trong Git. Tên manifest: `Keepit - Translate & Highlight Notes`; README cũ ghi `Local Highlight Notes for Firefox Windows` (v1.30.0).
-- Git không có lịch sử cho .502, .503 hoặc .507; không gán thay đổi chưa xác minh cho Codex.
-- File: Không ghi cụ thể trong nguồn baseline.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nguồn lịch sử.
-
-### Nhật ký ZIP trước baseline Git — v3.4.500 đến v3.4.398
-
-**2026-10-22 | v3.4.500 | Codex sửa:**
-
-- Đổi bước tăng/giảm tốc độ bằng phím ↑/↓ thành 0,15x và cho thanh Reading Speed kéo tự do.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-22 | v3.4.499 | Codex sửa:**
-
-- nhấp đúp vào nút kéo để đưa thanh đọc về vị trí mặc định: chính giữa, cách đáy màn hình 24px.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-22 | v3.4.498 | Codex sửa:**
-
-- icon speak ngoài vùng nội dung mà Alt+R đọc thành luôn ẩn; icon trong vùng đọc vẫn theo thiết lập hiện có.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-22 | v3.4.497 | Codex sửa:**
-
-- Thêm margin: 0 -14px cho nút data-hide-banner.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.496 | Codex sửa:**
-
-- Đã chặn Up/Down cuộn trang khi shortcut tốc độ đang bật; lúc đang đọc, chúng vẫn tăng/giảm tốc độ 0,25x.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.495 | Codex sửa:**
-
-- xử lý để các popup của speak popup đóng khi bấm bên ngoài thanh `lhn-bilingual-reading-bar`.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.494 | Codex sửa:**
-
-- Đồng bộ màu shortcut trong data-shortcut-banner với màu tím chủ đạo của lhn-bilingual-reading-bar.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.493 | Codex sửa:**
-
-- Mỗi lần lhn-bilingual-reading-bar hiện lại, data-shortcut-banner cũng hiện theo; trạng thái bật/tắt do người dùng chọn vẫn được lưu.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.492 | Codex sửa:**
-
-- hover: nền tím của nút Play/Pause được giữ nguyên, chỉ sáng nhẹ và nhấc lên 1px.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.491 | Codex sửa:**
-
-- hiệu ứng nhấn cho nút Play/Pause khi bấm nút hoặc dùng Space.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.490 | Codex sửa:**
-
-- các điểm nhấn của speak popup sang tím theo màu accent của addon: nút phát, thanh tốc độ và công tắc trong Settings.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.489 | Codex sửa:**
-
-- Đổi gợi ý đóng thành Alt+R; thêm shortcut tăng/giảm tốc độ đọc trong Dashboard > Shortcuts.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.488 | Codex sửa:**
-
-- `lhn-br-time` sang ước tính thời gian đọc **toàn bộ khung nội dung Reader**: số từ ÷ (220 từ/phút × tốc độ đọc). Nhãn cập nhật theo tốc độ hiện tại và ngôn ngữ hiển thị.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.487 | Codex sửa:**
-
-- Speak popup dùng theme và font toàn addon; Left/Right tạo hiệu ứng bấm nút đoạn trước/sau.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.486 | Codex sửa:**
-
-- Dịch speak popup; đổi nhãn account, reading icon và dark mode; đồng bộ Show reading icon với các chế độ Always visible/Show on hover của Reader.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.484 | Codex sửa:**
-
-- Chuyển scrollbar của Select Voice sang phải và tự focus ô tìm kiếm khi mở.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.483 | Codex sửa:**
-
-- Banner đồng bộ trạng thái cài đặt; dùng SVG cờ từ mẫu; Select Voice chỉ còn một scrollbar.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.482 | Codex sửa:**
-
-- Settings bật/tắt shortcut banner; Account mở dashboard hoặc form đăng nhập tùy trạng thái.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.481 | Codex sửa:**
-
-- Giữ banner trên một hàng, bỏ cuộn ngang trong speak popup và thay icon Settings bằng SVG người dùng cung cấp.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.480 | Codex sửa:**
-
-- Bắt phím ↑/↓ ở capture phase và chặn cuộn trang để dùng chúng thay đổi tốc độ đọc.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.479 | Codex sửa:**
-
-- **↑ để tăng** và **↓ để giảm tốc độ mỗi lần 0.25x** khi Bilingual Reader đang đọc, đồng thời cập nhật ghi chú trên `data-shortcut-banner`.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.478 | Codex sửa:**
-
-- animation mở popup để không ghi đè transform căn giữa nữa. Lần đầu popup sẽ hiện giữa phía dưới màn hình; khi kéo, cách kéo hiện tại được giữ nguyên.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.477 | Codex sửa:**
-
-- chế độ Auto: trước tiên chọn voice mặc định của hệ thống phù hợp với ngôn ngữ đang đọc, sau đó chọn voice khớp ngôn ngữ. Cờ toolbar theo voice được gán để phát; Auto trong menu vẫn là địa cầu.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.476 | Codex sửa:**
-
-- Sửa cờ trên thanh đọc để lấy theo voice thực sự đang phát; lựa chọn Auto trong danh sách vẫn hiện địa cầu.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.475 | Codex sửa:**
-
-- Sửa cờ theo voice đang đọc và bảo đảm icon cờ mở đúng popup #voice-popup.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.474 | Codex sửa:**
-
-- Auto hiển thị cờ theo ngôn ngữ đoạn đang đọc; popup chọn voice theo mẫu và có nền đục.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.473 | Codex sửa:**
-
-- đồng bộ Space với trạng thái đọc/tạm dừng của popup. Khi nhấn Space, âm thanh và biểu tượng play/pause được cập nhật đồng thời; chuyển đoạn cũng đồng bộ lại trạng thái.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.472 | Codex sửa:**
-
-- nút kéo: thanh công cụ giữ đúng vị trí tương đối với điểm con trỏ đang nhấn, không còn giật về giữa; nút hiển thị cursor bàn tay khi rê và khi kéo.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.471 | Codex sửa:**
-
-- Hoàn thiện điều khiển speak popup: giữ điểm kéo, đồng bộ Space với trạng thái Play/Pause và chuyển voice popup đúng.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.470 | Codex sửa:**
-
-- Khôi phục phát âm; tích hợp speak popup với Settings, chọn voice, theme, speed popup và nút mở dashboard.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.469 | Codex sửa:**
-
-- Tích hợp floating speak toolbar vào Bilingual Reader: play/pause, chuyển đoạn, chọn voice, chỉnh tốc độ, thời gian đọc, auto-scroll và kéo thả.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.468 | Codex sửa:**
-
-- chế độ hover: icon luôn ẩn khi không hover đoạn văn; focus hoặc trạng thái đọc không làm icon hiện.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.467 | Codex sửa:**
-
-- Gắn trạng thái icon speak với đoạn đang đọc; xóa trạng thái khi chuyển đoạn hoặc dừng đọc.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.466 | Codex sửa:**
-
-- Gỡ focus khỏi icon loa khi đọc xong để chế độ hover ẩn icon nếu con trỏ đã rời đoạn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.465 | Codex sửa:**
-
-- **Show reading icon** trong **Bilingual Reader > Reader**, với ba chế độ: luôn hiện, hiện khi di chuột và chỉ hiện khi đọc. Mặc định là **luôn hiện**. Các nhãn đã được dịch sang English, Tiếng Việt và 한국어.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.464 | Codex sửa:**
-
-- nút **Reset** bên phải thanh trượt; bấm sẽ khôi phục mức mặc định **80%**. Nhãn nút đã có bản dịch cho English, Tiếng Việt và 한국어.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.463 | Codex sửa:**
-
-- tùy chọn **Translation font size** với thanh trượt `50–150%`, mặc định `80%`. Giá trị được lưu và áp dụng qua `--translation-scale` cho bản dịch trên trang và preview, với cỡ tối thiểu `14px`.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.462 | Codex sửa:**
-
-- nhãn thành **Bilingual translation**, **Bản dịch song ngữ** và **이중 언어 번역**.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.461 | Codex sửa:**
-
-- nhãn thành **Bilingual**, **Song ngữ** và **이중 언어** theo ngôn ngữ giao diện.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.460 | Codex sửa:**
-
-- **Reading** thành **Reader**, **Trình đọc** và **리더** theo ngôn ngữ giao diện.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.459 | Codex sửa:**
-
-- **Translate to** khỏi Bilingual Reader. Giờ Bilingual Reader dùng trực tiếp **Translate > Target language**; khi đổi ngôn ngữ, preview và các bản dịch trên trang được cập nhật theo lựa chọn đó.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.458 | Codex sửa:**
-
-- Đổi nhãn Translation color và Translation bold, kèm bản dịch tiếng Việt và tiếng Hàn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.457 | Codex sửa:**
-
-- Tạo lại danh sách Translate to sau khi xác định ngôn ngữ giao diện để nhãn Auto được dịch đúng.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.456 | Codex sửa:**
-
-- whitelist cố định `en/vi/ko` khỏi luồng dịch Bilingual Reader. **Auto** dùng mã ngôn ngữ hiển thị hiện tại và chuyển mã đó tới API dịch; preview cũng chọn ngôn ngữ đích theo cài đặt giao diện.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.455 | Codex sửa:**
-
-- Nguyên nhân là lúc chọn ngôn ngữ hiển thị, handler cập nhật giao diện nhưng không gọi làm mới preview ngay. Tôi đã thêm bước làm mới tại sự kiện đổi ngôn ngữ; Auto sẽ tính lại ngôn ngữ đích và tải preview tương ứng.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.454 | Codex sửa:**
-
-- Sửa điều kiện cập nhật preview khi Translate to là Auto; so sánh theo ngôn ngữ giao diện thực tế và tải lại preview khi cần.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.453 | Codex sửa:**
-
-- **Translate to** mặc định là **Auto**. Khi chọn Auto, Bilingual Reader dịch theo ngôn ngữ hiển thị của extension và cập nhật các bản dịch khi ngôn ngữ hiển thị thay đổi.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.452 | Codex sửa:**
-
-- danh sách **Translate to** với **Translate > Target language**: cùng lựa chọn Auto và các ngôn ngữ, cùng nhãn theo ngôn ngữ giao diện.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.451 | Codex sửa:**
-
-- Dịch nhãn Inter (default) theo ngôn ngữ giao diện: English, Vietnamese và Korean.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.450 | Codex sửa:**
-
-- Đổi nhãn Inter (default) thành Inter trong Website font; giữ nguyên nhãn của Translation font.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.449 | Codex sửa:**
-
-- nhãn **Inter (default)** thành **Inter** trong dropdown **Translation font**.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.448 | Codex sửa:**
-
-- **Skip same language** lên đầu mục **Translation** và đặt khoảng cách **16px** giữa tiêu đề với danh sách cài đặt trong các mục Bilingual Reader, gồm cả **Translation** và **Reading**.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.447 | Codex sửa:**
-
-- riêng các dropdown trong **Dashboard settings > Bilingual Reader** để khớp kiểu dáng các dropdown settings khác, gồm cả chế độ sáng và tối.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.446 | Codex sửa:**
-
-- nhãn thành **Website font** và chuyển lên trên **Translation font**. Các tên đã được cập nhật cho cả tiếng Việt và tiếng Hàn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.445 | Codex sửa:**
-
-- nguyên đoạn preview tiếng Anh làm mẫu. Khi chọn ngôn ngữ khác, preview giờ tự dịch câu đó qua dịch vụ Bilingual Reader; không còn bản dịch mẫu hardcode.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.444 | Codex sửa:**
-
-- Bilingual Reader thêm Translation color, Translation bold và preview cập nhật theo thiết lập.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.443 | Codex sửa:**
-
-- Đã nối Web font với trạng thái website: **Alt+Z tắt font tùy chỉnh ngay khi disable website; bật lại thì khôi phục font đã chọn.** Các popup và giao diện của addon vẫn được loại trừ khỏi font trang.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.442 | Codex sửa:**
-
-- Chống nháy Web font: chèn style tại document_start từ storage.local trước khi đọc storage.sync; Auto không chèn CSS, system dùng system-ui; loại trừ trang extension và ghi chú Shadow DOM chưa hỗ trợ.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.441 | Codex sửa:**
-
-- phần chờ tải font để không thể chặn việc áp dụng font tùy chỉnh vô thời hạn. Font sẽ được áp dụng sau khi tải xong; nếu tải chậm, vẫn áp dụng để trình duyệt chuyển font khi tải hoàn tất.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.440 | Codex sửa:**
-
-- để font tùy chỉnh được tải trước khi áp dụng lên đoạn văn nguồn, giúp tránh hiện font gốc trước rồi mới đổi sang font tùy chỉnh. Tùy chọn **Auto** vẫn giữ font của trang.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.439 | Codex sửa:**
-
-- Thêm Website font phía trên Translation font trong Bilingual Reader; mặc định Auto dùng font trang, các lựa chọn font khớp với Translation font.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.438 | Codex sửa:**
-
-- nút quay lại: ẩn khi chưa có từ để quay lại, và khi hiện thì cùng kích thước, padding, bo góc với nút loa, dùng màu xanh của Syn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.437 | Codex sửa:**
-
-- Thêm nút quay lại từ vừa tra trong full dict, tự đọc từ mới khi Auto speak bật và cho phép tra nghĩa cả cụm Colloc.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.436 | Codex sửa:**
-
-- Alt+A: card dịch hiện có không còn bị xóa rồi tạo lại mỗi lần observer chạy; nội dung bản dịch cũng được loại khỏi văn bản nguồn để tránh dịch lặp khi trang thay đổi. Đây là nguyên nhân gây nhấp nháy khi chọn từ, cuộn hoặc mở popup.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.435 | Codex sửa:**
-
-- Đã dịch tên tab thành **Trình đọc song ngữ** (tiếng Việt) và **이중 언어 리더** (tiếng Hàn). Tiếng Anh giữ là **Bilingual Reader**.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.434 | Codex sửa:**
-
-- Khi đang đọc, bấm icon speak ở đoạn khác sẽ dừng đoạn hiện tại ngay và chuyển sang đọc đoạn mới.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.433 | Codex sửa:**
-
-- Space để hủy giọng đọc Bilingual Reader ngay lập tức thay vì chờ đọc hết từ; khi tiếp tục, nó đọc lại từ vị trí gần nhất. Phím này cũng tạm dừng audio/video đang phát trên trang và tiếp tục chúng khi bấm lần nữa.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.432 | Codex sửa:**
-
-- Thêm Space pause/resume và Left/Right chuyển đoạn, có shortcut tùy chỉnh; chặn xử lý phím ngay để dừng âm thanh.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.431 | Codex sửa:**
-
-- shortcut **Space** mặc định để tạm dừng và tiếp tục giọng đọc tại đúng vị trí đang phát. Bạn có thể đổi phím trong **Dashboard Settings > Shortcut**; khi không có giọng đọc, Space vẫn cuộn trang bình thường.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.430 | Codex sửa:**
-
-- Alt+Z tắt mọi chức năng Reader trên website; Alt+A/Alt+R loại sidebar khỏi vùng đọc; thêm Parts not to read để lọc bằng CSS selector.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.429 | Codex sửa:**
-
-- Ưu tiên chuyển Alt+A/Alt+D/Alt+R cho Bilingual Reader trước kiểm tra disable website và xung đột với shortcut Alt+D.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.428 | Codex sửa:**
-
-- riêng logic Alt+A/Alt+R để chỉ lấy văn bản hiển thị; bỏ qua nội dung ẩn, mã CSS trong `<style>`, thông tin tác giả/ngày giờ và nút Google của VnExpress. Alt+D vẫn giữ phạm vi toàn trang.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.427 | Codex sửa:**
-
-- Đưa tiêu đề và sapo của bài Tuổi Trẻ vào vùng đọc Alt+A/Alt+R dù nằm ngoài articleBody, giữ đúng thứ tự trước thân bài.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.426 | Codex sửa:**
-
-- Đã giới hạn **Alt+A** và **Alt+R** vào vùng nội dung chính: nhận diện `article`/`main` và loại điều hướng, sidebar, nội dung liên quan, quảng cáo khỏi vùng dịch và đọc. **Alt+D** vẫn tìm khối gần con trỏ trên toàn trang.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.425 | Codex sửa:**
-
-- shortcut Bilingual Reader sang cơ chế xử lý phím hiện có của addon: **Alt+A** dịch khi cuộn, **Alt+D** dịch khối gần con trỏ, **Alt+R** bật/tắt đọc liên tục. Đã bỏ `browser.commands`.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.424 | Codex sửa:**
-
-- Bilingual Reader vào Dashboard Settings, gồm các tùy chọn theo mặc định trong file mẫu. Nội dung trang được dịch qua background script, lưu cache 7 ngày, và có đọc liên tục, đọc từ con trỏ và dịch khi cuộn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.423 | Codex sửa:**
-
-- mặc định **Toggle enable on this website** thành `Alt+Z`. Shortcut đã được tùy chỉnh trước đó sẽ không bị ghi đè.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.422 | Codex sửa:**
-
-- khoảng cách giữa **Translate Settings** và danh sách của nó thành 16px, đồng bộ với **Voice** trong Flashcard settings > Speech.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.421 | Codex sửa:**
-
-- điều kiện chặn shortcut khi đang phát âm. Phần còn lại được giữ: khi popup đang hiện, shortcut chỉ gọi phát âm và không thay đổi popup.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-21 | v3.4.420 | Codex sửa:**
-
-- Khi Auto speak bật và popup dịch/full dict đang hiện, shortcut Translate selected text chỉ phát âm, không thay đổi popup.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.419 | Codex sửa:**
-
-- Giữ nhãn từ loại của full dict bằng tiếng Anh kể cả khi đổi ngôn ngữ giao diện; hỗ trợ dạng viết tắt n, v, adj, adv.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.418 | Codex sửa:**
-
-- Đổi nhãn từ loại trong full dict theo ngôn ngữ giao diện (English, Vietnamese hoặc Korean).
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.417 | Codex sửa:**
-
-- đường ngăn cách thứ hai trước mục Voice trong **Flashcard settings > Speech**. Khoảng cách đến Voice giờ theo cùng chuẩn với các tab cài đặt khác; khoảng cách 16px từ Voice đến danh sách được giữ nguyên.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.416 | Codex sửa:**
-
-- khoảng cách tiêu đề đến danh sách thành **16px** ở cả hai tab Speech đã nêu. Quy tắc áp dụng cho danh sách của mục nên vẫn giữ khoảng cách khi thêm hoặc chuyển hàng bên trong.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.415 | Codex sửa:**
-
-- mục **Auto speak when popup** sang tab **Speech**; ID và xử lý cài đặt được giữ nguyên.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.414 | Codex sửa:**
-
-- Để full dict tuân theo điều kiện hiện popup dịch; chế độ mở note không bật popup từ điển ngoài ý muốn, nhưng vẫn dùng bản dịch từ điển để điền note.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.413 | Codex sửa:**
-
-- Chỉ tô nền đỏ cho từng chip Ant, không tô nền cho cả hàng.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.412 | Codex sửa:**
-
-- riêng font của full dict popup: toàn bộ chữ, kể cả chip, IPA và nhãn engine, giờ dùng Inter sans-serif. Nguyên nhân là reset `all: initial` trên chip làm font bị trả về mặc định của trình duyệt.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.411 | Codex sửa:**
-
-- Khi note mở, gỡ full dict popup ngay; kết quả đang tải vẫn được chuyển vào note và popup không hiện lại.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.410 | Codex sửa:**
-
-- Ẩn full dict ngay khi mở note, tiếp tục chờ bản dịch nếu cần để điền note.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.409 | Codex sửa:**
-
-- full dict popup dùng cùng cơ chế định vị với popup dịch cũ: bám theo đoạn chữ đã chọn khi cuộn hoặc đổi kích thước cửa sổ, đồng thời giữ hành vi đóng khi bấm ra ngoài hoặc nhấn Escape.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.408 | Codex sửa:**
-
-- Với một từ tiếng Anh khi bật Full English Dictionary, lấy bản dịch từ lhn-dict-translation vào note và bỏ dịch cũ; từ hai từ trở lên dùng luồng cũ.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.407 | Codex sửa:**
-
-- Đọc trực tiếp bản dịch từ lhn-dict-translation vào note kể cả khi dict popup đã mở; không ghi đè nội dung người dùng đã nhập.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.406 | Codex sửa:**
-
-- Bỏ lượt dịch riêng cho từ tiếng Anh; lấy lhn-dict-translation đổ vào note và giữ nội dung note người dùng đang sửa.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.405 | Codex sửa:**
-
-- Áp dụng Inter cho giao diện addon và chuẩn hóa chuỗi dịch Unicode NFC trước khi render.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.404 | Codex sửa:**
-
-- dark mode riêng cho full dictionary popup: giao diện lấy theo cài đặt giao diện của addon hoặc theme hệ thống, và cập nhật khi theme đổi. Đã bổ sung màu tối tương ứng cho nền, chữ, nhãn, nút và các nhóm Syn/Ant/Forms/Colloc.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.403 | Codex sửa:**
-
-- Tinh chỉnh riêng full dict theo mẫu HTML: giảm cỡ chữ/padding, dùng rem và chỉnh khoảng cách giữa các nhóm.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.401 | Codex sửa:**
-
-- Tinh chỉnh UI full dict theo file mẫu: font, cỡ/độ đậm chữ, padding, light/dark mode và IPA; không đổi luồng tra cứu.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.400 | Codex sửa:**
-
-- Thêm Show full English dictionary mặc định bật; chọn một từ tiếng Anh sẽ hiện full dictionary popup với nghĩa, từ loại, từ liên quan, word forms, collocations và phát âm.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.399 | Codex sửa:**
-
-- Đổi tên mục thành Highlights & Notes và dịch nhãn sang tiếng Việt, tiếng Hàn.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-**2026-10-20 | v3.4.398 | Codex sửa:**
-
-- Đổi tên tab thành Highlight & Notes, thêm tab Translate với icon được yêu cầu và chuyển các mục dịch/ngôn ngữ dịch sang tab mới.
-- File: Không được ghi trong nhật ký ZIP gốc.
-- Kiểm tra: Không ghi nhận kết quả kiểm thử trong nhật ký ZIP gốc.
-
-- Không tìm thấy phản hồi chat có ZIP cho v3.4.402 hoặc v3.4.485; không gán thay đổi cho hai version này.
-
-### Lịch sử trước baseline Git — các phiên bản 1.x (ngày không xác định)
-
-**v1.45 trở đi | Có ZIP, thiếu changelog lịch sử**
-
-- ZIP đầu tiên tìm thấy là `highlight-notes-firefox-windows-v1.45.zip`; có các snapshot tiếp theo, nhưng không có ghi chú theo phiên bản để xác định chính xác từng thay đổi hoặc tác giả.
-
-**v1.31–v1.44 | Thiếu tư liệu**
-
-- Không tìm thấy ZIP hoặc changelog trong `C:\Users\Huuson\Documents\Codex`; không gán thay đổi cho từng phiên bản.
-
-**v1.30.0 | README ghi lại; người sửa chưa được xác nhận**
-
-- Thêm tùy chọn chỉ lưu và highlight đoạn vừa chọn sau khi click ra ngoài; mặc định tắt để giữ hành vi cũ.
-- README v1.30.0 mô tả sản phẩm lúc đó: highlight bốn màu, note có thể sửa/xóa, popup và sidebar, giao diện EN/VI/KO, shortcut tùy chỉnh, dashboard tìm/sửa/xóa và nhập/xuất JSON.
-
-**v1.29.0 | README ghi lại; người sửa chưa được xác nhận**
-
-- Tăng độ tin cậy khi khôi phục highlight trên trang động: chuẩn hóa khoảng trắng, hỗ trợ text qua nhiều node inline, chống mất yêu cầu đồng thời và thử lại khi nội dung chưa sẵn sàng.
-
-**v1.12.0 | README ghi lại; người sửa chưa được xác nhận**
-
-- Dashboard thư viện hai cột; sắp xếp, tìm kiếm/lọc website, đánh dấu yêu thích; xuất TXT/CSV/Markdown/JSON; thẻ trang có ảnh xem trước khi metadata sẵn có.
-- Chuẩn hóa icon, căn lại thanh công cụ và cho hai cột cuộn độc lập.
-
-**v1.9.0 | README ghi lại; người sửa chưa được xác nhận**
-
-- Sửa tham chiếu localization trong content script và trạng thái chọn màu sau khi dịch nhãn; cải thiện tooltip, thẻ sidebar và thứ tự ghi chú theo vị trí trên trang.
-- README có hai ghi chú v1.9.0 mâu thuẫn về vị trí nút tooltip; không kết luận vị trí nào là bản cuối.
-
-**v1.0.0–v1.8.0 | Chưa khôi phục được**
-
-- Không tìm thấy ZIP, source hoặc ghi chú changelog của các phiên bản này; chưa thể xác nhận tính năng ban đầu hay người thực hiện.
+Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; Hỏi AI mở hoặc giữ panel mở. Provider selection lưu theo window trong `storage.session` và lựa chọn gần nhất trong `storage.local`, đọc qua `pickSelectedProvider` chung; visible tabs chỉ là ChatGPT, Gemini, Claude, còn Grok hidden nhưng registry/auth code không bị xóa. Chromium giữ provider trong iframe; Firefox dùng sidebar native và chuyển provider top-level. Gemini/Claude dùng exact source→conversation mapping, localized prompt, URL injection lúc Send trên source chưa map (gồm prompt tự gõ; source đã map không thêm URL như ChatGPT) và shared opt-in auto-send cho explicit Keepit actions. ChatGPT/Gemini/Claude dùng một pipeline: iframe `page/composer.js` báo `KEEPIT_AI_PANEL_CONVERSATION`, `panel/panel.js` áp `planPanelNavigation()` stay/reload/load, route session (`AI_PANEL_ROUTE_CONTEXT`) mở lại đúng chat cho cả ba AI. User-written prompts không bao giờ auto-send; mapping chỉ sau confirmed send. Riêng ChatGPT chỉ khác ở dữ liệu `?q=` + early marker. Grok embedded sign-in legacy handler chỉ giữ origin validation; không hiện Grok tab/button. Không đọc page body/title/clipboard, không lưu/khôi phục unsent draft. Tab/source context đổi dùng debounce 2 giây; đóng panel hủy timer/request. Không dùng global last-chat URL. Toolbar geometry giữ nguyên; auto-send hiện với ChatGPT/Gemini/Claude. DNR rule 9002 chỉ nhắm subframe trên allowlist provider; không thêm Google auth vào DNR. Manifest không cấp clipboard permission.
+
+Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
+
+## 5. Nhật ký
+
+**2026-10-23 | v3.5.201 | Arena.ai Agent sửa:**
+
+- Overlay, Hiệu ứng nền bật: các ô và nút bên trong sheet/panel (ô ☰ Thêm, lưới tốc độ, nút chọn `.seg`, nút/ô nhập trong Cài đặt, Phụ đề, Ngôn ngữ…) hết nền đặc đen; dùng màu ô của ☰ thanh chính `--kp-tile-*` + viền `--kp-line-*`, hài hoà với kính v3.5.200. Nút chọn trong `.seg` dùng `--kp-glass-*`, dòng chọn dùng `--kp-line-*`; nút tím đang bật, ô màu phụ đề giữ nguyên.
+- File: `js/overlay/ui/overlay-css.js` (10 quy tắc `.ov.ambient .pnl …`), `manifest.json`, `docs/modules/overlay.md`.
+- Kiểm tra: Chromium, extension thật, overlay Web, dọc/ngang × sáng/tối, panel ☰, tốc độ, CC, âm lượng, Cài đặt, Phụ đề, Ngôn ngữ: bật hiệu ứng → trong panel không còn phần tử nền đặc trừ ô màu và nút tím; thử trên nền vàng nâu như video: ô trong, ánh màu nền. Tắt hiệu ứng → overlay giống v3.5.200 từng pixel (chỉ khác số phiên bản trong thanh ghi chú). Không lỗi trang.
+
+**2026-10-23 | v3.5.200 | Arena.ai Agent sửa:**
+
+- Overlay: khi bật Hiệu ứng nền, mọi sheet (dọc) và panel (ngang) — ☰ Thêm, tốc độ, CC, lặp, âm lượng, cài đặt, ghi chú… — dùng kính giống thanh Keepit chính: tối `rgba(24,24,28,.78)`, sáng `rgba(255,255,255,.78)`, `blur(24px) saturate(1.6)`. Tắt Hiệu ứng nền thì giữ nền đặc như cũ.
+- Màu lấy từ `js/shared/theme-tokens.js`: `UNIFIED_OVERLAY_CSS` bắt đầu bằng `LHN_THEME.css('.ov')`; 2 quy tắc `.ov.ambient .pnl` / `.ov.ambient.light .pnl`.
+- File: `js/overlay/ui/overlay-css.js`, `js/shared/theme-tokens.js` (chú thích), `manifest.json`, `docs/INDEX.md`, `docs/modules/overlay.md`.
+- Kiểm tra: Chromium, extension thật, overlay Web, dọc/ngang × sáng/tối, panel ☰/tốc độ/CC. Bật hiệu ứng: panel `rgba(…,.78)` + `blur(24px) saturate(1.6)`, ảnh chỉ khác v3.5.199 trong vùng panel. Tắt hiệu ứng: ảnh giống v3.5.199 từng pixel. Không lỗi trang.
+
+**2026-10-23 | v3.5.199 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5d, bước cuối (chỉ chuyển/đổi tên, không xoá code, không đổi giao diện/hành vi): `js/overlay/unified/unified-ui.js` → `js/overlay/ui/overlay-ui.js`, `unified-css.js` → `ui/overlay-css.js`, `js/overlay/study/shared/*` → `js/overlay/study/`.
+- `overlay-template.js` (cây đích ghi "xoá hẳn"): `OVERLAY_CSS` (2 quy tắc) + `OVERLAY_HTML` (gốc trạng thái ẩn) chuyển nguyên văn lên đầu `overlay-controller.js`. Overlay còn 9 file như cây đích.
+- Tên biến/global (`UNIFIED_OVERLAY_*`, `LHN_UNIFIED_*`) giữ nguyên để không đổi code. Khoá lưu trữ không đổi.
+- `docs/modules/dictation.md` gộp vào `overlay.md` (mục "Study: tab Nói · Chép"). `DATA-INVENTORY.md`: sửa đường dẫn/số dòng (đang trỏ vào file đã xoá ở v3.5.195–196).
+- File: `manifest.json`, `pages/dashboard.html` (`session-index.js`), `js/overlay/*` (đổi tên + chú thích đường dẫn), `js/core/languages.js`, `js/content/content.js` (chú thích), `README.md`, `AGENTS.md`, `DATA-INVENTORY.md`, `docs/INDEX.md`, `docs/modules/{overlay,dashboard}.md`, `docs/modules/dictation.md` (xoá), `OPT-ARENA.md` (Đã triển khai).
+
+**2026-10-23 | v3.5.198 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5c (không đổi giao diện/hành vi): nhãn overlay và trang offline chuyển vào `js/core/languages.js`; xoá `js/overlay/unified/unified-text.js` (hệ dịch thứ hai, khoá là câu tiếng Việt + MutationObserver).
+- Overlay: 245 khoá `ov_<tên>` (en/vi/ko). `unified-ui.js` gọi `T('<tên>', ...)`; `VI('<tên>')` giữ tiếng Việt ở các chỗ bản cũ chưa dịch (vòng tròn điểm, dòng ngôn ngữ nguồn→đích, "Ẩn", "· chạm để tra", "· Sửa", "Tỷ lệ sửa", "Xoá ghi chú", "Nhanh", "Đọc 34%", "Xem 60%"). Title nút ghi chú khi dùng chuột giữ đúng chữ cũ (`ov_noteAtThisSentenceMouse`).
+- Đổi ngôn ngữ: controller gọi `LHN_UNIFIED_OVERLAY.refreshLanguage()` → gán lại chữ cố định (`refreshText`), vẽ lại, mở lại panel đang mở, dịch lại chữ toast cuối như bản cũ. Hằng mức tốc độ `T` đổi tên `TIERS` (tránh trùng hàm nhãn).
+- Trang offline: bảng `TX` (17 nhãn) → khoá `off_<tên>`; APK dùng chung file nên cũng đổi theo.
+- File: `js/core/languages.js`, `js/overlay/unified/unified-ui.js`, `js/overlay/overlay-controller.js`, `js/content/offline-page.js`, `manifest.json` (bỏ `unified-text.js`), `AGENTS.md`, `docs/INDEX.md`, `docs/modules/overlay.md`, `docs/modules/content.md`, `OPT-ARENA.md`.
+- Kiểm tra: `node --check` đạt. Chromium headless, extension thật, v3.5.197 vs v3.5.198, 6 tổ hợp (ngang/dọc × vi/en/ko, mỗi tổ hợp đổi sang ngôn ngữ khác giữa chừng), 29 trạng thái mỗi tổ hợp: chữ, `title`/`aria-label`/`placeholder` giống hệt (TOTAL 0), không lỗi console; ảnh chụp giống từng pixel ngoài khung hiệu ứng nền ngẫu nhiên và số phiên bản. Trang offline vi/en/ko kiểu A/B: 17×3 nhãn khớp bảng cũ, ảnh chỉ khác ở phần hoạt hình (v3.5.197 so với chính nó cũng khác ở đó). Bản Firefox build được.
+
+**2026-10-23 | v3.5.197 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5b (không đổi giao diện/hành vi): xoá markup overlay cũ (`OVERLAY_HTML`, ẩn từ v3.5.171) và toàn bộ code controller/engine/source chỉ đọc-ghi vào markup đó.
+- `OVERLAY_HTML` còn một gốc rỗng ẩn `#keepit-exact-overlay`, chỉ mang các class trạng thái (`te-subtitle-mode-*`, `te-reading-mode`, `size-*`, `theme-*`) mà engine và `LHN_UNIFIED_BRIDGE.getCc` đọc. `OVERLAY_CSS` (2 quy tắc, `:host` phủ toàn màn hình) giữ nguyên.
+- Bỏ: `bindUI` và các menu/modal/nút cũ, listener play/pause/ratechange/volumechange/resize trên giao diện cũ, thanh tiến trình cũ (`attachWebProgressAnimation`), phím tắt trong overlay cũ, các hàm chỉ phục vụ chúng (theater cũ, preset cỡ chữ/phông, `renderHoverWords`, `seek*`, `toggleMute`, `toggleFullscreen`…). Phím tắt mở overlay/học trên trang và phím trong UI mới giữ nguyên.
+- Giữ nguyên tác dụng trạng thái: `togglePlay` (`pauseReasons`), `state.activeIdx`, hook `onStatus`/`onCaptions`/`onTranslated` của UI mới, hàng đợi dịch, yêu thích, `exportAs`. Lưu ngôn ngữ phụ đề tách khỏi `bindUI` thành `saveSubtitleLanguage` (bridge `setLanguage` gọi), vẫn ghi `lhnStudyTranslationSettings`.
+- Khác biệt duy nhất đo được: markup cũ có ảnh favicon ẩn `.te-site-favicon` tự tải icon trang và ghi `keepit:site-icon-cache:v1`. Ảnh này không hiển thị nên đã bỏ; khoá không đổi tên, Dashboard vẫn tự tải và ghi khi cần.
+- Kích thước: `overlay-controller.js` 102→40 KB, `overlay-engine.js` 52→19 KB, `overlay-template.js` 40→1 KB; tổng −2.6k dòng.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/overlay-engine.js`, `js/overlay/overlay-template.js`, `js/overlay/source/video.js`, `js/overlay/source/web.js`, `js/overlay/unified/unified-ui.js` (chú thích), `manifest.json`, tài liệu.
+- Kiểm tra: `node --check` đạt. Đồ thị tham chiếu (acorn) không còn khai báo chết, không tên bị treo. Chromium headless, extension thật, v3.5.196 vs v3.5.197: 10 lối vào Study cho trạng thái giống hệt; gõ câu ở tab Chép lưu bản ghi `dictation:web-…` giống hệt; ♥, chế độ CC (nút và phím 1/3), đổi ngôn ngữ nguồn/đích, gộp câu, xuất TXT (nội dung file), Rạp cho kết quả và dữ liệu lưu giống hệt; không lỗi trang. Ảnh 8 trạng thái overlay (điện thoại tối vi, điện thoại sáng en, máy tính sáng vi, máy tính tối ko): computed style và HTML giống hệt, chỉ khác vùng nhiễu đã biết (nền video, câu đang phát theo thời gian). `build_firefox.py` đạt. Chưa thử YouTube thật và máy thật.
+
+**2026-10-23 | v3.5.196 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5a (không đổi giao diện/hành vi). Bước 5 được chia 5a–5d vì điều kiện "không vừa chuyển file vừa xoá code trong cùng phiên bản"; cây đích không đổi (đã ghi vào `OPT-ARENA.md`).
+- Xoá panel Study cũ (ẩn từ v3.5.171): `study/dictation/dictation.js`, `study/shadowing/shadowing-activity.js`, `study/shadowing/shadowing.js`, `createStudyUi` trong `overlay-template.js`. Bốn hàm `shadowing.js` còn được gọi (`startWebTtsInViewMode`, `syncReadingAudioControls`, `setReadingAudioCompact`, `toggleReadingAudioCompact`) chuyển nguyên văn vào controller. `LHN_STUDY` viết lại không còn trải `...legacy`, vẫn mở tab Nói/Chép như trước.
+- Bỏ hover-pause (mục "bỏ" số 1): trạng thái `hoverPause*`/`hoverPointer*`, 11 hàm và các listener trên `.te-sub-en` / `.yt-dual-item` / root cũ (đều nằm trong markup ẩn nên không bao giờ chạy).
+- Khoá `dictation:progress-sync:v1` và `dictation:translation-visibility:v1` chỉ panel cũ ghi; không còn code đọc, dữ liệu cũ vẫn để nguyên.
+- File: `js/overlay/overlay-controller.js`, `js/overlay/overlay-engine.js`, `js/overlay/overlay-template.js`, `js/overlay/study/dictation/*` và `js/overlay/study/shadowing/*` (xoá), `manifest.json`, `OPT-ARENA.md`, `PROJECT.md`, `DATA-INVENTORY.md`, `docs/modules/overlay.md`, `docs/modules/dictation.md`.
+- Kiểm tra: `node --check` đạt. Đồ thị tham chiếu (acorn, toàn bộ content script) không còn tên bị treo, không thêm khai báo chết. Chromium headless, extension thật, v3.5.195 vs v3.5.196: 9 lối vào Study (phím tắt học, lặp lại, phím tắt xem, `typing-control`, chuyển giữa Xem/Nói/Chép, đóng) cho trạng thái giống hệt; gõ câu ở tab Chép lưu bản ghi `dictation:web-…` giống hệt; danh sách khoá lưu trữ giống hệt; không lỗi trang. Ảnh 8 trạng thái overlay (điện thoại tối vi, máy tính sáng vi): computed style và HTML giống hệt, ảnh chỉ khác ở vùng nhiễu đã biết (nền video, sheet ☰). `build_firefox.py` đạt. Chưa thử YouTube thật và máy thật.
+
+**2026-10-23 | v3.5.195 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 4 (không đổi giao diện/hành vi; người dùng đã duyệt bỏ cả 5 mục của bước 3): `OVERLAY_CSS` từ 197,7 KB còn 2 quy tắc chung (`*:not(:is(.ov, .ov *))`, `:host`). 1204 quy tắc và 15 `@keyframes` chỉ trúng markup cũ đang ẩn đã bỏ; phân loại theo token class/id chỉ có ở phía cũ, tính cả combinator. `js/overlay/overlay-engine.js` = `view/layout-mode.js` + `view/cc-mode.js` nguyên văn + phần yêu thích của `view/touch-layout.js` (13 khai báo nguyên văn). Xoá `view/touch-layout.js` và `view/touch-theater.js` (chỉ chạy khi không có UI mới), rồi xoá thư mục `view/`. Bỏ 2 lời gọi chết trong controller (`setupTouchOverlayLayout`, `LHN_TOUCH_THEATER?.showControls`).
+- File: `js/overlay/overlay-template.js`, `js/overlay/overlay-engine.js` (mới), `js/overlay/view/*` (xoá), `js/overlay/overlay-controller.js`, `manifest.json`, `OPT-ARENA.md`, `AGENTS.md`, `PROJECT.md`, `README.md`, `DATA-INVENTORY.md`, `docs/INDEX.md`, `docs/modules/overlay.md`, `docs/modules/video.md`.
+- Kiểm tra: `node --check` đạt. `layout-mode`/`cc-mode` có mặt nguyên văn trong engine. Đồ thị gọi hàm (acorn): ngoài lời gọi chết, không file nào gọi 96 tên bị xoá. Chromium headless, extension thật, overlay Web mở từ thanh, v3.5.194 vs v3.5.195. Trạng thái: Xem, ☰, Cài đặt, Phụ đề, Tốc độ, Nói, Chép, Toàn màn hình × (điện thoại tối vi, điện thoại sáng ko, máy tính tối en, máy tính sáng vi). Kết quả: computed style mọi phần tử của giao diện mới (trừ nền video động `#vid`/`#amb`/`#wave`) và HTML giống hệt; ảnh chỉ khác ở nền video (độ mờ ngẫu nhiên, chạy bản cũ hai lần cũng khác). Không lỗi console. Bấm ♥ ghi `lhnFavoriteVideos`, bật/tắt Kết hợp câu ghi `lhnYouTubeSettings.splitSentences`: giống bản cũ. Chưa thử overlay YouTube thật và máy thật.
+
+**2026-10-23 | v3.5.194 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 3 (chỉ tài liệu, không đổi code chạy): thêm mục "Bước 3: tính năng overlay cũ ↔ mới" vào bản ghi `OPT-ARENA.md` 2026-10-23. Gồm 17 tính năng đã có ở giao diện mới, 5 mục "bỏ" chờ duyệt (đều đã không chạy/không hiện từ v3.5.171) và danh sách chỗ giao diện mới còn dựa vào DOM cũ phải thay ở bước 4–5.
+- File: `OPT-ARENA.md`, `manifest.json` (version), `PROJECT.md`.
+- Kiểm tra: đối chiếu bằng source (`OVERLAY_HTML`, `bindUI`, `runExport`, `exportAs`, `LHN_UNIFIED_BRIDGE`, `pullSettings`/`persistSettings`, `onKey`, proxy `LHN_STUDY`). `unified-ui.js` không gọi `dictation.js`, `shadowing*`, `createStudyUi`, `view/touch-*`; `setupTouchOverlayLayout` chỉ chạy khi `!unified`. Manifest parse đạt, `git diff --check` đạt. Không chạy thử trình duyệt vì không đổi code.
+
+**2026-10-23 | v3.5.193 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 2 (không đổi giao diện/hành vi): thêm `js/shared/theme-tokens.js` (13 màu kính/chữ sáng-tối, biến `--kp-…`); CSS thanh Keepit + ☰ tách sang `js/content/keepit-bar-css.js`, CSS Reader sang `js/reader/reader-css.js`; bỏ 15 chú thích khối vá theo phiên bản, gộp quy tắc trùng bộ chọn khi không có quy tắc cùng độ ưu tiên xen giữa, bỏ khai báo bị chính bộ chọn đó ghi đè sau (thanh 461 → 423 quy tắc, Reader 205 → 190); `touch-ui.js` → `keepit-bar.js` (giữ id `#lhn-touch-ui`); bảng nhãn `T` (281 nhãn en/vi/ko) chuyển vào `languages.js` khoá `bar_<tên>`, xoá `T`/`LANG_INDEX`.
+- File: `js/shared/theme-tokens.js`, `js/content/keepit-bar.js` (đổi tên), `js/content/keepit-bar-css.js`, `js/reader/reader-css.js`, `js/reader/bilingual-reader.js`, `js/core/languages.js`, `js/content/content.js` (chú thích), `manifest.json`, `pages/home.html`, `OPT-ARENA.md`, `AGENTS.md`, `PROJECT.md`, `docs/INDEX.md`, `docs/modules/{content,reader,shared,core}.md`, `DATA-INVENTORY.md` (trỏ đường dẫn/số dòng mới của thanh).
+- Kiểm tra: `node --check` đạt; 281 nhãn khớp từng chữ, 203 khoá đang dùng đều có; Chromium headless với extension thật v3.5.192 vs v3.5.193 (điện thoại/máy tính × sáng/tối × vi/en/ko; thanh, ☰, Reader, bảng Giọng, bảng Tốc độ): HTML giống hệt, computed style mọi phần tử (kể cả ::before/::after) giống hệt trừ hoạt ảnh `.smore` đang chạy; ảnh chỉ khác chấm tiến độ đọc đang chạy (chạy v3.5.192 hai lần cũng khác đúng chỗ đó); trang chủ Keepit giống hệt từng điểm ảnh, không lỗi console. Chưa thử trên máy thật.
+
+**2026-10-23 | v3.5.192 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 1 (dọn tài liệu, không đổi giao diện/hành vi): nhật ký cũ chuyển nguyên văn sang `docs/changelog/` (mục 5 giữ 30 bản mới nhất); thêm mục 1 snapshot và tiêu đề mục 5; `docs/INDEX.md` thêm bảng "Muốn sửa → Mở file"; Supabase chuyển vào `docs/supabase/`; gộp `js/translate/search.js` vào `js/shared/search.js` (giữ cả `LHN_SEARCH` và `LHN_INDEX_SEARCH`, đặt ở vị trí cũ trước `content.js` trong manifest); `AGENTS.md` thêm luật nhãn, màu, khối vá, `legacy`, tách file, nhật ký.
+- File: `js/shared/search.js`, `js/translate/search.js` (xoá), `manifest.json`, `pages/dashboard.html`, `AGENTS.md`, `PROJECT.md`, `docs/INDEX.md`, `docs/changelog/v3.5.md`, `docs/changelog/v3.4-va-cu-hon.md`, `docs/supabase/*`, `docs/modules/shared.md`, `docs/modules/translate.md`.
+- Kiểm tra: `node --check` toàn bộ JS đạt; manifest parse, 84 đường dẫn manifest và mọi `src/href` trong `pages/*.html` tồn tại; `git diff --check` đạt; mọi dòng `PROJECT.md` cũ còn nguyên trong `PROJECT.md` mới hoặc `docs/changelog/` (chỉ khác 9 dòng chủ ý sửa ở mục 2 và 4.1). Chromium headless, extension thật, so v3.5.191 ↔ v3.5.192 (máy tính + điện thoại): Ghi chú mở Sidebar trang và ô tìm chạy; Reader tìm giọng 22 → "korean" 1, "tiếng việt" 1; Dashboard `LHN_SEARCH.rank/highlightMatches` + `LHN_INDEX_SEARCH` đúng; popup tìm ngôn ngữ còn `LHN_INDEX_SEARCH`; không có lỗi script ở trang, Dashboard, popup. Kết quả hai bản giống nhau (popup có thêm `LHN_SEARCH`, không dùng). Máy thật chưa chạy.
+
+Bản ghi ngắn v3.5.162–v3.5.191 (định dạng cũ, giữ nguyên văn):
+
+- v3.5.191: Reader dùng cùng kính sáng/tối như thanh Keepit (v3.5.189–190): thanh Reader, các bảng (Giọng đọc, Tốc độ…) và dòng phím tắt = kính 78% + blur 24 (sáng trắng, tối than `rgba(24,24,28,.78)`); nút tối `#e4e4e7`; ô tính năng, ô tìm giọng, cờ, nút tốc độ thành kính trong nhẹ; nhãn nhóm / chữ phụ `#52525b` (sáng) / `#b4b4bc` (tối). Mục đang bật giữ nguyên. Chỉ màu, bố cục không đổi. Ảnh: Keepit-demo/reader-theme/keepit-reader-glass-v1.png.
+- v3.5.190: chủ đề sáng hài hoà như chủ đề tối v3.5.189. Kính trắng 74% → 78%, blur 20 → 24px (thanh chính, menu ☰, nút lên đầu trang). Nhãn thanh `#5b6475` → `#334155`; tiêu đề nhóm → `#52525b`; ô tính năng từ khối `#f1f5f9` đặc → kính trắng 55% viền mảnh, icon `#1f2937`; ô ngôn ngữ kính trắng 60%; footer ☰ kính trắng 35%, icon `#334155`. Mục đang bật giữ tím. Chủ đề tối không đổi (ảnh chụp giống hệt từng điểm ảnh). Ảnh: Keepit-demo/light-theme/keepit-light-harmony-v1.png.
+- v3.5.189: chủ đề tối — nền kính thanh chính / menu ☰ / nút lên đầu trang 88% → 78%, blur 20 → 24px: kính mờ lại như chủ đề sáng; chữ/icon giữ màu v3.5.188 (≈6.5:1 trên trang trắng). Ảnh: Keepit-demo/dark-theme/keepit-dark-contrast-v2.png.
+- v3.5.188: chủ đề tối — tương phản. Nền kính thanh chính / menu ☰ / nút lên đầu trang 68% → than đậm 88% (`rgba(24,24,28,.88)`, trước bị xám đục trên trang sáng). Nhãn + icon thanh `#a1a1aa` → `#e4e4e7`; tiêu đề nhóm → `#b4b4bc`; ô tính năng: icon `#f4f4f5`, nền trắng 8%, viền trắng 12%; footer ☰ `#e4e4e7`; ô chọn ngôn ngữ hết hộp đen (nền trắng 8%, viền 14%, chữ trắng). Chủ đề sáng và hành vi không đổi. Ảnh trước/sau: Keepit-demo/dark-theme/keepit-dark-contrast-v1.png.
+- v3.5.187: thanh dừng lưng chừng → trượt nốt theo hướng cuộn cuối cùng (cuộn xuống = ẩn hẳn, cuộn lên = hiện hẳn), thay cho "về phía gần hơn" của v3.5.186. Vẫn chờ nhấc ngón + hết cuộn 160ms.
+- v3.5.186: ẩn/hiện thanh chính khi cuộn chạy theo đúng quãng cuộn (trước: cuộn quá 6px là ẩn/hiện hết). Cuộn xuống N px → thanh tụt N px (CSS `translate`, không chuyển động trễ), đủ chiều cao thanh + 4px + vùng an toàn + 2 thì ẩn hẳn; cuộn lên ngược lại. Dừng giữa chừng: sau khi nhấc ngón và hết cuộn 160ms, khuất quá nửa → ẩn hẳn, còn lại → hiện (trượt 0.24s). Gần đầu trang (40px, điện thoại ngang 16px) luôn hiện. Nút lên đầu trang đi theo thanh (màn rộng: không đổi). Quy tắc v3.5.185 giữ nguyên.
+- v3.5.185: thanh chính nổi và thanh chỉ báo (khi ẩn thanh) cách mép dưới vùng trang web 4px trên mọi màn hình (trước: thanh 14px / 11px khi điện thoại ngang, vạch 9px); nút lên đầu trang giữ nguyên vị trí. Chế độ hiện thanh: tắt overlay, tắt Reader, ☰ ẩn thanh → hiện thanh thì thanh chính hiện lại dù trước đó đã bị ẩn do cuộn xuống (`barBack()`: xoá `scrollHide`, giữ 800ms để lần cuộn trang tự khôi phục ngay sau đó không ẩn lại). Cuộn xuống sau đó vẫn ẩn như cũ.
+- v3.5.184: cử chỉ trên trang (touch). Vuốt trái trên đoạn = dịch/bỏ dịch đoạn (kể cả dòng toàn link — ngón tay di chuyển nên link không mở). Vuốt phải trên trang = không làm gì (để chọn chữ). Bỏ vuốt trang để lùi/tới (lùi/tới = vuốt trên thanh, nút Lùi Android, trình duyệt): bỏ ô ☰ "Vuốt trang", nhóm "Lùi / tới trang" trong danh sách cử chỉ, mẹo cử chỉ tương ứng, mũi tên vuốt trang. Dịch cả trang: chạm 3 ngón → chạm 2 ngón (2 ngón đặt cách nhau ≤300ms, không di chuyển >16px, ≤500ms; kéo 2 ngón vẫn là phóng to; chạm 2 ngón lên link không mở link). `gest.nav` / `navOff` vẫn giữ trong `lhnBottomBar` (không xoá dữ liệu cũ) nhưng không còn dùng.
+- v3.5.183: bỏ bước "vuốt đi xuyên trang chủ" của v3.5.182 (sai yêu cầu). Vuốt lùi/tới đi đúng từng trang trong tab, kể cả trang chủ Keepit; hết lùi → tab cũ, hết tới → tab mới. Bỏ key `lhnSwipeNav`.
+- v3.5.182: chỉ extension, chỉ hàm vuốt. Quy tắc: vuốt lùi/tới luôn đi trong lịch sử của tab trước; hết lùi → tab cũ (bên trái), hết tới → tab mới (bên phải). Sửa lỗi có từ v3.5.160: `navigation.canGoBack/canGoForward` chỉ biết trang cùng web nên trang trước/sau thuộc web khác bị bỏ qua, vuốt nhảy sang tab. Giờ luôn thử `history.back/forward`, trình duyệt bắt đầu rời trang (`beforeunload`/`pagehide`) hoặc đổi trang trong cùng web (`popstate`/`currententrychange`) = đã đi; 450ms không đi = hết lịch sử → chuyển tab / báo. Vuốt không dừng ở trang chủ Keepit (`lhnSwipeNav` ghi hướng vuốt, trang chủ đi tiếp cùng hướng). Chống vuốt 2 lần liền (700ms). APK giữ cách cũ.
+- v3.5.181: chỉ extension. ☰ › Ẩn thanh / Hiện thanh dùng icon thanh mới (giống APK: `barhide` / `barshow`, thay icon con mắt). Cuộn xuống ẩn thanh, cuộn lên hiện lại trên mọi thiết bị (trước chỉ màn hình cảm ứng). Sheet ☰ dùng kính mờ như thanh chính (nền 74% / tối 68%, blur 20px), footer ☰ trong suốt.
+- v3.5.180: chỉ extension. Thanh chính nổi + bo tròn như demo "Kính nổi" trên mọi thiết bị (cách 2 bên 10px, cách đáy 14px, bo 26px; máy tính: viên giữa cách đáy 14px). Ẩn khi cuộn xuống (cùng lúc thanh Edge ẩn) = dời hẳn xuống dưới màn hình cùng bóng đổ, không còn vệt ở đáy; vạch thu gọn vẫn nằm sát đáy như v3.5.174. Thêm **trang chủ Keepit** (`pages/home.html`, `js/home/home-ui.js`, giống trang chủ APK demo v12, bố cục điện thoại / tablet / máy tính) mở từ ☰ › Trang chủ; trên trang chủ thanh Keepit chạy thật (Tìm, Ghi chú, Hỏi AI, ☰), lệnh trang báo "Hãy mở một trang web trước". "Trang web khác" lưu ở `lhnHomeBookmarks`. APK không đổi.
+- v3.5.179: code lấy thẳng từ v3.5.174 (các thay đổi v3.5.175–178 trong extension bị bỏ: vuốt trang chồng lớp, ☰ 2 nấc và nhóm mới, sửa Reader/sheet của v3.5.176–177). Chỉ thêm **hình thanh chính theo demo** (kính mờ, màu chàm → tím, nút tìm tròn gradient, nút lên đầu kính + chevron); trong trình duyệt thanh vẫn dính đáy như v3.5.174. Riêng Keepit cho Android (`isApk()` / `LHN_ANDROID_UI`): thanh nổi "Kính nổi" cách đáy 14px, ☰ demo v12 (Lịch sử, Trang này: Tải lại · Chia sẻ · Đánh dấu · Thêm màn hình, Giao diện: Trang tối · Cỡ chữ), ☰ 2 nấc, trang offline A/B (`js/content/offline-page.js`), `LHN_BAR_HOOKS.nav/busy/refresh/toast`.
+- v3.5.178: vuốt trang trong Keepit cho Android: thứ tự lớp luôn là trang trước < trang hiện tại < trang sau, cả khi đổi hướng giữa chừng (trước đây trang không dời được / bị WebView thu nhỏ giữa chừng thì lớp "trang trước" nằm đè lên trang hiện tại). App vẽ hiệu ứng: cả WebView trượt (`setTranslationX`), chỗ trang trước nằm sau WebView, thẻ trang sau nằm trước (`SwipeLayer`); trang chỉ gửi vị trí ngón tay (`LHN_ANDROID_UI.swipe`), thanh Keepit ẩn trong lúc app giữ ảnh của thanh (`swipeHold`). Trình duyệt giữ nguyên như v3.5.177. App: quay lại sau khi tắt màn hình / chuyển app thì khung hình cuối hiện ngay (chụp ở `onPause`, phủ ở `onStop`, bỏ khi WebView vẽ lại xong); Android đóng hẳn app thì ảnh đã lưu che đến khi trang mở lại đúng chỗ.
+- v3.5.177: vuốt trang lùi/tới (trên trang và trên thanh Keepit, extension + APK) theo kiểu trang chồng lớp của demo `keepit-apk-home-demo-v14.html`: vuốt lùi thì trang hiện tại trượt sang phải kèm bóng, lộ chỗ của trang trước; vuốt tới thì trang sau phủ vào từ phải, trang hiện tại lùi 30% và tối đi; quá 35% hoặc hất nhanh > 0,3 px/ms thì chuyển trang, không thì bật về; hết lịch sử thì kéo dây thun 40px; vuốt mới trong lúc đang bật về thì hoàn tất ngay lần trước; bỏ 2 vòng ←/→ và việc xê dịch nút của thanh. Trang bên dưới/trang sau là kiểu B (nền mờ + mũi tên + "Trang trước"/"Trang sau"/"Tab trước"/"Tab sau") vì trang web không tải sẵn được trang khác trong lịch sử và không đọc được bộ nhớ back-forward của trình duyệt (APK chỉ làm được bằng WebView thứ hai). Chỉ trang có `initial-scale=1` và đang ở tỉ lệ 1 mới được dời `<body>` (dời trang khác làm trình duyệt thu nhỏ trang); thanh cố định của trang được giữ đúng chỗ khi `<body>` dời; thanh Keepit đứng yên. APK: (1) kéo ☰ lên/xuống không còn giật — sheet giữ chiều cao và dời bằng transform thay vì đổi max-height mỗi lần chạm (chân sheet vẫn ở mép màn hình); `LHN_SHEET` tính theo đơn vị CSS của chính sheet; (2) mở bàn phím từ ô tìm kiếm Keepit thì thanh chính ẩn (focus trong shadow root được tính); (3) thanh chính luôn ở giữa: trang rộng hơn màn hình (hoặc trang desktop bị thu nhỏ) làm `innerWidth` lớn hơn màn hình nên thanh lệch/tí hon — nay lớp thanh bám visual viewport và phóng lại về 1px màn hình; (4) thanh không nháy khi đổi trang: trang báo vị trí thanh cho app (`android.barRect`), lúc bắt đầu tải trang mới app chép điểm ảnh của thanh (PixelCopy) và hiện tạm đúng chỗ tới khi trang mới vẽ xong thanh của nó (tối đa 4s); (5) cờ trong bảng giọng đọc Reader: font cờ (`TwemojiCountryFlags.woff2`) nay có `Access-Control-Allow-Origin` nên tải được; nếu không có font thì cờ emoji của hệ thống được vẽ lên canvas và cắt lấy phần giữa (hết mép gợn sóng, không bị cắt lệch). Không thêm quyền, không thêm dữ liệu lưu hay gửi đi. Đã thử: giả lập APK (Chromium, chạm CDP) — vuốt lùi/tới, dây thun, thanh cố định, ô tìm kiếm + bàn phím, trang rộng/desktop, kéo ☰; extension thật trên Chromium cảm ứng — vuốt lùi. Chưa thử máy thật.
+- v3.5.176: sửa lỗi thử trên máy thật của app Android v3.5.175 (kèm phần extension): Trình đọc chạy được khi trình duyệt không có giọng hệ thống (WebView) mà dùng giọng Google; kéo sheet ghi chú không còn kéo trang / kéo để tải lại; vuốt trang lùi/tới trong app dùng lịch sử của WebView (cả từ trang chủ); Rạp ngang trong app xoay máy được.
+- v3.5.175: thanh Keepit theo demo `keepit-apk-home-demo-v12.html` đã duyệt — thanh "Kính nổi" (kính mờ, cách mép 10px, cách đáy 14px, bo 26px, màu nhấn chàm → tím của logo; nút tìm vẫn tròn gradient đặc), nút lên đầu kính + chevron, icon Ẩn/Hiện thanh mới, vạch thanh ẩn nằm ngang đáy thanh (14px; điện thoại ngang 11px); ☰ xếp lại: Công cụ · Trang này (Tải lại · Chia sẻ liên kết · Tô sáng lại · Vuốt trang) · Khi chọn chữ · Màu · Trình đọc · Giao diện (Gọn thanh chuyển vào đây). App Android thêm ô Lịch sử / Đánh dấu / Thêm màn hình / Trang tối / Cỡ chữ qua `LHN_ANDROID_UI`. ☰ 2 mức (giữa 58% / hết); trang mất mạng A/B ngẫu nhiên có thẻ ôn từ (`js/content/offline-page.js`).
+- v3.5.174 (chỉ công cụ đóng gói): ZIP, CRX và ZIP source APK để ở 3 thư mục riêng `Keepit-Zip`, `Keepit-Crx`, `Keepit-Apk-Zip`; `scripts/build_release.py` ghi ZIP vào `../Keepit-Zip` và CRX vào `../Keepit-Crx` (`--crx-out`). Source APK có repo git riêng `keep-it-apk` (nhánh `main`, nhập từ ZIP APK v3.5.148). Code extension không đổi.
+- v3.5.173: chỉnh UI overlay — thumbnail Web trong thanh nhạc nét; ô tab Xem/Nói/Chép active ở Hiệu ứng nền nhẹ hơn; danh sách dọc chỉ đổi video ↔ thanh nhạc khi kéo tiếp quá đầu/cuối; vuốt thẻ Nói/Chép mượt từ bất kỳ đâu trên thẻ; Ghi chú ở Xem (dọc, Rạp, máy tính) mở sheet/panel ghi chú trang như thanh chính (cả trong Rạp toàn màn hình); gập/mở phụ đề video mượt, không tính lại cỡ chữ giữa chừng; kéo video/thanh vào/ra Rạp có hiệu ứng theo tay kiểu YouTube; Rạp dọc vuốt lên hoặc xuống về video/thanh như trước.
+- v3.5.172: sửa UI overlay — logo đúng dấu Keepit; xoay từ Rạp ngang về dọc không còn mất thanh trên/dưới (hẹn giờ ẩn chỉ chạy khi đang ở Rạp); sheet dọc kéo xuống để đóng theo quy tắc chung `LHN_SHEET` như thanh Keepit; Tùy chọn phụ đề: bấm là thấy đổi ở xem trước (cỡ, phông, độ đậm, nền), phông áp cả dòng dịch, Độ đậm Phụ đề cuộn có tác dụng, Nền Đặc có style, lựa chọn được lưu.
+- v3.5.171: Overlay theo giao diện thống nhất (demo v18 đã duyệt, `docs/ui-layout.md`) cho Video và Web: chỉ 2 giao diện (dọc = Điện thoại, ngang = Máy tính), tab Xem · Nói · Chép, thanh dưới thích ứng (thiếu chỗ thì dồn vào ☰), Rạp (máy tính = toàn màn hình thật; điện thoại ⛶ = toàn màn hình + xoay ngang), ghi chú bài học + ghi chú theo thời gian (📍, phím N, mốc vàng trên thanh tiến trình), thống kê từ sai, tổng kết; nhấp đúp video trên máy tính = ♥. Engine cũ giữ nguyên (phụ đề, dịch, bản ghi học `dictation:<id>`, yêu thích, xuất phụ đề, từ điển/dịch khi chạm từ, ghi chú thanh bên); nhãn en/vi/ko. Đã thử trên Chromium (extension thật, YouTube giả + trang Web); YouTube thật / Edge Android chưa QA.
+- v3.5.170 (chỉ tài liệu): nguyên tắc giao diện chung được chốt và ghi tại `docs/ui-layout.md` — 2 giao diện theo dáng màn hình (dọc = Điện thoại, ngang = Máy tính), to/nhỏ chỉ dồn nút vào ☰, chạm/chuột chỉ đổi cách thao tác, ngoại lệ duy nhất điện thoại ngang (Overlay chỉ Rạp). `docs/INDEX.md` thêm 1 dòng; `AGENTS.md` thêm câu nhắc (mục 2) và ngoại lệ trang dùng chung (5.2.1). Không đổi code.
+- v3.5.169: overlay desktop/tablet ngang đồng bộ với cảm ứng: menu Chế độ phụ đề tự kẹp trong khung overlay (dịch ngang khi sát mép, giới hạn chiều cao + cuộn; cập nhật khi đổi kích thước cửa sổ); icon Lặp lại = repeat-1, icon Ghi chú = sổ tay (như cảm ứng); nút Thêm vào từ vựng (chưa có chức năng) thay bằng ♥ yêu thích video/trang (`#te-control-fav`, dùng chung `lhnFavoriteVideos` với ♥ cảm ứng). Ghi chú: thanh điều khiển chuột ở 820–900px vẫn có nút đè nhau (có từ trước, chưa sửa).
+- v3.5.168: overlay cảm ứng (dọc): chevron ở giữa hàng ♥ / Toàn màn hình — chạm để thu gọn khung phụ đề dưới video còn hàng nút (50px), danh sách câu được thêm chỗ; chạm lại để hiện (chevron lên = đang hiện, xuống = đã thu); nhớ trạng thái (`lhnTouchOverlaySubHidden`); khung phụ đề chừa hàng nút phía trên (đệm trên 44px) để chevron không đè chữ; chế độ rạp toàn màn hình không bị ảnh hưởng. Nhãn Ẩn/Hiện phụ đề en/vi/ko.
+- v3.5.167: (1) overlay trên tablet (DevTools iPad Mini 1024×768, trang tuoitre rộng 1210px): Chrome mobile thu nhỏ trang cho vừa nội dung tràn ngang nên overlay `100vw/100vh` chỉ phủ ~84% màn hình — khi mở overlay, viewport meta (chỉ trang `width=device-width`) được thêm `minimum-scale=1`, đóng thì trả lại nguyên bản; (2) thanh điều khiển overlay máy tính/tablet ngang khi hẹp (1024px: 614px, 1280px: 768px) không còn chồng nút (1.00x đè mic/luyện nói, tiêu đề bị bóp): `fitControlBar` đo nội dung, chỉ khi 4 cột đều sẽ chồng mới chuyển `te-bar-tight` (cột theo nội dung, khoảng cách 4px); ≥1440px giữ nguyên; (3) Hỏi AI trên điện thoại: Edge Android có `sidePanel.open()` và báo thành công nhưng không hiện gì (chỉ thấy "Đang chuẩn bị prompt") — máy di động luôn mở AI panel thành tab cho mọi lối vào (thanh, chọn chữ, phím tắt); tab được tính là panel đang mở của cửa sổ (prompt/nguồn/thêm link khi Gửi hoạt động như side panel), đóng tab = đóng panel.
+- v3.5.166: (1) cảm ứng: icon trong các nút thanh Keepit to hơn 10% (26→28,6px, tìm kiếm 29→32px, điện thoại ngang 25→27,5px), kích thước nút và chiều cao thanh giữ nguyên; (2) máy tính / tablet ngang: thanh chính chỉ hẹp 10% so với gốc (716→644px, tablet 724→652px; trước v3.5.164 hẹp 20% = 572px), icon/chữ giữ nguyên; (3) sheet ☰: thanh dưới thêm nút "Trang chủ" — mở trang khởi động của trình duyệt trong tab hiện tại (Chromium/Edge: trang tab mới; Firefox: trang chủ), thanh dưới thành 4 cột đều, icon trên chữ; (4) trình duyệt không có side panel (Edge/Chrome Android): nút Hỏi AI của thanh mở AI panel thành tab cạnh trang (dùng lại nếu đã có), link trang đi qua `?src=` và chỉ thêm vào tin nhắn khi bấm Gửi như side panel; máy tính có side panel giữ nguyên.
+- v3.5.165: (1) logo Keepit tắt trang ở mép màn hình hẹp 20% (44→35px) và màu xám như nút mép sidebar khi trang tắt; (2) phím tắt tìm kiếm của thanh: Windows/Linux dùng Ctrl+Space (Alt+Space bị Windows/hệ thống chiếm để mở menu cửa sổ nên trang không nhận được), macOS giữ Alt+Space; Alt+Space vẫn được nhận nếu trình duyệt chuyển tới; (3) kéo trái dịch đoạn: ngoài thẻ đoạn văn chuẩn, nhận thêm khối chữ mà Reader nhận diện (div chữ, khoảng hở giữa các đoạn ±16px) qua `LHN_READER_BAR.blockAt(x,y)` — trước: chạm vào khe giữa đoạn / khối div (~10% điểm chữ trên tuoitre) bị coi là vuốt lùi/tới; (4) chạm 3 ngón dịch cả trang: nhận cả khi hệ thống huỷ chạm (`touchcancel`, ColorOS/MIUI chiếm cử chỉ 3 ngón), cửa sổ 600ms — đánh đổi: trên các máy đó chạm 3 ngón không vuốt (cử chỉ chụp màn hình) cũng có thể bật/tắt dịch trang.
+- v3.5.164: (1) đóng Ghi chú cảm ứng (chạm ngoài / kéo xuống) màn hình sáng lại ngay như các sheet khác — Ghi chú tính là đã đóng từ lúc sidebar có `lhn-closing` (trước: chờ sidebar bị gỡ, việc gỡ không báo MutationObserver nên lớp mờ đợi ticker 700ms); (2) icon/thanh công cụ chọn chữ, popup ghi chú/dịch/từ điển nổi, thanh màu tô sáng nằm DƯỚI thanh Keepit, sheet ☰, sheet tìm kiếm (z 2147482900 < host 2147483000; sheet dịch/từ điển dạng bottom sheet `.lhn-touch-sheet` vẫn trên cùng); (3) thanh dưới ☰: "Bật trang" → "Tắt trang" (hành động tắt Keepit trên trang, không còn trạng thái bật); (4) nút lên đầu hiện khi cuộn quá min(200px, 25% màn hình) (trước: 1 màn hình); (5) máy tính chế độ tối: hover nút lên đầu nền tối `#3f3f46` (trước: nền sáng chữ trắng); (6) kéo trái dịch đoạn: dịch đúng đoạn đang kéo (trước: kéo từ mép phải, đoạn trượt theo tay nên điểm chạm rơi ra ngoài đoạn → Reader chọn đoạn bên dưới); (7) dịch cả trang: chạm 3 ngón tay cùng lúc (trước: nhấn 3 lần), vuốt 3 ngón không tính; (8) máy tính / tablet ngang: thanh chính hẹp 20% (716→572px, tablet 724→580px), icon/chữ giữ nguyên; (9) máy tính: Alt+Space mở/đóng tìm kiếm của thanh (không bắt khi đang gõ trong ô nhập của trang); (10) tắt trang trên mọi thiết bị: thay pill "Keepit đang tắt · Bật lại" bằng một logo Keepit nhỏ ở mép trái giữa màn hình, kéo tự do và hít vào mép trái/phải gần nhất (lưu `lhnBottomBar.offPos`), chạm/click để bật lại; chỉ còn một thông báo bật/tắt (của content.js).
+- v3.5.163 (chủ yếu cảm ứng): (1) chuyển thanh chính ↔ Reader / Vào học / Video mượt: thanh chính nhường ngay khi thanh Reader hiện hoặc overlay mở (MutationObserver trên `#lhn-bilingual-reading-bar` và class `lhn-video-overlay-open` của `<html>`, không chờ ticker 700ms) và trượt xuống/mờ dần (`.screen.extyield .bbar` opacity/visibility thay `display:none`) đồng thời thanh Reader trượt lên; đóng Reader thì thanh Reader trượt xuống (`lhn-hiding`, 220ms) trong khi thanh chính trượt lên — không còn khoảng trống ~0.6s; (2) kéo xuống ở mọi sheet: danh sách về đầu trước rồi sheet theo tay, kéo xuống là đóng hẳn (bỏ bước dừng half của ☰ full, `sheet-kit.js`); (3) Ghi chú cảm ứng không còn làm thanh chính nháy: thanh chính đứng yên dưới lớp mờ (`.nscrim` z 8 trên `.bbar`), Ghi chú không còn tính là "nhường thanh"; mở Ghi chú đóng ☰/tìm kiếm/popover; (4) sheet/popover ☰ có thanh dưới cố định kiểu Cốc Cốc `.mfoot` (không cuộn theo nội dung): Cài đặt · Bật trang · Ẩn thanh/Hiện thanh, icon + nhãn, 3 cột đều (nút giữa đúng tâm); bỏ 3 ô này khỏi lưới Công cụ / Giao diện & trang này.
+- v3.5.162: mỗi bản phát hành có ZIP + CRX cùng tên, tạo bằng `scripts/build_release.py` (Python thuần, ký CRX3 bằng khoá `.pem` để ngoài repo; ID cố định `nfkkifbpljgeocgjblklfacdlbabjanp`). CRX để cài thử trên Edge Android (Developer options → Extension install by crx); store vẫn nhận ZIP.
+
+Nhật ký cũ hơn: [`docs/changelog/v3.5.md`](docs/changelog/v3.5.md) (v3.5.0–v3.5.161, bản chi tiết tới v3.5.176) và [`docs/changelog/v3.4-va-cu-hon.md`](docs/changelog/v3.4-va-cu-hon.md).

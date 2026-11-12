@@ -24,7 +24,9 @@
   let translateIcon = null, translationPopup = null, translationRequestId = 0, dictionaryPopup = null, dictionaryRequestId = 0;
   let currentSpeakAudio = null, currentSpeakObjectUrl = null, currentSpeakFinish = null, speakRequestId = 0, speechPauseActive = false, shortcutPausedMedia = [];
   let outsideMouseDown = null, suppressMouseUp = false, composerSave = null, colorChosen = false, composerOriginalColor = null, tooltipColorUndo = null;
-  let sidebar = null, sidebarOpen = false, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
+  let sidebar = null, sidebarOpen = false, sidebarActiveTab = "highlights", sidebarSetActiveTab = null, sidebarFilter = "all", sidebarSearchQuery = "", sidebarItemsCache = null, pageAnnotationCache = new Map(), pageAnnotationCacheUrl = "", sidebarEdgeToggle = null, sidebarHeaderActions = null, sidebarToastTimer = 0, sidebarToastRender = null, sidebarRenderToken = 0, sidebarSearchTimer = 0;
+  // AI panel state reported by the background (AI_PANEL_VISIBILITY); drives the page edge button.
+  let aiPanelVisible = false, aiPanelPageToggle = false, aiPanelShortcut = "Alt+X", aiPanelToggleBusy = false;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
   const pageUrl = () => location.href;
@@ -32,12 +34,7 @@
   const pageTitle = () => document.title || displayWebsiteName(location.hostname);
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   const isWebsiteDisabledIn = value => Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey());
-  const pageThumbnailUrl = () => {
-    const meta = document.querySelector('meta[property="og:image"], meta[name="twitter:image"], meta[property="twitter:image"], meta[itemprop="image"]');
-    const raw = meta?.content?.trim();
-    if (!raw) return "";
-    try { const resolved = new URL(raw, location.href); return /^https?:$/.test(resolved.protocol) ? resolved.href : ""; } catch { return ""; }
-  };
+  const pageThumbnailUrl = () => globalThis.LHN_THUMBNAILS?.fromPageMetadata(document, location.href) || "";
   const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
   const MAP = {
     'o͝o': 'ʊ', 'o͞o': 'u', 'T͟H': 'ð', 'âr': 'ɛr', 'ûr': 'ɜr', 'îr': 'ɪr',
@@ -54,6 +51,8 @@
   globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
+  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (keepit-bar host 2147483000)
+  const FLOAT_Z = "2147482900";
   function animateRemove(el) {
     if (!el) return;
     el.classList.add("lhn-closing");
@@ -151,9 +150,30 @@
     const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
     el.style.left = left + "px"; el.style.top = top + "px";
   }
+  // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
+  function placeTouchOverlaySheet(popup, anchor) {
+    // a Range made with selectNode() starts at the parent — the selected node itself is childNodes[startOffset]
+    const anchorNode = anchor?.startContainer?.childNodes?.[anchor.startOffset]?.id === "lhn-bar-dict-anchor" ? anchor.startContainer.childNodes[anchor.startOffset] : anchor?.startContainer || anchor;
+    const barSheet = anchorNode?.id === "lhn-bar-dict-anchor" && matchMedia("(pointer: coarse)").matches;
+    if (!barSheet && (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host")) return false;
+    if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
+    popup.classList.add("lhn-touch-sheet"); popup.classList.toggle("lhn-bar-sheet", barSheet);
+    popup.style.setProperty("z-index", "2147483647", "important");   // a bottom sheet stays above the Keepit bar
+    popup.style.removeProperty("left"); popup.style.removeProperty("top");
+    // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js) — drag down from anywhere (scrolled
+    // content back to its top first), the page behind does not scroll while it is open
+    globalThis.LHN_SHEET?.attach(popup, { isOpen:() => popup.isConnected && popup.classList.contains("lhn-touch-sheet"), close:() => closeTouchSheetPopup(popup), watch:popup });
+    return true;
+  }
+  function closeTouchSheetPopup(popup) {
+    if (popup === translationPopup) removeTranslationUI();
+    else if (popup === dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
+    else popup.remove();
+  }
   function positionPopupAtAnchor(popup, anchor) {
     const anchorNode = anchor?.startContainer || anchor;
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
+    if (placeTouchOverlaySheet(popup, anchor)) return;
     const rect = anchor.getBoundingClientRect();
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
@@ -163,9 +183,33 @@
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
-    const rect = range.getBoundingClientRect();
+    // Anchor under the end of the selection (last non-empty line box), not the right edge of the whole block.
+    const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
+    const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
-    position(translateIcon, rect.right, rect.bottom);
+    const shell = translateIcon.querySelector(".lhn-translate-shell");
+    // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
+    const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
+    position(translateIcon, rect.right - 28, rect.bottom + shellOverflow + 4);
+    if (shell?.dataset.layout === "radial") {
+      // Radial: keep the side buttons on screen by sliding the whole group inward (badge centre = launcher right - half badge).
+      const half = (shell.offsetWidth || 38) / 2, labelled = shell.dataset.labels === "true";
+      const side = cls => labelled ? half + 6 + (shell.querySelector(cls)?.offsetWidth || 0) : 44 + half;
+      const centre = (Number.parseFloat(translateIcon.style.left) || 0) + translateIcon.offsetWidth - half;
+      const clamped = Math.max(side(".lhn-action-highlight") + 8, Math.min(centre, innerWidth - side(".lhn-action-ai") - 8));
+      translateIcon.style.left = `${clamped - translateIcon.offsetWidth + half}px`;
+      translateIcon.classList.remove("lhn-actions-right");
+      translateIcon.style.setProperty("left", translateIcon.style.left, "important");
+      translateIcon.style.setProperty("top", translateIcon.style.top, "important");
+      return;
+    }
+    const actions = translateIcon.querySelector(".lhn-translate-actions");
+    const shellWidth = Math.max(shell?.offsetWidth || 0, (actions?.scrollWidth || 0) + 42);
+    const launcherLeft = Number.parseFloat(translateIcon.style.left) || 0;
+    const rightEdge = launcherLeft + translateIcon.offsetWidth;
+    const leftRoom = rightEdge;
+    const rightRoom = innerWidth - rightEdge;
+    translateIcon.classList.toggle("lhn-actions-right", leftRoom < shellWidth + 8 && rightRoom > leftRoom);
     translateIcon.style.setProperty("left", translateIcon.style.left, "important");
     translateIcon.style.setProperty("top", translateIcon.style.top, "important");
   }
@@ -176,10 +220,11 @@
     dictionaryRequestId++; dictionaryPopup?.remove(); dictionaryPopup = null;
   }
   function dictionaryPopupAt(popup, range) {
+    if (popup?.isConnected && placeTouchOverlaySheet(popup, range)) return;
     const anchorNode = range?.startContainer;
     const anchorRoot = anchorNode?.getRootNode?.();
     const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
-    if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi")) {
+    if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi, .ov .sub-en, .ov .sub-vi")) {
       const rect = range.getBoundingClientRect();
       if (rect.width || rect.height) {
         position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
@@ -201,15 +246,25 @@
       const action = event.target.closest("[data-dict-action]"); if (!action) return;
       const word = action.dataset.word || "";
       if (action.dataset.dictAction === "speak") speakHighlightedText(word, "en-US", null, null, true);
+      else if (action.dataset.dictAction === "heart") toggleDictionaryHeart(popup, action, event);
       else if (action.dataset.dictAction === "back") {
         const previous = popup._lhnHistory?.pop();
-        if (previous) lookupEnglishDictionary(previous, popup._lhnAnchorRange, popup, { recordHistory:false, autoSpeak:true });
-      } else if (word && action.classList.contains("lhn-dict-colloc")) {
+        if (previous) popup._lhnPageDir = "prev";
+        // A phrase view (or the view a phrase replaced) comes back as saved, without a new lookup.
+        if (previous && typeof previous === "object") {
+          dictionaryRequestId++; popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
+          popup.dataset.word = previous.word; renderEnglishDictionary(popup, previous.view, false); popup._lhnPhrase = previous.phrase;
+          speakDictionaryTextIfAuto(popup, previous.view?.word);
+        } else if (previous) lookupEnglishDictionary(previous, popup._lhnAnchorRange, popup, { recordHistory:false, autoSpeak:true, speakOnOpen:popup._lhnSpeakOnOpen });
+      } else if (word && word.split(/\s+/).length >= 2) { popup._lhnPageDir = "next"; showPhraseInDictionary(popup, action, word); }
+      else if (word && action.classList.contains("lhn-dict-colloc")) {
         const anchorRange = popup._lhnAnchorRange;
         dictionaryRequestId++; popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
-        translateSelectedRange(anchorRange, { forcePopup:true, textOverride:word, sourceLanguage:"en" });
-      } else if (word) lookupEnglishDictionary(word, popup._lhnAnchorRange, popup, { autoSpeak:true });
+        translateSelectedRange(anchorRange, { forcePopup:true, textOverride:word, sourceLanguage:"en", speakOnOpen:popup._lhnSpeakOnOpen });
+      } else if (word) { popup._lhnPageDir = "next"; lookupEnglishDictionary(word, popup._lhnAnchorRange, popup, { autoSpeak:true, speakOnOpen:popup._lhnSpeakOnOpen }); }
     });
+    // Selecting inside an example sentence: one word opens it in the dict (with Back); a phrase opens the normal translation popup.
+    popup.addEventListener("mouseup", event => { if (event.button === 0) setTimeout(() => handleDictionaryExampleSelection(popup), 20); });
     document.documentElement.appendChild(popup); dictionaryPopup = popup;
     dictionaryPopupAt(popup, range);
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-dict-visible"));
@@ -225,15 +280,33 @@
     const forms = (data.forms || []).length ? `<section class="lhn-dict-related lhn-dict-forms" data-kind="Forms" data-label="Forms:">${data.forms.map(item => `<button class="lhn-dict-chip lhn-dict-form" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>${esc(item.tag)}</span><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
     const collocations = (data.collocations || []).length ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${data.collocations.map(item => `<button class="lhn-dict-chip lhn-dict-colloc" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
     const pos = (data.translation.posDict || []).map(item => `<div class="lhn-dict-pos"><span>${esc(posNames[item.pos.toLowerCase()] || item.pos)}</span><b>${esc((item.words || []).join(", "))}</b></div>`).join("");
+    const highlightExample = (text, exampleWord) => {
+      const pattern = LHN_DICTIONARY.exampleWordRegExp(exampleWord);
+      if (!pattern) return esc(text);
+      let html = "", last = 0;
+      for (const match of String(text).matchAll(pattern)) {
+        html += esc(text.slice(last, match.index)) + `<mark class="lhn-dict-example-word">${esc(match[0])}</mark>`;
+        last = match.index + match[0].length;
+      }
+      return html + esc(text.slice(last));
+    };
+    const examples = (data.examples || []).length ? `<section class="lhn-dict-examples" data-kind="Example" data-label="Example:">${data.examples.map((item, index) => `<div class="lhn-dict-example"><span class="lhn-dict-example-num">${index + 1}.</span><span class="lhn-dict-example-text">${highlightExample(item.text, data.exampleWord || data.word)}</span>${item.meaning ? `<span class="lhn-dict-example-meaning">${esc(item.meaning)}</span>` : ""}</div>`).join("")}</section>` : "";
+    const hearted = !!popup._lhnSaved?.has(String(data.word || "").toLowerCase());
+    const heartLabel = esc(t("dictionaryAddFlashcard"));
+    const heartButton = `<button class="lhn-dict-heart${hearted ? " is-favorite" : ""}" data-dict-action="heart" aria-label="${heartLabel}" title="${heartLabel}" aria-pressed="${hearted ? "true" : "false"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg></button>`;
     const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
     const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
-    popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button><button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${related}${forms}${collocations}</div>`;
+    popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>${heartButton}<button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${examples}${related}${forms}${collocations}</div>`;
+    placeDictionaryBrand(popup);
+    popup._lhnView = data;
+    if (popup._lhnPageDir) { popup.querySelector(".lhn-dict-body")?.classList.add(`lhn-dict-page-${popup._lhnPageDir}`); popup._lhnPageDir = ""; }
     fillNoteFromDictionary(popup);
     if (popup._lhnHideForNote) {
       popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null;
       return;
     }
     dictionaryPopupAt(popup, popup._lhnAnchorRange);
+    fitDictionaryBrand(popup); requestAnimationFrame(() => fitDictionaryBrand(popup));
   }
   function fillNoteFromDictionary(popup = dictionaryPopup) {
     const popupWord = popup?.dataset.word?.toLowerCase();
@@ -254,20 +327,189 @@
     popup.remove();
     if (hasTranslation && dictionaryPopup === popup) dictionaryPopup = null;
   }
-  async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false } = {}) {
+  // Same auto-speak rule as a single-word lookup inside the dict (autoSpeak:true).
+  function speakDictionaryTextIfAuto(popup, text) {
+    const speakOnOpen = popup._lhnSpeakOnOpen;
+    const shouldSpeak = speakOnOpen == null ? settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true : speakOnOpen === true;
+    if (shouldSpeak && text) speakHighlightedText(text, "en-US", null, null, true);
+  }
+  // A 2+-word chip stays in the dict and only changes the header and meaning; a chip from Ant swaps the Syn and Ant lists.
+  async function showPhraseInDictionary(popup, chip, phrase) {
+    const view = popup._lhnView;
+    if (!view || popup._lhnPhrase === phrase) { popup._lhnPageDir = ""; return; }
+    speakDictionaryTextIfAuto(popup, phrase);
+    popup._lhnHistory = popup._lhnHistory || [];
+    popup._lhnHistory.push({ view, phrase:popup._lhnPhrase || false, word:popup.dataset.word });
+    const requestId = ++dictionaryRequestId;
+    popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
+    popup._lhnMainController = new AbortController();
+    const fromAnt = chip.classList.contains("lhn-dict-ant");
+    const related = fromAnt ? (view.related || []).map(item => item.kind === "Syn" ? { ...item, kind:"Ant" } : item.kind === "Ant" ? { ...item, kind:"Syn" } : item) : view.related;
+    // Chip meanings come from the same dictionary translation, so reuse them; translate only when a chip has none.
+    const source = [...(view.related || []), ...(view.forms || []), ...(view.collocations || [])].find(item => item.word === phrase);
+    let translatedText = source?.meaning && source.meaning !== phrase ? source.meaning : "";
+    if (!translatedText) {
+      const targetLanguage = popup._lhnTargetLanguage || globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
+      try { translatedText = (await LHN_DICTIONARY.translate(phrase, targetLanguage, popup._lhnMainController.signal)).translatedText || phrase; }
+      catch { translatedText = phrase; }
+      if (requestId !== dictionaryRequestId || popup !== dictionaryPopup) return;
+    }
+    renderEnglishDictionary(popup, { ...view, word:phrase, ipa:"", ipaApprox:false, exampleWord:view.exampleWord || view.word, related, translation:{ ...view.translation, translatedText } }, false);
+    popup._lhnPhrase = phrase;
+  }
+  // "Keepit Dictionary" brand on the last line of the dict, at the right. The words are CSS-generated (no text nodes),
+  // so readers of .lhn-dict-translation / example text never pick them up.
+  function placeDictionaryBrand(popup) {
+    const body = popup?.querySelector(".lhn-dict-body"), last = body?.lastElementChild;
+    if (!body) return;
+    const brand = '<span class="lhn-dict-brand" role="img" aria-label="Keepit Dictionary"><span class="lhn-dict-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></span><span class="lhn-dict-brand-name" aria-hidden="true"><b></b><span></span></span></span>';
+    let host = body;
+    if (last?.matches(".lhn-dict-related")) host = last;
+    else if (last?.matches(".lhn-dict-pos-list")) host = last.querySelector(".lhn-dict-pos:last-child") || last;
+    else if (last?.matches(".lhn-dict-examples")) { const example = last.querySelector(".lhn-dict-example:last-child"); host = example?.querySelector(".lhn-dict-example-meaning") || example?.querySelector(".lhn-dict-example-text") || last; }
+    else if (last?.matches(".lhn-dict-translation")) host = last;
+    if (host !== body && !host.matches("section, .lhn-dict-pos")) host.classList.add("lhn-dict-brand-host");
+    // Chip rows: the last chip and the brand wrap together, so the brand never sits alone on a row.
+    const tailChip = host.matches(".lhn-dict-related") ? [...host.querySelectorAll(":scope > .lhn-dict-chip")].pop() : null;
+    if (tailChip) { const tail = document.createElement("span"); tail.className = "lhn-dict-brand-tail"; host.insertBefore(tail, tailChip); tail.append(tailChip); tail.insertAdjacentHTML("beforeend", brand); }
+    else host.insertAdjacentHTML("beforeend", brand);
+  }
+  // Text lines cannot be pushed down: when the brand had to wrap, give it its own row at the bottom right
+  // (keeps the translation bar to the text; a 2-line clamped pos row has no room on its last line).
+  function fitDictionaryBrand(popup) {
+    if (!popup?.isConnected) return;
+    const meaningMark = popup.querySelector(".lhn-dict-example-meaning > .lhn-dict-brand");
+    if (meaningMark) {
+      const meaning = meaningMark.parentElement, range = document.createRange(); range.selectNodeContents(meaning); range.setEndBefore(meaningMark);
+      const lines = [...range.getClientRects()].filter(rect => rect.width > 0), lastLine = lines[lines.length - 1];
+      if (lastLine && meaningMark.getBoundingClientRect().top >= lastLine.bottom - 0.5) { meaning.classList.remove("lhn-dict-brand-host"); meaning.closest(".lhn-dict-examples")?.append(meaningMark); }
+    }
+    const posMark = popup.querySelector(".lhn-dict-pos > .lhn-dict-brand"), words = posMark?.parentElement.querySelector(":scope > b");
+    if (posMark && words) {
+      const range = document.createRange(); range.selectNodeContents(words);
+      const tops = new Set([...range.getClientRects()].filter(rect => rect.width > 0).map(rect => Math.round(rect.top)));
+      if (tops.size > 1 || words.scrollHeight > words.clientHeight + 1) posMark.closest(".lhn-dict-pos-list")?.append(posMark);
+    }
+  }
+  // Same heartbeat, two ripples and ten heart particles as the Dashboard favorite button.
+  function playDictionaryHeartEffect(button, event) {
+    if (!button || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    const rect = button.getBoundingClientRect(), color = "#f43f5e";
+    const hasPoint = Number.isFinite(event?.clientX) && (event.clientX || event.clientY);
+    const x = hasPoint ? event.clientX : rect.left + rect.width / 2, y = hasPoint ? event.clientY : rect.top + rect.height / 2;
+    let layer = document.getElementById("lhn-dict-effect-layer");
+    if (!layer) { layer = document.createElement("div"); layer.id = "lhn-dict-effect-layer"; layer.setAttribute("aria-hidden", "true"); }
+    document.documentElement.append(layer); // keep it above a dict popup re-created later (same z-index), so the burst is never covered
+    button.classList.remove("lhn-dict-heart-pulse"); void button.offsetWidth; button.classList.add("lhn-dict-heart-pulse");
+    button.addEventListener("animationend", e => { if (e.animationName === "lhn-dict-heartbeat") button.classList.remove("lhn-dict-heart-pulse"); }, { once:true });
+    for (let i = 0; i < 2; i++) { const ring = document.createElement("span"); ring.className = "lhn-dict-ripple-ring"; ring.style.setProperty("--effect-color", color); ring.style.left = `${x}px`; ring.style.top = `${y}px`; ring.style.setProperty("--delay", `${i * 100}ms`); layer.append(ring); ring.addEventListener("animationend", () => ring.remove(), { once:true }); }
+    for (let i = 0; i < 10; i++) {
+      const particle = document.createElement("span"), angle = Math.PI * 2 * i / 10 + (Math.random() - .5) * .45, distance = 34 + Math.random() * 42;
+      particle.className = "lhn-dict-ripple-particle"; particle.style.left = `${x}px`; particle.style.top = `${y}px`; particle.style.setProperty("--effect-color", color);
+      particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`); particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`); particle.style.setProperty("--turn", `${Math.round((Math.random() - .5) * 70)}deg`);
+      particle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
+      layer.append(particle); particle.addEventListener("animationend", () => particle.remove(), { once:true });
+    }
+  }
+  // Flashcard sentence for a word not on the page: the first example containing it (a phrase must appear as a whole).
+  function dictionaryExampleSentence(view, word, isPhrase) {
+    const examples = view?.examples || [];
+    const pattern = isPhrase ? new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+")}\\b`, "i") : LHN_DICTIONARY.exampleWordRegExp(word);
+    const found = examples.find(item => { if (!pattern) return false; pattern.lastIndex = 0; return pattern.test(item.text); });
+    return found?.text || "";
+  }
+  // The looked-up word is "on the page" only when its anchor range is ordinary page text that can be highlighted.
+  function isDictionaryPageWordRange(range, key) {
+    if (!range || range.collapsed || !range.startContainer?.isConnected || range.startContainer.getRootNode?.() !== document) return false;
+    if (isVideoInterfaceRange(range) || isDictationTextRange(range) || isEditable(range.startContainer)) return false;
+    const element = node => node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+    if (element(range.startContainer)?.closest?.(`.lhn-mark,#lhn-full-english-dictionary,${RESTORE_EXCLUDED}`) || element(range.endContainer)?.closest?.(`.lhn-mark,#lhn-full-english-dictionary,${RESTORE_EXCLUDED}`)) return false;
+    return cleanText(range.toString()).toLowerCase() === key;
+  }
+  // Heart: a page word is highlighted and saved; any other word or phrase is saved to flashcards only. A second click removes it.
+  async function toggleDictionaryHeart(popup, button, event) {
+    if (popup._lhnHeartBusy) return;
+    playDictionaryHeartEffect(button, event);
+    const view = popup._lhnView || {}, word = cleanText(view.word), key = word.toLowerCase();
+    if (!key) return;
+    popup._lhnSaved = popup._lhnSaved || new Map();
+    const saved = popup._lhnSaved.get(key);
+    const setHeart = hearted => popup.querySelectorAll(".lhn-dict-heart").forEach(heart => { heart.classList.toggle("is-favorite", hearted); heart.setAttribute("aria-pressed", String(hearted)); });
+    setHeart(!saved);
+    popup._lhnHeartBusy = true;
+    try {
+      if (saved) {
+        await LHN_MESSAGING.sendMessage({ type: "DELETE", id: saved.id });
+        pageAnnotationCache.delete(saved.id);
+        const marks = [...document.querySelectorAll(`[data-lhn-id="${CSS.escape(saved.id)}"]`)];
+        const first = marks[0]?.firstChild, last = marks.at(-1)?.lastChild;
+        marks.forEach(n => n.replaceWith(...n.childNodes));
+        // Unwrapping collapses the old anchor range; point it at the restored text so the next heart highlights again.
+        if (saved.onPage && first?.isConnected && last?.isConnected) {
+          const restored = document.createRange();
+          if (first.nodeType === Node.TEXT_NODE) restored.setStart(first, 0); else restored.setStartBefore(first);
+          if (last.nodeType === Node.TEXT_NODE) restored.setEnd(last, last.textContent.length); else restored.setEndAfter(last);
+          popup._lhnAnchorRange = restored;
+        }
+        popup._lhnSaved.delete(key);
+      } else {
+        const range = popup._lhnAnchorRange;
+        const onPage = !popup._lhnPhrase && key === popup._lhnAnchorWord && isDictionaryPageWordRange(range, key);
+        const note = settings.autoTranslate !== false ? cleanText(popup.querySelector(".lhn-dict-translation")?.textContent).normalize("NFC") : "";
+        const contextNote = settings.sentenceNoteEnabled === false ? "" : onPage ? LHN_SENTENCE_NOTE.getContext(range, cleanText) : dictionaryExampleSentence(view, word, !!popup._lhnPhrase);
+        const context = onPage ? getContext(range) : { prefix:"", suffix:"" };
+        const item = LHN_NOTE_COMPOSER.buildRecord({ quote:onPage ? cleanText(range.toString()) : word, note, contextNote, tags:[], color:CONFIG.normalizeColor(settings.defaultHighlightColor), url:pageUrl(), title:pageTitle(), hostname:location.hostname, thumbnailUrl:pageThumbnailUrl(), prefix:context.prefix || "", suffix:context.suffix || "" });
+        // Records with no place on the page are skipped by restoreAnnotations.
+        if (!onPage) item.dictionaryOnly = true;
+        const record = await LHN_MESSAGING.sendMessage({ type: "ADD", item });
+        if (!record?.id) throw new Error("Could not save flashcard");
+        item.id = record.id; pageAnnotationCache.set(record.id, record);
+        if (onPage) webHighlighter.wrapRange(range, item);
+        popup._lhnSaved.set(key, { id:record.id, onPage });
+        showSidebarToast(() => t("dictionaryFlashcardAdded"));
+      }
+      if (sidebarOpen) renderSidebar();
+    } catch (error) {
+      console.warn("Could not update dictionary flashcard", error);
+      setHeart(!!saved);
+    } finally { popup._lhnHeartBusy = false; }
+    if (popup.isConnected && cleanText(popup._lhnView?.word).toLowerCase() === key) setHeart(popup._lhnSaved.has(key));
+  }
+  function handleDictionaryExampleSelection(popup) {
+    if (popup !== dictionaryPopup || !popup.isConnected) return;
+    const selection = currentSelection(), text = cleanText(selection?.toString());
+    if (!text || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    const node = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+    if (!node?.closest?.(".lhn-dict-example-text") || !popup.contains(node)) return;
+    const word = text.replace(/^[^A-Za-z]+|[^A-Za-z'’]+$/g, "");
+    if (LHN_DICTIONARY.isEnglishWord(word)) {
+      selection.removeAllRanges(); translationRequestId++; translationPopup?.remove(); translationPopup = null;
+      popup._lhnPageDir = "next"; lookupEnglishDictionary(word, popup._lhnAnchorRange, popup, { autoSpeak:true, speakOnOpen:popup._lhnSpeakOnOpen });
+    } else translateSelectedRange(range.cloneRange(), { forcePopup:true, textOverride:text, sourceLanguage:"en", speakOnOpen:popup._lhnSpeakOnOpen });
+  }
+  async function lookupEnglishDictionary(word, range, existingPopup = null, { recordHistory = true, autoSpeak = false, speakOnOpen = null } = {}) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range) && !isDictationTextRange(range)) return;
     word = cleanText(word); if (!settings.showFullEnglishDictionary || !LHN_DICTIONARY.isEnglishWord(word)) return;
-    if (autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true)) speakHighlightedText(word, "en-US", null, null, true);
+    const shouldSpeakOnOpen = speakOnOpen === null ? autoSpeak && (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true) : speakOnOpen === true;
+    if (shouldSpeakOnOpen) speakHighlightedText(word, "en-US", null, null, true);
+    const isNewPopup = !existingPopup?.isConnected;
     const popup = existingPopup?.isConnected ? existingPopup : makeDictionaryPopup(range), requestId = ++dictionaryRequestId;
+    if (isNewPopup) { popup._lhnAnchorWord = word.toLowerCase(); popup._lhnSaved = new Map(); }
     popup._lhnMainController?.abort(); popup._lhnRelatedController?.abort();
     popup._lhnMainController = new AbortController(); popup._lhnRelatedController = new AbortController();
     if (!popup._lhnHistory) popup._lhnHistory = [];
-    if (recordHistory && popup.dataset.word && popup.dataset.word !== word.toLowerCase()) popup._lhnHistory.push(popup.dataset.word);
+    if (recordHistory && popup._lhnPhrase && popup._lhnView) popup._lhnHistory.push({ view:popup._lhnView, phrase:popup._lhnPhrase, word:popup.dataset.word });
+    else if (recordHistory && popup.dataset.word && popup.dataset.word !== word.toLowerCase()) popup._lhnHistory.push(popup.dataset.word);
+    popup._lhnPhrase = false;
     popup.dataset.word = word.toLowerCase();
+    popup._lhnSpeakOnOpen = speakOnOpen;
     if (panel?.dataset.lhnDictionaryWord === popup.dataset.word) hideDictionaryPopupForNote(popup);
     popup._lhnAnchorRange = range;
     let targetLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     try { const data = await browser.storage.local.get([STUDY_TRANSLATION_SETTINGS_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); targetLanguage = translationOptionsFrom(data).targetLanguage || targetLanguage; } catch {}
     if (requestId !== dictionaryRequestId) return;
+    popup._lhnTargetLanguage = targetLanguage;
     const cacheKey = LHN_DICTIONARY.cacheKey(word, targetLanguage);
     const cached = await LHN_DICTIONARY.getCache(cacheKey, `${word.toLowerCase()}_${targetLanguage}`);
     const hiddenForOpenNote = () => popup._lhnHideForNote && panel?.dataset.lhnDictionaryWord === word.toLowerCase();
@@ -289,30 +531,21 @@
         LHN_DICTIONARY.collocations(word, targetLanguage, popup._lhnRelatedController.signal)
       ];
       const ipaPromise = noRelated ? Promise.resolve(null) : LHN_DICTIONARY.fetchIpa(word, "en", popup._lhnMainController.signal);
+      const examplesPromise = noRelated ? Promise.resolve([]) : LHN_DICTIONARY.examples(word, targetLanguage, popup._lhnRelatedController.signal);
       const [translation] = await Promise.allSettled([translationPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
       const mainTranslation = translation.status === "fulfilled" ? translation.value : { translatedText:word, posDict:[], engine:"Dictionary" };
       popup._lhnMainTranslation = mainTranslation;
       const mainResult = { word, ipa:"", ipaApprox:false, translation:mainTranslation, related:[], forms:[], collocations:[] };
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
-      else renderEnglishDictionary(popup, mainResult, false);
-      const [related, forms, collocations, ipaResult] = await Promise.allSettled([...relatedTasks, ipaPromise]);
+      const [related, forms, collocations, ipaResult, examples] = await Promise.allSettled([...relatedTasks, ipaPromise, examplesPromise]);
       if (requestId !== dictionaryRequestId || (popup !== dictionaryPopup && !hiddenForOpenNote())) return;
-      let fallbackRelated = [];
-      if (related.status !== "fulfilled" && !hiddenForOpenNote() && !popup._lhnRelatedController.signal.aborted) {
-        try {
-          const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`);
-          if (response.ok) {
-            const entry = (await response.json())[0];
-            const synonyms = [...new Set((entry?.meanings || []).flatMap(meaning => meaning.synonyms || []))].slice(0, 3);
-            fallbackRelated = await Promise.all(synonyms.map(async synonym => { try { return { word:synonym, kind:"Syn", meaning:(await LHN_DICTIONARY.translate(synonym, targetLanguage)).translatedText }; } catch { return { word:synonym, kind:"Syn", meaning:synonym }; } }));
-          }
-        } catch {}
-      }
       const ipaValue = ipaResult.status === "fulfilled" ? ipaResult.value : null;
-      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:mainTranslation, related:related.status === "fulfilled" ? related.value : fallbackRelated, forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [] };
+      const result = { word, ipa:ipaValue?.text || "", ipaApprox:ipaValue?.approx === true, translation:mainTranslation, related:related.status === "fulfilled" ? related.value : [], forms:forms.status === "fulfilled" ? forms.value : [], collocations:collocations.status === "fulfilled" ? collocations.value : [], examples:examples.status === "fulfilled" ? examples.value : [] };
       popup._lhnMainTranslation = result.translation;
-      if (!popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
+      // Any failed source (Datamuse/Free Dictionary/translation/IPA error, quota, timeout) or skipped section: show, but do not cache, so the next lookup retries.
+      const incomplete = noRelated || translation.status !== "fulfilled" || [related, forms, collocations, ipaResult, examples].some(item => item.status !== "fulfilled" || LHN_DICTIONARY.isIncomplete(item.value));
+      if (!incomplete && !popup._lhnHideForNote && !popup._lhnRelatedController.signal.aborted) await LHN_DICTIONARY.setCache(cacheKey, result);
       if (hiddenForOpenNote()) { fillNoteFromDictionary(popup); popup.remove(); if (dictionaryPopup === popup) dictionaryPopup = null; }
       else renderEnglishDictionary(popup, result, false);
     } catch (error) {
@@ -339,18 +572,46 @@
     return { translation, targetLanguage:options.targetLanguage };
   }
   function showTranslateIcon(range) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
+    const selectedText = String(window.getSelection()?.toString() || range.toString()).trim();
     translateIcon?.remove();
-    const button = document.createElement("button");
-    button.id = "lhn-translate-icon"; button.type = "button"; button.setAttribute("aria-label", t("translateSelectedText")); button.title = t("translateSelectedText");
-    button.innerHTML = '<img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNCI+DQogIDxwYXRoIGQ9Im05IDExLTYgNnYzaDlsMy0zIi8+DQogIDxwYXRoIGQ9Im0yMiAxMi00LjYgNC42YTIgMiAwIDAgMS0yLjggMGwtNS4yLTUuMmEyIDIgMCAwIDEgMC0yLjhMMTQgNCIvPg0KPC9zdmc+DQo=" />';
-    button.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-    button.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); translateSelectedRange(range, { forcePopup:true }); });
-    document.documentElement.appendChild(button); translateIcon = button;
-    // Keep host-page button rules from hiding the translate control.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"grid", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483646", width:"20px", height:"20px" })) button.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
+    const style = toolbar.normalizeStyle(settings.selectionToolbarStyleV2);
+    const launcher = document.createElement("div");
+    launcher.id = "lhn-translate-icon";
+    launcher.className = "lhn-translate-launcher";
+    launcher.dataset.style = style;
+    launcher.setAttribute("role", "group");
+    launcher.setAttribute("aria-label", t("translateSelectedText"));
+    // Same actions for the toolbar buttons and the logo; the logo runs the action chosen in Settings → Icon display.
+    const runAction = {
+      highlight:() => showComposer(range),
+      translate:() => translateSelectedRange(range, { forcePopup:true, allowDictionary:true }),
+      ai:() => launchChatGPTSidePanel({ selectedText }),
+    };
+    const shell = toolbar.build({
+      document, style, t, logoAction:settings.selectionToolbarLogoAction,
+      onAction:id => runAction[id]?.()
+    });
+    shell.querySelector(".lhn-translate-actions")?.setAttribute("aria-label", t("translateSelectedText"));
+    launcher.appendChild(shell);
+    launcher.addEventListener("mousedown", event => event.stopPropagation());
+    // v3.5.159 touch: Android keeps its own Copy/Share menu over the toolbar. Re-applying the same selection from script
+    // dismisses that menu (it only follows selections made by the finger); the text stays selected.
+    launcher.addEventListener("touchstart", () => {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || selection.isCollapsed) return;
+      const current = selection.getRangeAt(0).cloneRange();
+      selection.removeAllRanges(); selection.addRange(current);
+    }, { passive:true });
+    launcher.classList.toggle("lhn-ui-dark", isSidebarDark());
+    launcher.classList.toggle("lhn-ui-light", !isSidebarDark());
+    document.documentElement.appendChild(launcher);
+    translateIcon = launcher;
+    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:FLOAT_Z, width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
-    requestAnimationFrame(() => button.isConnected && button.classList.add("lhn-visible"));
+    requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
   function syncTranslateIconAvailability() {
     if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {
@@ -373,19 +634,23 @@
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
     // Keep host-page rules from hiding or restyling this extension-owned popup.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionPopupAtAnchor(popup, range);
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
   }
-  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null } = {}) {
+  async function translateSelectedRange(range, { keepIcon = false, forcePopup = false, forceSpeak = false, textOverride = null, sourceLanguage = null, speakOnOpen = null, allowDictionary = false } = {}) {
+    if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range) && !isDictationTextRange(range)) return;
     if (!websiteSettingsReady || websiteDisabled || panel || !range || range.collapsed || !range.startContainer.isConnected) return;
     const selectedText = cleanText(textOverride ?? range.toString());
     if (!selectedText) return;
-    if (settings.translationPopupEnabled !== false && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
+    // The toolbar Translate action (icon mode, where translationPopupEnabled is off) also opens the full dictionary for one English word.
+    if ((settings.translationPopupEnabled !== false || allowDictionary) && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedText)) {
       translationRequestId++; translateIcon?.remove(); translateIcon = null; translationPopup?.remove(); translationPopup = null;
-      lookupEnglishDictionary(selectedText, range);
-      if ((settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) && !panel) speakHighlightedText(selectedText, "en-US", null, null, true);
+      const shouldSpeak = speakOnOpen === null
+        ? settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak
+        : speakOnOpen === true;
+      lookupEnglishDictionary(selectedText, range, null, { speakOnOpen:shouldSpeak });
       return;
     }
     if (!noteTranslator) return;
@@ -394,7 +659,10 @@
     translationPopup?.remove(); translationPopup = null;
     const requestId = translationRequestId;
     const ui = forcePopup || settings.translationPopupEnabled !== false ? createTranslationPopup(range) : null;
-    if (settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak) {
+    const shouldSpeak = speakOnOpen === null
+      ? settings.autoSpeakSelectedText === true || settings.autoSpeakOnTranslate === true || forceSpeak
+      : speakOnOpen === true;
+    if (shouldSpeak) {
       const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
       speakHighlightedText(selectedText, sourceLanguage ? "en-US" : speechLanguageForText(selectedText, anchor), null, anchor, !!sourceLanguage);
     }
@@ -458,7 +726,7 @@
         setDefaultHighlightColor(color);
         requestAnimationFrame(() => { if (textarea.isConnected) textarea.focus({ preventScroll:true }); });
       });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>';
+      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
       const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
       option.append(button, star, check); colors.appendChild(option);
     });
@@ -717,7 +985,8 @@
     if (!speechPauseActive) shortcutPausedMedia = [];
   });
   document.addEventListener("keydown", e => {
-    if (!websiteSettingsReady || websiteDisabled || isEditable(e.target)) return;
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    if (!websiteSettingsReady || websiteDisabled || isEditable(e.target) || arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const pauseShortcut = String(settings.speechPauseShortcut ?? "Space").toLowerCase();
     if (pauseShortcut && pressed === pauseShortcut) {
@@ -827,7 +1096,7 @@
         }
       });
       const star = makeButton("", "lhn-color-default-star", e => { e.preventDefault(); e.stopPropagation(); setDefaultHighlightColor(color); });
-      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>`;
+      star.title = `${t("setDefaultColor")}: ${t(CONFIG.colorLabelKey(color))}`; star.setAttribute("aria-label", star.title); star.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>`;
       const check = document.createElement("span"); check.className = "lhn-color-default-check"; check.textContent = "✓"; check.setAttribute("aria-hidden", "true");
       option.append(colorButton, star, check); colorGroup.appendChild(option);
     }
@@ -858,7 +1127,7 @@
     tooltip.addEventListener("mouseenter", () => clearTimer("dismiss")); tooltip.addEventListener("mouseleave", scheduleTooltipClose);
     tooltip.addEventListener("mousedown", e => e.stopPropagation()); tooltip.addEventListener("click", e => e.stopPropagation());
     document.documentElement.appendChild(tooltip);
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:"2147483647", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     updateDefaultColorIndicators();
     requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, anchor); } });
   }
@@ -971,7 +1240,7 @@
   function syncSidebarTheme() {
     const dark = isSidebarDark();
     dictionaryPopup?.classList.toggle("lhn-dict-dark", isDictionaryDark());
-    [panel, tooltip, actionPopup, translationPopup, document.getElementById("lhn-sidebar-edit-dialog")].forEach(surface => {
+    [panel, tooltip, actionPopup, translationPopup, translateIcon, document.getElementById("lhn-sidebar-edit-dialog")].forEach(surface => {
       if (!surface) return;
       surface.classList.toggle("lhn-ui-dark", dark);
       surface.classList.toggle("lhn-ui-light", !dark);
@@ -1102,31 +1371,107 @@
     clearTimeout(sidebarToastTimer);
     sidebarToastTimer = setTimeout(() => { toast.classList.remove("is-visible"); sidebarToastTimer = setTimeout(() => { if (sidebarToastRender === renderToast) sidebarToastRender = null; toast.remove(); }, 220); }, 1800);
   }
+  function setChatGPTPanelScrollbar(open) {
+    const styleId = "lhn-chatgpt-panel-scrollbar-style";
+    let style = document.getElementById(styleId);
+    if (!open) { style?.remove(); return; }
+    if (!style) { style = document.createElement("style"); style.id = styleId; (document.head || document.documentElement).appendChild(style); }
+    style.textContent = /Firefox\//i.test(navigator.userAgent)
+      ? "* { scrollbar-width: thin !important; }"
+      : "*::-webkit-scrollbar { width: 3px !important; height: 3px !important; }";
+  }
+  // URL-only summary via Alt+X; the explicit Ask AI icon passes only the selected snippet.
+  async function launchChatGPTSidePanel(options = {}) {
+    const hasSelection = Object.prototype.hasOwnProperty.call(options, "selectedText");
+    const selectedText = hasSelection ? String(options.selectedText || "").trim() : "";
+    if (hasSelection && !selectedText) {
+      showSidebarToast(() => t("chatGPTAutoFillFailedToast"));
+      return { opened:false, error:"selected-text-unavailable" };
+    }
+    let requestPromise;
+    try {
+      requestPromise = LHN_MESSAGING.sendMessage({
+        type:"OPEN_AI_PANEL",
+        intent:hasSelection ? "ask-selected-text" : "summary",
+        ...(hasSelection ? { selectedText } : {})
+      });
+    } catch (error) { requestPromise = Promise.reject(error); }
+    const settled = await Promise.allSettled([requestPromise]);
+    const result = settled[0].status === "fulfilled" ? settled[0].value : null;
+    if (!result?.ok) {
+      const reason = settled[0].status === "rejected" ? String(settled[0].reason?.message || settled[0].reason) : result?.reason || result?.error;
+      console.warn("Could not open the ChatGPT prompt flow", reason || "unknown-error");
+      const firefoxSelectionHint = hasSelection && /Firefox\//i.test(navigator.userAgent || "") && result?.error === "panel-toggle-failed";
+      showSidebarToast(() => t(firefoxSelectionHint ? "chatGPTFirefoxAskAIContextMenuHint" : result?.opened ? "chatGPTAutoFillFailedToast" : "chatGPTPanelOpenFailedToast"));
+      return { opened:false };
+    }
+    if (!result.opened) {
+      showSidebarToast(() => t("chatGPTPanelClosedToast"));
+      return { opened:false, closed:true };
+    }
+    if (sidebarOpen) closeSidebar();
+    if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(result.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+    return { opened:true, action:result.action || "" };
+  }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
+  // While the AI panel is open (Chromium), the edge button toggles the AI panel instead of the Highlight sidebar.
+  function edgeToggleControlsAIPanel() { return aiPanelVisible && aiPanelPageToggle && !sidebarOpen; }
+  async function toggleAIPanelFromEdge() {
+    if (aiPanelToggleBusy) return;
+    aiPanelToggleBusy = true;
+    try {
+      const result = await LHN_MESSAGING.sendMessage({ type:"TOGGLE_AI_PANEL" });
+      if (!result?.ok) { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
+      if (!result.opened) {
+        aiPanelVisible = false;
+        syncSidebarEdgeToggle();
+        showSidebarToast(() => t("chatGPTPanelClosedToast"));
+      }
+    } catch { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); }
+    finally { aiPanelToggleBusy = false; }
+  }
   function syncSidebarEdgeToggle() {
     if (!sidebarEdgeToggle) {
       sidebarEdgeToggle = document.createElement("button"); sidebarEdgeToggle.id = "lhn-sidebar-edge-toggle"; sidebarEdgeToggle.type = "button";
       sidebarEdgeToggle.addEventListener("mousedown", event => { event.preventDefault(); event.stopPropagation(); });
-      sidebarEdgeToggle.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); toggleSidebar(); });
+      sidebarEdgeToggle.addEventListener("click", event => {
+        event.preventDefault(); event.stopPropagation();
+        if (edgeToggleControlsAIPanel()) void toggleAIPanelFromEdge(); else toggleSidebar();
+      });
       document.documentElement.appendChild(sidebarEdgeToggle);
     }
-    const shortcut = settings.sidebarShortcut ?? "Alt+Q";
-    const label = shortcut ? `${t("toggleSidebar")} (${shortcut})` : t("toggleSidebar");
-    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen));
+    const aiMode = edgeToggleControlsAIPanel();
+    const shortcut = aiMode ? aiPanelShortcut : (settings.sidebarShortcut ?? "Alt+Q");
+    const text = aiMode ? t("aiPanelToggleTooltip") : t("toggleSidebar");
+    const label = shortcut ? `${text} (${shortcut})` : text;
+    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen || aiMode));
     sidebarEdgeToggle.dataset.tooltip = label;
+    sidebarEdgeToggle.classList.toggle("is-ai-panel", aiMode);
     sidebarEdgeToggle.classList.toggle("is-open", sidebarOpen);
     sidebarEdgeToggle.classList.toggle("is-site-disabled", websiteDisabled);
     sidebarEdgeToggle.classList.toggle("lhn-hidden-by-setting", settings.sidebarIndicatorEnabled === false || (websiteDisabled && settings.sidebarIndicatorOnDisabledSites === false));
     const width = sidebarOpen ? (Number.parseFloat(sidebar?.style.width) || 0) : 0;
     sidebarEdgeToggle.style.right = `${width}px`;
-    const path = sidebarOpen ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
+    const path = sidebarOpen || aiMode ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
     sidebarEdgeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
   }
   function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
+  function toggleSidebarToTab(tab) {
+    const nextTab = tab === "chatgpt" ? "chatgpt" : "highlights";
+    if (sidebarOpen && sidebarActiveTab === nextTab) { closeSidebar(); return; }
+    sidebarActiveTab = nextTab;
+    if (sidebarOpen) {
+      if (sidebarSetActiveTab) sidebarSetActiveTab(nextTab);
+      else openSidebar(true);
+      return;
+    }
+    openSidebar();
+  }
   function closeSidebar() {
     clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
     sidebarOpen = false;
     if (sidebar) { const old = sidebar; sidebar = null; animateRemove(old); }
+    sidebarSetActiveTab = null;
     LHN_PAGE_LAYOUT.restorePageWidth();
     syncSidebarEdgeToggle();
   }
@@ -1141,7 +1486,9 @@
     LHN_PAGE_LAYOUT.applyPageShrink(width);
     const shell = SIDEBAR.createShell({
       width, pageTitle:pageTitle(), pageUrl:pageUrl(), websiteDisabled, version:browser.runtime.getManifest().version, colors:COLORS,
-      filter:sidebarFilter, searchQuery:sidebarSearchQuery, t, config:CONFIG,
+      filter:sidebarFilter, searchQuery:sidebarSearchQuery, activeTab:sidebarActiveTab, t, config:CONFIG,
+      onSelectTab:tab => { sidebarActiveTab = tab; if (tab === "chatgpt") void launchChatGPTSidePanel(); },
+      onOpenChatGPT:() => { void launchChatGPTSidePanel(); },
       onToggleSidebarSetting:toggleSidebarSetting, onToggleWebsiteDisabled:toggleWebsiteDisabled,
       onOpenDashboard:() => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)),
       onToggleTheme:toggleSidebarTheme,
@@ -1149,7 +1496,7 @@
       onFilter:(value, filters) => { sidebarFilter = value; filters.querySelectorAll(".lhn-side-filter").forEach(button => button.classList.toggle("is-active", button.dataset.filter === sidebarFilter)); renderSidebar(true); },
       onStopPropagation:event => event.stopPropagation()
     });
-    sidebar = shell.sidebar; sidebarHeaderActions = shell.headerActions;
+    sidebar = shell.sidebar; sidebarHeaderActions = shell.headerActions; sidebarSetActiveTab = shell.setActiveTab;
     syncSidebarSettingsButtons(); syncSidebarTheme();    // Keep the fixed sidebar outside the narrowed body so body overflow rules on
     // sites such as GitHub cannot clip the extension UI.
     if (previousSidebar) {
@@ -1271,6 +1618,72 @@
     if (shadowSel && String(shadowSel).trim()) return shadowSel;
     return getSelection();
   }
+  const VIDEO_INTERFACE_SELECTOR = "#te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .yt-dual-item, .te-sub-container";
+  // [data-lhn-primary] / [data-lhn-secondary]: the unified overlay (js/overlay/ui) marks its source / translated lines.
+  const PRIMARY_VIDEO_TRANSCRIPT_SELECTOR = ".te-sub-en, .yt-dual-item-en, [data-lhn-primary]";
+  const VIDEO_SUBTITLE_LINE_SELECTOR = ".te-sub-en, .ov .sub-en";
+  function selectionElement(node) { return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement; }
+  function isVideoInterfaceNode(node) {
+    const root = node?.getRootNode?.();
+    if (root?.host?.id === "keepit-host") return true;
+    const element = selectionElement(node);
+    return !!element?.closest?.(VIDEO_INTERFACE_SELECTOR);
+  }
+  function isVideoInterfaceRange(range) {
+    return !!range && (isVideoInterfaceNode(range.startContainer) || isVideoInterfaceNode(range.endContainer) || isVideoInterfaceNode(range.commonAncestorContainer));
+  }
+  function isPrimaryVideoTranscriptRange(range) {
+    if (!range) return false;
+    const start = selectionElement(range.startContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
+    const end = selectionElement(range.endContainer)?.closest?.(PRIMARY_VIDEO_TRANSCRIPT_SELECTOR);
+    if (!start || !end || start.matches(VIDEO_SUBTITLE_LINE_SELECTOR) !== end.matches(VIDEO_SUBTITLE_LINE_SELECTOR)) return false;
+    try {
+      const treeRoot = start.getRootNode();
+      const translatedLines = treeRoot.querySelectorAll?.(".te-sub-vi, .yt-dual-item-vi, [data-lhn-secondary]") || [];
+      if ([...translatedLines].some((line) => range.intersectsNode(line))) return false;
+    } catch { return false; }
+    return true;
+  }
+  const DICTATION_TEXT_RANGE_SELECTOR = "#te-dictation-center .te-dict-speech-result, #te-dictation-center .te-dict-error-words, #te-dictation-center .te-dict-speech-target, #te-dictation-notes .te-dict-stats-word-title";
+  const DICTATION_WORD_CLICK_SELECTOR = "#te-dictation-center .te-dict-speech-result .te-dict-speech-word, #te-dictation-center .te-dict-error-words .te-dict-w";
+  const VIDEO_SETTINGS_KEY = "lhnYouTubeSettings";
+  async function loadVideoSelectionSettings() {
+    try {
+      const data = await browser.storage.local.get(VIDEO_SETTINGS_KEY);
+      const stored = data[VIDEO_SETTINGS_KEY] || {};
+      return {
+        translationPopupEnabled: stored.videoTranslationPopupEnabled !== false,
+        clickToSpeak: stored.videoClickToSpeak !== false,
+      };
+    } catch {
+      return { translationPopupEnabled:true, clickToSpeak:true };
+    }
+  }
+  function dictationTextRootForRange(range) {
+    if (!range) return null;
+    const start = selectionElement(range.startContainer)?.closest?.(DICTATION_TEXT_RANGE_SELECTOR);
+    const end = selectionElement(range.endContainer)?.closest?.(DICTATION_TEXT_RANGE_SELECTOR);
+    if (!start || start !== end || start.getRootNode?.()?.host?.id !== "keepit-host") return null;
+    return start;
+  }
+  function isDictationTextRange(range) {
+    return !!dictationTextRootForRange(range);
+  }
+  function getDictationSelectionText(range, fallbackText = "") {
+    const root = dictationTextRootForRange(range);
+    if (!root || !root.matches(".te-dict-speech-result, .te-dict-error-words")) return cleanText(fallbackText || range?.toString());
+    const tokenSelector = root.matches(".te-dict-speech-result") ? ".te-dict-speech-word" : ".te-dict-w";
+    let selectedWords = [];
+    try {
+      selectedWords = [...root.querySelectorAll(tokenSelector)]
+        .filter(token => range.intersectsNode(token))
+        .map(token => cleanText(token.textContent).replace(/^[→➜↦]\s*/, ""))
+        .filter(Boolean);
+    } catch {}
+    if (selectedWords.length > 1) return selectedWords.join(" ");
+    if (selectedWords.length === 1) return selectedWords[0].replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9'’]+$/g, "") || selectedWords[0];
+    return cleanText(fallbackText || range.toString());
+  }
   const handledSelectionMouseUps = new WeakSet();
   function handleSelectionMouseUp(e) {
     if (handledSelectionMouseUps.has(e)) return;
@@ -1278,19 +1691,35 @@
     if (websiteSettingsReady && websiteDisabled) return;
     if (suppressMouseUp) { suppressMouseUp = false; return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
-    const isDualSubtitleSelection = e.composedPath?.().some(node => node?.classList?.contains("te-sub-en") || node?.classList?.contains("yt-dual-item-en"));
+    const eventPath = e.composedPath?.() || [];
+    const isVideoInterfaceEvent = eventPath.some(isVideoInterfaceNode);
     const selection = currentSelection(), selectionAnchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection?.anchorNode?.parentElement;
     if (e.button !== 0 || e.target.closest?.("#lhn-panel, #lhn-note-pop, #lhn-direct-translation, #lhn-full-english-dictionary, #lhn-translate-icon, #lhn-sidebar, #lhn-sidebar-edit-dialog, .lhn-mark") || selectionAnchor?.closest?.("#lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
+    if (selectionAnchor?.closest?.("#lhn-full-english-dictionary")) { if (dictionaryPopup) setTimeout(() => handleDictionaryExampleSelection(dictionaryPopup), 20); return; }
     setTimeout(() => {
-      const sel = currentSelection(), text = cleanText(sel?.toString());
-      if (!text || !sel.rangeCount || isEditable(sel.anchorNode)) return;
+      const sel = currentSelection(), rawText = cleanText(sel?.toString());
+      if (!rawText || !sel.rangeCount || isEditable(sel.anchorNode)) return;
       const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
+      const isVideoUiSelection = isVideoInterfaceEvent || isVideoInterfaceRange(range);
+      const isDualSubtitleSelection = isVideoUiSelection && isPrimaryVideoTranscriptRange(range);
+      const isDictationSelection = isDictationTextRange(range);
+      if (isVideoUiSelection && !isDualSubtitleSelection && !isDictationSelection) return;
+      const text = isDictationSelection ? getDictationSelectionText(range, rawText) : rawText;
+      if (!text) return;
       selectedRange = range.cloneRange();
       removeTranslationUI();
-      loadSettings().then(cfg => {
+      loadSettings().then(async cfg => {
         if (websiteDisabled) return;
-        if (isDualSubtitleSelection && cfg.translationPopupEnabled !== false && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
-          lookupEnglishDictionary(text, selectedRange, null, { autoSpeak:true });
+        if (isDualSubtitleSelection || isDictationSelection) {
+          const videoSettings = await loadVideoSelectionSettings();
+          if (!videoSettings.translationPopupEnabled) return;
+          if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
+            lookupEnglishDictionary(text, selectedRange, null, { speakOnOpen:videoSettings.clickToSpeak });
+          } else {
+            translateSelectedRange(selectedRange, {
+              forcePopup:true, textOverride:text, sourceLanguage:"en", speakOnOpen:videoSettings.clickToSpeak,
+            });
+          }
           return;
         }
         if (cfg.showOnSelect) {
@@ -1307,7 +1736,28 @@
       });
     }, 20);
   }
+  const handledDictationWordClicks = new WeakSet();
+  function handleDictationWordClick(event) {
+    if (handledDictationWordClicks.has(event)) return;
+    handledDictationWordClicks.add(event);
+    const token = (event.composedPath?.() || []).find(node => node?.nodeType === Node.ELEMENT_NODE && node.matches?.(DICTATION_WORD_CLICK_SELECTOR));
+    if (!token || token.getRootNode?.()?.host?.id !== "keepit-host") return;
+    const selection = currentSelection();
+    if (selection && !selection.isCollapsed && cleanText(selection.toString())) return;
+    const word = cleanText(token.textContent).replace(/^[^A-Za-z]+|[^A-Za-z'’]+$/g, "");
+    if (!LHN_DICTIONARY.isEnglishWord(word)) return;
+    const range = document.createRange();
+    try { range.selectNodeContents(token); } catch { return; }
+    if (!isDictationTextRange(range)) return;
+    loadSettings().then(async cfg => {
+      if (websiteDisabled || cfg.showFullEnglishDictionary === false) return;
+      const videoSettings = await loadVideoSelectionSettings();
+      if (!videoSettings.translationPopupEnabled) return;
+      lookupEnglishDictionary(word, range, null, { speakOnOpen:videoSettings.clickToSpeak });
+    }).catch(() => {});
+  }
   document.addEventListener("mouseup", handleSelectionMouseUp);
+  document.addEventListener("click", handleDictationWordClick);
   // Mouse events from a shadow tree may not reach the document listener in every host/browser.
   // Bind directly when the bilingual subtitle host appears; the WeakSet prevents double handling
   // when the same composed event also bubbles to document.
@@ -1318,6 +1768,7 @@
     if (boundSubtitleSelectionRoots.has(root)) return true;
     boundSubtitleSelectionRoots.add(root);
     root.addEventListener("mouseup", handleSelectionMouseUp);
+    root.addEventListener("click", handleDictationWordClick);
     return true;
   }
   if (!bindSubtitleSelectionRoot()) {
@@ -1336,19 +1787,24 @@
       else removeComposer();
     }
     if (tooltip && !e.target.closest?.("#lhn-note-pop, #lhn-highlight-actions, .lhn-mark")) removeTooltip();
-    if (translationPopup && !e.target.closest?.("#lhn-direct-translation, #lhn-translate-icon")) removeTranslationUI();
-    else if (dictionaryPopup && !dictionaryPopup._lhnHideForNote && !e.target.closest?.("#lhn-full-english-dictionary")) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
+    if (translationPopup && dictionaryPopup && e.target.closest?.("#lhn-full-english-dictionary")) { translationRequestId++; translationPopup.remove(); translationPopup = null; }
+    else if (translationPopup && !e.target.closest?.("#lhn-direct-translation, #lhn-translate-icon")) removeTranslationUI();
+    else if (dictionaryPopup && !dictionaryPopup._lhnHideForNote && !e.target.closest?.("#lhn-full-english-dictionary, #lhn-direct-translation")) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
   }, true);
   document.addEventListener("mouseup", e => {
     if ((outsideMouseDown?.wasOpen || outsideMouseDown?.dismissPopup) && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) suppressMouseUp = true;
     outsideMouseDown = null;
   }, true);
+  // the unified overlay (Xem · Ghi chú) opens / closes the page notes like the Keepit bar does (v3.5.173)
+  document.addEventListener("lhn-toggle-notes-sidebar", () => toggleSidebarToTab("highlights"));
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
     if (sidebarShortcut && pressed === sidebarShortcut) {
-      e.preventDefault(); e.stopPropagation(); toggleSidebar(); return;
+      e.preventDefault(); e.stopPropagation(); toggleSidebarToTab("highlights"); return;
     }
     const notePopupShortcut = String(settings.shortcut ?? "Alt+S").toLowerCase();
     if (!websiteSettingsReady) {
@@ -1368,8 +1824,14 @@
       e.preventDefault(); e.stopPropagation(); toggleWebsiteDisabled(); return;
     }
     if (websiteDisabled) return;
+    const dictationShortcut = String(settings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut).toLowerCase();
+    if (dictationShortcut && pressed === dictationShortcut) {
+      e.preventDefault(); e.stopPropagation();
+      if (!e.repeat) document.dispatchEvent(new CustomEvent("lhn-youtube-dictation-toggle"));
+      return;
+    }
     const dualSubtitlesShortcut = String(settings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut).toLowerCase();
-    if (dualSubtitlesShortcut && pressed === dualSubtitlesShortcut && /^(www\.)?youtube\.com$/i.test(location.hostname)) {
+    if (dualSubtitlesShortcut && pressed === dualSubtitlesShortcut) {
       e.preventDefault(); e.stopPropagation(); document.dispatchEvent(new CustomEvent("lhn-youtube-dual-subtitles-toggle")); return;
     }
     const bilingualShortcuts = { "alt+a":"toggle-lazy", "alt+d":"toggle-near-pointer", "alt+r":"toggle-reading" };
@@ -1407,7 +1869,7 @@
       }
       const selection = getSelection();
       const range = selection?.rangeCount && !selection.isCollapsed && cleanText(selection.toString()) && !isEditable(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
-      if (!e.repeat && range && cleanText(range.toString()) && !isEditable(e.target)) { e.preventDefault(); e.stopPropagation(); selectedRange = range.cloneRange(); translateSelectedRange(range, { forcePopup:true, forceSpeak:true }); }
+      if (!e.repeat && range && cleanText(range.toString()) && !isEditable(e.target)) { e.preventDefault(); e.stopPropagation(); selectedRange = range.cloneRange(); translateSelectedRange(range, { forcePopup:true, forceSpeak:true, allowDictionary:true }); }
       return;
     }
     if (notePopupShortcut && pressed === notePopupShortcut) {
@@ -1460,7 +1922,7 @@
       catch (error) { console.warn("Highlight Notes: could not load saved highlights", error); return; }
       if (!Array.isArray(items) || !document.body) return;
       const currentUrl = pageUrl();
-      const current = items.filter(x => x && x.url === currentUrl && x.quote && x.id);
+      const current = items.filter(x => x && x.url === currentUrl && x.quote && x.id && !x.dictionaryOnly);
       cachePageAnnotations(currentUrl, current);
       if (!current.length) { restoreRetryCount = 0; return; }
       // Snapshot existing marks once. Querying the whole page for every note made
@@ -1606,6 +2068,27 @@
       startRestoreObserver(); setTimeout(restoreAnnotations, 600);
     }
   });
+  // Bottom bar (keepit-bar.js, same content-script world; pages cannot reach these globals):
+  // Tô sáng lại and the search popup's Keepit Dictionary row reuse the real features.
+  function openBarDictionary(word) {
+    word = cleanText(word);
+    if (!word || websiteDisabled) return false;
+    let anchor = document.getElementById("lhn-bar-dict-anchor");
+    if (!anchor) {
+      anchor = document.createElement("span");
+      anchor.id = "lhn-bar-dict-anchor"; anchor.setAttribute("aria-hidden", "true"); anchor.setAttribute("data-lhn-bilingual-ui", "true");
+      anchor.style.cssText = "all:initial!important;position:fixed!important;left:50%!important;top:12vh!important;width:1px!important;height:1px!important;pointer-events:none!important;opacity:0!important";
+    }
+    if (anchor.parentNode !== document.documentElement) document.documentElement.appendChild(anchor);
+    const range = document.createRange(); range.selectNode(anchor);
+    if (settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(word)) lookupEnglishDictionary(word, range, null, {});
+    else translateSelectedRange(range, { forcePopup:true, textOverride:word });
+    return true;
+  }
+  globalThis.LHN_BAR_ACTIONS = Object.freeze({
+    restoreHighlights:() => websiteDisabled ? false : (restoreAnnotations(), true),
+    openDictionary:openBarDictionary
+  });
   LHN_MESSAGING.onMessage.addListener(message => {
     if (message?.type === "ANNOTATIONS_CHANGED") {
       const change = message.change;
@@ -1627,6 +2110,26 @@
       } else if (change.type === "refresh") { if (sidebarOpen) renderSidebar(); return; }
       else return;
       if (sidebarOpen) renderSidebar(true);
+      return;
+    }
+    if (message?.type === "AI_PANEL_VISIBILITY") {
+      setChatGPTPanelScrollbar(message.open === true);
+      aiPanelVisible = message.open === true;
+      aiPanelPageToggle = message.pageToggle === true;
+      if (typeof message.shortcut === "string" && aiPanelVisible) aiPanelShortcut = message.shortcut;
+      syncSidebarEdgeToggle();
+      return;
+    }
+    if (message?.type === "AI_PANEL_OPEN_FAILED") { showSidebarToast(() => t("chatGPTPanelOpenFailedToast")); return; }
+    if (message?.type === "AI_PANEL_TOGGLED_CLOSED") { showSidebarToast(() => t("chatGPTPanelClosedToast")); return; }
+    if (message?.type === "AI_LINK_PANEL_FAILED") { showSidebarToast(() => t("chatGPTAutoFillFailedToast")); return; }
+    if (message?.type === "AI_LINK_PANEL_QUEUED") {
+      if (["send-summary", "ask-selected-text-new", "ask-selected-text-existing"].includes(message.action)) showSidebarToast(() => t("chatGPTAutoFillPendingToast"));
+      return;
+    }
+    if (message?.type === "AI_PANEL_RESULT") {
+      if (message.ok) showSidebarToast(() => t(message.truncated ? "chatGPTAutoFillTruncatedToast" : "chatGPTAutoFillSuccessToast"));
+      else showSidebarToast(() => t(message.reason === "composer-not-empty" ? "chatGPTComposerPreservedToast" : "chatGPTAutoFillFailedToast"));
       return;
     }
     if (message?.type === "RESTORE_HIGHLIGHTS") return websiteDisabled ? undefined : restoreAnnotations();

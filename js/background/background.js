@@ -1,9 +1,57 @@
 if (typeof importScripts === "function") {
-  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js", "/js/shared/selection-toolbar.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
-browser.runtime.onInstalled.addListener(() => USAGE_LIMITS.initialize().catch(error => console.warn("Could not initialize local usage trial", error)));
+async function resetLegacyDictationWrongWordStats() {
+  const storage = browser?.storage?.local;
+  if (!storage) return;
+  try {
+    // One-time upgrade migration: clear only the old error aggregates, preserving each session's notes/progress.
+    const allData = await storage.get(null);
+    const updates = {};
+    for (const [key, record] of Object.entries(allData || {})) {
+      if (!/^dictation:[A-Za-z0-9_-]{6,}$/.test(key)) continue;
+      const stats = record?.wrongWordStats;
+      if (!record || !stats || Number(stats.version) >= 3) continue;
+      updates[key] = { ...record, wrongWordStats: { version: 3, words: {} } };
+    }
+    if (Object.keys(updates).length) await storage.set(updates);
+  } catch (error) {
+    console.warn("Could not reset legacy Dictation error statistics", error);
+  }
+}
+async function migrateSelectionToolbarStyle() {
+  // v3.5.147: 8 toolbar styles (radial 1-4, bar 5-8) under the new key selectionToolbarStyleV2 (default "1"), so every user
+  // starts on style 1 (approved reset). Drop the old keys selectionToolbarStyle (v3.5.119) and translateIconStyle (older).
+  const storage = browser?.storage?.local;
+  const key = CONFIG?.STORAGE_KEYS?.SETTINGS;
+  if (!storage || !key) return;
+  const data = await storage.get(key);
+  const saved = data?.[key] && typeof data[key] === "object" && !Array.isArray(data[key]) ? data[key] : {};
+  if (!Object.hasOwn(saved, "selectionToolbarStyle") && !Object.hasOwn(saved, "translateIconStyle")) return;
+  const { selectionToolbarStyle, translateIconStyle, ...rest } = saved;
+  await storage.set({ [key]:rest });
+}
+browser.runtime.onInstalled.addListener(async details => {
+  if (details?.reason === "update") {
+    try { await migrateSelectionToolbarStyle(); }
+    catch (error) { console.warn("Could not migrate the selection toolbar style", error); }
+  }
+  try {
+    await cleanupAskAIStorage();
+  } catch (error) { console.warn("Could not clean expired or legacy Ask AI data", error); }
+  try { await USAGE_LIMITS.initialize(); }
+  catch (error) { console.warn("Could not initialize local usage trial", error); }
+  try { await ensureAIProviderFrameRule(true); }
+  catch (error) { console.warn("Could not configure the AI-provider iframe header rule", error); }
+  await ensureAskAIContextMenu();
+  await resetLegacyDictationWrongWordStats();
+});
+browser.runtime.onStartup?.addListener(() => {
+  Promise.all([clearExpiredAILinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired Ask AI requests or register Firefox selection menu", error));
+  ensureAIProviderFrameRule().catch(error => console.warn("Could not configure the AI-provider iframe header rule", error));
+});
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
 const ttsAudioRequests = new Map();
 async function fetchTtsAudio(message) {
@@ -65,6 +113,21 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   return existing;
 }
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+// v3.5.160 touch bar: back / forward swipe past this tab's history → previous / next tab of the same window.
+// Only tab order (index, id) of the sender's window is used; nothing is stored or sent anywhere.
+async function tabNeighbors(message, sender) {
+  const tab = sender?.tab;
+  if (!tab || typeof tab.index !== "number") return { prev: false, next: false };
+  const tabs = await browser.tabs.query({ windowId: tab.windowId });
+  const prev = tabs.find(candidate => candidate.index === tab.index - 1), next = tabs.find(candidate => candidate.index === tab.index + 1);
+  if (message.type === "SWITCH_TAB") {
+    const target = message.dir < 0 ? prev : next;
+    if (!target?.id) return { ok: false };
+    await browser.tabs.update(target.id, { active: true });
+    return { ok: true };
+  }
+  return { prev: !!prev, next: !!next };
+}
 async function openHighlight(url, id) {
   if (typeof url !== "string" || !/^https?:\/\//i.test(url) || typeof id !== "string" || !id) return { found: false };
   const tabs = await browser.tabs.query({});
@@ -89,6 +152,12 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "DETECT_READ_LANGUAGE") return LHN_TRANSLATE.detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return LHN_TRANSLATE.translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_GET") return LHN_CACHE.getVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_SAVE") return LHN_CACHE.saveVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""), message.transcript);
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_TOUCH") return LHN_CACHE.touchVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_GET") return LHN_CACHE.getWebStudyCues(String(message.cacheKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_SAVE") return LHN_CACHE.saveWebStudyCues(String(message.cacheKey || ""), message.sentences);
+  if (message.type === "WEB_STUDY_CUE_CACHE_TOUCH") return LHN_CACHE.touchWebStudyCues(String(message.cacheKey || ""));
   if (message.type === "YOUTUBE_FETCH_TEXT") {
     const url = String(message.url || "");
     const allowed = /^https:\/\/(?:www\.)?youtube\.com\//.test(url) || /^https:\/\/translate\.googleapis\.com\//.test(url);
@@ -113,11 +182,22 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
   if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
   if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
+  if (ASK_AI_MESSAGE_TYPES.has(message.type)) {
+    const askAIResult = await handleAskAIMessage(message, sender);
+    if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
+  }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
+  // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
+  if (message.type === "OPEN_HOME") {
+    if (!Number.isInteger(sender?.tab?.id)) return { ok: false };
+    const url = browser.runtime.getURL("pages/home.html");   // v3.5.180: the Keepit home page (was the browser start page)
+    try { await browser.tabs.update(sender.tab.id, { url }); return { ok: true }; } catch (error) { return { ok: false, error: String(error?.message || error) }; }
+  }
  if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
+  if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
   if (message.type === "GET_ALL") return ANNOTATIONS.getAll();
   if (message.type === "GET_BATCH") return ANNOTATIONS.getBatch(message);
   if (message.type === "GET_PAGE") return ANNOTATIONS.getPage(message.url);
