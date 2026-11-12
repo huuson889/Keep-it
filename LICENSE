@@ -1,0 +1,13 @@
+# Keepit Proprietary License Notice — Draft
+
+**Draft status:** This notice is not ready for publication until the bracketed copyright-holder field is completed and the terms have been reviewed.
+
+Copyright © 2026 **[COPYRIGHT HOLDER — LEGAL NAME]**. All rights reserved.
+
+This notice applies only to original Keepit source code, documentation, and assets owned by the copyright holder. Except for the limited permission below, no permission is granted to copy, modify, adapt, publish, distribute, sublicense, sell, or create derivative works from those original materials without prior written permission from the copyright holder.
+
+If you obtain the packaged Keepit extension through an authorized distribution channel, you may install and use that copy for your own personal or internal business purposes, subject to the applicable distribution-platform terms and any separate end-user terms supplied with the product. This permission does not grant a right to redistribute the extension or its source code, or to reuse Keepit-owned source code or assets in another product.
+
+Third-party components are **not** covered by this proprietary notice. They remain subject to their own licenses and notices, listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) with the license texts in [`licenses/`](licenses/). If a third-party license conflicts with this notice, that third-party license governs the relevant component.
+
+The extension and original materials are provided “AS IS” to the extent permitted by applicable law. This notice does not limit any rights that cannot legally be limited, nor does it replace mandatory consumer protections or a separately reviewed end-user agreement.

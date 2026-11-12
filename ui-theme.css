@@ -1,0 +1,308 @@
+/* Shared component system: slate surfaces, indigo actions, soft borders. */
+#lhn-panel, #lhn-note-pop, #lhn-sidebar-edit-dialog {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-surface)!important;
+  border:1px solid var(--lhn-ui-border)!important; border-radius:16px!important;
+  box-shadow:var(--lhn-ui-shadow)!important;
+}
+#lhn-panel { padding:14px!important; }
+#lhn-note-pop { padding:13px!important; }
+#lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; }
+#lhn-panel .lhn-heading, #lhn-sidebar-edit-dialog h2 { color:var(--lhn-ui-strong)!important; }
+#lhn-panel .lhn-quote, #lhn-sidebar-edit-dialog .lhn-edit-field { color:var(--lhn-ui-muted)!important; }
+#lhn-panel textarea, #lhn-panel .lhn-tag-editor,
+#lhn-sidebar-edit-dialog .lhn-edit-input-wrap textarea,
+#lhn-sidebar-edit-dialog .lhn-edit-tags,
+#lhn-sidebar-edit-dialog .lhn-tag-editor {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-raised)!important;
+  border-color:var(--lhn-ui-border)!important; border-radius:11px!important;
+}
+#lhn-panel textarea:focus, #lhn-panel .lhn-tag-editor:focus-within,
+#lhn-sidebar-edit-dialog .lhn-edit-input-wrap textarea:focus,
+#lhn-sidebar-edit-dialog .lhn-edit-tags:focus,
+#lhn-sidebar-edit-dialog .lhn-tag-editor:focus-within {
+  border-color:var(--lhn-ui-brand)!important; background:var(--lhn-ui-surface)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--lhn-ui-brand) 18%,transparent)!important;
+}
+#lhn-panel textarea::placeholder, #lhn-sidebar-edit-dialog textarea::placeholder,
+#lhn-panel .lhn-tag-editor input::placeholder, #lhn-sidebar-edit-dialog .lhn-tag-editor input::placeholder { color:var(--lhn-ui-soft)!important; }
+#lhn-panel .lhn-btn.lhn-save-btn,
+#lhn-sidebar-edit-dialog .lhn-edit-actions button:not(.lhn-edit-secondary) {
+  background:var(--lhn-ui-brand)!important; color:#fff!important; border:0!important; box-shadow:none!important;
+}
+#lhn-panel .lhn-btn.lhn-save-btn:hover,
+#lhn-sidebar-edit-dialog .lhn-edit-actions button:not(.lhn-edit-secondary):hover { background:var(--lhn-ui-brand-hover)!important; }
+#lhn-panel .lhn-btn.lhn-cancel-btn, #lhn-sidebar-edit-dialog .lhn-edit-actions .lhn-edit-secondary { color:var(--lhn-ui-muted)!important; }
+#lhn-panel .lhn-btn.lhn-cancel-btn:hover, #lhn-sidebar-edit-dialog .lhn-edit-actions .lhn-edit-secondary:hover,
+#lhn-panel .lhn-btn.lhn-close-btn:hover, #lhn-sidebar-edit-dialog .lhn-edit-close:hover { background:var(--lhn-ui-subtle)!important; color:var(--lhn-ui-strong)!important; }
+#lhn-note-pop .lhn-icon-btn:not(.secondary) { background:var(--lhn-ui-subtle)!important; color:var(--lhn-ui-text)!important; }
+#lhn-note-pop .lhn-icon-btn:hover { background:var(--lhn-ui-border)!important; }
+#lhn-note-pop .lhn-tooltip-quote { color:var(--lhn-ui-muted)!important; }
+#lhn-sidebar-edit-dialog::backdrop { background:rgba(15,23,42,.38)!important; }
+
+/* Dashboard light theme uses the same shared surface and control tokens. */
+html:not(.dark) body { background:var(--lhn-ui-page); color:var(--lhn-ui-text); }
+html:not(.dark) header, html:not(.dark) .sources-panel, html:not(.dark) .notes-panel,
+html:not(.dark) .card, html:not(.dark) .composer-dialog, html:not(.dark) .study-dialog,
+html:not(.dark) #toast { background:var(--lhn-ui-surface); border-color:var(--lhn-ui-border); color:var(--lhn-ui-text); }
+html:not(.dark) header { box-shadow:0 2px 10px rgba(15,23,42,.035); }
+html:not(.dark) .toolbar select, html:not(.dark) .search-box, html:not(.dark) .favorite-filter,
+html:not(.dark) .composer-dialog textarea, html:not(.dark) .composer-dialog .tag-editor,
+html:not(.dark) .study-dialog textarea, html:not(.dark) .study-dialog input,
+html:not(.dark) .study-dialog select { background:var(--lhn-ui-raised); border-color:var(--lhn-ui-border); color:var(--lhn-ui-text); }
+html:not(.dark) .source-item:hover { background:var(--lhn-ui-raised); }
+html:not(.dark) .source-item.active { background:var(--lhn-ui-brand-soft); border:1px solid #adaccc; }
+html:not(.dark) .source-count, html:not(.dark) .icon-button, html:not(.dark) button.secondary { background:var(--lhn-ui-subtle); border-color:var(--lhn-ui-border); color:var(--lhn-ui-text); }
+html:not(.dark) .source-title, html:not(.dark) .selected-page-text h2, html:not(.dark) .empty h2,
+html:not(.dark) .composer-dialog h2, html:not(.dark) .study-dialog h2 { color:var(--lhn-ui-strong); }
+html:not(.dark) .note { color:var(--lhn-ui-text); }
+html:not(.dark) .export-menu { background:var(--lhn-ui-surface); border-color:var(--lhn-ui-border); box-shadow:var(--lhn-ui-shadow); }
+html:not(.dark) .export-option { color:var(--lhn-ui-text); }
+html:not(.dark) .export-option:hover { background:var(--lhn-ui-subtle); }
+
+/* Dashboard dark mode. Applied from the same sidebarTheme preference as the popup. */
+html.dark, html.dark body { background:var(--lhn-ui-page)!important; color:var(--lhn-ui-text)!important; }
+html.dark header, html.dark .sources-panel, html.dark .notes-panel,
+html.dark .card, html.dark .composer-dialog, html.dark .study-dialog,
+html.dark #toast, html.dark .export-menu {
+  background:var(--lhn-ui-surface)!important; color:var(--lhn-ui-text)!important;
+  border-color:var(--lhn-ui-border)!important; box-shadow:var(--lhn-ui-shadow);
+}
+html.dark header { border-bottom-color:var(--lhn-ui-border)!important; }
+html.dark h1, html.dark h2, html.dark h3, html.dark .source-title,
+html.dark .selected-page-text h2, html.dark .empty h2, html.dark .composer-dialog h2,
+html.dark .study-dialog h2 { color:var(--lhn-ui-strong)!important; }
+html.dark p, html.dark .meta, html.dark .source-meta, html.dark .panel-heading p,
+html.dark header p, html.dark .total-count, html.dark .empty { color:var(--lhn-ui-muted)!important; }
+html.dark .panel-heading, html.dark .notes-header { border-color:var(--lhn-ui-border-soft)!important; }
+html.dark .toolbar select, html.dark .search-box, html.dark .favorite-filter,
+html.dark .composer-dialog textarea, html.dark .composer-dialog input,
+html.dark .composer-dialog select, html.dark .composer-dialog .tag-editor,
+html.dark .study-dialog textarea, html.dark .study-dialog input,
+html.dark .study-dialog select, html.dark .study-dialog .setting-row,
+html.dark .study-dialog .shortcut-field {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important;
+}
+html.dark .toolbar select, html.dark .composer-dialog textarea, html.dark .study-dialog textarea { color-scheme:dark; }
+html.dark .toolbar select:focus, html.dark .search-box:focus-within,
+html.dark .composer-dialog textarea:focus, html.dark .study-dialog input:focus,
+html.dark .study-dialog textarea:focus { border-color:var(--lhn-ui-brand)!important; box-shadow:0 0 0 3px color-mix(in srgb,var(--lhn-ui-brand) 18%,transparent)!important; }
+html.dark .search-box input { color:var(--lhn-ui-text)!important; }
+html.dark .search-box input::placeholder, html.dark textarea::placeholder { color:var(--lhn-ui-soft)!important; }
+html.dark button.secondary, html.dark .icon-button, html.dark .source-count,
+html.dark .empty-icon, html.dark .selected-favicon, html.dark .file-icon {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-subtle)!important; border-color:var(--lhn-ui-border)!important;
+}
+html.dark .favorite-filter.is-active, html.dark .icon-button.is-favorite,
+html.dark .icon-button.is-active { background:#382f20!important; border-color:#69562b!important; color:#f2cc67!important; }
+html.dark .source-item { border-color:transparent; }
+html.dark .source-item:hover { background:var(--lhn-ui-raised)!important; }
+html.dark .source-item.active { background:var(--lhn-ui-brand-soft)!important; border:1px solid #413e6b!important; }
+html.dark .source-thumb { background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important; }
+html.dark .source-thumb .thumb-fallback { color:#aab6ca; }
+html.dark .card { border-color:var(--lhn-ui-border)!important; }
+html.dark .quote, html.dark .note { color:var(--lhn-ui-text)!important; }
+html.dark .meta, html.dark .source-host { color:var(--lhn-ui-soft)!important; }
+html.dark .selected-page-text a { color:var(--lhn-ui-brand)!important; }
+html.dark .composer-dialog form label, html.dark .composer-dialog .tag-editor,
+html.dark .study-dialog label, html.dark .study-dialog .setting-label { color:var(--lhn-ui-text)!important; }
+html.dark .composer-dialog textarea, html.dark .study-dialog textarea { border-radius:11px!important; }
+html.dark .composer-dialog .dialog-actions button.secondary { background:var(--lhn-ui-subtle)!important; border-color:var(--lhn-ui-border)!important; color:var(--lhn-ui-text)!important; }
+html.dark .export-option { color:var(--lhn-ui-text)!important; }
+html.dark .export-option:hover { background:var(--lhn-ui-subtle)!important; }
+html.dark .export-menu { border-color:var(--lhn-ui-border)!important; }
+html.dark .source-empty { color:var(--lhn-ui-muted)!important; }
+html.dark dialog::backdrop { background:rgba(0,0,0,.65)!important; }
+html.dark .composer-dialog .composer-quote { background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important; color:var(--lhn-ui-muted)!important; }
+html.dark #toast { background:#172338!important; color:#edf2fb!important; border-color:#34445d!important; }
+html.dark .study-dialog .setting-row, html.dark .study-dialog .shortcut-field { border-radius:11px!important; }
+
+/* Injected popups receive theme classes so host page styles cannot override them. */
+#lhn-panel.lhn-ui-dark, #lhn-note-pop.lhn-ui-dark, #lhn-sidebar-edit-dialog.lhn-ui-dark {
+  color-scheme:dark!important; --lhn-ui-page:#0b1120; --lhn-ui-surface:#111a2b; --lhn-ui-raised:#172338;
+  --lhn-ui-subtle:#1e2b41; --lhn-ui-text:#d7deeb; --lhn-ui-strong:#f1f5fb; --lhn-ui-muted:#a4b0c3;
+  --lhn-ui-soft:#8492a8; --lhn-ui-border:#2b3a52; --lhn-ui-border-soft:#233149;
+  --lhn-ui-brand:#7778f7; --lhn-ui-brand-hover:#8e8fff;
+}
+#lhn-panel.lhn-ui-light, #lhn-note-pop.lhn-ui-light, #lhn-sidebar-edit-dialog.lhn-ui-light { color-scheme:light!important; }
+#lhn-panel.lhn-ui-light, #lhn-note-pop.lhn-ui-light, #lhn-sidebar-edit-dialog.lhn-ui-light {
+  --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9;
+  --lhn-ui-text:#334155; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8;
+  --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#4f46e5; --lhn-ui-brand-hover:#4338ca;
+  --lhn-ui-brand-soft:#f5f3ff; color-scheme:light!important;
+}
+/* Sidebar edit dialog dark mode, matched to the dashboard editor. */
+#lhn-sidebar-edit-dialog.lhn-ui-dark { color:#d7deeb!important; background:#111a2b!important; border-color:#2b3a52!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark h2 { color:#f1f5fb!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-quote { color:#a4b0c3!important; background:#172338!important; border-color:#2b3a52!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-field { color:#cbd5e1!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor { color:#e2e8f0!important; background:#172338!important; border-color:#334155!important; color-scheme:dark; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea:focus,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags:focus,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor:focus-within { background:#1e293b!important; border-color:#818cf8!important; box-shadow:0 0 0 3px rgba(129,140,248,.18)!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea::placeholder,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags::placeholder,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor input::placeholder { color:#8492a8!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-close,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions .lhn-edit-secondary { color:#a4b0c3!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-close:hover,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions .lhn-edit-secondary:hover { color:#f1f5fb!important; background:#1e293b!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions button:not(.lhn-edit-secondary) { color:#fff!important; background:#6258e8!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark::backdrop { background:rgba(0,0,0,.68)!important; }
+
+/* Keep dashboard controls consistent and let Focus override the normal modal dimmer. */
+html.dark .favorite-filter:not(.is-active) {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-raised)!important;
+  border-color:var(--lhn-ui-border)!important; box-shadow:none!important;
+}
+html.dark .favorite-filter:not(.is-active) .lucide { color:var(--lhn-ui-soft)!important; stroke:var(--lhn-ui-soft)!important; }
+html.dark #studyDialog .study-session-header { box-shadow:none!important; }
+html.dark #studyDialog::backdrop { background:rgba(15,23,42,.5)!important; backdrop-filter:blur(3px)!important; }
+html.dark #studyDialog.study-focus::backdrop { background:rgba(0,0,0,.98)!important; backdrop-filter:blur(3px)!important; }
+
+/* Consistent light-mode elevation across dashboard cards, panels, and controls. */
+html:not(.dark) header,
+html:not(.dark) .sources-panel,
+html:not(.dark) .notes-panel,
+html:not(.dark) .composer-dialog,
+html:not(.dark) .study-dialog,
+html:not(.dark) .study-session,
+html:not(.dark) .shortcut-dialog,
+html:not(.dark) .export-menu {
+  box-shadow:var(--lhn-ui-shadow)!important;
+}
+html:not(.dark) .card,
+html:not(.dark) .source-item,
+html:not(.dark) .study-card,
+html:not(.dark) .notes-header,
+html:not(.dark) .note-color-filters,
+html:not(.dark) .panel-heading,
+html:not(.dark) .toolbar select,
+html:not(.dark) .search-box,
+html:not(.dark) .favorite-filter,
+html:not(.dark) .icon-button,
+html:not(.dark) .top-actions button,
+html:not(.dark) .source-thumb,
+html:not(.dark) .source-count,
+html:not(.dark) .file-icon {
+  box-shadow:0 3px 10px rgba(15,23,42,.07),0 1px 2px rgba(15,23,42,.04)!important;
+}
+html:not(.dark) .study-session-header { box-shadow:none!important; }
+html:not(.dark) .profile-card { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; box-shadow:var(--lhn-ui-shadow)!important; }
+html:not(.dark) .source-item { box-shadow:0 3px 10px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.04)!important; }
+html:not(.dark) .source-item:hover { box-shadow:0 6px 16px rgba(15,23,42,.12),0 2px 4px rgba(15,23,42,.05)!important; }
+html.dark .profile-card { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; color:var(--lhn-ui-text)!important; }
+html.dark .profile-stat-grid > div, html.dark .profile-chip { background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important; color:var(--lhn-ui-text)!important; }
+html.dark .profile-heat-cell { background:#273449; }
+html.dark .profile-heat-cell.level-1 { background:#343b69; } html.dark .profile-heat-cell.level-2 { background:#4b4c9a; } html.dark .profile-heat-cell.level-3 { background:#6366c8; } html.dark .profile-heat-cell.level-4 { background:#818cf8; }
+html.dark .profile-heatmap-legend i { background:#273449; }
+html.dark .profile-heatmap-legend i:nth-of-type(2) { background:#343b69; } html.dark .profile-heatmap-legend i:nth-of-type(3) { background:#4b4c9a; } html.dark .profile-heatmap-legend i:nth-of-type(4) { background:#6366c8; } html.dark .profile-heatmap-legend i:nth-of-type(5) { background:#818cf8; }
+html:not(.dark) .search-box:focus-within,
+html:not(.dark) .toolbar select:focus,
+html:not(.dark) .composer-dialog textarea:focus,
+html:not(.dark) .study-dialog input:focus,
+html:not(.dark) .study-dialog textarea:focus { box-shadow:0 0 0 3px color-mix(in srgb,var(--lhn-ui-brand) 18%,transparent)!important; }
+
+/* One shared control style for sorting, favorites, and search. */
+:root { --dashboard-control-height:34px; --dashboard-control-radius:9px; --dashboard-control-bg:#f8fafc; --dashboard-control-border:#dce2eb; --dashboard-control-text:#303949; --dashboard-control-font:11px; }
+html.dark { --dashboard-control-bg:#172338; --dashboard-control-border:#2b3a52; --dashboard-control-text:#d7deeb; }
+.toolbar .dashboard-control { box-sizing:border-box; height:var(--dashboard-control-height); min-height:var(--dashboard-control-height); border:1px solid var(--dashboard-control-border)!important; border-radius:var(--dashboard-control-radius)!important; background:var(--dashboard-control-bg)!important; color:var(--dashboard-control-text)!important; font-family:var(--lhn-app-font-family)!important; font-size:var(--dashboard-control-font)!important; font-weight:500!important; line-height:1.25!important; letter-spacing:normal!important; font-kerning:normal; }
+.toolbar .dashboard-control,
+.toolbar .dashboard-control > span,
+.toolbar .dashboard-control input,
+.toolbar .dashboard-control input::placeholder { font-family:var(--lhn-app-font-family)!important; font-size:var(--dashboard-control-font)!important; font-weight:500!important; line-height:1.25!important; letter-spacing:normal!important; }
+.toolbar button.dashboard-control:focus:not(:focus-visible) { outline:none!important; box-shadow:none!important; }
+.toolbar select.dashboard-control { padding:0 20px 0 7px; }
+.toolbar .favorite-filter.dashboard-control { padding:0 8px; gap:6px; }
+.toolbar .search-box.dashboard-control { padding:0 9px; gap:8px; }
+.toolbar .search-box.dashboard-control input { min-width:40px; padding:0; border:0; outline:0; background:transparent!important; color:var(--dashboard-control-text)!important; font:inherit!important; }
+.toolbar .search-box.dashboard-control input::placeholder { color:var(--lhn-ui-muted)!important; opacity:1; }
+.toolbar .favorite-filter.dashboard-control:not(.is-active) { box-shadow:none!important; }
+.toolbar .favorite-filter.dashboard-control:not(.is-active) svg { color:var(--lhn-ui-muted); }
+.toolbar .favorite-filter.dashboard-control.is-active { background:#fff8df!important; border-color:#f0d778!important; color:#8a6400!important; }
+html.dark .toolbar .favorite-filter.dashboard-control.is-active { background:#382f20!important; border-color:#69562b!important; color:#f2cc67!important; }
+html.dark .toolbar .favorite-filter.dashboard-control.is-active svg { color:#f2cc67!important; }
+.toolbar .search-box.dashboard-control:focus-within { box-shadow:none!important; }
+html:not(.dark) .toolbar select.dashboard-control:focus,
+html:not(.dark) .toolbar button.dashboard-control:focus,
+html.dark .toolbar select.dashboard-control:focus,
+html.dark .toolbar button.dashboard-control:focus { outline:none!important; box-shadow:none!important; }
+html.dark .profile-google-button { background:#111a2b; border-color:#2b3a52; color:#e2e8f0; }
+html.dark .profile-auth-divider { color:#94a3b8; }
+html.dark .top-actions .profile-avatar-button { background:#172338; border-color:#2b3a52; color:#d7deeb; }
+html.dark .top-actions .profile-avatar-button:hover { background:#202e44; }
+.profile-menu .profile-menu-item { box-shadow:none!important; }
+html.dark .profile-menu .profile-menu-export-wrap > .export-menu { background:transparent!important; border:0!important; box-shadow:none!important; }
+
+/* Keep component shadows inside visible gutters instead of clipping them at scrollports. */
+#profileSidebar { overflow:visible!important; }
+#profileSidebar .profile-card { margin:5px!important; }
+.sources-panel .source-list { padding:12px!important; }
+.sources-panel .source-item {
+  box-shadow:0 3px 8px rgba(15,23,42,.13),0 7px 18px rgba(15,23,42,.08)!important;
+}
+.sources-panel .source-item:hover {
+  box-shadow:0 5px 12px rgba(15,23,42,.17),0 9px 22px rgba(15,23,42,.11)!important;
+}
+html.dark .sources-panel .source-item {
+  box-shadow:0 3px 8px rgba(0,0,0,.38),0 7px 18px rgba(0,0,0,.28)!important;
+}
+html.dark .sources-panel .source-item:hover {
+  box-shadow:0 5px 12px rgba(0,0,0,.45),0 9px 22px rgba(0,0,0,.34)!important;
+}
+html:not(.dark) .notes-panel .lhn-sidebar-card:hover {
+  background:rgba(100,116,139,.06)!important; border-color:rgba(100,116,139,.22)!important;
+}
+html.dark .notes-panel .lhn-sidebar-card:hover {
+  background:rgba(148,163,184,.08)!important; border-color:rgba(148,163,184,.22)!important;
+}
+/* Keep profile and source-card shadows clear of parent clipping and soften card hover. */
+body > main { overflow:visible!important; }
+#profileSidebar.profile-sidebar { overflow:visible!important; padding:0!important; }
+#profileSidebar .profile-card { margin:5px!important; }
+.sources-panel .source-list { padding:14px!important; overflow:visible!important; }
+.sources-panel .source-item {
+  margin:5px!important;
+  box-shadow:0 4px 10px rgba(15,23,42,.16),0 8px 20px rgba(15,23,42,.10)!important;
+}
+.sources-panel .source-item:hover {
+  box-shadow:0 6px 14px rgba(15,23,42,.20),0 10px 24px rgba(15,23,42,.13)!important;
+}
+html.dark .sources-panel .source-item {
+  box-shadow:0 4px 10px rgba(0,0,0,.42),0 8px 20px rgba(0,0,0,.32)!important;
+}
+html.dark .sources-panel .source-item:hover {
+  box-shadow:0 6px 14px rgba(0,0,0,.48),0 10px 24px rgba(0,0,0,.38)!important;
+}
+html:not(.dark) .notes-panel .lhn-sidebar-card:hover {
+  background:#f8f9fb!important; border-color:#e5e7eb!important;
+}
+html.dark .notes-panel .lhn-sidebar-card:hover {
+  background:#222d40!important; border-color:#39475c!important;
+}
+/* Preserve source-list scrolling while leaving enough inset space for card shadows. */
+.sources-panel .source-list { overflow-y:auto!important; overflow-x:hidden!important; }
+
+/* Align the profile-to-workspace gutter with the source-to-notes gutter. */
+body > main { column-gap:10px!important; }
+
+/* Keep all settings tabs on the same heading-to-content rhythm and preserve scrolling. */
+#dashboardSettingsDialog .settings-window-layout { min-height:0!important; overflow:hidden!important; }
+#dashboardSettingsDialog .settings-window-content { min-height:0!important; overflow-x:hidden!important; overflow-y:auto!important; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+#dashboardSettingsDialog .settings-panel-page > .settings-panel-heading { margin:0 0 22px!important; }
+#dashboardSettingsDialog .settings-panel-page > .settings-panel-heading + * { margin-top:0!important; }
+#dashboardSettingsDialog .settings-panel-page > .settings-panel-heading + .settings-subsection { padding-top:0!important; border-top:0!important; }
+
+/* Make the visible profile-to-sources gap equal to the workspace's 10px panel gap. */
+#profileSidebar .profile-card { margin:0!important; }
+body > main { column-gap:10px!important; }
+
+/* Keep the first Account and Backup rows aligned with other Settings tabs. */
+#dashboardSettingsDialog .settings-picture-row { padding-top:0!important; }
+#dashboardSettingsDialog .settings-picture-row { margin-top:-10px!important; }
+#dashboardSettingsDialog [data-settings-panel="backup"] > .settings-panel-heading + .settings-backup-row { padding-top:0!important; }
+
+/* Keep the Study flashcards button purple in dark mode, as in light mode. */
+html.dark .sources-panel > .panel-heading .study-mode-button { background:#5145e8!important; border-color:#3e35c4!important; color:#fff!important; }
+html.dark .sources-panel > .panel-heading .study-mode-button:hover { background:#4438d4!important; }

@@ -1,0 +1,76 @@
+/* Shared component system: slate surfaces, indigo actions, soft borders. */
+#lhn-panel, #lhn-note-pop, #lhn-sidebar-edit-dialog {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-surface)!important;
+  border:1px solid var(--lhn-ui-border)!important; border-radius:16px!important;
+  box-shadow:var(--lhn-ui-shadow)!important;
+}
+#lhn-panel { padding:14px!important; }
+#lhn-note-pop { padding:13px!important; }
+#lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; }
+#lhn-panel .lhn-heading, #lhn-sidebar-edit-dialog h2 { color:var(--lhn-ui-strong)!important; }
+#lhn-panel .lhn-quote, #lhn-sidebar-edit-dialog .lhn-edit-field { color:var(--lhn-ui-muted)!important; }
+#lhn-panel textarea, #lhn-panel .lhn-tag-editor,
+#lhn-sidebar-edit-dialog .lhn-edit-input-wrap textarea,
+#lhn-sidebar-edit-dialog .lhn-edit-tags,
+#lhn-sidebar-edit-dialog .lhn-tag-editor {
+  color:var(--lhn-ui-text)!important; background:var(--lhn-ui-raised)!important;
+  border-color:var(--lhn-ui-border)!important; border-radius:11px!important;
+}
+#lhn-panel textarea:focus, #lhn-panel .lhn-tag-editor:focus-within,
+#lhn-sidebar-edit-dialog .lhn-edit-input-wrap textarea:focus,
+#lhn-sidebar-edit-dialog .lhn-edit-tags:focus,
+#lhn-sidebar-edit-dialog .lhn-tag-editor:focus-within {
+  border-color:var(--lhn-ui-brand)!important; background:var(--lhn-ui-surface)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--lhn-ui-brand) 18%,transparent)!important;
+}
+#lhn-panel textarea::placeholder, #lhn-sidebar-edit-dialog textarea::placeholder,
+#lhn-panel .lhn-tag-editor input::placeholder, #lhn-sidebar-edit-dialog .lhn-tag-editor input::placeholder { color:var(--lhn-ui-soft)!important; }
+#lhn-panel .lhn-btn.lhn-save-btn,
+#lhn-sidebar-edit-dialog .lhn-edit-actions button:not(.lhn-edit-secondary) {
+  background:var(--lhn-ui-brand)!important; color:#fff!important; border:0!important; box-shadow:none!important;
+}
+#lhn-panel .lhn-btn.lhn-save-btn:hover,
+#lhn-sidebar-edit-dialog .lhn-edit-actions button:not(.lhn-edit-secondary):hover { background:var(--lhn-ui-brand-hover)!important; }
+#lhn-panel .lhn-btn.lhn-cancel-btn, #lhn-sidebar-edit-dialog .lhn-edit-actions .lhn-edit-secondary { color:var(--lhn-ui-muted)!important; }
+#lhn-panel .lhn-btn.lhn-cancel-btn:hover, #lhn-sidebar-edit-dialog .lhn-edit-actions .lhn-edit-secondary:hover,
+#lhn-panel .lhn-btn.lhn-close-btn:hover, #lhn-sidebar-edit-dialog .lhn-edit-close:hover { background:var(--lhn-ui-subtle)!important; color:var(--lhn-ui-strong)!important; }
+#lhn-note-pop .lhn-icon-btn:not(.secondary) { background:var(--lhn-ui-subtle)!important; color:var(--lhn-ui-text)!important; }
+#lhn-note-pop .lhn-icon-btn:hover { background:var(--lhn-ui-border)!important; }
+#lhn-note-pop .lhn-tooltip-quote { color:var(--lhn-ui-muted)!important; }
+#lhn-sidebar-edit-dialog::backdrop { background:rgba(15,23,42,.38)!important; }
+
+/* Injected popups receive theme classes so host page styles cannot override them. */
+#lhn-panel.lhn-ui-dark, #lhn-note-pop.lhn-ui-dark, #lhn-sidebar-edit-dialog.lhn-ui-dark {
+  color-scheme:dark!important; --lhn-ui-page:#0b1120; --lhn-ui-surface:#111a2b; --lhn-ui-raised:#172338;
+  --lhn-ui-subtle:#1e2b41; --lhn-ui-text:#d7deeb; --lhn-ui-strong:#f1f5fb; --lhn-ui-muted:#a4b0c3;
+  --lhn-ui-soft:#8492a8; --lhn-ui-border:#2b3a52; --lhn-ui-border-soft:#233149;
+  --lhn-ui-brand:#7778f7; --lhn-ui-brand-hover:#8e8fff;
+}
+#lhn-panel.lhn-ui-light, #lhn-note-pop.lhn-ui-light, #lhn-sidebar-edit-dialog.lhn-ui-light { color-scheme:light!important; }
+#lhn-panel.lhn-ui-light, #lhn-note-pop.lhn-ui-light, #lhn-sidebar-edit-dialog.lhn-ui-light {
+  --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9;
+  --lhn-ui-text:#000; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8;
+  --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#4f46e5; --lhn-ui-brand-hover:#4338ca;
+  --lhn-ui-brand-soft:#f5f3ff; color-scheme:light!important;
+}
+/* Sidebar edit dialog dark mode, matched to the dashboard editor. */
+#lhn-sidebar-edit-dialog.lhn-ui-dark { color:#d7deeb!important; background:#111a2b!important; border-color:#2b3a52!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark h2 { color:#f1f5fb!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-quote { color:#a4b0c3!important; background:#172338!important; border-color:#2b3a52!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-field { color:#cbd5e1!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor { color:#e2e8f0!important; background:#172338!important; border-color:#334155!important; color-scheme:dark; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea:focus,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags:focus,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor:focus-within { background:#1e293b!important; border-color:#818cf8!important; box-shadow:0 0 0 3px rgba(129,140,248,.18)!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-input-wrap textarea::placeholder,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-tags::placeholder,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-tag-editor input::placeholder { color:#8492a8!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-close,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions .lhn-edit-secondary { color:#a4b0c3!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-close:hover,
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions .lhn-edit-secondary:hover { color:#f1f5fb!important; background:#1e293b!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-actions button:not(.lhn-edit-secondary) { color:#fff!important; background:#6258e8!important; }
+#lhn-sidebar-edit-dialog.lhn-ui-dark::backdrop { background:rgba(0,0,0,.68)!important; }
+
