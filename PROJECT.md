@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.209 | Arena.ai Agent sửa:**
+
+- Trang tối bỏ qua trang web đang tự hiện dark mode. Trước: chỉ xem nền `body`/`html`, nên trang tối để body trong suốt (nền ở khung bên trong, kiểu SPA) bị coi là trắng và bị đảo thành sáng. Giờ lấy mẫu nền thật ở 9 điểm trên màn hình (bỏ phần tử Keepit), tính cả nền body tràn màn hình và `color-scheme: dark` của trang; đa số tối thì để nguyên.
+- Trang tự đổi sáng/tối trong lúc xem (class/`data-theme`/style trên html/body) → Keepit đổi theo; kiểm tra lại 1s, 3s sau khi nạp cho trang dựng muộn.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật, Trang tối bật, Chủ đề tối: trang trắng → làm tối; SPA nền tối body trong suốt → giữ nguyên; chỉ `color-scheme: dark` → giữ nguyên; body tối ngắn → giữ nguyên; nền xám nhạt + header đen + thẻ trắng → làm tối; trang tự chuyển sáng → tối → sáng → Keepit tắt/bật theo. 0 lỗi trang.
+
 **2026-10-23 | v3.5.208 | Arena.ai Agent sửa:**
 
 - Thêm Cỡ chữ trang của APK vào extension: ô ☰ → Giao diện → Cỡ chữ (sau Trang tối; hiện "Cỡ chữ 150%" và sáng lên khi khác 100%). Bấm mở trang con giống hộp của APK: chữ xem trước, thanh trượt A–A 50–200 % bước 10, Đặt lại, Xong.
