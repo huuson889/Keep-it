@@ -14,6 +14,36 @@
 | [Study](modules/dictation.md) | Dictation/Writing, Shadowing/Speaking, scoring và session persistence | Sửa Study activities, cue sync, chấm điểm hoặc tiến độ. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
-| [Shared](modules/shared.md) | Custom font, icons, search index, favicon cache, thumbnails | Sửa helper dùng chung giữa Content/Dashboard/Popup. |
-| [Translate](modules/translate.md) | Translation, dictionary, study translation, search | Sửa provider, cache, từ điển hoặc ranking/highlight. |
+| [Shared](modules/shared.md) | Custom font, icons, search (index + ranking/highlight), sheet, favicon cache, thumbnails | Sửa helper dùng chung giữa Content/Dashboard/Popup. |
+| [Translate](modules/translate.md) | Translation, dictionary, study translation | Sửa provider, cache hoặc từ điển. |
 | [Video](modules/video.md) | YouTube caption source, transcript, cache và timing | Sửa track selection, caption parsing, transcript cache hoặc cue/playback sync. |
+| [Nhật ký cũ](changelog/v3.5.md) | Lịch sử thay đổi đã chuyển khỏi `PROJECT.md`: [v3.5.x](changelog/v3.5.md), [v3.4.x và cũ hơn](changelog/v3.4-va-cu-hon.md) | Chỉ khi cần tra lý do/lịch sử của một version cũ. |
+| [Supabase](supabase/SUPABASE_SYNC.md) | Hợp đồng dữ liệu đồng bộ cloud + `supabase-schema.sql` (chưa nối trong addon) | Khi làm đồng bộ cloud. |
+
+## Sửa nhanh: muốn sửa → mở file
+
+Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service worker; còn lại chạy trên trang hoặc trang của Keepit.
+
+| Muốn sửa | Mở file |
+|---|---|
+| Thanh Keepit, ☰, cuộn ẩn/hiện, nút lên đầu trang | `js/content/touch-ui.js` |
+| Vuốt thanh lùi/tới, sang tab trái/phải | `js/content/touch-ui.js` → `SWITCH_TAB` trong `js/background/background.js` (nền) |
+| Cử chỉ trên trang: vuốt trái dịch đoạn, chạm 2 ngón dịch trang | `js/content/touch-ui.js` |
+| Dịch đoạn, chọn chữ, popup dịch, full dict | `js/content/content.js`, `js/translate/dictionary.js` |
+| Gọi dịch vụ dịch, cache bản dịch | `js/translate/translate.js` (nền) |
+| Icon tròn / thanh công cụ khi chọn chữ | `js/shared/selection-toolbar.js` + `css/shared/selection-toolbar.css` |
+| Tô sáng, ghi chú, Sidebar trang | `js/content/web-highlighter.js`, `note-composer.js`, `sidebar.js`; lưu ở `js/background/annotations.js` (nền) |
+| Sheet kéo xuống để đóng (mọi sheet) | `js/shared/sheet-kit.js` |
+| Tìm kiếm, lọc danh sách, tô chỗ khớp | `js/shared/search.js` |
+| Reader song ngữ (thanh, giọng, tốc độ, CSS) | `js/reader/bilingual-reader.js`; giọng/âm thanh ở `js/reader/tts-engine.js` |
+| Overlay: giao diện Xem · Nói · Chép · Rạp | `js/overlay/unified/unified-ui.js` + `unified-css.js` |
+| Overlay: mở/đóng, phím tắt, phát/tua, xuất file | `js/overlay/overlay-controller.js` |
+| Overlay: phụ đề video / bài viết web | `js/overlay/source/video.js` / `js/overlay/source/web.js` |
+| Overlay: chấm điểm, luật giải câu | `js/overlay/study/shared/` |
+| ⚠ Không sửa giao diện ở | `js/overlay/overlay-template.js`, `js/overlay/view/` (giao diện cũ đang ẩn) |
+| AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
+| Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
+| Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
+| Nhãn en/vi/ko | `js/core/languages.js`. Hiện còn bảng riêng trong `touch-ui.js`, `offline-page.js`, `js/overlay/unified/unified-text.js` |
+| Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
+| Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |

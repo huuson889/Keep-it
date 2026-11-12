@@ -9,6 +9,7 @@
 - `PROJECT.md`: handoff hiện tại; mục 1 là snapshot ngắn, mục 2 chỉ giữ việc đang mở, mục 4 là bản đồ kiến trúc, mục 5 là nhật ký thay đổi duy nhất.
 - `README.md`: hướng dẫn/tính năng/giới hạn hướng tới người dùng; không dùng làm nơi giữ trạng thái nội bộ.
 - `docs/INDEX.md` và `docs/modules/*.md`: mục lục và hướng dẫn kỹ thuật nội bộ; không phải tài liệu người dùng hay nguồn sự thật thay cho code.
+- `docs/changelog/`: nhật ký cũ chuyển nguyên văn từ `PROJECT.md`; chỉ đọc khi cần tra lịch sử một version cũ.
 - `docs/ui-layout.md`: nguyên tắc giao diện chung (dọc/ngang, chạm/chuột) — mọi thay đổi giao diện phải theo; chỉ đọc khi sửa giao diện.
 - `OPT-ARENA.md`: nhật ký ý tưởng/thiết kế đã chốt qua thảo luận với Arena (mới nhất ở trên): quyết định, sơ đồ text, phương án đã loại và câu hỏi còn mở; không ghi trạng thái triển khai hay nhật ký thay đổi code (thuộc `PROJECT.md`).
 - Dùng `manifest.json` để xác nhận version và mã nguồn để xác nhận cách triển khai; chỉ khẳng định hành vi trên trình duyệt khi có kiểm tra thực tế được ghi nhận.
@@ -32,6 +33,14 @@
 - Phải sử dụng skill phù hợp đã được quy định trước.
 - Chạy kiểm tra liên quan và báo đúng kết quả; tuyệt đối không tuyên bố đã test nếu chưa chạy.
 - Nếu thay đổi module, cấu trúc file hay luồng tương tác các module thì phải cập nhật vào mục 4. Cấu trúc và kiến trúc dự án file project.md
+- Quy tắc cấu trúc code:
+  - Tìm file cần sửa ở bảng "Sửa nhanh" trong `docs/INDEX.md` trước khi tìm khắp repo.
+  - Tái cấu trúc cây thư mục: trước mỗi bước, đọc lại toàn bộ bản ghi `OPT-ARENA.md` 2026-10-23 "Tái cấu trúc cây thư mục…"; không làm khác cây đích ở đó.
+  - Nhãn mới: thêm vào `js/core/languages.js` (`MESSAGES` + `t()`), đủ en/vi/ko. File nào còn bảng nhãn riêng (`touch-ui.js`, `offline-page.js`, `js/overlay/unified/unified-text.js`) thì thêm vào đúng bảng đó cho tới khi được gộp; không tạo bảng nhãn mới.
+  - Màu sáng/tối của thanh Keepit, ☰, Reader, overlay: khai báo một chỗ trong `js/shared/theme-tokens.js` (có từ bước 2 tái cấu trúc); không rải mã màu mới.
+  - Không nối khối vá `/* v3.5.xxx */` vào cuối CSS; sửa thẳng quy tắc gốc, ghi phiên bản vào `PROJECT.md`.
+  - Không tạo thư mục/file `legacy`; code không còn dùng thì xoá. Không sửa giao diện overlay cũ đang ẩn (`overlay-template.js`, `view/`).
+  - Chỉ tách file khi file vừa quá lớn vừa có phần thật sự độc lập; không tạo thư mục chỉ có một file.
 - Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
 
 **4.2. Cách thức trả lời trên khung chat**
@@ -52,6 +61,7 @@
   - **Mục 2 — Việc đang mở:** chỉ liệt kê việc chưa hoàn tất; nhóm theo tính năng/loại việc và ưu tiên. Mỗi gạch đầu dòng nêu hành động, môi trường liên quan và trạng thái thực tế (chưa chạy/đã chạy một phần/đã xác nhận). Không giữ việc đã hoàn tất hoặc chép changelog.
   - Khi rút gọn mục 1/2, **không tự bỏ hoặc đánh dấu xong việc chưa xác nhận**. Gộp các kiểm thử cùng nhóm nhưng giữ điều kiện chấp nhận tối thiểu; nếu checklist chi tiết quá dài, đặt ở tài liệu QA liên quan và dẫn link từ mục 2. `PROJECT.md` vẫn là nguồn duy nhất về trạng thái và danh sách việc đang mở.
   - **Mục 5 — Nhật ký:** lưu lịch sử thay đổi theo version. Ghi thay đổi, file và kiểm tra thực tế; không lặp lại toàn bộ chi tiết lịch sử trong mục 1/2. Việc hiện tại và bước tiếp theo có thể được nhắc ngắn ở mục 1/2 khi cần cho bàn giao.
+  - Mục 5 chỉ giữ khoảng 30 bản ghi mới nhất. Khi vượt, chuyển các bản cũ nhất **nguyên văn** sang `docs/changelog/<nhánh version>.md` (mới nhất ở trên); không sửa nội dung, không đổi tác giả.
   - `OPT-ARENA.md` chỉ giữ nhật ký ý tưởng/thiết kế đã chốt với Arena; `README.md` mô tả cho người dùng.
   - **Quy tắc định dạng nhật ký (bắt buộc):**
     - Tiêu đề mỗi bản ghi phải là một dòng in đậm đứng riêng ở đầu dòng, đúng mẫu `**YYYY-MM-DD | vX.Y.Z | <Tên AI/người thực sự sửa> sửa:**`; không thêm dấu bullet, không thụt lề và không gộp tiêu đề vào nội dung của bản ghi trước.
@@ -73,7 +83,8 @@
 **5.2.1. Tài liệu kỹ thuật nội bộ (`docs/`)**
   - Phạm vi module là các thư mục first-party cấp cao nhất hiện có dưới `js/`: `ask-ai`, `background`, `content`, `core`, `dashboard`, `overlay`, `popup`, `reader`, `shared`, `translate`. Mỗi module có một trang `docs/modules/<slug>.md`; module mới phải thêm trang tương ứng và cập nhật `docs/INDEX.md`. Không tạo tài liệu riêng cho từng file mã nguồn hoặc cho `vendor/`.
   - Ngoại lệ: trang dùng chung nhiều module đặt tại `docs/<tên>.md` (hiện có `docs/ui-layout.md`), không theo mẫu 5 H2 của trang module, vẫn tối đa 700 từ và phải có trong `docs/INDEX.md`.
-  - `docs/INDEX.md` là mục lục duy nhất, dùng bảng đúng 3 cột: `Tài liệu | Phạm vi | Đọc khi`; chỉ đọc trang có liên quan tới yêu cầu, không nạp toàn bộ docs mặc định.
+  - `docs/INDEX.md` là mục lục duy nhất, dùng bảng đúng 3 cột: `Tài liệu | Phạm vi | Đọc khi`; chỉ đọc trang có liên quan tới yêu cầu, không nạp toàn bộ docs mặc định. Thêm đúng một bảng "Sửa nhanh" 2 cột `Muốn sửa | Mở file`; cập nhật bảng này khi thêm, xoá, đổi tên hoặc chuyển file.
+  - `docs/changelog/` (nhật ký lưu trữ) và `docs/supabase/` (hợp đồng đồng bộ cloud) không phải trang module, không theo mẫu 5 H2 và giới hạn 700 từ.
   - Mọi trang module phải có đúng một H1 theo mẫu `# <Tên module> — Hướng dẫn kỹ thuật`, tiếp theo đúng năm H2, cùng tên và thứ tự sau; không thêm H2 khác:
     - `## 1. Mục đích và phạm vi`
     - `## 2. File chính và điểm vào`

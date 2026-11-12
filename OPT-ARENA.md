@@ -7,6 +7,146 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
+
+**Trạng thái:** Đã chốt, chưa triển khai (chốt ở v3.5.191).
+
+> **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
+
+### Cây đích (sau khi đã xoá hết file cũ)
+
+```
+Keep-it/
+├─ manifest.json
+├─ AGENTS.md                     luật cho agent
+├─ README.md
+├─ PROJECT.md                    ~30 mục thay đổi mới nhất
+├─ OPT-ARENA.md                  ý tưởng đã chốt
+├─ PRIVACY-POLICY.md  DATA-INVENTORY.md  STORE-LISTING.md  THIRD_PARTY_NOTICES.md  LICENSE
+│
+├─ docs/
+│  ├─ INDEX.md                   bảng "muốn sửa X → mở file Y"
+│  ├─ ui-layout.md
+│  ├─ changelog/                 lịch sử cũ tách từ PROJECT.md
+│  ├─ supabase/                  SUPABASE_SYNC.md, supabase-schema.sql
+│  └─ modules/
+│     └─ ask-ai  background  content  core  dashboard  overlay  popup  reader  shared  translate  video
+│
+├─ js/
+│  ├─ background/                CHẠY NỀN
+│  │  ├─ background.js           điểm vào, nhận và chuyển tin nhắn
+│  │  ├─ annotations.js          lưu tô sáng, ghi chú
+│  │  └─ usage-limits.js
+│  ├─ core/                      NỀN CHUNG
+│  │  ├─ languages.js            TẤT CẢ nhãn en/vi/ko + danh sách ngôn ngữ
+│  │  ├─ settings.js  defaults.js  config.js  cache.js
+│  │  └─ messaging.js  browser-polyfill.js  error-logger.js  shortcuts.js
+│  ├─ shared/                    DÙNG CHUNG
+│  │  ├─ theme-tokens.js         màu kính sáng/tối (thanh, ☰, Reader, overlay)
+│  │  ├─ sheet-kit.js            sheet kéo xuống để đóng
+│  │  ├─ selection-toolbar.js    icon tròn khi chọn chữ
+│  │  ├─ search.js               chuẩn hoá, xếp hạng, tìm kiếm (gộp translate/search.js)
+│  │  └─ site-icons.js  thumbnails.js  icons.js  custom-font.js
+│  ├─ content/                   CHẠY TRÊN TRANG WEB
+│  │  ├─ keepit-bar.js           thanh Keepit + ☰ (đổi tên từ touch-ui.js)
+│  │  ├─ keepit-bar-css.js       CSS thanh + ☰, không còn khối vá
+│  │  ├─ content.js              dịch đoạn, chọn chữ, cử chỉ trên trang
+│  │  ├─ offline-page.js
+│  │  ├─ web-highlighter.js  annotation-restore.js
+│  │  ├─ sidebar.js  sentence-note.js  note-composer.js
+│  │  └─ page-layout.js  ui-components.js
+│  ├─ translate/                 DỊCH + TRA TỪ
+│  │  ├─ translate.js            gọi dịch vụ dịch (chạy nền)
+│  │  ├─ dictionary.js           bảng tra từ
+│  │  └─ study-translation.js
+│  ├─ reader/                    READER SONG NGỮ
+│  │  ├─ bilingual-reader.js
+│  │  ├─ reader-css.js           CSS Reader, không còn khối vá
+│  │  ├─ tts-engine.js
+│  │  └─ bilingual-flags.js
+│  ├─ overlay/                   MÀN HỌC VIDEO/WEB (9 file)
+│  │  ├─ overlay-controller.js   mở/đóng, phím tắt, phát/tua, câu hiện tại, xuất file
+│  │  ├─ overlay-engine.js       dịch phụ đề, CC, cài đặt, yêu thích
+│  │  ├─ source/
+│  │  │  ├─ video.js             lấy phụ đề video
+│  │  │  └─ web.js               bài viết → câu
+│  │  ├─ ui/
+│  │  │  ├─ overlay-ui.js        Xem · Nói · Chép · Rạp (nhãn qua t())
+│  │  │  └─ overlay-css.js
+│  │  └─ study/
+│  │     ├─ study-score.js       chấm điểm
+│  │     ├─ learning-rules.js    luật giải câu, khoá câu
+│  │     └─ session-index.js
+│  ├─ ask-ai/                    AI PANEL
+│  │  ├─ service.js  providers.js  prompt-format.js    (chạy nền)
+│  │  ├─ toolbar.js
+│  │  ├─ panel/
+│  │  └─ page/                   chạy trên ChatGPT/Gemini/Claude/Grok
+│  ├─ home/  dashboard/  popup/
+│
+├─ css/  shared/  content/  dashboard/  popup/
+├─ pages/  vendor/readability/  _locales/  icons/  assets/  fonts/
+└─ scripts/                      build_release.py, build_firefox.py
+```
+
+**Xoá hẳn (không có thư mục `legacy`):**
+- `js/overlay/overlay-template.js`
+- `js/overlay/view/` (`cc-mode`, `layout-mode`, `touch-layout`, `touch-theater`)
+- `js/overlay/study/dictation/`, `js/overlay/study/shadowing/`
+- `js/overlay/unified/unified-text.js`
+- `js/translate/search.js`
+- `docs/modules/dictation.md` (gộp vào `overlay.md`)
+
+**Đổi tên/chuyển:**
+- `touch-ui.js` → `keepit-bar.js`
+- `unified/` → `overlay/ui/` (`unified-ui.js` → `overlay-ui.js`, `unified-css.js` → `overlay-css.js`)
+- `study/shared/*` → `study/`
+- Supabase docs → `docs/supabase/`
+
+### Lý do
+
+| Quyết định | Lý do |
+|---|---|
+| Giữ cây hiện tại | Đã chia theo vùng chức năng. Chuyển hàng trăm file chỉ thêm rủi ro (thứ tự nạp manifest, link tài liệu, lịch sử git). |
+| Nhãn chỉ ở `languages.js` (`MESSAGES` + `t()`) | `unified-text.js` (v3.5.171) là hệ thống dịch thứ hai, dùng câu tiếng Việt làm khoá. Sửa một chữ là mất bản en/ko mà không báo lỗi. |
+| `theme-tokens.js` | Màu kính khai báo ở 3 nơi. v3.5.189–191 phải sửa ba lần cho một thay đổi. |
+| Tách CSS thanh và Reader ra file riêng | 74 KB CSS và 52 khối vá trong `touch-ui.js`, 11 khối trong Reader, đè nhau. Gộp vào quy tắc gốc thì mỗi quy tắc chỉ còn một chỗ. |
+| `touch-ui.js` → `keepit-bar.js` | Tên cũ sai: file chạy trên mọi thiết bị. |
+| Overlay 17 → 9 file, bỏ giao diện cũ | Giao diện cũ vẫn dựng nhưng ẩn, khoảng 600 KB nạp trên mọi trang. Agent dễ sửa nhầm phần không ai thấy. |
+| Gộp hai `search.js` | Trùng tên, việc gần nhau, mỗi file khoảng 1,5 KB. |
+| `PRIVACY-POLICY.md` ở gốc | Trang cửa hàng đang trỏ link tới đây. |
+
+### Luật cho agent (ghi vào `AGENTS.md` ở bước 1)
+- Nhãn mới chỉ thêm vào `languages.js` với đủ en/vi/ko. Không viết chữ cứng trong giao diện.
+- Màu sáng/tối chỉ khai báo trong `theme-tokens.js`. Nơi khác dùng `var(--…)`.
+- Không nối khối vá `/* v3.5.xxx */` vào cuối CSS. Sửa thẳng quy tắc gốc, ghi phiên bản vào `PROJECT.md`.
+- Chỉ tách file khi file vừa quá lớn vừa có phần thật sự độc lập. `overlay-ui.js`, `content.js`, `languages.js` giữ một file.
+- Không tạo thư mục `legacy`. Code cũ thì xoá.
+
+### Thứ tự triển khai (mỗi bước một phiên bản)
+1. **Dọn tài liệu:** `INDEX.md` thêm bảng "sửa X → file Y"; cắt `PROJECT.md`, lịch sử sang `docs/changelog/`; chuyển Supabase; gộp `search.js`; ghi luật vào `AGENTS.md`.
+2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`.
+3. **Danh sách tính năng overlay cũ ↔ mới:** chỉ là tài liệu. Mỗi tính năng của giao diện cũ được đánh dấu "đã có trong giao diện mới" hoặc "bỏ". Người dùng duyệt các mục "bỏ".
+4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`.
+5. **Overlay B:** bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
+
+### Điều kiện chấp nhận mỗi bước
+- Không đổi giao diện và hành vi. Ảnh chụp trước/sau giống hệt từng điểm ảnh: sáng/tối, điện thoại/máy tính, trang trắng/tối. Overlay chụp thêm vi/en/ko.
+- Thử chức năng: thanh (cuộn ẩn/hiện, vuốt lùi/tới, ☰), Reader (giọng, tốc độ), overlay (Xem, Nói, Chép, Rạp, yêu thích, ghi chú, xuất file, đổi ngôn ngữ).
+- Giữ nguyên khoá lưu trữ (`dictation:<sourceId>`, `lhnOverlayUi`, yêu thích, `lhnBottomBar`…). Không mất dữ liệu người dùng.
+- Không vừa chuyển file vừa xoá code trong cùng một phiên bản.
+- Cập nhật `manifest.json`, `docs/INDEX.md`, `docs/modules/*.md` và `scripts/build_firefox.py` khi đường dẫn đổi.
+
+### Phương án đã loại (kèm lý do)
+- **Chia `back/` và `front/` trong từng tính năng:** phần chạy nền chỉ khoảng 8 file. Sẽ sinh nhiều thư mục rỗng hoặc một file, và tách rời bộ định tuyến tin nhắn.
+- **Chuyển dịch đoạn sang `translate/`:** dịch đoạn gắn chặt với thẻ song ngữ, chọn chữ, cử chỉ trong `content.js`. Phần dịch ở nền chỉ 4 KB.
+- **Cắt `overlay-ui.js` thành khoảng 12 file:** các phần dùng chung trạng thái. Cắt ra là viết lại, rủi ro cao.
+- **Thư mục `overlay/legacy/`:** người dùng không muốn. Code cũ phải xoá.
+- **Chỉ bê bảng dịch `unified-text.js` vào `languages.js`:** vẫn dùng câu tiếng Việt làm khoá, không hết lỗi.
+- **Chuyển `PRIVACY-POLICY.md` vào `docs/`:** gãy link trên cửa hàng.
+
+---
+
 ## 2026-11-08 | Thanh Reader: căn trái popup, bóng chế độ sáng
 
 **Trạng thái:** Đã triển khai ở v3.5.155; v3.5.156 bóng đậm hơn 20% và thanh cách đáy 6px.

@@ -10,7 +10,7 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 |---|---|---|
 | [`js/shared/custom-font.js`](../../js/shared/custom-font.js) | IIFE trên trang http(s) | Áp font người dùng chọn qua thẻ `style#custom-font-style`, tôn trọng website bị tắt. |
 | [`js/shared/icons.js`](../../js/shared/icons.js) | `LHN_ICONS.render` | SVG Lucide path; ưu tiên `LHN_CONFIG.ACTION_ICON_PATHS`. |
-| [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH` | `normalize`, `createIndex`, `search`, `debounce`. |
+| [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH`, `LHN_SEARCH` | `normalize`, `createIndex`, `search`, `debounce`; `rank`, `highlightMatches` (Sidebar trang, Dashboard). |
 | [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin với cache `storage.local` và TTL. |
 | [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/source thumbnail URL, fallback SVG, image loading. |
 | [`js/shared/sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach(el,o)` / `sync()` / `locked()` / `detach(el)` | (v3.5.161) Hành vi chung của mọi sheet/popover Keepit: khóa cuộn trang, kéo/vuốt đóng (kéo xuống là đóng hẳn), bước half→full chỉ khi kéo lên; v3.5.175: `grow.mid()` + `grow.collapse()` (☰) = từ mức hết kéo xuống về mức giữa, kéo tiếp mới đóng; v3.5.177: độ dời tính theo đơn vị CSS của chính sheet (lớp thanh Keepit có thể được phóng về 1px màn hình). Nạp `document_start` cùng `touch-ui.js`, dùng chung isolated world cho overlay, Reader, content.js. |
@@ -21,7 +21,7 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 2. Content, Dashboard, Popup và panel shell nạp helper cần dùng qua `<script>` hoặc `content_scripts`.
 3. `site-icons.js` thử candidate favicon theo origin, lưu kết quả dương/âm vào cache rồi trả URL cho UI.
 4. `thumbnails.js` dựng URL thumbnail an toàn và gắn fallback khi ảnh lỗi.
-5. `search.js` chuẩn hóa chữ (bỏ dấu, chữ thường), tạo chỉ mục một lần và debounce khi gõ.
+5. `search.js` chuẩn hóa chữ (bỏ dấu, chữ thường), tạo chỉ mục một lần và debounce khi gõ; `LHN_SEARCH` xếp hạng trường tìm và bọc chỗ khớp bằng `mark.lhn-search-match`.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
