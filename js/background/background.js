@@ -52,6 +52,54 @@ browser.runtime.onStartup?.addListener(() => {
   Promise.all([clearExpiredAILinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired Ask AI requests or register Firefox selection menu", error));
   ensureAIProviderFrameRule().catch(error => console.warn("Could not configure the AI-provider iframe header rule", error));
 });
+// v3.5.215 Trang tối không nháy: khi Trang tối bật + Chủ đề Keepit tối, đăng ký sẵn (1) CSS lớp tối chạy trước lần vẽ đầu
+// cho mọi trang http(s) trừ các trang đã biết là vốn tối (`lhnPageDarkNative`, do js/content/page-dark.js báo), Chủ đề
+// Tự động thì CSS chỉ có tác dụng khi máy đang tối; (2) Chủ đề Tối: js/content/page-dark-main.js (world MAIN) báo cho trang
+// "máy đang tối" để trang có dark mode riêng tự bật. Tắt Trang tối / Chủ đề sáng → gỡ đăng ký.
+const PAGE_DARK_IDS = ["keepit-page-dark-early", "keepit-page-dark-main"];
+const PAGE_DARK_NATIVE_KEY = "lhnPageDarkNative", PAGE_DARK_NATIVE_MAX = 200;
+const pageDarkHostOk = host => typeof host === "string" && host.length <= 253 && /^[a-z0-9-]+(\.[a-z0-9-]+)*$/.test(host);
+let pageDarkSync = Promise.resolve(), pageDarkSig = null;
+function syncPageDarkScripts(force = false) {
+  pageDarkSync = pageDarkSync.then(async () => {
+    const api = browser.scripting;
+    if (!api?.registerContentScripts) return;
+    const got = await browser.storage.local.get(["lhnPageDark", CONFIG.STORAGE_KEYS.SETTINGS, PAGE_DARK_NATIVE_KEY]);
+    const raw = got[CONFIG.STORAGE_KEYS.SETTINGS] || {};
+    const theme = String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw).sidebarTheme || "");
+    const on = got.lhnPageDark === true && theme !== "light";
+    const native = (Array.isArray(got[PAGE_DARK_NATIVE_KEY]) ? got[PAGE_DARK_NATIVE_KEY] : []).filter(pageDarkHostOk);
+    const sig = JSON.stringify([on, theme === "dark", native]);
+    if (!force && sig === pageDarkSig) return;
+    const old = await api.getRegisteredContentScripts({ ids:PAGE_DARK_IDS }).catch(() => []);
+    if (old.length) await api.unregisterContentScripts({ ids:old.map(s => s.id) });
+    pageDarkSig = sig;
+    if (!on) return;
+    const matches = ["http://*/*", "https://*/*"];
+    const scripts = [{ id:PAGE_DARK_IDS[0], matches, css:[theme === "dark" ? "css/content/page-dark-early.css" : "css/content/page-dark-early-auto.css"], runAt:"document_start", allFrames:false, persistAcrossSessions:true }];
+    if (native.length) scripts[0].excludeMatches = native.map(h => `*://${h}/*`);
+    if (theme === "dark") scripts.push({ id:PAGE_DARK_IDS[1], matches, js:["js/content/page-dark-main.js"], runAt:"document_start", world:"MAIN", allFrames:false, persistAcrossSessions:true });
+    await api.registerContentScripts(scripts);
+  }).catch(error => { pageDarkSig = null; console.warn("Could not register the dark-pages scripts", error); });
+  return pageDarkSync;
+}
+// page-dark.js báo trang này vốn tối (thêm vào danh sách, mới nhất trước) hoặc không còn tối (bỏ ra).
+async function notePageDarkNative(message, sender) {
+  let host = ""; try { host = new URL(sender?.tab?.url || "").hostname.toLowerCase(); } catch {}
+  if (!pageDarkHostOk(host) || sender?.frameId) return { ok:false };
+  const got = await browser.storage.local.get(PAGE_DARK_NATIVE_KEY);
+  const old = Array.isArray(got[PAGE_DARK_NATIVE_KEY]) ? got[PAGE_DARK_NATIVE_KEY] : [];
+  if ((message.dark === true) === (old[0] === host) && (message.dark === true || !old.includes(host))) return { ok:true };
+  const list = old.filter(h => h !== host);
+  if (message.dark === true) list.unshift(host);
+  await browser.storage.local.set({ [PAGE_DARK_NATIVE_KEY]:list.slice(0, PAGE_DARK_NATIVE_MAX) });
+  return { ok:true };
+}
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && (changes.lhnPageDark || changes[CONFIG.STORAGE_KEYS.SETTINGS] || changes[PAGE_DARK_NATIVE_KEY])) syncPageDarkScripts();
+});
+browser.runtime.onInstalled.addListener(() => { syncPageDarkScripts(true); });
+browser.runtime.onStartup?.addListener(() => { syncPageDarkScripts(true); });
 const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
 const ttsAudioRequests = new Map();
 async function fetchTtsAudio(message) {
@@ -199,6 +247,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
   if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
   // v3.5.208: ☰ → Cỡ chữ (như Cỡ chữ trang của APK) = mức thu phóng của trình duyệt cho chính tab đó (trình duyệt tự nhớ theo trang web), 50–200 %.
+  if (message.type === "PAGE_DARK_NATIVE") return notePageDarkNative(message, sender);
   if (message.type === "PAGE_ZOOM_GET" || message.type === "PAGE_ZOOM_SET") {
     const tabId = sender.tab?.id; if (typeof tabId !== "number" || !browser.tabs?.getZoom) return { ok:false };
     try {

@@ -733,7 +733,8 @@
   MESSAGES.en.bar_zoom = "Text size"; MESSAGES.vi.bar_zoom = "Cỡ chữ"; MESSAGES.ko.bar_zoom = "글자 크기";
   MESSAGES.en.bar_zoomTip = "Make text on web pages bigger or smaller"; MESSAGES.vi.bar_zoomTip = "Phóng to / thu nhỏ chữ trên trang web"; MESSAGES.ko.bar_zoomTip = "웹 페이지 글자를 크게 / 작게";
   MESSAGES.en.bar_pdark = "Dark pages"; MESSAGES.vi.bar_pdark = "Trang tối"; MESSAGES.ko.bar_pdark = "어두운 페이지";
-  MESSAGES.en.bar_pdarkTip = "Darken web pages when the Keepit theme is dark"; MESSAGES.vi.bar_pdarkTip = "Làm tối trang web khi Keepit ở Chủ đề tối"; MESSAGES.ko.bar_pdarkTip = "Keepit 테마가 어두우면 웹 페이지도 어둡게";
+  MESSAGES.en.bar_beta = "Beta"; MESSAGES.vi.bar_beta = "Beta"; MESSAGES.ko.bar_beta = "베타";
+  MESSAGES.en.bar_pdarkBetaTip = "Beta: darkens pages when the Keepit theme is dark; sites with their own dark mode switch to it. Some sites may show wrong colours."; MESSAGES.vi.bar_pdarkBetaTip = "Beta: làm tối trang web khi Keepit ở Chủ đề tối; trang có chế độ tối riêng sẽ dùng chế độ đó. Một số trang có thể hiển thị sai màu."; MESSAGES.ko.bar_pdarkBetaTip = "베타: Keepit 테마가 어두우면 웹 페이지를 어둡게 하고, 자체 다크 모드가 있는 사이트는 그 모드를 사용합니다. 일부 사이트는 색이 잘못 보일 수 있습니다.";
   MESSAGES.en.bar_pdarkLight = "Dark pages work with the dark theme"; MESSAGES.vi.bar_pdarkLight = "Trang tối có tác dụng khi Chủ đề tối"; MESSAGES.ko.bar_pdarkLight = "어두운 페이지는 어두운 테마에서 작동합니다";
   // Overlay (js/overlay/ui/overlay-ui.js): khoá ov_<tên>, đọc bằng T(). Thêm nhãn mới cho overlay ở đây, đủ en/vi/ko.
   MESSAGES.en.ov_aTemporaryMemoryOnly = "A temporary memory-only recording plays locally; Keepit does not save or upload it. Browser speech recognition may process your audio."; MESSAGES.vi.ov_aTemporaryMemoryOnly = "Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện."; MESSAGES.ko.ov_aTemporaryMemoryOnly = "임시 녹음은 메모리에서만 재생되며 Keepit은 저장하거나 업로드하지 않습니다. 브라우저가 음성을 처리할 수 있습니다.";

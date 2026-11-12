@@ -35,6 +35,7 @@
 | `activeTab`, `tabs` | Know the current page's address and title for notes and the AI panel, open the Dashboard, switch to the correct tab, and — on touch screens — move to the previous / next tab when a back / forward swipe goes past the page history. |
 | `sidePanel` | Show the AI panel in Chrome's side panel. |
 | `contextMenus` | Right-click "Ask AI" on selected text. |
+| `scripting` | "Dark pages" (off by default): while the user keeps it on, register the packaged dark CSS to run before a page first paints (no white flash) and a packaged script that reports the dark colour scheme so sites with their own dark mode use it. Unregistered when the user turns it off. No remote code. |
 | `declarativeNetRequest` | (1) Set the Referer on Google text-to-speech requests so read-aloud works; (2) allow the user-chosen AI websites to display inside the AI panel by removing their frame-protection headers when framed. |
 | Remote code | None. All scripts are packaged; no eval, no remote scripts. |
 

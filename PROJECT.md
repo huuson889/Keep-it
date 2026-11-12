@@ -199,6 +199,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.215 | Arena.ai Agent sửa:**
+
+- Trang tối (Beta) vào thẳng tối, không nháy trắng: lớp tối nạp sẵn chạy trước lần vẽ đầu của trang (đăng ký khi Trang tối bật + Chủ đề tối; gỡ khi tắt).
+- Trang có dark mode theo máy (CSS `prefers-color-scheme` hoặc `matchMedia`) dùng dark mode của chính trang thay vì lớp tối Keepit; dark mode dở dang (nền vẫn sáng) → hoàn tác, dùng lớp tối. Tắt Trang tối → trang về như cũ.
+- Trang vốn tối được nhớ (tên miền, tối đa 200, `lhnPageDarkNative`, chỉ trên máy) để lần sau không nạp lớp tối → không chớp sáng.
+- Ô Trang tối trong sheet: nhãn Beta + chú thích khi rê chuột (en/vi/ko); bỏ chuỗi `bar_pdarkTip` cũ.
+- Quyền mới `scripting` (để đăng ký CSS/script đóng gói sẵn chạy trước lần vẽ đầu).
+- File: `manifest.json`, `js/background/background.js`, `js/content/page-dark.js`, `js/content/page-dark-main.js` (mới), `css/content/page-dark-early.css`, `css/content/page-dark-early-auto.css` (mới), `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js`, `DATA-INVENTORY.md`, `PRIVACY-POLICY.md`, `STORE-LISTING.md`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật: trang tải chậm tối ngay khi đang tải; trang sáng → lớp tối; trang vốn tối / SPA tối → giữ nguyên và được nhớ; dark mode bằng CSS, bằng `<link media>`, bằng JS `matchMedia` → trang tự tối, không lớp phủ; dark mode dở → hoàn tác + lớp tối; lần 2 vào trang đã nhớ không có lớp nạp sẵn; tắt → trang sáng lại, gỡ đăng ký; nhãn Beta + chú thích hiện đúng.
+
 **2026-10-23 | v3.5.214 | Arena.ai Agent sửa:**
 
 - Trang tối không còn áp dụng chồng lên các phần đã có giao diện tối riêng của Keepit:

@@ -144,6 +144,7 @@ button,input{font-family:inherit}
 .q:active .ic{transform:scale(.94)}
 .desk .q:hover .ic{filter:brightness(.97)}
 .q span{display:block;max-width:100%}
+.q .qbadge{position:absolute;top:-5px;left:calc(50% + 12px);padding:0 5px;border-radius:7px;background:linear-gradient(90deg,#4f46e5,#8b5cf6);color:#fff;font-size:9px;font-weight:700;line-height:14px;letter-spacing:.2px;pointer-events:none}
 .colors{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;margin:0 0 14px;border-radius:16px;background:#f1f5f9;border:1px solid #cbd5e1}
 .dark .colors{background:rgba(255,255,255,.06);border-color:rgba(148,163,184,.18)}
 .panel .sbody{scrollbar-width:none}

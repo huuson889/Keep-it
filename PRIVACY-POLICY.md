@@ -19,7 +19,7 @@ This policy covers the Keepit browser extension for Chromium-based browsers and 
 
 ### 2. Data kept in your browser
 
-Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
+Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, the host names of sites that are already dark (only when you use Dark pages), local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
 
 ### 3. Data sent to outside services
 
@@ -48,7 +48,7 @@ Data is used only to provide the feature you are using. Keepit does not sell dat
 
 ### 5. Permissions
 
-Keepit asks for access to all websites because highlighting, notes, translation, dictionary and the AI panel work on any page you choose. It uses browser storage, tab information (to know the current page), the side panel / sidebar, a context menu item for Ask AI, and network rules. To show AI websites inside the AI panel, a network rule removes those AI websites' frame-protection headers when they load inside a frame. Keepit requests no clipboard or cookie permission; the copy-link button only writes the page address when you click it.
+Keepit asks for access to all websites because highlighting, notes, translation, dictionary and the AI panel work on any page you choose. It uses browser storage, tab information (to know the current page), the side panel / sidebar, a context menu item for Ask AI, network rules, and registered page scripts (Dark pages: packaged CSS and a script that tell pages the dark theme is on, added only while Dark pages is on). To show AI websites inside the AI panel, a network rule removes those AI websites' frame-protection headers when they load inside a frame. Keepit requests no clipboard or cookie permission; the copy-link button only writes the page address when you click it.
 
 ### 6. Retention and deletion
 
@@ -70,7 +70,7 @@ Chính sách này áp dụng cho tiện ích Keepit trên trình duyệt nhân C
 
 ### 2. Dữ liệu giữ trong trình duyệt
 
-Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, các lối tắt bạn giữ trên trang chủ Keepit, bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
+Keepit lưu trong hồ sơ trình duyệt: phần tô sáng, ghi chú, tiêu đề và địa chỉ trang bạn ghi chú, flashcard và tiến độ học, cài đặt, bộ nhớ đệm bản dịch, âm thanh và phụ đề video (để khỏi gửi lại), liên kết giữa địa chỉ trang và cuộc trò chuyện AI (chỉ lưu sau khi tin nhắn đã gửi), trạng thái panel, tùy chọn thanh Keepit và tối đa 6 lượt tìm gần đây trên thanh Keepit, các lối tắt bạn giữ trên trang chủ Keepit, tên miền các trang vốn đã tối (chỉ khi bạn dùng Trang tối), bộ đếm hạn mức cục bộ, hồ sơ mẫu nếu bạn tạo, và nhật ký lỗi chỉ gồm mã lỗi. Đoạn ghi âm ngắn khi luyện nói chỉ nằm trong bộ nhớ để phát lại; Keepit không lưu hay tải nó lên.
 
 ### 3. Dữ liệu gửi đến dịch vụ bên ngoài
 
@@ -99,7 +99,7 @@ Dữ liệu chỉ dùng để cung cấp tính năng bạn đang dùng. Keepit k
 
 ### 5. Quyền truy cập
 
-Keepit xin quyền trên mọi website vì tô sáng, ghi chú, dịch, từ điển và AI panel hoạt động trên bất kỳ trang nào bạn chọn. Keepit dùng bộ nhớ trình duyệt, thông tin tab (để biết trang hiện tại), side panel / sidebar, một mục menu chuột phải cho Hỏi AI, và quy tắc mạng. Để hiện website AI bên trong AI panel, một quy tắc mạng gỡ các header chống nhúng khung của các website AI đó khi chúng được tải trong khung. Keepit không xin quyền clipboard hay cookie; nút sao chép liên kết chỉ ghi địa chỉ trang khi bạn bấm.
+Keepit xin quyền trên mọi website vì tô sáng, ghi chú, dịch, từ điển và AI panel hoạt động trên bất kỳ trang nào bạn chọn. Keepit dùng bộ nhớ trình duyệt, thông tin tab (để biết trang hiện tại), side panel / sidebar, một mục menu chuột phải cho Hỏi AI, quy tắc mạng, và script trang được đăng ký (Trang tối: CSS và script đóng gói sẵn báo cho trang biết đang ở giao diện tối, chỉ đăng ký khi Trang tối bật). Để hiện website AI bên trong AI panel, một quy tắc mạng gỡ các header chống nhúng khung của các website AI đó khi chúng được tải trong khung. Keepit không xin quyền clipboard hay cookie; nút sao chép liên kết chỉ ghi địa chỉ trang khi bạn bấm.
 
 ### 6. Thời hạn và xóa
 
