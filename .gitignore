@@ -1,5 +1,0 @@
-*.zip
-node_modules/
-*.pem
-*.crx
-__pycache__/
