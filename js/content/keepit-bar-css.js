@@ -45,7 +45,7 @@ button,input{font-family:inherit}
 .hidden.peeking .hzone i{opacity:0}
 .offdot{left:0;top:calc(50% - 22px);z-index:6;display:none;place-items:center;box-sizing:border-box;width:35px;height:44px;margin:0;padding:0 1px 0 0;border:1px solid rgba(255,255,255,.55);border-radius:0 12px 12px 0;background:linear-gradient(145deg,rgba(100,116,139,.78),rgba(71,85,105,.78));color:#fff;box-shadow:0 3px 10px rgba(71,85,105,.22);opacity:.85;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:left .22s,top .22s,border-radius .22s,opacity .15s,transform .12s}
 .offdot.r{padding:0 0 0 1px;border-radius:12px 0 0 12px}
-.offdot svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
+.offdot svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
 .offdot.drag{transition:none;border-radius:12px;opacity:1;transform:scale(1.06)}
 .desk .offdot:hover{opacity:1;filter:brightness(1.06);box-shadow:0 4px 13px rgba(71,85,105,.3)}
 .offdot:focus-visible{outline:3px solid rgba(156,39,176,.45);outline-offset:2px}
@@ -106,8 +106,8 @@ button,input{font-family:inherit}
 .wide .sheet.open .panel{transform:none;opacity:1}
 .desk .grip{display:none}
 .shead{flex:none;display:flex;align-items:center;gap:8px;padding:2px 2px 10px}
-.shead .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;display:grid;place-items:center;flex:none}
-.shead .logo svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+.shead .logo{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none}
+.shead .logo svg{width:28px;height:28px;display:block}
 .shead b{font-size:17px;font-weight:800}
 .shead .sp{flex:1}
 .lchip{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px 0 9px;border-radius:16px;border:1px solid rgba(148,163,184,.4);background:none;color:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}

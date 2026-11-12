@@ -199,6 +199,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.204 | Arena.ai Agent sửa:**
+
+- Ghi chú làm lại toàn bộ theo demo `notes-sheet` v10: `js/content/sidebar.js` dựng DOM mới (đầu trang, tìm kiếm, 7 chip màu vừa 1 hàng, tên dài cắt "…", thẻ có nút nghe/sửa/xoá hiện khi rê chuột, trạng thái trống/không tìm thấy/đã tắt có hình minh hoạ, bỏ hàng tab Tô sáng/AI panel); kiểu ở file mới `css/content/notes.css` (1 bộ màu `--nt-*`, kính macOS sáng/tối, bo 2 góc trái).
+- Xoá sạch CSS `#lhn-sidebar*` cũ (~370 quy tắc) trong `content.css`, `content-theme.css`, `ui-theme.css`; giữ `#lhn-sidebar-toast` và `#lhn-sidebar-edge-toggle`. Bỏ 5 nhãn tab cũ trong `languages.js`.
+- Máy tính: trang trượt nhẹ 0,26s khi mở/đóng (`page-layout.js`). Điện thoại: sheet chuẩn như ☰ (74vh → kéo lên 96vh → kéo xuống về giữa → đóng; `keepit-bar.js` `watchSidebar` dùng `grow` của `LHN_SHEET`).
+- Câu trống: "Trang này chưa có tô sáng. Hãy chọn văn bản và tạo ghi chú để lưu" (en/ko theo).
+- Logo mới (icon-v5, chiếc lá) ở mọi nơi: `assets/icons/icon.svg` + PNG 16/32/48/96/128, popup, Dashboard, menu Dashboard điện thoại, ☰ và nút ẩn của thanh Keepit, overlay, công cụ chọn chữ. Xoá `assets/icons/icon-pen-logo.svg` (không dùng).
+- Tính năng, lưu trữ và hành vi giữ nguyên (tắt website vẫn đóng Ghi chú như cũ).
+- File: `js/content/sidebar.js`, `css/content/notes.css` (mới), `js/content/content.js`, `js/content/page-layout.js`, `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js`, `css/content/content.css`, `css/content/content-theme.css`, `css/shared/ui-theme.css`, `js/shared/selection-toolbar.js`, `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `js/dashboard/responsive-nav.js`, `css/dashboard/*.css`, `pages/dashboard.html`, `pages/highlights-notes.html`, `assets/icons/*`, `manifest.json`, `docs/INDEX.md`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật, 6 ghi chú mẫu. Máy tính 1280: sidebar 400px, trang 1280→880 trượt, sáng/tối, rê chuột hiện 3 nút, hộp sửa, không tìm thấy, tắt/bật website, đóng trả trang về cũ. Điện thoại 390: sheet 592 → 768 → 592 → đóng bằng kéo. 7 chip vừa 1 hàng, tên không đè icon. Logo mới ở popup, Dashboard, ☰, công cụ chọn chữ. 0 lỗi trang.
+
 **2026-10-23 | v3.5.203 | Arena.ai Agent sửa:**
 
 - Space play/pause trên YouTube không có tác dụng (trong overlay và ngoài trang): Keepit dừng/phát ở keydown, YouTube lại đảo ở keyup (`handleGlobalKeyUp`). Giờ phím nào Keepit đã xử lý ở keydown thì keyup của nó cũng bị chặn (overlay: `eatenUp` trong `onKey`/`onKeyUp`; trang: `eatenKeyUps` trong `content.js`).

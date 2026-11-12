@@ -1492,8 +1492,7 @@
     LHN_PAGE_LAYOUT.applyPageShrink(width);
     const shell = SIDEBAR.createShell({
       width, pageTitle:pageTitle(), pageUrl:pageUrl(), websiteDisabled, version:browser.runtime.getManifest().version, colors:COLORS,
-      filter:sidebarFilter, searchQuery:sidebarSearchQuery, activeTab:sidebarActiveTab, t, config:CONFIG,
-      onSelectTab:tab => { sidebarActiveTab = tab; if (tab === "chatgpt") void launchChatGPTSidePanel(); },
+      filter:sidebarFilter, searchQuery:sidebarSearchQuery, t, config:CONFIG,
       onOpenChatGPT:() => { void launchChatGPTSidePanel(); },
       onToggleSidebarSetting:toggleSidebarSetting, onToggleWebsiteDisabled:toggleWebsiteDisabled,
       onOpenDashboard:() => LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD" }).catch(error => console.warn("Could not open dashboard", error)),
@@ -1581,9 +1580,8 @@
     if (!list) return;
    list.replaceChildren();
     if (!visible.length) {
-      const empty = document.createElement("div"); empty.className = "lhn-sidebar-empty";
-      empty.textContent = query ? t("noSidebarSearchResults") : current.length ? t("noColorHighlights") : t("noHighlights");
-      list.appendChild(empty); return;
+      list.appendChild(query ? SIDEBAR.createEmptyState("search", t("noSidebarSearchResults")) : current.length ? SIDEBAR.createEmptyState("search", t("noColorHighlights")) : SIDEBAR.createEmptyState("pen", t("noHighlights")));
+      return;
     }
     let cardBatch = document.createDocumentFragment();
     for (let itemIndex = 0; itemIndex < visible.length; itemIndex++) {

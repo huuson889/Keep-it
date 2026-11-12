@@ -31,7 +31,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Dịch đoạn, chọn chữ, popup dịch, full dict | `js/content/content.js`, `js/translate/dictionary.js` |
 | Gọi dịch vụ dịch, cache bản dịch | `js/translate/translate.js` (nền) |
 | Icon tròn / thanh công cụ khi chọn chữ | `js/shared/selection-toolbar.js` + `css/shared/selection-toolbar.css` |
-| Tô sáng, ghi chú, Sidebar trang | `js/content/web-highlighter.js`, `note-composer.js`, `sidebar.js`; lưu ở `js/background/annotations.js` (nền) |
+| Tô sáng, ghi chú, Sidebar trang | `js/content/web-highlighter.js`, `note-composer.js`, `sidebar.js` + `css/content/notes.css`; lưu ở `js/background/annotations.js` (nền) |
 | Sheet kéo xuống để đóng (mọi sheet) | `js/shared/sheet-kit.js` |
 | Tìm kiếm, lọc danh sách, tô chỗ khớp | `js/shared/search.js` |
 | Reader song ngữ (thanh, giọng, tốc độ) | `js/reader/bilingual-reader.js`; CSS ở `js/reader/reader-css.js`; giọng/âm thanh ở `js/reader/tts-engine.js` |

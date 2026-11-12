@@ -1685,8 +1685,8 @@ html.dark #dashboardHighlightsNotesView .bilingual-preview>p { color:#e5e7eb }
 #dashboardHighlightsNotesView.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { position:relative; top:auto; bottom:auto; left:auto; width:220px; flex:0 0 220px; }
 #dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-header { position:relative; display:flex; height:64px; min-height:64px; flex:0 0 64px; align-items:center; overflow:hidden; padding:0 12px; border-bottom:1px solid #e2e8f0; }
 #dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-brand { display:flex; width:100%; min-width:0; align-items:center; gap:12px; overflow:hidden; }
-#dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-logo { display:flex; width:32px; height:32px; flex:0 0 32px; align-items:center; justify-content:center; border-radius:12px; background:linear-gradient(to top right,#2563eb,#6366f1); color:#fff; box-shadow:0 4px 8px rgba(59,130,246,.2); }
-#dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-logo svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+#dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-logo { display:flex; width:32px; height:32px; flex:0 0 32px; align-items:center; justify-content:center; border-radius:8px; background:none; color:#fff; box-shadow:0 2px 3px rgba(0,0,0,.2); }
+#dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-logo svg { width:32px; height:32px; display:block; }
 #dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-brand-copy { display:none; flex-direction:column; justify-content:center; padding-right:32px; }
 #dashboardHighlightsNotesView #dashboardSidebar:hover .dashboard-reference-brand-copy { display:flex; }
 #dashboardHighlightsNotesView #dashboardSidebar .dashboard-reference-brand-copy strong { color:#1e293b; font-size:14px; font-weight:700; line-height:1.25; letter-spacing:.025em; }

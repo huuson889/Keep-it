@@ -17,7 +17,6 @@
     back:'<path d="m15 18-6-6 6-6"/>',
     gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-    logo:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>'
   };
   const svg = (inner, viewBox = "0 0 24 24") => `<svg viewBox="${viewBox}" aria-hidden="true">${inner}</svg>`;
   const sidebar = document.getElementById("dashboardSidebar");
@@ -53,7 +52,7 @@
     const themeText = document.getElementById("dashboardSidebarThemeText")?.textContent || "";
     const themeIcon = document.querySelector("#dashboardSidebarThemeToggle .reference-nav-icon")?.innerHTML || "";
     sheet.innerHTML = `<div class="rn-grab"></div>
-      <div class="rn-sh-head"><span class="rn-logo">${svg(SVG.logo)}</span><span>Keepit</span><button type="button" class="rn-x" data-rn="close" aria-label="${tr("close")}">×</button></div>
+      <div class="rn-sh-head"><span class="rn-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoNav" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoNav)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg></span><span>Keepit</span><button type="button" class="rn-x" data-rn="close" aria-label="${tr("close")}">×</button></div>
       <button type="button" class="rn-row" data-rn="settings">${svg(SVG.gear)}<span>${tr("settings")}</span></button>
       <button type="button" class="rn-row" data-rn="theme">${themeIcon}<span>${themeText}</span></button>
       <button type="button" class="rn-row" data-rn="account">${svg(SVG.user)}<span>${tr("account")}</span><span class="rn-sub">${document.getElementById("profileMenuToggleName")?.textContent || ""}</span></button>

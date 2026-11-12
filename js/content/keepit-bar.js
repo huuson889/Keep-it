@@ -54,7 +54,6 @@
   pin:'<path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2v2H6v-2z"/>',
   x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   home:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
-  logo:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
   restore:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
@@ -84,7 +83,9 @@
   starOn:'<path d="M12 2 15 9l7 .6-5.3 4.7L18.2 22 12 18.3 5.8 22l1.5-7.7L2 9.6 9 9z" fill="currentColor"/>',
   check:'<path d="m5 12 4 4L19 6"/>', star:'<path d="M12 2 15 9l7 .6-5.3 4.7L18.2 22 12 18.3 5.8 22l1.5-7.7L2 9.6 9 9z"/>'
 };
-  const ic = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
+  const LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoBar" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoBar)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>'; // icon-v5 (assets/icons/icon.svg)
+  const LEAF = '<svg viewBox="0 0 32 32" aria-hidden="true"><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>';
+  const ic = n => n === "logo" ? LOGO : n === "leaf" ? LEAF : `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
   const FLAG = {
   en:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#fff"/><g fill="#b22234">' + [0, 2, 4, 6, 8, 10, 12].map(i => `<rect y="${(i * 20 / 13).toFixed(2)}" width="30" height="1.54"/>`).join("") + '</g><rect width="12" height="10.77" fill="#3c3b6e"/><g fill="#fff">' + [[2, 2], [5, 2], [8, 2], [3.5, 4.5], [6.5, 4.5], [9.5, 4.5], [2, 7], [5, 7], [8, 7], [3.5, 9], [6.5, 9]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".6"/>`).join("") + '</g></svg>',
   vi:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#da251d"/><path fill="#ff0" d="M15 4.4L16.26 8.27H20.33L17.04 10.66L18.29 14.53L15 12.14L11.71 14.53L12.96 10.66L9.67 8.27H13.74Z"/></svg>',
@@ -190,7 +191,7 @@
   <button class="btop" id="btop" type="button">${ic("totop")}</button>
   <div class="iscrim" id="iscrim"></div>
   <div class="coach intro" id="intro" role="dialog"></div>
-  <button class="offdot" id="offdot" type="button">${ic("logo")}</button>
+  <button class="offdot" id="offdot" type="button">${ic("leaf")}</button>
   <div class="toast" id="toast" role="status"></div>
   <div class="sheet" id="sheet"><div class="scrim" id="scrim"></div><div class="panel" id="panel"></div></div>
   <div class="srch" id="srch"><div class="scrim2" id="scrim2"></div><div class="sbox" id="sbox">
@@ -1144,7 +1145,14 @@
     const observer = new MutationObserver(syncState);
     observer.observe(side, { attributes:true, attributeFilter:["class"] });
     sidebarWatch = { target:side, observer };
-    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close:() => run("notes"), watch:side });
+    // v3.5.204: Ghi chú là sheet chuẩn như ☰ — kéo lên = cao hết (96%), kéo xuống = về bậc giữa, kéo tiếp = đóng; danh sách cuộn trước khi kéo.
+    const snap = () => { side.classList.add("lhn-sheet-snap"); setTimeout(() => side.classList.remove("lhn-sheet-snap"), 260); };
+    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close:() => run("notes"), watch:side,
+      scroller:() => side.querySelector("#lhn-sidebar-list"),
+      grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => innerHeight * 0.96, mid:() => Math.round(Math.min(innerHeight * 0.74, 720)),
+        setH:px => { if (px === null) { side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); } else { side.classList.add("lhn-sheet-growing"); side.style.setProperty("height", px + "px", "important"); } },
+        collapse:() => { snap(); side.classList.remove("lhn-sheet-full", "lhn-sheet-growing"); side.style.removeProperty("height"); },
+        release:grow => { snap(); side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); if (grow) side.classList.add("lhn-sheet-full"); } } });
   }
 
   let ticker = 0, bodyWatch = null, lastLayout = "";

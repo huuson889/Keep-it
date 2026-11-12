@@ -30,7 +30,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .hd{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--bd);background:var(--bg);z-index:6;transition:opacity .3s,transform .3s}
 .brand{display:flex;align-items:center;gap:8px;min-width:0}
 .logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(45deg,#4f46e5,#8b5cf6);display:grid;place-items:center;flex:none;color:#fff;box-shadow:0 2px 3px rgba(0,0,0,.2)}
-.logo svg{width:17.5px;height:17.5px}
+.logo svg{width:28px;height:28px}
 .bname{font-weight:700;white-space:nowrap}
 .bsrc{color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tabs{position:relative;display:inline-grid;grid-template-columns:repeat(3,1fr);background:var(--pn2);border-radius:13px;padding:3px;justify-self:center}
