@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark light">
 <title>Keepit</title>
 <!-- Keepit home page (v3.5.180, demo apk-home v12, same start page as Keepit for Android). Drawn by js/home/home-ui.js;
-     the Keepit bar is the real one (js/content/touch-ui.js), loaded here because content scripts do not run on extension pages. -->
+     the Keepit bar is the real one (js/content/keepit-bar.js), loaded here because content scripts do not run on extension pages. -->
 <style>
   html, body { margin:0; min-height:100%; background:#0e0e11; }
   @media (prefers-color-scheme: light) { html, body { background:#f6f7fb; } }
@@ -22,7 +22,9 @@
 <script src="../js/core/settings.js"></script>
 <script src="../js/core/languages.js"></script>
 <script src="../js/shared/sheet-kit.js"></script>
-<script src="../js/content/touch-ui.js"></script>
+<script src="../js/shared/theme-tokens.js"></script>
+<script src="../js/content/keepit-bar-css.js"></script>
+<script src="../js/content/keepit-bar.js"></script>
 <script src="../js/home/home-ui.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
 
-**Trạng thái:** Đã chốt, chưa triển khai (chốt ở v3.5.191).
+**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193.
 
 > **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
 
@@ -125,10 +125,10 @@ Keep-it/
 
 ### Thứ tự triển khai (mỗi bước một phiên bản)
 1. **Dọn tài liệu:** `INDEX.md` thêm bảng "sửa X → file Y"; cắt `PROJECT.md`, lịch sử sang `docs/changelog/`; chuyển Supabase; gộp `search.js`; ghi luật vào `AGENTS.md`.
-2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`.
+2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`; chuyển bảng nhãn `T` của thanh sang `languages.js` (khoá `bar_<tên>`; người dùng duyệt thêm, "làm hết đi").
 3. **Danh sách tính năng overlay cũ ↔ mới:** chỉ là tài liệu. Mỗi tính năng của giao diện cũ được đánh dấu "đã có trong giao diện mới" hoặc "bỏ". Người dùng duyệt các mục "bỏ".
 4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`.
-5. **Overlay B:** bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
+5. **Overlay B:** bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
 
 ### Điều kiện chấp nhận mỗi bước
 - Không đổi giao diện và hành vi. Ảnh chụp trước/sau giống hệt từng điểm ảnh: sáng/tối, điện thoại/máy tính, trang trắng/tối. Overlay chụp thêm vi/en/ko.

@@ -15,7 +15,7 @@
 | [`js/core/config.js`](../../js/core/config.js) | `LHN_CONFIG` | Hằng số, storage/database keys, giới hạn và helpers cấu hình. |
 | [`js/core/settings.js`](../../js/core/settings.js) | `LHN_SETTINGS` | Resolve defaults với dữ liệu đã lưu; get/save/subscribe. |
 | [`js/core/messaging.js`](../../js/core/messaging.js) | `LHN_MESSAGING` | Wrapper gửi/nhận runtime message. |
-| [`js/core/languages.js`](../../js/core/languages.js) | `LHN_LANGUAGES` | Ngôn ngữ giao diện, dịch label và phát hiện language. |
+| [`js/core/languages.js`](../../js/core/languages.js) | `LHN_LANGUAGES` | (v3.5.193: thêm khoá `bar_<tên>` cho thanh Keepit, chuyển từ bảng `T` của `touch-ui.js`.) Ngôn ngữ giao diện, dịch label và phát hiện language. |
 | [`js/core/cache.js`](../../js/core/cache.js) | `LHN_CACHE` | Cache bản dịch song ngữ, transcript YouTube, cue Web Study và TTS audio. |
 | [`js/core/shortcuts.js`](../../js/core/shortcuts.js), [`js/core/error-logger.js`](../../js/core/error-logger.js) | `LHN_SHORTCUTS`, `LHN_ERROR_LOGGER` | Chuẩn hóa phím và lưu diagnostic error. |
 

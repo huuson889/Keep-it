@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version 3.5.192 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
-- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1/5 xong ở v3.5.192; bước kế tiếp: bước 2.
+- Version 3.5.193 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
+- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193; bước kế tiếp: bước 3.
 - Overlay: giao diện mới `js/overlay/unified/` chạy trên engine cũ; giao diện cũ (`overlay-template.js`, `view/`) vẫn dựng nhưng ẩn, không sửa giao diện ở đó.
 - Kiểm thử: các bản gần đây thử bằng Chromium headless với extension thật; nhiều mục trên máy thật vẫn chưa chạy (mục 2).
 - Nhật ký: mục 5 chỉ giữ ~30 bản mới nhất; bản cũ hơn ở `docs/changelog/`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Tái cấu trúc cây thư mục (đang làm)
-- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước kế tiếp là bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`). Chỉ làm khi người dùng nói "làm".
+- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193. Người dùng nói "làm hết đi": làm tiếp bước 3–5; bước 3 phải chờ người dùng duyệt các mục "bỏ" trước khi bước 4 xoá gì.
 
 ### Áp dụng nguyên tắc giao diện (`docs/ui-layout.md`)
 - (1) Overlay: xong ở v3.5.171 (demo v18). Còn lại, mỗi bước 1 bản: (2) Reader + thanh Keepit; (3) Dashboard + popup dịch/từ điển dạng sheet. Ghi chú cũ: Thứ tự đề xuất, mỗi bước 1 bản: (1) Overlay — demo overlay đồng bộ v2 theo nguyên tắc (demo v1 `keepit-overlay-unified-demo-v1.html` còn 3 lớp bề rộng, chưa duyệt) + tim nhấp đúp video trên máy tính; (2) Reader + thanh Keepit; (3) Dashboard (bỏ mức tablet) + popup dịch/từ điển dạng sheet khi màn dọc trên mọi trang.
@@ -113,9 +113,10 @@ Keepit - Test/
 │   │   └── page/                  # composer.js (editor bridge), send-flow.js (send/link/mapping), chatgpt-link-marker.js, grok-google-auth.js
 │   ├── content/                   # Page interaction content scripts
 │   │   ├── sidebar.js             # Page sidebar tabs and search tools
-│   │   ├── touch-ui.js            # Thanh Keepit + ☰ mọi thiết bị: cuộn ẩn/hiện, vuốt thanh lùi/tới/sang tab, cử chỉ trang (vuốt trái dịch đoạn, chạm 2 ngón dịch trang), nhấn giữ bôi chữ; có bảng nhãn en/vi/ko riêng
+│   │   ├── keepit-bar.js          # Thanh Keepit + ☰ mọi thiết bị: cuộn ẩn/hiện, vuốt thanh lùi/tới/sang tab, cử chỉ trang (vuốt trái dịch đoạn, chạm 2 ngón dịch trang), nhấn giữ bôi chữ; nhãn ở languages.js (bar_<tên>)
+│   │   ├── keepit-bar-css.js      # CSS thanh + ☰ (LHN_BAR_CSS), màu kính qua var(--kp-…)
 │   │   └── note-composer.js       # Note form and record normalization
-│   ├── reader/                    # bilingual-reader, TTS engine, reader voice flags
+│   ├── reader/                    # bilingual-reader, reader-css (CSS Reader), TTS engine, reader voice flags
 │   ├── translate/                 # translate (chạy nền), dictionary, study translation
 │   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats; responsive-nav.js = điều hướng điện thoại/tablet
 │   ├── overlay/                   # Shared Video/Web overlay, Study engine/activities and View modes
@@ -126,7 +127,7 @@ Keepit - Test/
 │   │   ├── study/                 # Dictation/Typing and Shadowing activities
 │   │   └── view/                  # layout-mode.js, cc-mode.js, touch-layout.js (bố cục overlay cảm ứng), touch-theater.js (rạp ngang điện thoại)
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
+│   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation, `responsive.css` cho điện thoại/tablet (nạp cuối)
@@ -198,6 +199,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-10-23 | v3.5.193 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 2 (không đổi giao diện/hành vi): thêm `js/shared/theme-tokens.js` (13 màu kính/chữ sáng-tối, biến `--kp-…`); CSS thanh Keepit + ☰ tách sang `js/content/keepit-bar-css.js`, CSS Reader sang `js/reader/reader-css.js`; bỏ 15 chú thích khối vá theo phiên bản, gộp quy tắc trùng bộ chọn khi không có quy tắc cùng độ ưu tiên xen giữa, bỏ khai báo bị chính bộ chọn đó ghi đè sau (thanh 461 → 423 quy tắc, Reader 205 → 190); `touch-ui.js` → `keepit-bar.js` (giữ id `#lhn-touch-ui`); bảng nhãn `T` (281 nhãn en/vi/ko) chuyển vào `languages.js` khoá `bar_<tên>`, xoá `T`/`LANG_INDEX`.
+- File: `js/shared/theme-tokens.js`, `js/content/keepit-bar.js` (đổi tên), `js/content/keepit-bar-css.js`, `js/reader/reader-css.js`, `js/reader/bilingual-reader.js`, `js/core/languages.js`, `js/content/content.js` (chú thích), `manifest.json`, `pages/home.html`, `OPT-ARENA.md`, `AGENTS.md`, `PROJECT.md`, `docs/INDEX.md`, `docs/modules/{content,reader,shared,core}.md`, `DATA-INVENTORY.md` (trỏ đường dẫn/số dòng mới của thanh).
+- Kiểm tra: `node --check` đạt; 281 nhãn khớp từng chữ, 203 khoá đang dùng đều có; Chromium headless với extension thật v3.5.192 vs v3.5.193 (điện thoại/máy tính × sáng/tối × vi/en/ko; thanh, ☰, Reader, bảng Giọng, bảng Tốc độ): HTML giống hệt, computed style mọi phần tử (kể cả ::before/::after) giống hệt trừ hoạt ảnh `.smore` đang chạy; ảnh chỉ khác chấm tiến độ đọc đang chạy (chạy v3.5.192 hai lần cũng khác đúng chỗ đó); trang chủ Keepit giống hệt từng điểm ảnh, không lỗi console. Chưa thử trên máy thật.
 
 **2026-10-23 | v3.5.192 | Arena.ai Agent sửa:**
 

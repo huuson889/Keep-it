@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.192",
+  "version": "3.5.193",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -62,7 +62,9 @@
         "js/core/settings.js",
         "js/core/languages.js",
         "js/shared/sheet-kit.js",
-        "js/content/touch-ui.js",
+        "js/shared/theme-tokens.js",
+        "js/content/keepit-bar-css.js",
+        "js/content/keepit-bar.js",
         "js/content/offline-page.js"
       ],
       "run_at": "document_start",
@@ -94,6 +96,7 @@
         "vendor/readability/Readability.js",
         "vendor/readability/Readability-readerable.js",
         "js/reader/bilingual-flags.js",
+        "js/reader/reader-css.js",
         "js/reader/bilingual-reader.js",
         "js/overlay/overlay-template.js",
         "js/overlay/source/video.js",

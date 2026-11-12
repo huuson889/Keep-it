@@ -26,16 +26,16 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 
 | Muốn sửa | Mở file |
 |---|---|
-| Thanh Keepit, ☰, cuộn ẩn/hiện, nút lên đầu trang | `js/content/touch-ui.js` |
-| Vuốt thanh lùi/tới, sang tab trái/phải | `js/content/touch-ui.js` → `SWITCH_TAB` trong `js/background/background.js` (nền) |
-| Cử chỉ trên trang: vuốt trái dịch đoạn, chạm 2 ngón dịch trang | `js/content/touch-ui.js` |
+| Thanh Keepit, ☰, cuộn ẩn/hiện, nút lên đầu trang | `js/content/keepit-bar.js`; giao diện (CSS) ở `js/content/keepit-bar-css.js` |
+| Vuốt thanh lùi/tới, sang tab trái/phải | `js/content/keepit-bar.js` → `SWITCH_TAB` trong `js/background/background.js` (nền) |
+| Cử chỉ trên trang: vuốt trái dịch đoạn, chạm 2 ngón dịch trang | `js/content/keepit-bar.js` |
 | Dịch đoạn, chọn chữ, popup dịch, full dict | `js/content/content.js`, `js/translate/dictionary.js` |
 | Gọi dịch vụ dịch, cache bản dịch | `js/translate/translate.js` (nền) |
 | Icon tròn / thanh công cụ khi chọn chữ | `js/shared/selection-toolbar.js` + `css/shared/selection-toolbar.css` |
 | Tô sáng, ghi chú, Sidebar trang | `js/content/web-highlighter.js`, `note-composer.js`, `sidebar.js`; lưu ở `js/background/annotations.js` (nền) |
 | Sheet kéo xuống để đóng (mọi sheet) | `js/shared/sheet-kit.js` |
 | Tìm kiếm, lọc danh sách, tô chỗ khớp | `js/shared/search.js` |
-| Reader song ngữ (thanh, giọng, tốc độ, CSS) | `js/reader/bilingual-reader.js`; giọng/âm thanh ở `js/reader/tts-engine.js` |
+| Reader song ngữ (thanh, giọng, tốc độ) | `js/reader/bilingual-reader.js`; CSS ở `js/reader/reader-css.js`; giọng/âm thanh ở `js/reader/tts-engine.js` |
 | Overlay: giao diện Xem · Nói · Chép · Rạp | `js/overlay/unified/unified-ui.js` + `unified-css.js` |
 | Overlay: mở/đóng, phím tắt, phát/tua, xuất file | `js/overlay/overlay-controller.js` |
 | Overlay: phụ đề video / bài viết web | `js/overlay/source/video.js` / `js/overlay/source/web.js` |
@@ -44,6 +44,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
-| Nhãn en/vi/ko | `js/core/languages.js`. Hiện còn bảng riêng trong `touch-ui.js`, `offline-page.js`, `js/overlay/unified/unified-text.js` |
+| Màu kính sáng/tối (thanh, ☰, Reader) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
+| Nhãn en/vi/ko | `js/core/languages.js` (nhãn thanh Keepit: khoá `bar_<tên>`). Hiện còn bảng riêng trong `offline-page.js`, `js/overlay/unified/unified-text.js` |
 | Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
 | Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |

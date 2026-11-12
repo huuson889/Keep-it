@@ -51,7 +51,7 @@
   globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
-  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (touch-ui host 2147483000)
+  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (keepit-bar host 2147483000)
   const FLOAT_Z = "2147482900";
   function animateRemove(el) {
     if (!el) return;
@@ -2068,7 +2068,7 @@
       startRestoreObserver(); setTimeout(restoreAnnotations, 600);
     }
   });
-  // Bottom bar (touch-ui.js, same content-script world; pages cannot reach these globals):
+  // Bottom bar (keepit-bar.js, same content-script world; pages cannot reach these globals):
   // Tô sáng lại and the search popup's Keepit Dictionary row reuse the real features.
   function openBarDictionary(word) {
     word = cleanText(word);

@@ -10,6 +10,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
+| [`js/reader/reader-css.js`](../../js/reader/reader-css.js) | `LHN_READER_CSS(flagFontUrl)` → chuỗi CSS | (v3.5.193) CSS Reader (thanh, bảng Giọng/Tốc độ/☰, thẻ song ngữ). `bilingual-reader.js` ghép `LHN_THEME.css("#lhn-bilingual-reading-bar") + LHN_READER_CSS(flagFontUrl)`. Nạp trước `bilingual-reader.js`. |
 | [`js/reader/bilingual-reader.js`](../../js/reader/bilingual-reader.js) | `readerBlocks`, `LHN_READER_MAIN_SOURCE`, `LHN_READER_SPEECH_RATE`, `LHN_READER_BAR` | Chọn/chuẩn hóa text, Reader controls và API rate cho Web TTS. |
 | [`js/reader/tts-engine.js`](../../js/reader/tts-engine.js) | `LHN_TTS` | TTS, chia chunk, voice và language detection. |
 | [`vendor/readability/Readability.js`](../../vendor/readability/Readability.js) | `Readability` | Phân tích main article. |
@@ -35,7 +36,7 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 - `LHN_READER_BAR` (cho menu nhấn giữ Đọc của thanh Keepit): `rate()`, `stepRate(±0.05)` qua `setSpeechSpeed` (cùng giới hạn 0.5×–3×), `autoVoice()`, `webFont()`/`setWebFont(on)` qua `saveWebsiteFont`. v3.5.160: `tileOn(key)` / `toggleTile(key)` (trả trạng thái mới) cho `autoscroll`, `parabtn`, `autolang`, `readtranslation`, `webfont` — cùng đường lưu với ô trong ☰ của Reader (`readerTileOn` / `setReaderTile`); sheet ☰ của thanh Keepit dùng cho hàng Trình đọc. Trên cảm ứng (`!isDeskBar()`, tức không có chuột), ☰ của Reader gọi `LHN_BAR_HOOKS.openMainSheet(rect)` thay sheet Thêm riêng; máy tính có chuột giữ popover Thêm của Reader. Điện thoại/tablet dọc: nhóm trái thụt 9px (nút cờ 38px, nút tốc độ đệm 1.5px) để cờ cách mép trái bằng ☰ cách mép phải (~15px), ô thời gian giữ vị trí. Dịch khối lỗi mạng (offline hoặc `fetch/network`) gọi `LHN_BAR_HOOKS.translateOffline()` nếu có. v3.5.165: `LHN_READER_BAR.blockAt(x,y)` trả khối chữ (`isTextBlock`) dưới điểm chạm hoặc cách ±8/±16px theo chiều dọc, hay `null` — thanh Keepit dùng cho kéo trái dịch đoạn.
 - Giữ `stop-reading` và `lhn-bilingual-reader-started` để Reader/Web Study không phát đồng thời.
 - v3.5.161: sheet/popover của Reader (`brPanel`) gắn `LHN_SHEET` (khóa cuộn trang, kéo đóng từ bất kỳ chỗ nào, cuộn danh sách giọng về đầu trước); bỏ kéo bằng grip pointer. Nút Thêm (☰) trên mọi thiết bị (cả máy tính chuột) đóng sheet Reader và gọi `LHN_BAR_HOOKS.openMainSheet(rect)` → sheet/popover chính với hàng Trình đọc ở giữa.
-- Giữ id `#lhn-bilingual-reading-bar` và class `lhn-show` (touch-ui.js nhường khi thanh hiện); `#lhn-br-spacer` là UI của Reader, MutationObserver phải bỏ qua. Phút/giờ còn lại định dạng chuẩn tiếng Anh cho mọi ngôn ngữ (`NM`, giờ thập phân `NH`).
+- Giữ id `#lhn-bilingual-reading-bar` và class `lhn-show` (keepit-bar.js nhường khi thanh hiện); `#lhn-br-spacer` là UI của Reader, MutationObserver phải bỏ qua. Phút/giờ còn lại định dạng chuẩn tiếng Anh cho mọi ngôn ngữ (`NM`, giờ thập phân `NH`).
 - Request ID, utterance và queue phải ngăn audio cũ tiếp tục sau stop, đổi block hoặc đổi voice; giữ speaker controls ngoài navigation/widget.
 
 ## 5. Kiểm tra và xác minh

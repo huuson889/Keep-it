@@ -17,7 +17,8 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 | [`js/content/sentence-note.js`](../../js/content/sentence-note.js) | `LHN_SENTENCE_NOTE` | Lấy ngữ cảnh câu quanh selection. |
 | [`js/content/page-layout.js`](../../js/content/page-layout.js) | `LHN_PAGE_LAYOUT` | Snapshot/khôi phục layout khi mở sidebar; thiết bị cảm ứng không thu hẹp trang (sidebar là bottom sheet). |
 | [`js/content/ui-components.js`](../../js/content/ui-components.js) | `LHN_UI_COMPONENTS` | Tag editor dùng chung. |
-| [`js/content/touch-ui.js`](../../js/content/touch-ui.js) | IIFE, host `#lhn-touch-ui` (shadow, open), `LHN_BAR_HOOKS` | Thanh Keepit dưới đáy mọi trang (demo bottom-bar v8) trên cả máy tính và cảm ứng + cầu nối nhấn giữ bôi chữ → `mouseup`. |
+| [`js/content/keepit-bar.js`](../../js/content/keepit-bar.js) | IIFE, host `#lhn-touch-ui` (shadow, open; giữ id cũ), `LHN_BAR_HOOKS` | Thanh Keepit dưới đáy mọi trang (demo bottom-bar v8) trên cả máy tính và cảm ứng + cầu nối nhấn giữ bôi chữ → `mouseup`. Nhãn: `t(key)` đọc `LHN_LANGUAGES.MESSAGES[lang].bar_<key>` (fallback en, rồi chính key), thay `{0}`, `{1}` theo vị trí. (v3.5.193: đổi tên từ `touch-ui.js`.) |
+| [`js/content/keepit-bar-css.js`](../../js/content/keepit-bar-css.js) | `LHN_BAR_CSS` (chuỗi) | CSS shadow root của thanh + ☰. `keepit-bar.js` ghép `LHN_THEME.css(":host") + LHN_BAR_CSS`. Nạp sau `theme-tokens.js`, trước `keepit-bar.js`. |
 | [`js/content/offline-page.js`](../../js/content/offline-page.js) | IIFE, `LHN_OFFLINE` | (v3.5.175) Trang mất mạng A "Mây ngủ" / B "Phích cắm" (ngẫu nhiên mỗi trang) + thẻ ôn từ đã lưu; extension: khi lệnh cần mạng bị chặn; APK: trang lỗi tải. |
 | [`js/shared/selection-toolbar.js`](../../js/shared/selection-toolbar.js) + [`css/shared/selection-toolbar.css`](../../css/shared/selection-toolbar.css) | `LHN_SELECTION_TOOLBAR` | Toolbar nổi khi chọn chữ (Tô sáng/Dịch/Hỏi AI + logo), dùng chung cho trang và preview Dashboard. |
 
@@ -68,6 +69,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 - v3.5.185: `.bbar` bottom = 4px + `--sab` (mọi bố cục), `.hzone i` bottom 4px. `barBack()` được gọi khi `extYield` chuyển true → false (overlay/Reader đóng) và `setHidden(false)`; `setScrollHide(true)` bị bỏ qua trong 800ms sau đó.
 - v3.5.186: `S.sOff` (px) thay cho ẩn/hiện bật-tắt: `scrollOff(dy, y)` theo từng sự kiện cuộn, `applyOff(anim)` đặt `translate` cho `.bbar` và `.btop`, `.shid` khi ẩn hẳn (`S.scrollHide` = ẩn hẳn), `settleOff()` sau 160ms không cuộn và không chạm. `.bbar.hide` chỉ còn cho bàn phím / video toàn màn hình / ẩn thanh / nhường thanh trang / overlay-Reader. Bỏ `setScrollHide` và lớp `.btop.flat`.
 - v3.5.187: `settleOff()` dùng `lastDir` (dấu của lần cuộn cuối) → `max` hoặc 0.
+- v3.5.193: tái cấu trúc bước 2 — `touch-ui.js` → `keepit-bar.js`; CSS sang `keepit-bar-css.js`, các khối vá theo phiên bản đã gộp vào quy tắc gốc (khối `.dark`/sáng giữ thứ tự đè), màu kính dùng `var(--kp-…)` từ `js/shared/theme-tokens.js`; bảng nhãn `T` sang `languages.js` (`bar_<tên>`). Các mục cũ dưới đây nói `touch-ui.js` = file này.
 - v3.5.188: khối CSS `.dark` cuối `touch-ui.js` (tương phản chủ đề tối); chỉ màu.
 - v3.5.189: `.dark .bbar/.panel/.btop` = `rgba(24,24,28,.78)` + `blur(24px) saturate(1.6)`.
 - v3.5.190: khối CSS chủ đề sáng cuối `touch-ui.js` (sau khối `.dark`; các luật `.dark` cụ thể hơn nên vẫn thắng).
