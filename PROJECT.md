@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.202 | Arena.ai Agent sửa:**
+
+- Space play/pause trên trang video: dừng bằng Space rồi bật lại bằng chuột (hoặc phím của trang, ví dụ K trên YouTube) thì lần Space kế tiếp không dừng, phải bấm 2 lần (lỗi có từ trước v3.5.174). `toggleSpeechPause()` giờ xét trạng thái thật: có video/audio đang phát → dừng.
+- File: `js/content/content.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium, extension thật, trang YouTube giả (route) có phím Space/K và nhấp trình phát như YouTube: Space liên tiếp, Space → nhấp Play → Space (×3), Space → K → Space, nhấp dừng → Space, Space trong overlay (sau khi bấm ▶, ⏭, ⏮, dòng phụ đề, video): v3.5.202 tất cả đổi trạng thái mỗi lần bấm; v3.5.174 hỏng 5 lần ở các ca bật lại bằng chuột/K. Không lỗi trang.
+
 **2026-10-23 | v3.5.201 | Arena.ai Agent sửa:**
 
 - Overlay, Hiệu ứng nền bật: các ô và nút bên trong sheet/panel (ô ☰ Thêm, lưới tốc độ, nút chọn `.seg`, nút/ô nhập trong Cài đặt, Phụ đề, Ngôn ngữ…) hết nền đặc đen; dùng màu ô của ☰ thanh chính `--kp-tile-*` + viền `--kp-line-*`, hài hoà với kính v3.5.200. Nút chọn trong `.seg` dùng `--kp-glass-*`, dòng chọn dùng `--kp-line-*`; nút tím đang bật, ô màu phụ đề giữ nguyên.

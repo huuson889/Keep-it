@@ -962,7 +962,9 @@
   }
   function toggleSpeechPause() {
     const synth = window.speechSynthesis;
-    const shouldPause = !speechPauseActive;
+    // v3.5.202: real state wins — media resumed with the mouse / the site's own keys after a Space pause must pause again (was: a no-op "resume")
+    const mediaPlaying = Array.from(document.querySelectorAll("audio,video")).some(item => !item.paused && !item.ended) || Boolean(currentSpeakAudio && !currentSpeakAudio.paused && !currentSpeakAudio.ended);
+    const shouldPause = !speechPauseActive || mediaPlaying;
     const readerPause = new CustomEvent("lhn-bilingual-reader-pause", { detail:shouldPause, cancelable:true });
     document.dispatchEvent(readerPause);
     if (shouldPause) {
