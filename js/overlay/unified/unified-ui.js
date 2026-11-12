@@ -1,5 +1,5 @@
 // Keepit unified overlay (docs/ui-layout.md) — the approved demo v18 UI on the real overlay engines.
-// Markup + behaviour; styles are UNIFIED_OVERLAY_CSS (unified-css.js), labels are translated by unified-text.js.
+// Markup + behaviour; styles are UNIFIED_OVERLAY_CSS (unified-css.js); labels are keys ov_* in js/core/languages.js, read with T().
 // overlay-controller.js mounts it inside the overlay shadow root and keeps every engine (captions, translation,
 // study records, favourites, export) — this file only draws the UI and calls those engines through LHN_UNIFIED_BRIDGE.
 const UNIFIED_OVERLAY_HTML = `
@@ -9,11 +9,11 @@ const UNIFIED_OVERLAY_HTML = `
   <header class="hd">
     <div class="brand"><span class="logo" id="logo"></span><span class="bname">Keepit</span><span class="bsrc" id="bsrc" translate="no"></span></div>
     <div class="tabs" role="tablist" id="tabs"><span class="tab-ind" id="tabInd"></span></div>
-    <div class="hd-act"><button class="ib" id="btnSize"></button><button class="ib" id="btnClose" title="Đóng (Esc)" aria-label="Đóng"></button></div>
+    <div class="hd-act"><button class="ib" id="btnSize"></button><button class="ib" id="btnClose"></button></div>
   </header>
   <main class="bd" id="bd">
     <div class="colrail l" id="railL"></div>
-    <div class="csplit" id="csL" data-c="l" title="Kéo để đổi độ rộng · nhấp đúp = mặc định"></div>
+    <div class="csplit" id="csL" data-c="l"></div>
     <section class="stage" id="stage">
       <div class="player" id="player">
         <div class="vid" id="vid"></div>
@@ -21,23 +21,23 @@ const UNIFIED_OVERLAY_HTML = `
         <div class="vplay" id="vplay"></div>
         <div class="ttring" id="ttring" role="status"><b></b><div class="ttring-c"><svg viewBox="0 0 84 84" aria-hidden="true"><circle class="trk" cx="42" cy="42" r="36"/><circle class="arc" cx="42" cy="42" r="36"/></svg><span class="ttring-ic"></span></div></div>
         <div class="ttseek" id="ttseek" role="status"><div><b></b><i></i></div><small translate="no"></small></div>
-        <div class="tthint" id="tthint"><i class="ttzone l">Âm lượng</i><i class="ttzone r">Độ sáng</i><span>Vuốt bên trái: âm lượng · bên phải: độ sáng<br>Vuốt ngang: tua · vuốt xuống ở giữa: thoát<small>Chạm để đóng</small></span></div>
-        <div class="vcorner" id="vcorner"><button class="vc favb" data-act="fav" title="Yêu thích" aria-label="Yêu thích"></button><button class="vc" data-act="theater" title="Toàn màn hình" aria-label="Toàn màn hình"></button></div>
+        <div class="tthint" id="tthint"></div>
+        <div class="vcorner" id="vcorner"><button class="vc favb" data-act="fav"></button><button class="vc" data-act="theater"></button></div>
         <div class="tsub bg-soft" id="tsub" translate="no"><div class="a" data-lhn-primary></div><div class="b" data-lhn-secondary></div></div>
-        <div class="cinfo"><div class="ct"><b id="cTitle" translate="no"></b><small id="cSrc" translate="no"></small></div><div class="spec"><i></i><i></i><i></i><i></i></div><button class="cplay" id="cplay" aria-label="Phát"></button></div>
+        <div class="cinfo"><div class="ct"><b id="cTitle" translate="no"></b><small id="cSrc" translate="no"></small></div><div class="spec"><i></i><i></i><i></i><i></i></div><button class="cplay" id="cplay"></button></div>
       </div>
       <div class="subbox" id="subbox" translate="no">
         <div class="sub-en" data-lhn-primary></div><div class="sub-vi" data-lhn-secondary></div>
-        <button class="sgrip" id="grip" title="Thu gọn phụ đề" aria-label="Thu gọn phụ đề"></button>
+        <button class="sgrip" id="grip"></button>
       </div>
       <div class="study" id="study"></div>
     </section>
-    <div class="split" id="split" title="Kéo để đổi độ rộng"></div>
+    <div class="split" id="split"></div>
     <aside class="side" id="side">
       <div class="side-hd" id="sideHd"></div>
       <div class="list" id="list"></div>
     </aside>
-    <div class="csplit" id="csR" data-c="r" title="Kéo để đổi độ rộng · nhấp đúp = mặc định"></div>
+    <div class="csplit" id="csR" data-c="r"></div>
     <aside class="notes" id="notesCol"></aside>
     <div class="colrail r" id="railR"></div>
   </main>
@@ -78,6 +78,14 @@ const LHN_UNIFIED_BRIDGE = Object.freeze({
   setLanguage: (kind, code) => saveSubtitleLanguage(kind === 'source' ? 'sourceLanguage' : 'targetLanguage', code),
   close: () => closeOverlay(),
 });
+
+// Labels: keys ov_<name> in js/core/languages.js (en/vi/ko). Language = the overlay's display language; anything
+// other than en/ko shows Vietnamese, as before. VI() = the Vietnamese text in every language: only for the few spots
+// that were never translated (kept unchanged on purpose; switch VI → T to translate them).
+const ovLabelLang = () => { let l = ''; try { l = LHN_UNIFIED_BRIDGE.state()?.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || ''; } catch (_) {} return l === 'en' || l === 'ko' ? l : 'vi'; };
+const ovLabel = (lang, key, args) => { const M = globalThis.LHN_LANGUAGES?.MESSAGES || {}; let s = String(M[lang]?.['ov_' + key] ?? M.vi?.['ov_' + key] ?? key); args.forEach((a, i) => { s = s.split(`{${i}}`).join(String(a)); }); return s; };
+const T = (key, ...args) => ovLabel(ovLabelLang(), key, args);
+const VI = (key, ...args) => ovLabel('vi', key, args);
 
 globalThis.LHN_UNIFIED_OVERLAY = (() => {
   'use strict';
@@ -237,36 +245,37 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     $('#vplay').innerHTML = ic('play');
     $('#wave').innerHTML = Array.from({ length: 46 }, (_, i) => `<i style="animation-delay:${(i * 37 % 100) / 100}s"></i>`).join('');
     $$('#vcorner [data-act=fav]').forEach((b) => (b.innerHTML = ic('heart'))); $('#vcorner [data-act=theater]').innerHTML = ic('fs');
-    const TABS = [['view', 'Xem', 'watch'], ['speak', 'Nói', 'mic'], ['write', 'Chép', 'pen']];
-    $('#tabs').insertAdjacentHTML('beforeend', TABS.map(([id, l, i]) => `<button role="tab" data-tab="${id}" aria-selected="false">${ic(i)}<span>${l}</span></button>`).join(''));
-    $('#railL').innerHTML = `<button class="ib" data-act="colList" title="Hiện danh sách câu">${ic('panel')}</button>`;
-    $('#railR').innerHTML = `<button class="ib" data-act="colNotes" title="Hiện Ghi chú bài học">${ic('panelR')}</button>`;
+    const TABS = [['view', 'watch', 'watch'], ['speak', 'speak', 'mic'], ['write', 'write', 'pen']]; // [tab, label key, icon]
+    $('#tabs').insertAdjacentHTML('beforeend', TABS.map(([id, l, i]) => `<button role="tab" data-tab="${id}" aria-selected="false">${ic(i)}<span>${T(l)}</span></button>`).join(''));
+    $('#railL').innerHTML = `<button class="ib" data-act="colList">${ic('panel')}</button>`;
+    $('#railR').innerHTML = `<button class="ib" data-act="colNotes">${ic('panelR')}</button>`;
 
-    // dock items: zone l/c/r, priority (lower hides first), tabs
+    // dock items: zone l/c/r, priority (lower hides first), tabs; label / tip are label keys
     const DOCK = [
       { id: 'title', z: 'l', p: 1, html: `<div class="dtitle" data-id="title">${YT}<span></span></div>` },
-      { id: 'fav', z: 'l', p: 6, label: 'Yêu thích', icon: 'heart', cls: 'favb' },
-      { id: 'notes', z: 'l', p: 3.5, label: 'Ghi chú', icon: 'notes' },
-      { id: 'vol', z: 'c', p: 2, label: 'Âm lượng', icon: 'vol' },
-      { id: 'rep', z: 'c', p: 9, label: 'Lặp lại câu', icon: 'repeat1', tip: 'Lặp lại câu — nhấn giữ: chọn số lần' },
-      { id: 'prev', z: 'c', p: 10, label: 'Câu trước', icon: 'prev' },
-      { id: 'play', z: 'c', p: 99, label: 'Phát/Tạm dừng', icon: 'play', cls: 'play', tip: 'Phát/Tạm dừng (Space)' },
-      { id: 'next', z: 'c', p: 10, label: 'Câu tiếp theo', icon: 'next' },
-      { id: 'speed', z: 'c', p: 8, label: 'Tốc độ', icon: 'speed', speed: true },
-      { id: 'cc', z: 'r', p: 7, label: 'Chế độ phụ đề', icon: 'cc', view: true },
-      { id: 'mode', z: 'r', p: 4, label: 'Chế độ xem', icon: 'normal', view: true },
-      { id: 'fs', z: 'r', p: 5, label: 'Toàn màn hình', icon: 'fs', view: true },
-      { id: 'set', z: 'r', p: 3, label: 'Cài đặt', icon: 'set' },
-      { id: 'more', z: 'r', p: 100, label: 'Thêm', icon: 'more' },
+      { id: 'fav', z: 'l', p: 6, label: 'favorite', icon: 'heart', cls: 'favb' },
+      { id: 'notes', z: 'l', p: 3.5, label: 'note', icon: 'notes' },
+      { id: 'vol', z: 'c', p: 2, label: 'volume', icon: 'vol' },
+      { id: 'rep', z: 'c', p: 9, label: 'repeatSentence', icon: 'repeat1', tip: 'repeatSentencePressAnd' },
+      { id: 'prev', z: 'c', p: 10, label: 'previousSentence', icon: 'prev' },
+      { id: 'play', z: 'c', p: 99, label: 'playPause', icon: 'play', cls: 'play', tip: 'playPauseSpace' },
+      { id: 'next', z: 'c', p: 10, label: 'nextSentence', icon: 'next' },
+      { id: 'speed', z: 'c', p: 8, label: 'speed', icon: 'speed', speed: true },
+      { id: 'cc', z: 'r', p: 7, label: 'subtitleMode', icon: 'cc', view: true },
+      { id: 'mode', z: 'r', p: 4, label: 'viewMode', icon: 'normal', view: true },
+      { id: 'fs', z: 'r', p: 5, label: 'fullScreen', icon: 'fs', view: true },
+      { id: 'set', z: 'r', p: 3, label: 'settings', icon: 'set' },
+      { id: 'more', z: 'r', p: 100, label: 'more', icon: 'more' },
     ];
     const dockEl = {};
+    function labelDockButton(d, el = dockEl[d.id]) { if (d.html || !el) return; el.title = T(d.tip || d.label); el.setAttribute('aria-label', T(d.label)); }
     DOCK.forEach((d) => {
       let el;
       if (d.html) { const t = document.createElement('div'); t.innerHTML = d.html; el = t.firstElementChild; }
       else {
         el = document.createElement('button');
         el.className = `ib ${d.cls || ''} ${d.speed ? 'spd' : ''}`;
-        el.dataset.id = d.id; el.title = d.tip || d.label; el.setAttribute('aria-label', d.label);
+        el.dataset.id = d.id; labelDockButton(d, el);
         el.innerHTML = d.speed ? `<span class="ico">${ic('speed')}</span><span class="sl">1.00x</span>` : ic(d.icon) + (d.id === 'rep' ? '<span class="bdg" hidden></span>' : '');
       }
       dockEl[d.id] = el;
@@ -357,7 +366,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function apply() {
       fit();
       const k = sizeKey();
-      if (k === 's' && isStudy()) { S.tabLand = S.tab; S.tab = 'view'; speakAbort(); B.setActivity(null); setPlaying(false); closePanel(); lastKey = ''; toast('Điện thoại ngang chỉ có Rạp — xoay dọc để học'); }
+      if (k === 's' && isStudy()) { S.tabLand = S.tab; S.tab = 'view'; speakAbort(); B.setActivity(null); setPlaying(false); closePanel(); lastKey = ''; toast(T('phoneLandscapeIsTheater')); }
       else if (k !== 's' && S.tabLand) { S.tab = S.tabLand; S.tabLand = null; B.setActivity(S.tab === 'speak' ? 'shadowing' : 'dictation'); useSent(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); resetStudy(); lastKey = ''; }
       useSent();
       ov.dataset.w = wClass(); ov.dataset.h = k === 's' ? 's' : 'n';
@@ -375,9 +384,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       $('#player').classList.toggle('card', card);
       // header size button
       const bs = $('#btnSize');
-      if (isStudy()) { bs.innerHTML = ic(S.showVideo ? 'shrink' : 'enlarge'); bs.title = S.showVideo ? 'Thu nhỏ video' : 'Hiện video'; }
-      else if (curView() === 'theater') { bs.innerHTML = ic('shrink'); bs.title = 'Thoát toàn màn hình'; }
-      else { bs.innerHTML = ic(mini ? 'enlarge' : 'shrink'); bs.title = mini ? 'Phóng to video' : 'Thu nhỏ video thành thanh'; }
+      if (isStudy()) { bs.innerHTML = ic(S.showVideo ? 'shrink' : 'enlarge'); bs.title = S.showVideo ? T('shrinkVideo') : T('showVideo'); }
+      else if (curView() === 'theater') { bs.innerHTML = ic('shrink'); bs.title = T('exitFullscreen'); }
+      else { bs.innerHTML = ic(mini ? 'enlarge' : 'shrink'); bs.title = mini ? T('expandVideo') : T('shrinkVideoToA'); }
       bs.setAttribute('aria-label', bs.title);
       // tabs
       $$('#tabs button').forEach((b, i) => { const on = b.dataset.tab === S.tab; b.setAttribute('aria-selected', on); if (on) $('#tabInd').style.transform = `translateX(${i * 100}%)`; });
@@ -388,7 +397,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       // portrait: ♥ / ⛶ on the video only when the dock itself has no room for them
       const vt = $('#vcorner [data-act=theater]');
       const vIc = isStudy() ? (S.showVideo ? 'shrink' : 'enlarge') : curView() === 'theater' ? 'fsx' : 'fs';
-      vt.innerHTML = ic(vIc); vt.title = isStudy() ? (S.showVideo ? 'Thu nhỏ video' : 'Phóng to video') : curView() === 'theater' ? 'Thoát toàn màn hình' : 'Toàn màn hình'; vt.setAttribute('aria-label', vt.title);
+      vt.innerHTML = ic(vIc); vt.title = isStudy() ? (S.showVideo ? T('shrinkVideo') : T('expandVideo')) : curView() === 'theater' ? T('exitFullscreen') : T('fullScreen'); vt.setAttribute('aria-label', vt.title);
       if (k !== lastKey) { lastKey = k; renderList(); }
       syncFav(); syncRep(); syncPlay(); syncSpeed(); applySubStyle();
       renderStudy(); renderSideHd(); renderNotesCol(); renderMarks(); tick(true); requestAnimationFrame(() => { fitSub(); fitTsub(); placeAmb(); fitStudy(); });
@@ -401,14 +410,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const s = SENT[i];
       let st = '';
       if (S.tab === 'view') {
-        if (practiced(i)) st += `<span class="ok" title="Đã luyện">${ic('check')}</span>`;
+        if (practiced(i)) st += `<span class="ok" title="${T('practiced')}">${ic('check')}</span>`;
       } else {
         const v = S.res[S.tab][i];
         if (v != null) st += `<span class="sc ${v >= 85 ? '' : v >= 65 ? 'mid' : 'low'}">${v}%</span>`;
       }
       let cls = '';
-      if (isStudy()) { if (isLocked(i)) { cls = ' locked'; st = `<span class="lk" title="Chưa mở">${ic('lock')}</span>`; } else if (!isSolved(S.tab, i)) cls = ' unsolved'; }
-      const nd = S.tnotes.some((n) => n.i === i) ? '<span class="nd" title="Có ghi chú"></span>' : '';
+      if (isStudy()) { if (isLocked(i)) { cls = ' locked'; st = `<span class="lk" title="${T('locked')}">${ic('lock')}</span>`; } else if (!isSolved(S.tab, i)) cls = ' unsolved'; }
+      const nd = S.tnotes.some((n) => n.i === i) ? `<span class="nd" title="${T('hasNotes')}"></span>` : '';
       return `<div class="row${cls}" data-i="${i}"><div class="rhd"><span class="tm">${fmt(s.start)}</span>${nd}<span class="st">${st}</span></div><div class="en" data-lhn-primary>${esc(s.en)}</div><div class="vi" data-lhn-secondary>${esc(s.vi)}</div></div>`;
     }
     const PASS = { speak: 70, write: 100 };
@@ -563,7 +572,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function syncFs() {
       const ex = S.rot ? true : sizeKey() === 's' ? S.realFs !== false : curView() === 'theater';
-      dockEl.fs.innerHTML = ic(ex ? 'fsx' : 'fs'); dockEl.fs.title = ex ? 'Thoát toàn màn hình' : 'Toàn màn hình'; dockEl.fs.setAttribute('aria-label', dockEl.fs.title);
+      dockEl.fs.innerHTML = ic(ex ? 'fsx' : 'fs'); dockEl.fs.title = ex ? T('exitFullscreen') : T('fullScreen'); dockEl.fs.setAttribute('aria-label', dockEl.fs.title);
     }
     function syncFav() { $$('.favb').forEach((b) => { b.classList.toggle('on', S.fav); b.setAttribute('aria-pressed', S.fav); }); }
 
@@ -579,7 +588,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (src && !src.classList.contains('favb')) src = src.closest('.favb') || src;
       const was = S.fav; S.fav = on; syncFav();
       if (on) $$('.favb').forEach((b) => { b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat'); if (b === src) burst(b); });
-      if (was !== on) { toast(on ? 'Đã thêm vào yêu thích' : 'Đã bỏ yêu thích'); B.setFavorite(on); }
+      if (was !== on) { toast(on ? T('addedToFavorites') : T('removedFromFavorites')); B.setFavorite(on); }
     }
     function heartAt(x, y) {
       const h = document.createElement('div'); h.className = 'hrt';
@@ -631,11 +640,11 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // ---------- view / subtitles ----------
     function setView(v) {
       const k = sizeKey();
-      if (k === 's') { if (v !== 'theater') toast('Điện thoại ngang chỉ có Rạp'); return; }
+      if (k === 's') { if (v !== 'theater') toast(T('phoneLandscapeTheaterOnly')); return; }
       S.view[k] = v; if (v !== 'theater') S.fs = false;
       if (v === 'theater') { enterTT(); enterFs(false); } else { ttReset(); exitFs(); }
       apply();
-      if (v === 'theater') toast('Chế độ rạp');
+      if (v === 'theater') toast(T('theaterMode'));
     }
     function enterTT() { ttReset(); if (S.input === 'touch' && !S.ttHint) ov.classList.add('tt-hint-on'); }
     let ttReset = () => {};
@@ -643,10 +652,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (S.rot || wClass() !== 'c') return;
       closePanel(); S.rot = { prev: S.view.c };
       S.view.c = 'theater'; S.view.e = 'theater';
-      enterTT(); enterFs(true); apply(); toast('Rạp ngang · máy tự xoay ngang');
+      enterTT(); enterFs(true); apply(); toast(T('landscapeTheaterTheDevice'));
     }
     function exitTheater() {
-      if (S.rot) { ttReset(); ov.classList.remove('tt-hint-on'); const r = S.rot; S.rot = null; S.view.c = r.prev || 'normal'; S.view.e = 'normal'; exitFs(); closePanel(); apply(); toast('Thoát Rạp ngang'); return; }
+      if (S.rot) { ttReset(); ov.classList.remove('tt-hint-on'); const r = S.rot; S.rot = null; S.view.c = r.prev || 'normal'; S.view.e = 'normal'; exitFs(); closePanel(); apply(); toast(T('exitLandscapeTheater')); return; }
       setView('normal');
     }
     function setMini(on) { const k = sizeKey(); if (k === 's' || !!S.mini[k] === on) return; S.mini[k] = on; apply(); }
@@ -690,11 +699,11 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const applyBri = () => ov.style.setProperty('--vfilter', S.bri < 1 ? 'none' : `brightness(${(0.35 + S.bri * 0.07).toFixed(3)})`);
       const showRing = (zone) => {
         let frac, label, icon;
-        if (zone === 'vol') { const auto = S.vol < 100 / BRI_MAX; frac = S.vol / 100; label = auto ? 'Tự động' : `${Math.round(S.vol)}%`; icon = auto ? 'volAuto' : 'vol'; }
-        else { const auto = S.bri < 1; frac = S.bri / BRI_MAX; label = auto ? 'Tự động' : `${Math.round(S.bri / BRI_MAX * 100)}%`; icon = auto ? 'auto' : 'sun'; applyBri(); }
+        if (zone === 'vol') { const auto = S.vol < 100 / BRI_MAX; frac = S.vol / 100; label = auto ? T('auto') : `${Math.round(S.vol)}%`; icon = auto ? 'volAuto' : 'vol'; }
+        else { const auto = S.bri < 1; frac = S.bri / BRI_MAX; label = auto ? T('auto') : `${Math.round(S.bri / BRI_MAX * 100)}%`; icon = auto ? 'auto' : 'sun'; applyBri(); }
         ring.querySelector('.arc').style.strokeDashoffset = (C * (1 - frac)).toFixed(2);
         ring.querySelector('b').textContent = label;
-        ring.setAttribute('aria-label', `${zone === 'vol' ? 'Âm lượng' : 'Độ sáng'} ${label}`);
+        ring.setAttribute('aria-label', `${VI(zone === 'vol' ? 'volume' : 'brightness')} ${label === T('auto') ? VI('auto') : label}`); // aria never translated (kept as before)
         const box = ring.querySelector('.ttring-ic'); if (box.dataset.icon !== icon) { box.innerHTML = IC[icon]; box.dataset.icon = icon; }
         clearTimeout(ringT); ring.classList.add('show'); ov.classList.add('tt-ring-on');
       };
@@ -785,7 +794,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     $('#vplay').addEventListener('click', (e) => { e.stopPropagation(); if (S.swallow) { S.swallow = false; return; } togglePlay(); if (S.playing) showCtl(1200); });
     function rowClick(row) {
       const i = +row.dataset.i;
-      if (isStudy()) { if (isLocked(i)) { vib(15); toast('Làm xong câu hiện tại để mở câu tiếp'); return; } setStudyIndex(i); closePanel(); return; }
+      if (isStudy()) { if (isLocked(i)) { vib(15); toast(T('finishTheCurrentSentence')); return; } setStudyIndex(i); closePanel(); return; }
       seek(SENT[i].start); if (!S.playing) setPlaying(true);
     }
     $('#list').addEventListener('click', (e) => { if (S.input === 'touch') return; const row = e.target.closest('.row'); if (row) rowClick(row); });
@@ -796,7 +805,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function showTip(e) {
       const t = progT(e), i = idxAt(t), tip = $('#ptip');
       const mk = e.target.closest?.('.mk'), tn = mk && S.tnotes.find((n) => n.i === +mk.dataset.i);
-      tip.innerHTML = tn ? `<b>📍 ${fmt(stTime(tn.i))}</b>${esc(tn.text) || '<i>(chưa viết)</i>'}` : `<b>${fmt(t)}</b>${esc(SENT[i].en)}`;
+      tip.innerHTML = tn ? `<b>📍 ${fmt(stTime(tn.i))}</b>${esc(tn.text) || `<i>${T('empty')}</i>`}` : `<b>${fmt(t)}</b>${esc(SENT[i].en)}`;
       tip.style.display = 'block';
       const r = prog.getBoundingClientRect(); const x = (e.clientX - r.left) / S.scale; const w = tip.offsetWidth; const W = r.width / S.scale;
       tip.style.left = `${Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, x))}px`;
@@ -807,7 +816,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     prog.addEventListener('pointerdown', (e) => { if (e.target.classList.contains('mk')) return; pdrag = true; prog.classList.add('drag'); prog.setPointerCapture(e.pointerId); seek(progT(e)); showTip(e); });
     prog.addEventListener('pointerup', () => { pdrag = false; prog.classList.remove('drag'); setTimeout(() => ($('#ptip').style.display = 'none'), S.input === 'touch' ? 600 : 0); });
     function renderMarks() {
-      $('#pmarks').innerHTML = S.tnotes.map((n) => `<span class="mk" data-i="${n.i}" style="left:${(stTime(n.i) / DUR * 100).toFixed(3)}%" role="button" aria-label="Ghi chú · ${fmt(stTime(n.i))}"></span>`).join('');
+      $('#pmarks').innerHTML = S.tnotes.map((n) => `<span class="mk" data-i="${n.i}" style="left:${(stTime(n.i) / DUR * 100).toFixed(3)}%" role="button" aria-label="${T('note')} · ${fmt(stTime(n.i))}"></span>`).join('');
     }
     $('#pmarks').addEventListener('click', (e) => { const m = e.target.closest('.mk'); if (m) { e.stopPropagation(); jumpToNote(+m.dataset.i); } });
 
@@ -823,7 +832,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
 
     // ---------- generic panel (popover on wide, sheet on compact) ----------
     const layer = $('#layer');
-    let panelKind = '', panelAnchor = null;
+    let panelKind = '', panelAnchor = null, panelOpt = {};
     const dropSheet = () => { const o = layer.querySelector('.pnl'); if (o) globalThis.LHN_SHEET?.detach?.(o); };
     function closePanel() { dropSheet(); layer.innerHTML = ''; panelKind = ''; panelAnchor = null; $$('.wd.on').forEach((w) => w.classList.remove('on')); if (curView() === 'theater') armChrome(); }
     function openPanel(kind, anchor, opt = {}) {
@@ -831,7 +840,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (panelKind === kind && !opt.keep) { closePanel(); return; }
       const same = panelKind === kind && opt.keep, old = layer.querySelector('.pnl'), keepTop = same && old ? old.scrollTop : 0, keepTf = same && old ? old.style.transform : '';
       dropSheet(); layer.innerHTML = '';
-      panelKind = kind; panelAnchor = anchor || panelAnchor;
+      panelKind = kind; panelAnchor = anchor || panelAnchor; panelOpt = { ...opt, keep: false };
       const sheet = sheetMode() && !opt.center;
       const scrim = document.createElement('div'); scrim.className = 'scrim' + (sheet || opt.center ? ' dim' : '');
       scrim.addEventListener('click', closePanel);
@@ -877,7 +886,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const end = () => { if (y0 == null) return; y0 = null; if (dy > Math.min(110, p.offsetHeight * 0.3)) closePanel(); else { p.style.transition = 'translate .2s'; p.style.translate = '0 0'; } };
       p.addEventListener('pointerup', end); p.addEventListener('pointercancel', end);
     }
-    const head = (title, val = '', back = '') => `<div class="phd">${back ? `<button class="px" data-back="${back}" aria-label="Quay lại">${ic('back')}</button>` : ''}<span class="ptl">${title}</span>${val ? `<span class="pval">${val}</span>` : ''}<button class="px x" data-close aria-label="Đóng">${ic('close')}</button></div>`;
+    const head = (title, val = '', back = '') => `<div class="phd">${back ? `<button class="px" data-back="${back}" aria-label="${T('back')}">${ic('back')}</button>` : ''}<span class="ptl">${title}</span>${val ? `<span class="pval">${val}</span>` : ''}<button class="px x" data-close aria-label="${T('close')}">${ic('close')}</button></div>`;
     const opt = (attr, sel, label, k = '', icon = '') => `<button class="opt ${sel ? 'sel' : ''}" ${attr}>${icon ? `<span class="oi">${ic(icon)}</span>` : `<span class="ck">${ic('check')}</span>`}<span>${label}</span>${k ? `<span class="k">(${k})</span>` : ''}${icon ? `<span class="ck" style="margin-left:${k ? '8px' : 'auto'}">${ic('check')}</span>` : ''}</button>`;
     const sw2 = (key, on) => `<label class="sw2"><input type="checkbox" data-sw="${key}" ${on ? 'checked' : ''}><span></span></label>`;
     const FLAGS = {
@@ -891,11 +900,11 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       es: `<svg viewBox="0 0 22 15"><rect width="22" height="15" fill="#AA151B"/><rect y="3.75" width="22" height="7.5" fill="#F1BF00"/></svg>`,
       de: `<svg viewBox="0 0 22 15"><rect width="22" height="5" fill="#000"/><rect y="5" width="22" height="5" fill="#DD0000"/><rect y="10" width="22" height="5" fill="#FFCE00"/></svg>`,
     };
-    const LANGS = [['auto', 'Tự động nhận diện', 'Auto detect'], ['en', 'English', 'English'], ['vi', 'Tiếng Việt', 'Vietnamese'], ['ko', '한국어', 'Korean']];
-    const langName = (c) => (LANGS.find((l) => l[0] === c) || [, c])[1];
+    const LANGS = [['auto', 'autoDetect', 'Auto detect'], ['en', 'langEnglish', 'English'], ['vi', 'vietnamese', 'Vietnamese'], ['ko', 'langKorean', 'Korean']]; // [code, label key, English name]
+    const langName = (c, viOnly = false) => { const l = LANGS.find((x) => x[0] === c); return l ? (viOnly ? VI : T)(l[1]) : c; };
     // default subtitle colours per theme (= the first swatch)
     const subDefault = (tab, grp) => ({ dark: { video: { en: '#ffff00', vi: '#ffffff' }, side: { en: '#e5e7eb', vi: '#c0c5ce' } }, light: { video: { en: '#8b5cf6', vi: '#4b5563' }, side: { en: '#111827', vi: '#4b5563' } } })[S.theme === 'dark' ? 'dark' : 'light'][tab][grp];
-    const SW_COLORS = [['#ffffff', 'Trắng'], ['#9ca3af', 'Xám'], ['#ffff00', 'Vàng'], ['#22c55e', 'Xanh lá'], ['#22d3ee', 'Xanh lơ'], ['#ef4444', 'Đỏ'], ['#ec4899', 'Hồng'], ['#8b5cf6', 'Tím']];
+    const SW_COLORS = [['#ffffff', 'white'], ['#9ca3af', 'gray'], ['#ffff00', 'yellow'], ['#22c55e', 'green'], ['#22d3ee', 'cyan'], ['#ef4444', 'red'], ['#ec4899', 'pink'], ['#8b5cf6', 'purple']]; // [colour, label key]
     const SPEEDS = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2];
 
     // ---------- tap-to-translate: the word is selected and the existing Keepit popup (content.js) opens on it ----------
@@ -923,92 +932,92 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       }, 30);
     }
     const PANELS = {
-      speed: () => `${head('Tốc độ', `${S.speed.toFixed(2)}x`)}<input class="rng" type="range" min="0.5" max="3" step="0.05" value="${S.speed}" data-rng="speed" aria-label="Tốc độ"><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:12px;margin:2px 2px 6px"><span>0.5x</span><span>3x</span></div><div class="sgrid">${SPEEDS.map((v) => `<button data-speed="${v}" class="${Math.abs(v - S.speed) < 0.01 ? 'on' : ''}">${v === 1 ? 'Bình<br>thường' : v + 'x'}</button>`).join('')}</div>`,
-      cc: () => `${head('Chế độ phụ đề')}${[['bi', 'Song ngữ', '1'], ['pri', 'Chính', '2'], ['tr', 'Dịch', '3'], ['off', 'Ẩn', '4']].map(([v, l, k]) => opt(`data-cc="${v}"`, S.cc === v, l, k)).join('')}`,
-      rep: () => `${head('Lặp lại câu', S.rep.on ? (S.rep.n === Infinity ? 'Liên tục' : `${S.rep.n} lần`) : 'Tắt')}<div class="sgrid rgrid">${[[0, 'Tắt'], [1, '1'], [2, '2'], [3, '3'], [5, '5'], [10, '10'], [Infinity, '∞<small>Liên tục</small>']].map(([v, l]) => `<button data-rep="${v}" class="${(v === 0 ? !S.rep.on : S.rep.on && S.rep.n === v) ? 'on' : ''}">${l}</button>`).join('')}</div><p class="help" style="text-align:left;margin:10px 4px 0">Số lần phát lại mỗi câu trước khi sang câu tiếp. Chạm nút lặp để bật/tắt, nhấn giữ để chọn.</p>`,
-      vol: () => `${head('Âm lượng', S.muted ? 'Tắt tiếng' : `${S.vol}%`)}<div style="display:flex;align-items:center;gap:10px"><button class="ib" data-act="mute">${ic(S.muted ? 'mute' : 'vol')}</button><input class="rng" type="range" min="0" max="100" value="${S.vol}" data-rng="vol" aria-label="Âm lượng"></div>`,
+      speed: () => `${head(T('speed'), `${S.speed.toFixed(2)}x`)}<input class="rng" type="range" min="0.5" max="3" step="0.05" value="${S.speed}" data-rng="speed" aria-label="${T('speed')}"><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:12px;margin:2px 2px 6px"><span>0.5x</span><span>3x</span></div><div class="sgrid">${SPEEDS.map((v) => `<button data-speed="${v}" class="${Math.abs(v - S.speed) < 0.01 ? 'on' : ''}">${v === 1 ? `${T('speedNormalTop')}<br>${T('speedNormalBottom')}` : v + 'x'}</button>`).join('')}</div>`,
+      cc: () => `${head(T('subtitleMode'))}${[['bi', T('bilingual'), '1'], ['pri', T('original'), '2'], ['tr', T('translate'), '3'], ['off', VI('ccHidden'), '4']].map(([v, l, k]) => opt(`data-cc="${v}"`, S.cc === v, l, k)).join('')}`,
+      rep: () => `${head(T('repeatSentence'), S.rep.on ? (S.rep.n === Infinity ? T('continuous') : T('timesCount', S.rep.n)) : T('off'))}<div class="sgrid rgrid">${[[0, T('off')], [1, '1'], [2, '2'], [3, '3'], [5, '5'], [10, '10'], [Infinity, `∞<small>${T('continuous')}</small>`]].map(([v, l]) => `<button data-rep="${v}" class="${(v === 0 ? !S.rep.on : S.rep.on && S.rep.n === v) ? 'on' : ''}">${l}</button>`).join('')}</div><p class="help" style="text-align:left;margin:10px 4px 0">${T('howManyTimesEach')}</p>`,
+      vol: () => `${head(T('volume'), S.muted ? T('muted') : `${S.vol}%`)}<div style="display:flex;align-items:center;gap:10px"><button class="ib" data-act="mute">${ic(S.muted ? 'mute' : 'vol')}</button><input class="rng" type="range" min="0" max="100" value="${S.vol}" data-rng="vol" aria-label="${T('volume')}"></div>`,
       more: () => {
         const ov2 = overflowTiles();
-        const L = { fav: ['heart', 'Yêu thích'], vol: ['vol', 'Âm lượng'], rep: ['repeat1', 'Lặp lại câu'], prev: ['prev', 'Câu trước'], next: ['next', 'Câu tiếp'], speed: ['speed', 'Tốc độ'], cc: ['cc', 'Chế độ phụ đề'], mode: [curView(), 'Chế độ xem'], fs: ['fs', 'Toàn màn hình'] };
+        const L = { fav: ['heart', T('favorite')], vol: ['vol', T('volume')], rep: ['repeat1', T('repeatSentence')], prev: ['prev', T('previousSentence')], next: ['next', T('next')], speed: ['speed', T('speed')], cc: ['cc', T('subtitleMode')], mode: [curView(), T('viewMode')], fs: ['fs', T('fullScreen')] };
         const tile = (act, icon, label) => `<button class="tile" data-tile="${act}">${ic(icon)}<span>${label}</span></button>`;
-        return `${head('Thêm')}${ov2.length ? `<div class="sec">Trên thanh</div><div class="tiles">${ov2.map((id) => tile(id, L[id][0], L[id][1])).join('')}</div>` : ''}<div class="sec">Nhanh</div><div class="tiles">${tile('theme', S.theme === 'dark' ? 'sun' : 'moon', S.theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối')}${tile('subopt', 'subOptions', 'Phụ đề')}${tile('sublang', 'subLanguage', 'Ngôn ngữ')}${tile('notes', 'notes', 'Ghi chú')}${tile('art', 'art', 'Hiệu ứng nền')}${tile('set', 'set', 'Cài đặt')}</div>`;
+        return `${head(T('more'))}${ov2.length ? `<div class="sec">${T('onTheBar')}</div><div class="tiles">${ov2.map((id) => tile(id, L[id][0], L[id][1])).join('')}</div>` : ''}<div class="sec">${VI('quick')}</div><div class="tiles">${tile('theme', S.theme === 'dark' ? 'sun' : 'moon', S.theme === 'dark' ? T('lightTheme') : T('darkTheme'))}${tile('subopt', 'subOptions', T('subtitles'))}${tile('sublang', 'subLanguage', T('language'))}${tile('notes', 'notes', T('note'))}${tile('art', 'art', T('ambientEffect'))}${tile('set', 'set', T('settings'))}</div>`;
       },
-      set: () => `${head('Cài đặt video')}
-        ${isStudy() || wClass() === 'c' ? '' : `<div class="srow" style="flex-wrap:wrap"><div class="l">Cột video: <b data-rw>${S.split}%</b><small>Màn ngang · kéo vạch chia giữa video và danh sách cũng được</small></div><div class="seg">${[[34, 'Đọc'], [60, 'Xem']].map(([v, l]) => `<button data-split="${v}" class="${S.split === v ? 'on' : ''}">${l} ${v}%</button>`).join('')}</div><input class="rng" type="range" min="25" max="80" step="1" value="${S.split}" data-rng="split"></div>`}
-        <div class="srow"><div class="l">Nhấn để dịch</div>${sw2('tapTranslate', S.tapTranslate)}</div>
-        <div class="srow"><div class="l">Phát âm khi dịch</div>${sw2('speakOnTranslate', S.speakOnTranslate)}</div>
-        <div class="srow"><div class="l">Kết hợp câu</div>${sw2('merge', S.merge)}</div>
-        <div class="srow"><div class="l">Hiệu ứng nền<small>Màu video lan ra nền</small></div>${sw2('ambient', S.ambient)}</div>
-        <div class="srow"><div class="l">Ẩn thanh điều khiển<small>Hiện lại khi rê chuột / chạm</small></div>${sw2('autoHideDock', S.autoHideDock)}</div>
-        <div class="srow nav" data-page="theme"><div class="l">Chủ đề</div><span class="v">${S.theme === 'dark' ? 'Tối' : 'Sáng'}</span>${ic('chevR')}</div>
-        <div class="srow nav" data-page="subopt"><div class="l">Phụ đề</div>${ic('chevR')}</div>
-        <div class="srow nav" data-page="sublang"><div class="l">Ngôn ngữ</div><span class="v">${langName(S.srcLang)} → ${langName(S.dstLang)}</span>${ic('chevR')}</div>
-        <div class="srow nav" data-page="export"><div class="l">Xuất phụ đề</div>${ic('chevR')}</div>`,
-      theme: () => `${head('Chủ đề', '', 'set')}${opt('data-theme="dark"', S.theme === 'dark', 'Tối', '', 'moon')}${opt('data-theme="light"', S.theme === 'light', 'Sáng', '', 'sun')}`,
+      set: () => `${head(T('videoSettings'))}
+        ${isStudy() || wClass() === 'c' ? '' : `<div class="srow" style="flex-wrap:wrap"><div class="l">${T('videoColumn')} <b data-rw>${S.split}%</b><small>${T('landscapeYouCanAlso')}</small></div><div class="seg">${[[34, VI('read')], [60, VI('watch')]] /* "Đọc 34%" is one text node: never translated (kept as before) */.map(([v, l]) => `<button data-split="${v}" class="${S.split === v ? 'on' : ''}">${l} ${v}%</button>`).join('')}</div><input class="rng" type="range" min="25" max="80" step="1" value="${S.split}" data-rng="split"></div>`}
+        <div class="srow"><div class="l">${T('clickToTranslate')}</div>${sw2('tapTranslate', S.tapTranslate)}</div>
+        <div class="srow"><div class="l">${T('speakTranslation')}</div>${sw2('speakOnTranslate', S.speakOnTranslate)}</div>
+        <div class="srow"><div class="l">${T('combineSentences')}</div>${sw2('merge', S.merge)}</div>
+        <div class="srow"><div class="l">${T('ambientEffect')}<small>${T('videoColorsSpillInto')}</small></div>${sw2('ambient', S.ambient)}</div>
+        <div class="srow"><div class="l">${T('hideControls')}<small>${T('showsAgainOnHover')}</small></div>${sw2('autoHideDock', S.autoHideDock)}</div>
+        <div class="srow nav" data-page="theme"><div class="l">${T('theme')}</div><span class="v">${S.theme === 'dark' ? T('themeDark') : T('themeLight')}</span>${ic('chevR')}</div>
+        <div class="srow nav" data-page="subopt"><div class="l">${T('subtitles')}</div>${ic('chevR')}</div>
+        <div class="srow nav" data-page="sublang"><div class="l">${T('language')}</div><span class="v">${langName(S.srcLang, true)} → ${langName(S.dstLang, true)}</span>${ic('chevR')}</div>
+        <div class="srow nav" data-page="export"><div class="l">${T('includeSubtitles')}</div>${ic('chevR')}</div>`,
+      theme: () => `${head(T('theme'), '', 'set')}${opt('data-theme="dark"', S.theme === 'dark', T('themeDark'), '', 'moon')}${opt('data-theme="light"', S.theme === 'light', T('themeLight'), '', 'sun')}`,
       subopt: () => {
         const st = S.subStyle[S.subTab];
-        const swatch = (grp) => { const d = subDefault(S.subTab, grp), dn = (SW_COLORS.find(([c]) => c === d) || [d, 'Màu chủ đề'])[1];
-          const list = [['def', `${dn} · mặc định`, d], ...SW_COLORS.filter(([c]) => c !== d).map(([c, n]) => [c, n, c])];
+        const swatch = (grp) => { const d = subDefault(S.subTab, grp), dn = T((SW_COLORS.find(([c]) => c === d) || [d, 'accentColor'])[1]);
+          const list = [['def', `${dn} · ${T('defaultSuffix')}`, d], ...SW_COLORS.filter(([c]) => c !== d).map(([c, n]) => [c, T(n), c])];
           return `<div class="swatches">${list.map(([c, n, bg]) => `<button class="swc ${st[grp] === c ? 'on' : ''}" data-color="${grp}:${c}" title="${n}" aria-label="${n}" style="background:${bg}"></button>`).join('')}</div>`; };
         const en = st.en === 'def' ? subDefault(S.subTab, 'en') : st.en, vi = st.vi === 'def' ? subDefault(S.subTab, 'vi') : st.vi;
-        return `${head('Phụ đề', '', 'set')}
-        <div class="seg" style="width:100%;margin-bottom:10px"><button data-subtab="video" class="${S.subTab === 'video' ? 'on' : ''}">Phụ đề video</button><button data-subtab="side" class="${S.subTab === 'side' ? 'on' : ''}">Phụ đề cuộn</button></div>
-        <div class="prev ${S.subTab === 'video' ? `bg-${st.bg}` : ''}" style="font-family:${subFam(st.font) || 'inherit'}"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500};font-size:${Math.round((S.subTab === 'video' ? 18 : 15.5) * SUB_SZ[st.size] * 10) / 10}px"><span>Keep exploring everything</span></div><div class="b" style="color:${vi};font-size:${Math.round((S.subTab === 'video' ? 14 : 13) * SUB_SZ[st.size] * 10) / 10}px"><span>Bản dịch hiện ở đây</span></div></div>
-        <div class="srow"><div class="l">Cỡ chữ</div><div class="seg">${['Nhỏ', 'Trung bình', 'Lớn'].map((l, i) => `<button data-fsz="${i}" class="${st.size === i ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <div class="sec">Màu phụ đề chính</div>${swatch('en')}
-        <div class="sec">Màu phụ đề dịch</div>${swatch('vi')}
-        <div class="srow" style="margin-top:8px"><div class="l">Độ đậm</div><div class="seg"><button data-bold="0" class="${!st.bold ? 'on' : ''}">Thường</button><button data-bold="1" class="${st.bold ? 'on' : ''}">Đậm</button></div></div>
-        <div class="srow"><div class="l">Phông chữ</div><div class="seg">${[['def', 'Mặc định'], ['serif', 'Serif'], ['mono', 'Mono']].map(([v, l]) => `<button data-font="${v}" class="${st.font === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <div class="srow"><div class="l">Nền<small>Áp dụng ở toàn màn hình</small></div><div class="seg">${[['none', 'Không'], ['soft', 'Nhẹ'], ['solid', 'Đặc']].map(([v, l]) => `<button data-bg="${v}" class="${st.bg === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <button class="btnw sec2" data-act="subreset">Đặt lại</button>`;
+        return `${head(T('subtitles'), '', 'set')}
+        <div class="seg" style="width:100%;margin-bottom:10px"><button data-subtab="video" class="${S.subTab === 'video' ? 'on' : ''}">${T('videoSubtitles')}</button><button data-subtab="side" class="${S.subTab === 'side' ? 'on' : ''}">${T('scrollingTranscript')}</button></div>
+        <div class="prev ${S.subTab === 'video' ? `bg-${st.bg}` : ''}" style="font-family:${subFam(st.font) || 'inherit'}"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500};font-size:${Math.round((S.subTab === 'video' ? 18 : 15.5) * SUB_SZ[st.size] * 10) / 10}px"><span>Keep exploring everything</span></div><div class="b" style="color:${vi};font-size:${Math.round((S.subTab === 'video' ? 14 : 13) * SUB_SZ[st.size] * 10) / 10}px"><span>${T('theTranslationAppearsHere')}</span></div></div>
+        <div class="srow"><div class="l">${T('fontSize')}</div><div class="seg">${[T('small'), T('sizeMedium'), T('large')].map((l, i) => `<button data-fsz="${i}" class="${st.size === i ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="sec">${T('primarySubtitleColor')}</div>${swatch('en')}
+        <div class="sec">${T('translatedSubtitleColor')}</div>${swatch('vi')}
+        <div class="srow" style="margin-top:8px"><div class="l">${T('weight')}</div><div class="seg"><button data-bold="0" class="${!st.bold ? 'on' : ''}">${T('weightNormal')}</button><button data-bold="1" class="${st.bold ? 'on' : ''}">${T('bold')}</button></div></div>
+        <div class="srow"><div class="l">${T('font')}</div><div class="seg">${[['def', T('default')], ['serif', 'Serif'], ['mono', 'Mono']].map(([v, l]) => `<button data-font="${v}" class="${st.font === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="srow"><div class="l">${T('background')}<small>${T('appliesInFullScreen')}</small></div><div class="seg">${[['none', T('none')], ['soft', T('bgLight')], ['solid', T('solid')]].map(([v, l]) => `<button data-bg="${v}" class="${st.bg === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <button class="btnw sec2" data-act="subreset">${T('reset')}</button>`;
       },
-      sublang: () => `${head('Ngôn ngữ', '', 'set')}<div class="sec">Ngôn ngữ video</div>${LANGS.map(([c, n, e]) => `<button class="lrow ${S.srcLang === c ? 'sel' : ''}" data-src="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${n}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}<div class="sec">Dịch sang</div>${LANGS.filter((l) => l[0] !== 'auto').map(([c, n, e]) => `<button class="lrow ${S.dstLang === c ? 'sel' : ''}" data-dst="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${n}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}`,
-      export: () => `${head('Xuất phụ đề', '', 'set')}<div class="srow"><div class="l">Định dạng</div><div class="seg">${['srt', 'txt', 'csv', 'pdf'].map((f) => `<button data-fmt="${f}" class="${S.exp.fmt === f ? 'on' : ''}">.${f}</button>`).join('')}</div></div><div class="srow"><div class="l">Song ngữ</div>${sw2('exp.bi', S.exp.bi)}</div><div class="srow"><div class="l">Hiển thị thời gian</div>${sw2('exp.time', S.exp.time)}</div><button class="btnw" data-act="export">${ic('export')}Xuất phụ đề</button>`,
-      notes: () => `${head('Ghi chú bài học')}${lessonInner('p')}`,
-      slist: () => { const d = doneCount(); return `${head(`Câu ${S.si[S.tab] + 1}/${SENT.length}`, `Đã làm ${d}/${SENT.length}`)}<div class="list" id="sheetList" style="max-height:none;-webkit-mask-image:none;mask-image:none;padding:0"></div><button class="btnw sec2" data-act="summary">${ic('trophy')}Kết thúc phiên</button>`; },
+      sublang: () => `${head(T('language'), '', 'set')}<div class="sec">${T('videoLanguage')}</div>${LANGS.map(([c, n, e]) => `<button class="lrow ${S.srcLang === c ? 'sel' : ''}" data-src="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${T(n)}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}<div class="sec">${T('translateTo')}</div>${LANGS.filter((l) => l[0] !== 'auto').map(([c, n, e]) => `<button class="lrow ${S.dstLang === c ? 'sel' : ''}" data-dst="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${T(n)}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}`,
+      export: () => `${head(T('includeSubtitles'), '', 'set')}<div class="srow"><div class="l">${T('format')}</div><div class="seg">${['srt', 'txt', 'csv', 'pdf'].map((f) => `<button data-fmt="${f}" class="${S.exp.fmt === f ? 'on' : ''}">.${f}</button>`).join('')}</div></div><div class="srow"><div class="l">${T('bilingual')}</div>${sw2('exp.bi', S.exp.bi)}</div><div class="srow"><div class="l">${T('showTimestamps')}</div>${sw2('exp.time', S.exp.time)}</div><button class="btnw" data-act="export">${ic('export')}${T('includeSubtitles')}</button>`,
+      notes: () => `${head(T('lessonNotes'))}${lessonInner('p')}`,
+      slist: () => { const d = doneCount(); return `${head(T('sentenceOf', S.si[S.tab] + 1, SENT.length), T('doneOf', d, SENT.length))}<div class="list" id="sheetList" style="max-height:none;-webkit-mask-image:none;mask-image:none;padding:0"></div><button class="btnw sec2" data-act="summary">${ic('trophy')}${T('endSession')}</button>`; },
       summary: () => {
         const r = S.res[S.tab]; const vals = Object.values(r); const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
         const mins = Math.max(1, Math.round((Date.now() - S.sess) / 60000));
-        return `${head(S.tab === 'speak' ? 'Tổng kết · Luyện nói' : 'Tổng kết · Chép chính tả')}<div class="sumh"><div class="trophy">${ic('trophy')}</div><b>${avg >= 85 ? 'Xuất sắc!' : avg >= 65 ? 'Làm tốt lắm!' : 'Cố lên nhé!'}</b><div class="help">Mười phút mỗi ngày tốt hơn hai giờ mỗi tuần.</div></div><div class="stats"><div class="stat"><b>${vals.length}/${SENT.length}</b><small>Câu đã làm</small></div><div class="stat"><b>${avg}%</b><small>Điểm TB</small></div><div class="stat"><b>${mins}′</b><small>Thời gian</small></div></div><div class="sec">Từ cần luyện thêm <small class="help" style="font-weight:500">· chạm để tra</small></div><div class="chips">${[...S.weak].slice(0, 10).map((w) => `<span data-wk="${w}">${w}</span>`).join('') || '<small class="help">Không có — tuyệt vời!</small>'}</div><button class="btnw" data-act="saveweak">${ic('notes')}Lưu từ cần luyện vào ghi chú</button><button class="btnw sec2" data-act="retryweak">${ic('replay')}Luyện lại câu dưới 85%</button>`;
+        return `${head(S.tab === 'speak' ? T('summarySpeaking') : T('summaryDictation'))}<div class="sumh"><div class="trophy">${ic('trophy')}</div><b>${avg >= 85 ? T('excellent') : avg >= 65 ? T('wellDone') : T('keepGoing')}</b><div class="help">${T('tenMinutesADay')}</div></div><div class="stats"><div class="stat"><b>${vals.length}/${SENT.length}</b><small>${T('sentencesDone')}</small></div><div class="stat"><b>${avg}%</b><small>${T('avgScore')}</small></div><div class="stat"><b>${mins}′</b><small>${T('time')}</small></div></div><div class="sec">${T('wordsToPractise')} <small class="help" style="font-weight:500">${VI('tapToLookUpSuffix')}</small></div><div class="chips">${[...S.weak].slice(0, 10).map((w) => `<span data-wk="${w}">${w}</span>`).join('') || `<small class="help">${T('noneGreatJob')}</small>`}</div><button class="btnw" data-act="saveweak">${ic('notes')}${T('saveWeakWordsToNotes')}</button><button class="btnw sec2" data-act="retryweak">${ic('replay')}${T('retryBelow85')}</button>`;
       },
     };
     function lessonInner(scope) {
       const mode = S.tab === 'speak' ? 'speak' : 'write', q = S.wSearch.trim().toLowerCase();
       const all = Object.values(S.wrong[mode]).sort((x, y) => (x.last === 'wrong') !== (y.last === 'wrong') ? (x.last === 'wrong' ? -1 : 1) : (x.last === 'wrong' && x.streak !== y.streak) ? y.streak - x.streak : x.err !== y.err ? y.err - x.err : x.at !== y.at ? y.at - x.at : x.word.localeCompare(y.word));
-      const rows = all.filter((d) => (S.wFilter === 'all' || d.last === 'wrong') && (!q || [d.word, ...d.v.map((x) => x.t || '(bỏ trống)')].some((t) => t.toLowerCase().includes(q))));
+      const rows = all.filter((d) => (S.wFilter === 'all' || d.last === 'wrong') && (!q || [d.word, ...d.v.map((x) => x.t || T('missing'))].some((t) => t.toLowerCase().includes(q))));
       const needs = all.filter((d) => d.last === 'wrong').length, lock = lessonLocked();
       const row = (d) => {
         const key = mode + ':' + d.word, open = S.vOpen.has(key), vs = [...d.v].sort((x, y) => y.n - x.n || x.t.localeCompare(y.t)), shown = open ? vs : vs.slice(0, 2), extra = vs.length - 2;
         const rate = d.err + d.fix ? Math.round(d.fix / (d.err + d.fix) * 100) : 0;
-        return `<div class="wst ${d.last}"><div class="wst-h"><b data-wk="${esc(d.word)}">${esc(d.word)}</b><span class="st ${d.last}" title="${d.last === 'wrong' ? 'Lần gần nhất vẫn sai' : 'Lần gần nhất đã đúng'}"><i></i>${d.last === 'wrong' ? 'Cần sửa' : 'Đã sửa'}</span></div>
-          <div class="wst-m"><span>Lỗi <b>${d.err}</b> · Sửa <b>${d.fix}</b></span><span>Tỷ lệ sửa <b>${rate}%</b></span></div><div class="wst-bar" role="img" aria-label="Tỷ lệ sửa ${rate}%"><span style="width:${rate}%"></span></div>
-          <div class="wst-v">${shown.map((x) => `<span class="${x.t ? '' : 'om'}">${x.t ? esc(x.t) : '(bỏ trống)'} <small>×${x.n}</small></span>`).join('<i>·</i>')}${extra > 0 ? `<button class="lnk" data-vmore="${esc(key)}">${open ? 'Thu gọn' : `+${extra}`}</button>` : ''}</div></div>`;
+        return `<div class="wst ${d.last}"><div class="wst-h"><b data-wk="${esc(d.word)}">${esc(d.word)}</b><span class="st ${d.last}" title="${d.last === 'wrong' ? T('stillWrongLastTime') : T('correctLastTime')}"><i></i>${d.last === 'wrong' ? T('needsPractice') : T('fixed')}</span></div>
+          <div class="wst-m"><span>${T('mistakes')} <b>${d.err}</b> ${VI('fixedSuffix')} <b>${d.fix}</b></span><span>${T('fixRate')} <b>${rate}%</b></span></div><div class="wst-bar" role="img" aria-label="${VI('fixRateAria', rate)}"><span style="width:${rate}%"></span></div>
+          <div class="wst-v">${shown.map((x) => `<span class="${x.t ? '' : 'om'}">${x.t ? esc(x.t) : T('missing')} <small>×${x.n}</small></span>`).join('<i>·</i>')}${extra > 0 ? `<button class="lnk" data-vmore="${esc(key)}">${open ? T('collapse') : `+${extra}`}</button>` : ''}</div></div>`;
       };
       return `<div class="lsn ${lock ? 'locked' : ''}" data-scope="${scope}"><div class="lsn-body">
-        <section class="wcard"><div class="sec wsec"><span>Thống kê từ sai</span><span class="cnt">${all.length}</span></div>
-          <input class="wsearch" type="search" placeholder="Tìm từ…" value="${esc(S.wSearch)}" data-wsearch aria-label="Tìm từ sai">
-          <div class="seg wseg"><button data-wf="all" class="${S.wFilter === 'all' ? 'on' : ''}">Tất cả</button><button data-wf="needs" class="${S.wFilter !== 'all' ? 'on' : ''}">Cần sửa${needs ? ` · ${needs}` : ''}</button></div>
-          <div class="wlbox"><div class="wlist">${rows.map(row).join('') || `<p class="help wempty">${all.length ? 'Không có từ phù hợp.' : 'Chưa có từ sai trong video này.'}</p>`}</div></div></section>
-        <div class="lnote"><div class="sec wsec"><label for="lnote-${scope}">Ghi chú</label><span class="nsaved" aria-live="polite"></span><button class="tadd" data-tadd ${lock ? 'disabled' : ''} title="Ghi chú tại câu này${S.input === 'mouse' ? ' (N)' : ''}">${ic('pin')}Ghi tại ${fmt(SENT[S.si[S.tab]].start)}</button></div>
-          ${S.tnotes.length ? `<div class="tnl">${S.tnotes.map((n) => tnRow(n, lock)).join('')}</div>` : ''}<textarea id="lnote-${scope}" data-lnote ${lock ? 'disabled' : ''} placeholder="Viết ghi chú… (tự lưu)">${esc(S.lessonNote)}</textarea></div>
-      </div>${lock ? `<div class="lsn-lock">${ic('lock')}<b>Ghi chú đang khóa</b><span>${S.tab === 'speak' ? 'Nói đạt ≥ 70% câu hiện tại để mở khóa ghi chú.' : 'Gõ đúng 100% câu hiện tại để mở khóa ghi chú.'}</span></div>` : ''}</div>`;
+        <section class="wcard"><div class="sec wsec"><span>${T('wrongWordStats')}</span><span class="cnt">${all.length}</span></div>
+          <input class="wsearch" type="search" placeholder="${T('searchWords')}" value="${esc(S.wSearch)}" data-wsearch aria-label="${T('searchMistakes')}">
+          <div class="seg wseg"><button data-wf="all" class="${S.wFilter === 'all' ? 'on' : ''}">${T('all')}</button><button data-wf="needs" class="${S.wFilter !== 'all' ? 'on' : ''}">${T('needsPractice')}${needs ? ` · ${needs}` : ''}</button></div>
+          <div class="wlbox"><div class="wlist">${rows.map(row).join('') || `<p class="help wempty">${all.length ? T('noMatchingWords') : T('noSpellingMistakesYet')}</p>`}</div></div></section>
+        <div class="lnote"><div class="sec wsec"><label for="lnote-${scope}">${T('note')}</label><span class="nsaved" aria-live="polite"></span><button class="tadd" data-tadd ${lock ? 'disabled' : ''} title="${S.input === 'mouse' ? T('noteAtThisSentenceMouse') : T('noteAtThisSentence')}">${ic('pin')}${T('noteAtTimeShort', fmt(SENT[S.si[S.tab]].start))}</button></div>
+          ${S.tnotes.length ? `<div class="tnl">${S.tnotes.map((n) => tnRow(n, lock)).join('')}</div>` : ''}<textarea id="lnote-${scope}" data-lnote ${lock ? 'disabled' : ''} placeholder="${T('writeANoteAutosaved')}">${esc(S.lessonNote)}</textarea></div>
+      </div>${lock ? `<div class="lsn-lock">${ic('lock')}<b>${T('notesAreLocked')}</b><span>${S.tab === 'speak' ? T('score70SpeakingThe') : T('typeTheCurrentSentence')}</span></div>` : ''}</div>`;
     }
     function esc(t) { return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function tnRow(n, lock) {
       const tm = fmt(stTime(n.i));
-      return `<div class="tn ${n.i === S.si[S.tab] ? 'cur' : ''}" data-tn="${n.i}"><button class="tt" data-tjump="${n.i}" title="Tới câu ${n.i + 1}">${tm}</button><textarea class="tx" data-tnote="${n.i}" rows="1" ${lock ? 'disabled' : ''} placeholder="Ghi chú cho câu ${n.i + 1}…" aria-label="Ghi chú tại ${tm}">${esc(n.text)}</textarea><button class="tdel" data-tdel="${n.i}" ${lock ? 'disabled' : ''} title="Xoá ghi chú" aria-label="Xoá ghi chú ${tm}">${ic('close')}</button></div>`;
+      return `<div class="tn ${n.i === S.si[S.tab] ? 'cur' : ''}" data-tn="${n.i}"><button class="tt" data-tjump="${n.i}" title="${T('goToSentence', n.i + 1)}">${tm}</button><textarea class="tx" data-tnote="${n.i}" rows="1" ${lock ? 'disabled' : ''} placeholder="${T('noteForSentence', n.i + 1)}" aria-label="${T('noteAtTime', tm)}">${esc(n.text)}</textarea><button class="tdel" data-tdel="${n.i}" ${lock ? 'disabled' : ''} title="${T('deleteNote')}" aria-label="${VI('deleteNoteAt', tm)}">${ic('close')}</button></div>`;
     }
     function growTn() { R.querySelectorAll('.tn .tx').forEach((t) => { if (CSS.supports?.('field-sizing', 'content')) return; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }); }
     function syncNoteDots() {
       R.querySelectorAll('.row[data-i]').forEach((r) => {
         const has = S.tnotes.some((n) => n.i === +r.dataset.i), h = r.querySelector('.rhd'); let d = h && h.querySelector('.nd');
-        if (has && !d && h) { d = document.createElement('span'); d.className = 'nd'; d.title = 'Có ghi chú'; h.querySelector('.tm').after(d); } else if (!has && d) d.remove();
+        if (has && !d && h) { d = document.createElement('span'); d.className = 'nd'; d.title = T('hasNotes'); h.querySelector('.tm').after(d); } else if (!has && d) d.remove();
       });
     }
     function syncNoteMarks() { renderMarks(); syncNoteDots(); }
     function addTimeNote(from) {
       if (!isStudy()) return;
-      if (lessonLocked()) { toast(S.tab === 'speak' ? 'Ghi chú đang khóa · nói đạt ≥ 70% câu này để mở' : 'Ghi chú đang khóa · gõ đúng 100% câu này để mở'); return; }
+      if (lessonLocked()) { toast(S.tab === 'speak' ? T('notesLockedScore70') : T('notesLockedTypeThis')); return; }
       const i = S.si[S.tab];
       if (!S.tnotes.some((n) => n.i === i)) { S.tnotes.push({ i, text: '' }); S.tnotes.sort((a, b) => a.i - b.i); }
       let scope = from && from.closest('.lsn') ? from.closest('.lsn').dataset.scope : null;
@@ -1029,7 +1038,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       R.querySelectorAll(`.tn[data-tn="${i}"]`).forEach((r) => { const box = r.parentElement; r.remove(); if (box && !box.children.length) box.remove(); });
       syncNoteMarks();
       queueStudySave();
-      if (say) toast(`Đã xoá ghi chú ${fmt(stTime(i))}`);
+      if (say) toast(T('noteDeleted', fmt(stTime(i))));
     }
     function jumpToNote(i) {
       if (!isStudy()) { seek(stTime(i)); markCur(true); return; }
@@ -1076,7 +1085,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function saveNote() {
       clearTimeout(noteSaveT); noteSaveT = 0;
       saveStudyNow();
-      R.querySelectorAll('.lsn .nsaved').forEach((m) => { m.innerHTML = `${ic('check')}Đã lưu`; m.classList.add('ok', 'on'); });
+      R.querySelectorAll('.lsn .nsaved').forEach((m) => { m.innerHTML = `${ic('check')}${T('saved')}`; m.classList.add('ok', 'on'); });
       clearTimeout(noteSavedT); noteSavedT = setTimeout(() => R.querySelectorAll('.lsn .nsaved').forEach((m) => m.classList.remove('on')), 1800);
     }
     ov.addEventListener('focusout', (e) => { if (e.target.matches?.('.lsn [data-lnote]') && noteSaveT) saveNote(); });
@@ -1090,7 +1099,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.speed) { S.speed = +t.dataset.speed; syncSpeed(); return openPanel('speed', null, { keep: true }); }
         if (t.dataset.cc) { S.cc = t.dataset.cc; apply(); closePanel(); return; }
         if (t.dataset.view) { closePanel(); setView(t.dataset.view); return; }
-        if (t.dataset.rep) { const v = +t.dataset.rep; if (v === 0) S.rep.on = false; else { S.rep.on = true; S.rep.n = v; S.rep.last = -1; } syncRep(); closePanel(); toast(v === 0 ? 'Tắt lặp câu' : v === Infinity ? 'Lặp câu liên tục' : `Lặp mỗi câu ${v} lần`); return; }
+        if (t.dataset.rep) { const v = +t.dataset.rep; if (v === 0) S.rep.on = false; else { S.rep.on = true; S.rep.n = v; S.rep.last = -1; } syncRep(); closePanel(); toast(v === 0 ? T('repeatOff') : v === Infinity ? T('repeatSentenceContinuously') : T('repeatEach', v)); return; }
         if (t.dataset.act === 'mute') { S.muted = !S.muted; return openPanel('vol', null, { keep: true }); }
         if (t.dataset.tile) return tileAction(t.dataset.tile);
         if (t.dataset.split) { setSplit(+t.dataset.split, true); return openPanel('set', null, { keep: true, wide: true }); }
@@ -1101,13 +1110,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.bold) { S.subStyle[S.subTab].bold = t.dataset.bold === '1'; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.font) { S.subStyle[S.subTab].font = t.dataset.font; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.bg) { S.subStyle[S.subTab].bg = t.dataset.bg; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
-        if (t.dataset.act === 'subreset') { S.subStyle[S.subTab] = { size: 1, en: 'def', vi: 'def', bold: S.subTab === 'video', font: 'def', bg: S.subTab === 'video' ? 'soft' : 'none' }; applySubStyle(); saveUi(); toast('Đã đặt lại'); return openPanel('subopt', null, { keep: true, wide: true }); }
+        if (t.dataset.act === 'subreset') { S.subStyle[S.subTab] = { size: 1, en: 'def', vi: 'def', bold: S.subTab === 'video', font: 'def', bg: S.subTab === 'video' ? 'soft' : 'none' }; applySubStyle(); saveUi(); toast(T('resetDone')); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.src) { S.srcLang = t.dataset.src; B.setLanguage('source', S.srcLang); return openPanel('sublang', null, { keep: true, wide: true }); }
-        if (t.dataset.dst) { S.dstLang = t.dataset.dst; B.setLanguage('target', S.dstLang); toast(`Dịch sang ${langName(S.dstLang)}`); return openPanel('sublang', null, { keep: true, wide: true }); }
+        if (t.dataset.dst) { S.dstLang = t.dataset.dst; B.setLanguage('target', S.dstLang); toast(T('translateToLang', langName(S.dstLang))); return openPanel('sublang', null, { keep: true, wide: true }); }
         if (t.dataset.fmt) { S.exp.fmt = t.dataset.fmt; saveUi(); return openPanel('export', null, { keep: true, wide: true }); }
         if (t.dataset.act === 'export') { closePanel(); saveUi(); B.exportAs(S.exp.fmt.toUpperCase(), { onlySubs: false, includeVi: !!S.exp.bi, showTime: !!S.exp.time }); return; }
         if (t.dataset.act === 'summary') { openPanel('summary', null, { keep: true, center: !sheetMode() }); return; }
-        if (t.dataset.act === 'saveweak') { S.lessonNote = (S.lessonNote ? S.lessonNote + '\n' : '') + `Từ cần luyện: ${[...S.weak].join(', ')}`; renderNotesCol(); queueStudySave(); closePanel(); toast('Đã thêm vào Ghi chú bài học'); return; }
+        if (t.dataset.act === 'saveweak') { S.lessonNote = (S.lessonNote ? S.lessonNote + '\n' : '') + `Từ cần luyện: ${[...S.weak].join(', ')}`; /* text saved into the user's note, not a label: Vietnamese as before */ renderNotesCol(); queueStudySave(); closePanel(); toast(T('addedToLessonNotes')); return; }
         if (t.dataset.act === 'retryweak') { const low = SENT.map((_, i) => i).find((i) => (S.res[S.tab][i] ?? 0) < 85); closePanel(); if (low != null) setStudyIndex(low); return; }
       });
       p.addEventListener('input', (e) => {
@@ -1127,7 +1136,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const anchor = dockEl.more;
       closePanel();
       if (id === 'theme') { S.theme = S.theme === 'dark' ? 'light' : 'dark'; apply(); return; }
-      if (id === 'art') { S.ambient = !S.ambient; apply(); toast(S.ambient ? 'Hiệu ứng nền: Bật' : 'Hiệu ứng nền: Tắt'); return; }
+      if (id === 'art') { S.ambient = !S.ambient; apply(); toast(S.ambient ? T('ambientEffectOn') : T('ambientEffectOff')); return; }
       if (id === 'set') return openPanel('set', anchor, { wide: true });
       if (id === 'subopt' || id === 'sublang') return openPanel(id, anchor, { wide: true });
       if (id === 'notes') return notesAction(anchor);
@@ -1187,9 +1196,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         case 'fav': setFav(!S.fav, dockEl.fav); break;
         case 'fs':
           if (S.rot) { exitTheater(); break; }
-          if (sizeKey() === 's') { const was = S.realFs; if (was) exitFs(); else enterFs(false); S.realFs = !was; syncFs(); toast(S.realFs ? 'Toàn màn hình' : 'Thoát toàn màn hình · vẫn ở Rạp (xoay dọc để học)'); break; }
+          if (sizeKey() === 's') { const was = S.realFs; if (was) exitFs(); else enterFs(false); S.realFs = !was; syncFs(); toast(S.realFs ? T('fullScreen') : T('exitedFullScreenStill')); break; }
           if (curView() === 'theater') exitTheater(); else setView('theater'); break;
-        case 'rep': S.rep.on = !S.rep.on; S.rep.last = -1; syncRep(); toast(S.rep.on ? (S.rep.n === Infinity ? 'Lặp câu liên tục' : `Lặp mỗi câu ${S.rep.n} lần`) : 'Tắt lặp câu'); break;
+        case 'rep': S.rep.on = !S.rep.on; S.rep.last = -1; syncRep(); toast(S.rep.on ? (S.rep.n === Infinity ? T('repeatSentenceContinuously') : T('repeatEach', S.rep.n)) : T('repeatOff')); break;
       }
     }
     let lpT = 0, lpFired = false;
@@ -1282,7 +1291,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // ---------- tabs / study ----------
     function setTab(t) {
       if (S.tab === t) return;
-      if (sizeKey() === 's' && t !== 'view') { toast('Xoay dọc để học Nói · Chép'); return; }
+      if (sizeKey() === 's' && t !== 'view') { toast(T('rotateToPortraitTo')); return; }
       setPlaying(false); speakAbort();
       S.tab = t; closePanel();
       if (isStudy() && !STUDY.length) loadStudy();
@@ -1343,22 +1352,22 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function renderSideHd() {
       if (!isStudy()) { $('#sideHd').innerHTML = ''; return; }
       const d = doneCount();
-      $('#sideHd').innerHTML = `<span class="t">Danh sách câu <span style="color:var(--mu);font-weight:600;font-size:12.5px">· ${d}/${SENT.length}</span></span>${wClass() === 'e' && sizeKey() !== 's' ? `<button class="ib" data-act="colList" title="Ẩn danh sách câu">${ic('panel')}</button>` : ''}<button class="pill" data-act="summary" style="height:34px;padding:0 11px;font-size:12.5px">${ic('trophy')}Kết thúc</button>`;
+      $('#sideHd').innerHTML = `<span class="t">${T('sentenceList')} <span style="color:var(--mu);font-weight:600;font-size:12.5px">· ${d}/${SENT.length}</span></span>${wClass() === 'e' && sizeKey() !== 's' ? `<button class="ib" data-act="colList" title="${T('hideSentenceList')}">${ic('panel')}</button>` : ''}<button class="pill" data-act="summary" style="height:34px;padding:0 11px;font-size:12.5px">${ic('trophy')}${T('finish')}</button>`;
     }
     $('#sideHd').addEventListener('click', (e) => { const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'summary') openPanel('summary', null, { center: !sheetMode() }); });
     function renderNotesCol() {
       const el = $('#notesCol');
       if (!isStudy()) { el.innerHTML = ''; return; }
       requestAnimationFrame(growTn);
-      el.innerHTML = `<div class="notes-hd"><span class="t">Ghi chú bài học</span><button class="ib" data-act="colNotes" title="Ẩn cột ghi chú">${ic('panelR')}</button></div><div class="nlist">${lessonInner('c')}</div>`;
+      el.innerHTML = `<div class="notes-hd"><span class="t">${T('lessonNotes')}</span><button class="ib" data-act="colNotes" title="${T('hideNotesColumn')}">${ic('panelR')}</button></div><div class="nlist">${lessonInner('c')}</div>`;
     }
     function cardHead() {
       const d = doneCount(), i = S.si[S.tab];
       const showNotesBtn = !(wClass() === 'e' && notesOn());
       const tgl = S.tab === 'speak'
-        ? `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="Hiện bản dịch">${ic('subLanguage')}<span>Dịch</span></button><button class="tg ${S.auto ? 'on' : ''}" data-sact="auto" title="Tự sang câu khi đạt ≥ 80%">${ic('sparkles')}<span>Tự động</span></button>`
-        : `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="Hiện bản dịch">${ic('subLanguage')}<span>Dịch</span></button><button class="tg ${S.hints ? 'on' : ''}" data-sact="hints" title="Gợi ý chữ cái đầu">${ic('bulb')}<span>Gợi ý</span></button>`;
-      return `<div class="scard-hd"><button class="chip" data-sact="chip" title="Danh sách câu">${ring(d, SENT.length)}<span class="lab">${i + 1}/${SENT.length}<small class="ctm"><i> · </i>${fmt(SENT[i].start)}</small></span></button><span class="sp"></span>${tgl}${showNotesBtn ? `<button class="tg" data-sact="notes" title="Ghi chú">${ic('notes')}</button>` : ''}</div>`;
+        ? `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button><button class="tg ${S.auto ? 'on' : ''}" data-sact="auto" title="${T('autoAdvanceAt80')}">${ic('sparkles')}<span>${T('auto')}</span></button>`
+        : `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button><button class="tg ${S.hints ? 'on' : ''}" data-sact="hints" title="${T('firstLetterHints')}">${ic('bulb')}<span>${T('hint')}</span></button>`;
+      return `<div class="scard-hd"><button class="chip" data-sact="chip" title="${T('sentenceList')}">${ring(d, SENT.length)}<span class="lab">${i + 1}/${SENT.length}<small class="ctm"><i> · </i>${fmt(SENT[i].start)}</small></span></button><span class="sp"></span>${tgl}${showNotesBtn ? `<button class="tg" data-sact="notes" title="${T('note')}">${ic('notes')}</button>` : ''}</div>`;
     }
     function renderStudy() {
       { const t = $('#sptoast'); if (t && (!isStudy() || t.dataset.tab !== S.tab || +t.dataset.i !== S.si[S.tab])) hideStudyToast(true); }
@@ -1370,23 +1379,23 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const tw = words(s.en);
         const target = tw.map((w, k) => { const st = sp.phase === 'done' ? sp.heard[k] : ''; return `<span class="w ${st || ''}">${esc(w)}</span>`; }).join(' ');
         let mid = '';
-        if (sp.phase === 'idle') mid = `<p class="help tch">Chạm micro để bắt đầu, chạm lần nữa để dừng, nghe lại bản ghi và chấm điểm.</p><p class="help kbdh">Nhấn Enter hoặc micro để bắt đầu. Nhấn Enter lần nữa để dừng, nghe lại bản ghi và chấm điểm.</p>`;
-        if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div><div class="heard" id="heard">Đang nghe…</div>`;
-        if (sp.phase === 'done') mid = `<p class="help legend">Xanh: đúng · Cam: gần đúng · Đỏ: thiếu</p>`;
-        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện.</p></div>
-          <div class="sctl"><div class="r main"><button class="pill" data-sact="model" title="Nghe mẫu (\`)">${ic('ear')}<span>Nghe mẫu</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">Câu tiếp ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="Câu tiếp">Bỏ qua ${ic('arrowR')}</button>`}</div>
-          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill" data-sact="playrec" style="height:34px">${ic('replay')}Nghe lại giọng bạn</button><button class="pill" data-sact="retry" style="height:34px">${ic('mic')}Thử lại</button></div>` : ''}
-          <p class="help kbdh">(Enter) Bắt đầu/dừng/tiếp · (Esc) Đáp án/làm lại · (\`) Phát/tạm dừng · (Ctrl) Nghe lại</p><p class="help tch">Vuốt trái/phải trên thẻ để đổi câu</p></div></div>`;
+        if (sp.phase === 'idle') mid = `<p class="help tch">${T('tapTheMicTo')}</p><p class="help kbdh">${T('pressEnterOrTap')}</p>`;
+        if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div><div class="heard" id="heard">${T('listening')}</div>`;
+        if (sp.phase === 'done') mid = `<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
+        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
+          <div class="sctl"><div class="r main"><button class="pill" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
+          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill" data-sact="playrec" style="height:34px">${ic('replay')}${T('replayYourVoice')}</button><button class="pill" data-sact="retry" style="height:34px">${ic('mic')}${T('tryAgain')}</button></div>` : ''}
+          <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
         const wr = S.wr;
         const hint = esc(words(s.en).map((w) => { const c = [...w]; return c[0] + c.slice(1).join('').replace(/[\p{L}\p{N}]/gu, '_'); }).join('  '));
         let res = '';
         if (wr.phase === 'done' || wr.phase === 'wrong') {
           const okAll = wr.phase === 'done';
-          res = `<div class="rpanel ${okAll ? 'ok' : 'err'}"><div class="rt">${ic(okAll ? 'check' : 'alert')}<b>${okAll ? 'Câu đúng' : 'Phân tích lỗi sai:'}</b><span class="sp"></span><span class="acc">${wr.acc}%</span></div><div class="diff">${wr.ops.map((o) => o.t === 'ok' ? `<span class="ok">${esc(o.w)}</span>` : o.t === 'bad' ? `<span class="bad">${esc(o.w)}</span> <span class="fix">${esc(o.fix)}</span>` : o.t === 'mis' ? `<span class="mis">${esc(o.w)}</span>` : `<span class="bad">${esc(o.w)}</span> <span class="fix">(thừa)</span>`).join(' ')}</div></div>`;
+          res = `<div class="rpanel ${okAll ? 'ok' : 'err'}"><div class="rt">${ic(okAll ? 'check' : 'alert')}<b>${okAll ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span><span class="acc">${wr.acc}%</span></div><div class="diff">${wr.ops.map((o) => o.t === 'ok' ? `<span class="ok">${esc(o.w)}</span>` : o.t === 'bad' ? `<span class="bad">${esc(o.w)}</span> <span class="fix">${esc(o.fix)}</span>` : o.t === 'mis' ? `<span class="mis">${esc(o.w)}</span>` : `<span class="bad">${esc(o.w)}</span> <span class="fix">${T('extra')}</span>`).join(' ')}</div></div>`;
         }
         el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
-          <div class="wbox"><textarea id="wta" placeholder="Gõ câu bạn nghe được…" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="Nghe lại (Ctrl)">${ic('vol')}Nghe lại</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">(Enter) Câu tiếp · (Esc) Làm lại</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}Làm lại</button><button class="pill pri" data-sact="next">Câu tiếp ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? 'Sửa câu rồi (Enter) Kiểm tra lại · (Esc) Đáp án' : '(Enter) Kiểm tra · (Esc) Đáp án · (Ctrl) Nghe lại'}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}1 từ</button><button class="pill pri" data-sact="check">${ic('check')}Kiểm tra</button>`}</div></div></div>`;
+          <div class="wbox"><textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
         ta.addEventListener('input', () => { S.wr.val = ta.value; grow(); }); requestAnimationFrame(grow);
@@ -1431,14 +1440,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const a = b.dataset.sact;
       if (a === 'chip') { if (wClass() === 'c' || !roomList()) openPanel('slist', b); else { S.colList = true; apply(); markCur(true); } return; }
       if (a === 'tr') { S.showTr = !S.showTr; renderStudy(); saveUi(); return; }
-      if (a === 'auto') { S.auto = !S.auto; renderStudy(); saveUi(); toast(S.auto ? 'Tự sang câu khi đạt ≥ 80%' : 'Tắt tự động'); return; }
+      if (a === 'auto') { S.auto = !S.auto; renderStudy(); saveUi(); toast(S.auto ? T('autoAdvanceAt80') : T('autoOff')); return; }
       if (a === 'hints') { S.hints = !S.hints; renderStudy(); saveUi(); return; }
       if (a === 'notes') { notesAction(b); return; }
       if (a === 'model') { S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); setPlaying(true); if (S.tab === 'write') renderStudy(); return; }
       if (a === 'mic') { speakToggle(); return; }
       if (a === 'next') { studyGo(1); return; }
       if (a === 'retry') { speakAbort(); resetStudy(); renderStudy(); return; }
-      if (a === 'playrec') { if (SPK.url) { toast('Đang phát lại bản ghi của bạn…'); playRec(); } else toast(B.t('dictationSpeakRecordingUnavailable')); return; }
+      if (a === 'playrec') { if (SPK.url) { toast(T('playingYourRecording')); playRec(); } else toast(B.t('dictationSpeakRecordingUnavailable')); return; }
       if (a === 'check') { writeCheck(); return; }
       if (a === 'word') { const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length; S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; renderStudy(); const ta = $('#wta'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return; }
     });
@@ -1564,7 +1573,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           for (let k = 0; k < e.results.length; k++) { const x = String(e.results[k]?.[0]?.transcript || '').trim(); if (x) (e.results[k].isFinal ? f : m).push(x); }
           fin = f.join(' '); inter = m.join(' ');
           SPK.live = [...SPK.finals, fin, inter].filter(Boolean).join(' ');
-          const h = $('#heard'); if (h) h.textContent = SPK.live || 'Đang nghe…';
+          const h = $('#heard'); if (h) h.textContent = SPK.live || T('listening');
           clearTimeout(SPK.timer);
           if (SPK.live) SPK.timer = setTimeout(() => { if (gen === SPK.gen && SPK.rec === rec) { SPK.stopping = true; try { rec.stop(); } catch (_) { speakEnd(); } } }, ENDPOINT_MS);
         };
@@ -1646,8 +1655,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function speakCopy(p) {
       const s = Math.max(0, Math.min(100, Math.round(p)));
-      const T = [[9, 'Khởi động lại nào!', 'Chưa sao cả, cứ mạnh dạn nói tiếp. Mỗi lần thử là một bước gần hơn đến phát âm chuẩn!'], [19, 'Đã bắt đầu rồi!', 'Bạn đã có những âm thanh đầu tiên. Chậm lại một chút, nghe kỹ và thử lại nhé!'], [29, 'Có tín hiệu rồi đấy!', 'Một vài từ đã bắt đầu đúng hướng. Cứ kiên trì, miệng bạn đang dần quen với tiếng Anh!'], [39, 'Sắp bắt nhịp rồi!', 'Bạn đã tiến gần hơn đến mục tiêu. Chỉnh thêm một chút phát âm và ngữ điệu nhé!'], [49, 'Khởi sắc rồi!', 'Bạn đã nói được kha khá đấy. Tiếp tục luyện từng âm để câu nói rõ ràng hơn nhé!'], [59, 'Đang vào guồng!', 'Một nửa chặng đường đã nằm trong tay bạn. Cố thêm chút nữa để lời nói tự nhiên hơn!'], [64, 'Tiến bộ đáng kể!', 'Bạn đã nắm được phần lớn cách phát âm. Chú ý thêm những âm còn thiếu để bứt phá nhé!'], [69, 'Chỉ còn một bước nữa!', 'Bạn đang rất gần mức tốt rồi. Thêm một chút tập trung là có thể chạm đích!'], [74, 'Đạt yêu cầu, tiếp tục phát huy!', 'Bạn đã đạt ngưỡng luyện nói. Luyện thêm để phát âm tự nhiên hơn nhé!'], [79, 'Nói khá chuẩn rồi!', 'Bạn đang làm rất tốt. Chỉnh thêm vài chi tiết nhỏ để câu nói mượt mà hơn nhé!'], [84, 'Rất tốt, cứ thế nhé!', 'Phát âm của bạn đã khá vững vàng. Tiếp tục duy trì phong độ và chinh phục những câu khó hơn!'], [89, 'Gần như hoàn hảo!', 'Bạn đã nói rất rõ ràng và chính xác. Giờ hãy thêm chút ngữ điệu để nghe thật cuốn hút!'], [94, 'Xuất sắc!', 'Bạn đang làm chủ cách phát âm rất tốt. Nghe thôi đã thấy trình độ lên một tầm mới!'], [99, 'Đỉnh cao phát âm!', 'Gần như không có gì để bắt bẻ! Bạn đang tiến sát đến sự hoàn hảo rồi!'], [100, 'Perfect! Quá đỉnh!', 'Không thể tin được, bạn đã chinh phục câu nói này! Giữ vững phong độ và tiếp tục tỏa sáng!']];
-      const r = T.find(([m]) => s <= m); return { title: r[1], desc: r[2] };
+      const TIERS = [[9, T('letSWarmUp'), T('noWorriesKeepSpeaking')], [19, T('youVeStarted'), T('youVeGotThe')], [29, T('thereSASignal'), T('someWordsAreHeading')], [39, T('almostInRhythm'), T('youReCloserTo')], [49, T('pickingUp'), T('youSaidQuiteA')], [59, T('gettingIntoTheGroove'), T('youReHalfwayThere')], [64, T('greatProgress'), T('youVeGotMost')], [69, T('justOneMoreStep'), T('youReVeryClose')], [74, T('passedKeepItUp'), T('youVeReachedThe')], [79, T('prettyAccurate'), T('youReDoingGreat')], [84, T('veryGoodKeepIt'), T('yourPronunciationIsSolid')], [89, T('almostPerfect'), T('youSpokeClearlyAnd')], [94, T('excellent'), T('youReMasteringThe')], [99, T('topNotchPronunciation'), T('hardlyAnythingToFault')], [100, T('perfectOutstanding'), T('incredibleYouVeConquered')]];
+      const r = TIERS.find(([m]) => s <= m); return { title: r[1], desc: r[2] };
     }
     function hideStudyToast(now) { clearTimeout(spToastT); const t = $('#sptoast'); if (!t) return; if (now) { t.remove(); return; } t.classList.add('exit'); setTimeout(() => t.remove(), 300); }
     function showStudyToast(html) {
@@ -1659,7 +1668,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function writeToastHTML() {
       const C = 2 * Math.PI * 21;
-      return `<div class="sptoast pass" id="sptoast" role="status"><div class="ring"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" class="bg"/><circle cx="25" cy="25" r="21" class="fg" stroke-dasharray="${C.toFixed(1)} ${C.toFixed(1)}"/></svg><b>100%</b></div><div class="tx"><b>Chính xác 100%!</b><small>Bạn đã chép đúng cả câu. Nhấn Enter để sang câu tiếp.</small></div></div>`;
+      return `<div class="sptoast pass" id="sptoast" role="status"><div class="ring"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" class="bg"/><circle cx="25" cy="25" r="21" class="fg" stroke-dasharray="${C.toFixed(1)} ${C.toFixed(1)}"/></svg><b>100%</b></div><div class="tx"><b>${T('n100Correct')}</b><small>${T('youTypedTheWhole')}</small></div></div>`;
     }
     function speakToastHTML(score) {
       const c = speakCopy(score), t = speakTier(score), C = 2 * Math.PI * 21;
@@ -1732,7 +1741,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         return;
       }
       if (e.altKey) return;
-      if (S.tab === 'view' && ['1', '2', '3', '4'].includes(e.key)) { stop(); S.cc = ['bi', 'pri', 'tr', 'off'][+e.key - 1]; apply(); toast(['Song ngữ', 'Chính', 'Dịch', 'Ẩn'][+e.key - 1]); return; }
+      if (S.tab === 'view' && ['1', '2', '3', '4'].includes(e.key)) { stop(); S.cc = ['bi', 'pri', 'tr', 'off'][+e.key - 1]; apply(); toast([T('bilingual'), T('original'), T('translate'), VI('ccHidden')][+e.key - 1]); return; }
       if (e.key === ' ' || e.key === '`') { stop(); togglePlay(); return; }
       if (e.key === '<' || e.key === '>') { stop(); S.speed = Math.round(Math.max(0.5, Math.min(3, S.speed + (e.key === '>' ? 0.05 : -0.05))) * 100) / 100; syncSpeed(); toast(`${S.speed.toFixed(2)}x`); return; }
       if (S.tab === 'speak' && e.key === 'Enter') { stop(); if (S.sp.phase === 'done') studyGo(1); else speakToggle(); return; }
@@ -1951,6 +1960,42 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
 
     // ---------- open / close (overlay-controller.js) ----------
+    // ---------- labels: fixed markup texts; refreshLanguage redraws everything when the display language changes ----------
+    let textLang = '';
+    function refreshText() {
+      textLang = ovLabelLang();
+      const btnClose = $('#btnClose'); btnClose.title = T('closeEsc'); btnClose.setAttribute('aria-label', T('close'));
+      $$('.csplit').forEach((el) => { el.title = T('dragToResizeDouble'); });
+      $('#split').title = T('dragToResize');
+      $('#tthint').innerHTML = `<i class="ttzone l">${T('volume')}</i><i class="ttzone r">${T('brightness')}</i><span>${T('swipeLeftSideVolume')}<br>${T('swipeSidewaysSeekSwipe')}<small>${T('tapToClose')}</small></span>`;
+      const fav = $('#vcorner [data-act=fav]'); fav.title = T('favorite'); fav.setAttribute('aria-label', T('favorite'));
+      const vt = $('#vcorner [data-act=theater]'); vt.title = T('fullScreen'); vt.setAttribute('aria-label', T('fullScreen'));
+      $('#cplay').setAttribute('aria-label', T('play'));
+      const grip = $('#grip'); grip.title = T('collapseSubtitles'); grip.setAttribute('aria-label', T('collapseSubtitles'));
+      $('#railL [data-act=colList]').title = T('showSentenceList'); $('#railR [data-act=colNotes]').title = T('showLessonNotes');
+      $$('#tabs [data-tab]').forEach((b) => { $('span', b).textContent = T(TABS.find((x) => x[0] === b.dataset.tab)[1]); });
+      DOCK.forEach((d) => labelDockButton(d));
+    }
+    // the toast's last text is re-worded too, shown or faded (as the old text-walker did): match it against the old language's ov_* texts
+    function retranslateToast(from, to) {
+      const t = $('#toast'), cur = t?.textContent || '', M = globalThis.LHN_LANGUAGES?.MESSAGES || {};
+      if (!cur) return;
+      for (const [k, v] of Object.entries(M[from] || {})) {
+        if (!k.startsWith('ov_') || typeof v !== 'string') continue;
+        const re = new RegExp('^' + v.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{\d\}/g, '(.+?)') + '$');
+        const m = cur.match(re);
+        if (m) { t.textContent = ovLabel(to, k.slice(3), m.slice(1)); return; }
+      }
+    }
+    function refreshLanguage() {
+      if (ovLabelLang() === textLang) return;
+      const from = textLang;
+      refreshText();
+      retranslateToast(from, textLang);
+      if (ov.hidden) return;
+      lastKey = ''; apply();
+      if (panelKind) openPanel(panelKind, null, { ...panelOpt, keep: true });
+    }
     function open(opts = {}) {
       ov.hidden = false;
       S.input = matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse';
@@ -2002,9 +2047,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       setTab: (t) => { if (ov.hidden) open({ tab: t }); else setTab(t); },
       tab: () => S.tab,
       refreshTitle: () => { if (!ov.hidden) setTitle(); },
+      refreshLanguage,
     };
     uiLoaded.then(() => { if (!ov.hidden) { lastKey = ''; apply(); } });
-    globalThis.LHN_UNIFIED_TEXT?.attach?.(ov, () => B.state()?.displayLanguage);
+    refreshText();
     return api;
   }
   return Object.freeze({
@@ -2020,5 +2066,6 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     setTab: (tab) => api?.setTab(tab),
     tab: () => api?.tab() || '',
     refreshTitle: () => api?.refreshTitle(),
+    refreshLanguage: () => api?.refreshLanguage(),
   });
 })();

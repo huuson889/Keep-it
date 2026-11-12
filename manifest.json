@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.197",
+  "version": "3.5.198",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -106,7 +106,6 @@
         "js/overlay/study/shared/learning-rules.js",
         "js/overlay/study/shared/session-index.js",
         "js/overlay/unified/unified-css.js",
-        "js/overlay/unified/unified-text.js",
         "js/overlay/unified/unified-ui.js",
         "js/overlay/overlay-controller.js"
       ],

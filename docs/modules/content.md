@@ -19,7 +19,7 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 | [`js/content/ui-components.js`](../../js/content/ui-components.js) | `LHN_UI_COMPONENTS` | Tag editor dùng chung. |
 | [`js/content/keepit-bar.js`](../../js/content/keepit-bar.js) | IIFE, host `#lhn-touch-ui` (shadow, open; giữ id cũ), `LHN_BAR_HOOKS` | Thanh Keepit dưới đáy mọi trang (demo bottom-bar v8) trên cả máy tính và cảm ứng + cầu nối nhấn giữ bôi chữ → `mouseup`. Nhãn: `t(key)` đọc `LHN_LANGUAGES.MESSAGES[lang].bar_<key>` (fallback en, rồi chính key), thay `{0}`, `{1}` theo vị trí. (v3.5.193: đổi tên từ `touch-ui.js`.) |
 | [`js/content/keepit-bar-css.js`](../../js/content/keepit-bar-css.js) | `LHN_BAR_CSS` (chuỗi) | CSS shadow root của thanh + ☰. `keepit-bar.js` ghép `LHN_THEME.css(":host") + LHN_BAR_CSS`. Nạp sau `theme-tokens.js`, trước `keepit-bar.js`. |
-| [`js/content/offline-page.js`](../../js/content/offline-page.js) | IIFE, `LHN_OFFLINE` | (v3.5.175) Trang mất mạng A "Mây ngủ" / B "Phích cắm" (ngẫu nhiên mỗi trang) + thẻ ôn từ đã lưu; extension: khi lệnh cần mạng bị chặn; APK: trang lỗi tải. |
+| [`js/content/offline-page.js`](../../js/content/offline-page.js) | IIFE, `LHN_OFFLINE` | (v3.5.175) Trang mất mạng A "Mây ngủ" / B "Phích cắm" (ngẫu nhiên mỗi trang) + thẻ ôn từ đã lưu; extension: khi lệnh cần mạng bị chặn; APK: trang lỗi tải. Nhãn: khoá `off_<tên>` trong `js/core/languages.js` (v3.5.198). |
 | [`js/shared/selection-toolbar.js`](../../js/shared/selection-toolbar.js) + [`css/shared/selection-toolbar.css`](../../css/shared/selection-toolbar.css) | `LHN_SELECTION_TOOLBAR` | Toolbar nổi khi chọn chữ (Tô sáng/Dịch/Hỏi AI + logo), dùng chung cho trang và preview Dashboard. |
 
 ## 3. Luồng chính

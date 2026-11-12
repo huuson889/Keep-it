@@ -6,25 +6,6 @@
 (() => {
   "use strict";
   if (globalThis.LHN_OFFLINE) return;
-  const TX = {
-    ofaT:["Oops, the internet dozed off!", "Ối, rớt mạng rồi!", "앗, 인터넷이 끊겼어요!"],
-    ofaP:["The Keepit cloud naps until Wi-Fi is back. The page opens by itself once you are online.", "Mây Keepit chợp mắt chờ Wi-Fi quay lại. Có mạng là trang tự mở.", "Wi-Fi가 돌아올 때까지 Keepit 구름이 잠깐 자고 있어요. 연결되면 페이지가 저절로 열려요."],
-    ofaPx:["The Keepit cloud naps until Wi-Fi is back. Keepit carries on by itself once you are online.", "Mây Keepit chợp mắt chờ Wi-Fi quay lại. Có mạng là Keepit tự làm tiếp.", "Wi-Fi가 돌아올 때까지 Keepit 구름이 잠깐 자고 있어요. 연결되면 Keepit이 알아서 이어서 해요."],
-    ofbT:["Uh-oh, we got unplugged!", "Ơ, tuột dây mạng rồi!", "어라, 연결이 빠졌어요!"],
-    ofbP:["Check Wi-Fi or mobile data. Keepit reconnects by itself when you are back online.", "Kiểm tra Wi-Fi hoặc dữ liệu di động nhé. Có mạng lại là Keepit tự nối.", "Wi-Fi나 모바일 데이터를 확인해 주세요. 연결되면 Keepit이 자동으로 다시 연결해요."],
-    ofaCard:["Review while you wait", "Ôn từ trong lúc chờ", "기다리는 동안 복습"],
-    flipHint:["Tap to flip", "Chạm để lật", "눌러서 뒤집기"],
-    nextW:["Next word", "Từ tiếp", "다음 단어"],
-    awakeA:["Back online!", "Có mạng rồi!", "다시 연결됐어요!"],
-    plugged:["Connected!", "Nối lại rồi!", "연결됐어요!"],
-    autoIn:["Retrying in {0}s", "Tự thử lại sau {0}s", "{0}초 후 다시 시도"],
-    trying:["Trying…", "Đang thử…", "시도 중…"],
-    retry:["Try again", "Thử lại", "다시 시도"],
-    goHome:["Go Home", "Về Trang chủ", "홈으로"],
-    close:["Close", "Đóng", "닫기"],
-    stillOff:["Still offline", "Vẫn chưa có mạng", "아직 오프라인입니다"],
-    offNotes:["Saved notes", "Ghi chú đã lưu", "저장한 노트"]
-  };
   // Shown only when the user has no saved words yet
   const STARTER = [
     { w:"curious", p:"/ˈkjʊəriəs/", m:["eager to know or learn", "tò mò, ham hiểu biết", "호기심이 많은"] },
@@ -158,7 +139,8 @@ svg{display:block}
   let host = null, root = null, st = null, ringT = 0, snackT = 0;
   const variants = new Map();                 // page key → "a" | "b" (random once per page)
   const li = () => { const l = String(st?.lang || globalThis.LHN_UI_LANG || navigator.language || "en").toLowerCase(); return l.startsWith("vi") ? 1 : l.startsWith("ko") ? 2 : 0; };
-  const t = (k, n) => String(TX[k]?.[li()] ?? TX[k]?.[0] ?? k).replace("{0}", n);
+  // Labels: keys off_<name> in js/core/languages.js (en/vi/ko).
+  const t = (k, n) => { const M = globalThis.LHN_LANGUAGES?.MESSAGES || {}, key = "off_" + k; return String(M[["en", "vi", "ko"][li()]]?.[key] ?? M.en?.[key] ?? k).replace("{0}", n); };
   const $ = id => root?.getElementById(id);
   const ofv = () => { const k = st.key; if (!variants.has(k)) variants.set(k, Math.random() < .5 ? "a" : "b"); return variants.get(k); };
   const isWord = s => /^[a-z][a-z'’-]*$/i.test(String(s || "").trim());

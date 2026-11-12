@@ -45,6 +45,6 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
-| Nhãn en/vi/ko | `js/core/languages.js` (nhãn thanh Keepit: khoá `bar_<tên>`). Hiện còn bảng riêng trong `offline-page.js`, `js/overlay/unified/unified-text.js` |
+| Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `unified-ui.js`), trang offline `off_<tên>` |
 | Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
 | Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |

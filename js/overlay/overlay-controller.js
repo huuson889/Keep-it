@@ -64,7 +64,7 @@ const overlayEl = () => $(OVERLAY_ID);
 const overlayT = (key, vars = {}) => globalThis.LHN_LANGUAGES?.t?.(key, vars, state.displayLanguage) || key;
 
 function refreshOverlayUiLocalization() {
-  globalThis.LHN_UNIFIED_TEXT?.refresh?.();
+  globalThis.LHN_UNIFIED_OVERLAY?.refreshLanguage?.();
   globalThis.LHN_UNIFIED_OVERLAY?.refreshTitle?.();
   const launcher = document.getElementById(LAUNCHER_ID);
   launcher?.setAttribute('title', overlayT('videoOpenKeepit'));
@@ -739,7 +739,7 @@ function unifiedUi() { return Boolean(globalThis.LHN_UNIFIED_OVERLAY?.isActive?.
     isOpen: () => unifiedUi() && (studyOpen() || Boolean(waitingTab)),
     getMode: () => (unifiedUi() ? (studyOpen() ? modeOf(U().tab()) : waitingTab ? modeOf(waitingTab) : null) : null),
     getActivity: () => (unifiedUi() && studyOpen() ? (U().tab() === 'speak' ? 'shadowing' : 'dictation') : null),
-    refreshLanguage: () => { globalThis.LHN_UNIFIED_TEXT?.refresh?.(); },
+    refreshLanguage: () => { globalThis.LHN_UNIFIED_OVERLAY?.refreshLanguage?.(); },
   });
   document.addEventListener('lhn-dual-captions-updated', () => {
     if (!waitingTab || !unifiedUi() || !state.open) return;
