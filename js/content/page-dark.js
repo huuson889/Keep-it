@@ -19,6 +19,8 @@
   const MEDIA = 'img,video,canvas,iframe,embed,object,svg image,[style*="url("]';
   // v3.5.213: khối lớn vốn tối trên trang sáng (CNN: dải đen, chân trang) cũng đảo lại → giữ màu gốc (`data-keepit-pd`).
   const KEEP = "[data-keepit-pd]";
+  // v3.5.216: khối màu rực (header đỏ tuoitre.vn) — lớp phủ khoét lỗ, khối và mọi thứ bên trong giữ nguyên (không filter).
+  const VIVID = "[data-keepit-pdv]";
   // v3.5.214: Highlight của Keepit trên trang cũng đảo lại → hiện đúng như trên web nền đen (màu tô gốc + chữ đen,
   // giống cơ chế `lhn-black-text` của web-highlighter.js), không bị lớp phủ đổi thành màu tô sậm.
   // Thẻ dịch + loa của Reader cũng vậy: giữ đúng màu nhấn tím của Keepit (lớp phủ đổi tím → hồng). Chữ dịch màu mặc định
@@ -28,7 +30,9 @@
   // v3.5.214: giao diện Keepit (Ghi chú, Reader, popup, thanh…) nằm TRÊN lớp phủ và có giao diện tối riêng → không đụng
   // tới ảnh/khung bên trong, nếu không logo / favicon / ảnh thu nhỏ của Ghi chú bị đảo (double).
   const UI = '[id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui]';
-  const DARK_CSS = `:is(${ALL}):not(:is(${UI})):not(:is(${UI}) *){filter:invert(1) hue-rotate(180deg)!important}:is(${ALL}) :is(${ALL}){filter:none!important}.lhn-bilingual-card[style*="rgb(45, 55, 72)"]{color:#cbd5e1!important}`;
+  // v3.5.216: :where trong :not để quy tắc "lồng nhau → không đảo" thắng (trước đó :is(UI) làm quy tắc đầu nặng hơn → ảnh
+  // trong khối vốn tối bị đảo thêm, logo trắng thành đen).
+  const DARK_CSS = `:is(${ALL}):not(:where(${UI})):not(:where(${UI}) *){filter:invert(1) hue-rotate(180deg)!important}:is(${ALL}) :is(${ALL}),${VIVID},${VIVID} *{filter:none!important}.lhn-bilingual-card[style*="rgb(45, 55, 72)"]{color:#cbd5e1!important}`;
   let on = false, theme = "", darkStyle = null, darkVeil = null, loaded = false;
   // Chủ đề Keepit đọc giống thanh Keepit (settings đã qua LHN_SETTINGS.resolve).
   const themeOf = raw => String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw || {}).sidebarTheme || "");
@@ -74,22 +78,55 @@
     return vals.filter(v => v < 0.45).length >= vals.length * share; // share 0.5 = đa số màn hình là nền tối
   }
   // Đánh dấu khối lớn vốn tối (rộng ≥ 40% màn hình, cao ≥ 40px, nền đặc độ sáng < 0.3) — không lồng nhau. Gộp ≥ 800ms.
+  // v3.5.216: khối màu đậm, rực (header đỏ chữ trắng của tuoitre.vn) cũng giữ màu gốc — chữ trắng trên nền đó vốn dễ đọc
+  // trên trang tối; đảo thì thành hồng nhạt chữ đen. Rực = độ đậm màu (max − min) ≥ 0.45 và độ sáng < 0.6;
+  // nền nhạt (hồng phấn, vàng kem) và màu quá sáng (vàng tươi) vẫn đảo như cũ.
+  const vivid = (color, l) => { if (l >= 0.6) return false; const m = String(color).match(/[\d.]+/g).slice(0, 3).map(Number); return (Math.max(...m) - Math.min(...m)) / 255 >= 0.45; };
+  // Nền gradient (header tuoitre.vn: background-color trong suốt + linear-gradient đỏ): mọi điểm màu phải tối hoặc rực;
+  // gradient có ảnh (url) thì bỏ qua.
+  const keepBg = cs => {
+    let cols = [cs.backgroundColor];
+    if (lumOf(cols[0]) === null) { const gi = cs.backgroundImage; if (!/gradient/.test(gi) || /url\(/.test(gi)) return false; cols = gi.match(/rgba?\([^)]*\)/g) || []; }
+    let kind = cols.length ? "d" : "";
+    for (const c of cols) { const l = lumOf(c); if (l === null) return ""; if (l >= 0.3) { if (!vivid(c, l)) return ""; kind = "v"; } }
+    return kind; // "d" = vốn tối (đảo lại như cũ), "v" = màu rực (khoét lỗ lớp phủ), "" = để lớp phủ làm tối
+  };
+  // Màu rực không giữ được bằng cách đảo hai lần (bộ lọc invert + hue-rotate cắt mất phần màu ngoài gam → đỏ tươi thành
+  // đỏ xỉn), nên lớp phủ được khoét lỗ đúng chỗ các khối này (clip-path evenodd, cập nhật khi cuộn / đổi cỡ) và khối hiện
+  // nguyên màu gốc, kể cả ảnh / logo bên trong.
+  let holeRaf = 0;
+  function cutHoles() {
+    holeRaf = 0; if (!darkVeil) return;
+    const W = innerWidth, H = innerHeight; let d = "";
+    document.querySelectorAll(VIVID).forEach(el => {
+      const r = el.getBoundingClientRect(); if (r.bottom <= 0 || r.top >= H || r.width < 1 || r.height < 1) return;
+      const l = Math.max(0, r.left), t = Math.max(0, r.top), rt = Math.min(W, r.right), b = Math.min(H, r.bottom);
+      d += `M${l} ${t}H${rt}V${b}H${l}Z`;
+    });
+    darkVeil.style.setProperty("clip-path", d ? `path(evenodd, "M0 0H${W}V${H}H0Z${d}")` : "none");
+  }
+  const holesSoon = () => { if (!holeRaf && darkVeil?.isConnected) holeRaf = requestAnimationFrame(cutHoles); };
+  addEventListener("scroll", holesSoon, { passive:true, capture:true });
+  addEventListener("resize", holesSoon, { passive:true });
   let scanT = 0, scanAt = 0;
   function markDarkBlocks() {
     scanAt = Date.now(); const minW = innerWidth * 0.4, found = [];
     for (const el of document.body.querySelectorAll("*")) {
       if (el.closest(KEEPIT)) continue;
       const r = el.getBoundingClientRect(); if (r.width < minW || r.height < 40) continue;
-      const l = lumOf(getComputedStyle(el).backgroundColor); if (l === null || l >= 0.3) continue;
+      const kind = keepBg(getComputedStyle(el)); if (!kind) continue;
+      // Khối màu rực trong popup đang ẩn (opacity 0 / visibility hidden — tuoitre.vn .titlepopup) không được khoét lỗ.
+      if (kind === "v" && el.checkVisibility?.({ opacityProperty:true, visibilityProperty:true }) === false) continue;
       if (found.some(f => f.contains(el))) continue;
-      found.push(el);
+      found.push(el); el.__keepitPd = kind;
     }
-    document.querySelectorAll(KEEP).forEach(el => { if (!found.includes(el)) el.removeAttribute("data-keepit-pd"); });
-    found.forEach(el => el.setAttribute("data-keepit-pd", ""));
+    document.querySelectorAll(KEEP + "," + VIVID).forEach(el => { if (!found.includes(el)) { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); } });
+    found.forEach(el => { const v = el.__keepitPd === "v"; el.toggleAttribute("data-keepit-pd", !v); el.toggleAttribute("data-keepit-pdv", v); });
+    cutHoles();
   }
   const scanSoon = () => { if (!darkStyle?.isConnected) return; clearTimeout(scanT); scanT = setTimeout(markDarkBlocks, Math.max(250, 800 - (Date.now() - scanAt))); };
   addEventListener("scroll", scanSoon, { passive:true });
-  function remove() { darkStyle?.remove(); darkVeil?.remove(); document.querySelectorAll(KEEP).forEach(el => el.removeAttribute("data-keepit-pd")); }
+  function remove() { darkStyle?.remove(); darkVeil?.remove(); document.querySelectorAll(KEEP + "," + VIVID).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); }); }
   // ---- v3.5.215: trang có dark mode theo máy → bật dark mode của chính trang thay vì lớp tối Keepit ----
   // Chỉ khi Chủ đề Keepit = Tối mà máy đang sáng (máy tối thì trang đã tự tối). Các quy tắc CSS
   // @media (prefers-color-scheme: dark|light) đọc được (cùng nguồn / CORS) và thuộc tính media của <link>/<style>/<source>

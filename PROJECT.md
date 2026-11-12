@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.216 | Arena.ai Agent sửa:**
+
+- Trang tối: header / dải lớn màu đậm, rực (ví dụ header đỏ chữ trắng của tuoitre.vn) giữ nguyên màu gốc, không còn thành hồng nhạt chữ đen. Lớp tối được khoét lỗ đúng chỗ khối đó (chạy theo khi cuộn), nên màu đỏ tươi và logo trắng hiện đúng 100%. Nền nhạt (hồng phấn, vàng kem) và màu quá sáng (vàng tươi) vẫn làm tối như cũ.
+- Sửa: ảnh / logo nằm trong khối giữ màu không còn bị đảo thêm một lần (logo trắng thành đen).
+- File: `js/content/page-dark.js`, `css/content/page-dark-early.css`, `css/content/page-dark-early-auto.css`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật: tuoitre.vn header đỏ tươi + logo trắng, popup ẩn không bị khoét, cuộn qua header thì lỗ biến mất; trang mẫu: đỏ / xanh lá / gradient đỏ giữ nguyên, đen / xanh navy giữ như cũ, hồng phấn / kem / vàng tươi / gradient nhạt được làm tối; bộ kiểm tra v3.5.215 (không nháy, dark mode riêng của trang, nhãn Beta) vẫn đúng.
+
 **2026-10-23 | v3.5.215 | Arena.ai Agent sửa:**
 
 - Trang tối (Beta) vào thẳng tối, không nháy trắng: lớp tối nạp sẵn chạy trước lần vẽ đầu của trang (đăng ký khi Trang tối bật + Chủ đề tối; gỡ khi tắt).

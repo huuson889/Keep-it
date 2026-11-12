@@ -5,6 +5,6 @@
 @media (prefers-color-scheme: dark){
 html:not([data-keepit-pd-off]){--keepit-pd-early:1}
 html:not([data-keepit-pd-off])::before{content:""!important;display:block!important;position:fixed!important;inset:0!important;z-index:2147482000!important;pointer-events:none!important;background:none!important;-webkit-backdrop-filter:invert(1) hue-rotate(180deg)!important;backdrop-filter:invert(1) hue-rotate(180deg)!important}
-html:not([data-keepit-pd-off]) :is(img,video,canvas,iframe,embed,object,svg image,[style*="url("]):not(:is([id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui])):not(:is([id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui]) *){filter:invert(1) hue-rotate(180deg)!important}
+html:not([data-keepit-pd-off]) :is(img,video,canvas,iframe,embed,object,svg image,[style*="url("]):not(:where([id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui])):not(:where([id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui]) *){filter:invert(1) hue-rotate(180deg)!important}
 html:not([data-keepit-pd-off]) :is(img,video,canvas,iframe,embed,object,svg image,[style*="url("]) :is(img,video,canvas,iframe,embed,object,svg image,[style*="url("]){filter:none!important}
 }
