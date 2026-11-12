@@ -47,3 +47,5 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 - Browser QA chưa chạy: bài viết dài, Readability fallback, Reader Alt+A/Alt+D/Alt+R, start/stop/pause, đổi URL và mutual exclusion với Web Study. Hai test path Reader cũ không tồn tại trong repo.
 - v3.5.177: cờ giọng đọc: chưa có font `Twemoji Country Flags` thì cờ emoji hệ thống (nếu có màu) được vẽ lên canvas, cắt sát rồi lấy phần giữa (bỏ mép gợn sóng của cờ Android); không có cờ màu thì giữ ký tự.
 - v3.5.179: code về lại v3.5.174 (các mục v3.5.176–177 phía trên không còn); `sheet-kit.js` giữ `grow.mid` / `collapse` của v3.5.175, chỉ ☰ của Keepit cho Android dùng.
+
+- v3.5.191 theme: the Reader bar, panels and kbd strip use the Keepit bar glass (light `rgba(255,255,255,.78)`, dark `rgba(24,24,28,.78)`, `blur(24px) saturate(1.6)`). Tiles, fields, flags and speed chips are translucent; secondary text is `#52525b` light and `#b4b4bc` dark. Active / accent states are unchanged (purple; the dark speed chip stays `#facc15`). Only CSS colours changed (end of the style string in `bilingual-reader.js`); no layout or behaviour changes.

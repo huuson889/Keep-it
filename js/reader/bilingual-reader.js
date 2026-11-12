@@ -239,6 +239,36 @@
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-left{padding-left:9px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-btn[data-voices]{width:38px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-btn.lhn-br-spd{padding:0 1.5px}
+    /* v3.5.191: same light / dark glass as the Keepit bar and ☰ sheet (touch-ui v3.5.189–190) — 78% glass + blur 24,
+       clear labels / icons, translucent tiles / fields / chips instead of solid blocks. Colours only; layout unchanged. */
+    #lhn-bilingual-reading-bar .lhn-br-rbar,#lhn-bilingual-reading-bar .lhn-br-panel,#lhn-bilingual-reading-bar .lhn-br-kbd{background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-panel,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{background:rgba(24,24,28,.78)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{border-color:rgba(255,255,255,.09)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-btn{color:#e4e4e7}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{color:#e4e4e7}
+    #lhn-bilingual-reading-bar .lhn-br-sx{color:#52525b}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-sx{color:#d4d4d8}
+    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic{background:rgba(255,255,255,.55);border-color:rgba(15,23,42,.12);color:#1f2937;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-ic{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:#f4f4f5;box-shadow:none}
+    #lhn-bilingual-reading-bar .lhn-br-vsearch{background:rgba(255,255,255,.6);border-color:rgba(15,23,42,.14)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vsearch{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:#f4f4f5}
+    #lhn-bilingual-reading-bar .lhn-br-voice-group,#lhn-bilingual-reading-bar .lhn-br-vt small{color:#52525b}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice-group,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-vt small{color:#b4b4bc}
+    #lhn-bilingual-reading-bar .lhn-br-voice.lhn-selected{background:rgba(15,23,42,.06)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-voice.lhn-selected{background:rgba(255,255,255,.08)}
+    #lhn-bilingual-reading-bar .lhn-br-vf{background:rgba(255,255,255,.6)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vf{background:rgba(255,255,255,.08)}
+    #lhn-bilingual-reading-bar .lhn-br-vf.lhn-br-globe{background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 1px rgba(15,23,42,.12)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vf.lhn-br-globe{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+    #lhn-bilingual-reading-bar .lhn-br-spstep,#lhn-bilingual-reading-bar .lhn-br-spgrid button{background:rgba(15,23,42,.06)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spstep,#lhn-bilingual-reading-bar.lhn-dark .lhn-br-spgrid button{background:rgba(255,255,255,.08)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spgrid button{color:#e4e4e7}
+    #lhn-bilingual-reading-bar .lhn-br-spgrid button.lhn-active{background:#7000ff;color:#fff}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-spgrid button.lhn-active{background:#facc15;color:#000}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-webkit-slider-runnable-track{background:rgba(255,255,255,.18)}
+    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-moz-range-track{background:rgba(255,255,255,.18)}
+    #lhn-bilingual-reading-bar .lhn-br-range::-webkit-slider-runnable-track{background:rgba(15,23,42,.12)}
+    #lhn-bilingual-reading-bar .lhn-br-range::-moz-range-track{background:rgba(15,23,42,.12)}
   `;
   (document.head || document.documentElement).appendChild(style);
   const bar = document.createElement("div");
