@@ -115,16 +115,45 @@
   addEventListener("scroll", holesSoon, { passive:true, capture:true });
   addEventListener("resize", holesSoon, { passive:true });
   let scanT = 0, scanAt = 0;
+  // v3.5.217: ảnh nền từ stylesheet → coi như ảnh (giữ màu gốc). Bỏ qua nền lặp (hoạ tiết) và khung cỡ cả trang.
+  const markBgImg = (el, r, cs, W, H) => {
+    if (el.hasAttribute("data-keepit-pdm") || !/url\(/.test(cs.backgroundImage) || /(^|,\s*)repeat/.test(cs.backgroundRepeat) || (r.width >= W * 0.9 && r.height >= H * 0.9)) return false;
+    el.setAttribute("data-keepit-pdm", ""); return true;
+  };
+  // v3.5.219: ảnh / video trong shadow DOM (web component — trình phát nyt-betamax, nyt-video-feed của nytimes.com) không
+  // nhận CSS của trang → chỉ bị lớp phủ đảo một lần → âm bản. Chèn CSS đảo lại vào từng shadow root (cả loại đóng, qua
+  // chrome.dom.openOrClosedShadowRoot / Element.openOrClosedShadowRoot của Firefox), đi tiếp vào shadow lồng nhau. Phần tử chủ
+  // đã nằm trong khối bị đảo → CSS rỗng (không đảo hai lần). Tắt Trang tối → gỡ hết.
+  const SHADOW_CSS = `:is(${MEDIA},${BGIMG}){filter:invert(1) hue-rotate(180deg)!important}:is(${MEDIA},${BGIMG}) :is(${MEDIA},${BGIMG}){filter:none!important}`;
+  const shadowStyles = new Set(), shadowMarks = new Set();
+  const shadowOf = el => {
+    if (el.shadowRoot) return el.shadowRoot;
+    if (!el.localName.includes("-")) return null;
+    try { return globalThis.chrome?.dom?.openOrClosedShadowRoot?.(el) || el.openOrClosedShadowRoot || null; } catch { return null; }
+  };
+  const invertedAbove = el => { for (let e = el; e; e = e.parentElement || e.getRootNode?.()?.host || null) if (/invert/.test(getComputedStyle(e).filter)) return true; return false; };
+  function scanShadow(root, W, H, depth = 0) {
+    if (depth > 8) return;
+    let st = [...root.children].find(c => c.localName === "style" && c.hasAttribute("data-keepit-pd"));
+    if (!st) { st = document.createElement("style"); st.setAttribute("data-keepit-pd", ""); root.appendChild(st); shadowStyles.add(st); }
+    const text = invertedAbove(root.host) ? "" : SHADOW_CSS; if (st.textContent !== text) st.textContent = text;
+    for (const el of root.querySelectorAll("*")) {
+      if (el === st) continue;
+      const sr = shadowOf(el); if (sr) scanShadow(sr, W, H, depth + 1);
+      const r = el.getBoundingClientRect(); if (r.width < 16 || r.height < 16) continue;
+      if (markBgImg(el, r, getComputedStyle(el), W, H)) shadowMarks.add(el);
+    }
+  }
+  function clearShadow() { shadowStyles.forEach(s => s.remove()); shadowStyles.clear(); shadowMarks.forEach(e => e.removeAttribute("data-keepit-pdm")); shadowMarks.clear(); }
   function markDarkBlocks() {
     scanAt = Date.now(); const minW = innerWidth * 0.4, found = [];
-    const W = innerWidth, H = innerHeight;
+    const W = innerWidth, H = innerHeight, hosts = [];
     for (const el of document.body.querySelectorAll("*")) {
       if (el.closest(KEEPIT)) continue;
+      const sr = shadowOf(el); if (sr) hosts.push(sr);
       const r = el.getBoundingClientRect(); if (r.width < 16 || r.height < 16) continue;
       const cs = getComputedStyle(el);
-      // v3.5.217: ảnh nền từ stylesheet → coi như ảnh (giữ màu gốc). Bỏ qua nền lặp (hoạ tiết) và khung cỡ cả trang.
-      if (!el.hasAttribute("data-keepit-pdm") && /url\(/.test(cs.backgroundImage) && !/(^|,\s*)repeat/.test(cs.backgroundRepeat)
-        && !(r.width >= W * 0.9 && r.height >= H * 0.9)) el.setAttribute("data-keepit-pdm", "");
+      markBgImg(el, r, cs, W, H);
       if (r.height < 40) continue;
       const big = r.width >= minW;
       const kind = keepBg(cs); if (!kind) continue;
@@ -137,11 +166,12 @@
     }
     document.querySelectorAll(KEEP + "," + VIVID).forEach(el => { if (!found.includes(el)) { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); } });
     found.forEach(el => { const v = el.__keepitPd === "v"; el.toggleAttribute("data-keepit-pd", !v); el.toggleAttribute("data-keepit-pdv", v); });
+    hosts.forEach(sr => scanShadow(sr, W, H)); // sau khi gắn khối giữ màu → invertedAbove đúng
     cutHoles();
   }
   const scanSoon = () => { if (!darkStyle?.isConnected) return; clearTimeout(scanT); scanT = setTimeout(markDarkBlocks, Math.max(250, 800 - (Date.now() - scanAt))); };
   addEventListener("scroll", scanSoon, { passive:true });
-  function remove() { darkStyle?.remove(); darkVeil?.remove(); document.querySelectorAll(KEEP + "," + VIVID + "," + BGIMG).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); el.removeAttribute("data-keepit-pdm"); }); }
+  function remove() { clearShadow(); darkStyle?.remove(); darkVeil?.remove(); document.querySelectorAll(KEEP + "," + VIVID + "," + BGIMG).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); el.removeAttribute("data-keepit-pdm"); }); }
   // ---- v3.5.215: trang có dark mode theo máy → bật dark mode của chính trang thay vì lớp tối Keepit ----
   // Chỉ khi Chủ đề Keepit = Tối mà máy đang sáng (máy tối thì trang đã tự tối). Các quy tắc CSS
   // @media (prefers-color-scheme: dark|light) đọc được (cùng nguồn / CORS) và thuộc tính media của <link>/<style>/<source>
@@ -200,6 +230,7 @@
     // Lớp tối nạp sẵn (css/content/page-dark-early*.css) đã làm xong việc → tắt nó; từ đây chỉ dùng quyết định ở trên.
     if (!document.documentElement.hasAttribute("data-keepit-pd-off")) {
       earlySeen = earlyOn(); document.documentElement.setAttribute("data-keepit-pd-off", ""); document.documentElement.style.removeProperty("--keepit-pd-clip");
+      if (!want) clearShadow();
       if (!want) document.querySelectorAll(KEEP + "," + VIVID + "," + BGIMG).forEach(el => { el.removeAttribute("data-keepit-pd"); el.removeAttribute("data-keepit-pdv"); el.removeAttribute("data-keepit-pdm"); });
     }
   }

@@ -57,7 +57,6 @@
     auto:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2Q13 11 22 12Q13 13 12 22Q11 13 2 12Q11 11 12 2Z"/></svg>',
     close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'
   };
-  const brTile = (key, icon, isSwitch = true) => `<button type="button" class="lhn-br-q" data-tile="${key}"${isSwitch ? ' role="switch" aria-checked="false"' : ""}><span class="lhn-br-ic">${icon}</span><span data-tile-label></span></button>`;
   const brStroke = paths => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
   bar.innerHTML = `<div class="lhn-br-rbar" data-rbar><div class="lhn-br-prog" data-prog><span class="lhn-br-fill" data-prog-fill><span class="lhn-br-knob"></span></span><span class="lhn-br-ptip" data-prog-tip></span></div>`
     + `<div class="lhn-br-left"><button type="button" class="lhn-br-btn" data-voices data-sheet="voices"><span class="lhn-br-vflag lhn-br-flagfont" data-bar-flag></span></button><button type="button" class="lhn-br-btn lhn-br-spd" data-speed data-sheet="speed"><span data-speed-label>1.00X</span></button><span class="lhn-br-btn lhn-br-mins" data-time role="note"></span></div>`
@@ -65,14 +64,7 @@
     + `<div class="lhn-br-right"><button type="button" class="lhn-br-btn lhn-br-rep" data-repeat aria-pressed="false">${brStroke('<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/>')}</button><button type="button" class="lhn-br-btn" data-close>${BR_ICON.close}</button><button type="button" class="lhn-br-btn" data-more data-sheet="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div></div>`
     + `<div class="lhn-br-kbd lhn-off" data-shortcut-banner><span data-banner-text></span><button type="button" data-hide-banner>×</button></div>`
     + `<div class="lhn-br-sheet" data-sheet-root><div class="lhn-br-scrim" data-scrim></div><div class="lhn-br-panel" data-panel role="dialog" aria-modal="true"><div class="lhn-br-grip"></div><div class="lhn-br-shead"><span class="lhn-br-stitle" data-sheet-title></span><span class="lhn-br-spval" data-speed-value hidden>1.00x</span><button type="button" class="lhn-br-sx" data-close-pop>${BR_ICON.close}</button></div><div class="lhn-br-sbody" data-sbody>`
-    + `<div class="lhn-br-pane" data-pane="more"><div class="lhn-br-quick">`
-    + brTile("autoscroll", brStroke('<path d="M3 2h18"/><rect width="18" height="12" x="3" y="6" rx="2"/><path d="M3 22h18"/>'))
-    + brTile("parabtn", brStroke('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>'))
-    + brTile("autolang", BR_ICON.auto)
-    + brTile("readtranslation", brStroke('<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>'))
-    + brTile("theme", `<span class="lhn-br-icmoon">${brStroke('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>')}</span><span class="lhn-br-icsun">${brStroke('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>')}</span>`, false)
-    + brTile("webfont", brStroke('<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>'))
-    + `</div></div><div class="lhn-br-pane" data-pane="speed"><div class="lhn-br-sprow"><button type="button" class="lhn-br-spstep" data-sp="-1">-</button><input class="lhn-br-range" type="range" min="0.5" max="3" step="0.05" value="1"><button type="button" class="lhn-br-spstep" data-sp="1">+</button></div><div class="lhn-br-spgrid">`
+    + `<div class="lhn-br-pane" data-pane="speed"><div class="lhn-br-sprow"><button type="button" class="lhn-br-spstep" data-sp="-1">-</button><input class="lhn-br-range" type="range" min="0.5" max="3" step="0.05" value="1"><button type="button" class="lhn-br-spstep" data-sp="1">+</button></div><div class="lhn-br-spgrid">`
     + [["0.5","0.5x"],["0.75","0.75x"],["0.9","0.9x"],["1.0",""],["1.1","1.1x"],["1.25","1.25x"],["1.5","1.5x"],["2.0","2.0x"]].map(([value, label]) => `<button type="button" data-preset="${value}"${label ? "" : ' class="lhn-br-normal"'}>${label}</button>`).join("")
     + `</div></div><div class="lhn-br-pane" data-pane="voices"><input class="lhn-br-vsearch" type="search"><div class="lhn-br-voice-list"></div></div></div></div></div><div class="lhn-br-toast" data-toast role="status"></div>`;
   const $br = selector => bar.querySelector(selector);
@@ -112,7 +104,7 @@
   function openSheet(name) {
     openSheetName = name;
     bar.querySelectorAll("[data-pane]").forEach(pane => pane.classList.toggle("lhn-on", pane.dataset.pane === name));
-    brPanel.classList.toggle("lhn-br-more", name === "more"); brPanel.classList.toggle("lhn-br-speedp", name === "speed");
+    brPanel.classList.toggle("lhn-br-speedp", name === "speed");
     $br("[data-speed-value]").hidden = name !== "speed";
     $br("[data-sheet-title]").textContent = name === "voices" ? popupText("readerPopupSelectVoice") : name === "speed" ? popupText("readerPopupSpeed") : "";
     if (name === "voices") { voiceSearch.value = ""; renderVoiceChoices(); }
@@ -207,7 +199,6 @@
     const value = String(dashboardShortcuts[key] ?? fallback);
     return ({ Up:"↑", Down:"↓", Left:"←", Right:"→" })[value] || value;
   }
-  function setTile(key, on) { const tile = $br(`[data-tile="${key}"]`); if (!tile) return; tile.classList.toggle("lhn-on", on); tile.setAttribute("aria-checked", String(on)); }
   function markReadingBlock(block) {
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
@@ -257,7 +248,8 @@
     else if (button.hasAttribute("data-close")) closeReadingBar();
     else if (button.hasAttribute("data-repeat")) { repeatSegment = !repeatSegment; syncToolbar(); showBarToast(popupText(repeatSegment ? "readerRepeatOn" : "readerRepeatOff")); }
     // v3.5.160 touch: Reader ☰ opens the Keepit main sheet (its Trình đọc row holds these tiles; theme / Font tùy chỉnh are there too)
-    else if (button.dataset.sheet === "more" && globalThis.LHN_BAR_HOOKS?.openMainSheet) { closeSheet(); globalThis.LHN_BAR_HOOKS.openMainSheet(button.getBoundingClientRect()); }   // v3.5.161 every device
+    // v3.5.218: sheet ☰ riêng của Reader đã xoá — ☰ chỉ mở sheet chính của Keepit (thanh Keepit luôn có khi Reader mở được)
+    else if (button.dataset.sheet === "more") { closeSheet(); globalThis.LHN_BAR_HOOKS?.openMainSheet?.(button.getBoundingClientRect()); }
     else if (button.dataset.sheet) toggleSheet(button.dataset.sheet);
   });
   $br("[data-scrim]").addEventListener("click", closeSheet);
@@ -265,12 +257,6 @@
   // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js): page locked while open, drag down from
   // anywhere closes (the voice list scrolls back to its top first), wheel / scroll keys never reach the page
   globalThis.LHN_SHEET?.attach(brPanel, { isOpen:() => brSheet.classList.contains("lhn-open"), close:() => closeSheet(), watch:brSheet });
-  $br(".lhn-br-quick").addEventListener("click", event => {
-    const tile = event.target.closest("[data-tile]"); if (!tile) return;
-    const key = tile.dataset.tile;
-    if (key === "theme") { saveAddonThemePreference(bar.classList.contains("lhn-dark") ? "light" : "dark"); return; }
-    setReaderTile(key, tile.getAttribute("aria-checked") !== "true");
-  });
   function readerTileOn(key) {
     if (key === "autoscroll") return !!settings.autoScroll;
     if (key === "parabtn") return settings.speakerIconVisibility === "always";
@@ -364,11 +350,6 @@
     $br("[data-time]").textContent = minutes ? formatLeft(minutes) : "—";
     const repeat = $br("[data-repeat]"); repeat.classList.toggle("lhn-on", repeatSegment); repeat.setAttribute("aria-pressed", String(repeatSegment));
     updateProgress();
-    setTile("autoscroll", !!settings.autoScroll);
-    setTile("parabtn", settings.speakerIconVisibility === "always");
-    setTile("autolang", settings.autoDetectVoice !== false);
-    setTile("readtranslation", !!settings.readTranslation);
-    setTile("webfont", settings.webFontFamily === "'Inter', sans-serif");
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
     const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
     renderFlag($br("[data-bar-flag]"), region);
@@ -388,9 +369,6 @@
     tip("[data-repeat]", "readerRepeatSegment");
     tip("[data-close]", "readerPopupStop", "Alt+R");
     tip("[data-more]", "readerMore");
-    for (const [key, label] of [["autoscroll","readerPopupAutoScroll"],["parabtn","bilingualSpeakerIcon"],["autolang","readerTileAutoLang"],["readtranslation","readerTileReadTranslation"],["theme","readerTileTheme"],["webfont","readerTileCustomFont"]]) {
-      const element = $br(`[data-tile="${key}"] [data-tile-label]`); if (element) element.textContent = popupText(label);
-    }
     $br('[data-preset="1.0"]').textContent = popupText("videoNormal");
     voiceSearch.placeholder = popupText("readerPopupSearch"); voiceSearch.setAttribute("aria-label", popupText("readerPopupSearch"));
     $br(".lhn-br-range").setAttribute("aria-label", popupText("readerPopupSpeed"));

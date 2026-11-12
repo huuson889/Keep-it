@@ -199,6 +199,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.219 | Arena.ai Agent sửa:**
+
+- Trang tối: video / ảnh trong trình phát dạng web component (shadow DOM — nytimes.com `nyt-betamax`, `nyt-video-feed`) không còn bị âm bản. Nguyên nhân: CSS đảo lại ảnh / video của Keepit nằm ở trang, không vào được bên trong shadow DOM. Giờ chèn CSS đó vào từng shadow root (cả loại đóng, cả lồng nhau); phần tử chủ đã nằm trong khối bị đảo thì không chèn (không đảo hai lần); tắt Trang tối gỡ hết.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật: trang mẫu shadow mở / đóng / lồng nhau / web component trong khung nền tối → mỗi ảnh đảo đúng 1 lần (= màu gốc), tắt → 0 và gỡ style; nytimes.com (sandbox): 8 video + 6 ảnh trong shadow đều đúng 1 lần; bộ kiểm tra v3.5.215 vẫn đúng.
+
+**2026-10-23 | v3.5.218 | Arena.ai Agent sửa:**
+
+- Reader: xoá hẳn sheet menu riêng cũ (pane "more": 6 ô Tự cuộn / Biểu tượng đọc / Ngôn ngữ tự động / Đọc song ngữ / Chủ đề / Font tùy chỉnh, CSS `.lhn-br-quick` / `.lhn-br-q` / `.lhn-br-more`, `setTile`, nhãn `readerTile*` + `readerPopupAutoScroll` không còn dùng). Từ v3.5.161 nút ☰ của Reader đã luôn mở sheet chính của Keepit (có hàng Trình đọc) — giữ nguyên; sheet Chọn giọng và Tốc độ giữ nguyên.
+- Git: lịch sử bị mất 3 commit v3.5.215–217 (snapshot workspace không giữ hết `.git` — 3.5k object rời). Đã commit lại thành một commit `v3.5.217: re-commit…` với cây file giống hệt ZIP v3.5.217 đã phát hành, rồi `git gc` (còn 71 file trong `.git`).
+- File: `js/reader/bilingual-reader.js`, `js/reader/reader-css.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: Chromium + extension thật: Reader mở, ☰ → sheet chính Keepit (hàng Trình đọc), bấm ra ngoài đóng; Chọn giọng (23 giọng) và Tốc độ (bấm 1.5x → 1.50X) chạy đúng; không còn pane "more"; không lỗi.
+
 **2026-10-23 | v3.5.217 | Arena.ai Agent sửa:**
 
 - Ô Trang tối: chú thích khi rê chuột rút gọn thành "Làm tối trang web, bản Beta có thể lỗi" (en/vi/ko).

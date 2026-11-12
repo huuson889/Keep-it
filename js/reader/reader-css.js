@@ -103,7 +103,7 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-panel{border-color:rgba(148,163,184,.2)}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-sheet.lhn-open .lhn-br-panel{transform:none;opacity:1}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-grip{display:none}
-    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel.lhn-br-more,#lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel.lhn-br-speedp{width:340px}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-panel.lhn-br-speedp{width:340px}
     #lhn-bilingual-reading-bar .lhn-br-shead{flex:none;display:flex;align-items:center;gap:6px;padding:2px 2px 8px;touch-action:none}
     #lhn-bilingual-reading-bar .lhn-br-shead .lhn-br-stitle{flex:1;min-width:0;font-size:17px;font-weight:700}
     #lhn-bilingual-reading-bar .lhn-br-shead .lhn-br-spval{flex:none;font-size:17px;font-weight:800;color:var(--lhn-br-accent);margin-right:4px}
@@ -114,18 +114,6 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar .lhn-br-sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
     #lhn-bilingual-reading-bar .lhn-br-pane{display:none}
     #lhn-bilingual-reading-bar .lhn-br-pane.lhn-on{display:block}
-    #lhn-bilingual-reading-bar .lhn-br-panel.lhn-br-more .lhn-br-shead{display:none}
-    #lhn-bilingual-reading-bar .lhn-br-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 6px;padding:4px 0 6px}
-    #lhn-bilingual-reading-bar .lhn-br-q{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;padding:4px 0;border:0;background:none;color:inherit;font-size:12.5px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic{position:relative;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;border:1px solid #cbd5e1;transition:transform .15s}
-    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic svg{width:23px;height:23px}
-    #lhn-bilingual-reading-bar .lhn-br-q.lhn-on .lhn-br-ic{background:#f3e8ff;border-color:var(--lhn-br-accent);color:var(--lhn-br-accent)}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q.lhn-on .lhn-br-ic{background:rgba(139,92,246,.22);border-color:#8b5cf6;color:#c4b5fd}
-    #lhn-bilingual-reading-bar .lhn-br-q:active .lhn-br-ic{transform:scale(.94)}
-    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-icmoon{display:contents}
-    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-icsun{display:none}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-icsun{display:contents}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-icmoon{display:none}
     #lhn-bilingual-reading-bar .lhn-br-vsearch{flex:none;display:block;width:100%;height:44px;border:1px solid #e2e8f0;border-radius:12px;padding:0 14px;font-size:15px;color:inherit;outline:none;margin:0 0 8px;-webkit-appearance:none;appearance:none}
     #lhn-bilingual-reading-bar .lhn-br-vsearch:focus{border-color:var(--lhn-br-accent)}
     #lhn-bilingual-reading-bar .lhn-br-voice-group{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:12px 6px 6px}
@@ -182,8 +170,6 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd{color:var(--kp-tx-d)}
     #lhn-bilingual-reading-bar .lhn-br-sx{color:var(--kp-tx2-l)}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-sx{color:#d4d4d8}
-    #lhn-bilingual-reading-bar .lhn-br-q .lhn-br-ic{background:var(--kp-tile-l);border-color:var(--kp-line-l);color:var(--kp-tx-strong-l);box-shadow:0 1px 2px rgba(15,23,42,.05)}
-    #lhn-bilingual-reading-bar.lhn-dark .lhn-br-q .lhn-br-ic{background:var(--kp-tile-d);border-color:var(--kp-line-d);color:var(--kp-tx-strong-d);box-shadow:none}
     #lhn-bilingual-reading-bar .lhn-br-vsearch{background:rgba(255,255,255,.6);border-color:rgba(15,23,42,.14)}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-vsearch{background:var(--kp-tile-d);border-color:rgba(255,255,255,.14);color:var(--kp-tx-strong-d)}
     #lhn-bilingual-reading-bar .lhn-br-voice-group,#lhn-bilingual-reading-bar .lhn-br-vt small{color:var(--kp-tx2-l)}
