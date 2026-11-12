@@ -2,7 +2,7 @@
 //   1. layout-mode.js — cài đặt (mặc định/gộp/khôi phục/lưu), chế độ xem, kích thước, rạp.
 //   2. cc-mode.js     — chế độ phụ đề, ngôn ngữ phụ đề, hàng đợi dịch (translateOne, queueCue, translateWindow…).
 //   3. touch-layout.js (chỉ phần yêu thích) — touchVideoMeta, loadTouchFavorites, setTouchFavorite… (lhnFavoriteVideos).
-// Các hàm còn ghi vào markup cũ đang ẩn sẽ được gỡ ở bước 5. Giao diện đang dùng: js/overlay/unified/.
+// Các hàm còn ghi vào markup cũ đang ẩn sẽ được gỡ ở bước 5. Giao diện đang dùng: js/overlay/ui/.
 
 const THEATER_SUBTITLE_POSITION_SPACE = 'frame-v1';
 function preferredVideoMode() {

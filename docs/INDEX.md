@@ -10,8 +10,7 @@
 | [Content](modules/content.md) | Tương tác trang: highlight, note, Sidebar trang, selection, restore | Sửa luồng website, DOM observer, sidebar trang hoặc annotation UI. |
 | [Core](modules/core.md) | Defaults, config, settings, messaging, languages, cache | Sửa nền tảng dùng chung hoặc thứ tự nạp. |
 | [Dashboard](modules/dashboard.md) | Overview, Listening, Highlights & Notes (LR), flashcards/settings | Sửa `pages/dashboard.html`, LR bridge hoặc chức năng Dashboard. |
-| [Overlay](modules/overlay.md) | Shared Video/Web overlay, Study engine/activities và View modes | Sửa overlay, nguồn Video/Web, Shadowing/Dictation integration hoặc chế độ hiển thị. |
-| [Study](modules/dictation.md) | Dictation/Writing, Shadowing/Speaking, scoring và session persistence | Sửa Study activities, cue sync, chấm điểm hoặc tiến độ. |
+| [Overlay](modules/overlay.md) | Overlay Video/Web, tab Xem · Nói · Chép · Rạp, chấm điểm và lưu tiến độ Study (gộp `dictation.md` ở v3.5.199) | Sửa overlay, nguồn Video/Web, Nói/Chép, chấm điểm, tiến độ hoặc chế độ hiển thị. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
 | [Shared](modules/shared.md) | Custom font, icons, search (index + ranking/highlight), sheet, favicon cache, thumbnails | Sửa helper dùng chung giữa Content/Dashboard/Popup. |
@@ -36,15 +35,15 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Sheet kéo xuống để đóng (mọi sheet) | `js/shared/sheet-kit.js` |
 | Tìm kiếm, lọc danh sách, tô chỗ khớp | `js/shared/search.js` |
 | Reader song ngữ (thanh, giọng, tốc độ) | `js/reader/bilingual-reader.js`; CSS ở `js/reader/reader-css.js`; giọng/âm thanh ở `js/reader/tts-engine.js` |
-| Overlay: giao diện Xem · Nói · Chép · Rạp | `js/overlay/unified/unified-ui.js` + `unified-css.js` |
+| Overlay: giao diện Xem · Nói · Chép · Rạp | `js/overlay/ui/overlay-ui.js` + `overlay-css.js` |
 | Overlay: mở/đóng, phím tắt, phát/tua, xuất file | `js/overlay/overlay-controller.js` |
 | Overlay: phụ đề video / bài viết web | `js/overlay/source/video.js` / `js/overlay/source/web.js` |
-| Overlay: chấm điểm, luật giải câu | `js/overlay/study/shared/` |
+| Overlay: chấm điểm, luật giải câu | `js/overlay/study/` |
 | Overlay: cài đặt, chế độ phụ đề/xem, hàng đợi dịch phụ đề, yêu thích | `js/overlay/overlay-engine.js` |
 | AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
-| Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `unified-ui.js`), trang offline `off_<tên>` |
+| Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |
 | Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
 | Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |

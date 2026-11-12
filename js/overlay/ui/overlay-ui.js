@@ -1,5 +1,5 @@
 // Keepit unified overlay (docs/ui-layout.md) — the approved demo v18 UI on the real overlay engines.
-// Markup + behaviour; styles are UNIFIED_OVERLAY_CSS (unified-css.js); labels are keys ov_* in js/core/languages.js, read with T().
+// Markup + behaviour; styles are UNIFIED_OVERLAY_CSS (overlay-css.js); labels are keys ov_* in js/core/languages.js, read with T().
 // overlay-controller.js mounts it inside the overlay shadow root and keeps every engine (captions, translation,
 // study records, favourites, export) — this file only draws the UI and calls those engines through LHN_UNIFIED_BRIDGE.
 const UNIFIED_OVERLAY_HTML = `

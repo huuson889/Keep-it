@@ -1619,7 +1619,7 @@
     return getSelection();
   }
   const VIDEO_INTERFACE_SELECTOR = "#te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .yt-dual-item, .te-sub-container";
-  // [data-lhn-primary] / [data-lhn-secondary]: the unified overlay (js/overlay/unified) marks its source / translated lines.
+  // [data-lhn-primary] / [data-lhn-secondary]: the unified overlay (js/overlay/ui) marks its source / translated lines.
   const PRIMARY_VIDEO_TRANSCRIPT_SELECTOR = ".te-sub-en, .yt-dual-item-en, [data-lhn-primary]";
   const VIDEO_SUBTITLE_LINE_SELECTOR = ".te-sub-en, .ov .sub-en";
   function selectionElement(node) { return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement; }

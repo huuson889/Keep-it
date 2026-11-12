@@ -36,10 +36,10 @@
 - Quy tắc cấu trúc code:
   - Tìm file cần sửa ở bảng "Sửa nhanh" trong `docs/INDEX.md` trước khi tìm khắp repo.
   - Tái cấu trúc cây thư mục: trước mỗi bước, đọc lại toàn bộ bản ghi `OPT-ARENA.md` 2026-10-23 "Tái cấu trúc cây thư mục…"; không làm khác cây đích ở đó.
-  - Nhãn mới: thêm vào `js/core/languages.js` (`MESSAGES` + `t()`), đủ en/vi/ko; không tạo bảng nhãn riêng trong file khác. Tiền tố khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (gọi `T('<tên>')` trong `unified-ui.js`), trang offline `off_<tên>`.
+  - Nhãn mới: thêm vào `js/core/languages.js` (`MESSAGES` + `t()`), đủ en/vi/ko; không tạo bảng nhãn riêng trong file khác. Tiền tố khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (gọi `T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>`.
   - Màu sáng/tối của thanh Keepit, ☰, Reader, overlay: khai báo một chỗ trong `js/shared/theme-tokens.js` (biến `--kp-…`; CSS thanh ở `js/content/keepit-bar-css.js`, Reader ở `js/reader/reader-css.js`); không rải mã màu mới.
   - Không nối khối vá `/* v3.5.xxx */` vào cuối CSS; sửa thẳng quy tắc gốc, ghi phiên bản vào `PROJECT.md`.
-  - Không tạo thư mục/file `legacy`; code không còn dùng thì xoá. Markup overlay cũ đã xoá (v3.5.197); `#keepit-exact-overlay` chỉ là gốc trạng thái ẩn, không thêm giao diện vào đó — giao diện overlay ở `js/overlay/unified/`.
+  - Không tạo thư mục/file `legacy`; code không còn dùng thì xoá. Markup overlay cũ đã xoá (v3.5.197); `#keepit-exact-overlay` chỉ là gốc trạng thái ẩn, không thêm giao diện vào đó — giao diện overlay ở `js/overlay/ui/`.
   - Chỉ tách file khi file vừa quá lớn vừa có phần thật sự độc lập; không tạo thư mục chỉ có một file.
 - Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
 

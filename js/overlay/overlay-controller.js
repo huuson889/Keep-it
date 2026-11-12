@@ -1,8 +1,34 @@
 // Shared overlay controller and content-script entry. Load after the Overlay modules.
 // ===== Video song ngữ và Web-study – content script (chuyển từ extension tham chiếu v1.12) =====
-// Nạp trước: overlay-template.js (OVERLAY_CSS/OVERLAY_HTML). Giao diện giữ nguyên 100%.
+// Giao diện giữ nguyên 100%.
 // Các "đường nối" đã đổi sang module Keepit: LHN_MESSAGING (fetch bridge), browser.storage (cài đặt),
 // LHN_DEFAULTS.youtube (giá trị mặc định).
+
+// Khung shadow root của overlay (v3.5.199: chuyển nguyên văn từ overlay-template.js): 2 quy tắc CSS chung + gốc trạng thái ẩn. Giao diện: js/overlay/ui/.
+const OVERLAY_CSS = `
+    /* Chỉ còn quy tắc chung cho shadow root. Giao diện overlay đang dùng: js/overlay/ui/overlay-css.js.
+       Phần tử ngoài .ov giữ reset + phông; :host phủ toàn màn hình. */
+    *:not(:is(.ov, .ov *)) {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--lhn-app-font-family, 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+    }
+    :host {
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #000;
+      color: #1f2937;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      z-index: 999998;
+    }
+`;
+// v3.5.197: the legacy overlay markup is gone. This empty, hidden root only carries the engine's state classes
+// (te-subtitle-mode-*, te-reading-mode, te-sidebar-hidden, size-*, theme-*), read by overlay-engine.js and LHN_UNIFIED_BRIDGE.getCc.
+const OVERLAY_HTML = `<div id="keepit-exact-overlay" class="theme-light" hidden></div>`;
 
 const LAUNCHER_ID = 'yt-keepit-launcher';
 const HOST_ID = 'keepit-host';
@@ -702,7 +728,7 @@ function startWebTtsInViewMode() {
   }
 }
 
-// Unified overlay UI (js/overlay/unified). Available when its scripts loaded; active once mounted in buildOverlay.
+// Unified overlay UI (js/overlay/ui). Available when its scripts loaded; active once mounted in buildOverlay.
 function unifiedUiAvailable() {
   return typeof UNIFIED_OVERLAY_HTML === 'string' && typeof UNIFIED_OVERLAY_CSS === 'string' && Boolean(globalThis.LHN_UNIFIED_OVERLAY?.mount);
 }

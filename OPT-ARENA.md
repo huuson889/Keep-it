@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
 
-**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196; bước 5b ở v3.5.197; bước 5c ở v3.5.198.
+**Trạng thái:** Đã triển khai ở v3.5.199 (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196; bước 5b ở v3.5.197; bước 5c ở v3.5.198; bước 5d ở v3.5.199 (`overlay-template.js` chuyển nguyên văn vào đầu `overlay-controller.js` để đúng cây 9 file).
 
 > **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
 

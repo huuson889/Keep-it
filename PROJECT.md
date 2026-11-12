@@ -2,14 +2,14 @@
 
 ## 1. Trạng thái hiện tại
 - Version 3.5.197 (`manifest.json`). Một ZIP + CRX cùng tên cho mọi trình duyệt/thiết bị (Chromium, Firefox ≥147, Edge Android cài bằng CRX).
-- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193, bước 3 ở v3.5.194, bước 4 ở v3.5.195, bước 5a (xoá panel Study cũ, hover-pause) ở v3.5.196, bước 5b (xoá markup overlay cũ) ở v3.5.197, bước 5c (nhãn sang `languages.js`) ở v3.5.198; bước kế tiếp: 5d (đổi tên thư mục overlay).
-- Overlay: giao diện `js/overlay/unified/` chạy trên engine (controller/engine/source); markup cũ đã xoá ở v3.5.197, chỉ còn gốc trạng thái ẩn `#keepit-exact-overlay`; CSS cũ và `view/` đã bỏ ở v3.5.195.
+- Đang làm: tái cấu trúc cây thư mục theo `OPT-ARENA.md` (bản ghi 2026-10-23). Bước 1 xong ở v3.5.192, bước 2 ở v3.5.193, bước 3 ở v3.5.194, bước 4 ở v3.5.195, bước 5a (xoá panel Study cũ, hover-pause) ở v3.5.196, bước 5b (xoá markup overlay cũ) ở v3.5.197, bước 5c (nhãn sang `languages.js`) ở v3.5.198, bước 5d (đổi tên thư mục overlay) ở v3.5.199 — xong cả 5 bước.
+- Overlay (9 file): giao diện `js/overlay/ui/` chạy trên engine (controller/engine/source); markup cũ đã xoá ở v3.5.197, chỉ còn gốc trạng thái ẩn `#keepit-exact-overlay`; CSS cũ và `view/` đã bỏ ở v3.5.195.
 - Kiểm thử: các bản gần đây thử bằng Chromium headless với extension thật; nhiều mục trên máy thật vẫn chưa chạy (mục 2).
 - Nhật ký: mục 5 chỉ giữ ~30 bản mới nhất; bản cũ hơn ở `docs/changelog/`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tái cấu trúc cây thư mục (đang làm)
-- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193; bước 3 (danh sách tính năng overlay cũ ↔ mới, trong bản ghi OPT) ở v3.5.194; người dùng duyệt bỏ cả 5 mục; bước 4 (CSS overlay cũ, `overlay-engine.js`, xoá `view/`) ở v3.5.195. Bước 5 chia 5a–5d vì luật "không vừa chuyển file vừa xoá code": 5a (xoá `study/dictation/`, `study/shadowing/`, `createStudyUi`, hover-pause) ở v3.5.196; 5b (markup cũ + chỗ ghi vào đó) ở v3.5.197; 5c (nhãn `unified-text.js`, `offline-page.js` sang `languages.js`) ở v3.5.198; còn 5d đổi tên thư mục + gộp `dictation.md`.
+### Tái cấu trúc cây thư mục (xong ở v3.5.199)
+- Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193; bước 3 (danh sách tính năng overlay cũ ↔ mới, trong bản ghi OPT) ở v3.5.194; người dùng duyệt bỏ cả 5 mục; bước 4 (CSS overlay cũ, `overlay-engine.js`, xoá `view/`) ở v3.5.195. Bước 5 chia 5a–5d vì luật "không vừa chuyển file vừa xoá code": 5a (xoá `study/dictation/`, `study/shadowing/`, `createStudyUi`, hover-pause) ở v3.5.196; 5b (markup cũ + chỗ ghi vào đó) ở v3.5.197; 5c (nhãn `unified-text.js`, `offline-page.js` sang `languages.js`) ở v3.5.198; 5d (đổi tên thư mục, gộp `dictation.md`) ở v3.5.199.
 
 ### Áp dụng nguyên tắc giao diện (`docs/ui-layout.md`)
 - (1) Overlay: xong ở v3.5.171 (demo v18). Còn lại, mỗi bước 1 bản: (2) Reader + thanh Keepit; (3) Dashboard + popup dịch/từ điển dạng sheet. Ghi chú cũ: Thứ tự đề xuất, mỗi bước 1 bản: (1) Overlay — demo overlay đồng bộ v2 theo nguyên tắc (demo v1 `keepit-overlay-unified-demo-v1.html` còn 3 lớp bề rộng, chưa duyệt) + tim nhấp đúp video trên máy tính; (2) Reader + thanh Keepit; (3) Dashboard (bỏ mức tablet) + popup dịch/từ điển dạng sheet khi màn dọc trên mọi trang.
@@ -121,10 +121,9 @@ Keepit - Test/
 │   ├── dashboard/                 # Dashboard routes, settings, account, backup, stats; responsive-nav.js = điều hướng điện thoại/tablet
 │   ├── overlay/                   # Shared Video/Web overlay, Study engine/activities and View modes
 │   │   ├── overlay-controller.js  # Lifecycle, source/activity routing and bootstrap
-│   │   ├── overlay-template.js    # Gốc trạng thái ẩn `#keepit-exact-overlay` + 2 quy tắc CSS chung; không thêm giao diện ở đây
-│   │   ├── unified/               # Giao diện overlay ĐANG DÙNG (demo v18): unified-ui.js, unified-css.js (nhãn: khoá `ov_*` trong languages.js)
+│   │   ├── ui/                    # Giao diện overlay (demo v18): overlay-ui.js, overlay-css.js (nhãn: khoá `ov_*` trong languages.js)
 │   │   ├── source/                # YouTube captions/timing and Reader cues
-│   │   ├── study/shared/          # study-score, learning-rules, session-index (chấm điểm, luật, chỉ mục cho Dashboard)
+│   │   ├── study/                 # study-score, learning-rules, session-index (chấm điểm, luật, chỉ mục cho Dashboard)
 │   │   ├── overlay-engine.js      # Cài đặt, chế độ xem/phụ đề, hàng đợi dịch phụ đề, yêu thích (từ view/ cũ, v3.5.195)
 │   ├── popup/                     # popup.js (entry)
 │   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
@@ -199,6 +198,14 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-10-23 | v3.5.199 | Arena.ai Agent sửa:**
+
+- Tái cấu trúc bước 5d, bước cuối (chỉ chuyển/đổi tên, không xoá code, không đổi giao diện/hành vi): `js/overlay/unified/unified-ui.js` → `js/overlay/ui/overlay-ui.js`, `unified-css.js` → `ui/overlay-css.js`, `js/overlay/study/shared/*` → `js/overlay/study/`.
+- `overlay-template.js` (cây đích ghi "xoá hẳn"): `OVERLAY_CSS` (2 quy tắc) + `OVERLAY_HTML` (gốc trạng thái ẩn) chuyển nguyên văn lên đầu `overlay-controller.js`. Overlay còn 9 file như cây đích.
+- Tên biến/global (`UNIFIED_OVERLAY_*`, `LHN_UNIFIED_*`) giữ nguyên để không đổi code. Khoá lưu trữ không đổi.
+- `docs/modules/dictation.md` gộp vào `overlay.md` (mục "Study: tab Nói · Chép"). `DATA-INVENTORY.md`: sửa đường dẫn/số dòng (đang trỏ vào file đã xoá ở v3.5.195–196).
+- File: `manifest.json`, `pages/dashboard.html` (`session-index.js`), `js/overlay/*` (đổi tên + chú thích đường dẫn), `js/core/languages.js`, `js/content/content.js` (chú thích), `README.md`, `AGENTS.md`, `DATA-INVENTORY.md`, `docs/INDEX.md`, `docs/modules/{overlay,dashboard}.md`, `docs/modules/dictation.md` (xoá), `OPT-ARENA.md` (Đã triển khai).
 
 **2026-10-23 | v3.5.198 | Arena.ai Agent sửa:**
 

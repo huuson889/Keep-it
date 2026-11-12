@@ -730,7 +730,7 @@
   MESSAGES.en.bar_pdark = "Dark pages"; MESSAGES.vi.bar_pdark = "Trang tối"; MESSAGES.ko.bar_pdark = "어두운 페이지";
   MESSAGES.en.bar_pdarkTip = "Darken web pages when the app theme is dark"; MESSAGES.vi.bar_pdarkTip = "Làm tối trang web khi app ở Chủ đề tối"; MESSAGES.ko.bar_pdarkTip = "앱 테마가 어두우면 웹 페이지도 어둡게";
   MESSAGES.en.bar_pdarkLight = "Dark pages work with the dark theme"; MESSAGES.vi.bar_pdarkLight = "Trang tối có tác dụng khi Chủ đề tối"; MESSAGES.ko.bar_pdarkLight = "어두운 페이지는 어두운 테마에서 작동합니다";
-  // Overlay (js/overlay/unified/unified-ui.js): khoá ov_<tên>, đọc bằng T(). Thêm nhãn mới cho overlay ở đây, đủ en/vi/ko.
+  // Overlay (js/overlay/ui/overlay-ui.js): khoá ov_<tên>, đọc bằng T(). Thêm nhãn mới cho overlay ở đây, đủ en/vi/ko.
   MESSAGES.en.ov_aTemporaryMemoryOnly = "A temporary memory-only recording plays locally; Keepit does not save or upload it. Browser speech recognition may process your audio."; MESSAGES.vi.ov_aTemporaryMemoryOnly = "Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện."; MESSAGES.ko.ov_aTemporaryMemoryOnly = "임시 녹음은 메모리에서만 재생되며 Keepit은 저장하거나 업로드하지 않습니다. 브라우저가 음성을 처리할 수 있습니다.";
   MESSAGES.en.ov_accentColor = "Accent color"; MESSAGES.vi.ov_accentColor = "Màu chủ đề"; MESSAGES.ko.ov_accentColor = "테마 색상";
   MESSAGES.en.ov_addedToFavorites = "Added to favorites"; MESSAGES.vi.ov_addedToFavorites = "Đã thêm vào yêu thích"; MESSAGES.ko.ov_addedToFavorites = "즐겨찾기에 추가했습니다";
