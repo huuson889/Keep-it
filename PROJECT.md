@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.200 | Arena.ai Agent sửa:**
+
+- Overlay: khi bật Hiệu ứng nền, mọi sheet (dọc) và panel (ngang) — ☰ Thêm, tốc độ, CC, lặp, âm lượng, cài đặt, ghi chú… — dùng kính giống thanh Keepit chính: tối `rgba(24,24,28,.78)`, sáng `rgba(255,255,255,.78)`, `blur(24px) saturate(1.6)`. Tắt Hiệu ứng nền thì giữ nền đặc như cũ.
+- Màu lấy từ `js/shared/theme-tokens.js`: `UNIFIED_OVERLAY_CSS` bắt đầu bằng `LHN_THEME.css('.ov')`; 2 quy tắc `.ov.ambient .pnl` / `.ov.ambient.light .pnl`.
+- File: `js/overlay/ui/overlay-css.js`, `js/shared/theme-tokens.js` (chú thích), `manifest.json`, `docs/INDEX.md`, `docs/modules/overlay.md`.
+- Kiểm tra: Chromium, extension thật, overlay Web, dọc/ngang × sáng/tối, panel ☰/tốc độ/CC. Bật hiệu ứng: panel `rgba(…,.78)` + `blur(24px) saturate(1.6)`, ảnh chỉ khác v3.5.199 trong vùng panel. Tắt hiệu ứng: ảnh giống v3.5.199 từng pixel. Không lỗi trang.
+
 **2026-10-23 | v3.5.199 | Arena.ai Agent sửa:**
 
 - Tái cấu trúc bước 5d, bước cuối (chỉ chuyển/đổi tên, không xoá code, không đổi giao diện/hành vi): `js/overlay/unified/unified-ui.js` → `js/overlay/ui/overlay-ui.js`, `unified-css.js` → `ui/overlay-css.js`, `js/overlay/study/shared/*` → `js/overlay/study/`.

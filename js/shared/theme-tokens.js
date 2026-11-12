@@ -1,5 +1,5 @@
-// Keepit — màu kính sáng/tối DÙNG CHUNG cho thanh Keepit, menu ☰ (js/content/keepit-bar-css.js) và Reader
-// (js/reader/reader-css.js). Đổi màu ở đây là cả hai đổi theo; CSS chỉ dùng var(--kp-…), không viết lại mã màu.
+// Keepit — màu kính sáng/tối DÙNG CHUNG cho thanh Keepit, menu ☰ (js/content/keepit-bar-css.js), Reader
+// (js/reader/reader-css.js) và sheet/panel overlay khi bật Hiệu ứng nền (js/overlay/ui/overlay-css.js). Đổi màu ở đây là tất cả đổi theo; CSS chỉ dùng var(--kp-…), không viết lại mã màu.
 // -l = chủ đề sáng, -d = chủ đề tối. css(selector) trả về khối biến để chèn trước CSS của từng giao diện.
 (() => {
   const TOKENS = Object.freeze({

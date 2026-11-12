@@ -1,6 +1,7 @@
 // Overlay — unified UI styles (demo keepit-overlay-unified-demo-v18.html, docs/ui-layout.md).
 // Injected into the overlay shadow root next to the legacy markup; every rule is scoped under .ov.
-const UNIFIED_OVERLAY_CSS = String.raw`*{box-sizing:border-box}
+// v3.5.200: LHN_THEME.css('.ov') = biến kính --kp-* dùng chung với thanh Keepit (js/shared/theme-tokens.js).
+const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-sizing:border-box}
 .ov button{font:inherit;color:inherit}
 /* ======================================================================
    OVERLAY — one shell for every device: header · body · dock
@@ -285,6 +286,8 @@ const UNIFIED_OVERLAY_CSS = String.raw`*{box-sizing:border-box}
 .ov.ambient .scard .tg:not(.on){background:transparent;border-color:color-mix(in srgb,var(--tx) 12%,transparent)}
 .ov.ambient .stage>*{position:relative;z-index:1}
 .ov.ambient .stage>.player{position:relative}
+.ov.ambient .pnl{background:var(--kp-glass-d);-webkit-backdrop-filter:var(--kp-blur);backdrop-filter:var(--kp-blur)}
+.ov.ambient.light .pnl{background:var(--kp-glass-l)}
 
 /* ---------- study card ---------- */
 .scard{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--pn);border:1px solid var(--bd);border-radius:20px;overflow:hidden;touch-action:pan-y;transition:transform .25s,opacity .25s}
