@@ -116,6 +116,7 @@
   // v3.5.179: the Keepit for Android browser adds its own tiles/dialogs (History, Bookmark, Add to Home screen, Text size,
   // Dark pages) through LHN_ANDROID_UI (APK asset android/browser-ui.js); on the APK start/offline page, page commands wait
   const AUI = () => isApk() ? globalThis.LHN_ANDROID_UI || null : null;
+  const PD = () => isApk() ? null : globalThis.LHN_PAGE_DARK || null; // Trang tối của extension (js/content/page-dark.js)
   const onHome = () => HOMEPAGE || !!AUI()?.onHome?.();
   const isWide = () => isDesk() ? innerWidth >= 760 : innerWidth >= 900 && innerHeight >= 600;
   const isPland = () => isTouch() && !isWide() && innerWidth > innerHeight && innerHeight < 500;
@@ -541,6 +542,23 @@
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
   // v7: tapping inside ☰ never jumps to the top — keep the scroll position when the same pane is redrawn
+  // v3.5.208: Cỡ chữ (extension) = Cỡ chữ trang của APK: 50–200 %, bước 10, có xem trước và Đặt lại.
+  // Extension không có textZoom của WebView nên dùng mức thu phóng của trình duyệt cho tab này (background PAGE_ZOOM_*).
+  let extZoom = 100, zoomT = 0;
+  async function readZoom() { const r = await send("PAGE_ZOOM_GET"); if (r?.ok && r.value !== extZoom) { extZoom = r.value; if ($("sheet")?.classList.contains("open")) renderSheet(); } }
+  function setZoom(v) {
+    extZoom = Math.min(200, Math.max(50, Math.round(v / 10) * 10)); clearTimeout(zoomT);
+    zoomT = setTimeout(async () => { const r = await send("PAGE_ZOOM_SET", { value:extZoom }); if (!r?.ok) toast(t("zoomFail")); }, 60);
+  }
+  function zoomPaneSync() {
+    const panel = $("panel"), r = panel.querySelector("#zr"); if (!r) return;
+    r.value = extZoom; panel.querySelector("#zo").textContent = extZoom + "%"; panel.querySelector("#zp").style.fontSize = (15 * extZoom / 100) + "px";
+  }
+  function zoomHTML() {
+    return `<div class="zprev" id="zp">${esc(t("zoomPrev"))}</div>
+    <div class="zrow"><span style="font-size:13px">A</span><input id="zr" type="range" min="50" max="200" step="10" value="${extZoom}" aria-label="${esc(t("zoomT"))}"><span style="font-size:21px">A</span><output id="zo">${extZoom}%</output></div>
+    <div class="zact"><button class="zbtn" type="button" data-q="zreset">${esc(t("zoomReset"))}</button><span class="sp"></span><button class="zbtn pri" type="button" data-q="back">${esc(t("zoomDone"))}</button></div>`;
+  }
   let sheetPaneDrawn = "";
   function renderSheet() {
     const panel = $("panel"), same = sheetPaneDrawn === S.sheetPane && $("sheet").classList.contains("open"), top = same ? panel.querySelector(".sbody")?.scrollTop || 0 : 0;
@@ -552,6 +570,11 @@
     if (S.sheetPane === "keys") {
       panel.innerHTML = `<div class="grip"></div><div class="shead"><button class="sx" type="button" data-q="back" aria-label="${esc(t("back"))}">${ic("left")}</button><b>${esc(t(isDesk() ? "keys" : "gestures"))}</b><span class="sp"></span></div><div class="sbody">${keysHTML()}</div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>`;
       requestAnimationFrame(updFade); return;
+    }
+    if (S.sheetPane === "zoom") {
+      panel.innerHTML = `<div class="grip"></div><div class="shead"><button class="sx" type="button" data-q="back" aria-label="${esc(t("back"))}">${ic("left")}</button><b>${esc(t("zoomT"))}</b><span class="sp"></span></div><div class="sbody">${zoomHTML()}</div>`;
+      panel.querySelector("#zr").addEventListener("input", ev => { setZoom(+ev.target.value); zoomPaneSync(); });
+      zoomPaneSync(); return;
     }
     const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[2]][1]));
     // v3.5.179: Keepit for Android (LHN_ANDROID_UI) = the demo v12 ☰ (Công cụ · Trang này · Khi chọn chữ · Màu · Trình đọc ·
@@ -583,7 +606,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
+    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkTip"))}${tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
   <div class="mfoot">${foot("home", "home", t("home"), undefined, t("homeTip"))}${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
@@ -649,6 +672,7 @@
     introDone(); closePop(); hideCoach(); S.sheetPane = "main"; const panel = $("panel");
     panel.classList.remove("full"); panel.style.maxHeight = ""; fontOn = globalThis.LHN_READER_BAR?.webFont?.() ?? fontOn; renderSheet(); setTimeout(updFade, 320);
     $("sheet").classList.add("open"); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); anchorPanel();
+    if (!AUI()) void readZoom();
   }
   function closeSheet() {
     if (!$("sheet")?.classList.contains("open")) return;
@@ -680,6 +704,8 @@
     const b = e.target.closest("[data-q]"); if (!b) return;
     const a = b.dataset.q, home0 = onHome();
     if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
+    if (a === "zoom" && !AUI()) { S.sheetPane = "zoom"; renderSheet(); anchorPanel(); void readZoom(); return; }
+    if (a === "zreset") { setZoom(100); zoomPaneSync(); return; }
     if (a === "compact") { if (S.autoFive) { toast(t("compactAutoToast")); return; } S.five = !S.five; persist(); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t(S.five ? "five" : "seven")); return; }
     if (a.startsWith("g:")) { const k = a.slice(2), st = panel.querySelector(".sbody").scrollTop; S.gest[k] = !S.gest[k]; persist(); renderSheet(); panel.querySelector(".sbody").scrollTop = st; toast(t(S.gest[k] ? "on" : "off") + t(k === "nav" ? "navG" : "trG")); return; }
     if (a.startsWith("rd:")) { const on = globalThis.LHN_READER_BAR?.toggleTile?.(a.slice(3)); renderSheet(); toast(t(on ? "on" : "off") + b.textContent.trim()); return; }
@@ -688,7 +714,7 @@
     if (a === "font") { await toggleFont(); return; }
     if (a === "btop") { S.btop = !S.btop; persist(); renderSheet(); updBtop(); toast(t(S.btop ? "btopOn" : "btopOff")); return; }
     if (home0 && ["reload", "share", "mark", "addhome", "site", "restore"].includes(a)) { closeSheet(); toast(t("brNeed")); return; }
-    if (a === "pdark") { const on = !!AUI()?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
+    if (a === "pdark") { const on = !!(AUI() || PD())?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }

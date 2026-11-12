@@ -198,6 +198,14 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
  if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
   if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
   if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
+  // v3.5.208: ☰ → Cỡ chữ (như Cỡ chữ trang của APK) = mức thu phóng của trình duyệt cho chính tab đó (trình duyệt tự nhớ theo trang web), 50–200 %.
+  if (message.type === "PAGE_ZOOM_GET" || message.type === "PAGE_ZOOM_SET") {
+    const tabId = sender.tab?.id; if (typeof tabId !== "number" || !browser.tabs?.getZoom) return { ok:false };
+    try {
+      if (message.type === "PAGE_ZOOM_SET") { const pct = Math.min(200, Math.max(50, Math.round(Number(message.value) / 10) * 10 || 100)); await browser.tabs.setZoom(tabId, pct / 100); }
+      return { ok:true, value:Math.round((await browser.tabs.getZoom(tabId)) * 100) };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
   if (message.type === "GET_ALL") return ANNOTATIONS.getAll();
   if (message.type === "GET_BATCH") return ANNOTATIONS.getBatch(message);
   if (message.type === "GET_PAGE") return ANNOTATIONS.getPage(message.url);

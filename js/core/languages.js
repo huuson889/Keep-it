@@ -725,10 +725,15 @@
   MESSAGES.en.bar_brHome = "Add to Home screen"; MESSAGES.vi.bar_brHome = "Thêm màn hình"; MESSAGES.ko.bar_brHome = "홈 화면에 추가";
   MESSAGES.en.bar_brNeed = "Open a web page first"; MESSAGES.vi.bar_brNeed = "Hãy mở một trang web trước"; MESSAGES.ko.bar_brNeed = "먼저 웹 페이지를 여세요";
   MESSAGES.en.bar_hist = "History"; MESSAGES.vi.bar_hist = "Lịch sử"; MESSAGES.ko.bar_hist = "방문 기록";
+  MESSAGES.en.bar_zoomT = "Page text size"; MESSAGES.vi.bar_zoomT = "Cỡ chữ trang"; MESSAGES.ko.bar_zoomT = "페이지 글자 크기";
+  MESSAGES.en.bar_zoomPrev = "Keep exploring everything. Drag the slider to make this page bigger or smaller."; MESSAGES.vi.bar_zoomPrev = "Keep exploring everything. Kéo thanh trượt để phóng to hoặc thu nhỏ trang này."; MESSAGES.ko.bar_zoomPrev = "Keep exploring everything. 슬라이더를 끌어 이 페이지를 크게 또는 작게 하세요.";
+  MESSAGES.en.bar_zoomReset = "Reset"; MESSAGES.vi.bar_zoomReset = "Đặt lại"; MESSAGES.ko.bar_zoomReset = "초기화";
+  MESSAGES.en.bar_zoomDone = "Done"; MESSAGES.vi.bar_zoomDone = "Xong"; MESSAGES.ko.bar_zoomDone = "완료";
+  MESSAGES.en.bar_zoomFail = "This browser can't change the page size"; MESSAGES.vi.bar_zoomFail = "Trình duyệt này không cho đổi cỡ trang"; MESSAGES.ko.bar_zoomFail = "이 브라우저에서는 페이지 크기를 바꿀 수 없습니다";
   MESSAGES.en.bar_zoom = "Text size"; MESSAGES.vi.bar_zoom = "Cỡ chữ"; MESSAGES.ko.bar_zoom = "글자 크기";
   MESSAGES.en.bar_zoomTip = "Make text on web pages bigger or smaller"; MESSAGES.vi.bar_zoomTip = "Phóng to / thu nhỏ chữ trên trang web"; MESSAGES.ko.bar_zoomTip = "웹 페이지 글자를 크게 / 작게";
   MESSAGES.en.bar_pdark = "Dark pages"; MESSAGES.vi.bar_pdark = "Trang tối"; MESSAGES.ko.bar_pdark = "어두운 페이지";
-  MESSAGES.en.bar_pdarkTip = "Darken web pages when the app theme is dark"; MESSAGES.vi.bar_pdarkTip = "Làm tối trang web khi app ở Chủ đề tối"; MESSAGES.ko.bar_pdarkTip = "앱 테마가 어두우면 웹 페이지도 어둡게";
+  MESSAGES.en.bar_pdarkTip = "Darken web pages when the Keepit theme is dark"; MESSAGES.vi.bar_pdarkTip = "Làm tối trang web khi Keepit ở Chủ đề tối"; MESSAGES.ko.bar_pdarkTip = "Keepit 테마가 어두우면 웹 페이지도 어둡게";
   MESSAGES.en.bar_pdarkLight = "Dark pages work with the dark theme"; MESSAGES.vi.bar_pdarkLight = "Trang tối có tác dụng khi Chủ đề tối"; MESSAGES.ko.bar_pdarkLight = "어두운 페이지는 어두운 테마에서 작동합니다";
   // Overlay (js/overlay/ui/overlay-ui.js): khoá ov_<tên>, đọc bằng T(). Thêm nhãn mới cho overlay ở đây, đủ en/vi/ko.
   MESSAGES.en.ov_aTemporaryMemoryOnly = "A temporary memory-only recording plays locally; Keepit does not save or upload it. Browser speech recognition may process your audio."; MESSAGES.vi.ov_aTemporaryMemoryOnly = "Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện."; MESSAGES.ko.ov_aTemporaryMemoryOnly = "임시 녹음은 메모리에서만 재생되며 Keepit은 저장하거나 업로드하지 않습니다. 브라우저가 음성을 처리할 수 있습니다.";

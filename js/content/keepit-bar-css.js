@@ -100,6 +100,18 @@ button,input{font-family:inherit}
 .krow>span{flex:1;min-width:0}
 .krow kbd{flex:none;max-width:56%;text-align:right;font-family:inherit;font-size:12px;font-weight:600;line-height:1.35;background:rgba(148,163,184,.16);border-radius:6px;padding:4px 7px;color:#7c3aed;white-space:normal}
 .dark .krow kbd{color:#c4b5fd}
+.zprev{display:flex;align-items:center;min-height:96px;margin:2px 0 14px;padding:14px 16px;border-radius:16px;border:1px solid var(--kp-line-l);background:var(--kp-tile-l);color:var(--kp-tx-strong-l);line-height:1.45}
+.dark .zprev{border-color:var(--kp-line-d);background:var(--kp-tile-d);color:var(--kp-tx-strong-d)}
+.zrow{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.zrow span{flex:none;font-weight:700;color:#64748b}
+.dark .zrow span{color:#a1a1aa}
+.zrow input{flex:1;min-width:0;height:28px;margin:0;accent-color:#7c3aed}
+.zrow output{flex:none;width:48px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.zact{display:flex;align-items:center;gap:10px;padding-bottom:4px}
+.zact .sp{flex:1}
+.zbtn{height:38px;padding:0 18px;border-radius:12px;border:1px solid rgba(148,163,184,.4);background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.dark .zbtn{border-color:rgba(255,255,255,.18)}
+.zbtn.pri{border-color:#7c3aed;background:#7c3aed;color:#fff}
 .knew{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:#9c27b0;border-radius:5px;padding:1px 5px;margin-left:4px;vertical-align:1px}
 .wide .panel{left:auto;width:400px;max-height:min(640px,84%);border-radius:20px;padding:12px 14px 14px;border:1px solid rgba(148,163,184,.28);box-shadow:0 18px 40px rgba(15,23,42,.18);transform:translateY(10px);opacity:0;transition:transform .2s,opacity .2s}
 .wide.dark .panel{border-color:rgba(148,163,184,.2)}

@@ -199,6 +199,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.208 | Arena.ai Agent sửa:**
+
+- Thêm Cỡ chữ trang của APK vào extension: ô ☰ → Giao diện → Cỡ chữ (sau Trang tối; hiện "Cỡ chữ 150%" và sáng lên khi khác 100%). Bấm mở trang con giống hộp của APK: chữ xem trước, thanh trượt A–A 50–200 % bước 10, Đặt lại, Xong.
+- Khác APK: extension không có textZoom của WebView nên dùng mức thu phóng của trình duyệt cho tab (`tabs.setZoom`, như Ctrl +/−): phóng cả trang (chữ, ảnh, khung), trình duyệt tự nhớ theo từng trang web. Không cần quyền mới. Trang tối đã có từ v3.5.207.
+- File: `js/background/background.js` (`PAGE_ZOOM_GET`/`PAGE_ZOOM_SET`), `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js` (5 nhãn en/vi/ko), `manifest.json`, `docs/modules/content.md`, `docs/INDEX.md`. Không lưu dữ liệu mới.
+- Kiểm tra: Chromium + extension thật: ô hiện trong ☰; trang con mở đúng; kéo 150 → tab 150 %, ô "150%" sáng; tải lại vẫn 150 %; Đặt lại → 100 %; sáng/tối đều đúng màu. 0 lỗi trang.
+
+**2026-10-23 | v3.5.207 | Arena.ai Agent sửa:**
+
+- Thêm Trang tối của APK vào extension: ô ☰ → Giao diện → Trang tối (cạnh Chủ đề). Khi Chủ đề Keepit tối, trang web sáng được làm tối (lớp phủ đảo màu như APK), ảnh/video giữ màu; thanh Keepit, Ghi chú, popup giữ màu riêng; trang vốn tối để nguyên; tạm ẩn khi overlay video mở. Chủ đề sáng → tự tắt, tối lại → tự bật. Giữ qua tải lại trang.
+- Mặc định tắt trên extension (APK mặc định bật) để người dùng cập nhật không bị đổi màu mọi trang bất ngờ.
+- File mới `js/content/page-dark.js` (`LHN_PAGE_DARK`); `js/content/keepit-bar.js` (ô + nút dùng chung với APK), `js/core/languages.js` (gợi ý: "app" → "Keepit"), `manifest.json`, `DATA-INVENTORY.md` (`lhnPageDark`), `docs/modules/content.md`, `docs/INDEX.md`. APK không chạy file mới (app có bản riêng).
+- Kiểm tra: Chromium + extension thật, Chủ đề tối: mặc định không có lớp phủ; bấm ô → bật (ô sáng, lưu `lhnPageDark: true`), trang tối, ảnh đỏ vẫn đỏ, header cố định vẫn đúng chỗ; overlay mở → ẩn, đóng → hiện; Chủ đề sáng → tắt, tối → bật; tải lại → vẫn bật; trang vốn tối → không đổi; Ghi chú mở trên trang tối giữ màu; bấm lại → tắt. 0 lỗi trang.
+
 **2026-10-23 | v3.5.206 | Arena.ai Agent sửa:**
 
 - Overlay: Phụ đề cuộn (tab Xem) theo cùng Chế độ phụ đề với phụ đề video (Song ngữ · Bản gốc · Bản dịch · Ẩn, cả phím 1–4). Bản dịch: câu chưa có bản dịch vẫn hiện dòng gốc. Ẩn: chỉ còn mốc thời gian (vẫn bấm để nhảy câu). Tab Nói/Chép giữ nguyên. Chỉ thêm CSS, không đổi logic/lưu trữ.
