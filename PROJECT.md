@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.212 | Arena.ai Agent sửa:**
+
+- Trang tối trên edition.cnn.com (v3.5.211 chưa sửa được): ảnh thành ô tối trơn. Nguyên nhân thật: filter đặt trên `<picture>` làm nó thành khung chứa của `<img>` (CNN đặt `<img position:absolute>` trong `<picture>` cao 0px) → ảnh co mất. Trước v3.5.211 cả `<picture>` và `<img>` đều bị đảo → ảnh âm bản. Sửa: không đảo `<picture>`, chỉ đảo `<img>`.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chrome 157 thật của người dùng (điều khiển qua `--remote-debugging-port` + cloudflared), Keepit v3.5.211 + CSS mới tiêm trực tiếp: trang chủ CNN tối, mọi ảnh (đầu trang, US Politics, Sports, Health…) đúng màu thật, quảng cáo đúng màu. Còn: dải quảng cáo vốn đen của CNN thành trắng (trang nửa sáng nửa tối — giới hạn của lớp phủ).
+
 **2026-10-23 | v3.5.211 | Arena.ai Agent sửa:**
 
 - Trang tối trên edition.cnn.com: ảnh bị âm bản và khu "More from CNN" sáng ngược lại kèm ảnh/chữ đen. Nguyên nhân: (1) ảnh trong `<picture>` bị đảo 2 lần (khung + ảnh); (2) mọi khối có chữ "background-image" trong style (kể cả `background-image:none`) bị đảo cả khu. Sửa: chỉ đảo khối có ảnh nền thật (`url(`); khung ảnh lồng nhau chỉ đảo 1 lần.

@@ -11,8 +11,10 @@
   const DARK_Q = matchMedia("(prefers-color-scheme: dark)");
   // Ảnh/video được đảo lại 1 lần để giữ màu thật. v3.5.211: chỉ khối có ảnh nền thật (`url(`), không bắt mọi style có chữ
   // "background-image" (CNN: cả khu lớn có `background-image:none` → cả khu sáng lại); khung ảnh lồng trong khung ảnh
-  // (`<picture><img>`, ảnh trong khối ảnh nền) không đảo thêm, nếu không ảnh thành âm bản.
-  const MEDIA = 'img,video,picture,canvas,iframe,embed,object,svg image,[style*="url("]';
+  // (ảnh trong khối ảnh nền) không đảo thêm, nếu không ảnh thành âm bản.
+  // v3.5.212: KHÔNG đặt filter lên <picture> — filter biến nó thành khung chứa của <img position:absolute> bên trong; CNN
+  // dùng <picture> cao 0px nên ảnh co mất, chỉ còn ô tối. Ảnh của <picture> luôn là <img> nên đảo <img> là đủ.
+  const MEDIA = 'img,video,canvas,iframe,embed,object,svg image,[style*="url("]';
   const DARK_CSS = `:is(${MEDIA}){filter:invert(1) hue-rotate(180deg)!important}:is(${MEDIA}) :is(${MEDIA}){filter:none!important}`;
   let on = false, theme = "", darkStyle = null, darkVeil = null, loaded = false;
   // Chủ đề Keepit đọc giống thanh Keepit (settings đã qua LHN_SETTINGS.resolve).
