@@ -48,8 +48,8 @@ Keepit — 27 module chức năng
     ├── Usage
     └── Diagnostics
 
-Entry point (chỉ khởi tạo/nối module): background.js, content.js,
-popup.js, dashboard.js.
+Entry point (chỉ khởi tạo/nối module): js/background/background.js,
+js/content/content.js, js/popup/popup.js, js/dashboard/dashboard.js.
 ```
 
 ### 2.1. Thứ tự triển khai
@@ -100,7 +100,7 @@ Note Composer ──> SentenceNote / Highlighter / Translate / Dictionary / TTS
                └──> Annotations (lưu/đọc)
 Sidebar ──> Annotations / Search / Highlighter / TTS / Page Layout
 Library ──> Annotations / Search / Flashcards / Backup
-Dashboard (dashboard.js) ──> Settings / Library / Account / Backup
+Dashboard (js/dashboard/dashboard.js) ──> Settings / Library / Account / Backup
 Library ──> Annotations / Search / Flashcards / Backup
 Các giao diện ──> UI Components / Icons / Languages / Themes khi cần
 
@@ -112,7 +112,7 @@ Messaging chỉ chuyển request/response/thông báo; Annotations là một ngu
 
 
 ```text
-Dashboard (dashboard.js)
+Dashboard (js/dashboard/dashboard.js)
 └── gọi/mount → Account (module độc lập)
     ├── Account UI / controller
     ├── Profile và trạng thái gói

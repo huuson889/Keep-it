@@ -89,25 +89,24 @@ Firefox removes temporary add-ons when it restarts; repeat the steps to test aga
 
 ## Project structure
 
-- `manifest.json`: extension manifest (Chromium uses `background.service_worker`, Firefox uses `background.scripts`)
-- `background.js`: IndexedDB storage, import/export, translation and TTS requests, usage limits
-- `content.js` / `content.css` / `content-theme.css`: page events, note popovers, sidebar, shortcuts
-- `web-highlighter.js`: highlight wrapping and restoration
-- `bilingual-reader.js` / `bilingual-flags.js`: Bilingual Reader, reading bar, Select Voice
-- `lib/Readability.js`, `lib/Readability-readerable.js`: main-content detection
-- `tts-engine.js`: Google TTS and browser-voice playback, language detection, voice settings
-- `study-translation.js` / `study-utils.js` / `study-view.js`: translation helpers and flashcard study view
-- `popup.html` / `popup.js` / `popup.css`: toolbar popup
-- `dashboard.html` / `dashboard.js` / `dashboard.css`: Dashboard
-- `config.js`: single source of truth for storage keys, default settings, and shared values
-- `i18n.js`: English, Vietnamese, and Korean strings
-- `usage-limits.js`, `error-logger.js`, `custom-font.js`, `browser-polyfill.js`, `ui-tokens.css`, `ui-theme.css`
+- `manifest.json`: extension entry points and permissions; keep it at the repository root.
+- `pages/`: `dashboard.html` and `popup.html` UI entry points.
+- `js/core/`: browser polyfill, shared configuration, languages, settings, messaging, cache, and shortcuts.
+- `js/background/`: background service worker, annotation storage, usage limits, and error logging.
+- `js/content/`: page content entry point, highlighting, notes, sidebar, page layout, and shared page UI.
+- `js/reader/`: Bilingual Reader, TTS engine, and reader voice flags.
+- `js/translate/`: translation, dictionary, search, and study translation modules.
+- `js/dashboard/`: Dashboard, flashcard study, account, library, backup, and flag modules.
+- `js/popup/` and `js/shared/`: toolbar popup entry point and cross-surface helpers.
+- `css/content/`, `css/dashboard/`, `css/popup/`, `css/shared/`: styles grouped by surface and shared theme tokens.
+- `assets/icons/` and `assets/fonts/`: local icons and fonts; `vendor/readability/`: Mozilla Readability sources.
+- `licenses/`: third-party license texts; `AGENTS.md`, `PROJECT.md`, and `OPT-ARENA.md`: contributor rules, project handoff, and architecture plan.
 
 ## Development
 
 - There is no build step: the folder is the extension.
-- Shared code uses the `browser.*` namespace through `browser-polyfill.js`.
-- Keep shared defaults in `config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
+- Shared code uses the `browser.*` namespace through `js/core/browser-polyfill.js`.
+- Keep shared defaults in `js/core/config.js`; avoid duplicating them across the popup, Dashboard, content script, and background script.
 
 ## Third-party components and licenses
 
