@@ -199,6 +199,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.214 | Arena.ai Agent sửa:**
+
+- Trang tối không còn áp dụng chồng lên các phần đã có giao diện tối riêng của Keepit:
+  - Ghi chú: logo, favicon, ảnh thu nhỏ không bị đảo màu nữa (Ghi chú giữ đúng giao diện tối riêng).
+  - Highlight trên trang: hiện như trên web nền đen (màu tô gốc + chữ đen), không bị lớp phủ biến thành màu tô sậm.
+  - Reader: thẻ dịch và loa giữ đúng màu nhấn tím (trước bị đổi thành hồng); chữ dịch màu mặc định sáng lên như trên nền đen; màu chữ người dùng tự chọn giữ nguyên. Thanh Reader, popup dịch / từ điển / thanh chọn chữ không bị đảo ảnh bên trong.
+- File: `js/content/page-dark.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật, trang bài viết sáng, Chủ đề tối + Trang tối: trang tối; highlight vàng nhạt chữ đen; thẻ dịch viền tím, chữ sáng; Ghi chú mở bằng nút trên thanh: giao diện tối, logo tím đúng màu, ảnh trong Ghi chú không bị đảo. 0 lỗi trang.
+
 **2026-10-23 | v3.5.213 | Arena.ai Agent sửa:**
 
 - Trang tối trên edition.cnn.com vẫn lỗi ở v3.5.212: cuộn tới dải đen / chân trang thì Trang tối tự tắt (cả trang về màu gốc), và khi bật thì các dải vốn đen bị lật thành trắng. Nguyên nhân: v3.5.209 đo lại sáng/tối theo phần đang hiện trên màn hình mỗi khi trang đổi class/style (CNN đổi liên tục).

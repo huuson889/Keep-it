@@ -16,8 +16,17 @@
   // dùng <picture> cao 0px nên ảnh co mất, chỉ còn ô tối. Ảnh của <picture> luôn là <img> nên đảo <img> là đủ.
   const MEDIA = 'img,video,canvas,iframe,embed,object,svg image,[style*="url("]';
   // v3.5.213: khối lớn vốn tối trên trang sáng (CNN: dải đen, chân trang) cũng đảo lại → giữ màu gốc (`data-keepit-pd`).
-  const KEEP = "[data-keepit-pd]", ALL = MEDIA + "," + KEEP;
-  const DARK_CSS = `:is(${ALL}){filter:invert(1) hue-rotate(180deg)!important}:is(${ALL}) :is(${ALL}){filter:none!important}`;
+  const KEEP = "[data-keepit-pd]";
+  // v3.5.214: Highlight của Keepit trên trang cũng đảo lại → hiện đúng như trên web nền đen (màu tô gốc + chữ đen,
+  // giống cơ chế `lhn-black-text` của web-highlighter.js), không bị lớp phủ đổi thành màu tô sậm.
+  // Thẻ dịch + loa của Reader cũng vậy: giữ đúng màu nhấn tím của Keepit (lớp phủ đổi tím → hồng). Chữ dịch màu mặc định
+  // (#2d3748, cho nền sáng) đổi sang chữ sáng như trên nền đen; màu chữ người dùng tự chọn giữ nguyên.
+  const MARKS = ".lhn-mark,.lhn-selection-preview-mark,.lhn-bilingual-card,.lhn-bilingual-speaker";
+  const ALL = MEDIA + "," + KEEP + "," + MARKS;
+  // v3.5.214: giao diện Keepit (Ghi chú, Reader, popup, thanh…) nằm TRÊN lớp phủ và có giao diện tối riêng → không đụng
+  // tới ảnh/khung bên trong, nếu không logo / favicon / ảnh thu nhỏ của Ghi chú bị đảo (double).
+  const UI = '[id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[data-lhn-bilingual-ui]';
+  const DARK_CSS = `:is(${ALL}):not(:is(${UI})):not(:is(${UI}) *){filter:invert(1) hue-rotate(180deg)!important}:is(${ALL}) :is(${ALL}){filter:none!important}.lhn-bilingual-card[style*="rgb(45, 55, 72)"]{color:#cbd5e1!important}`;
   let on = false, theme = "", darkStyle = null, darkVeil = null, loaded = false;
   // Chủ đề Keepit đọc giống thanh Keepit (settings đã qua LHN_SETTINGS.resolve).
   const themeOf = raw => String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw || {}).sidebarTheme || "");
