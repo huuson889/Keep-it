@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.203 | Arena.ai Agent sửa:**
+
+- Space play/pause trên YouTube không có tác dụng (trong overlay và ngoài trang): Keepit dừng/phát ở keydown, YouTube lại đảo ở keyup (`handleGlobalKeyUp`). Giờ phím nào Keepit đã xử lý ở keydown thì keyup của nó cũng bị chặn (overlay: `eatenUp` trong `onKey`/`onKeyUp`; trang: `eatenKeyUps` trong `content.js`).
+- File: `js/overlay/ui/overlay-ui.js`, `js/content/content.js`, `manifest.json`, `docs/modules/overlay.md`, `docs/modules/content.md`.
+- Kiểm tra: Chromium, extension thật, YouTube thật, giữ phím 0/120/300ms: ngoài trang (body, sau khi bấm video, sau khi bấm nút ▶ YouTube, sau khi đóng overlay), trong overlay; phím 1 trong overlay không làm YouTube tua. v3.5.203: tất cả đổi trạng thái đúng 1 lần mỗi lần bấm; v3.5.202 cùng bài thử: hỏng gần hết khi giữ 120ms. Không lỗi trang.
+
 **2026-10-23 | v3.5.202 | Arena.ai Agent sửa:**
 
 - Space play/pause trên trang video: dừng bằng Space rồi bật lại bằng chuột (hoặc phím của trang, ví dụ K trên YouTube) thì lần Space kế tiếp không dừng, phải bấm 2 lần (lỗi có từ trước v3.5.174). `toggleSpeechPause()` giờ xét trạng thái thật: có video/audio đang phát → dừng.

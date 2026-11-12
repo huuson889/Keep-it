@@ -986,6 +986,10 @@
     speechPauseActive = Boolean(event.detail);
     if (!speechPauseActive) shortcutPausedMedia = [];
   });
+  // v3.5.203: a key handled here on keydown also has its keyup swallowed — YouTube toggles play / seeks on keyup
+  const eatenKeyUps = new Set();
+  const eatKey = e => { e.preventDefault(); e.stopImmediatePropagation(); eatenKeyUps.add(e.code); };
+  addEventListener("keyup", e => { if (eatenKeyUps.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   document.addEventListener("keydown", e => {
     const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
     if (!websiteSettingsReady || websiteDisabled || isEditable(e.target) || arrowInEditablePath) return;
@@ -995,7 +999,7 @@
       const pageMediaPlaying = Array.from(document.querySelectorAll("audio,video")).some(item => !item.paused && !item.ended);
       const speaking = Boolean(speechPauseActive || document.querySelector(".lhn-bilingual-reading") || window.speechSynthesis?.speaking || window.speechSynthesis?.paused || (currentSpeakAudio && !currentSpeakAudio.ended) || pageMediaPlaying);
       if (speaking) {
-        e.preventDefault(); e.stopImmediatePropagation();
+        eatKey(e);
         if (!e.repeat) toggleSpeechPause();
         return;
       }
@@ -1010,7 +1014,7 @@
     const readingAction = readingShortcuts[pressed];
     if (readingAction) {
       const accepted = document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:readingAction, cancelable:true }));
-      if (!accepted) { speechPauseActive = false; shortcutPausedMedia = []; e.preventDefault(); e.stopImmediatePropagation(); }
+      if (!accepted) { speechPauseActive = false; shortcutPausedMedia = []; eatKey(e); }
     }
   }, true);
   document.addEventListener("lhn-bilingual-reader-started", () => { speechPauseActive = false; shortcutPausedMedia = []; });

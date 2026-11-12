@@ -1723,11 +1723,12 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // ---------- keyboard shortcuts (window capture while the overlay is open) ----------
     const editable = (el) => !!el?.closest?.('textarea,input,select,[contenteditable]:not([contenteditable=false])');
     let ctrlAlone = false;
+    const eatenUp = new Set(); // v3.5.203: keys handled on keydown — their keyup is swallowed too (YouTube toggles play on Space keyup)
     function onKey(e) {
       if (ov.hidden) return;
       const path = e.composedPath ? e.composedPath() : [], tgt = path.includes(ov) ? path[0] : null;
       const typing = editable(tgt) || (!tgt && editable(e.target));
-      const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+      const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); eatenUp.add(e.code); };
       ctrlAlone = e.key === 'Control' ? !e.repeat && (!typing || tgt?.id === 'wta') : false;
       if (e.key === 'Escape' && panelKind) { stop(); closePanel(); return; }
       if (isStudy() && e.code === 'KeyN' && (e.altKey || !typing) && !e.ctrlKey && !e.metaKey && !e.shiftKey) { stop(); addTimeNote(); return; } // N · Alt+N while typing
@@ -1754,6 +1755,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       }
     }
     function onKeyUp(e) {
+      if (eatenUp.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (ov.hidden || e.key !== 'Control' || !ctrlAlone) return;
       ctrlAlone = false;
       if (isStudy()) { const s = SENT[S.si[S.tab]]; S.t = s.start; seekMedia(s.start); setPlaying(true); } // Ctrl alone = listen again
