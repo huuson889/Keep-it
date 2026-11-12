@@ -246,9 +246,10 @@
   const spareTool = () => isVideoPage() ? "reader" : "dictation";
   function navLayout() {
     const Pr = barPrio();
-    // v3.5.222: Trang chủ = always the first button of the bar (was: ☰ footer)
-    return isWide() ? (isVideoPage() ? [["home", "overlay", "dictation", "page", "block"], ["reader", "notes", "ai", "more"]] : [["home", "page", "block", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
-      : isFive() ? [["home", Pr[0], Pr[1]], ["notes", "more"]] : [["home", ...Pr], ["notes", "ai", "more"]];
+    // v3.5.222: Trang chủ = always the first button of the bar (was: ☰ footer); v3.5.223: same number of buttons as before —
+    // the last tool of the left group moves to ☰ (wide: Dịch đoạn · phone: barPrio[2] · compact: barPrio[1]), see hiddenTools()
+    return isWide() ? (isVideoPage() ? [["home", "overlay", "dictation", "page"], ["reader", "notes", "ai", "more"]] : [["home", "page", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
+      : isFive() ? [["home", Pr[0]], ["notes", "more"]] : [["home", Pr[0], Pr[1]], ["notes", "ai", "more"]];
   }
   function renderBar() {
     if (!root) return;
@@ -566,6 +567,8 @@
   const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
+  // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
+  const hiddenTools = () => { const on = new Set(navLayout().flat()); return [...new Set([...barPrio(), "ai", "block", spareTool()])].filter(id => !on.has(id)).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -605,7 +608,7 @@
       panel.querySelector("#zr").addEventListener("input", ev => { setZoom(+ev.target.value); zoomPaneSync(); });
       zoomPaneSync(); return;
     }
-    const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[2]][1]));
+    const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[1]][1]));
     // v3.5.179: Keepit for Android (LHN_ANDROID_UI) = the demo v12 ☰ (Công cụ · Trang này · Khi chọn chữ · Màu · Trình đọc ·
     // Giao diện + browser tiles); the browser keeps the v3.5.174 ☰
     const A = AUI(), home = onHome(), marked = !home && !!A?.isMarked?.(), zoom = Number(A?.zoomValue?.()) || 100;
@@ -613,7 +616,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${tile("hist", "hist", t("hist"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${tile("hist", "hist", t("hist"))}${hiddenTools()}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome"))}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}</div>
     <div class="divider"></div>
@@ -628,7 +631,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${narrow && isFive() ? navTile(barPrio()[2]) + navTile("ai") : ""}${narrow ? navTile("block") + navTile(spareTool()) : ""}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     ${readerRowHTML()}

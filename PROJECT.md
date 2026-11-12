@@ -199,6 +199,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.224 | Arena.ai Agent sửa:**
+
+- Nhãn tiếng Việt trên thanh main và sheet ☰ (bố cục giữ như v3.5.223): "Dịch trang" → "Dịch", "Vào video" → "Video", "Vào học" → "Học" (cả chú thích rê chuột). Tiếng Anh, tiếng Hàn giữ nguyên.
+- File: `js/core/languages.js` (`bar_page`, `bar_overlay`, `bar_dictation` vi), `manifest.json`.
+- Kiểm tra (Chromium + extension thật, tiếng Việt): máy tính = Trang chủ · Dịch · Đọc · Video | tìm | Học · Ghi chú · Hỏi AI · Thêm, chữ không bị cắt; điện thoại 412 = Trang chủ · Dịch · Đọc | tìm | Ghi chú · Hỏi AI · Thêm, sheet có Video · Dịch đoạn · Học; không lỗi trang.
+
+**2026-10-23 | v3.5.223 | Arena.ai Agent sửa:**
+
+- Thanh main giữ đúng số nút như trước khi thêm Trang chủ (v3.5.222 đã làm thanh dài thêm 1 nút): nút cuối của nhóm trái vào ☰. Màn ngang 8 nút: Trang chủ · Dịch trang · Đọc · Vào video | tìm | Vào học · Ghi chú · Hỏi AI · Thêm (Dịch đoạn vào ☰; trang video: Trang chủ · Vào video · Vào học · Dịch trang | Đọc · …). Điện thoại 6 nút: Trang chủ · Dịch · Đọc | tìm | Ghi chú · Hỏi AI · Thêm (Video vào ☰). Gọn 4 nút: Trang chủ · Dịch | tìm | Ghi chú · Thêm (Đọc, Hỏi AI vào ☰).
+- ☰ Công cụ: `hiddenTools()` = mọi công cụ không có trên thanh lúc đó (trước: liệt kê tay theo bố cục); chú thích Gọn thanh nêu đúng nút bị chuyển (barPrio[1]).
+- File: `js/content/keepit-bar.js`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra (Chromium + extension thật, vi + en): máy tính = home,page,reader,overlay | dictation,notes,ai,more, ☰ có Dịch đoạn; điện thoại 360/412 = home,page,reader | notes,ai,more, chữ không bị cắt, ☰ có Video · Dịch đoạn · Vào học; Gọn 412 = home,page | notes,more, ☰ có Đọc · Video · Hỏi AI · Dịch đoạn · Vào học; không lỗi trang. Bố cục trang video chưa chạy thử (sandbox không có YouTube).
+
 **2026-10-23 | v3.5.222 | Arena.ai Agent sửa:**
 
 - Thanh main: nút Trang chủ luôn là nút đầu tiên bên trái ở mọi bố cục (điện thoại, chế độ gọn, máy tính, điện thoại ngang); bỏ khỏi chân sheet ☰ (chân còn 3 nút: Cài đặt · Bật trang · Ẩn/Hiện thanh, chia 3 cột). Bấm = mở trang chủ Keepit trong tab này như trước; đang ở trang chủ thì nút sáng; máy tính có tooltip "Mở trang chủ Keepit trong tab này".

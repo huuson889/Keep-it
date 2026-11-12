@@ -445,11 +445,11 @@
     return String(value).replace(/\{(\w+)\}/g, (_, k) => vars[k] == null ? `{${k}}` : String(vars[k]));
   }
   // Thanh Keepit + menu ☰ (js/content/keepit-bar.js): khoá bar_<tên>. Thêm nhãn mới cho thanh ở đây, đủ en/vi/ko.
-  MESSAGES.en.bar_page = "Translate page"; MESSAGES.vi.bar_page = "Dịch trang"; MESSAGES.ko.bar_page = "페이지 번역";
+  MESSAGES.en.bar_page = "Translate page"; MESSAGES.vi.bar_page = "Dịch"; MESSAGES.ko.bar_page = "페이지 번역";
   MESSAGES.en.bar_block = "Translate paragraph"; MESSAGES.vi.bar_block = "Dịch đoạn"; MESSAGES.ko.bar_block = "문단 번역";
   MESSAGES.en.bar_reader = "Read"; MESSAGES.vi.bar_reader = "Đọc"; MESSAGES.ko.bar_reader = "읽기";
-  MESSAGES.en.bar_overlay = "Video mode"; MESSAGES.vi.bar_overlay = "Vào video"; MESSAGES.ko.bar_overlay = "비디오 모드";
-  MESSAGES.en.bar_dictation = "Study"; MESSAGES.vi.bar_dictation = "Vào học"; MESSAGES.ko.bar_dictation = "학습";
+  MESSAGES.en.bar_overlay = "Video mode"; MESSAGES.vi.bar_overlay = "Video"; MESSAGES.ko.bar_overlay = "비디오 모드";
+  MESSAGES.en.bar_dictation = "Study"; MESSAGES.vi.bar_dictation = "Học"; MESSAGES.ko.bar_dictation = "학습";
   MESSAGES.en.bar_notes = "Notes"; MESSAGES.vi.bar_notes = "Ghi chú"; MESSAGES.ko.bar_notes = "노트";
   MESSAGES.en.bar_ai = "Ask AI"; MESSAGES.vi.bar_ai = "Hỏi AI"; MESSAGES.ko.bar_ai = "AI에게 묻기";
   MESSAGES.en.bar_more = "More"; MESSAGES.vi.bar_more = "Thêm"; MESSAGES.ko.bar_more = "더보기";
