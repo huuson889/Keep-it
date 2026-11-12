@@ -109,20 +109,12 @@ function selectLanguageTrack(tracks, language, tracklist = null) {
   return { track: matching || original, original, needsTranslation: !matching && !!original };
 }
 
-function pickTrack(tracks, sourceLanguage = state.sourceLanguageSetting, tracklist = null) {
-  const selected = selectLanguageTrack(tracks, sourceLanguage, tracklist);
-  state.sourceLanguage = trackLanguageCode(selected.track);
-  state.primaryNeedsTranslation = selected.needsTranslation;
-  return selected.track;
-}
-
 function markSingleTrackCues(cues, language = state.sourceLanguage) {
   const sourceNeedsTranslation = state.sourceLanguageSetting !== 'auto' && language !== state.sourceLanguageSetting;
   const targetNeedsTranslation = language !== state.targetLanguage;
   state.primaryNeedsTranslation = sourceNeedsTranslation;
   state.secondaryNeedsTranslation = targetNeedsTranslation;
   state.mainLanguage = state.sourceLanguageSetting === 'auto' ? (language || 'en') : state.sourceLanguageSetting;
-  updateSubtitleLanguageLabels();
   return cues.map((cue) => ({
     ...cue,
     mainNeedsTranslation: sourceNeedsTranslation,
@@ -481,29 +473,6 @@ function resegmentBySentence(cues) {
   return mergeShortTranscriptLines(segmented);
 }
 
-function parseCaptions(events) {
-  const list = [];
-  for (const ev of events || []) {
-    if (!ev.segs || ev.tStartMs == null) continue;
-
-    const text = ev.segs.map((s) => s.utf8 || '').join('').replace(/\s+/g, ' ').trim();
-    if (!text) continue;
-
-    const start = ev.tStartMs / 1000;
-    const end = start + (ev.dDurationMs || 2000) / 1000;
-
-    // Phụ đề tự động của YouTube hay lặp lại cùng câu: gộp lại
-    const prev = list[list.length - 1];
-    if (prev && prev.en === text) {
-      prev.end = end;
-      continue;
-    }
-
-    list.push({ id: list.length, start, end, en: text, vi: 'Đang dịch...' });
-  }
-  return list;
-}
-
 // ---------- Dịch lười qua module translate của Keepit ----------
 // Dùng message BILINGUAL_TRANSLATE (background: LHN_TRANSLATE + LHN_CACHE) và chỉ dịch
 // những cue quanh vị trí đang phát / đang xem, thay vì dịch toàn bộ danh sách ngay.
@@ -521,31 +490,9 @@ function attachVideo(video, slot) {
   video.controls = false;
   video.addEventListener('click', handlePlayerClick);
   video.addEventListener('timeupdate', onTimeUpdate);
-  video.addEventListener('play', handleMediaPlay);
   video.addEventListener('play', enforceVideoPause);
-  video.addEventListener('pause', handleMediaPause);
-  video.addEventListener('ratechange', handleMediaRateChange);
-  video.addEventListener('volumechange', handleMediaVolumeChange);
-  if (state.mediaGeometryHandler) {
-    video.removeEventListener('loadedmetadata', state.mediaGeometryHandler);
-    video.removeEventListener('resize', state.mediaGeometryHandler);
-  }
-  state.mediaGeometryHandler = () => {
-    if (state.activeMedia !== video) return;
-    syncMediaAspect(video);
-    syncTheaterFrame();
-  };
-  video.addEventListener('loadedmetadata', state.mediaGeometryHandler);
-  video.addEventListener('resize', state.mediaGeometryHandler);
-  syncMediaAspect(video);
-  syncTheaterFrame();
-  syncPlayButton();
-  syncSpeedButton();
-  syncMuteButton();
   enforceVideoPause(video);
   onTimeUpdate();
-  syncReadingAudioControls();
-  startAmbient();
 }
 
 function findCaptionIndex(t) {
@@ -569,8 +516,6 @@ function onTimeUpdate() {
   if (!v) return;
 
   const dur = v.duration || 0;
-  const fill = ui('.te-progress-fill');
-  if (fill && !fill.parentElement?.classList.contains('te-progress-drag')) fill.style.width = dur ? `${(v.currentTime / dur) * 100}%` : '0%';
 
   if (state.captions.length === 0) return;
 
@@ -929,7 +874,6 @@ async function captionsFromTracks(tracks, reasons, tracklist = null) {
   state.mainLanguage = state.sourceLanguageSetting === 'auto'
     ? (state.sourceLanguage || state.mainLanguage || 'en')
     : state.sourceLanguageSetting;
-  updateSubtitleLanguageLabels();
 
   return mainCues.map((cue) => {
     const originalCue = closestCue(originalCues, cue) || cue;

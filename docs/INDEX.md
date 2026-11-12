@@ -41,7 +41,6 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Overlay: phụ đề video / bài viết web | `js/overlay/source/video.js` / `js/overlay/source/web.js` |
 | Overlay: chấm điểm, luật giải câu | `js/overlay/study/shared/` |
 | Overlay: cài đặt, chế độ phụ đề/xem, hàng đợi dịch phụ đề, yêu thích | `js/overlay/overlay-engine.js` |
-| ⚠ Không sửa giao diện ở | `OVERLAY_HTML` trong `js/overlay/overlay-template.js` (markup cũ đang ẩn, xoá ở bước 5) |
 | AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |

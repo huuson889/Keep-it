@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
 
-**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196.
+**Trạng thái:** Đang triển khai (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196; bước 5b ở v3.5.197.
 
 > **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
 
@@ -128,7 +128,7 @@ Keep-it/
 2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`; chuyển bảng nhãn `T` của thanh sang `languages.js` (khoá `bar_<tên>`; người dùng duyệt thêm, "làm hết đi").
 3. **Danh sách tính năng overlay cũ ↔ mới:** chỉ là tài liệu. Mỗi tính năng của giao diện cũ được đánh dấu "đã có trong giao diện mới" hoặc "bỏ". Người dùng duyệt các mục "bỏ".
 4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`. (v3.5.195: `layout-mode.js` + `cc-mode.js` + phần yêu thích của `touch-layout.js` ghép nguyên văn; phần UI cũ còn lẫn trong đó gỡ ở bước 5 cùng các chỗ controller gọi.)
-5. **Overlay B** (chia 4 phiên bản vì điều kiện "không vừa chuyển file vừa xoá code"; cây đích không đổi): **5a** xoá `dictation/`, `shadowing/`, `createStudyUi`, hover-pause (v3.5.196); **5b** xoá HTML cũ và các chỗ controller/engine ghi vào đó; **5c** chuyển nhãn `unified-text.js` + `offline-page.js` sang `languages.js`, xoá `unified-text.js`; **5d** đổi `unified/` → `ui/`, `study/shared/*` → `study/`, gộp `dictation.md`. Nội dung gốc: bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
+5. **Overlay B** (chia 4 phiên bản vì điều kiện "không vừa chuyển file vừa xoá code"; cây đích không đổi): **5a** xoá `dictation/`, `shadowing/`, `createStudyUi`, hover-pause (v3.5.196); **5b** xoá HTML cũ và các chỗ controller/engine ghi vào đó (v3.5.197; giữ gốc rỗng ẩn `#keepit-exact-overlay` mang class trạng thái); **5c** chuyển nhãn `unified-text.js` + `offline-page.js` sang `languages.js`, xoá `unified-text.js`; **5d** đổi `unified/` → `ui/`, `study/shared/*` → `study/`, gộp `dictation.md`. Nội dung gốc: bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
 
 ### Bước 3: tính năng overlay cũ ↔ mới (lập ở v3.5.194)
 

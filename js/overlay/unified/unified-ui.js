@@ -75,7 +75,7 @@ const LHN_UNIFIED_BRIDGE = Object.freeze({
   setActivity: (activity) => { try { setOverlayStudyActivity(activity); } catch (_) {} },
   exportAs: (format, opts) => exportAs(format, opts),
   openNotes: () => document.dispatchEvent(new CustomEvent('lhn-toggle-notes-sidebar')), // the page notes sheet / panel (content.js), same as the Keepit bar
-  setLanguage: (kind, code) => overlayEl()?.querySelector(`#te-lang-${kind}-options [data-language-value="${code}"]`)?.click(),
+  setLanguage: (kind, code) => saveSubtitleLanguage(kind === 'source' ? 'sourceLanguage' : 'targetLanguage', code),
   close: () => closeOverlay(),
 });
 
@@ -1499,7 +1499,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       card.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') end(true); });
       card.addEventListener('click', (e) => { if (Date.now() < eatClick) { e.stopPropagation(); e.preventDefault(); } }, true);
     }
-    // ---------- Nói: microphone recording + speech recognition (same rules as study/shadowing/shadowing-activity.js) ----------
+    // ---------- Nói: microphone recording + speech recognition (rules kept from the old shadowing activity, removed in v3.5.196) ----------
     const SPK = { rec: null, recorder: null, stream: null, chunks: [], url: '', audio: null, gen: 0, finals: [], timer: 0, stopping: false, err: '', live: '' };
     const ENDPOINT_MS = 1500;
     function speechLang() {
