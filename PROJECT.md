@@ -199,6 +199,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.205 | Arena.ai Agent sửa:**
+
+- Đóng Ghi chú trên máy tính bị giật: Ghi chú trượt ra 0,15s nhưng trang giãn 0,26s (lộ dải trống), trang giãn tới `100vw` (rộng hơn khung nhìn) rồi cuối cùng bật về bề rộng/lề gốc. Giờ giống demo v2: Ghi chú và trang cùng 0,26s cùng đường cong; `page-layout.js` đo bề rộng + lề thật (px) của trang và trượt giữa đúng hai giá trị đó, mở không nhảy khung đầu, đóng xong trả kiểu gốc mà không còn gì đổi trên màn hình; trả cả `box-sizing` của body (trước đây sót).
+- File: `js/content/page-layout.js`, `js/content/content.js` (`closeSidebar` gỡ sau 280ms), `css/content/notes.css`, `manifest.json`, `docs/modules/content.md`.
+- Kiểm tra: Chromium + extension thật, đo từng khung hình 6 lần trên trang thường (lề 8px) và trang căn giữa (max-width): mở/đóng liền mạch, mép Ghi chú bám mép trang, kết thúc đúng bề rộng/lề gốc, kiểu inline của html/body giống hệt trước khi mở. 0 lỗi trang.
+
 **2026-10-23 | v3.5.204 | Arena.ai Agent sửa:**
 
 - Ghi chú làm lại toàn bộ theo demo `notes-sheet` v10: `js/content/sidebar.js` dựng DOM mới (đầu trang, tìm kiếm, 7 chip màu vừa 1 hàng, tên dài cắt "…", thẻ có nút nghe/sửa/xoá hiện khi rê chuột, trạng thái trống/không tìm thấy/đã tắt có hình minh hoạ, bỏ hàng tab Tô sáng/AI panel); kiểu ở file mới `css/content/notes.css` (1 bộ màu `--nt-*`, kính macOS sáng/tối, bo 2 góc trái).

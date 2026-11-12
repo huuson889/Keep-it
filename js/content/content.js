@@ -1476,7 +1476,8 @@
   function closeSidebar() {
     clearTimeout(sidebarSearchTimer); sidebarSearchTimer = 0;
     sidebarOpen = false;
-    if (sidebar) { const old = sidebar; sidebar = null; animateRemove(old); }
+    // v3.5.205: Ghi chú trượt ra 0,26s cùng nhịp với trang rồi mới gỡ (css/content/notes.css, page-layout.js).
+    if (sidebar) { const old = sidebar; sidebar = null; old.classList.add("lhn-closing"); setTimeout(() => old.remove(), 280); }
     sidebarSetActiveTab = null;
     LHN_PAGE_LAYOUT.restorePageWidth();
     syncSidebarEdgeToggle();
