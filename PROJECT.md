@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.257 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: đổi chỗ nút "1 từ" và "Bỏ qua". Khi đang làm: Nghe lại, 1 từ | hướng dẫn | Bỏ qua, Kiểm tra. Khi đúng 100%: Bỏ qua → Làm lại, Kiểm tra → Tiếp, nút 1 từ ẩn. Hành vi nút và phím tắt không đổi.
+- File: `js/overlay/ui/overlay-ui.js`, `manifest.json`.
+- Kiểm tra: cú pháp, thứ tự `data-sact`.
+
 **2026-11-13 | v3.5.256 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: phím Tab trong ô nhập = nút "1 từ" (hiện thêm 1 từ, con trỏ ở lại ô). Shift+Tab và Tab ngoài ô nhập như cũ; câu đã đúng thì Tab không làm gì thêm. Dòng hướng dẫn thêm "(Tab) 1 từ" (en/vi/ko), nút có chú thích "1 từ (Tab)".
