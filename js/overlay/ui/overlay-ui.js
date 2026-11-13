@@ -1388,9 +1388,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
         const wr = S.wr;
-        const hint = esc(words(s.en).map((w) => { const c = [...w]; return c[0] + c.slice(1).join('').replace(/[\p{L}\p{N}]/gu, '_'); }).join('  '));
-        const res = wr.panel ? wrPanelHTML(wr) : '';
-        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
+        const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en) : '';
+        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
           <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
@@ -1889,7 +1888,17 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (!h || h.kind !== kind || h.answer !== answer) S.wr.hint = { kind, answer, revealed: !!S.hints };
       return !!S.hints || S.wr.hint.revealed;
     }
-    function wrMasks(items, list) { for (const w of list) items.push({ c: 'msk', w: '_'.repeat([...(w.norm || '')].length) }); }
+    // v3.5.250: gợi ý bật → từ chưa gõ hiện chữ cái đầu (S_____, P_____'_, N___,); tắt → toàn "_"
+    function wrMaskText(w) {
+      if (!S.hints || !w.display) return '_'.repeat([...(w.norm || '')].length);
+      let seen = false;
+      return w.display.replace(/[\p{L}\p{N}]/gu, (ch) => (seen ? '_' : ((seen = true), ch)));
+    }
+    function wrMasks(items, list) { for (const w of list) items.push({ c: 'msk', w: wrMaskText(w) }); }
+    function wrIdlePanelHTML(ref) {
+      const items = []; wrMasks(items, getTranscriptWordTokens(ref));
+      return `<div class="rpanel err"><div class="rt">${ic('alert')}<b>${T('correctSentence')}:</b><span class="sp"></span></div><div class="diff wdiff">${items.map((it) => `<span class="msk">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+    }
     function wrPrefixItems(ref, answer) {
       const SC = globalThis.LHN_STUDY_SCORE, progress = SC.getPrefixProgress(ref, answer);
       const list = progress.expectedUnits.map((unit) => ({ display: unit.display, norm: SC.tokenize(unit.display).join('') || unit.norm }));
@@ -2014,7 +2023,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // gõ / sửa chữ: bỏ kết quả cũ (onAnswerInput cũ), không dựng lại ô gõ để không mất bàn phím
     function wrOnInput() {
       const w = S.wr; w.escFilled = false; w.hint = null; w.marks = null; w.slots = [];
-      if (w.panel && w.phase !== 'done') { w.panel = null; R.querySelector('#scard .rpanel')?.remove(); }
+      if (w.panel && w.phase !== 'done') {
+        w.panel = null; const old = R.querySelector('#scard .rpanel');
+        if (old) { if (S.hints) old.outerHTML = wrIdlePanelHTML(SENT[S.si.write].en); else old.remove(); }
+      }
       if (w.phase === 'wrong' || w.phase === 'prefix') { w.phase = 'idle'; const h = R.querySelector('#scard .wbox .help'); if (h) h.textContent = T('enterCheckEscAnswer'); }
     }
     function wrRebuildPanel() {

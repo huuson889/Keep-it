@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.250 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: bỏ dòng gợi ý chữ cái đầu trên cùng. Bật gợi ý: khung phân tích luôn hiện; từ chưa gõ hiện chữ cái đầu (`S_____ L_________ … N___,`) thay vì toàn `_`; chưa nhập (hoặc đang sửa sau khi chấm) thì nhãn là "Câu đúng:" thay cho "Phân tích lỗi sai:". Tắt gợi ý: như cũ (khung chỉ hiện sau Enter, toàn `_`).
+- File: `js/overlay/ui/overlay-ui.js` (`wrMaskText`, `wrIdlePanelHTML`, `wrOnInput`, phần dựng tab Chép), `manifest.json`.
+- Kiểm tra: Node: chưa nhập → "Câu đúng: S_____ L_________ C______ …"; gõ "a" bật gợi ý → "a → Senior L_________ C______ …"; nửa câu → "Senior Lieutenant Colonel P___ D__ …"; tắt gợi ý → toàn `_`.
+
 **2026-11-13 | v3.5.249 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: nút chính (Kiểm tra / Tiếp) có viền ngoài giống nút "1 từ" (`var(--bd)`; giao diện kính mờ: 10% màu chữ), nền tím không tràn dưới viền, nên hai nút trông cao bằng nhau.
