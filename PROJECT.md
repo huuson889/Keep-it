@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.258 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: tooltip kèm phím tắt cho "Kiểm tra (Enter)", "Làm lại (Esc)", "Tiếp (Enter)". Chấm đúng 100% thì con trỏ vẫn ở ô nhập (chỉ đọc) nên Esc = Làm lại, Enter = câu tiếp, không tắt overlay.
+- File: `js/overlay/ui/overlay-ui.js` (`writeCheck` luôn đặt `wrFocus`; focus lại ô nhập cả khi `done`), `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.257 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: đổi chỗ nút "1 từ" và "Bỏ qua". Khi đang làm: Nghe lại, 1 từ | hướng dẫn | Bỏ qua, Kiểm tra. Khi đúng 100%: Bỏ qua → Làm lại, Kiểm tra → Tiếp, nút 1 từ ẩn. Hành vi nút và phím tắt không đổi.
