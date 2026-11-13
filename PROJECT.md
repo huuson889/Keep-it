@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.252 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép, khung câu đúng 100%: bấm 1 từ → popup Keepit (từ điển đầy đủ nếu bật, không thì dịch), như bấm từ trong phụ đề (`openWord`, không phụ thuộc "chạm để dịch"); bôi đen cụm từ → dịch (khung được đánh dấu `data-lhn-primary` nên content.js đọc vùng chọn như phụ đề). Khôi phục tính năng bấm từ trong khung kết quả của bản trước v3.5.171.
+- File: `js/overlay/ui/overlay-ui.js` (`openWord(el, force)`, `wrPanelHTML`, phần dựng tab Chép), `manifest.json`.
+- Kiểm tra: cú pháp; chỉ khung câu đúng (kind ok) có `.wd` + `data-lhn-primary`.
+
 **2026-11-13 | v3.5.251 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: khung gợi ý "Câu đúng:" (bật gợi ý, chưa nhập) đổi tông đỏ sang tông vàng (viền, nền, nhãn), biểu tượng bóng đèn (như nút Gợi ý) trước nhãn. Khung "Phân tích lỗi sai:" giữ tông đỏ, khung câu đúng 100% giữ tông xanh.

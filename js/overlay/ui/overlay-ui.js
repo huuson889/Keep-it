@@ -909,8 +909,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
 
     // ---------- tap-to-translate: the word is selected and the existing Keepit popup (content.js) opens on it ----------
     let wordWatch = 0;
-    function openWord(el) {
-      if (!S.tapTranslate || !el || !el.isConnected) return;
+    function openWord(el, force = false) {
+      if ((!S.tapTranslate && !force) || !el || !el.isConnected) return;
       $$('.wd.on').forEach((w) => w.classList.remove('on'));
       el.classList.add('on');
       setPlaying(false);
@@ -1396,6 +1396,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         ta.addEventListener('input', () => { S.wr.val = ta.value; wrOnInput(); grow(); placeWrMarks(); }); ta.addEventListener('scroll', syncWrMarks); requestAnimationFrame(() => { grow(); placeWrMarks(); });
         if (wr.phase === 'wrong' && S.wrFocus) { S.wrFocus = false; setTimeout(() => { const t = $('#wta'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0); }
         ta.addEventListener('keydown', (e) => wrKeyDown(e, ta));
+        // v3.5.252: khung câu đúng 100%: bấm 1 từ → popup Keepit (từ điển đầy đủ nếu bật, không thì dịch); bôi đen cụm từ → dịch (content.js đọc vùng chọn [data-lhn-primary])
+        el.querySelector('.rpanel.ok .diff')?.addEventListener('click', (e) => { const w = e.target.closest('.wd'); if (!w) return; const sel = R.getSelection?.(); if (sel && !sel.isCollapsed && String(sel).trim().split(/\s+/).length > 1) return; e.stopPropagation(); openWord(w, true); });
       }
       bindSwipe($('#scard'));
       fitStudy();
@@ -1995,7 +1997,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function wrPanelHTML(wr) {
       const p = wr.panel, ok = p.kind === 'ok';
       const cls = { ok: 'ok', bad: 'bad', fix: 'fix', msk: 'msk', emp: 'emp' };
-      return `<div class="rpanel ${ok ? 'ok' : 'err'}"><div class="rt">${ic(ok ? 'check' : 'alert')}<b>${ok ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span>${p.kind === 'prefix' ? '' : `<span class="acc">${wr.acc}%</span>`}</div><div class="diff wdiff">${p.items.map((it) => `<span class="${cls[it.c]}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+      return `<div class="rpanel ${ok ? 'ok' : 'err'}"><div class="rt">${ic(ok ? 'check' : 'alert')}<b>${ok ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span>${p.kind === 'prefix' ? '' : `<span class="acc">${wr.acc}%</span>`}</div><div class="diff wdiff"${ok ? ' data-lhn-primary' : ''}>${p.items.map((it) => `<span class="${cls[it.c]}${ok ? ' wd' : ''}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
     }
     function pnHintHTML(ref) {
       const names = globalThis.LHN_STUDY_RULES?.getProperNounHints?.(ref) || [];
