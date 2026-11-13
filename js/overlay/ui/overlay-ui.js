@@ -476,14 +476,20 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       ov.classList.toggle('playing', on);
       $('.wbox .pill.lis')?.classList.toggle('on', on);
       if (on) B.play(); else B.pause();
-      syncPlay();
+      syncPlay(); syncSpeakPlay();
       if (curView() === 'theater') armChrome();
     }
     function syncPlayingFromMedia(m) {
       const on = !m.paused;
       if (on === S.playing) return;
-      S.playing = on; ov.classList.toggle('playing', on); $('.wbox .pill.lis')?.classList.toggle('on', on); syncPlay();
+      S.playing = on; ov.classList.toggle('playing', on); $('.wbox .pill.lis')?.classList.toggle('on', on); syncPlay(); syncSpeakPlay();
       if (curView() === 'theater') armChrome();
+    }
+    // v3.5.276: Nói — câu mẫu đang phát: "Nghe mẫu" có hiệu ứng phát, mic + Câu tiếp không màu
+    function syncSpeakPlay() {
+      const card = R.querySelector('#scard'); if (!card) return;
+      const on = S.tab === 'speak' && !!S.playing;
+      card.classList.toggle('spmodel', on); card.querySelector('.pill.spml')?.classList.toggle('on', on);
     }
     // 50ms: pull time / play state / rate / volume from the media; push what the overlay changed (speed, volume) back
     function step() {
@@ -1319,7 +1325,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       B.setActivity(S.tab === 'speak' ? 'shadowing' : S.tab === 'write' ? 'dictation' : null);
       if (isStudy()) { clampStudy(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); resetStudy(); translateAround(S.si[S.tab]); }
       lastKey = ''; apply();
-      if (S.tab === 'write') playStudyStart(); // v3.5.262: mở tab Chép = phát câu + số lần lặp
+      if (isStudy()) playStudyStart(); // v3.5.262/276: mở tab Chép / Nói = phát câu + số lần lặp
     }
     function doneCount() { return Object.keys(S.res[S.tab] || {}).length; }
     function ring(done, total, size = 28) {
@@ -1404,8 +1410,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (sp.phase === 'idle') mid = `<p class="help tch">${T('tapTheMicTo')}</p><p class="help kbdh">${T('pressEnterOrTap')}</p>`;
         if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div><div class="heard" id="heard">${T('listening')}</div>`;
         if (sp.phase === 'done') mid = `<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
-        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
-          <div class="sctl"><div class="r main"><button class="pill" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
+        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
+          <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
           ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('voice')}${T('replayYourVoice')}</button></div>` : ''}
           <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
@@ -2508,7 +2514,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         clampStudy();
         if (isStudy()) { useSent(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); translateAround(S.si[S.tab]); }
         lastKey = ''; apply();
-        if (S.tab === 'write') playStudyStart(); // v3.5.262
+        if (isStudy()) playStudyStart(); // v3.5.262/276
       });
     }
     function close() {

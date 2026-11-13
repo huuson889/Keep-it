@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.276 | Arena.ai Agent sửa:**
+
+- Overlay Nói: mở tab Nói (chuyển tab / mở overlay vào thẳng Nói) tự phát câu mẫu 1 lần + n lần "Lặp câu" như Chép; đổi câu đã có từ v3.5.261. Câu mẫu đang phát: "Nghe mẫu" có hiệu ứng phát (như "Giọng bạn"), mic + "Câu tiếp" về kiểu không màu; dừng thì trở lại tím. `syncSpeakPlay()` (class `spmodel` trên `#scard`, `spml.on` trên nút; đã grep không trùng).
+- File: `js/overlay/ui/overlay-ui.js` (`setTab`, `open`, `setPlaying`, `syncPlayingFromMedia`, `syncSpeakPlay`, thẻ Nói), `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp; grep tên class.
+
 **2026-11-13 | v3.5.275 | Arena.ai Agent sửa:**
 
 - Overlay Nói: sửa lỗi v3.5.274 — thẻ câu biến mất khi "Giọng bạn" phát. Nguyên nhân: class `vplay` trùng tên nút play giữa video (`.vplay` absolute 64px, opacity 0). Đổi thành `spvoice` (đã kiểm tra không trùng). Bài học: class mới phải grep trùng tên trong `overlay-css.js` trước khi dùng.
