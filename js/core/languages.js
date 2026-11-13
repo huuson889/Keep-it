@@ -711,8 +711,8 @@
   MESSAGES.en.bar_openingHl = "Opening the highlight"; MESSAGES.vi.bar_openingHl = "Đang mở tô sáng"; MESSAGES.ko.bar_openingHl = "하이라이트를 여는 중";
   MESSAGES.en.bar_openingDict = "Opening the dictation lesson"; MESSAGES.vi.bar_openingDict = "Mở bài chép chính tả"; MESSAGES.ko.bar_openingDict = "받아쓰기 수업을 엽니다";
   MESSAGES.en.bar_fSelect = "Move"; MESSAGES.vi.bar_fSelect = "Di chuyển"; MESSAGES.ko.bar_fSelect = "이동";
-  MESSAGES.en.bar_fToggle = "Open/close search"; MESSAGES.vi.bar_fToggle = "Mở/đóng tìm kiếm"; MESSAGES.ko.bar_fToggle = "검색 열기/닫기";
-  MESSAGES.en.bar_fOpen = "Open"; MESSAGES.vi.bar_fOpen = "Mở"; MESSAGES.ko.bar_fOpen = "열기";
+  MESSAGES.en.bar_fToggle = "Open"; MESSAGES.vi.bar_fToggle = "Mở"; MESSAGES.ko.bar_fToggle = "열기";
+  MESSAGES.en.bar_fOpen = "Go"; MESSAGES.vi.bar_fOpen = "Đi"; MESSAGES.ko.bar_fOpen = "가기";
   MESSAGES.en.bar_fClose = "Close"; MESSAGES.vi.bar_fClose = "Đóng"; MESSAGES.ko.bar_fClose = "닫기";
   MESSAGES.en.bar_reload = "Reload"; MESSAGES.vi.bar_reload = "Tải lại"; MESSAGES.ko.bar_reload = "새로고침";
   MESSAGES.en.bar_pageSec = "This page"; MESSAGES.vi.bar_pageSec = "Trang này"; MESSAGES.ko.bar_pageSec = "이 페이지";

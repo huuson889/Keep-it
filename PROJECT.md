@@ -199,6 +199,41 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.231 | Arena.ai Agent sửa:**
+
+- Logo Tuổi Trẻ đúng favicon thật (ô đỏ #e12e27, chữ "tt" trắng); dùng chung cho Trang chủ và Dashboard → Highlights & Notes.
+- "Học cùng Keepit" thêm thẻ VnExpress International (https://e.vnexpress.net/, logo chữ E nền đỏ mận #9f234f), chữ en/vi/ko. Bố cục: điện thoại dọc YouTube full ngang + 2 thẻ báo cạnh nhau; tablet, máy tính, màn hình ngang 3 thẻ một hàng. Không thêm vào "Trang web khác" mặc định.
+- Chữ trên các thẻ học luôn trắng ở chủ đề sáng (trước bị `.dev button{color:inherit}` ghi đè thành chữ tối).
+- File: `js/shared/site-brands.js` (`tt`, `vne`), `js/home/home-ui.js` (thẻ, chữ `vne`/`vneC`, CSS `.feat`, `.fc.vne`, `.dev .fc`), `manifest.json`.
+- Kiểm tra (Chromium, demo chạy code thật: điện thoại vi sáng, tablet dọc vi sáng, tablet ngang en sáng, máy tính ko tối, điện thoại ngang): chữ trắng, logo đúng, không cuộn ngang; không lỗi trang.
+
+**2026-10-23 | v3.5.230 | Arena.ai Agent sửa:**
+
+- Sheet tìm kiếm nhìn ra kính rõ hơn: lớp nền tối phía sau nhạt hơn (42% → 25%) để màu trang xuyên qua kính; mép trên sheet có viền sáng mảnh kiểu macOS (sáng: trắng 85%, tối: trắng 14%). Kính (78%, blur 24px) giữ nguyên; các sheet khác không đổi.
+- File: `js/content/keepit-bar-css.js` (`.srch .scrim2`, `.sbox`, `.dark .sbox`), `manifest.json`.
+- Kiểm tra (Chromium, demo chạy code thật: điện thoại sáng, máy tính sáng/tối, tablet ngang tối): nền 25%, viền sáng có ở cả hai chủ đề, kính giữ nguyên, đóng sheet vẫn không nháy; không lỗi trang.
+
+**2026-10-23 | v3.5.229 | Arena.ai Agent sửa:**
+
+- Sheet tìm kiếm: bỏ thanh cuộn của danh sách (Gần đây / kết quả) — hết lỗi thanh cuộn nháy hiện rồi mất khi sheet mở; danh sách dài vẫn vuốt / lăn chuột được.
+- Trang chủ màn hình ngang (tablet ngang, máy tính, điện thoại ngang): lời chào và ô tìm kiếm nằm giữa, ô tìm rộng 720px bằng sheet tìm kiếm (sheet nở thẳng từ ô); tablet ngang có lời chào lớn hơn, khoảng thở rộng hơn. Các phần bên dưới giữ nguyên. Màn hình dọc không đổi.
+- File: `js/content/keepit-bar-css.js` (`.res`), `js/home/home-ui.js` (CSS `data-o=l`), `manifest.json`.
+- Kiểm tra (Chromium, demo chạy code thật: điện thoại, tablet dọc/ngang, máy tính sáng/tối, điện thoại ngang 915×412): ô tìm nằm đúng giữa, không cuộn ngang, độ rộng thanh cuộn danh sách = 0 ở mọi khung hình lúc mở; không lỗi trang.
+
+**2026-10-23 | v3.5.228 | Arena.ai Agent sửa:**
+
+- Sheet tìm kiếm mở cùng vị trí trên mọi thiết bị (cách mép trên 12% chiều cao, như máy tính); trước đây điện thoại/tablet dính sát mép trên.
+- Sheet rộng tối đa 720px (trước 600px); điện thoại vẫn gần full chiều ngang.
+- Hết nháy khi đóng sheet ở Trang chủ: lớp nền mờ giữ ở trạng thái cuối cho tới khi sheet đóng hẳn, tắt chuyển động CSS lúc bàn giao nên không có khung hình nào hiện lại nền tối / sheet.
+- File: `js/content/keepit-bar.js` (`layoutSearch`, `closeSearch`, `stopMorph`), `js/content/keepit-bar-css.js` (`.sbox` width, `.srch.closing .scrim2`), `manifest.json`.
+- Kiểm tra (Chromium, demo chạy code thật: điện thoại 412, tablet ngang 1180, máy tính 1440): ghi từng khung hình lúc đóng, độ mờ nền và sheet chỉ giảm, không tăng lại; ô tìm hiện lại đúng lúc sheet biến mất; không lỗi trang.
+
+**2026-10-23 | v3.5.227 | Arena.ai Agent sửa:**
+
+- Chân sheet tìm kiếm (máy tính): "Ctrl+Space Mở/đóng tìm kiếm" → "Ctrl+Space Mở"; "Enter Mở" → "Enter Đi" (en Open / Go; ko 열기 / 가기).
+- File: `js/core/languages.js` (`bar_fToggle`, `bar_fOpen`), `manifest.json`.
+- Kiểm tra (Chromium + extension thật: điện thoại 412, tablet 820 dọc / 1180 ngang, máy tính 1440): chân sheet = Ctrl+Space Mở · ↑↓ Di chuyển · Enter Đi · Esc Đóng; cảm ứng ẩn chân như cũ; không lỗi trang.
+
 **2026-10-23 | v3.5.226 | Arena.ai Agent sửa:**
 
 - Trang chủ Keepit: bấm ô tìm kiếm (hoặc nút tìm trên thanh main) thì ô đó bay lên và nở thành sheet tìm kiếm (~0,3 giây), đóng (Esc, bấm nền, Ctrl+Space) thì thu ngược về ô cũ. Ô bị cuộn khuất hoặc máy bật giảm chuyển động thì dùng hiệu ứng cũ / đóng ngay. Trang khác giữ hiệu ứng cũ. Chức năng tìm không đổi.

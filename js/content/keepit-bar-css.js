@@ -220,14 +220,15 @@ button,input{font-family:inherit}
 .dark .lrow.on{background:rgba(139,92,246,.2);color:#c4b5fd}
 .lrow:active,.desk .lrow:hover{background:rgba(148,163,184,.14)}
 .srch{position:absolute;inset:0;z-index:12;pointer-events:none}
-.srch .scrim2{position:absolute;inset:0;background:rgba(15,23,42,.42);opacity:0;transition:opacity .2s}
+.srch .scrim2{position:absolute;inset:0;background:rgba(15,23,42,.25);opacity:0;transition:opacity .2s}
 .srch.open{pointer-events:auto}
 .srch.open .scrim2{opacity:1}
-.sbox{position:absolute;left:50%;width:min(600px,calc(100% - 20px));display:flex;flex-direction:column;border-radius:22px;background:#fff;color:#111827;box-shadow:0 24px 60px rgba(15,23,42,.35);transform:translate(-50%,-8px) scale(.98);opacity:0;transition:transform .2s,opacity .2s;overflow:hidden}
-.dark .sbox{background:#18181b;color:#f4f4f5;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.sbox{position:absolute;left:50%;width:min(720px,calc(100% - 20px));display:flex;flex-direction:column;border-radius:22px;background:#fff;color:#111827;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 24px 60px rgba(15,23,42,.35);transform:translate(-50%,-8px) scale(.98);opacity:0;transition:transform .2s,opacity .2s;overflow:hidden}
+.dark .sbox{background:#18181b;color:#f4f4f5;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 24px 60px rgba(0,0,0,.55)}
 .srch.open .sbox{transform:translate(-50%,0);opacity:1}
 .sbox.morph{transition:none}
 .srch.closing{pointer-events:none}
+.srch.closing .scrim2{transition:none}
 .cur{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px 0;font-size:12.5px;color:#64748b}
 .dark .cur{color:#a1a1aa}
 .cur svg{width:13px;height:13px;flex:none;fill:none;stroke:#16a34a;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -247,7 +248,8 @@ button,input{font-family:inherit}
 .chip{flex:none;height:30px;padding:0 12px;border-radius:15px;border:1px solid rgba(148,163,184,.45);background:none;color:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .chip.on{background:#9c27b0;border-color:#9c27b0;color:#fff}
 .dark .chip.on{background:#8b5cf6;border-color:#8b5cf6}
-.res{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:thin}
+.res{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:none}
+.res::-webkit-scrollbar{display:none}
 .rsec{display:flex;align-items:center;font-size:11.5px;font-weight:700;letter-spacing:.03em;padding:10px 8px 4px;text-transform:uppercase}
 .rsec span{flex:1}
 .rsec button{border:0;background:none;color:#9c27b0;font-size:12px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0}

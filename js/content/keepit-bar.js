@@ -964,7 +964,7 @@
   function renderChips() { $("chips").innerHTML = SCOPES().map(([k, l]) => `<button class="chip${S.scope === k ? " on" : ""}" type="button" data-scope="${k}">${esc(l)}</button>`).join(""); }
   function layoutSearch() {
     const vv = window.visualViewport, H = (vv ? vv.height : innerHeight) * Z(), top = (vv ? vv.offsetTop : 0) * Z();
-    const t0 = isDesk() ? Math.round(VH() * 0.12) : 10;
+    const t0 = Math.round(VH() * 0.12);   // v3.5.228: phone and tablet open it at the same place as the computer
     const sbox = $("sbox"); sbox.style.top = (top + t0) + "px"; sbox.style.maxHeight = Math.max(160, H - t0 - 10) + "px";
   }
   function renderCur() {
@@ -985,7 +985,7 @@
       { width:b.width * k + "px", height:b.height * k + "px", transform:"translate(-50%,0)", clipPath:`inset(0px 0px 0px 0px round 22px)` }];
   }
   const sheetRest = () => [...$("sbox").children].filter(c => !c.classList.contains("sin"));
-  function stopMorph() { morphAnim = null; $("sbox").getAnimations?.({ subtree:true }).forEach(a => a.cancel()); $("srch").classList.remove("closing"); $("sbox").classList.remove("morph"); if (morphPill) { morphPill.style.visibility = ""; morphPill = null; } }
+  function stopMorph() { morphAnim = null; $("srch").getAnimations?.({ subtree:true }).forEach(a => a.cancel()); $("srch").classList.remove("closing"); $("sbox").classList.remove("morph"); if (morphPill) { morphPill.style.visibility = ""; morphPill = null; } }
   function openSearch() {
     stopMorph(); introDone(); closePop(); closeSheet(); hideCoach(); S.scope = "all"; S.active = 0; const sq = $("sq"); sq.value = ""; sq.placeholder = t("sPlaceholder");
     $("sqx").setAttribute("aria-label", t("clear"));
@@ -1011,8 +1011,10 @@
       morphAnim?.cancel(); box.classList.add("morph"); srch.classList.add("closing");
       morphAnim = box.animate(morphFrames(pill).reverse(), { duration:240, easing:"cubic-bezier(.4,0,.2,1)", fill:"forwards" });
       sheetRest().forEach(c => c.animate([{ opacity:1 }, { opacity:0 }], { duration:120, easing:"ease-in", fill:"forwards" }));
-      $("scrim2").animate([{ opacity:1 }, { opacity:0 }], { duration:240 });
-      morphAnim.onfinish = () => { srch.classList.remove("open"); stopMorph(); };
+      $("scrim2").animate([{ opacity:1 }, { opacity:0 }], { duration:240, fill:"forwards" });
+      // v3.5.228: drop .open while .closing/.morph still switch the CSS transitions off and the animations hold everything
+      // at its end state, so nothing comes back for a frame (the old flash), then hand over to the plain closed styles
+      morphAnim.onfinish = () => { srch.classList.remove("open"); void getComputedStyle(box).opacity; void getComputedStyle($("scrim2")).opacity; stopMorph(); };
     } else { stopMorph(); srch.classList.remove("open"); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }
