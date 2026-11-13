@@ -102,6 +102,37 @@
     return { voiceMode, browserVoiceURI, readLanguage:voiceMode === "google" ? cleanReadLanguage(shared.readLanguage) : "" };
   }
 
+  // Giọng yêu thích (lhnSettings.favoriteVoices: danh sách voiceURI, mới nhất trước). Khi giọng đọc là Tự động / một ngôn ngữ,
+  // ngôn ngữ nào có giọng yêu thích còn trên máy thì đọc bằng giọng đứng đầu cho ngôn ngữ đó; không có thì Google như cũ.
+  const voiceBase = value => String(value || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
+  const cleanFavorites = list => [...new Set((Array.isArray(list) ? list : []).filter(uri => typeof uri === "string" && uri))].slice(0, 50);
+  async function getFavoriteVoices() { const data = await api.storage.local.get(SETTINGS_KEY); return cleanFavorites(data[SETTINGS_KEY]?.favoriteVoices); }
+  async function setFavoriteVoices(list) {
+    const data = await api.storage.local.get(SETTINGS_KEY), shared = data[SETTINGS_KEY] || {}, clean = cleanFavorites(list);
+    await api.storage.local.set({ [SETTINGS_KEY]:{ ...shared, favoriteVoices:clean } });
+    return clean;
+  }
+  function favoriteVoiceFor(lang, favorites, voices) {
+    const base = voiceBase(lang);
+    if (!base || !Array.isArray(favorites) || !Array.isArray(voices)) return null;
+    for (const uri of favorites) {
+      if (uri.startsWith("google:")) { if (voiceBase(uri.slice(7)) === base) return null; continue; }   // giọng Google yêu thích đứng trước → đọc bằng Google
+      const voice = voices.find(item => item.voiceURI === uri); if (voice && voiceBase(voice.lang) === base) return voice;
+    }
+    return null;
+  }
+  const deviceVoices = () => { try { return globalThis.speechSynthesis?.getVoices?.() || []; } catch { return []; } };
+  async function favoriteVoiceForLang(lang) {
+    const favorites = await getFavoriteVoices().catch(() => []);
+    if (!favorites.length) return null;
+    let voices = deviceVoices();
+    if (!voices.length && globalThis.speechSynthesis?.addEventListener) {   // Chrome nạp danh sách giọng bất đồng bộ
+      await new Promise(resolve => { const t = setTimeout(resolve, 600); globalThis.speechSynthesis.addEventListener("voiceschanged", () => { clearTimeout(t); resolve(); }, { once:true }); });
+      voices = deviceVoices();
+    }
+    return favoriteVoiceFor(lang, favorites, voices);
+  }
+
   function cleanReadLanguage(value) {
     const code = String(value || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
     return LANGUAGE_TAGS[code] ? code : "";
@@ -167,6 +198,12 @@
       await playWithBrowserVoice({ ...opts, browserVoiceURI:voiceSettings.browserVoiceURI });
       return;
     }
+    // Chỉ nơi bật useFavoriteVoice (Reader, đọc vùng chọn / nút loa từ điển) mới dùng giọng yêu thích; Dashboard, overlay giữ như cũ.
+    if (opts.useFavoriteVoice === true && typeof opts.systemSpeak === "function") {
+      const favorite = await favoriteVoiceForLang(opts.lang || opts.googleLanguage);
+      if (!opts.isActive()) return;
+      if (favorite) { opts.onFavoriteVoice?.(favorite); await playWithBrowserVoice({ ...opts, browserVoiceURI:favorite.voiceURI }); return; }
+    }
     let limitNotified = false;
     const chunks = splitChunks(opts.text);
     for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
@@ -230,5 +267,5 @@
     if (opts.isActive()) opts.onEnd?.();
   }
 
-  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectReadLanguage, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage });
+  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectReadLanguage, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage, getFavoriteVoices, setFavoriteVoices, favoriteVoiceFor });
 })();

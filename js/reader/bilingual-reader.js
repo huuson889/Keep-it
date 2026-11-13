@@ -10,6 +10,8 @@
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
   let voiceKbIndex = -1;
+  let favoriteVoices = []; // lhnSettings.favoriteVoices (voiceURI, mới nhất trước)
+  const favFlash = { key:"", at:0 }, favBeat = { key:"", at:0 }, favUnbeat = { key:"", at:0 }; const favGhosts = new Set(); let favOrder = null; // nhóm Yêu thích giữ nguyên thứ tự khi sheet đang mở; bỏ ♡ thì hàng ở lại (mờ) tới khi đóng sheet / đổi tìm kiếm → bấm lại để hoàn tác đúng chỗ
   const FLAG_REGION_KEYS = globalThis.LHN_FLAGS?.regionKeys || Object.freeze({ US: "US" });
   const flagEmojiForRegion = region => globalThis.LHN_FLAGS?.emojiForRegion?.(region) || "🇺🇸";
   const flagFontUrl = globalThis.browser?.runtime?.getURL?.("assets/fonts/TwemojiCountryFlags.woff2")
@@ -110,7 +112,7 @@
     brPanel.classList.toggle("lhn-br-speedp", name === "speed");
     $br("[data-speed-value]").hidden = name !== "speed";
     $br("[data-sheet-title]").textContent = name === "voices" ? popupText("readerPopupSelectVoice") : name === "speed" ? popupText("readerPopupSpeed") : "";
-    if (name === "voices") { voiceSearch.value = ""; renderVoiceChoices(); }
+    if (name === "voices") { voiceSearch.value = ""; favGhosts.clear(); favOrder = null; renderVoiceChoices(); }
     if (name === "speed") renderSpeed(currentSegmentRate());
     brPanel.removeAttribute("style");
     brSheet.classList.add("lhn-open"); $br("[data-sbody]").scrollTop = 0;
@@ -120,7 +122,7 @@
     syncBanner();
   }
   function closeSheet() {
-    brSheet.classList.remove("lhn-open"); openSheetName = "";
+    brSheet.classList.remove("lhn-open"); openSheetName = ""; favGhosts.clear(); favOrder = null;
     brRbar.querySelectorAll("[data-sheet].lhn-on").forEach(button => button.classList.remove("lhn-on"));
     syncBanner();
   }
@@ -286,7 +288,7 @@
   $br("[data-hide-banner]").addEventListener("click", () => { shortcutBannerVisible = false; syncBanner(); syncSpacer(); showBarToast(popupText("readerBannerHidden")); });
   const debouncedRenderVoiceChoices = LHN_INDEX_SEARCH.debounce(() => {
     if (LHN_INDEX_SEARCH.normalize(voiceSearch.value) === lastVoiceQuery) return;
-    renderVoiceChoices();
+    favGhosts.clear(); favOrder = null; renderVoiceChoices();
   }, 200);
   voiceSearch.addEventListener("input", debouncedRenderVoiceChoices);
   const voiceItems = () => Array.from(bar.querySelectorAll(".lhn-br-voice-list .lhn-br-voice"));
@@ -423,39 +425,129 @@
       auto.innerHTML=`<span class="lhn-br-vf lhn-br-globe">${BR_ICON.auto}</span><span class="lhn-br-vt"><b>${escVoiceHtml(popupText("readerVoiceAuto"))}</b><small>${escVoiceHtml(popupText("readerPopupAutoDescription"))}</small></span>${check(autoSelected)}`;
       auto.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(autoFlagLang()); void saveReaderVoiceSettings("google", ""); closePopovers(); }); list.appendChild(auto);
     }
-    const groupHeading = key => { const heading = document.createElement("div"); heading.className = "lhn-br-voice-group"; heading.setAttribute("role", "presentation"); heading.textContent = popupText(key); list.appendChild(heading); };
+    const groupHeading = key => { const heading = document.createElement("div"); heading.className = "lhn-br-voice-group"; heading.dataset.group = key; heading.setAttribute("role", "presentation"); heading.textContent = popupText(key); list.appendChild(heading); };
     let languageGroupShown = false, browserGroupShown = false;
-    READ_LANGUAGE_CODES.forEach(code => {
-      const region = readLanguageRegion(code), tag = LHN_TTS.normalizeLanguage(code);
-      const country = region ? (() => { try { return new Intl.DisplayNames([displayLang], { type:"region" }).of(region) || ""; } catch { return ""; } })() : "";
-      const name = readLanguageName(code), english = languageLabel(code, "en"), native = languageLabel(code, code);
-      if (plainQuery && !plainText(`${name} ${english} ${native} ${country} ${code} ${tag}`).includes(plainQuery)) return;
-      if (!languageGroupShown) { languageGroupShown = true; groupHeading("readerPopupGroupLanguages"); }
-      const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code;
-      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
-      button.innerHTML=`<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(name)}</b><small>${native !== name ? escVoiceHtml(native) + " · " : ""}${tag}</small></span>${check(isSelected)}`;
-      renderFlag(button.firstElementChild, region);
-      button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); }); list.appendChild(button);
-    });
     const flagMissLogged = new Set(); // debug: log một lần cho mỗi vùng thiếu cờ
     let voiceRegionNames = null, voiceLangNames = null;
     try { voiceRegionNames = new Intl.DisplayNames([displayLang], { type:"region" }); voiceLangNames = new Intl.DisplayNames([displayLang], { type:"language" }); } catch {}
-    LHN_INDEX_SEARCH.search(getVoiceIndex(), query).forEach(voice => {
+    const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
+    const favBase = voice => (voice?.lang || "").split(/[-_]/)[0].toLowerCase();
+    // Mục yêu thích: voiceURI (giọng trình duyệt) hoặc "google:<mã>" (giọng Google của ngôn ngữ đó)
+    const favEntry = key => key.startsWith("google:") ? (READ_LANGUAGE_CODES.includes(key.slice(7)) ? { key, code:key.slice(7), base:key.slice(7) } : null) : (() => { const voice = systemVoices.find(item => item.voiceURI === key); return voice ? { key, voice, base:favBase(voice) } : null; })();
+    const favEntries = favoriteVoices.map(favEntry).filter(Boolean);
+    const priorityURIs = new Set(); { const seen = new Set(); favEntries.forEach(entry => { if (entry.base && !seen.has(entry.base)) { seen.add(entry.base); priorityURIs.add(entry.key); } }); }
+    const prioTag = langName => `<span class="lhn-br-prio" title="${escVoiceHtml(popupText("readerVoiceFavPriorityTip", { lang:langName }))}">${escVoiceHtml(popupText("readerVoiceFavPriority"))}</span>`;
+    const favButton = (key, isFav) => { const tip = popupText(isFav ? "readerVoiceFavRemove" : "readerVoiceFavAdd"); return `<span class="lhn-br-fav${isFav ? " lhn-on" : ""}" role="button" aria-pressed="${isFav}" aria-label="${escVoiceHtml(tip)}" title="${escVoiceHtml(tip)}">${HEART}</span>`; };
+    const wireFav = (button, key) => { const unAge = key === favUnbeat.key ? performance.now() - favUnbeat.at : 1e9; if (unAge < 260) { button.querySelector(".lhn-br-fav").classList.add("lhn-unbeat"); button.style.setProperty("--lhn-un-delay", `-${Math.round(unAge)}ms`); if (button.classList.contains("lhn-br-ghost") || button.dataset.sec === "fav") button.classList.add("lhn-br-ghostin"); } const beatAge = key === favBeat.key ? performance.now() - favBeat.at : 1e9; if (beatAge < 500) { const heart = button.querySelector(".lhn-br-fav"); heart.classList.add("lhn-beat"); heart.firstElementChild.style.animationDelay = `-${Math.round(beatAge)}ms`; } button.querySelector(".lhn-br-fav").addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); void toggleFavoriteVoice(key, button); }); };
+    const langMatches = code => {
+      if (!plainQuery) return true;
+      const region = readLanguageRegion(code), tag = LHN_TTS.normalizeLanguage(code);
+      const country = region ? (() => { try { return new Intl.DisplayNames([displayLang], { type:"region" }).of(region) || ""; } catch { return ""; } })() : "";
+      return plainText(`${readLanguageName(code)} ${languageLabel(code, "en")} ${languageLabel(code, code)} ${country} ${code} ${tag} google`).includes(plainQuery);
+    };
+    const langRow = (code, inFavorites) => {
+      const region = readLanguageRegion(code), tag = LHN_TTS.normalizeLanguage(code), key = `google:${code}`;
+      const name = readLanguageName(code), native = languageLabel(code, code);
+      const isSelected = settings.voiceMode !== "browser" && settings.readLanguage === code, isFav = favoriteVoices.includes(key);
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.dataset.favKey = key; button.dataset.sec = inFavorites ? "fav" : "all";
+      button.innerHTML=`<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(name)}${inFavorites && priorityURIs.has(key) ? prioTag(name) : ""}</b><small>${inFavorites ? "Google · " : ""}${native !== name ? escVoiceHtml(native) + " · " : ""}${tag}</small></span>${check(isSelected)}${favButton(key, isFav)}`;
+      renderFlag(button.firstElementChild, region); wireFav(button, key);
+      button.addEventListener("click", () => { selectedVoice = null; activeVoice = null; previewVoiceFlag(LHN_TTS.normalizeLanguage(code)); void saveReaderVoiceSettings("google", "", code); closePopovers(); });
+      return button;
+    };
+    const voiceRow = (voice, inFavorites) => {
       const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
-      if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
-      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`;
-      const baseLang = (voice.lang || "").split(/[-_]/)[0].toLowerCase();
+      const isFav = favoriteVoices.includes(voice.voiceURI), key = voice.voiceURI;
+      const button = document.createElement("button"); button.type="button"; button.className=`lhn-br-voice${isSelected ? " lhn-selected" : ""}`; button.dataset.favKey = key; button.dataset.sec = inFavorites ? "fav" : "all";
+      const baseLang = favBase(voice);
       let langLabel = baseLang; try { langLabel = voiceLangNames?.of(baseLang) || baseLang; } catch {}
       let countryLabel = region || langLabel; try { if (region) countryLabel = voiceRegionNames?.of(region) || region; } catch {}
       const shortVoice = (voice.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").replace(/\s*\(Browser\)\s*$/i, "").split(" - ")[0].trim() || voice.name;
-      button.innerHTML = `<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(countryLabel)}</b><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${check(isSelected)}`;
+      const prio = inFavorites && priorityURIs.has(voice.voiceURI) ? prioTag(langLabel) : "";
+      button.innerHTML = `<span class="lhn-br-vf lhn-br-flagfont"></span><span class="lhn-br-vt"><b>${escVoiceHtml(countryLabel)}${prio}</b><small>${escVoiceHtml(shortVoice)} · ${escVoiceHtml(langLabel)}</small></span>${check(isSelected)}${favButton(voice.voiceURI, isFav)}`;
       renderFlag(button.firstElementChild, region);
       button.title = `${voice.name} · ${voice.lang}`;
-      button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); }); list.appendChild(button);
+      wireFav(button, voice.voiceURI);
+      button.addEventListener("click",()=>{ selectedVoice=voice; activeVoice=voice; previewVoiceFlag(voice.lang); void saveReaderVoiceSettings("browser", voice.voiceURI); closePopovers(); });
+      return button;
+    };
+    const matchedVoices = LHN_INDEX_SEARCH.search(getVoiceIndex(), query), matchedURIs = new Set(matchedVoices.map(voice => voice.voiceURI));
+    // thứ tự hiển thị = favOrder (chụp lúc mở sheet); giọng mới thích từ danh sách dưới thì thêm lên đầu
+    favOrder = favOrder ? [...favoriteVoices.filter(key => !favOrder.includes(key)), ...favOrder.filter(key => favoriteVoices.includes(key) || favGhosts.has(key))] : [...favoriteVoices];
+    const favDisplay = favOrder.map(key => { const entry = favEntry(key); return entry && (favGhosts.has(key) && !favoriteVoices.includes(key) ? { ...entry, ghost:true } : entry); }).filter(Boolean);
+    const favShown = favDisplay.filter(entry => entry.code ? langMatches(entry.code) : matchedURIs.has(entry.key));
+    if (favShown.length) { groupHeading("readerPopupGroupFavorites"); favShown.forEach(entry => { const row = entry.code ? langRow(entry.code, true) : voiceRow(entry.voice, true); if (entry.ghost) row.classList.add("lhn-br-ghost"); else row.classList.remove("lhn-br-ghostin"); const flashAge = entry.key === favFlash.key ? performance.now() - favFlash.at : 1e9; if (flashAge < 1200) { row.classList.add("lhn-br-flash"); row.style.animationDelay = `-${Math.round(flashAge)}ms`; } list.appendChild(row); }); }
+    READ_LANGUAGE_CODES.forEach(code => {
+      if (!langMatches(code)) return;
+      if (!languageGroupShown) { languageGroupShown = true; groupHeading("readerPopupGroupLanguages"); }
+      list.appendChild(langRow(code, false));
+    });
+    matchedVoices.forEach(voice => {
+      if (!browserGroupShown) { browserGroupShown = true; groupHeading("readerPopupGroupBrowserVoices"); }
+      list.appendChild(voiceRow(voice, false));
     });
     if (!list.childElementCount) list.textContent=popupText("readerPopupNoVoices");
+    // tiêu đề nhóm: icon nhỏ + số mục (nhẹ: chỉ là chữ/SVG, không nền, không dính)
+    const GROUP_ICON = {
+      readerPopupGroupFavorites:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>',
+      readerPopupGroupLanguages:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.2 9.6A7.6 7.6 0 1 0 19.6 12H12"/></svg>',
+      readerPopupGroupBrowserVoices:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3 9h18"/><path d="M6.2 6.8h.01M8.8 6.8h.01"/></svg>'
+    };
+    list.querySelectorAll(".lhn-br-voice-group").forEach(heading => {
+      let count = 0; for (let node = heading.nextElementSibling; node && !node.classList.contains("lhn-br-voice-group"); node = node.nextElementSibling) if (node.classList.contains("lhn-br-voice") && !node.classList.contains("lhn-br-ghost")) count++;
+      heading.innerHTML = `${GROUP_ICON[heading.dataset.group] || ""}<span>${escVoiceHtml(popupText(heading.dataset.group))}</span><span class="lhn-br-gcount">· ${count}</span>`;
+    });
+  }
+  // ♡: thêm/bỏ giọng yêu thích; giọng mới thích lên đầu nhóm (thành giọng ưu tiên của ngôn ngữ đó). Giữ nguyên vị trí cuộn.
+  // ♡ không làm nhảy dòng: hàng vừa bấm đứng yên dưới ngón tay/chuột (cuộn bù phần nhóm Yêu thích dài/ngắn đi).
+  //   Thích ở danh sách dưới → bản sao lên Yêu thích (đầu nhóm = Ưu tiên) và sáng nhẹ một lần.
+  //   Bỏ thích trong nhóm Yêu thích → hàng ở lại mờ (bấm lại ♡ là hoàn tác về đúng chỗ cũ).
+  async function toggleFavoriteVoice(uri, row) {
+    const list = $br(".lhn-br-voice-list"), sec = row?.dataset.sec || "all", anchorTop = row?.isConnected ? row.getBoundingClientRect().top : null;
+    let current = favoriteVoices; try { current = await LHN_TTS.getFavoriteVoices(); } catch {}
+    const adding = !current.includes(uri);
+    let next;
+    const before = favPriorityFor(uri, current);
+    if (adding && favGhosts.has(uri) && favOrder) { favGhosts.delete(uri); next = favOrder.filter(key => key === uri || current.includes(key)); next.push(...current.filter(key => !next.includes(key))); }   // hoàn tác: về đúng chỗ cũ
+    else if (adding) { favGhosts.delete(uri); next = [uri, ...current]; if (favOrder) favOrder = [uri, ...favOrder.filter(key => key !== uri)]; }
+    else { next = current.filter(item => item !== uri); if (sec === "fav") favGhosts.add(uri); else { favGhosts.delete(uri); if (favOrder) favOrder = favOrder.filter(key => key !== uri); } }
+    try { favoriteVoices = await LHN_TTS.setFavoriteVoices(next); } catch { return; }
+    let scroller = list; while (scroller && scroller !== bar && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+    if (!scroller || scroller === bar) scroller = list.parentElement;
+    if (adding && sec === "all") { favFlash.key = uri; favFlash.at = performance.now(); }   // bản sao mới sáng nhẹ (giữ cả khi danh sách vẽ lại)
+    if (adding) { favBeat.key = uri; favBeat.at = performance.now(); }   // ♥ đập (giữ cả khi danh sách vẽ lại)
+    else { favUnbeat.key = uri; favUnbeat.at = performance.now(); }   // bỏ ♥: tim co nhẹ, đỏ rút về viền xám; hàng mờ dần
+    const kb = voiceKbIndex; renderVoiceChoices();
+    const find = section => list.querySelector(`.lhn-br-voice[data-sec="${section}"][data-fav-key="${CSS.escape(uri)}"]`);
+    const same = find(sec);
+    if (same && anchorTop != null && scroller) scroller.scrollTop += (same.getBoundingClientRect().top - anchorTop) / (scroller.currentCSSZoom || 1);
+
+    if (kb >= 0) { voiceKbIndex = kb; voiceItems()[kb]?.classList.add("lhn-kb-active"); }
+    const tapped = same?.querySelector(".lhn-br-fav");
+    if (adding && tapped) favBurst(tapped);
+    if (adding) navigator.vibrate?.(15);
+    const after = favPriorityFor(uri, favoriteVoices);
+    if (after.label && after.key !== before.key) showBarToast(popupText("readerVoiceFavNowReads", { lang:after.label, voice:after.voice }));   // chỉ báo khi giọng đọc của ngôn ngữ đó đổi
+  }
+  // Giọng sẽ đọc ngôn ngữ của mục `uri` theo danh sách yêu thích (mục đầu tiên còn trên máy; không có thì Google)
+  function favPriorityFor(uri, favorites) {
+    const voices = synth?.getVoices?.() || systemVoices, baseOf = key => key.startsWith("google:") ? key.slice(7) : String(voices.find(v => v.voiceURI === key)?.lang || "").split(/[-_]/)[0].toLowerCase();
+    const base = baseOf(uri); if (!base) return {};
+    const top = favorites.find(key => baseOf(key) === base && (key.startsWith("google:") ? READ_LANGUAGE_CODES.includes(base) : voices.some(v => v.voiceURI === key))) || "";
+    let label = base; try { label = READ_LANGUAGE_CODES.includes(base) ? readLanguageName(base) : (new Intl.DisplayNames([displayLang], { type:"language" }).of(base) || base); } catch {}
+    const voice = !top || top.startsWith("google:") ? "Google" : String(voices.find(v => v.voiceURI === top)?.name || "").replace(/^Microsoft\s+/, "").replace(/\s*Online\s*\(Natural\)/i, "").split(" - ")[0].trim();
+    return { key:top || `google:${base}`, label, voice };
+  }
+  // Hiệu ứng ♥ giống nút ♥ của overlay: 2 vòng tròn lan ra + 10 tim nhỏ bay tỏa (gắn vào bảng chọn để không bị cắt ở mép danh sách)
+  function favBurst(heart) {
+    const panel = brPanel, pr = panel.getBoundingClientRect(), hr = heart.getBoundingClientRect(), k = pr.width / (panel.offsetWidth || pr.width || 1) || 1;
+    const b = document.createElement("span"); b.className = "lhn-br-burst";
+    b.style.left = `${(hr.left + hr.width / 2 - pr.left) / k}px`; b.style.top = `${(hr.top + hr.height / 2 - pr.top) / k}px`;
+    const path = heart.querySelector("path")?.getAttribute("d") || "";
+    b.innerHTML = "<b></b><b></b>" + Array.from({ length:10 }, (_, i) => { const a = i / 10 * Math.PI * 2, r = 34 + (i % 3) * 8; return `<i style="--x:${(Math.cos(a) * r).toFixed(1)}px;--y:${(Math.sin(a) * r).toFixed(1)}px"><svg viewBox="0 0 24 24"><path d="${path}"/></svg></i>`; }).join("");
+    panel.appendChild(b); setTimeout(() => b.remove(), 900);
   }
   function speakAfterCancel(text) {
     window.setTimeout(() => { if (reading && !readingPaused) { synth?.resume(); speakNext(text); } }, 120);
@@ -1088,7 +1180,7 @@
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
       clearCurrent: () => { googleAudio = null; },
-      browserVoiceURI:voiceSettings.browserVoiceURI,
+      browserVoiceURI:voiceSettings.browserVoiceURI, useFavoriteVoice:true,
       systemSpeak: (t, l, done, browserVoiceURI) => {
         if (!synth || !window.SpeechSynthesisUtterance) { done({ unsupported:true }); return; }
         const normalize = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
@@ -1343,6 +1435,7 @@
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
       displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
+      if (Array.isArray(changes[DISPLAY_SETTINGS_KEY].newValue?.favoriteVoices)) favoriteVoices = changes[DISPLAY_SETTINGS_KEY].newValue.favoriteVoices.filter(uri => typeof uri === "string");
       applySharedSpeechRate();
       const nextVoiceMode = dashboardShortcuts.voiceMode === "browser" || (!dashboardShortcuts.voiceMode && dashboardShortcuts.speechVoice === "browser") ? "browser" : "google";
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
@@ -1362,6 +1455,7 @@
     accountProfile = data[DEMO_PROFILE_KEY] || null;
     let voiceSettings = { voiceMode:"google", browserVoiceURI:"" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
+    try { favoriteVoices = await LHN_TTS.getFavoriteVoices(); } catch {}
     const savedReaderSettings = data[SETTINGS_KEY] || {};
     const savedReaderSites = Array.isArray(savedReaderSettings.readerDisabledWebsites) ? savedReaderSettings.readerDisabledWebsites : [];
     const seedReaderSites = savedReaderSettings.readerDefaultSitesSeeded !== true;

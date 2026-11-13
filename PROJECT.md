@@ -199,6 +199,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.232 | Arena.ai Agent sửa:**
+
+- Reader → Chọn giọng đọc: giọng yêu thích theo demo `reader-voice` v6 (người dùng duyệt). ♡ ở bên phải mỗi giọng Google và giọng trình duyệt (máy tính: hiện khi rê chuột; cảm ứng: luôn hiện mờ). Giọng đã thích có bản sao trong nhóm "Yêu thích" ngay dưới Tự động; giọng đứng đầu của mỗi ngôn ngữ có nhãn "Ưu tiên" và được dùng khi giọng là Tự động hoặc một ngôn ngữ Google (khớp theo ngôn ngữ gốc, en-US/en-GB cùng là tiếng Anh). Chọn một giọng cụ thể thì vẫn luôn dùng giọng đó; ngôn ngữ chưa có yêu thích đọc Google như cũ; giọng yêu thích không còn trên máy thì ẩn, vẫn được lưu. Ô tìm kiếm lọc cả nhóm Yêu thích.
+- Áp dụng cho Reader, đọc vùng chọn và nút loa từ điển (`useFavoriteVoice:true`); Dashboard và overlay không đổi.
+- Không nhảy dòng: hàng vừa bấm ♡ đứng yên (danh sách tự cuộn bù); khi sheet mở, thứ tự nhóm Yêu thích giữ nguyên; bỏ ♡ trong nhóm thì hàng ở lại mờ, bấm lại để hoàn tác về đúng chỗ; đóng sheet / đổi tìm kiếm mới bỏ hàng mờ.
+- Hiệu ứng: thích = tim đập + 2 vòng lan + 10 tim nhỏ (giống ♥ overlay, màu #ff2d55, rung 15ms); bỏ thích = tim co nhẹ, đỏ rút về viền xám, hàng mờ dần. Toast "Tiếng Anh: đọc bằng …" chỉ khi giọng đọc của ngôn ngữ đó đổi. Tắt hiệu ứng khi hệ thống bật giảm chuyển động.
+- Tiêu đề nhóm có icon nhỏ (♥ / chữ G / cửa sổ trình duyệt) và số mục; gạch mảnh giữa các nhóm. Nhãn "Ngôn ngữ (Google TTS)" → "Giọng Google" (en "Google voices", ko "Google 음성").
+- Lưu: thêm `lhnSettings.favoriteVoices` (chỉ trên máy, tối đa 50); không đổi key nào khác. `DATA-INVENTORY.md` §2, `docs/modules/reader.md` cập nhật.
+- File: `js/reader/bilingual-reader.js`, `js/reader/reader-css.js`, `js/reader/tts-engine.js`, `js/core/languages.js`, `js/content/content.js` (`useFavoriteVoice`), `manifest.json`, `DATA-INVENTORY.md`, `docs/modules/reader.md`.
+- Kiểm tra (Chromium): demo dựng lại từ đúng code trong repo — máy tính vi sáng, điện thoại en tối, tablet ngang ko sáng: Tự động đọc tiếng Anh bằng Sonia ♥, tiếng Việt bằng HoaiMy ♥, tiếng Hàn bằng Google ♥; bấm ♡ trong nhóm Yêu thích 4 lần và ♡ ở danh sách dưới không hàng nào xê dịch; nhãn 3 ngôn ngữ đúng. Extension thật (unpacked): thanh Reader mở bằng Alt+R, nhóm Yêu thích + "Giọng Google", ♡ lưu `favoriteVoices`, thanh cuộn danh sách 3px; không lỗi trang.
+
 **2026-10-23 | v3.5.231 | Arena.ai Agent sửa:**
 
 - Logo Tuổi Trẻ đúng favicon thật (ô đỏ #e12e27, chữ "tt" trắng); dùng chung cho Trang chủ và Dashboard → Highlights & Notes.

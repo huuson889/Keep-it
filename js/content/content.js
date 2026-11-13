@@ -1047,7 +1047,7 @@
       setCurrent: (audio, url) => { currentSpeakAudio = audio; currentSpeakObjectUrl = url; },
       clearCurrent: () => { currentSpeakAudio = null; currentSpeakObjectUrl = null; },
       browserVoiceURI:voiceSettings.browserVoiceURI,
-      systemSpeak: (t, l, done, uri) => speakWithSystemSpeech(t, l, done, uri),
+      systemSpeak: (t, l, done, uri) => speakWithSystemSpeech(t, l, done, uri), useFavoriteVoice:true,
       onGoogleAudioSlow: () => showSidebarToast(() => t("googleAudioSlowToast")),
       onEnd: finish
     });

@@ -100,8 +100,14 @@
   MESSAGES.en.bilingualSpeakerAlways = "Always visible"; MESSAGES.vi.bilingualSpeakerAlways = "Luôn hiện"; MESSAGES.ko.bilingualSpeakerAlways = "항상 표시";
   MESSAGES.en.bilingualSpeakerHover = "Show on hover"; MESSAGES.vi.bilingualSpeakerHover = "Hiện khi di chuột"; MESSAGES.ko.bilingualSpeakerHover = "마우스를 올릴 때 표시";
   MESSAGES.en.bilingualSpeakerReading = "Only while reading"; MESSAGES.vi.bilingualSpeakerReading = "Chỉ hiện khi đọc"; MESSAGES.ko.bilingualSpeakerReading = "읽는 동안에만 표시";
-  MESSAGES.en.readerPopupGroupLanguages = "Languages (Google TTS)"; MESSAGES.vi.readerPopupGroupLanguages = "Ngôn ngữ (Google TTS)"; MESSAGES.ko.readerPopupGroupLanguages = "언어 (Google TTS)";
+  MESSAGES.en.readerPopupGroupLanguages = "Google voices"; MESSAGES.vi.readerPopupGroupLanguages = "Giọng Google"; MESSAGES.ko.readerPopupGroupLanguages = "Google 음성";
   MESSAGES.en.readerPopupGroupBrowserVoices = "Browser voices"; MESSAGES.vi.readerPopupGroupBrowserVoices = "Giọng trình duyệt"; MESSAGES.ko.readerPopupGroupBrowserVoices = "브라우저 음성";
+  MESSAGES.en.readerPopupGroupFavorites = "Favourites"; MESSAGES.vi.readerPopupGroupFavorites = "Yêu thích"; MESSAGES.ko.readerPopupGroupFavorites = "즐겨찾기";
+  MESSAGES.en.readerVoiceFavAdd = "Add to favourites"; MESSAGES.vi.readerVoiceFavAdd = "Thêm vào yêu thích"; MESSAGES.ko.readerVoiceFavAdd = "즐겨찾기에 추가";
+  MESSAGES.en.readerVoiceFavRemove = "Remove from favourites"; MESSAGES.vi.readerVoiceFavRemove = "Bỏ yêu thích"; MESSAGES.ko.readerVoiceFavRemove = "즐겨찾기에서 삭제";
+  MESSAGES.en.readerVoiceFavPriority = "Priority"; MESSAGES.vi.readerVoiceFavPriority = "Ưu tiên"; MESSAGES.ko.readerVoiceFavPriority = "우선";
+  MESSAGES.en.readerVoiceFavPriorityTip = "Used first for {lang} with Auto or a language"; MESSAGES.vi.readerVoiceFavPriorityTip = "Dùng trước cho {lang} khi chọn Tự động hoặc chọn ngôn ngữ"; MESSAGES.ko.readerVoiceFavPriorityTip = "자동 또는 언어 선택 시 {lang}에 먼저 사용";
+  MESSAGES.en.readerVoiceFavNowReads = "{lang}: reading with {voice}"; MESSAGES.vi.readerVoiceFavNowReads = "{lang}: đọc bằng {voice}"; MESSAGES.ko.readerVoiceFavNowReads = "{lang}: {voice} 음성으로 읽기";
   MESSAGES.en.readerPopupBrowserTag = "Browser"; MESSAGES.vi.readerPopupBrowserTag = "Trình duyệt"; MESSAGES.ko.readerPopupBrowserTag = "브라우저";
   MESSAGES.en.readerToastGoogleVoiceFailed = "Google voice failed. Reading stopped."; MESSAGES.vi.readerToastGoogleVoiceFailed = "Giọng Google bị lỗi. Đã dừng đọc."; MESSAGES.ko.readerToastGoogleVoiceFailed = "Google 음성 오류로 읽기를 중지했습니다.";
   MESSAGES.en.readerToastGoogleLimit = "Google voice limit reached. Using browser voice."; MESSAGES.vi.readerToastGoogleLimit = "Hết lượt giọng Google. Đang dùng giọng trình duyệt."; MESSAGES.ko.readerToastGoogleLimit = "Google 음성 사용 한도에 도달했습니다. 브라우저 음성을 사용합니다.";
