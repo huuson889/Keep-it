@@ -218,7 +218,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       tnotes: [],
       colList: true, colNotes: true, ambient: true, autoHideDock: false,
       tapTranslate: true, speakOnTranslate: true, merge: true,
-      sp: { phase: 'idle', heard: [], score: 0, attempt: 0 }, wr: { phase: 'idle', val: '', acc: 0, ops: null },
+      sp: { phase: 'idle', heard: [], score: 0, attempt: 0 }, wr: { phase: 'idle', val: '', acc: 0, panel: null, marks: null, slots: [], hint: null, escFilled: false },
       kb: false, chromeOff: false, sess: Date.now(), srcLang: 'auto', dstLang: 'auto',
       subTab: 'video', subStyle: { video: { size: 1, en: 'def', vi: 'def', bold: true, font: 'def', bg: 'soft' }, side: { size: 1, en: 'def', vi: 'def', bold: false, font: 'def', bg: 'none' } },
       exp: { fmt: 'srt', bi: true, time: true },
@@ -1306,7 +1306,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const r = size / 2 - 3, c = 2 * Math.PI * r, f = done / total;
       return `<svg viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="rgba(148,163,184,.3)" stroke-width="3"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}"/></svg>`;
     }
-    function resetStudy() { S.sp = { phase: 'idle', heard: [], score: 0, attempt: S.sp.attempt }; S.wr = { phase: 'idle', val: '', acc: 0, ops: null }; }
+    function resetStudy() { S.sp = { phase: 'idle', heard: [], score: 0, attempt: S.sp.attempt }; S.wr = { phase: 'idle', val: '', acc: 0, panel: null, marks: null, slots: [], hint: null, escFilled: false }; }
     function setStudyIndex(i) {
       i = Math.max(0, Math.min(SENT.length - 1, i));
       speakAbort(); S.si[S.tab] = i; S.reach[S.tab] = Math.max(S.reach[S.tab] || 0, i); S.t = SENT[i].start; seekMedia(S.t); setPlaying(false); resetStudy(); queueStudySave(); translateAround(i);
@@ -1389,18 +1389,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       } else {
         const wr = S.wr;
         const hint = esc(words(s.en).map((w) => { const c = [...w]; return c[0] + c.slice(1).join('').replace(/[\p{L}\p{N}]/gu, '_'); }).join('  '));
-        let res = '';
-        if (wr.phase === 'done' || wr.phase === 'wrong') {
-          const okAll = wr.phase === 'done';
-          res = `<div class="rpanel ${okAll ? 'ok' : 'err'}"><div class="rt">${ic(okAll ? 'check' : 'alert')}<b>${okAll ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span><span class="acc">${wr.acc}%</span></div><div class="diff">${wr.ops.map((o) => o.t === 'ok' ? `<span class="ok">${esc(o.w)}</span>` : o.t === 'bad' ? `<span class="bad">${esc(o.w)}</span> <span class="fix">${esc(o.fix)}</span>` : o.t === 'mis' ? `<span class="mis">${esc(o.w)}</span>` : `<span class="bad">${esc(o.w)}</span> <span class="fix">${T('extra')}</span>`).join(' ')}</div></div>`;
-        }
-        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
+        const res = wr.panel ? wrPanelHTML(wr) : '';
+        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
           <div class="wbox"><textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
-        ta.addEventListener('input', () => { S.wr.val = ta.value; grow(); }); requestAnimationFrame(grow);
+        ta.addEventListener('input', () => { S.wr.val = ta.value; wrOnInput(); grow(); placeWrMarks(); }); ta.addEventListener('scroll', syncWrMarks); requestAnimationFrame(() => { grow(); placeWrMarks(); });
         if (wr.phase === 'wrong' && S.wrFocus) { S.wrFocus = false; setTimeout(() => { const t = $('#wta'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0); }
-        ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (S.wr.phase === 'done') studyGo(1); else writeCheck(); } if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (S.wr.phase === 'done') { resetStudy(); renderStudy(); } else { S.wr.val = s.en; writeCheck(); } } });
+        ta.addEventListener('keydown', (e) => wrKeyDown(e, ta));
       }
       bindSwipe($('#scard'));
       fitStudy();
@@ -1441,7 +1437,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'chip') { if (wClass() === 'c' || !roomList()) openPanel('slist', b); else { S.colList = true; apply(); markCur(true); } return; }
       if (a === 'tr') { S.showTr = !S.showTr; renderStudy(); saveUi(); return; }
       if (a === 'auto') { S.auto = !S.auto; renderStudy(); saveUi(); toast(S.auto ? T('autoAdvanceAt80') : T('autoOff')); return; }
-      if (a === 'hints') { S.hints = !S.hints; renderStudy(); saveUi(); return; }
+      if (a === 'hints') { S.hints = !S.hints; wrHintsToggled(); renderStudy(); saveUi(); return; }
       if (a === 'notes') { notesAction(b); return; }
       if (a === 'model') { S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); setPlaying(true); if (S.tab === 'write') renderStudy(); return; }
       if (a === 'mic') { speakToggle(); return; }
@@ -1449,7 +1445,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'retry') { speakAbort(); resetStudy(); renderStudy(); return; }
       if (a === 'playrec') { if (SPK.url) { toast(T('playingYourRecording')); playRec(); } else toast(B.t('dictationSpeakRecordingUnavailable')); return; }
       if (a === 'check') { writeCheck(); return; }
-      if (a === 'word') { const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length; S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; renderStudy(); const ta = $('#wta'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return; }
+      if (a === 'word') { const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length; S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; wrOnInput(); renderStudy(); const ta = $('#wta'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return; }
     });
     function bindSwipe(card) {
       // the whole card follows the finger (tilt) and slides away (demo v17); a swipe may start anywhere on the card on touch —
@@ -1674,14 +1670,408 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const c = speakCopy(score), t = speakTier(score), C = 2 * Math.PI * 21;
       return `<div class="sptoast ${t}" id="sptoast" role="status"><div class="ring"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" class="bg"/><circle cx="25" cy="25" r="21" class="fg" stroke-dasharray="${(C * score / 100).toFixed(1)} ${C.toFixed(1)}"/></svg><b>${score}%</b></div><div class="tx"><b>${c.title}</b><small>${c.desc}</small></div></div>`;
     }
+    // ---------- Chép: chấm + báo lỗi y như dictation.js trước v3.5.171 (v3.5.244) ----------
+    // Enter: gõ đúng phần đầu câu → không chấm, hiện các từ đã đúng + "___" (gợi ý bật thì lộ 1 từ kế); còn lại chuẩn hoá theo phụ đề rồi chấm.
+    // Sai: chỉ báo chỗ sai đầu tiên; tắt gợi ý thì không lộ từ đúng (Enter lần nữa mới lộ); gạch chân từ sai + ô trống chỗ thiếu ngay trong ô gõ.
+    // Esc: điền đáp án, không chấm; Esc lần nữa xoá. Đúng 100%: tự thêm dấu câu còn thiếu.
+    function findMissingBeforeCorrect(operations) {
+      const matches = [];
+      for (let index = 0; index < operations.length;) {
+        if (operations[index].type !== "missing") { index++; continue; }
+        const startIndex = index;
+        const missingOperations = [];
+        let lastExpectedIndex = null;
+        let isContiguous = true;
+        while (operations[index]?.type === "missing") {
+          const missing = operations[index];
+          const expectedIndices = missing.expectedIndices || [];
+          if (!expectedIndices.length) isContiguous = false;
+          for (const expectedIndex of expectedIndices) {
+            if (lastExpectedIndex !== null && expectedIndex !== lastExpectedIndex + 1) isContiguous = false;
+            lastExpectedIndex = expectedIndex;
+          }
+          missingOperations.push(missing);
+          index++;
+        }
+        const following = operations[index];
+        const followingExpectedIndices = following?.expectedIndices || [];
+        const followingTypedIndices = following?.typedIndices || [];
+        if (isContiguous && missingOperations.length && following?.type === "ok"
+          && followingExpectedIndices.length === 1 && followingTypedIndices.length === 1
+          && followingExpectedIndices[0] === lastExpectedIndex + 1) {
+          matches.push({
+            index: startIndex,
+            missingOperations,
+            expectedIndices: missingOperations.flatMap((operation) => operation.expectedIndices || []),
+            following,
+            nextTypedIndex: followingTypedIndices[0],
+          });
+        }
+      }
+      return matches;
+    }
+    function addMissingPunctuation(reference, answer) {
+      const wordPattern = /[\p{L}\p{N}’‘`´']+/gu;
+      const referenceWords = [...String(reference).matchAll(wordPattern)];
+      const answerWords = [...String(answer).matchAll(wordPattern)];
+      if (referenceWords.length !== answerWords.length) return answer;
+
+      const isApostrophe = (char) => "’‘`´'".includes(char);
+      const restoreWordApostrophes = (expected, typed) => {
+        const expectedLetters = [...expected].filter((char) => !isApostrophe(char));
+        const typedLetters = [...typed].filter((char) => !isApostrophe(char));
+        if (expectedLetters.length !== typedLetters.length
+          || expectedLetters.map((char) => char.toLowerCase()).join("") !== typedLetters.map((char) => char.toLowerCase()).join("")) return typed;
+        let letterIndex = 0;
+        return [...expected].map((char) => isApostrophe(char) ? char : typedLetters[letterIndex++]).join("");
+      };
+      const punctuation = (text) => [...text.matchAll(/\p{P}/gu)].map((match) => match[0]);
+      let output = "";
+      let referenceOffset = 0;
+      let answerOffset = 0;
+
+      for (let index = 0; index <= referenceWords.length; index++) {
+        const referenceEnd = index < referenceWords.length ? referenceWords[index].index : String(reference).length;
+        const answerEnd = index < answerWords.length ? answerWords[index].index : String(answer).length;
+        const expectedGap = String(reference).slice(referenceOffset, referenceEnd);
+        const typedGap = String(answer).slice(answerOffset, answerEnd);
+        const expectedMarks = punctuation(expectedGap);
+        const typedMarks = punctuation(typedGap);
+        const remainingMarks = [...expectedMarks];
+        let unexpectedMark = false;
+        for (const mark of typedMarks) {
+          const position = remainingMarks.indexOf(mark);
+          if (position < 0) { unexpectedMark = true; break; }
+          remainingMarks.splice(position, 1);
+        }
+        output += remainingMarks.length && !unexpectedMark ? expectedGap : typedGap;
+
+        if (index < referenceWords.length) {
+          const expectedWord = referenceWords[index][0];
+          const typedWord = answerWords[index][0];
+          output += restoreWordApostrophes(expectedWord, typedWord);
+          referenceOffset = referenceWords[index].index + expectedWord.length;
+          answerOffset = answerWords[index].index + typedWord.length;
+        }
+      }
+      return output;
+    }
+    function getTranscriptWordTokens(text) {
+      const source = String(text ?? "");
+      const matches = [...source.matchAll(/[\p{L}\p{N}’‘`´']+/gu)];
+      return matches.map((match, index) => {
+        const nextStart = index + 1 < matches.length ? matches[index + 1].index : source.length;
+        const end = match.index + match[0].length;
+        const before = index === 0
+          ? [...source.slice(0, match.index).matchAll(/\p{P}/gu)].map((item) => item[0]).join("")
+          : "";
+        const after = [...source.slice(end, nextStart).matchAll(/\p{P}/gu)].map((item) => item[0]).join("");
+        return {
+          raw: match[0],
+          norm: globalThis.LHN_STUDY_SCORE.tokenize(match[0])[0] || "",
+          display: `${before}${match[0]}${after}`,
+          start: match.index,
+          end,
+        };
+      }).filter((word) => word.norm);
+    }
+    function canonicalizeCorrectWords(reference, answer) {
+      const expectedWords = getTranscriptWordTokens(reference);
+      const typedWords = getTranscriptWordTokens(answer);
+      const operations = globalThis.LHN_STUDY_SCORE.diff(reference, answer);
+      const replacements = [];
+      for (const operation of operations) {
+        const expectedIndices = operation.expectedIndices || [];
+        const typedIndices = operation.typedIndices || [];
+        if (operation.type !== "ok" || expectedIndices.length !== 1 || typedIndices.length !== 1) continue;
+        const expected = expectedWords[expectedIndices[0]];
+        const typed = typedWords[typedIndices[0]];
+        if (expected && typed && expected.raw !== typed.raw) replacements.push({ start: typed.start, end: typed.end, text: expected.raw });
+      }
+      let result = String(answer);
+      for (const replacement of replacements.reverse()) {
+        result = result.slice(0, replacement.start) + replacement.text + result.slice(replacement.end);
+      }
+      return result;
+    }
+    function restoreAlignedPunctuation(reference, answer) {
+      const expectedWords = getTranscriptWordTokens(reference);
+      const typedWords = getTranscriptWordTokens(answer);
+      const operations = globalThis.LHN_STUDY_SCORE.diff(reference, answer);
+      const expectedToTyped = new Array(expectedWords.length).fill(-1);
+      const expectedStatus = new Array(expectedWords.length).fill("missing");
+      for (const operation of operations) {
+        if (operation.type === "missing" || operation.type === "extra") continue;
+        const expectedIndices = operation.expectedIndices || [];
+        const typedIndices = operation.typedIndices || [];
+        // A contraction may align one target phrase to a different number of typed tokens.
+        // In that case keep the learner's text unchanged rather than misplacing punctuation.
+        if (expectedIndices.length !== typedIndices.length) return answer;
+        for (let index = 0; index < expectedIndices.length; index++) {
+          expectedToTyped[expectedIndices[index]] = typedIndices[index];
+          expectedStatus[expectedIndices[index]] = operation.type;
+        }
+      }
+
+      const source = String(reference);
+      const answerText = String(answer);
+      const punctuation = (text) => [...String(text).matchAll(/\p{P}/gu)].map((match) => match[0]);
+      const replacements = [];
+      const insertions = [];
+      for (let boundary = 0; boundary <= expectedWords.length; boundary++) {
+        const expectedStart = boundary === 0 ? 0 : expectedWords[boundary - 1].end;
+        const expectedEnd = boundary === expectedWords.length ? source.length : expectedWords[boundary].start;
+        const expectedGap = source.slice(expectedStart, expectedEnd);
+        const expectedMarks = punctuation(expectedGap);
+        if (!expectedMarks.length) continue;
+
+        let typedGapStart;
+        let typedGapEnd;
+        let insertionPosition;
+        let canReplaceGap = false;
+        if (boundary === 0) {
+          const firstTyped = expectedToTyped[0];
+          if (firstTyped < 0 || expectedStatus[0] !== "ok") continue;
+          typedGapStart = 0;
+          typedGapEnd = typedWords[firstTyped].start;
+          insertionPosition = typedGapEnd;
+          canReplaceGap = firstTyped === 0;
+        } else {
+          const previousTyped = expectedToTyped[boundary - 1];
+          if (previousTyped < 0 || expectedStatus[boundary - 1] !== "ok") continue;
+          typedGapStart = typedWords[previousTyped].end;
+          insertionPosition = typedGapStart;
+          const nextTyped = boundary < expectedWords.length ? expectedToTyped[boundary] : -1;
+          if (boundary < expectedWords.length && nextTyped >= 0) {
+            typedGapEnd = typedWords[nextTyped].start;
+            canReplaceGap = nextTyped === previousTyped + 1;
+          } else if (boundary === expectedWords.length) {
+            typedGapEnd = answerText.length;
+            canReplaceGap = previousTyped === typedWords.length - 1;
+          } else {
+            let nextExpected = boundary + 1;
+            while (nextExpected < expectedWords.length && expectedToTyped[nextExpected] < 0) nextExpected++;
+            typedGapEnd = nextExpected < expectedWords.length
+              ? typedWords[expectedToTyped[nextExpected]].start
+              : answerText.length;
+          }
+        }
+        if (typedGapEnd < typedGapStart) continue;
+
+        const remainingMarks = [...expectedMarks];
+        let unexpectedMark = false;
+        for (const mark of punctuation(answerText.slice(typedGapStart, typedGapEnd))) {
+          const markIndex = remainingMarks.indexOf(mark);
+          if (markIndex < 0) { unexpectedMark = true; break; }
+          remainingMarks.splice(markIndex, 1);
+        }
+        if (!remainingMarks.length || unexpectedMark) continue;
+
+        if (canReplaceGap) replacements.push({ start: typedGapStart, end: typedGapEnd, text: expectedGap });
+        else insertions.push({ position: insertionPosition, text: remainingMarks.join("") });
+      }
+
+      let result = answerText;
+      const edits = [
+        ...replacements.map((item) => ({ start: item.start, end: item.end, text: item.text })),
+        ...insertions.map((item) => ({ start: item.position, end: item.position, text: item.text })),
+      ].sort((a, b) => b.start - a.start);
+      for (const edit of edits) result = result.slice(0, edit.start) + edit.text + result.slice(edit.end);
+      return result;
+    }
+    function normalizeAnswerToTranscript(reference, answer) {
+      const canonicalAnswer = canonicalizeCorrectWords(reference, answer);
+      return restoreAlignedPunctuation(reference, canonicalAnswer);
+    }
+    const WR_WORD = /[\p{L}\p{N}’‘`´']+/gu;
+    function wrShowHints(kind, answer) {
+      const h = S.wr.hint;
+      if (!h || h.kind !== kind || h.answer !== answer) S.wr.hint = { kind, answer, revealed: !!S.hints };
+      return !!S.hints || S.wr.hint.revealed;
+    }
+    function wrMasks(items, list) { for (const w of list) items.push({ c: 'msk', w: '_'.repeat([...(w.norm || '')].length) }); }
+    function wrPrefixItems(ref, answer) {
+      const SC = globalThis.LHN_STUDY_SCORE, progress = SC.getPrefixProgress(ref, answer);
+      const list = progress.expectedUnits.map((unit) => ({ display: unit.display, norm: SC.tokenize(unit.display).join('') || unit.norm }));
+      const entered = progress.matchedUnits, visible = Math.min(list.length, entered + (wrShowHints('prefix', answer) ? 1 : 0)), items = [];
+      for (let k = 0; k < visible; k++) items.push({ c: k < entered ? 'ok' : 'fix', w: list[k].display });
+      wrMasks(items, list.slice(visible));
+      return items;
+    }
+    function wrErrorItems(ref, answer) {
+      const SC = globalThis.LHN_STUDY_SCORE, items = [];
+      const showHints = wrShowHints('error', answer);
+      const list = getTranscriptWordTokens(ref);
+      const operations = SC.diff(ref, answer);
+      const missingPatterns = findMissingBeforeCorrect(operations);
+      const missingPattern = missingPatterns[0] || null;
+      const displayOperations = missingPattern ? operations.slice(0, missingPattern.index + missingPattern.missingOperations.length + 1) : SC.positionalDiff(ref, answer);
+      if (!answer.trim()) items.push({ c: 'emp', w: B.t('dictationEmptyAnswer') });
+      else {
+        let expectedIndex = 0;
+        const expectedStart = (op) => op.expectedIndices?.length ? op.expectedIndices[0] : Number.isInteger(op.expectedIndex) ? op.expectedIndex : expectedIndex;
+        const advanceExpected = (op) => { const ix = op.expectedIndices || []; expectedIndex = ix.length ? Math.max(expectedIndex, ...ix) + 1 : expectedIndex + 1; };
+        const expectedDisplay = (op) => {
+          const ix = op.expectedIndices || [];
+          if (ix.length > 1) { const first = list[ix[0]], last = list[ix[ix.length - 1]]; if (first && last) return ref.slice(first.start, last.end); }
+          return list[expectedStart(op)]?.display || op.expected || '';
+        };
+        for (const op of displayOperations) {
+          if (op.type === 'ok') { items.push({ c: 'ok', w: expectedDisplay(op) || op.typed }); advanceExpected(op); continue; }
+          if (op.type === 'wrong') {
+            items.push({ c: 'bad', w: op.typed });
+            if (showHints) items.push({ c: 'fix', w: `→ ${expectedDisplay(op)}` });
+            else wrMasks(items, [list[expectedStart(op)] || { norm: SC.tokenize(op.expected)[0] || '' }]);
+            advanceExpected(op); wrMasks(items, list.slice(expectedIndex));
+            break;
+          }
+          if (op.type === 'missing') {
+            if (missingPattern?.missingOperations[0] === op) {
+              for (const x of missingPattern.expectedIndices) {
+                const expected = list[x] || { display: '', norm: SC.tokenize(op.expected)[0] || '' };
+                if (showHints) items.push({ c: 'fix', w: `→ ${expected.display}` }); else wrMasks(items, [expected]);
+              }
+              expectedIndex = Math.max(expectedIndex, ...missingPattern.expectedIndices) + 1;
+              items.push({ c: 'ok', w: expectedDisplay(missingPattern.following) || missingPattern.following.typed });
+              advanceExpected(missingPattern.following); wrMasks(items, list.slice(expectedIndex));
+              break;
+            }
+            wrMasks(items, list.slice(expectedStart(op)));
+            break;
+          }
+          if (op.type === 'extra') { items.push({ c: 'bad', w: op.typed }); items.push({ c: 'fix', w: `→ ${B.t('dictationExtra')}` }); }
+        }
+      }
+      return { items, operations, missingPatterns };
+    }
+    // ô trống chỗ thiếu từ + gạch chân từ sai/thừa (renderInputWrongMarks cũ): trả về chữ mới của ô gõ, các đoạn cần gạch và các ô trống
+    function wrMarks(ref, value, operations, missingPatterns) {
+      const typed0 = [...value.matchAll(WR_WORD)], refWords = getTranscriptWordTokens(ref), edits = [];
+      for (const pattern of missingPatterns) {
+        const next = typed0[pattern.nextTypedIndex]; if (!next) continue;
+        const prev = typed0[pattern.nextTypedIndex - 1];
+        const gapStart = prev ? prev.index + prev[0].length : 0, gapEnd = next.index;
+        const trailing = value.slice(gapStart, gapEnd).match(/[ \t]*$/u)?.[0] || '';
+        const missing = pattern.expectedIndices.map((x) => refWords[x]?.display || '').filter(Boolean);
+        if (!missing.length) continue;
+        const lens = missing.map((w) => Math.max(2, [...w].length * 2));
+        let replacement = ' ';
+        lens.forEach((len, k) => { replacement += ' '.repeat(len); replacement += k < lens.length - 1 ? '  ' : ' '; });
+        edits.push({ start: gapEnd - trailing.length, end: gapEnd, replacement, lens });
+      }
+      edits.sort((l, r) => l.start - r.start || l.end - r.end);
+      const missingRanges = []; let out = value;
+      if (edits.length) {
+        let cursor = 0, nv = '';
+        for (const edit of edits) {
+          if (edit.start < cursor) continue;
+          nv += value.slice(cursor, edit.start);
+          let slotStart = nv.length + 1;
+          for (const len of edit.lens) { missingRanges.push({ start: slotStart, end: slotStart + len, missing: true }); slotStart += len + 2; }
+          nv += edit.replacement; cursor = edit.end;
+        }
+        out = nv + value.slice(cursor);
+      }
+      const typed = [...out.matchAll(WR_WORD)], ranges = [...missingRanges];
+      let typedIndex = 0;
+      for (const op of operations) {
+        if (op.type === 'missing') continue;
+        const ix = op.typedIndices || [], m = typed[ix.length ? ix[0] : typedIndex];
+        if (m && (op.type === 'wrong' || op.type === 'extra')) ranges.push({ start: m.index, end: m.index + m[0].length, missing: false });
+        typedIndex = ix.length ? Math.max(typedIndex, ...ix) + 1 : typedIndex + 1;
+      }
+      ranges.sort((l, r) => l.start - r.start || Number(r.missing) - Number(l.missing));
+      return { value: out, ranges, slots: missingRanges.map(({ start, end }) => ({ start, end })) };
+    }
+    function wrPanelHTML(wr) {
+      const p = wr.panel, ok = p.kind === 'ok';
+      const cls = { ok: 'ok', bad: 'bad', fix: 'fix', msk: 'msk', emp: 'emp' };
+      return `<div class="rpanel ${ok ? 'ok' : 'err'}"><div class="rt">${ic(ok ? 'check' : 'alert')}<b>${ok ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span>${p.kind === 'prefix' ? '' : `<span class="acc">${wr.acc}%</span>`}</div><div class="diff">${p.items.map((it) => `<span class="${cls[it.c]}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+    }
+    function pnHintHTML(ref) {
+      const names = globalThis.LHN_STUDY_RULES?.getProperNounHints?.(ref) || [];
+      return names.length ? `<div class="pnh"><b>${esc(B.t('dictationProperNounHint'))}:</b> <span>${esc(names.join(', '))}</span></div>` : '';
+    }
+    function placeWrMarks() {
+      const box = R.querySelector('#scard .wbox'), ta = $('#wta'), m = S.wr.marks;
+      let mk = box?.querySelector('.wmk');
+      if (!box || !ta || !m || !m.ranges.length || ta.value !== m.value) { mk?.remove(); return; }
+      if (!mk) { mk = document.createElement('div'); mk.className = 'wmk'; mk.setAttribute('aria-hidden', 'true'); mk.appendChild(document.createElement('div')); box.appendChild(mk); }
+      const inner = mk.firstChild, cs = getComputedStyle(ta);
+      Object.assign(mk.style, { left: `${ta.offsetLeft}px`, top: `${ta.offsetTop}px`, width: `${ta.offsetWidth}px`, height: `${ta.offsetHeight}px`, borderRadius: cs.borderRadius });
+      for (const k of ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing', 'wordSpacing', 'textIndent', 'textTransform']) inner.style[k] = cs[k];
+      const frag = document.createDocumentFragment(), v = m.value; let off = 0;
+      for (const r of m.ranges) {
+        if (r.start < off) continue;
+        if (r.start > off) frag.append(v.slice(off, r.start));
+        const sp = document.createElement('span'); sp.className = r.missing ? 'wg' : 'ww'; sp.textContent = v.slice(r.start, r.end); frag.append(sp); off = r.end;
+      }
+      if (off < v.length) frag.append(v.slice(off));
+      inner.replaceChildren(frag); syncWrMarks();
+    }
+    function syncWrMarks() { const ta = $('#wta'), inner = R.querySelector('#scard .wmk > div'); if (ta && inner) inner.style.transform = `translate(${-ta.scrollLeft}px, ${-ta.scrollTop}px)`; }
+    function wrFocusEnd() { setTimeout(() => { const t = $('#wta'); if (t && !t.readOnly) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0); }
+    // gõ / sửa chữ: bỏ kết quả cũ (onAnswerInput cũ), không dựng lại ô gõ để không mất bàn phím
+    function wrOnInput() {
+      const w = S.wr; w.escFilled = false; w.hint = null; w.marks = null; w.slots = [];
+      if (w.panel && w.phase !== 'done') { w.panel = null; R.querySelector('#scard .rpanel')?.remove(); }
+      if (w.phase === 'wrong' || w.phase === 'prefix') { w.phase = 'idle'; const h = R.querySelector('#scard .wbox .help'); if (h) h.textContent = T('enterCheckEscAnswer'); }
+    }
+    function wrRebuildPanel() {
+      const ref = SENT[S.si.write].en;
+      if (S.wr.panel?.kind === 'prefix') S.wr.panel = { kind: 'prefix', items: wrPrefixItems(ref, S.wr.val) };
+      else if (S.wr.panel?.kind === 'error') S.wr.panel = { kind: 'error', items: wrErrorItems(ref, S.wr.hint?.answer ?? S.wr.val).items };
+    }
+    function wrHintsToggled() { const h = S.wr.hint; if (!h || !S.wr.panel || S.wr.panel.kind === 'ok') return; h.revealed = !!S.hints; wrRebuildPanel(); }
+    function wrRemoveSlot(e, ta) {
+      const slots = S.wr.slots || [];
+      if (!slots.length) return false;
+      const a = ta.selectionStart, b = ta.selectionEnd, sel = a !== b;
+      const slot = slots.find(({ start, end }) => sel ? a <= end && b > start : (a >= start && a <= end) || (e.key === 'Backspace' && a === end + 1));
+      if (!slot) return false;
+      e.preventDefault(); e.stopPropagation();
+      const rs = sel ? Math.min(a, slot.start) : slot.start, re = sel ? Math.max(b, slot.end) : slot.end;
+      ta.value = ta.value.slice(0, rs) + ta.value.slice(re); ta.setSelectionRange(rs, rs);
+      ta.dispatchEvent(new Event('input'));
+      return true;
+    }
+    function wrKeyDown(e, ta) {
+      const ref = SENT[S.si.write].en;
+      if ((e.key === 'Backspace' || e.key === 'Delete') && wrRemoveSlot(e, ta)) return;
+      if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
+        if (S.wr.phase === 'done' || S.wr.escFilled) { resetStudy(); renderStudy(); wrFocusEnd(); return; }
+        ta.value = ref; ta.dispatchEvent(new Event('input')); ta.setSelectionRange(ref.length, ref.length); S.wr.escFilled = true;
+        return;
+      }
+      if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      const h = S.wr.hint;
+      if (!S.hints && h && !h.revealed && S.wr.panel && S.wr.panel.kind !== 'ok' && h.answer === ta.value) { h.revealed = true; wrRebuildPanel(); renderStudy(); wrFocusEnd(); return; }
+      if (S.wr.phase === 'done') { studyGo(1); return; }
+      S.wr.val = ta.value;
+      if (globalThis.LHN_STUDY_SCORE.isCorrectIncompletePrefix(ref, S.wr.val)) {
+        const v = `${normalizeAnswerToTranscript(ref, S.wr.val).trimEnd()} `;
+        S.wr.val = v; S.wr.marks = null; S.wr.slots = []; S.wr.escFilled = false;
+        S.wr.panel = { kind: 'prefix', items: wrPrefixItems(ref, v) }; S.wr.phase = 'prefix';
+        renderStudy(); wrFocusEnd();
+        return;
+      }
+      S.wr.val = normalizeAnswerToTranscript(ref, S.wr.val);
+      writeCheck();
+    }
     function writeCheck() {
-      const i = S.si.write, ref = SENT[i].en;
-      const result = globalThis.LHN_STUDY_SCORE.score(ref, S.wr.val);
-      const ops = result.ops.map((o) => (o.type === 'ok' ? { t: 'ok', w: o.expected } : o.type === 'wrong' ? { t: 'bad', w: o.typed, fix: o.expected } : o.type === 'missing' ? { t: 'mis', w: o.expected } : { t: 'extra', w: o.typed }));
+      const i = S.si.write, ref = SENT[i].en, val = S.wr.val;
+      const result = globalThis.LHN_STUDY_SCORE.score(ref, val);
       result.ops.forEach((o) => { if (o.type === 'wrong' || o.type === 'missing') S.weak.add(norm(o.expected)); });
       const accv = result.percent;
       const okAll = !!result.perfect;
-      S.wr = { phase: okAll ? 'done' : 'wrong', val: S.wr.val, acc: accv, ops };
+      if (okAll) {
+        S.wr = { phase: 'done', val: addMissingPunctuation(ref, val), acc: accv, panel: { kind: 'ok', items: ref.trim().split(/\s+/).filter(Boolean).map((w) => ({ c: 'ok', w })) }, marks: null, slots: [], hint: null, escFilled: false };
+      } else {
+        const r = wrErrorItems(ref, val), mk = wrMarks(ref, val, r.operations, r.missingPatterns), has = mk.ranges.length > 0;
+        S.wr = { phase: 'wrong', val: has ? mk.value : val, acc: accv, panel: { kind: 'error', items: r.items }, marks: has ? mk : null, slots: has ? mk.slots : [], hint: S.wr.hint, escFilled: false };
+      }
       S.wrFocus = !okAll;
       if (okAll) { playSuccessSound(); confetti(); } else playErrorSound();
       if (okAll) setTimeout(() => showStudyToast(writeToastHTML()), 0); else hideStudyToast(true);

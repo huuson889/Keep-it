@@ -388,24 +388,7 @@
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
   }
-  function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); syncBackgroundSession(); }
-  // v3.5.241: đọc tiếp khi tắt màn hình (LHN_TTS.backgroundSession) + nút trên màn hình khoá
-  function readerMediaHandlers() {
-    const noEvent = { preventDefault() {} }, pause = paused => document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:paused, cancelable:true }));
-    return {
-      play:() => { if (reading && readingPaused) pause(false); },
-      pause:() => { if (reading && !readingPaused) pause(true); },
-      stop:() => { if (reading) stopReading(); },
-      nexttrack:() => moveReading(1, noEvent),
-      previoustrack:() => moveReading(-1, noEvent)
-    };
-  }
-  function syncBackgroundSession() {
-    const media = globalThis.LHN_TTS?.backgroundSession; if (!media) return;
-    if (!reading) { media.stop(); return; }
-    if (!media.isActive()) media.start({ title:document.title || location.hostname, artist:"Keepit Reader", handlers:readerMediaHandlers() });
-    media.setPlaying(!readingPaused);
-  }
+  function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
   function popupText(key, vars = {}) { return globalThis.LHN_LANGUAGES?.t?.(key, vars, displayLang) || key; }
   function renderPopupText() {
     const tip = (selector, key, shortcut = "") => { const element = $br(selector); if (!element) return; const label = popupText(key); element.setAttribute("aria-label", label); element.dataset.tip = shortcut ? `${label} (${shortcut})` : label; };

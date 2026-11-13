@@ -411,6 +411,10 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 @keyframes pulse2{50%{transform:scale(1.06)}}
 .hint{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--mu);text-align:center;letter-spacing:.5px;font-size:15px;max-width:640px}
 .diff{text-align:center;font-size:18px;line-height:1.6;max-width:680px}
+.diff .msk{color:var(--warn);letter-spacing:.08em;white-space:nowrap}.diff .emp{color:var(--mu);font-style:italic;font-size:14px}
+.pnh{width:100%;max-width:680px;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:5px;padding:6px 12px;border-radius:10px;border:1px solid rgba(245,158,11,.22);background:rgba(245,158,11,.08);color:var(--warn);font-size:14px}.pnh b{font-weight:750}.pnh span{font-weight:700}
+.wbox{position:relative}.wmk{position:absolute;z-index:2;overflow:hidden;pointer-events:none}.wmk>div{position:absolute;left:0;top:0;right:0;box-sizing:border-box;border-style:solid;border-color:transparent;color:transparent;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;user-select:none}
+.wmk .ww{text-decoration-line:underline;text-decoration-color:var(--bad);text-decoration-thickness:3px;text-underline-offset:4px;text-decoration-skip-ink:none}.wmk .wg{background-image:linear-gradient(var(--bad),var(--bad));background-repeat:no-repeat;background-position:left bottom;background-size:100% 3px}
 .diff .ok{color:var(--ok)}.diff .bad{color:var(--bad);text-decoration:line-through}.diff .fix{color:var(--ok);font-weight:700}.diff .mis{color:var(--warn);border-bottom:2px dashed var(--warn)}
 .wbox{flex:none;padding:10px 12px 12px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:8px;background:var(--pn)}
 .wbox textarea{width:100%;min-height:62px;max-height:none;border-radius:14px;border:1px solid var(--bd);background:var(--pn2);color:var(--tx);padding:11px 13px;font:inherit;font-size:16px;resize:none;outline:none}
