@@ -404,6 +404,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .listen{width:40px;height:40px;flex:none;border-radius:50%;border:0;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acct);display:grid;place-items:center;cursor:pointer}
 .ov[data-input=touch] .listen{width:44px;height:44px}
 .wbox .r .pill.lis.on{border-color:var(--acc);color:var(--acct)}
+/* v3.5.249: nút chính hàng Chép (Kiểm tra / Tiếp) có viền ngoài như nút "1 từ" */.wbox .r .pill.pri{border-color:var(--bd);background-clip:padding-box}.ov.ambient .wbox .r .pill.pri{border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
 .wbox .r .pill.lis.on svg{animation:pulse2 1.2s infinite}
 .ov[data-w=c] .rpanel .diff{font-size:15px}
 .listen svg{width:20px;height:20px}

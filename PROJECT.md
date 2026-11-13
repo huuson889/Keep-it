@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.249 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: nút chính (Kiểm tra / Tiếp) có viền ngoài giống nút "1 từ" (`var(--bd)`; giao diện kính mờ: 10% màu chữ), nền tím không tràn dưới viền, nên hai nút trông cao bằng nhau.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp; màu viền khớp đúng giá trị của `.pill` thường và `.ov.ambient .scard .pill:not(.pri)`.
+
 **2026-11-13 | v3.5.248 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: bỏ phần cân chiều rộng nút của v3.5.247 (hiểu sai yêu cầu). "1 từ" / "Kiểm tra" / "Làm lại" / "Tiếp" rộng theo chữ như trước; chế độ chỉ biểu tượng: nút chính 48px như trước. Chiều cao các nút vốn đã bằng nhau (`.pill` 42px).
