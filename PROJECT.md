@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.277 | Arena.ai Agent sửa:**
+
+- Overlay Nói: "Nghe mẫu" và "Giọng bạn" khi phát thêm vòng sóng lan ra như mic thu âm (18px, 1,3 giây) nhưng màu tím (`@keyframes pulsev`, đã grep không trùng); giữ viền/chữ màu nhấn + icon nhịp.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.276 | Arena.ai Agent sửa:**
 
 - Overlay Nói: mở tab Nói (chuyển tab / mở overlay vào thẳng Nói) tự phát câu mẫu 1 lần + n lần "Lặp câu" như Chép; đổi câu đã có từ v3.5.261. Câu mẫu đang phát: "Nghe mẫu" có hiệu ứng phát (như "Giọng bạn"), mic + "Câu tiếp" về kiểu không màu; dừng thì trở lại tím. `syncSpeakPlay()` (class `spmodel` trên `#scard`, `spml.on` trên nút; đã grep không trùng).
