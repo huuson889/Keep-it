@@ -199,6 +199,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.226 | Arena.ai Agent sửa:**
+
+- Trang chủ Keepit: bấm ô tìm kiếm (hoặc nút tìm trên thanh main) thì ô đó bay lên và nở thành sheet tìm kiếm (~0,3 giây), đóng (Esc, bấm nền, Ctrl+Space) thì thu ngược về ô cũ. Ô bị cuộn khuất hoặc máy bật giảm chuyển động thì dùng hiệu ứng cũ / đóng ngay. Trang khác giữ hiệu ứng cũ. Chức năng tìm không đổi.
+- Sheet tìm kiếm dùng kính mờ giống thanh main và các sheet (sáng/tối); ô nhập và phím dùng màu ô của theme.
+- Chân sheet (máy tính) thêm gợi ý `Ctrl+Space` (Mac `Alt+Space`) "Mở/đóng tìm kiếm"; "↑↓ Chọn" → "↑↓ Di chuyển" (en Move, ko 이동); chân sheet tự xuống dòng khi hẹp.
+- File: `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/home/home-ui.js` (`LHN_HOME.searchBox()`), `js/core/languages.js` (`bar_fToggle` mới, `bar_fSelect`), `manifest.json`.
+- Kiểm tra (Chromium + extension thật, máy tính 1200 sáng và điện thoại 412 tối): khung đầu trùng ô tìm, ô ẩn trong lúc mở và hiện lại sau khi đóng, mở lại khi đang đóng không kẹt, Ctrl+Space và Esc đóng đúng, trang thường vẫn hiệu ứng cũ; không lỗi trang.
+
 **2026-10-23 | v3.5.225 | Arena.ai Agent sửa:**
 
 - Nhãn tiếng Anh và tiếng Hàn trên thanh main và sheet ☰ đổi tương ứng v3.5.224: "Translate page" → "Translate", "Video mode" → "Video"; "페이지 번역" → "번역", "비디오 모드" → "비디오" ("Study" / "학습" vốn đã ngắn).

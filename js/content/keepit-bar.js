@@ -972,18 +972,48 @@
     cur.innerHTML = isApk() ? `${ic("lock")}<span>${esc(location.hostname + location.pathname)}</span><button type="button" data-reload>${ic("reload")}${esc(t("reload"))}</button>` : "";
     cur.hidden = !isApk() || onHome();   // v3.5.179: no address row on the APK start / offline page
   }
+  // v3.5.226: on the Keepit home page the page's search box turns into the search sheet (container transform) and back
+  const homePill = () => { if (!onHome()) return null; const el = globalThis.LHN_HOME?.searchBox?.(); const r = el?.getBoundingClientRect(); return r && r.width && r.bottom > 0 && r.top < innerHeight ? el : null; };
+  const reduceMotion = () => !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  let morphPill = null, morphAnim = null;
+  function morphFrames(pill) {   // UI px. The box starts as the pill plus the sheet padding (clipped to the pill) and grows to its rest size.
+    const k = Z(), p = pill.getBoundingClientRect(), b = $("sbox").getBoundingClientRect(), s = $("sbox").querySelector(".sin").getBoundingClientRect();
+    const pw = p.width * k, ph = p.height * k, sl = Math.max(0, (s.left - b.left) * k), st = Math.max(0, (s.top - b.top) * k + (s.height * k - ph) / 2);
+    const w0 = pw + 2 * sl, h0 = ph + 2 * st;
+    const dx = (p.left + p.width / 2 - b.left - b.width / 2) * k, dy = (p.top - b.top) * k - st;
+    return [{ width:w0 + "px", height:h0 + "px", transform:`translate(-50%,0) translate(${dx}px,${dy}px)`, clipPath:`inset(${st}px ${sl}px ${st}px ${sl}px round ${ph / 2}px)` },
+      { width:b.width * k + "px", height:b.height * k + "px", transform:"translate(-50%,0)", clipPath:`inset(0px 0px 0px 0px round 22px)` }];
+  }
+  const sheetRest = () => [...$("sbox").children].filter(c => !c.classList.contains("sin"));
+  function stopMorph() { morphAnim = null; $("sbox").getAnimations?.({ subtree:true }).forEach(a => a.cancel()); $("srch").classList.remove("closing"); $("sbox").classList.remove("morph"); if (morphPill) { morphPill.style.visibility = ""; morphPill = null; } }
   function openSearch() {
-    introDone(); closePop(); closeSheet(); hideCoach(); S.scope = "all"; S.active = 0; const sq = $("sq"); sq.value = ""; sq.placeholder = t("sPlaceholder");
+    stopMorph(); introDone(); closePop(); closeSheet(); hideCoach(); S.scope = "all"; S.active = 0; const sq = $("sq"); sq.value = ""; sq.placeholder = t("sPlaceholder");
     $("sqx").setAttribute("aria-label", t("clear"));
-    $("sfoot").innerHTML = `<span><kbd>↑</kbd> <kbd>↓</kbd> ${esc(t("fSelect"))}</span><span><kbd>Enter</kbd> ${esc(t("fOpen"))}</span><span><kbd>Esc</kbd> ${esc(t("fClose"))}</span>`;
+    $("sfoot").innerHTML = `<span><kbd>${esc(SEARCH_KEY)}</kbd> ${esc(t("fToggle"))}</span><span><kbd>↑</kbd> <kbd>↓</kbd> ${esc(t("fSelect"))}</span><span><kbd>Enter</kbd> ${esc(t("fOpen"))}</span><span><kbd>Esc</kbd> ${esc(t("fClose"))}</span>`;
     renderCur(); renderChips(); renderResults(); void loadSearchData();
+    const pill = !reduceMotion() && homePill(), box = $("sbox");
+    if (pill) box.classList.add("morph");
     $("srch").classList.add("open"); $("srch").classList.toggle("deskmode", isDesk());
-    layoutSearch(); requestAnimationFrame(layoutSearch);
+    layoutSearch();
+    if (pill) {
+      morphPill = pill; pill.style.visibility = "hidden";
+      morphAnim = box.animate(morphFrames(pill), { duration:300, easing:"cubic-bezier(.2,.8,.2,1)" });
+      morphAnim.onfinish = () => { morphAnim = null; box.classList.remove("morph"); };
+      sheetRest().forEach(c => c.animate([{ opacity:0 }, { opacity:1 }], { duration:200, delay:110, easing:"ease-out", fill:"backwards" }));
+    } else requestAnimationFrame(layoutSearch);
     setTimeout(() => sq.focus({ preventScroll:true }), 30);
   }
   function closeSearch() {
-    if (!$("srch")?.classList.contains("open")) return;
-    $("srch").classList.remove("open"); $("sq").blur();
+    const srch = $("srch"); if (!srch?.classList.contains("open") || srch.classList.contains("closing")) return;
+    $("sq").blur();
+    const pill = morphPill && !reduceMotion() && homePill() === morphPill ? morphPill : null, box = $("sbox");
+    if (pill) {
+      morphAnim?.cancel(); box.classList.add("morph"); srch.classList.add("closing");
+      morphAnim = box.animate(morphFrames(pill).reverse(), { duration:240, easing:"cubic-bezier(.4,0,.2,1)", fill:"forwards" });
+      sheetRest().forEach(c => c.animate([{ opacity:1 }, { opacity:0 }], { duration:120, easing:"ease-in", fill:"forwards" }));
+      $("scrim2").animate([{ opacity:1 }, { opacity:0 }], { duration:240 });
+      morphAnim.onfinish = () => { srch.classList.remove("open"); stopMorph(); };
+    } else { stopMorph(); srch.classList.remove("open"); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }
   function runActive() { const r = ROWS.filter(x => x.act)[S.active]; if (!r) return; closeSearch(); r.act(); }

@@ -257,6 +257,8 @@ ${V12CSS}`;
     // edit mode: the page must not scroll while a tile is dragged
     g.addEventListener("touchmove", ev => { if (pt?.drag && ev.cancelable) ev.preventDefault(); }, { passive:false });
   }
+  // v3.5.226: the Keepit bar's search sheet grows out of this search box (js/content/keepit-bar.js homePill)
+  globalThis.LHN_HOME = Object.freeze({ searchBox:() => homeRoot?.querySelector('.srch[data-act="search"]') || null });
   function mountHome() {
     const box = document.getElementById("keepit-home"); if (!box || homeRoot) return;
     homeRoot = box.attachShadow({ mode:"closed" });
