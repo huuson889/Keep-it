@@ -387,8 +387,9 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .spw{padding:2px 6px;border-radius:4px;font-size:14px;font-weight:700}
 .spw.ok{background:rgba(16,185,129,.2);color:#059669}
 .spw.wrong,.spw.extra{background:rgba(239,68,68,.2);color:#dc2626;text-decoration:line-through}
-.spw.fix,.spw.missing{background:rgba(245,158,11,.2);color:#b45309}
-.ov.dark .spw.ok{color:#34d399}.ov.dark .spw.wrong,.ov.dark .spw.extra{color:#f87171}.ov.dark .spw.fix,.ov.dark .spw.missing{color:#fcd34d}
+.spw.fix{background:rgba(245,158,11,.2);color:#b45309}
+.spw.missing{background:rgba(239,68,68,.2);color:#dc2626}
+.ov.dark .spw.ok{color:#34d399}.ov.dark .spw.wrong,.ov.dark .spw.extra,.ov.dark .spw.missing{color:#f87171}.ov.dark .spw.fix{color:#fcd34d}
 .spres.warn{border-color:rgba(245,158,11,.42);background:rgba(245,158,11,.08)}.spres.warn .spres-t{color:#b45309}.ov.dark .spres.warn .spres-t{color:#fbbf24}
 .spres.fail{border-color:rgba(239,68,68,.42);background:rgba(239,68,68,.07)}.spres.fail .spres-t{color:#dc2626}.ov.dark .spres.fail .spres-t{color:#f87171}
 .sctl{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 14px 12px;border-top:1px solid var(--bd)}

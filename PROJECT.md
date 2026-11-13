@@ -204,6 +204,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.279 | Arena.ai Agent sửa:**
+
+- Overlay Nói: trong khung "Kết quả nhận diện giọng nói", từ thiếu (`.spw.missing`) đổi từ vàng sang đỏ (không gạch ngang); "→ từ đúng" vẫn vàng.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`.
+
 **2026-11-13 | v3.5.278 | Arena.ai Agent sửa:**
 
 - Overlay Nói: dòng nhận dạng như bản cũ trước unified (`shadowing-activity.js` `renderSpeechResult` + CSS `.te-shadowing-result*` / `.te-shadowing-word*` của c2f3b57~1): khung "Kết quả nhận diện giọng nói" với ô từ — đúng xanh, sai đỏ gạch ngang + "→ từ đúng" vàng, thiếu vàng, thừa đỏ gạch ngang; cập nhật live khi nói (trước khi có chữ: "Đang nghe…"); sau khi chấm khung giữ lại, xanh / vàng (40–69%) / đỏ (<40%) như `dictation.js` cũ. Thanh sóng âm giữ.
