@@ -7,7 +7,7 @@ const UNIFIED_OVERLAY_HTML = `
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="gheart" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6b95"/><stop offset="1" stop-color="#ff2d55"/></linearGradient></defs></svg>
   <div class="amb" id="amb" aria-hidden="true"><canvas width="32" height="18"></canvas></div>
   <header class="hd">
-    <div class="brand"><span class="logo" id="logo"></span><span class="bname">Keepit</span><span class="bsrc" id="bsrc" translate="no"></span></div>
+    <div class="brand"><span class="logo" id="logo"></span><span class="bname">Keepit</span></div>
     <div class="tabs" role="tablist" id="tabs"><span class="tab-ind" id="tabInd"></span></div>
     <div class="hd-act"><button class="ib" id="btnSize"></button><button class="ib" id="btnClose"></button></div>
   </header>
@@ -148,6 +148,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       logo: '<path d="M4 20 14.5 9.5M9 4l11 11M15 3l6 6-9.5 9.5L5.5 12.5z" stroke="#fff"/>',
       arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
       eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+      hand: '<path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>', // hướng dẫn vuốt (Nói)
+      tap: '<path d="M22 14a8 8 0 0 1-8 8"/><path d="M18 11v-1a2 2 0 0 0-4 0"/><path d="M14 10V9a2 2 0 0 0-4 0v1"/><path d="M10 9.5V4a2 2 0 0 0-4 0v10"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>', // hướng dẫn chạm 2 lần = tim (Xem)
+      chevL: '<path d="m15 18-6-6 6-6"/>',
     };
     const ic = (n, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${P[n]}</svg>`;
     const YT = '<svg class="yt" viewBox="0 0 28 20"><rect width="28" height="20" rx="5" fill="#ff0033"/><path d="M11 6v8l7-4z" fill="#fff"/></svg>';
@@ -364,13 +367,46 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function fit() { S.kb = measureViewport(); }
     let lastKey = '';
+    // video ⇄ thanh mượt kiểu iOS: chụp khung cũ → đổi bố cục → chạy từ khung cũ tới khung mới (chỉ Web Animations, xong là về đúng CSS)
+    const FLIP_EASE = 'cubic-bezier(.32,.72,0,1)', FLIP_MS = 480;
+    function flipFirst() {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+      const pl = $('#player'), v = $('#vid'), cs = getComputedStyle(pl);
+      return { p: pl.getBoundingClientRect(), v: v.getBoundingClientRect(), r: cs.borderRadius, bg: cs.backgroundColor, mt: cs.marginTop, ml: cs.marginLeft, mr: cs.marginRight, vr: getComputedStyle(v).borderRadius, bw: pl.clientLeft, bt: pl.clientTop, study: ov.dataset.tab !== 'view' };
+    }
+    function flipPlay(f) {
+      queueMicrotask(() => { // chạy ngay sau apply(), trước khi vẽ khung kế tiếp — không lộ 1 khung bố cục mới rồi mới chạy
+        const pl = $('#player'), v = $('#vid');
+        if (pl.classList.contains('g-in') || ov.classList.contains('gdrag')) return; // cử chỉ vuốt rạp hát đã có hiệu ứng riêng
+        [pl, v, ...$$('.cinfo,.vcorner,.wave,.tsub', pl), $('#study'), $('#subbox')].forEach((el) => el?.getAnimations().forEach((a) => a.cancel()));
+        pl.classList.toggle('pc-n', pl.classList.contains('card') && pl.clientWidth < 360); // thẻ hẹp gắn ngay (trước là sau 1 khung → đích lệch, cuối hiệu ứng nhảy)
+        const p2 = pl.getBoundingClientRect(), v2 = v.getBoundingClientRect(), cs = getComputedStyle(pl);
+        if (!f.p.width || !p2.width || !f.v.width || !v2.width) return;
+        const o = { duration: FLIP_MS, easing: FLIP_EASE };
+        // màn ngang: trong lúc chạy, khung bám mép trái cột (align-self) và lề trái tính từ vị trí thật cũ → mới, không lệch đầu / cuối
+        const par = pl.parentElement, pcs = getComputedStyle(par), cl = par.getBoundingClientRect().left + parseFloat(pcs.borderLeftWidth) + parseFloat(pcs.paddingLeft), land = ov.dataset.w === 'e';
+        const xa = (r, ml) => (land ? { marginLeft: `${r.left - cl}px`, alignSelf: 'flex-start' } : { marginLeft: ml });
+        pl.animate([
+          { width: `${f.p.width}px`, height: `${f.p.height}px`, aspectRatio: 'auto', marginTop: f.mt, marginRight: f.mr, borderRadius: f.r, backgroundColor: f.bg, ...xa(f.p, f.ml) },
+          { width: `${p2.width}px`, height: `${p2.height}px`, aspectRatio: 'auto', marginTop: cs.marginTop, marginRight: cs.marginRight, borderRadius: cs.borderRadius, backgroundColor: cs.backgroundColor, ...xa(p2, cs.marginLeft) },
+        ], o);
+        const box = (r, p, bl, bt) => ({ left: `${r.left - p.left - bl}px`, top: `${r.top - p.top - bt}px`, width: `${r.width}px`, height: `${r.height}px`, transform: 'none', aspectRatio: 'auto' });
+        v.animate([{ ...box(f.v, f.p, f.bw, f.bt), borderRadius: f.vr }, { ...box(v2, p2, pl.clientLeft, pl.clientTop), borderRadius: getComputedStyle(v).borderRadius }], o);
+        const late = [{ opacity: 0 }, { opacity: 0, offset: 0.55 }, { opacity: 1 }];
+        $$('.cinfo,.vcorner,.wave,.tsub', pl).forEach((el) => el.animate(late, { duration: FLIP_MS, easing: 'linear' }));
+        if (f.study !== isStudy()) { const inc = isStudy() ? $('#study') : $('#subbox'); inc?.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: FLIP_MS, easing: FLIP_EASE, delay: 60, fill: 'backwards' }); }
+      });
+    }
     function apply() {
       fit();
       const k = sizeKey();
       if (k === 's' && isStudy()) { S.tabLand = S.tab; S.tab = 'view'; speakAbort(); B.setActivity(null); setPlaying(false); closePanel(); lastKey = ''; toast(T('phoneLandscapeIsTheater')); }
       else if (k !== 's' && S.tabLand) { S.tab = S.tabLand; S.tabLand = null; B.setActivity(S.tab === 'speak' ? 'shadowing' : 'dictation'); useSent(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); resetStudy(); lastKey = ''; }
       useSent();
+      const flip = ready && $('#player').classList.contains('card') !== ((S.tab === 'view' && curView() !== 'theater' && !!S.mini[k]) || (isStudy() && !S.showVideo)) ? flipFirst() : null; // video ⇄ thanh: chụp vị trí cũ
       ov.dataset.w = wClass(); ov.dataset.h = k === 's' ? 's' : 'n';
+      ov.classList.toggle('tfold', wClass() === 'c' && ov.clientWidth < 600); // điện thoại dọc: tab gom 1 nút (thiếu chỗ 2 bên); tablet dọc: 3 nút cùng dòng như ngang
+      if (!ov.classList.contains('tfold')) $('#tabs')?.classList.remove('open');
       ov.dataset.tab = S.tab; ov.dataset.view = curView(); ov.dataset.input = S.input; ov.dataset.cc = S.cc;
       ov.classList.toggle('dark', S.theme === 'dark'); ov.classList.toggle('light', S.theme !== 'dark');
       ov.classList.toggle('subhid', !!S.subHidden[k]);
@@ -383,6 +419,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       ov.classList.toggle('vmini', mini);
       const card = mini || (isStudy() && !S.showVideo);
       $('#player').classList.toggle('card', card);
+      if (flip) flipPlay(flip);
       // header size button
       const bs = $('#btnSize');
       if (isStudy()) { bs.innerHTML = ic(S.showVideo ? 'shrink' : 'enlarge'); bs.title = S.showVideo ? T('shrinkVideo') : T('showVideo'); }
@@ -402,6 +439,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (k !== lastKey) { lastKey = k; renderList(); }
       syncFav(); syncRep(); syncPlay(); syncSpeed(); applySubStyle();
       renderStudy(); renderSideHd(); renderNotesCol(); renderMarks(); tick(true); requestAnimationFrame(() => { fitSub(); fitTsub(); placeAmb(); fitStudy(); });
+      heartGuide();
       if (curView() !== 'theater' || S.tab !== 'view') setChrome(true);
       syncDocClass(); persistSettings();
     }
@@ -507,7 +545,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       else if (vol !== applied.vol || mu !== applied.muted) { applied.vol = S.vol = vol; applied.muted = S.muted = mu; }
       if (m.videoWidth && m.videoHeight) { const va = (m.videoWidth / m.videoHeight).toFixed(4); if (va !== lastVa) { lastVa = va; ov.style.setProperty('--va', va); } }
       if (S.playing) {
-        if (isStudy()) { const s = SENT[S.si[S.tab]]; if (s && S.t >= s.end) { if (studyRepLeft > 0) { if (studyRepLeft !== Infinity) studyRepLeft--; S.t = s.start; seekMedia(s.start); } else setPlaying(false); } }
+        if (isStudy()) { const s = SENT[S.si[S.tab]]; if (s && S.t >= s.end) { if (studyRepLeft > 0) { if (studyRepLeft !== Infinity) studyRepLeft--; S.t = s.start; seekMedia(s.start); } else { setPlaying(false); autoRecAfterModel(); } } }
         else if (S.rep.on) {
           const before = step.prev ?? idxAt(S.t), endOf = SENT[before]?.end;
           if (endOf != null && S.t >= endOf - 0.04 && S.t - endOf < 1) {
@@ -614,11 +652,54 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (on) $$('.favb').forEach((b) => { b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat'); if (b === src) burst(b); });
       if (was !== on) { toast(on ? T('addedToFavorites') : T('removedFromFavorites')); B.setFavorite(on); }
     }
+    // tim to: icon tim trên video đang ẩn (video đang chạy / rạp hát) → hiện tạm 1.6s để thấy tim đỏ + nhịp
+    let favShowT = 0;
+    function flashFav() {
+      const pl = $('#player'), vc = $('#vcorner'); if (!pl || !vc || pl.classList.contains('card')) return;
+      if (!pl.classList.contains('favshow')) { const cs = getComputedStyle(vc); if (cs.display !== 'none' && +cs.opacity > 0.5) return; }
+      pl.classList.add('favshow'); clearTimeout(favShowT); favShowT = setTimeout(() => pl.classList.remove('favshow'), 1600);
+    }
+    // hướng dẫn tim (Xem): video đang lớn → 0.9s sau, bàn tay chạm liên tục 5 cái, từ cái thứ 2 mỗi cái bay 1 tim to y như thật (chỉ hình, không thêm yêu thích)
+    // vị trí: giữa góc phần tư phải dưới (75% ngang, 75% dọc) — cảm ứng: của cột chứa video · chuột: của video; 1 lần mỗi lần mở; chạm là tắt
+    var hGuideSess = 0, hGuideT = 0; // var + function: apply() có thể gọi trước dòng này (tránh lỗi TDZ)
+    function hGuideOk() { const pl = $('#player'); return !ov.hidden && S.tab === 'view' && !!pl && !pl.classList.contains('card') && !pl.classList.contains('g-in') && !ov.classList.contains('gdrag'); }
+    function heartGuide() {
+      if (hGuideSess === S.sess || hGuideT || !hGuideOk() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      hGuideT = setTimeout(() => {
+        hGuideT = 0;
+        if (hGuideSess === S.sess || !hGuideOk()) return;
+        hGuideSess = S.sess;
+        const pl = $('#player'), o = ov.getBoundingClientRect(), sc = S.scale || 1, ref = (S.input === 'touch' ? pl.closest('.stage') || pl : pl).getBoundingClientRect();
+        const x = (ref.left + ref.width * 0.75 - o.left) / sc, y = (ref.top + ref.height * 0.75 - o.top) / sc;
+        const g = document.createElement('div'); g.className = 'hguide'; g.setAttribute('aria-hidden', 'true');
+        g.style.left = `${x}px`; g.style.top = `${y}px`; g.innerHTML = `<span class="hgh">${ic('tap')}</span>`;
+        ov.appendChild(g);
+        const DUR = 2800, TAPS = [500, 720, 940, 1160, 1380], svg = g.querySelector('svg'), anims = [], timers = [], hearts = [];
+        anims.push(g.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.1 }, { opacity: 1, transform: 'none', offset: 0.8 }, { opacity: 0, transform: 'none' }], { duration: DUR, easing: 'ease-out' }));
+        const kf = [{ transform: 'none', offset: 0 }];
+        TAPS.forEach((t) => kf.push({ transform: 'none', offset: (t - 60) / DUR }, { transform: 'scale(.8)', offset: t / DUR }, { transform: 'none', offset: (t + 80) / DUR }));
+        kf.push({ transform: 'none', offset: 1 });
+        anims.push(svg.animate(kf, { duration: DUR }));
+        TAPS.forEach((t, i) => {
+          const r = document.createElement('i'); r.className = 'hgr'; g.appendChild(r);
+          anims.push(r.animate([{ opacity: 0.75, transform: 'scale(.3)' }, { opacity: 0, transform: 'scale(1.35)' }], { duration: 420, delay: t, easing: 'ease-out', fill: 'backwards' }));
+          if (i) timers.push(setTimeout(() => { // từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
+            const h = document.createElement('div'); h.className = 'hrt'; h.setAttribute('aria-hidden', 'true');
+            h.style.left = `${x + (Math.random() * 24 - 12)}px`; h.style.top = `${y - 20 + (Math.random() * 16 - 8)}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
+            h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
+            ov.appendChild(h); hearts.push(h); setTimeout(() => h.remove(), 1000);
+          }, t));
+        });
+        const stop = () => { timers.forEach(clearTimeout); anims.forEach((a) => a.cancel()); g.remove(); hearts.forEach((h) => h.remove()); ov.removeEventListener('pointerdown', stop, true); };
+        anims[0].onfinish = stop; ov.addEventListener('pointerdown', stop, { once: true, capture: true });
+      }, 900);
+    }
     function heartAt(x, y) {
       const h = document.createElement('div'); h.className = 'hrt';
       h.style.left = `${x}px`; h.style.top = `${y}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
       h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
       ov.appendChild(h); setTimeout(() => h.remove(), 1000);
+      flashFav();
       if (!S.fav) setFav(true); else { $$('.favb').forEach((b) => { b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat'); }); }
       vib(15);
     }
@@ -1206,9 +1287,24 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
 
     // ---------- dock actions ----------
+    // tên video dưới thanh bị cắt → chạy chữ vòng tròn: 'once' (lần đầu mở, 1 vòng) · 'loop' (rê chuột / bấm = chạy mãi) · 'stop'
+    const MQ = { a: null, keep: false };
+    function titleMarquee(mode) {
+      const sp = $('span', dockEl.title), inner = sp?.querySelector('.mqw');
+      MQ.a?.cancel(); MQ.a = null; sp?.classList.remove('mq');
+      if (!inner || mode === 'stop' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const d = sp.scrollWidth - sp.clientWidth; if (d < 4 || !sp.offsetWidth) return;
+      sp.classList.add('mq');
+      const L = sp.querySelector('.mqi').offsetWidth; // 1 vòng = tên + khoảng cách; bản sao nối đuôi nên vòng sau liền mạch
+      MQ.a = inner.animate([{ transform: 'none' }, { transform: `translateX(${-L}px)` }], { duration: L / 45 * 1000, iterations: mode === 'loop' ? Infinity : 1, easing: 'linear' });
+      MQ.a.onfinish = () => { sp.classList.remove('mq'); MQ.a = null; };
+    }
+    $('#drow').addEventListener('pointerover', (e) => { const t = e.target.closest('.dtitle'); if (t && e.pointerType === 'mouse' && !t.contains(e.relatedTarget) && !MQ.keep) titleMarquee('loop'); });
+    $('#drow').addEventListener('pointerout', (e) => { const t = e.target.closest('.dtitle'); if (t && e.pointerType === 'mouse' && !t.contains(e.relatedTarget) && !MQ.keep) titleMarquee('stop'); });
     function dockAction(id, anchor) {
       const a = anchor || dockEl[id];
       switch (id) {
+        case 'title': MQ.keep = !MQ.keep; titleMarquee(MQ.keep ? 'loop' : 'stop'); break;
         case 'play': togglePlay(); break;
         case 'prev': go(-1); break;
         case 'next': go(1); break;
@@ -1245,7 +1341,20 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       setMini(!S.mini[sizeKey()]);
     });
     $('#btnClose').addEventListener('click', () => B.close());
-    $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+    // điện thoại dọc (tfold): Xem · Nói · Chép gom vào 1 nút giữa logo và X — bấm (cảm ứng) / rê chuột → bung ra chọn, chọn xong thu lại
+    const tabsEl = $('#tabs');
+    const tabsFold = () => ov.classList.contains('tfold');
+    let tabsT = 0;
+    function tabsOpen(on) { clearTimeout(tabsT); tabsEl.classList.toggle('open', !!on && tabsFold()); }
+    tabsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tab]');
+      if (tabsFold() && !tabsEl.classList.contains('open')) { tabsOpen(true); return; }
+      tabsOpen(false);
+      if (b) setTab(b.dataset.tab);
+    });
+    tabsEl.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && tabsFold()) tabsOpen(true); });
+    tabsEl.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && tabsEl.classList.contains('open')) { clearTimeout(tabsT); tabsT = setTimeout(() => tabsOpen(false), 250); } });
+    R.addEventListener('pointerdown', (e) => { if (tabsEl.classList.contains('open') && !e.composedPath().includes(tabsEl)) tabsOpen(false); }, true);
     $('#bd').addEventListener('click', (e) => {
       const b = e.target.closest('[data-act="colList"],[data-act="colNotes"]'); if (!b) return;
       // no room for the column → open it as a popover instead of squeezing the card
@@ -1407,13 +1516,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const tw = words(s.en);
         const target = tw.map((w, k) => { const st = sp.phase === 'done' ? sp.heard[k] : ''; return `<span class="w ${st || ''}">${esc(w)}</span>`; }).join(' ');
         let mid = '';
-        if (sp.phase === 'idle') mid = `<p class="help tch">${T('tapTheMicTo')}</p><p class="help kbdh">${T('pressEnterOrTap')}</p>`;
+        if (sp.phase === 'idle') mid = `<p class="help tch spmid">${T('tapTheMicTo')}</p><p class="help kbdh spmid">${T('pressEnterOrTap')}</p>`;
         if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div>${SPK.live ? spResultHTML(s.en, SPK.live) : `<div class="heard" id="heard">${T('listening')}</div>`}`;
         if (sp.phase === 'done') mid = `${spResultHTML(s.en, sp.transcript, speakTier(sp.score))}<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
-        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
-          <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
+        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody spb${sp.phase === 'idle' ? ' idle' : ''}"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}</div>
+          <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${ic('next')}${T('skip')}</button>`}</div>
           ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('voice')}${T('replayYourVoice')}</button></div>` : ''}
-          <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
+          <p class="help kbdh">${T('speakKeysHint')}</p></div></div>`;
       } else {
         const wr = S.wr;
         const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en, wr.okN) : '';
@@ -1429,6 +1538,40 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       }
       bindSwipe($('#scard'));
       fitStudy();
+      if (isStudy()) swipeGuide(); // Nói + Chép
+    }
+    // Nói: thay dòng "Vuốt trái/phải trên thẻ…" bằng hiệu ứng hướng dẫn — bàn tay kéo thẻ trái ↔ phải, thẻ chạy đúng hiệu ứng kéo thật (swipeFx); 1 lần mỗi lần mở overlay, mọi thiết bị; chạm là tắt
+    const swGuideSess = {}; // mỗi tab (Nói / Chép) 1 lần mỗi lần mở
+    const swIdle = (tab) => (tab === 'speak' ? S.sp.phase === 'idle' : S.wr.phase === 'idle' && !S.wr.val); // Chép: chưa gõ gì
+    function swipeGuide() {
+      const tab = S.tab;
+      if (swGuideSess[tab] === S.sess || !swIdle(tab) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      swGuideSess[tab] = S.sess;
+      setTimeout(() => {
+        const card = $('#scard');
+        if (!card || ov.hidden || S.tab !== tab || !swIdle(tab)) return;
+        const g = document.createElement('div'); g.className = 'swguide'; g.setAttribute('aria-hidden', 'true'); g.innerHTML = `<i>${ic('chevL')}</i>${ic('hand')}<i>${ic('chevR')}</i>`;
+        card.appendChild(g);
+        const cr = card.getBoundingClientRect(), up = (card.querySelector('.sbody .trans') || card.querySelector('.sbody .target'))?.getBoundingClientRect(), dn = [...card.querySelectorAll('.sbody .help.spmid')].find((h) => h.offsetHeight)?.getBoundingClientRect();
+        const hEl = [...card.querySelectorAll('.sbody .help.spmid')].find((h) => h.offsetHeight);
+        if (tab === 'write') { // Chép: khoảng trống lớn nhất trong thân thẻ (trên / dưới khung câu + bản dịch); hẹp quá thì nằm trên ô gõ (đang trống)
+          const sb = card.querySelector('.sbody')?.getBoundingClientRect(), ks = [...card.querySelectorAll('.sbody > *')].filter((k) => k.offsetHeight).map((k) => k.getBoundingClientRect()), ta = card.querySelector('#wta')?.getBoundingClientRect();
+          const need = g.offsetHeight + 12, top = ks.length ? Math.min(...ks.map((r) => r.top)) : sb?.bottom, bot = ks.length ? Math.max(...ks.map((r) => r.bottom)) : sb?.top;
+          const above = sb ? top - sb.top : 0, below = sb ? sb.bottom - bot : 0;
+          if (sb && !ks.length) g.style.top = `${(sb.top + sb.bottom) / 2 - cr.top}px`;
+          else if (sb && Math.max(above, below) >= need) g.style.top = `${(below >= above ? (bot + sb.bottom) / 2 : (sb.top + top) / 2) - cr.top}px`;
+          else if (ta) g.style.top = `${(ta.top + ta.bottom) / 2 - cr.top}px`;
+        }
+        else if (up && dn && dn.top - up.bottom >= g.offsetHeight + 12) g.style.top = `${(up.bottom + dn.top) / 2 - cr.top}px`; // giữa bản dịch và chữ hướng dẫn micro
+        else if (dn) { g.style.top = `${(dn.top + dn.bottom) / 2 - cr.top}px`; hEl.style.visibility = 'hidden'; } // câu dài, khe hẹp: thế chỗ dòng chữ micro trong lúc hướng dẫn
+        const o = { duration: 2400, easing: 'ease-in-out' }, at = (x, r = 0) => `translate(-50%,-50%) translateX(${x}px) rotate(${r}deg)`;
+        const a1 = g.animate([{ opacity: 0, transform: at(0) }, { opacity: 1, transform: at(0), offset: 0.1 }, { opacity: 1, transform: at(0, -10), offset: 0.33 }, { opacity: 1, transform: at(0, 10), offset: 0.66 }, { opacity: 1, transform: at(0), offset: 0.86 }, { opacity: 0, transform: at(0) }], o);
+        const w = card.offsetWidth || 360, rest = swipeFx(0, w);
+        const a2 = card.animate([rest, { ...rest, offset: 0.1 }, { ...swipeFx(-60, w), offset: 0.33 }, { ...swipeFx(60, w), offset: 0.66 }, { ...rest, offset: 0.86 }, rest], o);
+        const st = $('#study'); st.classList.add('swg'); // thẻ trượt không đè lên cột danh sách / ghi chú
+        const stop = () => { a1.cancel(); a2.cancel(); g.remove(); st.classList.remove('swg'); if (hEl) hEl.style.visibility = ''; };
+        a1.onfinish = stop; card.addEventListener('pointerdown', stop, { once: true }); card.addEventListener('input', stop, { once: true }); // Chép: gõ là tắt
+      }, 900);
     }
     function rowOver(r) {
       const cs = getComputedStyle(r), gap = parseFloat(cs.columnGap) || 0, inner = r.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -1447,6 +1590,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function fitStudy() {
       const pl = $('#player'); pl.classList.toggle('pc-n', pl.classList.contains('card') && pl.clientWidth < 360); // small card: tap the thumbnail to enlarge
       const card = $('#scard'); if (!card || !isStudy()) return;
+      const tg = card.querySelector('.sbody.spb .target'), tr = card.querySelector('.sbody.spb .trans');
+      if (tg) { // Nói: câu đọc 4 dòng → 90%, mỗi dòng thêm giảm 5% (5 dòng 85%, 6 dòng 80%…), dừng ở 50%; bản dịch 90%; đếm dòng ở cỡ gốc
+        tg.style.fontSize = ''; if (tr) tr.style.fontSize = '';
+        const cs = getComputedStyle(tg), fs = parseFloat(cs.fontSize); let lh = parseFloat(cs.lineHeight); if (!(lh >= fs * 0.8)) lh = fs * 1.38;
+        const n = Math.round(tg.offsetHeight / lh), k = Math.max(0.5, 0.9 - 0.05 * (n - 4));
+        if (n >= 4) { tg.style.fontSize = `${fs * k}px`; tg.dataset.lines = n; if (tr) tr.style.fontSize = `${parseFloat(getComputedStyle(tr).fontSize) * 0.9}px`; }
+      }
       const hd = card.querySelector('.scard-hd');
       if (hd) { hd.classList.remove('f-nonotes', 'f-ico'); if (rowOver(hd) > 1) hd.classList.add('f-nonotes'); if (rowOver(hd) > 1) hd.classList.add('f-ico'); }
       card.querySelectorAll('.wbox .r, .sctl .r.main').forEach((r) => {
@@ -1477,6 +1627,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'skip') { const ta = $('#wta'); if (ta) wrEscape(ta); return; }
       if (a === 'word') { wrOneWord(); return; }
     });
+    // kéo thẻ: dịch theo tay + nghiêng + mờ nhẹ — dùng chung cho kéo thật và hiệu ứng hướng dẫn vuốt
+    const swipeFx = (fx, w) => ({ transform: `translateX(${fx.toFixed(1)}px) rotate(${(fx / w * 7).toFixed(2)}deg)`, opacity: String((1 - Math.min(0.35, Math.abs(fx) / w * 0.45)).toFixed(3)) });
     function bindSwipe(card) {
       // the whole card follows the finger (tilt) and slides away (demo v17); a swipe may start anywhere on the card on touch —
       // buttons and the answer box too (a tap stays a tap). Touch = touch events (they keep coming past the card edge and the
@@ -1504,8 +1656,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         }
         const cur = S.si[S.tab], edge = (dx > 0 && cur <= 0), fx = edge ? dx * 0.3 : dx; // nothing before the first sentence: rubber band
         g.dx = dx;
-        card.style.transform = `translateX(${fx.toFixed(1)}px) rotate(${(fx / W() * 7).toFixed(2)}deg)`;
-        card.style.opacity = String((1 - Math.min(0.35, Math.abs(fx) / W() * 0.45)).toFixed(3));
+        Object.assign(card.style, swipeFx(fx, W()));
         return true;
       };
       const back = () => {
@@ -1570,6 +1721,17 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const mark = (on) => { R.querySelector('#scard [data-sact="playrec"]')?.classList.toggle('on', on); R.querySelector('#scard')?.classList.toggle('spvoice', on); }; // v3.5.274/275: đang phát → mic + Câu tiếp không màu (class spvoice; 'vplay' là nút play video)
         try { const a = new Audio(SPK.url); SPK.audio = a; mark(true); const done = (ok) => { if (SPK.audio === a) { SPK.audio = null; mark(false); } res(ok); }; a.onended = () => done(true); a.onerror = () => done(false); a.onpause = () => { if (!a.ended) done(false); }; a.play().catch(() => done(false)); } catch (_) { res(false); }
       });
+    }
+    // Tự động (Nói): câu mẫu phát xong → 1 giây sau mic tự bật ghi âm (bấm gì khác trong 1 giây đó thì thôi)
+    let autoRecT = 0;
+    function autoRecAfterModel() {
+      clearTimeout(autoRecT);
+      if (S.tab !== 'speak' || !S.auto || S.sp.phase === 'rec') return;
+      const i = S.si.speak, gen = SPK.gen;
+      autoRecT = setTimeout(() => {
+        if (ov.hidden || S.tab !== 'speak' || !S.auto || S.si.speak !== i || gen !== SPK.gen || S.playing || SPK.audio || S.sp.phase === 'rec') return;
+        speakToggle();
+      }, 1000);
     }
     async function speakToggle() {
       if (S.sp.phase === 'rec') { // stop: the recognizer delivers its last words, then the attempt is scored
@@ -2233,6 +2395,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const typing = editable(tgt) || (!tgt && editable(e.target));
       const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); eatenUp.add(e.code); };
       ctrlAlone = e.key === 'Control' ? !e.repeat && (!typing || tgt?.id === 'wta') : false;
+      if (e.key === 'Escape' && tabsEl.classList.contains('open')) { stop(); tabsOpen(false); return; }
       if (e.key === 'Escape' && panelKind) { stop(); closePanel(); return; }
       if (isStudy() && e.code === 'KeyN' && (e.altKey || !typing) && !e.ctrlKey && !e.metaKey && !e.shiftKey) { stop(); addTimeNote(); return; } // N · Alt+N while typing
       if (typing) { if (e.key === 'Escape' && tgt && tgt.id !== 'wta') { stop(); tgt.blur(); } return; } // fields keep their own keys (Chép: Enter / Esc)
@@ -2348,8 +2511,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const st = B.state() || {}, web = st.sourceType === 'web', meta = B.meta() || {};
       const title = String(meta.title || (web ? st.webSourceTitle : '') || document.title || 'Keepit').trim();
       let host = ''; try { host = new URL(web ? (st.webSourceUrl || location.href) : location.href).hostname.replace(/^(www|m)\./, ''); } catch (_) {}
-      const d = dockEl.title; d.title = title; d.innerHTML = `${web ? ic('globe', 'class="yt gl"') : YT}<span></span>`; $('span', d).textContent = title;
-      $('#bsrc').textContent = `· ${title}`; $('#cTitle').textContent = title;
+      const d = dockEl.title; d.title = title; d.innerHTML = `${web ? ic('globe', 'class="yt gl"') : YT}<span><i class="mqw"><i class="mqi"></i><i class="mqc" aria-hidden="true"></i></i></span>`; $('.mqi', d).textContent = title; $('.mqc', d).textContent = title;
+      if (MQ.keep) requestAnimationFrame(() => titleMarquee('loop'));
+      ov.classList.toggle('srcweb', web); // sóng âm trên khung chỉ cho nguồn web (video đã có hình)
+      $('#cTitle').textContent = title;
       $('#cSrc').textContent = [host, web ? '' : meta.channel].filter(Boolean).join(' · ');
     }
     function syncDocClass() { document.documentElement.classList.toggle('lhn-touch-overlay', !ov.hidden && wClass() === 'c'); }
@@ -2530,6 +2695,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         lastKey = ''; apply();
         if (isStudy()) playStudyStart(); // v3.5.262/276
       });
+      setTimeout(() => { if (!ov.hidden && !MQ.keep) titleMarquee('once'); }, 900); // lần đầu mở: tên video dưới chạy 1 lượt
     }
     function close() {
       if (ov.hidden) return;

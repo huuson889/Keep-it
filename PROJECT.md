@@ -204,6 +204,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.280 | Arena.ai Agent sửa:**
+
+- Overlay: áp dụng demo `keepit-overlay-tabs-demo-v15.html` (đã duyệt), bỏ nút so sánh 90/100% chỉ có trong demo.
+- Thanh trên: điện thoại dọc (< 600px) gom Xem · Nói · Chép thành 1 nút, bấm / rê thì bung ra, chọn xong thu lại (hiệu ứng v2); tablet dọc 3 nút cùng dòng với logo và X. Bỏ tên video cạnh Keepit; tên video dưới thanh chạy chữ vòng tròn (mở 1 vòng, rê / bấm thì chạy liên tục). Video không có sóng âm. Xem tự thu gọn mượt.
+- Nói: bỏ dòng quyền riêng tư và dòng "vuốt trái/phải"; chữ hướng dẫn micro nằm giữa; hiệu ứng hướng dẫn vuốt (1 lần mỗi tab mỗi phiên, không che câu). Nghe mẫu đang phát = nền xanh lá đặc + vòng sóng, Giọng bạn = xanh dương. Tự động: 1 giây sau Nghe mẫu tự bật micro. Câu mẫu 4 dòng = 90%, thêm mỗi dòng −5%, tối thiểu 50%. Vòng điểm, tiêu đề và khung nhận diện dùng --ok / --warn / --bad.
+- Chép: "Nghe lại" đang phát giống Nghe mẫu; hướng dẫn vuốt như Nói, gõ chữ thì tắt.
+- Xem: tim 144px mọi thiết bị; icon tim trên video hiện tạm (không chớp nút phóng to); hướng dẫn chạm 2 lần (bàn tay 136px, không nghiêng) ở giữa góc phần tư phải dưới của cột video (cảm ứng) / video (chuột), 1 lần mỗi phiên.
+- Màu nút đang phát thành biến `--play` / `--voice` cạnh `--ok/--warn/--bad`; các quy tắc demo gộp thẳng vào quy tắc gốc (không thêm khối cuối file). Xoá nhãn không còn dùng `ov_aTemporaryMemoryOnly`, `ov_swipeLeftRightOn`.
+- Kiểm thử: Chromium headless, file thật thay vào demo — ảnh chụp trùng demo v15 (điện thoại / tablet dọc / máy tính × sáng / tối), vị trí hướng dẫn tim đúng 75/75, không lỗi. Chưa thử máy thật.
+- File: `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `js/core/languages.js`, `DATA-INVENTORY.md`, `manifest.json`.
+
 **2026-11-13 | v3.5.279 | Arena.ai Agent sửa:**
 
 - Overlay Nói: trong khung "Kết quả nhận diện giọng nói", từ thiếu (`.spw.missing`) đổi từ vàng sang đỏ (không gạch ngang); "→ từ đúng" vẫn vàng.

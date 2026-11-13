@@ -742,7 +742,6 @@
   MESSAGES.en.bar_pdarkBetaTip = "Darken web pages. Beta, may have bugs"; MESSAGES.vi.bar_pdarkBetaTip = "Làm tối trang web, bản Beta có thể lỗi"; MESSAGES.ko.bar_pdarkBetaTip = "웹 페이지 어둡게. 베타 버전이라 오류가 있을 수 있음";
   MESSAGES.en.bar_pdarkLight = "Dark pages work with the dark theme"; MESSAGES.vi.bar_pdarkLight = "Trang tối có tác dụng khi Chủ đề tối"; MESSAGES.ko.bar_pdarkLight = "어두운 페이지는 어두운 테마에서 작동합니다";
   // Overlay (js/overlay/ui/overlay-ui.js): khoá ov_<tên>, đọc bằng T(). Thêm nhãn mới cho overlay ở đây, đủ en/vi/ko.
-  MESSAGES.en.ov_aTemporaryMemoryOnly = "A temporary memory-only recording plays locally; Keepit does not save or upload it. Browser speech recognition may process your audio."; MESSAGES.vi.ov_aTemporaryMemoryOnly = "Bản ghi chỉ tạm trong bộ nhớ để phát tại chỗ; Keepit không lưu/tải lên. Trình duyệt có thể xử lý audio để nhận diện."; MESSAGES.ko.ov_aTemporaryMemoryOnly = "임시 녹음은 메모리에서만 재생되며 Keepit은 저장하거나 업로드하지 않습니다. 브라우저가 음성을 처리할 수 있습니다.";
   MESSAGES.en.ov_accentColor = "Accent color"; MESSAGES.vi.ov_accentColor = "Màu chủ đề"; MESSAGES.ko.ov_accentColor = "테마 색상";
   MESSAGES.en.ov_addedToFavorites = "Added to favorites"; MESSAGES.vi.ov_addedToFavorites = "Đã thêm vào yêu thích"; MESSAGES.ko.ov_addedToFavorites = "즐겨찾기에 추가했습니다";
   MESSAGES.en.ov_addedToLessonNotes = "Added to lesson notes"; MESSAGES.vi.ov_addedToLessonNotes = "Đã thêm vào Ghi chú bài học"; MESSAGES.ko.ov_addedToLessonNotes = "학습 노트에 추가했습니다";
@@ -932,7 +931,6 @@
   MESSAGES.en.ov_subtitles = "Subtitles"; MESSAGES.vi.ov_subtitles = "Phụ đề"; MESSAGES.ko.ov_subtitles = "자막";
   MESSAGES.en.ov_summaryDictation = "Summary · Dictation"; MESSAGES.vi.ov_summaryDictation = "Tổng kết · Chép chính tả"; MESSAGES.ko.ov_summaryDictation = "요약 · 받아쓰기";
   MESSAGES.en.ov_summarySpeaking = "Summary · Speaking"; MESSAGES.vi.ov_summarySpeaking = "Tổng kết · Luyện nói"; MESSAGES.ko.ov_summarySpeaking = "요약 · 말하기";
-  MESSAGES.en.ov_swipeLeftRightOn = "Swipe left/right on the card to change sentence"; MESSAGES.vi.ov_swipeLeftRightOn = "Vuốt trái/phải trên thẻ để đổi câu"; MESSAGES.ko.ov_swipeLeftRightOn = "카드를 좌우로 스와이프해 문장 변경";
   MESSAGES.en.ov_swipeLeftSideVolume = "Swipe left side: volume · right side: brightness"; MESSAGES.vi.ov_swipeLeftSideVolume = "Vuốt bên trái: âm lượng · bên phải: độ sáng"; MESSAGES.ko.ov_swipeLeftSideVolume = "왼쪽 스와이프: 볼륨 · 오른쪽: 밝기";
   MESSAGES.en.ov_swipeSidewaysSeekSwipe = "Swipe sideways: seek · swipe down in the middle: exit"; MESSAGES.vi.ov_swipeSidewaysSeekSwipe = "Vuốt ngang: tua · vuốt xuống ở giữa: thoát"; MESSAGES.ko.ov_swipeSidewaysSeekSwipe = "가로 스와이프: 탐색 · 가운데에서 아래로: 종료";
   MESSAGES.en.ov_tapTheMicTo = "Tap the mic to start, tap again to stop, hear your recording and get scored."; MESSAGES.vi.ov_tapTheMicTo = "Chạm micro để bắt đầu, chạm lần nữa để dừng, nghe lại bản ghi và chấm điểm."; MESSAGES.ko.ov_tapTheMicTo = "마이크를 눌러 시작하고 다시 눌러 멈추면 녹음을 듣고 점수를 받습니다.";

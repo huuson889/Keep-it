@@ -12,8 +12,8 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .ov{--hit:36px;--ico:20px;position:fixed;left:0;top:0;width:100vw;height:var(--ovH,100vh);height:var(--ovH,100dvh);z-index:999998;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;text-align:left;letter-spacing:normal;-webkit-tap-highlight-color:transparent}
 .ov[hidden]{display:none}
 .ov[data-input=touch]{--hit:44px;--ico:22px}
-.ov.dark{--bg:#0e0e11;--pn:#18181b;--pn2:#222227;--bd:rgba(148,163,184,.17);--tx:#f4f4f5;--mu:#bcbcc5;--hov:rgba(255,255,255,.08);--en:#ffff00;--vi:#ffffff;--sen:#e5e7eb;--svi:#c0c5ce;--acc:#8b5cf6;--acct:#c4b5fd;--sel:#26262b;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--shadow:0 18px 40px rgba(0,0,0,.5)}
-.ov.light{--bg:#f6f7fb;--pn:#ffffff;--pn2:#eef0f4;--bd:rgba(15,23,42,.11);--tx:#111827;--mu:#475569;--hov:rgba(15,23,42,.06);--en:#8b5cf6;--vi:#4b5563;--sen:#111827;--svi:#4b5563;--acc:#8b5cf6;--acct:#7c3aed;--sel:#eef0f4;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--shadow:0 18px 40px rgba(15,23,42,.18)}
+.ov.dark{--bg:#0e0e11;--pn:#18181b;--pn2:#222227;--bd:rgba(148,163,184,.17);--tx:#f4f4f5;--mu:#bcbcc5;--hov:rgba(255,255,255,.08);--en:#ffff00;--vi:#ffffff;--sen:#e5e7eb;--svi:#c0c5ce;--acc:#8b5cf6;--acct:#c4b5fd;--sel:#26262b;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--play:#10b981;--voice:#3b82f6;--shadow:0 18px 40px rgba(0,0,0,.5)}
+.ov.light{--bg:#f6f7fb;--pn:#ffffff;--pn2:#eef0f4;--bd:rgba(15,23,42,.11);--tx:#111827;--mu:#475569;--hov:rgba(15,23,42,.06);--en:#8b5cf6;--vi:#4b5563;--sen:#111827;--svi:#4b5563;--acc:#8b5cf6;--acct:#7c3aed;--sel:#eef0f4;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--play:#10b981;--voice:#3b82f6;--shadow:0 18px 40px rgba(15,23,42,.18)}
 .ov svg{display:block}
 .ib{width:var(--hit);height:var(--hit);border:0;background:none;color:var(--tx);border-radius:12px;display:inline-grid;place-items:center;cursor:pointer;flex:none;position:relative;padding:0;transition:background .15s,color .15s}
 .ib svg{width:var(--ico);height:var(--ico)}
@@ -32,7 +32,6 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(45deg,#4f46e5,#8b5cf6);display:grid;place-items:center;flex:none;color:#fff;box-shadow:0 2px 3px rgba(0,0,0,.2)}
 .logo svg{width:28px;height:28px}
 .bname{font-weight:700;white-space:nowrap}
-.bsrc{color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tabs{position:relative;display:inline-grid;grid-template-columns:repeat(3,1fr);background:var(--pn2);border-radius:13px;padding:3px;justify-self:center}
 .tabs button{position:relative;z-index:1;border:0;background:none;color:var(--mu);font-weight:650;height:calc(var(--hit) - 6px);min-width:78px;padding:0 14px;border-radius:10px;display:flex;align-items:center;gap:7px;justify-content:center;cursor:pointer;white-space:nowrap}
 .tabs button svg{width:17px;height:17px}
@@ -43,11 +42,27 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .ov[data-w=c] .hd{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"b a" "t t";row-gap:8px;padding:8px 10px 10px}
 .ov[data-w=c] .brand{grid-area:b}.ov[data-w=c] .hd-act{grid-area:a}
 .ov[data-w=c] .tabs{grid-area:t;display:grid;width:100%}
-.ov[data-w=c] .bsrc{display:none}
+/* thanh trên luôn 1 dòng: đủ chỗ (tablet dọc) = 3 nút giữa logo và X như màn ngang; điện thoại dọc (class tfold, < 600px) = gom 1 nút, bấm / rê → bung ra, chọn xong thu lại */
+.ov[data-w=c]:not(.tfold) .hd{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:none;row-gap:0;padding:8px 10px}
+.ov[data-w=c]:not(.tfold) :is(.brand,.hd-act,.tabs){grid-area:auto}
+.ov[data-w=c]:not(.tfold) .tabs{display:inline-grid;width:auto}
+.ov.tfold .hd{grid-template-areas:"b a";row-gap:0;padding:8px 10px}
+.ov.tfold .tabs{grid-area:auto;width:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;z-index:3;cursor:pointer;transition:box-shadow .25s,background-color .25s}
+.ov.tfold .tab-ind{display:none}
+.ov.tfold .tabs button{min-width:0;max-width:0;padding:0;opacity:0;visibility:hidden;overflow:hidden;transition:max-width .28s cubic-bezier(.3,.7,.2,1),padding .28s cubic-bezier(.3,.7,.2,1),opacity .2s,visibility 0s .28s}
+.ov.tfold .tabs button[aria-selected=true],.ov.tfold .tabs.open button{max-width:150px;padding:0 13px;opacity:1;visibility:visible;transition:max-width .28s cubic-bezier(.3,.7,.2,1),padding .28s cubic-bezier(.3,.7,.2,1),opacity .2s .05s,visibility 0s}
+.ov.tfold .tabs button[aria-selected=true]{background:var(--pn);box-shadow:0 1px 4px rgba(0,0,0,.28)}
+.ov.light.tfold .tabs button[aria-selected=true]{box-shadow:0 1px 4px rgba(15,23,42,.16)}
+.ov.tfold .bname,.ov.tfold #btnSize{transition:opacity .2s}
+.ov.tfold .hd:has(.tabs.open) :is(.bname,#btnSize){opacity:0;pointer-events:none}
+.ov.tfold .hd .tabs.open{background:color-mix(in srgb,var(--pn2) 94%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 10px 28px rgba(0,0,0,.32),inset 0 0 0 1px color-mix(in srgb,var(--tx) 9%,transparent)}
+.ov.light.tfold .hd .tabs.open{box-shadow:0 10px 28px rgba(15,23,42,.18),inset 0 0 0 1px rgba(15,23,42,.06)}
+.ov.ambient.dark.tfold:not([data-tab=view][data-view=theater]) .tabs button[aria-selected=true]{background:color-mix(in srgb,var(--tx) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tx) 9%,transparent)}
+.ov.ambient.light.tfold:not([data-tab=view][data-view=theater]) .tabs button[aria-selected=true]{background:color-mix(in srgb,var(--pn) 62%,transparent);box-shadow:0 1px 3px rgba(15,23,42,.1)}
+.ov.tfold[data-tab=view][data-view=theater] .tabs button[aria-selected=true]{background:rgba(255,255,255,.22);box-shadow:none}
 .ov[data-h=s] .hd{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:none;padding:4px 8px;row-gap:0}
 .ov[data-h=s] .brand,.ov[data-h=s] .hd-act,.ov[data-h=s] .tabs{grid-area:auto}
 .ov[data-h=s] .tabs{width:auto;display:inline-grid;justify-self:center}
-.ov[data-h=s] .bsrc{display:none}
 #btnSize{display:inline-grid}
 .ov[data-h=s] #btnSize,.ov[data-w=e]:not([data-tab=view]) #btnSize{display:none}
 /* phone landscape: only Theater — study tabs dimmed (tap → "Xoay dọc để học") */
@@ -62,6 +77,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .wave{position:absolute;left:50%;top:58%;transform:translateX(-50%);display:flex;gap:3px;align-items:flex-end;height:26px}
 .wave i{width:3px;height:4px;background:#fff;border-radius:2px;opacity:.9}
 .ov.playing .wave i{animation:wv 1s infinite ease-in-out}
+.ov:not(.srcweb) .wave{display:none} /* sóng âm chỉ cho nguồn web (video đã có hình) */
 @keyframes wv{50%{height:22px}}
 .ov[data-input=touch][data-tab=view] .player{touch-action:none;-webkit-user-select:none;user-select:none}
 .ttring{position:absolute;top:50%;left:50%;z-index:6;display:flex;flex-direction:column;align-items:center;gap:8px;color:#fff;opacity:0;transform:translate(-50%,-50%);transition:opacity .2s;pointer-events:none}
@@ -343,18 +359,18 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .cft{position:absolute;top:60%;left:50%;width:7px;height:11px;border-radius:2px;animation:cftFall 1300ms cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes cftFall{0%{transform:translate(0,0) rotate(0);opacity:1}40%{transform:translate(var(--ux),var(--uy)) rotate(calc(var(--rot) * .5));opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
 @media (prefers-reduced-motion:reduce){.cft{animation-duration:1ms}}
-.sptoast{position:absolute;top:14px;left:50%;z-index:30;width:min(460px,calc(100% - 20px));display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:20px;transform:translateX(-50%);background:color-mix(in srgb,var(--pn) 72%,transparent);border:1px solid rgba(16,185,129,.35);-webkit-backdrop-filter:blur(28px) saturate(1.8);backdrop-filter:blur(28px) saturate(1.8);box-shadow:0 12px 32px rgba(0,0,0,.28);cursor:pointer;animation:spPop .5s cubic-bezier(.175,.885,.32,1.275) both}
-.sptoast.warn{border-color:rgba(245,158,11,.4)}.sptoast.fail{border-color:rgba(239,68,68,.4)}
+.sptoast{position:absolute;top:14px;left:50%;z-index:30;width:min(460px,calc(100% - 20px));display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:20px;transform:translateX(-50%);background:color-mix(in srgb,var(--pn) 72%,transparent);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent);-webkit-backdrop-filter:blur(28px) saturate(1.8);backdrop-filter:blur(28px) saturate(1.8);box-shadow:0 12px 32px rgba(0,0,0,.28);cursor:pointer;animation:spPop .5s cubic-bezier(.175,.885,.32,1.275) both}
+.sptoast.warn{border-color:color-mix(in srgb,var(--warn) 40%,transparent)}.sptoast.fail{border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
 .sptoast.exit{animation:spOut .28s ease forwards}
 @keyframes spPop{0%{opacity:0;transform:translateX(-50%) translateY(-10px) scale(.92)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
 @keyframes spOut{to{opacity:0;transform:translateX(-50%) translateY(-8px) scale(.96)}}
 .sptoast .ring{position:relative;flex:0 0 50px;width:50px;height:50px;display:grid;place-items:center}
 .sptoast .ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
 .sptoast .ring .bg{fill:none;stroke:color-mix(in srgb,var(--tx) 14%,transparent);stroke-width:4}
-.sptoast .ring .fg{fill:none;stroke:#10b981;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 0 4px #10b981)}
-.sptoast.warn .ring .fg{stroke:#f59e0b;filter:drop-shadow(0 0 4px #f59e0b)}.sptoast.fail .ring .fg{stroke:#ef4444;filter:drop-shadow(0 0 4px #ef4444)}
+.sptoast .ring .fg{fill:none;stroke:var(--ok);stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 0 4px var(--ok))}
+.sptoast.warn .ring .fg{stroke:var(--warn);filter:drop-shadow(0 0 4px var(--warn))}.sptoast.fail .ring .fg{stroke:var(--bad);filter:drop-shadow(0 0 4px var(--bad))}
 .sptoast .ring b{font-size:12.5px;font-weight:800}
-.sptoast .tx{min-width:0}.sptoast .tx b{display:block;font-size:15px;color:#10b981}.sptoast.warn .tx b{color:#f59e0b}.sptoast.fail .tx b{color:#ef4444}
+.sptoast .tx{min-width:0}.sptoast .tx b{display:block;font-size:15px;color:var(--ok)}.sptoast.warn .tx b{color:var(--warn)}.sptoast.fail .tx b{color:var(--bad)}
 .sptoast .tx small{display:block;color:var(--mu);font-size:12px;line-height:1.4;margin-top:2px}
 .rpanel{width:100%;max-width:680px;border-radius:14px;padding:10px 12px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08)}
 .rpanel.ok{border-color:rgba(34,197,94,.32);background:rgba(34,197,94,.08)}
@@ -380,18 +396,16 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .trans{color:var(--mu);text-align:center;max-width:620px;font-size:15px}
 .heard{min-height:24px;color:var(--mu);text-align:center;font-style:italic;max-width:620px}
 /* v3.5.278: Nói — khung kết quả nhận diện như bản cũ (.te-shadowing-result-wrap / .te-shadowing-word trước v3.5.171) */
-.spres{width:100%;max-width:620px;padding:10px 12px;border:1px solid rgba(16,185,129,.28);border-radius:12px;background:rgba(16,185,129,.07)}
-.spres-t{margin-bottom:8px;color:#059669;font-size:12px;font-weight:800}
-.ov.dark .spres-t{color:#34d399}
+.spres{width:100%;max-width:620px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);border-radius:12px;background:color-mix(in srgb,var(--ok) 7%,transparent)}
+.spres-t{margin-bottom:8px;color:var(--ok);font-size:12px;font-weight:800}
 .spres-w{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;-webkit-user-select:text;user-select:text}
 .spw{padding:2px 6px;border-radius:4px;font-size:14px;font-weight:700}
-.spw.ok{background:rgba(16,185,129,.2);color:#059669}
-.spw.wrong,.spw.extra{background:rgba(239,68,68,.2);color:#dc2626;text-decoration:line-through}
-.spw.fix{background:rgba(245,158,11,.2);color:#b45309}
-.spw.missing{background:rgba(239,68,68,.2);color:#dc2626}
-.ov.dark .spw.ok{color:#34d399}.ov.dark .spw.wrong,.ov.dark .spw.extra,.ov.dark .spw.missing{color:#f87171}.ov.dark .spw.fix{color:#fcd34d}
-.spres.warn{border-color:rgba(245,158,11,.42);background:rgba(245,158,11,.08)}.spres.warn .spres-t{color:#b45309}.ov.dark .spres.warn .spres-t{color:#fbbf24}
-.spres.fail{border-color:rgba(239,68,68,.42);background:rgba(239,68,68,.07)}.spres.fail .spres-t{color:#dc2626}.ov.dark .spres.fail .spres-t{color:#f87171}
+.spw.ok{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.spw.wrong,.spw.extra{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad);text-decoration:line-through}
+.spw.fix{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.spw.missing{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
+.spres.warn{border-color:color-mix(in srgb,var(--warn) 42%,transparent);background:color-mix(in srgb,var(--warn) 8%,transparent)}.spres.warn .spres-t{color:var(--warn)}
+.spres.fail{border-color:color-mix(in srgb,var(--bad) 42%,transparent);background:color-mix(in srgb,var(--bad) 7%,transparent)}.spres.fail .spres-t{color:var(--bad)}
 .sctl{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 14px 12px;border-top:1px solid var(--bd)}
 .sctl .r{display:flex;align-items:center;justify-content:center;gap:18px;width:100%}
 .sctl .r.main{display:grid;grid-template-columns:1fr auto 1fr;gap:16px}
@@ -412,16 +426,26 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .help.kbdh{display:none}
 .ov[data-input=mouse] .help.kbdh{display:block}
 .ov[data-input=mouse] .help.tch{display:none}
+/* Nói: câu mẫu luôn ở trên (khoảng trống dồn xuống như trước); lúc chờ, chữ hướng dẫn micro nằm giữa khoảng trống */
+.sbody.spb::after{content:"";margin-top:auto}
+.sbody.spb.idle::after{display:none}
+.sbody.spb .help.spmid{margin-block:auto}
+/* Nói: hiệu ứng hướng dẫn vuốt trái ↔ phải (thay dòng chữ) */
+.swguide{position:absolute;left:50%;top:46%;display:flex;align-items:center;gap:2px;padding:10px 12px;border-radius:999px;background:color-mix(in srgb,var(--pn2) 70%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.25);color:var(--tx);pointer-events:none;z-index:5}
+.swguide>svg{width:30px;height:30px}
+.study.swg{overflow:clip}
+.swguide i{display:grid;color:var(--acc)}.swguide i svg{width:18px;height:18px}
 .lbars{display:flex;gap:4px;align-items:center;height:30px}
 .lbars i{width:4px;height:6px;border-radius:3px;background:var(--bad);animation:wv3 .8s infinite ease-in-out}
 @keyframes wv3{50%{height:28px}}
 .listen{width:40px;height:40px;flex:none;border-radius:50%;border:0;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acct);display:grid;place-items:center;cursor:pointer}
 .ov[data-input=touch] .listen{width:44px;height:44px}
-.wbox .r .pill.lis.on{border-color:var(--acc);color:var(--acct)}
+/* Chép "Nghe lại" đang phát = như "Nghe mẫu" ở Nói: nền xanh đặc, icon nhịp, 2 vòng sóng liên tục */.ov .wbox .r .pill.lis.on{position:relative;background:var(--play);border-color:var(--play);color:#fff;box-shadow:0 6px 18px color-mix(in srgb,var(--play) 40%,transparent)}.ov .wbox .r .pill.lis.on svg{animation:pulse2 .9s infinite}.ov .wbox .r .pill.lis.on::before,.ov .wbox .r .pill.lis.on::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;animation:pring .9s linear infinite}.ov .wbox .r .pill.lis.on::after{animation-delay:-.45s}
 /* v3.5.249: nút chính hàng Chép (Kiểm tra / Tiếp) có viền ngoài như nút "1 từ" */.wbox .r .pill.pri{border-color:var(--bd);background-clip:padding-box}.ov.ambient .wbox .r .pill.pri{border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
-.wbox .r .pill.lis.on svg{animation:pulse2 1.2s infinite}
 /* v3.5.274: Nói — "Giọng bạn" đang phát: mic + "Câu tiếp" về kiểu nút không màu như "Nghe mẫu" */.ov .scard:is(.spvoice,.spmodel) .sctl :is(.mic,.pill.pri){background:var(--pn2);border:1px solid var(--bd);color:var(--tx);box-shadow:none}.ov.ambient .scard:is(.spvoice,.spmodel) .sctl :is(.mic,.pill.pri){background:color-mix(in srgb,var(--pn2) 45%,transparent);border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
-/* v3.5.272: Nói — "Giọng bạn" đang phát = hiệu ứng như "Nghe lại" bên Chép; không phát = nút không màu */.ov .scard .pill:is(.vrec,.spml).on{border-color:var(--acc);color:var(--acct);box-shadow:0 0 0 0 rgba(139,92,246,.6);animation:pulsev 1.3s infinite}@keyframes pulsev{70%{box-shadow:0 0 0 18px rgba(139,92,246,0)}100%{box-shadow:0 0 0 0 rgba(139,92,246,0)}}/* v3.5.277: vòng sóng như mic thu âm, màu tím */.ov .scard .pill:is(.vrec,.spml).on svg{animation:pulse2 1.2s infinite}
+/* v3.5.272: Nói — "Giọng bạn" đang phát = hiệu ứng như "Nghe lại" bên Chép; không phát = nút không màu *//* đang phát: nền xanh đặc như mic, icon giữ nhịp (tai / sóng), 2 vòng sóng ngoài nối nhau chạy liên tục */.ov .scard .pill:is(.vrec,.spml).on{position:relative;background:var(--play);border-color:var(--play);color:#fff;box-shadow:0 6px 18px color-mix(in srgb,var(--play) 40%,transparent)}.ov .scard .pill:is(.vrec,.spml).on svg{animation:pulse2 .9s infinite}.ov .scard .pill:is(.vrec,.spml).on::before,.ov .scard .pill:is(.vrec,.spml).on::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;animation:pring .9s linear infinite}.ov .scard .pill:is(.vrec,.spml).on::after{animation-delay:-.45s}@keyframes pring{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--play) 55%,transparent)}to{box-shadow:0 0 0 14px transparent}}.ov .scard .pill.vrec.on{background:var(--voice);border-color:var(--voice);box-shadow:0 6px 18px color-mix(in srgb,var(--voice) 40%,transparent)}.ov .scard .pill.vrec.on::before,.ov .scard .pill.vrec.on::after{animation-name:pringb}@keyframes pringb{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--voice) 55%,transparent)}to{box-shadow:0 0 0 14px transparent}}
+/* tim to (chạm 2 lần): icon tim trên video hiện tạm (chỉ tim, nút phóng to vẫn ẩn cả lúc mờ dần) */.ov .player.favshow:not(.card) .vcorner{display:flex!important;opacity:1!important;pointer-events:none!important}.ov .player.favshow:not(.card) .vcorner .vc:not(.favb){visibility:hidden;transition:none}.ov .player:not(.favshow) .vcorner .vc:not(.favb){transition:visibility 0s linear .25s}
+/* hướng dẫn tim (Xem): bàn tay to gấp đôi (136 / 64px); giữa góc phần tư phải dưới của cột video (cảm ứng) / video (chuột) */.hguide{position:absolute;width:136px;height:136px;margin:-68px 0 0 -68px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 8px 26px rgba(0,0,0,.3);color:#fff;pointer-events:none;z-index:31}.hguide .hgh{display:grid;place-items:center}.hguide svg{width:64px;height:64px;transform-origin:50% 75%}.hguide .hgr{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.85);opacity:0;pointer-events:none}
 .ov[data-w=c] .rpanel .diff{font-size:15px}
 .listen svg{width:20px;height:20px}
 .listen.on{animation:pulse2 1.2s infinite}
@@ -463,12 +487,14 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .ptip{position:absolute;bottom:calc(100% + 4px);transform:translateX(-50%);background:var(--pn);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:7px 10px;width:max-content;max-width:min(300px,80%);font-size:12.5px;box-shadow:var(--shadow);pointer-events:none;display:none;z-index:5}
 .ptip b{color:var(--acct);font-variant-numeric:tabular-nums;margin-right:6px}
 .drow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;min-height:calc(var(--hit) + 6px)}
-.zl{display:flex;align-items:center;gap:2px;min-width:0;justify-self:stretch}
+.zl{display:flex;align-items:center;gap:2px;min-width:0;justify-self:stretch;align-self:stretch}
 .zc{display:flex;align-items:center;gap:2px}
 .zr{display:flex;align-items:center;gap:2px;justify-self:end}
-.dtitle{display:flex;align-items:center;gap:8px;min-width:0;flex:0 1 auto;padding:0 8px 0 4px;max-width:260px}
+.dtitle{display:flex;align-items:center;gap:8px;min-width:0;flex:0 1 auto;padding:0 8px 0 4px;max-width:260px;align-self:stretch;cursor:pointer}
 .dtitle .yt{width:22px;height:16px;flex:none}
 .dtitle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:13px}
+/* tên video bị cắt: chạy chữ vòng tròn (lần đầu mở 1 vòng · rê chuột / bấm = chạy liên tục) */
+.dtitle :is(.mqw,.mqi,.mqc){font-style:normal}.dtitle .mqc{display:none}.dtitle span.mq{text-overflow:clip}.dtitle span.mq .mqw{display:inline-block;will-change:transform}.dtitle span.mq :is(.mqi,.mqc){display:inline-block;padding-right:48px}
 .play{width:calc(var(--hit) + 6px);height:calc(var(--hit) + 6px);border-radius:50%;background:var(--acc);color:#fff;margin:0 4px}
 .play:hover{background:#7c3aed}
 .spd{width:auto;padding:0 8px 0 6px;gap:5px;display:inline-flex;align-items:center}
@@ -642,8 +668,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 /* toast · hearts */
 .toast{position:absolute;left:50%;bottom:calc(var(--dockH,64px) + 14px);transform:translate(-50%,10px);background:rgba(24,24,27,.95);color:#fff;padding:9px 15px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:60;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
-.hrt{position:absolute;width:96px;height:96px;margin:-48px 0 0 -48px;pointer-events:none;z-index:30;animation:hpop 1s ease-out forwards}
-.ov[data-w=c] .hrt{width:144px;height:144px;margin:-72px 0 0 -72px}
+.hrt{position:absolute;width:144px;height:144px;margin:-72px 0 0 -72px;pointer-events:none;z-index:30;animation:hpop 1s ease-out forwards}
 .hrt svg{width:100%;height:100%;filter:drop-shadow(0 6px 14px rgba(255,45,85,.45))}
 @keyframes hpop{0%{transform:scale(.2) rotate(var(--r));opacity:0}15%{transform:scale(1.15) rotate(var(--r));opacity:1}30%{transform:scale(.95) rotate(var(--r))}70%{opacity:1}100%{transform:translateY(-110px) scale(1.25) rotate(var(--r));opacity:0}}
 .burst{position:absolute;width:0;height:0;pointer-events:none;z-index:70}
