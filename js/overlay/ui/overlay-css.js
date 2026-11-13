@@ -659,4 +659,9 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .vid .te-web-thumbnail-artist{overflow:hidden;color:rgba(255,255,255,.84);font-size:clamp(10px,1.35cqw,26px);font-weight:500;white-space:nowrap;text-overflow:ellipsis}
 .dtitle .yt.gl{color:var(--mu)}
 .scard .sempty{margin:auto;text-align:center;color:var(--mu);font-size:14px;line-height:1.5;padding:24px 12px}
+/* v3.5.260: hiệu ứng nền — thanh Tất cả/Cần sửa và khung Ghi chú đang khóa trong như kính */
+.ov.ambient .wseg{background:color-mix(in srgb,var(--pn2) 45%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tx) 10%,transparent)}
+.ov.ambient.dark .wseg button.on{background:color-mix(in srgb,var(--tx) 11%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tx) 9%,transparent)}
+.ov.ambient.light .wseg button.on{background:color-mix(in srgb,var(--pn) 62%,transparent);box-shadow:0 1px 3px rgba(15,23,42,.1)}
+.ov.ambient .lsn-lock::before{background:color-mix(in srgb,var(--pn) 42%,transparent);border-color:color-mix(in srgb,var(--tx) 9%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.35);backdrop-filter:blur(24px) saturate(1.35);box-shadow:0 8px 24px rgba(0,0,0,.12)}
 `;

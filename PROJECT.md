@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.260 | Arena.ai Agent sửa:**
+
+- Overlay, hiệu ứng nền: thanh "Tất cả | Cần sửa" (`.wseg`) và khung "Ghi chú đang khóa" (`.lsn-lock::before`) chuyển sang kính trong (như ô Tìm từ / thanh tab / thẻ câu), sáng và tối. Chế độ thường không đổi.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.259 | Arena.ai Agent sửa:**
 
 - Overlay Chép/Nói: làm lại câu đã pass thì phụ đề bên trái mờ từ câu đó trở xuống (cùng kiểu mờ câu chưa pass); câu trên vẫn rõ; câu đang làm rõ lại khi chấm xong. Logic mờ câu chưa pass / khoá giữ nguyên.
