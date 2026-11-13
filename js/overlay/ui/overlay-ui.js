@@ -1317,6 +1317,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       B.setActivity(S.tab === 'speak' ? 'shadowing' : S.tab === 'write' ? 'dictation' : null);
       if (isStudy()) { clampStudy(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); resetStudy(); translateAround(S.si[S.tab]); }
       lastKey = ''; apply();
+      if (S.tab === 'write') playStudyStart(); // v3.5.262: mở tab Chép = phát câu + số lần lặp
     }
     function doneCount() { return Object.keys(S.res[S.tab] || {}).length; }
     function ring(done, total, size = 28) {
@@ -1459,7 +1460,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'auto') { S.auto = !S.auto; renderStudy(); saveUi(); toast(S.auto ? T('autoAdvanceAt80') : T('autoOff')); return; }
       if (a === 'hints') { S.hints = !S.hints; wrHintsToggled(); renderStudy(); saveUi(); return; }
       if (a === 'notes') { notesAction(b); return; }
-      if (a === 'model') { studyRepLeft = 0; S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); setPlaying(true); if (S.tab === 'write') renderStudy(); return; }
+      if (a === 'model') { playStudyStart(); if (S.tab === 'write') renderStudy(); return; }
       if (a === 'mic') { speakToggle(); return; }
       if (a === 'next') { studyGo(1); return; }
       if (a === 'retry') { speakAbort(); resetStudy(); renderStudy(); playStudyStart(); return; }
@@ -2191,7 +2192,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (eatenUp.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (ov.hidden || e.key !== 'Control' || !ctrlAlone) return;
       ctrlAlone = false;
-      if (isStudy()) { const s = SENT[S.si[S.tab]]; studyRepLeft = 0; S.t = s.start; seekMedia(s.start); setPlaying(true); } // Ctrl alone = listen again
+      if (isStudy()) playStudyStart(); // Ctrl alone = listen again
     }
     // keys typed into the overlay's own fields never reach the page (YouTube shortcuts)
     ['keydown', 'keyup', 'keypress'].forEach((t) => ov.addEventListener(t, (e) => { if (editable(e.composedPath()[0])) e.stopPropagation(); }));
@@ -2458,6 +2459,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         clampStudy();
         if (isStudy()) { useSent(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); translateAround(S.si[S.tab]); }
         lastKey = ''; apply();
+        if (S.tab === 'write') playStudyStart(); // v3.5.262
       });
     }
     function close() {

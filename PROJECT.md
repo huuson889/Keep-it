@@ -204,6 +204,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.263 | Arena.ai Agent sửa:**
+
+- Overlay Chép/Nói: Ctrl và nút Nghe lại/Nghe phát lại từ đầu câu 1 lần + số lần "Lặp câu" (dùng `playStudyStart`), giống khi bắt đầu câu.
+- File: `js/overlay/ui/overlay-ui.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
+**2026-11-13 | v3.5.262 | Arena.ai Agent sửa:**
+
+- Overlay Chép: mở tab Chép (chuyển tab hoặc mở overlay vào thẳng Chép) cũng tự phát câu hiện tại 1 lần + số lần "Lặp câu". Tab Nói không đổi.
+- File: `js/overlay/ui/overlay-ui.js` (`setTab`, `open`), `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.261 | Arena.ai Agent sửa:**
 
 - Overlay Chép/Nói: bắt đầu 1 câu (đổi câu hoặc Làm lại) thì tự phát câu đó 1 lần + số lần "Lặp câu" đang chọn (như `dictation.js` cũ: count = lặp + 1; liên tục = lặp tới khi dừng). Tạm dừng, mic, đổi câu, Nghe lại/Ctrl huỷ lượt lặp còn lại; Nghe lại/Ctrl vẫn phát 1 lần.
