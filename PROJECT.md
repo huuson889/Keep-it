@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.248 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: bỏ phần cân chiều rộng nút của v3.5.247 (hiểu sai yêu cầu). "1 từ" / "Kiểm tra" / "Làm lại" / "Tiếp" rộng theo chữ như trước; chế độ chỉ biểu tượng: nút chính 48px như trước. Chiều cao các nút vốn đã bằng nhau (`.pill` 42px).
+- File: `js/overlay/ui/overlay-ui.js` (`fitStudy`), `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: `git diff 9b93e14 -- js/overlay/ui/overlay-css.js` chỉ còn phần khung lỗi phủ kín và màu vàng; cú pháp.
+
 **2026-11-13 | v3.5.247 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: (1) thiếu từ → từ thiếu màu vàng, không mũi tên, các từ phía sau ẩn hết thành `___` (kể cả từ đã gõ đúng ngay sau); từ gợi ý trong khung phân tích dùng màu vàng. (2) Khung phân tích lỗi: dòng chữ phủ hết chiều ngang (bỏ giới hạn 680px của `.diff`). (3) "1 từ" và "Kiểm tra" (cũng như "Làm lại" và "Tiếp") rộng bằng nhau, chỉ khác màu; chế độ chỉ biểu tượng: cả hai 42px.

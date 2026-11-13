@@ -369,7 +369,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .ov[data-w=c] .chip .lab{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .ov[data-w=c] .chip .ctm{font-size:10.5px}
 .ov[data-w=c] .chip .ctm i{display:none}
-.wbox .r .pill{flex:none;white-space:nowrap;justify-content:center}
+.wbox .r .pill{flex:none;white-space:nowrap}
 .ov[data-w=c] .wbox .r{gap:6px}
 .ov[data-w=c] .wbox .r .pill{padding:0 12px;gap:5px}
 .target{font-size:clamp(19px,2.2vw + 10px,26px);font-weight:750;line-height:1.38;text-align:center;max-width:680px}
@@ -570,7 +570,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .scard-hd.f-ico .tg span{display:none}
 .f-nokbd .kbdh{display:none!important}
 .f-ico .pill:not(.pri):not(.mic) .pl{display:none}.f-ico .pill:not(.pri):not(.mic){width:42px;padding:0!important;justify-content:center;gap:0}
-.f-ico2 .pill.pri .pl{display:none}.f-ico2 .pill.pri{width:42px;padding:0!important;justify-content:center;gap:0}
+.f-ico2 .pill.pri .pl{display:none}.f-ico2 .pill.pri{width:48px;padding:0!important;justify-content:center;gap:0}
 .player.card.pc-n .vid{width:72px;height:40px;top:17px}.player.card.pc-n .cinfo{padding-left:90px}
 .player.card.pc-n .vc[data-act=theater]{display:none}.player.card.pc-n .ct{margin-right:40px}
 .sbody.fb{-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent)}

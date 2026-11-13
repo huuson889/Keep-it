@@ -1422,12 +1422,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (hd) { hd.classList.remove('f-nonotes', 'f-ico'); if (rowOver(hd) > 1) hd.classList.add('f-nonotes'); if (rowOver(hd) > 1) hd.classList.add('f-ico'); }
       card.querySelectorAll('.wbox .r, .sctl .r.main').forEach((r) => {
         wrapPills(r); r.classList.remove('f-nokbd', 'f-ico', 'f-ico2');
-        // v3.5.247: Chép — "1 từ" và "Kiểm tra" (cũng như "Làm lại" và "Tiếp") rộng bằng nhau, chỉ khác màu
-        const pairs = [r.querySelectorAll('.pill[data-sact=word], .pill[data-sact=check]'), r.querySelectorAll('.pill[data-sact=retry], .pill[data-sact=next]')];
-        pairs.forEach((pair) => { pair.forEach((b) => { b.style.minWidth = ''; }); if (pair.length === 2) { const w = Math.max(...[...pair].map((b) => b.offsetWidth)); pair.forEach((b) => { b.style.minWidth = `${w}px`; }); } });
         const k = r.querySelector('.kbdh'), lh = k ? parseFloat(getComputedStyle(k).lineHeight) || parseFloat(getComputedStyle(k).fontSize) * 1.3 : 0;
         if (rowOver(r) > 1 || (k && k.offsetHeight > lh * 2.3)) r.classList.add('f-nokbd');
-        if (rowOver(r) > 1) { pairs.forEach((pair) => pair.forEach((b) => { b.style.minWidth = ''; })); r.classList.add('f-ico'); }
+        if (rowOver(r) > 1) r.classList.add('f-ico');
         if (rowOver(r) > 1) r.classList.add('f-ico2');
       });
       const b = card.querySelector('.sbody'); if (b && !b.dataset.fd) { b.dataset.fd = '1'; b.addEventListener('scroll', fadeBody, { passive: true }); }
