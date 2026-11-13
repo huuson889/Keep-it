@@ -1409,7 +1409,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
         const wr = S.wr;
-        const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en) : '';
+        const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en, wr.val) : '';
         el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
           <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase !== 'done' ? `<button class="pill" data-sact="word" title="${T('oneWord')} (Tab)">${ic('bulb')}${T('oneWord')}</button>` : ''}${wr.phase === 'done' ? `<span class="sp"></span><span class="help kbdh" style="text-align:center">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry" title="${T('redo')} (Esc)">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next" title="${T('next')} (Enter)">${T('next')} ${ic('arrowR')}</button>` : `<span class="sp"></span><span class="help kbdh" style="text-align:center">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="skip" title="${T('skip')} (Esc)">${ic('next')}${T('skip')}</button><button class="pill pri" data-sact="check" title="${T('check')} (Enter)">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
@@ -1920,9 +1920,22 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       return w.display.replace(/[\p{L}\p{N}]/gu, (ch) => (seen ? '_' : ((seen = true), ch)));
     }
     function wrMasks(items, list) { for (const w of list) items.push({ c: 'msk', w: wrMaskText(w) }); }
-    function wrIdlePanelHTML(ref) {
-      const items = []; wrMasks(items, getTranscriptWordTokens(ref));
-      return `<div class="rpanel hnt"><div class="rt">${ic('bulb')}<b>${T('correctSentence')}:</b><span class="sp"></span></div><div class="diff wdiff">${items.map((it) => `<span class="msk">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+    // v3.5.266: số từ gõ đúng liên tiếp từ đầu câu (từ đang gõ dở / sai không tính)
+    function wrTypedOk(ref, val) {
+      const SC = globalThis.LHN_STUDY_SCORE, tw = String(val || '').trim().split(/\s+/).filter(Boolean);
+      if (!tw.length) return { n: 0, list: null };
+      const units = SC.getPrefixProgress(ref, '').expectedUnits;
+      const list = units.map((unit) => ({ display: unit.display, norm: SC.tokenize(unit.display).join('') || unit.norm }));
+      if (SC.score(ref, tw.join(' ')).perfect) return { n: list.length, list };
+      let n = 0;
+      for (let k = 1; k <= tw.length; k++) { const pr = SC.getPrefixProgress(ref, tw.slice(0, k).join(' ')); if (!pr.isPrefix) break; n = pr.matchedUnits; }
+      return { n, list };
+    }
+    function wrIdlePanelHTML(ref, val) {
+      const items = [], ok = wrTypedOk(ref, val);
+      if (ok.n) { for (let k = 0; k < ok.n; k++) items.push({ c: 'ok', w: ok.list[k].display }); wrMasks(items, ok.list.slice(ok.n)); }
+      else wrMasks(items, getTranscriptWordTokens(ref));
+      return `<div class="rpanel hnt"><div class="rt">${ic('bulb')}<b>${T('correctSentence')}:</b><span class="sp"></span></div><div class="diff wdiff">${items.map((it) => `<span class="${it.c}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
     }
     function wrPrefixItems(ref, answer) {
       const SC = globalThis.LHN_STUDY_SCORE, progress = SC.getPrefixProgress(ref, answer);
@@ -2050,8 +2063,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const w = S.wr; w.escFilled = false; w.hint = null; w.marks = null; w.slots = [];
       if (w.panel && w.phase !== 'done') {
         w.panel = null; const old = R.querySelector('#scard .rpanel');
-        if (old) { if (S.hints) old.outerHTML = wrIdlePanelHTML(SENT[S.si.write].en); else old.remove(); }
-      }
+        if (old) { if (S.hints) old.outerHTML = wrIdlePanelHTML(SENT[S.si.write].en, w.val); else old.remove(); }
+      } else if (!w.panel && w.phase !== 'done' && S.hints) { const old = R.querySelector('#scard .rpanel.hnt'); if (old) old.outerHTML = wrIdlePanelHTML(SENT[S.si.write].en, w.val); }
       if (w.phase === 'wrong' || w.phase === 'prefix') { w.phase = 'idle'; const h = R.querySelector('#scard .wbox .help'); if (h) h.textContent = T('enterCheckEscAnswer'); }
     }
     function wrRebuildPanel() {

@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.266 | Arena.ai Agent sửa:**
+
+- Overlay Chép, khung vàng "Câu đúng:": các từ gõ đúng liên tiếp từ đầu câu hiện màu xanh, cập nhật khi gõ; từ đang gõ dở / sai và các từ sau vẫn che chữ cái đầu; đúng cả câu thì xanh hết. Tắt gợi ý / panel lỗi / panel đúng 100% không đổi.
+- File: `js/overlay/ui/overlay-ui.js` (`wrTypedOk`, `wrIdlePanelHTML`, `wrOnInput`), `manifest.json`.
+- Kiểm tra: cú pháp; `wrTypedOk` bằng node.
+
 **2026-11-13 | v3.5.265 | Arena.ai Agent sửa:**
 
 - Overlay sheet Tổng kết: căn giữa dòng "Từ cần luyện thêm · chạm để tra" và danh sách từ / "Không có — tuyệt vời!".
