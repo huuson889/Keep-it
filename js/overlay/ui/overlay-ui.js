@@ -1422,9 +1422,12 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (hd) { hd.classList.remove('f-nonotes', 'f-ico'); if (rowOver(hd) > 1) hd.classList.add('f-nonotes'); if (rowOver(hd) > 1) hd.classList.add('f-ico'); }
       card.querySelectorAll('.wbox .r, .sctl .r.main').forEach((r) => {
         wrapPills(r); r.classList.remove('f-nokbd', 'f-ico', 'f-ico2');
+        // v3.5.247: Chép — "1 từ" và "Kiểm tra" (cũng như "Làm lại" và "Tiếp") rộng bằng nhau, chỉ khác màu
+        const pairs = [r.querySelectorAll('.pill[data-sact=word], .pill[data-sact=check]'), r.querySelectorAll('.pill[data-sact=retry], .pill[data-sact=next]')];
+        pairs.forEach((pair) => { pair.forEach((b) => { b.style.minWidth = ''; }); if (pair.length === 2) { const w = Math.max(...[...pair].map((b) => b.offsetWidth)); pair.forEach((b) => { b.style.minWidth = `${w}px`; }); } });
         const k = r.querySelector('.kbdh'), lh = k ? parseFloat(getComputedStyle(k).lineHeight) || parseFloat(getComputedStyle(k).fontSize) * 1.3 : 0;
         if (rowOver(r) > 1 || (k && k.offsetHeight > lh * 2.3)) r.classList.add('f-nokbd');
-        if (rowOver(r) > 1) r.classList.add('f-ico');
+        if (rowOver(r) > 1) { pairs.forEach((pair) => pair.forEach((b) => { b.style.minWidth = ''; })); r.classList.add('f-ico'); }
         if (rowOver(r) > 1) r.classList.add('f-ico2');
       });
       const b = card.querySelector('.sbody'); if (b && !b.dataset.fd) { b.dataset.fd = '1'; b.addEventListener('scroll', fadeBody, { passive: true }); }
@@ -1927,13 +1930,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           }
           if (op.type === 'missing') {
             if (missingPattern?.missingOperations[0] === op) {
+              // v3.5.247: từ thiếu màu vàng, không mũi tên; các từ sau nó ẩn hết (kể cả từ đã gõ đúng ngay sau)
               for (const x of missingPattern.expectedIndices) {
                 const expected = list[x] || { display: '', norm: SC.tokenize(op.expected)[0] || '' };
-                if (showHints) items.push({ c: 'fix', w: `→ ${expected.display}` }); else wrMasks(items, [expected]);
+                if (showHints) items.push({ c: 'fix', w: expected.display }); else wrMasks(items, [expected]);
               }
               expectedIndex = Math.max(expectedIndex, ...missingPattern.expectedIndices) + 1;
-              items.push({ c: 'ok', w: expectedDisplay(missingPattern.following) || missingPattern.following.typed });
-              advanceExpected(missingPattern.following); wrMasks(items, list.slice(expectedIndex));
+              wrMasks(items, list.slice(expectedIndex));
               break;
             }
             wrMasks(items, list.slice(expectedStart(op)));
@@ -1986,7 +1989,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function wrPanelHTML(wr) {
       const p = wr.panel, ok = p.kind === 'ok';
       const cls = { ok: 'ok', bad: 'bad', fix: 'fix', msk: 'msk', emp: 'emp' };
-      return `<div class="rpanel ${ok ? 'ok' : 'err'}"><div class="rt">${ic(ok ? 'check' : 'alert')}<b>${ok ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span>${p.kind === 'prefix' ? '' : `<span class="acc">${wr.acc}%</span>`}</div><div class="diff">${p.items.map((it) => `<span class="${cls[it.c]}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+      return `<div class="rpanel ${ok ? 'ok' : 'err'}"><div class="rt">${ic(ok ? 'check' : 'alert')}<b>${ok ? T('correctSentence') : T('errorAnalysis')}</b><span class="sp"></span>${p.kind === 'prefix' ? '' : `<span class="acc">${wr.acc}%</span>`}</div><div class="diff wdiff">${p.items.map((it) => `<span class="${cls[it.c]}">${esc(it.w)}</span>`).join(' ')}</div></div>`;
     }
     function pnHintHTML(ref) {
       const names = globalThis.LHN_STUDY_RULES?.getProperNounHints?.(ref) || [];

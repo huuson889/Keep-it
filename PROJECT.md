@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.247 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: (1) thiếu từ → từ thiếu màu vàng, không mũi tên, các từ phía sau ẩn hết thành `___` (kể cả từ đã gõ đúng ngay sau); từ gợi ý trong khung phân tích dùng màu vàng. (2) Khung phân tích lỗi: dòng chữ phủ hết chiều ngang (bỏ giới hạn 680px của `.diff`). (3) "1 từ" và "Kiểm tra" (cũng như "Làm lại" và "Tiếp") rộng bằng nhau, chỉ khác màu; chế độ chỉ biểu tượng: cả hai 42px.
+- File: `js/overlay/ui/overlay-ui.js` (`wrErrorItems`, `wrPanelHTML`, `fitStudy`), `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: Node với câu "Senior Lieutenant Colonel Pham Duc Ninh, deputy chief of staff of Naval Region 1…" gõ thiếu "staff": hiện "… deputy chief of **staff** ___ ____ …" (vàng, không mũi tên, "of" bị ẩn); tắt gợi ý: "staff" thành `_____`.
+
 **2026-11-13 | v3.5.246 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép, gợi ý tên riêng: các tên viết hoa đứng liền nhau (chỉ cách bằng khoảng trắng) gộp thành một mục. "we Alex don't Vietnam Didier Le Bret" → Gợi ý: **Alex, Vietnam Didier Le Bret**; có dấu phẩy / dấu chấm ở giữa thì vẫn tách; trùng thì chỉ hiện một lần.
