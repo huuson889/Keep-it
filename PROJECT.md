@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.275 | Arena.ai Agent sửa:**
+
+- Overlay Nói: sửa lỗi v3.5.274 — thẻ câu biến mất khi "Giọng bạn" phát. Nguyên nhân: class `vplay` trùng tên nút play giữa video (`.vplay` absolute 64px, opacity 0). Đổi thành `spvoice` (đã kiểm tra không trùng). Bài học: class mới phải grep trùng tên trong `overlay-css.js` trước khi dùng.
+- File: `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp; grep `spvoice`, `vrec` không trùng.
+
 **2026-11-13 | v3.5.274 | Arena.ai Agent sửa:**
 
 - Overlay Nói: khi "Giọng bạn" đang phát, mic và "Câu tiếp" tạm về kiểu nút không màu như "Nghe mẫu" (nền xám, viền mảnh, không quầng tím; cả hiệu ứng nền); phát xong trở lại tím. `#scard.vplay` bật/tắt trong `playRec`.

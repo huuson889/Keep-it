@@ -407,7 +407,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .wbox .r .pill.lis.on{border-color:var(--acc);color:var(--acct)}
 /* v3.5.249: nút chính hàng Chép (Kiểm tra / Tiếp) có viền ngoài như nút "1 từ" */.wbox .r .pill.pri{border-color:var(--bd);background-clip:padding-box}.ov.ambient .wbox .r .pill.pri{border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
 .wbox .r .pill.lis.on svg{animation:pulse2 1.2s infinite}
-/* v3.5.274: Nói — "Giọng bạn" đang phát: mic + "Câu tiếp" về kiểu nút không màu như "Nghe mẫu" */.ov .scard.vplay .sctl :is(.mic,.pill.pri){background:var(--pn2);border:1px solid var(--bd);color:var(--tx);box-shadow:none}.ov.ambient .scard.vplay .sctl :is(.mic,.pill.pri){background:color-mix(in srgb,var(--pn2) 45%,transparent);border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
+/* v3.5.274: Nói — "Giọng bạn" đang phát: mic + "Câu tiếp" về kiểu nút không màu như "Nghe mẫu" */.ov .scard.spvoice .sctl :is(.mic,.pill.pri){background:var(--pn2);border:1px solid var(--bd);color:var(--tx);box-shadow:none}.ov.ambient .scard.spvoice .sctl :is(.mic,.pill.pri){background:color-mix(in srgb,var(--pn2) 45%,transparent);border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
 /* v3.5.272: Nói — "Giọng bạn" đang phát = hiệu ứng như "Nghe lại" bên Chép; không phát = nút không màu */.ov .scard .pill.vrec.on{border-color:var(--acc);color:var(--acct)}.ov .scard .pill.vrec.on svg{animation:pulse2 1.2s infinite}
 .ov[data-w=c] .rpanel .diff{font-size:15px}
 .listen svg{width:20px;height:20px}
