@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.245 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: gợi ý tên riêng không còn khung vàng; là một dòng chữ thường ngay trên ô nhập: "Gợi ý:" chữ thường màu phụ, danh sách tên in đậm (vd. Gợi ý: **Vietnam, Tuoitre**).
+- File: `js/overlay/ui/overlay-ui.js` (`pnHintHTML`, chỗ đặt trong `.wbox`), `js/overlay/ui/overlay-css.js` (`.pnh`), `manifest.json`.
+- Kiểm tra: cú pháp; HTML sinh ra đúng thứ tự gợi ý → ô nhập.
+
 **2026-11-13 | v3.5.244 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: khôi phục cách chấm và báo lỗi của `dictation.js` trước v3.5.171 (giao diện hợp nhất đã bỏ mất). Enter khi gõ đúng phần đầu câu: không chấm, không tính sai, hiện các từ đã đúng + `___` (gợi ý bật thì lộ 1 từ kế). Enter: chuẩn hoá theo phụ đề (chữ hoa, dấu nháy, viết tắt) rồi chấm. Sai: chỉ báo chỗ sai đầu tiên; tắt gợi ý thì không lộ từ đúng, Enter lần nữa mới lộ; gạch chân từ sai/thừa và chèn ô trống chỗ thiếu từ ngay trong ô gõ (Backspace xoá ô trống). Đúng 100%: tự thêm dấu câu. Esc: điền đáp án, không chấm; Esc lần nữa xoá. Gợi ý tên riêng hiện lại. Bộ chấm `LHN_STUDY_SCORE`, giao diện, tab Nói không đổi.

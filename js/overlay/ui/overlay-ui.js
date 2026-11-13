@@ -1390,8 +1390,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const wr = S.wr;
         const hint = esc(words(s.en).map((w) => { const c = [...w]; return c[0] + c.slice(1).join('').replace(/[\p{L}\p{N}]/gu, '_'); }).join('  '));
         const res = wr.panel ? wrPanelHTML(wr) : '';
-        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
-          <div class="wbox"><textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
+        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${S.hints && wr.phase !== 'done' ? `<div class="hint">${hint}</div>` : ''}${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
+          <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
         ta.addEventListener('input', () => { S.wr.val = ta.value; wrOnInput(); grow(); placeWrMarks(); }); ta.addEventListener('scroll', syncWrMarks); requestAnimationFrame(() => { grow(); placeWrMarks(); });
@@ -1990,7 +1990,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     function pnHintHTML(ref) {
       const names = globalThis.LHN_STUDY_RULES?.getProperNounHints?.(ref) || [];
-      return names.length ? `<div class="pnh"><b>${esc(B.t('dictationProperNounHint'))}:</b> <span>${esc(names.join(', '))}</span></div>` : '';
+      return names.length ? `<div class="pnh">${esc(B.t('dictationProperNounHint'))}: <b>${esc(names.join(', '))}</b></div>` : '';
     }
     function placeWrMarks() {
       const box = R.querySelector('#scard .wbox'), ta = $('#wta'), m = S.wr.marks;
