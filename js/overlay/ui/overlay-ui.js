@@ -1390,7 +1390,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const wr = S.wr;
         const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en) : '';
         el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
-          <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase !== 'done' ? `<button class="pill" data-sact="skip" title="${T('skip')} (Esc)">${ic('next')}${T('skip')}</button>` : ''}${wr.phase === 'done' ? `<span class="help kbdh" style="text-align:left">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="help kbdh" style="text-align:left">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
+          <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase !== 'done' ? `<button class="pill" data-sact="skip" title="${T('skip')} (Esc)">${ic('next')}${T('skip')}</button>` : ''}${wr.phase === 'done' ? `<span class="sp"></span><span class="help kbdh" style="text-align:center">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<span class="sp"></span><span class="help kbdh" style="text-align:center">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="word" title="${T('oneWord')} (Tab)">${ic('bulb')}${T('oneWord')}</button><button class="pill pri" data-sact="check">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
         ta.addEventListener('input', () => { S.wr.val = ta.value; wrOnInput(); grow(); placeWrMarks(); }); ta.addEventListener('scroll', syncWrMarks); requestAnimationFrame(() => { grow(); placeWrMarks(); });
@@ -1447,7 +1447,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'playrec') { if (SPK.url) { toast(T('playingYourRecording')); playRec(); } else toast(B.t('dictationSpeakRecordingUnavailable')); return; }
       if (a === 'check') { writeCheck(); return; }
       if (a === 'skip') { const ta = $('#wta'); if (ta) wrEscape(ta); return; }
-      if (a === 'word') { const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length; S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; wrOnInput(); renderStudy(); const ta = $('#wta'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return; }
+      if (a === 'word') { wrOneWord(); return; }
     });
     function bindSwipe(card) {
       // the whole card follows the finger (tilt) and slides away (demo v17); a swipe may start anywhere on the card on touch —
@@ -2057,10 +2057,17 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (S.wr.phase === 'done' || S.wr.escFilled) { resetStudy(); renderStudy(); wrFocusEnd(); return; }
       ta.value = ref; ta.dispatchEvent(new Event('input')); ta.focus(); ta.setSelectionRange(ref.length, ref.length); S.wr.escFilled = true;
     }
+    // nút "1 từ" và phím Tab (v3.5.256): hiện thêm 1 từ của đáp án
+    function wrOneWord() {
+      const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length;
+      S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; wrOnInput(); renderStudy();
+      const ta = $('#wta'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    }
     function wrKeyDown(e, ta) {
       const ref = SENT[S.si.write].en;
       if ((e.key === 'Backspace' || e.key === 'Delete') && wrRemoveSlot(e, ta)) return;
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); wrEscape(ta); return; }
+      if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && S.wr.phase !== 'done') { e.preventDefault(); e.stopPropagation(); S.wr.val = ta.value; wrOneWord(); return; }
       if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.keyCode === 229) return;
       e.preventDefault();
       const h = S.wr.hint;

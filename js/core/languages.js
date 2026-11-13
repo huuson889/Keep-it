@@ -786,7 +786,7 @@
   MESSAGES.en.ov_dragToResizeDouble = "Drag to resize · double-click = default"; MESSAGES.vi.ov_dragToResizeDouble = "Kéo để đổi độ rộng · nhấp đúp = mặc định"; MESSAGES.ko.ov_dragToResizeDouble = "드래그하여 너비 조절 · 더블클릭 = 기본값";
   MESSAGES.en.ov_empty = "(empty)"; MESSAGES.vi.ov_empty = "(chưa viết)"; MESSAGES.ko.ov_empty = "(비어 있음)";
   MESSAGES.en.ov_endSession = "End session"; MESSAGES.vi.ov_endSession = "Kết thúc phiên"; MESSAGES.ko.ov_endSession = "세션 종료";
-  MESSAGES.en.ov_enterCheckEscAnswer = "(Enter) Check · (Esc) Answer · (Ctrl) Replay"; MESSAGES.vi.ov_enterCheckEscAnswer = "(Enter) Kiểm tra · (Esc) Đáp án · (Ctrl) Nghe lại"; MESSAGES.ko.ov_enterCheckEscAnswer = "(Enter) 확인 · (Esc) 정답 · (Ctrl) 다시 듣기";
+  MESSAGES.en.ov_enterCheckEscAnswer = "(Enter) Check · (Esc) Answer · (Tab) 1 word · (Ctrl) Replay"; MESSAGES.vi.ov_enterCheckEscAnswer = "(Enter) Kiểm tra · (Esc) Đáp án · (Tab) 1 từ · (Ctrl) Nghe lại"; MESSAGES.ko.ov_enterCheckEscAnswer = "(Enter) 확인 · (Esc) 정답 · (Tab) 1단어 · (Ctrl) 다시 듣기";
   MESSAGES.en.ov_enterNextSentenceEsc = "(Enter) Next sentence · (Esc) Retry"; MESSAGES.vi.ov_enterNextSentenceEsc = "(Enter) Câu tiếp · (Esc) Làm lại"; MESSAGES.ko.ov_enterNextSentenceEsc = "(Enter) 다음 문장 · (Esc) 다시 하기";
   MESSAGES.en.ov_errorAnalysis = "Error analysis:"; MESSAGES.vi.ov_errorAnalysis = "Phân tích lỗi sai:"; MESSAGES.ko.ov_errorAnalysis = "오류 분석:";
   MESSAGES.en.ov_excellent = "Excellent!"; MESSAGES.vi.ov_excellent = "Xuất sắc!"; MESSAGES.ko.ov_excellent = "훌륭해요!";
@@ -801,7 +801,7 @@
   MESSAGES.en.ov_firstLetterHints = "First-letter hints"; MESSAGES.vi.ov_firstLetterHints = "Gợi ý chữ cái đầu"; MESSAGES.ko.ov_firstLetterHints = "첫 글자 힌트";
   MESSAGES.en.ov_fixRate = "Fix rate"; MESSAGES.vi.ov_fixRate = "Tỷ lệ sửa"; MESSAGES.ko.ov_fixRate = "수정률";
   MESSAGES.en.ov_fixRateAria = "Fix rate {0}%"; MESSAGES.vi.ov_fixRateAria = "Tỷ lệ sửa {0}%"; MESSAGES.ko.ov_fixRateAria = "수정률 {0}%";
-  MESSAGES.en.ov_fixTheSentenceThen = "Fix the sentence, then (Enter) Check again · (Esc) Answer"; MESSAGES.vi.ov_fixTheSentenceThen = "Sửa câu rồi (Enter) Kiểm tra lại · (Esc) Đáp án"; MESSAGES.ko.ov_fixTheSentenceThen = "문장을 고친 뒤 (Enter) 다시 확인 · (Esc) 정답";
+  MESSAGES.en.ov_fixTheSentenceThen = "Fix the sentence, then (Enter) Check again · (Esc) Answer · (Tab) 1 word"; MESSAGES.vi.ov_fixTheSentenceThen = "Sửa câu rồi (Enter) Kiểm tra lại · (Esc) Đáp án · (Tab) 1 từ"; MESSAGES.ko.ov_fixTheSentenceThen = "문장을 고친 뒤 (Enter) 다시 확인 · (Esc) 정답 · (Tab) 1단어";
   MESSAGES.en.ov_fixed = "Fixed"; MESSAGES.vi.ov_fixed = "Đã sửa"; MESSAGES.ko.ov_fixed = "수정됨";
   MESSAGES.en.ov_fixedSuffix = "· Fix"; MESSAGES.vi.ov_fixedSuffix = "· Sửa"; MESSAGES.ko.ov_fixedSuffix = "· 수정";
   MESSAGES.en.ov_font = "Font"; MESSAGES.vi.ov_font = "Phông chữ"; MESSAGES.ko.ov_font = "글꼴";

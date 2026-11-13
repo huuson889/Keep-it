@@ -204,6 +204,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.256 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: phím Tab trong ô nhập = nút "1 từ" (hiện thêm 1 từ, con trỏ ở lại ô). Shift+Tab và Tab ngoài ô nhập như cũ; câu đã đúng thì Tab không làm gì thêm. Dòng hướng dẫn thêm "(Tab) 1 từ" (en/vi/ko), nút có chú thích "1 từ (Tab)".
+- File: `js/overlay/ui/overlay-ui.js` (`wrOneWord`, `wrKeyDown`), `js/core/languages.js` (`ov_enterCheckEscAnswer`, `ov_fixTheSentenceThen`), `manifest.json`.
+- Kiểm tra: cú pháp; hai nhãn chỉ dùng ở tab Chép.
+
+**2026-11-13 | v3.5.255 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép: dòng hướng dẫn phím tắt ở hàng nút nằm giữa khoảng trống giữa nhóm nút trái và nhóm nút phải (khoảng đệm hai bên), chữ căn giữa khi xuống dòng. Cách ẩn dòng khi chật giữ nguyên.
+- File: `js/overlay/ui/overlay-ui.js`, `manifest.json`.
+- Kiểm tra: cú pháp; `.sp` không được tính vào độ rộng hàng (`rowOver` bỏ qua `.sp`).
+
 **2026-11-13 | v3.5.254 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: thêm nút "Bỏ qua" (Skip / 건너뛰기, nhãn `ov_skip` có sẵn, biểu tượng ⏭) bên phải "Nghe lại", làm giống Esc: điền đáp án, không chấm; bấm lần nữa thì xoá. Ẩn khi câu đã đúng (đã có "Làm lại"). Màn hẹp: chỉ còn biểu tượng như các nút phụ khác.
