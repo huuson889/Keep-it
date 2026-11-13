@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.273 | Arena.ai Agent sửa:**
+
+- Overlay Nói: bỏ nút "Thử lại" (thử lại = bấm mic / Enter như cũ); "Giọng bạn" dùng icon sóng âm mới `voice` (kiểu Lucide audio-lines), vẫn nhịp khi phát. Xử lý `retry` giữ cho nút "Làm lại" bên Chép.
+- File: `js/overlay/ui/overlay-ui.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.272 | Arena.ai Agent sửa:**
 
 - Overlay Nói: "Nghe lại giọng bạn" → "Giọng bạn" (en "Your voice", ko "내 목소리"); đang phát bản ghi thì nút có hiệu ứng phát (viền/chữ màu nhấn, icon nhịp như "Nghe lại" bên Chép), không phát = nút không màu; "Giọng bạn" và "Thử lại" cao 42px như nút mẫu (bỏ 34px). Mic và "Tiếp" giữ màu.

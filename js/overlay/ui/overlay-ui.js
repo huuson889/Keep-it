@@ -138,6 +138,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       sparkles: '<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 15v4M17 17h4"/>',
       bulb: '<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/>',
       replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+      voice: '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>', // v3.5.273: "Giọng bạn" (sóng âm)
       ear: '<path d="M6 8.5a6 6 0 1 1 12 0c0 6-6 6-6 10a3 3 0 0 1-6 0"/><path d="M10 9a2 2 0 1 1 4 0c0 2-2 2-2 4"/>',
       export: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
       panel: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>',
@@ -1405,7 +1406,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (sp.phase === 'done') mid = `<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
         el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
           <div class="sctl"><div class="r main"><button class="pill" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
-          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('replay')}${T('replayYourVoice')}</button><button class="pill" data-sact="retry">${ic('mic')}${T('tryAgain')}</button></div>` : ''}
+          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('voice')}${T('replayYourVoice')}</button></div>` : ''}
           <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
         const wr = S.wr;
