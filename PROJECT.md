@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.261 | Arena.ai Agent sửa:**
+
+- Overlay Chép/Nói: bắt đầu 1 câu (đổi câu hoặc Làm lại) thì tự phát câu đó 1 lần + số lần "Lặp câu" đang chọn (như `dictation.js` cũ: count = lặp + 1; liên tục = lặp tới khi dừng). Tạm dừng, mic, đổi câu, Nghe lại/Ctrl huỷ lượt lặp còn lại; Nghe lại/Ctrl vẫn phát 1 lần.
+- File: `js/overlay/ui/overlay-ui.js` (`studyRepLeft`, `playStudyStart`, `setStudyIndex`, `tick`, `setPlaying`), `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.260 | Arena.ai Agent sửa:**
 
 - Overlay, hiệu ứng nền: thanh "Tất cả | Cần sửa" (`.wseg`) và khung "Ghi chú đang khóa" (`.lsn-lock::before`) chuyển sang kính trong (như ô Tìm từ / thanh tab / thẻ câu), sáng và tối. Chế độ thường không đổi.

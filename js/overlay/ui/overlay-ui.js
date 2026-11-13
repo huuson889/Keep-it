@@ -461,7 +461,16 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const applied = { speed: null, vol: null, muted: null };
     function media() { return B.state()?.activeMedia || null; }
     function seekMedia(t) { const m = media(); if (!m) return; try { m.currentTime = Math.max(0, t); } catch (_) {} seekHold = performance.now() + 300; }
+    // bắt đầu 1 câu học (v3.5.261): phát câu đó 1 lần + số lần "Lặp câu" (như dictation.js cũ: count = lặp + 1)
+    let studyRepLeft = 0;
+    function playStudyStart() {
+      if (!isStudy()) return;
+      const s = SENT[S.si[S.tab]]; if (!s) return;
+      S.t = s.start; seekMedia(s.start); setPlaying(true);
+      studyRepLeft = S.rep.on ? S.rep.n : 0;
+    }
     function setPlaying(on) {
+      if (!on) studyRepLeft = 0;
       S.playing = on;
       ov.classList.toggle('playing', on);
       $('.wbox .pill.lis')?.classList.toggle('on', on);
@@ -491,7 +500,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       else if (vol !== applied.vol || mu !== applied.muted) { applied.vol = S.vol = vol; applied.muted = S.muted = mu; }
       if (m.videoWidth && m.videoHeight) { const va = (m.videoWidth / m.videoHeight).toFixed(4); if (va !== lastVa) { lastVa = va; ov.style.setProperty('--va', va); } }
       if (S.playing) {
-        if (isStudy()) { const s = SENT[S.si[S.tab]]; if (s && S.t >= s.end) setPlaying(false); }
+        if (isStudy()) { const s = SENT[S.si[S.tab]]; if (s && S.t >= s.end) { if (studyRepLeft > 0) { if (studyRepLeft !== Infinity) studyRepLeft--; S.t = s.start; seekMedia(s.start); } else setPlaying(false); } }
         else if (S.rep.on) {
           const before = step.prev ?? idxAt(S.t), endOf = SENT[before]?.end;
           if (endOf != null && S.t >= endOf - 0.04 && S.t - endOf < 1) {
@@ -1319,6 +1328,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       i = Math.max(0, Math.min(SENT.length - 1, i));
       speakAbort(); S.si[S.tab] = i; S.reach[S.tab] = Math.max(S.reach[S.tab] || 0, i); S.t = SENT[i].start; seekMedia(S.t); setPlaying(false); resetStudy(); queueStudySave(); translateAround(i);
       renderStudy(); renderSideHd(); refreshLesson(); markCur(true); tick(true);
+      playStudyStart();
     }
     function studyGo(d, anim = true, swipe = false) {
       const i = (goPend ? goPend.i : S.si[S.tab]) + d; // a pending change counts as already made
@@ -1449,10 +1459,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (a === 'auto') { S.auto = !S.auto; renderStudy(); saveUi(); toast(S.auto ? T('autoAdvanceAt80') : T('autoOff')); return; }
       if (a === 'hints') { S.hints = !S.hints; wrHintsToggled(); renderStudy(); saveUi(); return; }
       if (a === 'notes') { notesAction(b); return; }
-      if (a === 'model') { S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); setPlaying(true); if (S.tab === 'write') renderStudy(); return; }
+      if (a === 'model') { studyRepLeft = 0; S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); setPlaying(true); if (S.tab === 'write') renderStudy(); return; }
       if (a === 'mic') { speakToggle(); return; }
       if (a === 'next') { studyGo(1); return; }
-      if (a === 'retry') { speakAbort(); resetStudy(); renderStudy(); return; }
+      if (a === 'retry') { speakAbort(); resetStudy(); renderStudy(); playStudyStart(); return; }
       if (a === 'playrec') { if (SPK.url) { toast(T('playingYourRecording')); playRec(); } else toast(B.t('dictationSpeakRecordingUnavailable')); return; }
       if (a === 'check') { writeCheck(); return; }
       if (a === 'skip') { const ta = $('#wta'); if (ta) wrEscape(ta); return; }
@@ -2181,7 +2191,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (eatenUp.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (ov.hidden || e.key !== 'Control' || !ctrlAlone) return;
       ctrlAlone = false;
-      if (isStudy()) { const s = SENT[S.si[S.tab]]; S.t = s.start; seekMedia(s.start); setPlaying(true); } // Ctrl alone = listen again
+      if (isStudy()) { const s = SENT[S.si[S.tab]]; studyRepLeft = 0; S.t = s.start; seekMedia(s.start); setPlaying(true); } // Ctrl alone = listen again
     }
     // keys typed into the overlay's own fields never reach the page (YouTube shortcuts)
     ['keydown', 'keyup', 'keypress'].forEach((t) => ov.addEventListener(t, (e) => { if (editable(e.composedPath()[0])) e.stopPropagation(); }));
