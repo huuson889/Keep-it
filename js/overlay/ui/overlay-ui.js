@@ -1408,8 +1408,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const target = tw.map((w, k) => { const st = sp.phase === 'done' ? sp.heard[k] : ''; return `<span class="w ${st || ''}">${esc(w)}</span>`; }).join(' ');
         let mid = '';
         if (sp.phase === 'idle') mid = `<p class="help tch">${T('tapTheMicTo')}</p><p class="help kbdh">${T('pressEnterOrTap')}</p>`;
-        if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div><div class="heard" id="heard">${T('listening')}</div>`;
-        if (sp.phase === 'done') mid = `<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
+        if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div>${SPK.live ? spResultHTML(s.en, SPK.live) : `<div class="heard" id="heard">${T('listening')}</div>`}`;
+        if (sp.phase === 'done') mid = `${spResultHTML(s.en, sp.transcript, speakTier(sp.score))}<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
         el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
           <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
           ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('voice')}${T('replayYourVoice')}</button></div>` : ''}
@@ -1602,7 +1602,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           for (let k = 0; k < e.results.length; k++) { const x = String(e.results[k]?.[0]?.transcript || '').trim(); if (x) (e.results[k].isFinal ? f : m).push(x); }
           fin = f.join(' '); inter = m.join(' ');
           SPK.live = [...SPK.finals, fin, inter].filter(Boolean).join(' ');
-          const h = $('#heard'); if (h) h.textContent = SPK.live || T('listening');
+          const h = R.querySelector('#scard #spres, #scard #heard'); if (h) { if (SPK.live) h.outerHTML = spResultHTML(SENT[i].en, SPK.live); else h.textContent = T('listening'); }
           clearTimeout(SPK.timer);
           if (SPK.live) SPK.timer = setTimeout(() => { if (gen === SPK.gen && SPK.rec === rec) { SPK.stopping = true; try { rec.stop(); } catch (_) { speakEnd(); } } }, ENDPOINT_MS);
         };
@@ -1631,6 +1631,20 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const played = url ? await playRec() : false;
       if (S.auto && score >= 80) setTimeout(() => { if (gen === SPK.gen && S.tab === 'speak' && S.si.speak === i && S.sp.phase === 'done' && !SPK.audio) studyGo(1); }, played ? 600 : 1500);
     }
+    // v3.5.278: khung "Kết quả nhận diện giọng nói" như bản cũ (shadowing-activity.js renderSpeechResult trước v3.5.171):
+    // từ đúng xanh, sai đỏ gạch ngang + "→ từ đúng" vàng, thiếu vàng, thừa đỏ gạch ngang; cập nhật khi đang nói; sau khi chấm khung theo mức điểm
+    function spResultHTML(ref, text, tier) {
+      const tr = String(text || '').trim(); if (!tr) return '';
+      const ops = globalThis.LHN_STUDY_SCORE.score(ref, tr).ops, tt = getTranscriptWordTokens(tr), et = getTranscriptWordTokens(ref);
+      const disp = (toks, ix, fb) => (ix?.length ? toks.slice(ix[0], ix[ix.length - 1] + 1).map((x) => x.display).join(' ') : (fb || ''));
+      let h = '';
+      for (const o of ops) {
+        const td = disp(tt, o.typedIndices, o.typed), ed = disp(et, o.expectedIndices, o.expected);
+        if (o.type === 'wrong') h += `<span class="spw wrong">${esc(td)}</span><span class="spw fix">→ ${esc(ed)}</span>`;
+        else h += `<span class="spw ${o.type}">${esc(o.type === 'missing' ? ed : td)}</span>`;
+      }
+      return `<div class="spres${tier === 'warn' || tier === 'fail' ? ` ${tier}` : ''}" id="spres" role="status" aria-live="polite"><div class="spres-t">${esc(B.t('dictationSpeakResult'))}</div><div class="spres-w">${h}</div></div>`;
+    }
     function speakFinish(transcript) {
       const i = S.si.speak, ref = SENT[i].en, tw = words(ref);
       const result = globalThis.LHN_STUDY_SCORE.score(ref, transcript);
@@ -1646,7 +1660,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const score = result.percent;
       heard.forEach((h, k) => { if (h !== 'ok') S.weak.add(norm(tw[k])); });
       recordWrong('speak', i, result, ref);
-      S.sp = { ...S.sp, phase: 'done', heard, score, toast: true };
+      S.sp = { ...S.sp, phase: 'done', heard, score, toast: true, transcript };
       const tier = speakTier(score);
       if (tier === 'pass') { playSuccessSound(); confetti(); } else playErrorSound();
       showStudyToast(speakToastHTML(score));
