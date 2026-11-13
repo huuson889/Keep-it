@@ -1405,7 +1405,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (sp.phase === 'done') mid = `<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
         el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}<p class="help" style="font-size:11.5px;margin-top:auto">${T('aTemporaryMemoryOnly')}</p></div>
           <div class="sctl"><div class="r main"><button class="pill" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill pri" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${T('skip')} ${ic('arrowR')}</button>`}</div>
-          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill" data-sact="playrec" style="height:34px">${ic('replay')}${T('replayYourVoice')}</button><button class="pill" data-sact="retry" style="height:34px">${ic('mic')}${T('tryAgain')}</button></div>` : ''}
+          ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('replay')}${T('replayYourVoice')}</button><button class="pill" data-sact="retry">${ic('mic')}${T('tryAgain')}</button></div>` : ''}
           <p class="help kbdh">${T('speakKeysHint')}</p><p class="help tch">${T('swipeLeftRightOn')}</p></div></div>`;
       } else {
         const wr = S.wr;
@@ -1559,7 +1559,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       setPlaying(false);
       if (SPK.audio) { try { SPK.audio.pause(); } catch (_) {} }
       return new Promise((res) => {
-        try { const a = new Audio(SPK.url); SPK.audio = a; const done = (ok) => { if (SPK.audio === a) SPK.audio = null; res(ok); }; a.onended = () => done(true); a.onerror = () => done(false); a.onpause = () => { if (!a.ended) done(false); }; a.play().catch(() => done(false)); } catch (_) { res(false); }
+        // v3.5.272: nút "Giọng bạn" có hiệu ứng phát trong lúc phát bản ghi
+        const mark = (on) => R.querySelector('#scard [data-sact="playrec"]')?.classList.toggle('on', on);
+        try { const a = new Audio(SPK.url); SPK.audio = a; mark(true); const done = (ok) => { if (SPK.audio === a) { SPK.audio = null; mark(false); } res(ok); }; a.onended = () => done(true); a.onerror = () => done(false); a.onpause = () => { if (!a.ended) done(false); }; a.play().catch(() => done(false)); } catch (_) { res(false); }
       });
     }
     async function speakToggle() {

@@ -893,7 +893,7 @@
   MESSAGES.en.ov_repeatSentencePressAnd = "Repeat sentence — press and hold: choose count"; MESSAGES.vi.ov_repeatSentencePressAnd = "Lặp lại câu — nhấn giữ: chọn số lần"; MESSAGES.ko.ov_repeatSentencePressAnd = "문장 반복 — 길게 누르기: 횟수 선택";
   MESSAGES.en.ov_replay = "Replay"; MESSAGES.vi.ov_replay = "Nghe lại"; MESSAGES.ko.ov_replay = "다시 듣기";
   MESSAGES.en.ov_replayCtrl = "Replay (Ctrl)"; MESSAGES.vi.ov_replayCtrl = "Nghe lại (Ctrl)"; MESSAGES.ko.ov_replayCtrl = "다시 듣기 (Ctrl)";
-  MESSAGES.en.ov_replayYourVoice = "Hear your voice"; MESSAGES.vi.ov_replayYourVoice = "Nghe lại giọng bạn"; MESSAGES.ko.ov_replayYourVoice = "내 목소리 듣기";
+  MESSAGES.en.ov_replayYourVoice = "Your voice"; MESSAGES.vi.ov_replayYourVoice = "Giọng bạn"; MESSAGES.ko.ov_replayYourVoice = "내 목소리";
   MESSAGES.en.ov_reset = "Reset"; MESSAGES.vi.ov_reset = "Đặt lại"; MESSAGES.ko.ov_reset = "초기화";
   MESSAGES.en.ov_resetDone = "Reset"; MESSAGES.vi.ov_resetDone = "Đã đặt lại"; MESSAGES.ko.ov_resetDone = "초기화했습니다";
   MESSAGES.en.ov_retryBelow85 = "Redo sentences under 85%"; MESSAGES.vi.ov_retryBelow85 = "Luyện lại câu dưới 85%"; MESSAGES.ko.ov_retryBelow85 = "85% 미만 문장 다시 연습";

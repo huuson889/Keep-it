@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.272 | Arena.ai Agent sửa:**
+
+- Overlay Nói: "Nghe lại giọng bạn" → "Giọng bạn" (en "Your voice", ko "내 목소리"); đang phát bản ghi thì nút có hiệu ứng phát (viền/chữ màu nhấn, icon nhịp như "Nghe lại" bên Chép), không phát = nút không màu; "Giọng bạn" và "Thử lại" cao 42px như nút mẫu (bỏ 34px). Mic và "Tiếp" giữ màu.
+- File: `js/overlay/ui/overlay-ui.js` (`playRec`, hàng nút Nói), `js/overlay/ui/overlay-css.js` (`.pill.vrec.on`), `js/core/languages.js` (`ov_replayYourVoice`), `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.271 | Arena.ai Agent sửa:**
 
 - **Quy tắc chung cả app: thanh cuộn 3px ở MỌI giao diện** (Chrome/Edge đúng 3px; Firefox `thin`). Nguồn chung `LHN_THEME.scrollbar` (`js/shared/theme-tokens.js`) chèn vào mọi shadow root: thanh Keepit/☰/sheet, Trang chủ (trang + hộp thoại), trang offline, overlay; `pages/home.html`, `pages/ai-panel.html` và thanh AI panel (`js/ask-ai/toolbar.js`, bản sao vì không nạp theme-tokens). Trang thường giữ `css/content/content.css`; Dashboard/Popup/Highlights & Notes đã 3px. Chỗ thiết kế ẩn thanh cuộn vẫn ẩn.
