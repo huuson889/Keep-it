@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.259 | Arena.ai Agent sửa:**
+
+- Overlay Chép/Nói: làm lại câu đã pass thì phụ đề bên trái mờ từ câu đó trở xuống (cùng kiểu mờ câu chưa pass); câu trên vẫn rõ; câu đang làm rõ lại khi chấm xong. Logic mờ câu chưa pass / khoá giữ nguyên.
+- File: `js/overlay/ui/overlay-ui.js` (`redoBlur`, `syncRedoBlur`, class `.row.redo`), `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp; logic `redoBlur` bằng node.
+
 **2026-11-13 | v3.5.258 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: tooltip kèm phím tắt cho "Kiểm tra (Enter)", "Làm lại (Esc)", "Tiếp (Enter)". Chấm đúng 100% thì con trỏ vẫn ở ô nhập (chỉ đọc) nên Esc = Làm lại, Enter = câu tiếp, không tắt overlay.

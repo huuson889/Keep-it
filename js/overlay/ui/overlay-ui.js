@@ -416,7 +416,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (v != null) st += `<span class="sc ${v >= 85 ? '' : v >= 65 ? 'mid' : 'low'}">${v}%</span>`;
       }
       let cls = '';
-      if (isStudy()) { if (isLocked(i)) { cls = ' locked'; st = `<span class="lk" title="${T('locked')}">${ic('lock')}</span>`; } else if (!isSolved(S.tab, i)) cls = ' unsolved'; }
+      if (isStudy()) { if (isLocked(i)) { cls = ' locked'; st = `<span class="lk" title="${T('locked')}">${ic('lock')}</span>`; } else if (!isSolved(S.tab, i)) cls = ' unsolved'; else if (redoBlur(i)) cls = ' redo'; }
       const nd = S.tnotes.some((n) => n.i === i) ? `<span class="nd" title="${T('hasNotes')}"></span>` : '';
       return `<div class="row${cls}" data-i="${i}"><div class="rhd"><span class="tm">${fmt(s.start)}</span>${nd}<span class="st">${st}</span></div><div class="en" data-lhn-primary>${esc(s.en)}</div><div class="vi" data-lhn-secondary>${esc(s.vi)}</div></div>`;
     }
@@ -424,6 +424,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const speakTier = (p) => (p >= 70 ? 'pass' : p >= 40 ? 'warn' : 'fail');
     function isSolved(tab, i) { const v = S.res[tab][i]; return v != null && v >= PASS[tab]; }
     function isLocked(i) { return i > Math.max(S.si[S.tab], S.reach[S.tab] || 0); }
+    // làm lại câu đã pass (v3.5.259): mờ từ câu đó trở xuống; câu đó rõ lại khi chấm xong
+    function redoBlur(i) {
+      if (!isStudy()) return false;
+      const c = S.si[S.tab];
+      if (i < c || !isSolved(S.tab, c) || !isSolved(S.tab, i) || isLocked(i)) return false;
+      return i > c || (S.tab === 'write' ? S.wr.phase : S.sp.phase) !== 'done';
+    }
+    function syncRedoBlur() { $$('.row[data-i]').forEach((r) => r.classList.toggle('redo', redoBlur(+r.dataset.i))); }
     function lessonLocked() { return isStudy() && !isSolved(S.tab, S.si[S.tab]); }
     function renderList(target) {
       const el = target || $('#list');
@@ -1372,6 +1380,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function renderStudy() {
       { const t = $('#sptoast'); if (t && (!isStudy() || t.dataset.tab !== S.tab || +t.dataset.i !== S.si[S.tab])) hideStudyToast(true); }
       const el = $('#study');
+      syncRedoBlur();
       if (!isStudy()) { el.innerHTML = ''; return; }
       const i = S.si[S.tab], s = SENT[i];
       if (S.tab === 'speak') {

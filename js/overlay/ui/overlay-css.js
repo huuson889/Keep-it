@@ -201,7 +201,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .row .st{display:flex;gap:4px;align-items:center}
 .row .st:empty{display:none}
 .row .ok{color:var(--ok)}.row .ok svg{width:15px;height:15px}
-.row.unsolved .en,.row.unsolved .vi,.row.locked .en{filter:blur(5px);user-select:none}
+.row.unsolved .en,.row.unsolved .vi,.row.redo .en,.row.redo .vi,.row.locked .en{filter:blur(5px);user-select:none}
 .row.locked{cursor:not-allowed;opacity:.55}.row.locked .vi{display:none}.row.locked:hover{background:none}
 .row .lk{color:var(--mu)}.row .lk svg{width:14px;height:14px}
 .row .sc{font-size:11px;font-weight:800;border-radius:7px;padding:1px 6px;background:rgba(34,197,94,.15);color:var(--ok)}
