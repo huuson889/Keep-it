@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.264 | Arena.ai Agent sửa:**
+
+- Overlay: mở sheet Tổng kết (bấm hoặc tự hiện sau câu cuối) phát tiếng chấm đúng + pháo hoa; vẽ lại tại chỗ không phát lại.
+- File: `js/overlay/ui/overlay-ui.js` (`openPanel`), `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.263 | Arena.ai Agent sửa:**
 
 - Overlay Chép/Nói: Ctrl và nút Nghe lại/Nghe phát lại từ đầu câu 1 lần + số lần "Lặp câu" (dùng `playStudyStart`), giống khi bắt đầu câu.

@@ -873,6 +873,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (sheet) attachSheetDrag(p);
       if (same) { if (keepTf) p.style.transform = keepTf; p.scrollTop = keepTop; } // after placing: the max-height exists now, so the scroll position sticks
       setChrome(true);
+      if (kind === 'summary' && !same) { playSuccessSound(); confetti(); } // v3.5.264: tổng kết = tiếng chấm đúng + pháo hoa
     }
     function placePop(p, anchor) {
       const or = ov.getBoundingClientRect();
