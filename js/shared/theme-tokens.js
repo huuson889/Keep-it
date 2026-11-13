@@ -18,5 +18,9 @@
     "line-d":"rgba(255,255,255,.12)"     // viền ô — tối
   });
   const css = selector => `${selector}{${Object.entries(TOKENS).map(([k, v]) => `--kp-${k}:${v}`).join(";")}}`;
-  globalThis.LHN_THEME = Object.freeze({ TOKENS, css });
+  // v3.5.271: thanh cuộn 3px — QUY TẮC CHUNG CẢ APP. Mọi shadow root chèn chuỗi này (trang thường dùng css/content/content.css,
+  // trang extension dùng CSS riêng cùng chuẩn). Chrome/Edge: đúng 3px; Firefox chỉ có auto/thin → thin. Không đặt scrollbar-width cho
+  // Chromium (Chrome 121+ thấy scrollbar-width là bỏ qua ::-webkit-scrollbar). Chỗ đã ẩn thanh cuộn (display:none / none) vẫn ẩn.
+  const scrollbar = "*::-webkit-scrollbar{width:3px;height:3px}*::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(148,163,184,.55)}*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.55) transparent}}";
+  globalThis.LHN_THEME = Object.freeze({ TOKENS, css, scrollbar });
 })();

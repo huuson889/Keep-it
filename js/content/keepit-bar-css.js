@@ -137,7 +137,7 @@ button,input{font-family:inherit}
 .sx{width:38px;height:38px;flex:none;border:0;border-radius:10px;background:none;display:grid;place-items:center;cursor:pointer}
 .sx:active,.desk .sx:hover{background:rgba(148,163,184,.18)}
 .sx svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .sec{font-size:12px;font-weight:700;letter-spacing:.02em;margin:6px 2px 8px}
 .quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:12px 4px;padding:2px 0 10px}
 .q{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:2px 0;border:0;background:none;color:inherit;font-size:12px;font-weight:600;line-height:1.2;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}

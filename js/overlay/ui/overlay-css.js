@@ -1,7 +1,7 @@
 // Overlay — unified UI styles (demo keepit-overlay-unified-demo-v18.html, docs/ui-layout.md).
 // Injected into the overlay shadow root next to the legacy markup; every rule is scoped under .ov.
 // v3.5.200: LHN_THEME.css('.ov') = biến kính --kp-* dùng chung với thanh Keepit (js/shared/theme-tokens.js).
-const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-sizing:border-box}
+const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THEME.scrollbar + String.raw`*{box-sizing:border-box}
 .ov button{font:inherit;color:inherit}
 /* ======================================================================
    OVERLAY — one shell for every device: header · body · dock

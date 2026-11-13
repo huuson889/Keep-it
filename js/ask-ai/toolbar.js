@@ -47,6 +47,8 @@
       const shadow = host.attachShadow({ mode:"open" });
       shadow.innerHTML = `
         <style>
+          /* v3.5.271: thanh cuộn 3px — bản sao LHN_THEME.scrollbar (js/shared/theme-tokens.js); trang này không nạp theme-tokens.js */
+          *::-webkit-scrollbar{width:3px;height:3px}*::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(148,163,184,.55)}*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.55) transparent}}
           :host {
             all: initial;
             color-scheme: light dark;

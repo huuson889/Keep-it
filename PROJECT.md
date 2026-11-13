@@ -204,6 +204,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.271 | Arena.ai Agent sửa:**
+
+- **Quy tắc chung cả app: thanh cuộn 3px ở MỌI giao diện** (Chrome/Edge đúng 3px; Firefox `thin`). Nguồn chung `LHN_THEME.scrollbar` (`js/shared/theme-tokens.js`) chèn vào mọi shadow root: thanh Keepit/☰/sheet, Trang chủ (trang + hộp thoại), trang offline, overlay; `pages/home.html`, `pages/ai-panel.html` và thanh AI panel (`js/ask-ai/toolbar.js`, bản sao vì không nạp theme-tokens). Trang thường giữ `css/content/content.css`; Dashboard/Popup/Highlights & Notes đã 3px. Chỗ thiết kế ẩn thanh cuộn vẫn ẩn.
+- Không đặt `scrollbar-width` cho Chromium (Chrome 121+ sẽ bỏ qua `::-webkit-scrollbar`): bỏ `thin` ở `.sbody` thanh Keepit; danh sách Ghi chú 6px → 3px, `thin` chỉ cho Firefox. Thay khối riêng cho `textarea` của v3.5.270.
+- File: `js/shared/theme-tokens.js`, `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/home/home-ui.js`, `js/content/offline-page.js`, `js/overlay/ui/overlay-css.js`, `js/ask-ai/toolbar.js`, `css/content/notes.css`, `pages/home.html`, `pages/ai-panel.html`, `manifest.json`.
+- Kiểm tra: cú pháp; node — CSS overlay có rule 3px, CSS thanh Keepit hết `thin`.
+
+**2026-11-13 | v3.5.270 | Arena.ai Agent sửa:**
+
+- Overlay: mọi `textarea` (ghi chú bài, ghi chú theo câu, ô Chép) có thanh cuộn 3px (Chrome/Edge `::-webkit-scrollbar`; Firefox `thin` qua `@supports not selector(::-webkit-scrollbar)` — không đặt `scrollbar-width` cho Chrome vì Chrome 121+ sẽ bỏ qua kiểu webkit). Lý do: overlay nằm trong shadow root nên không nhận rule 3px của `content.css`. Quy tắc chung: thanh cuộn luôn 3px.
+- File: `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.269 | Arena.ai Agent sửa:**
 
 - Overlay Chép: nút "1 từ" / Tab sửa đúng **chỗ gạch đỏ đầu tiên** trong ô nhập (từ sai → thay, ô trống → điền, từ thừa → xoá); các gạch còn lại vẫn hiện để bấm tiếp. Chưa chấm thì tìm lỗi bằng đúng cách chấm của Kiểm tra (`wrErrorItems` + `wrMarks`) nhưng không hiện gạch. Từ sai cuối ô với phía trước đúng → từ kế tiếp (như panel lỗi). Không lỗi → thêm 1 từ mới; đủ câu → không làm gì. Sửa v3.5.268 (dùng diff riêng, lệch với gạch đỏ).

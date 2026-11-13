@@ -39,6 +39,7 @@
     <g class="happy"><path class="f2s" d="M189 60q5-6 10 0"/><path class="f2s" d="M207 60q5-6 10 0"/><path class="f2s" d="M197 72q6 7 12 0"/></g>
     <ellipse cx="190" cy="70" rx="5" ry="3" fill="#f9a8d4" opacity=".8"/><ellipse cx="216" cy="70" rx="5" ry="3" fill="#f9a8d4" opacity=".8"/></g></svg>`;
   const CSS = `:host{all:initial}
+${globalThis.LHN_THEME?.scrollbar || ""}
 .of-root{position:fixed;inset:0;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;-webkit-font-smoothing:antialiased;opacity:0;transition:opacity .2s;--bh:84px}
 .of-root.on{opacity:1}
 .of-root{--bg:#f6f7fb;--pn:#ffffff;--pn2:#eef0f4;--bd:rgba(15,23,42,.10);--tx:#111827;--mu:#52607a;--acc:#8b5cf6;--acct:#6d28d9;--tint:rgba(139,92,246,.11);--sh:0 10px 30px rgba(15,23,42,.12)}

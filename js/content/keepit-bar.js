@@ -200,7 +200,7 @@
   function haptic() { if (isApk()) navigator.vibrate?.(12); }
 
   // ---------- CSS: the demo's bar CSS + the few rules the real page needs ----------
-  const CSS = globalThis.LHN_THEME.css(":host") + globalThis.LHN_BAR_CSS;  // js/shared/theme-tokens.js + js/content/keepit-bar-css.js
+  const CSS = globalThis.LHN_THEME.css(":host") + globalThis.LHN_THEME.scrollbar + globalThis.LHN_BAR_CSS;  // js/shared/theme-tokens.js + js/content/keepit-bar-css.js
 
   function build() {
     host = document.createElement("div");

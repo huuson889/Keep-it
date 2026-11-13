@@ -8,6 +8,9 @@
 <!-- Keepit home page (v3.5.180, demo apk-home v12, same start page as Keepit for Android). Drawn by js/home/home-ui.js;
      the Keepit bar is the real one (js/content/keepit-bar.js), loaded here because content scripts do not run on extension pages. -->
 <style>
+/* v3.5.271: thanh cuộn 3px — quy tắc chung cả app (= LHN_THEME.scrollbar) */
+*::-webkit-scrollbar{width:3px;height:3px}*::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(148,163,184,.55)}*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.55) transparent}}
+
   html, body { margin:0; min-height:100%; background:#0e0e11; }
   @media (prefers-color-scheme: light) { html, body { background:#f6f7fb; } }
   #keepit-home { display:block; min-height:100vh; }

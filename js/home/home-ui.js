@@ -52,7 +52,7 @@
 .dev *{box-sizing:border-box}.dev svg{display:block}
 .dlgw,.snk.on{pointer-events:auto}
 .dev[data-o=l]{--bh:80px}
-${V12CSS}`;
+${V12CSS}${globalThis.LHN_THEME?.scrollbar || ""}`;
   let dlgHost = null, dlgRoot = null;
   function dlgDev() {
     if (!dlgHost) {
@@ -150,7 +150,7 @@ ${V12CSS}`;
 .dev[data-o=l]{--bh:80px}
 .hbh{padding-top:calc(14px + env(safe-area-inset-top,0px))}
 .semp{grid-column:1/-1;padding:14px;text-align:center;color:var(--mu);font-size:13px;border:1px dashed var(--bd);border-radius:18px}
-${V12CSS}`;
+${V12CSS}${globalThis.LHN_THEME?.scrollbar || ""}`;
   const searchPill = () => { const ph = d("sPh"); return `<button class="srch" data-act="search" aria-label="${esc(ph)}">${UI("search")}<span>${esc(ph)}</span><i>${UI("search")}</i></button>`; };
   function bmTiles() {
     return (bms.length || edit ? "" : `<div class="semp">${esc(d("noSite"))}</div>`) +
