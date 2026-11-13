@@ -199,6 +199,38 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.241 | Arena.ai Agent sửa:**
+
+- Reader đọc tiếp khi tắt màn hình / khoá máy. Nguyên nhân dừng: Android (Edge/Chrome) treo trang và tắt tiếng tab khi không còn âm thanh đang phát, ví dụ khoảng trống ~1 giây lúc chờ đoạn Google TTS kế tiếp tải về; Keepit không có chỗ nào tự dừng khi ẩn trang. Sửa: `LHN_TTS.backgroundSession` phát một âm thanh im lặng lặp liên tục (1 thẻ `Audio`, WAV 8 kHz tạo bằng blob) suốt lúc Reader đang đọc, tạm dừng thì dừng theo, đóng thì tắt; kèm Media Session: màn hình khoá / thông báo hiện tên trang, "Keepit Reader" và nút ⏮ ⏯ ⏭ (⏹ = đóng Reader). Giọng Google ổn định nhất; giọng trình duyệt (`speechSynthesis`) vẫn có thể bị hệ điều hành cắt. Overlay Web chưa nối phiên nền.
+- File: `js/reader/tts-engine.js` (`backgroundSession`), `js/reader/bilingual-reader.js` (`syncPauseShortcutState` → `syncBackgroundSession`, `readerMediaHandlers`), `docs/modules/reader.md`, `manifest.json`.
+- Kiểm tra: Chromium + extension thật, 412×915, giọng Google giả lập (mỗi đoạn 1,2 giây, tải đoạn kế 0,8 giây). Âm thanh nền phát liên tục 4,8 giây qua các khoảng giữa đoạn; `playbackState` playing → ⏸ paused → ▶ playing; ⏭ đoạn 3→4, ⏮ 4→3; ⏹ và nút × đưa về `none`, xoá các handler; 0 lỗi trang. Tắt màn hình thật cần thử trên máy.
+
+**2026-10-23 | v3.5.240 | Arena.ai Agent sửa:**
+
+- Nút về đầu trang luôn cách đáy màn hình 110px (cộng safe-area đáy, thường 0) ở mọi cỡ màn và mọi trạng thái: thanh main hiện / ẩn khi cuộn / thu gọn, đang mở Reader. Lề phải giữ như cũ: điện thoại 16px, màn rộng 24px. Trước: 60–107px tùy trường hợp và trượt theo thanh khi cuộn. Bỏ phần đo thanh Reader (`--rbtop`, `.readerlow`) của v3.5.237; các quy tắc `bottom` của `.btop` gộp còn một.
+- File: `js/content/keepit-bar-css.js`, `js/content/keepit-bar.js` (`applyOff`, `updBtop`, `syncState`), `manifest.json`.
+- Kiểm tra: Chromium + extension thật, trang dài. 412×915, 360×780, 915×412 (điện thoại ngang), 820×1180, cửa sổ desktop 900×800, 1440×900: thanh hiện, cuộn xuống (thanh ẩn hẳn ở điện thoại) và mở Reader đều đo được mép dưới nút cách đáy 110px; phải 16 (điện thoại/máy tính bảng) hoặc 24 (màn rộng). Bấm nút → scrollY 0 ở cả 6 cỡ. 0 lỗi trang.
+
+**2026-10-23 | v3.5.239 | Arena.ai Agent sửa:**
+
+- Reader trên điện thoại (thanh nổi bo 26px): thanh tiến độ thụt vào 24px mỗi bên, bắt đầu đúng chỗ hết góc bo như màn rộng (bo 20, thụt 18). Trước: vạch chạy sát hai mép (1px), lấn qua góc bo. Màn hẹp có zoom thì bù theo `--lhn-br-z`. Kéo tua vẫn tính theo khung thanh tiến độ.
+- File: `js/reader/reader-css.js`, `manifest.json`.
+- Kiểm tra: Chromium + extension thật. 412×915: thụt 25/25px tính từ mép ngoài (gồm viền 1px), trước 1/1. 360×780 (zoom .867): 25/25. 1440×900: 19/19 như cũ. Ảnh chụp: vạch nằm trong phần thẳng của mép trên; 0 lỗi trang.
+
+**2026-10-23 | v3.5.238 | Arena.ai Agent sửa:**
+
+- Reader: cờ không còn méo khi font cờ của Keepit chưa tải được (Edge Android). Lúc đó Edge dùng cờ hệ thống Android (tấm vải bay gợn sóng) nên mép gợn và góc lọt vào vòng tròn. Đưa lại bản sửa v3.5.177 (bị mất khi dựng lại code từ v3.5.174 ở v3.5.179): không có font thì cờ hệ thống được vẽ lên canvas, cắt lấy phần giữa (bớt 10% ngang, 16% dọc); hệ thống không có cờ màu thì giữ ký tự như cũ.
+- Font cờ: `@font-face` không tải được thì nạp thẳng file `assets/fonts/TwemojiCountryFlags.woff2` bằng `FontFace`. Chỉ coi là có font khi canvas vẽ thật bằng font đó (so với vẽ bằng font hệ thống).
+- File: `js/reader/bilingual-reader.js` (`flagCanvasFor`, `renderFlag`, `prepareFlagFont`, `flagFontDrawsFlags`), `manifest.json`.
+- Kiểm tra: Chromium + Noto Color Emoji (cờ vải gợn sóng như Android), điện thoại 412×915 tối. Extension thật có font: cờ phẳng Twemoji, `flagState …|true`. Bản sao bỏ file font (giả lập Edge Android): trước khi sửa cờ méo y hệt ảnh người dùng gửi; sau khi sửa cờ hệ thống tròn đều, không còn mép gợn, trên thanh và trong danh sách. 0 lỗi trang.
+
+**2026-10-23 | v3.5.237 | Arena.ai Agent sửa:**
+
+- Mở Reader vẫn hiện nút về đầu trang như bình thường (cuộn quá 1/4 màn hình). Trước: Reader được tính là "chiếm chỗ thanh main" nên ẩn luôn nút này. Video overlay vẫn ẩn như cũ.
+- Vị trí: thanh Reader trải ngang (điện thoại, máy tính bảng dọc, cửa sổ < 1024px) thì nút nằm trên thanh Reader, cách 26px (bằng khoảng cách nút với thanh main), lề phải 16px. Thanh Reader nổi giữa (màn rộng) thì nút ở góc phải như cũ. Khi mở Reader, nút không trượt theo thanh main lúc cuộn.
+- File: `js/content/keepit-bar.js` (`S.readerOn`, `updBtop` đo `--rbtop` từ thanh Reader, `syncState`), `js/content/keepit-bar-css.js`, `manifest.json`.
+- Kiểm tra: Chromium + extension thật, trang dài, cuộn 2600px. 412×915, 360×780, 820×1180, cửa sổ desktop 900×800: nút hiện, cách thanh Reader 26px, không đè thanh Reader. 1440×900: nút ở góc phải (phải 24, đáy 60), không đè. Bấm nút → scrollY 0 ở cả 5 cỡ. Không mở Reader: như cũ (cách thanh main 26px). 0 lỗi trang.
+
 **2026-10-23 | v3.5.236 | Arena.ai Agent sửa:**
 
 - Reader, danh sách giọng: cờ đúng cho mọi vùng. Trước: bảng `js/reader/bilingual-flags.js` chỉ có 79 vùng, vùng thiếu rơi về cờ Mỹ (giọng Edge: Ethiopia, Georgia, Campuchia, Lào, Litva, Latvia, Bắc Macedonia, Mông Cổ, Malta, Myanmar, Nepal, Afghanistan, Sri Lanka, Slovakia, Slovenia, Somalia, Albania, Serbia, Pakistan, Uzbekistan). Giờ bảng gồm đủ 258 cờ có trong font `TwemojiCountryFlags.woff2` (không đổi font).

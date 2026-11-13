@@ -74,6 +74,7 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar .lhn-br-fimg{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);display:block;pointer-events:none}
     #lhn-bilingual-reading-bar .lhn-br-prog{position:absolute;top:-11px;left:0;right:0;height:22px;cursor:pointer;touch-action:none;z-index:2}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-prog{left:18px;right:18px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-prog{left:calc(24px / var(--lhn-br-z,1));right:calc(24px / var(--lhn-br-z,1))}   /* v3.5.239: thanh nổi bo 26px → vạch bắt đầu đúng chỗ hết góc bo như màn rộng (bo 20, thụt 18) */
     #lhn-bilingual-reading-bar .lhn-br-prog::before{content:"";position:absolute;left:0;right:0;top:10px;height:3px;background:rgba(148,163,184,.3);border-radius:2px;transition:top .15s,height .15s}
     #lhn-bilingual-reading-bar .lhn-br-fill{position:absolute;left:0;top:10px;height:3px;width:0;background:var(--lhn-br-accent);display:block;border-radius:2px;transition:width .35s linear}
     #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag::before,#lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-fill{top:8.5px;height:5px}

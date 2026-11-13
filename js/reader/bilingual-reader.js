@@ -146,40 +146,64 @@
     clearTimeout(brToastTimer); brToastTimer = setTimeout(() => toast.classList.remove("lhn-on"), 1700);
   }
   // Cờ: vẽ lên canvas, đo vùng có màu thật rồi cắt sát mép để cờ cao đúng bằng vòng tròn và căn giữa tuyệt đối. Font chưa tải được thì dùng ký tự cờ.
-  function flagCanvasFor(region) {
-    if (flagCanvasCache.has(region)) return flagCanvasCache.get(region);
+  // v3.5.238 (đưa lại bản sửa v3.5.177, bị mất ở v3.5.179): không có font cờ thì vẽ cờ của hệ thống cũng bằng cách này nhưng cắt lấy phần giữa —
+  // cờ Android là tấm vải bay gợn sóng, để nguyên thì mép gợn và góc lọt vào vòng tròn (cờ méo trên Edge Android)
+  function flagCanvasFor(region, system = false) {
+    const cacheKey = system ? region + "|sys" : region;
+    if (flagCanvasCache.has(cacheKey)) return flagCanvasCache.get(cacheKey);
     let result = null;
     try {
       const N = 220, source = document.createElement("canvas"); source.width = source.height = N;
       const context = source.getContext("2d", { willReadFrequently:true });
-      context.font = '160px "Twemoji Country Flags"'; context.textAlign = "center"; context.textBaseline = "middle";
+      context.font = system ? '150px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif' : '160px "Twemoji Country Flags"'; context.textAlign = "center"; context.textBaseline = "middle";
       context.fillText(flagEmojiForRegion(region), N / 2, N / 2);
       const data = context.getImageData(0, 0, N, N).data; let x0 = N, y0 = N, x1 = -1, y1 = -1;
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (data[(y * N + x) * 4 + 3] > 200) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-      if (x1 - x0 >= 20 && y1 - y0 >= 20) {
+      // hệ thống không có cờ màu thì vẽ ra 2 chữ cái: giữ ký tự thường
+      let colour = !system;
+      for (let i = 0; !colour && i < data.length; i += 16) if (data[i + 3] > 200 && Math.max(data[i], data[i + 1], data[i + 2]) - Math.min(data[i], data[i + 1], data[i + 2]) > 60) colour = true;
+      if (colour && x1 - x0 >= 20 && y1 - y0 >= 20) {
         x0 += 1; y0 += 1; x1 -= 1; y1 -= 1;
+        if (system) { const ix = Math.round((x1 - x0) * 0.1), iy = Math.round((y1 - y0) * 0.16); x0 += ix; x1 -= ix; y0 += iy; y1 -= iy; }
         const bw = x1 - x0 + 1, bh = y1 - y0 + 1, H = 96, output = document.createElement("canvas");
         output.height = H; output.width = Math.round(H * bw / bh);
         const out = output.getContext("2d"); out.imageSmoothingQuality = "high"; out.drawImage(source, x0, y0, bw, bh, 0, 0, output.width, H);
         result = output;
       }
     } catch {}
-    flagCanvasCache.set(region, result);
+    flagCanvasCache.set(cacheKey, result);
     return result;
   }
   function renderFlag(container, region) {
     const key = String(region || "").toUpperCase(), state = `${key}|${flagFontReady}`;
     if (!container || container.dataset.flagState === state) return;
     container.dataset.flagState = state;
-    const source = flagFontReady ? flagCanvasFor(key) : null;
+    const source = flagFontReady ? flagCanvasFor(key) : flagCanvasFor(key, true);
     if (source) {
       const canvas = document.createElement("canvas"); canvas.width = source.width; canvas.height = source.height; canvas.className = "lhn-br-fimg"; canvas.setAttribute("aria-hidden", "true");
       canvas.getContext("2d")?.drawImage(source, 0, 0); container.replaceChildren(canvas);
     } else { const span = document.createElement("span"); span.textContent = flagEmojiForRegion(key); container.replaceChildren(span); }
   }
+  // v3.5.238: canvas có vẽ thật bằng font cờ không (so với vẽ bằng font hệ thống; giống hệt = font chưa được dùng)
+  function flagFontDrawsFlags() {
+    try {
+      const draw = font => { const c = document.createElement("canvas"); c.width = c.height = 48; const x = c.getContext("2d", { willReadFrequently:true }); x.font = font; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("🇻🇳", 24, 24); return x.getImageData(0, 0, 48, 48).data; };
+      const a = draw('36px "Twemoji Country Flags"'), b = draw('36px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif');
+      let painted = 0, diff = 0; for (let i = 3; i < a.length; i += 4) { if (a[i] > 200) painted++; if (Math.abs(a[i] - b[i]) > 40 || Math.abs(a[i - 3] - b[i - 3]) > 40) diff++; }
+      return painted > 200 && diff > 40;
+    } catch { return false; }
+  }
+  const flagFontLoaded = () => { try { return [...document.fonts].some(face => face.family.replace(/["']/g, "") === "Twemoji Country Flags" && face.status === "loaded"); } catch { return false; } };
   async function prepareFlagFont() {
     try { await document.fonts.load('160px "Twemoji Country Flags"', "🇺🇸"); } catch {}
-    try { flagFontReady = [...document.fonts].some(face => face.family.replace(/["']/g, "") === "Twemoji Country Flags" && face.status === "loaded"); } catch { flagFontReady = false; }
+    if (!flagFontLoaded() && flagFontUrl && typeof FontFace === "function") {   // v3.5.238: @font-face không tải được → nạp thẳng file font của extension
+      try {
+        const buffer = await (await fetch(flagFontUrl)).arrayBuffer();
+        const face = new FontFace("Twemoji Country Flags", buffer, { unicodeRange:"U+1F1E6-1F1FF,U+1F3F4,U+E0062-E0063,U+E0065,U+E0067,U+E006C,U+E006E,U+E0073-E0074,U+E0077,U+E007F" });
+        await face.load(); document.fonts.add(face);
+      } catch {}
+    }
+    flagFontReady = flagFontLoaded() && flagFontDrawsFlags();
     if (!flagFontReady) return;
     syncToolbar(); if (openSheetName === "voices") renderVoiceChoices();
   }
@@ -364,7 +388,24 @@
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
   }
-  function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
+  function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); syncBackgroundSession(); }
+  // v3.5.241: đọc tiếp khi tắt màn hình (LHN_TTS.backgroundSession) + nút trên màn hình khoá
+  function readerMediaHandlers() {
+    const noEvent = { preventDefault() {} }, pause = paused => document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause", { detail:paused, cancelable:true }));
+    return {
+      play:() => { if (reading && readingPaused) pause(false); },
+      pause:() => { if (reading && !readingPaused) pause(true); },
+      stop:() => { if (reading) stopReading(); },
+      nexttrack:() => moveReading(1, noEvent),
+      previoustrack:() => moveReading(-1, noEvent)
+    };
+  }
+  function syncBackgroundSession() {
+    const media = globalThis.LHN_TTS?.backgroundSession; if (!media) return;
+    if (!reading) { media.stop(); return; }
+    if (!media.isActive()) media.start({ title:document.title || location.hostname, artist:"Keepit Reader", handlers:readerMediaHandlers() });
+    media.setPlaying(!readingPaused);
+  }
   function popupText(key, vars = {}) { return globalThis.LHN_LANGUAGES?.t?.(key, vars, displayLang) || key; }
   function renderPopupText() {
     const tip = (selector, key, shortcut = "") => { const element = $br(selector); if (!element) return; const label = popupText(key); element.setAttribute("aria-label", label); element.dataset.tip = shortcut ? `${label} (${shortcut})` : label; };

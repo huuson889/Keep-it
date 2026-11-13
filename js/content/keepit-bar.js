@@ -281,7 +281,7 @@
     bar.classList.toggle("peek", barless && S.peek && !off);
     screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
     screen.classList.toggle("siteoff", S.siteOff);
-    screen.classList.toggle("extyield", S.extYield);
+    screen.classList.toggle("extyield", S.extYield); screen.classList.toggle("readeron", S.readerOn);
     screen.classList.toggle("notesopen", S.notesOn && isTouch()); syncScrollLock();
     screen.classList.toggle("picking", picking);
     screen.style.setProperty("--yb", "0px");   // v3.5.161: folded = the one line at the bottom edge (never lifted above a page bar)
@@ -297,12 +297,11 @@
   function applyOff(anim) {
     const bar = $("bar"), b = $("btop"); if (!bar) return;
     const max = offMax(); S.sOff = clamp(S.sOff, 0, max);
-    const o = S.peek ? 0 : S.sOff, low = (S.hidden || S.yieldBar) && !S.peek;
+    const o = S.peek ? 0 : S.sOff;
     S.scrollHide = o >= max;
     if (anim) { bar.classList.add("snap"); b?.classList.add("snap"); clearTimeout(snapT); snapT = setTimeout(() => { bar.classList.remove("snap"); b?.classList.remove("snap"); }, 280); }
     bar.style.translate = o ? `0 ${o}px` : ""; bar.classList.toggle("shid", S.scrollHide);
-    const d = !b || low || isWide() ? 0 : Math.min(o, bar.offsetHeight + (isPland() ? 8 : 14));
-    if (b) b.style.translate = d ? `0 ${d}px` : "";
+    if (b) b.style.translate = "";   // v3.5.240: nút về đầu trang luôn cách đáy 110px, không trượt theo thanh
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
   let scroller = null;
@@ -310,7 +309,8 @@
   const clientHOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? innerHeight : el.clientHeight;
   function updBtop() {
     const b = $("btop"); if (!b) return;
-    b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && !S.extYield);
+    // v3.5.237: Reader open → back-to-top stays (video overlay still hides it). v3.5.240: always 110px from the bottom (CSS)
+    b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && (!S.extYield || S.readerOn));
     b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
@@ -1137,10 +1137,10 @@
     const notesVisible = !!document.querySelector("#lhn-sidebar.lhn-side-visible:not(.lhn-closing)");
     // v3.5.163: Notes no longer folds the bar — it stays under the dim like with ☰, so closing Notes never flashes it back in
     const ext = readerShown() || document.documentElement.classList.contains("lhn-video-overlay-open");
-    const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn;
+    const off = siteDisabled(), changed = ext !== S.extYield || off !== S.siteOff || notesVisible !== S.notesOn || (ext && readerShown()) !== S.readerOn;
     if (notesVisible && !S.notesOn && isTouch()) { closePop(); closeSheet(); closeSearch(); hideCoach(); }   // Notes sheet opening: nothing else stays open
     if (S.extYield && !ext) barBack();
-    S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible;
+    S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible; S.readerOn = ext && readerShown();
     if (ext) { closePop(); if (!S.sheetFrom) closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
     if (S.sheetFrom && !readerShown()) closeSheet(); // Reader closed under its ☰ sheet
     if (changed) { root.querySelector('[data-nav="notes"]')?.classList.toggle("on", notesVisible); syncBarVis(); }

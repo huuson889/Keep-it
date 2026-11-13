@@ -267,5 +267,53 @@
     if (opts.isActive()) opts.onEnd?.();
   }
 
-  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectReadLanguage, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage, getFavoriteVoices, setFavoriteVoices, favoriteVoiceFor });
+  // v3.5.241: giữ phiên phát khi tắt màn hình (Edge/Chrome Android). Android chỉ cho tab chạy nền khi đang có âm thanh phát;
+  // giữa 2 đoạn (đang tải đoạn sau) không có gì phát → trình duyệt tắt dịch vụ phát nền và chặn / tắt tiếng đoạn sau.
+  // Một âm thanh im lặng lặp lại phát suốt lúc đang đọc + Media Session (tên + nút ⏮ ⏯ ⏭ trên màn hình khoá / thanh thông báo).
+  const backgroundSession = (() => {
+    let element = null, silentUrl = "", active = false;
+    const session = () => globalThis.navigator?.mediaSession || null;
+    function silentWavUrl() {
+      if (silentUrl) return silentUrl;
+      const rate = 8000, samples = rate, buffer = new ArrayBuffer(44 + samples), view = new DataView(buffer);
+      const text = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
+      text(0, "RIFF"); view.setUint32(4, 36 + samples, true); text(8, "WAVE"); text(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+      view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true); text(36, "data"); view.setUint32(40, samples, true);
+      new Uint8Array(buffer, 44).fill(128);   // PCM 8-bit: 128 = im lặng
+      silentUrl = URL.createObjectURL(new Blob([buffer], { type:"audio/wav" }));
+      return silentUrl;
+    }
+    function setHandlers(handlers) {
+      const media = session(); if (!media) return;
+      for (const action of ["play", "pause", "stop", "nexttrack", "previoustrack"]) { try { media.setActionHandler(action, handlers?.[action] || null); } catch {} }
+    }
+    function start({ title = "", artist = "Keepit Reader", handlers = null } = {}) {
+      try {
+        if (!element) { element = new Audio(); element.loop = true; element.preload = "auto"; }
+        if (!active || !element.src) element.src = silentWavUrl();
+        active = true;
+        element.play().catch(() => {});
+        const media = session();
+        if (media) {
+          try { media.metadata = new MediaMetadata({ title:title || document.title || "Keepit", artist }); } catch {}
+          setHandlers(handlers);
+          try { media.playbackState = "playing"; } catch {}
+        }
+      } catch {}
+    }
+    function setPlaying(playing) {
+      if (!active || !element) return;
+      if (playing) element.play().catch(() => {}); else element.pause();
+      try { const media = session(); if (media) media.playbackState = playing ? "playing" : "paused"; } catch {}
+    }
+    function stop() {
+      if (!active) return;
+      active = false; element?.pause();
+      const media = session();
+      if (media) { setHandlers(null); try { media.metadata = null; media.playbackState = "none"; } catch {} }
+    }
+    return Object.freeze({ start, setPlaying, stop, isActive:() => active, isPlaying:() => !!element && active && !element.paused });
+  })();
+
+  globalThis.LHN_TTS = Object.freeze({ splitChunks, play, detectReadLanguage, detectLanguage, getVoiceSettings, setVoiceSettings, normalizeLanguage, getFavoriteVoices, setFavoriteVoices, favoriteVoiceFor, backgroundSession });
 })();
