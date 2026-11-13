@@ -97,7 +97,8 @@
     syncBarScale(); syncBanner(); syncSpacer();
   }
   // Màn hẹp hơn 392px (vd. 360px, 390px): thu nhỏ đều cả thanh theo đúng tỉ lệ thiết kế thay vì bớt khoảng cách, để các nút không đè lên nhau
-  function syncBarScale() { const width = bar.clientWidth || innerWidth; brRbar.style.zoom = !isWideBar() && width && width < 392 ? String(Math.round(width / 392 * 1000) / 1000) : ""; }
+  // v3.5.235: thanh điện thoại nổi cách 2 bên 10px → bề ngang thanh = màn − 20px
+  function syncBarScale() { const width = (bar.clientWidth || innerWidth) - 20, z = !isWideBar() && width > 0 && width < 392 ? Math.round(width / 392 * 1000) / 1000 : 0; brRbar.style.zoom = z ? String(z) : ""; bar.style.setProperty("--lhn-br-z", String(z || 1)); }
   function anchorPanel() {
     const button = brRbar.querySelector(`[data-sheet="${openSheetName}"]`); if (!button) return;
     const k = uiK(), rect = button.getBoundingClientRect(), barRect = brRbar.getBoundingClientRect(), top = barRect.top * k, W = bar.clientWidth || innerWidth * k, H = bar.clientHeight || innerHeight * k, w = brPanel.offsetWidth;

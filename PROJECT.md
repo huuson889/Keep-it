@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.235 | Arena.ai Agent sửa:**
+
+- Reader: thanh Reader cách đáy 4px như thanh main ở mọi cỡ màn (trước: điện thoại 0px, màn rộng 6px). Điện thoại: thanh nổi giống thanh main (cách 2 bên 10px, bo 26px, viền + bóng như thanh main; cộng safe-area đáy). Màn hẹp < 412px vẫn thu nhỏ đều thanh theo bề ngang 392px, khoảng cách/bo góc bù theo `--lhn-br-z` nên nhìn vẫn đúng 4px / 10px / 26px.
+- Thanh phím tắt cách thanh Reader 10px, bằng khoảng các sheet (☰) cách thanh main (trước: 12px).
+- File: `js/reader/reader-css.js`, `js/reader/bilingual-reader.js` (`syncBarScale`), `manifest.json`.
+- Kiểm tra: Chromium + extension thật, sáng và tối, đo bằng getBoundingClientRect. Thanh main: cách đáy 4px, sheet cách thanh 10px. Reader: 412×915 cách đáy 4, 2 bên 10/10, bo 26px, phím tắt cách 10; 360×780 (zoom .867) cách đáy 4, 2 bên 10/10, phím tắt cách 10; 1180×820 và 1440×900 cách đáy 4, phím tắt cách 10. Nút nằm trong thanh, không đè nhau; 0 lỗi trang.
+
 **2026-10-23 | v3.5.234 | Arena.ai Agent sửa:**
 
 - Reader: đổi giọng Ưu tiên (♥) của ngôn ngữ đang đọc thì đọc lại ngay đoạn hiện tại bằng giọng mới (từ đầu đoạn; đang đọc phần dịch thì chỉ đọc lại phần dịch). Thích giọng của ngôn ngữ khác thì không gián đoạn. Đổi lúc tạm dừng thì bấm tiếp tục sẽ đọc bằng giọng mới. Đổi từ tab khác cũng áp dụng.

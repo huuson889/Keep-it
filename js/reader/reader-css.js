@@ -36,9 +36,12 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar svg *{fill:inherit;stroke:inherit}
     #lhn-bilingual-reading-bar .lhn-br-rbar{left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding:4px;border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);pointer-events:auto;animation:lhnBrSlide .25s ease}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-rbar{box-shadow:0 -6px 18px rgba(0,0,0,.3)}
-    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:6px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-rbar{left:50%;right:auto;bottom:4px;width:560px;margin-left:-280px;padding:4px 14px;border:1px solid rgba(148,163,184,.35);border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.16)}
     #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-rbar,#lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-dark) .lhn-br-kbd{box-shadow:0 0 2px rgba(15,23,42,.144),0 0 12px rgba(15,23,42,.192)}
     #lhn-bilingual-reading-bar.lhn-br-wide.lhn-dark .lhn-br-rbar{border-color:rgba(148,163,184,.2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+    /* v3.5.235: điện thoại nổi giống thanh main (cách đáy 4px, 2 bên 10px, bo 26px); chia cho --lhn-br-z vì thanh có thể bị zoom ở màn hẹp */
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-rbar{left:calc(10px / var(--lhn-br-z,1));right:calc(10px / var(--lhn-br-z,1));bottom:calc((4px + env(safe-area-inset-bottom,0px)) / var(--lhn-br-z,1));border:1px solid rgba(15,23,42,.08);border-radius:calc(26px / var(--lhn-br-z,1));box-shadow:0 10px 30px rgba(15,23,42,.16)}
+    #lhn-bilingual-reading-bar.lhn-dark:not(.lhn-br-wide) .lhn-br-rbar{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
     #lhn-bilingual-reading-bar .lhn-br-left,#lhn-bilingual-reading-bar .lhn-br-center,#lhn-bilingual-reading-bar .lhn-br-right{display:flex;align-items:center;gap:2px;min-width:0}
     #lhn-bilingual-reading-bar .lhn-br-right{justify-content:flex-end}
     #lhn-bilingual-reading-bar.lhn-br-wide .lhn-br-center{gap:12px}
@@ -80,8 +83,7 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar .lhn-br-ptip{position:absolute;bottom:26px;left:0;transform:translateX(-50%);background:rgba(24,24,27,.96);color:#fff;font-size:12.5px;font-weight:800;line-height:normal;padding:7px 10px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 6px 16px rgba(0,0,0,.35)}
     #lhn-bilingual-reading-bar .lhn-br-ptip small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:#e9d5ff;font-size:11.5px;margin-top:2px}
     #lhn-bilingual-reading-bar .lhn-br-prog.lhn-drag .lhn-br-ptip{opacity:1}
-    #lhn-bilingual-reading-bar .lhn-br-kbd{left:50%;bottom:82px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);overflow:hidden;padding:5px 6px 5px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.35);box-shadow:0 6px 18px rgba(15,23,42,.1);font-size:12.5px;font-weight:500;color:#475569;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:auto}
-    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-kbd{bottom:76px}
+    #lhn-bilingual-reading-bar .lhn-br-kbd{left:50%;bottom:78px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);overflow:hidden;padding:5px 6px 5px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.35);box-shadow:0 6px 18px rgba(15,23,42,.1);font-size:12.5px;font-weight:500;color:#475569;white-space:nowrap;transition:opacity .2s,transform .25s;pointer-events:auto}
     #lhn-bilingual-reading-bar .lhn-br-kbd [data-banner-text]{display:contents}
     #lhn-bilingual-reading-bar .lhn-br-kbd kbd{font-size:11.5px;font-weight:700;line-height:normal;padding:2px 6px;border-radius:6px;border:1px solid rgba(148,163,184,.45);border-bottom-width:2px;background:rgba(148,163,184,.1);color:var(--lhn-br-accent);margin:0 3px 0 0;box-shadow:none}
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-kbd kbd{color:#c4b5fd}
@@ -162,8 +164,8 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-btn.lhn-br-play{height:54px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-btn svg{width:26px;height:26px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-vflag{width:34px;height:34px;font-size:41px}
-    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-kbd{bottom:89px}
-    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-kbd{bottom:95px}
+    #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-kbd{bottom:calc(14px + env(safe-area-inset-bottom,0px) + 77px * var(--lhn-br-z,1))}
+    #lhn-bilingual-reading-bar.lhn-br-wide:not(.lhn-br-desk) .lhn-br-kbd{bottom:91px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk) .lhn-br-toast{bottom:97px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-left{padding-left:9px}
     #lhn-bilingual-reading-bar:not(.lhn-br-desk):not(.lhn-br-wide) .lhn-br-btn[data-voices]{width:38px}
