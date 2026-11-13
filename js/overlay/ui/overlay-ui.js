@@ -2093,10 +2093,32 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (S.wr.phase === 'done' || S.wr.escFilled) { resetStudy(); renderStudy(); wrFocusEnd(); return; }
       ta.value = ref; ta.dispatchEvent(new Event('input')); ta.focus(); ta.setSelectionRange(ref.length, ref.length); S.wr.escFilled = true;
     }
-    // nút "1 từ" và phím Tab (v3.5.256): hiện thêm 1 từ của đáp án
+    // nút "1 từ" và phím Tab (v3.5.268): chỉ sửa từ sai đầu tiên (sai → thay, thiếu → chèn, thừa → xoá);
+    // phía trước đúng hết → thêm 1 từ mới; câu đã đủ đúng → không làm gì
     function wrOneWord() {
-      const tw = words(SENT[S.si.write].en); const have = words(S.wr.val).length;
-      S.wr.val = tw.slice(0, have + 1).join(' ') + ' '; wrOnInput(); renderStudy();
+      const ref = SENT[S.si.write].en, val = String(S.wr.val || '');
+      const SC = globalThis.LHN_STUDY_SCORE, ops = SC.diff(ref, val), k = ops.findIndex((o) => o.type !== 'ok');
+      const toks = [...val.matchAll(/[\p{L}\p{N}’‘`´']+/gu)].filter((m) => m[0].toLowerCase().replace(/[’‘`´']/g, '').replace(/[^\p{L}\p{N}]+/gu, '')).map((m) => ({ start: m.index, end: m.index + m[0].length }));
+      // từ cuối đang gõ dở (chưa có dấu cách) và phía trước đúng hết → hoàn thành / thay đúng từ đó
+      const last = toks[toks.length - 1];
+      if (k >= 0 && last && !/\s$/.test(val)) {
+        const head = val.slice(0, last.start), pr = head.trim() ? SC.getPrefixProgress(ref, head) : { isPrefix: true, matchedUnits: 0 };
+        const exp = pr.isPrefix ? SC.getPrefixProgress(ref, '').expectedUnits[pr.matchedUnits] : null;
+        if (exp && SC.tokenize(val.slice(last.start)).join('') !== exp.norm) { S.wr.val = `${head}${exp.display} `; wrOnInput(); renderStudy(); const t2 = $('#wta'); if (t2) { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); } return; }
+      }
+      if (k >= 0) {
+        const o = ops[k], span = (x) => ({ a: toks[x.typedIndices[0]].start, b: toks[x.typedIndices[x.typedIndices.length - 1]].end });
+        let nv = val, at = 0;
+        if (o.type === 'wrong') { const { a, b } = span(o); nv = val.slice(0, a) + o.expected + val.slice(b); at = a + o.expected.length; }
+        else if (o.type === 'extra') { const { a, b } = span(o); let e = b; while (/\s/.test(val[e] || '')) e++; nv = val.slice(0, a) + val.slice(e); at = a; }
+        else {
+          const nx = ops.slice(k + 1).find((x) => x.typedIndices);
+          if (nx) { const a = span(nx).a; nv = `${val.slice(0, a)}${o.expected} ${val.slice(a)}`; at = a + o.expected.length + 1; }
+          else { const head = val.replace(/\s+$/, ''); nv = head + (head ? ' ' : '') + o.expected; at = nv.length; }
+        }
+        if (!nv.slice(at).trim()) nv = `${nv.replace(/\s+$/, '')} `;
+        S.wr.val = nv; wrOnInput(); renderStudy();
+      }
       const ta = $('#wta'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
     }
     function wrKeyDown(e, ta) {

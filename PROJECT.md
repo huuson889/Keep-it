@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.268 | Arena.ai Agent sửa:**
+
+- Overlay Chép: nút "1 từ" / Tab chỉ sửa từ sai đầu tiên (sai → thay, thiếu → chèn đúng chỗ, thừa → xoá; từ cuối gõ dở → hoàn thành), giữ nguyên phần đã gõ khác; phía trước đúng hết → thêm 1 từ mới; câu đủ đúng → không làm gì. Dùng `LHN_STUDY_SCORE.diff`; chấm điểm không đổi.
+- File: `js/overlay/ui/overlay-ui.js` (`wrOneWord`), `manifest.json`.
+- Kiểm tra: cú pháp; 13 trường hợp `wrOneWord` bằng node.
+
 **2026-11-13 | v3.5.267 | Arena.ai Agent sửa:**
 
 - Overlay Chép, khung vàng "Câu đúng:": sửa v3.5.266 — chỉ tô xanh các từ đúng liên tiếp đầu câu **lúc chấm** (Enter/Kiểm tra, lưu `S.wr.okN`); gõ tiếp không cập nhật; chưa chấm lần nào = che hết; đổi câu / Làm lại xoá.
