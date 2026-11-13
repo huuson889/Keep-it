@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.274 | Arena.ai Agent sửa:**
+
+- Overlay Nói: khi "Giọng bạn" đang phát, mic và "Câu tiếp" tạm về kiểu nút không màu như "Nghe mẫu" (nền xám, viền mảnh, không quầng tím; cả hiệu ứng nền); phát xong trở lại tím. `#scard.vplay` bật/tắt trong `playRec`.
+- File: `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `manifest.json`.
+- Kiểm tra: cú pháp.
+
 **2026-11-13 | v3.5.273 | Arena.ai Agent sửa:**
 
 - Overlay Nói: bỏ nút "Thử lại" (thử lại = bấm mic / Enter như cũ); "Giọng bạn" dùng icon sóng âm mới `voice` (kiểu Lucide audio-lines), vẫn nhịp khi phát. Xử lý `retry` giữ cho nút "Làm lại" bên Chép.
