@@ -622,6 +622,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .stat{background:var(--pn2);border-radius:14px;padding:10px;text-align:center}
 .stat b{display:block;font-size:20px}.stat small{color:var(--mu);font-size:12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
+/* v3.5.265: Tổng kết — căn giữa "Từ cần luyện thêm" và danh sách từ */.sumh~.sec{text-align:center}.sumh~.chips{justify-content:center}
 .chips span{padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad);font-weight:650;font-size:13px}
 /* toast · hearts */
 .toast{position:absolute;left:50%;bottom:calc(var(--dockH,64px) + 14px);transform:translate(-50%,10px);background:rgba(24,24,27,.95);color:#fff;padding:9px 15px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:60;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
