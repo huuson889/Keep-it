@@ -198,8 +198,8 @@
       await playWithBrowserVoice({ ...opts, browserVoiceURI:voiceSettings.browserVoiceURI });
       return;
     }
-    // Chỉ nơi bật useFavoriteVoice (Reader, đọc vùng chọn / nút loa từ điển) mới dùng giọng yêu thích; Dashboard, overlay giữ như cũ.
-    if (opts.useFavoriteVoice === true && typeof opts.systemSpeak === "function") {
+    // v3.5.233: mọi nơi đọc to dùng chung cấu hình giọng — giọng yêu thích áp dụng cho mọi caller (systemSpeak nào cũng nhận voiceURI ở tham số thứ 4).
+    if (typeof opts.systemSpeak === "function") {
       const favorite = await favoriteVoiceForLang(opts.lang || opts.googleLanguage);
       if (!opts.isActive()) return;
       if (favorite) { opts.onFavoriteVoice?.(favorite); await playWithBrowserVoice({ ...opts, browserVoiceURI:favorite.voiceURI }); return; }

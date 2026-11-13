@@ -357,7 +357,8 @@
     const repeat = $br("[data-repeat]"); repeat.classList.toggle("lhn-on", repeatSegment); repeat.setAttribute("aria-pressed", String(repeatSegment));
     updateProgress();
     const lang = voiceFlagOverride || readingSegment?.lang || (settings.voiceMode !== "browser" && settings.readLanguage ? LHN_TTS.normalizeLanguage(settings.readLanguage) : "") || selectedVoice?.lang || activeVoice?.lang || activeSpeechLang || queue[queueIndex]?.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "";
-    const parts = lang.split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
+    const favVoice = settings.voiceMode !== "browser" && !(voiceFlagOverride && selectedVoice) ? favoriteVoiceForReader(lang) : null;   // v3.5.234: Tự động / ngôn ngữ Google mà có giọng Ưu tiên → cờ theo giọng đó (vd. en-GB → 🇬🇧)
+    const parts = String(favVoice?.lang || lang).split(/[-_]/), base = parts[0]?.toLowerCase(), region = parts.slice(1).find(part => /^[a-z]{2}$|^\d{3}$/i.test(part))?.toUpperCase() || ({ en:"US", vi:"VN", ko:"KR", ja:"JP", zh:"CN", fr:"FR", de:"DE", es:"ES", it:"IT", pt:"BR", ru:"RU", ar:"SA", hi:"IN", th:"TH" })[base];
     renderFlag($br("[data-bar-flag]"), region);
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
@@ -530,6 +531,7 @@
     if (adding) navigator.vibrate?.(15);
     const after = favPriorityFor(uri, favoriteVoices);
     if (after.label && after.key !== before.key) showBarToast(popupText("readerVoiceFavNowReads", { lang:after.label, voice:after.voice }));   // chỉ báo khi giọng đọc của ngôn ngữ đó đổi
+    applyFavoriteVoiceChange();
   }
   // Giọng sẽ đọc ngôn ngữ của mục `uri` theo danh sách yêu thích (mục đầu tiên còn trên máy; không có thì Google)
   function favPriorityFor(uri, favorites) {
@@ -548,6 +550,21 @@
     const path = heart.querySelector("path")?.getAttribute("d") || "";
     b.innerHTML = "<b></b><b></b>" + Array.from({ length:10 }, (_, i) => { const a = i / 10 * Math.PI * 2, r = 34 + (i % 3) * 8; return `<i style="--x:${(Math.cos(a) * r).toFixed(1)}px;--y:${(Math.sin(a) * r).toFixed(1)}px"><svg viewBox="0 0 24 24"><path d="${path}"/></svg></i>`; }).join("");
     panel.appendChild(b); setTimeout(() => b.remove(), 900);
+  }
+  // v3.5.234: giọng sẽ đọc `lang` theo danh sách yêu thích (cùng luật LHN_TTS); key "google" = đọc Google
+  function favoriteVoiceForReader(lang) { return lang ? LHN_TTS.favoriteVoiceFor(lang, favoriteVoices, synth?.getVoices?.() || systemVoices) : null; }
+  function favVoiceKeyFor(lang) { return favoriteVoiceForReader(lang)?.voiceURI || "google"; }
+  // Đổi giọng Ưu tiên của ngôn ngữ đang đọc → đọc lại ngay đoạn hiện tại bằng giọng mới (đang đọc phần dịch thì chỉ đọc lại phần dịch)
+  function applyFavoriteVoiceChange() {
+    syncToolbar();
+    const seg = readingSegment;
+    if (!reading || readingPaused || !seg || settings.voiceMode === "browser" || !googleToken) return;
+    const nextKey = favVoiceKeyFor(seg.lang);
+    if (nextKey === seg.voiceKey) return;
+    seg.voiceKey = nextKey; utterance = null; cancelGoogle();
+    const pending = seg.translation ? pendingTranslationFor(queue[queueIndex]) : null;
+    if (pending) { const voiceSettings = { voiceMode:settings.voiceMode, browserVoiceURI:settings.browserVoiceURI || "", readLanguage:settings.readLanguage || "" }; void speakGoogleNext(pending.text, pending.lang, ++speechDetectionRequest, voiceSettings, pending.lang); return; }
+    speakAfterCancel(null);
   }
   function speakAfterCancel(text) {
     window.setTimeout(() => { if (reading && !readingPaused) { synth?.resume(); speakNext(text); } }, 120);
@@ -1173,14 +1190,14 @@
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
     const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) advanceQueue(); return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) advanceQueue(); };
-    readingSegment = { translation: Boolean(forcedLang), lang }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
+    readingSegment = { translation: Boolean(forcedLang), lang, voiceKey: favVoiceKeyFor(lang) }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
       isActive: () => googleToken === token && reading,
       waitIfPaused: () => readingPaused ? new Promise(resolve => googleResumeWaiters.push(resolve)) : null,
       setCurrent: audio => { googleAudio = audio; },
       clearCurrent: () => { googleAudio = null; },
-      browserVoiceURI:voiceSettings.browserVoiceURI, useFavoriteVoice:true,
+      browserVoiceURI:voiceSettings.browserVoiceURI,
       systemSpeak: (t, l, done, browserVoiceURI) => {
         if (!synth || !window.SpeechSynthesisUtterance) { done({ unsupported:true }); return; }
         const normalize = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
@@ -1402,7 +1419,8 @@
       syncPauseShortcutState(); syncToolbar(); event.preventDefault();
     } else if (readingPaused) {
       readingPaused = false;
-      if (googleToken) { syncPauseShortcutState(); syncToolbar(); resumeGoogle(); }
+      if (googleToken && readingSegment && settings.voiceMode !== "browser" && favVoiceKeyFor(readingSegment.lang) !== readingSegment.voiceKey) { syncPauseShortcutState(); applyFavoriteVoiceChange(); }   // v3.5.234: đổi giọng Ưu tiên lúc tạm dừng → tiếp tục bằng giọng mới
+      else if (googleToken) { syncPauseShortcutState(); syncToolbar(); resumeGoogle(); }
       else { const remaining = resumeText; resumeText = ""; syncPauseShortcutState(); syncToolbar(); speakAfterCancel(remaining || null); }
       event.preventDefault();
     } else {
@@ -1441,6 +1459,7 @@
       settings = { ...settings, voiceMode:nextVoiceMode, browserVoiceURI:String(dashboardShortcuts.browserVoiceURI || ""), readLanguage:nextVoiceMode === "google" ? String(dashboardShortcuts.readLanguage || "") : "" };
       selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
       if (reading && !readingPaused && (previousVoiceMode !== settings.voiceMode || previousVoiceURI !== settings.browserVoiceURI || previousReadLanguage !== settings.readLanguage)) restartCurrentSpeech();
+      else applyFavoriteVoiceChange();   // v3.5.234: danh sách yêu thích đổi (tab này hoặc tab khác)
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
       syncToolbar();

@@ -199,6 +199,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.234 | Arena.ai Agent sửa:**
+
+- Reader: đổi giọng Ưu tiên (♥) của ngôn ngữ đang đọc thì đọc lại ngay đoạn hiện tại bằng giọng mới (từ đầu đoạn; đang đọc phần dịch thì chỉ đọc lại phần dịch). Thích giọng của ngôn ngữ khác thì không gián đoạn. Đổi lúc tạm dừng thì bấm tiếp tục sẽ đọc bằng giọng mới. Đổi từ tab khác cũng áp dụng.
+- Reader: cờ trên thanh luôn theo giọng đang đọc. Trước: Tự động + Ưu tiên Anh–Anh vẫn hiện cờ Mỹ (cờ lấy theo ngôn ngữ đoạn, bỏ qua giọng yêu thích).
+- File: `js/reader/bilingual-reader.js`, `docs/modules/reader.md`, `manifest.json`. Không đổi key lưu trữ.
+- Kiểm tra: Chromium + extension thật, giả lập giọng Aria (en-US), Sonia (en-GB), HoaiMy trong isolated world của content script. Tự động + Ưu tiên Sonia: cờ GB lúc chưa đọc và lúc đọc, đọc bằng Sonia. ♥ Aria khi đang đọc đoạn 1: sau 130 ms đọc lại đoạn 1 bằng Aria, cờ US, toast "Tiếng Anh: đọc bằng Aria". ♥ HoaiMy: không đọc lại. `google:en` lên đầu từ storage (tab khác): chuyển sang Google, cờ US. Tạm dừng → đưa Sonia lên: im, cờ GB; tiếp tục: đọc lại đoạn bằng Sonia. 0 lỗi trang.
+
+**2026-10-23 | v3.5.233 | Arena.ai Agent sửa:**
+
+- Mọi nơi đọc to dùng chung một cấu hình giọng (Google/Trình duyệt, giọng đã chọn, giọng yêu thích trong `lhnSettings`): Reader, đọc vùng chọn và nút loa từ điển, overlay Web (đọc trang), Dashboard (flashcard, ghi chú, từ điển) và nút loa trong Thống kê chi tiết Dictation. Trước: giọng yêu thích chỉ ở Reader/đọc vùng chọn; Dashboard chọn "Giọng trình duyệt" thì lấy giọng bất kỳ theo ngôn ngữ (bỏ qua giọng đã chọn); thống kê chính tả luôn đọc giọng trình duyệt en-US.
+- Flashcard bỏ ô "Giọng đọc" riêng (Cài đặt Ôn tập → Giọng đọc); giá trị cũ `speechVoice` vẫn nằm trong storage, không còn dùng. Tốc độ đọc giữ như cũ ở mọi nơi, flashcard vẫn có tốc độ riêng.
+- File: `js/reader/tts-engine.js` (giọng yêu thích cho mọi caller), `js/dashboard/dashboard.js` (`speakText` luôn qua `LHN_TTS.play`; `speakSystemText` đọc đúng voiceURI; bỏ `studySpeechVoice`), `pages/dashboard.html`, `js/dashboard/dictation-stats-popup.js` (đọc qua `parent.speakText`), `js/reader/bilingual-reader.js`, `js/content/content.js` (bỏ cờ `useFavoriteVoice`), `docs/modules/reader.md`, `manifest.json`. Không thêm/đổi key lưu trữ.
+- Kiểm tra: Chromium + extension thật, `pages/dashboard.html` với 4 giọng giả lập: Tự động chưa yêu thích → Google; yêu thích Sonia/HoaiMy → en Sonia, vi HoaiMy; `google:en` đứng đầu → en Google, vi HoaiMy; chọn cụ thể NamMinh → luôn NamMinh. Ô `studySpeechVoice` đã mất; khung thống kê chính tả gọi được `parent.speakText` và đọc đúng giọng chung. Reader mở bằng Alt+R, danh sách giọng hiện bình thường; 0 lỗi trang. `node --check` các file JS đã sửa đều qua.
+
 **2026-10-23 | v3.5.232 | Arena.ai Agent sửa:**
 
 - Reader → Chọn giọng đọc: giọng yêu thích theo demo `reader-voice` v6 (người dùng duyệt). ♡ ở bên phải mỗi giọng Google và giọng trình duyệt (máy tính: hiện khi rê chuột; cảm ứng: luôn hiện mờ). Giọng đã thích có bản sao trong nhóm "Yêu thích" ngay dưới Tự động; giọng đứng đầu của mỗi ngôn ngữ có nhãn "Ưu tiên" và được dùng khi giọng là Tự động hoặc một ngôn ngữ Google (khớp theo ngôn ngữ gốc, en-US/en-GB cùng là tiếng Anh). Chọn một giọng cụ thể thì vẫn luôn dùng giọng đó; ngôn ngữ chưa có yêu thích đọc Google như cũ; giọng yêu thích không còn trên máy thì ẩn, vẫn được lưu. Ô tìm kiếm lọc cả nhóm Yêu thích.

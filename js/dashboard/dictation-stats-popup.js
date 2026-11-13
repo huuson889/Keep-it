@@ -273,6 +273,9 @@
     audio.setAttribute("aria-label", tr("dictationStatsAudioLabel", { word }));
     audio.title = audio.getAttribute("aria-label");
     audio.addEventListener("click", () => {
+      // v3.5.233: đọc qua bộ đọc chung của Dashboard (cùng giọng/tốc độ như mọi nơi); chỉ khi mở riêng ngoài Dashboard mới dùng giọng trình duyệt mặc định.
+      let sharedSpeak = null; try { sharedSpeak = window.parent !== window ? window.parent.speakText : null; } catch {}
+      if (typeof sharedSpeak === "function") { sharedSpeak(word, "en-US"); return; }
       if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = "en-US";

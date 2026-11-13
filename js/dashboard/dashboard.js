@@ -641,7 +641,6 @@ function refreshFlashcardTranslateSettingsUI() {
   populateStudyLanguageOptions($("studyTranslationTarget"), "auto", translation.targetLanguage);
   $("studyTranslationSource").value = translation.sourceLanguage;
   $("studyTranslationTarget").value = translation.targetLanguage;
-  $("studySpeechVoice").value = sharedSpeech ? (dashboardSettings.speechVoice === "browser" ? "browser" : "google") : (flashcardTranslateSettings.speechVoice === "browser" ? "browser" : "google");
   $("studySpeechRateLabel").textContent = t("flashcardSpeechRate");
   populateStudySpeechLanguageOptions($("studyHighlightVoiceLanguage"), flashcardTranslateSettings.highlightSpeechLanguage);
   populateStudySpeechLanguageOptions($("studyNoteVoiceLanguage"), flashcardTranslateSettings.noteSpeechLanguage);
@@ -1964,13 +1963,14 @@ function getSpeechRate(speechSettings = dashboardSettings, spokenLanguage) {
   const rate = Number(customRate ?? speechSettings.speechRate);
   return Number.isFinite(rate) ? Math.min(2, Math.max(.5, rate)) : 1;
 }
-function speakSystemText(text, lang, onEnd, shouldSpeak, requestId, speechRate = getSpeechRate(dashboardSettings, lang)) {
+function speakSystemText(text, lang, onEnd, shouldSpeak, requestId, speechRate = getSpeechRate(dashboardSettings, lang), browserVoiceURI = "") {
   if (!window.speechSynthesis || !window.SpeechSynthesisUtterance || requestId !== speechRequestId || !shouldSpeak()) { onEnd?.(); return; }
   const synth = window.speechSynthesis;
   if (synth.paused) synth.resume();
   const normalizeLanguage = value => String(value || "").trim().replace(/_/g, "-").toLowerCase();
   const target = normalizeLanguage(lang), base = target.split("-")[0];
-  const findVoice = voices => voices.find(voice => normalizeLanguage(voice.lang) === target)
+  const findVoice = voices => (browserVoiceURI && voices.find(voice => voice.voiceURI === browserVoiceURI))
+    || voices.find(voice => normalizeLanguage(voice.lang) === target)
     || voices.find(voice => normalizeLanguage(voice.lang).split("-")[0] === base);
   const playWithVoices = voices => {
     if (requestId !== speechRequestId || !shouldSpeak()) return;
@@ -1999,14 +1999,14 @@ async function speakText(text, lang, onEnd, shouldSpeak = () => true, cacheVoice
   const requestId = ++speechRequestId;
   window.speechSynthesis?.cancel(); stopStudyAudio();
   const speechRate = getSpeechRate(speechSettings, lang);
-  if (speechSettings.speechVoice === "browser") { speakSystemText(sample, lang, onEnd, shouldSpeak, requestId, speechRate); return; }
+  // v3.5.233: giọng đọc dùng chung cấu hình TTS (Google/Trình duyệt, giọng đã chọn, giọng yêu thích) qua LHN_TTS; tốc độ vẫn theo speechSettings.
   const language = String(lang || "en-US").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
   LHN_TTS.play({
     text: sample, lang, googleLanguage: language, voice: `${cacheVoice}:${language}`, rate: speechRate,
     isActive: () => requestId === speechRequestId && shouldSpeak(),
     setCurrent: (audio, url) => { studySpeakAudio = audio; studySpeakObjectUrl = url; },
     clearCurrent: () => { studySpeakAudio = null; studySpeakObjectUrl = null; },
-    systemSpeak: (t, l, done) => speakSystemText(t, l, done, shouldSpeak, requestId, speechRate),
+    systemSpeak: (t, l, done, uri) => speakSystemText(t, l, done, shouldSpeak, requestId, speechRate, uri),
     onEnd
   });
 }
@@ -2303,7 +2303,6 @@ function updateFlashcardTranslateSettingsFromUI({ rerender = true, customRate = 
     useDashboardSpeechSettings:!$("studyUseDashboardSpeechSettings").checked,
     sourceLanguage:$("studyTranslationSource").value,
     targetLanguage:$("studyTranslationTarget").value,
-    speechVoice:$("studySpeechVoice").value === "browser" ? "browser" : "google",
     speechRate:rate,
     hasCustomSpeechRate:customRate || flashcardTranslateSettings.hasCustomSpeechRate
   };
@@ -2327,7 +2326,6 @@ $("studyUseDashboardSpeechSettings").addEventListener("change", () => {
   if ($("studyUseDashboardSpeechSettings").checked) resetFlashcardLanguageRatesToDashboard();
   updateFlashcardTranslateSettingsFromUI({ rerender:false });
 });
-$("studySpeechVoice").addEventListener("change", () => updateFlashcardTranslateSettingsFromUI({ rerender:false }));
 function updateFlashcardSpeechLanguageSetting(field, value) {
   const key = studySpeechSettingKey(field), revisionKey = studySpeechSettingRevisionKey(field);
   if (!key || !["auto", "en-US", "vi-VN", "ko-KR"].includes(value)) return;
