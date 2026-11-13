@@ -458,7 +458,7 @@
       return button;
     };
     const voiceRow = (voice, inFavorites) => {
-      const region = voice.lang?.split(/[-_]/)[1]?.toUpperCase();
+      const region = globalThis.LHN_FLAGS?.regionOfLang?.(voice.lang) || "";   // v3.5.236: iu-Latn-CA → CA (trước lấy nhầm "LATN")
       if (region && !FLAG_REGION_KEYS[region] && !flagMissLogged.has(region)) { flagMissLogged.add(region); console.info('[Keepit] Giọng chưa có cờ:', region, '|', voice.name, '|', voice.lang); }
       const isSelected=settings.voiceMode === "browser" && settings.browserVoiceURI === voice.voiceURI;
       const isFav = favoriteVoices.includes(voice.voiceURI), key = voice.voiceURI;

@@ -199,6 +199,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.236 | Arena.ai Agent sửa:**
+
+- Reader, danh sách giọng: cờ đúng cho mọi vùng. Trước: bảng `js/reader/bilingual-flags.js` chỉ có 79 vùng, vùng thiếu rơi về cờ Mỹ (giọng Edge: Ethiopia, Georgia, Campuchia, Lào, Litva, Latvia, Bắc Macedonia, Mông Cổ, Malta, Myanmar, Nepal, Afghanistan, Sri Lanka, Slovakia, Slovenia, Somalia, Albania, Serbia, Pakistan, Uzbekistan). Giờ bảng gồm đủ 258 cờ có trong font `TwemojiCountryFlags.woff2` (không đổi font).
+- Mã vùng lấy theo subtag 2 chữ / 3 số đầu tiên (`LHN_FLAGS.regionOfLang`): `iu-Latn-CA` (Inuktitut) giờ là Canada 🇨🇦; trước lấy nhầm "LATN" nên hiện tên "LATN" + cờ Mỹ.
+- File: `js/reader/bilingual-flags.js`, `js/reader/bilingual-reader.js`, `manifest.json`.
+- Kiểm tra: đọc GSUB của font, đủ 258 cờ, có cả 20 vùng trên. Chromium + extension thật, giả lập 26 giọng Edge (am-ET, iu-Latn-CA, iu-Cans-CA, ka-GE, km-KH, lo-LA, lt-LT, lv-LV, mk-MK, mn-MN, mt-MT, my-MM, ne-NP, ps-AF, si-LK, sk-SK, sl-SI, so-SO, sq-AL, sr-RS, ta-LK, ur-PK, uz-UZ, en-US, en-GB, vi-VN): mỗi hàng đúng cờ, đúng tên nước; ảnh chụp cờ hiển thị đúng; không còn log "Giọng chưa có cờ"; 0 lỗi trang.
+
 **2026-10-23 | v3.5.235 | Arena.ai Agent sửa:**
 
 - Reader: thanh Reader cách đáy 4px như thanh main ở mọi cỡ màn (trước: điện thoại 0px, màn rộng 6px). Điện thoại: thanh nổi giống thanh main (cách 2 bên 10px, bo 26px, viền + bóng như thanh main; cộng safe-area đáy). Màn hẹp < 412px vẫn thu nhỏ đều thanh theo bề ngang 392px, khoảng cách/bo góc bù theo `--lhn-br-z` nên nhìn vẫn đúng 4px / 10px / 26px.
