@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.246 | Arena.ai Agent sửa:**
+
+- Overlay tab Chép, gợi ý tên riêng: các tên viết hoa đứng liền nhau (chỉ cách bằng khoảng trắng) gộp thành một mục. "we Alex don't Vietnam Didier Le Bret" → Gợi ý: **Alex, Vietnam Didier Le Bret**; có dấu phẩy / dấu chấm ở giữa thì vẫn tách; trùng thì chỉ hiện một lần.
+- File: `js/overlay/study/learning-rules.js` (`getProperNounHints`, chỉ tab Chép dùng), `manifest.json`.
+- Kiểm tra: Node: câu ví dụ trên → "Alex, Vietnam Didier Le Bret"; "Ben Tre and Tra Vinh" → "Ben Tre, Tra Vinh"; "Alex, Vietnam and Didier Le Bret in Hanoi" → "Alex, Vietnam, Didier Le Bret, Hanoi"; "Ho Chi Minh City" giữ nguyên một mục.
+
 **2026-11-13 | v3.5.245 | Arena.ai Agent sửa:**
 
 - Overlay tab Chép: gợi ý tên riêng không còn khung vàng; là một dòng chữ thường ngay trên ô nhập: "Gợi ý:" chữ thường màu phụ, danh sách tên in đậm (vd. Gợi ý: **Vietnam, Tuoitre**).

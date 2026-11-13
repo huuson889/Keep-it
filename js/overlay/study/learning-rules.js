@@ -56,19 +56,28 @@
     }
     return indexes;
   }
+  // v3.5.246: tên riêng đứng liền nhau (chỉ cách bằng khoảng trắng) gộp thành một mục: "Vietnam Didier Le Bret"
   function getProperNounHints(text) {
-    const tokens = getWords(text);
-    const proper = getProperNounIndexes(text);
+    const source = String(text ?? "");
+    const tokens = getWords(source);
+    const proper = [...getProperNounIndexes(source)].sort((a, b) => a - b);
     const result = [];
     const seen = new Set();
+    let group = [];
+    const flush = () => {
+      const value = group.map((token) => token.raw).join(" ");
+      const key = value.toLocaleLowerCase();
+      if (value && !seen.has(key)) { result.push(value); seen.add(key); }
+      group = [];
+    };
     for (const index of proper) {
-      const value = tokens[index]?.raw;
-      const key = value?.toLocaleLowerCase();
-      if (value && !seen.has(key)) {
-        result.push(value);
-        seen.add(key);
-      }
+      const token = tokens[index];
+      if (!token) continue;
+      const last = group[group.length - 1];
+      if (last && !(last.index + 1 === index && /^\s+$/u.test(source.slice(last.end, token.start)))) flush();
+      group.push({ raw: token.raw, end: token.end, index });
     }
+    if (group.length) flush();
     return result;
   }
   function countLetters(value) { return (String(value ?? "").match(/\p{L}/gu) || []).length; }
