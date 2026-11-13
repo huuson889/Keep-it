@@ -1897,7 +1897,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function wrMasks(items, list) { for (const w of list) items.push({ c: 'msk', w: wrMaskText(w) }); }
     function wrIdlePanelHTML(ref) {
       const items = []; wrMasks(items, getTranscriptWordTokens(ref));
-      return `<div class="rpanel err"><div class="rt">${ic('alert')}<b>${T('correctSentence')}:</b><span class="sp"></span></div><div class="diff wdiff">${items.map((it) => `<span class="msk">${esc(it.w)}</span>`).join(' ')}</div></div>`;
+      return `<div class="rpanel hnt"><div class="rt">${ic('bulb')}<b>${T('correctSentence')}:</b><span class="sp"></span></div><div class="diff wdiff">${items.map((it) => `<span class="msk">${esc(it.w)}</span>`).join(' ')}</div></div>`;
     }
     function wrPrefixItems(ref, answer) {
       const SC = globalThis.LHN_STUDY_SCORE, progress = SC.getPrefixProgress(ref, answer);

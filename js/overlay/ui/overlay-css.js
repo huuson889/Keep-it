@@ -358,6 +358,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + String.raw`*{box-s
 .sptoast .tx small{display:block;color:var(--mu);font-size:12px;line-height:1.4;margin-top:2px}
 .rpanel{width:100%;max-width:680px;border-radius:14px;padding:10px 12px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08)}
 .rpanel.ok{border-color:rgba(34,197,94,.32);background:rgba(34,197,94,.08)}
+.rpanel.hnt{border-color:rgba(245,158,11,.32);background:rgba(245,158,11,.08)}.rpanel.hnt .rt{color:var(--warn)}
 .rpanel .rt{display:flex;align-items:center;gap:7px;margin-bottom:6px;color:var(--bad)}.rpanel.ok .rt{color:var(--ok)}
 .rpanel .rt svg{width:17px;height:17px}.rpanel .rt .sp{flex:1}.rpanel .rt .acc{font-weight:800}
 .rpanel .diff{font-size:17px;text-align:left;max-width:none}.rpanel .wdiff .fix{color:var(--warn)}
