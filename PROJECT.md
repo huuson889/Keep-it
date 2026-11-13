@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-13 | v3.5.269 | Arena.ai Agent sửa:**
+
+- Overlay Chép: nút "1 từ" / Tab sửa đúng **chỗ gạch đỏ đầu tiên** trong ô nhập (từ sai → thay, ô trống → điền, từ thừa → xoá); các gạch còn lại vẫn hiện để bấm tiếp. Chưa chấm thì tìm lỗi bằng đúng cách chấm của Kiểm tra (`wrErrorItems` + `wrMarks`) nhưng không hiện gạch. Từ sai cuối ô với phía trước đúng → từ kế tiếp (như panel lỗi). Không lỗi → thêm 1 từ mới; đủ câu → không làm gì. Sửa v3.5.268 (dùng diff riêng, lệch với gạch đỏ).
+- File: `js/overlay/ui/overlay-ui.js` (`wrMarks` lưu `fix` cho mỗi chỗ gạch, `wrOneWord`), `manifest.json`.
+- Kiểm tra: cú pháp; node — 4 câu nhiều lỗi sau chấm (bấm liên tiếp), 10 câu chưa chấm, gõ dở cuối câu, từ rút gọn.
+
 **2026-11-13 | v3.5.268 | Arena.ai Agent sửa:**
 
 - Overlay Chép: nút "1 từ" / Tab chỉ sửa từ sai đầu tiên (sai → thay, thiếu → chèn đúng chỗ, thừa → xoá; từ cuối gõ dở → hoàn thành), giữ nguyên phần đã gõ khác; phía trước đúng hết → thêm 1 từ mới; câu đủ đúng → không làm gì. Dùng `LHN_STUDY_SCORE.diff`; chấm điểm không đổi.

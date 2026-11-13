@@ -2006,7 +2006,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const lens = missing.map((w) => Math.max(2, [...w].length * 2));
         let replacement = ' ';
         lens.forEach((len, k) => { replacement += ' '.repeat(len); replacement += k < lens.length - 1 ? '  ' : ' '; });
-        edits.push({ start: gapEnd - trailing.length, end: gapEnd, replacement, lens });
+        edits.push({ start: gapEnd - trailing.length, end: gapEnd, replacement, lens, missing });
       }
       edits.sort((l, r) => l.start - r.start || l.end - r.end);
       const missingRanges = []; let out = value;
@@ -2016,7 +2016,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           if (edit.start < cursor) continue;
           nv += value.slice(cursor, edit.start);
           let slotStart = nv.length + 1;
-          for (const len of edit.lens) { missingRanges.push({ start: slotStart, end: slotStart + len, missing: true }); slotStart += len + 2; }
+          edit.lens.forEach((len, q) => { missingRanges.push({ start: slotStart, end: slotStart + len, missing: true, fix: edit.missing[q] }); slotStart += len + 2; });
           nv += edit.replacement; cursor = edit.end;
         }
         out = nv + value.slice(cursor);
@@ -2026,7 +2026,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       for (const op of operations) {
         if (op.type === 'missing') continue;
         const ix = op.typedIndices || [], m = typed[ix.length ? ix[0] : typedIndex];
-        if (m && (op.type === 'wrong' || op.type === 'extra')) ranges.push({ start: m.index, end: m.index + m[0].length, missing: false });
+        if (m && (op.type === 'wrong' || op.type === 'extra')) ranges.push({ start: m.index, end: m.index + m[0].length, missing: false, fix: op.type === 'wrong' ? (op.expected || '') : '' });
         typedIndex = ix.length ? Math.max(typedIndex, ...ix) + 1 : typedIndex + 1;
       }
       ranges.sort((l, r) => l.start - r.start || Number(r.missing) - Number(l.missing));
@@ -2093,33 +2093,41 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (S.wr.phase === 'done' || S.wr.escFilled) { resetStudy(); renderStudy(); wrFocusEnd(); return; }
       ta.value = ref; ta.dispatchEvent(new Event('input')); ta.focus(); ta.setSelectionRange(ref.length, ref.length); S.wr.escFilled = true;
     }
-    // nút "1 từ" và phím Tab (v3.5.268): chỉ sửa từ sai đầu tiên (sai → thay, thiếu → chèn, thừa → xoá);
-    // phía trước đúng hết → thêm 1 từ mới; câu đã đủ đúng → không làm gì
+    // nút "1 từ" và phím Tab (v3.5.269): sửa đúng chỗ gạch đỏ đầu tiên (sai → thay, ô trống → điền, thừa → xoá),
+    // các gạch còn lại giữ nguyên; không có lỗi → thêm 1 từ mới; câu đủ đúng → không làm gì
     function wrOneWord() {
-      const ref = SENT[S.si.write].en, val = String(S.wr.val || '');
-      const SC = globalThis.LHN_STUDY_SCORE, ops = SC.diff(ref, val), k = ops.findIndex((o) => o.type !== 'ok');
-      const toks = [...val.matchAll(/[\p{L}\p{N}’‘`´']+/gu)].filter((m) => m[0].toLowerCase().replace(/[’‘`´']/g, '').replace(/[^\p{L}\p{N}]+/gu, '')).map((m) => ({ start: m.index, end: m.index + m[0].length }));
-      // từ cuối đang gõ dở (chưa có dấu cách) và phía trước đúng hết → hoàn thành / thay đúng từ đó
-      const last = toks[toks.length - 1];
-      if (k >= 0 && last && !/\s$/.test(val)) {
-        const head = val.slice(0, last.start), pr = head.trim() ? SC.getPrefixProgress(ref, head) : { isPrefix: true, matchedUnits: 0 };
-        const exp = pr.isPrefix ? SC.getPrefixProgress(ref, '').expectedUnits[pr.matchedUnits] : null;
-        if (exp && SC.tokenize(val.slice(last.start)).join('') !== exp.norm) { S.wr.val = `${head}${exp.display} `; wrOnInput(); renderStudy(); const t2 = $('#wta'); if (t2) { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); } return; }
-      }
-      if (k >= 0) {
-        const o = ops[k], span = (x) => ({ a: toks[x.typedIndices[0]].start, b: toks[x.typedIndices[x.typedIndices.length - 1]].end });
-        let nv = val, at = 0;
-        if (o.type === 'wrong') { const { a, b } = span(o); nv = val.slice(0, a) + o.expected + val.slice(b); at = a + o.expected.length; }
-        else if (o.type === 'extra') { const { a, b } = span(o); let e = b; while (/\s/.test(val[e] || '')) e++; nv = val.slice(0, a) + val.slice(e); at = a; }
-        else {
-          const nx = ops.slice(k + 1).find((x) => x.typedIndices);
-          if (nx) { const a = span(nx).a; nv = `${val.slice(0, a)}${o.expected} ${val.slice(a)}`; at = a + o.expected.length + 1; }
-          else { const head = val.replace(/\s+$/, ''); nv = head + (head ? ' ' : '') + o.expected; at = nv.length; }
+      const ref = SENT[S.si.write].en, val = String(S.wr.val || ''), SC = globalThis.LHN_STUDY_SCORE;
+      const done = () => { const ta = $('#wta'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } };
+      const shown = !!(S.wr.marks && S.wr.marks.value === val && S.wr.marks.ranges.length);
+      let mk = shown ? S.wr.marks : null;
+      if (!mk && val.trim()) { const r = wrErrorItems(ref, val); mk = wrMarks(ref, val, r.operations, r.missingPatterns); }
+      const r0 = mk && mk.ranges[0];
+      if (r0) {
+        const v = mk.value; let fix = r0.fix || '', a = r0.start, b = r0.end;
+        // từ sai nằm cuối ô và phía trước đúng hết → từ kế tiếp của câu (như panel lỗi: "Lanc → Lancaster")
+        if (!r0.missing && fix && !v.slice(b).trim()) {
+          const head = v.slice(0, a), pr = head.trim() ? SC.getPrefixProgress(ref, head) : { isPrefix: true, matchedUnits: 0 };
+          const exp = pr.isPrefix ? SC.getPrefixProgress(ref, '').expectedUnits[pr.matchedUnits] : null;
+          if (exp) fix = exp.display;
         }
-        if (!nv.slice(at).trim()) nv = `${nv.replace(/\s+$/, '')} `;
-        S.wr.val = nv; wrOnInput(); renderStudy();
+        if (!r0.missing && !fix) { if (v[b] === ' ') b++; else if (a > 0 && v[a - 1] === ' ') a--; }
+        let nv = v.slice(0, a) + fix + v.slice(b);
+        const d = fix.length - (b - a), at = a + fix.length;
+        let rest = mk.ranges.slice(1).filter((x) => x.start >= b).map((x) => ({ ...x, start: x.start + d, end: x.end + d }));
+        if (!shown) { // chưa chấm: không để lại ô trống / gạch nào khác
+          for (const x of rest.filter((y) => y.missing).sort((l, r) => r.start - l.start)) nv = nv.slice(0, x.start) + nv.slice(x.end);
+          nv = nv.replace(/ {2,}/g, ' '); rest = [];
+        }
+        if (!nv.slice(at).trim()) { nv = `${nv.replace(/\s+$/, '')} `; rest = rest.filter((x) => x.end <= nv.length); }
+        S.wr.val = nv; wrOnInput();
+        if (rest.length) { S.wr.marks = { value: nv, ranges: rest, slots: rest.filter((x) => x.missing).map(({ start, end }) => ({ start, end })) }; S.wr.slots = S.wr.marks.slots; }
+        renderStudy(); done(); return;
       }
-      const ta = $('#wta'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      if (SC.score(ref, val).perfect) { done(); return; }
+      const pr = val.trim() ? SC.getPrefixProgress(ref, val) : { isPrefix: true, matchedUnits: 0 };
+      const exp = pr.isPrefix ? SC.getPrefixProgress(ref, '').expectedUnits[pr.matchedUnits] : null;
+      if (exp) { const head = val.replace(/\s+$/, ''); S.wr.val = `${head}${head ? ' ' : ''}${exp.display} `; wrOnInput(); renderStudy(); }
+      done();
     }
     function wrKeyDown(e, ta) {
       const ref = SENT[S.si.write].en;
