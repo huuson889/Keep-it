@@ -436,9 +436,10 @@
   // The provider page (page/composer.js) reports its live route and sign-in pages; the page itself
   // reports route context to the background, so the route only feeds the panel's navigation plan.
   window.addEventListener("message", event => {
-    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN", "KEEPIT_AI_PANEL_HELLO", "KEEPIT_AI_PANEL_WANT_FOCUS"].includes(event.data?.type)) return;
+    if (event.source !== frame.contentWindow || !["KEEPIT_AI_PANEL_CONVERSATION", "KEEPIT_AI_PANEL_LOGIN", "KEEPIT_AI_PANEL_HELLO", "KEEPIT_AI_PANEL_WANT_FOCUS", "KEEPIT_AI_PANEL_SHEET_DRAG"].includes(event.data?.type)) return;
     const provider = providers.get(event.data.providerId);
     if (!providers.isPanelProvider(provider?.id) || frameProvider()?.id !== provider.id || !provider.origins.includes(event.origin)) return;
+    if (event.data.type === "KEEPIT_AI_PANEL_SHEET_DRAG") { sheetDrag(event.data.phase, event.data.y); return; }
     if (event.data.type === "KEEPIT_AI_PANEL_HELLO") {
       // The frame is on the AI: clear only the "left the AI" overlay. Sign-in pages and pages
       // without a chat box report their own state when they load.
@@ -489,6 +490,32 @@
       }, 1500);
     }, 800);
   });
+
+  // v3.5.285 AI sheet (phone / tablet, this page framed by Keepit in the page): swipes on the toolbar / sign-in box and the
+  // AI's downward swipes at the top of its chat drag the sheet (js/content/keepit-bar.js AIS feeds them to sheet-kit).
+  // Only the finger's screen y travels (no page or chat data). Never in the side panel / sidebar / tab.
+  const inSheet = window.top !== window;
+  function sheetDrag(phase, y) {
+    if (!inSheet || !["start", "move", "end", "cancel"].includes(phase) || (phase !== "end" && phase !== "cancel" && !Number.isFinite(y))) return;
+    try { window.parent.postMessage({ type:"KEEPIT_AI_SHEET_DRAG", phase, y }, "*"); } catch {}
+  }
+  if (inSheet) {
+    let swipe = null;
+    addEventListener("touchstart", event => {
+      const t = event.touches[0];
+      swipe = event.touches.length === 1 && t && event.target !== frame ? { y:t.screenY, x:t.screenX, on:false } : null;
+    }, { capture:true, passive:true });
+    addEventListener("touchmove", event => {
+      const t = event.touches[0];
+      if (!swipe || !t || event.touches.length !== 1) return;
+      if (!swipe.on) { if (Math.hypot(t.screenX - swipe.x, t.screenY - swipe.y) < 6) return; swipe.on = true; sheetDrag("start", swipe.y); }
+      if (event.cancelable) event.preventDefault();
+      sheetDrag("move", t.screenY);
+    }, { capture:true, passive:false });
+    const endSwipe = event => { if (swipe?.on) sheetDrag(event.type === "touchend" ? "end" : "cancel"); swipe = null; };
+    addEventListener("touchend", endSwipe, true);
+    addEventListener("touchcancel", endSwipe, true);
+  }
 
   browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local" || !changes[NAVIGATION_KEY]?.newValue) return;

@@ -26,7 +26,7 @@
   const LINK_PROMPT_PREFIX = "Hãy tóm tắt bài sau:";
   const MAX_WAIT_MS = 25000;
   // Same AI panel host in Chromium and Firefox: the provider page is the iframe inside the extension page.
-  const isPanelRoot = window.parent === window.top && window.top !== window;
+  const isPanelRoot = window.top !== window && providers.isPanelChildFrame();   // v3.5.285: also inside the phone AI sheet
   const safeSourceUrl = providers.normalizeSourceUrl;
   let url;
   try { url = new URL(location.href); } catch { return; }

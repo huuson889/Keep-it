@@ -10,7 +10,7 @@
   const provider = providers.fromHost(location.hostname);
   if (!provider) return;
   // The provider page itself: a normal tab, or the iframe directly inside the AI panel host.
-  if (window.parent !== window.top) return;
+  if (window.top !== window && !providers.isPanelChildFrame()) return;
 
   const SESSION_KEYS = Object.freeze({
     panel:"keepitAiPanelMarker",
@@ -297,6 +297,42 @@
         postToPanel({ type:"KEEPIT_AI_PANEL_LOGIN", providerId:provider.id, reason:"login-click" });
       } catch { /* Leave the navigation to the browser. */ }
     });
+  }
+
+  // v3.5.285 AI sheet (phone / tablet: page → Keepit panel → AI): a downward swipe while the chat is at its top drags the
+  // sheet, like every Keepit sheet (js/shared/sheet-kit.js); the page behind neither scrolls nor reloads. A scrolled chat
+  // scrolls back first; sideways moves, upward swipes and the chat box stay the AI's own.
+  if (inPanelFrame && window.parent !== window.top && providers.isPanelProvider(provider.id)) {
+    const EDIT = "input,textarea,select,[contenteditable]:not([contenteditable=false])";
+    const scrolled = el => {
+      for (let n = el; n instanceof Element; n = n.parentElement) {
+        if (n.scrollTop > 0 && n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY)) return true;
+      }
+      return (document.scrollingElement?.scrollTop || 0) > 0;
+    };
+    const drag = (phase, y) => postToPanel({ type:"KEEPIT_AI_PANEL_SHEET_DRAG", providerId:provider.id, phase, y });
+    let swipe = null;
+    window.addEventListener("touchstart", event => {
+      const t = event.touches[0];
+      swipe = event.touches.length === 1 && t ? { x:t.screenX, y:t.screenY, target:event.target, mode:"" } : null;
+    }, { capture:true, passive:true });
+    window.addEventListener("touchmove", event => {
+      const t = event.touches[0];
+      if (!swipe || !t || event.touches.length !== 1) return;
+      const dx = t.screenX - swipe.x, dy = t.screenY - swipe.y;
+      if (!swipe.mode) {
+        if (Math.hypot(dx, dy) < 6) return;
+        const own = swipe.target instanceof Element && !!swipe.target.closest(EDIT);
+        swipe.mode = dy > 0 && dy > Math.abs(dx) && event.cancelable && !own && !scrolled(swipe.target) ? "sheet" : "native";
+        if (swipe.mode === "sheet") drag("start", swipe.y);
+      }
+      if (swipe.mode !== "sheet") return;
+      event.preventDefault();
+      drag("move", t.screenY);
+    }, { capture:true, passive:false });
+    const endSwipe = event => { if (swipe?.mode === "sheet") drag(event.type === "touchend" ? "end" : "cancel"); swipe = null; };
+    window.addEventListener("touchend", endSwipe, true);
+    window.addEventListener("touchcancel", endSwipe, true);
   }
 
   if (inPanelFrame) {

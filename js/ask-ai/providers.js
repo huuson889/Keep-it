@@ -330,7 +330,23 @@
     }
   }
 
+  // v3.5.285: is this AI page the frame directly inside the Keepit AI panel? Side panel / sidebar / tab: its parent is the
+  // top window (as before). Phone / tablet AI sheet: page → Keepit panel → AI, so the parent must be the extension page
+  // (Chromium: location.ancestorOrigins; Firefox has none: the panel's referrer).
+  function isPanelChildFrame() {
+    const w = globalThis.window;
+    if (!w || w.top === w) return false;
+    if (w.parent === w.top) return true;
+    const root = globalThis.browser?.runtime?.getURL?.("") || "";
+    let origin = "";
+    try { const u = new URL(root); origin = u.host ? `${u.protocol}//${u.host}` : ""; } catch {}
+    if (!origin) return false;
+    try { const a = w.location.ancestorOrigins; if (a && a.length) return a[0] === origin; } catch {}
+    return w.document.referrer.startsWith(root);
+  }
+
   globalThis.LHN_AI_PROVIDERS = Object.freeze({
+    isPanelChildFrame,
     list:Object.freeze(frozenEntries),
     panelList:panelEntries,
     ids:Object.freeze(frozenEntries.map(provider => provider.id)),

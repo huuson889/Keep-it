@@ -204,6 +204,22 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-14 | v3.5.286 | Arena.ai Agent sửa:**
+
+- AI sheet cao hết bị tràn lên khỏi mép trên màn hình (ảnh máy thật, Edge Android có thanh dưới đang hiện): chiều cao theo `vh` = màn hình khi thanh trình duyệt ẩn, nên sheet cao hơn vùng thấy bằng chiều cao thanh đó. Nay `74dvh` / `96dvh` (vùng thấy thật, `vh` giữ làm dự phòng) và `overflow:clip` (focus ô chat không cuộn được nội dung sheet). File: `js/content/keepit-bar.js` (CSS `AIS`), `manifest.json`.
+- Kiểm thử: Chromium UA Android + cảm ứng: 74% (đỉnh 238, cao 677/915), 96% (đỉnh 37, cao 878), vuốt thanh / khung chat, chạm nền tối vẫn đúng như v3.5.285. Headless không có thanh trình duyệt co giãn → phần tràn chỉ kiểm được trên máy thật.
+- Ghi chú: sheet Ghi chú (`css/content/notes.css`) vẫn dùng `vh`, chưa sửa.
+
+**2026-11-14 | v3.5.285 | Arena.ai Agent sửa:**
+
+- AI sheet (điện thoại / máy tính bảng) — người dùng báo v3.5.284 vuốt xuống không kéo được sheet, trang phía sau cuộn / kéo tải lại. Nay giống các sheet khác của Keepit:
+  - Vuốt trên thanh Nguồn / hàng AI (và hộp đăng nhập của panel): vuốt xuống → 74% rồi đóng; vuốt lên → 96%. `panel.js` chuyển cử chỉ lên trang (`KEEPIT_AI_SHEET_DRAG`), `keepit-bar.js` `AIS` đưa vào đúng sheet-kit của Ghi chú.
+  - Trong trang ChatGPT / Gemini / Claude: khung chat đang ở đầu → vuốt xuống kéo sheet; khung chat đã cuộn → cuộn lên trước; ô nhập (input/textarea/contenteditable) giữ cử chỉ của nó; vuốt lên để trang AI tự xử lý. `composer.js` gửi `KEEPIT_AI_PANEL_SHEET_DRAG` → panel → trang.
+  - Sheet mở → `overscroll-behavior-y:none` trên html/body của trang (đóng thì trả lại); `pages/ai-panel.html` cũng tắt overscroll.
+  - Sửa lỗi v3.5.284: `composer.js` / `send-flow.js` không chạy trong khung AI lồng trong sheet (trang → panel → AI), nên không có HELLO / gửi câu hỏi / báo đăng nhập. `providers.isPanelChildFrame()`: chạy khi cha là trang trên cùng (side panel, tab) hoặc cha là trang panel của extension.
+- Kiểm thử (extension thật, Chromium UA Android + cảm ứng CDP): thanh Nguồn vuốt lên → 96%, xuống 150px → 74%, xuống 260px → đóng; trong khung ChatGPT ở đầu vuốt xuống → đóng / về 74%; vuốt lên → không đổi; khung chat đã cuộn → chat cuộn, sheet đứng yên; ô nhập → sheet đứng yên; chạm tab Gemini vẫn đổi; `scrollY` trang không đổi suốt; overscroll `none` khi mở, `auto` khi đóng. Chưa thử máy thật, chưa thử Firefox.
+- File: `js/ask-ai/providers.js`, `js/ask-ai/page/composer.js`, `js/ask-ai/page/send-flow.js`, `js/ask-ai/panel/panel.js`, `pages/ai-panel.html`, `js/content/keepit-bar.js`, `manifest.json`, `docs/modules/ask-ai.md`.
+
 **2026-11-14 | v3.5.284 | Arena.ai Agent sửa:**
 
 - AI panel trên điện thoại / máy tính bảng (theo demo `Keepit-demo/ai-panel/keepit-ai-panel-demo-v1.html`): Hỏi AI mở sheet trong trang giống Ghi chú thay cho tab mới. Máy tính giữ side panel (Chromium) / sidebar (Firefox).
