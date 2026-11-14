@@ -377,6 +377,14 @@ browser.tabs.onActivated?.addListener(async ({ windowId, tabId }) => {
   aiPanelFocusedWindowId = windowId;
   // Tab mode: showing the AI panel tab itself is not a source-page switch.
   if (aiPanelTabIds.has(tabId)) return;
+  // v3.5.284: switching tabs closes the AI sheet of the previous page (its frame is removed) instead of moving it to the new page.
+  const sheetTabId = aiPanelSourceTabs.get(windowId);
+  if (aiPanelSheetTabs.has(sheetTabId) && sheetTabId !== tabId) {
+    aiPanelSheetTabs.delete(sheetTabId);
+    try { void browser.tabs.sendMessage(sheetTabId, { type:"KEEPIT_AI_SHEET", close:true }, { frameId:0 }).catch(() => {}); } catch {}
+    await trackAIPanel(windowId, null, false);
+    return;
+  }
   const wasTrackedOpen = aiPanelOpenWindows.has(windowId);
   const previousTabId = aiPanelSourceTabs.get(windowId);
   if (Number.isInteger(previousTabId) && previousTabId !== tabId) void setAIPanelPageScrollbar(previousTabId, false);
@@ -504,6 +512,9 @@ globalThis.chrome?.sidePanel?.onClosed?.addListener(async info => {
 // sidePanel.open() and it resolves, but nothing is shown, so mobile never uses it. The page link travels in ?src=
 // and is only added to the message on Send, exactly like the side panel; the tab counts as the window's open panel.
 const aiPanelTabIds = new Set();
+// v3.5.284: phone / tablet — the AI panel opens as a sheet inside the page, like Notes (js/content/keepit-bar.js AIS), instead of
+// a tab. Pages without the Keepit content script (browser pages, store pages) keep the tab. A sheet belongs to its tab.
+const aiPanelSheetTabs = new Set();
 function aiIsMobile() { return globalThis.navigator?.userAgentData?.mobile === true || /Android|Mobile/i.test(globalThis.navigator?.userAgent || ""); }
 function aiTabMode() { return aiIsMobile() || (typeof globalThis.chrome?.sidePanel?.open !== "function" && typeof globalThis.browser?.sidebarAction?.toggle !== "function"); }
 function aiPanelPageBase() { return browser.runtime.getURL("pages/ai-panel.html"); }
@@ -556,11 +567,32 @@ browser.tabs.onRemoved?.addListener((tabId, info) => { void aiPanelTabGone(tabId
 browser.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
   if (aiPanelTabIds.has(tabId) && typeof changeInfo?.url === "string" && !changeInfo.url.startsWith(aiPanelPageBase())) void aiPanelTabGone(tabId, tab?.windowId);
 });
+async function openAIPanelSheet(sourceTab, toggle) {
+  if (!aiIsMobile()) return null;
+  let tab = sourceTab;
+  if (!Number.isInteger(tab?.id)) {
+    try { tab = (await browser.tabs.query(Number.isInteger(tab?.windowId) ? { active:true, windowId:tab.windowId } : { active:true, currentWindow:true }))?.[0]; } catch { tab = null; }
+  }
+  if (!Number.isInteger(tab?.id)) return null;
+  const src = normalizeAISourceUrl(tab.url);
+  const url = aiPanelPageBase() + (src ? "?src=" + encodeURIComponent(src) : "");
+  aiPanelSheetTabs.add(tab.id);   // before the frame loads: the panel page checks it (AI_SHEET_FRAME_CHECK)
+  let res = null;
+  try { res = await browser.tabs.sendMessage(tab.id, { type:"KEEPIT_AI_SHEET", url, toggle:!!toggle }, { frameId:0 }); } catch {}
+  if (!res?.ok || !res.opened) aiPanelSheetTabs.delete(tab.id);
+  if (!res?.ok) return null;
+  const windowId = Number.isInteger(tab.windowId) ? tab.windowId : null;
+  if (windowId !== null) {
+    await trackAIPanel(windowId, tab.id, !!res.opened);
+    if (res.opened && src) await rememberAIPanelSourceUrl(windowId, src);
+  }
+  return { ok:true, browser:"sheet", opened:!!res.opened, toggled:!!toggle };
+}
 async function openAIPanel({ sender, tab, toggle = true } = {}) {
   const sourceTab = tab || sender?.tab;
   const windowId = aiPanelWindowId(sourceTab);
   const chromePanel = globalThis.chrome?.sidePanel;
-  if (aiTabMode()) return openAIPanelTab(sourceTab);
+  if (aiTabMode()) return (await openAIPanelSheet(sourceTab, toggle)) || openAIPanelTab(sourceTab);
   if (typeof chromePanel?.open === "function") {
     try {
       const alreadyOpen = aiPanelIsOpen(windowId);
@@ -989,7 +1021,7 @@ browser.commands?.onCommand.addListener((command, tab) => {
 // AI runtime messages (pages, panel and content script) handled by the background router.
 const ASK_AI_UNHANDLED = Symbol("ask-ai-unhandled");
 const ASK_AI_MESSAGE_TYPES = new Set([
-  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL", "TOGGLE_AI_PANEL"
+  "AI_PANEL_GROK_AUTH_FRAME_DETECTED", "AI_PANEL_PROVIDER_SELECTED", "AI_PANEL_CONTEXT_READY", "AI_PANEL_ROUTE_CONTEXT", "AI_PANEL_HOST_CLOSED", "AI_LINK_PREPARE", "AI_LINK_RESULT", "AI_LINK_DRAFT_READY", "OPEN_AI_PANEL", "TOGGLE_AI_PANEL", "AI_SHEET_CLOSED", "AI_SHEET_FRAME_CHECK"
 ]);
 async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_PANEL_GROK_AUTH_FRAME_DETECTED") return openGrokSignInTabFromEmbeddedAuth(message, sender);
@@ -1042,5 +1074,18 @@ async function handleAskAIMessage(message, sender) {
   if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
   // Page edge button shown while the panel is open: same toggle as Alt+X, in the sender's window.
   if (message.type === "TOGGLE_AI_PANEL") return openAIPanel({ sender, toggle:true });
+  // v3.5.284 AI sheet (phone / tablet): closed by the page (drag down, tap outside, page left)
+  if (message.type === "AI_SHEET_CLOSED") {
+    const tabId = sender?.tab?.id, windowId = sender?.tab?.windowId;
+    if (!Number.isInteger(tabId) || sender.frameId !== 0) return { ok:false };
+    aiPanelSheetTabs.delete(tabId);
+    if (Number.isInteger(windowId) && aiPanelOpenWindows.has(windowId) && [tabId, undefined].includes(aiPanelSourceTabs.get(windowId))) await trackAIPanel(windowId, tabId, false);
+    return { ok:true };
+  }
+  // the panel page shows the AI only inside Keepit's own sheet — never framed by another site
+  if (message.type === "AI_SHEET_FRAME_CHECK") {
+    const tabId = sender?.tab?.id;
+    return { ok:Number.isInteger(tabId) && aiPanelSheetTabs.has(tabId) && sender.frameId !== 0 && String(sender.url || "").startsWith(aiPanelPageBase()) };
+  }
   return ASK_AI_UNHANDLED;
 }

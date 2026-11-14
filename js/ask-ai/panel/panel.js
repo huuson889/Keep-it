@@ -502,6 +502,12 @@
   }, { once:true });
 
   void (async () => {
+    // v3.5.284: inside a page this panel runs only as Keepit's own AI sheet (phone / tablet); framed by any other page it stays empty.
+    if (window.top !== window) {
+      let allowed = false;
+      try { allowed = (await browser.runtime.sendMessage({ type:"AI_SHEET_FRAME_CHECK" }))?.ok === true; } catch {}
+      if (!allowed) { document.documentElement.replaceChildren(); return; }
+    }
     panelWindowId = await getCurrentWindowId();
     void loadUiLanguage();
     if (!isChromiumPanel) {

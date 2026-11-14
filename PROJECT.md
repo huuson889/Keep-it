@@ -204,6 +204,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-14 | v3.5.284 | Arena.ai Agent sửa:**
+
+- AI panel trên điện thoại / máy tính bảng (theo demo `Keepit-demo/ai-panel/keepit-ai-panel-demo-v1.html`): Hỏi AI mở sheet trong trang giống Ghi chú thay cho tab mới. Máy tính giữ side panel (Chromium) / sidebar (Firefox).
+  - `service.js` `openAIPanelSheet`: UA di động → gửi `KEEPIT_AI_SHEET {url, toggle}` cho khung chính của tab; trang không có content script Keepit (trang trình duyệt, cửa hàng) → vẫn mở tab như cũ. `aiPanelSheetTabs`; `AI_SHEET_CLOSED` (kéo xuống, chạm nền tối, rời trang) → `trackAIPanel(false)`; đổi tab → đóng sheet của tab trước.
+  - `keepit-bar.js` `AIS`: shadow host `keepit-ai-sheet`, kiểu kính/tay nắm/chiều cao của Ghi chú cảm ứng, sheet-kit với đúng cấu hình grow của Ghi chú (74% → kéo lên 96%, kéo xuống về 74%, kéo tiếp đóng), nền tối chạm để đóng, trang bị khoá cuộn. Bàn phím mở (visualViewport) → sheet cao hết, nằm trên bàn phím. Đóng = gỡ khung AI sau hiệu ứng; mở lại tải đúng cuộc chat của trang (mapping theo nguồn).
+  - `pages/ai-panel.html` vào `web_accessible_resources`; `panel.js`: chạy trong khung của trang chỉ khi background xác nhận đó là sheet Keepit (`AI_SHEET_FRAME_CHECK`), trang khác nhúng → trang trống.
+  - Kiểm tra (extension thật, Chromium UA Android + cảm ứng): mở 74%, kéo lên 96%, xuống 74%, kéo tiếp đóng (khung gỡ, background hết trạng thái mở), chạm nền tối đóng, trang không cuộn khi mở, toggle Alt+X/Hỏi AI, Hỏi AI văn bản chọn giữ mở, đổi tab đóng, trang lạ nhúng panel → trống. Chromium gửi cookie SameSite=Lax cho trang AI trong khung extension nằm trong trang (giữ đăng nhập); Firefox Android chưa kiểm tra.
+
 **2026-11-14 | v3.5.283 | Arena.ai Agent sửa:**
 
 - Thanh Keepit, nút Shorts trên YouTube: v3.5.282 vào `/shorts/` trống đen (lệnh Shorts trần không chọn Short nào). Nay bấm hộ đúng nút Shorts của YouTube — YouTube tự chọn 1 Short rồi mở `/shorts/<id>`, lướt được như bấm nút của YouTube:

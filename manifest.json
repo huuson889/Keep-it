@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.283",
+  "version": "3.5.284",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
@@ -206,7 +206,7 @@
       "resources": [
         "assets/icons/icon.svg",
         "assets/fonts/TwemojiCountryFlags.woff2",
-        "assets/images/web-thumbnail-lofi.webp"
+        "assets/images/web-thumbnail-lofi.webp", "pages/ai-panel.html"
       ],
       "matches": [
         "<all_urls>"
