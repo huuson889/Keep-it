@@ -3645,7 +3645,15 @@ browser.storage.onChanged.addListener((changes, area) => {
     load();
   }
 });
+// v3.5.281: Keepit bar "Yêu thích" → Highlights & Notes with the "Yêu thích" quick filter (hearted videos)
+function openFavoriteVideos(tries = 0) {
+  if (tries === 0) setDashboardView("highlights-notes");
+  const button = dashboardHighlightsNotesView?.querySelector('[data-quick-filter="favorites"]');
+  if (button && highlightsNotesViewReady) { if (!button.classList.contains("active")) button.click(); return; }
+  if (tries < 50) setTimeout(() => openFavoriteVideos(tries + 1), 100);
+}
 LHN_MESSAGING.onMessage.addListener(message => {
+  if (message?.type === "OPEN_DASHBOARD_FAVORITES") { openFavoriteVideos(); return; }
   if (message?.type === "OPEN_DASHBOARD_SETTINGS") { openDashboardSettings(); return; }
   if (message?.type === "OPEN_DASHBOARD_ACCOUNT") { openDashboardSettings(); if (!demoProfile) openProfileAuth(); return; }
   if (message?.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") { openDashboardSettings("bilingualReader"); return; }
@@ -3683,6 +3691,7 @@ load().then(() => {
   const loadCycle = dashboardViewSwitchCycle;
   restoreDashboardViewAndReveal(loadedView, loadCycle);
   initDictationView();
+  if (new URLSearchParams(location.search).get("openFavorites") === "1") openFavoriteVideos();
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

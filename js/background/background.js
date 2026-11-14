@@ -140,15 +140,17 @@ async function fetchTtsAudio(message) {
   try { return await request; }
   finally { if (ttsAudioRequests.get(key) === request) ttsAudioRequests.delete(key); }
 }
-async function openDashboard(openSettings = false, openAccount = false, settingsTab = "account") {
+// v3.5.281: favorites = Keepit bar "Yêu thích" (YouTube) → Highlights & Notes, quick filter "Yêu thích" (hearted videos)
+async function openDashboard(openSettings = false, openAccount = false, settingsTab = "account", favorites = false) {
   const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
+  const favoritesUrl = `${dashboardUrl}?openFavorites=1`;
   const settingsUrl = `${dashboardUrl}?openSettings=1${openAccount ? "&openAccount=1" : ""}${settingsTab !== "account" ? `&openSettingsTab=${encodeURIComponent(settingsTab)}` : ""}`;
   const [tabs, activeTabs] = await Promise.all([
     browser.tabs.query({}),
     browser.tabs.query({ active: true, currentWindow: true })
   ]);
   const existing = tabs.find(tab => tab.url?.split(/[?#]/, 1)[0] === dashboardUrl);
-  if (!existing) return browser.tabs.create({ url: openSettings ? settingsUrl : dashboardUrl });
+  if (!existing) return browser.tabs.create({ url: openSettings ? settingsUrl : favorites ? favoritesUrl : dashboardUrl });
   const activeTab = activeTabs[0];
   if (activeTab?.id !== existing.id) {
     await browser.tabs.update(existing.id, { active: true });
@@ -159,6 +161,10 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   if (openSettings) {
     try { await browser.tabs.sendMessage(existing.id, { type: settingsTab === "bilingualReader" ? "OPEN_DASHBOARD_BILINGUAL_SETTINGS" : openAccount ? "OPEN_DASHBOARD_ACCOUNT" : "OPEN_DASHBOARD_SETTINGS" }); }
     catch { return browser.tabs.update(existing.id, { url: settingsUrl, active: true }); }
+  }
+  if (favorites) {
+    try { await browser.tabs.sendMessage(existing.id, { type: "OPEN_DASHBOARD_FAVORITES" }); }
+    catch { return browser.tabs.update(existing.id, { url: favoritesUrl, active: true }); }
   }
   return existing;
 }
@@ -239,6 +245,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
+  if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);
   // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
   if (message.type === "OPEN_HOME") {
     if (!Number.isInteger(sender?.tab?.id)) return { ok: false };

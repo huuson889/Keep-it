@@ -526,7 +526,7 @@
   MESSAGES.en.bar_gesturesTip = "Gestures that work on this page"; MESSAGES.vi.bar_gesturesTip = "Cử chỉ dùng được trên trang này"; MESSAGES.ko.bar_gesturesTip = "이 페이지에서 쓸 수 있는 제스처";
   MESSAGES.en.bar_compact = "Compact bar"; MESSAGES.vi.bar_compact = "Gọn thanh"; MESSAGES.ko.bar_compact = "간단한 바";
   MESSAGES.en.bar_compactAuto = "Compact automatically because system text is large"; MESSAGES.vi.bar_compactAuto = "Đang tự gọn vì cỡ chữ hệ thống lớn"; MESSAGES.ko.bar_compactAuto = "시스템 글자가 커서 자동으로 간단히 표시 중";
-  MESSAGES.en.bar_compactTip = "5-button bar ({0}, Ask AI move to ☰)"; MESSAGES.vi.bar_compactTip = "Thanh 5 nút ({0}, Hỏi AI vào ☰)"; MESSAGES.ko.bar_compactTip = "5버튼 바 ({0}, AI에게 묻기는 ☰로 이동)";
+  MESSAGES.en.bar_compactTip = "5-button bar ({0} move to ☰)"; MESSAGES.vi.bar_compactTip = "Thanh 5 nút ({0} vào ☰)"; MESSAGES.ko.bar_compactTip = "5버튼 바 ({0}는 ☰로 이동)";
   MESSAGES.en.bar_compactAutoToast = "The bar is compact because system text is large"; MESSAGES.vi.bar_compactAutoToast = "Thanh đang tự gọn vì cỡ chữ hệ thống lớn"; MESSAGES.ko.bar_compactAutoToast = "시스템 글자가 커서 바가 자동으로 간단해졌습니다";
   MESSAGES.en.bar_five = "Compact bar: 5 buttons"; MESSAGES.vi.bar_five = "Thanh gọn: 5 nút"; MESSAGES.ko.bar_five = "간단한 바: 5버튼";
   MESSAGES.en.bar_seven = "Full bar: 7 buttons"; MESSAGES.vi.bar_seven = "Thanh đầy đủ: 7 nút"; MESSAGES.ko.bar_seven = "전체 바: 7버튼";
@@ -576,6 +576,12 @@
   MESSAGES.en.bar_btopOn = "Back-to-top button on — shows after scrolling past 1 screen"; MESSAGES.vi.bar_btopOn = "Đã bật nút lên đầu trang — hiện khi cuộn quá 1 màn hình"; MESSAGES.ko.bar_btopOn = "맨 위로 버튼 켬 — 한 화면 넘게 스크롤하면 표시";
   MESSAGES.en.bar_btopOff = "Back-to-top button off"; MESSAGES.vi.bar_btopOff = "Đã tắt nút lên đầu trang"; MESSAGES.ko.bar_btopOff = "맨 위로 버튼 끔";
   MESSAGES.en.bar_home = "Home"; MESSAGES.vi.bar_home = "Trang chủ"; MESSAGES.ko.bar_home = "홈";
+  MESSAGES.en.bar_shorts = "Shorts"; MESSAGES.vi.bar_shorts = "Shorts"; MESSAGES.ko.bar_shorts = "Shorts";
+  MESSAGES.en.bar_subs = "Subscriptions"; MESSAGES.vi.bar_subs = "Kênh đăng ký"; MESSAGES.ko.bar_subs = "구독";
+  MESSAGES.en.bar_sSubs = "Subs"; MESSAGES.vi.bar_sSubs = "Đăng ký"; MESSAGES.ko.bar_sSubs = "구독";
+  MESSAGES.en.bar_you = "You"; MESSAGES.vi.bar_you = "Bạn"; MESSAGES.ko.bar_you = "내 페이지";
+  MESSAGES.en.bar_fav = "Favorites"; MESSAGES.vi.bar_fav = "Yêu thích"; MESSAGES.ko.bar_fav = "즐겨찾기";
+  MESSAGES.en.bar_favTip = "Favorite videos (Dashboard)"; MESSAGES.vi.bar_favTip = "Video đã thả tim (Bảng quản lý)"; MESSAGES.ko.bar_favTip = "하트 표시한 동영상 (대시보드)";
   MESSAGES.en.bar_homeTip = "Open the Keepit home page in this tab"; MESSAGES.vi.bar_homeTip = "Mở trang chủ Keepit trong tab này"; MESSAGES.ko.bar_homeTip = "이 탭에서 Keepit 홈 열기";
   MESSAGES.en.bar_homeFailed = "Could not open the home page"; MESSAGES.vi.bar_homeFailed = "Không mở được trang chủ"; MESSAGES.ko.bar_homeFailed = "홈을 열 수 없습니다";
   MESSAGES.en.bar_hide = "Hide bar"; MESSAGES.vi.bar_hide = "Ẩn thanh"; MESSAGES.ko.bar_hide = "바 숨기기";

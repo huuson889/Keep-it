@@ -204,6 +204,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-14 | v3.5.281 | Arena.ai Agent sửa:**
+
+- Thanh Keepit chính: áp dụng demo `keepit-main-bar-demo-v5.html` (đã duyệt). Chỉ còn 2 kiểu 7 nút (điện thoại, tablet, máy tính) và 5 nút (thanh gọn); bỏ kiểu rộng 9 nút. Một nút Trang chủ = trang chủ Keepit ở mọi trang (cả YouTube).
+  - Trang thường: Trang chủ · Dịch · Đọc 🔍 Học · Hỏi AI · ☰ (5 nút: Trang chủ · Dịch 🔍 Học · ☰). Ghi chú vào ☰.
+  - Trang YouTube (cả Shorts): Trang chủ · Shorts · Yêu thích 🔍 Kênh đăng ký · Bạn · ☰ (5 nút: Trang chủ · Shorts 🔍 Bạn · ☰). Video YouTube: Trang chủ · Shorts · Video 🔍 Học · Bạn · ☰ (5 nút: Trang chủ · Video 🔍 Học · ☰). Shorts / Kênh đăng ký / Bạn là link thường tới trang YouTube; trên YouTube thanh Keepit không nhường thanh dưới của YouTube (không ẩn / sửa thanh YouTube).
+  - Yêu thích mở Bảng quản lý → Highlight & Ghi chú, lọc nhanh "Yêu thích" (video đã thả tim, `lhnFavoriteVideos`): `background.js` `OPEN_DASHBOARD_FAVORITES` (tab Bảng quản lý có sẵn → nhắn tin, không có → `?openFavorites=1`), `dashboard.js` `openFavoriteVideos`.
+  - Tim bo tròn đáy. Ẩn / hiện kiểu Dock macOS: cuộn xuống 24px cả thanh trượt ẩn 0.5s (không đi theo tay 1:1), cuộn lên 24px / về đầu trang trượt hiện; ẩn hết → vạch tím ở mép dưới (máy tính rê tới 0.3s = hiện, rời 0.25s = ẩn; cảm ứng chạm / vuốt lên vạch = hiện). Ẩn thanh (☰) cũng trượt 0.5s.
+  - Hướng dẫn tay vuốt thanh (cảm ứng): tay 69px giữa 2 nút bên trái 🔍 kéo thanh sang phải (lùi) rồi trái (tới) như vuốt thật; tối đa 3 lần, vuốt thật 1 lần là thôi, chạm = dừng; lưu số lần trong `lhnBottomBar.navGuide`.
+  - Tablet dọc: thanh ôm gọn các nút (nút 72px), không dư khoảng trống 2 bên.
+- Nhãn mới en/vi/ko: `bar_shorts`, `bar_subs`, `bar_sSubs`, `bar_you`, `bar_fav`, `bar_favTip`; `bar_compactTip` đổi.
+- Kiểm thử: các bản vá demo áp đúng thứ tự (39/39), file thật khớp demo trừ guard trang chủ; Chromium headless có extension thật: thanh mới, cuộn ẩn, Yêu thích mở đúng Bảng quản lý (tab mới và tab có sẵn), không lỗi. Chưa thử máy thật.
+- File: `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js`, `js/background/background.js`, `js/dashboard/dashboard.js`, `DATA-INVENTORY.md`, `manifest.json`.
+
 **2026-11-13 | v3.5.280 | Arena.ai Agent sửa:**
 
 - Overlay: áp dụng demo `keepit-overlay-tabs-demo-v15.html` (đã duyệt), bỏ nút so sánh 90/100% chỉ có trong demo.

@@ -78,6 +78,9 @@
   eyeoff:'<path d="m2 2 20 20"/><path d="M6.7 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7c1.9 0 3.6-.6 5-1.5"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 6.4 0 10 7 10 7a17 17 0 0 1-2.2 3.2"/>',
   pin:'<path d="M12 17v5"/><path d="M9 10.8V4h6v6.8l3 3.2v2H6v-2z"/>',
   x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  shorts:'<path d="M14.3 2.6 7.6 6.2a3.9 3.9 0 0 0 .2 6.9l.9.5-1.2.6a3.9 3.9 0 0 0 3.6 6.9l6.7-3.6a3.9 3.9 0 0 0-.2-6.9l-.9-.5 1.2-.6a3.9 3.9 0 0 0-3.6-6.9z"/><path d="m10.4 9.6 4 2.4-4 2.4z"/>',
+  subs:'<rect x="2" y="8" width="20" height="13" rx="2.5"/><path d="M5 5h14M7.5 2h9"/><path d="m10 11.5 4.5 3-4.5 3z"/>',
+  heart:'<path d="M12 20.6c-.42 0-.83-.15-1.15-.44C6.3 15.9 2 12.4 2 8.5A5.5 5.5 0 0 1 7.5 3c1.76 0 3.2.75 4.5 2.25C13.3 3.75 14.74 3 16.5 3A5.5 5.5 0 0 1 22 8.5c0 3.9-4.3 7.4-8.85 11.66-.32.29-.73.44-1.15.44z"/>',
   home:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   restore:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
@@ -128,7 +131,7 @@
   const S = {
     hidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
-    kbd:false, vfs:false, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
+    kbd:false, vfs:false, navGuide:0, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
@@ -194,7 +197,7 @@
   function persist() {
     clearTimeout(storeTimer);
     storeTimer = setTimeout(() => {
-      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent, offPos:S.offPos } }).catch(() => {});
+      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent, offPos:S.offPos, navGuide:S.navGuide } }).catch(() => {});
     }, 120);
   }
   function haptic() { if (isApk()) navigator.vibrate?.(12); }
@@ -213,7 +216,7 @@
   <div class="clear" id="clear"></div>
   <div class="pop" id="pop"></div>
   <div class="coach" id="coach" role="dialog"></div>
-  <div class="bbar" id="bar" role="toolbar" aria-label="Keepit"><div class="swi l" id="swl">${ic("left")}</div><div class="swi r" id="swr">${ic("right")}</div><div class="bin" id="bin"></div></div>
+  <div class="bbar" id="bar" role="toolbar" aria-label="Keepit"><div class="swi l" id="swl">${ic("left")}</div><div class="swi r" id="swr">${ic("right")}</div><div class="bin" id="bin"></div><div class="bguide" id="bguide">${ic("hand")}</div></div>
   <div class="hzone" id="hzone"><i></i></div>
   <button class="btop" id="btop" type="button">${ic("totop")}</button>
   <div class="iscrim" id="iscrim"></div>
@@ -234,30 +237,36 @@
   }
 
   // ---------- bar ----------
-  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more" };
-  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu" };
-  const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation" };
+  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more", shorts:"shorts", subs:"subs", you:"you", fav:"fav" };
+  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", shorts:"shorts", subs:"subs", you:"user", fav:"heart" };
+  const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation", subs:"sSubs" };
   const tipFor = id => ({
     home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
-    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`
+    notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`,
+    shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip")
   }[id]);
-  const barPrio = () => isVideoPage() ? ["overlay", "dictation", "page"] : ["page", "reader", "overlay"];
-  const spareTool = () => isVideoPage() ? "reader" : "dictation";
-  function navLayout() {
-    const Pr = barPrio();
-    // v3.5.222: Trang chủ = always the first button of the bar (was: ☰ footer); v3.5.223: same number of buttons as before —
-    // the last tool of the left group moves to ☰ (wide: Dịch đoạn · phone: barPrio[2] · compact: barPrio[1]), see hiddenTools()
-    return isWide() ? (isVideoPage() ? [["home", "overlay", "dictation", "page"], ["reader", "notes", "ai", "more"]] : [["home", "page", "reader", "overlay"], ["dictation", "notes", "ai", "more"]])
-      : isFive() ? [["home", Pr[0]], ["notes", "more"]] : [["home", Pr[0], Pr[1]], ["notes", "ai", "more"]];
-  }
+  // Thanh chính: 3 kiểu trang (trang thường · trang YouTube · video YouTube) × 2 kiểu thanh (7 nút mọi màn hình · 5 nút = Gọn thanh).
+  // Trang chủ luôn là trang chủ Keepit. Shorts / Kênh đăng ký / Bạn = đường dẫn tới trang của YouTube (không ẩn thanh của YouTube).
+  // Yêu thích = Bảng quản lý → Highlights & Notes → Yêu thích. Công cụ không có trên thanh nằm trong ☰ (hiddenTools).
+  const isYouTube = () => /^(www\.|m\.)?youtube\.com$/.test(location.hostname);
+  const pageKind = () => isVideoPage() ? "watch" : isYouTube() ? "yt" : "web";
+  const YT_NAV = { shorts:"/shorts", subs:"/feed/subscriptions", you:"/feed/you" };
+  const ytOn = id => !!YT_NAV[id] && isYouTube() && location.pathname.startsWith(YT_NAV[id]);
+  const BARS = {
+    web:[[["home", "page", "reader"], ["dictation", "ai", "more"]], [["home", "page"], ["dictation", "more"]]],
+    yt:[[["home", "shorts", "fav"], ["subs", "you", "more"]], [["home", "shorts"], ["you", "more"]]],
+    watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]]
+  };
+  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
+  const navLayout = () => BARS[pageKind()][isFive() ? 1 : 0];
   function renderBar() {
     if (!root) return;
     const screen = $("screen");
-    screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland());
+    screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland()); screen.classList.toggle("tabp", isTouch() && !isWide() && !isPland() && !isSmall());
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
-    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc((isSmall() && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
+    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
@@ -285,7 +294,7 @@
     screen.classList.toggle("notesopen", S.notesOn && isTouch()); syncScrollLock();
     screen.classList.toggle("picking", picking);
     screen.style.setProperty("--yb", "0px");   // v3.5.161: folded = the one line at the bottom edge (never lifted above a page bar)
-    screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px");
+    screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px"); screen.style.setProperty("--bw", bar.offsetWidth + "px");
     screen.style.setProperty("--bh", bar.offsetHeight + "px");
     updBtop(); applyOff(false);
   }
@@ -301,6 +310,7 @@
     S.scrollHide = o >= max;
     if (anim) { bar.classList.add("snap"); b?.classList.add("snap"); clearTimeout(snapT); snapT = setTimeout(() => { bar.classList.remove("snap"); b?.classList.remove("snap"); }, 280); }
     bar.style.translate = o ? `0 ${o}px` : ""; bar.classList.toggle("shid", S.scrollHide);
+    $("screen").classList.toggle("shid", S.scrollHide && !S.hidden && !S.yieldBar && !S.kbd && !S.vfs);   // vuốt xuống ẩn hẳn thanh → vạch tím
     if (b) b.style.translate = "";   // v3.5.240: nút về đầu trang luôn cách đáy 110px, không trượt theo thanh
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
@@ -319,7 +329,7 @@
   function checkOverlap() {
     if (!mounted) return;
     let h = 0;
-    if (!S.siteOff && !S.extYield) {
+    if (!S.siteOff && !S.extYield && !isYouTube()) {   // YouTube: thanh Keepit đã có nút của YouTube → không thu gọn nhường thanh của YouTube, mà phủ lên nó
       const H = innerHeight, W = innerWidth, seen = new Set();
       for (const x of [W * 0.12, W * 0.5, W * 0.88]) {
         for (const el of document.elementsFromPoint(x, H - 3).slice(0, 4)) {
@@ -344,13 +354,17 @@
   // scroll by dy at y: follow it 1:1; near the top always whole; stops half-way → after the finger is up and scrolling
   // stopped (160ms) it glides on in the direction of the last scroll (v3.5.187; was: to the nearer end)
   let settleT = 0, touching = false, lastDir = 0;
+  // như Dock macOS: cả thanh trượt ẩn / hiện 0.5s ease-in-out (không đi theo tay 1:1) — cuộn xuống 24px = ẩn, cuộn lên 24px
+  // hoặc về đầu trang = hiện; khi ẩn còn vạch tím ở mép dưới (máy tính rê tới mép, cảm ứng chạm / vuốt lên vạch = hiện)
+  let dockAcc = 0, dockT = 0;
+  function dockAnim() { const bar = $("bar"); if (!bar) return; bar.classList.add("dock"); clearTimeout(dockT); dockT = setTimeout(() => bar.classList.remove("dock"), 520); }
   function scrollOff(dy, y) {
-    const top = y <= (isPland() ? 16 : 40), was = S.sOff; lastDir = dy > 0 ? 1 : -1;
+    const top = y <= (isPland() ? 16 : 40), was = S.sOff, dir = dy > 0 ? 1 : -1;
+    if (dir !== lastDir) dockAcc = 0; lastDir = dir; dockAcc += Math.abs(dy) * Z();
     if (top) S.sOff = 0;
     else if (dy > 0 && (anyOpen() || Date.now() < showHold)) return;
-    else S.sOff = clamp(S.sOff + dy * Z(), 0, offMax());
-    if (S.sOff !== was) applyOff(top && was > 0);
-    clearTimeout(settleT); settleT = setTimeout(settleOff, 160);
+    else if (dockAcc >= 24) S.sOff = dir > 0 ? offMax() : 0;
+    if (S.sOff !== was) { dockAnim(); applyOff(false); }
   }
   function settleOff() {
     if (touching) { settleT = setTimeout(settleOff, 160); return; }
@@ -361,7 +375,8 @@
   // scroll restore right after (overlay close) must not hide it again → 800ms hold
   let showHold = 0;
   function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; }
-  function setPeek(on) { S.peek = on; syncBarVis(); }
+  // ẩn / hiện tạm như Dock macOS: cả thanh trượt 0.5s ease-in-out (class dock trong lúc chạy)
+  function setPeek(on) { if (on !== S.peek) dockAnim(); S.peek = on; syncBarVis(); }
   function setHidden(on) { if (!on) barBack(); S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
   let toastT = 0;
   function toast(text, undo) {
@@ -405,6 +420,8 @@
     if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
     closePop();
     if (id === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
+    if (YT_NAV[id]) { closeSheet(); location.assign(YT_NAV[id]); return; }
+    if (id === "fav") { closeSheet(); send("OPEN_DASHBOARD_FAVORITES"); return; }
     if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
@@ -525,17 +542,30 @@
       swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
       bar.classList.remove("swiping"); bin.style.transform = "";
       $$(".swi").forEach(x => { x.style.opacity = 0; x.style.transform = "scale(.5)"; x.classList.remove("go", "no"); });
-      if (Math.abs(s.dx) >= bar.offsetWidth * 0.3 && e.type === "pointerup") { const back = s.dx > 0; if (go(back)) haptic(); else toast(noGoText(back)); }
+      if (Math.abs(s.dx) >= bar.offsetWidth * 0.3 && e.type === "pointerup") { const back = s.dx > 0; if (go(back)) { haptic(); if (S.navGuide < 3) { S.navGuide = 3; persist(); } } else toast(noGoText(back)); }
     };
     bar.addEventListener("pointerup", endSwipe); bar.addEventListener("pointercancel", endSwipe);
     // release after a long-press: swallow exactly one click (it can land on the button or on the overlay that just opened)
     $("screen").addEventListener("click", e => { if (lpEat && Date.now() < lpEat) { lpEat = 0; e.stopPropagation(); e.preventDefault(); } }, true);
-    // hidden bar: desktop hover the line 0.3 s → show, leave 0.6 s → hide · touch tap the line
+    // thanh ẩn (Ẩn thanh / nhường thanh của trang / cuộn xuống), như Dock macOS: máy tính rê chuột tới mép dưới 0.3s → hiện,
+    // rời thanh 0.25s → ẩn · cảm ứng: chạm vạch hoặc vuốt lên từ vạch
     let peekT = 0;
-    wireBar.peekLater = () => { clearTimeout(peekT); peekT = setTimeout(() => { if (!anyOpen() && !bar.matches(":hover")) setPeek(false); }, 600); };
-    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(S.hidden || S.yieldBar)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
+    const mouse = { x:-1, y:-1 };
+    // chuột còn trong vùng thanh khi đã hiện hẳn (lúc thanh trượt lên dưới con trỏ đứng yên, :hover chưa cập nhật); rời vùng = ẩn
+    const overBar = () => { const r = bar.getBoundingClientRect(); return mouse.y >= innerHeight - r.height - 8 && mouse.x >= r.left && mouse.x <= r.right; };
+    let leaveArmed = false;
+    document.addEventListener("mousemove", e => {
+      mouse.x = e.clientX; mouse.y = e.clientY;
+      if (S.peek && isDesk() && !overBar() && !bar.matches(":hover")) { if (!leaveArmed) { leaveArmed = true; wireBar.peekLater(); } } else leaveArmed = false;
+    }, { capture:true, passive:true });
+    wireBar.peekLater = () => { clearTimeout(peekT); peekT = setTimeout(() => { leaveArmed = false; if (!anyOpen() && !bar.matches(":hover") && !overBar()) setPeek(false); }, 250); };
+    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(S.hidden || S.yieldBar || S.scrollHide)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
     $("hzone").addEventListener("mouseleave", () => { if (!isDesk()) return; clearTimeout(peekT); if (S.peek) wireBar.peekLater(); });
-    $("hzone").addEventListener("click", () => { if ((S.hidden || S.yieldBar) && isTouch()) setPeek(true); });
+    const hzAct = () => { if ((S.hidden || S.yieldBar) && isTouch()) setPeek(true); else if (S.scrollHide) { S.sOff = 0; dockAnim(); applyOff(false); } };
+    let hzY = null;
+    $("hzone").addEventListener("click", hzAct);
+    $("hzone").addEventListener("pointerdown", e => { hzY = isTouch() ? e.clientY : null; });
+    $("hzone").addEventListener("pointermove", e => { if (hzY !== null && (hzY - e.clientY) * Z() > 12) { hzY = null; hzAct(); } });
     bar.addEventListener("mouseenter", () => { if (isDesk() && S.peek) clearTimeout(peekT); });
     bar.addEventListener("mouseleave", () => { if (isDesk() && S.peek) wireBar.peekLater(); });
     wireOffDot();
@@ -564,11 +594,11 @@
   const colorHex = k => globalThis.LHN_CONFIG?.HIGHLIGHT_COLORS?.[k] || DEMO_COLORS[k];
   const curColor = () => globalThis.LHN_CONFIG?.normalizeColor?.(settings.defaultHighlightColor) || settings.defaultHighlightColor || "yellow";
   const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z") });
-  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"] };
+  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(navLayout().flat()); return [...new Set([...barPrio(), "ai", "block", spareTool()])].filter(id => !on.has(id)).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id)).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -608,7 +638,7 @@
       panel.querySelector("#zr").addEventListener("input", ev => { setZoom(+ev.target.value); zoomPaneSync(); });
       zoomPaneSync(); return;
     }
-    const compactTip = S.autoFive ? t("compactAuto") : t("compactTip", t(NAVTILE[barPrio()[1]][1]));
+    const [B7, B5] = BARS[pageKind()], compactTip = S.autoFive ? t("compactAuto") : t("compactTip", B7.flat().filter(id => !B5.flat().includes(id)).map(id => t(LABEL[id])).join(", "));
     // v3.5.179: Keepit for Android (LHN_ANDROID_UI) = the demo v12 ☰ (Công cụ · Trang này · Khi chọn chữ · Màu · Trình đọc ·
     // Giao diện + browser tiles); the browser keeps the v3.5.174 ☰
     const A = AUI(), home = onHome(), marked = !home && !!A?.isMarked?.(), zoom = Number(A?.zoomValue?.()) || 100;
@@ -861,7 +891,43 @@
   }
   function hideCoach() { clearTimeout(coachT); $("coach")?.classList.remove("on"); }
   function coachDone() { if (!S.coachSeen) { S.coachSeen = true; persist(); } hideCoach(); }
-  function scheduleCoach() { hideCoach(); if (isTouch() && !S.coachSeen && S.introSeen && !S.introOn) coachT = setTimeout(() => { if (!anyOpen()) showCoach(); }, 700); }
+  function scheduleCoach() { hideCoach(); if (isTouch() && !S.coachSeen && S.introSeen && !S.introOn) coachT = setTimeout(() => { if (!anyOpen()) showCoach(); }, 700); else scheduleNavGuide(); }
+  // Hướng dẫn vuốt thanh (cảm ứng): bàn tay kéo thanh sang phải (lùi trang) rồi sang trái (tới trang), cùng hiệu ứng khi vuốt thật
+  // (thanh dịch theo tay, mũi tên lớn dần rồi tô màu). Tối đa 3 lần mở trang; vuốt thanh thật 1 lần là thôi; chạm bất kỳ đâu = dừng.
+  let navGuideT = 0, navGuideRaf = 0;
+  function scheduleNavGuide() {
+    clearTimeout(navGuideT);
+    if (!isTouch() || !S.gest.nav || S.navGuide >= 3) return;
+    navGuideT = setTimeout(() => {
+      if (!mounted || S.hidden || S.yieldBar || S.sOff || S.kbd || S.vfs || S.siteOff || S.extYield || S.introOn || anyOpen() || $("coach").classList.contains("on") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      S.navGuide++; persist(); playNavGuide();
+    }, 1800);
+  }
+  function playNavGuide() {
+    const bar = $("bar"), bin = $("bin"), g = $("bguide"), L = $("swl"), R = $("swr"), need = bar.offsetWidth * 0.3, k = 0.35;
+    const ease = x => x < .5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
+    const K = [[0, 0], [300, 0], [1000, need], [1300, need], [1600, 0], [1800, 0], [2500, -need], [2800, -need], [3100, 0], [3400, 0]];   // [ms, dx]
+    const dxAt = t => { for (let i = 1; i < K.length; i++) if (t <= K[i][0]) { const [t0, a] = K[i - 1], [t1, b] = K[i]; return a + (b - a) * ease((t - t0) / (t1 - t0)); } return 0; };
+    let start = 0;
+    const stop = () => {
+      cancelAnimationFrame(navGuideRaf); removeEventListener("pointerdown", stop, true);
+      bar.classList.remove("swiping"); bin.style.transform = ""; g.classList.remove("on", "press"); g.style.translate = "";
+      [L, R].forEach(x => { x.style.opacity = 0; x.style.transform = "scale(.5)"; x.classList.remove("go", "no"); });
+    };
+    const frame = now => {
+      start ||= now; const t = now - start;
+      if (t >= 3400 || S.sOff || anyOpen()) return stop();
+      const dx = dxAt(t), p = Math.min(1, Math.abs(dx) / need), back = dx > 0, el = back ? L : R, other = back ? R : L;
+      bin.style.transform = `translateX(${dx * k}px)`; g.style.translate = `${dx * k}px 0`; g.classList.toggle("press", t > 250 && t < 3150);
+      other.style.opacity = 0; el.style.opacity = p; el.style.transform = `scale(${0.5 + 0.5 * p})`; el.classList.toggle("go", p >= 1);
+      navGuideRaf = requestAnimationFrame(frame);
+    };
+    // tay đặt giữa 2 nút ngay bên trái 🔍 (vd. Shorts | Yêu thích; thanh 5 nút: Trang chủ | Shorts)
+    const all = [...bin.querySelectorAll("[data-nav]")], si = all.findIndex(x => x.dataset.nav === "search"), rb = bar.getBoundingClientRect();
+    const na = all[Math.max(0, si - 2)], nc = all[si - 1];
+    if (na && nc) { const ra = na.getBoundingClientRect(), rc = nc.getBoundingClientRect(); g.style.left = (((ra.left + ra.right) / 2 + (rc.left + rc.right) / 2) / 2 - rb.left) / rb.width * 100 + "%"; g.style.top = "50%"; }
+    bar.classList.add("swiping"); g.classList.add("on"); addEventListener("pointerdown", stop, true); navGuideRaf = requestAnimationFrame(frame);
+  }
 
   // ---------- v8: first-run intro (flag touchBarIntroSeen in storage.local) ----------
   function introHTML() {
@@ -1250,7 +1316,7 @@
   }
 
   let ticker = 0, bodyWatch = null, lastLayout = "";
-  const layoutKey = () => [isTouch(), isWide(), isPland(), isSmall(), isVideoPage(), langCode(), isDark()].join("|");
+  const layoutKey = () => [isTouch(), isWide(), isPland(), isSmall(), pageKind(), Object.keys(YT_NAV).find(ytOn) || "", langCode(), isDark()].join("|");
   function relayout(force) {
     if (!mounted) return;
     const key = layoutKey(); if (!force && key === lastLayout) { syncBarVis(); return; }
@@ -1294,6 +1360,7 @@
       S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true; S.offPos = b.offPos && typeof b.offPos.y === "number" ? { side:b.offPos.side === "r" ? "r" : "l", y:clamp(b.offPos.y, 0, 1) } : null; placeOffDot();
       S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
       S.navOff = b.navOff && typeof b.navOff === "object" ? { ...b.navOff } : {};
+      S.navGuide = Number(b.navGuide) || 0;
       S.recent = Array.isArray(b.recent) ? b.recent.filter(r => r && typeof r.q === "string").slice(0, 6) : [];
       S.introSeen = data[INTRO_KEY] === true;
     } catch {}
