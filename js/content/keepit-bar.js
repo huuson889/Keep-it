@@ -418,17 +418,23 @@
   // v3.5.282: YouTube is a one-page app — Shorts / Kênh đăng ký / Bạn go there the way YouTube's own buttons do (only the
   // content changes, the left column stays, no black reload): m.youtube = a link click inside the app (YouTube takes it; not
   // taken → the browser simply opens the link); www = background runs YouTube's own "yt-navigate" in the page (world MAIN),
-  // not started within 1 s → plain page load as before
+  // not started within 3 s → plain page load as before
   function ytGo(path) {
     const ytm = document.querySelector("ytm-app");
-    if (ytm) { const a = document.createElement("a"); a.href = path; a.hidden = true; ytm.appendChild(a); a.click(); a.remove(); return; }
+    if (ytm) {
+      // v3.5.283: Shorts = YouTube's own bottom-bar tab when it is there (YouTube picks a Short → /shorts/<id>), else a link click
+      const own = path === "/shorts" && document.querySelector(".pivot-shorts");
+      if (own) { own.click(); return; }
+      const a = document.createElement("a"); a.href = path; a.hidden = true; ytm.appendChild(a); a.click(); a.remove(); return;
+    }
     if (!document.querySelector("ytd-app")) { location.assign(path); return; }
+    // YouTube fires yt-navigate-start on its app (no bubbling to document → capture); Shorts first asks YouTube for a Short (>1 s)
     let started = false;
-    const on = () => { started = true; };
-    document.addEventListener("yt-navigate-start", on, { once:true });
+    const from = location.pathname, on = () => { started = true; }, off = () => document.removeEventListener("yt-navigate-start", on, true);
+    document.addEventListener("yt-navigate-start", on, true);
     send("YT_SPA_NAV", { path }).then(r => {
-      if (!r?.ok) { document.removeEventListener("yt-navigate-start", on); location.assign(path); return; }
-      setTimeout(() => { document.removeEventListener("yt-navigate-start", on); if (!started && !location.pathname.startsWith(path)) location.assign(path); }, 1000);
+      if (!r?.ok) { off(); location.assign(path); return; }
+      setTimeout(() => { off(); if (!started && location.pathname === from) location.assign(path); }, 3000);
     });
   }
   function doNav(id, b) {

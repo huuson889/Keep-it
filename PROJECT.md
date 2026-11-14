@@ -204,6 +204,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-14 | v3.5.283 | Arena.ai Agent sửa:**
+
+- Thanh Keepit, nút Shorts trên YouTube: v3.5.282 vào `/shorts/` trống đen (lệnh Shorts trần không chọn Short nào). Nay bấm hộ đúng nút Shorts của YouTube — YouTube tự chọn 1 Short rồi mở `/shorts/<id>`, lướt được như bấm nút của YouTube:
+  - www.youtube.com (`background.js` `ytNavigateInPage`, world MAIN): có mục cùng địa chỉ ở cột trái / cột thu gọn → click mục đó (cả Kênh đăng ký, Bạn); trang video chưa có cột trái → `ytd-app.renderGuide = true` (YouTube dựng cột trái, vẫn đóng) rồi click mục Shorts; 3 giây không có → tải `/shorts` như cũ. Kênh đăng ký / Bạn khi không có cột trái vẫn dùng `yt-navigate` (đã chạy đúng).
+  - m.youtube.com: có tab Shorts ở thanh dưới của YouTube → click tab đó; không có (trang video) → link như cũ.
+  - Nội dung: chờ `yt-navigate-start` bằng capture (YouTube không cho sự kiện nổi lên document), dự phòng sau 3 giây nếu vẫn đứng ở trang cũ (Shorts cần >1 giây để YouTube chọn Short).
+- Kiểm thử: Chromium headless có extension thật trên YouTube thật — www (trang chủ, Thịnh hành, trang video → Shorts mở `/shorts/<id>`, không tải lại; Kênh đăng ký, Bạn vẫn đúng), m.youtube (trang chủ → `/shorts/<id>`; trang video → Short phát; Bạn, Kênh đăng ký đúng). Không lỗi. Chưa thử máy thật.
+- File: `js/background/background.js`, `js/content/keepit-bar.js`, `manifest.json`.
+
 **2026-11-14 | v3.5.282 | Arena.ai Agent sửa:**
 
 - Thanh Keepit trên YouTube: Shorts / Kênh đăng ký / Bạn chuyển trang như nút của YouTube (chỉ đổi phần nội dung, cột trái đứng yên, không tải lại đen màn hình). m.youtube: bấm một link ẩn trong `ytm-app` (YouTube tự nhận; nếu không thì trình duyệt mở link như thường). www.youtube.com: `background.js` `YT_SPA_NAV` → `scripting.executeScript` world MAIN chạy `ytNavigateInPage` — dùng endpoint của mục cùng địa chỉ ở cột trái / cột thu gọn nếu có, không thì endpoint dựng sẵn (FEsubscriptions, FElibrary "you", Shorts seedless) và phát `yt-navigate` của YouTube; 1 giây không bắt đầu chuyển trang → tải trang như cũ. Không thêm quyền, không gửi dữ liệu đi đâu, không sửa giao diện YouTube. Nút sáng theo trang ngay khi YouTube xong (`yt-navigate-finish`).

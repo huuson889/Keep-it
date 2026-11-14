@@ -184,16 +184,25 @@ function ytNavigateInPage(path) {
   if (!app) return false;
   const urlOf = ep => ep?.commandMetadata?.webCommandMetadata?.url || "";
   const same = url => url === path || url.startsWith(`${path}/`);
-  let endpoint = null;
-  for (const el of document.querySelectorAll("ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer")) {
-    const ep = el.data?.navigationEndpoint || el.data?.serviceEndpoint;
-    if (ep && same(urlOf(ep))) { endpoint = ep; break; }
+  const entry = () => [...document.querySelectorAll("ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer")]
+    .find(el => same(urlOf(el.data?.navigationEndpoint || el.data?.serviceEndpoint)) && el.querySelector("a"));
+  // v3.5.283: YouTube's own left-column entry when it is there — a click = exactly what YouTube does (Shorts: YouTube first picks
+  // a Short, then opens /shorts/<id>; the bare Shorts endpoint alone gives an empty black /shorts/)
+  const hit = entry();
+  if (hit) { hit.querySelector("a").click(); return true; }
+  if (path === "/shorts") {
+    // Shorts with no left column on the page (video page): let YouTube build its left column (stays closed), then click its entry
+    app.renderGuide = true;
+    return new Promise(resolve => {
+      let n = 0;
+      const tick = () => { const el = entry(); if (el) { el.querySelector("a").click(); resolve(true); } else if (++n > 30) resolve(false); else setTimeout(tick, 100); };
+      tick();
+    });
   }
-  const meta = (url, webPageType, rootVe, browse) => ({ webCommandMetadata: { url, webPageType, rootVe, ...(browse ? { apiUrl: "/youtubei/v1/browse" } : {}) } });
-  endpoint ||= {
-    "/feed/subscriptions": { commandMetadata: meta("/feed/subscriptions", "WEB_PAGE_TYPE_BROWSE", 96368, true), browseEndpoint: { browseId: "FEsubscriptions" } },
-    "/feed/you": { commandMetadata: meta("/feed/you", "WEB_PAGE_TYPE_BROWSE", 6827, true), browseEndpoint: { browseId: "FElibrary", params: "KgN5b3U%3D" } },
-    "/shorts": { commandMetadata: meta("/shorts/", "WEB_PAGE_TYPE_SHORTS", 37414, false), reelWatchEndpoint: {} }
+  const meta = (url, rootVe) => ({ webCommandMetadata: { url, webPageType: "WEB_PAGE_TYPE_BROWSE", rootVe, apiUrl: "/youtubei/v1/browse" } });
+  const endpoint = {
+    "/feed/subscriptions": { commandMetadata: meta("/feed/subscriptions", 96368), browseEndpoint: { browseId: "FEsubscriptions" } },
+    "/feed/you": { commandMetadata: meta("/feed/you", 6827), browseEndpoint: { browseId: "FElibrary", params: "KgN5b3U%3D" } }
   }[path];
   if (!endpoint) return false;
   app.dispatchEvent(new CustomEvent("yt-navigate", { bubbles: true, composed: true, detail: { endpoint } }));
