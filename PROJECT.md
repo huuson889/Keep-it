@@ -204,6 +204,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-14 | v3.5.282 | Arena.ai Agent sửa:**
+
+- Thanh Keepit trên YouTube: Shorts / Kênh đăng ký / Bạn chuyển trang như nút của YouTube (chỉ đổi phần nội dung, cột trái đứng yên, không tải lại đen màn hình). m.youtube: bấm một link ẩn trong `ytm-app` (YouTube tự nhận; nếu không thì trình duyệt mở link như thường). www.youtube.com: `background.js` `YT_SPA_NAV` → `scripting.executeScript` world MAIN chạy `ytNavigateInPage` — dùng endpoint của mục cùng địa chỉ ở cột trái / cột thu gọn nếu có, không thì endpoint dựng sẵn (FEsubscriptions, FElibrary "you", Shorts seedless) và phát `yt-navigate` của YouTube; 1 giây không bắt đầu chuyển trang → tải trang như cũ. Không thêm quyền, không gửi dữ liệu đi đâu, không sửa giao diện YouTube. Nút sáng theo trang ngay khi YouTube xong (`yt-navigate-finish`).
+- Yêu thích → Bảng quản lý: sau khi bật lọc "Yêu thích", cuộn thẳng tới thanh tìm / lọc ngay dưới thanh trên (tab mới: nhảy ngay; tab có sẵn: cuộn mượt) thay vì đứng ở đầu trang Highlight & Ghi chú.
+- Kiểm thử: Chromium headless có extension thật trên YouTube thật — www (trang chủ → Kênh đăng ký; trang video → Shorts, Bạn) và m.youtube (điện thoại) đều chuyển trang không tải lại, nút đang mở sáng đúng; Bảng quản lý mở đúng Yêu thích và cuộn tới danh sách (tab mới, tab có sẵn). Không lỗi. Chưa thử máy thật.
+- File: `js/content/keepit-bar.js`, `js/background/background.js`, `js/dashboard/dashboard.js`, `manifest.json`.
+
 **2026-11-14 | v3.5.281 | Arena.ai Agent sửa:**
 
 - Thanh Keepit chính: áp dụng demo `keepit-main-bar-demo-v5.html` (đã duyệt). Chỉ còn 2 kiểu 7 nút (điện thoại, tablet, máy tính) và 5 nút (thanh gọn); bỏ kiểu rộng 9 nút. Một nút Trang chủ = trang chủ Keepit ở mọi trang (cả YouTube).

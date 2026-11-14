@@ -3646,11 +3646,23 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
 });
 // v3.5.281: Keepit bar "Yêu thích" → Highlights & Notes with the "Yêu thích" quick filter (hearted videos)
-function openFavoriteVideos(tries = 0) {
+// v3.5.282: then straight to the list — the search / filter bar (with "Yêu thích" on) right under the top bar
+function openFavoriteVideos(tries = 0, smooth = true) {
   if (tries === 0) setDashboardView("highlights-notes");
   const button = dashboardHighlightsNotesView?.querySelector('[data-quick-filter="favorites"]');
-  if (button && highlightsNotesViewReady) { if (!button.classList.contains("active")) button.click(); return; }
-  if (tries < 50) setTimeout(() => openFavoriteVideos(tries + 1), 100);
+  if (button && highlightsNotesViewReady) { if (!button.classList.contains("active")) button.click(); scrollToFavoriteVideos(smooth); return; }
+  if (tries < 50) setTimeout(() => openFavoriteVideos(tries + 1, smooth), 100);
+}
+function scrollToFavoriteVideos(smooth, tries = 0) {
+  if (dashboardScrollRestoring && tries < 60) { requestAnimationFrame(() => scrollToFavoriteVideos(smooth, tries + 1)); return; }
+  const target = dashboardHighlightsNotesView.querySelector(".demo-library-toolbar");
+  if (!target || !dashboardScroller) return;
+  const box = dashboardScroller.getBoundingClientRect();
+  let stuck = null;   // the top bar stays on screen through its sticky portal
+  for (let n = dashboardSharedTopbar; n && n !== dashboardScroller && !stuck; n = n.parentElement) if (/sticky|fixed/.test(getComputedStyle(n).position)) stuck = n;
+  const cover = stuck ? Math.max(0, dashboardSharedTopbar.getBoundingClientRect().bottom - box.top) : 0;
+  const y = dashboardScroller.scrollTop + target.getBoundingClientRect().top - box.top;
+  dashboardScroller.scrollTo({ top: Math.max(0, y - cover - 12), behavior: smooth ? "smooth" : "auto" });
 }
 LHN_MESSAGING.onMessage.addListener(message => {
   if (message?.type === "OPEN_DASHBOARD_FAVORITES") { openFavoriteVideos(); return; }
@@ -3691,7 +3703,7 @@ load().then(() => {
   const loadCycle = dashboardViewSwitchCycle;
   restoreDashboardViewAndReveal(loadedView, loadCycle);
   initDictationView();
-  if (new URLSearchParams(location.search).get("openFavorites") === "1") openFavoriteVideos();
+  if (new URLSearchParams(location.search).get("openFavorites") === "1") openFavoriteVideos(0, false);
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

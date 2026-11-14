@@ -415,12 +415,28 @@
     }, 0);
   }
   function setPicking(on) { picking = on; syncBarVis(); }
+  // v3.5.282: YouTube is a one-page app — Shorts / Kênh đăng ký / Bạn go there the way YouTube's own buttons do (only the
+  // content changes, the left column stays, no black reload): m.youtube = a link click inside the app (YouTube takes it; not
+  // taken → the browser simply opens the link); www = background runs YouTube's own "yt-navigate" in the page (world MAIN),
+  // not started within 1 s → plain page load as before
+  function ytGo(path) {
+    const ytm = document.querySelector("ytm-app");
+    if (ytm) { const a = document.createElement("a"); a.href = path; a.hidden = true; ytm.appendChild(a); a.click(); a.remove(); return; }
+    if (!document.querySelector("ytd-app")) { location.assign(path); return; }
+    let started = false;
+    const on = () => { started = true; };
+    document.addEventListener("yt-navigate-start", on, { once:true });
+    send("YT_SPA_NAV", { path }).then(r => {
+      if (!r?.ok) { document.removeEventListener("yt-navigate-start", on); location.assign(path); return; }
+      setTimeout(() => { document.removeEventListener("yt-navigate-start", on); if (!started && !location.pathname.startsWith(path)) location.assign(path); }, 1000);
+    });
+  }
   function doNav(id, b) {
     if (id === "search") return openSearch();
     if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
     closePop();
     if (id === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
-    if (YT_NAV[id]) { closeSheet(); location.assign(YT_NAV[id]); return; }
+    if (YT_NAV[id]) { closeSheet(); ytGo(YT_NAV[id]); return; }
     if (id === "fav") { closeSheet(); send("OPEN_DASHBOARD_FAVORITES"); return; }
     if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
@@ -1375,7 +1391,7 @@
     addEventListener("keepit-ui-zoom", () => { relayout(false); if ($("sheet")?.classList.contains("open")) anchorPanel(); if ($("srch")?.classList.contains("open")) layoutSearch(); placeOffDot(); });
     addEventListener("resize", () => { relayout(false); if ($("sheet")?.classList.contains("open")) anchorPanel(); if ($("srch")?.classList.contains("open")) layoutSearch(); if (mounted) checkOverlap(); });
     addEventListener("online", onNetwork); addEventListener("offline", onNetwork);
-    addEventListener("popstate", () => relayout(false)); setInterval(() => { if (mounted && layoutKey() !== lastLayout) relayout(false); }, 1000);
+    addEventListener("popstate", () => relayout(false)); document.addEventListener("yt-navigate-finish", () => relayout(false)); setInterval(() => { if (mounted && layoutKey() !== lastLayout) relayout(false); }, 1000);
     document.fonts?.ready?.then(() => { if (mounted) fitLabels(); });
     // v3.5.161: loaded at document_start → draw the bar as soon as <body> exists, so it is in the new page's first frame
     // (Chromium keeps the previous page on screen until then, so the bar does not blink or reload between pages)

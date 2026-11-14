@@ -168,6 +168,37 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   }
   return existing;
 }
+// v3.5.282: Keepit bar Shorts / Kênh đăng ký / Bạn on www.youtube.com — YouTube's own in-page navigation (like its left column:
+// only the content changes) instead of a full reload. Runs in the YouTube page (world MAIN), sends nothing anywhere.
+const YT_SPA_PATHS = ["/shorts", "/feed/subscriptions", "/feed/you"];
+async function ytSpaNav(path, sender) {
+  const tabId = sender?.tab?.id;
+  if (!Number.isInteger(tabId) || !YT_SPA_PATHS.includes(path) || !/^https:\/\/www\.youtube\.com\//.test(sender?.tab?.url || sender?.url || "")) return { ok: false };
+  try {
+    const [res] = await browser.scripting.executeScript({ target: { tabId, frameIds: [0] }, world: "MAIN", func: ytNavigateInPage, args: [path] });
+    return { ok: res?.result === true };
+  } catch { return { ok: false }; }
+}
+function ytNavigateInPage(path) {
+  const app = document.querySelector("ytd-app");
+  if (!app) return false;
+  const urlOf = ep => ep?.commandMetadata?.webCommandMetadata?.url || "";
+  const same = url => url === path || url.startsWith(`${path}/`);
+  let endpoint = null;
+  for (const el of document.querySelectorAll("ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer")) {
+    const ep = el.data?.navigationEndpoint || el.data?.serviceEndpoint;
+    if (ep && same(urlOf(ep))) { endpoint = ep; break; }
+  }
+  const meta = (url, webPageType, rootVe, browse) => ({ webCommandMetadata: { url, webPageType, rootVe, ...(browse ? { apiUrl: "/youtubei/v1/browse" } : {}) } });
+  endpoint ||= {
+    "/feed/subscriptions": { commandMetadata: meta("/feed/subscriptions", "WEB_PAGE_TYPE_BROWSE", 96368, true), browseEndpoint: { browseId: "FEsubscriptions" } },
+    "/feed/you": { commandMetadata: meta("/feed/you", "WEB_PAGE_TYPE_BROWSE", 6827, true), browseEndpoint: { browseId: "FElibrary", params: "KgN5b3U%3D" } },
+    "/shorts": { commandMetadata: meta("/shorts/", "WEB_PAGE_TYPE_SHORTS", 37414, false), reelWatchEndpoint: {} }
+  }[path];
+  if (!endpoint) return false;
+  app.dispatchEvent(new CustomEvent("yt-navigate", { bubbles: true, composed: true, detail: { endpoint } }));
+  return true;
+}
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // v3.5.160 touch bar: back / forward swipe past this tab's history → previous / next tab of the same window.
 // Only tab order (index, id) of the sender's window is used; nothing is stored or sent anywhere.
@@ -246,6 +277,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
   if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);
+  if (message.type === "YT_SPA_NAV") return ytSpaNav(message.path, sender);
   // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
   if (message.type === "OPEN_HOME") {
     if (!Number.isInteger(sender?.tab?.id)) return { ok: false };
