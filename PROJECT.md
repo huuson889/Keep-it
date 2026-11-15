@@ -204,6 +204,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.287 | Arena.ai Agent sửa:**
+
+- Mang Cài đặt v43 (demo đã duyệt) vào Bảng quản lý — phần 1/3: giao diện + lưu trữ. Hiệu ứng trên trang web (ẩn nút tính năng đang tắt, website ẩn thanh, cử chỉ, AI mặc định…) làm ở v3.5.288; sheet Cài đặt + popup Đăng nhập trong trang ở v3.5.289.
+- Cửa sổ Cài đặt responsive mọi thiết bị, nhóm Tài khoản · Tiện ích · Chung · Dữ liệu, thẻ hồ sơ + nhãn gói (Miễn phí / Pro / Ultra), popup Đăng nhập mới, hộp xác nhận Xóa tài khoản, nút Đặt lại từng trang + Hoàn tác, công tắc chính Ghi chú / Dịch / Hỏi AI, ẩn từng phần Từ điển đầy đủ (có xem trước), bật/tắt từng AI + AI mặc định (có xem trước Thanh Hỏi AI), trang Thanh Keepit (Gọn thanh, Nút lên đầu trang, Ẩn thanh, Xem lại hướng dẫn, danh sách website ẩn thanh), ô phím tắt mới (phím hiện dạng nút, báo trùng / phím trình duyệt), Đặt lại quy tắc phát âm, Dạng 1 "Chỉ hiện icon".
+- Khóa lưu mới (giá trị cũ giữ nguyên): `notesEnabled`, `translateEnabled`, `askAIEnabled`, `fullDictionarySections`, `askAIProviders`, `askAIDefaultProvider`, `sidebarIndicatorTarget`; `lhnBottomBar`: `five`, `btop`, `hidden`, `hiddenSites`, `coachSeen`, `gest.translate`. Mặc định đổi theo demo: `translateIconEnabled` bật, `sidebarIndicatorOnDisabledSites` tắt.
+- File: mới `css/dashboard/settings.css`, `js/shared/auth-popup.js`; sửa `pages/dashboard.html`, `css/dashboard/{dashboard,responsive}.css`, `css/shared/{ui-theme,selection-toolbar}.css`, `js/dashboard/{dashboard,settings-ui,responsive-nav}.js`, `js/core/{languages,defaults,config}.js`, `js/ask-ai/toolbar.js` (tách `shadowMarkup()` cho xem trước), `js/shared/selection-toolbar.js` (Dạng 0).
+- Kiểm tra: so ảnh với demo v43 trên 4 thiết bị (máy tính, tablet dọc, điện thoại dọc / ngang) × sáng / tối, 12 trang — khớp, chỉ khác chỗ xuống dòng do Bảng quản lý dùng font Inter thật (demo dùng font hệ thống). 4 trạng thái tài khoản (khách / Miễn phí / Pro / Ultra) × 2 giao diện × máy tính + điện thoại. Chạy thử: công tắc chính + Đặt lại + Hoàn tác, AI mặc định khi tắt AI, phần từ điển, thêm / xóa website (luật tên miền con), phím tắt trùng, đăng nhập / xóa tài khoản, quy tắc phát âm. Không có pageerror.
+- Ghi chú: với font Inter, ô Ngôn ngữ ở cột trái máy tính hẹp hơn 8px nên tên tiếng Anh ("Vietnamese") tự ẩn; trên điện thoại vẫn hiện.
+
 **2026-11-14 | v3.5.286 | Arena.ai Agent sửa:**
 
 - AI sheet cao hết bị tràn lên khỏi mép trên màn hình (ảnh máy thật, Edge Android có thanh dưới đang hiện): chiều cao theo `vh` = màn hình khi thanh trình duyệt ẩn, nên sheet cao hơn vùng thấy bằng chiều cao thanh đó. Nay `74dvh` / `96dvh` (vùng thấy thật, `vh` giữ làm dự phòng) và `overflow:clip` (focus ô chat không cuộn được nội dung sheet). File: `js/content/keepit-bar.js` (CSS `AIS`), `manifest.json`.

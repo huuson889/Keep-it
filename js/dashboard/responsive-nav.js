@@ -6,9 +6,9 @@
   const PHONE = matchMedia("(max-width: 599.98px)");
   const RAIL = matchMedia("(min-width: 600px) and (max-width: 899.98px)");
   const TEXT = {
-    en:{ overview:"Overview", review:"Review", notes:"Notes", dictation:"Dictation", more:"More", settings:"Settings", account:"Account", soon:"Coming soon", soonToast:"Coming soon", back:"Back", close:"Close", gAccount:"Account", gRead:"Translate & Read", gView:"Display", gData:"Data" },
-    vi:{ overview:"Tổng quan", review:"Ôn tập", notes:"Ghi chú", dictation:"Chính tả", more:"Thêm", settings:"Cài đặt", account:"Tài khoản", soon:"Sắp có", soonToast:"Tính năng sắp có", back:"Quay lại", close:"Đóng", gAccount:"Tài khoản", gRead:"Dịch & Đọc", gView:"Hiển thị", gData:"Dữ liệu" },
-    ko:{ overview:"개요", review:"복습", notes:"노트", dictation:"받아쓰기", more:"더보기", settings:"설정", account:"계정", soon:"출시 예정", soonToast:"출시 예정 기능", back:"뒤로", close:"닫기", gAccount:"계정", gRead:"번역 및 읽기", gView:"표시", gData:"데이터" }
+    en:{ overview:"Overview", review:"Review", notes:"Notes", dictation:"Dictation", more:"More", settings:"Settings", account:"Account", soon:"Coming soon", soonToast:"Coming soon", back:"Back", close:"Close"},
+    vi:{ overview:"Tổng quan", review:"Ôn tập", notes:"Ghi chú", dictation:"Chính tả", more:"Thêm", settings:"Cài đặt", account:"Tài khoản", soon:"Sắp có", soonToast:"Tính năng sắp có", back:"Quay lại", close:"Đóng"},
+    ko:{ overview:"개요", review:"복습", notes:"노트", dictation:"받아쓰기", more:"더보기", settings:"설정", account:"계정", soon:"출시 예정", soonToast:"출시 예정 기능", back:"뒤로", close:"닫기"}
   };
   const lang = () => { const value = String(document.documentElement.lang || "vi").slice(0, 2).toLowerCase(); return TEXT[value] ? value : "en"; };
   const tr = key => TEXT[lang()][key] || TEXT.en[key] || key;
@@ -89,7 +89,6 @@
   function relabel() {
     TABS.forEach(tab => { const label = tabbar.querySelector(`[data-rn-tab="${tab.id}"] .rn-lb`); if (label) label.textContent = tr(tab.id); tabbar.querySelector(`[data-rn-tab="${tab.id}"]`)?.setAttribute("aria-label", tr(tab.id)); });
     document.querySelectorAll(".rn-back, .rn-set-back").forEach(button => button.setAttribute("aria-label", tr("back")));
-    document.querySelectorAll(".rn-set-group").forEach(group => { group.textContent = tr(["gAccount", "gRead", "gView", "gData"][Number(group.dataset.g)]); });
   }
   function syncActive() {
     const view = sidebar.querySelector("[data-dashboard-view].is-active")?.dataset.dashboardView || "overview";
@@ -141,32 +140,92 @@
   document.getElementById("sourceList")?.addEventListener("click", event => { if (event.target.closest(".source-item")) openNotesDetail(); });
   document.getElementById("sourceList")?.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && event.target.closest(".source-item")) openNotesDetail(); });
 
-  // ---------- Settings: list → panel (phone) ----------
+  // ---------- Settings (docs/ui-layout.md): dọc + điện thoại ngang = sheet từ đáy; điện thoại dọc = danh sách → trang con; còn lại = 2 cột ----------
+  // sheet từ đáy (vuốt xuống để đóng): dọc + điện thoại ngang (cao < 500px)
+  const SHEET = matchMedia("(orientation: portrait), (orientation: landscape) and (max-height: 499.98px)");
+  const PUSH = matchMedia("(orientation: portrait) and (max-width: 699.98px)");
+  const COARSE = matchMedia("(pointer: coarse)");
+  const syncCoarse = () => document.documentElement.classList.toggle("kp-coarse", COARSE.matches);
+  syncCoarse(); COARSE.addEventListener?.("change", syncCoarse);
+  // cảm ứng + có chuột/bàn phím (tablet có bàn phím, laptop cảm ứng): trang Cử chỉ có thêm nút chuyển sang Phím tắt
+  const ANYFINE = matchMedia("(any-pointer: fine)");
+  const syncFine = () => document.documentElement.classList.toggle("kp-anyfine", ANYFINE.matches);
+  syncFine(); ANYFINE.addEventListener?.("change", syncFine);
+  // tên mục đang mở = phần chữ đang hiện (mục Phím tắt có 2 tên: Phím tắt / Cử chỉ)
+  const navLabel = item => [...(item?.querySelectorAll(":scope > span") || [])].filter(span => getComputedStyle(span).display !== "none").map(span => span.textContent.trim()).join(" ");
   const settingsDialog = document.getElementById("dashboardSettingsDialog");
+  // Settings inside the Keepit bar sheet (?openSettings=1&sheet=1): the outer sheet handles dragging
+  const SHEET_EMBED = window.top !== window && new URLSearchParams(location.search).get("sheet") === "1";
   let wantSettingsPanel = /[?&]openSettingsTab=/.test(location.search) || /[?&]openAccount=1/.test(location.search);
   let settingsPanelState = false, ignorePop = false;
+  const settingsSearch = settingsDialog?.querySelector(".settings-search");
+  const settingsInput = settingsDialog?.querySelector("#settingsSearch");
+  const settingsTitle = document.createElement("span");
+  settingsTitle.className = "rn-set-title";
   if (settingsDialog) {
     const nav = settingsDialog.querySelector(".settings-window-nav");
-    if (nav) [0, 1, 2, 3].forEach(g => { const group = document.createElement("div"); group.className = "rn-set-group"; group.dataset.g = String(g); group.setAttribute("aria-hidden", "true"); nav.appendChild(group); });
     const topbar = settingsDialog.querySelector(".settings-window-topbar");
-    const back = document.createElement("button");
-    back.type = "button"; back.className = "rn-set-back"; back.innerHTML = svg(SVG.back);
-    back.addEventListener("click", () => setSettingsPanel(false, true));
-    topbar?.prepend(back);
+    let back = topbar?.querySelector(".rn-set-back");
+    if (!back) { back = document.createElement("button"); back.type = "button"; back.className = "rn-set-back"; topbar?.prepend(back); }
+    back.innerHTML = svg(SVG.back);
+    // ‹: trang con (điện thoại dọc) = về danh sách; trang danh sách / 2 cột trong sheet (điện thoại, máy tính bảng dọc) = đóng Cài đặt, về Bảng quản lý
+    // (sheet trong thanh Keepit: sheet_embed.js bắt trước → về menu ☰)
+    back.addEventListener("click", () => { if (PUSH.matches && settingsDialog.classList.contains("rn-set-panel")) setSettingsPanel(false, true); else settingsDialog.close(); });
+    settingsDialog.querySelector(".settings-window-title")?.appendChild(settingsTitle);
     nav?.addEventListener("click", event => { if (event.target.closest("[data-settings-tab]")) setSettingsPanel(true); });
+    // chạm thẻ hồ sơ = mở Tài khoản
+    settingsDialog.querySelector(".settings-window-profile")?.addEventListener("click", () => click(settingsDialog.querySelector('[data-settings-tab="account"]')));
+    settingsInput?.addEventListener("input", syncSettingsSearch);
+    // Cử chỉ | Phím tắt
+    // máy tính: cũng có Cử chỉ | Phím tắt như máy tính bảng, nhưng mở mục là vào Phím tắt trước; cảm ứng: Cử chỉ trước
+    const modeTabs = [...settingsDialog.querySelectorAll(".settings-shortcut-mode [data-kp-mode]")];
+    const setKeysMode = mode => {
+      settingsDialog.classList.toggle("kp-show-keys", mode === "keys");
+      modeTabs.forEach(other => { const on = other.dataset.kpMode === mode; other.classList.toggle("is-selected", on); other.setAttribute("aria-selected", String(on)); });
+    };
+    const isCoarse = () => document.documentElement.classList.contains("kp-coarse");
+    const defaultKeysMode = () => setKeysMode(isCoarse() ? "gestures" : "keys");
+    modeTabs.forEach(tab => tab.addEventListener("click", () => setKeysMode(tab.dataset.kpMode)));
+    defaultKeysMode();
+    let wasCoarse = isCoarse();   // đổi chuột ↔ cảm ứng (html.kp-coarse) → về mục mặc định của thiết bị
+    new MutationObserver(() => { if (isCoarse() !== wasCoarse) { wasCoarse = isCoarse(); defaultKeysMode(); } }).observe(document.documentElement, { attributes:true, attributeFilter:["class"] });
+    nav?.addEventListener("click", event => { if (event.target.closest('[data-settings-tab="shortcuts"]')) defaultKeysMode(); });
+    placeSettingsSearch();
+    // 2 cột: ô tìm dính đầu cột nội dung; chỉ khi nội dung cuộn xuống dưới nó mới hiện nền (không lồng blur trong kính → không rung, trong sheet cũng đúng)
+    const settingsContent = settingsDialog.querySelector(".settings-window-content");
+    settingsContent?.addEventListener("scroll", () => settingsContent.classList.toggle("kp-scrolled", settingsContent.scrollTop > 2), { passive:true });
+    PUSH.addEventListener?.("change", () => { placeSettingsSearch(); if (!PUSH.matches) settingsDialog.classList.remove("rn-set-panel", "rn-set-searching"); else syncSettingsSearch(); });
     new MutationObserver(() => {
-      if (settingsDialog.open) { setSettingsPanel(wantSettingsPanel, false, true); wantSettingsPanel = false; }
-      else { settingsDialog.classList.remove("rn-set-panel"); if (settingsPanelState) { settingsPanelState = false; ignorePop = true; try { history.back(); } catch { ignorePop = false; } } }
+      // mở: focus vào chính hộp thoại (không phải nút ‹ / ✕ / phóng to → không hiện viền focus đen); Tab vẫn đi tiếp như thường
+      if (settingsDialog.open) { setSettingsPanel(wantSettingsPanel, false, true); wantSettingsPanel = false; settingsDialog.tabIndex = -1; requestAnimationFrame(() => { if (settingsDialog.open && !settingsDialog.contains(document.activeElement) || document.activeElement?.closest?.(".settings-window-actions, .rn-set-back")) settingsDialog.focus({ preventScroll:true }); }); }
+      else { settingsDialog.classList.remove("rn-set-panel", "rn-set-searching"); if (settingsPanelState) { settingsPanelState = false; ignorePop = true; try { history.back(); } catch { ignorePop = false; } } }
     }).observe(settingsDialog, { attributes:true, attributeFilter:["open"] });
+    // dọc: vuốt xuống ở bất kỳ đâu trên sheet để đóng (danh sách đang cuộn thì cuộn lên trước) — cùng sheet-kit với các sheet khác
+    globalThis.LHN_SHEET?.attach(settingsDialog, { isOpen:() => settingsDialog.open && SHEET.matches && !SHEET_EMBED, close:() => settingsDialog.close(), watch:settingsDialog });
+  }
+  // điện thoại dọc (cả trong sheet của thanh Keepit): ô tìm ghim dưới tiêu đề (ngoài các cột); 2 cột (mọi nơi): đầu cột nội dung như máy tính
+  function placeSettingsSearch() {
+    if (!settingsSearch) return;
+    const win = settingsDialog.querySelector(".settings-window"), content = settingsDialog.querySelector(".settings-window-content");
+    if (PUSH.matches) { if (settingsSearch.parentElement !== win) settingsDialog.querySelector(".settings-window-topbar")?.after(settingsSearch); }
+    else if (settingsSearch.parentElement !== content) content?.prepend(settingsSearch);
+  }
+  function syncSettingsSearch() {
+    if (!settingsDialog) return;
+    const on = PUSH.matches && !!settingsInput?.value.trim();
+    settingsDialog.classList.toggle("rn-set-searching", on);
+    if (on) settingsDialog.classList.add("rn-set-panel"); else if (!settingsPanelState) settingsDialog.classList.remove("rn-set-panel");
   }
   function setSettingsPanel(on, viaBack = false, initial = false) {
     if (!settingsDialog) return;
-    if (!PHONE.matches) { settingsDialog.classList.remove("rn-set-panel"); return; }
+    if (!PUSH.matches) { settingsDialog.classList.remove("rn-set-panel", "rn-set-searching"); return; }
+    if (!on && settingsInput?.value) { settingsInput.value = ""; settingsInput.dispatchEvent(new Event("input", { bubbles:true })); }
     if (!on && viaBack && settingsPanelState) { history.back(); return; }
     settingsDialog.classList.toggle("rn-set-panel", on);
+    if (on) settingsTitle.textContent = navLabel(settingsDialog.querySelector(".settings-nav-item.is-active"));
     if (on && !initial && !settingsPanelState) { try { history.pushState({ rnSettings:true }, ""); settingsPanelState = true; } catch {} }
     if (!on) settingsPanelState = false;
-    const scrollBox = on ? settingsDialog.querySelector(".settings-window-layout > :not(.settings-window-sidebar)") : settingsDialog.querySelector(".settings-window-sidebar");
+    const scrollBox = on ? settingsDialog.querySelector(".settings-window-content") : settingsDialog.querySelector(".settings-window-sidebar");
     if (scrollBox) scrollBox.scrollTop = 0;
   }
   window.addEventListener("popstate", () => {
@@ -208,7 +267,7 @@
   new MutationObserver(relabel).observe(document.documentElement, { attributes:true, attributeFilter:["lang"] });
   const due = document.getElementById("overviewDueCount");
   if (due) new MutationObserver(syncBadge).observe(due, { childList:true, characterData:true, subtree:true });
-  const onLayoutChange = () => { hideTip(); closeSheet(); if (!PHONE.matches) { document.body.classList.remove("rn-hn-detail"); settingsDialog?.classList.remove("rn-set-panel"); showTabbar(); } };
+  const onLayoutChange = () => { hideTip(); closeSheet(); if (!PHONE.matches) { document.body.classList.remove("rn-hn-detail"); showTabbar(); } };
   PHONE.addEventListener("change", onLayoutChange); RAIL.addEventListener("change", onLayoutChange);
   document.addEventListener("keydown", event => { if (event.key === "Escape" && sheet.classList.contains("open")) closeSheet(); });
   relabel(); syncActive(); syncBadge();

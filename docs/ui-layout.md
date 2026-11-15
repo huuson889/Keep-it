@@ -41,3 +41,12 @@
 - Overlay chỉ có **Rạp** (video full, phụ đề, thanh tự ẩn) và gợi ý "Xoay dọc để học".
 - Thanh Keepit thu gọn.
 - Popup và menu vẫn theo quy tắc ngang (nổi), cao tối đa ~90% màn, cuộn bên trong.
+
+## Cửa sổ Cài đặt (Bảng quản lý)
+
+- Máy tính / tablet ngang: cửa sổ nổi `min(1024px, 100vw - 48px)` × `min(720px, 100dvh - 48px)`, cột trái (thẻ hồ sơ, Ngôn ngữ, 4 nhóm mục) + nội dung.
+- Dọc hoặc điện thoại ngang (cao < 500px): sheet từ đáy 96dvh, bo 22px, kéo xuống để đóng. Dọc và rộng < 700px: danh sách → trang (nút ‹).
+- Mỗi trang giữ vị trí cuộn riêng; nút Đặt lại ở cuối mỗi trang Tiện ích / Chung, tím khi khác mặc định; Hoàn tác 5 giây.
+- Thông báo đăng nhập / đăng xuất ở phía trên; Hoàn tác ở dưới. Popup Đăng nhập: thẻ giữa (máy tính), sheet như Cài đặt (điện thoại).
+- Phím tắt: cảm ứng mở tab Cử chỉ, chuột mở tab Phím tắt.
+

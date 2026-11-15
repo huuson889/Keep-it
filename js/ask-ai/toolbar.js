@@ -36,16 +36,9 @@
     return Object.hasOwn(SOURCE_LABELS, language) ? language : "en";
   }
 
-  // The AI panel host page (pages/ai-panel.html) owns the 25px row above the provider iframe.
-  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {}, onNewChat = null, onOpenGrokInTab = null } = {}) {
-    document.getElementById(LEGACY_HOST_ID)?.remove();
-    let host = document.getElementById(HOST_ID);
-    if (!host) {
-      host = document.createElement("div");
-      host.id = HOST_ID;
-      host.style.cssText = "all:initial;position:fixed;inset:0 0 auto 0;z-index:2147483647;pointer-events:none;font:13px/1.3 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;";
-      const shadow = host.attachShadow({ mode:"open" });
-      shadow.innerHTML = `
+  // Shadow DOM of the bar (style + markup); Dashboard Settings → Ask AI reuses it for its preview.
+  function shadowMarkup() {
+    return `
         <style>
           /* v3.5.271: thanh cuộn 3px — bản sao LHN_THEME.scrollbar (js/shared/theme-tokens.js); trang này không nạp theme-tokens.js */
           *::-webkit-scrollbar{width:3px;height:3px}*::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(148,163,184,.55)}*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,.55) transparent}}
@@ -398,6 +391,18 @@
           <div class="tabs" id="tabs" role="tablist" aria-label="Các AI" aria-hidden="false">${PROVIDERS.map(provider => `<button class="tab" type="button" role="tab" data-provider="${provider.id}" aria-selected="false"><span class="provider-icon-wrap" aria-hidden="true"><img class="provider-icon" alt="" hidden><span class="provider-icon-fallback">${provider.name.slice(0, 1)}</span></span><span class="tab-label">${provider.name}</span></button>`).join("")}</div>
           <div class="copy-toast" role="status" aria-live="polite"></div>
         </div>`;
+  }
+
+  // The AI panel host page (pages/ai-panel.html) owns the 25px row above the provider iframe.
+  function create({ sourceUrl = "", initialProvider = "chatgpt", onProviderChange = () => {}, onNewChat = null, onOpenGrokInTab = null } = {}) {
+    document.getElementById(LEGACY_HOST_ID)?.remove();
+    let host = document.getElementById(HOST_ID);
+    if (!host) {
+      host = document.createElement("div");
+      host.id = HOST_ID;
+      host.style.cssText = "all:initial;position:fixed;inset:0 0 auto 0;z-index:2147483647;pointer-events:none;font:13px/1.3 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;";
+      const shadow = host.attachShadow({ mode:"open" });
+      shadow.innerHTML = shadowMarkup();
       document.documentElement.append(host);
     }
 
@@ -678,5 +683,5 @@
     return Object.freeze({ setSourceUrl, setProvider, getProvider:() => selectedProvider });
   }
 
-  globalThis.LHN_AI_TOOLBAR = Object.freeze({ create });
+  globalThis.LHN_AI_TOOLBAR = Object.freeze({ create, shadowMarkup, ICONS:PROVIDER_ICON_DATA });
 })();

@@ -386,32 +386,11 @@ html.dark .dashboard-theme-toggle .theme-icon-moon { display:block; }
 .profile-avatar { width:54px; height:54px; flex:none; display:grid; place-items:center; border-radius:50%; background:#64748b; color:#fff; font-size:23px; font-weight:600; box-shadow:inset 0 2px 5px #0002; }
 .profile-avatar-guest { border:2px dashed #cbd5e1; background:#f1f5f9; color:#94a3b8; font-size:21px; }
 
-.profile-auth-dialog { width:min(440px,calc(100% - 24px)); padding:0; overflow:hidden; border:1px solid var(--lhn-ui-border); border-radius:18px; background:var(--lhn-ui-surface); color:var(--lhn-ui-text); box-shadow:0 24px 64px rgba(15,23,42,.24); }
-.profile-auth-dialog::backdrop { background:rgba(15,23,42,.58); backdrop-filter:blur(3px); }
-.profile-auth-dialog form { display:block; padding:0; }
-.profile-auth-tabs { position:relative; display:flex; border-bottom:1px solid var(--lhn-ui-border-soft); }
-.profile-auth-tabs button { flex:1; padding:15px 8px; border-radius:0; background:transparent; color:var(--muted); font-size:13px; }
-.profile-auth-tabs button.is-active { border-bottom:2px solid #2563eb; color:#2563eb; font-weight:700; }
-.profile-auth-tabs #profileAuthClose { position:absolute; top:7px; right:8px; flex:none; width:32px; padding:5px; font-size:21px; }
-.profile-auth-body { display:grid; gap:14px; padding:22px 24px 18px; }
-.profile-auth-body label { display:grid; gap:6px; color:var(--lhn-ui-muted); font-size:11px; font-weight:600; }
-.profile-auth-body input { width:100%; padding:10px 12px; border:1px solid var(--lhn-ui-border); border-radius:10px; outline:0; background:var(--lhn-ui-raised); color:var(--lhn-ui-text); font-size:13px; }
-.profile-auth-body input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.16); }
-.profile-demo-hint,.profile-auth-note { margin:0; color:var(--muted); font-size:11px; text-align:center; }
-.profile-auth-submit { padding:11px 14px; border-radius:11px; background:#2563eb; color:#fff; box-shadow:0 5px 12px rgba(59,130,246,.2); }
-.profile-auth-error { margin:0; color:#dc2626; font-size:11px; }
 html.dark .profile-avatar-guest { background:#1e293b; border-color:#475569; color:#94a3b8; }
 
-html.dark .profile-auth-dialog { background:#0f172a; border-color:#334155; color:#e2e8f0; }
-html.dark .profile-auth-body input { background:#1e293b; border-color:#334155; color:#f1f5f9; }
-html.dark .profile-auth-tabs { border-color:#334155; }
 
 /* Preserve exact 1:1:2 column proportions on every viewport. */
 
-.profile-google-button { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 14px; border:1px solid var(--lhn-ui-border); border-radius:11px; background:var(--lhn-ui-surface); color:var(--lhn-ui-text); font-size:12px; font-weight:600; box-shadow:0 1px 2px rgba(15,23,42,.08); }
-.profile-google-button svg { width:18px; height:18px; }
-.profile-auth-divider { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; }
-.profile-auth-divider::before,.profile-auth-divider::after { content:""; flex:1; border-top:1px solid var(--lhn-ui-border); }
 
 /* Compact profile menu in the dashboard header. */
 .profile-menu-wrap { position:relative; }
@@ -500,7 +479,6 @@ body > header .top-actions .menu-item.item-free svg { width:13px; height:13px; }
 body > header .top-actions .profile-avatar-button { width:35px; height:35px; flex-basis:35px!important; padding:2px; }
 body > header .profile-menu-avatar { width:29px; height:29px; font-size:12.5px; }
 body > header .profile-menu-avatar svg { width:13px; height:13px; }
-.profile-auth-body label[hidden] { display:none!important; }
 
 /* Settings popup modeled on the supplied reference: title bar, navigation rail, and working settings panels. */
 .dashboard-settings-dialog { width:min(1024px,96vw); height:min(720px,90vh); max-width:none; max-height:none; padding:0; overflow:hidden; border:1px solid #e2e8f0; border-radius:16px; background:#fff; color:#1f2937; box-shadow:0 24px 64px rgba(15,23,42,.35); }
@@ -752,21 +730,6 @@ html.dark .settings-theme-options button.is-selected { border-color:#10b981; bac
 html.dark .settings-backup-row,html.dark .settings-action-button { border-color:#1f2937; }
 html.dark .settings-action-button { background:#1f2937; color:#e5e7eb; }
 html.dark .settings-action-button:hover { background:#374151; }
-@media(max-width:700px) {
-  .dashboard-settings-dialog { width:100vw; height:100vh; max-height:100vh; border-radius:0; }
-  .settings-window-sidebar { width:190px; min-width:190px; }
-  .settings-window-content { padding:20px 18px; }
-}
-@media(max-width:520px) {
-  .settings-window-layout { flex-direction:column; }
-  .settings-window-sidebar { width:100%; min-width:0; flex:none; }
-  .settings-window-profile,.settings-language-row { display:none; }
-  .settings-window-nav { display:flex; overflow:auto; padding:6px; border-bottom:1px solid #e5e7eb; }
-  .settings-nav-item { width:auto; flex:none; }
-  .settings-nav-item svg { display:none; }
-  .settings-window-content { padding:16px 12px; }
-}
-@media(max-width:520px) and (prefers-color-scheme:dark) { html.dark .settings-window-nav { border-color:#1f2937; } }
 
 /* Keep the Settings content in the flexible right-hand column, independent of dashboard main-grid rules. */
 .settings-window-content { display:block!important; flex:1 1 0%; width:0; min-width:0; max-width:none; align-self:stretch; box-sizing:border-box; }
@@ -785,7 +748,6 @@ html.dark .settings-profile-avatar.profile-avatar-guest { background:#1e293b; bo
 .settings-default-colors button.is-selected { outline-color:var(--lhn-ui-brand); }
 html.dark .settings-nav-item.is-active { background:var(--lhn-ui-brand-soft); color:var(--lhn-ui-brand); }
 html.dark .settings-theme-options button.is-selected { border-color:var(--lhn-ui-brand); background:var(--lhn-ui-brand-soft); }
-@media(max-width:520px) { .settings-window-content { width:100%; flex:1 1 auto; } }
 .settings-account-row { min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:16px 0; border-bottom:1px solid var(--lhn-ui-border-soft); }
 .settings-account-row>span:first-child { display:grid; gap:4px; min-width:0; }
 .settings-account-row strong { color:var(--lhn-ui-text); font-size:13px; font-weight:600; }

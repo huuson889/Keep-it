@@ -41,13 +41,23 @@
   - Không nối khối vá `/* v3.5.xxx */` vào cuối CSS; sửa thẳng quy tắc gốc, ghi phiên bản vào `PROJECT.md`.
   - Không tạo thư mục/file `legacy`; code không còn dùng thì xoá. Markup overlay cũ đã xoá (v3.5.197); `#keepit-exact-overlay` chỉ là gốc trạng thái ẩn, không thêm giao diện vào đó — giao diện overlay ở `js/overlay/ui/`.
   - Chỉ tách file khi file vừa quá lớn vừa có phần thật sự độc lập; không tạo thư mục chỉ có một file.
-- Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè, xóa hoặc tái sử dụng tên version cũ. Giữ lại toàn bộ các bản demo trước.
+- Khi tạo demo cùng một tên gốc, luôn tăng hậu tố version lên số kế tiếp (ví dụ `...-demo-v14.html` → `...-demo-v15.html`); không ghi đè hoặc tái sử dụng tên version đã giao. Chỉ giữ bản demo mới nhất, xoá các bản trước.
 
 **4.2. Cách thức trả lời trên khung chat**
 - Các phản hồi phải ngắn gọn, đúng vấn đề, không được nói khi không làm.
 - Trước khi sửa, nêu version hiện tại lên khung chat, (mục tiêu, kết quả mong đợi và cách làm) mỗi đầu mục in đậm và gạch đầu dòng ngắn gọn tương ứng.
 - Trong lúc sửa, làm bước nào ghi ra màn hình bước đó.
 - Sau khi sửa, Phải luôn ghi sửa từ version nào -> version nào ở cuối phản hồi; không tự đoán version.
+
+**4.3. Cách hiểu yêu cầu của người dùng**
+- Đọc theo ngữ cảnh, không chỉ theo chữ: câu ngắn (ví dụ "để như cũ") phải đặt vào việc đang làm — bản demo/version hiện tại, lần sửa trước, vòng nào đã được duyệt — để biết đúng "cũ", "cái kia", "như những cái khác" là gì.
+- Ghi nhớ quy tắc lâu dài: mỗi lần người dùng sửa, từ chối hay chốt điều gì thì coi là quy tắc đứng; mọi yêu cầu mới phải đối chiếu với các quy tắc đó trước khi làm.
+- Người dùng bực = đã làm sai hoặc lặp lại lỗi: không giải thích vòng vo, tìm đúng chỗ gây ra, sửa tận gốc và ghi lại để không tái phạm.
+- Người dùng khen = giữ nguyên hướng đó; không tự đổi những gì đã được duyệt.
+- Người dùng chất vấn ("sao…?", "lỗi:") = báo lỗi: tra code tìm nguyên nhân, xác định lỗi chỉ ở demo hay cả app thật, sửa rồi báo ngắn gọn.
+- Câu có thể hiểu hai cách: chọn cách gần ngữ cảnh và các mẫu đã duyệt nhất, nói rõ cách đã chọn để người dùng chỉnh; chỉ hỏi trước khi đoán sai sẽ tốn nhiều công.
+- Ghi lại các lần hiểu sai từ ngữ (ví dụ "bằng nhau" = chiều cao, "nghiêng" = vị trí) và không nhầm lại.
+- Tự kiểm tra trước khi báo: chạy thử, chụp màn hình sáng/tối và các thiết bị; phần chưa kiểm chứng được thì nói rõ là chưa kiểm.
 
 
 ## 5. Quy trình sau khi sửa

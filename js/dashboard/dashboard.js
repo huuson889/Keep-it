@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -127,6 +127,7 @@ function showDashboardSettingsPanel(name) {
 function renderPronunciationDictionary() {
   const container = $("pronunciationLanguageCards");
   if (!container) return;
+  $("resetPronunciationRules")?.classList.toggle("is-custom", !pronunciationIsDefault());
   const dictionary = dashboardSettings.customPronunciationDictionary && typeof dashboardSettings.customPronunciationDictionary === "object" ? dashboardSettings.customPronunciationDictionary : {};
   const supportedLanguages = LANGUAGES.LANGS.map(language => ({ ...language, speechCode:{ en:"en-US", vi:"vi-VN", ko:"ko-KR" }[language.code] }));
   const languageSelect = $("pronunciationLanguageSelect");
@@ -161,6 +162,21 @@ function renderPronunciationDictionary() {
 const SETTINGS_UI = globalThis.LHN_DASHBOARD_SETTINGS_UI.create({ $, document, languages:LANGUAGES, t, escapeHtml });
 SETTINGS_UI.initLanguagePicker();
 SETTINGS_UI.initSettingsSearch();
+const SETTINGS_KIT = globalThis.LHN_SETTINGS_KIT.create({ t, escapeHtml });
+SETTINGS_KIT.initSelects();
+globalThis.LHN_SETTINGS_PREVIEWS?.init();
+const AUTH_POPUP = LHN_AUTH_POPUP.attach($("profileAuthDialog"), { dark:() => document.documentElement.classList.contains("dark"), coarse:() => document.documentElement.classList.contains("kp-coarse") });
+// Keepit bar preferences (browser.storage.local lhnBottomBar, same object the bar's ☰ writes): other keys are kept as they are
+const BAR_SETTINGS_KEY = "lhnBottomBar";
+let barSettings = {};
+const barHiddenSites = () => Array.isArray(barSettings.hiddenSites) ? barSettings.hiddenSites : [...CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES];
+async function saveBarSettings(patch) {
+  try { const stored = (await browser.storage.local.get(BAR_SETTINGS_KEY))[BAR_SETTINGS_KEY]; barSettings = { ...(stored && typeof stored === "object" ? stored : {}), ...barSettings, ...patch }; }
+  catch { barSettings = { ...barSettings, ...patch }; }
+  if ($("dashboardSettingsDialog")?.open) dashboardSettingsChangedWhileOpen = true;
+  renderSettingsExtras();
+  try { await browser.storage.local.set({ [BAR_SETTINGS_KEY]:barSettings }); } catch (error) { console.warn("Could not save Keepit bar settings", error); }
+}
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
@@ -174,10 +190,10 @@ function refreshDashboardSettings() {
   $("settingsChatGPTAutoSend").checked = dashboardSettings.chatGPTAutoSend === true;
   $("settingsChatGPTSummaryPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTSummaryPrompt", dashboardSettings.chatGPTSummaryPrompt);
   $("settingsChatGPTAskPrompt").value = LHN_CHATGPT_PROMPTS.resolve(currentLang, "chatGPTAskPrompt", dashboardSettings.chatGPTAskPrompt);
-  $("settingsAutoPopup").checked = dashboardSettings.showOnSelect !== false;
+  $("settingsAutoPopup").checked = (dashboardSettings.showOnSelect ?? CONFIG.DEFAULT_SETTINGS.showOnSelect) === true;
   $("settingsAutoHighlight").checked = dashboardSettings.autoHighlight === true;
   $("settingsAutoSentence").checked = dashboardSettings.sentenceNoteEnabled !== false;
-  $("settingsTranslateIconEnabled").checked = dashboardSettings.translateIconEnabled === true;
+  $("settingsTranslateIconEnabled").checked = (dashboardSettings.translateIconEnabled ?? CONFIG.DEFAULT_SETTINGS.translateIconEnabled) === true;
   syncSelectionToolbarSettings();
   $("settingsTranslationPopupEnabled").checked = dashboardSettings.translationPopupEnabled === true;
   $("settingsFullEnglishDictionary").checked = dashboardSettings.showFullEnglishDictionary !== false;
@@ -211,44 +227,14 @@ function refreshDashboardSettings() {
   $("settingsLanguageSpeechRate").value = String(customLanguageRate);
   $("settingsLanguageSpeechRateValue").value = formatLanguageSpeechRate(customLanguageRate);
   $("settingsLanguageSpeechRateRow").hidden = !useLanguageSpeechRate;
-  const notePopupEnabled = dashboardSettings.showOnSelect !== false;
-  const translateIconEnabled = dashboardSettings.translateIconEnabled === true;
-  const directTranslationEnabled = dashboardSettings.translationPopupEnabled === true;
-  $("settingsAutoPopup").disabled = translateIconEnabled || directTranslationEnabled;
-  $("settingsTranslateIconEnabled").disabled = notePopupEnabled || directTranslationEnabled;
-  $("settingsTranslationPopupEnabled").disabled = notePopupEnabled || translateIconEnabled;
-  const conflictingModes = (condition, keys) => condition ? t("disabledConflictSettings", { settings: keys.map(key => t(key)).join(currentLang === "vi" ? " và " : currentLang === "ko" ? " 및 " : " and ") }) : "";
-  const autoPopupRow = $("settingsAutoPopup").closest(".settings-preference-row");
-  autoPopupRow.classList.toggle("is-disabled", $("settingsAutoPopup").disabled);
-  setDisabledTooltip($("settingsAutoPopup"), autoPopupRow, conflictingModes($("settingsAutoPopup").disabled, [translateIconEnabled && "showKeepitIcon", directTranslationEnabled && "showDirectTranslationPopup"].filter(Boolean)));
-  $("settingsTranslateIconEnabledRow").classList.toggle("is-disabled", $("settingsTranslateIconEnabled").disabled);
-  setDisabledTooltip($("settingsTranslateIconEnabled"), $("settingsTranslateIconEnabledRow"), conflictingModes($("settingsTranslateIconEnabled").disabled, [notePopupEnabled && "autoPopup", directTranslationEnabled && "showDirectTranslationPopup"].filter(Boolean)));
-  $("settingsTranslationPopupEnabledRow").classList.toggle("is-disabled", $("settingsTranslationPopupEnabled").disabled);
-  setDisabledTooltip($("settingsTranslationPopupEnabled"), $("settingsTranslationPopupEnabledRow"), conflictingModes($("settingsTranslationPopupEnabled").disabled, [notePopupEnabled && "autoPopup", translateIconEnabled && "showKeepitIcon"].filter(Boolean)));
   $("settingsPopupTranslationSource").value = studyTranslationSettings.sourceLanguage;
   $("settingsPopupTranslationTarget").value = studyTranslationSettings.targetLanguage;
   refreshFlashcardTranslateSettingsUI();
   $("settingsSidebarIndicator").checked = dashboardSettings.sidebarIndicatorEnabled !== false;
-  $("settingsSidebarIndicatorDisabledSites").checked = dashboardSettings.sidebarIndicatorOnDisabledSites !== false;
-  $("settingsSidebarIndicatorDisabledSites").disabled = dashboardSettings.sidebarIndicatorEnabled === false;
-  $("settingsSidebarIndicatorDisabledSitesRow").classList.toggle("is-disabled", dashboardSettings.sidebarIndicatorEnabled === false);
-  setDisabledTooltip($("settingsSidebarIndicatorDisabledSites"), $("settingsSidebarIndicatorDisabledSitesRow"), $("settingsSidebarIndicatorDisabledSites").disabled ? t("disabledIndicatorSetting", { setting:t("enableSidebarIndicator") }) : "");
+  $("settingsSidebarIndicatorDisabledSites").checked = dashboardSettings.sidebarIndicatorOnDisabledSites === true;
   $("settingsProductUpdates").checked = dashboardSettings.productUpdatesEnabled !== false;
   $("settingsWeeklySummary").checked = dashboardSettings.weeklySummaryEnabled === true;
-  $("settingsShortcut").value = dashboardSettings.shortcut ?? CONFIG.DEFAULT_SETTINGS.shortcut;
-  $("settingsSidebarShortcut").value = dashboardSettings.sidebarShortcut ?? CONFIG.DEFAULT_SETTINGS.sidebarShortcut;
-  $("settingsTranslateShortcut").value = dashboardSettings.translateSelectedShortcut ?? CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut;
-  $("settingsWebsiteShortcut").value = dashboardSettings.toggleWebsiteShortcut ?? CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut;
-  $("settingsDualSubtitlesShortcut").value = dashboardSettings.dualSubtitlesShortcut ?? CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut;
-  $("settingsDictationShortcut").value = dashboardSettings.dictationShortcut ?? CONFIG.DEFAULT_SETTINGS.dictationShortcut;
-  $("settingsSpeechPauseShortcut").value = dashboardSettings.speechPauseShortcut ?? CONFIG.DEFAULT_SETTINGS.speechPauseShortcut;
-  $("settingsPreviousReadingShortcut").value = dashboardSettings.previousReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.previousReadingShortcut;
-  $("settingsNextReadingShortcut").value = dashboardSettings.nextReadingShortcut ?? CONFIG.DEFAULT_SETTINGS.nextReadingShortcut;
-  $("settingsIncreaseReadingSpeedShortcut").value = dashboardSettings.increaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.increaseReadingSpeedShortcut;
-  $("settingsDecreaseReadingSpeedShortcut").value = dashboardSettings.decreaseReadingSpeedShortcut ?? CONFIG.DEFAULT_SETTINGS.decreaseReadingSpeedShortcut;
-  $("settingsSelectVoiceShortcut").value = dashboardSettings.selectVoiceShortcut ?? CONFIG.DEFAULT_SETTINGS.selectVoiceShortcut;
-  ["settingsShortcut", "settingsSidebarShortcut", "settingsTranslateShortcut", "settingsWebsiteShortcut", "settingsDualSubtitlesShortcut", "settingsDictationShortcut", "settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"].forEach(id => { $(id).title = t("shortcutInputHint"); });
-  $("resetDashboardShortcuts").classList.toggle("has-custom-shortcuts", ["shortcut", "sidebarShortcut", "translateSelectedShortcut", "toggleWebsiteShortcut", "dualSubtitlesShortcut", "dictationShortcut", "speechPauseShortcut", "previousReadingShortcut", "nextReadingShortcut", "increaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut", "selectVoiceShortcut"].some(key => (dashboardSettings[key] ?? CONFIG.DEFAULT_SETTINGS[key]) !== CONFIG.DEFAULT_SETTINGS[key]));
+  SHORTCUT_FIELDS.renderAll();
   $("settingsVersion").textContent = `v${browser.runtime.getManifest().version}`;
   const displayName = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest"), email = demoProfile ? String(demoProfile.email || "").trim() : t("profileLocal");
   $("settingsProfileName").textContent = displayName;
@@ -279,9 +265,34 @@ function refreshDashboardSettings() {
   settingsAvatar.innerHTML = demoProfile
     ? profilePictureMarkup(demoProfile, escapeHtml(String(displayName).slice(0, 1).toLocaleUpperCase()))
     : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
+  if (!demoProfile) SETTINGS_KIT.plan.set("free");
   const theme = ["light", "dark", "system"].includes(dashboardSettings.sidebarTheme) ? dashboardSettings.sidebarTheme : "system";
   document.querySelectorAll("[data-settings-theme]").forEach(button => { const active = button.dataset.settingsTheme === theme; button.classList.toggle("is-selected", active); button.setAttribute("aria-pressed", String(active)); });
   document.querySelectorAll("[data-settings-color]").forEach(button => { const color = button.dataset.settingsColor; button.style.backgroundColor = CONFIG.HIGHLIGHT_COLORS[color]; const active = CONFIG.normalizeColor(dashboardSettings.defaultHighlightColor) === color; button.classList.toggle("is-selected", active); button.setAttribute("aria-pressed", String(active)); });
+  renderSettingsExtras();
+}
+// Settings added in v3.5.287: master switches, dictionary parts, AI row, default AI, indicator target, Keepit bar, touch gestures
+function renderSettingsExtras() {
+  $("settingsNotesEnabled").checked = dashboardSettings.notesEnabled !== false;
+  $("settingsTranslateEnabled").checked = dashboardSettings.translateEnabled !== false;
+  $("settingsAskAIEnabled").checked = dashboardSettings.askAIEnabled !== false;
+  const sections = dashboardSettings.fullDictionarySections && typeof dashboardSettings.fullDictionarySections === "object" ? dashboardSettings.fullDictionarySections : {};
+  document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => { input.checked = sections[input.dataset.dictPart] !== false; });
+  const providers = dashboardSettings.askAIProviders && typeof dashboardSettings.askAIProviders === "object" ? dashboardSettings.askAIProviders : {};
+  const providerInputs = [...document.querySelectorAll("#dashboardSettingsDialog [data-ai-provider]")];
+  providerInputs.forEach(input => { input.checked = providers[input.dataset.aiProvider] !== false; });
+  if (!providerInputs.some(input => input.checked)) providerInputs.forEach(input => { input.checked = true; });
+  const defaultAI = String(dashboardSettings.askAIDefaultProvider || "last");
+  document.querySelectorAll("#dashboardSettingsDialog input[name=askAIDefaultProvider]").forEach(input => { input.checked = input.value === defaultAI; });
+  const target = dashboardSettings.sidebarIndicatorTarget === "ai" ? "ai" : "notes";
+  document.querySelectorAll("#dashboardSettingsDialog input[name=sidebarIndicatorTarget]").forEach(input => { input.checked = input.value === target; input.closest(".settings-logo-action-tab")?.classList.toggle("is-selected", input.checked); });
+  $("settingsBarCompact").checked = barSettings.five === true;
+  $("settingsBarTop").checked = barSettings.btop !== false;
+  $("settingsBarHidden").checked = barSettings.hidden === true;
+  $("settingsGestureTranslate").checked = barSettings.gest?.translate !== false;
+  renderBarHiddenWebsiteList();
+  globalThis.LHN_SETTINGS_PREVIEWS?.sync();
+  SETTINGS_KIT.reset.sync();
 }
 async function refreshUsageLimitSettings() {
   try {
@@ -290,6 +301,7 @@ async function refreshUsageLimitSettings() {
     const planKey = ({ trial:"usagePlanTrial", free:"usagePlanFree", keyA:"usagePlanKeyA", keyB:"usagePlanKeyB" })[status.planId] || "usagePlanFree";
     const limitLabel = status.dailyLimit === null ? t("usageUnlimited") : t("usageDailyLimit", { count:status.dailyLimit });
     $("upgradePlanBadge").textContent = t(status.trialActive ? "usagePlanTrial" : planKey);
+    SETTINGS_KIT.plan.set(demoProfile ? (status.trialActive ? "trial" : status.planId) : "free");
     $("usagePlanStatus").textContent = status.trialActive
       ? `${t("usageTrialUntil", { date:new Date(status.trialEndsAt).toLocaleDateString(currentLang) })}${status.keyActive ? ` · ${t("usageKeyAfterTrial", { plan:t(planKey) })}` : ""}`
       : status.keyActive ? t("usageKeyWithLimit", { plan:t(planKey), limit:limitLabel }) : t("usageFreeWithLimit", { limit:limitLabel });
@@ -314,7 +326,7 @@ function normalizeDisabledWebsite(value) {
 }
 function renderDisabledWebsiteList() {
   const sites = Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [];
-  SETTINGS_UI.renderWebsiteList({ host:$("settingsDisabledWebsiteList"), sites, editing:editingDisabledWebsite, actionAttribute:"disabled-site-action", ariaLabel:"disableWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
+  SETTINGS_KIT.motion.flip($("settingsDisabledWebsiteList"), "data-site", () => SETTINGS_UI.renderWebsiteList({ host:$("settingsDisabledWebsiteList"), sites, editing:editingDisabledWebsite, actionAttribute:"disabled-site-action", ariaLabel:"disableWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] }));
 }
 async function updateDisabledWebsites(sites) {
   editingDisabledWebsite = null;
@@ -322,7 +334,48 @@ async function updateDisabledWebsites(sites) {
 }
 function renderDisabledReaderWebsiteList() {
   const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
-  SETTINGS_UI.renderWebsiteList({ host:$("bilingualDisabledReaderWebList"), sites, editing:editingDisabledReaderWebsite, actionAttribute:"reader-site-action", ariaLabel:"bilingualDisabledReaderWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] });
+  SETTINGS_KIT.motion.flip($("bilingualDisabledReaderWebList"), "data-site", () => SETTINGS_UI.renderWebsiteList({ host:$("bilingualDisabledReaderWebList"), sites, editing:editingDisabledReaderWebsite, actionAttribute:"reader-site-action", ariaLabel:"bilingualDisabledReaderWeb", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] }));
+  $("resetReaderDisabledWebsites")?.classList.toggle("is-custom", !sameSites(sites, CONFIG.DEFAULT_READER_DISABLED_WEBSITES));
+}
+let editingBarHiddenWebsite = null;
+function renderBarHiddenWebsiteList() {
+  const sites = barHiddenSites();
+  SETTINGS_KIT.motion.flip($("barHiddenWebList"), "data-site", () => SETTINGS_UI.renderWebsiteList({ host:$("barHiddenWebList"), sites, editing:editingBarHiddenWebsite, actionAttribute:"bar-site-action", ariaLabel:"kpBarHiddenSites", emptyTextKey:"noDisabledWebsites", actionKeys:[["edit", "edit"], ["remove", "removeWebsite"]] }));
+  $("resetBarHiddenWebsites")?.classList.toggle("is-custom", !sameSites(sites, CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES));
+}
+const sameSites = (a, b) => a.length === b.length && a.every((site, index) => site === b[index]);
+// abc.com also covers m.abc.com / x.abc.com; m.abc.com covers only itself
+const siteCovers = (domain, host) => !!domain && (host === domain || host.endsWith(`.${domain}`));
+// adding a site an entry already covers: flash that entry instead of adding a duplicate
+function flashCoveringSite(listId, sites, site) {
+  const cover = sites.find(domain => siteCovers(domain, site)); if (!cover) return false;
+  const row = $(listId).querySelector(`[data-site="${CSS.escape(cover)}"]`);
+  row?.scrollIntoView({ block:"nearest", behavior:"smooth" }); row?.classList.remove("kp-flash"); void row?.offsetWidth; row?.classList.add("kp-flash"); row?.setAttribute("title", t("kpSiteCovered", { site:cover }));
+  return true;
+}
+// one handler for the 3 site lists (Disable websites, Reader, Keepit bar): edit / save / cancel / remove (shrinks away, "Deleted · Undo")
+function setupWebsiteList({ formId, inputId, listId, attribute, get, set, editing, setEditing, render }) {
+  $(formId).addEventListener("submit", async event => {
+    event.preventDefault();
+    const field = $(inputId), site = normalizeDisabledWebsite(field.value), sites = get();
+    if (!site) { toast(t("invalidWebsite")); field.focus(); return; }
+    if (flashCoveringSite(listId, sites, site)) { field.value = ""; return; }
+    field.value = ""; await set([site, ...sites]);
+  });
+  $(listId).addEventListener("click", async event => {
+    const button = event.target.closest(`[data-${attribute}]`), row = button?.closest(".settings-disabled-web-item");
+    if (!button || !row) return;
+    const site = row.dataset.site, action = button.getAttribute(`data-${attribute}`), sites = get();
+    if (action === "edit") { setEditing(site); render(); const field = $(listId).querySelector(".settings-disabled-web-edit-input"); field?.focus(); field?.select(); return; }
+    if (action === "cancel") { setEditing(null); render(); return; }
+    if (action === "remove") { await SETTINGS_KIT.motion.leave(row, false); await set(sites.filter(value => value !== site)); SETTINGS_KIT.undo.show(() => set(sites), "kpDeleted"); return; }
+    if (action === "save") {
+      const field = row.querySelector(".settings-disabled-web-edit-input"), updated = normalizeDisabledWebsite(field?.value);
+      if (!updated) { toast(t("invalidWebsite")); field?.focus(); return; }
+      if (updated !== site && sites.includes(updated)) { toast(t("websiteAlreadyDisabled")); field?.focus(); return; }
+      await set(sites.map(value => value === site ? updated : value));
+    }
+  });
 }
 function syncBilingualReaderControls() { SETTINGS_UI.syncReaderControls(); }
 async function updateDisabledReaderWebsites(sites) {
@@ -343,22 +396,46 @@ async function saveDashboardSettings(nextValues) {
 function openDashboardSettings(panel = "account") {
   closeMenus();
   dashboardSettingsChangedWhileOpen = false;
+  if (!settingsDefaultsCaptured) captureSettingsDefaults();
   refreshDashboardSettings();
+  refreshUsageLimitSettings();
   showDashboardSettingsPanel(panel);
   $("dashboardSettingsDialog").classList.remove("is-maximized");
   $("dashboardSettingsDialog").showModal();
+}
+// Reset at the end of each panel compares the controls with how they look on default settings:
+// render once with the defaults (lists / pronunciation / shortcuts are parts with their own defaults), remember, render the real values again.
+let settingsDefaultsCaptured = false;
+function defaultPronunciationDictionary() {
+  return { "en-US":[
+    { id:"default-en-eg", original:"e.g.", replacement:"For example" },
+    { id:"default-en-ie", original:"i.e.", replacement:"That is" },
+    { id:"default-en-etc", original:"etc.", replacement:"Et cetera" },
+    { id:"default-en-idk", original:"IDK", replacement:"I don't know" },
+    { id:"default-en-fyi", original:"FYI", replacement:"For your information" }
+  ] };
+}
+const pronunciationSignature = dictionary => JSON.stringify(Object.entries(dictionary && typeof dictionary === "object" ? dictionary : {}).sort(([a], [b]) => a.localeCompare(b)).map(([language, rules]) => [language, (rules || []).map(rule => [rule.original, rule.replacement])]));
+const pronunciationIsDefault = () => pronunciationSignature(dashboardSettings.customPronunciationDictionary) === pronunciationSignature(defaultPronunciationDictionary());
+function captureSettingsDefaults() {
+  settingsDefaultsCaptured = true;
+  const saved = { settings:dashboardSettings, study:studyTranslationSettings, reader:bilingualReaderSettings, bar:barSettings };
+  dashboardSettings = { ...CONFIG.DEFAULT_SETTINGS, language:saved.settings.language, customPronunciationDictionary:saved.settings.customPronunciationDictionary, disabledWebsites:saved.settings.disabledWebsites };
+  studyTranslationSettings = { ...DEFAULT_STUDY_TRANSLATION_SETTINGS };
+  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, readerDisabledWebsites:saved.reader.readerDisabledWebsites };
+  barSettings = { hiddenSites:saved.bar.hiddenSites };
+  try { refreshDashboardSettings(); renderBilingualReaderControls(); SETTINGS_KIT.reset.snapshot(); }
+  finally {
+    ({ settings:dashboardSettings, study:studyTranslationSettings, reader:bilingualReaderSettings, bar:barSettings } = saved);
+    refreshDashboardSettings(); renderBilingualReaderControls();
+  }
+  SETTINGS_KIT.reset.bind();
 }
 async function restoreAddonSettings() {
   try {
     const defaultSettings = {
       ...CONFIG.DEFAULT_SETTINGS,
-      customPronunciationDictionary:{ "en-US":[
-        { id:"default-en-eg", original:"e.g.", replacement:"For example" },
-        { id:"default-en-ie", original:"i.e.", replacement:"That is" },
-        { id:"default-en-etc", original:"etc.", replacement:"Et cetera" },
-        { id:"default-en-idk", original:"IDK", replacement:"I don't know" },
-        { id:"default-en-fyi", original:"FYI", replacement:"For your information" }
-      ] },
+      customPronunciationDictionary:defaultPronunciationDictionary(),
       pronunciationDictionaryDefaultsInitialized:true
     };
     await browser.storage.local.set({
@@ -432,6 +509,8 @@ function setProfileAuthMode(mode) {
   const isRegister = mode === "register";
   $("profileLoginTab").classList.toggle("is-active", !isRegister);
   $("profileRegisterTab").classList.toggle("is-active", isRegister);
+  $("profileLoginTab").setAttribute("aria-selected", String(!isRegister));
+  $("profileRegisterTab").setAttribute("aria-selected", String(isRegister));
   $("profileRetypePasswordLabel").hidden = !isRegister;
   $("profileRetypePassword").required = isRegister;
   if (!isRegister) $("profileRetypePassword").value = "";
@@ -440,19 +519,27 @@ function setProfileAuthMode(mode) {
   $("profileAuthError").hidden = true;
   profileAuthMode = mode;
 }
-function openProfileAuth(mode = "login") { setProfileAuthMode(mode); $("profileAuthDialog").showModal(); $("profileUsername").focus(); }
+// Login popup opens above Settings (Settings stays open); touch: no auto focus (the keyboard would cover the sheet)
+function openProfileAuth(mode = "login") {
+  setProfileAuthMode(mode); AUTH_POPUP.sync();
+  if (!$("profileAuthDialog").open) $("profileAuthDialog").showModal();
+  if (!document.documentElement.classList.contains("kp-coarse")) $("profileUsername").focus(); else document.activeElement?.blur?.();
+}
 async function finishProfileAuth(profile) {
+  const registered = profileAuthMode === "register";
   demoProfile = profile;
   await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-  $("profileAuthDialog").close(); renderProfileMenu();
-  if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
+  AUTH_POPUP.close(); renderProfileMenu();
+  if ($("dashboardSettingsDialog").open) { refreshDashboardSettings(); refreshUsageLimitSettings(); }
+  SETTINGS_KIT.undo.note(t(registered ? "kpRegistered" : "kpSignedIn", { name:profileDisplayName(profile) }));
 }
-async function signOutDemoProfile() {
+async function signOutDemoProfile(reason = "") {
   await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
   closeMenus();
   renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
+  SETTINGS_KIT.undo.note(t(reason === "delete" ? "accountDeleteSuccess" : "kpSignedOut"));
 }
 function setStudyQueue(items) { studyQueue = items; studyQueueHead = 0; }
 function studyQueueLength() { return studyQueue.length - studyQueueHead; }
@@ -964,20 +1051,7 @@ function applyTranslations() {
   refreshDictationView();
   if (typeof activeDashboardView !== "undefined") updateSharedTopbarContent(activeDashboardView);
 }
-async function load() {
-  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
-  if (DASHBOARD_SETTINGS_TAB_NAMES.has(settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY])) lastDashboardSettingsTab = settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY];
-  const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
-  const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
-  const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
-  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
-  // "Read translation with source" mặc định bật từ v3.4.594; bản lưu cũ đã ghi cứng false nên bật lại một lần.
-  const readTranslationDefaultNeedsOn = savedBilingualReaderSettings.readTranslationDefaultOn !== true;
-  if (readTranslationDefaultNeedsOn) bilingualReaderSettings = { ...bilingualReaderSettings, readTranslation:true, readTranslationDefaultOn:true };
-  if (seedReaderSites || readTranslationDefaultNeedsOn) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
-  const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
-  const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
-  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
+function renderBilingualReaderControls() {
   $("bilingualTransFont").value = bilingualReaderSettings.fontFamily;
   $("bilingualWebFont").value = bilingualReaderSettings.webFontFamily || "";
   $("bilingualAccentColor").value = /^#[0-9a-f]{6}$/i.test(bilingualReaderSettings.accentColor) ? bilingualReaderSettings.accentColor : "#9c27b0";
@@ -994,6 +1068,23 @@ async function load() {
   syncBilingualReaderControls();
   document.querySelectorAll("[data-bilingual-translation-color]").forEach(button => button.classList.toggle("is-selected", button.dataset.bilingualTranslationColor === (bilingualReaderSettings.translationTextColor || "default")));
   $("bilingualTranslationCustomColor").parentElement.classList.toggle("is-custom-selected", bilingualReaderSettings.translationTextColor === "custom");
+}
+async function load() {
+  const settingsData = await browser.storage.local.get([CONFIG.STORAGE_KEYS.SETTINGS, CONFIG.STORAGE_KEYS.FAVORITES, CONFIG.STORAGE_KEYS.FAVORITE_VIDEOS, CONFIG.STORAGE_KEYS.NOTE_FAVORITES, STUDY_SHORTCUT_KEY, STUDY_FOCUS_MODE_KEY, STUDY_SHOW_SHORTCUTS_KEY, STUDY_PREFERENCES_KEY, STUDY_TRANSLATION_SETTINGS_KEY, FLASHCARD_TRANSLATE_SETTINGS_KEY, DEMO_PROFILE_KEY, BILINGUAL_READER_SETTINGS_KEY, LAST_DASHBOARD_SETTINGS_TAB_KEY]);
+  if (DASHBOARD_SETTINGS_TAB_NAMES.has(settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY])) lastDashboardSettingsTab = settingsData[LAST_DASHBOARD_SETTINGS_TAB_KEY];
+  try { const storedBar = (await browser.storage.local.get(BAR_SETTINGS_KEY))[BAR_SETTINGS_KEY]; barSettings = storedBar && typeof storedBar === "object" ? storedBar : {}; } catch { barSettings = {}; }
+  const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
+  const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
+  const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
+  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
+  // "Read translation with source" mặc định bật từ v3.4.594; bản lưu cũ đã ghi cứng false nên bật lại một lần.
+  const readTranslationDefaultNeedsOn = savedBilingualReaderSettings.readTranslationDefaultOn !== true;
+  if (readTranslationDefaultNeedsOn) bilingualReaderSettings = { ...bilingualReaderSettings, readTranslation:true, readTranslationDefaultOn:true };
+  if (seedReaderSites || readTranslationDefaultNeedsOn) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
+  const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
+  const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
+  browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});
+  renderBilingualReaderControls();
   const savedStudyShortcuts = settingsData[STUDY_SHORTCUT_KEY] || {};
   studyShortcuts = { ...DEFAULT_STUDY_SHORTCUTS, ...savedStudyShortcuts };
   if (savedStudyShortcuts.previous === "Ctrl") studyShortcuts.previous = DEFAULT_STUDY_SHORTCUTS.previous;
@@ -1040,13 +1131,7 @@ async function load() {
   dashboardSettings = settingsData[CONFIG.STORAGE_KEYS.SETTINGS] || {};
   if (dashboardSettings.pronunciationDictionaryDefaultsInitialized !== true) {
     const dictionary = dashboardSettings.customPronunciationDictionary && typeof dashboardSettings.customPronunciationDictionary === "object" ? { ...dashboardSettings.customPronunciationDictionary } : {};
-    if (!Object.hasOwn(dictionary, "en-US")) dictionary["en-US"] = [
-      { id:"default-en-eg", original:"e.g.", replacement:"For example" },
-      { id:"default-en-ie", original:"i.e.", replacement:"That is" },
-      { id:"default-en-etc", original:"etc.", replacement:"Et cetera" },
-      { id:"default-en-idk", original:"IDK", replacement:"I don't know" },
-      { id:"default-en-fyi", original:"FYI", replacement:"For your information" }
-    ];
+    if (!Object.hasOwn(dictionary, "en-US")) dictionary["en-US"] = defaultPronunciationDictionary()["en-US"];
     dashboardSettings = { ...dashboardSettings, customPronunciationDictionary:dictionary, pronunciationDictionaryDefaultsInitialized:true };
     try { await LHN_SETTINGS.save(dashboardSettings); }
     catch (error) { console.warn("Could not initialize pronunciation dictionary defaults", error); }
@@ -2642,32 +2727,18 @@ window.addEventListener("resize", updateStudyFullscreenButton);
 updateStudyFullscreenButton();
 $("closeStudyDone").addEventListener("click", () => $("studyDialog").close());
 $("studyDialog").addEventListener("close", () => { stopStudySpeech(); if (annotationsChangedDuringStudy) { annotationsChangedDuringStudy = false; load(); } });
-$("profileAuthDialog").addEventListener("click", event => { if (event.target === $("profileAuthDialog")) $("profileAuthDialog").close(); });
-$("profileAuthClose").addEventListener("click", () => $("profileAuthDialog").close());
-$("profileGoogleLogin").addEventListener("click", async () => { await finishProfileAuth({ username:"huson", email:"huuson889@gmail.com", displayName:"Huson", createdAt:Date.now() }); });
-$("profileLoginTab").addEventListener("click", () => setProfileAuthMode("login"));
-$("profileRegisterTab").addEventListener("click", () => setProfileAuthMode("register"));
+$("profileAuthDialog").addEventListener("click", event => { if (event.target === $("profileAuthDialog")) AUTH_POPUP.close(); });
+$("profileGoogleLogin").addEventListener("click", () => finishProfileAuth(LHN_AUTH_POPUP.check("google").profile));
+// Login ↔ Register: the "Retype password" field opens / closes smoothly
+$("profileLoginTab").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
+$("profileRegisterTab").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("register")));
+$("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("register")));
+$("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
-  const username = $("profileUsername").value.trim(), password = $("profilePassword").value;
-  if (profileAuthMode === "login") {
-    if (!["huson", "huson@example.com"].includes(username.toLocaleLowerCase()) || password !== "123") {
-      $("profileAuthError").textContent = t("profileBadCredentials");
-      $("profileAuthError").hidden = false; return;
-    }
-    await finishProfileAuth({ username: username.includes("@") ? username.split("@")[0] : "huson", email: username.includes("@") ? username : "huuson889@gmail.com", displayName:"Huson", createdAt:Date.now() });
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username) || password.length < 1) {
-    $("profileAuthError").textContent = t("profileNeedFields");
-    $("profileAuthError").hidden = false; return;
-  }
-  if (password !== $("profileRetypePassword").value) {
-    $("profileAuthError").textContent = t("profilePasswordMismatch");
-    $("profileAuthError").hidden = false; return;
-  }
-  const displayName = username.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
-  await finishProfileAuth({ username:username.split("@")[0], email:username, displayName, createdAt:Date.now() });
+  const result = LHN_AUTH_POPUP.check(profileAuthMode, $("profileUsername").value, $("profilePassword").value, $("profileRetypePassword").value);
+  if (result.error) { $("profileAuthError").textContent = t(result.error); $("profileAuthError").hidden = false; return; }
+  await finishProfileAuth(result.profile);
 });
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
 document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
@@ -3131,7 +3202,7 @@ $("profileMenu").addEventListener("click", async event => {
 $("profileMenuAccountHost").addEventListener("click", e => { if (e.target.closest("#profileMenuSignIn")) { closeMenus(); openProfileAuth("login"); } });
 $("profileOpenSettings").addEventListener("click", openDashboardSettings);
 $("settingsAccountState").addEventListener("click", async event => {
-  if (event.target.closest("#settingsAccountSignIn")) { $("dashboardSettingsDialog").close(); openProfileAuth("login"); return; }
+  if (event.target.closest("#settingsAccountSignIn")) { openProfileAuth("login"); return; }
   if (event.target.closest("#settingsAccountSignOut")) { await signOutDemoProfile(); return; }
   if (event.target.closest("#settingsChangeProfilePicture")) { $("settingsProfilePictureFile").click(); return; }
   if (event.target.closest("#settingsAccountChangeEmail")) {
@@ -3158,8 +3229,9 @@ $("settingsAccountState").addEventListener("click", async event => {
     renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved")); return;
   }
   if (event.target.closest("#settingsAccountDelete")) {
-    if (!demoProfile || !confirm(t("accountDeleteConfirm"))) return;
-    await signOutDemoProfile(); toast(t("accountDeleteSuccess"));
+    if (!demoProfile) return;
+    const dialog = $("accountDeleteConfirmDialog"); dialog.returnValue = ""; dialog.showModal();
+    requestAnimationFrame(() => dialog.querySelector("button[value=cancel]")?.focus());
   }
 });
 $("settingsAccountState").addEventListener("change", async event => {
@@ -3177,6 +3249,8 @@ $("settingsAccountState").addEventListener("change", async event => {
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
 });
+$("accountDeleteConfirmDialog").addEventListener("close", event => { if (event.target.returnValue === "confirm") signOutDemoProfile("delete"); });
+$("accountDeleteConfirmDialog").addEventListener("click", event => { const dialog = event.currentTarget, rect = dialog.getBoundingClientRect(); if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close("cancel"); });
 $("settingsWindowClose").addEventListener("click", () => $("dashboardSettingsDialog").close());
 $("settingsWindowMaximize").addEventListener("click", () => $("dashboardSettingsDialog").classList.toggle("is-maximized"));
 $("dashboardSettingsDialog").addEventListener("click", event => { if (event.target === $("dashboardSettingsDialog")) $("dashboardSettingsDialog").close(); });
@@ -3214,16 +3288,18 @@ $("pronunciationLanguageCards").addEventListener("submit", event => {
   dictionary[language] = rules;
   saveDashboardSettings({ customPronunciationDictionary:dictionary });
 });
-$("pronunciationLanguageCards").addEventListener("click", event => {
+$("pronunciationLanguageCards").addEventListener("click", async event => {
   const button = event.target.closest("[data-pronunciation-action]");
   if (!button) return;
   const action = button.dataset.pronunciationAction, card = button.closest(".pronunciation-language-card"), language = card?.dataset.language;
   if (!language) return;
   const dictionary = { ...(dashboardSettings.customPronunciationDictionary || {}) };
-  if (action === "remove-language") { delete dictionary[language]; saveDashboardSettings({ customPronunciationDictionary:dictionary }); return; }
+  const before = dashboardSettings.customPronunciationDictionary;
+  const removeWithUndo = async element => { await SETTINGS_KIT.motion.leave(element); await saveDashboardSettings({ customPronunciationDictionary:dictionary }); SETTINGS_KIT.undo.show(() => saveDashboardSettings({ customPronunciationDictionary:before }), "kpDeleted"); };
+  if (action === "remove-language") { delete dictionary[language]; await removeWithUndo(card); return; }
   const row = button.closest(".pronunciation-rule-row"), ruleId = row?.dataset.ruleId;
   if (!row || !ruleId) return;
-  if (action === "delete") { dictionary[language] = (dictionary[language] || []).filter(rule => String(rule.id) !== ruleId); saveDashboardSettings({ customPronunciationDictionary:dictionary }); return; }
+  if (action === "delete") { dictionary[language] = (dictionary[language] || []).filter(rule => String(rule.id) !== ruleId); await removeWithUndo(row); return; }
   if (action === "edit") {
     const rule = dictionary[language]?.find(entry => String(entry.id) === ruleId); if (!rule) return;
     row.replaceChildren();
@@ -3242,6 +3318,13 @@ $("pronunciationLanguageCards").addEventListener("click", event => {
     saveDashboardSettings({ customPronunciationDictionary:dictionary });
   }
 });
+$("resetPronunciationRules").addEventListener("click", () => {
+  if (pronunciationIsDefault()) return;
+  const before = dashboardSettings.customPronunciationDictionary;
+  saveDashboardSettings({ customPronunciationDictionary:defaultPronunciationDictionary() });
+  SETTINGS_KIT.undo.show(() => saveDashboardSettings({ customPronunciationDictionary:before }));
+});
+SETTINGS_KIT.reset.part("speech", { isDefault:pronunciationIsDefault, save:() => dashboardSettings.customPronunciationDictionary, restore:dictionary => saveDashboardSettings({ customPronunciationDictionary:dictionary }), initial:defaultPronunciationDictionary });
 $("upgradeActivateCta").addEventListener("click", () => {
   $("usageKeyInput").scrollIntoView({ behavior:"smooth", block:"center" });
   $("usageKeyInput").focus({ preventScroll:true });
@@ -3262,30 +3345,10 @@ $("usageKeyForm").addEventListener("submit", async event => {
     console.warn("Could not activate local test key", error);
   } finally { button.disabled = false; setDisabledTooltip(button, button, ""); }
 });
-$("settingsDisabledWebsiteForm").addEventListener("submit", async event => {
-  event.preventDefault();
-  const field = $("settingsDisabledWebsiteInput"), site = normalizeDisabledWebsite(field.value);
-  if (!site) { toast(t("invalidWebsite")); field.focus(); return; }
-  const sites = Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [];
-  if (sites.includes(site)) { toast(t("websiteAlreadyDisabled")); field.focus(); return; }
-  field.value = "";
-  await updateDisabledWebsites([...sites, site]);
-});
-$("settingsDisabledWebsiteList").addEventListener("click", async event => {
-  const button = event.target.closest("[data-disabled-site-action]"), row = button?.closest(".settings-disabled-web-item");
-  if (!button || !row) return;
-  const site = row.dataset.site, action = button.dataset.disabledSiteAction;
-  const sites = Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [];
-  if (action === "edit") { editingDisabledWebsite = site; renderDisabledWebsiteList(); const field = $("settingsDisabledWebsiteList").querySelector(".settings-disabled-web-edit-input"); field?.focus(); field?.select(); return; }
-  if (action === "cancel") { editingDisabledWebsite = null; renderDisabledWebsiteList(); return; }
-  if (action === "remove") { await updateDisabledWebsites(sites.filter(value => value !== site)); return; }
-  if (action === "save") {
-    const field = row.querySelector(".settings-disabled-web-edit-input"), updated = normalizeDisabledWebsite(field?.value);
-    if (!updated) { toast(t("invalidWebsite")); field?.focus(); return; }
-    if (updated !== site && sites.includes(updated)) { toast(t("websiteAlreadyDisabled")); field?.focus(); return; }
-    await updateDisabledWebsites(sites.map(value => value === site ? updated : value));
-  }
-});
+setupWebsiteList({ formId:"settingsDisabledWebsiteForm", inputId:"settingsDisabledWebsiteInput", listId:"settingsDisabledWebsiteList", attribute:"disabled-site-action",
+  get:() => Array.isArray(dashboardSettings.disabledWebsites) ? dashboardSettings.disabledWebsites : [], set:updateDisabledWebsites, setEditing:site => { editingDisabledWebsite = site; }, render:renderDisabledWebsiteList });
+setupWebsiteList({ formId:"barHiddenWebForm", inputId:"barHiddenWebInput", listId:"barHiddenWebList", attribute:"bar-site-action",
+  get:barHiddenSites, set:sites => { editingBarHiddenWebsite = null; return saveBarSettings({ hiddenSites:[...new Set(sites)] }); }, setEditing:site => { editingBarHiddenWebsite = site; }, render:renderBarHiddenWebsiteList });
 $("settingsLanguageSelect").addEventListener("change", async event => {
   dashboardSettingsChangedWhileOpen = true;
   currentLang = event.target.value;
@@ -3391,6 +3454,25 @@ $("settingsPopupTranslationTarget").addEventListener("change", async event => {
 });
 $("settingsSidebarIndicator").addEventListener("change", event => saveDashboardSettings({ sidebarIndicatorEnabled:event.target.checked }));
 $("settingsSidebarIndicatorDisabledSites").addEventListener("change", event => saveDashboardSettings({ sidebarIndicatorOnDisabledSites:event.target.checked }));
+document.querySelectorAll("#dashboardSettingsDialog input[name=sidebarIndicatorTarget]").forEach(input => input.addEventListener("change", event => { if (event.target.checked) saveDashboardSettings({ sidebarIndicatorTarget:event.target.value === "ai" ? "ai" : "notes" }); }));
+$("settingsNotesEnabled").addEventListener("change", event => saveDashboardSettings({ notesEnabled:event.target.checked }));
+$("settingsTranslateEnabled").addEventListener("change", event => saveDashboardSettings({ translateEnabled:event.target.checked }));
+$("settingsAskAIEnabled").addEventListener("change", event => saveDashboardSettings({ askAIEnabled:event.target.checked }));
+document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => input.addEventListener("change", () => saveDashboardSettings({ fullDictionarySections:Object.fromEntries([...document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]")].map(part => [part.dataset.dictPart, part.checked])) })));
+// AI row: at least one AI stays on; the default AI turned off → "Last used" (the preview module keeps the controls right before this runs)
+document.querySelectorAll("#dashboardSettingsDialog [data-ai-provider]").forEach(input => input.addEventListener("change", () => {
+  const askAIProviders = Object.fromEntries([...document.querySelectorAll("#dashboardSettingsDialog [data-ai-provider]")].map(part => [part.dataset.aiProvider, part.checked]));
+  if (!Object.values(askAIProviders).some(Boolean)) { renderSettingsExtras(); return; }
+  const current = String(dashboardSettings.askAIDefaultProvider || "last");
+  saveDashboardSettings({ askAIProviders, askAIDefaultProvider:current !== "last" && askAIProviders[current] === false ? "last" : current });
+}));
+document.querySelectorAll("#dashboardSettingsDialog input[name=askAIDefaultProvider]").forEach(input => input.addEventListener("change", event => { if (event.target.checked) saveDashboardSettings({ askAIDefaultProvider:event.target.value }); }));
+// Keepit bar (same keys as the bar's ☰): compact, back-to-top button, hidden, show the guide again (touch)
+$("settingsBarCompact").addEventListener("change", event => saveBarSettings({ five:event.target.checked }));
+$("settingsBarTop").addEventListener("change", event => saveBarSettings({ btop:event.target.checked }));
+$("settingsBarHidden").addEventListener("change", event => saveBarSettings({ hidden:event.target.checked }));
+$("settingsBarCoach").addEventListener("click", () => saveBarSettings({ coachSeen:false }));
+$("settingsGestureTranslate").addEventListener("change", event => saveBarSettings({ gest:{ ...(barSettings.gest || { translate:true, nav:true }), translate:event.target.checked } }));
 $("settingsProductUpdates").addEventListener("change", event => saveDashboardSettings({ productUpdatesEnabled:event.target.checked }));
 $("settingsWeeklySummary").addEventListener("change", event => saveDashboardSettings({ weeklySummaryEnabled:event.target.checked }));
 async function saveBilingualReaderSettings(patch) {
@@ -3480,29 +3562,15 @@ $("bilingualReadTranslation").addEventListener("change", event => saveBilingualR
 $("bilingualEnableTTS").addEventListener("change", event => saveBilingualReaderSettings({ enableTTS:event.target.checked }));
 $("bilingualSpeakerIconVisibility").addEventListener("change", event => saveBilingualReaderSettings({ speakerIconVisibility:event.target.value }));
 $("bilingualExcludeSelectors").addEventListener("change", event => saveBilingualReaderSettings({ excludeSelectors:event.target.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean) }));
-$("bilingualDisabledReaderWebForm").addEventListener("submit", async event => {
-  event.preventDefault();
-  const field = $("bilingualDisabledReaderWebInput"), site = normalizeDisabledWebsite(field.value);
-  if (!site) { toast(t("invalidWebsite")); field.focus(); return; }
-  const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
-  if (sites.includes(site)) { toast(t("websiteAlreadyDisabled")); field.focus(); return; }
-  field.value = ""; await updateDisabledReaderWebsites([...sites, site]);
-});
-$("bilingualDisabledReaderWebList").addEventListener("click", async event => {
-  const button = event.target.closest("[data-reader-site-action]"), row = button?.closest(".settings-disabled-web-item");
-  if (!button || !row) return;
-  const site = row.dataset.site, action = button.dataset.readerSiteAction;
-  const sites = Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [];
-  if (action === "edit") { editingDisabledReaderWebsite = site; renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); const field = $("bilingualDisabledReaderWebList").querySelector(".settings-disabled-web-edit-input"); field?.focus(); field?.select(); return; }
-  if (action === "cancel") { editingDisabledReaderWebsite = null; renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); return; }
-  if (action === "remove") { await updateDisabledReaderWebsites(sites.filter(value => value !== site)); return; }
-  if (action === "save") {
-    const field = row.querySelector(".settings-disabled-web-edit-input"), updated = normalizeDisabledWebsite(field?.value);
-    if (!updated) { toast(t("invalidWebsite")); field?.focus(); return; }
-    if (updated !== site && sites.includes(updated)) { toast(t("websiteAlreadyDisabled")); field?.focus(); return; }
-    await updateDisabledReaderWebsites(sites.map(value => value === site ? updated : value));
-  }
-});
+setupWebsiteList({ formId:"bilingualDisabledReaderWebForm", inputId:"bilingualDisabledReaderWebInput", listId:"bilingualDisabledReaderWebList", attribute:"reader-site-action",
+  get:() => Array.isArray(bilingualReaderSettings.readerDisabledWebsites) ? bilingualReaderSettings.readerDisabledWebsites : [], set:updateDisabledReaderWebsites, setEditing:site => { editingDisabledReaderWebsite = site; }, render:() => { renderDisabledReaderWebsiteList(); syncBilingualReaderControls(); } });
+// list Reset buttons (purple while the list differs from the default): "Reset done · Undo"
+function resetSiteList(get, set, defaults) { const before = get().slice(); if (sameSites(before, defaults)) return; set([...defaults]); SETTINGS_KIT.undo.show(() => set(before)); }
+$("resetReaderDisabledWebsites").addEventListener("click", () => resetSiteList(() => bilingualReaderSettings.readerDisabledWebsites || [], updateDisabledReaderWebsites, CONFIG.DEFAULT_READER_DISABLED_WEBSITES));
+$("resetBarHiddenWebsites").addEventListener("click", () => resetSiteList(barHiddenSites, sites => saveBarSettings({ hiddenSites:sites }), CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES));
+SETTINGS_KIT.reset.part("disableWeb", { isDefault:() => !(dashboardSettings.disabledWebsites || []).length, save:() => (dashboardSettings.disabledWebsites || []).slice(), restore:updateDisabledWebsites, initial:() => [] });
+SETTINGS_KIT.reset.part("bilingualReader", { isDefault:() => sameSites(bilingualReaderSettings.readerDisabledWebsites || [], CONFIG.DEFAULT_READER_DISABLED_WEBSITES), save:() => (bilingualReaderSettings.readerDisabledWebsites || []).slice(), restore:updateDisabledReaderWebsites, initial:() => [...CONFIG.DEFAULT_READER_DISABLED_WEBSITES] });
+SETTINGS_KIT.reset.part("keepitBar", { isDefault:() => sameSites(barHiddenSites(), CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES), save:() => barHiddenSites().slice(), restore:sites => saveBarSettings({ hiddenSites:sites }), initial:() => [...CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES] });
 $("bilingualClearCache").addEventListener("click", async () => { await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_CLEAR_CACHE" }); toast(t("bilingualCacheCleared")); });
 // Full dictionary cache: looked-up words (lhnFullDictionary:*, incl. old versions) + their chip/phrase translations (lhnFullDictionaryTranslation:*). Nothing else.
 $("settingsClearDictionaryCache").addEventListener("click", async () => { const all = await browser.storage.local.get(null); await browser.storage.local.remove(Object.keys(all).filter(key => key.startsWith("lhnFullDictionary:") || key.startsWith("lhnFullDictionaryTranslation:"))); toast(t("dictionaryCacheCleared")); });
@@ -3514,48 +3582,67 @@ $("settingsExportButton").addEventListener("click", event => {
   closeMenus(); menu.hidden = !shouldOpen; $("settingsExportButton").setAttribute("aria-expanded", String(shouldOpen));
 });
 $("settingsImportJson").addEventListener("click", () => $("importFile").click());
-function setupDashboardShortcut(id, settingKey) {
-  const field = $(id); let isCapturing = false;
-  const restore = () => { isCapturing = false; field.value = dashboardSettings[settingKey] ?? CONFIG.DEFAULT_SETTINGS[settingKey]; };
-  field.addEventListener("focus", () => { isCapturing = true; field.value = t("shortcutCapture"); });
-  field.addEventListener("blur", () => { if (isCapturing) restore(); });
-  field.addEventListener("keydown", async event => {
-    if (!isCapturing) return;
-    event.preventDefault(); event.stopPropagation();
-    if (event.key === "Escape") { restore(); field.blur(); return; }
-    if (event.key === "Backspace") { isCapturing = false; field.value = ""; await saveDashboardSettings({ [settingKey]:"" }); field.blur(); return; }
-    if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return;
-    const value = LHN_SHORTCUTS.fromEvent(event); isCapturing = false;
-    await saveDashboardSettings({ [settingKey]:value }); field.blur();
+// Shortcut fields: keys shown as key caps ("Not set" when empty); click = wait for keys (held Ctrl / Alt / Shift show at once);
+// Esc = stop, Backspace / Delete / ✕ = clear (with Undo); Tab still moves on; a key used by another shortcut is not saved ("Used for …").
+// Warnings (still saved): keys the browser keeps, or a single key for a general shortcut (it would block typing).
+const SHORTCUT_FIELDS = (() => {
+  const FIELDS = { settingsShortcut:"shortcut", settingsSidebarShortcut:"sidebarShortcut", settingsTranslateShortcut:"translateSelectedShortcut", settingsWebsiteShortcut:"toggleWebsiteShortcut", settingsDualSubtitlesShortcut:"dualSubtitlesShortcut", settingsDictationShortcut:"dictationShortcut", settingsSpeechPauseShortcut:"speechPauseShortcut", settingsPreviousReadingShortcut:"previousReadingShortcut", settingsNextReadingShortcut:"nextReadingShortcut", settingsIncreaseReadingSpeedShortcut:"increaseReadingSpeedShortcut", settingsDecreaseReadingSpeedShortcut:"decreaseReadingSpeedShortcut", settingsSelectVoiceShortcut:"selectVoiceShortcut" };
+  const IDS = Object.keys(FIELDS);
+  const READING_IDS = ["settingsSpeechPauseShortcut", "settingsPreviousReadingShortcut", "settingsNextReadingShortcut", "settingsIncreaseReadingSpeedShortcut", "settingsDecreaseReadingSpeedShortcut", "settingsSelectVoiceShortcut"];
+  const BROWSER_KEYS = new Set(["Ctrl+T", "Ctrl+W", "Ctrl+N", "Ctrl+Q", "Ctrl+Shift+N", "Ctrl+Shift+P", "Ctrl+Shift+T", "Ctrl+Shift+W", "Ctrl+Shift+Q", "Ctrl+Tab", "Ctrl+Shift+Tab", "Ctrl+PageUp", "Ctrl+PageDown", "Alt+F4", "F11", "Meta+T", "Meta+W", "Meta+N", "Meta+Q", "Shift+Meta+T", "Shift+Meta+N"].map(key => key.toLowerCase()));
+  const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+  const KEY_SHOW = { Left:"←", Right:"→", Up:"↑", Down:"↓", Meta:IS_MAC ? "⌘" : "Win" };   // display only; stored as "Left", "Meta"…
+  const value = id => String(dashboardSettings[FIELDS[id]] ?? CONFIG.DEFAULT_SETTINGS[FIELDS[id]] ?? "");
+  const kbd = key => `<kbd class="kp-kbd">${escapeHtml(KEY_SHOW[key] || key)}</kbd>`;
+  const chips = parts => parts.map(kbd).join('<i class="kp-plus">+</i>');
+  const mods = event => [event.ctrlKey && "Ctrl", event.altKey && "Alt", event.shiftKey && "Shift", event.metaKey && "Meta"].filter(Boolean);
+  function message(id, text, warn) {
+    const row = $(id).closest(".settings-shortcut-row"), host = row.querySelector(":scope > span");
+    let note = host.querySelector(".kp-key-msg"); if (!note) { note = document.createElement("small"); note.className = "kp-key-msg"; note.setAttribute("role", "status"); host.append(note); }
+    note.textContent = text || ""; note.hidden = !text; note.classList.toggle("is-warn", !!warn); row.classList.toggle("has-key-error", !!text && !warn);
+  }
+  function warning(id, keys) {
+    if (!keys) return "";
+    if (BROWSER_KEYS.has(keys.toLowerCase())) return t("shortcutBrowserKey");
+    const parts = keys.split("+"), key = parts[parts.length - 1];
+    if (!READING_IDS.includes(id) && !parts.some(part => ["Ctrl", "Alt", "Meta"].includes(part)) && (key.length === 1 || key === "Space")) return t("shortcutSingleKey");
+    return "";
+  }
+  function render(id, live) {
+    const field = $(id), wrap = field?.parentElement; if (!wrap) return;
+    const keys = value(id), box = wrap.querySelector(".kp-keys");
+    field.value = ""; wrap.dataset.empty = String(!keys);
+    if (wrap.classList.contains("is-capturing")) box.innerHTML = live?.length ? chips(live) + '<i class="kp-plus">+</i><span class="kp-key-hint">…</span>' : `<span class="kp-key-hint">${escapeHtml(t("shortcutCapture"))}</span>`;
+    else { box.innerHTML = keys ? chips(keys.split("+")) : `<span class="kp-key-hint">${escapeHtml(t("shortcutNotSet"))}</span>`; message(id, warning(id, keys), true); }
+    field.setAttribute("aria-label", `${field.closest(".settings-shortcut-row")?.querySelector("strong")?.textContent || ""}: ${keys || t("shortcutNotSet")}`);
+  }
+  const save = (id, keys) => saveDashboardSettings({ [FIELDS[id]]:keys });
+  IDS.forEach(id => {
+    const field = $(id); if (!field) return; const wrap = field.parentElement;
+    const clearKey = () => { const before = value(id); field.blur(); save(id, ""); if (before) SETTINGS_KIT.undo.show(() => save(id, before), "kpDeleted"); };
+    field.addEventListener("focus", () => { wrap.classList.add("is-capturing"); message(id, ""); render(id); });
+    field.addEventListener("blur", () => { wrap.classList.remove("is-capturing"); message(id, ""); render(id); });
+    field.addEventListener("keyup", event => { if (wrap.classList.contains("is-capturing")) render(id, mods(event)); });
+    field.addEventListener("keydown", event => {
+      if (!wrap.classList.contains("is-capturing")) return;
+      if (event.key === "Tab" && !event.ctrlKey && !event.altKey && !event.metaKey) return;
+      event.preventDefault(); event.stopPropagation();
+      if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) { render(id, mods(event)); return; }
+      if (event.key === "Escape" && !mods(event).length) { field.blur(); return; }
+      if ((event.key === "Backspace" || event.key === "Delete") && !mods(event).length) { clearKey(); return; }
+      const keys = LHN_SHORTCUTS.fromEvent(event), clash = IDS.find(other => other !== id && value(other).toLowerCase() === keys.toLowerCase());
+      if (clash) { message(id, t("shortcutInUse", { name:$(clash).closest(".settings-shortcut-row").querySelector("strong").textContent })); render(id); return; }
+      field.blur(); save(id, keys);
+    });
+    const clear = wrap.querySelector(".settings-shortcut-clear");
+    clear?.addEventListener("pointerdown", event => event.preventDefault());
+    clear?.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); clearKey(); });
   });
-}
-setupDashboardShortcut("settingsShortcut", "shortcut");
-setupDashboardShortcut("settingsSidebarShortcut", "sidebarShortcut");
-setupDashboardShortcut("settingsTranslateShortcut", "translateSelectedShortcut");
-setupDashboardShortcut("settingsWebsiteShortcut", "toggleWebsiteShortcut");
-setupDashboardShortcut("settingsDualSubtitlesShortcut", "dualSubtitlesShortcut");
-setupDashboardShortcut("settingsDictationShortcut", "dictationShortcut");
-setupDashboardShortcut("settingsSpeechPauseShortcut", "speechPauseShortcut");
-setupDashboardShortcut("settingsPreviousReadingShortcut", "previousReadingShortcut");
-setupDashboardShortcut("settingsNextReadingShortcut", "nextReadingShortcut");
-setupDashboardShortcut("settingsIncreaseReadingSpeedShortcut", "increaseReadingSpeedShortcut");
-setupDashboardShortcut("settingsDecreaseReadingSpeedShortcut", "decreaseReadingSpeedShortcut");
-setupDashboardShortcut("settingsSelectVoiceShortcut", "selectVoiceShortcut");
-$("resetDashboardShortcuts").addEventListener("click", () => saveDashboardSettings({
-  shortcut:CONFIG.DEFAULT_SETTINGS.shortcut,
-  sidebarShortcut:CONFIG.DEFAULT_SETTINGS.sidebarShortcut,
-  translateSelectedShortcut:CONFIG.DEFAULT_SETTINGS.translateSelectedShortcut,
-  toggleWebsiteShortcut:CONFIG.DEFAULT_SETTINGS.toggleWebsiteShortcut,
-  dualSubtitlesShortcut:CONFIG.DEFAULT_SETTINGS.dualSubtitlesShortcut,
-  dictationShortcut:CONFIG.DEFAULT_SETTINGS.dictationShortcut,
-  speechPauseShortcut:CONFIG.DEFAULT_SETTINGS.speechPauseShortcut,
-  previousReadingShortcut:CONFIG.DEFAULT_SETTINGS.previousReadingShortcut,
-  nextReadingShortcut:CONFIG.DEFAULT_SETTINGS.nextReadingShortcut,
-  increaseReadingSpeedShortcut:CONFIG.DEFAULT_SETTINGS.increaseReadingSpeedShortcut,
-  decreaseReadingSpeedShortcut:CONFIG.DEFAULT_SETTINGS.decreaseReadingSpeedShortcut,
-  selectVoiceShortcut:CONFIG.DEFAULT_SETTINGS.selectVoiceShortcut
-}).then(saved => { if (saved) toast(t("settingsReset")); }));
-$("profileMenuSignOut").addEventListener("click", signOutDemoProfile);
+  const isDefault = () => IDS.every(id => value(id) === String(CONFIG.DEFAULT_SETTINGS[FIELDS[id]] ?? ""));
+  SETTINGS_KIT.reset.part("shortcuts", { isDefault, save:() => Object.fromEntries(IDS.map(id => [FIELDS[id], value(id)])), restore:patch => saveDashboardSettings(patch), initial:() => Object.fromEntries(IDS.map(id => [FIELDS[id], CONFIG.DEFAULT_SETTINGS[FIELDS[id]] ?? ""])) });
+  return { renderAll() { IDS.forEach(id => render(id)); } };
+})();
+$("profileMenuSignOut").addEventListener("click", () => signOutDemoProfile());
 $("profileImportJson").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async e => {
   const file = e.target.files?.[0]; if (!file) return;

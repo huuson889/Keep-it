@@ -11,6 +11,7 @@
   const HIGHLIGHT_COLORS = Object.freeze({ yellow: COLOR_YELLOW, green: COLOR_GREEN, purple: COLOR_PURPLE, red: COLOR_RED, blue: COLOR_BLUE, orange: COLOR_ORANGE });
   const DEFAULT_COLOR = "yellow";
   const DEFAULT_READER_DISABLED_WEBSITES = globalThis.LHN_DEFAULTS.readerDisabledWebsites;
+  const DEFAULT_BAR_HIDDEN_WEBSITES = globalThis.LHN_DEFAULTS.barHiddenWebsites;
   const ACTION_ICON_PATHS = Object.freeze({
     edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>',
     trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>',
@@ -29,6 +30,7 @@
     }),
     DEFAULT_SETTINGS,
     DEFAULT_READER_DISABLED_WEBSITES,
+    DEFAULT_BAR_HIDDEN_WEBSITES,
     DATABASE: Object.freeze({
       NAME: "local-highlight-notes",
       VERSION: 1,

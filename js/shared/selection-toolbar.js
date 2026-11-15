@@ -18,12 +18,13 @@
   const ACTION_IDS = ACTIONS.map(action => action.id);
 
   // Every style is a combination of three flags; CSS reads the flags, never the style number.
-  // Order: radial before bar; within each, labels before icons; always open before hover to open.
+  // 0 = logo only (Settings "Style 1"). Order: radial before bar; within each, labels before icons; always open before hover to open.
   //   radial (3 framed buttons around the logo: Highlight left, Translate below, Ask AI right):
   //     1 = labels, always open · 2 = labels, hover to open · 3 = icons, always open · 4 = icons, hover to open
   //   bar (actions in a row, logo right):
   //     5 = labels, always open · 6 = labels, hover to open · 7 = icons, always open · 8 = icons, hover to open
   const STYLES = Object.freeze({
+    0:Object.freeze({ layout:"icon", labels:false, collapsible:false }),   // logo only: the logo runs its default action, no buttons
     1:Object.freeze({ layout:"radial", labels:true, collapsible:false }),
     2:Object.freeze({ layout:"radial", labels:true, collapsible:true }),
     3:Object.freeze({ layout:"radial", labels:false, collapsible:false }),
@@ -58,7 +59,7 @@
    * Builds the toolbar shell (actions + logo).
    * @param {object} options
    * @param {Document} options.document
-   * @param {string} options.style        "1".."8"
+   * @param {string} options.style        "0".."8"
    * @param {(key:string) => string} options.t  i18n lookup
    * @param {string} [options.logoAction] action run by the logo
    * @param {(id:string) => void} [options.onAction] called for action buttons and the logo

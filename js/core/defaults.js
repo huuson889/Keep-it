@@ -11,6 +11,10 @@
 
   const READER_DISABLED_WEBSITES = deepFreeze(["facebook.com", "messenger.com", "zalo.me", "youtube.com", "netflix.com", "github.com", "stackoverflow.com", "discord.com", "telegram.org", "twitch.tv", "soundcloud.com", "spotify.com", "google.com", "linkedin.com", "twitter.com", "x.com", "reddit.com", "tiktok.com", "instagram.com", "dropbox.com", "paypal.com", "behance.net", "dribbble.com", "figma.com", "canva.com", "chatgpt.com", "claude.ai"]);
 
+  // Keepit bar hidden on these sites (Settings → Keepit bar, lhnBottomBar.hiddenSites): the reader list without youtube.com (the bar has its own YouTube buttons) + Google sites.
+  const BAR_GOOGLE_WEBSITES = ["google.com", "google.com.vn", "gmail.com", "googleusercontent.com"];
+  const BAR_HIDDEN_WEBSITES = deepFreeze([...READER_DISABLED_WEBSITES.filter(site => site !== "youtube.com" && !BAR_GOOGLE_WEBSITES.includes(site)), ...BAR_GOOGLE_WEBSITES]);
+
   const settings = deepFreeze({
     showOnSelect: false,
     autoHighlight: false,
@@ -23,14 +27,21 @@
     speechRateByLanguage: { en: 1.5, vi: 1.5, ko: 1.5 }, // v3.5.217: 1.25 → 1.5
     hasCustomSpeechRateByLanguage: {},
     inheritedSpeechRateByLanguage: {},
-    translateIconEnabled: false,
+    translateIconEnabled: true, // v3.5.287: Settings → Icon display "Show Keepit icon" on by default
     selectionToolbarStyleV2: "1", // v3.5.147: 8 styles (radial 1-4, bar 5-8); new key so every user starts on style 1
     selectionToolbarLogoAction: "highlight",
     autoSpeakOnTranslate: true,
     translationPopupEnabled: false,
     showFullEnglishDictionary: true,
+    fullDictionarySections: { ipa: true, pos: true, examples: true, syn: true, ant: true, forms: true, colloc: true }, // parts of the full dictionary popup
     sidebarIndicatorEnabled: true,
-    sidebarIndicatorOnDisabledSites: true,
+    sidebarIndicatorOnDisabledSites: false, // v3.5.287: off by default
+    sidebarIndicatorTarget: "notes", // tapping the indicator opens "notes" | "ai"
+    notesEnabled: true, // master switches of Settings → Notes / Translate / Ask AI
+    translateEnabled: true,
+    askAIEnabled: true,
+    askAIProviders: { chatgpt: true, gemini: true, claude: true }, // AIs in the AI panel row (at least one on)
+    askAIDefaultProvider: "last", // AI opened by Ask AI: "last" | "chatgpt" | "gemini" | "claude"
     chatGPTAutoSend: false,
     chatGPTSummaryPrompt: "Hãy tóm tắt web này",
     chatGPTAskPrompt: "Đoạn này trên web nghĩa là sao?",
@@ -122,7 +133,7 @@
     sub: { font: null, bold: false, en: { pct: 100, color: null }, vi: { pct: 90, color: null } }
   });
 
-  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, youtube, chatGPTPrompts, legacyChatGPTAskPrompts, readerDisabledWebsites: READER_DISABLED_WEBSITES });
+  globalThis.LHN_DEFAULTS = deepFreeze({ settings, reader, studyTranslation, flashcard, youtube, chatGPTPrompts, legacyChatGPTAskPrompts, readerDisabledWebsites: READER_DISABLED_WEBSITES, barHiddenWebsites: BAR_HIDDEN_WEBSITES });
   const promptFields = Object.freeze({ chatGPTSummaryPrompt:"summary", chatGPTAskPrompt:"ask" });
   const normalizePrompt = value => String(value ?? "").replace(/\s+/g, " ").trim().slice(0, 500);
   const isKnownDefault = (key, value) => {

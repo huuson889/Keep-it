@@ -201,8 +201,6 @@ html:not(.dark) .toolbar select.dashboard-control:focus,
 html:not(.dark) .toolbar button.dashboard-control:focus,
 html.dark .toolbar select.dashboard-control:focus,
 html.dark .toolbar button.dashboard-control:focus { outline:none!important; box-shadow:none!important; }
-html.dark .profile-google-button { background:#111a2b; border-color:#2b3a52; color:#e2e8f0; }
-html.dark .profile-auth-divider { color:#94a3b8; }
 html.dark .top-actions .profile-avatar-button { background:#172338; border-color:#2b3a52; color:#d7deeb; }
 html.dark .top-actions .profile-avatar-button:hover { background:#202e44; }
 .profile-menu .profile-menu-item { box-shadow:none!important; }
