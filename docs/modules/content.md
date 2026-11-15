@@ -32,6 +32,11 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Cài đặt → Ghi chú / Dịch / Hỏi AI (`notesEnabled`, `translateEnabled`, `askAIEnabled`): khi chọn chữ, tính năng tắt không có nút trên thanh tiện ích (`build({ actions })`, nút còn lại xếp theo `data-kp-slot`), cả 3 tắt thì không có icon (không ghi đè `translateIconEnabled`). Ghi chú tắt = không mở popup ghi chú; Dịch tắt = không popup dịch / từ điển, không cử chỉ dịch (`keepit-bar.js gestTranslate`).
+- Từ điển đầy đủ chỉ vẽ các phần `fullDictionarySections` đang bật (dữ liệu vẫn đủ); popup đang mở vẽ lại ngay khi đổi.
+- Chỉ báo cạnh: `sidebarIndicatorTarget:"ai"` (và Hỏi AI bật) → bấm mở / đóng AI panel.
+- Thanh Keepit: `lhnBottomBar.hiddenSites` (chưa lưu = `LHN_CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES`, gồm tên miền con) ẩn thanh như "Ẩn thanh"; "Hiện thanh" ở ☰ bỏ website khỏi danh sách. `persist()` giữ các khóa khác; đổi từ Cài đặt / tab khác áp dụng ngay (`storage.onChanged`).
+
 - Không đọc page body/title cho AI; Hỏi AI chỉ gửi selection người dùng chọn và URL hiện tại.
 - Full dict bật + 1 từ tiếng Anh: Dịch trên toolbar/logo và phím dịch (`translateSelectedShortcut`, mặc định Alt+W) đều truyền `allowDictionary:true` → mở full dict kể cả khi popup dịch trực tiếp tắt (chế độ icon); cụm từ → popup dịch thường. Không dùng `forcePopup` làm cờ (nút cụm trong full dict cũng truyền `forcePopup`).
 - Record annotation chỉ chứa field trong `PERSISTED_FIELDS` của `note-composer.js`, ngoại lệ duy nhất là cờ `dictionaryOnly` do nút tim của full dict thêm.

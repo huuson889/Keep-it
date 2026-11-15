@@ -108,6 +108,8 @@
       if (settings.translationPopupEnabled === false && translationPopup) { translationRequestId++; translationPopup.remove(); translationPopup = null; }
       if (settings.translationPopupEnabled === false && dictionaryPopup && !dictionaryPopup._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
       if (settings.showFullEnglishDictionary === false && dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
+      const previousSections = JSON.stringify(changes[CONFIG.STORAGE_KEYS.SETTINGS].oldValue?.fullDictionarySections || {});
+      if (dictionaryPopup?.isConnected && dictionaryPopup._lhnView && previousSections !== JSON.stringify(settings.fullDictionarySections || {})) renderEnglishDictionary(dictionaryPopup, dictionaryPopup._lhnView, dictionaryPopup._lhnFromCache);
       syncTranslateIconAvailability();
       if (previousLanguage !== globalThis.LHN_LANGUAGES.languageFor(settings)) refreshLocalizedUI(!websiteStateChanged);
     }
@@ -271,16 +273,18 @@
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-dict-visible"));
     return popup;
   }
+  const dictionarySectionShown = part => settings.fullDictionarySections?.[part] !== false;
   function renderEnglishDictionary(popup, data, fromCache) {
     const hiddenForOpenNote = popup?._lhnHideForNote && popup === dictionaryPopup && panel?.dataset.lhnDictionaryWord === popup.dataset.word;
     if (!popup || (!popup.isConnected && !hiddenForOpenNote)) return;
     const posNames = { noun:"noun", n:"noun", verb:"verb", v:"verb", adjective:"adjective", adj:"adjective", adverb:"adverb", adv:"adverb", };
     const esc = value => String(value ?? "").normalize("NFC").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
-    const relatedByKind = kind => (data.related || []).filter(item => item.kind === kind).map(item => `<button class="lhn-dict-chip lhn-dict-${kind.toLowerCase()}" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("");
+    const shown = dictionarySectionShown;
+    const relatedByKind = kind => !shown(kind.toLowerCase()) ? "" : (data.related || []).filter(item => item.kind === kind).map(item => `<button class="lhn-dict-chip lhn-dict-${kind.toLowerCase()}" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("");
     const related = ["Syn", "Ant"].map(kind => relatedByKind(kind) ? `<section class="lhn-dict-related lhn-dict-${kind.toLowerCase()}" data-kind="${kind}" data-label="${kind}:">${relatedByKind(kind)}</section>` : "").join("");
-    const forms = (data.forms || []).length ? `<section class="lhn-dict-related lhn-dict-forms" data-kind="Forms" data-label="Forms:">${data.forms.map(item => `<button class="lhn-dict-chip lhn-dict-form" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>${esc(item.tag)}</span><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
-    const collocations = (data.collocations || []).length ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${data.collocations.map(item => `<button class="lhn-dict-chip lhn-dict-colloc" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
-    const pos = (data.translation.posDict || []).map(item => `<div class="lhn-dict-pos"><span>${esc(posNames[item.pos.toLowerCase()] || item.pos)}</span><b>${esc((item.words || []).join(", "))}</b></div>`).join("");
+    const forms = shown("forms") && (data.forms || []).length ? `<section class="lhn-dict-related lhn-dict-forms" data-kind="Forms" data-label="Forms:">${data.forms.map(item => `<button class="lhn-dict-chip lhn-dict-form" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>${esc(item.tag)}</span><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
+    const collocations = shown("colloc") && (data.collocations || []).length ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${data.collocations.map(item => `<button class="lhn-dict-chip lhn-dict-colloc" data-dict-action="lookup" data-word="${esc(item.word)}"><b>${esc(item.word)}</b><span>(${esc(item.meaning || item.word)})</span></button>`).join("")}</section>` : "";
+    const pos = (shown("pos") ? data.translation.posDict || [] : []).map(item => `<div class="lhn-dict-pos"><span>${esc(posNames[item.pos.toLowerCase()] || item.pos)}</span><b>${esc((item.words || []).join(", "))}</b></div>`).join("");
     const highlightExample = (text, exampleWord) => {
       const pattern = LHN_DICTIONARY.exampleWordRegExp(exampleWord);
       if (!pattern) return esc(text);
@@ -291,15 +295,15 @@
       }
       return html + esc(text.slice(last));
     };
-    const examples = (data.examples || []).length ? `<section class="lhn-dict-examples" data-kind="Example" data-label="Example:">${data.examples.map((item, index) => `<div class="lhn-dict-example"><span class="lhn-dict-example-num">${index + 1}.</span><span class="lhn-dict-example-text">${highlightExample(item.text, data.exampleWord || data.word)}</span>${item.meaning ? `<span class="lhn-dict-example-meaning">${esc(item.meaning)}</span>` : ""}</div>`).join("")}</section>` : "";
+    const examples = shown("examples") && (data.examples || []).length ? `<section class="lhn-dict-examples" data-kind="Example" data-label="Example:">${data.examples.map((item, index) => `<div class="lhn-dict-example"><span class="lhn-dict-example-num">${index + 1}.</span><span class="lhn-dict-example-text">${highlightExample(item.text, data.exampleWord || data.word)}</span>${item.meaning ? `<span class="lhn-dict-example-meaning">${esc(item.meaning)}</span>` : ""}</div>`).join("")}</section>` : "";
     const hearted = !!popup._lhnSaved?.has(String(data.word || "").toLowerCase());
     const heartLabel = esc(t("dictionaryAddFlashcard"));
     const heartButton = `<button class="lhn-dict-heart${hearted ? " is-favorite" : ""}" data-dict-action="heart" aria-label="${heartLabel}" title="${heartLabel}" aria-pressed="${hearted ? "true" : "false"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg></button>`;
     const ipaText = String(data.ipa || "").replace(/^\/+|\/+$/g, "");
-    const ipa = ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
+    const ipa = shown("ipa") && ipaText && ipaText.toLowerCase() !== String(data.word || "").toLowerCase() ? ipaText : "";
     popup.innerHTML = `<div class="lhn-dict-body"><header><div><strong>${esc(data.word)}</strong>${ipa ? `<span class="lhn-dict-ipa"${data.ipaApprox ? ' data-approx="true"' : ""}>/${esc(ipa)}/</span>` : ""}<span class="lhn-dict-engine">${fromCache ? "⚡ Cached" : esc(data.translation.engine)}</span></div><button class="lhn-dict-back" data-dict-action="back" aria-label="Back" title="Back" ${popup._lhnHistory?.length ? "" : "hidden"}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 14-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>${heartButton}<button class="lhn-dict-speak" data-dict-action="speak" data-word="${esc(data.word)}" aria-label="${esc(t("readTranslation"))}" title="${esc(t("readTranslation"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button></header><div class="lhn-dict-translation">${esc(data.translation.translatedText || "")}</div>${pos ? `<section class="lhn-dict-pos-list">${pos}</section>` : ""}${examples}${related}${forms}${collocations}</div>`;
     placeDictionaryBrand(popup);
-    popup._lhnView = data;
+    popup._lhnView = data; popup._lhnFromCache = fromCache;
     if (popup._lhnPageDir) { popup.querySelector(".lhn-dict-body")?.classList.add(`lhn-dict-page-${popup._lhnPageDir}`); popup._lhnPageDir = ""; }
     fillNoteFromDictionary(popup);
     if (popup._lhnHideForNote) {
@@ -572,9 +576,11 @@
     const translation = await noteTranslator.translate(text, options);
     return { translation, targetLanguage:options.targetLanguage };
   }
+  // Settings → Notes / Translate / Ask AI: a tool that is off has no toolbar button; all 3 off = no Keepit icon (translateIconEnabled itself is kept)
+  const enabledToolbarActions = (cfg = settings) => [cfg.notesEnabled !== false && "highlight", cfg.translateEnabled !== false && "translate", cfg.askAIEnabled !== false && "ai"].filter(Boolean);
   function showTranslateIcon(range) {
     if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
-    if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false) return;
+    if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false || !enabledToolbarActions().length) return;
     const selectedText = String(window.getSelection()?.toString() || range.toString()).trim();
     translateIcon?.remove();
     const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
@@ -592,7 +598,7 @@
       ai:() => launchChatGPTSidePanel({ selectedText }),
     };
     const shell = toolbar.build({
-      document, style, t, logoAction:settings.selectionToolbarLogoAction,
+      document, style, t, logoAction:settings.selectionToolbarLogoAction, actions:enabledToolbarActions(),
       onAction:id => runAction[id]?.()
     });
     shell.querySelector(".lhn-translate-actions")?.setAttribute("aria-label", t("translateSelectedText"));
@@ -615,7 +621,7 @@
     requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
   function syncTranslateIconAvailability() {
-    if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {
+    if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !enabledToolbarActions().length || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {
       translateIcon?.remove(); translateIcon = null; return;
     }
     showTranslateIcon(selectedRange);
@@ -1422,7 +1428,9 @@
   }
   document.addEventListener("lhn-browser-voice-unavailable", () => showSidebarToast("Trình duyệt bạn không hỗ trợ ngôn ngữ này"));
   // While the AI panel is open (Chromium), the edge button toggles the AI panel instead of the Highlight sidebar.
-  function edgeToggleControlsAIPanel() { return aiPanelVisible && aiPanelPageToggle && !sidebarOpen; }
+  // Settings → Appearance → indicator opens the AI panel (needs Ask AI on); otherwise only while the AI panel is open
+  const indicatorOpensAI = () => settings.sidebarIndicatorTarget === "ai" && settings.askAIEnabled !== false;
+  function edgeToggleControlsAIPanel() { return !sidebarOpen && (indicatorOpensAI() || (aiPanelVisible && aiPanelPageToggle)); }
   async function toggleAIPanelFromEdge() {
     if (aiPanelToggleBusy) return;
     aiPanelToggleBusy = true;
@@ -1451,15 +1459,15 @@
     const shortcut = aiMode ? aiPanelShortcut : (settings.sidebarShortcut ?? "Alt+Q");
     const text = aiMode ? t("aiPanelToggleTooltip") : t("toggleSidebar");
     const label = shortcut ? `${text} (${shortcut})` : text;
-    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen || aiMode));
+    sidebarEdgeToggle.removeAttribute("title"); sidebarEdgeToggle.setAttribute("aria-label", label); sidebarEdgeToggle.setAttribute("aria-expanded", String(sidebarOpen || (aiMode && aiPanelVisible)));
     sidebarEdgeToggle.dataset.tooltip = label;
-    sidebarEdgeToggle.classList.toggle("is-ai-panel", aiMode);
+    sidebarEdgeToggle.classList.toggle("is-ai-panel", aiMode && aiPanelVisible);
     sidebarEdgeToggle.classList.toggle("is-open", sidebarOpen);
     sidebarEdgeToggle.classList.toggle("is-site-disabled", websiteDisabled);
     sidebarEdgeToggle.classList.toggle("lhn-hidden-by-setting", settings.sidebarIndicatorEnabled === false || (websiteDisabled && settings.sidebarIndicatorOnDisabledSites === false));
     const width = sidebarOpen ? (Number.parseFloat(sidebar?.style.width) || 0) : 0;
     sidebarEdgeToggle.style.right = `${width}px`;
-    const path = sidebarOpen || aiMode ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
+    const path = sidebarOpen || (aiMode && aiPanelVisible) ? "M9 18l6-6-6-6" : "M15 18l-6-6 6-6";
     sidebarEdgeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
   }
   function toggleSidebar() { if (sidebarOpen) closeSidebar(); else openSidebar(); }
@@ -1730,7 +1738,8 @@
           return;
         }
         if (cfg.showOnSelect) {
-          if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
+          if (cfg.notesEnabled === false) return;
+          if (cfg.translateEnabled !== false && cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
             showComposer(range, null, { skipAutoTranslate:true, dictionaryWord:text });
             lookupEnglishDictionary(text, selectedRange);
           } else showComposer(range);
@@ -1738,7 +1747,7 @@
         else {
           removeTooltip();
           if (cfg.translateIconEnabled !== false) showTranslateIcon(selectedRange);
-          if (cfg.translationPopupEnabled !== false) translateSelectedRange(selectedRange, { keepIcon:cfg.translateIconEnabled !== false });
+          if (cfg.translationPopupEnabled !== false && cfg.translateEnabled !== false) translateSelectedRange(selectedRange, { keepIcon:cfg.translateIconEnabled !== false });
         }
       });
     }, 20);

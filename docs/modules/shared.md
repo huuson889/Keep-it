@@ -28,6 +28,8 @@ Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font 
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- `LHN_SELECTION_TOOLBAR.build({ actions })`: chỉ dựng nút của tính năng đang bật, gắn `data-kp-slot` (3 = trái·dưới·phải, 2 = trái·phải, 1 = dưới); logo chạy tính năng đã chọn, nếu tính năng đó tắt thì chạy tính năng bật đầu tiên. Dạng 0 = chỉ logo.
+
 - Script thường, không dùng `export`; mỗi file đăng ký đúng một global `LHN_*` (custom-font không đăng ký global).
 - `custom-font.js` không áp font khi website bị tắt hoặc chọn `auto`; gỡ stylesheet font khi tắt.
 - Favicon cache có giới hạn số mục và TTL; không gửi dữ liệu trang ngoài URL origin cần tra icon.

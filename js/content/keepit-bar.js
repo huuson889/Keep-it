@@ -129,11 +129,16 @@
 
   let settings = {}, host = null, root = null, mounted = false, picking = false;
   const S = {
-    hidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
+    hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
     kbd:false, vfs:false, navGuide:0, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
+  // Settings → Keepit bar → Hide the bar on websites: abc.com also covers m.abc.com, xxx.abc.com; no list stored yet = the default list
+  const siteInList = (list, host = websiteKey()) => (Array.isArray(list) ? list : []).some(d => { d = String(d || "").toLowerCase().replace(/^www\./, ""); return !!d && (host === d || host.endsWith("." + d)); });
+  const barHiddenList = b => Array.isArray(b?.hiddenSites) ? b.hiddenSites : (globalThis.LHN_CONFIG?.DEFAULT_BAR_HIDDEN_WEBSITES || []);
+  const barOff = () => S.hidden || S.siteHidden;
+  const gestTranslate = () => S.gest.translate && settings.translateEnabled !== false;   // Settings → Translate off = no translate gestures
   const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
   const langCode = () => { const code = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return ["en","vi","ko"].includes(code) ? code : "en"; };
   const t = (key, ...args) => { const M = globalThis.LHN_LANGUAGES?.MESSAGES || {}, k = "bar_" + key; let s = M[langCode()]?.[k] || M.en?.[k] || key; args.forEach((a, i) => { s = s.split(`{${i}}`).join(a); }); return s; };
@@ -196,8 +201,10 @@
   let storeTimer = 0;
   function persist() {
     clearTimeout(storeTimer);
-    storeTimer = setTimeout(() => {
-      browser.storage.local.set({ [STORE_KEY]:{ hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent, offPos:S.offPos, navGuide:S.navGuide } }).catch(() => {});
+    storeTimer = setTimeout(async () => {
+      // keep the keys only Settings writes (hiddenSites…)
+      let prev = {}; try { prev = (await browser.storage.local.get(STORE_KEY))?.[STORE_KEY] || {}; } catch {}
+      browser.storage.local.set({ [STORE_KEY]:{ ...(prev && typeof prev === "object" ? prev : {}), hidden:S.hidden, five:S.five, btop:S.btop, gest:S.gest, navOff:S.navOff, coachSeen:S.coachSeen, recent:S.recent, offPos:S.offPos, navGuide:S.navGuide } }).catch(() => {});
     }, 120);
   }
   function haptic() { if (isApk()) navigator.vibrate?.(12); }
@@ -285,7 +292,7 @@
   function syncBarVis() {
     if (!root) return;
     const bar = $("bar"), screen = $("screen");
-    const off = S.kbd || S.vfs, barless = S.hidden || S.yieldBar;
+    const off = S.kbd || S.vfs, barless = barOff() || S.yieldBar;
     bar.classList.toggle("hide", off || barless || S.extYield);
     bar.classList.toggle("peek", barless && S.peek && !off);
     screen.classList.toggle("hidden", barless && !off); screen.classList.toggle("peeking", S.peek);
@@ -310,7 +317,7 @@
     S.scrollHide = o >= max;
     if (anim) { bar.classList.add("snap"); b?.classList.add("snap"); clearTimeout(snapT); snapT = setTimeout(() => { bar.classList.remove("snap"); b?.classList.remove("snap"); }, 280); }
     bar.style.translate = o ? `0 ${o}px` : ""; bar.classList.toggle("shid", S.scrollHide);
-    $("screen").classList.toggle("shid", S.scrollHide && !S.hidden && !S.yieldBar && !S.kbd && !S.vfs);   // vuốt xuống ẩn hẳn thanh → vạch tím
+    $("screen").classList.toggle("shid", S.scrollHide && !barOff() && !S.yieldBar && !S.kbd && !S.vfs);   // vuốt xuống ẩn hẳn thanh → vạch tím
     if (b) b.style.translate = "";   // v3.5.240: nút về đầu trang luôn cách đáy 110px, không trượt theo thanh
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
@@ -321,7 +328,7 @@
     const b = $("btop"); if (!b) return;
     // v3.5.237: Reader open → back-to-top stays (video overlay still hides it). v3.5.240: always 110px from the bottom (CSS)
     b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && (!S.extYield || S.readerOn));
-    b.classList.toggle("low", (S.hidden || S.yieldBar) && !S.peek);
+    b.classList.toggle("low", (barOff() || S.yieldBar) && !S.peek);
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
@@ -377,6 +384,13 @@
   function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; }
   // ẩn / hiện tạm như Dock macOS: cả thanh trượt 0.5s ease-in-out (class dock trong lúc chạy)
   function setPeek(on) { if (on !== S.peek) dockAnim(); S.peek = on; syncBarVis(); }
+  // the bar was hidden by the website list: "Show bar" takes this website (and the list entry that covers it) off the list
+  async function showOnThisSite() {
+    let b = {}; try { b = (await browser.storage.local.get(STORE_KEY))?.[STORE_KEY] || {}; } catch {}
+    const host = websiteKey(), list = barHiddenList(b).filter(d => !siteInList([d], host));
+    barBack(); S.siteHidden = false; S.peek = false; syncBarVis(); toast(t("shown"));
+    try { await browser.storage.local.set({ [STORE_KEY]:{ ...b, hiddenSites:list } }); } catch {}
+  }
   function setHidden(on) { if (!on) barBack(); S.hidden = on; S.peek = false; persist(); syncBarVis(); toast(on ? t(isDesk() ? "hiddenDesk" : "hiddenTouch") : t("shown")); }
   let toastT = 0;
   function toast(text, undo) {
@@ -581,9 +595,9 @@
       if (S.peek && isDesk() && !overBar() && !bar.matches(":hover")) { if (!leaveArmed) { leaveArmed = true; wireBar.peekLater(); } } else leaveArmed = false;
     }, { capture:true, passive:true });
     wireBar.peekLater = () => { clearTimeout(peekT); peekT = setTimeout(() => { leaveArmed = false; if (!anyOpen() && !bar.matches(":hover") && !overBar()) setPeek(false); }, 250); };
-    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(S.hidden || S.yieldBar || S.scrollHide)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
+    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(barOff() || S.yieldBar || S.scrollHide)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
     $("hzone").addEventListener("mouseleave", () => { if (!isDesk()) return; clearTimeout(peekT); if (S.peek) wireBar.peekLater(); });
-    const hzAct = () => { if ((S.hidden || S.yieldBar) && isTouch()) setPeek(true); else if (S.scrollHide) { S.sOff = 0; dockAnim(); applyOff(false); } };
+    const hzAct = () => { if ((barOff() || S.yieldBar) && isTouch()) setPeek(true); else if (S.scrollHide) { S.sOff = 0; dockAnim(); applyOff(false); } };
     let hzY = null;
     $("hzone").addEventListener("click", hzAct);
     $("hzone").addEventListener("pointerdown", e => { hzY = isTouch() ? e.clientY : null; });
@@ -679,7 +693,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
@@ -692,7 +706,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta"))}${tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${S.hidden ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -809,7 +823,7 @@
     if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
     if (a === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
     if (a === "hide") { closeSheet(); setHidden(true); return; }
-    if (a === "show") { closeSheet(); setHidden(false); return; }
+    if (a === "show") { closeSheet(); if (S.siteHidden) void showOnThisSite(); else setHidden(false); return; }
     closeSheet();
     if (a === "dashboard") void send("OPEN_DASHBOARD");
     else if (a === "settings") void send("OPEN_DASHBOARD_SETTINGS");
@@ -871,11 +885,11 @@
     // v3.5.184: two fingers tapping together (landing ≤ 300ms apart, not moving) = translate / untranslate the whole page;
     // moving them = the browser's pinch zoom as usual (was v3.5.164: three fingers, clashed with phones' 3-finger screenshot)
     if (e.touches.length === 1) { tri = null; t1 = Date.now(); }
-    else if (e.touches.length === 2 && !tri && Date.now() - t1 < 300 && gestureAllowed() && S.gest.translate && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
+    else if (e.touches.length === 2 && !tri && Date.now() - t1 < 300 && gestureAllowed() && gestTranslate() && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
     else tri = null;
     if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
-    const para = S.gest.translate ? paraOf(target, p0.clientX, p0.clientY) : null;
+    const para = gestTranslate() ? paraOf(target, p0.clientX, p0.clientY) : null;
     if (!para) { pg = null; return; }
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
       edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed };
@@ -905,7 +919,7 @@
 
   // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
   let coachT = 0;
-  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && S.gest.translate) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
+  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && gestTranslate()) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
   function showCoach() {
     const it = coachItems(); if (!it.length || !isTouch() || S.kbd || S.vfs || S.siteOff || S.extYield) return;
     $("coach").innerHTML = `<div class="ch1">${ic("hand")}<b>${esc(t(S.coachRe ? "coachTitle" : "coachNew"))}</b></div><ul>${it.map(([g, r]) => `<li><span>${esc(g)}</span><em>${esc(r)}</em></li>`).join("")}</ul><div class="cb"><button type="button" data-c="all">${esc(t("seeAll"))}</button><button type="button" class="pri" data-c="ok">${esc(t("gotIt"))}</button></div>`;
@@ -921,7 +935,7 @@
     clearTimeout(navGuideT);
     if (!isTouch() || !S.gest.nav || S.navGuide >= 3) return;
     navGuideT = setTimeout(() => {
-      if (!mounted || S.hidden || S.yieldBar || S.sOff || S.kbd || S.vfs || S.siteOff || S.extYield || S.introOn || anyOpen() || $("coach").classList.contains("on") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (!mounted || barOff() || S.yieldBar || S.sOff || S.kbd || S.vfs || S.siteOff || S.extYield || S.introOn || anyOpen() || $("coach").classList.contains("on") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       S.navGuide++; persist(); playNavGuide();
     }, 1800);
   }
@@ -967,7 +981,7 @@
     if (!S.introOn) return; S.introOn = false; S.introSeen = true;
     browser.storage.local.set({ [INTRO_KEY]:true }).catch(() => {});
     $("intro").classList.remove("on"); $("screen").classList.remove("introon");
-    if (S.hidden && S.peek) setPeek(false);
+    if (barOff() && S.peek) setPeek(false);
     scheduleCoach();
   }
 
@@ -1383,6 +1397,7 @@
       S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
       S.navOff = b.navOff && typeof b.navOff === "object" ? { ...b.navOff } : {};
       S.navGuide = Number(b.navGuide) || 0;
+      S.siteHidden = siteInList(barHiddenList(b));
       S.recent = Array.isArray(b.recent) ? b.recent.filter(r => r && typeof r.q === "string").slice(0, 6) : [];
       S.introSeen = data[INTRO_KEY] === true;
     } catch {}
@@ -1391,6 +1406,19 @@
       if (area !== "local" || !mounted) return;
       if (changes[INTRO_KEY]?.newValue === true && S.introOn) introDone();
       if (changes[INTRO_KEY]?.newValue === true) S.introSeen = true;
+      // Settings → Keepit bar (or the ☰ of another tab) changed: follow at once
+      const b = changes[STORE_KEY]?.newValue;
+      if (b && typeof b === "object") {
+        const was = { five:S.five, off:barOff() };
+        S.hidden = b.hidden === true; S.five = b.five === true; S.btop = b.btop !== false; S.coachSeen = b.coachSeen === true;
+        S.gest = { translate:b.gest?.translate !== false, nav:b.gest?.nav !== false };
+        S.siteHidden = siteInList(barHiddenList(b));
+        if (was.off && !barOff()) barBack();
+        if (was.off !== barOff()) S.peek = false;
+        if (was.five !== S.five) { renderBar(); relayout(false); }
+        if ($("sheet")?.classList.contains("open")) renderSheet();
+        syncBarVis();
+      }
     });
     TOUCH.addEventListener("change", () => relayout(true));
     DARK_SCHEME.addEventListener("change", () => relayout(true));

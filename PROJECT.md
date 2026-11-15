@@ -204,6 +204,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.288 | Arena.ai Agent sửa:**
+
+- Người dùng báo: các cài đặt mới của v3.5.287 chỉ đổi giao diện Cài đặt, không có tác dụng thật (thanh tiện ích vẫn đủ nút, tra từ vẫn hiện đủ mục). Nay có tác dụng ngay trên trang đang mở, không cần tải lại:
+  - Ghi chú / Dịch / Hỏi AI tắt → thanh tiện ích khi chọn chữ bỏ nút đó, nút còn lại xếp như xem trước (3: trái·dưới·phải, 2: trái·phải, 1: dưới), tắt cả 3 → không icon; Ghi chú tắt → không mở popup ghi chú; Dịch tắt → không popup dịch / từ điển, không cử chỉ dịch. Logo chạy tính năng bật đầu tiên nếu tính năng đã chọn đang tắt.
+  - Mục trong từ điển đầy đủ: popup tra từ chỉ hiện phần đang bật, popup đang mở đổi ngay.
+  - Hỏi AI: AI tắt bị ẩn khỏi tab AI panel và không được chọn; AI mặc định mở mỗi lần (hoặc AI dùng lần trước).
+  - Chỉ báo cạnh: "Bấm chỉ báo để mở" = AI panel.
+  - Thanh Keepit: Ẩn thanh trên website (gồm tên miền con), Gọn thanh / Nút lên đầu trang / Ẩn thanh / cử chỉ dịch đổi từ Cài đặt áp dụng ngay; ☰ "Hiện thanh" trên website trong danh sách thì bỏ website đó khỏi danh sách. Thanh không còn xóa danh sách khi lưu trạng thái của nó.
+- Xem trước Từ điển đầy đủ trong Cài đặt đổi mượt: khung đổi chiều cao, phần còn lại trượt, phần mới hiện dần, phần tắt mờ dần (sửa luôn việc lưu Cài đặt vẽ lại preview cắt ngang chuyển động).
+- File: `js/shared/selection-toolbar.js`, `css/shared/selection-toolbar.css` (vị trí `data-kp-slot` chuyển từ `settings.css`), `css/dashboard/settings.css`, `js/content/{content,keepit-bar}.js`, `js/ask-ai/{providers,service,toolbar}.js`, `js/ask-ai/panel/panel.js`, `js/dashboard/{settings-ui,dashboard}.js`.
+- Kiểm tra: Chromium nạp extension thật + trang thử http: thanh tiện ích 3/2/1/0 nút (dạng có chữ + chỉ icon, đổi trực tiếp), popup ghi chú / dịch bật-tắt (có đối chứng), từ điển thật (mạng) ẩn đúng phần cả popup đang mở, ẩn thanh theo website (cả sau tải lại), chỉ báo → AI panel, chọn AI ở nền + AI panel (ẩn tab, đổi AI khi tắt). Xem trước: 4 chuyển động + bóng mờ, máy tính + điện thoại × sáng / tối. Kiểm thử Cài đặt v3.5.287 chạy lại đạt. Không có pageerror.
+- Chưa làm: cử chỉ dịch chỉ kiểm bằng code (headless không có chạm thật). Nút Dịch / Hỏi AI trên thanh Keepit giữ nguyên như demo.
+
 **2026-10-23 | v3.5.287 | Arena.ai Agent sửa:**
 
 - Mang Cài đặt v43 (demo đã duyệt) vào Bảng quản lý — phần 1/3: giao diện + lưu trữ. Hiệu ứng trên trang web (ẩn nút tính năng đang tắt, website ẩn thanh, cử chỉ, AI mặc định…) làm ở v3.5.288; sheet Cài đặt + popup Đăng nhập trong trang ở v3.5.289.

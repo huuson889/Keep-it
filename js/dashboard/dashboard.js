@@ -171,7 +171,7 @@ const BAR_SETTINGS_KEY = "lhnBottomBar";
 let barSettings = {};
 const barHiddenSites = () => Array.isArray(barSettings.hiddenSites) ? barSettings.hiddenSites : [...CONFIG.DEFAULT_BAR_HIDDEN_WEBSITES];
 async function saveBarSettings(patch) {
-  try { const stored = (await browser.storage.local.get(BAR_SETTINGS_KEY))[BAR_SETTINGS_KEY]; barSettings = { ...(stored && typeof stored === "object" ? stored : {}), ...barSettings, ...patch }; }
+  try { const stored = (await browser.storage.local.get(BAR_SETTINGS_KEY))[BAR_SETTINGS_KEY]; barSettings = { ...(stored && typeof stored === "object" ? stored : {}), ...patch }; }
   catch { barSettings = { ...barSettings, ...patch }; }
   if ($("dashboardSettingsDialog")?.open) dashboardSettingsChangedWhileOpen = true;
   renderSettingsExtras();

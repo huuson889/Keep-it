@@ -513,9 +513,39 @@
       + (on.colloc ? `<section class="lhn-dict-related lhn-dict-collocations" data-kind="Colloc" data-label="Colloc:">${D.colloc.map(([w, m]) => chip("lhn-dict-colloc", w, m)).join("")}</section>` : "")
       + `</div>`;
     placeBrand(); fitBrand();
+    box.dataset.kpParts = JSON.stringify(on);
   };
-  dictRender = render;
-  document.addEventListener("change", e => { if (e.target.matches?.("#dashboardSettingsDialog [data-dict-part]")) render(); }, true);
+  // a part switched on/off: the frame changes height softly, kept parts slide to their new place, a new part fades in, a removed part fades out where it was
+  const PARTS = [".lhn-dict-ipa", ".lhn-dict-translation", ".lhn-dict-pos-list", ".lhn-dict-examples", ".lhn-dict-syn", ".lhn-dict-ant", ".lhn-dict-forms", ".lhn-dict-collocations", ".lhn-dict-brand"];
+  const EASE = "cubic-bezier(.2,.8,.2,1)";
+  const animatedRender = () => {
+    if (!box.offsetParent || matchMedia("(prefers-reduced-motion: reduce)").matches) { render(); return; }
+    box.getAnimations({ subtree:true }).forEach(a => a.finish()); box.querySelectorAll(".kp-dict-ghost").forEach(g => g.remove());
+    const at = (el, base) => { const r = el.getBoundingClientRect(); return { x:r.left - base.left, y:r.top - base.top, w:r.width, h:r.height }; };
+    const base0 = box.getBoundingClientRect(), h0 = box.offsetHeight;
+    const old = new Map(PARTS.map(k => [k, box.querySelector(k)]).filter(([, el]) => el).map(([k, el]) => [k, { el, ...at(el, base0) }]));
+    render();
+    const base1 = box.getBoundingClientRect(), h1 = box.offsetHeight, body = box.querySelector(".lhn-dict-body");
+    if (h0 !== h1) { const overflow = box.style.overflow; box.style.overflow = "hidden";
+      box.animate([{ height:h0 + "px" }, { height:h1 + "px" }], { duration:280, easing:EASE }).finished.then(() => { box.style.overflow = overflow; }, () => { box.style.overflow = overflow; }); }
+    PARTS.forEach(k => {
+      const el = box.querySelector(k), was = old.get(k);
+      if (el && was) { const now = at(el, base1), dx = was.x - now.x, dy = was.y - now.y;
+        if (Math.abs(dx) > .5 || Math.abs(dy) > .5) el.animate([{ transform:`translate(${dx}px,${dy}px)` }, { transform:"none" }], { duration:280, easing:EASE }); }
+      else if (el) el.animate([{ opacity:0, transform:"translateY(-4px)" }, { opacity:1, transform:"none" }], { duration:240, delay:60, easing:EASE, fill:"backwards" });
+      else if (was && body && k !== ".lhn-dict-brand") {   // the old node, laid over the new popup where it was, fades out
+        const b = body.getBoundingClientRect(), ghost = was.el;
+        ghost.classList.add("kp-dict-ghost"); ghost.setAttribute("aria-hidden", "true");
+        Object.assign(ghost.style, { position:"absolute", left:(base0.left + was.x - b.left) + "px", top:(base0.top + was.y - b.top) + "px", width:was.w + "px", margin:"0", pointerEvents:"none", zIndex:"1" });
+        if (getComputedStyle(body).position === "static") body.style.position = "relative";
+        body.append(ghost);
+        ghost.animate([{ opacity:1, transform:"none" }, { opacity:0, transform:"scale(.98)" }], { duration:120, easing:"ease-out", fill:"forwards" }).finished.then(() => ghost.remove(), () => ghost.remove());
+      }
+    });
+  };
+  // Settings saved → sync(): draw again only when the parts differ from what is shown (never cut a running animation)
+  dictRender = () => { if (box.dataset.kpParts !== JSON.stringify(parts())) render(); };
+  document.addEventListener("change", e => { if (e.target.matches?.("#dashboardSettingsDialog [data-dict-part]")) animatedRender(); }, true);
   let w0 = -1; new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== w0) { w0 = w; render(); } }).observe(box.parentElement);   // panel shown / device changed → place the logo again like the real popup
   render();
 }

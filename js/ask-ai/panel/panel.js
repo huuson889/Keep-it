@@ -69,8 +69,9 @@
     let byWindow = {};
     let lastProviderId = "";
     try { byWindow = (await browser.storage.session?.get?.(providers.SELECTED_BY_WINDOW_KEY))?.[providers.SELECTED_BY_WINDOW_KEY] || {}; } catch {}
-    try { lastProviderId = (await browser.storage.local.get(providers.LAST_SELECTED_KEY))?.[providers.LAST_SELECTED_KEY] || ""; } catch {}
-    return providers.pickSelectedProvider(byWindow, windowId, lastProviderId);
+    let settings = {};
+    try { const stored = await browser.storage.local.get([providers.LAST_SELECTED_KEY, "lhnSettings"]); lastProviderId = stored?.[providers.LAST_SELECTED_KEY] || ""; settings = stored?.lhnSettings || {}; } catch {}
+    return providers.pickSelectedProvider(byWindow, windowId, lastProviderId, settings);
   }
 
   async function rememberProvider(providerId) {
@@ -387,8 +388,19 @@
   browser.tabs.onRemoved?.addListener(tabId => {
     if (loginState?.mode === "waiting" && tabId === loginState.tabId) finishLoginWait();
   });
+  // Settings → Ask AI: tabs of AIs that are off are hidden; the open AI turned off → the next AI that is on
+  async function syncEnabledProviders(settings) {
+    if (!settings) { try { settings = (await browser.storage.local.get("lhnSettings"))?.lhnSettings || {}; } catch { settings = {}; } }
+    const on = providers.enabledPanelProviders(settings);
+    toolbar?.setEnabledProviders?.(on);
+    if (currentProviderId && providers.isPanelProvider(currentProviderId) && !on.includes(currentProviderId)) {
+      const windowId = await getCurrentWindowId();
+      void switchProvider(await getSavedProvider(windowId));
+    }
+  }
+  void syncEnabledProviders();
   browser.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && changes.lhnSettings) void loadUiLanguage();
+    if (areaName === "local" && changes.lhnSettings) { void loadUiLanguage(); void syncEnabledProviders(changes.lhnSettings.newValue || {}); }
   });
 
   async function openPanelPage() {

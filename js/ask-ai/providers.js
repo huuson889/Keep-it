@@ -228,12 +228,20 @@
   // (storage.local, survives refresh/restart), then ChatGPT only if nothing was ever chosen.
   const SELECTED_BY_WINDOW_KEY = "keepitAiPanelProviderByWindow";
   const LAST_SELECTED_KEY = "keepitAiPanelLastProvider";
-  function pickSelectedProvider(byWindow, windowId, lastProviderId) {
-    const candidates = [Number.isInteger(windowId) ? byWindow?.[String(windowId)] : "", lastProviderId];
+  // Settings → Ask AI: askAIProviders { chatgpt, gemini, claude } (false = off, at least one stays on) and askAIDefaultProvider
+  // ("last" = the AI used last; otherwise that AI opens every time).
+  function enabledPanelProviders(settings = {}) {
+    const all = panelIds.slice();
+    const on = all.filter(id => settings?.askAIProviders?.[id] !== false);
+    return on.length ? on : all;
+  }
+  function pickSelectedProvider(byWindow, windowId, lastProviderId, settings = {}) {
+    const on = enabledPanelProviders(settings), def = settings?.askAIDefaultProvider;
+    const candidates = def && def !== "last" && on.includes(def) ? [def] : [Number.isInteger(windowId) ? byWindow?.[String(windowId)] : "", lastProviderId];
     for (const candidate of candidates) {
-      if (candidate && isPanelProvider(candidate)) return get(candidate).id;
+      if (candidate && isPanelProvider(candidate) && on.includes(get(candidate).id)) return get(candidate).id;
     }
-    return "chatgpt";
+    return on.includes("chatgpt") ? "chatgpt" : on[0];
   }
 
   function isStartPath(provider, url) {
@@ -367,6 +375,7 @@
     readPanelMarkers,
     SELECTED_BY_WINDOW_KEY,
     LAST_SELECTED_KEY,
-    pickSelectedProvider
+    pickSelectedProvider,
+    enabledPanelProviders
   });
 })();

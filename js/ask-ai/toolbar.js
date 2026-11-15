@@ -379,7 +379,7 @@
             font-size: 9.6px;
             font-weight: 750;
           }
-          .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden], .open-grok-tab[hidden], .new-chat[hidden] { display: none; }
+          .tab[hidden], .provider-icon[hidden], .provider-icon-fallback[hidden], .empty-source[hidden], .source-link[hidden], .auto-send[hidden], .open-grok-tab[hidden], .new-chat[hidden] { display: none; }
           @media (max-width: 520px) {
             .tab { gap: 3px; padding-inline: 2px; font-size: 10px; }
             .provider-icon-wrap, .provider-icon, .provider-icon-fallback { flex-basis: 15.6px; width: 15.6px; height: 15.6px; }
@@ -452,6 +452,11 @@
       }
     }
 
+    // Settings → Ask AI: only the AIs that are on keep a tab (Grok keeps its own rule)
+    function setEnabledProviders(ids) {
+      const on = new Set(ids || []);
+      for (const button of providerButtons) if (["chatgpt", "gemini", "claude"].includes(button.dataset.provider)) button.hidden = !on.has(button.dataset.provider);
+    }
     function renderProvider() {
       for (const button of providerButtons) {
         const selected = button.dataset.provider === selectedProvider;
@@ -629,11 +634,12 @@
       button.addEventListener("keydown", event => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
-        const index = providerButtons.indexOf(button);
-        const next = event.key === "Home" ? 0 : event.key === "End" ? providerButtons.length - 1
-          : (index + (event.key === "ArrowRight" ? 1 : -1) + providerButtons.length) % providerButtons.length;
-        providerButtons[next].focus();
-        setProvider(providerButtons[next].dataset.provider);
+        const visible = providerButtons.filter(item => !item.hidden);
+        const index = visible.indexOf(button);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? visible.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : -1) + visible.length) % visible.length;
+        visible[next].focus();
+        setProvider(visible[next].dataset.provider);
       });
     }
 
@@ -680,7 +686,7 @@
     renderExpansion();
     renderProvider();
     loadProviderIcons();
-    return Object.freeze({ setSourceUrl, setProvider, getProvider:() => selectedProvider });
+    return Object.freeze({ setSourceUrl, setProvider, setEnabledProviders, getProvider:() => selectedProvider });
   }
 
   globalThis.LHN_AI_TOOLBAR = Object.freeze({ create, shadowMarkup, ICONS:PROVIDER_ICON_DATA });

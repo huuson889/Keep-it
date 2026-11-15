@@ -65,11 +65,15 @@
    * @param {(id:string) => void} [options.onAction] called for action buttons and the logo
    * @param {boolean} [options.preview]   static, non-focusable markup for settings previews
    * @param {string} [options.idSuffix]   keeps SVG ids unique when several toolbars share a document
+   * @param {string[]} [options.actions]  tools that are on (Settings → Notes / Translate / Ask AI); the others are left out
    */
-  function build({ document:doc, style, t = key => key, logoAction, onAction = null, preview = false, idSuffix = "" }) {
+  function build({ document:doc, style, t = key => key, logoAction, onAction = null, preview = false, idSuffix = "", actions:enabled = ACTION_IDS }) {
     const styleId = normalizeStyle(style);
     const flags = STYLES[styleId];
-    const logoActionId = normalizeLogoAction(logoAction);
+    const shown = ACTIONS.filter(action => enabled.includes(action.id));
+    const slots = { 3:["left", "bottom", "right"], 2:["left", "right"], 1:["bottom"] }[shown.length] || [];
+    // the logo runs the chosen tool; if that tool is off it runs the first tool that is on
+    const logoActionId = shown.some(action => action.id === normalizeLogoAction(logoAction)) ? normalizeLogoAction(logoAction) : (shown[0]?.id || normalizeLogoAction(logoAction));
     const tag = preview ? "span" : "button";
     const shell = doc.createElement(preview ? "span" : "div");
     shell.className = "lhn-translate-shell";
@@ -81,11 +85,12 @@
     const actions = doc.createElement(preview ? "span" : "div");
     actions.className = "lhn-translate-actions";
     if (!preview) actions.setAttribute("role", "group");
-    ACTIONS.forEach((spec, index) => {
+    shown.forEach((spec, index) => {
       const label = t(spec.labelKey);
       const action = doc.createElement(tag);
       action.className = `lhn-translate-action ${spec.className}`;
       action.dataset.action = spec.id;
+      action.dataset.kpSlot = slots[index];
       if (preview) action.setAttribute("aria-hidden", "true");
       else {
         action.type = "button";
@@ -96,7 +101,7 @@
       }
       action.innerHTML = `${spec.svg}<span class="lhn-translate-label">${escapeText(label)}</span>`;
       actions.appendChild(action);
-      if (index < ACTIONS.length - 1) {
+      if (index < shown.length - 1) {
         const separator = doc.createElement("span");
         separator.className = "lhn-translate-separator";
         separator.setAttribute("aria-hidden", "true");

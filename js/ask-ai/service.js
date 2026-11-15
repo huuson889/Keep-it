@@ -10,8 +10,9 @@ async function getAIProviderForWindow(windowId) {
   let providersByWindow = {};
   let lastProviderId = "";
   try { providersByWindow = (await browser.storage.session?.get?.(AI_PANEL_PROVIDER_BY_WINDOW_KEY))?.[AI_PANEL_PROVIDER_BY_WINDOW_KEY] || {}; } catch {}
-  try { lastProviderId = (await browser.storage.local.get(providers.LAST_SELECTED_KEY))?.[providers.LAST_SELECTED_KEY] || ""; } catch {}
-  return providers.get(providers.pickSelectedProvider(providersByWindow, windowId, lastProviderId));
+  let settings = {};
+  try { const stored = await browser.storage.local.get([providers.LAST_SELECTED_KEY, CONFIG.STORAGE_KEYS.SETTINGS]); lastProviderId = stored?.[providers.LAST_SELECTED_KEY] || ""; settings = stored?.[CONFIG.STORAGE_KEYS.SETTINGS] || {}; } catch {}
+  return providers.get(providers.pickSelectedProvider(providersByWindow, windowId, lastProviderId, settings));
 }
 async function rememberAIProviderForWindow(windowId, providerId) {
   const providers = globalThis.LHN_AI_PROVIDERS;
