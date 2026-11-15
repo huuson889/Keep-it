@@ -40,6 +40,8 @@ Dashboard cung cấp Overview, Dictation, Highlights & Notes và luồng setting
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- "Đọc bản dịch cùng bản gốc" (Trình đọc) có `data-kp-depends="settingsTranslateEnabled"`: Dịch tắt → mờ + khóa.
+
 - Cài đặt: công tắc chính (Ghi chú / Dịch / Hỏi AI) tắt thì mục phụ mờ + `inert`; 3 công tắc độc quyền (Tự mở popup / Icon / Popup dịch) không bao giờ bị khóa. Hỏi AI luôn còn ≥1 AI; tắt AI mặc định → `askAIDefaultProvider:"last"`. Khóa mới: `notesEnabled`, `translateEnabled`, `askAIEnabled`, `fullDictionarySections`, `askAIProviders`, `askAIDefaultProvider`, `sidebarIndicatorTarget`.
 
 - Giữ ba route, shared topbar và hành vi sidebar hiện có; không khôi phục Grammar/Library hoặc tạo route Flashcards mới. `sessionStorage` lưu riêng `overview`, `dictation`, `highlights-notes` và route cuối; Overview và Dictation lưu scroll trên route viewport-bounded; Highlights & Notes lưu trên `#dashboardScroller`. Giá trị route/scroll cũ `listening` được migrate sang `dictation` để giữ last-route/scroll reload; dữ liệu H&N V1 vẫn được migrate như trước. Khi chưa có route đã lưu, mặc định Overview; sau reload, scroll đặt lại sau khi dữ liệu/layout sẵn sàng.

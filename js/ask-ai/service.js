@@ -1015,8 +1015,11 @@ function openAIPanelFromCommand(commandTab) {
     }
   }).catch(error => console.warn("Could not finish the AI panel keyboard command", error));
 }
+let askAIOff = false;   // Settings → Ask AI off
+browser.storage.local.get("lhnSettings").then(data => { askAIOff = data?.lhnSettings?.askAIEnabled === false; }).catch(() => {});   // = CONFIG.STORAGE_KEYS.SETTINGS (CONFIG is not loaded yet here)
+browser.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.lhnSettings) askAIOff = changes.lhnSettings.newValue?.askAIEnabled === false; });
 browser.commands?.onCommand.addListener((command, tab) => {
-  if (command === "open-chatgpt-sidepanel") void openAIPanelFromCommand(tab);
+  if (command === "open-chatgpt-sidepanel" && !askAIOff) void openAIPanelFromCommand(tab);
 });
 
 // AI runtime messages (pages, panel and content script) handled by the background router.
@@ -1074,7 +1077,7 @@ async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_LINK_DRAFT_READY") return notifyAILinkDraftReady(message);
   if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
   // Page edge button shown while the panel is open: same toggle as Alt+X, in the sender's window.
-  if (message.type === "TOGGLE_AI_PANEL") return openAIPanel({ sender, toggle:true });
+  if (message.type === "TOGGLE_AI_PANEL") return askAIOff ? { ok:false, disabled:true } : openAIPanel({ sender, toggle:true });   // Settings → Ask AI off
   // v3.5.284 AI sheet (phone / tablet): closed by the page (drag down, tap outside, page left)
   if (message.type === "AI_SHEET_CLOSED") {
     const tabId = sender?.tab?.id, windowId = sender?.tab?.windowId;

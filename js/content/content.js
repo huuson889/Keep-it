@@ -1852,6 +1852,7 @@
     }
     const bilingualShortcuts = { "alt+a":"toggle-lazy", "alt+d":"toggle-near-pointer", "alt+r":"toggle-reading" };
     const bilingualAction = bilingualShortcuts[pressed];
+    if (bilingualAction && bilingualAction !== "toggle-reading" && settings.translateEnabled === false) return;   // Translate off: the key goes to the page
     if (bilingualAction) {
       e.preventDefault(); e.stopPropagation();
       if (bilingualAction === "toggle-reading") { speechPauseActive = false; shortcutPausedMedia = []; }
@@ -1859,7 +1860,7 @@
       return;
     }
     const translateShortcut = String(settings.translateSelectedShortcut ?? "Alt+W").toLowerCase();
-    if (translateShortcut && pressed === translateShortcut && notePopupShortcut !== translateShortcut) {
+    if (translateShortcut && pressed === translateShortcut && notePopupShortcut !== translateShortcut && settings.translateEnabled !== false) {
       if (panel || e.target.closest?.("#lhn-panel, #lhn-sidebar, #lhn-sidebar-edit-dialog")) return;
       const visibleTranslationPopup = translationPopup?.isConnected && translationPopup.classList.contains("lhn-visible") ? translationPopup : null;
       const visibleDictionaryPopup = dictionaryPopup?.isConnected && dictionaryPopup.classList.contains("lhn-dict-visible") ? dictionaryPopup : null;

@@ -32,6 +32,8 @@ Ask AI gom toàn bộ AI panel: provider registry, một trang panel chung cho C
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Cài đặt → Hỏi AI tắt (`askAIOff` trong service worker, theo dõi `lhnSettings`): lệnh Alt+X không mở AI panel; `TOGGLE_AI_PANEL` trả `{ ok:false, disabled:true }`.
+
 - Cài đặt → Hỏi AI: `pickSelectedProvider(byWindow, windowId, last, settings)` bỏ qua AI tắt trong `askAIProviders`; `askAIDefaultProvider` ≠ `"last"` thì luôn mở AI đó. AI panel ẩn tab AI tắt (`toolbar.setEnabledProviders`) và chuyển AI khi AI đang mở bị tắt.
 
 - Storage `local`: mapping `keepitChatGPTConversationBySourceUrl`, `keepitGeminiConversationBySourceUrl`, `keepitClaudeConversationBySourceUrl` (giữ tên cũ để không mất dữ liệu); `keepitAiPanelLastProvider`; request ngắn hạn `keepitAiLinkPending`, `keepitAiPanelNavigationRequest`. `session`: `keepitAiPanelProviderByWindow`, `keepitAiPanelOpenWindowIds`, `keepitAiPanelSourceUrlByWindow`, `keepitAiPanelRouteContextByWindow`.

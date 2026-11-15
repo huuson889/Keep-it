@@ -28,6 +28,8 @@ Reader chọn khối văn bản chính trên trang, quản lý dịch song ngữ
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Cài đặt → Dịch tắt (`lhnSettings.translateEnabled === false`): không dịch song ngữ (`translateBlock`, `toggleLazy` chỉ còn tắt), Trình đọc chỉ đọc bản gốc (`readTr()` thay mọi chỗ đọc `settings.readTranslation`; giá trị lưu không đổi). Tắt lúc đang dịch → gỡ thẻ dịch, đang đọc bản dịch thì bỏ qua.
+
 - `getTextBlocks(options={})` tương thích lời gọi không tham số; `forceRefresh` chỉ điều khiển cache ở Reader, không đổi thuật toán chọn main content.
 - Web snapshot là câu nguồn theo document/URL; đóng/mở overlay không gọi lại Reader. Full reload tạo context mới; URL khác tạo snapshot mới. Cache bền vững chỉ dùng khi source fingerprint và schema khớp.
 - Bảo toàn Readability và legacy fallback, `readerDisabledWebsites`, loại trừ extension UI, nội dung ẩn và metadata.

@@ -204,6 +204,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.289 | Arena.ai Agent sửa:**
+
+- Người dùng chốt: tắt Dịch / Hỏi AI / Ghi chú trong Cài đặt là tắt ở mọi nơi; Trình đọc không đọc song ngữ khi Dịch tắt. Áp dụng ngay, không cần tải lại:
+  - Thanh Keepit: nút của tính năng tắt biến mất khỏi thanh và ☰ Công cụ; chỗ trống lấy công cụ đầu tiên còn lại trong ☰ (vd. web 7 nút, tắt Dịch + Hỏi AI → Trang chủ·Video·Đọc 🔍 Học·Ghi chú·☰).
+  - Hỏi AI tắt: Alt+X và mọi lệnh mở AI panel (`TOGGLE_AI_PANEL`) bị chặn; chỉ báo cạnh đã mở Ghi chú từ v3.5.288.
+  - Dịch tắt: không dịch trang / đoạn (Alt+A, Alt+D, nút thanh, chọn đoạn), không phím dịch Alt+W; Trình đọc chỉ đọc bản gốc, ô "đọc bản dịch" ở ☰ Trình đọc ẩn, mục đó trong Cài đặt → Trình đọc mờ + khóa; tắt lúc đang dịch thì bản dịch trên trang được gỡ.
+- Sửa: Nút lên đầu trang đổi từ Cài đặt chưa áp dụng ngay (v3.5.288 thiếu `updBtop()`).
+- File: `js/content/{keepit-bar,content}.js`, `js/reader/bilingual-reader.js`, `js/ask-ai/service.js`, `pages/dashboard.html`, `docs/modules/{content,reader,ask-ai,dashboard}.md`.
+- Kiểm tra: Chromium nạp extension thật + trang thử http: nút thanh / ☰ Công cụ / ô Trình đọc khi tắt từng tính năng (đổi trực tiếp, 7 nút); Alt+A, Alt+D tắt → không thẻ dịch, bật → có, tắt lúc đang dịch → gỡ; `TOGGLE_AI_PANEL` tắt → bị chặn, bật → mở; nút lên đầu trang bật/tắt trực tiếp; Cài đặt khóa/mở dòng đọc bản dịch; ảnh thanh điện thoại sáng + tối. Thử lại thanh tiện ích chọn chữ, chỉ báo, chọn AI: đạt.
+- Chưa làm: Alt+X chỉ kiểm cờ trong service worker (headless không bấm được lệnh trình duyệt); đọc bản dịch khi đọc thật chỉ kiểm bằng code. Các ô ☰ khác liên quan dịch / ghi chú (Ghi chú dịch, Tự dịch, Từ điển đầy đủ, Popup ghi chú, Tự tô sáng) vẫn hiện.
+
 **2026-10-23 | v3.5.288 | Arena.ai Agent sửa:**
 
 - Người dùng báo: các cài đặt mới của v3.5.287 chỉ đổi giao diện Cài đặt, không có tác dụng thật (thanh tiện ích vẫn đủ nút, tra từ vẫn hiện đủ mục). Nay có tác dụng ngay trên trang đang mở, không cần tải lại:

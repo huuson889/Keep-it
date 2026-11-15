@@ -11,6 +11,9 @@
   let speechDetectionRequest = 0;
   let voiceKbIndex = -1;
   let favoriteVoices = []; // lhnSettings.favoriteVoices (voiceURI, mới nhất trước)
+  // Settings → Translate off: no bilingual translation (Alt+A, Alt+D, paragraph pick, gestures) and the Reader reads the source only
+  const translateOn = () => dashboardShortcuts?.translateEnabled !== false;
+  const readTr = () => !!settings.readTranslation && translateOn();
   const favFlash = { key:"", at:0 }, favBeat = { key:"", at:0 }, favUnbeat = { key:"", at:0 }; const favGhosts = new Set(); let favOrder = null; // nhóm Yêu thích giữ nguyên thứ tự khi sheet đang mở; bỏ ♡ thì hàng ở lại (mờ) tới khi đóng sheet / đổi tìm kiếm → bấm lại để hoàn tác đúng chỗ
   const FLAG_REGION_KEYS = globalThis.LHN_FLAGS?.regionKeys || Object.freeze({ US: "US" });
   const flagEmojiForRegion = region => globalThis.LHN_FLAGS?.emojiForRegion?.(region) || "🇺🇸";
@@ -215,7 +218,7 @@
     for (let i = Math.max(0, index); i < queue.length; i++) {
       const block = queue[i]; if (!block) continue;
       words += countWords(rawText(block, true));
-      if (settings.readTranslation) words += countWords(block.querySelector(":scope > .lhn-bilingual-card")?.textContent);
+      if (readTr()) words += countWords(block.querySelector(":scope > .lhn-bilingual-card")?.textContent);
     }
     return words ? Math.max(1, Math.ceil(words / (220 * currentSegmentRate()))) : 0;
   }
@@ -291,7 +294,7 @@
     if (key === "autoscroll") return !!settings.autoScroll;
     if (key === "parabtn") return settings.speakerIconVisibility === "always";
     if (key === "autolang") return settings.autoDetectVoice !== false;
-    if (key === "readtranslation") return !!settings.readTranslation;
+    if (key === "readtranslation") return readTr();
     if (key === "webfont") return settings.webFontFamily === "'Inter', sans-serif";
     return false;
   }
@@ -1152,7 +1155,7 @@
   }
 
   async function translateBlock(block, readerMode = false) {
-    if (websiteDisabled || !block || !document.body.contains(block) || block.dataset.lhnBrTranslating === "true") return;
+    if (!translateOn() || websiteDisabled || !block || !document.body.contains(block) || block.dataset.lhnBrTranslating === "true") return;
     block.classList.toggle("lhn-bilingual-web-font", !!settings.webFontFamily && loadedWebFontFamily === settings.webFontFamily);
     block.dataset.lhnBrTranslating = "true";
     try {
@@ -1180,7 +1183,7 @@
     readerBlocks().forEach(block => lazyObserver.observe(block));
   }
   function toggleLazy() {
-    if (websiteDisabled) return;
+    if (websiteDisabled || (!translateOn() && !window.__lhnBilingualLazy)) return;
     window.__lhnBilingualLazy = !window.__lhnBilingualLazy;
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
     else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
@@ -1214,7 +1217,7 @@
     cancelGoogle(); // dừng đoạn đang đọc trước khi đọc đoạn mới (next/previous)
     const token = {}; googleToken = token; utterance = token;
     const base = String(lang || "en").replace(/_/g, "-").split("-")[0].toLowerCase() || "en";
-    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!settings.readTranslation) { if (reading) advanceQueue(); return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) advanceQueue(); };
+    const finish = () => { if (googleToken !== token) return; googleToken = null; utterance = null; if (then) { if (!readTr()) { if (reading) advanceQueue(); return; } void speakGoogleNext(then.text, then.lang, requestId, voiceSettings, then.lang); return; } if (!forcedLang) { const pending = pendingTranslationFor(queue[queueIndex]); if (pending) { void speakGoogleNext(pending.text, pending.lang, requestId, voiceSettings, pending.lang); return; } } if (reading) advanceQueue(); };
     readingSegment = { translation: Boolean(forcedLang), lang, voiceKey: favVoiceKeyFor(lang) }; lastAppliedSegmentRate = segmentRate(lang); syncToolbar();
     LHN_TTS.play({
       text, lang, googleLanguage: base, voice: `google-translate-default:${base}`, rate: () => segmentRate(lang),
@@ -1269,7 +1272,7 @@
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
-    const translationIncluded = textOverride == null && Boolean(settings.readTranslation) && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
+    const translationIncluded = textOverride == null && readTr() && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -1306,7 +1309,7 @@
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
   function readSegmentsFor(block) {
-    if (!settings.readTranslation) return null;
+    if (!readTr()) return null;
     const card = block.querySelector(":scope > .lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
@@ -1315,7 +1318,7 @@
   // Đoạn gốc vừa đọc xong: nếu tuỳ chọn được bật (kể cả vừa bật trong lúc đang đọc) và đoạn có bản dịch
   // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
   function pendingTranslationFor(block) {
-    if (!settings.readTranslation || !block) return null;
+    if (!readTr() || !block) return null;
     const card = block.querySelector(":scope > .lhn-bilingual-card");
     const translated = card?.textContent.trim();
     if (!translated) return null;
@@ -1337,7 +1340,7 @@
   function readTextFor(block) {
     const source = rawText(block, true);
     const card = block.querySelector(":scope > .lhn-bilingual-card");
-    const translated = settings.readTranslation && card ? card.textContent.trim() : "";
+    const translated = readTr() && card ? card.textContent.trim() : "";
     return translated ? `${source}\n${translated}` : source;
   }
   let readerErrorToastTimer = null;
@@ -1476,7 +1479,13 @@
     }
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
+      const translateWasOn = translateOn();
       dashboardShortcuts = changes[DISPLAY_SETTINGS_KEY].newValue || {};
+      if (translateWasOn && !translateOn()) {   // Translate just turned off: translations leave the page, a translation being read is skipped
+        if (window.__lhnBilingualLazy) toggleLazy();
+        document.querySelectorAll(".lhn-bilingual-card").forEach(card => card.remove());
+        if (reading) skipBilingualSegment();
+      }
       displayLang = globalThis.LHN_LANGUAGES?.languageFor?.(changes[DISPLAY_SETTINGS_KEY].newValue) || displayLang;
       if (Array.isArray(changes[DISPLAY_SETTINGS_KEY].newValue?.favoriteVoices)) favoriteVoices = changes[DISPLAY_SETTINGS_KEY].newValue.favoriteVoices.filter(uri => typeof uri === "string");
       applySharedSpeechRate();

@@ -32,6 +32,9 @@ Content scripts chạy trên trang web: highlight, note, sidebar trang, selectio
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Thanh Keepit: Ghi chú / Dịch / Hỏi AI tắt → công cụ đó (`notes`; `page` + `block`; `ai`) không có trên thanh lẫn ☰ Công cụ (`toolOn`); chỗ trống trên thanh lấy công cụ đầu tiên theo thứ tự `TOOLS` còn bật và chưa có trên thanh (hết công cụ thì bên đó ít nút hơn). Dịch tắt → ☰ Trình đọc bỏ ô "đọc bản dịch". Đổi `lhnBottomBar.btop` từ Cài đặt → `updBtop()` ngay.
+- Dịch tắt → Alt+A / Alt+D / phím dịch (Alt+W) không làm gì, phím đi tiếp cho trang; Alt+R vẫn chạy.
+
 - Cài đặt → Ghi chú / Dịch / Hỏi AI (`notesEnabled`, `translateEnabled`, `askAIEnabled`): khi chọn chữ, tính năng tắt không có nút trên thanh tiện ích (`build({ actions })`, nút còn lại xếp theo `data-kp-slot`), cả 3 tắt thì không có icon (không ghi đè `translateIconEnabled`). Ghi chú tắt = không mở popup ghi chú; Dịch tắt = không popup dịch / từ điển, không cử chỉ dịch (`keepit-bar.js gestTranslate`).
 - Từ điển đầy đủ chỉ vẽ các phần `fullDictionarySections` đang bật (dữ liệu vẫn đủ); popup đang mở vẽ lại ngay khi đổi.
 - Chỉ báo cạnh: `sidebarIndicatorTarget:"ai"` (và Hỏi AI bật) → bấm mở / đóng AI panel.

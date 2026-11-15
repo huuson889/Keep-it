@@ -266,7 +266,15 @@
     watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]]
   };
   const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
-  const navLayout = () => BARS[pageKind()][isFive() ? 1 : 0];
+  // Settings → Notes / Translate / Ask AI off = that tool is gone from the bar and ☰ (Translate = page + paragraph translation);
+  // its place on the bar goes to the first ☰ tool (TOOLS order) that is on and not on the bar yet, so each side keeps its buttons
+  const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled" };
+  const toolOn = id => !TOOL_FEATURE[id] || settings[TOOL_FEATURE[id]] !== false;
+  const navLayout = () => {
+    const base = BARS[pageKind()][isFive() ? 1 : 0], used = new Set(base.flat());
+    const spare = TOOLS[pageKind()].filter(id => !used.has(id) && toolOn(id));
+    return base.map(side => side.map(id => toolOn(id) ? id : spare.shift()).filter(Boolean));
+  };
   function renderBar() {
     if (!root) return;
     const screen = $("screen");
@@ -458,6 +466,7 @@
     if (id === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
     if (YT_NAV[id]) { closeSheet(); ytGo(YT_NAV[id]); return; }
     if (id === "fav") { closeSheet(); send("OPEN_DASHBOARD_FAVORITES"); return; }
+    if (!toolOn(id)) return;
     if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
@@ -634,7 +643,7 @@
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id)).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id)).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -713,7 +722,7 @@
   const RDT = [["autoscroll", "rdscroll", "rdAutoscroll"], ["parabtn", "read", "rdIcon"], ["autolang", "rdauto", "rdLang"], ["readtranslation", "rdbook", "rdBi"]];
   function readerRowHTML() {
     const rb = globalThis.LHN_READER_BAR; if (!rb?.tileOn) return "";
-    return `<div class="divider"></div><div class="sec" data-sec="rd">${esc(t("rdSec"))}</div><div class="quick">${RDT.map(([k, i, l]) => tile("rd:" + k, i, t(l), rb.tileOn(k))).join("")}</div>`;
+    return `<div class="divider"></div><div class="sec" data-sec="rd">${esc(t("rdSec"))}</div><div class="quick">${RDT.filter(([k]) => k !== "readtranslation" || settings.translateEnabled !== false).map(([k, i, l]) => tile("rd:" + k, i, t(l), rb.tileOn(k))).join("")}</div>`;
   }
   // v5: the highlight-color frame lines up with the first/last tile of the grid above
   function alignColors() {
@@ -1417,7 +1426,7 @@
         if (was.off !== barOff()) S.peek = false;
         if (was.five !== S.five) { renderBar(); relayout(false); }
         if ($("sheet")?.classList.contains("open")) renderSheet();
-        syncBarVis();
+        syncBarVis(); updBtop();
       }
     });
     TOUCH.addEventListener("change", () => relayout(true));
