@@ -19,7 +19,7 @@ This policy covers the Keepit browser extension for Chromium-based browsers and 
 
 ### 2. Data kept in your browser
 
-Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress, settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, the host names of sites that are already dark (only when you use Dark pages), local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
+Keepit stores in your browser profile: highlights, notes, the title and address of pages you annotate, flashcards and study progress (for a web dictation lesson: the page title, address and preview-image address), settings, caches of translations, audio and video captions (to avoid repeat requests), the link between a page address and an AI conversation (saved only after a message is sent), panel state, Keepit bar preferences and up to 6 recent searches from the Keepit bar, the shortcuts you keep on the Keepit home page, the host names of sites that are already dark (only when you use Dark pages), local usage counters, an optional demo profile, and a diagnostic log containing only error codes. A short recording made during speaking practice stays in memory for playback and is not saved or uploaded by Keepit.
 
 ### 3. Data sent to outside services
 

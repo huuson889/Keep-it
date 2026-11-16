@@ -965,12 +965,43 @@ browser.storage.onChanged.addListener((changes, area) => {
 });
 
 // v3.5.310: a web Dictation record saved without its page URL gets it when the page is visited again (Dashboard → Tiếp tục).
-if (/^https?:$/.test(location.protocol) && globalThis.LHN_STUDY_SESSION_INDEX?.webSourceIdOf) {
-  const webKey = `dictation:${globalThis.LHN_STUDY_SESSION_INDEX.webSourceIdOf(location.href)}`;
+// v3.5.312: the page image (og:image) too, so the Dashboard card has a thumbnail like YouTube.
+const DICTATION_OPEN_INTENT_KEY = 'lhnDictationOpenIntent';
+if (/^https?:$/.test(location.protocol) && !OVERLAY_YOUTUBE_HOST_RE.test(location.hostname) && globalThis.LHN_STUDY_SESSION_INDEX?.webSourceIdOf) {
+  const webSourceId = globalThis.LHN_STUDY_SESSION_INDEX.webSourceIdOf(location.href), webKey = `dictation:${webSourceId}`;
   browser.storage.local.get(webKey).then((stored) => {
     const record = stored?.[webKey];
-    if (record && typeof record === 'object' && !record.url) return browser.storage.local.set({ [webKey]: { ...record, url: location.href } });
+    if (!record || typeof record !== 'object') return;
+    const thumbnailUrl = globalThis.LHN_THUMBNAILS?.fromPageMetadata?.(document, location.href) || '';
+    const patch = {};
+    if (!record.url) patch.url = location.href;
+    if (thumbnailUrl && !record.thumbnailUrl) patch.thumbnailUrl = thumbnailUrl;
+    if (Object.keys(patch).length) return browser.storage.local.set({ [webKey]: { ...record, ...patch } });
   }).catch(() => {});
+  // v3.5.312: Dashboard → Tiếp tục on a web lesson opens Dictation on the page, the same as YouTube's lhn_open_dictation.
+  let webIntentBusy = false;
+  const openWebStudyFromIntent = async (intent) => {
+    if (webIntentBusy || !intent || typeof intent !== 'object' || intent.sourceId !== webSourceId || !(Date.now() - Number(intent.at) < 120000)) return;
+    webIntentBusy = true;
+    try {
+      await browser.storage.local.remove(DICTATION_OPEN_INTENT_KEY);
+      if (document.readyState !== 'complete') await new Promise((resolve) => window.addEventListener('load', resolve, { once: true }));
+      await refreshKeepitGate();
+      if (keepitSiteDisabled) return;
+      for (let attempt = 0; attempt < 4 && !globalThis.LHN_STUDY?.isOpen?.(); attempt++) {
+        if (attempt) await sleep(1200);
+        if (state.open && !globalThis.LHN_STUDY?.isOpen?.()) { beginStudyMode(preferredLearningMode()); continue; }
+        await prepareWebSourceForShortcut();
+        if (!globalThis.LHN_STUDY?.isOpen?.() && !pendingStudyShortcut) beginStudyMode(preferredLearningMode());
+      }
+    } catch (error) {
+      console.warn('[Keepit Web] Could not open Dictation from the Dashboard.', error);
+    } finally { webIntentBusy = false; }
+  };
+  browser.storage.local.get(DICTATION_OPEN_INTENT_KEY).then((stored) => openWebStudyFromIntent(stored?.[DICTATION_OPEN_INTENT_KEY])).catch(() => {});
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[DICTATION_OPEN_INTENT_KEY]?.newValue) void openWebStudyFromIntent(changes[DICTATION_OPEN_INTENT_KEY].newValue);
+  });
 }
 
 // Player discovery and caption polling remain YouTube-specific.

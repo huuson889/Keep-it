@@ -28,6 +28,7 @@
       sourceId,
       title:typeof value.title === "string" ? value.title.slice(0, 240) : "",
       url:typeof value.url === "string" ? value.url.slice(0, 2048) : "",
+      thumbnailUrl:/^https:\/\//i.test(String(value.thumbnailUrl || "")) ? String(value.thumbnailUrl).slice(0, 2048) : "", // v3.5.312: web page image (og:image)
       currentIndex:totalCount > 0 ? Math.min(currentIndex, totalCount - 1) : currentIndex,
       totalCount,
       solvedCount:totalCount > 0 ? Math.min(solvedCount, totalCount) : solvedCount,
@@ -114,6 +115,7 @@
       sourceType:"web", sourceId:id,
       title:recordTitle && recordTitleAt > indexedUpdatedAt ? recordTitle : indexedTitle || recordTitle,
       url:safeUrl(previous?.url) || safeUrl(record.url) || safeUrl(url),
+      thumbnailUrl:safeUrl(record.thumbnailUrl) || safeUrl(previous?.thumbnailUrl),
       currentIndex, totalCount, solvedCount,
       status:previous?.status === "complete" || (totalCount > 0 && solvedCount >= totalCount) ? "complete" : "in_progress",
       updatedAt:Math.max(indexedUpdatedAt, recordTitleAt, safeTimestamp(record.updatedAt)),

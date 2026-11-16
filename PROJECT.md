@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+### 2026-10-23 | v3.5.312 — Dashboard: bài Dictation web giống YouTube (ảnh bìa, Tiếp tục vào thẳng Chép)
+- Bản ghi web lưu `thumbnailUrl` (og:image của trang); bài cũ tự có khi mở lại trang. Session index giữ `thumbnailUrl`.
+- Thẻ lịch sử và khung "Tiếp tục Dictation" hiện ảnh bìa web như thumbnail YouTube.
+- Tiếp tục (bài web): Dashboard ghi `lhnDictationOpenIntent {sourceId, at}`; trang có đúng `web-<hash>` tự mở Overlay ở chế độ học đã chọn, đúng câu đang làm (như `lhn_open_dictation` của YouTube). Intent hết hạn sau 2 phút.
+- PRIVACY-POLICY: thêm tiêu đề, địa chỉ và địa chỉ ảnh xem trước của bài web.
+
 ### 2026-10-23 | v3.5.311 — Dashboard: tự tìm lại tổng số câu của bài Dictation cũ
 - Bài cũ chưa có tổng câu: Dashboard lấy lại từ bộ nhớ đệm cục bộ của Overlay rồi ghi `totalCount` vào bản ghi:
   - web: bộ nhớ đệm câu của bài (`lhnWebStudyCueCache`) có câu đầu trùng tiêu đề bài;

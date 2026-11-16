@@ -799,9 +799,10 @@ function renderDictationSessionCards() {
     const sourceType = String(session.sourceType || "").toLowerCase();
     const artClass = sourceType === "web" ? "article" : "habits";
     const videoId = String(session.sourceId || "");
+    const webThumb = sourceType === "web" ? globalThis.LHN_THUMBNAILS?.safeUrl(session.thumbnailUrl) || "" : "";
     const thumbnail = sourceType === "youtube" && globalThis.LHN_THUMBNAILS?.youtubeVideoId(videoId)
       ? `<img class="dictation-thumb-image" data-video-id="${escapeHtml(videoId)}" alt="" loading="lazy" decoding="async">`
-      : "";
+      : webThumb ? `<img class="dictation-thumb-image" data-src="${escapeHtml(webThumb)}" alt="" loading="lazy" decoding="async">` : "";
     const isComplete = session.status === "complete";
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
@@ -810,7 +811,8 @@ function renderDictationSessionCards() {
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
-    globalThis.LHN_THUMBNAILS?.loadYouTube(image, image.dataset.videoId, { onError:() => image.remove() });
+    if (image.dataset.src) globalThis.LHN_THUMBNAILS?.load(image, { src:image.dataset.src, onError:() => image.remove() });
+    else globalThis.LHN_THUMBNAILS?.loadYouTube(image, image.dataset.videoId, { onError:() => image.remove() });
   });
   refreshDictationView({ animateCounters:true });
   observeDictationSessionCards();
@@ -821,15 +823,17 @@ function updateDictationContinueThumbnail(session) {
   const thumbnails = globalThis.LHN_THUMBNAILS;
   if (!art || !image) return;
   const videoId = String(session?.sourceType === "youtube" ? session.sourceId || "" : "");
-  if (!thumbnails?.youtubeVideoId(videoId)) {
+  const webThumb = session?.sourceType === "web" ? thumbnails?.safeUrl(session.thumbnailUrl) || "" : ""; // v3.5.312
+  if (!thumbnails?.youtubeVideoId(videoId) && !webThumb) {
     image.hidden = true;
     thumbnails?.clear(image);
     art.classList.remove("has-thumbnail");
     return;
   }
   image.hidden = false;
-  if (image.getAttribute("src") !== thumbnails.youtubeUrl(videoId)) art.classList.remove("has-thumbnail");
-  thumbnails.loadYouTube(image, videoId, {
+  const src = webThumb || thumbnails.youtubeUrl(videoId);
+  if (image.getAttribute("src") !== src) art.classList.remove("has-thumbnail");
+  thumbnails.load(image, { src,
     onLoad:() => art.classList.add("has-thumbnail"),
     onError:() => { image.hidden = true; art.classList.remove("has-thumbnail"); },
   });
@@ -955,7 +959,7 @@ function initDictationView() {
       try {
         const tabs = await browser.tabs.query({});
         const tab = tabs.find(item => /^https?:/i.test(String(item?.url || "")) && STUDY_SESSION_INDEX.webSourceIdOf(item.url) === session.sourceId);
-        if (tab) { await browser.tabs.update(tab.id, { active:true }); if (tab.windowId != null) await browser.windows?.update?.(tab.windowId, { focused:true }); return; }
+        if (tab) { if (autoOpenDictation) await browser.storage.local.set({ lhnDictationOpenIntent:{ sourceId:session.sourceId, at:Date.now() } }); await browser.tabs.update(tab.id, { active:true }); if (tab.windowId != null) await browser.windows?.update?.(tab.windowId, { focused:true }); return; }
       } catch (error) { console.warn("Could not look for the open page of a web Dictation session", error); }
       toast(t("dictationWebLinkMissing")); return;
     }
@@ -968,6 +972,9 @@ function initDictationView() {
       youtubeUrl.searchParams.set("v", videoId);
       youtubeUrl.searchParams.set("lhn_open_dictation", "1");
       targetUrl = youtubeUrl.href;
+    }
+    if (autoOpenDictation && sourceType === "web" && STUDY_SESSION_INDEX.isWebSourceId(videoId)) { // v3.5.312: the page opens Dictation itself (overlay-controller)
+      try { await browser.storage.local.set({ lhnDictationOpenIntent:{ sourceId:videoId, at:Date.now() } }); } catch (error) { console.warn("Could not ask the page to open Dictation", error); }
     }
     try { await browser.tabs.create({ url:targetUrl, active:true }); } catch (error) { console.warn("Could not open saved Dictation session", error); toast(t("dictationSourceUnavailable")); }
   };
@@ -1819,7 +1826,7 @@ function overviewSessionsNeedReconciliation(indexedSessions, reconciledSessions)
   return (reconciledSessions || []).some(session => {
     const previous = indexedById.get(session.sessionId);
     if (!previous) return true;
-    return ["title", "url", "currentIndex", "totalCount", "solvedCount", "status"].some(key => previous[key] !== session[key]);
+    return ["title", "url", "thumbnailUrl", "currentIndex", "totalCount", "solvedCount", "status"].some(key => previous[key] !== session[key]);
   });
 }
 async function loadOverviewDictationSessions() {

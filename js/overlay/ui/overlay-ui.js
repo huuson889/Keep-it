@@ -2626,11 +2626,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const st = B.state() || {}, web = st.sourceType === 'web', sid = String(st.sourceId || '');
       if (web) next.url = String(st.webSourceUrl || location.href); // v3.5.309: lets the Dashboard rebuild a web session from the record alone
       next.totalCount = STUDY.length; // v3.5.310: progress "x / total" without the index
+      const thumb = web ? globalThis.LHN_THUMBNAILS?.fromPageMetadata?.(document, next.url) || '' : '';
+      if (thumb) next.thumbnailUrl = thumb; // v3.5.312: the Dashboard card shows the page image like a YouTube thumbnail
       try { await store()?.set({ [key]: next }); } catch (_) { return; }
       const idx = globalThis.LHN_STUDY_SESSION_INDEX;
       if (!idx) return;
       const total = STUDY.length, done = active.solved.length;
-      const session = { version: 1, sessionId: `${web ? 'web' : 'youtube'}:${sid}`, sourceType: web ? 'web' : 'youtube', sourceId: sid, title, url: web ? String(st.webSourceUrl || location.href) : `https://www.youtube.com/watch?v=${encodeURIComponent(sid)}`, currentIndex: Math.max(0, active.current), totalCount: total, solvedCount: done, updatedAt: Date.now(), status: total > 0 && done >= total ? 'complete' : 'in_progress' };
+      const session = { version: 1, sessionId: `${web ? 'web' : 'youtube'}:${sid}`, sourceType: web ? 'web' : 'youtube', sourceId: sid, title, url: web ? String(st.webSourceUrl || location.href) : `https://www.youtube.com/watch?v=${encodeURIComponent(sid)}`, thumbnailUrl: thumb, currentIndex: Math.max(0, active.current), totalCount: total, solvedCount: done, updatedAt: Date.now(), status: total > 0 && done >= total ? 'complete' : 'in_progress' };
       try {
         const stored = await store()?.get(idx.STORAGE_KEY), prev = idx.normalizeIndex(stored?.[idx.STORAGE_KEY]);
         const ps = prev.sessions.find((x) => x.sessionId === session.sessionId);
