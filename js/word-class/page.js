@@ -232,8 +232,11 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   // ---------- wrap / unwrap ----------
   const tagged = new Map();   // block → { nodes:[{ node, created:Set }], hosts:[] }
   const HOST_STYLE = "display:inline-flex!important;flex-direction:column!important;align-items:center!important;vertical-align:baseline!important;margin:0!important;padding:0!important;border:0!important;float:none!important;position:static!important;text-indent:0!important;background:none!important";
-  const SHADOW_CSS = `.t{display:block;white-space:nowrap;line-height:1.2}
-.a{display:block;margin-top:5px;min-height:15px;font:600 12px/15px system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:.01em;white-space:nowrap;text-align:center;text-indent:0;text-transform:none;font-style:normal;text-decoration:none;-webkit-user-select:none;user-select:none}
+  // Underline and label are placed from the baseline (not the font's content box), so the gaps stay the same in every font
+  // and size: underline 2px just below the descenders, label 5px under it. .t ends at the baseline where text-box-trim exists.
+  const SHADOW_CSS = `.t{display:block;white-space:nowrap;line-height:1.2;padding-bottom:calc(.1em + 9px)}
+@supports (text-box-trim:trim-end){.t{text-box-trim:trim-end;text-box-edge:text alphabetic;padding-bottom:calc(.22em + 9px)}}
+.a{display:block;min-height:15px;font:600 12px/15px system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:.01em;white-space:nowrap;text-align:center;text-indent:0;text-transform:none;font-style:normal;text-decoration:none;-webkit-user-select:none;user-select:none}
 .s{margin:0 3px;font-weight:400}`;
   const lum = c => { const m = String(c).match(/[\d.]+/g); return m && m.length >= 3 ? (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255 : 0; };
   const meaning = upos => globalThis.LHN_LANGUAGES?.t?.("wc_" + upos, {}, lang()) || upos;
@@ -246,7 +249,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   }
   function underline(node, abbr, dark) {
     const u = document.createElement("lhn-wcu"); u.className = "lhn-wcu";
-    u.setAttribute("style", `display:inline!important;border-bottom:2px solid ${CORE.color(abbr, dark)}!important;padding-bottom:3px!important;margin:0!important;background:none!important`);
+    u.setAttribute("style", `display:inline!important;text-decoration:underline 2px solid ${CORE.color(abbr, dark)}!important;text-decoration-skip-ink:none!important;text-underline-position:auto!important;text-underline-offset:calc(.22em + 2px)!important;border:0!important;padding:0!important;margin:0!important;background:none!important`);
     node.parentNode.insertBefore(u, node); u.appendChild(node); return u;
   }
   // units in one text node: [{ s, e, abbrs, segs:[[a, b, abbr]], tip }] (offsets inside the node)

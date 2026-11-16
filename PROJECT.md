@@ -204,6 +204,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.294 | Arena.ai Agent sửa:**
+
+- Loại từ: gạch chân sát chữ hơn, khoảng gạch → nhãn đều nhau ở mọi phông / cỡ chữ (trước đây gạch là `border-bottom` theo hộp chữ của phông, tiêu đề chữ to bị gạch xa chữ và dính sát nhãn).
+  - Gạch = `text-decoration` 2px, cách đường chân chữ `.22em + 2px` (ngay dưới phần chữ thò xuống); nhãn cách gạch 5px nhờ `text-box-trim` cắt `.t` tại đường chân chữ. Trình duyệt chưa có `text-box-trim` (Firefox) dùng khoảng dự phòng, nhãn không đè gạch.
+- File: `js/word-class/page.js`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, trang thử có tiêu đề 46px (Noto Sans CJK, phông gây lỗi), đoạn 20px đậm và Georgia 18px: Alt+G → gạch sát chữ, nhãn cách gạch như nhau ở cả 3; không lỗi trang.
+
 **2026-10-23 | v3.5.293 | Arena.ai Agent sửa:**
 
 - Bảng chú thích Loại từ, người dùng yêu cầu:
