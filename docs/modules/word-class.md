@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-"Loại từ" (Word class / 품사) hiện loại từ viết tắt dưới mỗi từ tiếng Anh trên trang web: gạch chân màu rồi nhãn 12px (N, V, Adj…), danh từ liền nhau (kèm tiểu từ PART dính sau, như "City’s") chung một cột, một gạch N; tiểu từ dính sau giữ gạch và nhãn riêng ("N · Part"). Nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8, ~110 MB) gán theo ngữ cảnh, không danh sách từ; tải từ huggingface.co khi người dùng đồng ý, rồi chạy trên máy. Chỉ web, khung trên cùng.
+"Loại từ" (Word class / 품사) hiện loại từ viết tắt dưới mỗi từ tiếng Anh trên trang web: gạch chân màu rồi nhãn 12px (N, V, Adj…), danh từ liền nhau hoặc nối gạch (Notre-Dame; kèm PART dính sau, như "City’s") chung một cột, một gạch N; tiểu từ dính sau giữ gạch và nhãn riêng ("N · Part"). Nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8, ~110 MB) gán theo ngữ cảnh, không danh sách từ; tải từ huggingface.co khi người dùng đồng ý, rồi chạy trên máy. Chỉ web, khung trên cùng.
 
 ## 2. File chính và điểm vào
 
@@ -39,4 +39,4 @@
 
 - Static: `node --check` `js/word-class/*`.
 - Extension thật: Cài đặt → Tải → xem trước có nhãn; Alt+G gắn đoạn tiếng Anh, bỏ đoạn khác, `innerText`/vùng chọn không đổi, tắt → HTML như cũ; Alt+J chỉ một đoạn; công tắc tổng tắt → gỡ nhãn, ẩn ô ☰, phím không tác dụng.
-- Firefox: thử bản `build_firefox.py` thật.
+- Firefox: thử bản build thật.

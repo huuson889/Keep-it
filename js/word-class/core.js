@@ -112,20 +112,22 @@
     const allN = g => g.every(isN);
     const clitic = (g, k) => g[k]?.upos === "PART" && k > 0 && (isN(g[k - 1]) || clitic(g, k - 1));   // City’s: PART glued after the noun
     const lead = g => { let k = 0; while (k < g.length - 1 && punct(g[k])) k++; return k; };   // opening quote / bracket before the word
-    const nThenPunct = g => { const a = lead(g), k = g.findIndex((t, j) => j >= a && !isN(t) && !clitic(g, j)); return isN(g[a]) && (k < 0 || g.slice(k).every(punct)); };   // "river." / "City’s," / “baby can be a noun run
+    // v3.5.298 a hyphen written between two nouns joins them (Notre-Dame, e-mail)
+    const link = (g, j) => /^[-‐‑]$/.test(g[j]?.text || "") && isN(g[j - 1] || {}) && isN(g[j + 1] || {});
+    const nThenPunct = g => { const a = lead(g), k = g.findIndex((t, j) => j >= a && !isN(t) && !clitic(g, j) && !link(g, j)); return isN(g[a]) && (k < 0 || g.slice(k).every(punct)); };   // "river." / "City’s," / “baby can be a noun run
     const hasClitic = g => g.some((t, j) => clitic(g, j));
     // v3.5.297 a run goes on after a plain noun word (“baby → sitters”) or an initial (J. → D. → Salinger)
-    const open = g => { const a = lead(g); return allN(g.slice(a)) || (a === 0 && g.length === 2 && isN(g[0]) && /^\p{Lu}$/u.test(g[0].text) && g[1].text === "."); };
+    const open = g => { const a = lead(g); return (isN(g[a]) && g.every((t, j) => j < a || isN(t) || link(g, j))) || (a === 0 && g.length === 2 && isN(g[0]) && /^\p{Lu}$/u.test(g[0].text) && g[1].text === "."); };
     // v3.5.297 a reference glued to the noun (War.[25], Constitution.[nb 2]) is cut off: the noun part can still join the run
     const cut = [];
-    groups.forEach(g => { const k = g.findIndex((t, j) => j > 0 && !punct(t) && punct(g[j - 1])); if (k > 0 && nThenPunct(g.slice(0, k))) cut.push(g.slice(0, k), g.slice(k)); else cut.push(g); });
+    groups.forEach(g => { const k = g.findIndex((t, j) => j > 0 && !punct(t) && punct(g[j - 1]) && !link(g, j - 1)); if (k > 0 && nThenPunct(g.slice(0, k))) cut.push(g.slice(0, k), g.slice(k)); else cut.push(g); });
     const out = [];
     cut.forEach((g, i) => {
       const prev = out[out.length - 1], gap = i ? text.slice(cut[i - 1][cut[i - 1].length - 1].end, g[0].start) : "";
       if (prev && prev.noun && open(prev.groups[prev.groups.length - 1]) && !lead(g) && nThenPunct(g) && /^[ \t\u00a0]+$/.test(gap)) prev.groups.push(g);
       else out.push({ groups:[g], noun:nThenPunct(g) });
     });
-    return out.map(u => ({ tokens:u.groups.flat(), merged:u.groups.length > 1 || (u.noun && u.groups.some(hasClitic)) }));
+    return out.map(u => ({ tokens:u.groups.flat(), merged:u.groups.length > 1 || (u.noun && u.groups.some(g => hasClitic(g) || g.some((t, j) => link(g, j)))) }));
   }
 
   // Settings preview: same columns as the page, as HTML (labels are plain text here — it is not a web page)
@@ -134,8 +136,14 @@
   // v3.5.292: proper nouns next to each other are explained once — "Ho Chi Minh City: danh từ riêng · proper noun"
   function tip(tokens, meaning, meaningEn) {
     const rows = [];
-    tokens.filter(t => t.pos).forEach(t => {
+    tokens.forEach((t, i) => {
       const last = rows[rows.length - 1];
+      if (!t.pos) {   // v3.5.298 Notre-Dame: the hyphen between two proper nouns stays in the name
+        const nx = tokens[i + 1];
+        if (/^(PROPN|NOUN)$/.test(last?.upos) && /^[-‐‑]$/.test(t.text) && t.start === last.end && nx?.upos === last.upos && nx.start === t.end) { last.text += t.text; last.end = t.end; last.hy = true; }
+        return;
+      }
+      if (last?.hy && last.end === t.start) { last.text += t.text; last.end = t.end; last.hy = false; return; }   // e-mail: one word
       if (last && t.upos === "PROPN" && last.upos === "PROPN" && last.end <= t.start) { last.text += (t.start > last.end ? " " : "") + t.text; last.end = t.end; return; }
       rows.push({ text:t.text, upos:t.upos, end:t.end });
     });

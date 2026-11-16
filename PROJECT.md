@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.298 | Arena.ai Agent sửa:**
+
+- Loại từ: danh từ nối bằng gạch nối viết liền được gộp như danh từ liền kề — "Notre-Dame Cathedral Basilica" một gạch N liền qua dấu gạch, rê chuột "Notre-Dame Cathedral Basilica: danh từ riêng"; "e-mail" một N, rê chuột "e-mail: danh từ". Gạch nối với từ không phải danh từ giữ như cũ ("Anti-Draft" Adj · N, "Saigon-based" N + V); gạch ngang có khoảng trắng không gộp.
+- File: `js/word-class/core.js` (`units` — `link()`, `tip`), `manifest.json`, `docs/modules/word-class.md`.
+- Kiểm tra: `units`/`tip` với nhãn giả (7 câu, gồm "War.[25]", "City’s streets" như v3.5.297); Chromium nạp extension thật, trang thử: Notre-Dame Cathedral Basilica / e-mail một N, Anti-Draft "Adj · N", Saigon-based N + V; không lỗi trang.
+
 **2026-10-23 | v3.5.297 | Arena.ai Agent sửa:**
 
 - Loại từ, theo báo lỗi của người dùng:
