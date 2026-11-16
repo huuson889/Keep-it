@@ -204,6 +204,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.292 | Arena.ai Agent sửa:**
+
+- Loại từ, người dùng yêu cầu:
+  - Cụm danh từ + tiểu từ dính sau vẫn một cột nhưng hiện lại tiểu từ như trước: "Ho Chi Minh City’s" gạch N liền cho "Ho Chi Minh City", "’s" gạch riêng, nhãn "N · Part" (v3.5.291 chỉ hiện N).
+  - Rê chuột: danh từ riêng liền nhau gom một dòng — "Ho Chi Minh City: danh từ riêng · proper noun".
+  - Bảng chú thích và Xem trước Cài đặt: "**N · Noun:** Danh từ / Danh từ riêng" (dấu chấm giữa như khi rê chuột, thay cho "N (Noun):").
+- File: `js/word-class/{core,page}.js`, `manifest.json`, `docs/modules/word-class.md`.
+- Kiểm tra: node (units / nounUnit / tip / html với nhãn mẫu); Chromium nạp extension thật: "Ho Chi Minh City’s", "teacher's", "Nam's" → "N · Part", title đúng, bảng chú thích định dạng mới (tiếng Việt), không lỗi trang.
+
 **2026-10-23 | v3.5.291 | Arena.ai Agent sửa:**
 
 - Loại từ, theo yêu cầu người dùng:

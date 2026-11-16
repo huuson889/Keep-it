@@ -53,7 +53,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   function hideCard() { clearTimeout(cardT); card?.classList.remove("on"); }
 
   // ---------- v3.5.291 legend: small frosted panel, top right, while words are labelled ----------
-  // Shows the abbreviations used on the page ("N (Noun): Danh từ / Danh từ riêng", as demo v4). Each time Word class is turned on it
+  // Shows the abbreviations used on the page ("N · Noun: Danh từ / Danh từ riêng"). Each time Word class is turned on it
   // shows again (× hides it until then); Settings → Word class → "Show the legend" off = never. Drag the header to move it; the place
   // is kept in storage (lhnWordClassLegend {x, y}: share of the free space, so it stays on screen when the window changes size).
   const LEGEND_KEY = "lhnWordClassLegend";
@@ -243,10 +243,10 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
         else if (ts.length > 1) ts.forEach(x => add([x], false));
         return;
       }
-      const base = starts[i], lastN = merged ? ts.findLastIndex(x => x.pos) : -1;   // last noun or its glued particle (City’s)
-      const segs = merged ? [[0, ts[lastN].end - s, "N"]] : lab.map(x => [x.start - s, x.end - s, x.pos.abbr]);
+      const base = starts[i], nu = merged ? CORE.nounUnit(ts) : null;   // nouns: one N underline; a glued particle (City’s) keeps its own: "N · Part"
+      const segs = nu ? [[0, ts[nu.nounEnd].end - s, "N"], ...nu.parts.map(x => [x.start - s, x.end - s, x.pos.abbr])] : lab.map(x => [x.start - s, x.end - s, x.pos.abbr]);
       if (!byNode.has(i)) byNode.set(i, []);
-      byNode.get(i).push({ s:s - base, e:e - base, abbrs:merged ? ["N"] : lab.map(x => x.pos.abbr), segs, tip:tipOf(ts) });
+      byNode.get(i).push({ s:s - base, e:e - base, abbrs:nu ? nu.abbrs : lab.map(x => x.pos.abbr), segs, tip:tipOf(ts) });
     };
     CORE.units(text, tokens).forEach(u => add(u.tokens, u.merged));
     const rec = { nodes:[], hosts:[] };

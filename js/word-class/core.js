@@ -125,8 +125,20 @@
   // Settings preview: same columns as the page, as HTML (labels are plain text here — it is not a web page)
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
   // hover text as in demo v4: one line per labelled word — "book: danh từ · noun" (the English name is left out when the UI is English)
+  // v3.5.292: proper nouns next to each other are explained once — "Ho Chi Minh City: danh từ riêng · proper noun"
   function tip(tokens, meaning, meaningEn) {
-    return tokens.filter(t => t.pos).map(t => { const a = meaning(t.upos), b = meaningEn ? meaningEn(t.upos) : ""; return `${t.text}: ${a}${b && b !== a ? ` · ${b}` : ""}`; }).join("\n");
+    const rows = [];
+    tokens.filter(t => t.pos).forEach(t => {
+      const last = rows[rows.length - 1];
+      if (last && t.upos === "PROPN" && last.upos === "PROPN" && last.end <= t.start) { last.text += (t.start > last.end ? " " : "") + t.text; last.end = t.end; return; }
+      rows.push({ text:t.text, upos:t.upos, end:t.end });
+    });
+    return rows.map(r => { const a = meaning(r.upos), b = meaningEn ? meaningEn(r.upos) : ""; return `${r.text}: ${a}${b && b !== a ? ` · ${b}` : ""}`; }).join("\n");
+  }
+  // merged unit → { nounEnd (index of the last noun), parts: the labelled tokens after it (City’s → ’s), abbrs: ["N", "Part"] }
+  function nounUnit(ts) {
+    const nounEnd = ts.findLastIndex(t => t.pos?.abbr === "N"), parts = ts.slice(nounEnd + 1).filter(t => t.pos);
+    return { nounEnd, parts, abbrs:["N", ...parts.map(t => t.pos.abbr)] };
   }
   function html(text, tokens, dark, tipOf) {
     const title = ts => { const s = tipOf ? tipOf(ts) : ""; return s ? ` title="${esc(s)}"` : ""; };
@@ -134,20 +146,21 @@
     return units(text, tokens).map(u => {
       const ts = u.tokens;
       if (u.merged) {
-        const last = ts.findLastIndex(t => t.pos);
-        return `<span class="kp-wc-p"${title(ts)}><span class="kp-wc-t"><span class="kp-wc-u" style="border-color:${color("N", dark)}">${esc(text.slice(ts[0].start, ts[last].end))}</span>${esc(text.slice(ts[last].end, ts[ts.length - 1].end))}</span><span class="kp-wc-a">${lab(["N"])}</span></span>`;
+        const { nounEnd, abbrs } = nounUnit(ts);
+        const after = ts.slice(nounEnd + 1).map((t, k, a) => (t.start > (k ? a[k - 1] : ts[nounEnd]).end ? esc(text.slice((k ? a[k - 1] : ts[nounEnd]).end, t.start)) : "") + (t.pos ? `<span class="kp-wc-u" style="border-color:${color(t.pos.abbr, dark)}">${esc(t.text)}</span>` : esc(t.text))).join("");
+        return `<span class="kp-wc-p"${title(ts)}><span class="kp-wc-t"><span class="kp-wc-u" style="border-color:${color("N", dark)}">${esc(text.slice(ts[0].start, ts[nounEnd].end))}</span>${after}</span><span class="kp-wc-a">${lab(abbrs)}</span></span>`;
       }
       const word = ts.map((t, k) => (k && t.start > ts[k - 1].end ? esc(text.slice(ts[k - 1].end, t.start)) : "") + (t.pos ? `<span class="kp-wc-u" style="border-color:${color(t.pos.abbr, dark)}">${esc(t.text)}</span>` : esc(t.text))).join("");
       return `<span class="kp-wc-p"${title(ts)}><span class="kp-wc-t">${word}</span><span class="kp-wc-a">${lab(ts.filter(t => t.pos).map(t => t.pos.abbr))}</span></span>`;
     }).join("");
   }
-  // legend of the abbreviations that appear, fixed order — "N (Noun): Danh từ / Danh từ riêng" (meaning = translate(UPOS))
+  // legend of the abbreviations that appear, fixed order — "N · Noun: Danh từ / Danh từ riêng" (v3.5.292: the dot as in the hover text) (meaning = translate(UPOS))
   function legend(tokens, meaning, dark) {
     const used = new Set(tokens.filter(t => t.pos).map(t => t.pos.abbr)), groups = new Map();
     Object.entries(POS).filter(([, p]) => p).forEach(([upos, p]) => { if (!groups.has(p.abbr)) groups.set(p.abbr, { name:p.name, list:[] }); groups.get(p.abbr).list.push(upos); });
     const cap = s => s ? s[0].toLocaleUpperCase() + s.slice(1) : s;
-    return [...groups].filter(([a]) => used.has(a)).map(([a, g]) => `<span><b style="color:${color(a, dark)}">${esc(a)} (${esc(g.name)}):</b> ${esc([...new Set(g.list.map(u => cap(meaning(u))))].join(" / "))}</span>`).join("");
+    return [...groups].filter(([a]) => used.has(a)).map(([a, g]) => `<span><b style="color:${color(a, dark)}">${esc(a)} · ${esc(g.name)}:</b> ${esc([...new Set(g.list.map(u => cap(meaning(u))))].join(" / "))}</span>`).join("");
   }
 
-  globalThis.LHN_WORD_CLASS_CORE = Object.freeze({ MODEL_ID, MODEL_FILE, MODEL_FILES, MODEL_URL, POS, COLORS, MUTED, color, tokenize, chunks, tagWords, analyze, label, units, tip, html, legend });
+  globalThis.LHN_WORD_CLASS_CORE = Object.freeze({ MODEL_ID, MODEL_FILE, MODEL_FILES, MODEL_URL, POS, COLORS, MUTED, color, tokenize, chunks, tagWords, analyze, label, units, nounUnit, tip, html, legend });
 })();
