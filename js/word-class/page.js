@@ -51,6 +51,72 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     return c;
   }
   function hideCard() { clearTimeout(cardT); card?.classList.remove("on"); }
+
+  // ---------- v3.5.291 legend: small frosted panel, top right, while words are labelled ----------
+  // Shows the abbreviations used on the page ("N (Noun): Danh từ / Danh từ riêng", as demo v4). Each time Word class is turned on it
+  // shows again (× hides it until then); Settings → Word class → "Show the legend" off = never. Drag the header to move it; the place
+  // is kept in storage (lhnWordClassLegend {x, y}: share of the free space, so it stays on screen when the window changes size).
+  const LEGEND_KEY = "lhnWordClassLegend";
+  let legHost = null, leg = null, legClosed = false, legPos = null;
+  const LEG_CSS = `:host{all:initial}
+.l{position:fixed;top:14px;right:14px;box-sizing:border-box;width:max-content;max-width:min(300px,calc(100vw - 24px));max-height:min(60vh,420px);display:flex;flex-direction:column;
+  border-radius:14px;font:12.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#475569;background:rgba(255,255,255,.78);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(15,23,42,.08);box-shadow:0 8px 26px rgba(15,23,42,.14);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .26s cubic-bezier(.2,.8,.2,1)}
+.l.on{opacity:1;transform:none;pointer-events:auto}
+.l.dark{color:#94a3b8;background:rgba(30,30,36,.76);border-color:rgba(255,255,255,.1);box-shadow:0 8px 26px rgba(0,0,0,.4)}
+.h{display:flex;align-items:center;gap:8px;padding:7px 6px 3px 12px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.l.drag .h{cursor:grabbing}
+.h b{flex:1;font-size:12px;font-weight:650;color:#0f172a}.dark .h b{color:#e2e8f0}
+.x{appearance:none;border:0;background:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;cursor:pointer;color:inherit;padding:0}
+.x:hover{background:rgba(15,23,42,.07)}.dark .x:hover{background:rgba(255,255,255,.1)}
+.x svg{width:14px;height:14px}
+.b{display:flex;flex-direction:column;gap:3px;padding:2px 12px 10px;overflow:auto;scrollbar-width:thin}
+.b::-webkit-scrollbar{width:3px}.b::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45);border-radius:3px}
+.b span{display:block;white-space:normal;padding-left:10px;text-indent:-10px}.b b{font-weight:700;white-space:nowrap}`;
+  function legendEl() {
+    if (leg?.isConnected) return leg;
+    legHost = document.createElement("div"); legHost.id = "lhn-word-class-legend"; legHost.setAttribute("data-lhn-bilingual-ui", "true");
+    legHost.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;");
+    const root = legHost.attachShadow({ mode:"closed" });
+    root.innerHTML = `<style>${LEG_CSS}</style><div class="l" role="note"><div class="h"><b></b><button class="x" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="b"></div></div>`;
+    leg = root.querySelector(".l"); (document.body || document.documentElement).append(legHost);
+    leg.querySelector(".x").addEventListener("click", () => { legClosed = true; legendSync(); });
+    // drag by the header (mouse / touch / pen)
+    const head = leg.querySelector(".h");
+    head.addEventListener("pointerdown", e => {
+      if (e.button || e.target.closest(".x")) return;
+      const r = leg.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+      head.setPointerCapture(e.pointerId); leg.classList.add("drag"); e.preventDefault();
+      const move = ev => placeLegend({ left:ev.clientX - dx, top:ev.clientY - dy });
+      const up = () => { head.removeEventListener("pointermove", move); leg.classList.remove("drag"); savePos(); };
+      head.addEventListener("pointermove", move); head.addEventListener("pointerup", up, { once:true }); head.addEventListener("pointercancel", up, { once:true });
+    });
+    return leg;
+  }
+  function placeLegend(at) {
+    if (!leg) return;
+    const w = leg.offsetWidth, h = leg.offsetHeight, fw = Math.max(0, innerWidth - w - 8), fh = Math.max(0, innerHeight - h - 8);
+    let left, top;
+    if (at) { left = at.left; top = at.top; } else if (legPos) { left = legPos.x * fw; top = legPos.y * fh; } else { leg.style.left = ""; leg.style.top = ""; leg.style.right = ""; return; }
+    left = Math.min(Math.max(8, left), Math.max(8, fw)); top = Math.min(Math.max(8, top), Math.max(8, fh));
+    leg.style.right = "auto"; leg.style.left = left + "px"; leg.style.top = top + "px";
+    if (at) legPos = { x:fw ? left / fw : 0, y:fh ? top / fh : 0 };
+  }
+  const savePos = () => { if (legPos) api.storage?.local?.set({ [LEGEND_KEY]:legPos })?.catch?.(() => {}); };
+  addEventListener("resize", () => { if (leg?.classList.contains("on")) placeLegend(); }, { passive:true });
+  function legendSync() {
+    const used = new Set(); tagged.forEach(rec => (rec.upos || []).forEach(u => used.add(u)));
+    const show = settings.wordClassLegend !== false && enabled() && !legClosed && used.size > 0;
+    if (!show) { leg?.classList.remove("on"); return; }
+    const el = legendEl(), dark = keepitDark();
+    el.classList.toggle("dark", dark);
+    el.querySelector(".h b").textContent = t("legend"); el.querySelector(".x").setAttribute("aria-label", t("close")); el.querySelector(".x").title = t("close");
+    const html = CORE.legend([...used].map(upos => ({ upos, pos:CORE.POS[upos] })).filter(x => x.pos), meaning, dark);
+    const body = el.querySelector(".b"); if (body.innerHTML !== html) body.innerHTML = html;
+    el.classList.add("on"); placeLegend();
+  }
+  api.storage?.local?.get(LEGEND_KEY).then(d => { const p = d?.[LEGEND_KEY]; if (p && typeof p.x === "number" && typeof p.y === "number") { legPos = { x:Math.min(1, Math.max(0, p.x)), y:Math.min(1, Math.max(0, p.y)) }; placeLegend(); } }).catch(() => {});
   function notice(text, undo) {
     const c = showCard(`<div class="row"><span class="tx">${esc(text)}</span>${undo ? `<button class="link" type="button">${esc(t("undo"))}</button>` : ""}</div>`, undo ? 5000 : 2400);
     if (undo) c.querySelector("button").addEventListener("click", () => { hideCard(); undo(); }, { once:true });
@@ -136,6 +202,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
 .s{margin:0 3px;font-weight:400}`;
   const lum = c => { const m = String(c).match(/[\d.]+/g); return m && m.length >= 3 ? (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255 : 0; };
   const meaning = upos => globalThis.LHN_LANGUAGES?.t?.("wc_" + upos, {}, lang()) || upos;
+  const meaningEn = upos => globalThis.LHN_LANGUAGES?.t?.("wc_" + upos, {}, "en") || upos;
   function host(abbrs, tip, dark) {
     const h = document.createElement("lhn-wc"); h.className = "lhn-wc"; h.setAttribute("style", HOST_STYLE); if (tip) h.title = tip;
     const root = h.attachShadow({ mode:"closed" });
@@ -167,16 +234,16 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     const nodeAt = pos => { let lo = 0, hi = parts.length - 1, f = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (starts[m] <= pos) { f = m; lo = m + 1; } else hi = m - 1; } return f; };
     const within = (s, e) => { const i = nodeAt(s); return i >= 0 && e <= starts[i] + parts[i][0].data.length ? i : -1; };
     const dark = lum(getComputedStyle(block).color) > 0.6, byNode = new Map();
-    const tipOf = ts => ts.filter(x => x.pos).map(x => `${x.text}: ${meaning(x.upos)}`).join("\n");
+    const tipOf = ts => CORE.tip(ts, meaning, meaningEn);
     const add = (ts, merged) => {
       const lab = ts.filter(x => x.pos); if (!lab.length) return;
       const s = ts[0].start, e = ts[ts.length - 1].end, i = within(s, e);
       if (i < 0) {   // crosses an element (a link, bold…): split the merged nouns into words / the group into tokens
-        if (merged) { let g = []; ts.forEach((x, k) => { if (k && x.start !== ts[k - 1].end) { add(g, false); g = []; } g.push(x); }); add(g, false); }
+        if (merged) { const one = g => add(g, g.length > 1 && g.length < ts.length && g[0].pos?.abbr === "N" && g.slice(1).every(x => x.upos === "PART" || !x.pos)); let g = []; ts.forEach((x, k) => { if (k && x.start !== ts[k - 1].end) { one(g); g = []; } g.push(x); }); one(g); }
         else if (ts.length > 1) ts.forEach(x => add([x], false));
         return;
       }
-      const base = starts[i], lastN = merged ? ts.findLastIndex(x => x.pos?.abbr === "N") : -1;
+      const base = starts[i], lastN = merged ? ts.findLastIndex(x => x.pos) : -1;   // last noun or its glued particle (City’s)
       const segs = merged ? [[0, ts[lastN].end - s, "N"]] : lab.map(x => [x.start - s, x.end - s, x.pos.abbr]);
       if (!byNode.has(i)) byNode.set(i, []);
       byNode.get(i).push({ s:s - base, e:e - base, abbrs:merged ? ["N"] : lab.map(x => x.pos.abbr), segs, tip:tipOf(ts) });
@@ -184,12 +251,13 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     CORE.units(text, tokens).forEach(u => add(u.tokens, u.merged));
     const rec = { nodes:[], hosts:[] };
     for (const [i, units] of byNode) { const r = { node:parts[i][0], created:new Set() }; wrapNode(r, units, dark, rec.hosts); rec.nodes.push(r); }
-    if (rec.hosts.length) tagged.set(block, rec);
+    rec.upos = [...new Set(tokens.filter(x => x.pos).map(x => x.upos))];
+    if (rec.hosts.length) { tagged.set(block, rec); legendSync(); }
     return rec.hosts.length > 0;
   }
   const unwrap = el => { if (el.parentNode) el.replaceWith(...el.childNodes); };
   function untag(block) {
-    const rec = tagged.get(block); if (!rec) return; tagged.delete(block);
+    const rec = tagged.get(block); if (!rec) return; tagged.delete(block); queueMicrotask(legendSync);
     rec.hosts.forEach(h => { h.querySelectorAll("lhn-wcu").forEach(unwrap); unwrap(h); });
     block.querySelectorAll?.("lhn-wcu, lhn-wc").forEach(unwrap);   // copies made by other scripts (e.g. a highlight wrapping a word)
     for (const { node, created } of rec.nodes) {
@@ -233,7 +301,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     if (on === pageMode) return;
     if (on) {
       if (!enabled() || !(await ensureModel())) return;
-      pageMode = true; skippedNotice = false; watched = new WeakSet();
+      pageMode = true; skippedNotice = false; watched = new WeakSet(); legClosed = false;
       io = new IntersectionObserver(onScreen, { rootMargin:"200px 0px" }); scan();
       if (!silent) notice(t("on"));
     } else {
@@ -251,6 +319,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     const done = taggedNear(block);
     if (done) { untag(done); notice(t("paraOff"), () => { if (done.isConnected) tagBlock(done); }); return; }
     if (!(await ensureModel())) return;
+    if (!tagged.size) legClosed = false;   // Word class turned on again (nothing labelled yet): the legend shows again
     const r = await tagBlock(block);
     if (r === "lang") notice(t("notEnglish")); else if (r === "empty") notice(t("none"));
   }
@@ -265,6 +334,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   document.addEventListener("lhn-website-disabled-change", e => { websiteDisabled = !!e.detail; if (websiteDisabled) { void setPage(false, { silent:true }); clearAll(); } });
   const sync = next => {
     settings = next || {}; websiteDisabled = Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
+    legendSync();
     if (!enabled()) { if (pageMode) void setPage(false, { silent:true }); clearAll(); }
   };
   globalThis.LHN_SETTINGS?.get?.().then(sync).catch(() => {});

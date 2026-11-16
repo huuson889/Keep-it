@@ -1043,6 +1043,10 @@
   MESSAGES.en.kpWcDelete = "Delete"; MESSAGES.vi.kpWcDelete = "Xóa"; MESSAGES.ko.kpWcDelete = "삭제";
   MESSAGES.en.kpWcPreviewNeed = "Download the model to see the preview"; MESSAGES.vi.kpWcPreviewNeed = "Tải mô hình để xem trước"; MESSAGES.ko.kpWcPreviewNeed = "미리 보려면 모델을 다운로드하세요";
   MESSAGES.en.kpWcPreviewBusy = "Finding word classes…"; MESSAGES.vi.kpWcPreviewBusy = "Đang xác định loại từ…"; MESSAGES.ko.kpWcPreviewBusy = "품사 분석 중…";
+  MESSAGES.en.wc_legend = "Legend"; MESSAGES.vi.wc_legend = "Chú thích"; MESSAGES.ko.wc_legend = "범례";
+  MESSAGES.en.wc_close = "Close"; MESSAGES.vi.wc_close = "Đóng"; MESSAGES.ko.wc_close = "닫기";
+  MESSAGES.en.kpWcLegend = "Show the legend"; MESSAGES.vi.kpWcLegend = "Hiện bảng chú thích"; MESSAGES.ko.kpWcLegend = "범례 표시";
+  MESSAGES.en.kpWcLegendHelp = "A small panel in the top-right corner explains the labels each time Word class is on"; MESSAGES.vi.kpWcLegendHelp = "Bảng nhỏ góc phải trên giải thích các nhãn mỗi khi bật Loại từ"; MESSAGES.ko.kpWcLegendHelp = "품사를 켤 때마다 오른쪽 위 작은 패널에 라벨 설명을 표시해요";
   // Trang mất mạng (js/content/offline-page.js): khoá off_<tên>.
   MESSAGES.en.off_ofaT = "Oops, the internet dozed off!"; MESSAGES.vi.off_ofaT = "Ối, rớt mạng rồi!"; MESSAGES.ko.off_ofaT = "앗, 인터넷이 끊겼어요!";
   MESSAGES.en.off_ofaP = "The Keepit cloud naps until Wi-Fi is back. The page opens by itself once you are online."; MESSAGES.vi.off_ofaP = "Mây Keepit chợp mắt chờ Wi-Fi quay lại. Có mạng là trang tự mở."; MESSAGES.ko.off_ofaP = "Wi-Fi가 돌아올 때까지 Keepit 구름이 잠깐 자고 있어요. 연결되면 페이지가 저절로 열려요.";

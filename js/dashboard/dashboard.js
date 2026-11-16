@@ -277,6 +277,7 @@ function renderSettingsExtras() {
   $("settingsTranslateEnabled").checked = dashboardSettings.translateEnabled !== false;
   $("settingsAskAIEnabled").checked = dashboardSettings.askAIEnabled !== false;
   $("settingsWordClassEnabled").checked = dashboardSettings.wordClassEnabled !== false;
+  $("settingsWordClassLegend").checked = dashboardSettings.wordClassLegend !== false;
   const sections = dashboardSettings.fullDictionarySections && typeof dashboardSettings.fullDictionarySections === "object" ? dashboardSettings.fullDictionarySections : {};
   document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => { input.checked = sections[input.dataset.dictPart] !== false; });
   const providers = dashboardSettings.askAIProviders && typeof dashboardSettings.askAIProviders === "object" ? dashboardSettings.askAIProviders : {};
@@ -3459,6 +3460,7 @@ document.querySelectorAll("#dashboardSettingsDialog input[name=sidebarIndicatorT
 $("settingsNotesEnabled").addEventListener("change", event => saveDashboardSettings({ notesEnabled:event.target.checked }));
 $("settingsTranslateEnabled").addEventListener("change", event => saveDashboardSettings({ translateEnabled:event.target.checked }));
 $("settingsWordClassEnabled").addEventListener("change", event => saveDashboardSettings({ wordClassEnabled:event.target.checked }));
+$("settingsWordClassLegend").addEventListener("change", event => saveDashboardSettings({ wordClassLegend:event.target.checked }));
 $("settingsAskAIEnabled").addEventListener("change", event => saveDashboardSettings({ askAIEnabled:event.target.checked }));
 document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => input.addEventListener("change", () => saveDashboardSettings({ fullDictionarySections:Object.fromEntries([...document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]")].map(part => [part.dataset.dictPart, part.checked])) })));
 // AI row: at least one AI stays on; the default AI turned off → "Last used" (the preview module keeps the controls right before this runs)

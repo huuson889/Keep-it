@@ -204,6 +204,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.291 | Arena.ai Agent sửa:**
+
+- Loại từ, theo yêu cầu người dùng:
+  - Danh từ + tiểu từ dính sau (sở hữu ’s / 's, mô hình gắn PART) hiện là một từ: "Ho Chi Minh City’s" một gạch, một nhãn N (theo nhãn + vị trí, không danh sách từ).
+  - Rê chuột vào từ hiện chú thích như demo ("book: danh từ · noun"), trên trang và trong Xem trước Cài đặt.
+  - Bảng chú thích kính mờ nhỏ góc phải trên ("**N (Noun):** Danh từ / Danh từ riêng"…, chỉ các nhãn đang có trên trang), hiện mỗi lần bật Loại từ; × ẩn đến lần bật sau; kéo đầu bảng để dời, nhớ vị trí; Cài đặt → Loại từ → "Hiện bảng chú thích" (mặc định bật) để tắt hẳn.
+- Sửa: từ gộp nằm vắt qua thẻ (link / đậm) làm tràn ngăn xếp, đoạn đó không được gắn nhãn.
+- File: `js/word-class/{core,page}.js`, `js/dashboard/{dashboard,settings-ui}.js`, `pages/dashboard.html`, `js/core/{defaults,languages}.js`, `manifest.json`, `docs/modules/word-class.md`, `docs/ui-layout.md`.
+- Kiểm tra: Chromium nạp extension thật: "Ho Chi Minh City’s", "teacher's", "Nam's" mỗi cụm một nhãn N; title từ đúng định dạng (vi + en, en chỉ một lần); bảng chú thích hiện, kéo → lưu vị trí, tắt trong Cài đặt → không hiện; sáng / tối, tiếng Việt xuống dòng gọn; không lỗi trang. Khi mô hình đã nạp: mỗi đoạn ~0,1–0,2 giây.
+
 **2026-10-23 | v3.5.290 | Arena.ai Agent sửa:**
 
 - Thêm Loại từ (Word class / 품사) như demo pos v4: mỗi từ tiếng Anh trên trang có gạch chân màu rồi nhãn viết tắt 12px (N, V, Aux V, Adj…), danh từ liền nhau chung một gạch và một nhãn N; nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8) gán, không danh sách cứng.

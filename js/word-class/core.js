@@ -101,35 +101,44 @@
   }
 
   // Columns as in demo v4: words written together (don't, end.) form one group; nouns written next to each other (only spaces
-  // between, same line) share one underline and one "N" label. → [{ tokens, merged }]
+  // between, same line) share one underline and one "N" label. v3.5.291: a particle the model tags PART written right after the
+  // noun with no space (the possessive in "Ho Chi Minh City’s") belongs to that noun: one underline, one "N" (by tag + position,
+  // no word list). → [{ tokens, merged }] (merged = one underline + one N for the whole unit)
   function units(text, tokens) {
     const groups = []; let prevEnd = -1;
     for (const t of tokens) { if (groups.length && t.start === prevEnd) groups[groups.length - 1].push(t); else groups.push([t]); prevEnd = t.end; }
     const isN = t => t.pos?.abbr === "N";
     const punct = t => !t.pos && !/[\p{L}\p{N}]/u.test(t.text);
     const allN = g => g.every(isN);
-    const nThenPunct = g => { const k = g.findIndex(t => !isN(t)); return isN(g[0]) && (k < 0 || g.slice(k).every(punct)); };   // "river." can end a noun run
+    const clitic = (g, k) => g[k]?.upos === "PART" && k > 0 && (isN(g[k - 1]) || clitic(g, k - 1));   // City’s: PART glued after the noun
+    const nThenPunct = g => { const k = g.findIndex((t, j) => !isN(t) && !clitic(g, j)); return isN(g[0]) && (k < 0 || g.slice(k).every(punct)); };   // "river." / "City’s," can end a noun run
+    const hasClitic = g => g.some((t, j) => clitic(g, j));
     const out = [];
     groups.forEach((g, i) => {
       const prev = out[out.length - 1], gap = i ? text.slice(groups[i - 1][groups[i - 1].length - 1].end, g[0].start) : "";
       if (prev && prev.noun && allN(prev.groups[prev.groups.length - 1]) && nThenPunct(g) && /^[ \t\u00a0]+$/.test(gap)) prev.groups.push(g);
       else out.push({ groups:[g], noun:nThenPunct(g) });
     });
-    return out.map(u => ({ tokens:u.groups.flat(), merged:u.groups.length > 1 }));
+    return out.map(u => ({ tokens:u.groups.flat(), merged:u.groups.length > 1 || (u.noun && u.groups.some(hasClitic)) }));
   }
 
   // Settings preview: same columns as the page, as HTML (labels are plain text here — it is not a web page)
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
-  function html(text, tokens, dark) {
+  // hover text as in demo v4: one line per labelled word — "book: danh từ · noun" (the English name is left out when the UI is English)
+  function tip(tokens, meaning, meaningEn) {
+    return tokens.filter(t => t.pos).map(t => { const a = meaning(t.upos), b = meaningEn ? meaningEn(t.upos) : ""; return `${t.text}: ${a}${b && b !== a ? ` · ${b}` : ""}`; }).join("\n");
+  }
+  function html(text, tokens, dark, tipOf) {
+    const title = ts => { const s = tipOf ? tipOf(ts) : ""; return s ? ` title="${esc(s)}"` : ""; };
     const lab = abbrs => abbrs.map(a => `<span style="color:${color(a, dark)}">${esc(a)}</span>`).join('<span class="kp-wc-sep">·</span>');
     return units(text, tokens).map(u => {
       const ts = u.tokens;
       if (u.merged) {
-        const last = ts.findLastIndex(t => t.pos?.abbr === "N");
-        return `<span class="kp-wc-p"><span class="kp-wc-t"><span class="kp-wc-u" style="border-color:${color("N", dark)}">${esc(text.slice(ts[0].start, ts[last].end))}</span>${esc(text.slice(ts[last].end, ts[ts.length - 1].end))}</span><span class="kp-wc-a">${lab(["N"])}</span></span>`;
+        const last = ts.findLastIndex(t => t.pos);
+        return `<span class="kp-wc-p"${title(ts)}><span class="kp-wc-t"><span class="kp-wc-u" style="border-color:${color("N", dark)}">${esc(text.slice(ts[0].start, ts[last].end))}</span>${esc(text.slice(ts[last].end, ts[ts.length - 1].end))}</span><span class="kp-wc-a">${lab(["N"])}</span></span>`;
       }
       const word = ts.map((t, k) => (k && t.start > ts[k - 1].end ? esc(text.slice(ts[k - 1].end, t.start)) : "") + (t.pos ? `<span class="kp-wc-u" style="border-color:${color(t.pos.abbr, dark)}">${esc(t.text)}</span>` : esc(t.text))).join("");
-      return `<span class="kp-wc-p"><span class="kp-wc-t">${word}</span><span class="kp-wc-a">${lab(ts.filter(t => t.pos).map(t => t.pos.abbr))}</span></span>`;
+      return `<span class="kp-wc-p"${title(ts)}><span class="kp-wc-t">${word}</span><span class="kp-wc-a">${lab(ts.filter(t => t.pos).map(t => t.pos.abbr))}</span></span>`;
     }).join("");
   }
   // legend of the abbreviations that appear, fixed order — "N (Noun): Danh từ / Danh từ riêng" (meaning = translate(UPOS))
@@ -140,5 +149,5 @@
     return [...groups].filter(([a]) => used.has(a)).map(([a, g]) => `<span><b style="color:${color(a, dark)}">${esc(a)} (${esc(g.name)}):</b> ${esc([...new Set(g.list.map(u => cap(meaning(u))))].join(" / "))}</span>`).join("");
   }
 
-  globalThis.LHN_WORD_CLASS_CORE = Object.freeze({ MODEL_ID, MODEL_FILE, MODEL_FILES, MODEL_URL, POS, COLORS, MUTED, color, tokenize, chunks, tagWords, analyze, label, units, html, legend });
+  globalThis.LHN_WORD_CLASS_CORE = Object.freeze({ MODEL_ID, MODEL_FILE, MODEL_FILES, MODEL_URL, POS, COLORS, MUTED, color, tokenize, chunks, tagWords, analyze, label, units, tip, html, legend });
 })();

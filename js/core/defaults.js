@@ -40,7 +40,8 @@
     notesEnabled: true, // master switches of Settings → Notes / Translate / Ask AI
     translateEnabled: true,
     askAIEnabled: true,
-    wordClassEnabled: true, // v3.5.290 master switch of Settings → Word class (☰ Loại từ / Loại từ đoạn, Alt+G / Alt+J)
+    wordClassEnabled: true,
+    wordClassLegend: true, // v3.5.291 Settings → Word class → "Show the legend" (frosted panel, top right, while words are labelled) // v3.5.290 master switch of Settings → Word class (☰ Loại từ / Loại từ đoạn, Alt+G / Alt+J)
     askAIProviders: { chatgpt: true, gemini: true, claude: true }, // AIs in the AI panel row (at least one on)
     askAIDefaultProvider: "last", // AI opened by Ask AI: "last" | "chatgpt" | "gemini" | "claude"
     chatGPTAutoSend: false,

@@ -615,7 +615,7 @@
       prog.hidden = !loading; prog.firstElementChild.style.width = pct() + "%";
       btn.textContent = ready() ? t("kpWcDelete") : t("kpWcDownload"); btn.disabled = loading || !st;
       let key, html;
-      if (ready() && tags) { const tokens = CORE.label(SAMPLE, tags); key = "tags"; html = `<div class="kp-wc-line">${CORE.html(SAMPLE, tokens, dark())}</div><div class="kp-wc-legend">${CORE.legend(tokens, u => t("wc_" + u), dark())}</div>`; }
+      if (ready() && tags) { const tokens = CORE.label(SAMPLE, tags); key = "tags"; html = `<div class="kp-wc-line">${CORE.html(SAMPLE, tokens, dark(), ts => CORE.tip(ts, u => t("wc_" + u), u => globalThis.LHN_LANGUAGES?.t?.("wc_" + u, {}, "en") ?? u))}</div><div class="kp-wc-legend">${CORE.legend(tokens, u => t("wc_" + u), dark())}</div>`; }
       else if (ready()) { key = "busy"; html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p><p class="kp-wc-note">${esc(t("kpWcPreviewBusy"))}</p>`; void tag(); }
       else if (loading) { key = "loading" + pct(); html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p><p class="kp-wc-note">${esc(t("kpWcDownloading", { p:pct() }))}</p>`; }
       else { key = st ? "need" : "wait"; html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p>` + (st ? `<button type="button" class="settings-action-button kp-wc-get">${esc(t("kpWcPreviewNeed"))}</button>` : ""); }
