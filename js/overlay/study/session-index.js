@@ -3,6 +3,8 @@
   const STORAGE_KEY = "dictation:session-index:v1";
   const VERSION = 1;
   const MAX_SESSIONS = 500;
+  // Web Study sources are keyed `web-<hex>` (overlay/source/web.js); a YouTube video id never has this form.
+  const isWebSourceId = value => /^web-[0-9a-f]{1,8}$/.test(String(value || "").trim());
 
   const safeCount = value => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : 0;
   const safeTimestamp = value => {
@@ -14,6 +16,7 @@
     const sourceType = String(value.sourceType || "").trim().toLowerCase().slice(0, 32);
     const sourceId = String(value.sourceId || "").trim().slice(0, 256);
     if (!sourceType || !sourceId) return null;
+    if (sourceType === "youtube" && isWebSourceId(sourceId)) return null; // v3.5.308: drop web records once mistaken for YouTube
     const totalCount = safeCount(value.totalCount);
     const currentIndex = safeCount(value.currentIndex);
     const solvedCount = safeCount(value.solvedCount);
@@ -45,7 +48,7 @@
   }
   function fromLegacyYouTubeRecord(sourceId, record, { title = "", url = "" } = {}) {
     const id = String(sourceId || "").trim();
-    if (!/^[A-Za-z0-9_-]{6,}$/.test(id) || !record || typeof record !== "object") return null;
+    if (!/^[A-Za-z0-9_-]{6,}$/.test(id) || isWebSourceId(id) || !record || typeof record !== "object") return null;
     const solvedCount = Array.isArray(record.solved) ? new Set(record.solved.map(Number).filter(Number.isInteger)).size : 0;
     return normalizeSession({
       sourceType:"youtube",
@@ -106,7 +109,7 @@
       .slice(0, MAX_SESSIONS);
   }
 
-  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord });
+  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord, isWebSourceId });
   globalThis.LHN_STUDY_SESSION_INDEX = studySessionIndex;
   globalThis.LHN_DICTATION_SESSION_INDEX = studySessionIndex; // Compatibility alias for existing integrations.
 })();

@@ -5,6 +5,7 @@
 
   const storage = globalThis.browser?.storage?.local;
   const INDEX_KEY = "dictation:session-index:v1";
+  const isWebSourceId = value => /^web-[0-9a-f]{1,8}$/.test(String(value || "")); // web Study source (`web-<hex>`), not a YouTube video
   let openSequence = 0;
   let snapshotRequest = 0;
   let popupReadySequence = 0;
@@ -139,24 +140,25 @@
       const index = localData?.[INDEX_KEY];
       const indexedSessions = Array.isArray(index?.sessions) ? index.sessions : [];
       const metadataBySourceId = new Map(indexedSessions
-        .filter(session => session?.sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(String(session.sourceId || "")))
+        .filter(session => (session?.sourceType === "youtube" && /^[A-Za-z0-9_-]{6,}$/.test(String(session.sourceId || "")) && !isWebSourceId(session.sourceId)) || (session?.sourceType === "web" && isWebSourceId(session.sourceId)))
         .map(session => [String(session.sourceId), session]));
       const normalizedSessions = Object.entries(localData || {}).flatMap(([key, record]) => {
         const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
         if (!match) return [];
-        const sourceId = match[1];
+        const sourceId = match[1], web = isWebSourceId(sourceId);
         const metadata = metadataBySourceId.get(sourceId);
         const words = normalizeSessionWords(record?.wrongWordStats);
         if (!words.length) return [];
         return [{
-          id:`youtube:${sourceId}`,
+          id:`${web ? "web" : "youtube"}:${sourceId}`,
           sourceId,
+          web,
           title:sessionTitle(record, metadata, sourceId),
-          url:String(metadata?.url || `https://www.youtube.com/watch?v=${encodeURIComponent(sourceId)}`),
+          url:String(metadata?.url || record?.url || (web ? "" : `https://www.youtube.com/watch?v=${encodeURIComponent(sourceId)}`)),
           words,
         }];
       });
-      const unresolvedIds = normalizedSessions.filter(session => session.title === session.sourceId).map(session => session.sourceId);
+      const unresolvedIds = normalizedSessions.filter(session => !session.web && session.title === session.sourceId).map(session => session.sourceId);
       const liveTitles = await openYouTubeTitles(unresolvedIds);
       for (const session of normalizedSessions) {
         const liveTitle = liveTitles.get(session.sourceId);

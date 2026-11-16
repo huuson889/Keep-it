@@ -204,6 +204,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-16 | v3.5.308 | Arena.ai Agent sửa:**
+
+- Dashboard > Chép chính tả, theo báo lỗi: bài chép trên trang web bị nhận nhầm là video YouTube. Nguyên nhân: Dashboard đối soát mọi khoá `dictation:<id>` bằng regex `[A-Za-z0-9_-]{6,}`, khớp cả `dictation:web-<hex>` của trang web → tạo thêm phiên `youtube:web-…` (thẻ YouTube thứ hai, ảnh `i.ytimg.com/vi/web-…` hỏng, bộ lọc YouTube đếm dư) và ghi phiên đó vào `dictation:session-index:v1`; popup "Xem thống kê chi tiết" cũng coi mọi bài là YouTube (nguồn trỏ `youtube.com/watch?v=web-…`, đi tìm tên trong tab YouTube). Sửa: `session-index.js` thêm `isWebSourceId` (`web-<hex>`, dạng mà mã video YouTube không có); `fromLegacyYouTubeRecord` bỏ qua mã web; `normalizeSession` loại phiên `youtube:web-…` đã lưu nhầm (index tự sạch ở lần ghi sau). `dictation-stats-popup-bridge.js`: bài web lấy tên / URL từ phiên `web:`, không gắn link YouTube, không tìm tên trong tab YouTube.
+- File: `js/overlay/study/session-index.js`, `js/dashboard/dictation-stats-popup-bridge.js`, `docs/modules/dashboard.md`, `manifest.json`.
+- Kiểm tra: `node --check`; Chromium + extension thật, dữ liệu 1 bài web (`dictation:web-2d096b53` + phiên `web:` và phiên `youtube:web-…` lưu nhầm) + 1 bài YouTube. Bản cũ: 3 thẻ (1 thẻ YouTube giả, ảnh hỏng), lọc 3 / 2 / 1, popup có link `watch?v=web-2d096b53` — tái hiện đúng lỗi. Bản mới: 2 thẻ (Web + YouTube), lọc 2 / 1 / 1, index lưu còn `web:web-2d096b53`, `youtube:dQw4w9WgXcQ`; popup thống kê đủ từ của cả 2 bài, chỉ bài YouTube có link; không lỗi trang.
+
+**2026-11-16 | v3.5.307 (không phát hành) | Arena.ai Agent sửa:**
+
+- `OPT-ARENA.md`, theo yêu cầu: xoá 8 mục đã triển khai (Tái cấu trúc cây thư mục v3.5.191–199; Thanh Reader; Thanh Bilingual Reader; 14 góp ý chạm; Overlay khớp demo v10; Overlay cảm ứng demo v10; Bản chốt v3.5.136; Tên, slogan và mô tả cửa hàng). Giữ nguyên 5 mục còn lại. Thêm 4 mục riêng cho ý tưởng chưa ghi: Loại từ B5 (độ tự tin mô hình, chờ quyết), Cài đặt / Đăng nhập dạng sheet trong trang trên máy tính, làm lại giao diện responsive, bản APK Android.
+- File: `OPT-ARENA.md`, `PROJECT.md`. Không đổi code, không đổi phiên bản.
+
 **2026-11-16 | v3.5.307 | Arena.ai Agent sửa:**
 
 - Dashboard, theo yêu cầu: xoá 9 tab trống trên thanh bên (Luyện đề SW, Luyện viết, Luyện nói Shadowing, Từ vựng, Luyện đọc, Bảng tin, Tin nhắn, Affiliate, Dành cho giáo viên — chỉ là link `#`, không mở gì). Thanh bên còn Tổng quan, Chép chính tả, Ôn tập (Flashcards), Tô sáng & Ghi chú. Sheet "Thêm" trên điện thoại bỏ nhóm "Sắp có" (dựng từ chính các tab đó) cùng toast "Tính năng sắp có" và CSS liên quan.

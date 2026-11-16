@@ -3,328 +3,51 @@
 File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận với Arena**, bản mới nhất ở trên cùng.
 - Ở đây chỉ ghi ý tưởng, quyết định, phương án đã loại (kèm lý do) và câu hỏi còn mở.
 - Trạng thái triển khai, việc đang mở và nhật ký thay đổi code nằm trong `PROJECT.md`. Hành vi thực tế xác nhận bằng mã nguồn.
-- Mỗi bản ghi có tiêu đề `## YYYY-MM-DD | <chủ đề>` và dòng **Trạng thái** (Đã chốt, chưa triển khai / Đang triển khai / Đã triển khai ở vX.Y.Z).
+- Mỗi bản ghi có tiêu đề `## YYYY-MM-DD | <chủ đề>`; bản ghi là ý tưởng thì ghi `## YYYY-MM-DD | Ý TƯỞNG - <chủ đề>`, và dòng **Trạng thái** (Đã chốt, chưa triển khai / Đang triển khai / Đã triển khai ở vX.Y.Z).
 
 ---
 
-## 2026-10-23 | Tái cấu trúc cây thư mục, bỏ overlay cũ, một nguồn nhãn và một nguồn màu
+## 2026-11-16 | Ý TƯỞNG - Loại từ cả trang: bước B5 — độ tự tin của mô hình
 
-**Trạng thái:** Đã triển khai ở v3.5.199 (chốt ở v3.5.191). Bước 1 xong ở v3.5.192; bước 2 xong ở v3.5.193; bước 3 (danh sách bên dưới) ở v3.5.194; bước 4 ở v3.5.195; bước 5a ở v3.5.196; bước 5b ở v3.5.197; bước 5c ở v3.5.198; bước 5d ở v3.5.199 (`overlay-template.js` chuyển nguyên văn vào đầu `overlay-controller.js` để đúng cây 9 file).
+**Trạng thái:** Đề xuất, chờ người dùng quyết. Chưa đưa vào code.
 
-> **BẮT BUỘC:** trước MỖI bước triển khai bên dưới, đọc lại toàn bộ bản ghi này (cây đích, luật, thứ tự) rồi mới sửa. Không làm khác cây này. Muốn đổi cây thì hỏi người dùng và cập nhật bản ghi này trước.
-
-### Cây đích (sau khi đã xoá hết file cũ)
-
-```
-Keep-it/
-├─ manifest.json
-├─ AGENTS.md                     luật cho agent
-├─ README.md
-├─ PROJECT.md                    ~30 mục thay đổi mới nhất
-├─ OPT-ARENA.md                  ý tưởng đã chốt
-├─ PRIVACY-POLICY.md  DATA-INVENTORY.md  STORE-LISTING.md  THIRD_PARTY_NOTICES.md  LICENSE
-│
-├─ docs/
-│  ├─ INDEX.md                   bảng "muốn sửa X → mở file Y"
-│  ├─ ui-layout.md
-│  ├─ changelog/                 lịch sử cũ tách từ PROJECT.md
-│  ├─ supabase/                  SUPABASE_SYNC.md, supabase-schema.sql
-│  └─ modules/
-│     └─ ask-ai  background  content  core  dashboard  overlay  popup  reader  shared  translate  video
-│
-├─ js/
-│  ├─ background/                CHẠY NỀN
-│  │  ├─ background.js           điểm vào, nhận và chuyển tin nhắn
-│  │  ├─ annotations.js          lưu tô sáng, ghi chú
-│  │  └─ usage-limits.js
-│  ├─ core/                      NỀN CHUNG
-│  │  ├─ languages.js            TẤT CẢ nhãn en/vi/ko + danh sách ngôn ngữ
-│  │  ├─ settings.js  defaults.js  config.js  cache.js
-│  │  └─ messaging.js  browser-polyfill.js  error-logger.js  shortcuts.js
-│  ├─ shared/                    DÙNG CHUNG
-│  │  ├─ theme-tokens.js         màu kính sáng/tối (thanh, ☰, Reader, overlay)
-│  │  ├─ sheet-kit.js            sheet kéo xuống để đóng
-│  │  ├─ selection-toolbar.js    icon tròn khi chọn chữ
-│  │  ├─ search.js               chuẩn hoá, xếp hạng, tìm kiếm (gộp translate/search.js)
-│  │  └─ site-icons.js  thumbnails.js  icons.js  custom-font.js
-│  ├─ content/                   CHẠY TRÊN TRANG WEB
-│  │  ├─ keepit-bar.js           thanh Keepit + ☰ (đổi tên từ touch-ui.js)
-│  │  ├─ keepit-bar-css.js       CSS thanh + ☰, không còn khối vá
-│  │  ├─ content.js              dịch đoạn, chọn chữ, cử chỉ trên trang
-│  │  ├─ offline-page.js
-│  │  ├─ web-highlighter.js  annotation-restore.js
-│  │  ├─ sidebar.js  sentence-note.js  note-composer.js
-│  │  └─ page-layout.js  ui-components.js
-│  ├─ translate/                 DỊCH + TRA TỪ
-│  │  ├─ translate.js            gọi dịch vụ dịch (chạy nền)
-│  │  ├─ dictionary.js           bảng tra từ
-│  │  └─ study-translation.js
-│  ├─ reader/                    READER SONG NGỮ
-│  │  ├─ bilingual-reader.js
-│  │  ├─ reader-css.js           CSS Reader, không còn khối vá
-│  │  ├─ tts-engine.js
-│  │  └─ bilingual-flags.js
-│  ├─ overlay/                   MÀN HỌC VIDEO/WEB (9 file)
-│  │  ├─ overlay-controller.js   mở/đóng, phím tắt, phát/tua, câu hiện tại, xuất file
-│  │  ├─ overlay-engine.js       dịch phụ đề, CC, cài đặt, yêu thích
-│  │  ├─ source/
-│  │  │  ├─ video.js             lấy phụ đề video
-│  │  │  └─ web.js               bài viết → câu
-│  │  ├─ ui/
-│  │  │  ├─ overlay-ui.js        Xem · Nói · Chép · Rạp (nhãn qua t())
-│  │  │  └─ overlay-css.js
-│  │  └─ study/
-│  │     ├─ study-score.js       chấm điểm
-│  │     ├─ learning-rules.js    luật giải câu, khoá câu
-│  │     └─ session-index.js
-│  ├─ ask-ai/                    AI PANEL
-│  │  ├─ service.js  providers.js  prompt-format.js    (chạy nền)
-│  │  ├─ toolbar.js
-│  │  ├─ panel/
-│  │  └─ page/                   chạy trên ChatGPT/Gemini/Claude/Grok
-│  ├─ home/  dashboard/  popup/
-│
-├─ css/  shared/  content/  dashboard/  popup/
-├─ pages/  vendor/readability/  _locales/  icons/  assets/  fonts/
-└─ scripts/                      build_release.py, build_firefox.py
-```
-
-**Xoá hẳn (không có thư mục `legacy`):**
-- `js/overlay/overlay-template.js`
-- `js/overlay/view/` (`cc-mode`, `layout-mode`, `touch-layout`, `touch-theater`)
-- `js/overlay/study/dictation/`, `js/overlay/study/shadowing/`
-- `js/overlay/unified/unified-text.js`
-- `js/translate/search.js`
-- `docs/modules/dictation.md` (gộp vào `overlay.md`)
-
-**Đổi tên/chuyển:**
-- `touch-ui.js` → `keepit-bar.js`
-- `unified/` → `overlay/ui/` (`unified-ui.js` → `overlay-ui.js`, `unified-css.js` → `overlay-css.js`)
-- `study/shared/*` → `study/`
-- Supabase docs → `docs/supabase/`
-
-### Lý do
-
-| Quyết định | Lý do |
-|---|---|
-| Giữ cây hiện tại | Đã chia theo vùng chức năng. Chuyển hàng trăm file chỉ thêm rủi ro (thứ tự nạp manifest, link tài liệu, lịch sử git). |
-| Nhãn chỉ ở `languages.js` (`MESSAGES` + `t()`) | `unified-text.js` (v3.5.171) là hệ thống dịch thứ hai, dùng câu tiếng Việt làm khoá. Sửa một chữ là mất bản en/ko mà không báo lỗi. |
-| `theme-tokens.js` | Màu kính khai báo ở 3 nơi. v3.5.189–191 phải sửa ba lần cho một thay đổi. |
-| Tách CSS thanh và Reader ra file riêng | 74 KB CSS và 52 khối vá trong `touch-ui.js`, 11 khối trong Reader, đè nhau. Gộp vào quy tắc gốc thì mỗi quy tắc chỉ còn một chỗ. |
-| `touch-ui.js` → `keepit-bar.js` | Tên cũ sai: file chạy trên mọi thiết bị. |
-| Overlay 17 → 9 file, bỏ giao diện cũ | Giao diện cũ vẫn dựng nhưng ẩn, khoảng 600 KB nạp trên mọi trang. Agent dễ sửa nhầm phần không ai thấy. |
-| Gộp hai `search.js` | Trùng tên, việc gần nhau, mỗi file khoảng 1,5 KB. |
-| `PRIVACY-POLICY.md` ở gốc | Trang cửa hàng đang trỏ link tới đây. |
-
-### Luật cho agent (ghi vào `AGENTS.md` ở bước 1)
-- Nhãn mới chỉ thêm vào `languages.js` với đủ en/vi/ko. Không viết chữ cứng trong giao diện.
-- Màu sáng/tối chỉ khai báo trong `theme-tokens.js`. Nơi khác dùng `var(--…)`.
-- Không nối khối vá `/* v3.5.xxx */` vào cuối CSS. Sửa thẳng quy tắc gốc, ghi phiên bản vào `PROJECT.md`.
-- Chỉ tách file khi file vừa quá lớn vừa có phần thật sự độc lập. `overlay-ui.js`, `content.js`, `languages.js` giữ một file.
-- Không tạo thư mục `legacy`. Code cũ thì xoá.
-
-### Thứ tự triển khai (mỗi bước một phiên bản)
-1. **Dọn tài liệu:** `INDEX.md` thêm bảng "sửa X → file Y"; cắt `PROJECT.md`, lịch sử sang `docs/changelog/`; chuyển Supabase; gộp `search.js`; ghi luật vào `AGENTS.md`.
-2. **Màu và CSS:** `theme-tokens.js`; tách `keepit-bar-css.js` và `reader-css.js`, gộp hết khối vá; đổi tên `keepit-bar.js`; chuyển bảng nhãn `T` của thanh sang `languages.js` (khoá `bar_<tên>`; người dùng duyệt thêm, "làm hết đi").
-3. **Danh sách tính năng overlay cũ ↔ mới:** chỉ là tài liệu. Mỗi tính năng của giao diện cũ được đánh dấu "đã có trong giao diện mới" hoặc "bỏ". Người dùng duyệt các mục "bỏ".
-4. **Overlay A:** xoá CSS cũ, giữ lại quy tắc chung mà giao diện mới cần (`:host`, `*:not(:is(.ov, .ov *))`…). Tạo `overlay-engine.js` từ phần còn dùng trong `view/` (dịch phụ đề, CC, cài đặt, yêu thích), rồi xoá `view/`. (v3.5.195: `layout-mode.js` + `cc-mode.js` + phần yêu thích của `touch-layout.js` ghép nguyên văn; phần UI cũ còn lẫn trong đó gỡ ở bước 5 cùng các chỗ controller gọi.)
-5. **Overlay B** (chia 4 phiên bản vì điều kiện "không vừa chuyển file vừa xoá code"; cây đích không đổi): **5a** xoá `dictation/`, `shadowing/`, `createStudyUi`, hover-pause (v3.5.196); **5b** xoá HTML cũ và các chỗ controller/engine ghi vào đó (v3.5.197; giữ gốc rỗng ẩn `#keepit-exact-overlay` mang class trạng thái); **5c** chuyển nhãn `unified-text.js` + `offline-page.js` sang `languages.js`, xoá `unified-text.js`; **5d** đổi `unified/` → `ui/`, `study/shared/*` → `study/`, gộp `dictation.md`. Nội dung gốc: bỏ các chỗ controller dùng DOM cũ và đường dự phòng UI cũ; xoá HTML cũ, `createStudyUi`, `dictation/`, `shadowing/`; chuyển ~260 nhãn sang `languages.js` rồi xoá `unified-text.js`; chuyển luôn bảng nhãn của `offline-page.js` sang `languages.js` (người dùng duyệt thêm); đổi `unified/` → `ui/`; gộp `dictation.md` vào `overlay.md`.
-
-### Bước 3: tính năng overlay cũ ↔ mới (lập ở v3.5.194)
-
-Đối chiếu `OVERLAY_HTML` (`overlay-template.js`), `view/`, `study/dictation/`, `study/shadowing/` với `unified-ui.js` + controller. Giao diện cũ bị ẩn bằng `#keepit-exact-overlay{display:none!important}` từ v3.5.171 (`buildOverlay`), nên mọi thứ chỉ có ở giao diện cũ đã không hiện với người dùng từ đó.
-
-| Tính năng cũ | Ở giao diện mới | Kết luận |
-|---|---|---|
-| Phát/dừng, câu trước/sau, lặp câu, tốc độ 0.5–3x + nút sẵn | thanh dưới + bảng `speed`, `rep` | Có |
-| Âm lượng / tắt tiếng | bảng `vol` | Có |
-| Yêu thích ♥ | `data-act="fav"` → `B.setFavorite` (`lhnFavoriteVideos`) | Có |
-| Thanh bên ghi chú | `B.openNotes` | Có |
-| Chế độ phụ đề Song ngữ/Chính/Dịch/Ẩn, phím 1–4 | bảng `cc`, `onKey` | Có |
-| Chế độ xem Rạp/Đọc/Thường, Alt+1/2/3 | Xem (Đọc 34% / Xem 60%, kéo vạch chia) + Rạp, Alt+1/2/3 | Có (đã gộp từ demo v6–v18) |
-| Kích thước xem S/M/L | Cột video + nút Phóng to/Thu nhỏ (`btnSize`) | Có (dạng mới) |
-| Toàn màn hình, Rạp ngang điện thoại (vuốt âm lượng/độ sáng/tua) | `data-act="theater"`, `#ttring` `#ttseek` `#tthint` | Có |
-| Luyện nói / Chép chính tả (panel Study cũ, `createStudyUi`) | tab Nói · Chép: chấm bằng `LHN_STUDY_SCORE`, luật `LHN_STUDY_RULES`, tự ghi `dictation:<sourceId>` + `LHN_STUDY_SESSION_INDEX` | Có. Panel cũ chỉ chạy khi không có UI mới |
-| Mở bài học từ phím tắt / Dashboard / popup | proxy `LHN_STUDY.open` → tab Nói/Chép | Có |
-| Nhấn để dịch, Phát âm khi dịch, Kết hợp câu, Hiệu ứng nền, Ẩn thanh điều khiển, Chủ đề | bảng `set`, `theme` | Có |
-| Ngôn ngữ phụ đề nguồn/dịch | bảng `sublang` → `B.setLanguage` | Có (đang bấm nút trong DOM cũ, xem dưới) |
-| Xuất phụ đề SRT/CSV/PDF, song ngữ, thời gian | bảng `export` (srt/txt/csv/pdf) → `exportAs` / `printPdf` | Có (thêm TXT) |
-| Nút phát nhỏ khi thu nhỏ video | `#cplay` (`setMini`) | Có |
-| Thanh tiến trình kéo + tooltip | `#prog` `#ptip` | Có |
-| Chọn từ để tra | chạm/nhấp `.wd` → `mouseup` cho `content.js` | Có |
-| Phím Space/`, < >, Enter, Esc, N, Ctrl | `onKey` / `onKeyUp` | Có |
-
-**Mục "bỏ": người dùng đã duyệt bỏ cả 5 (sau v3.5.194).** Tất cả đã không chạy hoặc không hiện từ v3.5.171:
-1. Rê chuột lên phụ đề thì tạm dừng (`hoverPause*` trong controller). Chỉ gắn với `.te-sub-en` / `.yt-dual-item` của DOM cũ.
-2. Kéo dời ô phụ đề ở Rạp (`#te-theater-subtitle-drag-handle`, `theaterSubtitle*` trong `layout-mode.js`).
-3. Tuỳ chọn phụ đề chi tiết cũ:
-   - Cỡ chính/dịch theo % (±10), cỡ phụ đề thanh bên.
-   - Màu nền ô phụ đề + độ trong suốt.
-   - Phông Inter/Roboto/Arial.
-   - Giao diện mới có: Cỡ chữ Nhỏ/Trung bình/Lớn, Màu, Độ đậm, Phông Mặc định/Serif/Mono, Nền Không/Nhẹ/Đặc (riêng video / cuộn). `unified-ui.js` không đọc các khoá cũ.
-4. Ô chọn khi xuất: "Xuất từ đã lưu", "Hiển thị từ đánh dấu" (`runExport` chưa từng đọc 2 ô này), "Chỉ xuất phụ đề".
-5. Thành phần chỉ của giao diện cũ: toast, menu Chế độ xem, popup tốc độ, các modal Cài đặt, bố cục cảm ứng `view/touch-layout.js` và `view/touch-theater.js` (chỉ dựng khi `!unified`).
-
-**Phụ thuộc vào DOM cũ phải thay trước khi xoá HTML cũ (bước 4–5):**
-- `B.getCc` đọc class `te-subtitle-mode-*` trên `#keepit-exact-overlay`.
-- `B.setLanguage` bấm `#te-lang-*-options [data-language-value]`.
-- `renderTranscriptList`, `updateVietnameseRow`, `setStatus` ghi vào DOM cũ rồi mới gọi hook `onCaptions` / `onTranslated` / `onStatus`.
-- `openOverlay`: chỗ đặt media dự phòng `.te-player-slot`.
-- `buildOverlay`: `bindUI()`, `refreshOverlayUiLocalization`, ô chọn phông, nút kích thước.
-- (Đã làm ở v3.5.196) `LHN_STUDY` proxy trải `...legacy` từ `dictation.js`.
-- Bảng nhãn riêng `TOUCH_OVERLAY_TEXT` / `touchOverlayText` (nay nằm trong `overlay-engine.js`, phần yêu thích): bước 5 chuyển sang `languages.js` hoặc xoá cùng `syncTouchFavoriteButtons` (chỉ ghi vào nút cũ).
-- (Đã làm ở v3.5.195) `view/layout-mode.js`, `view/cc-mode.js` lẫn phần engine (mặc định/gộp/khôi phục/lưu cài đặt, hàng đợi dịch `translateOne` `queueCue` `translateWindow`, cài đặt ngôn ngữ phụ đề, `setSubtitleDisplayModeByUser`) với phần UI cũ. Phần engine chuyển sang `overlay-engine.js`.
-
-### Điều kiện chấp nhận mỗi bước
-- Không đổi giao diện và hành vi. Ảnh chụp trước/sau giống hệt từng điểm ảnh: sáng/tối, điện thoại/máy tính, trang trắng/tối. Overlay chụp thêm vi/en/ko.
-- Thử chức năng: thanh (cuộn ẩn/hiện, vuốt lùi/tới, ☰), Reader (giọng, tốc độ), overlay (Xem, Nói, Chép, Rạp, yêu thích, ghi chú, xuất file, đổi ngôn ngữ).
-- Giữ nguyên khoá lưu trữ (`dictation:<sourceId>`, `lhnOverlayUi`, yêu thích, `lhnBottomBar`…). Không mất dữ liệu người dùng.
-- Không vừa chuyển file vừa xoá code trong cùng một phiên bản.
-- Cập nhật `manifest.json`, `docs/INDEX.md`, `docs/modules/*.md` và `scripts/build_firefox.py` khi đường dẫn đổi.
-
-### Phương án đã loại (kèm lý do)
-- **Chia `back/` và `front/` trong từng tính năng:** phần chạy nền chỉ khoảng 8 file. Sẽ sinh nhiều thư mục rỗng hoặc một file, và tách rời bộ định tuyến tin nhắn.
-- **Chuyển dịch đoạn sang `translate/`:** dịch đoạn gắn chặt với thẻ song ngữ, chọn chữ, cử chỉ trong `content.js`. Phần dịch ở nền chỉ 4 KB.
-- **Cắt `overlay-ui.js` thành khoảng 12 file:** các phần dùng chung trạng thái. Cắt ra là viết lại, rủi ro cao.
-- **Thư mục `overlay/legacy/`:** người dùng không muốn. Code cũ phải xoá.
-- **Chỉ bê bảng dịch `unified-text.js` vào `languages.js`:** vẫn dùng câu tiếng Việt làm khoá, không hết lỗi.
-- **Chuyển `PRIVACY-POLICY.md` vào `docs/`:** gãy link trên cửa hàng.
+- Bối cảnh: Loại từ cả trang (Alt+G) phải biết đoạn nào là tiếng Anh. Chuỗi hiện có: B1 kiểm tra chữ cái → B2 trình duyệt nhận diện (đoạn ≥40 ký tự, chỉ kết quả chắc chắn) → B3 đa số các đoạn chắc chắn trên trang (≥3 đoạn) → B4 `<html lang>`, rồi nhận diện chữ cả trang.
+- Vấn đề B4 không giải được: trang khai `lang` sai, ví dụ tuoitrenews.vn khai `vi` nhưng nội dung tiếng Anh.
+- Đề xuất B5: dùng chính mô hình Loại từ (chạy offline) để đánh giá đoạn có phải tiếng Anh không. Đạt khi cả 3 điều kiện: điểm tin cậy trung bình ≥0.80, số mảnh/từ ≤1.5, danh từ riêng ≤70%.
+- Kết quả đo: 70/70 tiêu đề tiếng Anh đạt; 1/72 câu không phải tiếng Anh đạt nhầm (tiếng Pháp); 0/14 câu tiếng Việt không dấu đạt nhầm.
+- Giữ nguyên ràng buộc đã chốt: nhận diện ngôn ngữ chạy offline, không gửi chữ lên Google.
+- Câu hỏi mở: có thêm B5 không; nếu có thì B5 đứng trước hay sau B4.
 
 ---
 
-## 2026-11-08 | Thanh Reader: căn trái popup, bóng chế độ sáng
+## 2026-11-16 | Ý TƯỞNG - Cài đặt và Đăng nhập dạng sheet trong trang trên máy tính
 
-**Trạng thái:** Đã triển khai ở v3.5.155; v3.5.156 bóng đậm hơn 20% và thanh cách đáy 6px.
+**Trạng thái:** Hoãn, chưa chốt chi tiết.
 
-- Người dùng duyệt thanh Reader v3.5.154 ("rất rất đẹp và chuẩn").
-- Máy tính/tablet ngang: popup Chọn giọng đọc và Tốc độ căn mép trái thanh Reader; ☰ vẫn bật trên nút.
-- Chế độ sáng: thanh Reader và thanh phím tắt có bóng đều 4 hướng, tỏa gần, đủ đậm để thấy rõ trên nền web. Chế độ tối giữ nguyên.
-
----
-
-## 2026-11-08 | Thanh Bilingual Reader theo demo v16
-
-**Trạng thái:** Đã triển khai ở v3.5.154.
-
-- Một giao diện cho cảm ứng và máy tính, thanh luôn hiện: `[cờ giọng][1.00X][phút] · [⏮ ▶ ⏭] · [Lặp lại][✕][☰]`. Hẹp (điện thoại, tablet dọc) full-width sát đáy; rộng ≥1024px (máy tính, tablet ngang) đảo 560px bo góc cách đáy 16px.
-- Phút còn lại là nhãn riêng, chuẩn tiếng Anh cho mọi ngôn ngữ: `45M`; từ 60 phút là giờ thập phân tối đa 2 số lẻ (`1H`, `1.5H`, `3.13H`). Tốc độ trên thanh `X` hoa, trong sheet `x` thường.
-- Thanh tiến độ kéo được như overlay; Tốc độ mở giống Giọng đọc (sheet khi hẹp, popup khi rộng); tối theo bảng màu zinc của overlay.
-- ☰: Tự cuộn, Hiện icon đọc, Ngôn ngữ tự động, Đọc song ngữ, Chủ đề, Font tùy chỉnh. Không có ô Phím tắt; máy tính có bảng phím tắt phía trên thanh, hiện lại mỗi lần bắt đầu đọc, × chỉ ẩn trong lần đọc đó.
-- Bỏ: kéo thanh, PDF, Bảng điều khiển, Cài đặt (Phím tắt, Bước nhảy tùy chỉnh, Cài đặt Bilingual Reader, Đăng nhập, footer), dòng "còn N phút" dài, vuốt ẩn thanh. Không đưa ♥, CC, rạp, cử chỉ âm lượng/độ sáng vào Reader.
-- Màn hẹp hơn thiết kế 390px (vd. 360px) thu nhỏ đều cả thanh theo tỉ lệ; không bớt khoảng cách (người dùng đã từ chối).
-- Còn mở: tốc độ tối đa 3x hay 2x, màu mức tốc độ đang chọn, thống nhất bảng màu tối.
+- Hiện tại: thiết bị cảm ứng mở Cài đặt bằng sheet trong trang; máy tính mở Cài đặt ở tab mới (Bảng quản lý).
+- Ý tưởng: máy tính cũng mở Cài đặt bằng sheet ngay trong trang, Đăng nhập bằng popup trong trang, không rời trang đang đọc.
+- Cần chốt khi làm: kích thước và vị trí sheet trên màn rộng; giữ hay bỏ đường mở Bảng quản lý ở tab mới.
 
 ---
 
-## 2026-11-08 | 14 góp ý chạm cho overlay (rạp ngang, dọc, nhấn giữ để dịch)
+## 2026-11-16 | Ý TƯỞNG - Làm lại giao diện responsive
 
-**Trạng thái:** Đã triển khai ở v3.5.153.
+**Trạng thái:** Để sau, chưa có thiết kế hay demo.
 
-- Cử chỉ phân biệt theo chuyển động ngón tay, không theo lớp: chạm yên trên phụ đề = chức năng của phụ đề (phát/dừng); di chuyển dọc >10px = âm lượng/độ sáng kể cả khi bắt đầu trên phụ đề; giữ yên ~450ms = chọn từ.
-- Rạp ngang: chạm video = hiện/ẩn thanh (dừng chỉ bằng ▶), double-tap = tim; vuốt ngang = tua (hiện giờ + câu, áp dụng khi nhả); vuốt xuống ở dải giữa = thoát; hướng dẫn chỉ lần đầu, giữ đến khi chạm; ♥ bật đỏ `#f43f5e`; video và ▶ căn giữa.
-- Dọc: vuốt lên trên video/thẻ âm thanh = vào rạp; chạm dòng transcript = tua và phát, không dừng; xem trước Tùy chọn phụ đề nền đặc; nghệ thuật bật thì nút góc không nền/viền; ảnh web luôn nét trên cảm ứng.
-- Nhấn giữ để dịch (khi bật Nhấn để dịch): kéo để chọn thêm từ; nhả tay mở bottom sheet như Ghi chú (1 từ + từ điển đầy đủ → từ điển, còn lại → popup dịch), dừng video khi mở, phát lại khi đóng nếu trước đó đang phát.
-- Không làm demo mới; desktop giữ nguyên. APK còn cần cầu nối xoay màn hình gốc cho vào/thoát rạp.
+- Ý tưởng: rà và làm lại bố cục cho mọi cỡ màn hình (điện thoại, tablet, máy tính).
+- Phạm vi, thứ tự các trang và demo sẽ chốt khi bắt đầu.
 
 ---
 
-## 2026-11-08 | Overlay thật khớp demo v10 100%, kể cả nguồn web
+## 2026-11-16 | Ý TƯỞNG - Bản APK Android (trình duyệt Keepit dùng WebView)
 
-**Trạng thái:** Đã triển khai ở v3.5.152.
+**Trạng thái:** Tạm dừng; chỉ làm khi người dùng yêu cầu. APK hiện ở v3.5.179-android (từ extension v3.5.174).
 
-- Overlay thật phải giống demo v10 hoàn toàn (cỡ chữ, sheet, ♥, rạp ngang) cho cả video và web source; kiểm tra bằng chạm thật và ảnh so sánh, không chỉ `.click()` bằng JS.
-- Cài đặt / Tùy chọn phụ đề / Ngôn ngữ phụ đề trên cảm ứng dùng một bottom sheet như demo `#sset`, ghi qua điều khiển gốc; desktop giữ modal gốc.
-- ♥ trên web source lưu theo URL trong `lhnFavoriteVideos`; Dashboard liệt kê và bỏ yêu thích được.
-- Danh sách phông giữ đủ như Keepit (cuộn ngang), không rút về 3 phông của demo.
-
----
-
-## 2026-11-08 | Overlay cảm ứng theo demo v10 (thanh, sheet ☰, rạp ngang, thả tim, yêu thích video)
-
-**Trạng thái:** Đã triển khai ở v3.5.151.
-
-- Đã chốt qua demo v1–v10 (`keepit-overlay-more-sheet-demo-v10.html`): thanh dọc `[CC][tốc độ] · [trước phát sau] · [lặp][☰]`; ♥ trái / Toàn màn hình phải ở góc ô phụ đề; sheet ☰ 2 thẻ Học + 6 ô; Cài đặt video cảm ứng chỉ 4 mục; Tùy chọn phụ đề cảm ứng (Nền chỉ ở rạp).
-- Rạp ngang điện thoại: video tràn màn hình, thanh tự ẩn 3s, vuốt trái âm lượng / phải độ sáng, đáy = Tự động; tablet ngang giữ desktop. Âm lượng/độ sáng hệ thống chỉ làm được ở APK.
-- Thả tim kiểu TikTok: double-tap video/phụ đề/transcript, mỗi lần chạm một tim, nét rõ (vẽ ở cỡ lớn nhất, scale ≤1) nhưng vẫn phóng to + glow (cân bằng v8/v9). Hiệu ứng nhịp + burst áp dụng cho mọi nút tim.
-- Màu phụ đề chính mặc định vàng `#ffff00` ở mọi nền tảng; palette cảm ứng thêm Tím; light mode thay Trắng bằng Xám.
-- Yêu thích video là khóa riêng `lhnFavoriteVideos` theo video ID (không cần highlight); thanh tiến trình kéo được ở mọi nền tảng.
-- CC và tốc độ giữ nguyên như Keepit hiện tại; mọi thứ không nêu ở trên giữ nguyên.
-
----
-
-## 2026-11-06 | Bản chốt v3.5.136: chuẩn bị gửi duyệt Chrome Web Store và Firefox Add-ons
-
-**Trạng thái:** Đã triển khai ở v3.5.136. Điều chỉnh đã chốt sau khi ghi kế hoạch: một ZIP chung cho Chromium và Firefox; cài đặt Firefox ghi thẳng vào `manifest.json` (không dùng `build_firefox.py`); `addons-linter` chạy trên ZIP chung. Quyết định của người dùng khi triển khai: giữ quy tắc 9002 của AI panel dù xung đột chính sách AMO §4.4 (xem mục 6).
-
-**Mục tiêu:** đáp ứng yêu cầu kỹ thuật, quyền riêng tư và chính sách của cả hai cửa hàng với ít thay đổi nhất, trong một lần phát hành duy nhất là v3.5.136. Không cam kết chắc chắn được duyệt.
-
-### 1. Phần Arena làm
-
-| # | Hạng mục | Công việc |
-|---|---|---|
-| 1 | Manifest | Đặt UUID cố định cho Firefox, phiên bản tối thiểu 147, ghi thẳng vào `browser_specific_settings.gecko` trong `manifest.json` (không sửa `build_firefox.py`). Rà soát manifest và toàn bộ quyền. |
-| 2 | Dữ liệu | Kiểm tra từng luồng: dữ liệu gì, bên nhận, mục đích và mức độ cần thiết. Phân loại từng luồng thành `required` / `optional` / ngừng gửi / `none`. Không mặc định dữ liệu đang gửi là bắt buộc. **Firefox:** khai báo `data_collection_permissions` chính xác theo từng loại dữ liệu. Với dữ liệu `optional`, chỉ gửi sau khi người dùng đồng ý qua `permissions.request()` (trường `data_collection`); lời gọi này chỉ được thực hiện khi người dùng chủ động dùng tính năng tương ứng. **Chrome:** chuẩn bị nội dung khai báo chính xác trên Developer Dashboard; nếu cần cơ chế đồng ý mới phải sửa code, báo người dùng quyết định trước. |
-| 3 | Chính sách quyền riêng tư | Nêu loại dữ liệu, mục đích, bên nhận, cách thu thập, sử dụng, chia sẻ và xử lý. Có tuyên bố khẳng định việc xử lý dữ liệu người dùng tuân thủ Chrome Web Store User Data Policy, bao gồm Limited Use. |
-| 4 | Tuân thủ | Rà soát `<all_urls>`, DNR/CSP, `Referer`, Google Fonts, `postMessage`, `sessionStorage` và URL gửi cho AI. Kiểm tra mã thực thi từ xa trên toàn dự án. Mỗi điểm có kết luận: phù hợp / xung đột (báo người dùng quyết định) / chưa xác minh / không áp dụng. |
-| 5 | Tài nguyên | Xóa dòng S2. Thay ảnh Unsplash bằng ảnh người dùng cung cấp, thêm đúng 1 dòng vào `web_accessible_resources` (đã xác minh là bắt buộc). Giữ nguyên logic dự phòng. |
-| 6 | Kiểm định | Chạy `addons-linter` trên ZIP chung: không còn error; warning cho khóa chỉ dành cho Chromium là dự kiến; mỗi warning được sửa hoặc giải thích kèm căn cứ. `addons-linter` chỉ kiểm tra những vấn đề thuộc phạm vi công cụ, không thay thế việc rà soát toàn bộ chính sách AMO. |
-| 7 | Nội dung cửa hàng | Chuẩn bị tên, mô tả và giải trình từng quyền cho cả hai cửa hàng. Chốt mục đích duy nhất sau khi đối chiếu toàn bộ tính năng; không nới rộng mục đích để hợp thức hóa tính năng không phù hợp. |
-| 8 | Đóng gói | Nâng phiên bản lên v3.5.136, cập nhật `PROJECT.md`, commit. Tạo một ZIP chung cho Chromium và Firefox từ mã đã commit: `Keepit - Optimize Test-v3.5.136.zip`. Kiểm tra lại ZIP sau khi build. |
-
-### 2. Phần người dùng làm
-1. ~~Gửi ảnh thay Unsplash~~ — đã xong (ảnh Unsplash gốc, chuyển WebP, giấy phép Unsplash).
-2. Đăng chính sách quyền riêng tư lên một URL công khai.
-3. Chuẩn bị ảnh chụp màn hình cho hai cửa hàng (Chrome: 1280 × 800).
-4. Hoàn tất tài khoản và thông tin liên hệ trên Chrome Web Store và AMO.
-5. Kiểm thử ZIP trên cả Chrome và Firefox thật: tính năng, Console, Network, từng luồng dữ liệu, Google Fonts, ảnh mới và các trường hợp favicon.
-
-### 3. Thứ tự thực hiện
-1. Arena làm phần kỹ thuật và kiểm tra tuân thủ.
-2. Hoàn tất công việc, commit và tạo một ZIP kiểm thử chung.
-3. Người dùng kiểm thử ZIP trên Chrome và Firefox, ghi lại lỗi kèm bằng chứng.
-4. Nếu kiểm thử đạt:
-   - Giữ nguyên ZIP kiểm thử, không chỉnh sửa hoặc ghi đè.
-   - Tạo bản sao từ ZIP kiểm thử để làm ZIP phát hành.
-   - Xóa bảng kê khai (`DATA-INVENTORY.md`) và ghi chú nội bộ (`STORE-LISTING.md`) khỏi bản sao; không xóa khỏi repo hoặc ZIP kiểm thử.
-   - Kiểm tra lại nội dung ZIP phát hành trước khi nộp.
-   - Mặc định người dùng tự thực hiện bước này; nếu muốn Arena thực hiện thì nói rõ.
-5. Nếu có lỗi:
-   - Báo người dùng mức độ, phạm vi và bằng chứng.
-   - Nếu người dùng duyệt sửa, tạo phiên bản v3.5.137.
-   - Không ghi đè hoặc chỉnh sửa ZIP v3.5.136.
-   - Không tự ý sửa ngoài phạm vi đã được duyệt.
-
-### 4. Quy tắc thực hiện
-- Không tái cấu trúc code, không sửa giao diện, không bỏ tính năng đang chạy nếu chưa có quyết định của người dùng.
-- Mọi kết luận về tuân thủ phải có bằng chứng.
-- Nếu phát hiện xung đột cần thay đổi hành vi, báo người dùng và chờ quyết định.
-- Bảng kê khai dữ liệu nằm trong repo và ZIP kiểm thử, nhưng không có trong ZIP phát hành.
-- Bảng kê khai chỉ ghi loại dữ liệu, bên nhận, mục đích và vị trí `file:dòng`. Không ghi endpoint, payload, token, thông tin xác thực hoặc logic nhạy cảm.
-- Không nộp khi còn lỗi nghiêm trọng, còn luồng dữ liệu chưa xác định hoặc nội dung khai báo không khớp với hành vi thực tế.
-- Hoàn thành phần kỹ thuật không đồng nghĩa với việc chắc chắn được cửa hàng phê duyệt.
-
-### 5. Tiêu chí chi tiết đã thống nhất (áp dụng trong từng hạng mục)
-- **Nhãn trạng thái:** đã xác minh / theo tài liệu bên thứ ba / chưa xác minh / không áp dụng / đã quyết định / dự kiến.
-- **Phân loại dữ liệu:** code đang gửi không có nghĩa phải khai `required`; `optional` không phải giấy phép gửi dữ liệu không cần thiết; khai một nhóm là `required` không hợp thức hóa mọi luồng trong nhóm. URL nguồn thuộc `browsingActivity`, nội dung trang thuộc `websiteContent`.
-- **Quyền tùy chọn:** manifest không có `optional_permissions` / `optional_host_permissions` (đã xác minh). `data_collection_permissions.optional` là cơ chế khác, đánh giá riêng.
-- **Favicon sau khi bỏ S2:** icon tab đã lưu → `favicon.svg` → Apple Touch icon → `.ico` → `.png` → icon mặc định của Keepit (đã xác minh). Trang không có favicon hiện icon mặc định là hành vi dự kiến; không khôi phục S2.
-- **Ảnh thay Unsplash:** WebP hoặc JPG, rộng khoảng 1280–1600px, dưới khoảng 200 KB, đặt trong `assets/images/`. Chỉ đổi nguồn ảnh; ảnh phải có trong ZIP; không còn chuỗi `unsplash` trong mã đóng gói (kiểm sơ bộ, bằng chứng cuối là Network).
-- **Google Fonts:** tách 3 bước: CSS được chèn trên mọi trang (đã xác minh theo manifest) / trình duyệt có thật sự tải font không (chưa xác minh) / request có gửi URL trang qua `Referer` không (chưa xác minh). Kiểm từng request tới `fonts.googleapis.com` và `fonts.gstatic.com`, mỗi request ghi: URL request, giá trị `Referer`, trang thử nghiệm, font có tải hay không. Bảng kê khai có sẵn mẫu ghi.
-- **Nhận dạng giọng nói (Web Speech API, dùng trong Shadowing):** Chrome: âm thanh được gửi tới dịch vụ nhận dạng từ xa (theo MDN), MDN không xác định nhà cung cấp; code không dùng `processLocally` (đã xác minh). Firefox: chưa có trong bản phát hành Firefox 147 (MDN ghi 160 ở trạng thái Preview); đánh giá lại khi Firefox phát hành chính thức. Việc cửa hàng có tính luồng này là dữ liệu do extension thu thập hay không: chưa xác minh; vẫn công khai trong chính sách.
-- **Shadowing và tính năng tương lai:** Shadowing (nhận dạng giọng nói, chỉ Chrome) là tính năng hiện có, nằm trong kiểm thử. Module Luyện viết/nói (Drive/Sheet, Whisper) là tính năng tương lai.
-- **Limited Use:** dùng câu cam kết chung. Câu mẫu về Google APIs của Chrome chỉ thêm khi đã xác minh đúng phạm vi; mặc định không thêm. Các luồng dịch và TTS của Google vẫn khai riêng.
-- **Mục đích duy nhất:** ứng viên ưu tiên "Keepit helps users understand, learn from, and retain information from web content." Không cố đưa mọi tính năng vào câu; tính năng mới không phục vụ mục đích thì đánh giá lại tính năng.
-- **Mã thực thi từ xa:** `eval`, `new Function`, `import()` động, `<script>` nguồn từ xa, module từ CDN, `executeScript` với chuỗi mã và các cơ chế nạp mã khác. Trang AI trong iframe không tính là mã của extension. WASM: chưa phát hiện trong code hiện tại, không áp dụng cho phiên bản này. `importScripts()`: đã xác minh 14 file đều có trong repo và gói, không file nào tự nạp thêm mã; kết luận chỉ giới hạn trong 14 file này.
-- **Đã xác minh:** tên 33 ký tự (Chrome ≤ 75, AMO ≤ 50); mô tả 130 ký tự (≤ 132); ZIP chung giữ khóa của cả hai trình duyệt (Firefox bỏ qua `sidePanel`, `side_panel`, `service_worker`); `vendor/` là Readability không minify, không cần nộp mã nguồn cho AMO.
-- **Ngoài phạm vi sửa code (vẫn đánh giá tuân thủ):** Google Fonts, `postMessage`, `sessionStorage`, luồng URL nguồn, lọc query URL, AI panel.
-- **Khi upload:** các khóa chỉ dành cho Firefox trong ZIP Chrome (`sidebar_action`, `browser_specific_settings`, `background.scripts`) chỉ sửa nếu bị chặn.
-
-### 6. Kết quả triển khai v3.5.136
-- Ảnh: `assets/images/web-thumbnail-lofi.webp` + 1 dòng `web_accessible_resources`; `thumbnails.js` cho phép tải đường dẫn nội bộ của extension (trước đó bị lọc, ảnh sẽ không hiện). S2 đã xóa.
-- Firefox: `data_collection_permissions.required = ["websiteContent", "browsingActivity"]`, không có `optional`.
-- Bảng kê khai: `DATA-INVENTORY.md`; nội dung cửa hàng: `STORE-LISTING.md`; chính sách viết lại EN + VI, không ghi endpoint.
-- **Xung đột đã báo, người dùng chọn giữ nguyên:** quy tắc 9002 gỡ `X-Frame-Options` và `Content-Security-Policy` của 5 domain AI khi tải trong khung, không giới hạn bên khởi tạo. AMO §4.4: "Add-ons must not relax web page security headers". Thu hẹp bằng `initiatorDomains` từng làm hỏng Grok (v3.5.103). Cần phương án riêng trước khi nộp AMO.
-- Công khai trong chính sách: dịch song song tới Google/MyMemory/Lingva; URL nguồn vào trang AI (phần `#` và `sessionStorage`) ngay khi mở panel, trang AI đọc được trước khi Gửi; Inter từ Google Fonts tải trên mọi trang.
+- Lý do cần: Chrome Android không cài được extension (Edge Android thì được).
+- Quy ước: phiên bản APK `<extension>-android.<n>`.
+- Lần chuyển các bản extension mới sang APK trước đây đã bị huỷ; khi làm lại phải bắt đầu từ bản APK hiện tại.
+- Giới hạn đã biết: Google và Facebook chặn đăng nhập trong WebView. Gradle: Java 21 cần Gradle 8.5+, Java 25 cần 9.1.0+.
+- Việc riêng của APK (đọc khi tắt màn hình, chặn quảng cáo) ghi ở mục "Việc cho APK" trong `PROJECT.md`.
 
 ---
 
@@ -359,7 +82,7 @@ Keep-it/
 
 ---
 
-## 2026-11-06 | AI composer (gợi ý trả lời mail, viết mail)
+## 2026-11-06 | Ý TƯỞNG - AI composer (gợi ý trả lời mail, viết mail)
 
 **Trạng thái:** Đã chốt hướng (Cách B), chưa triển khai, chưa có spec chi tiết.
 
@@ -391,7 +114,7 @@ Keep-it/
 
 ---
 
-## 2026-11-06 | Ý tưởng khác (chưa chọn)
+## 2026-11-06 | Ý TƯỞNG - Khác (chưa chọn)
 
 **Trạng thái:** Ghi lại để cân nhắc, chưa chốt. Kiểm tra trùng với tính năng hiện có trước khi làm.
 
@@ -403,7 +126,7 @@ Keep-it/
 
 ---
 
-## 2026-11-06 | Dịch PDF và OCR
+## 2026-11-06 | Ý TƯỞNG - Dịch PDF và OCR
 
 **Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.135. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
 
@@ -435,23 +158,7 @@ Keep-it/
 
 ---
 
-## 2026-11-06 | Tên, slogan và mô tả cửa hàng
-
-**Trạng thái:** Đã triển khai ở v3.5.133; phần hiển thị sửa ở v3.5.134.
-
-- **Tên extension:** "Keepit - Translate, Learn, Ask AI" (33 ký tự; Chrome tối đa 75, Firefox 50). Ba từ khóa = ba nhu cầu: dịch, học, AI. Không thêm từ khóa.
-- **Slogan:** "Keep Exploring Everything" (không dấu chấm). Định vị dài hạn: khám phá và học mọi nội dung trên Internet; tên ưu tiên từ khóa tìm kiếm.
-- **Hiển thị (v3.5.134):** popup = "Keepit - Keep Exploring" + slogan; Dashboard (tab, Giới thiệu), sidebar Highlight = "Keepit - Keep Exploring"; nhãn logo Dashboard 2 dòng "Keepit" / "Keep Exploring" (khung ~130px); header AI panel Chrome/Firefox, trang Tiện ích, tooltip toolbar = tên extension "Keepit - Translate, Learn, Ask AI".
-- **Mô tả Chrome (manifest, tối đa 132):** "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards."
-- **Tóm tắt Firefox (AMO, tối đa 250, dán tay):** "Translate web pages side by side. Highlight, take notes, look up words, turn pages into a video player, ask AI, and practice speaking, listening, dictation and flashcards."
-- **Mô tả dài cửa hàng:** theo bản đồ hệ sinh thái, chỉ ghi tính năng đã có.
-- **Quy tắc:** chỉ mô tả tính năng đã phát hành (PDF, DOCX, OCR, dịch ảnh thêm vào khi phát hành); không dùng "&" trong tên (Chrome nuốt ở header side panel); không ghi ChatGPT/Gemini/Claude trong tên.
-- **Đã loại:** "Keepit - Keep Exploring" (không nói tính năng, khó tìm); "Language Learning" trong tên (thu hẹp thành app học ngoại ngữ).
-- Nguồn giới hạn: https://extensionlaunch.com/blog/chrome-extension-manifest-json ; https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/Listing
-
----
-
-## 2026-11-06 | Luyện viết, Luyện nói trên Dashboard và nhận dạng giọng nói
+## 2026-11-06 | Ý TƯỞNG - Luyện viết, Luyện nói trên Dashboard và nhận dạng giọng nói
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.120.
 
