@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-16 | v3.5.307 | Arena.ai Agent sửa:**
+
+- Dashboard, theo yêu cầu: xoá 9 tab trống trên thanh bên (Luyện đề SW, Luyện viết, Luyện nói Shadowing, Từ vựng, Luyện đọc, Bảng tin, Tin nhắn, Affiliate, Dành cho giáo viên — chỉ là link `#`, không mở gì). Thanh bên còn Tổng quan, Chép chính tả, Ôn tập (Flashcards), Tô sáng & Ghi chú. Sheet "Thêm" trên điện thoại bỏ nhóm "Sắp có" (dựng từ chính các tab đó) cùng toast "Tính năng sắp có" và CSS liên quan.
+- File: `pages/dashboard.html`, `js/dashboard/responsive-nav.js`, `css/dashboard/responsive.css`, `docs/modules/dashboard.md`, `manifest.json`.
+- Kiểm tra: `node --check`; Chromium + extension thật: desktop 1280px thanh bên đúng 4 mục, bấm Chép chính tả / Tô sáng & Ghi chú chuyển đúng; điện thoại 390px sheet Thêm chỉ còn Cài đặt / Giao diện / Tài khoản, không còn "Sắp có"; sáng và tối; không lỗi trang.
+
 **2026-11-16 | v3.5.306 | Arena.ai Agent sửa:**
 
 - Overlay nhất quán, theo yêu cầu: (1) Phím chung cho Nói và Chép: bỏ (`) ở mọi tab (Xem / Nói / Chép, Space vẫn phát / dừng); Ctrl = Nghe lại / Dừng ở cả Nói và Chép; phím (→) = Câu tiếp ở Nói và Chép (Chép: khi không gõ trong ô, hoặc sau Kiểm tra khi ô đã khoá); Chép Esc vẫn = Đáp án / Làm lại. Gợi ý phím en/vi/ko cập nhật. (2) Khi Overlay mở, popup dịch, popup từ điển và sidebar Ghi chú theo theme của Overlay (đổi theme trong Overlay → đổi theo; đóng Overlay → về theme trong Cài đặt). (3) Phụ đề cùng ngôn ngữ hiển thị: Nói / Chép không hiện nút Dịch và dòng dịch (trước đây lặp lại y câu gốc). (4) Dịch các chỗ còn cố định tiếng Việt: Ẩn phụ đề, Nhanh, Tự động, Đọc / Xem, Đã sửa, Tỷ lệ sửa, Xoá ghi chú, tên ngôn ngữ phụ đề, Micro (Enter), "Từ cần luyện". (5) Dòng "Nhấn để dịch" bị mờ có tooltip "Phụ đề đã cùng ngôn ngữ hiển thị" (en/vi/ko).

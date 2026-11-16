@@ -6,9 +6,9 @@
   const PHONE = matchMedia("(max-width: 599.98px)");
   const RAIL = matchMedia("(min-width: 600px) and (max-width: 899.98px)");
   const TEXT = {
-    en:{ overview:"Overview", review:"Review", notes:"Notes", dictation:"Dictation", more:"More", settings:"Settings", account:"Account", soon:"Coming soon", soonToast:"Coming soon", back:"Back", close:"Close"},
-    vi:{ overview:"Tổng quan", review:"Ôn tập", notes:"Ghi chú", dictation:"Chính tả", more:"Thêm", settings:"Cài đặt", account:"Tài khoản", soon:"Sắp có", soonToast:"Tính năng sắp có", back:"Quay lại", close:"Đóng"},
-    ko:{ overview:"개요", review:"복습", notes:"노트", dictation:"받아쓰기", more:"더보기", settings:"설정", account:"계정", soon:"출시 예정", soonToast:"출시 예정 기능", back:"뒤로", close:"닫기"}
+    en:{ overview:"Overview", review:"Review", notes:"Notes", dictation:"Dictation", more:"More", settings:"Settings", account:"Account", back:"Back", close:"Close"},
+    vi:{ overview:"Tổng quan", review:"Ôn tập", notes:"Ghi chú", dictation:"Chính tả", more:"Thêm", settings:"Cài đặt", account:"Tài khoản", back:"Quay lại", close:"Đóng"},
+    ko:{ overview:"개요", review:"복습", notes:"노트", dictation:"받아쓰기", more:"더보기", settings:"설정", account:"계정", back:"뒤로", close:"닫기"}
   };
   const lang = () => { const value = String(document.documentElement.lang || "vi").slice(0, 2).toLowerCase(); return TEXT[value] ? value : "en"; };
   const tr = key => TEXT[lang()][key] || TEXT.en[key] || key;
@@ -42,12 +42,8 @@
   // ---------- sheet (Thêm) ----------
   const backdrop = document.createElement("div"); backdrop.className = "rn-backdrop";
   const sheet = document.createElement("div"); sheet.className = "rn-sheet"; sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true");
-  const soonItems = [...sidebar.querySelectorAll(".reference-nav-item:not([data-dashboard-view]):not([data-dashboard-action])")];
-  const toastEl = document.createElement("div"); toastEl.className = "rn-toast"; toastEl.setAttribute("role", "status");
   const tip = document.createElement("div"); tip.className = "rn-tip"; tip.setAttribute("aria-hidden", "true");
-  document.body.append(backdrop, sheet, toastEl, tip);
-  let toastTimer = 0;
-  function toast(message) { toastEl.textContent = message; toastEl.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800); }
+  document.body.append(backdrop, sheet, tip);
   function renderSheet() {
     const themeText = document.getElementById("dashboardSidebarThemeText")?.textContent || "";
     const themeIcon = document.querySelector("#dashboardSidebarThemeToggle .reference-nav-icon")?.innerHTML || "";
@@ -55,16 +51,13 @@
       <div class="rn-sh-head"><span class="rn-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoNav" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoNav)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg></span><span>Keepit</span><button type="button" class="rn-x" data-rn="close" aria-label="${tr("close")}">×</button></div>
       <button type="button" class="rn-row" data-rn="settings">${svg(SVG.gear)}<span>${tr("settings")}</span></button>
       <button type="button" class="rn-row" data-rn="theme">${themeIcon}<span>${themeText}</span></button>
-      <button type="button" class="rn-row" data-rn="account">${svg(SVG.user)}<span>${tr("account")}</span><span class="rn-sub">${document.getElementById("profileMenuToggleName")?.textContent || ""}</span></button>
-      <div class="rn-sec">${tr("soon")}</div>
-      <div class="rn-soon">${soonItems.map((item, index) => `<button type="button" data-rn-soon="${index}">${item.querySelector(".reference-nav-icon")?.innerHTML || ""}<span>${item.querySelector(".nav-label")?.textContent || item.getAttribute("aria-label") || ""}</span><small>${tr("soon")}</small></button>`).join("")}</div>`;
+      <button type="button" class="rn-row" data-rn="account">${svg(SVG.user)}<span>${tr("account")}</span><span class="rn-sub">${document.getElementById("profileMenuToggleName")?.textContent || ""}</span></button>`;
   }
   function openSheet() { renderSheet(); sheet.classList.add("open"); backdrop.classList.add("open"); }
   function closeSheet() { sheet.classList.remove("open"); backdrop.classList.remove("open"); sheet.style.transform = ""; }
   backdrop.addEventListener("click", closeSheet);
   sheet.addEventListener("click", event => {
     const action = event.target.closest("[data-rn]")?.dataset.rn;
-    if (event.target.closest("[data-rn-soon]")) { toast(tr("soonToast")); return; }
     if (!action) return;
     closeSheet();
     if (action === "settings") click(document.querySelector('#profileMenu [data-profile-menu-action="settings"]'));

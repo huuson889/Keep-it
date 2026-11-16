@@ -3,7 +3,7 @@
    except the new elements (tab bar, sheet, tooltip) which stay hidden on desktop.
    Markup for .rn-* elements is created by js/dashboard/responsive-nav.js. */
 
-.rn-tabbar, .rn-sheet, .rn-backdrop, .rn-tip, .rn-toast, .rn-back, .rn-set-group, .rn-set-back { display: none; }
+.rn-tabbar, .rn-sheet, .rn-backdrop, .rn-tip, .rn-back, .rn-set-group, .rn-set-back { display: none; }
 
 @media (max-width: 899.98px) {
   html, body { height: 100%; }
@@ -65,13 +65,6 @@
   .rn-row:active { background: #f1f5f9; }
   .rn-row svg { width: 20px; height: 20px; flex: none; color: #7c3aed; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .rn-row .rn-sub { margin-left: auto; color: #94a3b8; font-size: 13px; }
-  .rn-sec { margin: 10px 6px 6px; color: #94a3b8; font-size: 11.5px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
-  .rn-soon { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .rn-soon button { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 1px solid #eeedf5; border-radius: 14px; background: #fafaff; color: #334155; font-family: inherit; font-weight: 600; font-size: 11.5px; line-height: 1.2; padding: 12px 4px 10px; cursor: pointer; text-align: center; }
-  .rn-soon button svg { width: 20px; height: 20px; color: #7c3aed; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .rn-soon small { color: #94a3b8; font-size: 10px; font-weight: 600; }
-  .rn-toast { display: block; position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 1000; transform: translate(-50%, 10px); opacity: 0; visibility: hidden; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: #1e293b; color: #fff; font: 500 13.5px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; box-shadow: 0 10px 30px -10px rgba(15, 23, 42, .5); transition: transform .2s, opacity .2s, visibility .2s; pointer-events: none; }
-  .rn-toast.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
 
   /* Highlights & Notes: list → detail */
   #dashboardHighlightsNotesView > .workspace { display: block !important; }
@@ -107,7 +100,6 @@
   html.dark .rn-grab { background: #334155; }
   html.dark .rn-sh-head .rn-x, html.dark .rn-back { background: #1e293b; color: #cbd5e1; }
   html.dark .rn-row:active { background: #1e293b; }
-  html.dark .rn-row svg, html.dark .rn-soon button svg { color: #a78bfa; }
-  html.dark .rn-soon button { background: #172338; border-color: #2b3a52; color: #cbd5e1; }
+  html.dark .rn-row svg { color: #a78bfa; }
   html.dark #studyDialog .study-ratings:not([hidden]) { background: rgba(17, 26, 43, .96); border-color: #2b3a52; }
 }
