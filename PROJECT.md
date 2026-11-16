@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.301 | Arena.ai Agent sửa:**
+
+- Overlay, theo yêu cầu: (1) khung "Kết quả nhận diện giọng nói" trải rộng 2 bên như câu và bản dịch (màn rộng); (2) khoá câu ở danh sách bên trái của Nói độc lập với Chép — bản ghi cũ chỉ có tiến độ chung (của Chép) không còn làm Nói mở khoá theo; (3) Lặp câu riêng từng tab: Nói mặc định tắt, Chép mặc định 3, Xem giữ tắt; chạm nút Lặp câu mở sheet Lặp câu (chú thích sheet / tooltip cập nhật en/vi/ko); (4) lỗi icon nguồn Web: thanh dưới hiện favicon của trang (như PROJECT.md mục 3 đã ghi) thay quả địa cầu; trang không có favicon vẫn là quả địa cầu.
+- File: `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `js/core/languages.js`, `docs/modules/overlay.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, Overlay web (Alt+F) trên trang thử. Chép: Lặp 3 bật, chạm → sheet chọn 3; Nói: tắt, chạm → sheet chọn Tắt, chọn 2 → Nói 2, Chép vẫn 3, Xem tắt. Khung kết quả rộng 460 = câu 460 = bản dịch 460. Bản ghi cũ `{current:1, solved:[0]}`: Chép câu 1 xong + câu 2 mở; Nói câu 1 chưa làm + câu 2 khoá. Trang có `<link rel=icon>`: favicon hiện, quả địa cầu ẩn; trang không có: quả địa cầu. Không lỗi trang. Chưa thử YouTube thật / điện thoại.
+
 **2026-10-23 | v3.5.300 | Arena.ai Agent sửa:**
 
 - Lỗi icon tự hiện lại: đổi theme (hay bất kỳ cài đặt nào) làm icon Keepit + Ghi chú / Dịch / Hỏi AI hiện lại ở chỗ bôi đen cũ dù đã bấm ra ngoài để tắt — nay chỉ cập nhật icon đang hiện.

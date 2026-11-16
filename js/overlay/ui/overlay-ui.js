@@ -214,7 +214,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       view: { c: 'normal', e: 'normal', s: 'theater' }, mini: { c: true, e: false }, subHidden: { c: false, e: false, s: false }, tabLand: null, word: null,
       split: 60, colW: { l: 290, r: 300 }, bri: 0, rot: null, ttHint: false,
       t: 0, playing: false, speed: 1, vol: 100, muted: false, cc: 'bi',
-      rep: { on: false, n: 3, left: 3, last: -1 }, fav: false, fs: false,
+      // v3.5.301: Lặp câu riêng từng tab — Nói mặc định tắt, Chép mặc định 3 (S.rep = của tab đang mở)
+      repBy: { view: { on: false, n: 3, left: 3, last: -1 }, speak: { on: false, n: 3, left: 3, last: -1 }, write: { on: true, n: 3, left: 3, last: -1 } }, fav: false, fs: false,
       si: { speak: 0, write: 0 }, reach: { speak: 0, write: 0 }, res: { speak: {}, write: {} },
       weak: new Set(), showTr: true, auto: true, hints: true, showVideo: false,
       wrong: { write: {}, speak: {} }, wFilter: 'all', wSearch: '', vOpen: new Set(),
@@ -227,6 +228,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       subTab: 'video', subStyle: { video: { size: 1, en: 'def', vi: 'def', bold: true, font: 'def', bg: 'soft' }, side: { size: 1, en: 'def', vi: 'def', bold: false, font: 'def', bg: 'none' } },
       exp: { fmt: 'srt', bi: true, time: true },
     };
+    Object.defineProperty(S, 'rep', { get: () => S.repBy[S.tab] || S.repBy.view });
     const ov = $('#ov');
     // docs/ui-layout.md — layout = orientation only: portrait → phone UI (c), landscape → computer UI (e);
     // phone landscape (landscape and height < 500) = Theater only (s). Touch/mouse never changes the layout.
@@ -260,7 +262,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       { id: 'fav', z: 'l', p: 6, label: 'favorite', icon: 'heart', cls: 'favb' },
       { id: 'notes', z: 'l', p: 3.5, label: 'note', icon: 'notes' },
       { id: 'vol', z: 'c', p: 2, label: 'volume', icon: 'vol' },
-      { id: 'rep', z: 'c', p: 9, label: 'repeatSentence', icon: 'repeat1', tip: 'repeatSentencePressAnd' },
+      { id: 'rep', z: 'c', p: 9, label: 'repeatSentence', icon: 'repeat1', tip: 'repeatSentence' },
       { id: 'prev', z: 'c', p: 10, label: 'previousSentence', icon: 'prev' },
       { id: 'play', z: 'c', p: 99, label: 'playPause', icon: 'play', cls: 'play', tip: 'playPauseSpace' },
       { id: 'next', z: 'c', p: 10, label: 'nextSentence', icon: 'next' },
@@ -1319,7 +1321,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           if (S.rot) { exitTheater(); break; }
           if (sizeKey() === 's') { const was = S.realFs; if (was) exitFs(); else enterFs(false); S.realFs = !was; syncFs(); toast(S.realFs ? T('fullScreen') : T('exitedFullScreenStill')); break; }
           if (curView() === 'theater') exitTheater(); else setView('theater'); break;
-        case 'rep': S.rep.on = !S.rep.on; S.rep.last = -1; syncRep(); toast(S.rep.on ? (S.rep.n === Infinity ? T('repeatSentenceContinuously') : T('repeatEach', S.rep.n)) : T('repeatOff')); break;
+        case 'rep': openPanel('rep', anchor); break;   // v3.5.301: tap = the Lặp câu sheet
       }
     }
     let lpT = 0, lpFired = false;
@@ -2519,11 +2521,23 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (S.cc !== lastCc) { lastCc = S.cc; B.setCc(CC_MAP[S.cc]); }
       saveUi();
     }
+    // v3.5.301: Web = the site's own icon (the page's <link rel=icon>, then shared/site-icons.js same-origin guesses); none → globe
+    function webFavicon(d, url) {
+      const img = $('img.fav', d), globe = $('.glw', d); if (!img || !globe) return;
+      let own = []; try { if (new URL(url).origin === location.origin) own = [...document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')].map((l) => l.href).filter((h) => /^https?:/.test(h)); } catch (_) {}
+      const shared = () => { img.onload = img.onerror = null; globalThis.LHN_SITE_ICONS?.load?.(img, url, { fallbackElement: globe }); };
+      if (!own.length) return void shared();
+      let k = 0; img.referrerPolicy = 'no-referrer';
+      img.onload = () => { if (img.naturalWidth) { img.onload = img.onerror = null; img.hidden = false; globe.hidden = true; } else img.onerror(); };
+      img.onerror = () => { if (++k < own.length) img.src = own[k]; else shared(); };
+      img.src = own[0];
+    }
     function setTitle() {
       const st = B.state() || {}, web = st.sourceType === 'web', meta = B.meta() || {};
       const title = String(meta.title || (web ? st.webSourceTitle : '') || document.title || 'Keepit').trim();
       let host = ''; try { host = new URL(web ? (st.webSourceUrl || location.href) : location.href).hostname.replace(/^(www|m)\./, ''); } catch (_) {}
-      const d = dockEl.title; d.title = title; d.innerHTML = `${web ? ic('globe', 'class="yt gl"') : YT}<span><i class="mqw"><i class="mqi"></i><i class="mqc" aria-hidden="true"></i></i></span>`; $('.mqi', d).textContent = title; $('.mqc', d).textContent = title;
+      const d = dockEl.title; d.title = title; d.innerHTML = `${web ? `<img class="yt fav" alt="" hidden><span class="glw">${ic('globe', 'class="yt gl"')}</span>` : YT}<span><i class="mqw"><i class="mqi"></i><i class="mqc" aria-hidden="true"></i></i></span>`; $('.mqi', d).textContent = title; $('.mqc', d).textContent = title;
+      if (web) webFavicon(d, st.webSourceUrl || location.href);
       if (MQ.keep) requestAnimationFrame(() => titleMarquee('loop'));
       ov.classList.toggle('srcweb', web); // sóng âm trên khung chỉ cho nguồn web (video đã có hình)
       $('#cTitle').textContent = title;
@@ -2547,7 +2561,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       try { rec = (await store()?.get(key))?.[key] || {}; } catch (_) {}
       if (studyKey !== key) return;
       const pm = rec.progressByMode || {};
-      const prog = (p) => ({ current: Number.isInteger(p?.current) ? p.current : Number.isInteger(rec.current) ? rec.current : 0, solved: (Array.isArray(p?.solved) ? p.solved : Array.isArray(rec.solved) ? rec.solved : []).map(Number).filter(Number.isInteger) });
+      // v3.5.301: the old shared current/solved belong to Chép — Nói never borrows them (its locks are its own)
+      const prog = (p, legacy) => ({ current: Number.isInteger(p?.current) ? p.current : legacy && Number.isInteger(rec.current) ? rec.current : 0, solved: (Array.isArray(p?.solved) ? p.solved : legacy && Array.isArray(rec.solved) ? rec.solved : []).map(Number).filter(Number.isInteger) });
       const fill = (tab, p, scores, pass) => {
         const r = {};
         for (const [i, v] of Object.entries(scores || {})) if (Number.isFinite(+v)) r[i] = +v;
@@ -2555,7 +2570,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         S.res[tab] = r; S.si[tab] = Math.max(0, p.current); S.reach[tab] = Math.max(S.si[tab], ...p.solved);
       };
       const sc = rec.unifiedScores || {};
-      fill('write', prog(pm.typing), sc.typing, PASS.write); fill('speak', prog(pm.speaking), sc.speaking, PASS.speak);
+      fill('write', prog(pm.typing, true), sc.typing, PASS.write); fill('speak', prog(pm.speaking, false), sc.speaking, PASS.speak);
       S.tnotes = Object.entries(rec.notes || {}).map(([i, n]) => ({ i: +i, text: String(n?.note || '') })).filter((n) => Number.isInteger(n.i) && n.text.trim()).sort((a, b) => a.i - b.i);
       S.lessonNote = String(rec.lessonNote || '');
       const ok = (v) => v && v.version === 3 && v.words && typeof v.words === 'object';

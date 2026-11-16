@@ -343,7 +343,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .scard-hd .sp{flex:1}
 .ov[data-w=e] .scard-hd{padding-left:12px;padding-right:12px}
 .ov[data-w=e] .sbody{padding-left:12px;padding-right:12px}
-.ov[data-w=e] .sbody>:is(.target,.trans,.heard,.help,.hint,.diff,.rpanel,.res){width:100%;max-width:none}
+.ov[data-w=e] .sbody>:is(.target,.trans,.heard,.help,.hint,.diff,.rpanel,.res,.spres){width:100%;max-width:none}
 .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--bd);border-radius:999px;padding:3px 11px 3px 3px;background:var(--pn2);font-weight:750;font-size:13px;cursor:pointer;height:34px}
 .chip svg{width:28px;height:28px}
 .chip .lab{font-variant-numeric:tabular-nums}
@@ -492,6 +492,8 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .zr{display:flex;align-items:center;gap:2px;justify-self:end}
 .dtitle{display:flex;align-items:center;gap:8px;min-width:0;flex:0 1 auto;padding:0 8px 0 4px;max-width:260px;align-self:stretch;cursor:pointer}
 .dtitle .yt{width:22px;height:16px;flex:none}
+.dtitle .glw{display:flex;flex:none}.dtitle .glw[hidden]{display:none}
+.dtitle img.yt.fav{width:16px;height:16px;margin:0 3px;border-radius:3px;object-fit:contain}
 .dtitle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650;font-size:13px}
 /* tên video bị cắt: chạy chữ vòng tròn (lần đầu mở 1 vòng · rê chuột / bấm = chạy liên tục) */
 .dtitle :is(.mqw,.mqi,.mqc){font-style:normal}.dtitle .mqc{display:none}.dtitle span.mq{text-overflow:clip}.dtitle span.mq .mqw{display:inline-block;will-change:transform}.dtitle span.mq :is(.mqi,.mqc){display:inline-block;padding-right:48px}
