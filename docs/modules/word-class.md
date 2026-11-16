@@ -21,7 +21,7 @@
 
 1. ☰ Loại từ / Alt+G → `togglePage()`; ☰ Loại từ đoạn (chạm chọn đoạn) / Alt+J (đoạn gần con trỏ) → `toggleAt(x, y)`.
 2. Chưa có mô hình: thẻ "Tải mô hình loại từ?" → `WORD_CLASS_DOWNLOAD`, hiện %.
-3. Cả trang: lấy đoạn từ `LHN_READER_BAR.mainBlocks()` (cùng danh sách Alt+A / Alt+R), IntersectionObserver gắn đoạn khi vào màn hình. Bỏ đoạn không phải tiếng Anh (báo một lần): chữ có dấu / chữ khác, `detectLanguage` khi `isReliable`; không chắc → đa số đoạn trên trang (≥3 đoạn chắc chắn), rồi ngôn ngữ trang; Alt+J chỉ xét chữ.
+3. Cả trang: lấy đoạn từ `LHN_READER_BAR.mainBlocks()` (như Alt+A / Alt+R), gắn đoạn khi vào màn hình. Bỏ đoạn không phải tiếng Anh (báo một lần): chữ có dấu / chữ khác, `detectLanguage` khi `isReliable`; không chắc → đa số đoạn trên trang (≥3 đoạn chắc chắn), rồi ngôn ngữ trang; Alt+J chỉ xét chữ.
 4. Mỗi đoạn: `WORD_CLASS_TAG` → `[[start, end, UPOS]]` → `CORE.label/units` → bọc từ trong `<lhn-wc>` (shadow đóng chứa nhãn), phần gạch trong `<lhn-wcu>`.
 5. Bảng chú thích kính mờ góc phải trên (chỉ các nhãn đang có trên trang) hiện mỗi lần bật; rê chuột / chạm dòng hiện định nghĩa (`wc_def_*`); ☰ Chú thích hiện / ẩn tay; × ẩn đến lần bật sau, kéo đầu bảng để dời (lưu `lhnWordClassLegend`); `wordClassLegend` tắt tự hiện. Rê chuột: "book: danh từ · noun", danh từ riêng liền nhau một dòng.
 6. Tắt: gỡ mọi `lhn-wc`/`lhn-wcu`, nối lại các text node đã tách → HTML như cũ. Thẻ "Đã tắt · Hoàn tác".
@@ -31,7 +31,7 @@
 
 - Nhãn chỉ từ đầu ra mô hình. Bảng viết tắt và nghĩa (`wc_<UPOS>` trong `languages.js`) là quy ước hiển thị.
 - Chữ trang chỉ được bọc: nhãn trong shadow đóng nên không bị đọc, dịch, chọn, sao chép. Reader bỏ `lhn-wc`/`lhn-wcu` khỏi `isTextBlock`.
-- `wordClassEnabled` tắt là tắt mọi nơi (ô ☰, Alt+G / Alt+J, gỡ nhãn). Website đã tắt Keepit, YouTube: không chạy.
+- `wordClassEnabled` tắt là tắt mọi nơi (ô ☰, Alt+G / Alt+J, gỡ nhãn). Giữ Alt: tạm gỡ accesskey G/J của trang (Wikipedia). Website đã tắt Keepit, YouTube: không chạy.
 - Chrome: quyền `offscreen` + CSP `'wasm-unsafe-eval'`; `build_firefox.py` bỏ `offscreen`, Firefox chạy engine trong background page.
 - Mô hình là dữ liệu tải về; JS/WASM luôn đóng gói. Đổi mô hình: sửa `core.js`, privacy, notices.
 
@@ -39,5 +39,4 @@
 
 - Static: `node --check` `js/word-class/*`.
 - Extension thật: Cài đặt → Tải → xem trước có nhãn; Alt+G gắn đoạn tiếng Anh, bỏ đoạn khác, `innerText`/vùng chọn không đổi, tắt → HTML như cũ; Alt+J chỉ một đoạn; công tắc tổng tắt → gỡ nhãn, ẩn ô ☰, phím không tác dụng.
-- Độ chính xác ~96% (UD EWT).
 - Firefox: thử bản `build_firefox.py` thật.

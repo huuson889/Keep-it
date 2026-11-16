@@ -204,6 +204,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.297 | Arena.ai Agent sửa:**
+
+- Loại từ, theo báo lỗi của người dùng:
+  - news.tuoitre.vn tiêu đề ngắn lúc được lúc không: đa số đoạn chỉ được nhớ khi đã đủ ≥3 đoạn chắc chắn; chưa đủ (trang còn tải) thì 1,5 giây sau đếm lại. Máy thử không tái hiện được lỗi (6 lần đều gắn đủ), đây là chỗ yếu duy nhất tìm thấy.
+  - Wikipedia Alt+G nhảy trang: trang có `accesskey="g"` (Wikidata) / `"j"` (What links here); trình duyệt xử lý accesskey trước khi script nhận phím nên `preventDefault` không chặn được. Giữ Alt → tạm gỡ accesskey G/J, thả Alt → trả lại.
+  - Danh từ liền kề không gộp: (1) cụm danh từ tràn qua thẻ ("Vietnam War" trong liên kết + "." ngoài) trước đây tách từng từ, nay tách theo text node; (2) số chú thích dính sau ("War.[25]") được cắt ra; (3) cho phép ngoặc kép mở đầu ("baby sitters"); (4) chữ viết tắt tên (J. D. Salinger, John F. Phillips) nối tiếp được.
+- Chưa làm: cụm nằm một nửa trong liên kết ("author [Marilyn Ferguson]", "[Quaker] draft counselors", "a [Democratic Society] chapter") — cần dời phần tử của trang.
+- File: `js/word-class/{core,page}.js`, `manifest.json`, `docs/modules/word-class.md`.
+- Kiểm tra: Chromium nạp extension thật. news.tuoitre.vn (bật ngay khi trang đang tải và sau khi tải xong): 3 tiêu đề H3 + mọi đoạn gắn nhãn. Bản lưu Mark_Satin: cặp N liền kề chưa gộp 51 → 21 (còn lại là dấu phẩy, "Ladies'" sở hữu như v3.5.292, và 4 cụm nửa liên kết); giữ Alt → accesskey g/j gỡ, thả → trả lại. "City’s / teacher's / Nam's" vẫn "N · Part"; 4 trang thử ngôn ngữ như v3.5.296; không lỗi trang. Accesskey thật không thử được trên headless.
+
 **2026-10-23 | v3.5.296 | Arena.ai Agent sửa:**
 
 - Loại từ cả trang: đoạn mà trình duyệt không chắc là tiếng Anh → xét đa số đoạn trên trang trước `<html lang>`.

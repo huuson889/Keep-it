@@ -213,6 +213,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
       const s = (b.innerText || "").trim(); if (s.length < 40) continue;
       try { const r = await api.i18n.detectLanguage(s.slice(0, 1000)); const top = r?.languages?.[0]; if (top && r.isReliable) m[top.language === "en" ? "en" : "other"]++; } catch {}
     }
+    if (m.en + m.other < 3) setTimeout(() => { majority = null; }, 1500);   // v3.5.297 page still loading: count again later
     return m;
   })();
   let pageEn = null;
@@ -290,12 +291,17 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
       const lab = ts.filter(x => x.pos); if (!lab.length) return;
       const s = ts[0].start, e = ts[ts.length - 1].end, i = within(s, e);
       if (i < 0) {   // crosses an element (a link, bold…): split the merged nouns into words / the group into tokens
-        if (merged) { const one = g => add(g, g.length > 1 && g.length < ts.length && g[0].pos?.abbr === "N" && g.slice(1).every(x => x.upos === "PART" || !x.pos)); let g = []; ts.forEach((x, k) => { if (k && x.start !== ts[k - 1].end) { one(g); g = []; } g.push(x); }); one(g); }
+        // v3.5.297 merged nouns: keep together what sits in one text node ("Vietnam War" in a link, the "." after it outside)
+        if (merged) {
+          const runs = []; ts.forEach(x => { const r = runs[runs.length - 1]; if (r && nodeAt(x.start) === nodeAt(r[0].start)) r.push(x); else runs.push([x]); });
+          if (runs.length < 2) { ts.forEach(x => add([x], false)); return; }
+          runs.forEach(r => { const l = r.filter(x => x.pos); add(r, l.length > 1 && l[0].pos.abbr === "N" && l.every(x => x.pos.abbr === "N" || x.upos === "PART")); });
+        }
         else if (ts.length > 1) ts.forEach(x => add([x], false));
         return;
       }
       const base = starts[i], nu = merged ? CORE.nounUnit(ts) : null;   // nouns: one N underline; a glued particle (City’s) keeps its own: "N · Part"
-      const segs = nu ? [[0, ts[nu.nounEnd].end - s, "N"], ...nu.parts.map(x => [x.start - s, x.end - s, x.pos.abbr])] : lab.map(x => [x.start - s, x.end - s, x.pos.abbr]);
+      const segs = nu ? [[ts.find(x => x.pos?.abbr === "N").start - s, ts[nu.nounEnd].end - s, "N"], ...nu.parts.map(x => [x.start - s, x.end - s, x.pos.abbr])] : lab.map(x => [x.start - s, x.end - s, x.pos.abbr]);
       if (!byNode.has(i)) byNode.set(i, []);
       byNode.get(i).push({ s:s - base, e:e - base, abbrs:nu ? nu.abbrs : lab.map(x => x.pos.abbr), segs, tip:tipOf(ts) });
     };
@@ -377,6 +383,16 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
 
   // ---------- wiring ----------
   document.addEventListener("mousemove", e => { lastPointer = { x:e.clientX, y:e.clientY }; }, { passive:true, capture:true });
+  // v3.5.297 a page accesskey on G / J (Wikipedia: Alt+G = Wikidata, Alt+J = What links here) runs before any script sees the key,
+  // so preventDefault cannot stop it: while Alt is held those accesskeys are parked, and put back when Alt is released
+  let parked = [];
+  const unpark = () => { parked.forEach(([el, k]) => el.setAttribute("accesskey", k)); parked = []; };
+  addEventListener("keydown", e => {
+    if (e.key !== "Alt" || parked.length || !enabled()) return;
+    document.querySelectorAll("[accesskey]").forEach(el => { const k = el.getAttribute("accesskey"); if (/(^|\s)[gj](\s|$)/i.test(k)) { parked.push([el, k]); el.removeAttribute("accesskey"); } });
+  }, true);
+  addEventListener("keyup", e => { if (e.key === "Alt") setTimeout(unpark, 0); }, true);
+  addEventListener("blur", unpark);
   document.addEventListener("lhn-word-class-command", e => {
     if (!enabled()) return;
     if (e.detail === "page") void setPage(!pageMode);
