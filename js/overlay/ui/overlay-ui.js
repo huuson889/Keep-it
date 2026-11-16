@@ -664,7 +664,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     // hướng dẫn tim (Xem): video đang lớn → 0.9s sau, bàn tay chạm liên tục 5 cái, từ cái thứ 2 mỗi cái bay 1 tim to y như thật (chỉ hình, không thêm yêu thích)
     // vị trí: giữa góc phần tư phải dưới (75% ngang, 75% dọc) — cảm ứng: của cột chứa video · chuột: của video; 1 lần mỗi lần mở; chạm là tắt
-    var hGuideSess = null, hGuideT = 0; // { n: session, t: session } — Thường and Rạp each show it once per opening // var + function: apply() có thể gọi trước dòng này (tránh lỗi TDZ)
+    var hGuideSess = null, hGuideT = 0, hGuideStop = null; // { n: session, t: session } — Thường and Rạp each show it once per opening // var + function: apply() có thể gọi trước dòng này (tránh lỗi TDZ)
     function hGuideOk() { const pl = $('#player'); return !ov.hidden && S.tab === 'view' && !!pl && !pl.classList.contains('card') && !pl.classList.contains('g-in') && !ov.classList.contains('gdrag') && !ov.classList.contains('tt-hint-on'); }
     function hGuideDone() { return !!hGuideSess && hGuideSess[curView() === 'theater' ? 't' : 'n'] === S.sess; }
     function heartGuide() {
@@ -675,10 +675,11 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         (hGuideSess = hGuideSess || {})[curView() === 'theater' ? 't' : 'n'] = S.sess;
         const pl = $('#player'), o = ov.getBoundingClientRect(), sc = S.scale || 1, ref = (S.input === 'touch' ? pl.closest('.stage') || pl : pl).getBoundingClientRect();
         const x = (ref.left + ref.width * 0.75 - o.left) / sc, y = (ref.top + ref.height * 0.75 - o.top) / sc;
+        hGuideStop?.(); // Thường → Rạp without a tap (keyboard): the old hand goes first, never two at once
         const g = document.createElement('div'); g.className = 'hguide'; g.setAttribute('aria-hidden', 'true');
         g.style.left = `${x}px`; g.style.top = `${y}px`; g.innerHTML = `<span class="hgh">${ic('tap')}</span>`;
         ov.appendChild(g);
-        const DUR = 5600, TAPS = [500, 720, 940, 1160, 1380, 3300, 3520, 3740, 3960, 4180], // v3.5.303: 2× longer = 2 rounds of 5 taps
+        const TAPS = Array.from({ length: 10 }, (_, i) => 500 + i * 220), DUR = TAPS[9] + 1420, // v3.5.304: 10 taps in a row (2× the 5 before), same lead-in / fade
            svg = g.querySelector('svg'), anims = [], timers = [], hearts = [];
         anims.push(g.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.1 }, { opacity: 1, transform: 'none', offset: 0.8 }, { opacity: 0, transform: 'none' }], { duration: DUR, easing: 'ease-out' }));
         const kf = [{ transform: 'none', offset: 0 }];
@@ -688,14 +689,15 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         TAPS.forEach((t, i) => {
           const r = document.createElement('i'); r.className = 'hgr'; g.appendChild(r);
           anims.push(r.animate([{ opacity: 0.75, transform: 'scale(.3)' }, { opacity: 0, transform: 'scale(1.35)' }], { duration: 420, delay: t, easing: 'ease-out', fill: 'backwards' }));
-          if (i % 5) timers.push(setTimeout(() => { // mỗi lượt: từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
+          if (i) timers.push(setTimeout(() => { // từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
             const h = document.createElement('div'); h.className = 'hrt'; h.setAttribute('aria-hidden', 'true');
             h.style.left = `${x + (Math.random() * 24 - 12)}px`; h.style.top = `${y - 20 + (Math.random() * 16 - 8)}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
             h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
             ov.appendChild(h); hearts.push(h); setTimeout(() => h.remove(), 1000);
           }, t));
         });
-        const stop = () => { timers.forEach(clearTimeout); anims.forEach((a) => a.cancel()); g.remove(); hearts.forEach((h) => h.remove()); ov.removeEventListener('pointerdown', stop, true); };
+        const stop = () => { timers.forEach(clearTimeout); anims.forEach((a) => a.cancel()); g.remove(); hearts.forEach((h) => h.remove()); ov.removeEventListener('pointerdown', stop, true); if (hGuideStop === stop) hGuideStop = null; };
+        hGuideStop = stop;
         anims[0].onfinish = stop; ov.addEventListener('pointerdown', stop, { once: true, capture: true });
       }, 900);
     }

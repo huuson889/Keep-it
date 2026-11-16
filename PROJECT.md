@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.304 | Arena.ai Agent sửa:**
+
+- Overlay, theo yêu cầu: hướng dẫn chạm tim bấm liên tục 10 cái (gấp đôi 5 cái trước), cùng nhịp 220ms, không nghỉ giữa chừng như v3.5.303; tim bay từ cái thứ 2; phần hiện vào / mờ dần giữ như cũ (tổng 3,9s). Kèm sửa: hướng dẫn mới chạy thì tắt hướng dẫn cũ đang chạy (Thường → Rạp không qua chạm, ví dụ phím tắt, trước đây có thể hiện 2 bàn tay).
+- File: `js/overlay/ui/overlay-ui.js`, `docs/modules/overlay.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, Overlay web (Alt+F). Mở thẳng vào Rạp: 10 vòng chạm, 9 tim cách đều ~220ms, hiện ~3,9s. Mở ở Thường rồi vào Rạp bằng lệnh (không chạm): hướng dẫn Thường dừng ngay khi hướng dẫn Rạp bắt đầu, chỉ 1 chuỗi tim. Không lỗi trang. Chưa thử YouTube thật / điện thoại.
+
 **2026-10-23 | v3.5.303 | Arena.ai Agent sửa:**
 
 - Overlay, theo yêu cầu: (1) hướng dẫn chạm tim hiện gấp đôi thời gian (5,6s, 2 lượt × 5 cái chạm); (2) Rạp: chạm 2 lần thả tim không hiện tim nhỏ ở góc video nữa, chỉ tim ở thanh điều khiển; (3) Overlay có theme riêng: mỗi lần mở theo giao diện của website (nền trang tối hoặc đang bật Trang tối → tối, trang sáng → sáng); nút theme trong Overlay đổi tạm đến khi tải lại trang, không ghi `lhnSettings.sidebarTheme` (thay quy tắc v3.5.300 cho Overlay); (4) khung xem trước Phụ đề giống Overlay đang hiện: Rạp + Phụ đề video = nền video, màu mặc định trắng / vàng như phụ đề trên video; còn lại = nền theme Overlay, màu theo theme; (5) dòng Nền phụ đề chỉ hiện ở chế độ Rạp.
