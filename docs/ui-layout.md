@@ -45,6 +45,7 @@
 ## Theme
 
 - Một cài đặt chung `lhnSettings.sidebarTheme` (Sáng / Tối / Theo hệ thống = theo máy, không theo theme của trang web) cho mọi phần: thanh Keepit, sidebar, icon chọn chữ, popup dịch / từ điển, Loại từ, Home, Overlay, Reader, popup, Bảng quản lý. Nút đổi theme ở bất kỳ đâu ghi vào cài đặt này (v3.5.300).
+- Riêng Overlay (v3.5.303): mỗi lần mở theo giao diện của website (trang tối / đang bật Trang tối → tối, trang sáng → sáng); nút theme trong Overlay chỉ đổi tạm đến khi tải lại trang, không ghi vào cài đặt chung.
 - Riêng hàng công cụ của AI panel theo máy, cho khớp trang AI bên dưới (không đổi được theme trang đó).
 
 ## Cửa sổ Cài đặt (Bảng quản lý)

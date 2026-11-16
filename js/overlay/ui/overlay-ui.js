@@ -658,7 +658,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // tim to: icon tim trên video đang ẩn (video đang chạy / rạp hát) → hiện tạm 1.6s để thấy tim đỏ + nhịp
     let favShowT = 0;
     function flashFav() {
-      const pl = $('#player'), vc = $('#vcorner'); if (!pl || !vc || pl.classList.contains('card')) return;
+      const pl = $('#player'), vc = $('#vcorner'); if (!pl || !vc || pl.classList.contains('card') || curView() === 'theater') return; // Rạp: only the control bar heart
       if (!pl.classList.contains('favshow')) { const cs = getComputedStyle(vc); if (cs.display !== 'none' && +cs.opacity > 0.5) return; }
       pl.classList.add('favshow'); clearTimeout(favShowT); favShowT = setTimeout(() => pl.classList.remove('favshow'), 1600);
     }
@@ -678,7 +678,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const g = document.createElement('div'); g.className = 'hguide'; g.setAttribute('aria-hidden', 'true');
         g.style.left = `${x}px`; g.style.top = `${y}px`; g.innerHTML = `<span class="hgh">${ic('tap')}</span>`;
         ov.appendChild(g);
-        const DUR = 2800, TAPS = [500, 720, 940, 1160, 1380], svg = g.querySelector('svg'), anims = [], timers = [], hearts = [];
+        const DUR = 5600, TAPS = [500, 720, 940, 1160, 1380, 3300, 3520, 3740, 3960, 4180], // v3.5.303: 2× longer = 2 rounds of 5 taps
+           svg = g.querySelector('svg'), anims = [], timers = [], hearts = [];
         anims.push(g.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.1 }, { opacity: 1, transform: 'none', offset: 0.8 }, { opacity: 0, transform: 'none' }], { duration: DUR, easing: 'ease-out' }));
         const kf = [{ transform: 'none', offset: 0 }];
         TAPS.forEach((t) => kf.push({ transform: 'none', offset: (t - 60) / DUR }, { transform: 'scale(.8)', offset: t / DUR }, { transform: 'none', offset: (t + 80) / DUR }));
@@ -687,7 +688,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         TAPS.forEach((t, i) => {
           const r = document.createElement('i'); r.className = 'hgr'; g.appendChild(r);
           anims.push(r.animate([{ opacity: 0.75, transform: 'scale(.3)' }, { opacity: 0, transform: 'scale(1.35)' }], { duration: 420, delay: t, easing: 'ease-out', fill: 'backwards' }));
-          if (i) timers.push(setTimeout(() => { // từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
+          if (i % 5) timers.push(setTimeout(() => { // mỗi lượt: từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
             const h = document.createElement('div'); h.className = 'hrt'; h.setAttribute('aria-hidden', 'true');
             h.style.left = `${x + (Math.random() * 24 - 12)}px`; h.style.top = `${y - 20 + (Math.random() * 16 - 8)}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
             h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
@@ -1070,16 +1071,17 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const swatch = (grp) => { const d = subDefault(S.subTab, grp), dn = T((SW_COLORS.find(([c]) => c === d) || [d, 'accentColor'])[1]);
           const list = [['def', `${dn} · ${T('defaultSuffix')}`, d], ...SW_COLORS.filter(([c]) => c !== d).map(([c, n]) => [c, T(n), c])];
           return `<div class="swatches">${list.map(([c, n, bg]) => `<button class="swc ${st[grp] === c ? 'on' : ''}" data-color="${grp}:${c}" title="${n}" aria-label="${n}" style="background:${bg}"></button>`).join('')}</div>`; };
-        const en = st.en === 'def' ? subDefault(S.subTab, 'en') : st.en, vi = st.vi === 'def' ? subDefault(S.subTab, 'vi') : st.vi;
+        const onVid = S.subTab === 'video' && curView() === 'theater'; // Rạp: subtitles sit on the video (white / yellow by default, like .tsub)
+        const en = st.en === 'def' ? (onVid ? '#ffffff' : subDefault(S.subTab, 'en')) : st.en, vi = st.vi === 'def' ? (onVid ? '#ffff00' : subDefault(S.subTab, 'vi')) : st.vi;
         return `${head(T('subtitles'), '', 'set')}
         <div class="seg" style="width:100%;margin-bottom:10px"><button data-subtab="video" class="${S.subTab === 'video' ? 'on' : ''}">${T('videoSubtitles')}</button><button data-subtab="side" class="${S.subTab === 'side' ? 'on' : ''}">${T('scrollingTranscript')}</button></div>
-        <div class="prev ${S.subTab === 'video' ? `bg-${st.bg}` : ''}" style="font-family:${subFam(st.font) || 'inherit'}"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500};font-size:${Math.round((S.subTab === 'video' ? 18 : 15.5) * SUB_SZ[st.size] * 10) / 10}px"><span>Keep exploring everything</span></div><div class="b" style="color:${vi};font-size:${Math.round((S.subTab === 'video' ? 14 : 13) * SUB_SZ[st.size] * 10) / 10}px"><span>${T('theTranslationAppearsHere')}</span></div></div>
+        <div class="prev ${onVid ? `tt bg-${st.bg}` : 'ovbg'}" style="font-family:${subFam(st.font) || 'inherit'}"><div class="a" style="color:${en};font-weight:${st.bold ? 800 : 500};font-size:${Math.round((S.subTab === 'video' ? 18 : 15.5) * SUB_SZ[st.size] * 10) / 10}px"><span>Keep exploring everything</span></div><div class="b" style="color:${vi};font-size:${Math.round((S.subTab === 'video' ? 14 : 13) * SUB_SZ[st.size] * 10) / 10}px"><span>${T('theTranslationAppearsHere')}</span></div></div>
         <div class="srow"><div class="l">${T('fontSize')}</div><div class="seg">${[T('small'), T('sizeMedium'), T('large')].map((l, i) => `<button data-fsz="${i}" class="${st.size === i ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <div class="sec">${T('primarySubtitleColor')}</div>${swatch('en')}
         <div class="sec">${T('translatedSubtitleColor')}</div>${swatch('vi')}
         <div class="srow" style="margin-top:8px"><div class="l">${T('weight')}</div><div class="seg"><button data-bold="0" class="${!st.bold ? 'on' : ''}">${T('weightNormal')}</button><button data-bold="1" class="${st.bold ? 'on' : ''}">${T('bold')}</button></div></div>
         <div class="srow"><div class="l">${T('font')}</div><div class="seg">${[['def', T('default')], ['serif', 'Serif'], ['mono', 'Mono']].map(([v, l]) => `<button data-font="${v}" class="${st.font === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <div class="srow"><div class="l">${T('background')}<small>${T('appliesInFullScreen')}</small></div><div class="seg">${[['none', T('none')], ['soft', T('bgLight')], ['solid', T('solid')]].map(([v, l]) => `<button data-bg="${v}" class="${st.bg === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        ${curView() === 'theater' ? `<div class="srow"><div class="l">${T('background')}<small>${T('appliesInFullScreen')}</small></div><div class="seg">${[['none', T('none')], ['soft', T('bgLight')], ['solid', T('solid')]].map(([v, l]) => `<button data-bg="${v}" class="${st.bg === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
         <button class="btnw sec2" data-act="subreset">${T('reset')}</button>`;
       },
       sublang: () => `${head(T('language'), '', 'set')}<div class="sec">${T('videoLanguage')}</div>${LANGS.map(([c, n, e]) => `<button class="lrow ${S.srcLang === c ? 'sel' : ''}" data-src="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${T(n)}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}<div class="sec">${T('translateTo')}</div>${LANGS.filter((l) => l[0] !== 'auto').map(([c, n, e]) => `<button class="lrow ${S.dstLang === c ? 'sel' : ''}" data-dst="${c}"><span class="fl">${FLAGS[c]}</span><span class="nn">${T(n)}</span><span class="en2">${e}</span><span class="ck">${ic('check')}</span></button>`).join('')}`,
@@ -1214,7 +1216,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.act === 'mute') { S.muted = !S.muted; return openPanel('vol', null, { keep: true }); }
         if (t.dataset.tile) return tileAction(t.dataset.tile);
         if (t.dataset.split) { setSplit(+t.dataset.split, true); return openPanel('set', null, { keep: true, wide: true }); }
-        if (t.dataset.theme) { void setTheme(t.dataset.theme === 'light' ? 'light' : 'dark'); return openPanel('theme', null, { keep: true }); }
+        if (t.dataset.theme) { setTheme(t.dataset.theme === 'light' ? 'light' : 'dark'); return openPanel('theme', null, { keep: true }); }
         if (t.dataset.subtab) { S.subTab = t.dataset.subtab; return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.fsz) { S.subStyle[S.subTab].size = +t.dataset.fsz; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.color) { const [g, c] = t.dataset.color.split(':'); S.subStyle[S.subTab][g] = c; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
@@ -1246,7 +1248,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function tileAction(id) {
       const anchor = dockEl.more;
       closePanel();
-      if (id === 'theme') { void setTheme(S.theme === 'dark' ? 'light' : 'dark'); return; }
+      if (id === 'theme') { setTheme(S.theme === 'dark' ? 'light' : 'dark'); return; }
       if (id === 'art') { S.ambient = !S.ambient; apply(); toast(S.ambient ? T('ambientEffectOn') : T('ambientEffectOff')); return; }
       if (id === 'set') return openPanel('set', anchor, { wide: true });
       if (id === 'subopt' || id === 'sublang') return openPanel(id, anchor, { wide: true });
@@ -2463,18 +2465,25 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const UI_KEYS = ['view', 'mini', 'split', 'colW', 'colList', 'colNotes', 'subHidden', 'showTr', 'auto', 'hints', 'exp', 'ttHint', 'subStyle'];
     let ready = false, uiSaveT = 0, uiLast = '', lastCc = '', studyKey = '', studyLoaded = false, saveT = 0, ambT = 0, trLang = '';
     const store = () => globalThis.browser?.storage?.local;
-    // v3.5.300: the Overlay uses the one Keepit theme (lhnSettings.sidebarTheme: light / dark / system = device); its own theme switch writes it
-    const KP_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings', DARK_MQ = matchMedia('(prefers-color-scheme: dark)');
-    let kpTheme = null;
-    const keepitTheme = () => (kpTheme === 'dark' || (kpTheme !== 'light' && DARK_MQ.matches) ? 'dark' : 'light');
-    const followTheme = () => { if (kpTheme == null) return; const th = keepitTheme(); if (th === S.theme) return; S.theme = th; if (!ov.hidden) apply(); };
-    async function setTheme(th) {
-      S.theme = th; kpTheme = th; apply();
-      try { const cur = (await store()?.get(KP_KEY))?.[KP_KEY]; await store()?.set({ [KP_KEY]: { ...(cur && typeof cur === 'object' ? cur : {}), sidebarTheme: th } }); } catch (_) {}
+    // v3.5.303: the Overlay has its own theme — each opening follows the page's look (dark site, or Keepit "Trang tối" darkening it → dark);
+    // the theme switch in the Overlay lasts until the page reloads (kept in memory only; Keepit's theme is not touched)
+    let themePick = null;
+    function pageTheme() {
+      if (document.getElementById('keepit-page-dark')) return 'dark';
+      const KP = '[id^="lhn-"],[id^="keepit-"],[id^="yt-keepit"],[class^="lhn-"]';
+      const lum = (c) => { const m = String(c).match(/[\d.]+/g); if (!m || m.length < 3 || (m.length > 3 && +m[3] < 0.5)) return null; return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255; };
+      const bgOf = (el) => (el ? lum(getComputedStyle(el).backgroundColor) : null);
+      const root = bgOf(document.documentElement) ?? bgOf(document.body);
+      if (root != null) return root < 0.45 ? 'dark' : 'light';
+      const vals = []; // transparent root: sample the real background at 9 points (as page-dark.js)
+      for (const fy of [0.2, 0.45, 0.7]) for (const fx of [0.2, 0.5, 0.8]) {
+        const el = document.elementsFromPoint(innerWidth * fx, innerHeight * fy).find((e) => !e.closest(KP));
+        for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const v = bgOf(n); if (v != null) { vals.push(v); break; } }
+      }
+      if (!vals.length) return /\bdark\b/.test(getComputedStyle(document.documentElement).colorScheme || '') ? 'dark' : 'light';
+      return vals.filter((v) => v < 0.45).length >= vals.length / 2 ? 'dark' : 'light';
     }
-    store()?.get(KP_KEY)?.then?.((v) => { kpTheme = String(v?.[KP_KEY]?.sidebarTheme || 'system'); followTheme(); })?.catch?.(() => {});
-    globalThis.browser?.storage?.onChanged?.addListener?.((ch, area) => { if (area !== 'local' || !ch[KP_KEY]) return; kpTheme = String(ch[KP_KEY].newValue?.sidebarTheme || 'system'); followTheme(); });
-    DARK_MQ.addEventListener?.('change', followTheme);
+    function setTheme(th) { S.theme = th; themePick = th; apply(); }
     const uiLoaded = (async () => {
       try {
         const v = (await store()?.get(OV_UI_KEY))?.[OV_UI_KEY];
@@ -2493,7 +2502,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const CC_MAP = { bi: 'bilingual', pri: 'primary', tr: 'translation', off: 'hidden' };
     function pullSettings() {
       const st = B.settings() || {}, s = B.state() || {};
-      S.theme = kpTheme != null ? keepitTheme() : st.theme === 'light' ? 'light' : 'dark';
+      S.theme = themePick || pageTheme();
       S.tapTranslate = st.videoTranslationPopupEnabled !== false;
       S.speakOnTranslate = st.videoClickToSpeak !== false;
       S.merge = st.splitSentences !== false;

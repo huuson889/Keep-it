@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.303 | Arena.ai Agent sửa:**
+
+- Overlay, theo yêu cầu: (1) hướng dẫn chạm tim hiện gấp đôi thời gian (5,6s, 2 lượt × 5 cái chạm); (2) Rạp: chạm 2 lần thả tim không hiện tim nhỏ ở góc video nữa, chỉ tim ở thanh điều khiển; (3) Overlay có theme riêng: mỗi lần mở theo giao diện của website (nền trang tối hoặc đang bật Trang tối → tối, trang sáng → sáng); nút theme trong Overlay đổi tạm đến khi tải lại trang, không ghi `lhnSettings.sidebarTheme` (thay quy tắc v3.5.300 cho Overlay); (4) khung xem trước Phụ đề giống Overlay đang hiện: Rạp + Phụ đề video = nền video, màu mặc định trắng / vàng như phụ đề trên video; còn lại = nền theme Overlay, màu theo theme; (5) dòng Nền phụ đề chỉ hiện ở chế độ Rạp.
+- File: `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `docs/ui-layout.md`, `docs/modules/overlay.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, Overlay web (Alt+F), Keepit theme Sáng. Trang nền #121212 → Overlay tối; trang sáng → sáng; ☰ đổi theme → tối, cài đặt Keepit vẫn Sáng; đóng rồi mở lại → vẫn tối; tải lại trang → sáng. Phụ đề ở Thường: xem trước nền #f6f7fb, chữ tím, không có dòng Nền; ở Rạp: nền video, chữ trắng, có dòng Nền. Hướng dẫn tim ở Rạp hiện sau 0,94s, kéo dài 5,8s. Rạp chạm 2 lần: 1 tim to, tim thanh điều khiển đỏ, góc video không hiện tim. Không lỗi trang. Chưa thử YouTube thật / điện thoại.
+
 **2026-10-23 | v3.5.302 | Arena.ai Agent sửa:**
 
 - Overlay, theo yêu cầu: (1) ngôn ngữ phụ đề trùng ngôn ngữ hiển thị → tắt bấm dịch và chọn dịch (cả chữ ở Nói / Chép), dòng "Bấm để dịch" trong Cài đặt video mờ, không bấm được. Ngôn ngữ phụ đề lấy theo thứ tự: chọn tay → track video → trang web khi chắc chắn, hoặc 12 câu đầu nhận rõ một ngôn ngữ; không rõ thì vẫn cho dịch; (2) nút ♥ / Rạp góc video ở light mode icon trắng như dark mode (`.ov button{color:inherit}` đè màu trắng); (3) tên nguồn Web chạy chữ lại được (sau v3.5.301 hàm chạy chữ lấy nhầm span quả địa cầu); (4) hướng dẫn chạm tim chạy riêng cho Rạp (Thường và Rạp mỗi chế độ 1 lần mỗi lần mở); cảm ứng: chạy sau khi tắt gợi ý Rạp.

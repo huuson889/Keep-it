@@ -105,7 +105,8 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .tsub.bg-solid .a,.tsub.bg-solid .b{background:rgba(0,0,0,.88);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
 .prev.bg-soft .a span,.prev.bg-soft .b span{background:rgba(0,0,0,.45);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
 .prev.bg-solid .a span,.prev.bg-solid .b span{background:#000;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .25em;border-radius:6px}
-.prev.bg-soft,.prev.bg-solid{background:linear-gradient(135deg,#3b3f4a,#1c1f26)}
+.prev.tt{background:linear-gradient(135deg,#3b3f4a,#1c1f26)}.prev.tt .a{text-shadow:0 2px 8px rgba(0,0,0,.85)}.prev.tt .b{text-shadow:0 2px 6px rgba(0,0,0,.85)}
+.prev.ovbg{background:var(--bg);box-shadow:inset 0 0 0 1px var(--bd)}
 .list.sbold .row .en{font-weight:700}
 .cinfo{display:none}
 .vplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;opacity:0;transition:.2s;pointer-events:none}
