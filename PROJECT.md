@@ -204,6 +204,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.300 | Arena.ai Agent sửa:**
+
+- Lỗi icon tự hiện lại: đổi theme (hay bất kỳ cài đặt nào) làm icon Keepit + Ghi chú / Dịch / Hỏi AI hiện lại ở chỗ bôi đen cũ dù đã bấm ra ngoài để tắt — nay chỉ cập nhật icon đang hiện.
+- Theme thống nhất: sidebar, icon chọn chữ, popup dịch, khung ghi chú không còn theo theme riêng của trang web (chế độ Theo hệ thống) mà theo máy như thanh Keepit / từ điển / Loại từ; Overlay bỏ theme riêng (mặc định Tối) → theo cài đặt chung, nút theme trong Overlay ghi vào cài đặt chung; nền trang Home theo theme Keepit.
+- File: `js/content/content.js`, `js/overlay/ui/overlay-ui.js`, `js/home/home-ui.js`, `docs/ui-layout.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật. Bôi đen → icon hiện, bấm ra ngoài → mất, đổi Tối / Sáng → không hiện lại; icon đang hiện thì đổi màu theo theme. Theo hệ thống + máy sáng + trang `html.dark` → icon sáng. Overlay (Alt+F trên trang thử): theo cài đặt chung sáng / tối, nút theme trong ☰ Overlay ghi `sidebarTheme`. Home: Keepit Sáng + máy tối → nền sáng; Theo hệ thống → tối. Các nút theme ở thanh ☰, Bảng quản lý, popup không đổi cài đặt khác. Không lỗi trang.
+
 **2026-10-23 | v3.5.299 | Arena.ai Agent sửa:**
 
 - Cài đặt: thêm trang **Từ điển** (Tiện ích, ngay sau Dịch) — chuyển từ trang Dịch sang: Hiện từ điển tiếng Anh đầy đủ, Mục trong từ điển đầy đủ + xem trước, Bộ nhớ đệm từ điển. Trang mờ khi Bật dịch (trang Dịch) tắt, vì từ điển cần dịch bật. Nút Đặt lại riêng cho Dịch / Từ điển. Không đổi khóa lưu hay cách hoạt động.

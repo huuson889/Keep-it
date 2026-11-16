@@ -26,6 +26,8 @@
   const DARK_Q = matchMedia("(prefers-color-scheme: dark)");
   const lang = () => { const c = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return ["vi", "en", "ko"].includes(c) ? c : "en"; };
   const isDark = () => settings.sidebarTheme === "dark" || (settings.sidebarTheme !== "light" && DARK_Q.matches);
+  // v3.5.300: the Home page background follows the Keepit theme too (pages/home.html only had the device setting)
+  const pageBg = () => { if (!/\/pages\/home\.html$/.test(location.pathname)) return; const bg = isDark() ? "#0e0e11" : "#f6f7fb"; document.documentElement.style.background = bg; if (document.body) document.body.style.background = bg; };
   const d = (k, ...a) => { let x = (D[lang()] || D.en)[k] ?? D.en[k] ?? k; a.forEach((v, i) => { x = String(x).split(`{${i}}`).join(v); }); return x; };
   const h = () => H[lang()] || H.en;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -63,7 +65,7 @@ ${V12CSS}${globalThis.LHN_THEME?.scrollbar || ""}`;
     }
     if (!dlgHost.isConnected) document.documentElement.appendChild(dlgHost);
     const dev = dlgRoot.querySelector(".dev");
-    dev.className = "dev " + (isDark() ? "dark" : "light"); dev.dataset.o = innerWidth > innerHeight ? "l" : "p";
+    dev.className = "dev " + (isDark() ? "dark" : "light"); pageBg(); dev.dataset.o = innerWidth > innerHeight ? "l" : "p";
     dev.dataset.d = Math.min(innerWidth, innerHeight) >= 600 ? "tablet" : "phone";
     return dev;
   }
@@ -197,7 +199,7 @@ ${V12CSS}${globalThis.LHN_THEME?.scrollbar || ""}`;
   }
   function homeDev() {
     const dev = homeRoot.querySelector(".dev");
-    dev.className = "dev " + (isDark() ? "dark" : "light"); dev.dataset.o = innerWidth > innerHeight ? "l" : "p";
+    dev.className = "dev " + (isDark() ? "dark" : "light"); pageBg(); dev.dataset.o = innerWidth > innerHeight ? "l" : "p";
     dev.dataset.d = Math.min(innerWidth, innerHeight) >= 600 ? "tablet" : "phone";
     document.documentElement.style.background = getComputedStyle(dev).getPropertyValue("--bg") || "";
     return dev;

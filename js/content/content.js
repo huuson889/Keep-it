@@ -119,8 +119,6 @@
     }
     if (area === "local" && changes[CONFIG.STORAGE_KEYS.ANNOTATIONS] && sidebarOpen) renderSidebar();
   });
-  const sidebarThemeObserver = new MutationObserver(() => syncSidebarTheme());
-  sidebarThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "data-color-scheme"] });
   window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => {
     if (settings.sidebarTheme !== "dark" && settings.sidebarTheme !== "light") syncSidebarTheme();
   });
@@ -621,6 +619,7 @@
     requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
   function syncTranslateIconAvailability() {
+    if (!translateIcon?.isConnected) return;   // v3.5.300: settings changed (e.g. theme) → only update an icon that is showing; a dismissed one stays gone
     if (!websiteSettingsReady || websiteDisabled || panel || settings.showOnSelect !== false || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || !enabledToolbarActions().length || !selectedRange?.startContainer?.isConnected || selectedRange.collapsed) {
       translateIcon?.remove(); translateIcon = null; return;
     }
@@ -1237,12 +1236,10 @@
       siteButton.classList.toggle("is-on", !websiteDisabled); siteButton.setAttribute("aria-pressed", String(!websiteDisabled));
     }
   }
+  // v3.5.300: same rule as the Keepit bar, dictionary, Word class, Home, Overlay: Keepit theme, "system" = the device (not the web page's theme)
   function isSidebarDark() {
     if (settings.sidebarTheme === "dark") return true;
     if (settings.sidebarTheme === "light") return false;
-    const root = document.documentElement;
-    if (root.classList.contains("dark") || root.dataset.theme === "dark" || root.dataset.colorScheme === "dark") return true;
-    if (root.classList.contains("light")) return false;
     return !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   }
   function isDictionaryDark() {

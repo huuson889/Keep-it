@@ -1209,7 +1209,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.act === 'mute') { S.muted = !S.muted; return openPanel('vol', null, { keep: true }); }
         if (t.dataset.tile) return tileAction(t.dataset.tile);
         if (t.dataset.split) { setSplit(+t.dataset.split, true); return openPanel('set', null, { keep: true, wide: true }); }
-        if (t.dataset.theme) { S.theme = t.dataset.theme; apply(); return openPanel('theme', null, { keep: true }); }
+        if (t.dataset.theme) { void setTheme(t.dataset.theme === 'light' ? 'light' : 'dark'); return openPanel('theme', null, { keep: true }); }
         if (t.dataset.subtab) { S.subTab = t.dataset.subtab; return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.fsz) { S.subStyle[S.subTab].size = +t.dataset.fsz; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
         if (t.dataset.color) { const [g, c] = t.dataset.color.split(':'); S.subStyle[S.subTab][g] = c; applySubStyle(); saveUi(); return openPanel('subopt', null, { keep: true, wide: true }); }
@@ -1241,7 +1241,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function tileAction(id) {
       const anchor = dockEl.more;
       closePanel();
-      if (id === 'theme') { S.theme = S.theme === 'dark' ? 'light' : 'dark'; apply(); return; }
+      if (id === 'theme') { void setTheme(S.theme === 'dark' ? 'light' : 'dark'); return; }
       if (id === 'art') { S.ambient = !S.ambient; apply(); toast(S.ambient ? T('ambientEffectOn') : T('ambientEffectOff')); return; }
       if (id === 'set') return openPanel('set', anchor, { wide: true });
       if (id === 'subopt' || id === 'sublang') return openPanel(id, anchor, { wide: true });
@@ -2458,6 +2458,18 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const UI_KEYS = ['view', 'mini', 'split', 'colW', 'colList', 'colNotes', 'subHidden', 'showTr', 'auto', 'hints', 'exp', 'ttHint', 'subStyle'];
     let ready = false, uiSaveT = 0, uiLast = '', lastCc = '', studyKey = '', studyLoaded = false, saveT = 0, ambT = 0, trLang = '';
     const store = () => globalThis.browser?.storage?.local;
+    // v3.5.300: the Overlay uses the one Keepit theme (lhnSettings.sidebarTheme: light / dark / system = device); its own theme switch writes it
+    const KP_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || 'lhnSettings', DARK_MQ = matchMedia('(prefers-color-scheme: dark)');
+    let kpTheme = null;
+    const keepitTheme = () => (kpTheme === 'dark' || (kpTheme !== 'light' && DARK_MQ.matches) ? 'dark' : 'light');
+    const followTheme = () => { if (kpTheme == null) return; const th = keepitTheme(); if (th === S.theme) return; S.theme = th; if (!ov.hidden) apply(); };
+    async function setTheme(th) {
+      S.theme = th; kpTheme = th; apply();
+      try { const cur = (await store()?.get(KP_KEY))?.[KP_KEY]; await store()?.set({ [KP_KEY]: { ...(cur && typeof cur === 'object' ? cur : {}), sidebarTheme: th } }); } catch (_) {}
+    }
+    store()?.get(KP_KEY)?.then?.((v) => { kpTheme = String(v?.[KP_KEY]?.sidebarTheme || 'system'); followTheme(); })?.catch?.(() => {});
+    globalThis.browser?.storage?.onChanged?.addListener?.((ch, area) => { if (area !== 'local' || !ch[KP_KEY]) return; kpTheme = String(ch[KP_KEY].newValue?.sidebarTheme || 'system'); followTheme(); });
+    DARK_MQ.addEventListener?.('change', followTheme);
     const uiLoaded = (async () => {
       try {
         const v = (await store()?.get(OV_UI_KEY))?.[OV_UI_KEY];
@@ -2476,7 +2488,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     const CC_MAP = { bi: 'bilingual', pri: 'primary', tr: 'translation', off: 'hidden' };
     function pullSettings() {
       const st = B.settings() || {}, s = B.state() || {};
-      S.theme = st.theme === 'light' ? 'light' : 'dark';
+      S.theme = kpTheme != null ? keepitTheme() : st.theme === 'light' ? 'light' : 'dark';
       S.tapTranslate = st.videoTranslationPopupEnabled !== false;
       S.speakOnTranslate = st.videoClickToSpeak !== false;
       S.merge = st.splitSentences !== false;
