@@ -50,6 +50,7 @@
   para:'<path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h7"/><path d="m15 15 3 6 3-6"/>',
   // v3.5.290 Loại từ: words with a short label under each · Loại từ đoạn: the same on one paragraph (+ the Dịch đoạn chevron)
   wc:'<path d="M3 6h8"/><path d="M5 10h4"/><path d="M14 6h7"/><path d="M15.5 10h4"/><path d="M3 15h8"/><path d="M5 19h4"/><path d="M14 15h7"/><path d="M15.5 19h4"/>',
+  wclegend:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h2"/><path d="M12 9h5"/><path d="M7 13h2"/><path d="M12 13h5"/><path d="M7 17h2"/><path d="M12 17h3"/>',
   wcpara:'<path d="M4 6h16"/><path d="M4 11h8"/><path d="M6 15h4"/><path d="M4 19h8"/><path d="m15 13 3 6 3-6"/>',
   read:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
   overlay:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z"/><path d="M8 21h8"/><path d="M12 17v4"/>',
@@ -268,10 +269,10 @@
     yt:[[["home", "shorts", "fav"], ["subs", "you", "more"]], [["home", "shorts"], ["you", "more"]]],
     watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]]
   };
-  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
+  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock", "wclegend"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
   // Settings → Notes / Translate / Ask AI off = that tool is gone from the bar and ☰ (Translate = page + paragraph translation);
   // its place on the bar goes to the first ☰ tool (TOOLS order) that is on and not on the bar yet, so each side keeps its buttons
-  const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled", wc:"wordClassEnabled", wcblock:"wordClassEnabled" };
+  const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled", wc:"wordClassEnabled", wcblock:"wordClassEnabled", wclegend:"wordClassEnabled" };
   const wcOn = () => !!globalThis.LHN_WORD_CLASS?.pageOn?.();   // v3.5.290 Loại từ cả trang is on (js/word-class/page.js)
   const toolOn = id => !TOOL_FEATURE[id] || settings[TOOL_FEATURE[id]] !== false;
   const navLayout = () => {
@@ -478,6 +479,7 @@
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
     if (id === "wc") { void globalThis.LHN_WORD_CLASS?.togglePage(); return; }   // confirm / progress / toasts: js/word-class/page.js
     if (id === "wcblock") { setPicking("wc"); toast(t("wcPickHint")); return; }
+    if (id === "wclegend") { globalThis.LHN_WORD_CLASS?.toggleLegend?.(); return; }   // v3.5.293 ☰ Chú thích: show / hide the legend
     if (id === "reader") { run("reader"); setTimeout(() => { if (document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) toast(t("readerStart")); syncState(); }, 300); return; }
     if (id === "ai") { void askAI(); return; }
     run(id); setTimeout(syncState, 350);
@@ -648,9 +650,9 @@
   const colorHex = k => globalThis.LHN_CONFIG?.HIGHLIGHT_COLORS?.[k] || DEMO_COLORS[k];
   const curColor = () => globalThis.LHN_CONFIG?.normalizeColor?.(settings.defaultHighlightColor) || settings.defaultHighlightColor || "yellow";
   const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z"), wc:"Alt+G", wcblock:"Alt+J" });
-  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"] };
+  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"], wclegend:["wclegend", "wcLegend"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
-  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), id === "wc" && wcOn());
+  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && wcOn()) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
   const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id)).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles

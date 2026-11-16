@@ -11,7 +11,7 @@
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
 | [`js/word-class/core.js`](../../js/word-class/core.js) | `LHN_WORD_CLASS_CORE` | Model id/URL, bảng UPOS → viết tắt (`POS`), màu, tách từ, `analyze`/`label`, gộp danh từ (`units`), HTML xem trước (`html`, `legend`). |
-| [`js/word-class/engine.js`](../../js/word-class/engine.js) | ES module `handle({op})` | Chạy Transformers.js: `status`, `download`, `tag` (≤50 đoạn), `remove`. Cache `transformers-cache`; rảnh 3 phút thì giải phóng (`WORD_CLASS_IDLE`). |
+| [`js/word-class/engine.js`](../../js/word-class/engine.js) | ES module `handle({op})` | Chạy Transformers.js: `status`, `download`, `tag` (≤50 đoạn), `remove`. Cache `transformers-cache`; rảnh 3 phút thì giải phóng. |
 | [`pages/word-class-engine.html`](../../pages/word-class-engine.html) | offscreen document | Chrome chạy engine ở đây; Firefox `import()` trong background page. |
 | [`js/background/background.js`](../../js/background/background.js) | `wordClassMessage` | Router `WORD_CLASS_*`; TAG khi chưa có mô hình → `{needDownload:true}`. |
 | [`js/word-class/page.js`](../../js/word-class/page.js) | `LHN_WORD_CLASS{enabled, pageOn, togglePage, toggleAt}` | Content script: cả trang, từng đoạn, thẻ thông báo, bảng chú thích, bọc/gỡ từ. |
@@ -23,7 +23,7 @@
 2. Chưa có mô hình: thẻ "Tải mô hình loại từ?" → `WORD_CLASS_DOWNLOAD`, hiện %.
 3. Cả trang: lấy đoạn từ `LHN_READER_BAR.mainBlocks()` (cùng danh sách Alt+A / Alt+R), IntersectionObserver gắn đoạn khi vào màn hình, cuộn thì quét thêm. Đoạn không phải tiếng Anh bị bỏ qua (thông báo một lần).
 4. Mỗi đoạn: `WORD_CLASS_TAG` → `[[start, end, UPOS]]` → `CORE.label/units` → bọc từ trong `<lhn-wc>` (shadow đóng chứa nhãn), phần gạch trong `<lhn-wcu>`.
-5. Bảng chú thích kính mờ góc phải trên (chỉ các nhãn đang có trên trang) hiện mỗi lần bật; × ẩn đến lần bật sau, kéo đầu bảng để dời (vị trí lưu ở `lhnWordClassLegend`), tắt hẳn bằng `wordClassLegend`. Rê chuột: "book: danh từ · noun", danh từ riêng liền nhau gom một dòng. Chú thích: "N · Noun: Danh từ / Danh từ riêng".
+5. Bảng chú thích kính mờ góc phải trên (chỉ các nhãn đang có trên trang) hiện mỗi lần bật; rê chuột / chạm dòng hiện định nghĩa (`wc_def_*`); ☰ Chú thích hiện / ẩn tay; × ẩn đến lần bật sau, kéo đầu bảng để dời (lưu `lhnWordClassLegend`); `wordClassLegend` tắt tự hiện. Rê chuột: "book: danh từ · noun", danh từ riêng liền nhau gom một dòng. Chú thích: "N · Noun: Danh từ / Danh từ riêng".
 6. Tắt: gỡ mọi `lhn-wc`/`lhn-wcu`, nối lại các text node đã tách → HTML như cũ. Thẻ "Đã tắt · Hoàn tác".
 7. Cài đặt → Loại từ (`settings-ui.js` `wordClass()`): Hiện bảng chú thích, trạng thái mô hình + Tải / Xóa (Hoàn tác 5 giây rồi mới xóa), Xem trước gắn nhãn câu mẫu bằng mô hình thật.
 
@@ -37,7 +37,7 @@
 
 ## 5. Kiểm tra và xác minh
 
-- Static: `node --check` các file `js/word-class/` (engine.js dạng module).
+- Static: `node --check` `js/word-class/*`.
 - Extension thật: Cài đặt → Tải → xem trước có nhãn; Alt+G gắn đoạn tiếng Anh, bỏ đoạn khác, `innerText`/vùng chọn không đổi, tắt → HTML như cũ; Alt+J chỉ một đoạn; công tắc tổng tắt → gỡ nhãn, ẩn ô ☰, phím không tác dụng.
-- Độ chính xác (UD EWT): ~96%, không hứa 100%.
+- Độ chính xác ~96% (UD EWT).
 - Firefox: thử bản `build_firefox.py` thật.

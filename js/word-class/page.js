@@ -57,9 +57,11 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   // shows again (× hides it until then); Settings → Word class → "Show the legend" off = never. Drag the header to move it; the place
   // is kept in storage (lhnWordClassLegend {x, y}: share of the free space, so it stays on screen when the window changes size).
   const LEGEND_KEY = "lhnWordClassLegend";
-  let legHost = null, leg = null, legClosed = false, legPos = null;
+  // v3.5.293: wider (one line per label in vi), each row explains its word class on hover (tap on touch) in a frosted tip,
+  // and ☰ Chú thích shows / hides it by hand (legManual: shown even with "Show the legend" off or nothing labelled yet → all labels).
+  let legHost = null, leg = null, legTip = null, legClosed = false, legManual = false, legPos = null;
   const LEG_CSS = `:host{all:initial}
-.l{position:fixed;top:14px;right:14px;box-sizing:border-box;width:max-content;max-width:min(300px,calc(100vw - 24px));max-height:min(60vh,420px);display:flex;flex-direction:column;
+.l{position:fixed;top:14px;right:14px;box-sizing:border-box;width:max-content;max-width:min(440px,calc(100vw - 24px));max-height:min(60vh,420px);display:flex;flex-direction:column;
   border-radius:14px;font:12.5px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#475569;background:rgba(255,255,255,.78);
   -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(15,23,42,.08);box-shadow:0 8px 26px rgba(15,23,42,.14);
   opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .26s cubic-bezier(.2,.8,.2,1)}
@@ -73,19 +75,32 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
 .x svg{width:14px;height:14px}
 .b{display:flex;flex-direction:column;gap:3px;padding:2px 12px 10px;overflow:auto;scrollbar-width:thin}
 .b::-webkit-scrollbar{width:3px}.b::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45);border-radius:3px}
-.b span{display:block;white-space:normal;padding-left:10px;text-indent:-10px}.b b{font-weight:700;white-space:nowrap}`;
+.b span{display:block;white-space:normal;margin:0 -6px;padding:1px 6px 1px 16px;text-indent:-10px;border-radius:7px;cursor:default;transition:background .15s}.b b{font-weight:700;white-space:nowrap}
+.b span:hover,.b span.tp-on{background:rgba(15,23,42,.06)}.dark .b span:hover,.dark .b span.tp-on{background:rgba(255,255,255,.08)}
+.tp{position:fixed;box-sizing:border-box;width:max-content;max-width:min(280px,calc(100vw - 24px));padding:9px 12px;border-radius:12px;font:12.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color:#334155;background:rgba(255,255,255,.86);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(15,23,42,.08);box-shadow:0 8px 26px rgba(15,23,42,.16);
+  opacity:0;transform:translateY(2px);pointer-events:none;transition:opacity .15s,transform .2s cubic-bezier(.2,.8,.2,1)}
+.tp.on{opacity:1;transform:none}.tp.dark{color:#cbd5e1;background:rgba(30,30,36,.86);border-color:rgba(255,255,255,.1);box-shadow:0 8px 26px rgba(0,0,0,.45)}
+.tp b{display:block;margin-bottom:2px;font-weight:700}`;
   function legendEl() {
     if (leg?.isConnected) return leg;
     legHost = document.createElement("div"); legHost.id = "lhn-word-class-legend"; legHost.setAttribute("data-lhn-bilingual-ui", "true");
     legHost.setAttribute("style", "all:initial;position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;");
     const root = legHost.attachShadow({ mode:"closed" });
-    root.innerHTML = `<style>${LEG_CSS}</style><div class="l" role="note"><div class="h"><b></b><button class="x" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="b"></div></div>`;
-    leg = root.querySelector(".l"); (document.body || document.documentElement).append(legHost);
-    leg.querySelector(".x").addEventListener("click", () => { legClosed = true; legendSync(); });
+    root.innerHTML = `<style>${LEG_CSS}</style><div class="l" role="note"><div class="h"><b></b><button class="x" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div><div class="b"></div></div><div class="tp" role="tooltip"></div>`;
+    leg = root.querySelector(".l"); legTip = root.querySelector(".tp"); (document.body || document.documentElement).append(legHost);
+    leg.querySelector(".x").addEventListener("click", () => { legClosed = true; legManual = false; legendSync(); legendChanged(); });
+    // row → definition (outside .l: its backdrop-filter would make it the tip's containing block)
+    const body = leg.querySelector(".b");
+    body.addEventListener("pointerover", e => { if (e.pointerType !== "touch") showTip(e.target.closest?.("span[data-a]")); });
+    body.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") hideTip(); });
+    body.addEventListener("click", e => { const row = e.target.closest?.("span[data-a]"); if (row && row.classList.contains("tp-on")) hideTip(); else showTip(row); });
+    body.addEventListener("scroll", hideTip, { passive:true });
     // drag by the header (mouse / touch / pen)
     const head = leg.querySelector(".h");
     head.addEventListener("pointerdown", e => {
       if (e.button || e.target.closest(".x")) return;
+      hideTip();
       const r = leg.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
       head.setPointerCapture(e.pointerId); leg.classList.add("drag"); e.preventDefault();
       const move = ev => placeLegend({ left:ev.clientX - dx, top:ev.clientY - dy });
@@ -103,18 +118,38 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     leg.style.right = "auto"; leg.style.left = left + "px"; leg.style.top = top + "px";
     if (at) legPos = { x:fw ? left / fw : 0, y:fh ? top / fh : 0 };
   }
+  function showTip(row) {
+    if (!row || !legTip) { hideTip(); return; }
+    if (row.classList.contains("tp-on") && legTip.classList.contains("on")) return;
+    leg.querySelectorAll(".b span.tp-on").forEach(s => s.classList.remove("tp-on")); row.classList.add("tp-on");
+    const a = row.dataset.a, b = row.querySelector("b");
+    legTip.classList.toggle("dark", keepitDark());
+    legTip.innerHTML = `<b style="color:${b?.style.color || "inherit"}">${esc(b?.textContent.replace(/:\s*$/, "") || a)}</b>${esc(t("def_" + a.replace(/\s+/g, "")))}`;
+    const L = leg.getBoundingClientRect(), r = row.getBoundingClientRect(), w = legTip.offsetWidth, h = legTip.offsetHeight;
+    const left = L.left - w - 8 >= 8 ? L.left - w - 8 : Math.min(L.right + 8, innerWidth - w - 8);   // beside the panel, the side with room
+    const top = Math.min(Math.max(8, r.top - 6), innerHeight - h - 8);
+    legTip.style.left = Math.max(8, left) + "px"; legTip.style.top = top + "px"; legTip.classList.add("on");
+  }
+  function hideTip() { legTip?.classList.remove("on"); leg?.querySelectorAll(".b span.tp-on").forEach(s => s.classList.remove("tp-on")); }
+  const legendChanged = () => document.dispatchEvent(new CustomEvent("lhn-word-class-change", { detail:{ page:pageMode, legend:legendShown() } }));
+  const legendShown = () => !!leg?.classList.contains("on");
+  function toggleLegend() {   // ☰ Chú thích
+    if (!enabled()) return false;
+    if (legendShown()) { legClosed = true; legManual = false; } else { legClosed = false; legManual = true; }
+    legendSync(); legendChanged(); return legendShown();
+  }
   const savePos = () => { if (legPos) api.storage?.local?.set({ [LEGEND_KEY]:legPos })?.catch?.(() => {}); };
   addEventListener("resize", () => { if (leg?.classList.contains("on")) placeLegend(); }, { passive:true });
   function legendSync() {
     const used = new Set(); tagged.forEach(rec => (rec.upos || []).forEach(u => used.add(u)));
-    const show = settings.wordClassLegend !== false && enabled() && !legClosed && used.size > 0;
-    if (!show) { leg?.classList.remove("on"); return; }
+    const show = enabled() && !legClosed && (legManual || (settings.wordClassLegend !== false && used.size > 0));
+    if (!show) { if (legendShown()) { leg.classList.remove("on"); hideTip(); queueMicrotask(legendChanged); } return; }
     const el = legendEl(), dark = keepitDark();
     el.classList.toggle("dark", dark);
     el.querySelector(".h b").textContent = t("legend"); el.querySelector(".x").setAttribute("aria-label", t("close")); el.querySelector(".x").title = t("close");
-    const html = CORE.legend([...used].map(upos => ({ upos, pos:CORE.POS[upos] })).filter(x => x.pos), meaning, dark);
-    const body = el.querySelector(".b"); if (body.innerHTML !== html) body.innerHTML = html;
-    el.classList.add("on"); placeLegend();
+    const html = CORE.legend(used.size ? [...used].map(upos => ({ upos, pos:CORE.POS[upos] })).filter(x => x.pos) : null, meaning, dark);
+    const body = el.querySelector(".b"); if (body.innerHTML !== html) { hideTip(); body.innerHTML = html; }
+    const was = legendShown(); el.classList.add("on"); placeLegend(); if (!was) queueMicrotask(legendChanged);
   }
   api.storage?.local?.get(LEGEND_KEY).then(d => { const p = d?.[LEGEND_KEY]; if (p && typeof p.x === "number" && typeof p.y === "number") { legPos = { x:Math.min(1, Math.max(0, p.x)), y:Math.min(1, Math.max(0, p.y)) }; placeLegend(); } }).catch(() => {});
   function notice(text, undo) {
@@ -305,7 +340,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
       io = new IntersectionObserver(onScreen, { rootMargin:"200px 0px" }); scan();
       if (!silent) notice(t("on"));
     } else {
-      pageMode = false; io?.disconnect(); io = null; clearAll();
+      pageMode = false; io?.disconnect(); io = null; legManual = false; clearAll();
       if (!silent) notice(t("off"), () => setPage(true, { silent:true }));
     }
     document.dispatchEvent(new CustomEvent("lhn-word-class-change", { detail:{ page:pageMode } }));
@@ -343,6 +378,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
   globalThis.LHN_WORD_CLASS = Object.freeze({
     enabled, pageOn:() => pageMode,
     togglePage:() => setPage(!pageMode),
-    toggleAt:(x, y) => toggleAt(x, y)
+    toggleAt:(x, y) => toggleAt(x, y),
+    legendShown:() => legendShown(), toggleLegend:() => toggleLegend()
   });
 })();

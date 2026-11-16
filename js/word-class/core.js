@@ -155,11 +155,11 @@
     }).join("");
   }
   // legend of the abbreviations that appear, fixed order — "N · Noun: Danh từ / Danh từ riêng" (v3.5.292: the dot as in the hover text) (meaning = translate(UPOS))
-  function legend(tokens, meaning, dark) {
-    const used = new Set(tokens.filter(t => t.pos).map(t => t.pos.abbr)), groups = new Map();
+  function legend(tokens, meaning, dark) {   // tokens = null → every abbreviation (☰ Chú thích before anything is labelled)
+    const used = tokens ? new Set(tokens.filter(t => t.pos).map(t => t.pos.abbr)) : new Set(Object.values(POS).filter(Boolean).map(p => p.abbr)), groups = new Map();
     Object.entries(POS).filter(([, p]) => p).forEach(([upos, p]) => { if (!groups.has(p.abbr)) groups.set(p.abbr, { name:p.name, list:[] }); groups.get(p.abbr).list.push(upos); });
     const cap = s => s ? s[0].toLocaleUpperCase() + s.slice(1) : s;
-    return [...groups].filter(([a]) => used.has(a)).map(([a, g]) => `<span><b style="color:${color(a, dark)}">${esc(a)} · ${esc(g.name)}:</b> ${esc([...new Set(g.list.map(u => cap(meaning(u))))].join(" / "))}</span>`).join("");
+    return [...groups].filter(([a]) => used.has(a)).map(([a, g]) => `<span data-a="${esc(a)}"><b style="color:${color(a, dark)}">${esc(a)} · ${esc(g.name)}:</b> ${esc([...new Set(g.list.map(u => cap(meaning(u))))].join(" / "))}</span>`).join("");
   }
 
   globalThis.LHN_WORD_CLASS_CORE = Object.freeze({ MODEL_ID, MODEL_FILE, MODEL_FILES, MODEL_URL, POS, COLORS, MUTED, color, tokenize, chunks, tagWords, analyze, label, units, nounUnit, tip, html, legend });

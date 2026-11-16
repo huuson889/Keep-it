@@ -54,7 +54,7 @@
 ## Loại từ trên trang (v3.5.290)
 
 - Mỗi từ tiếng Anh: gạch chân màu (2px) rồi nhãn viết tắt 12px bên dưới (N, V, Aux V, Adj…); danh từ đứng liền nhau dùng chung một gạch và một nhãn N. Giống `Keepit-demo/pos/keepit-pos-demo-v4.html`, mọi thiết bị như nhau.
-- Bảng chú thích: kính mờ nhỏ góc phải trên, kéo được, có ×; tắt hẳn trong Cài đặt → Loại từ.
+- Bảng chú thích: kính mờ nhỏ góc phải trên, mỗi loại một dòng, kéo được, có ×; rê chuột / chạm dòng → khung định nghĩa bên cạnh; ☰ Chú thích hiện / ẩn; tắt tự hiện trong Cài đặt → Loại từ.
 - Thẻ thông báo (hỏi tải mô hình, tiến độ, Đã tắt · Hoàn tác) nổi ở phía trên giữa màn hình, kính mờ như sheet.
-- ☰ Công cụ: Loại từ, Loại từ đoạn ngay sau Dịch đoạn; chỉ trên web (không YouTube, không Overlay).
+- ☰ Công cụ: Loại từ, Loại từ đoạn, Chú thích ngay sau Dịch đoạn; chỉ trên web (không YouTube, không Overlay).
 - Cài đặt → Loại từ: công tắc tổng, Hiện bảng chú thích, Mô hình (Tải / Xóa, thanh tiến độ), Xem trước bằng mô hình thật, Đặt lại.

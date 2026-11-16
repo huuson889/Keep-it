@@ -204,6 +204,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.293 | Arena.ai Agent sửa:**
+
+- Bảng chú thích Loại từ, người dùng yêu cầu:
+  - Rộng hơn (tối đa 440px, vừa nội dung): tiếng Việt mỗi loại một dòng; màn hẹp mới xuống dòng (thụt đầu dòng treo).
+  - Rê chuột vào dòng (chạm trên cảm ứng) → khung kính mờ bên cạnh bảng: định nghĩa chi tiết + ví dụ của loại từ đó (en/vi/ko, `wc_def_*`).
+  - ☰ Công cụ có ô "Chú thích" (sau Loại từ đoạn): bảng đang ẩn → hiện (chưa gắn nhãn gì thì hiện đủ các loại, hiện cả khi Cài đặt tắt tự hiện), đang hiện → ẩn; ô sáng khi bảng đang hiện. Tắt Loại từ thì bảng ẩn theo.
+- File: `js/word-class/{core,page}.js`, `js/content/keepit-bar.js`, `js/core/languages.js`, `manifest.json`, `docs/modules/word-class.md`, `docs/ui-layout.md`.
+- Kiểm tra: Chromium nạp extension thật (tiếng Việt): ☰ Chú thích trước khi gắn nhãn → đủ 13 loại, ô sáng / tắt đúng; Alt+G → bảng một dòng mỗi loại; rê chuột dòng Prep → khung định nghĩa cạnh bảng; không lỗi trang.
+- Chưa rõ: trong máy thử headless, mô hình đã tải đôi khi mất sau khi lần chạy bị ngắt giữa chừng; mở lại bình thường vẫn còn. Cần xem trên Chrome thật.
+
 **2026-10-23 | v3.5.292 | Arena.ai Agent sửa:**
 
 - Loại từ, người dùng yêu cầu:
