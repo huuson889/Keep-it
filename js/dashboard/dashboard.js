@@ -1741,19 +1741,21 @@ function normalizeOverviewSessionIndex(value) { return STUDY_SESSION_INDEX.norma
 function mergeOverviewSessions(...groups) { return STUDY_SESSION_INDEX.mergeSessions(...groups); }
 function migrateLegacyDictationRecords(storageData, existingSessions) {
   const indexedById = new Map((existingSessions || []).map(session => [session.sessionId, session]));
-  const titleByVideoId = new Map();
+  const titleByVideoId = new Map(), urlByTitle = new Map();
   for (const item of annotations) {
     const id = globalThis.LHN_DASHBOARD_OVERVIEW_DATA.youtubeVideoId(item?.url);
     if (id && !titleByVideoId.has(id) && item?.title) titleByVideoId.set(id, String(item.title));
+    const title = String(item?.title || "").trim(); // web record saved before v3.5.309 has no URL: a highlight on a page with the same title gives it
+    if (!id && title && item?.url && !urlByTitle.has(title)) urlByTitle.set(title, String(item.url));
   }
   const reconciled = [];
   for (const [key, record] of Object.entries(storageData || {})) {
     const match = key.match(/^dictation:([A-Za-z0-9_-]{6,})$/);
     if (!match || !record || typeof record !== "object") continue;
     const sourceId = match[1];
-    const session = STUDY_SESSION_INDEX.reconcileYouTubeRecord(
-      sourceId, record, indexedById.get(`youtube:${sourceId}`), { title:titleByVideoId.get(sourceId) || "" }
-    );
+    const session = STUDY_SESSION_INDEX.isWebSourceId(sourceId)
+      ? STUDY_SESSION_INDEX.reconcileWebRecord(sourceId, record, indexedById.get(`web:${sourceId}`), { url:urlByTitle.get(String(record.title || "").trim()) || "" })
+      : STUDY_SESSION_INDEX.reconcileYouTubeRecord(sourceId, record, indexedById.get(`youtube:${sourceId}`), { title:titleByVideoId.get(sourceId) || "" });
     if (session) reconciled.push(session);
   }
   return reconciled;

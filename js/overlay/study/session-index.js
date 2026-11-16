@@ -96,6 +96,29 @@
       legacy:previous?.legacy === true || !previous,
     });
   }
+  // v3.5.309: web record `dictation:web-<hex>` → `web:` session (same rules as YouTube; the URL comes from the index, the record or `url`)
+  function reconcileWebRecord(sourceId, record, indexed = null, { url = "" } = {}) {
+    const id = String(sourceId || "").trim();
+    if (!isWebSourceId(id) || !record || typeof record !== "object") return null;
+    const previous = normalizeSession(indexed);
+    const usableTitle = value => { const candidate = String(value || "").trim(); return candidate && candidate !== id ? candidate : ""; };
+    const recordTitle = usableTitle(record.title), indexedTitle = usableTitle(previous?.title);
+    const recordTitleAt = safeTimestamp(record.titleUpdatedAt), indexedUpdatedAt = safeTimestamp(previous?.updatedAt);
+    const solvedCount = Array.isArray(record.solved) ? new Set(record.solved.map(Number).filter(Number.isInteger)).size : safeCount(previous?.solvedCount);
+    const currentIndex = Number.isFinite(Number(record.current)) ? safeCount(record.current) : safeCount(previous?.currentIndex);
+    const totalCount = safeCount(previous?.totalCount);
+    const safeUrl = value => /^https?:\/\//i.test(String(value || "")) ? String(value) : "";
+    return normalizeSession({
+      ...(previous || {}),
+      sourceType:"web", sourceId:id,
+      title:recordTitle && recordTitleAt > indexedUpdatedAt ? recordTitle : indexedTitle || recordTitle,
+      url:safeUrl(previous?.url) || safeUrl(record.url) || safeUrl(url),
+      currentIndex, totalCount, solvedCount,
+      status:previous?.status === "complete" || (totalCount > 0 && solvedCount >= totalCount) ? "complete" : "in_progress",
+      updatedAt:Math.max(indexedUpdatedAt, recordTitleAt, safeTimestamp(record.updatedAt)),
+      legacy:previous?.legacy === true || !previous,
+    });
+  }
   function mergeSessions(...groups) {
     const merged = new Map();
     for (const group of groups) for (const value of group || []) {
@@ -109,7 +132,7 @@
       .slice(0, MAX_SESSIONS);
   }
 
-  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord, isWebSourceId });
+  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord, reconcileWebRecord, isWebSourceId });
   globalThis.LHN_STUDY_SESSION_INDEX = studySessionIndex;
   globalThis.LHN_DICTATION_SESSION_INDEX = studySessionIndex; // Compatibility alias for existing integrations.
 })();

@@ -2622,16 +2622,17 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const meta = B.meta() || {}, title = String(meta.title || '').trim() || String(rec.title || '');
       const next = { ...rec, version: 1, current: active.current, solved: active.solved, progressByMode: { ...(rec.progressByMode || {}), typing, speaking }, notes, lessonNote: S.lessonNote, unifiedScores: { typing: { ...S.res.write }, speaking: { ...S.res.speak } }, wrongWordStats: STATS.write, speakingWrongWordStats: STATS.speak, title };
       if (title) next.titleUpdatedAt = Date.now();
+      const st = B.state() || {}, web = st.sourceType === 'web', sid = String(st.sourceId || '');
+      if (web) next.url = String(st.webSourceUrl || location.href); // v3.5.309: lets the Dashboard rebuild a web session from the record alone
       try { await store()?.set({ [key]: next }); } catch (_) { return; }
-      const idx = globalThis.LHN_STUDY_SESSION_INDEX, st = B.state() || {};
+      const idx = globalThis.LHN_STUDY_SESSION_INDEX;
       if (!idx) return;
-      const web = st.sourceType === 'web', sid = String(st.sourceId || '');
       const total = STUDY.length, done = active.solved.length;
       const session = { version: 1, sessionId: `${web ? 'web' : 'youtube'}:${sid}`, sourceType: web ? 'web' : 'youtube', sourceId: sid, title, url: web ? String(st.webSourceUrl || location.href) : `https://www.youtube.com/watch?v=${encodeURIComponent(sid)}`, currentIndex: Math.max(0, active.current), totalCount: total, solvedCount: done, updatedAt: Date.now(), status: total > 0 && done >= total ? 'complete' : 'in_progress' };
       try {
         const stored = await store()?.get(idx.STORAGE_KEY), prev = idx.normalizeIndex(stored?.[idx.STORAGE_KEY]);
         const ps = prev.sessions.find((x) => x.sessionId === session.sessionId);
-        const sessions = idx.mergeSessions(prev.sessions, { ...session, title: session.title || ps?.title || '' });
+        const sessions = idx.mergeSessions(prev.sessions, [{ ...session, title: session.title || ps?.title || '' }]); // groups are arrays (v3.5.309: an object threw, so the index was never written)
         await store()?.set({ [idx.STORAGE_KEY]: { version: idx.VERSION, updatedAt: Date.now(), legacyMigrationComplete: prev.legacyMigrationComplete, sessions } });
       } catch (_) {}
     }
