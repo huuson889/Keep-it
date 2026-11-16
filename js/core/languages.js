@@ -1030,6 +1030,9 @@
   MESSAGES.en.wc_PART = "particle"; MESSAGES.vi.wc_PART = "tiểu từ"; MESSAGES.ko.wc_PART = "불변화사";
   MESSAGES.en.wc_INTJ = "interjection"; MESSAGES.vi.wc_INTJ = "thán từ"; MESSAGES.ko.wc_INTJ = "감탄사";
   MESSAGES.en.wc_SYM = "symbol"; MESSAGES.vi.wc_SYM = "ký hiệu"; MESSAGES.ko.wc_SYM = "기호";
+  // v3.5.299 Settings → Dictionary (moved out of Translate)
+  MESSAGES.en.dictionaryTab = "Dictionary"; MESSAGES.vi.dictionaryTab = "Từ điển"; MESSAGES.ko.dictionaryTab = "사전";
+  MESSAGES.en.kpTabHelpDictionary = "The full dictionary that opens when you select one English word. It uses the Turn on translation switch in Translate."; MESSAGES.vi.kpTabHelpDictionary = "Từ điển đầy đủ hiện khi bôi đen một từ tiếng Anh. Dùng chung công tắc Bật dịch trong Dịch."; MESSAGES.ko.kpTabHelpDictionary = "영어 단어 하나를 선택하면 열리는 전체 사전입니다. 번역의 번역 켜기 스위치를 함께 사용합니다.";
   MESSAGES.en.wordClassTab = "Word class"; MESSAGES.vi.wordClassTab = "Loại từ"; MESSAGES.ko.wordClassTab = "품사";
   MESSAGES.en.kpTabHelpWordClass = "Shows the part of speech under each word of English paragraphs on web pages."; MESSAGES.vi.kpTabHelpWordClass = "Hiện loại từ viết tắt dưới mỗi từ trong các đoạn tiếng Anh trên trang web."; MESSAGES.ko.kpTabHelpWordClass = "웹페이지 영어 문단의 각 단어 아래에 품사를 표시해요.";
   MESSAGES.en.kpEnableWordClass = "Turn on word class"; MESSAGES.vi.kpEnableWordClass = "Bật loại từ"; MESSAGES.ko.kpEnableWordClass = "품사 켜기";

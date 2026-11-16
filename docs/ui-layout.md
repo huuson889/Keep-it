@@ -49,6 +49,7 @@
 - Mỗi trang giữ vị trí cuộn riêng; nút Đặt lại ở cuối mỗi trang Tiện ích / Chung, tím khi khác mặc định; Hoàn tác 5 giây.
 - Thông báo đăng nhập / đăng xuất ở phía trên; Hoàn tác ở dưới. Popup Đăng nhập: thẻ giữa (máy tính), sheet như Cài đặt (điện thoại).
 - Phím tắt: cảm ứng mở tab Cử chỉ, chuột mở tab Phím tắt.
+- Tiện ích: … Dịch, Từ điển (v3.5.299: từ điển đầy đủ, các mục + xem trước, bộ nhớ đệm từ điển; mờ khi Bật dịch tắt), Loại từ …
 
 
 ## Loại từ trên trang (v3.5.290)

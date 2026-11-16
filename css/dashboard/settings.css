@@ -741,6 +741,7 @@
   #dashboardSettingsDialog .kp-dependent.is-disabled { opacity: .45; pointer-events: none; user-select: none; }
   #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > .settings-subsection:first-child { margin-top: 0 !important; padding-top: 0 !important; border-top: 0 !important; }   /* khoảng cách công tắc tổng → mục đầu = như Trình đọc (16px) */
   #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > .settings-chatgpt-section:first-child { margin-top: 16px !important; }
+  #dashboardSettingsDialog .settings-panel-page > .settings-panel-heading + .kp-dependent > .settings-subsection:first-child { margin-top: 0 !important; padding-top: 0 !important; border-top: 0 !important; }   /* Từ điển: không có công tắc tổng riêng → mục đầu sát tiêu đề như các trang khác */
   #dashboardSettingsDialog .settings-logo-action-tab.is-off { opacity: .4; pointer-events: none; }
 
   /* (5) quy tắc trang con + ô bị trùng nháy nhẹ */

@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.299 | Arena.ai Agent sửa:**
+
+- Cài đặt: thêm trang **Từ điển** (Tiện ích, ngay sau Dịch) — chuyển từ trang Dịch sang: Hiện từ điển tiếng Anh đầy đủ, Mục trong từ điển đầy đủ + xem trước, Bộ nhớ đệm từ điển. Trang mờ khi Bật dịch (trang Dịch) tắt, vì từ điển cần dịch bật. Nút Đặt lại riêng cho Dịch / Từ điển. Không đổi khóa lưu hay cách hoạt động.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js` (`DASHBOARD_SETTINGS_TAB_NAMES`), `js/core/languages.js` (`dictionaryTab`, `kpTabHelpDictionary` en/vi/ko), `css/dashboard/settings.css`, `docs/ui-layout.md`, `manifest.json`. Sửa ghi chú Kiểm tra v3.5.297 (tuoitre chưa chạy lại).
+- Kiểm tra: dashboard (stub) 1300px sáng / tối, 390px cảm ứng: tab Từ điển mở, xem trước hiện; tắt Bật dịch → trang Từ điển mờ + inert; đổi Câu ví dụ → Đặt lại Từ điển tím, Dịch không; Đặt lại → về mặc định; trang Dịch chỉ còn Bộ nhớ đệm bản dịch; không lỗi trang.
+
 **2026-10-23 | v3.5.298 | Arena.ai Agent sửa:**
 
 - Loại từ: danh từ nối bằng gạch nối viết liền được gộp như danh từ liền kề — "Notre-Dame Cathedral Basilica" một gạch N liền qua dấu gạch, rê chuột "Notre-Dame Cathedral Basilica: danh từ riêng"; "e-mail" một N, rê chuột "e-mail: danh từ". Gạch nối với từ không phải danh từ giữ như cũ ("Anti-Draft" Adj · N, "Saigon-based" N + V); gạch ngang có khoảng trắng không gộp.
@@ -218,7 +224,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
   - Danh từ liền kề không gộp: (1) cụm danh từ tràn qua thẻ ("Vietnam War" trong liên kết + "." ngoài) trước đây tách từng từ, nay tách theo text node; (2) số chú thích dính sau ("War.[25]") được cắt ra; (3) cho phép ngoặc kép mở đầu ("baby sitters"); (4) chữ viết tắt tên (J. D. Salinger, John F. Phillips) nối tiếp được.
 - Chưa làm: cụm nằm một nửa trong liên kết ("author [Marilyn Ferguson]", "[Quaker] draft counselors", "a [Democratic Society] chapter") — cần dời phần tử của trang.
 - File: `js/word-class/{core,page}.js`, `manifest.json`, `docs/modules/word-class.md`.
-- Kiểm tra: Chromium nạp extension thật. news.tuoitre.vn (bật ngay khi trang đang tải và sau khi tải xong): 3 tiêu đề H3 + mọi đoạn gắn nhãn. Bản lưu Mark_Satin: cặp N liền kề chưa gộp 51 → 21 (còn lại là dấu phẩy, "Ladies'" sở hữu như v3.5.292, và 4 cụm nửa liên kết); giữ Alt → accesskey g/j gỡ, thả → trả lại. "City’s / teacher's / Nam's" vẫn "N · Part"; 4 trang thử ngôn ngữ như v3.5.296; không lỗi trang. Accesskey thật không thử được trên headless.
+- Kiểm tra: Chromium nạp extension thật. news.tuoitre.vn: chưa chạy lại sau khi sửa (cần thử trên máy thật). Bản lưu Mark_Satin: cặp N liền kề chưa gộp 51 → 21 (còn lại là dấu phẩy, "Ladies'" sở hữu như v3.5.292, và 4 cụm nửa liên kết); giữ Alt → accesskey g/j gỡ, thả → trả lại. "City’s / teacher's / Nam's" vẫn "N · Part"; 4 trang thử ngôn ngữ như v3.5.296; không lỗi trang. Accesskey thật không thử được trên headless.
 
 **2026-10-23 | v3.5.296 | Arena.ai Agent sửa:**
 

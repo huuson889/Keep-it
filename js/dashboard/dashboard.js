@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "wordClass", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "dictionary", "wordClass", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
