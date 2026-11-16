@@ -806,7 +806,7 @@ function renderDictationSessionCards() {
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
       <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
-      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3>${domain ? `<div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div>` : ""}<div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total || solved ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div>${total || !solved ? `<div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div>` : ""}</div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain || t("dictationNoPageLink"))}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText} <span>${escapeHtml(t("dictationSentences"))}</span></strong></div><div class="progress-track"${total ? "" : ` style="visibility:hidden"`}><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
@@ -1768,6 +1768,52 @@ function migrateLegacyDictationRecords(storageData, existingSessions) {
   }
   return reconciled;
 }
+// v3.5.311: lessons saved before the sentence total was stored get it back from the local caches the Overlay keeps
+// (web: the article's sentence cache, whose first sentence is the lesson title; YouTube: the cached transcript, split
+// exactly like the Overlay). The total is written into the record so it stays.
+function countTranscriptSentences(items) {
+  if (!Object.keys(items).length || typeof Worker !== "function") return Promise.resolve({});
+  return new Promise(resolve => {
+    let worker;
+    const done = counts => { try { worker?.terminate(); } catch {} resolve(counts && typeof counts === "object" ? counts : {}); };
+    try { worker = new Worker("../js/dashboard/sentence-count-worker.js"); } catch { done({}); return; }
+    const timer = setTimeout(() => done({}), 8000);
+    worker.onmessage = event => { clearTimeout(timer); done(event.data); };
+    worker.onerror = () => { clearTimeout(timer); done({}); };
+    worker.postMessage({ items });
+  });
+}
+async function recoverDictationTotals(allData, indexedSessions) {
+  try {
+    const indexedTotal = new Map((indexedSessions || []).map(session => [String(session.sourceId || ""), Number(session.totalCount) || 0]));
+    const norm = value => String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
+    const webTotals = new Map(), transcripts = new Map(), now = Date.now();
+    for (const [key, entry] of Object.entries(allData || {})) {
+      if (!entry || typeof entry !== "object" || !(Number(entry.expires) > now)) continue;
+      if (key.startsWith("lhnWebStudyCueCache:v1:item:") && Array.isArray(entry.value?.sentences) && entry.value.sentences.length) {
+        const title = norm(entry.value.sentences[0]);
+        if (title && !webTotals.has(title)) webTotals.set(title, entry.value.sentences.filter(sentence => String(sentence || "").trim()).length);
+      } else if (key.startsWith("lhnYouTubeTranscriptCache:v1:item:") && typeof entry.cacheKey === "string" && entry.value?.variants) {
+        const variant = Object.values(entry.value.variants).find(item => item?.captionTrackLanguage === "en" && Array.isArray(item.cues) && item.cues.length);
+        if (variant) transcripts.set(entry.cacheKey, variant.cues);
+      }
+    }
+    const missing = Object.entries(allData || {}).map(([key, record]) => [key.match(/^dictation:([A-Za-z0-9_-]{6,})$/)?.[1], key, record])
+      .filter(([id, , record]) => id && record && typeof record === "object" && !(Number(record.totalCount) > 0) && !(indexedTotal.get(id) > 0));
+    const youtubeItems = {};
+    for (const [id] of missing) if (!STUDY_SESSION_INDEX.isWebSourceId(id) && transcripts.has(id)) youtubeItems[id] = transcripts.get(id);
+    const youtubeTotals = await countTranscriptSentences(youtubeItems);
+    const updates = {};
+    for (const [id, key, record] of missing) {
+      const total = STUDY_SESSION_INDEX.isWebSourceId(id) ? webTotals.get(norm(record.title)) : youtubeTotals[id];
+      if (!(Number(total) > 0)) continue;
+      allData[key] = updates[key] = { ...record, totalCount:Number(total) };
+    }
+    if (Object.keys(updates).length) await browser.storage.local.set(updates);
+  } catch (error) {
+    console.warn("Could not recover Dictation sentence totals", error);
+  }
+}
 function overviewSessionsNeedReconciliation(indexedSessions, reconciledSessions) {
   const indexedById = new Map((indexedSessions || []).map(session => [session.sessionId, session]));
   return (reconciledSessions || []).some(session => {
@@ -1782,6 +1828,7 @@ async function loadOverviewDictationSessions() {
   try {
     const allData = await browser.storage.local.get(null);
     const index = normalizeOverviewSessionIndex(allData?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
+    await recoverDictationTotals(allData, index.sessions);
     const reconciledSessions = migrateLegacyDictationRecords(allData, index.sessions);
     const sessions = mergeOverviewSessions(index.sessions, reconciledSessions);
     overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, sessions);

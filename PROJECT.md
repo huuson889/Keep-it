@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+### 2026-10-23 | v3.5.311 — Dashboard: tự tìm lại tổng số câu của bài Dictation cũ
+- Bài cũ chưa có tổng câu: Dashboard lấy lại từ bộ nhớ đệm cục bộ của Overlay rồi ghi `totalCount` vào bản ghi:
+  - web: bộ nhớ đệm câu của bài (`lhnWebStudyCueCache`) có câu đầu trùng tiêu đề bài;
+  - YouTube: phụ đề đã lưu (`lhnYouTubeTranscriptCache`, bản `en`), cắt câu bằng đúng hàm của Overlay trong worker `js/dashboard/sentence-count-worker.js`.
+- Thẻ đồng đều: luôn có dòng nguồn (web chưa có link: "Chưa có liên kết trang" en/vi/ko) và "x / tổng câu"; chưa biết tổng thì "x câu", thanh giữ chỗ nhưng ẩn.
+
 ### 2026-10-23 | v3.5.310 — Dashboard: bài Dictation web cũ hiện đúng
 - Nhãn nguồn web chỉ là "Web" / "Web" / "웹".
 - Thẻ web không bao giờ hiện mã nội bộ `web-…`: có link thì hiện tên miền, chưa có thì ẩn dòng nguồn.
