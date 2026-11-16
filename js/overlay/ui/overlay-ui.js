@@ -512,6 +512,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       studyRepLeft = S.rep.on ? S.rep.n : 0;
     }
     function setPlaying(on) {
+      if (on && S.tab === 'speak') spQuiet(); // v3.5.305: Nghe mẫu / Giọng bạn / mic — only one at a time
       if (!on) studyRepLeft = 0;
       S.playing = on;
       ov.classList.toggle('playing', on);
@@ -1721,6 +1722,10 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       SPK.chunks = []; stopTracks();
       if (SPK.audio) { try { SPK.audio.pause(); } catch (_) {} SPK.audio = null; }
     }
+    function spQuiet() { // model starts: a running recording is cancelled, your voice stops
+      if (S.sp.phase === 'rec') { speakAbort(); S.sp = { phase: 'idle', heard: [], score: 0, attempt: S.sp.attempt }; renderStudy(); }
+      else if (SPK.audio) { try { SPK.audio.pause(); } catch (_) {} }
+    }
     function playRec() {
       if (!SPK.url) return Promise.resolve(false);
       setPlaying(false);
@@ -2418,13 +2423,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       }
       if (e.altKey) return;
       if (S.tab === 'view' && ['1', '2', '3', '4'].includes(e.key)) { stop(); S.cc = ['bi', 'pri', 'tr', 'off'][+e.key - 1]; apply(); toast([T('bilingual'), T('original'), T('translate'), VI('ccHidden')][+e.key - 1]); return; }
-      if (e.key === ' ' || e.key === '`') { stop(); togglePlay(); return; }
+      if (e.key === ' ' || (e.key === '`' && S.tab !== 'speak')) { stop(); togglePlay(); return; } // Nói: no ` (v3.5.305)
       if (e.key === '<' || e.key === '>') { stop(); S.speed = Math.round(Math.max(0.5, Math.min(3, S.speed + (e.key === '>' ? 0.05 : -0.05))) * 100) / 100; syncSpeed(); toast(`${S.speed.toFixed(2)}x`); return; }
-      if (S.tab === 'speak' && e.key === 'Enter') { stop(); if (S.sp.phase === 'done') studyGo(1); else speakToggle(); return; }
+      if (S.tab === 'speak' && e.key === 'Enter') { stop(); speakToggle(); return; } // Nói: Enter = the mic only
       if (S.tab === 'write' && e.key === 'Enter') { stop(); const ta = $('#wta'); if (S.wr.phase === 'done') studyGo(1); else if (ta) ta.focus(); return; }
       if (e.key === 'Escape') {
         stop();
-        if (S.tab === 'speak' && S.sp.phase !== 'idle') { speakAbort(); resetStudy(); renderStudy(); return; }
+        if (S.tab === 'speak') { speakAbort(); studyGo(1); return; } // Nói: Esc = skip the sentence
         if (S.tab === 'view' && (S.rot || (curView() === 'theater' && sizeKey() !== 's'))) { exitTheater(); return; }
         B.close();
       }
@@ -2433,6 +2438,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (eatenUp.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (ov.hidden || e.key !== 'Control' || !ctrlAlone) return;
       ctrlAlone = false;
+      if (S.tab === 'speak' && S.playing) { setPlaying(false); return; } // Nói: Ctrl = listen again / stop
       if (isStudy()) playStudyStart(); // Ctrl alone = listen again
     }
     // keys typed into the overlay's own fields never reach the page (YouTube shortcuts)
@@ -2761,6 +2767,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       tab: () => S.tab,
       refreshTitle: () => { if (!ov.hidden) setTitle(); },
       refreshLanguage,
+      syncCc: () => { if (ov.hidden) return; const cc = Object.keys(CC_MAP).find((k) => CC_MAP[k] === B.getCc()); if (cc && cc !== S.cc) { S.cc = cc; lastCc = cc; apply(); } },
     };
     uiLoaded.then(() => { if (!ov.hidden) { lastKey = ''; apply(); } });
     refreshText();
@@ -2780,5 +2787,6 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     tab: () => api?.tab() || '',
     refreshTitle: () => api?.refreshTitle(),
     refreshLanguage: () => api?.refreshLanguage(),
+    syncCc: () => api?.syncCc(),
   });
 })();

@@ -513,8 +513,14 @@ const WEB_THUMBNAIL_EFFECT_TRANSITION_MS = 2_400;
 const WEB_THUMBNAIL_EFFECT_GAP_MS = WEB_THUMBNAIL_EFFECT_TRANSITION_MS + 350;
 let activeWebThumbnailVisualizer = null;
 
+// v3.5.305: the fake video's clock only runs while playing → paused = every effect stands still, resumes where it stopped
 function webSourceThumbnailNow() {
-  return globalThis.performance?.now?.() ?? Date.now();
+  const visualizer = activeWebThumbnailVisualizer;
+  return visualizer && Number.isFinite(visualizer.clock) ? visualizer.clock : (globalThis.performance?.now?.() ?? Date.now());
+}
+function webThumbnailPlaying() {
+  const media = state.activeMedia;
+  return state.sourceType === 'web' && Boolean(media) && media.paused === false;
 }
 
 function webSourceThumbnailRandomInt(min, max) {
@@ -716,6 +722,7 @@ function scheduleWebThumbnailEffect(visualizer, key, now = webSourceThumbnailNow
 
 function runWebThumbnailEffect(visualizer, key) {
   if (!visualizer.active || activeWebThumbnailVisualizer !== visualizer) return;
+  if (!webThumbnailPlaying()) { visualizer.effectTimers.set(key, setTimeout(() => runWebThumbnailEffect(visualizer, key), 250)); return; } // paused: wait
   visualizer.effectTimers.delete(key);
   visualizer.nextEffectTimes.delete(key);
   const now = webSourceThumbnailNow();
@@ -860,12 +867,19 @@ function drawWebThumbnailWaveform(visualizer, currentWaveStyle = visualizer.wave
 function drawWebThumbnailVisualizer(visualizer, timestamp) {
   if (!visualizer?.active || activeWebThumbnailVisualizer !== visualizer) return;
   const { context:ctx, width, height, stage, image } = visualizer;
-  const now = Number.isFinite(timestamp) ? timestamp : webSourceThumbnailNow();
-  const elapsed = Math.min(50, Math.max(0, now - (visualizer.lastTimestamp || now)));
-  visualizer.lastTimestamp = now;
-  visualizer.time += 0.012;
+  const real = Number.isFinite(timestamp) ? timestamp : (globalThis.performance?.now?.() ?? Date.now());
+  const elapsed = Math.min(50, Math.max(0, real - (visualizer.lastTimestamp || real)));
+  visualizer.lastTimestamp = real;
+  const playing = webThumbnailPlaying();
+  if (!playing && visualizer.drawn) { // paused: keep the last frame
+    visualizer.frameId = requestAnimationFrame((nextTimestamp) => drawWebThumbnailVisualizer(visualizer, nextTimestamp));
+    return;
+  }
+  if (playing) { visualizer.clock += elapsed; visualizer.time += 0.012; }
+  visualizer.drawn = true;
+  const now = visualizer.clock;
   ctx.clearRect(0, 0, width, height);
-  const motionStep = document.hidden ? 0 : elapsed / 16.67;
+  const motionStep = document.hidden || !playing ? 0 : elapsed / 16.67;
   const theme = webSourceThumbnailCurrentTheme(visualizer, now);
   visualizer.theme = theme;
   stage.style.setProperty('--te-webviz-main', theme.main);
@@ -983,7 +997,7 @@ function createWebThumbnailVisualizer(image) {
     stage, image, context, width:canvas.width, height:canvas.height, theme, themeTransition:null,
     waveStyle, waveTransition:null, motionMode, motionTransition:null, time:0,
     values:{ blur:scalar(blur), darkness:scalar(darkness), particleCount:scalar(particleCount), motionSpeed:scalar(motionSpeed) },
-    lastTimestamp:0, frameId:0, active:true, titleObserver,
+    lastTimestamp:0, frameId:0, active:true, titleObserver, clock:now, drawn:false,
     effectTimers:new Map(), nextEffectTimes:new Map(), nextEffectAllowedAt:now,
     particles:Array.from({ length:100 }, () => ({
       x:Math.random() * canvas.width,

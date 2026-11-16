@@ -66,6 +66,7 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 - v3.5.302: `subtitleIsDisplayLanguage()` (overlay-engine.js, bridge `sameLang`): phụ đề cùng ngôn ngữ hiển thị → tắt bấm / chọn dịch (overlay-ui `tapOn()`, content.js `overlaySameLanguage()`). Nút góc video luôn icon trắng; chạy chữ tìm `.mqw`; hướng dẫn tim nhớ riêng Thường / Rạp.
 - v3.5.303: theme riêng `pageTheme()` mỗi lần mở + `themePick` tạm (đến khi tải lại trang, không ghi `sidebarTheme`). Hướng dẫn tim 5,6s (2 lượt). Rạp: `flashFav` bỏ qua. Xem trước Phụ đề `.prev.tt` (Rạp, video) / `.prev.ovbg`; dòng Nền chỉ ở Rạp.
 - v3.5.304: hướng dẫn tim = 10 cái chạm liên tục (220ms), `DUR` = cái cuối + 1420ms; `hGuideStop` tắt hướng dẫn cũ khi hướng dẫn mới bắt đầu.
+- v3.5.305: video giả web `visualizer.clock` chỉ chạy khi phát (`webThumbnailPlaying`). Cùng ngôn ngữ hiển thị → mở là `primary` (`defaultSubtitleDisplayMode` = `subtitleIsDisplayLanguage`), UI nhận qua `syncCc`. Nói: Enter = mic, Esc = bỏ qua câu, không (`), Ctrl = nghe lại / dừng; `spQuiet()` cho mẫu / giọng bạn / mic loại trừ nhau.
 - Phạm vi: luyện câu từ phụ đề YouTube hoặc câu Web (Reader) ngay trong overlay. Chép (Typing) và Nói (Speaking) giữ tiến độ/thống kê theo chế độ. SpeechRecognition/MediaRecorder chỉ chạy ở tab Nói; bản ghi âm chỉ nằm tạm trong bộ nhớ để phát lại, không tải lên, không lưu lâu dài.
 - Luồng:
   1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; YouTube dùng caption cues, Web dùng câu Reader. Phụ đề làm mới qua `lhn-dual-captions-updated`.

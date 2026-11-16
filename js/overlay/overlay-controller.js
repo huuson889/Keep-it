@@ -334,6 +334,7 @@ function openOverlay() {
   startAppPopupObserver();
   extendLoadedWindow();
   if (state.sourceType !== 'web' && state.captions.length === 0 && state.loadingFor !== state.sourceId) loadCaptions();
+  if (subtitleIsDisplayLanguage()) subtitleModeManuallySelectedFor = null; // v3.5.305: same language → primary on every opening
   applyDefaultSubtitleDisplayMode();
   if (unifiedUi()) globalThis.LHN_UNIFIED_OVERLAY.open({ tab: 'view' });
 }

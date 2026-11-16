@@ -843,7 +843,7 @@
   MESSAGES.en.ov_letSWarmUp = "Let's warm up again!"; MESSAGES.vi.ov_letSWarmUp = "Khởi động lại nào!"; MESSAGES.ko.ov_letSWarmUp = "다시 시작해 봐요!";
   MESSAGES.en.ov_lightTheme = "Light theme"; MESSAGES.vi.ov_lightTheme = "Giao diện sáng"; MESSAGES.ko.ov_lightTheme = "밝은 테마";
   MESSAGES.en.ov_listen = "Listen"; MESSAGES.vi.ov_listen = "Nghe mẫu"; MESSAGES.ko.ov_listen = "원음 듣기";
-  MESSAGES.en.ov_listenModelKey = "Listen (`)"; MESSAGES.vi.ov_listenModelKey = "Nghe mẫu (`)"; MESSAGES.ko.ov_listenModelKey = "원음 듣기 (`)";
+  MESSAGES.en.ov_listenModelKey = "Listen (Ctrl)"; MESSAGES.vi.ov_listenModelKey = "Nghe mẫu (Ctrl)"; MESSAGES.ko.ov_listenModelKey = "원음 듣기 (Ctrl)";
   MESSAGES.en.ov_listening = "Listening…"; MESSAGES.vi.ov_listening = "Đang nghe…"; MESSAGES.ko.ov_listening = "듣는 중…";
   MESSAGES.en.ov_locked = "Locked"; MESSAGES.vi.ov_locked = "Chưa mở"; MESSAGES.ko.ov_locked = "잠김";
   MESSAGES.en.ov_missing = "(missing)"; MESSAGES.vi.ov_missing = "(bỏ trống)"; MESSAGES.ko.ov_missing = "(누락)";
@@ -930,7 +930,7 @@
   MESSAGES.en.ov_solid = "Solid"; MESSAGES.vi.ov_solid = "Đặc"; MESSAGES.ko.ov_solid = "진하게";
   MESSAGES.en.ov_someWordsAreHeading = "Some words are heading the right way. Keep at it, your mouth is getting used to English!"; MESSAGES.vi.ov_someWordsAreHeading = "Một vài từ đã bắt đầu đúng hướng. Cứ kiên trì, miệng bạn đang dần quen với tiếng Anh!"; MESSAGES.ko.ov_someWordsAreHeading = "몇몇 단어는 제대로 나오기 시작했어요. 꾸준히 하면 입이 영어에 익숙해져요!";
   MESSAGES.en.ov_speak = "Speak"; MESSAGES.vi.ov_speak = "Nói"; MESSAGES.ko.ov_speak = "말하기";
-  MESSAGES.en.ov_speakKeysHint = "(Enter) Start/stop/next · (Esc) Reveal/retry · (`) Play/pause · (Ctrl) Replay"; MESSAGES.vi.ov_speakKeysHint = "(Enter) Bắt đầu/dừng/tiếp · (Esc) Đáp án/làm lại · (`) Phát/tạm dừng · (Ctrl) Nghe lại"; MESSAGES.ko.ov_speakKeysHint = "(Enter) 시작/정지/다음 · (Esc) 정답/다시 하기 · (`) 재생/일시정지 · (Ctrl) 다시 듣기";
+  MESSAGES.en.ov_speakKeysHint = "(Enter) Start/stop · (Esc) Skip sentence · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_speakKeysHint = "(Enter) Bắt đầu/dừng · (Esc) Bỏ qua câu · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_speakKeysHint = "(Enter) 시작/정지 · (Esc) 문장 건너뛰기 · (Ctrl) 다시 듣기/정지";
   MESSAGES.en.ov_speakTranslation = "Speak translation"; MESSAGES.vi.ov_speakTranslation = "Phát âm khi dịch"; MESSAGES.ko.ov_speakTranslation = "번역 시 음성 재생";
   MESSAGES.en.ov_speed = "Speed"; MESSAGES.vi.ov_speed = "Tốc độ"; MESSAGES.ko.ov_speed = "재생 속도";
   MESSAGES.en.ov_speedNormalBottom = "normal"; MESSAGES.vi.ov_speedNormalBottom = "thường"; MESSAGES.ko.ov_speedNormalBottom = "보통";

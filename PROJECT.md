@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.305 | Arena.ai Agent sửa:**
+
+- Overlay, theo yêu cầu: (1) Overlay web (video giả): tạm dừng thì mọi hiệu ứng trên hình (hạt, sóng, ảnh chuyển động, đổi màu / hiệu ứng ngẫu nhiên) đứng yên — đồng hồ hiệu ứng chỉ chạy khi đang phát, phát lại chạy tiếp từ chỗ dừng; (2) phụ đề cùng ngôn ngữ hiển thị → mỗi lần mở Overlay luôn là chế độ Phụ đề chính (dù lần trước đã chọn khác); kiểu mặc định dùng chung cách so ngôn ngữ của v3.5.302 (trang web không chắc ngôn ngữ thì xét 12 câu đầu); thanh điều khiển cập nhật khi Overlay tự đổi chế độ; (3) Nói: Enter chỉ bấm mic (bắt đầu / dừng; ở màn kết quả = ghi âm lại), không chuyển câu; (4) Nói: Nghe mẫu / Giọng bạn / mic loại trừ nhau — Nghe mẫu khi đang ghi âm thì huỷ lần ghi âm, khi đang phát Giọng bạn thì dừng nó; (5) Nói: Esc = bỏ qua câu; (6) Nói: bỏ phím (`) Phát/tạm dừng; (7) Nói: Ctrl = Nghe lại, đang phát thì Dừng. Dòng phím tắt Nói: "(Enter) Bắt đầu/dừng · (Esc) Bỏ qua câu · (Ctrl) Nghe lại/Dừng" (en/vi/ko); chú thích nút Nghe mẫu "(Ctrl)". Xem / Chép giữ phím cũ.
+- File: `js/overlay/source/web.js`, `js/overlay/overlay-engine.js`, `js/overlay/overlay-controller.js`, `js/overlay/ui/overlay-ui.js`, `js/core/languages.js`, `docs/modules/overlay.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, Overlay web (Alt+F), trang tiếng Anh. Hiển thị en: mở → Phụ đề chính; bấm 1 (Song ngữ), đóng, mở lại → Phụ đề chính; hiển thị vi: Song ngữ. Canvas hình: tạm dừng 0,7–1,5s không đổi điểm ảnh, đang phát thì đổi. Nói: (`) không làm gì; Ctrl phát, Ctrl lần nữa dừng; Esc sang câu 2/2; Enter khi đang Nghe mẫu → dừng mẫu và bật mic (Chromium headless không có nhận diện giọng nói nên báo bị từ chối). Chưa thử được: Nghe mẫu khi đang ghi âm thật, Giọng bạn; YouTube thật / điện thoại. Không lỗi trang.
+
 **2026-10-23 | v3.5.304 | Arena.ai Agent sửa:**
 
 - Overlay, theo yêu cầu: hướng dẫn chạm tim bấm liên tục 10 cái (gấp đôi 5 cái trước), cùng nhịp 220ms, không nghỉ giữa chừng như v3.5.303; tim bay từ cái thứ 2; phần hiện vào / mờ dần giữ như cũ (tổng 3,9s). Kèm sửa: hướng dẫn mới chạy thì tắt hướng dẫn cũ đang chạy (Thường → Rạp không qua chạm, ví dụ phím tắt, trước đây có thể hiện 2 bàn tay).

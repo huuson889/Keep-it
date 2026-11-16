@@ -284,12 +284,7 @@ function baseLanguageCode(language) {
 }
 
 function defaultSubtitleDisplayMode() {
-  const detectedCueLanguage = state.sourceType === 'web'
-    ? (state.webSourceCueLanguageKnown ? state.webSourceDetectedLanguage : '')
-    : state.sourceLanguage;
-  const cueLanguage = baseLanguageCode(detectedCueLanguage);
-  const displayLanguage = baseLanguageCode(state.displayLanguage);
-  return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
+  return subtitleIsDisplayLanguage() ? 'primary' : 'bilingual'; // v3.5.305: same check as tap / select to translate (v3.5.302)
 }
 
 // v3.5.302: subtitle language = the Overlay display language → nothing to translate (tap / select to translate is off)
@@ -315,7 +310,9 @@ function subtitleIsDisplayLanguage() {
 function applyDefaultSubtitleDisplayMode() {
   const contextKey = subtitleModeContextKey();
   if (contextKey && subtitleModeManuallySelectedFor === contextKey) return false;
-  return setSubtitleDisplayMode(defaultSubtitleDisplayMode());
+  const done = setSubtitleDisplayMode(defaultSubtitleDisplayMode());
+  if (done) globalThis.LHN_UNIFIED_OVERLAY?.syncCc?.(); // the unified UI shows the mode the controller chose
+  return done;
 }
 
 function setSubtitleDisplayModeByUser(mode) {
