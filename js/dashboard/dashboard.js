@@ -792,7 +792,7 @@ function renderDictationSessionCards() {
   const sessions = sortedDictationSessions();
   grid.innerHTML = sessions.map(session => {
     const title = dictationSessionTitle(session), source = dictationSourceLabel(session);
-    const url = dictationSessionUrl(session), domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return session.sourceId || source; } })();
+    const url = dictationSessionUrl(session), domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } })(); // no page link yet: no source line (never the internal id)
     const total = Math.max(0, Number(session.totalCount) || 0), solved = Math.max(0, Number(session.solvedCount) || 0);
     const progress = total ? Math.min(100, Math.round(solved / total * 100)) : 0;
     const progressText = total ? `${overviewFormatCount(solved)} / ${overviewFormatCount(total)}` : overviewFormatCount(solved);
@@ -806,7 +806,7 @@ function renderDictationSessionCards() {
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
       <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
-      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3>${domain ? `<div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain)}</div>` : ""}<div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText}${total || solved ? ` <span>${escapeHtml(t("dictationSentences"))}</span>` : ""}</strong></div>${total || !solved ? `<div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div>` : ""}</div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
@@ -950,7 +950,15 @@ function initDictationView() {
   }));
   const openSession = async (sessionId, { autoOpenDictation = false } = {}) => {
     const session = overviewSessionEntries.find(item => item.sessionId === sessionId);
-    const url = dictationSessionUrl(session);
+    let url = dictationSessionUrl(session);
+    if (!url && session?.sourceType === "web") { // v3.5.310: old web lesson without its link → the tab that has the page open
+      try {
+        const tabs = await browser.tabs.query({});
+        const tab = tabs.find(item => /^https?:/i.test(String(item?.url || "")) && STUDY_SESSION_INDEX.webSourceIdOf(item.url) === session.sourceId);
+        if (tab) { await browser.tabs.update(tab.id, { active:true }); if (tab.windowId != null) await browser.windows?.update?.(tab.windowId, { focused:true }); return; }
+      } catch (error) { console.warn("Could not look for the open page of a web Dictation session", error); }
+      toast(t("dictationWebLinkMissing")); return;
+    }
     if (!url) { toast(t("dictationSourceUnavailable")); return; }
     let targetUrl = url;
     const sourceType = String(session?.sourceType || "").toLowerCase();

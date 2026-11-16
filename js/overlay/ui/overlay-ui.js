@@ -2471,7 +2471,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // ---------- engine glue: settings, saved UI, study records, translations, ambient ----------
     const OV_UI_KEY = 'lhnOverlayUi';
     const UI_KEYS = ['view', 'mini', 'split', 'colW', 'colList', 'colNotes', 'subHidden', 'showTr', 'auto', 'hints', 'exp', 'ttHint', 'subStyle'];
-    let ready = false, uiSaveT = 0, uiLast = '', lastCc = '', studyKey = '', studyLoaded = false, saveT = 0, ambT = 0, trLang = '';
+    let ready = false, uiSaveT = 0, uiLast = '', lastCc = '', studyKey = '', studyLoaded = false, studyHadRecord = false, saveT = 0, ambT = 0, trLang = '';
     const store = () => globalThis.browser?.storage?.local;
     // v3.5.303: the Overlay has its own theme — each opening follows the page's look (dark site, or Keepit "Trang tối" darkening it → dark);
     // the theme switch in the Overlay lasts until the page reloads (kept in memory only; Keepit's theme is not touched)
@@ -2574,13 +2574,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // study records: the app's dictation:<sourceId> record (progress, notes, wrong-word stats) + the session index
     async function loadStudyRecord() {
       const id = String(B.state()?.sourceId || ''), key = id ? `dictation:${id}` : '';
-      studyKey = key; studyLoaded = false;
+      studyKey = key; studyLoaded = false; studyHadRecord = false;
       S.res = { speak: {}, write: {} }; S.si = { speak: 0, write: 0 }; S.reach = { speak: 0, write: 0 }; S.tnotes = []; S.lessonNote = '';
       STATS.write = { version: 3, words: {} }; STATS.speak = { version: 3, words: {} }; syncWrong();
       if (!key) return;
       let rec = {};
       try { rec = (await store()?.get(key))?.[key] || {}; } catch (_) {}
       if (studyKey !== key) return;
+      studyHadRecord = Object.keys(rec).length > 0;
       const pm = rec.progressByMode || {};
       // v3.5.301: the old shared current/solved belong to Chép — Nói never borrows them (its locks are its own)
       const prog = (p, legacy) => ({ current: Number.isInteger(p?.current) ? p.current : legacy && Number.isInteger(rec.current) ? rec.current : 0, solved: (Array.isArray(p?.solved) ? p.solved : legacy && Array.isArray(rec.solved) ? rec.solved : []).map(Number).filter(Number.isInteger) });
@@ -2624,6 +2625,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (title) next.titleUpdatedAt = Date.now();
       const st = B.state() || {}, web = st.sourceType === 'web', sid = String(st.sourceId || '');
       if (web) next.url = String(st.webSourceUrl || location.href); // v3.5.309: lets the Dashboard rebuild a web session from the record alone
+      next.totalCount = STUDY.length; // v3.5.310: progress "x / total" without the index
       try { await store()?.set({ [key]: next }); } catch (_) { return; }
       const idx = globalThis.LHN_STUDY_SESSION_INDEX;
       if (!idx) return;
@@ -2740,6 +2742,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       Promise.all([uiLoaded, loadStudyRecord()]).then(() => {
         if (ov.hidden || B.state()?.sourceId !== sid) return;
         clampStudy();
+        if (studyHadRecord) queueStudySave(); // v3.5.310: an existing lesson re-registers its session (URL, sentence count) on open
         if (isStudy()) { useSent(); S.t = SENT[S.si[S.tab]].start; seekMedia(S.t); translateAround(S.si[S.tab]); }
         lastKey = ''; apply();
         if (isStudy()) playStudyStart(); // v3.5.262/276

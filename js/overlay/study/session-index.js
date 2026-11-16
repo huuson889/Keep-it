@@ -5,6 +5,7 @@
   const MAX_SESSIONS = 500;
   // Web Study sources are keyed `web-<hex>` (overlay/source/web.js); a YouTube video id never has this form.
   const isWebSourceId = value => /^web-[0-9a-f]{1,8}$/.test(String(value || "").trim());
+  const webSourceIdOf = url => { let hash = 2166136261; for (const char of String(url || "")) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619); return `web-${(hash >>> 0).toString(16)}`; };
 
   const safeCount = value => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : 0;
   const safeTimestamp = value => {
@@ -83,7 +84,7 @@
       ? new Set(record.solved.map(Number).filter(Number.isInteger)).size
       : safeCount(previous?.solvedCount);
     const currentIndex = Number.isFinite(Number(record.current)) ? safeCount(record.current) : safeCount(previous?.currentIndex);
-    const totalCount = safeCount(previous?.totalCount);
+    const totalCount = safeCount(previous?.totalCount) || safeCount(record.totalCount);
     return normalizeSession({
       ...legacy,
       ...(previous || {}),
@@ -106,7 +107,7 @@
     const recordTitleAt = safeTimestamp(record.titleUpdatedAt), indexedUpdatedAt = safeTimestamp(previous?.updatedAt);
     const solvedCount = Array.isArray(record.solved) ? new Set(record.solved.map(Number).filter(Number.isInteger)).size : safeCount(previous?.solvedCount);
     const currentIndex = Number.isFinite(Number(record.current)) ? safeCount(record.current) : safeCount(previous?.currentIndex);
-    const totalCount = safeCount(previous?.totalCount);
+    const totalCount = safeCount(previous?.totalCount) || safeCount(record.totalCount);
     const safeUrl = value => /^https?:\/\//i.test(String(value || "")) ? String(value) : "";
     return normalizeSession({
       ...(previous || {}),
@@ -132,7 +133,7 @@
       .slice(0, MAX_SESSIONS);
   }
 
-  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord, reconcileWebRecord, isWebSourceId });
+  const studySessionIndex = Object.freeze({ STORAGE_KEY, VERSION, MAX_SESSIONS, normalizeSession, normalizeIndex, mergeSessions, fromLegacyYouTubeRecord, reconcileYouTubeRecord, reconcileWebRecord, isWebSourceId, webSourceIdOf });
   globalThis.LHN_STUDY_SESSION_INDEX = studySessionIndex;
   globalThis.LHN_DICTATION_SESSION_INDEX = studySessionIndex; // Compatibility alias for existing integrations.
 })();

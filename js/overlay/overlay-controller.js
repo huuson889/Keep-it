@@ -964,6 +964,15 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[STUDY_TRANSLATION_SETTINGS_KEY]) void refreshSubtitleLanguageSettings();
 });
 
+// v3.5.310: a web Dictation record saved without its page URL gets it when the page is visited again (Dashboard → Tiếp tục).
+if (/^https?:$/.test(location.protocol) && globalThis.LHN_STUDY_SESSION_INDEX?.webSourceIdOf) {
+  const webKey = `dictation:${globalThis.LHN_STUDY_SESSION_INDEX.webSourceIdOf(location.href)}`;
+  browser.storage.local.get(webKey).then((stored) => {
+    const record = stored?.[webKey];
+    if (record && typeof record === 'object' && !record.url) return browser.storage.local.set({ [webKey]: { ...record, url: location.href } });
+  }).catch(() => {});
+}
+
 // Player discovery and caption polling remain YouTube-specific.
 if (OVERLAY_YOUTUBE_HOST_RE.test(location.hostname)) {
   observeLauncherChanges();

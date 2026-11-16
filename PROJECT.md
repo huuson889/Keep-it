@@ -204,6 +204,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+### 2026-10-23 | v3.5.310 — Dashboard: bài Dictation web cũ hiện đúng
+- Nhãn nguồn web chỉ là "Web" / "Web" / "웹".
+- Thẻ web không bao giờ hiện mã nội bộ `web-…`: có link thì hiện tên miền, chưa có thì ẩn dòng nguồn.
+- Bản ghi web lưu `totalCount`; chưa biết tổng thì hiện "7 câu" và ẩn thanh rỗng.
+- Mở lại trang của một bài web cũ (bản ghi chưa có `url`) sẽ tự ghi `url`; mở Overlay trên bài đã có bản ghi sẽ ghi lại phiên (URL, tổng câu).
+- Tiếp tục với bài chưa có link: chuyển tới tab đang mở trang đó, nếu không có thì báo cần mở trang một lần (en/vi/ko).
+
 **2026-11-16 | v3.5.309 | Arena.ai Agent sửa:**
 
 - Dashboard > Chép chính tả, theo báo lỗi sau v3.5.308: bài chép web (news.tuoitre.vn) biến mất khỏi Dashboard, dù trang vẫn còn lịch sử. Nguyên nhân gốc: `saveStudyNow` (overlay-ui.js) gọi `mergeSessions(prev.sessions, {…})` với object thay vì mảng → luôn lỗi "not iterable" (bị `catch` nuốt) nên Overlay chưa bao giờ ghi `dictation:session-index:v1` (cả YouTube lẫn web). YouTube vẫn hiện nhờ Dashboard dựng lại từ record; web chỉ hiện nhờ phiên giả `youtube:web-…`, mà v3.5.308 đã loại → mất thẻ. Sửa: truyền mảng (index được ghi thật); record web lưu thêm `url`; `session-index.js` thêm `reconcileWebRecord` (record `dictation:web-<hex>` → phiên `web:`, giữ tiêu đề / tiến độ, URL từ index → record → highlight cùng tiêu đề); Dashboard dùng nó lúc mở và khi dữ liệu đổi. Record cũ không có URL vẫn hiện thẻ; nút mở báo "không có liên kết nguồn" cho tới lần học lại trên trang.
