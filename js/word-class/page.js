@@ -205,6 +205,16 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     walk(block);
     return { parts, text };
   }
+  // the browser's sure answers over the page's paragraphs (offline, all at once, also the ones not scrolled to yet)
+  let majority = null;
+  const pageMajority = () => majority ||= (async () => {
+    const m = { en:0, other:0 };
+    for (const b of paragraphBlocks().slice(0, 80)) {
+      const s = (b.innerText || "").trim(); if (s.length < 40) continue;
+      try { const r = await api.i18n.detectLanguage(s.slice(0, 1000)); const top = r?.languages?.[0]; if (top && r.isReliable) m[top.language === "en" ? "en" : "other"]++; } catch {}
+    }
+    return m;
+  })();
   let pageEn = null;
   function pageEnglish() {
     if (pageEn !== null) return pageEn;
@@ -219,6 +229,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     if (text.trim().length >= 40) {   // the browser's guess only when it is sure (short headlines come back "pt 100%, not reliable")
       try { const r = await api.i18n.detectLanguage(text.slice(0, 1000)); const top = r?.languages?.[0]; if (top && r.isReliable) return top.language === "en"; } catch {}
     }
+    const m = await pageMajority(); if (m.en + m.other >= 3) return m.en > m.other;   // not sure: what most of the page is
     const p = pageEnglish(); if (p !== null) return p;
     try { const r = await api.i18n.detectLanguage((document.body?.innerText || "").slice(0, 2000)); pageEn = r?.languages?.[0]?.language === "en"; } catch { pageEn = true; }
     return pageEn;
@@ -341,7 +352,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     if (on === pageMode) return;
     if (on) {
       if (!enabled() || !(await ensureModel())) return;
-      pageMode = true; skippedNotice = false; watched = new WeakSet(); legClosed = false;
+      pageMode = true; skippedNotice = false; watched = new WeakSet(); legClosed = false; majority = null;
       io = new IntersectionObserver(onScreen, { rootMargin:"200px 0px" }); scan();
       if (!silent) notice(t("on"));
     } else {

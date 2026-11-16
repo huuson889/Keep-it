@@ -21,7 +21,7 @@
 
 1. ☰ Loại từ / Alt+G → `togglePage()`; ☰ Loại từ đoạn (chạm chọn đoạn) / Alt+J (đoạn gần con trỏ) → `toggleAt(x, y)`.
 2. Chưa có mô hình: thẻ "Tải mô hình loại từ?" → `WORD_CLASS_DOWNLOAD`, hiện %.
-3. Cả trang: lấy đoạn từ `LHN_READER_BAR.mainBlocks()` (cùng danh sách Alt+A / Alt+R), IntersectionObserver gắn đoạn khi vào màn hình. Bỏ đoạn không phải tiếng Anh (báo một lần): chữ có dấu / chữ khác, `detectLanguage` khi `isReliable`, rồi ngôn ngữ trang; Alt+J chỉ xét chữ.
+3. Cả trang: lấy đoạn từ `LHN_READER_BAR.mainBlocks()` (cùng danh sách Alt+A / Alt+R), IntersectionObserver gắn đoạn khi vào màn hình. Bỏ đoạn không phải tiếng Anh (báo một lần): chữ có dấu / chữ khác, `detectLanguage` khi `isReliable`; không chắc → đa số đoạn trên trang (≥3 đoạn chắc chắn), rồi ngôn ngữ trang; Alt+J chỉ xét chữ.
 4. Mỗi đoạn: `WORD_CLASS_TAG` → `[[start, end, UPOS]]` → `CORE.label/units` → bọc từ trong `<lhn-wc>` (shadow đóng chứa nhãn), phần gạch trong `<lhn-wcu>`.
 5. Bảng chú thích kính mờ góc phải trên (chỉ các nhãn đang có trên trang) hiện mỗi lần bật; rê chuột / chạm dòng hiện định nghĩa (`wc_def_*`); ☰ Chú thích hiện / ẩn tay; × ẩn đến lần bật sau, kéo đầu bảng để dời (lưu `lhnWordClassLegend`); `wordClassLegend` tắt tự hiện. Rê chuột: "book: danh từ · noun", danh từ riêng liền nhau một dòng.
 6. Tắt: gỡ mọi `lhn-wc`/`lhn-wcu`, nối lại các text node đã tách → HTML như cũ. Thẻ "Đã tắt · Hoàn tác".

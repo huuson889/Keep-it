@@ -204,6 +204,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.296 | Arena.ai Agent sửa:**
+
+- Loại từ cả trang: đoạn mà trình duyệt không chắc là tiếng Anh → xét đa số đoạn trên trang trước `<html lang>`.
+  - `pageMajority()`: `i18n.detectLanguage` (offline) trên tối đa 80 đoạn chính ≥40 ký tự, kể cả đoạn chưa cuộn tới; chỉ đếm kết quả `isReliable`. ≥3 đoạn chắc chắn → đa số tiếng Anh thì gắn, không thì bỏ. Chưa đủ 3 → `<html lang>` / nhận diện chữ cả trang như cũ. Tính lại mỗi lần bật cả trang.
+  - Loại từ đoạn không đổi (chỉ chặn chữ khác / nhiều chữ có dấu).
+- Đo B5 (độ tự tin của mô hình, CHƯA đưa vào code): 70/70 tiêu đề tiếng Anh đạt, 1/72 câu không phải tiếng Anh đạt nhầm (tiếng Pháp) với luật điểm trung bình ≥0.80, mảnh/từ ≤1.5, danh từ riêng ≤70%. Chờ người dùng quyết.
+- File: `js/word-class/page.js`, `manifest.json`, `docs/modules/word-class.md`.
+- Kiểm tra: Chromium nạp extension thật, 4 trang thử. `lang="vi"` + 3 đoạn tiếng Anh: Alt+G gắn tiêu đề (trước bỏ qua); `lang="en"` + 3 đoạn tiếng Việt: tiêu đề tiếng Anh bỏ qua (đa số tiếng Việt); `lang="en"` / `lang="vi"` một đoạn: như v3.5.295; Alt+J trên tiêu đề luôn gắn; không lỗi trang.
+
 **2026-10-23 | v3.5.295 | Arena.ai Agent sửa:**
 
 - Loại từ: đoạn tiếng Anh ngắn không còn bị bỏ qua oan (ví dụ tiêu đề "Vietnam’s digital economy gains momentum with AI adoption": `chrome.i18n.detectLanguage` trả "pt 100%" nhưng `isReliable:false`, code cũ vẫn tin vì ≥60%).
