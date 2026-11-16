@@ -204,6 +204,10 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+### 2026-10-23 | v3.5.313 — Popup Phân tích lỗi sai: bài web có favicon và link
+- Nguyên nhân: `safeVideoUrl` trong `dictation-stats-popup.js` chỉ giữ link youtube.com, nên từ v3.5.308 (bài web nhận đúng là web) link bài báo bị bỏ → "?" và không bấm được. Trước đó bài web hiện ▶ với link `youtube.com/watch?v=web-…` (sai).
+- Nhận link http/https; bài web có favicon trang, tiêu đề mở đúng bài; chưa có link thì icon quả địa cầu. Dòng nguồn của bài web dùng 🌐 thay 📺. YouTube giữ nguyên.
+
 ### 2026-10-23 | v3.5.312 — Dashboard: bài Dictation web giống YouTube (ảnh bìa, Tiếp tục vào thẳng Chép)
 - Bản ghi web lưu `thumbnailUrl` (og:image của trang); bài cũ tự có khi mở lại trang. Session index giữ `thumbnailUrl`.
 - Thẻ lịch sử và khung "Tiếp tục Dictation" hiện ảnh bìa web như thumbnail YouTube.

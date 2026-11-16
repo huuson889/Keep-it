@@ -91,14 +91,16 @@
     const number = Number(value);
     return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
   }
+  // v3.5.313: a web Dictation lesson links to its article (http/https), a YouTube lesson to its video.
   function safeVideoUrl(value) {
     try {
       const url = new URL(String(value || ""));
-      const host = url.hostname.toLocaleLowerCase();
-      if (url.protocol !== "https:" || !(host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com"))) return "";
+      if (!["http:", "https:"].includes(url.protocol) || !url.hostname || url.username || url.password) return "";
       return url.href;
     } catch { return ""; }
   }
+  const isYoutubeUrl = value => { try { return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(new URL(value).hostname); } catch { return false; } };
+  const GLOBE_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
   function countLetters(word) { return (String(word || "").match(/\p{L}/gu) || []).length; }
   function normalizeContext(value) {
     if (!value || typeof value !== "object") return null;
@@ -285,14 +287,14 @@
     return audio;
   }
   function createSourceLink(source, url, className = "source-link") {
-    const label = tr("dictationStatsSourceLabel", { source });
     const href = safeVideoUrl(url);
+    const label = tr("dictationStatsSourceLabel", { source }).replace("📺", isYoutubeUrl(href) ? "📺" : "🌐"); // v3.5.313: a web lesson is not a video (YouTube sources always carry their link)
     if (!href) return el("div", className, label);
     const link = el("a", className, label);
     link.href = href;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.title = `Open YouTube video: ${source}`;
+    link.title = `${isYoutubeUrl(href) ? "Open YouTube video" : "Open page"}: ${source}`;
     link.setAttribute("aria-label", link.title);
     return link;
   }
@@ -343,7 +345,8 @@
     let hostname = "";
     try { hostname = new URL(session.url).hostname; } catch {}
     const isYoutube = /(^|\.)youtube\.com$|(^|\.)youtu\.be$/i.test(hostname);
-    fallbackIcon.textContent = isYoutube ? "▶" : "?";
+    if (isYoutube) fallbackIcon.textContent = "▶";
+    else fallbackIcon.innerHTML = GLOBE_SVG; // web page: globe until its favicon loads (no link yet: stays a globe)
     if (isYoutube) host.classList.add("is-youtube");
     host.append(image, fallbackIcon);
     if (window.LHN_SITE_ICONS) void window.LHN_SITE_ICONS.load(image, session.url, { fallbackElement:fallbackIcon });
