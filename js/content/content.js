@@ -1237,12 +1237,19 @@
     }
   }
   // v3.5.300: same rule as the Keepit bar, dictionary, Word class, Home, Overlay: Keepit theme, "system" = the device (not the web page's theme)
+  // v3.5.306: while the Overlay is open, the popups and the Notes sidebar shown in it use the Overlay's own theme
+  function overlayTheme() {
+    try { const overlay = globalThis.LHN_UNIFIED_OVERLAY; return overlay?.isOpen?.() ? String(overlay.theme?.() || "") : ""; } catch { return ""; }
+  }
+  document.addEventListener("lhn-overlay-theme", () => syncSidebarTheme());
   function isSidebarDark() {
+    const fromOverlay = overlayTheme(); if (fromOverlay) return fromOverlay === "dark";
     if (settings.sidebarTheme === "dark") return true;
     if (settings.sidebarTheme === "light") return false;
     return !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   }
   function isDictionaryDark() {
+    const fromOverlay = overlayTheme(); if (fromOverlay) return fromOverlay === "dark";
     if (settings.sidebarTheme === "dark") return true;
     if (settings.sidebarTheme === "light") return false;
     return !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;

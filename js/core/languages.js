@@ -794,8 +794,8 @@
   MESSAGES.en.ov_dragToResizeDouble = "Drag to resize · double-click = default"; MESSAGES.vi.ov_dragToResizeDouble = "Kéo để đổi độ rộng · nhấp đúp = mặc định"; MESSAGES.ko.ov_dragToResizeDouble = "드래그하여 너비 조절 · 더블클릭 = 기본값";
   MESSAGES.en.ov_empty = "(empty)"; MESSAGES.vi.ov_empty = "(chưa viết)"; MESSAGES.ko.ov_empty = "(비어 있음)";
   MESSAGES.en.ov_endSession = "End session"; MESSAGES.vi.ov_endSession = "Kết thúc phiên"; MESSAGES.ko.ov_endSession = "세션 종료";
-  MESSAGES.en.ov_enterCheckEscAnswer = "(Enter) Check · (Esc) Answer · (Tab) 1 word · (Ctrl) Replay"; MESSAGES.vi.ov_enterCheckEscAnswer = "(Enter) Kiểm tra · (Esc) Đáp án · (Tab) 1 từ · (Ctrl) Nghe lại"; MESSAGES.ko.ov_enterCheckEscAnswer = "(Enter) 확인 · (Esc) 정답 · (Tab) 1단어 · (Ctrl) 다시 듣기";
-  MESSAGES.en.ov_enterNextSentenceEsc = "(Enter) Next sentence · (Esc) Retry"; MESSAGES.vi.ov_enterNextSentenceEsc = "(Enter) Câu tiếp · (Esc) Làm lại"; MESSAGES.ko.ov_enterNextSentenceEsc = "(Enter) 다음 문장 · (Esc) 다시 하기";
+  MESSAGES.en.ov_enterCheckEscAnswer = "(Enter) Check · (Esc) Answer · (Tab) 1 word · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_enterCheckEscAnswer = "(Enter) Kiểm tra · (Esc) Đáp án · (Tab) 1 từ · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_enterCheckEscAnswer = "(Enter) 확인 · (Esc) 정답 · (Tab) 1단어 · (Ctrl) 다시 듣기/정지";
+  MESSAGES.en.ov_enterNextSentenceEsc = "(Enter/→) Next sentence · (Esc) Retry · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_enterNextSentenceEsc = "(Enter/→) Câu tiếp · (Esc) Làm lại · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_enterNextSentenceEsc = "(Enter/→) 다음 문장 · (Esc) 다시 하기 · (Ctrl) 다시 듣기/정지";
   MESSAGES.en.ov_errorAnalysis = "Error analysis:"; MESSAGES.vi.ov_errorAnalysis = "Phân tích lỗi sai:"; MESSAGES.ko.ov_errorAnalysis = "오류 분석:";
   MESSAGES.en.ov_excellent = "Excellent!"; MESSAGES.vi.ov_excellent = "Xuất sắc!"; MESSAGES.ko.ov_excellent = "훌륭해요!";
   MESSAGES.en.ov_exitFullscreen = "Exit fullscreen"; MESSAGES.vi.ov_exitFullscreen = "Thoát toàn màn hình"; MESSAGES.ko.ov_exitFullscreen = "전체 화면 종료";
@@ -900,7 +900,10 @@
   MESSAGES.en.ov_repeatSentenceContinuously = "Repeat sentence continuously"; MESSAGES.vi.ov_repeatSentenceContinuously = "Lặp câu liên tục"; MESSAGES.ko.ov_repeatSentenceContinuously = "문장 계속 반복";
   MESSAGES.en.ov_repeatSentencePressAnd = "Repeat sentence — press and hold: choose count"; MESSAGES.vi.ov_repeatSentencePressAnd = "Lặp lại câu — nhấn giữ: chọn số lần"; MESSAGES.ko.ov_repeatSentencePressAnd = "문장 반복 — 길게 누르기: 횟수 선택";
   MESSAGES.en.ov_replay = "Replay"; MESSAGES.vi.ov_replay = "Nghe lại"; MESSAGES.ko.ov_replay = "다시 듣기";
-  MESSAGES.en.ov_replayCtrl = "Replay (Ctrl)"; MESSAGES.vi.ov_replayCtrl = "Nghe lại (Ctrl)"; MESSAGES.ko.ov_replayCtrl = "다시 듣기 (Ctrl)";
+  MESSAGES.en.ov_replayCtrl = "Replay/Stop (Ctrl)"; MESSAGES.vi.ov_replayCtrl = "Nghe lại/Dừng (Ctrl)"; MESSAGES.ko.ov_replayCtrl = "다시 듣기/정지 (Ctrl)";
+  MESSAGES.en.ov_micEnter = "Microphone (Enter)"; MESSAGES.vi.ov_micEnter = "Micro (Enter)"; MESSAGES.ko.ov_micEnter = "마이크 (Enter)";
+  MESSAGES.en.ov_wordsToPractice = "Words to practise: {0}"; MESSAGES.vi.ov_wordsToPractice = "Từ cần luyện: {0}"; MESSAGES.ko.ov_wordsToPractice = "연습할 단어: {0}";
+  MESSAGES.en.ov_subtitlesInDisplayLanguage = "Subtitles are already in the display language"; MESSAGES.vi.ov_subtitlesInDisplayLanguage = "Phụ đề đã cùng ngôn ngữ hiển thị"; MESSAGES.ko.ov_subtitlesInDisplayLanguage = "자막이 이미 표시 언어로 되어 있습니다";
   MESSAGES.en.ov_replayYourVoice = "Your voice"; MESSAGES.vi.ov_replayYourVoice = "Giọng bạn"; MESSAGES.ko.ov_replayYourVoice = "내 목소리";
   MESSAGES.en.ov_reset = "Reset"; MESSAGES.vi.ov_reset = "Đặt lại"; MESSAGES.ko.ov_reset = "초기화";
   MESSAGES.en.ov_resetDone = "Reset"; MESSAGES.vi.ov_resetDone = "Đã đặt lại"; MESSAGES.ko.ov_resetDone = "초기화했습니다";
@@ -930,7 +933,7 @@
   MESSAGES.en.ov_solid = "Solid"; MESSAGES.vi.ov_solid = "Đặc"; MESSAGES.ko.ov_solid = "진하게";
   MESSAGES.en.ov_someWordsAreHeading = "Some words are heading the right way. Keep at it, your mouth is getting used to English!"; MESSAGES.vi.ov_someWordsAreHeading = "Một vài từ đã bắt đầu đúng hướng. Cứ kiên trì, miệng bạn đang dần quen với tiếng Anh!"; MESSAGES.ko.ov_someWordsAreHeading = "몇몇 단어는 제대로 나오기 시작했어요. 꾸준히 하면 입이 영어에 익숙해져요!";
   MESSAGES.en.ov_speak = "Speak"; MESSAGES.vi.ov_speak = "Nói"; MESSAGES.ko.ov_speak = "말하기";
-  MESSAGES.en.ov_speakKeysHint = "(Enter) Start/stop · (Esc) Skip sentence · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_speakKeysHint = "(Enter) Bắt đầu/dừng · (Esc) Bỏ qua câu · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_speakKeysHint = "(Enter) 시작/정지 · (Esc) 문장 건너뛰기 · (Ctrl) 다시 듣기/정지";
+  MESSAGES.en.ov_speakKeysHint = "(Enter) Start/stop · (Esc) Skip sentence · (→) Next sentence · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_speakKeysHint = "(Enter) Bắt đầu/dừng · (Esc) Bỏ qua câu · (→) Câu tiếp · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_speakKeysHint = "(Enter) 시작/정지 · (Esc) 문장 건너뛰기 · (→) 다음 문장 · (Ctrl) 다시 듣기/정지";
   MESSAGES.en.ov_speakTranslation = "Speak translation"; MESSAGES.vi.ov_speakTranslation = "Phát âm khi dịch"; MESSAGES.ko.ov_speakTranslation = "번역 시 음성 재생";
   MESSAGES.en.ov_speed = "Speed"; MESSAGES.vi.ov_speed = "Tốc độ"; MESSAGES.ko.ov_speed = "재생 속도";
   MESSAGES.en.ov_speedNormalBottom = "normal"; MESSAGES.vi.ov_speedNormalBottom = "thường"; MESSAGES.ko.ov_speedNormalBottom = "보통";

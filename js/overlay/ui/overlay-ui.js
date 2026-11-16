@@ -81,12 +81,10 @@ const LHN_UNIFIED_BRIDGE = Object.freeze({
 });
 
 // Labels: keys ov_<name> in js/core/languages.js (en/vi/ko). Language = the overlay's display language; anything
-// other than en/ko shows Vietnamese, as before. VI() = the Vietnamese text in every language: only for the few spots
-// that were never translated (kept unchanged on purpose; switch VI → T to translate them).
+// other than en/ko shows Vietnamese, as before.
 const ovLabelLang = () => { let l = ''; try { l = LHN_UNIFIED_BRIDGE.state()?.displayLanguage || globalThis.LHN_LANGUAGES?.detectLanguage?.() || ''; } catch (_) {} return l === 'en' || l === 'ko' ? l : 'vi'; };
 const ovLabel = (lang, key, args) => { const M = globalThis.LHN_LANGUAGES?.MESSAGES || {}; let s = String(M[lang]?.['ov_' + key] ?? M.vi?.['ov_' + key] ?? key); args.forEach((a, i) => { s = s.split(`{${i}}`).join(String(a)); }); return s; };
 const T = (key, ...args) => ovLabel(ovLabelLang(), key, args);
-const VI = (key, ...args) => ovLabel('vi', key, args);
 
 globalThis.LHN_UNIFIED_OVERLAY = (() => {
   'use strict';
@@ -816,7 +814,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         else { const auto = S.bri < 1; frac = S.bri / BRI_MAX; label = auto ? T('auto') : `${Math.round(S.bri / BRI_MAX * 100)}%`; icon = auto ? 'auto' : 'sun'; applyBri(); }
         ring.querySelector('.arc').style.strokeDashoffset = (C * (1 - frac)).toFixed(2);
         ring.querySelector('b').textContent = label;
-        ring.setAttribute('aria-label', `${VI(zone === 'vol' ? 'volume' : 'brightness')} ${label === T('auto') ? VI('auto') : label}`); // aria never translated (kept as before)
+        ring.setAttribute('aria-label', `${T(zone === 'vol' ? 'volume' : 'brightness')} ${label === T('auto') ? T('auto') : label}`);
         const box = ring.querySelector('.ttring-ic'); if (box.dataset.icon !== icon) { box.innerHTML = IC[icon]; box.dataset.icon = icon; }
         clearTimeout(ringT); ring.classList.add('show'); ov.classList.add('tt-ring-on');
       };
@@ -1015,7 +1013,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       de: `<svg viewBox="0 0 22 15"><rect width="22" height="5" fill="#000"/><rect y="5" width="22" height="5" fill="#DD0000"/><rect y="10" width="22" height="5" fill="#FFCE00"/></svg>`,
     };
     const LANGS = [['auto', 'autoDetect', 'Auto detect'], ['en', 'langEnglish', 'English'], ['vi', 'vietnamese', 'Vietnamese'], ['ko', 'langKorean', 'Korean']]; // [code, label key, English name]
-    const langName = (c, viOnly = false) => { const l = LANGS.find((x) => x[0] === c); return l ? (viOnly ? VI : T)(l[1]) : c; };
+    const langName = (c) => { const l = LANGS.find((x) => x[0] === c); return l ? T(l[1]) : c; };
     // default subtitle colours per theme (= the first swatch)
     const subDefault = (tab, grp) => ({ dark: { video: { en: '#ffff00', vi: '#ffffff' }, side: { en: '#e5e7eb', vi: '#c0c5ce' } }, light: { video: { en: '#8b5cf6', vi: '#4b5563' }, side: { en: '#111827', vi: '#4b5563' } } })[S.theme === 'dark' ? 'dark' : 'light'][tab][grp];
     const SW_COLORS = [['#ffffff', 'white'], ['#9ca3af', 'gray'], ['#ffff00', 'yellow'], ['#22c55e', 'green'], ['#22d3ee', 'cyan'], ['#ef4444', 'red'], ['#ec4899', 'pink'], ['#8b5cf6', 'purple']]; // [colour, label key]
@@ -1048,25 +1046,25 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     const PANELS = {
       speed: () => `${head(T('speed'), `${S.speed.toFixed(2)}x`)}<input class="rng" type="range" min="0.5" max="3" step="0.05" value="${S.speed}" data-rng="speed" aria-label="${T('speed')}"><div style="display:flex;justify-content:space-between;color:var(--mu);font-size:12px;margin:2px 2px 6px"><span>0.5x</span><span>3x</span></div><div class="sgrid">${SPEEDS.map((v) => `<button data-speed="${v}" class="${Math.abs(v - S.speed) < 0.01 ? 'on' : ''}">${v === 1 ? `${T('speedNormalTop')}<br>${T('speedNormalBottom')}` : v + 'x'}</button>`).join('')}</div>`,
-      cc: () => `${head(T('subtitleMode'))}${[['bi', T('bilingual'), '1'], ['pri', T('original'), '2'], ['tr', T('translate'), '3'], ['off', VI('ccHidden'), '4']].map(([v, l, k]) => opt(`data-cc="${v}"`, S.cc === v, l, k)).join('')}`,
+      cc: () => `${head(T('subtitleMode'))}${[['bi', T('bilingual'), '1'], ['pri', T('original'), '2'], ['tr', T('translate'), '3'], ['off', T('ccHidden'), '4']].map(([v, l, k]) => opt(`data-cc="${v}"`, S.cc === v, l, k)).join('')}`,
       rep: () => `${head(T('repeatSentence'), S.rep.on ? (S.rep.n === Infinity ? T('continuous') : T('timesCount', S.rep.n)) : T('off'))}<div class="sgrid rgrid">${[[0, T('off')], [1, '1'], [2, '2'], [3, '3'], [5, '5'], [10, '10'], [Infinity, `∞<small>${T('continuous')}</small>`]].map(([v, l]) => `<button data-rep="${v}" class="${(v === 0 ? !S.rep.on : S.rep.on && S.rep.n === v) ? 'on' : ''}">${l}</button>`).join('')}</div><p class="help" style="text-align:left;margin:10px 4px 0">${T('howManyTimesEach')}</p>`,
       vol: () => `${head(T('volume'), S.muted ? T('muted') : `${S.vol}%`)}<div style="display:flex;align-items:center;gap:10px"><button class="ib" data-act="mute">${ic(S.muted ? 'mute' : 'vol')}</button><input class="rng" type="range" min="0" max="100" value="${S.vol}" data-rng="vol" aria-label="${T('volume')}"></div>`,
       more: () => {
         const ov2 = overflowTiles();
         const L = { fav: ['heart', T('favorite')], vol: ['vol', T('volume')], rep: ['repeat1', T('repeatSentence')], prev: ['prev', T('previousSentence')], next: ['next', T('next')], speed: ['speed', T('speed')], cc: ['cc', T('subtitleMode')], mode: [curView(), T('viewMode')], fs: ['fs', T('fullScreen')] };
         const tile = (act, icon, label) => `<button class="tile" data-tile="${act}">${ic(icon)}<span>${label}</span></button>`;
-        return `${head(T('more'))}${ov2.length ? `<div class="sec">${T('onTheBar')}</div><div class="tiles">${ov2.map((id) => tile(id, L[id][0], L[id][1])).join('')}</div>` : ''}<div class="sec">${VI('quick')}</div><div class="tiles">${tile('theme', S.theme === 'dark' ? 'sun' : 'moon', S.theme === 'dark' ? T('lightTheme') : T('darkTheme'))}${tile('subopt', 'subOptions', T('subtitles'))}${tile('sublang', 'subLanguage', T('language'))}${tile('notes', 'notes', T('note'))}${tile('art', 'art', T('ambientEffect'))}${tile('set', 'set', T('settings'))}</div>`;
+        return `${head(T('more'))}${ov2.length ? `<div class="sec">${T('onTheBar')}</div><div class="tiles">${ov2.map((id) => tile(id, L[id][0], L[id][1])).join('')}</div>` : ''}<div class="sec">${T('quick')}</div><div class="tiles">${tile('theme', S.theme === 'dark' ? 'sun' : 'moon', S.theme === 'dark' ? T('lightTheme') : T('darkTheme'))}${tile('subopt', 'subOptions', T('subtitles'))}${tile('sublang', 'subLanguage', T('language'))}${tile('notes', 'notes', T('note'))}${tile('art', 'art', T('ambientEffect'))}${tile('set', 'set', T('settings'))}</div>`;
       },
       set: () => `${head(T('videoSettings'))}
-        ${isStudy() || wClass() === 'c' ? '' : `<div class="srow" style="flex-wrap:wrap"><div class="l">${T('videoColumn')} <b data-rw>${S.split}%</b><small>${T('landscapeYouCanAlso')}</small></div><div class="seg">${[[34, VI('read')], [60, VI('watch')]] /* "Đọc 34%" is one text node: never translated (kept as before) */.map(([v, l]) => `<button data-split="${v}" class="${S.split === v ? 'on' : ''}">${l} ${v}%</button>`).join('')}</div><input class="rng" type="range" min="25" max="80" step="1" value="${S.split}" data-rng="split"></div>`}
-        <div class="srow${B.sameLang() ? ' off' : ''}"><div class="l">${T('clickToTranslate')}</div>${sw2('tapTranslate', S.tapTranslate)}</div>
+        ${isStudy() || wClass() === 'c' ? '' : `<div class="srow" style="flex-wrap:wrap"><div class="l">${T('videoColumn')} <b data-rw>${S.split}%</b><small>${T('landscapeYouCanAlso')}</small></div><div class="seg">${[[34, T('read')], [60, T('watch')]] /* "Đọc 34%" is one text node: never translated (kept as before) */.map(([v, l]) => `<button data-split="${v}" class="${S.split === v ? 'on' : ''}">${l} ${v}%</button>`).join('')}</div><input class="rng" type="range" min="25" max="80" step="1" value="${S.split}" data-rng="split"></div>`}
+        <div class="srow${B.sameLang() ? ` off" title="${T('subtitlesInDisplayLanguage')}` : ''}"><div class="l">${T('clickToTranslate')}</div>${sw2('tapTranslate', S.tapTranslate)}</div>
         <div class="srow"><div class="l">${T('speakTranslation')}</div>${sw2('speakOnTranslate', S.speakOnTranslate)}</div>
         <div class="srow"><div class="l">${T('combineSentences')}</div>${sw2('merge', S.merge)}</div>
         <div class="srow"><div class="l">${T('ambientEffect')}<small>${T('videoColorsSpillInto')}</small></div>${sw2('ambient', S.ambient)}</div>
         <div class="srow"><div class="l">${T('hideControls')}<small>${T('showsAgainOnHover')}</small></div>${sw2('autoHideDock', S.autoHideDock)}</div>
         <div class="srow nav" data-page="theme"><div class="l">${T('theme')}</div><span class="v">${S.theme === 'dark' ? T('themeDark') : T('themeLight')}</span>${ic('chevR')}</div>
         <div class="srow nav" data-page="subopt"><div class="l">${T('subtitles')}</div>${ic('chevR')}</div>
-        <div class="srow nav" data-page="sublang"><div class="l">${T('language')}</div><span class="v">${langName(S.srcLang, true)} → ${langName(S.dstLang, true)}</span>${ic('chevR')}</div>
+        <div class="srow nav" data-page="sublang"><div class="l">${T('language')}</div><span class="v">${langName(S.srcLang)} → ${langName(S.dstLang)}</span>${ic('chevR')}</div>
         <div class="srow nav" data-page="export"><div class="l">${T('includeSubtitles')}</div>${ic('chevR')}</div>`,
       theme: () => `${head(T('theme'), '', 'set')}${opt('data-theme="dark"', S.theme === 'dark', T('themeDark'), '', 'moon')}${opt('data-theme="light"', S.theme === 'light', T('themeLight'), '', 'sun')}`,
       subopt: () => {
@@ -1094,7 +1092,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       summary: () => {
         const r = S.res[S.tab]; const vals = Object.values(r); const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
         const mins = Math.max(1, Math.round((Date.now() - S.sess) / 60000));
-        return `${head(S.tab === 'speak' ? T('summarySpeaking') : T('summaryDictation'))}<div class="sumh"><div class="trophy">${ic('trophy')}</div><b>${avg >= 85 ? T('excellent') : avg >= 65 ? T('wellDone') : T('keepGoing')}</b><div class="help">${T('tenMinutesADay')}</div></div><div class="stats"><div class="stat"><b>${vals.length}/${SENT.length}</b><small>${T('sentencesDone')}</small></div><div class="stat"><b>${avg}%</b><small>${T('avgScore')}</small></div><div class="stat"><b>${mins}′</b><small>${T('time')}</small></div></div><div class="sec">${T('wordsToPractise')} <small class="help" style="font-weight:500">${VI('tapToLookUpSuffix')}</small></div><div class="chips">${[...S.weak].slice(0, 10).map((w) => `<span data-wk="${w}">${w}</span>`).join('') || `<small class="help">${T('noneGreatJob')}</small>`}</div><button class="btnw" data-act="saveweak">${ic('notes')}${T('saveWeakWordsToNotes')}</button><button class="btnw sec2" data-act="retryweak">${ic('replay')}${T('retryBelow85')}</button>`;
+        return `${head(S.tab === 'speak' ? T('summarySpeaking') : T('summaryDictation'))}<div class="sumh"><div class="trophy">${ic('trophy')}</div><b>${avg >= 85 ? T('excellent') : avg >= 65 ? T('wellDone') : T('keepGoing')}</b><div class="help">${T('tenMinutesADay')}</div></div><div class="stats"><div class="stat"><b>${vals.length}/${SENT.length}</b><small>${T('sentencesDone')}</small></div><div class="stat"><b>${avg}%</b><small>${T('avgScore')}</small></div><div class="stat"><b>${mins}′</b><small>${T('time')}</small></div></div><div class="sec">${T('wordsToPractise')} <small class="help" style="font-weight:500">${T('tapToLookUpSuffix')}</small></div><div class="chips">${[...S.weak].slice(0, 10).map((w) => `<span data-wk="${w}">${w}</span>`).join('') || `<small class="help">${T('noneGreatJob')}</small>`}</div><button class="btnw" data-act="saveweak">${ic('notes')}${T('saveWeakWordsToNotes')}</button><button class="btnw sec2" data-act="retryweak">${ic('replay')}${T('retryBelow85')}</button>`;
       },
     };
     function lessonInner(scope) {
@@ -1106,7 +1104,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const key = mode + ':' + d.word, open = S.vOpen.has(key), vs = [...d.v].sort((x, y) => y.n - x.n || x.t.localeCompare(y.t)), shown = open ? vs : vs.slice(0, 2), extra = vs.length - 2;
         const rate = d.err + d.fix ? Math.round(d.fix / (d.err + d.fix) * 100) : 0;
         return `<div class="wst ${d.last}"><div class="wst-h"><b data-wk="${esc(d.word)}">${esc(d.word)}</b><span class="st ${d.last}" title="${d.last === 'wrong' ? T('stillWrongLastTime') : T('correctLastTime')}"><i></i>${d.last === 'wrong' ? T('needsPractice') : T('fixed')}</span></div>
-          <div class="wst-m"><span>${T('mistakes')} <b>${d.err}</b> ${VI('fixedSuffix')} <b>${d.fix}</b></span><span>${T('fixRate')} <b>${rate}%</b></span></div><div class="wst-bar" role="img" aria-label="${VI('fixRateAria', rate)}"><span style="width:${rate}%"></span></div>
+          <div class="wst-m"><span>${T('mistakes')} <b>${d.err}</b> ${T('fixedSuffix')} <b>${d.fix}</b></span><span>${T('fixRate')} <b>${rate}%</b></span></div><div class="wst-bar" role="img" aria-label="${T('fixRateAria', rate)}"><span style="width:${rate}%"></span></div>
           <div class="wst-v">${shown.map((x) => `<span class="${x.t ? '' : 'om'}">${x.t ? esc(x.t) : T('missing')} <small>×${x.n}</small></span>`).join('<i>·</i>')}${extra > 0 ? `<button class="lnk" data-vmore="${esc(key)}">${open ? T('collapse') : `+${extra}`}</button>` : ''}</div></div>`;
       };
       return `<div class="lsn ${lock ? 'locked' : ''}" data-scope="${scope}"><div class="lsn-body">
@@ -1121,7 +1119,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     function esc(t) { return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function tnRow(n, lock) {
       const tm = fmt(stTime(n.i));
-      return `<div class="tn ${n.i === S.si[S.tab] ? 'cur' : ''}" data-tn="${n.i}"><button class="tt" data-tjump="${n.i}" title="${T('goToSentence', n.i + 1)}">${tm}</button><textarea class="tx" data-tnote="${n.i}" rows="1" ${lock ? 'disabled' : ''} placeholder="${T('noteForSentence', n.i + 1)}" aria-label="${T('noteAtTime', tm)}">${esc(n.text)}</textarea><button class="tdel" data-tdel="${n.i}" ${lock ? 'disabled' : ''} title="${T('deleteNote')}" aria-label="${VI('deleteNoteAt', tm)}">${ic('close')}</button></div>`;
+      return `<div class="tn ${n.i === S.si[S.tab] ? 'cur' : ''}" data-tn="${n.i}"><button class="tt" data-tjump="${n.i}" title="${T('goToSentence', n.i + 1)}">${tm}</button><textarea class="tx" data-tnote="${n.i}" rows="1" ${lock ? 'disabled' : ''} placeholder="${T('noteForSentence', n.i + 1)}" aria-label="${T('noteAtTime', tm)}">${esc(n.text)}</textarea><button class="tdel" data-tdel="${n.i}" ${lock ? 'disabled' : ''} title="${T('deleteNote')}" aria-label="${T('deleteNoteAt', tm)}">${ic('close')}</button></div>`;
     }
     function growTn() { R.querySelectorAll('.tn .tx').forEach((t) => { if (CSS.supports?.('field-sizing', 'content')) return; t.style.height = 'auto'; t.style.height = `${t.scrollHeight}px`; }); }
     function syncNoteDots() {
@@ -1232,7 +1230,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (t.dataset.fmt) { S.exp.fmt = t.dataset.fmt; saveUi(); return openPanel('export', null, { keep: true, wide: true }); }
         if (t.dataset.act === 'export') { closePanel(); saveUi(); B.exportAs(S.exp.fmt.toUpperCase(), { onlySubs: false, includeVi: !!S.exp.bi, showTime: !!S.exp.time }); return; }
         if (t.dataset.act === 'summary') { openPanel('summary', null, { keep: true, center: !sheetMode() }); return; }
-        if (t.dataset.act === 'saveweak') { S.lessonNote = (S.lessonNote ? S.lessonNote + '\n' : '') + `Từ cần luyện: ${[...S.weak].join(', ')}`; /* text saved into the user's note, not a label: Vietnamese as before */ renderNotesCol(); queueStudySave(); closePanel(); toast(T('addedToLessonNotes')); return; }
+        if (t.dataset.act === 'saveweak') { S.lessonNote = (S.lessonNote ? S.lessonNote + '\n' : '') + T('wordsToPractice', [...S.weak].join(', ')); renderNotesCol(); queueStudySave(); closePanel(); toast(T('addedToLessonNotes')); return; }
         if (t.dataset.act === 'retryweak') { const low = SENT.map((_, i) => i).find((i) => (S.res[S.tab][i] ?? 0) < 85); closePanel(); if (low != null) setStudyIndex(low); return; }
       });
       p.addEventListener('input', (e) => {
@@ -1511,8 +1509,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       const d = doneCount(), i = S.si[S.tab];
       const showNotesBtn = !(wClass() === 'e' && notesOn());
       const tgl = S.tab === 'speak'
-        ? `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button><button class="tg ${S.auto ? 'on' : ''}" data-sact="auto" title="${T('autoAdvanceAt80')}">${ic('sparkles')}<span>${T('auto')}</span></button>`
-        : `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button><button class="tg ${S.hints ? 'on' : ''}" data-sact="hints" title="${T('firstLetterHints')}">${ic('bulb')}<span>${T('hint')}</span></button>`;
+        ? `${B.sameLang() ? '' : `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button>`}<button class="tg ${S.auto ? 'on' : ''}" data-sact="auto" title="${T('autoAdvanceAt80')}">${ic('sparkles')}<span>${T('auto')}</span></button>`
+        : `${B.sameLang() ? '' : `<button class="tg ${S.showTr ? 'on' : ''}" data-sact="tr" title="${T('showTranslation')}">${ic('subLanguage')}<span>${T('translate')}</span></button>`}<button class="tg ${S.hints ? 'on' : ''}" data-sact="hints" title="${T('firstLetterHints')}">${ic('bulb')}<span>${T('hint')}</span></button>`;
       return `<div class="scard-hd"><button class="chip" data-sact="chip" title="${T('sentenceList')}">${ring(d, SENT.length)}<span class="lab">${i + 1}/${SENT.length}<small class="ctm"><i> · </i>${fmt(SENT[i].start)}</small></span></button><span class="sp"></span>${tgl}${showNotesBtn ? `<button class="tg" data-sact="notes" title="${T('note')}">${ic('notes')}</button>` : ''}</div>`;
     }
     function renderStudy() {
@@ -1529,14 +1527,14 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (sp.phase === 'idle') mid = `<p class="help tch spmid">${T('tapTheMicTo')}</p><p class="help kbdh spmid">${T('pressEnterOrTap')}</p>`;
         if (sp.phase === 'rec') mid = `<div class="lbars">${Array.from({ length: 9 }, (_, k) => `<i style="animation-delay:${k * 0.09}s"></i>`).join('')}</div>${SPK.live ? spResultHTML(s.en, SPK.live) : `<div class="heard" id="heard">${T('listening')}</div>`}`;
         if (sp.phase === 'done') mid = `${spResultHTML(s.en, sp.transcript, speakTier(sp.score))}<p class="help legend">${T('greenCorrectOrangeClose')}</p>`;
-        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody spb${sp.phase === 'idle' ? ' idle' : ''}"><div class="target">${target}</div>${S.showTr || sp.phase === 'done' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}</div>
-          <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="Micro (Enter)">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${ic('next')}${T('skip')}</button>`}</div>
+        el.innerHTML = `<div class="scard${SPK.audio ? ' spvoice' : ''}${S.playing ? ' spmodel' : ''}" id="scard">${cardHead()}<div class="sbody spb${sp.phase === 'idle' ? ' idle' : ''}"><div class="target">${target}</div>${!B.sameLang() && (S.showTr || sp.phase === 'done') ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}${mid}</div>
+          <div class="sctl"><div class="r main"><button class="pill spml ${S.playing ? 'on' : ''}" data-sact="model" title="${T('listenModelKey')}">${ic('ear')}<span>${T('listen')}</span></button><button class="mic ${sp.phase === 'rec' ? 'rec' : ''}" data-sact="mic" aria-label="${T('micEnter')}">${ic('mic')}</button>${sp.phase === 'done' ? `<button class="pill" data-sact="next">${T('next')} ${ic('arrowR')}</button>` : `<button class="pill" data-sact="next" title="${T('next')}">${ic('next')}${T('skip')}</button>`}</div>
           ${sp.phase === 'done' ? `<div class="r" style="gap:8px"><button class="pill vrec ${SPK.audio ? 'on' : ''}" data-sact="playrec">${ic('voice')}${T('replayYourVoice')}</button></div>` : ''}
           <p class="help kbdh">${T('speakKeysHint')}</p></div></div>`;
       } else {
         const wr = S.wr;
         const res = wr.panel ? wrPanelHTML(wr) : S.hints && wr.phase === 'idle' ? wrIdlePanelHTML(s.en, wr.okN) : '';
-        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${res}${S.showTr || wr.phase !== 'idle' ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
+        el.innerHTML = `<div class="scard" id="scard">${cardHead()}<div class="sbody">${res}${!B.sameLang() && (S.showTr || wr.phase !== 'idle') ? `<div class="trans">${esc(s.vi || '…')}</div>` : ''}</div>
           <div class="wbox">${wr.phase !== 'done' ? pnHintHTML(s.en) : ''}<textarea id="wta" placeholder="${T('typeTheSentenceYou')}" ${wr.phase === 'done' ? 'readonly' : ''}>${esc(wr.val)}</textarea><div class="r"><button class="pill lis ${S.playing ? 'on' : ''}" data-sact="model" title="${T('replayCtrl')}">${ic('vol')}${T('replay')}</button>${wr.phase !== 'done' ? `<button class="pill" data-sact="word" title="${T('oneWord')} (Tab)">${ic('bulb')}${T('oneWord')}</button>` : ''}${wr.phase === 'done' ? `<span class="sp"></span><span class="help kbdh" style="text-align:center">${T('enterNextSentenceEsc')}</span><span class="sp"></span><button class="pill" data-sact="retry" title="${T('redo')} (Esc)">${ic('replay')}${T('redo')}</button><button class="pill pri" data-sact="next" title="${T('next')} (Enter)">${T('next')} ${ic('arrowR')}</button>` : `<span class="sp"></span><span class="help kbdh" style="text-align:center">${wr.phase === 'wrong' ? T('fixTheSentenceThen') : T('enterCheckEscAnswer')}</span><span class="sp"></span><button class="pill" data-sact="skip" title="${T('skip')} (Esc)">${ic('next')}${T('skip')}</button><button class="pill pri" data-sact="check" title="${T('check')} (Enter)">${ic('check')}${T('check')}</button>`}</div></div></div>`;
         const ta = $('#wta');
         const grow = () => { const card = $('#scard'); if (!card || !ta.isConnected) return; ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight + 2, Math.max(120, card.clientHeight * 0.42))}px`; };
@@ -2412,6 +2410,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (e.key === 'Escape' && tabsEl.classList.contains('open')) { stop(); tabsOpen(false); return; }
       if (e.key === 'Escape' && panelKind) { stop(); closePanel(); return; }
       if (isStudy() && e.code === 'KeyN' && (e.altKey || !typing) && !e.ctrlKey && !e.metaKey && !e.shiftKey) { stop(); addTimeNote(); return; } // N · Alt+N while typing
+      if (isStudy() && e.key === 'ArrowRight' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && tgt?.id === 'wta' && tgt.readOnly) { stop(); studyGo(1); return; } // Chép: → after the check (the box is read-only)
       if (typing) { if (e.key === 'Escape' && tgt && tgt.id !== 'wta') { stop(); tgt.blur(); } return; } // fields keep their own keys (Chép: Enter / Esc)
       if (e.ctrlKey || e.metaKey) return; // never take browser / page shortcuts (Ctrl+A, Ctrl+C …)
       if (e.altKey && ['1', '2', '3'].includes(e.key) && S.tab === 'view' && sizeKey() !== 's') {
@@ -2422,8 +2421,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         return;
       }
       if (e.altKey) return;
-      if (S.tab === 'view' && ['1', '2', '3', '4'].includes(e.key)) { stop(); S.cc = ['bi', 'pri', 'tr', 'off'][+e.key - 1]; apply(); toast([T('bilingual'), T('original'), T('translate'), VI('ccHidden')][+e.key - 1]); return; }
-      if (e.key === ' ' || (e.key === '`' && S.tab !== 'speak')) { stop(); togglePlay(); return; } // Nói: no ` (v3.5.305)
+      if (S.tab === 'view' && ['1', '2', '3', '4'].includes(e.key)) { stop(); S.cc = ['bi', 'pri', 'tr', 'off'][+e.key - 1]; apply(); toast([T('bilingual'), T('original'), T('translate'), T('ccHidden')][+e.key - 1]); return; }
+      if (e.key === ' ') { stop(); togglePlay(); return; } // v3.5.306: no ` in any tab
+      if (isStudy() && e.key === 'ArrowRight' && !e.shiftKey) { stop(); speakAbort(); studyGo(1); return; } // → = next sentence (Nói / Chép, not while typing)
       if (e.key === '<' || e.key === '>') { stop(); S.speed = Math.round(Math.max(0.5, Math.min(3, S.speed + (e.key === '>' ? 0.05 : -0.05))) * 100) / 100; syncSpeed(); toast(`${S.speed.toFixed(2)}x`); return; }
       if (S.tab === 'speak' && e.key === 'Enter') { stop(); speakToggle(); return; } // Nói: Enter = the mic only
       if (S.tab === 'write' && e.key === 'Enter') { stop(); const ta = $('#wta'); if (S.wr.phase === 'done') studyGo(1); else if (ta) ta.focus(); return; }
@@ -2438,7 +2438,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (eatenUp.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (ov.hidden || e.key !== 'Control' || !ctrlAlone) return;
       ctrlAlone = false;
-      if (S.tab === 'speak' && S.playing) { setPlaying(false); return; } // Nói: Ctrl = listen again / stop
+      if (isStudy() && S.playing) { setPlaying(false); return; } // Nói / Chép: Ctrl = listen again / stop
       if (isStudy()) playStudyStart(); // Ctrl alone = listen again
     }
     // keys typed into the overlay's own fields never reach the page (YouTube shortcuts)
@@ -2491,7 +2491,8 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       if (!vals.length) return /\bdark\b/.test(getComputedStyle(document.documentElement).colorScheme || '') ? 'dark' : 'light';
       return vals.filter((v) => v < 0.45).length >= vals.length / 2 ? 'dark' : 'light';
     }
-    function setTheme(th) { S.theme = th; themePick = th; apply(); }
+    function setTheme(th) { S.theme = th; themePick = th; apply(); themeOut(); }
+    function themeOut() { document.dispatchEvent(new CustomEvent('lhn-overlay-theme')); } // content.js: popups / Notes sidebar follow the Overlay theme while it is open
     const uiLoaded = (async () => {
       try {
         const v = (await store()?.get(OV_UI_KEY))?.[OV_UI_KEY];
@@ -2743,6 +2744,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (isStudy()) playStudyStart(); // v3.5.262/276
       });
       setTimeout(() => { if (!ov.hidden && !MQ.keep) titleMarquee('once'); }, 900); // lần đầu mở: tên video dưới chạy 1 lượt
+      themeOut();
     }
     function close() {
       if (ov.hidden) return;
@@ -2758,6 +2760,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       exitFs(); ttReset(); ov.classList.remove('tt-hint-on');
       ov.hidden = true; syncDocClass();
       B.setActivity(null);
+      themeOut();
     }
     api = {
       open, close, onCaptions, onTranslated, onStatus,
@@ -2767,6 +2770,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       tab: () => S.tab,
       refreshTitle: () => { if (!ov.hidden) setTitle(); },
       refreshLanguage,
+      theme: () => S.theme,
       syncCc: () => { if (ov.hidden) return; const cc = Object.keys(CC_MAP).find((k) => CC_MAP[k] === B.getCc()); if (cc && cc !== S.cc) { S.cc = cc; lastCc = cc; apply(); } },
     };
     uiLoaded.then(() => { if (!ov.hidden) { lastKey = ''; apply(); } });
@@ -2788,5 +2792,6 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     refreshTitle: () => api?.refreshTitle(),
     refreshLanguage: () => api?.refreshLanguage(),
     syncCc: () => api?.syncCc(),
+    theme: () => api?.theme() || '',
   });
 })();

@@ -548,7 +548,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .tile svg{width:22px;height:22px;color:var(--tx)}
 .ov.light .tile svg{color:var(--acct)}
 .tile:hover{filter:brightness(1.08)}
-.srow.off{opacity:.45;pointer-events:none}
+.srow.off{opacity:.45}.srow.off .sw2{pointer-events:none}
 .srow{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 4px;border-bottom:1px solid var(--bd);cursor:default}
 .srow:last-child{border-bottom:0}
 .srow .l{flex:1;min-width:0}
