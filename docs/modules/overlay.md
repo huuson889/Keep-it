@@ -63,6 +63,7 @@ Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều ph
 ## Study: tab Nói · Chép (gộp từ `docs/modules/dictation.md`, v3.5.199)
 
 - v3.5.301: Lặp câu riêng từng tab (`S.repBy`, `S.rep` = tab đang mở; Nói mặc định tắt, Chép 3, Xem tắt), chạm nút = sheet Lặp câu. Nói không mượn `current/solved` chung (của Chép) khi bản ghi chưa có `progressByMode.speaking`. Thanh dưới nguồn Web: favicon của trang (`<link rel=icon>` rồi `LHN_SITE_ICONS`), không có → quả địa cầu. Khung kết quả nhận diện full-width ở màn rộng như câu / bản dịch.
+- v3.5.302: `subtitleIsDisplayLanguage()` (overlay-engine.js, bridge `sameLang`): phụ đề cùng ngôn ngữ hiển thị → tắt bấm / chọn dịch (overlay-ui `tapOn()`, content.js `overlaySameLanguage()`). Nút góc video luôn icon trắng; chạy chữ tìm `.mqw`; hướng dẫn tim nhớ riêng Thường / Rạp.
 - Phạm vi: luyện câu từ phụ đề YouTube hoặc câu Web (Reader) ngay trong overlay. Chép (Typing) và Nói (Speaking) giữ tiến độ/thống kê theo chế độ. SpeechRecognition/MediaRecorder chỉ chạy ở tab Nói; bản ghi âm chỉ nằm tạm trong bộ nhớ để phát lại, không tải lên, không lưu lâu dài.
 - Luồng:
   1. `lhn-overlay-ready` cung cấp `LHN_OVERLAY_API`; YouTube dùng caption cues, Web dùng câu Reader. Phụ đề làm mới qua `lhn-dual-captions-updated`.

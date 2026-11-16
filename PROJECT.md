@@ -204,6 +204,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.302 | Arena.ai Agent sửa:**
+
+- Overlay, theo yêu cầu: (1) ngôn ngữ phụ đề trùng ngôn ngữ hiển thị → tắt bấm dịch và chọn dịch (cả chữ ở Nói / Chép), dòng "Bấm để dịch" trong Cài đặt video mờ, không bấm được. Ngôn ngữ phụ đề lấy theo thứ tự: chọn tay → track video → trang web khi chắc chắn, hoặc 12 câu đầu nhận rõ một ngôn ngữ; không rõ thì vẫn cho dịch; (2) nút ♥ / Rạp góc video ở light mode icon trắng như dark mode (`.ov button{color:inherit}` đè màu trắng); (3) tên nguồn Web chạy chữ lại được (sau v3.5.301 hàm chạy chữ lấy nhầm span quả địa cầu); (4) hướng dẫn chạm tim chạy riêng cho Rạp (Thường và Rạp mỗi chế độ 1 lần mỗi lần mở); cảm ứng: chạy sau khi tắt gợi ý Rạp.
+- File: `js/overlay/overlay-engine.js`, `js/overlay/ui/overlay-ui.js`, `js/overlay/ui/overlay-css.js`, `js/content/content.js`, `docs/modules/overlay.md`, `manifest.json`.
+- Kiểm tra: Chromium nạp extension thật, Overlay web (Alt+F), trang tiếng Anh. Hiển thị vi: bấm chữ đánh dấu chữ, chọn "digital economy" → hiện "kinh tế số", dòng Bấm để dịch bình thường. Hiển thị en: bấm chữ không gì xảy ra, chọn chữ không mở dịch, dòng mờ 0.45. Nút góc video lớn: light và dark đều màu #fff trên nền đen 50%; thẻ nhỏ giữ như cũ. Tên trang dài: rê chuột → chạy chữ. Mở thẳng vào Rạp → hướng dẫn tim hiện. Không lỗi trang. Chưa thử YouTube thật / điện thoại.
+
 **2026-10-23 | v3.5.301 | Arena.ai Agent sửa:**
 
 - Overlay, theo yêu cầu: (1) khung "Kết quả nhận diện giọng nói" trải rộng 2 bên như câu và bản dịch (màn rộng); (2) khoá câu ở danh sách bên trái của Nói độc lập với Chép — bản ghi cũ chỉ có tiến độ chung (của Chép) không còn làm Nói mở khoá theo; (3) Lặp câu riêng từng tab: Nói mặc định tắt, Chép mặc định 3, Xem giữ tắt; chạm nút Lặp câu mở sheet Lặp câu (chú thích sheet / tooltip cập nhật en/vi/ko); (4) lỗi icon nguồn Web: thanh dưới hiện favicon của trang (như PROJECT.md mục 3 đã ghi) thay quả địa cầu; trang không có favicon vẫn là quả địa cầu.

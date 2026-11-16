@@ -1659,6 +1659,10 @@
   const DICTATION_TEXT_RANGE_SELECTOR = "#te-dictation-center .te-dict-speech-result, #te-dictation-center .te-dict-error-words, #te-dictation-center .te-dict-speech-target, #te-dictation-notes .te-dict-stats-word-title";
   const DICTATION_WORD_CLICK_SELECTOR = "#te-dictation-center .te-dict-speech-result .te-dict-speech-word, #te-dictation-center .te-dict-error-words .te-dict-w";
   const VIDEO_SETTINGS_KEY = "lhnYouTubeSettings";
+  // v3.5.302: Overlay subtitles already in the display language → no select / tap translate (overlay-engine.js, same content-script scope)
+  function overlaySameLanguage() {
+    try { return typeof LHN_UNIFIED_BRIDGE === "object" && LHN_UNIFIED_BRIDGE.sameLang(); } catch { return false; }
+  }
   async function loadVideoSelectionSettings() {
     try {
       const data = await browser.storage.local.get(VIDEO_SETTINGS_KEY);
@@ -1724,7 +1728,7 @@
         if (websiteDisabled) return;
         if (isDualSubtitleSelection || isDictationSelection) {
           const videoSettings = await loadVideoSelectionSettings();
-          if (!videoSettings.translationPopupEnabled) return;
+          if (!videoSettings.translationPopupEnabled || overlaySameLanguage()) return;
           if (cfg.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(text)) {
             lookupEnglishDictionary(text, selectedRange, null, { speakOnOpen:videoSettings.clickToSpeak });
           } else {
@@ -1765,7 +1769,7 @@
     loadSettings().then(async cfg => {
       if (websiteDisabled || cfg.showFullEnglishDictionary === false) return;
       const videoSettings = await loadVideoSelectionSettings();
-      if (!videoSettings.translationPopupEnabled) return;
+      if (!videoSettings.translationPopupEnabled || overlaySameLanguage()) return;
       lookupEnglishDictionary(word, range, null, { speakOnOpen:videoSettings.clickToSpeak });
     }).catch(() => {});
   }

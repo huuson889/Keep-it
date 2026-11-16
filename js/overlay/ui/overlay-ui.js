@@ -67,6 +67,7 @@ const LHN_UNIFIED_BRIDGE = Object.freeze({
   getCc: () => { const root = overlayEl(); return ['bilingual', 'primary', 'translation', 'hidden'].find((m) => root?.classList.contains(`te-subtitle-mode-${m}`)) || ''; },
   setCc: (mode) => setSubtitleDisplayModeByUser(mode),
   translate: (text) => translateOne(text),
+  sameLang: () => { try { return state.open && subtitleIsDisplayLanguage(); } catch (_) { return false; } }, // subtitle language = display language
   t: (key, vars = {}) => overlayT(key, vars),
   meta: () => { try { return touchVideoMeta(); } catch (_) { return {}; } },
   loadFavorite: async () => { await loadTouchFavorites(); const id = touchFavoriteKey(); return Boolean(id && touchFavoriteIds.has(id)); },
@@ -663,14 +664,15 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     }
     // hướng dẫn tim (Xem): video đang lớn → 0.9s sau, bàn tay chạm liên tục 5 cái, từ cái thứ 2 mỗi cái bay 1 tim to y như thật (chỉ hình, không thêm yêu thích)
     // vị trí: giữa góc phần tư phải dưới (75% ngang, 75% dọc) — cảm ứng: của cột chứa video · chuột: của video; 1 lần mỗi lần mở; chạm là tắt
-    var hGuideSess = 0, hGuideT = 0; // var + function: apply() có thể gọi trước dòng này (tránh lỗi TDZ)
-    function hGuideOk() { const pl = $('#player'); return !ov.hidden && S.tab === 'view' && !!pl && !pl.classList.contains('card') && !pl.classList.contains('g-in') && !ov.classList.contains('gdrag'); }
+    var hGuideSess = null, hGuideT = 0; // { n: session, t: session } — Thường and Rạp each show it once per opening // var + function: apply() có thể gọi trước dòng này (tránh lỗi TDZ)
+    function hGuideOk() { const pl = $('#player'); return !ov.hidden && S.tab === 'view' && !!pl && !pl.classList.contains('card') && !pl.classList.contains('g-in') && !ov.classList.contains('gdrag') && !ov.classList.contains('tt-hint-on'); }
+    function hGuideDone() { return !!hGuideSess && hGuideSess[curView() === 'theater' ? 't' : 'n'] === S.sess; }
     function heartGuide() {
-      if (hGuideSess === S.sess || hGuideT || !hGuideOk() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (hGuideDone() || hGuideT || !hGuideOk() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       hGuideT = setTimeout(() => {
         hGuideT = 0;
-        if (hGuideSess === S.sess || !hGuideOk()) return;
-        hGuideSess = S.sess;
+        if (hGuideDone() || !hGuideOk()) return;
+        (hGuideSess = hGuideSess || {})[curView() === 'theater' ? 't' : 'n'] = S.sess;
         const pl = $('#player'), o = ov.getBoundingClientRect(), sc = S.scale || 1, ref = (S.input === 'touch' ? pl.closest('.stage') || pl : pl).getBoundingClientRect();
         const x = (ref.left + ref.width * 0.75 - o.left) / sc, y = (ref.top + ref.height * 0.75 - o.top) / sc;
         const g = document.createElement('div'); g.className = 'hguide'; g.setAttribute('aria-hidden', 'true');
@@ -723,7 +725,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         if (isStudy()) { S.showVideo = true; apply(); return; }
         togglePlay(); return;
       }
-      const w = S.tapTranslate && e.target.closest('.wd');
+      const w = tapOn() && e.target.closest('.wd');
       if (w && S.input !== 'touch') { openWord(w); return; }
       onDoubleZone(e, w ? () => openWord(w) : () => {
         if (S.input === 'touch') {
@@ -737,7 +739,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // on touch the subtitle box and the list also take double taps (as today); with a mouse double-click there selects words
     ['#subbox', '#list'].forEach((sel) => $(sel).addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
-      const w = sel === '#subbox' && S.tapTranslate && e.target.closest('.wd');
+      const w = sel === '#subbox' && tapOn() && e.target.closest('.wd');
       if (S.input !== 'touch') { if (w) openWord(w); return; }
       if (sel === '#list') { const row = e.target.closest('.row'); onDoubleZone(e, row ? () => rowClick(row) : null); return; }
       onDoubleZone(e, w ? () => openWord(w) : null);
@@ -847,7 +849,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
           setTimeout(() => { pl.classList.remove('g-in'); pl.style.transition = ''; }, 320);
         }, 140);
       };
-      ov.addEventListener('pointerdown', () => { if (ov.classList.contains('tt-hint-on')) { ov.classList.remove('tt-hint-on'); S.ttHint = true; } }, true);
+      ov.addEventListener('pointerdown', () => { if (ov.classList.contains('tt-hint-on')) { ov.classList.remove('tt-hint-on'); S.ttHint = true; heartGuide(); } }, true);
       pl.addEventListener('pointerdown', (e) => {
         g = null;
         if (S.input !== 'touch' || S.tab !== 'view' || !e.isPrimary || e.button > 0) return;
@@ -1017,8 +1019,9 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
 
     // ---------- tap-to-translate: the word is selected and the existing Keepit popup (content.js) opens on it ----------
     let wordWatch = 0;
+    function tapOn() { return S.tapTranslate && !B.sameLang(); } // off when the subtitles are already in the display language
     function openWord(el, force = false) {
-      if ((!S.tapTranslate && !force) || !el || !el.isConnected) return;
+      if ((!S.tapTranslate && !force) || B.sameLang() || !el || !el.isConnected) return;
       $$('.wd.on').forEach((w) => w.classList.remove('on'));
       el.classList.add('on');
       setPlaying(false);
@@ -1052,7 +1055,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       },
       set: () => `${head(T('videoSettings'))}
         ${isStudy() || wClass() === 'c' ? '' : `<div class="srow" style="flex-wrap:wrap"><div class="l">${T('videoColumn')} <b data-rw>${S.split}%</b><small>${T('landscapeYouCanAlso')}</small></div><div class="seg">${[[34, VI('read')], [60, VI('watch')]] /* "Đọc 34%" is one text node: never translated (kept as before) */.map(([v, l]) => `<button data-split="${v}" class="${S.split === v ? 'on' : ''}">${l} ${v}%</button>`).join('')}</div><input class="rng" type="range" min="25" max="80" step="1" value="${S.split}" data-rng="split"></div>`}
-        <div class="srow"><div class="l">${T('clickToTranslate')}</div>${sw2('tapTranslate', S.tapTranslate)}</div>
+        <div class="srow${B.sameLang() ? ' off' : ''}"><div class="l">${T('clickToTranslate')}</div>${sw2('tapTranslate', S.tapTranslate)}</div>
         <div class="srow"><div class="l">${T('speakTranslation')}</div>${sw2('speakOnTranslate', S.speakOnTranslate)}</div>
         <div class="srow"><div class="l">${T('combineSentences')}</div>${sw2('merge', S.merge)}</div>
         <div class="srow"><div class="l">${T('ambientEffect')}<small>${T('videoColorsSpillInto')}</small></div>${sw2('ambient', S.ambient)}</div>
@@ -1292,7 +1295,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
     // tên video dưới thanh bị cắt → chạy chữ vòng tròn: 'once' (lần đầu mở, 1 vòng) · 'loop' (rê chuột / bấm = chạy mãi) · 'stop'
     const MQ = { a: null, keep: false };
     function titleMarquee(mode) {
-      const sp = $('span', dockEl.title), inner = sp?.querySelector('.mqw');
+      const inner = $('.mqw', dockEl.title), sp = inner?.parentElement; // not $('span'): on web the first span is the globe (.glw)
       MQ.a?.cancel(); MQ.a = null; sp?.classList.remove('mq');
       if (!inner || mode === 'stop' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const d = sp.scrollWidth - sp.clientWidth; if (d < 4 || !sp.offsetWidth) return;

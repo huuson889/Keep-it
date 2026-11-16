@@ -292,6 +292,26 @@ function defaultSubtitleDisplayMode() {
   return cueLanguage && displayLanguage && cueLanguage === displayLanguage ? 'primary' : 'bilingual';
 }
 
+// v3.5.302: subtitle language = the Overlay display language → nothing to translate (tap / select to translate is off)
+// web: the page language counts only when sure (webSourceCueLanguageKnown) or when the first 12 sentences read clearly as one language
+let subtitleLanguageCache = { key: '', lang: '' };
+function subtitleIsDisplayLanguage() {
+  const chosen = state.sourceLanguageSetting && state.sourceLanguageSetting !== 'auto' ? state.sourceLanguageSetting : '';
+  let detected = state.sourceType === 'web'
+    ? (state.webSourceCueLanguageKnown ? state.webSourceDetectedLanguage : '')
+    : state.sourceLanguage;
+  if (!chosen && !detected && state.sourceType === 'web') {
+    const cues = state.allCues || [], key = `${state.sourceId}|${cues.length}`;
+    if (subtitleLanguageCache.key !== key) {
+      const text = cues.slice(0, 12).map((cue) => cue.mainText || cue.en || '').join(' ');
+      subtitleLanguageCache = { key, lang: globalThis.LHN_TTS?.detectReadLanguage?.(text) || '' };
+    }
+    detected = subtitleLanguageCache.lang;
+  }
+  const cue = baseLanguageCode(chosen || detected), shown = baseLanguageCode(state.displayLanguage);
+  return Boolean(cue && shown && cue === shown);
+}
+
 function applyDefaultSubtitleDisplayMode() {
   const contextKey = subtitleModeContextKey();
   if (contextKey && subtitleModeManuallySelectedFor === contextKey) return false;

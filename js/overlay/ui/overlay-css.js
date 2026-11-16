@@ -185,6 +185,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .vc::after{content:"";position:absolute;inset:-6px}
 .vc svg{width:17px;height:17px}
 .vc[hidden]{display:none}
+.player:not(.card) .vc{color:#fff}
 .vc.favb.on{color:#ff2d55}
 /* auto-hide like YouTube: visible when paused, on hover (mouse) or after a tap (touch) */
 .player:not(.card) .vcorner{opacity:0;pointer-events:none}
@@ -546,6 +547,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .tile svg{width:22px;height:22px;color:var(--tx)}
 .ov.light .tile svg{color:var(--acct)}
 .tile:hover{filter:brightness(1.08)}
+.srow.off{opacity:.45;pointer-events:none}
 .srow{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 4px;border-bottom:1px solid var(--bd);cursor:default}
 .srow:last-child{border-bottom:0}
 .srow .l{flex:1;min-width:0}
