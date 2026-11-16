@@ -1153,8 +1153,8 @@ html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name,html.da
   #dashboardSettingsDialog .kp-ai-preview{width:min(400px,100%);pointer-events:none;}
   #dashboardSettingsDialog .settings-switch:has(input[data-ai-provider]:disabled){opacity:.55;}
   /* nhóm có tiêu đề ngay sau công tắc tổng → khoảng cách + đường kẻ như các nhóm khác (rule "kp-master + kp-dependent > :first-child" bỏ chúng đi) */
-  #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > .kp-ai-options:first-child{margin-top:24px !important;padding-top:20px !important;border-top:1px solid rgba(15,23,42,.12) !important;}
-  html.dark #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > .kp-ai-options:first-child{border-top-color:rgba(255,255,255,.12) !important;}
+  #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > :is(.kp-ai-options, .kp-wc-options):first-child{margin-top:24px !important;padding-top:20px !important;border-top:1px solid rgba(15,23,42,.12) !important;}
+  html.dark #dashboardSettingsDialog .settings-panel-page .kp-master + .kp-dependent > :is(.kp-ai-options, .kp-wc-options):first-child{border-top-color:rgba(255,255,255,.12) !important;}
 
   /* AI mặc định */
   #dashboardSettingsDialog .kp-ai-default{margin-top:14px;}
@@ -1162,3 +1162,26 @@ html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name,html.da
   @media (orientation: portrait) and (max-width: 699.98px){ #dashboardSettingsDialog .kp-ai-default-tabs > .settings-logo-action-tab{flex-direction:column;gap:4px;padding:8px 2px;}   /* điện thoại dọc: icon trên chữ để 4 nút vẫn 1 hàng, không cắt chữ */ }
   #dashboardSettingsDialog .kp-ai-tab-icon{display:block;width:16px;height:16px;border-radius:4px;object-fit:contain;}
   #dashboardSettingsDialog .kp-ai-default-tabs > .settings-logo-action-tab.kp-ai-gone{display:none !important;}
+  /* v3.5.290 Settings → Word class: model row (status + progress) and the preview tagged by the real model — looks like demo pos v4 */
+  #dashboardSettingsDialog .kp-wc-model > span:first-child{min-width:0;flex:1 1 auto;}
+  #dashboardSettingsDialog .kp-wc-model > .settings-action-button{flex:0 0 auto;min-width:88px;}
+  #dashboardSettingsDialog .kp-wc-progress{display:block;height:3px;margin-top:8px;border-radius:3px;background:rgba(15,23,42,.1);overflow:hidden;}
+  #dashboardSettingsDialog .kp-wc-progress[hidden]{display:none;}
+  #dashboardSettingsDialog .kp-wc-progress > i{display:block;height:100%;width:0;border-radius:inherit;background:#4f46e5;transition:width .3s ease;}
+  html.dark #dashboardSettingsDialog .kp-wc-progress{background:rgba(255,255,255,.12);}
+  #dashboardSettingsDialog .kp-wc-stage{margin-top:14px;padding:18px 16px;border:1px solid rgba(15,23,42,.12);border-radius:8px;background:rgba(15,23,42,.035);}
+  html.dark #dashboardSettingsDialog .kp-wc-stage{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.04);}
+  #dashboardSettingsDialog .kp-wc-preview{min-height:64px;}
+  #dashboardSettingsDialog .kp-wc-sample{margin:0;font-size:16px;line-height:1.5;color:#0f172a;}
+  #dashboardSettingsDialog .kp-wc-note{margin:10px 0 0;font-size:12.5px;color:#64748b;}
+  #dashboardSettingsDialog .kp-wc-get{margin-top:12px;}
+  #dashboardSettingsDialog .kp-wc-line{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:9px;row-gap:10px;line-height:1.2;}
+  #dashboardSettingsDialog .kp-wc-p{display:inline-flex;flex-direction:column;align-items:center;}
+  #dashboardSettingsDialog .kp-wc-t{font-size:16px;color:#0f172a;white-space:pre;}
+  #dashboardSettingsDialog .kp-wc-u{border-bottom:2px solid;padding-bottom:3px;}
+  #dashboardSettingsDialog .kp-wc-a{margin-top:5px;font-size:12px;font-weight:600;letter-spacing:.01em;white-space:nowrap;min-height:15px;}
+  #dashboardSettingsDialog .kp-wc-sep{color:#94a3b8;margin:0 3px;font-weight:400;}
+  #dashboardSettingsDialog .kp-wc-legend{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:#475569;}
+  #dashboardSettingsDialog .kp-wc-legend b{font-weight:700;}
+  html.dark #dashboardSettingsDialog :is(.kp-wc-sample, .kp-wc-t){color:#e5e7eb;}
+  html.dark #dashboardSettingsDialog :is(.kp-wc-legend, .kp-wc-note){color:#94a3b8;}

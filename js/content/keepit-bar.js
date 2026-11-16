@@ -48,6 +48,9 @@
   const P = {
   lang:'<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
   para:'<path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h7"/><path d="m15 15 3 6 3-6"/>',
+  // v3.5.290 Loại từ: words with a short label under each · Loại từ đoạn: the same on one paragraph (+ the Dịch đoạn chevron)
+  wc:'<path d="M3 6h8"/><path d="M5 10h4"/><path d="M14 6h7"/><path d="M15.5 10h4"/><path d="M3 15h8"/><path d="M5 19h4"/><path d="M14 15h7"/><path d="M15.5 19h4"/>',
+  wcpara:'<path d="M4 6h16"/><path d="M4 11h8"/><path d="M6 15h4"/><path d="M4 19h8"/><path d="m15 13 3 6 3-6"/>',
   read:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
   overlay:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   keyboard:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h.01M12 13h.01M16 13h.01M7 16h10"/>',
@@ -244,14 +247,14 @@
   }
 
   // ---------- bar ----------
-  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more", shorts:"shorts", subs:"subs", you:"you", fav:"fav" };
-  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", shorts:"shorts", subs:"subs", you:"user", fav:"heart" };
+  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more", shorts:"shorts", subs:"subs", you:"you", fav:"fav", wc:"wc", wcblock:"wcBlock" };
+  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", shorts:"shorts", subs:"subs", you:"user", fav:"heart", wc:"wc", wcblock:"wcpara" };
   const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation", subs:"sSubs" };
   const tipFor = id => ({
     home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
     notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`,
-    shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip")
+    shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip"), wc:`${t("wc")} (Alt+G)`, wcblock:`${t("wcBlock")} (Alt+J)`
   }[id]);
   // Thanh chính: 3 kiểu trang (trang thường · trang YouTube · video YouTube) × 2 kiểu thanh (7 nút mọi màn hình · 5 nút = Gọn thanh).
   // Trang chủ luôn là trang chủ Keepit. Shorts / Kênh đăng ký / Bạn = đường dẫn tới trang của YouTube (không ẩn thanh của YouTube).
@@ -265,10 +268,11 @@
     yt:[[["home", "shorts", "fav"], ["subs", "you", "more"]], [["home", "shorts"], ["you", "more"]]],
     watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]]
   };
-  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
+  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
   // Settings → Notes / Translate / Ask AI off = that tool is gone from the bar and ☰ (Translate = page + paragraph translation);
   // its place on the bar goes to the first ☰ tool (TOOLS order) that is on and not on the bar yet, so each side keeps its buttons
-  const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled" };
+  const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled", wc:"wordClassEnabled", wcblock:"wordClassEnabled" };
+  const wcOn = () => !!globalThis.LHN_WORD_CLASS?.pageOn?.();   // v3.5.290 Loại từ cả trang is on (js/word-class/page.js)
   const toolOn = id => !TOOL_FEATURE[id] || settings[TOOL_FEATURE[id]] !== false;
   const navLayout = () => {
     const base = BARS[pageKind()][isFive() ? 1 : 0], used = new Set(base.flat());
@@ -281,7 +285,7 @@
     screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland()); screen.classList.toggle("tabp", isTouch() && !isWide() && !isPland() && !isSmall());
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
-    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
+    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "wc" && wcOn()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
@@ -307,7 +311,7 @@
     screen.classList.toggle("siteoff", S.siteOff);
     screen.classList.toggle("extyield", S.extYield); screen.classList.toggle("readeron", S.readerOn);
     screen.classList.toggle("notesopen", S.notesOn && isTouch()); syncScrollLock();
-    screen.classList.toggle("picking", picking);
+    screen.classList.toggle("picking", !!picking);
     screen.style.setProperty("--yb", "0px");   // v3.5.161: folded = the one line at the bottom edge (never lifted above a page bar)
     screen.style.setProperty("--lw", Math.round(bar.offsetWidth * 0.6) + "px"); screen.style.setProperty("--bw", bar.offsetWidth + "px");
     screen.style.setProperty("--bh", bar.offsetHeight + "px");
@@ -426,6 +430,8 @@
     return true;
   }
   function syncTr() { root?.querySelector('[data-nav="page"]')?.classList.toggle("on", pageTranslated()); }
+  // v3.5.290 Loại từ cả trang on/off (also by Alt+G): the bar button / ☰ tile follow
+  document.addEventListener("lhn-word-class-change", () => { root?.querySelector('[data-nav="wc"]')?.classList.toggle("on", wcOn()); if ($("sheet")?.classList.contains("open") && S.sheetPane === "main") renderSheet(); });
   function togglePage() {
     const was = pageTranslated();
     if (!was && offlineBlock(() => togglePage())) return;
@@ -470,6 +476,8 @@
     if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
+    if (id === "wc") { void globalThis.LHN_WORD_CLASS?.togglePage(); return; }   // confirm / progress / toasts: js/word-class/page.js
+    if (id === "wcblock") { setPicking("wc"); toast(t("wcPickHint")); return; }
     if (id === "reader") { run("reader"); setTimeout(() => { if (document.querySelector("#lhn-bilingual-reading-bar.lhn-show")) toast(t("readerStart")); syncState(); }, 300); return; }
     if (id === "ai") { void askAI(); return; }
     run(id); setTimeout(syncState, 350);
@@ -478,7 +486,8 @@
   document.addEventListener("click", event => {
     if (!picking || !mounted || event.composedPath().includes(host)) return;
     event.preventDefault(); event.stopImmediatePropagation();
-    setPicking(false);
+    const mode = picking; setPicking(false);
+    if (mode === "wc") { void globalThis.LHN_WORD_CLASS?.toggleAt(event.clientX, event.clientY); return; }   // ☰ Loại từ đoạn
     document.dispatchEvent(new MouseEvent("mousemove", { clientX:event.clientX, clientY:event.clientY, bubbles:true }));
     run("bilingual-block");
   }, true);
@@ -638,10 +647,10 @@
   const COLORS = ["yellow", "green", "purple", "red", "blue", "orange"];
   const colorHex = k => globalThis.LHN_CONFIG?.HIGHLIGHT_COLORS?.[k] || DEMO_COLORS[k];
   const curColor = () => globalThis.LHN_CONFIG?.normalizeColor?.(settings.defaultHighlightColor) || settings.defaultHighlightColor || "yellow";
-  const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z") });
-  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"] };
+  const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z"), wc:"Alt+G", wcblock:"Alt+J" });
+  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
-  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]));
+  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), id === "wc" && wcOn());
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
   const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id)).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
@@ -755,6 +764,7 @@
       G.push([t("gGeneral"), [[t("kSite"), shortcut("toggleWebsiteShortcut", "Alt+Z")], [t("kAi"), "Alt+X"], [t("kNotes"), shortcut("sidebarShortcut", "Alt+Q")]]]);
       G.push([t("onSelect"), [[t("kNotePopup"), shortcut("shortcut", "Alt+S")], [t("kTranslateSel"), shortcut("translateSelectedShortcut", "Alt+W")]]]);
       if (!video) G.push([t("gTrRead"), [[t("kLazy"), "Alt+A"], [t("kNear"), "Alt+D"], [t("kRead"), "Alt+R"]]], [t("gReading"), [[t("kPause"), readerKey("speechPauseShortcut", "Space")], [t("kPrevNext"), `${readerKey("previousReadingShortcut", "Left")} / ${readerKey("nextReadingShortcut", "Right")}`], [t("kSpeed"), `${readerKey("increaseReadingSpeedShortcut", "Up")} / ${readerKey("decreaseReadingSpeedShortcut", "Down")}`], [t("kVoice"), shortcut("selectVoiceShortcut", "Alt+L")]]]);
+      if (!video && !isYouTube() && toolOn("wc")) G.push([t("wc"), [[t("kWcPage"), "Alt+G"], [t("kWcBlock"), "Alt+J"]]]);   // v3.5.290
       if (video) G.push([t("gVideo"), [[t("overlay"), shortcut("dualSubtitlesShortcut", "Alt+E")], [t("dictation"), shortcut("dictationShortcut", "Alt+F")], [t("kPlay"), "Space / K"], [t("kPrevS"), "← / J"], [t("kNextS"), "→ / L"], [t("kRate"), "< / >"]]], [t("dictation"), [[t("kPlay"), "`"], [t("kReplay"), "Ctrl"]]]);
       G.push([t("gBar"), [[t("kPickRes"), "↑ / ↓"], [t("kOpenRes"), "Enter"], [t("kClose"), "Esc"]]]);
     } else {

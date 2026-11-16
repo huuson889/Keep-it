@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "wordClass", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -164,7 +164,7 @@ SETTINGS_UI.initLanguagePicker();
 SETTINGS_UI.initSettingsSearch();
 const SETTINGS_KIT = globalThis.LHN_SETTINGS_KIT.create({ t, escapeHtml });
 SETTINGS_KIT.initSelects();
-globalThis.LHN_SETTINGS_PREVIEWS?.init();
+globalThis.LHN_SETTINGS_PREVIEWS?.init({ undo:SETTINGS_KIT.undo });
 const AUTH_POPUP = LHN_AUTH_POPUP.attach($("profileAuthDialog"), { dark:() => document.documentElement.classList.contains("dark"), coarse:() => document.documentElement.classList.contains("kp-coarse") });
 // Keepit bar preferences (browser.storage.local lhnBottomBar, same object the bar's ☰ writes): other keys are kept as they are
 const BAR_SETTINGS_KEY = "lhnBottomBar";
@@ -276,6 +276,7 @@ function renderSettingsExtras() {
   $("settingsNotesEnabled").checked = dashboardSettings.notesEnabled !== false;
   $("settingsTranslateEnabled").checked = dashboardSettings.translateEnabled !== false;
   $("settingsAskAIEnabled").checked = dashboardSettings.askAIEnabled !== false;
+  $("settingsWordClassEnabled").checked = dashboardSettings.wordClassEnabled !== false;
   const sections = dashboardSettings.fullDictionarySections && typeof dashboardSettings.fullDictionarySections === "object" ? dashboardSettings.fullDictionarySections : {};
   document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => { input.checked = sections[input.dataset.dictPart] !== false; });
   const providers = dashboardSettings.askAIProviders && typeof dashboardSettings.askAIProviders === "object" ? dashboardSettings.askAIProviders : {};
@@ -3457,6 +3458,7 @@ $("settingsSidebarIndicatorDisabledSites").addEventListener("change", event => s
 document.querySelectorAll("#dashboardSettingsDialog input[name=sidebarIndicatorTarget]").forEach(input => input.addEventListener("change", event => { if (event.target.checked) saveDashboardSettings({ sidebarIndicatorTarget:event.target.value === "ai" ? "ai" : "notes" }); }));
 $("settingsNotesEnabled").addEventListener("change", event => saveDashboardSettings({ notesEnabled:event.target.checked }));
 $("settingsTranslateEnabled").addEventListener("change", event => saveDashboardSettings({ translateEnabled:event.target.checked }));
+$("settingsWordClassEnabled").addEventListener("change", event => saveDashboardSettings({ wordClassEnabled:event.target.checked }));
 $("settingsAskAIEnabled").addEventListener("change", event => saveDashboardSettings({ askAIEnabled:event.target.checked }));
 document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]").forEach(input => input.addEventListener("change", () => saveDashboardSettings({ fullDictionarySections:Object.fromEntries([...document.querySelectorAll("#dashboardSettingsDialog [data-dict-part]")].map(part => [part.dataset.dictPart, part.checked])) })));
 // AI row: at least one AI stays on; the default AI turned off → "Last used" (the preview module keeps the controls right before this runs)

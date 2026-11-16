@@ -595,6 +595,63 @@
     lock(); syncDefault(); render();
     return { sync:() => { lock(); syncDefault(); render(); } };
   }
-  let ai = null;
-  globalThis.LHN_SETTINGS_PREVIEWS = Object.freeze({ init() { dictionary(); ai = askAI(); }, sync() { dictRender?.(); ai?.sync(); } });
+  // v3.5.290 Settings → Word class: model status with Download / Delete (“Deleted · Undo”: removed after 5 s) and a preview
+  // tagged by the real model (background.js → js/word-class/engine.js), nothing hard-coded; no model → the preview offers it.
+  function wordClass(kit) {
+    const $ = id => document.getElementById(id), status = $("kpWcModelStatus"), btn = $("kpWcModelButton"), prog = $("kpWcModelProgress"), box = $("kpWcPreview"), CORE = globalThis.LHN_WORD_CLASS_CORE;
+    if (!status || !btn || !prog || !box || !CORE) return null;
+    const SAMPLE = "I can't believe she finally finished the book that her grandfather wrote in 1952.";
+    const lang = () => ["en", "vi", "ko"].includes(document.documentElement.lang) ? document.documentElement.lang : "en";
+    const t = (key, vars) => globalThis.LHN_LANGUAGES?.t?.(key, vars || {}, lang()) ?? key;
+    const esc = text => String(text).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+    const send = (type, extra) => globalThis.LHN_MESSAGING?.sendMessage({ type, ...(extra || {}) }).catch(() => null) ?? Promise.resolve(null);
+    let st = null, tags = null, tagging = false, failed = false, pollT = 0, delT = 0;
+    const dark = () => document.documentElement.classList.contains("dark");
+    const pct = () => st?.total ? Math.min(100, Math.round(100 * st.loaded / st.total)) : 0;
+    const ready = () => !!st?.downloaded && !st.loading && !delT;
+    function draw() {
+      const loading = !!st?.loading && !delT;
+      status.textContent = loading ? t("kpWcDownloading", { p:pct() }) : failed ? t("wc_failed") : ready() ? t("kpWcReady") : st ? t("kpWcNotDownloaded") : "";
+      prog.hidden = !loading; prog.firstElementChild.style.width = pct() + "%";
+      btn.textContent = ready() ? t("kpWcDelete") : t("kpWcDownload"); btn.disabled = loading || !st;
+      let key, html;
+      if (ready() && tags) { const tokens = CORE.label(SAMPLE, tags); key = "tags"; html = `<div class="kp-wc-line">${CORE.html(SAMPLE, tokens, dark())}</div><div class="kp-wc-legend">${CORE.legend(tokens, u => t("wc_" + u), dark())}</div>`; }
+      else if (ready()) { key = "busy"; html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p><p class="kp-wc-note">${esc(t("kpWcPreviewBusy"))}</p>`; void tag(); }
+      else if (loading) { key = "loading" + pct(); html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p><p class="kp-wc-note">${esc(t("kpWcDownloading", { p:pct() }))}</p>`; }
+      else { key = st ? "need" : "wait"; html = `<p class="kp-wc-sample">${esc(SAMPLE)}</p>` + (st ? `<button type="button" class="settings-action-button kp-wc-get">${esc(t("kpWcPreviewNeed"))}</button>` : ""); }
+      key += "|" + lang() + "|" + dark();
+      if (box.dataset.kpKey !== key) { box.dataset.kpKey = key; box.innerHTML = html; }
+    }
+    async function tag() {
+      if (tagging) return; tagging = true;
+      const r = await send("WORD_CLASS_TAG", { texts:[SAMPLE] }); tagging = false;
+      if (r?.ok && Array.isArray(r.results?.[0])) tags = r.results[0]; else if (r?.needDownload && st) st = { ...st, downloaded:false };
+      draw();
+    }
+    async function refresh() {
+      clearTimeout(pollT);
+      const r = await send("WORD_CLASS_STATUS"); if (r?.ok) { st = r; failed = !!r.error && !r.loading && !r.downloaded; }
+      draw();
+      if (st?.loading) pollT = setTimeout(refresh, 500);
+    }
+    async function download() {
+      if (delT) { clearTimeout(delT); delT = 0; draw(); return; }
+      failed = false; const r = await send("WORD_CLASS_DOWNLOAD"); if (r?.ok) st = r; draw(); refresh();
+    }
+    const removeNow = () => { clearTimeout(delT); delT = 0; tags = null; return send("WORD_CLASS_REMOVE").then(refresh); };
+    function remove() {
+      delT = setTimeout(removeNow, 5000); draw();
+      kit?.undo?.show(() => { clearTimeout(delT); delT = 0; draw(); }, "kpDeleted");
+    }
+    btn.addEventListener("click", () => { if (ready()) remove(); else void download(); });
+    box.addEventListener("click", e => { if (e.target.closest(".kp-wc-get")) void download(); });
+    document.addEventListener("click", e => { if (e.target.closest?.('[data-settings-tab="wordClass"]')) void refresh(); }, true);
+    addEventListener("pagehide", () => { if (delT) void removeNow(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") void refresh(); });
+    new MutationObserver(draw).observe(document.documentElement, { attributes:true, attributeFilter:["class", "lang"] });
+    void refresh();
+    return { sync:draw };
+  }
+  let ai = null, wc = null;
+  globalThis.LHN_SETTINGS_PREVIEWS = Object.freeze({ init(kit) { dictionary(); ai = askAI(); wc = wordClass(kit); }, sync() { dictRender?.(); ai?.sync(); wc?.sync(); } });
 })();

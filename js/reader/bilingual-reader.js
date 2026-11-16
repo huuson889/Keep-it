@@ -719,7 +719,7 @@
   }
   function isTextBlock(el) {
     const excluded = new Set(["BUTTON","SELECT","OPTION","INPUT","TEXTAREA","SCRIPT","STYLE","LABEL","SVG","NOSCRIPT"]);
-    if (!el || excluded.has(el.tagName) || el.closest("[data-lhn-bilingual-ui],.lhn-bilingual-card,#lhn-bilingual-reading-bar,.lhn-bilingual-speaker,button,select,label")) return false;
+    if (!el || excluded.has(el.tagName) || el.closest("[data-lhn-bilingual-ui],.lhn-bilingual-card,#lhn-bilingual-reading-bar,.lhn-bilingual-speaker,button,select,label,lhn-wc,lhn-wcu")) return false;   // lhn-wc/lhn-wcu: Loại từ words (inline-flex), part of their paragraph
     const computed = getComputedStyle(el);
     if (computed.display === "inline" || computed.display === "none" || computed.visibility === "hidden" || !el.getClientRects().length) return false;
     const hasDirectText = Array.from(el.childNodes).some(node => node.nodeType === 3 && node.textContent.trim().length >= 2);
@@ -1422,7 +1422,9 @@
         for (let el = document.elementFromPoint(x, y + dy); el && el !== document.body && el !== document.documentElement; el = el.parentElement) if (isTextBlock(el)) return el;
       }
       return null;
-    }
+    },
+    // v3.5.290: Loại từ cả trang (js/word-class/page.js) uses the same main-content paragraphs as Alt+A / Alt+R
+    mainBlocks:() => readerBlocks().slice()
   });
   document.addEventListener("lhn-bilingual-reader-command", event => {
     if (event.detail === "stop-reading") { closeReadingBar(); return; }

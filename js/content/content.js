@@ -1859,6 +1859,14 @@
       document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-command", { detail:bilingualAction }));
       return;
     }
+    // v3.5.290 Loại từ (js/word-class/page.js): Alt+G = English paragraphs on the page, Alt+J = the paragraph near the pointer.
+    // Settings → Word class off, or YouTube: the key goes to the page.
+    const wordClassAction = { "alt+g":"page", "alt+j":"block" }[pressed];
+    if (wordClassAction && settings.wordClassEnabled !== false && !/(^|\.)youtube\.com$/.test(location.hostname)) {
+      e.preventDefault(); e.stopPropagation();
+      if (!e.repeat) document.dispatchEvent(new CustomEvent("lhn-word-class-command", { detail:wordClassAction }));
+      return;
+    }
     const translateShortcut = String(settings.translateSelectedShortcut ?? "Alt+W").toLowerCase();
     if (translateShortcut && pressed === translateShortcut && notePopupShortcut !== translateShortcut && settings.translateEnabled !== false) {
       if (panel || e.target.closest?.("#lhn-panel, #lhn-sidebar, #lhn-sidebar-edit-dialog")) return;

@@ -50,3 +50,10 @@
 - Thông báo đăng nhập / đăng xuất ở phía trên; Hoàn tác ở dưới. Popup Đăng nhập: thẻ giữa (máy tính), sheet như Cài đặt (điện thoại).
 - Phím tắt: cảm ứng mở tab Cử chỉ, chuột mở tab Phím tắt.
 
+
+## Loại từ trên trang (v3.5.290)
+
+- Mỗi từ tiếng Anh: gạch chân màu (2px) rồi nhãn viết tắt 12px bên dưới (N, V, Aux V, Adj…); danh từ đứng liền nhau dùng chung một gạch và một nhãn N. Giống `Keepit-demo/pos/keepit-pos-demo-v4.html`, mọi thiết bị như nhau.
+- Thẻ thông báo (hỏi tải mô hình, tiến độ, Đã tắt · Hoàn tác) nổi ở phía trên giữa màn hình, kính mờ như sheet.
+- ☰ Công cụ: Loại từ, Loại từ đoạn ngay sau Dịch đoạn; chỉ trên web (không YouTube, không Overlay).
+- Cài đặt → Loại từ: công tắc tổng, Mô hình (Tải / Xóa, thanh tiến độ), Xem trước bằng mô hình thật, Đặt lại.

@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.289",
+  "version": "3.5.290",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
   "permissions": [
     "storage",
@@ -14,7 +14,8 @@
     "declarativeNetRequest",
     "sidePanel",
     "contextMenus",
-    "scripting"
+    "scripting",
+    "offscreen"
   ],
   "background": {
     "service_worker": "js/background/background.js",
@@ -33,6 +34,7 @@
       "js/ask-ai/prompt-format.js",
       "js/ask-ai/service.js",
       "js/shared/selection-toolbar.js",
+      "js/word-class/core.js",
       "js/background/background.js"
     ]
   },
@@ -100,6 +102,8 @@
         "js/reader/bilingual-flags.js",
         "js/reader/reader-css.js",
         "js/reader/bilingual-reader.js",
+        "js/word-class/core.js",
+        "js/word-class/page.js",
         "js/overlay/source/video.js",
         "js/overlay/source/web.js",
         "js/overlay/overlay-engine.js",

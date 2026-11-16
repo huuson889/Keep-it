@@ -15,6 +15,7 @@
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
 | [Shared](modules/shared.md) | Custom font, icons, search (index + ranking/highlight), sheet, favicon cache, thumbnails | Sửa helper dùng chung giữa Content/Dashboard/Popup. |
 | [Translate](modules/translate.md) | Translation, dictionary, study translation | Sửa provider, cache hoặc từ điển. |
+| [Word class](modules/word-class.md) | Loại từ trên trang: mô hình POS trên máy (Transformers.js), ☰ Loại từ / Loại từ đoạn, Alt+G / Alt+J, Cài đặt → Loại từ | Sửa nhãn loại từ, mô hình, tải/xóa mô hình hoặc cách bọc từ. |
 | [Video](modules/video.md) | YouTube caption source, transcript, cache và timing | Sửa track selection, caption parsing, transcript cache hoặc cue/playback sync. |
 | [Nhật ký cũ](changelog/v3.5.md) | Lịch sử thay đổi đã chuyển khỏi `PROJECT.md`: [v3.5.x](changelog/v3.5.md), [v3.4.x và cũ hơn](changelog/v3.4-va-cu-hon.md) | Chỉ khi cần tra lý do/lịch sử của một version cũ. |
 | [Supabase](supabase/SUPABASE_SYNC.md) | Hợp đồng dữ liệu đồng bộ cloud + `supabase-schema.sql` (chưa nối trong addon) | Khi làm đồng bộ cloud. |

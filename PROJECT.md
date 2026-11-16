@@ -204,6 +204,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.290 | Arena.ai Agent sửa:**
+
+- Thêm Loại từ (Word class / 품사) như demo pos v4: mỗi từ tiếng Anh trên trang có gạch chân màu rồi nhãn viết tắt 12px (N, V, Aux V, Adj…), danh từ liền nhau chung một gạch và một nhãn N; nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8) gán, không danh sách cứng.
+  - ☰ Công cụ (chỉ web, không YouTube / Overlay): Loại từ (các đoạn tiếng Anh trên trang, gắn thêm khi cuộn; đoạn khác tiếng Anh bỏ qua) và Loại từ đoạn (chạm chọn đoạn), ngay sau Dịch đoạn. Phím Alt+G / Alt+J, có trong Phím tắt (☰ và Cài đặt).
+  - Lần đầu hỏi "Tải mô hình loại từ?" (~110 MB từ huggingface.co), hiện %; sau đó chạy trên máy, không cần mạng; rảnh 3 phút thì giải phóng bộ nhớ.
+  - Nhãn nằm trong shadow DOM đóng: chữ trang không đổi (không bị đọc / dịch / chọn kèm); tắt → HTML trang như cũ, có Hoàn tác.
+  - Cài đặt → Loại từ (Tiện ích, sau Dịch): Bật loại từ (tắt là tắt mọi nơi), Mô hình Tải / Xóa (Hoàn tác), Xem trước bằng mô hình thật, Đặt lại.
+- Chrome: quyền `offscreen` + CSP `'wasm-unsafe-eval'` (người dùng đã duyệt); Firefox: engine chạy trong background page, bản Firefox bỏ `offscreen`.
+- File: `js/word-class/{core,engine,page}.js` (mới), `pages/word-class-engine.html` (mới), `vendor/transformers/` (mới: Transformers.js 3.8.1 + ONNX Runtime Web WASM), `js/background/background.js`, `js/content/{content,keepit-bar}.js`, `js/reader/bilingual-reader.js` (`mainBlocks`, bỏ `lhn-wc` khỏi `isTextBlock`), `js/core/{defaults,languages}.js`, `js/dashboard/{dashboard,settings-ui}.js`, `pages/dashboard.html`, `css/dashboard/settings.css`, `manifest.json`, `scripts/build_firefox.py`, `PRIVACY-POLICY.md`, `THIRD_PARTY_NOTICES.md`, `licenses/` (Transformers.js, jinja, ONNX Runtime + notices), `docs/modules/word-class.md`, `docs/INDEX.md`, `docs/ui-layout.md`.
+- Kiểm tra: Chromium nạp extension thật + trang thử http: Cài đặt → Tải → Đã tải, xem trước có nhãn (sáng / tối); Alt+G gắn 51 từ, đoạn tiếng Việt bỏ qua, `innerText` + vùng chọn không đổi, tắt → HTML như ban đầu; Alt+J / ☰ Loại từ đoạn gắn đúng một đoạn, bấm lại gỡ; ô ☰ Loại từ sáng khi bật; công tắc tổng tắt → gỡ nhãn, ẩn 2 ô, Alt+G không tác dụng.
+- Chưa làm: chưa thử trên Firefox thật và điện thoại thật; mô hình không ghi giấy phép trên Hugging Face (ghi chú trong `THIRD_PARTY_NOTICES.md`).
+
 **2026-10-23 | v3.5.289 | Arena.ai Agent sửa:**
 
 - Người dùng chốt: tắt Dịch / Hỏi AI / Ghi chú trong Cài đặt là tắt ở mọi nơi; Trình đọc không đọc song ngữ khi Dịch tắt. Áp dụng ngay, không cần tải lại:

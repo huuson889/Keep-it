@@ -1,5 +1,5 @@
 if (typeof importScripts === "function") {
-  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js", "/js/shared/selection-toolbar.js");
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js", "/js/shared/selection-toolbar.js", "/js/word-class/core.js");
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
@@ -242,9 +242,66 @@ async function openHighlight(url, id) {
   }
   return { found: false };
 }
+// v3.5.290 Loại từ (Word class): one on-device engine for all tabs (js/word-class/engine.js). Chrome = offscreen document
+// pages/word-class-engine.html, opened on demand and closed when the engine reports idle; Firefox = the engine module imported
+// into this background page. Status / delete work from the cache alone, so Settings never starts the engine just to look.
+const WC_ENGINE = "pages/word-class-engine.html", WC_CACHE = "transformers-cache";
+let wcCreating = null, wcModule = null;
+const wcOffscreen = () => !!globalThis.chrome?.offscreen;
+async function wcOpen() {
+  if (!wcOffscreen()) return !!wcModule;
+  const contexts = await chrome.runtime.getContexts({ contextTypes:["OFFSCREEN_DOCUMENT"], documentUrls:[chrome.runtime.getURL(WC_ENGINE)] });
+  return contexts.length > 0;
+}
+async function wcEngine() {
+  if (!wcOffscreen()) { wcModule ||= import(browser.runtime.getURL("js/word-class/engine.js")); return (await wcModule).handle; }
+  if (!(await wcOpen())) {
+    wcCreating ||= chrome.offscreen.createDocument({ url:WC_ENGINE, reasons:["WORKERS"], justification:"Runs the on-device word class (part of speech) model" }).finally(() => { wcCreating = null; });
+    await wcCreating;
+  }
+  // the new document registers its listener once its module has loaded: retry while nobody is listening yet
+  return async message => {
+    for (let i = 0; ; i++) {
+      try { const r = await chrome.runtime.sendMessage({ ...message, target:"lhn-word-class-engine" }); if (r !== undefined || i >= 50) return r; }
+      catch (error) { if (i >= 50 || !/receiving end|establish connection/i.test(String(error?.message || error))) throw error; }
+      await delay(100);
+    }
+  };
+}
+async function wcCached() {
+  const core = globalThis.LHN_WORD_CLASS_CORE;
+  try {
+    if (!core || !(await caches.has(WC_CACHE))) return false;
+    const cache = await caches.open(WC_CACHE);
+    for (const file of core.MODEL_FILES) if (!(await cache.match(core.MODEL_URL(file)))) return false;
+    return true;
+  } catch { return false; }
+}
+async function wcClose() { if (wcOffscreen() && await wcOpen()) await chrome.offscreen.closeDocument().catch(() => {}); }
+async function wordClassMessage(message) {
+  const type = message.type;
+  if (type === "WORD_CLASS_IDLE") { await wcClose(); return { ok:true }; }
+  if (type === "WORD_CLASS_STATUS") {
+    if (await wcOpen()) return (await wcEngine())({ op:"status" });
+    return { ok:true, downloaded:await wcCached(), loading:false, loaded:0, total:0, error:"" };
+  }
+  if (type === "WORD_CLASS_REMOVE") {
+    if (await wcOpen()) { await (await wcEngine())({ op:"remove" }); await wcClose(); }
+    try { await caches.delete(WC_CACHE); } catch {}
+    return { ok:true };
+  }
+  if (type === "WORD_CLASS_DOWNLOAD") return (await wcEngine())({ op:"download" });
+  if (type === "WORD_CLASS_TAG") {
+    const texts = Array.isArray(message.texts) ? message.texts.slice(0, 50).map(text => String(text || "").slice(0, 20000)) : [];
+    if (!(await wcOpen()) && !(await wcCached())) return { ok:false, needDownload:true };
+    return (await wcEngine())({ op:"tag", texts });
+  }
+  return { ok:false, error:"unknown word class message" };
+}
 LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
   if (!message || !message.type) return;
   if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
+  if (typeof message.type === "string" && message.type.startsWith("WORD_CLASS_")) return wordClassMessage(message);
   if (message.type === "DETECT_READ_LANGUAGE") return LHN_TRANSLATE.detectReadLanguageRemote(message.text);
   if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return LHN_TRANSLATE.translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
   if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
