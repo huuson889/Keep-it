@@ -204,6 +204,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-10-23 | v3.5.295 | Arena.ai Agent sửa:**
+
+- Loại từ: đoạn tiếng Anh ngắn không còn bị bỏ qua oan (ví dụ tiêu đề "Vietnam’s digital economy gains momentum with AI adoption": `chrome.i18n.detectLanguage` trả "pt 100%" nhưng `isReliable:false`, code cũ vẫn tin vì ≥60%).
+  - Cả trang (Alt+G): chỉ tin bộ nhận diện của trình duyệt khi `isReliable`; không chắc → ngôn ngữ trang (`<html lang>`, rồi nhận diện chữ cả trang). Vẫn offline.
+  - Loại từ đoạn (☰ / Alt+J, người dùng tự chọn đoạn): chỉ chặn đoạn rõ ràng không phải tiếng Anh (chữ khác, nhiều chữ có dấu); chữ a–z thì luôn gắn nhãn.
+- File: `js/word-class/page.js`, `manifest.json`, `docs/modules/word-class.md`.
+- Kiểm tra: Chromium nạp extension thật. Trang `lang="en"`: Alt+G gắn tiêu đề (7 cột) + đoạn; trang `lang="vi"`: Alt+G bỏ cả tiêu đề tiếng Anh lẫn đoạn tiếng Việt, Alt+J trên tiêu đề → gắn 7 cột, Alt+J trên đoạn tiếng Việt → không gắn; không lỗi trang.
+
 **2026-10-23 | v3.5.294 | Arena.ai Agent sửa:**
 
 - Loại từ: gạch chân sát chữ hơn, khoảng gạch → nhãn đều nhau ở mọi phông / cỡ chữ (trước đây gạch là `border-bottom` theo hộp chữ của phông, tiêu đề chữ to bị gạch xa chữ và dính sát nhãn).

@@ -211,11 +211,13 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
     const l = (document.documentElement.lang || "").toLowerCase();
     return pageEn = l ? l.startsWith("en") : null;
   }
-  async function english(text) {
+  // manual = the user picked this paragraph (☰ Loại từ đoạn / Alt+J): plain a–z text is enough, no guessing
+  async function english(text, manual) {
     const letters = (text.match(/\p{L}/gu) || []).length, latin = (text.match(/[A-Za-z]/g) || []).length;
     if (latin < 2 || latin / letters < 0.9) return false;                       // other scripts, or many accented letters (Vietnamese…)
-    if (text.trim().length >= 40) {
-      try { const r = await api.i18n.detectLanguage(text.slice(0, 1000)); const top = r?.languages?.[0]; if (top && (r.isReliable || top.percentage >= 60)) return top.language === "en"; } catch {}
+    if (manual) return true;
+    if (text.trim().length >= 40) {   // the browser's guess only when it is sure (short headlines come back "pt 100%, not reliable")
+      try { const r = await api.i18n.detectLanguage(text.slice(0, 1000)); const top = r?.languages?.[0]; if (top && r.isReliable) return top.language === "en"; } catch {}
     }
     const p = pageEnglish(); if (p !== null) return p;
     try { const r = await api.i18n.detectLanguage((document.body?.innerText || "").slice(0, 2000)); pageEn = r?.languages?.[0]?.language === "en"; } catch { pageEn = true; }
@@ -313,7 +315,7 @@ button.pri{color:#fff;background:#4f46e5}button.link{background:none;color:#4f46
       if (!block.isConnected || taggedNear(block) || !enabled()) return "skip";
       const collected = collect(block);
       if (!/[A-Za-z]{2}/.test(collected.text)) return "empty";
-      if (!(await english(collected.text))) return "lang";
+      if (!(await english(collected.text, !quiet))) return "lang";
       clearTimeout(workT); workT = setTimeout(() => { if (!card?.classList.contains("on")) showCard(`<div class="row"><span class="tx">${esc(t("working"))}</span></div>`); }, 700);
       const r = await send("WORD_CLASS_TAG", { texts:[collected.text] });
       clearTimeout(workT); if (card?.textContent === t("working")) hideCard();
