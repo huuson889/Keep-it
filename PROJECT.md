@@ -1,18 +1,19 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.336**, nhánh `Keepit-Optimize-Test`; PDF Original speaker icon dùng hit-test paragraph/hover với visibility always/hover; double-click Reader nhảy đoạn khi đang đọc/tạm dừng. Chưa browser-test trên app/PDF thật.
+- Version **3.5.337**, nhánh `Keepit-Optimize-Test`; PDF Original speaker dùng hit-test paragraph/hover; PDF tables nhận diện hàng thẳng cột thành một block để dịch theo hàng và TTS đọc tuần tự. Các mục mới chưa browser-test trên PDF thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu & Reader — v3.5.336
+### Tài liệu & Reader — v3.5.337
 - Cần xác nhận trên PDF thật khi Cuộn theo tệp bật: tâm đoạn PDF và tâm card gốc + dịch trùng nhau khi cuộn liên tục/trang đơn và bản dịch tải muộn. Chưa browser-test.
 - Cần xác nhận double-click khi Reader đang chạy/tạm dừng nhảy và tiếp tục đúng đoạn trên web, Documents PDF (nhiều span/trang), và Read mode. Chưa browser-test.
 - Cần xác nhận speaker icon PDF Original bằng Chrome thật: hover trên text và vùng paragraph, setting always/hover, click-to-read, auto-scroll, vị trí/kích thước. Chưa browser-test.
 - Cần xác nhận trên Documents thật: panel Bản dịch có mặc định 1.5× theo breakpoint và giữ bề rộng đã lưu; hai dòng nguồn/bản dịch là 12px, giảm 1px so với trước. Chưa browser-test.
+- Cần xác nhận PDF bảng thật: một mục dịch với newline mỗi hàng/` — ` giữa ô; Reader đọc tuần tự theo hàng, không tô hàng. Chưa browser-test; synthetic geometry test đạt.
 - Cần xác nhận với tài liệu thật ở theme sáng/tối: màu bản dịch dễ đọc và cỡ chữ khớp nguồn. Chưa browser-test UI.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
@@ -223,6 +224,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.337 | Arena.ai Agent sửa:**
+
+- PDF nhận dạng các hàng bảng có cột lặp/thẳng hàng và ô phụ hẹp thành một paragraph block. Dịch hiển thị mỗi hàng trên dòng mới, ô ngăn bởi ` — `; TTS đọc nội dung hàng tuần tự với pause bằng `; `, không thêm highlight hàng.
+- File: `manifest.json`, `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `js/reader/bilingual-reader.js`, `css/dashboard/documents.css`, `docs/modules/dashboard.md`, `docs/modules/reader.md`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` renderer/Documents/Reader, `git diff --check`, synthetic PDF geometry test (bảng 5 hàng thành một block; paragraph thường và prose hai cột không đổi) đạt; chưa browser-test PDF thật.
 
 **2026-11-17 | v3.5.336 | Arena.ai Agent sửa:**
 

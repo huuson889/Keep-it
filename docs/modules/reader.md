@@ -21,7 +21,7 @@ Một Reader chung chọn nội dung, dịch song ngữ và đọc liên tục c
 2. `LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh})` cung cấp text cho Web Study; force chỉ bỏ cache, không đổi extractor. `LHN_READER_BAR` giữ API rate/tile/blockAt/mainBlocks cho thanh Keepit/POS.
 3. `LHN_READER_API` là facade gọi chính Reader: `start`, `toggle`, `stop`, `reset`, `translate`, `setTranslation`, `refreshSource`, `refreshTranslations`, `state`. Document pager chỉ nhường chỗ theo trạng thái native bar.
 4. `translateBlock()` dùng cùng native card/provider/style. Trên web card nằm cạnh paragraph; file adapter có thể đặt chính card đó trong sidebar để không phá PDF. Helper `translationCard`/`translationBlock` giữ liên kết source; không dựng card/translation queue riêng.
-5. `LHN_TTS` phát với voice/rate chung; adapter xử lý page boundary. Double-click nhảy vào queue hiện hành. PDF Original dùng speaker icon chung trên overlay không scale, neo cuối paragraph; hit-test theo span/paragraph bounds để hover nội dung hiện icon đoạn tương ứng.
+5. `LHN_TTS` dùng voice/rate chung; adapter xử lý page boundary và double-click queue. PDF table có các hàng/cột thẳng hàng được gom thành một block; dịch giữ newline giữa hàng, TTS ngắt hàng bằng dấu chấm phẩy, không tô nổi từng hàng. PDF Original dùng speaker chung trên overlay không scale; hit-test paragraph bật icon đúng đoạn.
 6. Các command/event `lhn-bilingual-reader-*` và pause-state/start event giữ nguyên; Web Study và Reader tiếp tục loại trừ nhau. More trên file mở cài đặt Reader hiện có của Dashboard.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -29,10 +29,10 @@ Một Reader chung chọn nội dung, dịch song ngữ và đọc liên tục c
 - Không có context trên web thì extractor, metadata exclusions, source cache và hành vi UI giữ đường cũ; không đọc thêm body/title cho AI.
 - Dịch master tắt → không lazy/paragraph/bilingual read; preference lưu không bị mất. Dừng/đổi nguồn phải hủy token, utterance/audio, waiters và request cũ; không phát audio muộn.
 - Giữ `#lhn-bilingual-reading-bar`, `lhn-show`, spacer trên web, flags/voice/favorite/rate semantics. File dùng viewport riêng nên adapter bỏ body spacer, không tạo thanh thay thế.
-- Font override/speaker insertion chỉ dùng nơi source cho phép; không viết lại font/hình học PDF/Office gốc. Text projection của mode Đọc vẫn là dữ liệu tệp thật. Mọi PDF text span phải ánh xạ về một paragraph; Reader đọc một lần và đánh dấu tất cả spans của đoạn.
+- Font override/speaker insertion chỉ dùng nơi source cho phép; không viết lại hình học PDF/Office. Mọi PDF span ánh xạ về paragraph; các hàng bảng thẳng cột cùng một block và giữ chỉ số span cho anchor/selection.
 - Double-click khi Reader đang chạy/tạm dừng chỉ nhảy nếu target ánh xạ được tới readable block; bar/control/input không kích hoạt. Dùng queue và luồng hủy TTS hiện có, không tạo playback engine riêng. Speaker icon PDF dùng chung visibility/settings/start handler của web; hover trên bất kỳ span nào trong paragraph hiện icon đúng đoạn; JS bật marker `data-source-hover` bằng presence, CSS match theo presence. Visibility chỉ còn `always` và `hover`; giá trị `reading` cũ được migrate về `hover`.
 - `LHN_READER_SPEECH_RATE.getRate/setRate` dùng cùng resolver; không ảnh hưởng Dictation slow replay, YouTube hoặc tốc độ Flashcard riêng.
-- Sheet/popover dùng `LHN_SHEET`; More trên web vẫn gọi Keepit menu. Không ghép CSS màu mới vào Reader.
+- Sheet/popover dùng `LHN_SHEET`; không ghép CSS màu mới vào Reader.
 
 ## 5. Kiểm tra và xác minh
 

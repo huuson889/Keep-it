@@ -543,6 +543,7 @@ html.dark .tour button{background:#0000000f}
 .transSource{font-size:11.5px;font-weight:700;color:var(--brand);padding:0 2px}
 .transItem{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:12px;line-height:1.65}
 .transItem .source{color:var(--muted);font-size:inherit;margin-bottom:8px}
+.transItem.tableItem .source,.lhn-bilingual-card.lhn-document-table,.readFrame .para[data-pdf-table="true"] .en{white-space:pre-line}
 .transItem .trText{color:var(--ink)}
 .transTip{padding:8px 12px 12px;font-size:11.5px;color:var(--muted)}
 .toast{top:118px;max-width:min(560px,calc(100vw - 24px));font-size:12.5px;text-align:center;z-index:94}

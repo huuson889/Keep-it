@@ -1233,6 +1233,7 @@
       if (!document.body.contains(block)) return;
       if (!card) { card = document.createElement("div"); card.className = "lhn-bilingual-card"; }
       card.textContent = translated; card.dataset.sourceText = text; card.dataset.targetLang = targetLang;
+      card.classList.toggle("lhn-document-table", block.dataset.pdfTable === "true");
       updateTranslationCardStyle(card, block);
       if (pageContext) pageContext.mountReaderCard(block, card);
       else { const speaker = block.querySelector(":scope > .lhn-bilingual-speaker"); speaker ? speaker.after(card) : block.appendChild(card); }
@@ -1381,12 +1382,16 @@
   }
   // Đọc luôn cả đoạn dịch song ngữ phía dưới (chỉ khi đoạn có bản dịch)
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
+  function speechTextFor(block, text = rawText(block, true)) {
+    if (block?.dataset?.pdfTable !== "true") return text;
+    return String(text || "").split(/\r?\n+/).map(row => row.trim()).filter(Boolean).join("; ");
+  }
   function readSegmentsFor(block) {
     if (!readTr()) return null;
     const card = translationCard(block);
     const translated = card?.textContent.trim();
     if (!translated) return null;
-    return { source: rawText(block, true), translated, lang: card.dataset.targetLang || displayLang };
+    return { source:speechTextFor(block), translated:speechTextFor(block, translated), lang:card.dataset.targetLang || displayLang };
   }
   // Đoạn gốc vừa đọc xong: nếu tuỳ chọn được bật (kể cả vừa bật trong lúc đang đọc) và đoạn có bản dịch
   // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
@@ -1395,7 +1400,7 @@
     const card = translationCard(block);
     const translated = card?.textContent.trim();
     if (!translated) return null;
-    return { text:translated, lang:card.dataset.targetLang || displayLang };
+    return { text:speechTextFor(block, translated), lang:card.dataset.targetLang || displayLang };
   }
   // Tắt tuỳ chọn khi đang đọc bản dịch của đoạn hiện tại: cắt ngay phần bản dịch, không đọc tiếp.
   function skipBilingualSegment() {
@@ -1411,9 +1416,9 @@
     speakAfterCancel();
   }
   function readTextFor(block) {
-    const source = rawText(block, true);
+    const source = speechTextFor(block);
     const card = translationCard(block);
-    const translated = readTr() && card ? card.textContent.trim() : "";
+    const translated = readTr() && card ? speechTextFor(block, card.textContent.trim()) : "";
     return translated ? `${source}\n${translated}` : source;
   }
   let readerErrorToastTimer = null;

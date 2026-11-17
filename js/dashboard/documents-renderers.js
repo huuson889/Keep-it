@@ -79,27 +79,68 @@
       return normPdfText(out);
     };
     for(const line of lines){line.parts.sort((a,b)=>a.left-b.left);line.text=lineText(line);line.x=line.left;line.top=Math.min(line.top,line.y-line.fontSize);line.bottom=Math.max(line.bottom,line.y+line.fontSize*.2);}
+    // Repeated aligned narrow cells identify a table row more reliably than isolated x-gaps.
+    const visualRows=[];
+    for(const line of lines.slice().sort((a,b)=>a.y-b.y||a.left-b.left)){
+      const tolerance=Math.max(2,line.fontSize*.35);let row=visualRows.at(-1);
+      if(!row||Math.abs(row.y-line.y)>Math.max(tolerance,row.fontSize*.35)){row={y:line.y,top:line.top,bottom:line.bottom,fontSize:line.fontSize,lines:[]};visualRows.push(row);}
+      row.lines.push(line);row.top=Math.min(row.top,line.top);row.bottom=Math.max(row.bottom,line.bottom);row.fontSize=Math.max(row.fontSize,line.fontSize);
+    }
+    function cellsForRow(row){
+      const parts=row.lines.flatMap(line=>line.parts).sort((a,b)=>a.left-b.left),groups=[];let group=[];
+      for(const part of parts){const previous=group.at(-1);if(group.length&&part.left-previous.right>Math.max(24,part.fontSize*2.2)){groups.push(group);group=[];}group.push(part);}
+      if(group.length)groups.push(group);
+      return groups.map(parts=>({parts,text:lineText({parts,rtl:parts[0]?.rtl}),left:parts[0].left,right:parts.at(-1).right}));
+    }
+    for(const row of visualRows){row.cells=cellsForRow(row);const first=row.cells[0],second=row.cells[1],secondWidth=second?second.right-second.left:Infinity,firstWidth=first?first.right-first.left:0;
+      row.tableCandidate=row.cells.length>=3||(row.cells.length>=2&&secondWidth<=Math.max(pageWidth*.3,row.fontSize*8)&&secondWidth<=firstWidth*.85);
+    }
+    const tableRuns=[];const usedRows=new Set();
+    for(let i=0;i<visualRows.length;i++){
+      const first=visualRows[i];if(!first.tableCandidate||usedRows.has(first))continue;
+      const run=[first];let last=first,evidence=1,missingCellRows=0;
+      for(let j=i+1;j<visualRows.length;j++){
+        const next=visualRows[j],gap=next.top-last.bottom,tolerance=Math.max(12,first.fontSize*1.5),cellTolerance=Math.max(18,first.fontSize*2);
+        if(gap>Math.max(18,first.fontSize*2.6)||Math.abs(next.cells[0]?.left-first.cells[0].left)>tolerance)break;
+        if(next.tableCandidate){
+          if(Math.abs(next.cells[1].left-first.cells[1].left)>cellTolerance)break;
+          run.push(next);last=next;evidence++;missingCellRows=0;
+        }else if(next.cells.length===1&&missingCellRows===0){run.push(next);last=next;missingCellRows++;}
+        else break;
+      }
+      if(evidence<2)continue;
+      const tableId=tableRuns.length+1;
+      for(const row of run){row.tableId=tableId;row.tableText=row.cells.map(cell=>cell.text).filter(Boolean).join(' — ');usedRows.add(row);}
+      tableRuns.push(run);
+    }
+    const replacedLines=new Map();
+    for(const run of tableRuns)for(const row of run){
+      const parts=row.lines.flatMap(line=>line.parts),synthetic={parts,text:row.tableText,x:row.cells[0].left,left:row.cells[0].left,right:row.cells.at(-1).right,y:row.y,top:row.top,bottom:row.bottom,fontSize:row.fontSize,angle:row.lines[0]?.angle||0,rtl:false,tableId:row.tableId};
+      for(const line of row.lines)replacedLines.set(line,synthetic);
+    }
+    const workingLines=[],seenTableRows=new Set();
+    for(const line of lines){const replacement=replacedLines.get(line);if(!replacement)workingLines.push(line);else if(!seenTableRows.has(replacement)){workingLines.push(replacement);seenTableRows.add(replacement);}}
     // A wide, stable gutter plus vertically overlapping text lines is a stronger two-column signal than x-position alone.
-    const starts=lines.map(line=>line.left).sort((a,b)=>a-b);let split=null,largest=0;
+    const starts=workingLines.map(line=>line.left).sort((a,b)=>a-b);let split=null,largest=0;
     for(let i=1;i<=starts.length-2;i++){const gap=starts[i]-starts[i-1];if(gap>largest&&gap>=Math.max(32,pageWidth*.12)){largest=gap;split=(starts[i]+starts[i-1])/2;}}
     let columns=null;
-    if(split!=null){const left=lines.filter(line=>line.left<split),right=lines.filter(line=>line.left>=split);if(left.length>=2&&right.length>=2){const overlap=Math.min(Math.max(...left.map(x=>x.bottom)),Math.max(...right.map(x=>x.bottom)))-Math.max(Math.min(...left.map(x=>x.top)),Math.min(...right.map(x=>x.top)));if(overlap>Math.min(Math.max(...left.map(x=>x.bottom))-Math.min(...left.map(x=>x.top)),Math.max(...right.map(x=>x.bottom))-Math.min(...right.map(x=>x.top)))*.25)columns=[left,right];}}
-    const readingLines=columns?columns.flatMap((column,columnIndex)=>column.sort((a,b)=>a.y-b.y||a.left-b.left).map(line=>({...line,columnIndex}))):lines.sort((a,b)=>a.y-b.y||a.left-b.left);
+    if(split!=null){const left=workingLines.filter(line=>line.left<split),right=workingLines.filter(line=>line.left>=split);if(left.length>=2&&right.length>=2){const overlap=Math.min(Math.max(...left.map(x=>x.bottom)),Math.max(...right.map(x=>x.bottom)))-Math.max(Math.min(...left.map(x=>x.top)),Math.min(...right.map(x=>x.top)));if(overlap>Math.min(Math.max(...left.map(x=>x.bottom))-Math.min(...left.map(x=>x.top)),Math.max(...right.map(x=>x.bottom))-Math.min(...right.map(x=>x.top)))*.25)columns=[left,right];}}
+    const readingLines=columns?columns.flatMap((column,columnIndex)=>column.sort((a,b)=>a.y-b.y||a.left-b.left).map(line=>({...line,columnIndex}))):workingLines.sort((a,b)=>a.y-b.y||a.left-b.left);
     const paragraphs=[];let current=null;
     const bullet=/^(?:[•◦▪‣*-]|\d{1,3}[.)]|\([a-z0-9]+\))\s/i;
     for(const line of readingLines){if(!line.text)continue;const previous=current?.lines.at(-1),gap=previous?line.top-previous.bottom:Infinity;
+      const sameTable=Boolean(line.tableId&&current?.tableId===line.tableId),tableBoundary=Boolean(line.tableId)!==Boolean(current?.tableId)||(line.tableId&&current?.tableId&&line.tableId!==current.tableId);
       const fontBreak=previous&&Math.abs(line.fontSize-previous.fontSize)>Math.max(1.5,previous.fontSize*.2);
-      const newParagraph=!current||!previous||line.columnIndex!==previous.columnIndex||gap>Math.max(5,line.fontSize*.72)||fontBreak||bullet.test(line.text);
-      if(newParagraph){current={text:line.text,lines:[line],items:[]};paragraphs.push(current);}else{
-        const last=current.text;
-        if(/(?:[A-Za-z]{3,})[-\u2010\u00ad]$/.test(last)&&/^[a-z]/.test(line.text))current.text=last.slice(0,-1)+line.text;
-        else current.text=normPdfText(last+' '+line.text);
+      const newParagraph=!sameTable&&(tableBoundary||!current||!previous||line.columnIndex!==previous.columnIndex||gap>Math.max(5,line.fontSize*.72)||fontBreak||bullet.test(line.text));
+      if(newParagraph){current={text:line.text,lines:[line],items:[],tableId:line.tableId||0,rows:line.tableId?[line.text]:[]};paragraphs.push(current);}else{
+        if(sameTable){current.text+='\n'+line.text;current.rows.push(line.text);}
+        else{const last=current.text;if(/(?:[A-Za-z]{3,})[-\u2010\u00ad]$/.test(last)&&/^[a-z]/.test(line.text))current.text=last.slice(0,-1)+line.text;else current.text=normPdfText(last+' '+line.text);}
         current.lines.push(line);
       }
       current.items.push(...line.parts.map(part=>part.index));
     }
     const fragmentToParagraph=Array(items.length).fill(-1);
-    const clean=paragraphs.map((paragraph,index)=>{for(const fragment of paragraph.items)fragmentToParagraph[fragment]=index;return {text:normPdfText(paragraph.text),items:paragraph.items};}).filter(paragraph=>paragraph.text);
+    const clean=paragraphs.map((paragraph,index)=>{for(const fragment of paragraph.items)fragmentToParagraph[fragment]=index;const text=paragraph.tableId?paragraph.rows.map(normPdfText).filter(Boolean).join('\n'):normPdfText(paragraph.text);return {text,items:paragraph.items,...(paragraph.tableId?{isTable:true,rows:paragraph.rows.map(normPdfText).filter(Boolean)}:{})};}).filter(paragraph=>paragraph.text);
     // Filtering is normally a no-op; rebuild indices defensively if an empty paragraph was discarded.
     if(clean.length!==paragraphs.length){fragmentToParagraph.fill(-1);clean.forEach((p,i)=>p.items.forEach(index=>fragmentToParagraph[index]=i));}
     return {paragraphs:clean,fragmentToParagraph};
@@ -179,6 +220,7 @@
           for (let i = 0; i < textDivs.length; i++) {
             const el = textDivs[i], paragraphIndex = mapped[i].paragraphIndex;
             el.classList.add('para'); el.dataset.page = number; el.dataset.i = i; el.dataset.paragraphIndex = paragraphIndex;
+            if (spec.paragraphs[paragraphIndex]?.isTable) el.dataset.pdfTable = 'true';
             if (!seenParagraphs.has(paragraphIndex)) { el.dataset.paragraphStart = 'true'; seenParagraphs.add(paragraphIndex); }
             // Keep PDF.js' positioned text span untouched; its child owns marks and selections.
             const en = window.document.createElement('span'); en.className = 'en'; en.textContent = el.textContent; el.replaceChildren(en);
