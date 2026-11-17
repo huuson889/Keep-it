@@ -693,7 +693,7 @@ body{overflow:auto}
 .documents-native-inactive #lhn-sidebar-edge-toggle,.documents-native-inactive #lhn-sidebar,.documents-native-inactive #lhn-panel,.documents-native-inactive #lhn-direct-translation,.documents-native-inactive #lhn-translate-icon,.documents-native-inactive #lhn-full-english-dictionary{display:none!important}
 .nativeTranslationSlot .lhn-bilingual-card,.readFrame .reflow .lhn-bilingual-card{font-size:inherit!important}
 .nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;width:auto;max-width:100%;box-sizing:border-box}
-.docsSource .lhn-bilingual-reading{outline:1px solid var(--lhn-br-accent,#7262df);outline-offset:2px}
+.docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;border:1px solid var(--lhn-br-accent,#7262df);border-radius:6px;pointer-events:none}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}
