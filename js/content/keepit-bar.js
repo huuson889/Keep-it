@@ -1331,15 +1331,6 @@
       S.pendingTr = retry; toast(t("offline"), { icon:"wifioff", label:t("retry"), fn:() => { if (navigator.onLine === false) return toast(t("offline"), { icon:"wifioff" }); S.pendingTr = null; retry(); } });
     }
   });
-  globalThis.LHN_MESSAGING?.onMessage.addListener(message => {
-    if (message?.type !== "KEEPIT_DOCUMENTS_MAIN_SHEET") return;
-    if (!mounted) return { ok:false };
-    const alreadyOpen = $("sheet").classList.contains("open");
-    const shouldOpen = message.toggle === true ? !alreadyOpen : true;
-    if (shouldOpen) globalThis.LHN_BAR_HOOKS.openMainSheet(undefined, { documents:true, focusReader:message.reader === true }); else closeSheet();
-    return { ok:true, open:shouldOpen };
-  });
-
   // ---------- v3.5.161: every sheet behaves the same (js/shared/sheet-kit.js LHN_SHEET) — page locked while one is open
   // (touch, wheel, scroll keys), drag down from anywhere closes, a scrolled list scrolls back first, the ☰ sheet grows while
   // pulled up and keeps scrolling in the same gesture; Notes (touch bottom sheet) is attached in watchSidebar.

@@ -315,13 +315,26 @@ new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stag
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
 addEventListener('resize', requestToolbarFit);
 $('#vMore').onclick = () => setMore($('#vMorePanel').hidden);
-async function requestWebMainSheet(toggle=false,reader=false){
- const result=await LHN_MESSAGING.sendMessage({type:'DOCUMENTS_OPEN_WEB_MAIN_SHEET',toggle,reader});
- if(result?.ok){$('#pageMenu').setAttribute('aria-expanded',String(!!result.open));$('#pageMenu').classList.toggle('on',!!result.open);}
- else toast(t('mainSheetUnavailable'));
- return result;
+function setMainMenu(open,focusReader=false){
+ if(open)setMore(false,false);
+ $('#mainMenuPanel').hidden=!open;$('#mainMenuScrim').hidden=!open;
+ $('#pageMenu').setAttribute('aria-expanded',String(!!open));$('#pageMenu').classList.toggle('on',!!open);
+ if(open){hideSel();const target=focusReader?$('#mainMenuReader'):$('#mainMenuClose');target?.focus({preventScroll:true});if(focusReader)target?.scrollIntoView({block:'center'});}
 }
-$('#pageMenu').onclick = () => void requestWebMainSheet(true);
+$('#pageMenu').onclick=()=>setMainMenu($('#mainMenuPanel').hidden);
+$('#mainMenuClose').onclick=()=>setMainMenu(false);
+$('#mainMenuScrim').onclick=()=>setMainMenu(false);
+$('#mainMenuPanel').addEventListener('click',e=>{
+ const action=e.target.closest('[data-main-action]')?.dataset.mainAction;if(!action)return;
+ setMainMenu(false);
+ if(action==='translate')setPanel('translation');
+ else if(action==='tts')void startNativeReader();
+ else if(action==='notes')void openNativeNotes();
+ else if(action==='ai')void LHN_CONTENT_TOOLS.askAI();
+ else if(action==='wc')void toggleWordClass().catch(()=>toast(t('wcError')));
+ else if(action==='theme')void toggleTheme();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#mainMenuPanel').hidden){e.preventDefault();setMainMenu(false);}});
 $('#moreClose').onclick = () => setMore(false);
 $('#moreScrim').onclick = () => setMore(false);
 let moreStartY = 0;
@@ -501,7 +514,7 @@ LHN_DOCUMENT_CONTEXT.attach({
  openSettings:()=>parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'bilingualReader'},location.origin)
 });
 // The Reader's existing More action opens the app's existing Reader settings, not a copied menu.
-globalThis.LHN_BAR_HOOKS=Object.freeze({openMainSheet:()=>void requestWebMainSheet(false,true),translateOffline:()=>toast(t('trError'))});
+globalThis.LHN_BAR_HOOKS=Object.freeze({openMainSheet:()=>setMainMenu(true,true),translateOffline:()=>toast(t('trError'))});
 
 $('#viewer').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b||b.disabled)return;setMore(false,false);if(b.dataset.t==='notes'){void openNativeNotes();return;}if(b.dataset.t==='ai'){void LHN_CONTENT_TOOLS.askAI();return;}if(b.dataset.t==='tts'){void startNativeReader();return;}if(b.dataset.t==='wc'){void toggleWordClass().catch(()=>toast(t('wcError')));return;}if(b.dataset.t==='translate')setPanel('translation');});
 for(const header of $$('.side2 header')){let y=null;header.addEventListener('touchstart',e=>{y=e.target.closest('button,select,input')?null:e.touches[0].clientY;},{passive:true});header.addEventListener('touchend',e=>{if(y!==null&&matchMedia('(orientation:portrait)').matches&&e.changedTouches[0].clientY-y>55&&V.panel)setPanel(V.panel);y=null;},{passive:true});}
