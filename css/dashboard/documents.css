@@ -687,7 +687,7 @@ body{overflow:auto}
 /* POS is a geometric overlay: source text, font runs and page layout are never rewritten. */
 .docsWcOverlay{position:absolute;inset:0;pointer-events:none;z-index:8;overflow:hidden}
 .docsWcMark{position:absolute;display:block;border-top:2px solid;box-sizing:border-box;height:0}
-.docsWcMark.docsWcHover{height:6px;pointer-events:auto;cursor:help}
+.docsWcMark.docsWcHover{height:6px;pointer-events:auto}
 .docsWcMark.docsWcHover .docsWcLabel{display:none}
 .docsWcLabel{position:absolute;left:50%;top:2px;transform:translateX(-50%);font:600 12px/1 Arial,sans-serif;white-space:nowrap;text-align:center;background:none}
 .stage:focus{outline:none}
