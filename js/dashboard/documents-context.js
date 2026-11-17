@@ -10,7 +10,7 @@
   globalThis.LHN_SELECTION_TOOLBAR.installTouchSelectionBridge();
   for (const name of [
     'url','title','hostname','thumbnail','sentenceContext','root','containsRange','anchorFor','findRanges','onAnnotations',
-    'applyPageShrink','restorePageWidth','onSidebar','revealAnnotation','readerBlocks','readerBlocksForTarget','readerText',
+    'applyPageShrink','restorePageWidth','onSidebar','revealAnnotation','readerBlocks','readerBlocksForTarget','readerSpeakerGeometry','readerText',
     'readerFontAllowed','readerSpeakersAllowed','readerCard','readerBlockForCard','mountReaderCard',
     'readerNextPage','onReaderBlock','onReaderState','readerTargetLanguage','openSettings'
   ]) context[name] = (...args) => host?.[name]?.(...args);

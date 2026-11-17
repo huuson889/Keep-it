@@ -1091,9 +1091,15 @@
     }
     return anchor;
   }
-  function positionSpeakerAfterText(block, speaker, anchor = lastReaderCharacterRect(block)) {
+  function speakerGeometry(block) {
+    const custom = pageContext?.readerSpeakerGeometry?.(block);
+    if (custom?.anchor?.rect) return custom;
+    return { anchor:lastReaderCharacterRect(block), bounds:block.getBoundingClientRect() };
+  }
+  function positionSpeakerAfterText(block, speaker, geometry = speakerGeometry(block)) {
+    const anchor = geometry?.anchor;
     if (!anchor) return;
-    const textRect = anchor.rect, blockRect = block.getBoundingClientRect();
+    const textRect = anchor.rect, blockRect = geometry.bounds || block.getBoundingClientRect();
     const iconWidth = speaker.offsetWidth || 18, iconHeight = speaker.offsetHeight || 18, gap = 3;
     const rtl = anchor.direction === "rtl";
     let x = rtl ? textRect.left - iconWidth - gap : textRect.right + gap;
@@ -1151,7 +1157,7 @@
         if (nestedSpeaker) { speakerPositionObserver?.unobserve(block); nestedSpeaker.remove(); }
         return;
       }
-      const anchor = lastReaderCharacterRect(block);
+      const geometry = speakerGeometry(block), anchor = geometry?.anchor;
       let speaker = block.querySelector(":scope > .lhn-bilingual-speaker");
       if (!anchor) {
         if (speaker) { speakerPositionObserver?.unobserve(block); speaker.remove(); }
@@ -1166,7 +1172,7 @@
       }
       speaker.dataset.visibility = settings.speakerIconVisibility;
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
-      positionSpeakerAfterText(block, speaker, anchor);
+      positionSpeakerAfterText(block, speaker, geometry);
       speakerPositionObserver?.observe(block);
     });
   }

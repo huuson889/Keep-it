@@ -409,6 +409,15 @@ function readerParagraphHighlightBox(rects,sourceRect,scale){
  const left=Math.min(...visible.map(rect=>rect.left)),top=Math.min(...visible.map(rect=>rect.top)),right=Math.max(...visible.map(rect=>rect.right)),bottom=Math.max(...visible.map(rect=>rect.bottom));
  return{left:(left-sourceRect.left)/scale,top:(top-sourceRect.top)/scale,width:(right-left)/scale,height:(bottom-top)/scale};
 }
+function nativeSpeakerGeometry(block){
+ if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return null;
+ const page=+block.dataset.page,index=paragraphIndex(block),spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),rects=spans.map(el=>el.getBoundingClientRect()).filter(rect=>rect.width>0&&rect.height>0);if(!rects.length)return null;
+ let last=null;
+ for(const span of spans){const root=span.querySelector('.en');if(!root)continue;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){const node=walker.currentNode,text=node.textContent||'';let end=text.length;while(end>0&&/\s/u.test(text[end-1]))end--;if(!end)continue;let start=end-1;if(start>0&&/[\uDC00-\uDFFF]/u.test(text[start])&&/[\uD800-\uDBFF]/u.test(text[start-1]))start--;const range=document.createRange();range.setStart(node,start);range.setEnd(node,end);const rect=range.getBoundingClientRect();if(rect.width||rect.height)last={rect,direction:getComputedStyle(node.parentElement||span).direction};}}
+ if(!last)return null;
+ const left=Math.min(...rects.map(rect=>rect.left)),top=Math.min(...rects.map(rect=>rect.top)),right=Math.max(...rects.map(rect=>rect.right)),bottom=Math.max(...rects.map(rect=>rect.bottom));
+ return{anchor:last,bounds:{left,top,right,bottom,width:right-left,height:bottom-top}};
+}
 function showReaderParagraphHighlight(block){
  clearReaderParagraphHighlight();if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return;
  const page=+block.dataset.page,index=paragraphIndex(block),source=block.closest('.docsSource');if(!page||!source)return;
@@ -427,7 +436,7 @@ LHN_DOCUMENT_CONTEXT.attach({
  applyPageShrink(width){if(!matchMedia('(pointer:coarse) and (hover:none)').matches){nativeNoteWidth=width;$('#viewer').style.right=width+'px';}},
  restorePageWidth(){nativeNoteWidth=0;$('#viewer').style.right='';},
  onSidebar(element,open,width,close){nativeNotesOpen=!!open;$('[data-t="notes"]').classList.toggle('on',!!open);if(element&&matchMedia('(pointer:coarse) and (hover:none)').matches)LHN_SIDEBAR.attachTouchSheet(element,{close});},
- readerBlocks:nativeBlocks,readerBlocksForTarget:nativeBlocksForTarget,readerText:readerTextForBlock,readerFontAllowed:()=>V.mode==='read',readerSpeakersAllowed:()=>V.mode==='read',
+ readerBlocks:nativeBlocks,readerBlocksForTarget:nativeBlocksForTarget,readerText:readerTextForBlock,readerSpeakerGeometry:nativeSpeakerGeometry,readerFontAllowed:()=>V.mode==='read',readerSpeakersAllowed:()=>V.mode==='read'||(V.doc?.type==='pdf'&&V.mode==='orig'),
  readerCard(block){const entry=nativeCards.get(cardKey(block));if(entry){entry.block=block;if(V.mode==='read'&&entry.card.parentElement!==block)mountNativeCard(block,entry.card);else if(V.mode==='orig'&&V.tools.has('translate')&&!entry.card.closest('#transList'))mountNativeCard(block,entry.card);}return entry?.card||null;},readerBlockForCard:cardBlock,mountReaderCard:mountNativeCard,readerTargetLanguage:()=>panelPrefs.language,
  async readerNextPage(direction,reference){if(!activeEngine||V.mode==='read')return false;const from=+(reference?.dataset.page||V.page);let page=from+Math.sign(direction);while(page>=1&&page<=V.doc.pages&&!sourceEntries(page).length)page+=Math.sign(direction);if(page<1||page>V.doc.pages)return false;await setPage(page,true);await ensurePage(page);return true;},
  onReaderBlock(block){const page=+block.dataset.page;if(page&&page!==V.page){V.page=page;updatePaging();savePosition();applyTools();}showReaderParagraphHighlight(block);},onReaderState:nativeReaderState,
