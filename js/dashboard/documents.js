@@ -212,16 +212,18 @@ function requestTranslationSync(force = false) {
     if (!$('#viewer').classList.contains('show') || V.panel !== 'translation' || translationView.doc !== V.doc || (!panelPrefs.follow && !forced)) return;
     const st = $('#stage'), list = $('#transList'), frame = $(`#pageStack>[data-page="${V.page}"]`), targetPage = $(`#transList [data-trans-page="${V.page}"]`);
     if (!frame || !targetPage || !list.clientHeight) return;
-    const edge = st.getBoundingClientRect().top + Math.min(100, st.clientHeight * .18), groups = [];
+    const focus = st.getBoundingClientRect().top + st.clientHeight / 2, groups = [];
     for (const block of frame.querySelectorAll('.para[data-paragraph-start="true"]')) {
       const index = block.dataset.paragraphIndex ?? block.dataset.i;
       const peers = block.dataset.paragraphIndex != null ? [...frame.querySelectorAll(`.para[data-paragraph-index="${index}"]`)] : [block];
       const rects = peers.map(el => el.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
-      if (rects.length) groups.push({ block, index, top:Math.min(...rects.map(rect => rect.top)), bottom:Math.max(...rects.map(rect => rect.bottom)) });
+      if (rects.length) groups.push({ index, top:Math.min(...rects.map(rect => rect.top)), bottom:Math.max(...rects.map(rect => rect.bottom)) });
     }
-    let source = groups.find(group => group.top <= edge && group.bottom >= edge);
-    if (!source) source = groups.filter(group => group.top <= edge).sort((a,b) => b.top-a.top)[0] || groups.sort((a,b) => Math.abs(a.top-edge)-Math.abs(b.top-edge))[0];
-    if (!source) return;
+    if (!groups.length) return;
+    const source = groups.reduce((best, group) => {
+      const distance = focus < group.top ? group.top - focus : focus > group.bottom ? focus - group.bottom : 0;
+      return !best || distance < best.distance ? { ...group, distance } : best;
+    }, null);
     const target = targetPage.querySelector(`[data-trans-i="${source.index}"]`) || targetPage;
     const targetRect = target.getBoundingClientRect();
     list.scrollTop = Math.max(0, list.scrollTop + targetRect.top - source.top);
