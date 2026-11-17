@@ -341,6 +341,13 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     const askAIResult = await handleAskAIMessage(message, sender);
     if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
   }
+  if (message.type === "DOCUMENTS_OPEN_WEB_MAIN_SHEET") {
+    if (!sender?.url?.startsWith(browser.runtime.getURL("pages/documents.html"))) return { ok:false };
+    const [tab] = await browser.tabs.query({ active:true, lastFocusedWindow:true }).catch(() => []);
+    if (!Number.isInteger(tab?.id) || !/^https?:\/\//i.test(tab.url || "")) return { ok:false };
+    try { return await browser.tabs.sendMessage(tab.id, { type:"KEEPIT_DOCUMENTS_MAIN_SHEET", toggle:message.toggle === true }); }
+    catch { return { ok:false }; }
+  }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
