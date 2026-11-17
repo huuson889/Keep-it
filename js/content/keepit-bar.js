@@ -10,7 +10,7 @@
   // v3.5.180: also on the Keepit home page (pages/home.html, js/home/home-ui.js), where page commands wait for a web page
   const DOCUMENTS_HOST = !!document.documentElement?.hasAttribute("data-keepit-documents");
   const HOMEPAGE = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/home\.html$/.test(location.pathname);
-  if (window.top !== window || !document.documentElement || (!HOMEPAGE && !DOCUMENTS_HOST && !/^https?:$/.test(location.protocol))) return;
+  if (!document.documentElement || (window.top !== window && !DOCUMENTS_HOST) || (!HOMEPAGE && !DOCUMENTS_HOST && !/^https?:$/.test(location.protocol))) return;
   // v3.5.221: Keepit's own bars, sheets and panels keep their size at every page zoom (Cỡ chữ trang, Ctrl +/-), like the
   // browser's own toolbar: <html> gets --keepit-uiz = 1 / zoom and the bar host, the Reader bar/sheets and the notes sidebar use
   // CSS zoom:var(--keepit-uiz). Inside them lengths are "UI px" = page px × zoom (innerWidth, clientX, getBoundingClientRect
@@ -132,7 +132,8 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
   const norm = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase().trim();
 
-  let settings = {}, host = null, root = null, mounted = false, picking = false;
+  let settings = {}, host = null, root = null, mounted = false, picking = false, resolveMounted;
+  const mountedReady = new Promise(resolve => { resolveMounted = resolve; });
   const S = {
     hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false,
@@ -1317,8 +1318,11 @@
     toast(text) { if (mounted) toast(String(text || "")); },
     // the Reader's ☰ opens this main sheet above the Reader bar (v3.5.160 touch; v3.5.161 every device) with its
     // Trình đọc row in the vertical middle of the sheet
-    openMainSheet(fromRect, options = {}) {
-      if (!mounted) return { ok:false };
+    async openMainSheet(fromRect, options = {}) {
+      if (!mounted) {
+        const ready = await Promise.race([mountedReady, new Promise(resolve => setTimeout(() => resolve(false), 5000))]);
+        if (!ready || !mounted) return { ok:false };
+      }
       const alreadyOpen = $("sheet").classList.contains("open");
       if (options.toggle === true && alreadyOpen) { closeSheet(); return { ok:true, open:false }; }
       S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
@@ -1389,7 +1393,7 @@
     if (mounted || !document.body) return;
     if (!host) build();
     document.documentElement.appendChild(host);
-    mounted = true; lastLayout = ""; relayout(true); syncState();
+    mounted = true; resolveMounted?.(true); lastLayout = ""; relayout(true); syncState();
     const passive = { capture:true, passive:true };
     document.addEventListener("scroll", onScroll, passive);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshTabs(); });
@@ -1480,5 +1484,5 @@
   const AIS = globalThis.LHN_AI_SHEET.create({isTouch,isDark,t,send,SK,VH,Z});
   AIS.bindMessages();
 
-  void init();
+  void init().catch(error => { console.error("[Keepit] bar initialization failed", error); resolveMounted?.(false); });
 })();

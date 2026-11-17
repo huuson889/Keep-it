@@ -315,14 +315,14 @@ new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stag
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
 addEventListener('resize', requestToolbarFit);
 $('#vMore').onclick = () => setMore($('#vMorePanel').hidden);
-function requestMainSheet(toggle=false,focusReader=false){
+async function requestMainSheet(toggle=false,focusReader=false){
  setMore(false,false);
  const rect=$('#pageMenu').getBoundingClientRect();
- const result=globalThis.LHN_BAR_HOOKS?.openMainSheet?.(rect,{documents:true,toggle,focusReader});
+ const result=await globalThis.LHN_BAR_HOOKS?.openMainSheet?.(rect,{documents:true,toggle,focusReader});
  if(result?.ok){$('#pageMenu').setAttribute('aria-expanded',String(!!result.open));$('#pageMenu').classList.toggle('on',!!result.open);return result;}
  toast(t('mainSheetUnavailable'));return{ok:false};
 }
-$('#pageMenu').onclick=()=>requestMainSheet(true,false);
+$('#pageMenu').onclick=()=>void requestMainSheet(true,false);
 document.addEventListener('lhn-main-sheet',event=>{const open=!!event.detail?.open;$('#pageMenu').setAttribute('aria-expanded',String(open));$('#pageMenu').classList.toggle('on',open);});
 $('#moreClose').onclick = () => setMore(false);
 $('#moreScrim').onclick = () => setMore(false);
