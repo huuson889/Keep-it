@@ -7,6 +7,63 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Mục lục, Tìm kiếm, Đọc đêm, Song ngữ trực tiếp, Audiobook)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+### 1. Bối cảnh & Mục tiêu
+- Tab **Tài liệu** (PDF, Word DOCX, PowerPoint PPTX, Ảnh) hiện đã có bộ đọc cục bộ, hỗ trợ highlight, ghi chú, đọc text, tra từ điển, dịch panel và Ask AI.
+- Mục tiêu: Nâng cấp trải nghiệm đọc sách/tài liệu dài chuyên sâu, tiện dụng và hỗ trợ học ngoại ngữ đắm chìm như một máy đọc sách chuyên nghiệp (Kindle/e-reader).
+
+### 2. Chi tiết 5 tính năng giao diện & đọc cốt lõi
+
+1. **Cây mục lục tài liệu (PDF Outline / Table of Contents / Heading Navigation):**
+   - *PDF:* Gọi hàm `await document.getOutline()` của PDF.js lấy cây mục lục phân cấp `{ title, dest, items }`, dùng `await document.getPageIndex(destRef)` để lấy số trang chính xác.
+   - *PPTX & DOCX:* Trích xuất tiêu đề slide hoặc các thẻ tiêu đề `<h1>, <h2>, <h3>` kèm số trang tương ứng.
+   - *Giao diện:* Thêm nút chuyển đổi tab trên thanh rail bên trái **[Trang thu nhỏ (Thumbnails) | Mục lục (Outline)]**. Click vào mục nào thì gọi `setPage(targetPage)` nhảy ngay đến trang đó.
+
+2. **Tìm kiếm nội dung trong file (In-Document Search / Ctrl+F nội bộ):**
+   - *Vấn đề:* `Ctrl+F` của trình duyệt không quét được các trang ở xa viewport do PDF.js giải phóng DOM/canvas để tối ưu RAM.
+   - *Giải pháp:* Tận dụng mảng `activeEngine.pages[i].texts` đã nạp sẵn; bấm `Ctrl+F` mở thanh tìm kiếm góc trên stage (`input`, `Next/Prev`, số kết quả `3 / 15`, `✕`).
+   - *Tô sáng:* Gọi `setPage(match.page)`, tìm phần tử `.para[data-i="..."] .en` tương ứng và bọc từ khóa tìm thấy trong thẻ `<mark class="docSearchActive">` màu vàng sáng.
+
+3. **Bộ lọc màu đọc ban đêm (Dark Mode & Giấy vàng Sepia cho trang sách):**
+   - *Vấn đề:* Nền canvas PDF/Word mặc định màu trắng tinh, rất chói mắt khi đọc ban đêm dù giao diện app đã bật Dark Theme.
+   - *Giải pháp:* Thêm thuộc tính `data-doc-theme="sepia|dark"` vào `.docSurface` với CSS filter thông minh:
+     - **Sepia (Màu giấy vàng):** `filter: sepia(35%) brightness(95%) contrast(95%);` giúp dịu mắt như máy đọc sách Kindle.
+     - **Đêm (Dark Mode đảo màu):** `filter: invert(90%) hue-rotate(180deg) contrast(90%);` kèm quy tắc đảo ngược lại cho hình ảnh bên trong tài liệu (`img, image { filter: invert(100%) hue-rotate(180deg); }`) để giữ nguyên màu gốc của hình ảnh và sơ đồ.
+
+4. **Chế độ đọc 2 trang song song (Two-Page Spread / Book View):**
+   - Mở rộng biến luồng `V.flow`: ngoài `'continuous'` và `'single'`, bổ sung giá trị `'spread'`.
+   - Bố cục: Trang 1 là trang bìa nằm độc lập. Từ trang 2 trở đi hiển thị theo cặp `[Trang chẵn (Trái) | Trang lẻ (Phải)]` qua CSS Flexbox/Grid (`gap: 16px`).
+   - Phím mũi tên và nút tiến/lùi trang chuyển 2 trang mỗi lần (`V.page ± 2`), tối ưu tuyệt đối cho màn hình máy tính rộng và tablet xoay ngang.
+
+5. **Đọc song ngữ đoạn văn trực tiếp (Inline Bilingual Paragraph):**
+   - *Vấn đề:* Muốn dịch đoạn văn hiện phải liếc mắt sang panel sidebar bên phải, làm ngắt quãng mạch đọc.
+   - *Giải pháp:* Click đúp hoặc dùng phím tắt `Alt+D` trên khối `.para`: gọi `BILINGUAL_TRANSLATE` và chèn khối `<div class="viTrans">` ngay bên dưới `<span class="en">`.
+   - Bản dịch được tự động lưu vào store `translations` của `keepit-documents` (IndexedDB), lần sau mở lại đoạn đó sẽ hiện ngay mà không cần gọi mạng dịch lại.
+
+### 3. Chi tiết 4 tính năng học tập chuyên sâu
+
+6. **Chế độ Audiobook tự động lật trang (Continuous Document TTS):**
+   - Nút "Đọc tiếp (Play Book)": TTS đọc tuần tự từng câu/đoạn văn trên trang (có vạch sáng highlight chạy theo câu đang đọc).
+   - Khi đọc hết câu cuối của trang hiện tại $\rightarrow$ tự động gọi `setPage(V.page + 1)` lật sang trang kế tiếp và đọc tiếp liên tục mà không cần thao tác chuột.
+
+7. **Xuất toàn bộ Ghi chú của cuốn sách (Export Book Summary & Flashcard Deck):**
+   - Nút "Xuất ghi chú cuốn sách":
+     - Xuất file **Markdown (`.md`)** hoặc HTML tóm tắt: Gom toàn bộ câu trích dẫn kèm ghi chú cá nhân theo thứ tự số trang để in hoặc lưu trữ.
+     - Xuất trực tiếp toàn bộ các từ vựng đã highlight trong cuốn sách đó thành **một bộ thẻ Flashcard riêng** trong Dashboard (ví dụ bộ thẻ: *"Từ vựng sách Atomic Habits"*).
+
+8. **Đánh dấu trang & Nhớ vị trí cuộn chi tiết (Bookmarks 🔖 & Precise Scroll):**
+   - *Lưu vị trí cuộn chính xác:* Lưu thêm tỷ lệ phần trăm cuộn của trang (`scrollPercent`) vào `KeepitDocumentsStore.patch(id, { at, scrollPercent })`. Mở lại sách mắt sẽ dừng đúng ngay dòng chữ đang đọc dở thay vì nhảy về đầu trang.
+   - *Nút Bookmark 🔖:* Cho phép ghim các trang quan trọng, hiển thị danh sách trang đã bookmark trên thanh rail bên trái để bấm nhảy đến ngay.
+
+9. **Chế độ đọc tập trung không phân tâm (Distraction-Free Focus Mode):**
+   - Phím tắt `F` hoặc nút Fullscreen: Tạm ẩn toàn bộ sidebar, toolbar, topbar; trang sách căn giữa toàn màn hình.
+   - Con trỏ chuột và nút phân trang tự động mờ đi khi không di chuột (`pointer-events: none` sau 1.5 giây idle).
+
+---
+
 ## 2026-11-17 | Ý TƯỞNG - Bốn tính năng học mở rộng (Audio Playlist, AI Quiz, New Tab, Word Graph)
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
