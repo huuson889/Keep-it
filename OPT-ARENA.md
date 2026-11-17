@@ -7,6 +7,15 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | PDF toolbar handoff mở đúng tệp trong Keepit
+
+**Trạng thái:** Đã chốt; triển khai v3.5.371, browser QA còn pending.
+
+- Khi tab mở PDF online hoặc file trong máy, badge `PDF` trên toolbar giữ nguyên; mở popup toolbar thì thẻ PDF nằm trong vùng nội dung, thay chỗ trống.
+- Toàn bộ thẻ/nút CTA đều bấm để mở đúng PDF đang xem trong Keepit Documents; bỏ cửa sổ nổi, dấu X, thu/phóng và yêu cầu tự chọn file khi URL có thể được truy cập.
+- Với `file://`, hướng dẫn bật quyền “Allow access to file URLs” trong trang chi tiết extension. Nếu quyền vẫn tắt hoặc đọc URL thất bại, giữ đường dự phòng chọn PDF trong Tài liệu.
+
+---
 
 ## 2026-11-17 | Điều khiển watcher và giải nén ZIP vào Optimize Test
 

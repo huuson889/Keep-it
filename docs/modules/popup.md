@@ -4,15 +4,15 @@
 
 ## 1. Mục đích và phạm vi
 
-Popup là bảng điều khiển nhanh của extension: cài đặt phổ biến, trạng thái website đang mở, phím tắt, theme và liên kết tới Dashboard. Khi tab đang hoạt động mở PDF, Background hiện một cửa sổ gợi ý nhỏ ở góc phải trên; đây là cửa sổ extension riêng, không phải lớp được chèn vào viewer PDF nội bộ.
+Popup là bảng điều khiển nhanh của extension: cài đặt phổ biến, trạng thái website đang mở, phím tắt, theme và liên kết tới Dashboard. Khi tab đang hoạt động mở PDF, popup toolbar hiện một thẻ PDF bấm được toàn bộ; badge PDF vẫn do Background cập nhật.
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`pages/popup.html`](../../pages/popup.html), [`js/popup/popup.js`](../../js/popup/popup.js) | `load`, event handlers | Popup settings và CTA dự phòng cho PDF. |
-| [`pages/pdf-suggestion.html`](../../pages/pdf-suggestion.html), [`js/popup/pdf-suggestion.js`](../../js/popup/pdf-suggestion.js), [`css/popup/pdf-suggestion.css`](../../css/popup/pdf-suggestion.css) | `initializeHint` | Cửa sổ nổi có dịch nhãn, nút đóng và route sang Tài liệu. |
-| [`js/background/background.js`](../../js/background/background.js) | `pdfTabSource`, `showFloatingPdfHint` | Nhận diện URL PDF, badge và mở một gợi ý theo tab. |
+| [`pages/popup.html`](../../pages/popup.html), [`js/popup/popup.js`](../../js/popup/popup.js), [`css/popup/popup.css`](../../css/popup/popup.css) | `load`, PDF card handler | Thẻ PDF toolbar bấm toàn vùng, nhận URL nguồn hiện tại. |
+| [`js/background/background.js`](../../js/background/background.js) | `pdfTabSource`, `openDashboardDocuments` | Nhận diện URL PDF, badge `PDF`, định tuyến nguồn sang Tài liệu. |
+| [`js/dashboard/dashboard.js`](../../js/dashboard/dashboard.js), [`js/dashboard/documents.js`](../../js/dashboard/documents.js) | dashboard `openPdf`, `openPdfFromUrl` | Nhập và mở trực tiếp PDF; file URL bị chặn thì hiện hướng dẫn bật quyền và nút chọn tệp. |
 | [`js/core/defaults.js`](../../js/core/defaults.js), [`js/core/config.js`](../../js/core/config.js) | `LHN_DEFAULTS`, `LHN_CONFIG` | Defaults, setting keys và cài đặt chuẩn. |
 | [`js/core/settings.js`](../../js/core/settings.js), [`js/core/languages.js`](../../js/core/languages.js) | `LHN_SETTINGS`, `LHN_LANGUAGES` | Resolve/lưu settings và dịch giao diện. |
 | [`js/core/messaging.js`](../../js/core/messaging.js), [`js/background/background.js`](../../js/background/background.js) | `LHN_MESSAGING`, `OPEN_DASHBOARD_DOCUMENTS`, PDF badge | Định tuyến Dashboard/Tài liệu và đánh dấu tab PDF nhận diện được. |
@@ -20,9 +20,9 @@ Popup là bảng điều khiển nhanh của extension: cài đặt phổ biến
 ## 3. Luồng chính
 
 1. `popup.html` nạp polyfill, config/defaults, settings/languages và shared helpers trước `popup.js`.
-2. Background theo dõi navigation/activation; `pdfTabSource()` nhận diện `.pdf` trực tiếp hoặc URL nguồn trong `src`/`file`/`url` của Chrome/Firefox viewer. Badge `PDF` hỗ trợ người dùng nếu cửa sổ gợi ý bị đóng.
-3. Khi tab PDF đang active, `showFloatingPdfHint()` tạo cửa sổ popup extension ở góc phải trên, tối đa một gợi ý cho mỗi tệp/tab. Popup lấy ngôn ngữ/theme, có thể đóng, hoặc gửi `OPEN_DASHBOARD_DOCUMENTS`.
-4. Background tái sử dụng Dashboard hiện có hoặc mở route Tài liệu; người dùng tự chọn file local. Không redirect tab PDF, không fetch hoặc đọc nội dung viewer.
+2. Background theo dõi navigation/activation; `pdfTabSource()` nhận diện `.pdf` trực tiếp hoặc URL nguồn trong `src`/`file`/`url` của Chrome/Firefox viewer. Badge `PDF` vẫn được đặt trên toolbar.
+3. Popup settings nhận URL PDF active; thẻ PDF là một nút duy nhất, toàn diện tích mở file, không có close/collapse.
+4. Background mở Dashboard > Tài liệu với URL PDF đã kiểm tra; Documents fetches HTTP(S)/file URL, nhập qua pipeline tài liệu hiện có rồi mở viewer. File URL không được phép hoặc fetch lỗi hiện localized file-access guide và nút chọn file. Không chuyển hướng tab PDF.
 5. Thay đổi controls chuẩn hóa các giá trị rồi lưu qua `LHN_SETTINGS`; các nút Dashboard/settings/usage tiếp tục dùng message Background và báo lỗi context/tab thay vì giả định thành công.
 
 ## 4. Hợp đồng và quy tắc cần giữ
@@ -32,10 +32,10 @@ Popup là bảng điều khiển nhanh của extension: cài đặt phổ biến
 - Giữ logic loại trừ giữa các chế độ dịch popup/icon/auto-open; cập nhật đồng bộ disabled state, tooltip và persistence khi đổi quy tắc.
 - Website được chuẩn hóa bỏ `www.` để so với danh sách disabled; không lưu URL đầy đủ thay hostname nếu hợp đồng setting là domain.
 - Popup chỉ gửi message mở Dashboard/Tài liệu; Background xử lý tab reuse/focus. Tránh tạo luồng tab thứ hai trong popup.
-- PDF nhận diện theo path `.pdf`, không theo MIME; hỗ trợ trực tiếp `file:`/HTTP(S) và nguồn bọc trong URL nội bộ viewer. Gợi ý là cửa sổ extension riêng, không thể phủ DOM của browser PDF viewer; chỉ tự hiện với tab PDF đang active, một lần theo URL/tab, có thể đóng. CTA không chuyển file tự động—người dùng phải chọn bản local trong Documents.
+- PDF nhận diện theo path `.pdf`, không theo MIME; hỗ trợ trực tiếp `file:`/HTTP(S) và nguồn bọc trong URL nội bộ viewer. Badge `PDF` trên toolbar và thẻ popup là riêng biệt; toàn thẻ là CTA. File URL cần quyền “Allow access to file URLs”; khi tắt/không truy cập được, Documents hướng dẫn bật quyền và giữ nút Choose PDF để nhập thủ công.
 
 ## 5. Kiểm tra và xác minh
 
 - Static: `node --check` cho popup/background/dashboard; kiểm tra `.pdf`, URL Chrome/Firefox viewer bọc `src`/`file`, nội dung ngôn ngữ và route `OPEN_DASHBOARD_DOCUMENTS`; `git diff --check`.
-- Browser: kiểm tra Chrome/Firefox mở PDF `file://` active → cửa sổ góc phải, đóng/auto-dismiss, switch tab, không lặp theo cùng URL, CTA sang Dashboard > Tài liệu trong cửa sổ nguồn (hoặc focus Dashboard đang mở); thử cả PDF web và URL không phải PDF.
+- Browser: kiểm tra Chrome/Firefox toolbar badge + popup PDF web/local; click mọi vị trí trên card mở đúng file; local access on/off, guide and manual file-picker fallback; reuse Dashboard; non-PDF tab has no card. Browser QA chưa tự chạy thì không coi static checks là xác nhận.
 - Kiểm tra máy người dùng cần xác nhận vị trí popup, focus, và viewer nội bộ cụ thể; static test không thay browser-test.

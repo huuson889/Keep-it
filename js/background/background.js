@@ -38,62 +38,13 @@ function pdfTabSource(value, depth = 0) {
   } catch { /* not a PDF URL */ }
   return "";
 }
-const PDF_HINT_SEEN_KEY = "lhnPdfSuggestionSeenV1", pdfHintStore = browser.storage.session || browser.storage.local;
-let floatingPdfHintWindowId = null, floatingPdfHintTabId = null;
-const pdfHintPending = new Set();
-async function closeFloatingPdfHint(tabId = null) {
-  if (!Number.isInteger(floatingPdfHintWindowId) || (Number.isInteger(tabId) && floatingPdfHintTabId !== tabId)) return;
-  const id = floatingPdfHintWindowId;
-  floatingPdfHintWindowId = floatingPdfHintTabId = null;
-  await browser.windows.remove(id).catch(() => {});
-}
-async function forgetPdfHintForTab(tabId) {
-  try {
-    const stored = await pdfHintStore.get(PDF_HINT_SEEN_KEY), seen = stored[PDF_HINT_SEEN_KEY] || {};
-    if (!Object.hasOwn(seen, tabId)) return;
-    delete seen[tabId]; await pdfHintStore.set({ [PDF_HINT_SEEN_KEY]:seen });
-  } catch {}
-}
-async function showFloatingPdfHint(tab, url = tab?.url || "") {
-  const tabId = tab?.id, source = pdfTabSource(url);
-  if (!Number.isInteger(tabId) || !tab.active || !source) return;
-  const pendingKey = `${tabId}:${source}`;
-  if (pdfHintPending.has(pendingKey)) return;
-  pdfHintPending.add(pendingKey);
-  try {
-    const stored = await pdfHintStore.get(PDF_HINT_SEEN_KEY), seen = stored[PDF_HINT_SEEN_KEY] || {};
-    if (seen[tabId]?.url === source && Date.now() - seen[tabId].at < 43200000) return;
-    seen[tabId] = { url:source, at:Date.now() };
-    for (const [id, value] of Object.entries(seen)) if (id !== String(tabId) && (!value || typeof value.url !== "string" || Date.now() - value.at > 86400000)) delete seen[id];
-    await pdfHintStore.set({ [PDF_HINT_SEEN_KEY]:seen });
-    await closeFloatingPdfHint();
-    const host = Number.isInteger(tab.windowId) ? await browser.windows.get(tab.windowId).catch(() => null) : null;
-    const width = 368, height = 176, left = (host?.left || 0) + (host?.width || 1280) - width - 18, top = (host?.top || 0) + 88;
-    const hintUrl = new URL(browser.runtime.getURL("pages/pdf-suggestion.html")); hintUrl.searchParams.set("sourceTabId", String(tabId));
-    const popup = await browser.windows.create({ url:hintUrl.href, type:"popup", width, height, left, top, focused:true });
-    floatingPdfHintWindowId = popup.id; floatingPdfHintTabId = tabId;
-  } catch (error) { console.warn("Could not show the floating PDF suggestion", error); await forgetPdfHintForTab(tabId); }
-  finally { pdfHintPending.delete(pendingKey); }
-}
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   const url = changeInfo.url || tab?.url || "";
-  if (changeInfo.url || changeInfo.status === "loading") {
-    void syncPdfTabBadge(tabId, url);
-    if (pdfTabSource(url)) void showFloatingPdfHint({ ...tab, id:tabId }, url);
-    else { void forgetPdfHintForTab(tabId); void closeFloatingPdfHint(tabId); }
-  } else if (changeInfo.status === "complete") void syncPdfTabBadge(tabId, url);
+  if (changeInfo.url || changeInfo.status === "loading" || changeInfo.status === "complete") void syncPdfTabBadge(tabId, url);
 });
 browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  try {
-    const tab = await browser.tabs.get(tabId), ownHint = browser.runtime.getURL("pages/pdf-suggestion.html");
-    if (tab.url?.split(/[?#]/, 1)[0] === ownHint) return;
-    void syncPdfTabBadge(tabId, tab.url);
-    if (pdfTabSource(tab.url)) void showFloatingPdfHint(tab, tab.url);
-    else await closeFloatingPdfHint();
-  } catch {}
+  try { const tab = await browser.tabs.get(tabId); void syncPdfTabBadge(tabId, tab.url); } catch {}
 });
-browser.tabs.onRemoved.addListener(tabId => { void forgetPdfHintForTab(tabId); void closeFloatingPdfHint(tabId); });
-browser.windows.onRemoved.addListener(windowId => { if (windowId === floatingPdfHintWindowId) floatingPdfHintWindowId = floatingPdfHintTabId = null; });
 browser.tabs.query({}).then(tabs => tabs.forEach(tab => { if (Number.isInteger(tab.id)) void syncPdfTabBadge(tab.id, tab.url); })).catch(() => {});
 async function resetLegacyDictationWrongWordStats() {
   const storage = browser?.storage?.local;
@@ -260,9 +211,12 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   }
   return existing;
 }
-async function openDashboardDocuments(sourceTabId = null) {
-  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
-  const documentsUrl = `${dashboardUrl}?view=documents`;
+async function openDashboardDocuments(sourceTabId = null, pdfUrl = "", fileAccessDenied = false) {
+  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html"), target = new URL(`${dashboardUrl}?view=documents`);
+  const source = typeof pdfUrl === "string" ? pdfTabSource(pdfUrl) : "";
+  if (source) target.searchParams.set("openPdf", source);
+  if (fileAccessDenied && source.startsWith("file:")) target.searchParams.set("pdfHelp", "file-access");
+  const documentsUrl = target.href;
   const [tabs, activeTabs, sourceTab] = await Promise.all([
     browser.tabs.query({}), browser.tabs.query({ active:true, currentWindow:true }),
     Number.isInteger(sourceTabId) ? browser.tabs.get(sourceTabId).catch(() => null) : Promise.resolve(null)
@@ -274,9 +228,10 @@ async function openDashboardDocuments(sourceTabId = null) {
     return created;
   }
   const activeTab = activeTabs[0];
+  if (existing.status !== "complete" || source || fileAccessDenied) return browser.tabs.update(existing.id, { url:documentsUrl, active:true });
   if (activeTab?.id !== existing.id) await browser.tabs.update(existing.id, { active:true });
   if (activeTab?.windowId !== existing.windowId) await browser.windows.update(existing.windowId, { focused:true });
-  if (existing.status !== "complete") return browser.tabs.update(existing.id, { url:documentsUrl, active:true });
+  try { await browser.tabs.sendMessage(existing.id, { type:"OPEN_DASHBOARD_DOCUMENTS" }); } catch { return browser.tabs.update(existing.id, { url:documentsUrl, active:true }); }
   return existing;
 }
 // v3.5.282: Keepit bar Shorts / Kênh đăng ký / Bạn on www.youtube.com — YouTube's own in-page navigation (like its left column:
@@ -453,7 +408,10 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
   }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
-  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") return openDashboardDocuments(Number.isInteger(message.sourceTabId) ? message.sourceTabId : null);
+  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") {
+    const pdfUrl = typeof message.pdfUrl === "string" ? pdfTabSource(message.pdfUrl) : "";
+    return openDashboardDocuments(Number.isInteger(message.sourceTabId) ? message.sourceTabId : null, pdfUrl, message.fileAccessDenied === true);
+  }
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
   if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);

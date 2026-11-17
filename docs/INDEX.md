@@ -49,7 +49,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
 | Công cụ chung cho Tài liệu | `js/dashboard/documents-context.js`; `js/content/content.js`, `sidebar.js`, `note-composer.js`; `js/reader/bilingual-reader.js`; `js/ask-ai/sheet.js` |
 | Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
-| Gợi ý PDF popup nổi | `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `css/popup/pdf-suggestion.css`, `js/dashboard/dashboard.js` |
+| Popup PDF toolbar, mở đúng PDF trong Tài liệu | `js/popup/popup.js`, `pages/popup.html`, `js/background/background.js`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
 | Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |
