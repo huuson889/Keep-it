@@ -1357,19 +1357,13 @@
   let sidebarWatch = null;
   function watchSidebar() {
     const side = document.getElementById("lhn-sidebar");
-    if (!side || side === sidebarWatch?.target) return;
+    if (!side || !globalThis.LHN_SIDEBAR?.attachTouchSheet || side === sidebarWatch?.target) return;
     sidebarWatch?.observer.disconnect();
     const observer = new MutationObserver(syncState);
     observer.observe(side, { attributes:true, attributeFilter:["class"] });
     sidebarWatch = { target:side, observer };
     // v3.5.204: Ghi chú là sheet chuẩn như ☰ — kéo lên = cao hết (96%), kéo xuống = về bậc giữa, kéo tiếp = đóng; danh sách cuộn trước khi kéo.
-    const snap = () => { side.classList.add("lhn-sheet-snap"); setTimeout(() => side.classList.remove("lhn-sheet-snap"), 260); };
-    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close:() => run("notes"), watch:side,
-      scroller:() => side.querySelector("#lhn-sidebar-list"),
-      grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => VH() * 0.96, mid:() => Math.round(Math.min(VH() * 0.74, 720)),
-        setH:px => { if (px === null) { side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); } else { side.classList.add("lhn-sheet-growing"); side.style.setProperty("height", px + "px", "important"); } },
-        collapse:() => { snap(); side.classList.remove("lhn-sheet-full", "lhn-sheet-growing"); side.style.removeProperty("height"); },
-        release:grow => { snap(); side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); if (grow) side.classList.add("lhn-sheet-full"); } } });
+    globalThis.LHN_SIDEBAR.attachTouchSheet(side,{close:()=>run("notes"),isTouch,viewportHeight:VH});
   }
 
   let ticker = 0, bodyWatch = null, lastLayout = "";
@@ -1465,35 +1459,7 @@
   // open the popup again and again. Android Chrome fires contextmenu when a drag-selection is finished (finger lifted) → open
   // right then; otherwise wait until the selection has been still for SETTLE ms (single word long-pressed, other browsers).
   function installTouchSelectionBridge() {
-    let touching = false, timer = 0, lastKey = "";
-    const selectionKey = () => {
-      const selection = getSelection();
-      if (!selection || selection.isCollapsed || !selection.rangeCount) return "";
-      const rect = selection.getRangeAt(0).getBoundingClientRect();
-      return `${selection.toString()}|${Math.round(rect.left)}|${Math.round(rect.top)}|${Math.round(rect.width)}`;
-    };
-    function fire() {
-      if (touching || !TOUCH.matches) return;
-      const selection = getSelection();
-      if (!selection || selection.isCollapsed || !selection.rangeCount || !selection.toString().trim()) { lastKey = ""; return; }
-      const key = selectionKey();
-      if (key === lastKey) return;
-      lastKey = key;
-      const range = selection.getRangeAt(0), rects = range.getClientRects();
-      const last = rects[rects.length - 1] || range.getBoundingClientRect();
-      const node = range.endContainer, target = node.nodeType === 1 ? node : node.parentElement;
-      if (host && target && host.contains(target)) return;
-      (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
-    }
-    const SETTLE = 900;
-    const schedule = () => { if (!TOUCH.matches) return; clearTimeout(timer); timer = setTimeout(fire, SETTLE); };
-    // contextmenu while the finger is still down = the long press that starts a selection (more may follow) → keep waiting
-    document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
-    document.addEventListener("touchstart", () => { touching = true; }, { capture:true, passive:true });
-    document.addEventListener("touchend", () => { touching = false; schedule(); }, { capture:true, passive:true });
-    document.addEventListener("touchcancel", () => { touching = false; schedule(); }, { capture:true, passive:true });
-    document.addEventListener("selectionchange", schedule);
-    document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);
+    globalThis.LHN_SELECTION_TOOLBAR.installTouchSelectionBridge({touchQuery:TOUCH,isOwnTarget:target=>!!host&&host.contains(target)});
   }
 
   // ---------- v3.5.284: AI panel trên điện thoại / máy tính bảng = sheet trong trang, mở giống Ghi chú (demo ai-panel v1).
@@ -1501,117 +1467,8 @@
   // Kiểu = Ghi chú cảm ứng (css/content/notes.css), kéo = sheet-kit với đúng cấu hình grow của Ghi chú (watchSidebar):
   // mở ở bậc giữa 74%, kéo lên = cao hết (96%), kéo xuống = về bậc giữa, kéo tiếp = đóng; chạm nền tối = đóng; trang bị khoá cuộn.
   // Khung AI là trang riêng (pages/ai-panel.html) nên chỉ kéo được ở dải tay nắm phía trên. Bàn phím mở = cao hết, nằm trên bàn phím.
-  const AIS = (() => {
-    const CSS = `
-.sheet{ --nt-g:rgba(246,246,248,.74); --nt-sheen:rgba(255,255,255,.55); --nt-hi:rgba(255,255,255,.85); --nt-edge:rgba(0,0,0,.12); --nt-tx2:#64748b;
-  zoom:var(--keepit-uiz,1); position:fixed; top:auto; left:0; right:0; bottom:0; display:flex; flex-direction:column; box-sizing:border-box; margin:0;
-  height:min(calc(74vh / var(--keepit-uiz,1)),720px); max-height:calc(96vh / var(--keepit-uiz,1)); padding:22px 0 0; overflow:hidden; pointer-events:auto;
-  height:min(calc(74dvh / var(--keepit-uiz,1)),720px); max-height:calc(96dvh / var(--keepit-uiz,1)); overflow:clip;
-  background:linear-gradient(180deg,var(--nt-sheen) 0,rgba(255,255,255,0) 34%),var(--nt-g); -webkit-backdrop-filter:blur(30px) saturate(1.8); backdrop-filter:blur(30px) saturate(1.8);
-  border:0; border-top:1px solid var(--nt-edge); border-radius:22px 22px 0 0; box-shadow:inset 0 1px 0 var(--nt-hi),0 -10px 30px rgba(0,0,0,.25);
-  transform:translateY(105%); transition:transform .26s cubic-bezier(.2,.8,.2,1),translate .2s ease; -webkit-user-select:none; user-select:none; color-scheme:light; }
-.sheet.lhn-theme-dark{ --nt-g:rgba(36,36,42,.76); --nt-sheen:rgba(255,255,255,.06); --nt-hi:rgba(255,255,255,.1); --nt-edge:rgba(0,0,0,.55); --nt-tx2:#a1a1aa;
-  box-shadow:inset 0 1px 0 var(--nt-hi),0 -10px 30px rgba(0,0,0,.45); color-scheme:dark; }
-.sheet.lhn-side-visible{ transform:none; }
-.sheet.lhn-sheet-full{ height:calc(96vh / var(--keepit-uiz,1)); height:calc(96dvh / var(--keepit-uiz,1)); }
-.sheet.lhn-sheet-growing{ transition:none; }
-.sheet.lhn-sheet-snap{ transition:height .22s ease,transform .26s cubic-bezier(.2,.8,.2,1),translate .2s ease; }
-.sheet::before{ content:""; position:absolute; top:8px; left:50%; width:38px; height:5px; margin-left:-19px; border-radius:3px; background:var(--nt-tx2); opacity:.45; }
-.sheet iframe{ display:block; flex:1 1 auto; width:100%; min-height:0; margin:0; padding:0; border:0; background:transparent; }
-.scrim{ position:fixed; inset:-120px 0; background:rgba(0,0,0,.4); opacity:0; visibility:hidden; transition:opacity .25s,visibility .25s; }
-.scrim.on{ opacity:1; visibility:visible; pointer-events:auto; }`;
-    let host = null, side = null, scrim = null, frame = null, src = "", dropTimer = 0;
-    const isOpen = () => !!side?.classList.contains("lhn-side-visible");
-    const snap = () => { side.classList.add("lhn-sheet-snap"); setTimeout(() => side.classList.remove("lhn-sheet-snap"), 260); };
-    function build() {
-      host = document.createElement("keepit-ai-sheet");
-      host.style.cssText = "all:initial;position:fixed;inset:0;z-index:2147483646;display:block;pointer-events:none";
-      const sr = host.attachShadow({ mode:"open" });
-      sr.innerHTML = `<style>${CSS}</style><div class="scrim"></div><div class="sheet" role="dialog"></div>`;
-      scrim = sr.querySelector(".scrim"); side = sr.querySelector(".sheet");
-      scrim.addEventListener("click", () => close(true));
-      SK()?.attach(side, { isOpen:() => isOpen(), close:() => close(true), watch:side,
-        grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => VH() * 0.96, mid:() => Math.round(Math.min(VH() * 0.74, 720)),
-          setH:px => { if (px === null) { side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); } else { side.classList.add("lhn-sheet-growing"); side.style.setProperty("height", px + "px", "important"); } },
-          collapse:() => { snap(); side.classList.remove("lhn-sheet-full", "lhn-sheet-growing"); side.style.removeProperty("height"); },
-          release:grow => { snap(); side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); if (grow) side.classList.add("lhn-sheet-full"); } } });
-      globalThis.visualViewport?.addEventListener("resize", fitKeyboard);
-      globalThis.visualViewport?.addEventListener("scroll", fitKeyboard);
-      addEventListener("pagehide", () => close(true));
-    }
-    // bàn phím mở (chạm ô chat của AI): sheet cao hết và nằm ngay trên bàn phím; bàn phím đóng: về như cũ
-    let kbOn = false;
-    function fitKeyboard() {
-      const vv = globalThis.visualViewport; if (!vv || !side) return;
-      const kb = isOpen() ? Math.max(0, innerHeight - vv.height - vv.offsetTop) : 0;
-      if (kb > 80) {
-        if (!kbOn) { kbOn = true; snap(); side.classList.add("lhn-sheet-full"); }
-        side.style.setProperty("bottom", kb * Z() + "px", "important");
-        side.style.setProperty("max-height", vv.height * Z() * 0.96 + "px", "important");
-      } else if (kbOn) { kbOn = false; side.style.removeProperty("bottom"); side.style.removeProperty("max-height"); }
-    }
-    // v3.5.285: swipes inside the AI frame (toolbar, sign-in box, the AI's chat at its top) come as KEEPIT_AI_SHEET_DRAG
-    // (finger screen y) and are fed to sheet-kit as touches on the sheet — same drag as the handle and as Ghi chú.
-    let fwd = null;
-    function feed(type, y) {
-      try {
-        const pt = y === null ? null : new Touch({ identifier:9, target:side, clientX:fwd.x, clientY:y, screenX:fwd.x, screenY:y, pageX:fwd.x, pageY:y + scrollY });
-        side.dispatchEvent(new TouchEvent(type, { bubbles:true, cancelable:true, composed:true, touches:pt ? [pt] : [], targetTouches:pt ? [pt] : [], changedTouches:pt ? [pt] : [] }));
-      } catch {}
-    }
-    addEventListener("message", event => {
-      const d = event.data;
-      if (!frame || event.source !== frame.contentWindow || d?.type !== "KEEPIT_AI_SHEET_DRAG") return;
-      if (d.phase === "start") {
-        if (!isOpen() || !Number.isFinite(d.y)) return;
-        const r = side.getBoundingClientRect();
-        fwd = { x:r.left + r.width / 2, y0:r.top + 11, s0:d.y, last:r.top + 11 };
-        feed("touchstart", fwd.y0);
-      } else if (!fwd) return;
-      else if (d.phase === "move" && Number.isFinite(d.y)) { fwd.last = fwd.y0 + (d.y - fwd.s0); feed("touchmove", fwd.last); }
-      else if (d.phase === "end" || d.phase === "cancel") { const f = fwd; feed(d.phase === "end" ? "touchend" : "touchcancel", null); if (f === fwd) fwd = null; }
-    });
-    // no pull-to-refresh / page bounce while the sheet is open (swipes inside the AI frame never reach sheet-kit)
-    let ptr = null;
-    function lockPull(on) {
-      const els = [document.documentElement, document.body].filter(Boolean);
-      if (on && !ptr) { ptr = els.map(el => [el, el.style.getPropertyValue("overscroll-behavior-y"), el.style.getPropertyPriority("overscroll-behavior-y")]); els.forEach(el => el.style.setProperty("overscroll-behavior-y", "none", "important")); }
-      else if (!on && ptr) { ptr.forEach(([el, v, pr]) => { if (v) el.style.setProperty("overscroll-behavior-y", v, pr); else el.style.removeProperty("overscroll-behavior-y"); }); ptr = null; }
-    }
-    function open(url) {
-      if (!host) build();
-      if (!host.isConnected) document.documentElement.appendChild(host);
-      clearTimeout(dropTimer);
-      side.setAttribute("aria-label", t("ai"));
-      side.classList.toggle("lhn-theme-dark", isDark());
-      if (!frame || url !== src) {
-        frame?.remove(); src = url;
-        frame = document.createElement("iframe"); frame.title = "AI panel"; frame.allow = "clipboard-write"; frame.src = url;
-        side.appendChild(frame);
-      }
-      side.classList.remove("lhn-sheet-full"); side.style.removeProperty("height");
-      void side.offsetHeight;   // mới gắn vào trang: trượt lên từ dưới
-      side.classList.add("lhn-side-visible"); scrim.classList.add("on"); lockPull(true);
-    }
-    // đóng = gỡ khung AI sau hiệu ứng (lần mở sau tải lại đúng cuộc chat của trang này); report = báo background
-    function close(report) {
-      if (!isOpen()) return;
-      side.classList.remove("lhn-side-visible"); scrim.classList.remove("on"); lockPull(false); fwd = null;
-      if (kbOn) { kbOn = false; side.style.removeProperty("bottom"); side.style.removeProperty("max-height"); }
-      dropTimer = setTimeout(() => { if (!isOpen()) { frame?.remove(); frame = null; src = ""; } }, 300);
-      if (report) void send("AI_SHEET_CLOSED");
-    }
-    return { open, close, isOpen };
-  })();
-  browser.runtime.onMessage.addListener(message => {
-    if (message?.type !== "KEEPIT_AI_SHEET") return;
-    if (message.close) { AIS.close(false); return Promise.resolve({ ok:true, opened:false }); }
-    const url = String(message.url || "");
-    if (!isTouch() || !url.startsWith(browser.runtime.getURL("pages/ai-panel.html"))) return Promise.resolve({ ok:false });
-    if (message.toggle && AIS.isOpen()) { AIS.close(false); return Promise.resolve({ ok:true, opened:false }); }
-    AIS.open(url);
-    return Promise.resolve({ ok:true, opened:true });
-  });
+  const AIS = globalThis.LHN_AI_SHEET.create({isTouch,isDark,t,send,SK,VH,Z});
+  AIS.bindMessages();
 
   void init();
 })();

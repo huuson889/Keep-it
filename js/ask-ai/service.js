@@ -866,8 +866,10 @@ async function queueAILinkPanelFlow(tab, { intent = "summary", selectedText = ""
     : (askingAboutSelection ? "ask-selected-text-existing" : "reopen-existing");
   return { ok:true, action };
 }
-async function openAILinkPanel({ sender, tab, intent = "summary", selectedText = "" } = {}) {
-  const sourceTab = tab || sender?.tab;
+async function openAILinkPanel({ sender, tab, intent = "summary", selectedText = "", sourceUrl = "" } = {}) {
+  let sourceTab = tab || sender?.tab;
+  // Only the owned Documents page can bind its local file reference. Web senders cannot spoof a source tab.
+  try{const own=new URL(browser.runtime.getURL("pages/documents.html")),from=new URL(sender?.url||""),source=normalizeAISourceUrl(sourceUrl),url=new URL(source||"https://invalid.invalid/");if(from.protocol===own.protocol&&from.host===own.host&&from.pathname===own.pathname&&url.protocol===own.protocol&&url.host===own.host){if(!Number.isInteger(sourceTab?.id))sourceTab=(await browser.tabs.query({active:true,currentWindow:true}))[0];sourceTab={...sourceTab,url:source};}}catch{}
   if (intent === "ask-selected-text" && !String(selectedText || "").trim()) return { ok:false, error:"selected-text-unavailable" };
   const windowId = Number.isInteger(sourceTab?.windowId) ? sourceTab.windowId : null;
   if (Number.isInteger(windowId)) markAIPanelExplicitOpen(windowId);
@@ -1075,7 +1077,7 @@ async function handleAskAIMessage(message, sender) {
   if (message.type === "AI_LINK_PREPARE") return prepareAIManualLinkSend(message, sender);
   if (message.type === "AI_LINK_RESULT") return completeAILinkRequest(message, sender);
   if (message.type === "AI_LINK_DRAFT_READY") return notifyAILinkDraftReady(message);
-  if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText });
+  if (message.type === "OPEN_AI_PANEL") return openAILinkPanel({ sender, intent:message.intent, selectedText:message.selectedText, sourceUrl:message.sourceUrl });
   // Page edge button shown while the panel is open: same toggle as Alt+X, in the sender's window.
   if (message.type === "TOGGLE_AI_PANEL") return askAIOff ? { ok:false, disabled:true } : openAIPanel({ sender, toggle:true });   // Settings → Ask AI off
   // v3.5.284 AI sheet (phone / tablet): closed by the page (drag down, tap outside, page left)

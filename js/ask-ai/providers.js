@@ -209,7 +209,10 @@
   function normalizeSourceUrl(value) {
     try {
       const url = new URL(String(value || ""));
-      return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+      if (["http:", "https:"].includes(url.protocol)) return url.href;
+      const own=globalThis.browser?.runtime?.getURL?.("pages/dashboard.html");
+      if(own){const base=new URL(own),key=url.searchParams.get("document");if(url.protocol===base.protocol&&url.host===base.host&&url.pathname===base.pathname&&/^[a-zA-Z0-9-]{16,80}$/.test(key||"")){base.searchParams.set("document",key);return base.href;}}
+      return "";
     } catch { return ""; }
   }
 

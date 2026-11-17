@@ -35,7 +35,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - Reveal/counter dùng module chung, cycle guard và reduced motion; không tạo timer/observer presentation trùng ở consumer. Không animation giả số liệu.
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
 - Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
-- Tài liệu có DB riêng, không thay annotations web hay mở rộng JSON backup hiện có; các giới hạn/đời sống tệp ở trang luồng.
+- Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng kho annotations chung. Chỉ owned document references được phép mở/jump; blob tệp chưa nằm trong JSON backup.
 
 ## 5. Kiểm tra và xác minh
 

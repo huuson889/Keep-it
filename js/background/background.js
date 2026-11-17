@@ -225,13 +225,15 @@ async function tabNeighbors(message, sender) {
   return { prev: !!prev, next: !!next };
 }
 async function openHighlight(url, id) {
-  if (typeof url !== "string" || !/^https?:\/\//i.test(url) || typeof id !== "string" || !id) return { found: false };
+  const ownedDocument=typeof url==="string"&&!/^https?:\/\//i.test(url)?globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(url):"";
+  if (typeof url !== "string" || (!/^https?:\/\//i.test(url)&&!ownedDocument) || typeof id !== "string" || !id) return { found: false };
+  if(ownedDocument)url=ownedDocument;
   const tabs = await browser.tabs.query({});
-  let tab = tabs.find(candidate => candidate.url === url);
+  let tab = tabs.find(candidate => candidate.url === url || (ownedDocument && globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(candidate.url) === ownedDocument));
   if (tab) {
     await browser.windows.update(tab.windowId, { focused: true });
     tab = await browser.tabs.update(tab.id, { active: true });
-  } else tab = await browser.tabs.create({ url, active: true });
+  } else {const target=new URL(url);if(ownedDocument)target.searchParams.set("highlight",id);tab=await browser.tabs.create({ url:target.href, active:true });}
   if (!tab?.id) return { found: false };
   for (let attempt = 0; attempt < 48; attempt++) {
     try {

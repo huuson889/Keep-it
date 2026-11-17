@@ -5,11 +5,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
 <title>Keepit — Documents</title>
-
-<meta content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; media-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://translate.googleapis.com https://api.dictionaryapi.dev https://api.datamuse.com https://api.mymemory.translated.net https://lingva.ml https://lingva.thedaviddelta.com; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'" http-equiv="Content-Security-Policy"/><link href="../css/dashboard/documents.css" rel="stylesheet"/></head>
+<meta content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: blob: https://fonts.gstatic.com; media-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://translate.googleapis.com https://api.dictionaryapi.dev https://api.datamuse.com https://api.mymemory.translated.net https://lingva.ml https://lingva.thedaviddelta.com; object-src 'none'; frame-src 'self'; base-uri 'none'; form-action 'none'" http-equiv="Content-Security-Policy"/><link href="../css/dashboard/documents.css" rel="stylesheet"/><link href="../css/content/content.css" rel="stylesheet"/><link href="../css/content/content-theme.css" rel="stylesheet"/><link href="../css/content/notes.css" rel="stylesheet"/><link href="../css/shared/selection-toolbar.css" rel="stylesheet"/></head>
 <body>
 <div class="app">
-
 <main class="main">
 <div class="topbar"><div class="libraryBrand"><img alt="" aria-hidden="true" height="26" src="../assets/icons/icon.svg" width="26"/><span>Keepit</span></div><div class="crumb"><span>/  </span><span data-doc-label="title">Tài liệu</span></div><div class="topPill" title="Lưu trên thiết bị"><span><span data-doc-label="local">✨ LƯU TRÊN THIẾT BỊ</span></span></div><button class="vbtn" data-doc-title="theme" id="libraryTheme" type="button"><svg aria-hidden="true" class="i" viewbox="0 0 24 24"></svg></button></div>
 <section class="row">
@@ -33,7 +31,6 @@
 </label>
 <div class="dzNote"><svg class="i" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg><span><span data-doc-label="privacy">Tệp được giữ trong trình duyệt. Chỉ chữ bạn chọn dịch, đọc to hoặc hỏi AI mới gửi tới dịch vụ tương ứng.</span></span></div>
 </section>
-
 <section class="lib">
 <div>
 <div class="libHead"><div><h3><span data-doc-label="library">Thư viện tài liệu</span></h3><p><span data-doc-label="librarySub">Tài liệu đã mở trên thiết bị này.</span></p></div><span class="count" id="countPill"></span></div>
@@ -55,9 +52,6 @@
 </main>
 </div>
 <!-- phone nav -->
-
-
-
 <!-- viewer -->
 <div class="viewer" id="viewer">
 <div class="vbar" id="vBar">
@@ -97,19 +91,16 @@
 </div>
 <div class="zoomGroup" data-dock="zoom" id="zoomWrap"><button aria-label="Thu nhỏ" class="vbtn" data-doc-aria="zoomOut" data-doc-title="zoomOut" id="zOut" title="Thu nhỏ"><svg class="i" viewbox="0 0 24 24"><path d="M5 12h14"></path></svg></button><label class="viewSelect zoom"><select aria-label="Thu phóng trang" data-doc-aria="zoom" id="vZoom"><option value="fit"><span data-doc-label="fitWidth">Vừa chiều rộng</span></option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option><option value="125">125%</option><option value="150">150%</option><option value="175">175%</option><option value="200">200%</option></select></label><button aria-label="Phóng to" class="vbtn" data-doc-aria="zoomIn" data-doc-title="zoomIn" id="zIn" title="Phóng to"><svg class="i" viewbox="0 0 24 24"><path d="M5 12h14M12 5v14"></path></svg></button></div>
 </div></div>
-<div class="player" id="player"><button data-doc-title="prevParagraph" id="tPrev" title="Đoạn trước"><svg class="i" viewbox="0 0 24 24"><path d="M19 20 9 12l10-8z"></path><path d="M5 19V5"></path></svg></button><button class="big" data-doc-title="playPause" id="tPlay" title="Phát / Dừng"></button><button data-doc-title="nextParagraph" id="tNext" title="Đoạn sau"><svg class="i" viewbox="0 0 24 24"><path d="m5 4 10 8-10 8z"></path><path d="M19 5v14"></path></svg></button><span id="tLbl"></span><span class="rate">1.5×</span><button data-doc-title="close" id="tClose" title="Tắt đọc to"><svg class="i" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+
 <div class="legend" id="legend"><header><span data-doc-label="legend"></span><button data-doc-title="close" id="lgClose" type="button">×</button></header><div id="wordClassLegend"></div></div>
 </div>
 <aside class="translation side2 resizablePanel" data-panel="translation" id="trPanel"><div aria-controls="trPanel" aria-label="Đổi độ rộng bản dịch" aria-orientation="vertical" class="panelResize" data-doc-aria="resize" data-doc-title="resize" role="separator" tabindex="0" title="Kéo để đổi độ rộng"></div><header><b class="transTitle" data-doc-label="translation"><span data-doc-label="translation">Bản dịch</span></b><label class="trLangWrap"><select aria-label="Ngôn ngữ bản dịch" data-doc-aria="trLanguage" id="trLang"></select><svg aria-hidden="true" class="i" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></label><button aria-controls="transList" aria-label="Cuộn theo tệp" aria-pressed="true" class="vbtn on" data-doc-aria="follow" data-doc-title="follow" id="trFollow" title="Cuộn theo tệp"><svg aria-hidden="true" class="i" viewbox="0 0 24 24"><path d="M4 4v16M1 7l3-3 3 3M1 17l3 3 3-3M11 5h10M11 12h8M11 19h10"></path></svg></button><button aria-label="Đóng bản dịch" class="vbtn" data-doc-aria="close" data-doc-title="close" id="trClose" title="Đóng bản dịch"><svg class="i" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></header><div class="transList" id="transList"></div><div class="transTip"><span data-doc-label="trTip">Bản dịch không làm thay đổi bố cục tệp.</span></div></aside>
-<aside class="notes side2 resizablePanel" data-panel="notes" id="notesPanel"><div aria-controls="notesPanel" aria-label="Đổi độ rộng ghi chú" aria-orientation="vertical" class="panelResize" data-doc-aria="resize" data-doc-title="resize" role="separator" tabindex="0" title="Kéo để đổi độ rộng"></div><header><div><span data-doc-label="notesTitle">Ghi chú tài liệu</span><small id="nSub"></small></div><button class="vbtn" data-doc-title="close" id="nClose" title="Đóng"><svg class="i" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></header><div class="nlist" id="nlist"></div></aside>
-<aside class="ai side2"><header><div>✨ AI panel<small><span data-doc-label="aiContext">Hỏi về tài liệu đang mở</span></small></div><button class="vbtn" data-doc-title="close" id="aClose" title="Đóng"><svg class="i" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></header>
-<div class="aiBody" id="aiBody"><div class="quote" id="realAiQuote"></div><p data-doc-label="aiHint"></p><button class="btnP" data-doc-label="aiOpen" id="openAiPanel"></button></div>
 
-<div class="aiNote"><span data-doc-label="aiHint">Chỉ gửi đoạn bạn chọn và tên tệp, không gửi cả tệp.</span></div></aside>
+
 </div>
 </div>
-<div class="sel" id="sel"><button data-a="hl"><span data-doc-label="highlight">🖍 Tô sáng</span></button><button data-a="note"><span data-doc-label="notes">📝 Ghi chú</span></button><button data-a="dict"><span data-doc-label="lookup">📖 Tra từ</span></button><button data-a="ai"><span data-doc-label="askAI">✨ Hỏi AI</span></button></div>
-<div class="dict" id="dict"></div>
+
+
 <div class="dropAll" id="dropAll"><div><span class="dzIcon" style="display:grid;place-items:center"><svg class="i" style="width:30px;height:30px" viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg></span><span data-doc-label="drop">Thả tệp để mở bằng Keepit</span><small><span data-doc-label="private">PDF · Word · PowerPoint · JPG, PNG, WebP — mở trên máy, không tải lên</span></small></div></div>
 <div class="modalWrap" id="openWrap"><div class="modal">
 <div class="mHead"><span class="fIco" id="oIco"></span><div><b id="oName"></b><small id="oMeta"></small></div></div>
@@ -129,8 +120,6 @@
 <h4 id="errTitle"></h4><p id="errMsg"></p><div class="hint" id="errHint"></div>
 <div class="mBtns"><button class="btnP" id="errOk"><span data-doc-label="understood">Đã hiểu</span></button></div>
 </div></div>
-
 <div class="toast" id="toast"></div>
-
-<script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/word-class/core.js"></script><script src="../js/translate/dictionary.js"></script><script src="../js/dashboard/documents-store.js"></script><script src="../js/dashboard/documents-renderers.js"></script><script src="../js/dashboard/documents.js"></script></body>
+<script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/core/shortcuts.js"></script><script src="../js/shared/theme-tokens.js"></script><script src="../js/shared/sheet-kit.js"></script><script src="../js/shared/selection-toolbar.js"></script><script src="../js/shared/search.js"></script><script src="../js/shared/icons.js"></script><script src="../js/shared/thumbnails.js"></script><script src="../js/shared/site-icons.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/translate/study-translation.js"></script><script src="../js/translate/dictionary.js"></script><script src="../js/content/web-highlighter.js"></script><script src="../js/content/sentence-note.js"></script><script src="../js/content/ui-components.js"></script><script src="../js/content/page-layout.js"></script><script src="../js/content/sidebar.js"></script><script src="../js/content/note-composer.js"></script><script src="../js/content/annotation-restore.js"></script><script src="../js/ask-ai/sheet.js"></script><script src="../js/dashboard/documents-context.js"></script><script src="../js/content/content.js"></script><script src="../vendor/readability/Readability.js"></script><script src="../vendor/readability/Readability-readerable.js"></script><script src="../js/reader/bilingual-flags.js"></script><script src="../js/reader/reader-css.js"></script><script src="../js/reader/bilingual-reader.js"></script><script src="../js/word-class/core.js"></script><script src="../js/dashboard/documents-store.js"></script><script src="../js/dashboard/documents-renderers.js"></script><script src="../js/dashboard/documents.js"></script></body>
 </html>

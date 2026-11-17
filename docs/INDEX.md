@@ -44,9 +44,10 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Overlay: phụ đề video / bài viết web | `js/overlay/source/video.js` / `js/overlay/source/web.js` |
 | Overlay: chấm điểm, luật giải câu | `js/overlay/study/` |
 | Overlay: cài đặt, chế độ phụ đề/xem, hàng đợi dịch phụ đề, yêu thích | `js/overlay/overlay-engine.js` |
-| AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
+| AI panel / mobile sheet dùng chung | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
+| Công cụ chung cho Tài liệu | `js/dashboard/documents-context.js`; `js/content/content.js`, `sidebar.js`, `note-composer.js`; `js/reader/bilingual-reader.js`; `js/ask-ai/sheet.js` |
 | Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |

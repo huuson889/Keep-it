@@ -144,7 +144,7 @@ function dateLabel(value){const time=dateMs(value);if(!Number.isFinite(time))ret
 function hostnameOf(url,fallback=''){let host='';try{host=new URL(url).hostname}catch{host=String(fallback||'nguồn không rõ')}return host?host[0].toLocaleUpperCase()+host.slice(1):'nguồn không rõ'}
 function pageKeyOf(item){return String(item.__keepitPageKey||item.url||item.hostname||item.title||'unknown')}
 function normalizedColor(value){return validColors.includes(String(value||'').toLowerCase())?String(value).toLowerCase():'yellow'}
-function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:'#'}catch{return '#'}}
+function safePageHref(value){try{const url=new URL(value);return ['http:','https:','file:'].includes(url.protocol)?url.href:(globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(url.href)||'#')}catch{return '#'}}
 function setSelectedFavicon(pageUrl){
  const host=$('selectedFavicon'),brand=siteBrandOf(pageUrl);
  if(brand){host.innerHTML=`<span class="site-brand-tile" style="background:${brand.bg}">${brand.svg}</span>`;return}

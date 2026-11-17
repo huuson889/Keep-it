@@ -6,6 +6,7 @@
   const DEMO_PROFILE_KEY = "lhnDashboardDemoProfile";
   const DISPLAY_SETTINGS_KEY = globalThis.LHN_CONFIG?.STORAGE_KEYS?.SETTINGS || "lhnSettings";
   const DEFAULTS = globalThis.LHN_DEFAULTS.reader;
+  const pageContext = globalThis.LHN_PAGE_CONTEXT;
   let settings = { ...DEFAULTS }, targetLanguage = "auto", displayLang = globalThis.LHN_LANGUAGES?.detectLanguage?.() || "en", lastPointer = null, lazyObserver = null, reading = false, readingPaused = false, resumeText = "", currentReadText = "", currentReadCharIndex = 0, websiteDisabled = false, queue = [], queueIndex = 0, utterance = null, selectedVoice = null, activeVoice = null, activeSpeechLang = "", systemVoices = [];
   let webFontRequestId = 0, loadedWebFontFamily = "", fontStylesheetReady = Promise.resolve(), accountProfile = null, addonThemePreference = "system", dashboardShortcuts = {};
   let speechDetectionRequest = 0;
@@ -138,6 +139,7 @@
   function syncBanner() { $br("[data-shortcut-banner]")?.classList.toggle("lhn-off", !(isDeskBar() && shortcutBannerVisible && !openSheetName && !scrubbing && !mainSheetOpen)); }
   // Khoảng trống đáy cố định khi Reader mở để thanh luôn hiện mà không che chữ cuối trang
   function syncSpacer() {
+    if(pageContext){document.getElementById("lhn-br-spacer")?.remove();return;}
     let spacer = document.getElementById("lhn-br-spacer");
     if (!bar.classList.contains("lhn-show") || !document.body) { spacer?.remove(); return; }
     if (!spacer) { spacer = document.createElement("div"); spacer.id = "lhn-br-spacer"; spacer.setAttribute("aria-hidden", "true"); spacer.setAttribute("data-lhn-bilingual-ui", "true"); }
@@ -218,7 +220,7 @@
     for (let i = Math.max(0, index); i < queue.length; i++) {
       const block = queue[i]; if (!block) continue;
       words += countWords(rawText(block, true));
-      if (readTr()) words += countWords(block.querySelector(":scope > .lhn-bilingual-card")?.textContent);
+      if (readTr()) words += countWords(translationCard(block)?.textContent);
     }
     return words ? Math.max(1, Math.ceil(words / (220 * currentSegmentRate()))) : 0;
   }
@@ -372,6 +374,7 @@
     syncToolbar();
     browser.storage.local.get(DISPLAY_SETTINGS_KEY).then(data => browser.storage.local.set({ [DISPLAY_SETTINGS_KEY]:{ ...(data[DISPLAY_SETTINGS_KEY] || {}), sidebarTheme:theme } })).catch(error => console.warn("Could not save shared theme", error));
   }
+  function notifySourceReaderState(){pageContext?.onReaderState?.({reading,paused:readingPaused,visible:bar.classList.contains("lhn-show")});}
   function syncToolbar() {
     const playing = reading && !readingPaused, play = $br("[data-play]");
     if (play.dataset.state !== String(playing)) { play.dataset.state = String(playing); play.innerHTML = playing ? BR_ICON.pause : BR_ICON.play; }
@@ -390,6 +393,7 @@
     renderFlag($br("[data-bar-flag]"), region);
     const isDark = addonThemePreference === "dark" || (addonThemePreference !== "light" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
     bar.classList.toggle("lhn-dark", isDark);
+    notifySourceReaderState();
   }
   function syncPauseShortcutState() { document.dispatchEvent(new CustomEvent("lhn-bilingual-reader-pause-state", { detail:readingPaused })); }
   function popupText(key, vars = {}) { return globalThis.LHN_LANGUAGES?.t?.(key, vars, displayLang) || key; }
@@ -670,7 +674,7 @@
     document.documentElement.style.setProperty("--lhn-br-accent-rgb", channels.join(","));
     document.documentElement.style.setProperty("--lhn-br-font", settings.fontFamily);
     document.documentElement.style.setProperty("--lhn-br-translation-color", getTranslationColor());
-    document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, card.parentElement));
+    document.querySelectorAll(".lhn-bilingual-card").forEach(card => updateTranslationCardStyle(card, translationBlock(card)));
     applyWebFont();
     const readerActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     if (!readerActive) { stopReading(); removeAllReaderSpeakers(); }
@@ -684,6 +688,7 @@
     });
   }
   async function applyWebFont() {
+    if(pageContext && pageContext.readerFontAllowed() !== true)return;
     const requestId = ++webFontRequestId, family = settings.webFontFamily;
     if (!family) {
       loadedWebFontFamily = "";
@@ -727,7 +732,7 @@
     const genericLeafTextBlock = /^(DIV|SECTION)$/.test(el.tagName) && !el.querySelector("p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption,pre,td,dd,dt,div,section,[role='paragraph']");
     return hasDirectText || ((semanticTextBlock || genericLeafTextBlock) && el.textContent.trim().length >= 2);
   }
-  function blocks(root = document.body) { return Array.from(root?.querySelectorAll("*") || []).filter(isTextBlock); }
+  function blocks(root = document.body) { if(pageContext)return readerBlocks();return Array.from(root?.querySelectorAll("*") || []).filter(isTextBlock); }
   function excludedPageContentSelector() {
     const base = "nav,header,footer,aside,[role='navigation'],[role='complementary'],[aria-label*='related' i],[class*='sidebar' i],[id*='sidebar' i],[class*='related' i],[id*='related' i],[class*='recommend' i],[id*='recommend' i],[class*='advert' i],[id*='advert' i],[class*='most-read' i],[id*='most-read' i],[class*='most_read' i],[id*='most_read' i],[class*='popular' i],[id*='popular' i],[class*='trending' i],[id*='trending' i],[class*='right-column' i],[id*='right-column' i],[class*='right_column' i],[id*='right_column' i],[class*='rightbar' i],[id*='rightbar' i],[class*='right_bar' i],[id*='right_bar' i],[class*='col-right' i],[id*='col-right' i],[class*='col_right' i],[id*='col_right' i],[class*='column-right' i],[id*='column-right' i],[class*='column_right' i],[id*='column_right' i],[class*='col_300' i],[id*='col_300' i],[class*='ranking' i],[id*='ranking' i]";
     const values = Array.isArray(settings.excludeSelectors) ? settings.excludeSelectors : String(settings.excludeSelectors || "").split(/\r?\n/);
@@ -1021,6 +1026,7 @@
   }
   // Alt+R and Alt+A both read from this list. Alt+D uses blocks() (whole page).
   function readerBlocks(force = false) {
+    if (pageContext) return (pageContext.readerBlocks() || []).filter(el => el?.isConnected);
     const fresh = Date.now() - mainBlocksAt < 1500;
     if (!force && (!mainBlocksDirty || fresh) && mainBlocksCache.length) {
       mainBlocksCache = mainBlocksCache.filter(el => el.isConnected);
@@ -1032,6 +1038,8 @@
     return mainBlocksCache;
   }
   function rawText(block) {
+    if (!block) return "";
+    if (pageContext) return pageContext.readerText(block) || "";
     // Một đường duy nhất cho Alt+A/lazy và Alt+D để hai phím dùng chung khóa cache Reader.
     return visibleReaderText(block);
   }
@@ -1105,6 +1113,7 @@
     });
   }
   function updateSpeakers() {
+    if (pageContext && pageContext.readerSpeakersAllowed() === false) { removeAllReaderSpeakers(); return; }
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
     const readableBlocks = readerBlocks();
     const blockSet = new Set(readableBlocks);
@@ -1133,7 +1142,7 @@
         speaker.title = "Read this paragraph; click to start reading here"; speaker.setAttribute("role", "button"); speaker.tabIndex = 0;
         speaker.addEventListener("click", event => { event.stopPropagation(); startReading(block, true); });
         speaker.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); startReading(block, true); } });
-        const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.before(speaker) : block.appendChild(speaker);
+        const card = translationCard(block); card ? card.before(speaker) : block.appendChild(speaker);
       }
       speaker.dataset.visibility = settings.speakerIconVisibility;
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
@@ -1154,25 +1163,28 @@
     toast._lhnSameLangTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
   }
 
+  function translationCard(block) { return !block ? null : pageContext ? pageContext.readerCard(block) : block.querySelector(":scope > .lhn-bilingual-card"); }
+  function translationBlock(card) { return pageContext?.readerBlockForCard?.(card) || card.parentElement; }
   async function translateBlock(block, readerMode = false) {
     if (!translateOn() || websiteDisabled || !block || !document.body.contains(block) || block.dataset.lhnBrTranslating === "true") return;
-    block.classList.toggle("lhn-bilingual-web-font", !!settings.webFontFamily && loadedWebFontFamily === settings.webFontFamily);
+    block.classList.toggle("lhn-bilingual-web-font", (!pageContext || pageContext.readerFontAllowed() !== false) && !!settings.webFontFamily && loadedWebFontFamily === settings.webFontFamily);
     block.dataset.lhnBrTranslating = "true";
     try {
       const text = rawText(block, readerMode); if (!text || text.length < 2) return;
-      let card = block.querySelector(":scope > .lhn-bilingual-card");
-      const targetLang = ["auto", "same"].includes(targetLanguage) ? displayLang : targetLanguage;
+      let card = translationCard(block);
+      const targetLang = pageContext?.readerTargetLanguage?.() || (["auto", "same"].includes(targetLanguage) ? displayLang : targetLanguage);
       if (card?.dataset.sourceText === text && card.dataset.targetLang === targetLang) return;
       const result = await LHN_MESSAGING.sendMessage({ type:"BILINGUAL_TRANSLATE", text, targetLang });
       let translated = result?.translated;
-      if (!translated) return;
+      if (!translated || (pageContext && result?.fallback)) return;
       const source = text.trim().toLocaleLowerCase(), sameDetected = result.detectedLang && result.detectedLang.toLowerCase().split("-")[0] === targetLang;
       if (settings.skipSameLang && !result.fallback && (sameDetected || translated.trim().toLocaleLowerCase() === source)) { card?.remove(); notifySameLangSkipped(); return; }
       if (!document.body.contains(block)) return;
       if (!card) { card = document.createElement("div"); card.className = "lhn-bilingual-card"; }
       card.textContent = translated; card.dataset.sourceText = text; card.dataset.targetLang = targetLang;
       updateTranslationCardStyle(card, block);
-      const speaker = block.querySelector(":scope > .lhn-bilingual-speaker"); speaker ? speaker.after(card) : block.appendChild(card);
+      if (pageContext) pageContext.mountReaderCard(block, card);
+      else { const speaker = block.querySelector(":scope > .lhn-bilingual-speaker"); speaker ? speaker.after(card) : block.appendChild(card); }
     } catch (error) { console.warn("Bilingual Reader translation failed", error); if (!navigator.onLine || /fetch|network/i.test(String(error?.message || error))) globalThis.LHN_BAR_HOOKS?.translateOffline?.(); }
     finally { delete block.dataset.lhnBrTranslating; }
   }
@@ -1186,7 +1198,7 @@
     if (websiteDisabled || (!translateOn() && !window.__lhnBilingualLazy)) return;
     window.__lhnBilingualLazy = !window.__lhnBilingualLazy;
     if (window.__lhnBilingualLazy) { readerBlocks(true); observeLazy(); }
-    else { lazyObserver?.disconnect(); readerBlocks().forEach(block => block.querySelectorAll(":scope > .lhn-bilingual-card").forEach(card => card.remove())); }
+    else { lazyObserver?.disconnect(); readerBlocks().forEach(block => translationCard(block)?.remove()); }
   }
   // v3.5.163: the bar slides out (the Keepit bar slides back in at the same time) instead of vanishing
   let barHideTimer = 0;
@@ -1194,7 +1206,7 @@
     stopReading(); closeSheet();
     if (!bar.classList.contains("lhn-show") || bar.classList.contains("lhn-hiding")) return;
     bar.classList.add("lhn-hiding"); clearTimeout(barHideTimer);
-    barHideTimer = setTimeout(() => { bar.classList.remove("lhn-show", "lhn-hiding"); syncSpacer(); }, 220);
+    barHideTimer = setTimeout(() => { bar.classList.remove("lhn-show", "lhn-hiding"); syncSpacer(); notifySourceReaderState(); }, 220);
   }
   function stopReading() {
     speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
@@ -1263,16 +1275,28 @@
       synth.addEventListener?.("voiceschanged", onChange);
     });
   }
+  async function continueSourcePage(direction, reference) {
+    if (!pageContext || !reading) return false;
+    const token=++speechDetectionRequest;utterance=null;cancelGoogle();
+    const moved=await pageContext.readerNextPage(direction,reference);
+    if(token!==speechDetectionRequest||!reading)return true;
+    if(!moved)return false;
+    queue=readerBlocks(true);queueIndex=direction<0?queue.length-1:0;
+    if(!queue.length)return false;
+    readingPaused=false;resumeText="";syncPauseShortcutState();syncToolbar();void speakNext();return true;
+  }
   async function speakNext(textOverride = null) {
-    if (!reading || queueIndex >= queue.length || !queue[queueIndex]) { stopReading(); return; }
+    if (!reading) return;
+    if (queueIndex >= queue.length || !queue[queueIndex]) { if(await continueSourcePage(1,queue[queue.length-1]))return;stopReading();return; }
     const requestId = ++speechDetectionRequest;
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
+    pageContext?.onReaderBlock?.(block);
     block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
-    const translationIncluded = textOverride == null && readTr() && Boolean(block.querySelector(":scope > .lhn-bilingual-card")?.textContent.trim());
+    const translationIncluded = textOverride == null && readTr() && Boolean(translationCard(block)?.textContent.trim());
     const blockLang = block.closest("[lang]")?.getAttribute("lang") || document.documentElement.lang || navigator.language || "en-US";
     let voiceSettings = { voiceMode:settings.voiceMode || "google", browserVoiceURI:settings.browserVoiceURI || "" };
     try { voiceSettings = await LHN_TTS.getVoiceSettings(); } catch {}
@@ -1310,7 +1334,7 @@
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
   function readSegmentsFor(block) {
     if (!readTr()) return null;
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = translationCard(block);
     const translated = card?.textContent.trim();
     if (!translated) return null;
     return { source: rawText(block, true), translated, lang: card.dataset.targetLang || displayLang };
@@ -1319,7 +1343,7 @@
   // thì đọc ngay bản dịch trước khi sang đoạn kế tiếp.
   function pendingTranslationFor(block) {
     if (!readTr() || !block) return null;
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = translationCard(block);
     const translated = card?.textContent.trim();
     if (!translated) return null;
     return { text:translated, lang:card.dataset.targetLang || displayLang };
@@ -1339,7 +1363,7 @@
   }
   function readTextFor(block) {
     const source = rawText(block, true);
-    const card = block.querySelector(":scope > .lhn-bilingual-card");
+    const card = translationCard(block);
     const translated = readTr() && card ? card.textContent.trim() : "";
     return translated ? `${source}\n${translated}` : source;
   }
@@ -1379,7 +1403,7 @@
     navigationButton.classList.remove("lhn-br-key-press"); void navigationButton.offsetWidth; navigationButton.classList.add("lhn-br-key-press");
     window.setTimeout(() => navigationButton.classList.remove("lhn-br-key-press"), 190);
     const nextIndex = queueIndex + delta;
-    if (nextIndex < 0 || nextIndex >= queue.length || !queue[nextIndex]) return;
+    if (nextIndex < 0 || nextIndex >= queue.length || !queue[nextIndex]) { if(pageContext)void continueSourcePage(delta,queue[queueIndex]);return; }
     speechDetectionRequest++;
     utterance = null;
     readingPaused = false; resumeText = "";
@@ -1400,7 +1424,7 @@
   }
   function toggleNearPointer() {
     const block = getBlockNearPointer(); if (!block) return;
-    const card = block.querySelector(":scope > .lhn-bilingual-card"); card ? card.remove() : translateBlock(block);
+    const card = translationCard(block); card ? card.remove() : translateBlock(block);
   }
   function notifySpeed(rate) { if (rate !== null) showBarToast(`${popupText("readerSpeedShort")} ${Number(rate).toFixed(2)}x`); }
   document.addEventListener("mousemove", event => { lastPointer = { x:event.clientX, y:event.clientY }; }, { passive:true });
@@ -1477,7 +1501,7 @@
     if (changes[SETTINGS_KEY]) { const voice = { voiceMode:settings.voiceMode, browserVoiceURI:settings.browserVoiceURI, readLanguage:settings.readLanguage }; applySettings(changes[SETTINGS_KEY].newValue); settings = { ...settings, ...voice }; selectedVoice = systemVoices.find(item => item.voiceURI === settings.browserVoiceURI) || null; syncToolbar(); }
     if (changes[TARGET_LANGUAGE_KEY]) {
       targetLanguage = changes[TARGET_LANGUAGE_KEY].newValue?.targetLanguage || "auto";
-      document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
+      document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = translationBlock(card); if (block) translateBlock(block, true); });
     }
     if (changes[DISPLAY_SETTINGS_KEY]) {
       const previousVoiceMode = settings.voiceMode, previousVoiceURI = settings.browserVoiceURI, previousReadLanguage = settings.readLanguage || "";
@@ -1499,7 +1523,7 @@
       addonThemePreference = ["light","dark","system"].includes(changes[DISPLAY_SETTINGS_KEY].newValue?.sidebarTheme) ? changes[DISPLAY_SETTINGS_KEY].newValue.sidebarTheme : "system";
       renderPopupText();
       syncToolbar();
-      document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = card.parentElement; if (block) translateBlock(block, true); });
+      document.querySelectorAll(".lhn-bilingual-card").forEach(card => { const block = translationBlock(card); if (block) translateBlock(block, true); });
     }
   });
   const readerRateSettingsReady = browser.storage.local.get([SETTINGS_KEY, DISPLAY_SETTINGS_KEY, TARGET_LANGUAGE_KEY, DEMO_PROFILE_KEY]).then(async data => {
@@ -1534,6 +1558,17 @@
     selectedVoice = systemVoices.find(voice => voice.voiceURI === settings.browserVoiceURI) || null;
     syncToolbar();
   }).catch(() => applySettings(DEFAULTS));
+  globalThis.LHN_READER_API = Object.freeze({
+    start:from => startReading(from),
+    toggle:from => reading ? closeReadingBar() : startReading(from),
+    stop:(immediate=false) => {closeReadingBar();if(immediate){clearTimeout(barHideTimer);bar.classList.remove("lhn-show","lhn-hiding");syncSpacer();notifySourceReaderState();}},
+    translate:translateBlock,
+    setTranslation:enabled => {window.__lhnBilingualLazy=!!enabled;if(enabled)observeLazy();else{lazyObserver?.disconnect();document.querySelectorAll(".lhn-bilingual-card").forEach(card=>card.remove());}},
+    refreshSource:() => {mainBlocksCache=[];mainBlocksDirty=true;removeAllReaderSpeakers();if(pageContext&&!pageContext.active()){lazyObserver?.disconnect();return;}updateSpeakers();if(pageContext?.readerFontAllowed?.())void applyWebFont();if(window.__lhnBilingualLazy)observeLazy();},
+    refreshTranslations:() => {for(const card of document.querySelectorAll(".lhn-bilingual-card")){const block=translationBlock(card);if(block)void translateBlock(block,true);}},
+    reset:() => {stopReading();clearTimeout(barHideTimer);bar.classList.remove("lhn-show","lhn-hiding");window.__lhnBilingualLazy=false;lazyObserver?.disconnect();removeAllReaderSpeakers();document.querySelectorAll(".lhn-bilingual-card").forEach(card=>card.remove());mainBlocksCache=[];mainBlocksDirty=true;notifySourceReaderState();},
+    get state(){return {reading,paused:readingPaused,visible:bar.classList.contains("lhn-show")};}
+  });
   globalThis.LHN_READER_SPEECH_RATE = Object.freeze({
     clamp: clampSpeechRate,
     getRate: async (lang) => { await readerRateSettingsReady; return segmentRate(lang); },

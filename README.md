@@ -10,12 +10,12 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 
 ### Local documents and images
 - Dashboard → **Documents** (inside **More** on phones): choose or drag in PDF, DOCX, PPTX, JPG/JPEG, PNG or WebP. The library starts empty and shows your actual files, not sample pages.
-- Original bytes, reading position, document notes, highlights and translation cache are kept locally in IndexedDB. Reopening the browser restores the library. Files are not uploaded to a conversion server; explicit translation, dictionary, read-aloud and AI actions use the existing services for text only.
-- Original/Read modes, continuous/single-page flow, zoom, page thumbnails, guarded ←/→ navigation, a one-second idle fade, resizable translation/notes panels, optional translation follow and the shared theme follow the approved v13 UI. Images keep their aspect ratio and original colours; the image dock shows zoom only.
+- Original bytes and reading position are kept locally in IndexedDB. Reader, selection toolbar, Full Dictionary, note composer/sidebar, highlights/Flashcards and AI use the **existing app modules and settings**, not copies from the demo. New document notes use the common annotations store and old v3.5.314 notes migrate without losing their content/date. No file is uploaded to a conversion server.
+- Original/Read modes, continuous/single-page flow, zoom, page thumbnails, guarded ←/→ navigation, a one-second idle fade, a resizable translation pane, optional translation follow and the shared theme keep the v13 file layout. Notes uses the app’s native sidebar/sheet; the pager yields to the native Reader controls. Images keep their aspect ratio and original colours; the image dock shows zoom only.
 - PDF uses a packaged local renderer and selectable text layer. Passwords are checked by the PDF reader and are not saved. Decrypted thumbnails of password-protected PDFs are not saved either.
 - Word and PowerPoint are **read-only previews**. Fonts, advanced objects and pagination may differ from Microsoft Office; use a static PDF for precise page layout. Speaker notes are read from PPTX. OCR, XFA, interactive PDF form editing, Office animations and embedded audio/video are not implemented.
-- Limit: 50 MB per document, 30 MB per image, 2,000 pages; expanded Office archives also have safety bounds. Corrupt/unsupported files show an error rather than fabricated content. Notes/translations use the file's content hash, and duplicate imports reuse that file.
-- Document files and their document-specific notes are **not included in the existing JSON backup** for web highlights/notes. This library is local to the browser profile and is not cloud-synced.
+- Limit: 50 MB per document, 30 MB per image, 2,000 pages; expanded Office archives also have safety bounds. Corrupt/unsupported files show an error rather than fabricated content. File anchors use the content hash; links use a local random document reference. Duplicate imports reuse the file.
+- Document **notes/highlights are included in the common JSON backup**; source anchors are preserved and owned document references are rewritten safely across Chrome/Firefox origins on import. Original file bytes are **not included**: keep/reimport the files separately. The library is local, not cloud-synced.
 
 
 ### Highlights and notes

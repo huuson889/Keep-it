@@ -2,45 +2,40 @@
 
 ## 1. Mục đích và phạm vi
 
-Shared chứa helper giao diện/dữ liệu dùng ở nhiều bề mặt: font tùy chỉnh trên trang, SVG icon, tìm kiếm có chỉ mục, favicon cache và thumbnail. Code AI panel đã chuyển sang module [Ask AI](ask-ai.md).
+Shared giữ UI/helper dùng nhiều bề mặt: selection toolbar, touch selection bridge, sheet behaviour, theme, font, search, favicon và thumbnail. Reader/Notes/AI chỉ dùng component chung, không dựng lại phiên bản riêng khi áp dụng demo vào app. Context tệp ở [documents](../documents.md).
 
 ## 2. File chính và điểm vào
 
 | File | Điểm vào/symbol | Vai trò |
 |---|---|---|
-| [`js/shared/custom-font.js`](../../js/shared/custom-font.js) | IIFE trên trang http(s) | Áp font người dùng chọn qua thẻ `style#custom-font-style`, tôn trọng website bị tắt. |
-| [`js/shared/icons.js`](../../js/shared/icons.js) | `LHN_ICONS.render` | SVG Lucide path; ưu tiên `LHN_CONFIG.ACTION_ICON_PATHS`. |
-| [`js/shared/search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH`, `LHN_SEARCH` | `normalize`, `createIndex`, `search`, `debounce`; `rank`, `highlightMatches` (Sidebar trang, Dashboard). |
-| [`js/shared/site-icons.js`](../../js/shared/site-icons.js) | `LHN_SITE_ICONS.load` | Favicon theo origin với cache `storage.local` và TTL. |
-| [`js/shared/site-brands.js`](../../js/shared/site-brands.js) | `LHN_SITE_BRANDS` (`SITES`, `byHost`, `letter`, `colour`) | v3.5.210: icon thương hiệu trang quen + ô chữ cái màu, dùng chung cho Trang chủ (`home-ui.js`) và Highlights & Notes. Không mạng, không lưu. |
-| [`js/shared/thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | YouTube/source thumbnail URL, fallback SVG, image loading. |
-| [`js/shared/theme-tokens.js`](../../js/shared/theme-tokens.js) | `LHN_THEME.TOKENS`, `LHN_THEME.css(selector)` | (v3.5.193) Màu kính sáng/tối dùng chung (thanh Keepit, ☰, Reader): `css(sel)` trả `sel{--kp-glass-l:…;…}`. Nạp ở nhóm content script `document_start` và `pages/home.html` trước `keepit-bar-css.js`; Reader dùng lại (cùng world, top frame). Đổi màu ở đây, không viết mã màu vào CSS. |
-| [`js/shared/auth-popup.js`](../../js/shared/auth-popup.js) | `LHN_AUTH_POPUP` (`attach`, `check`, `markup`, `PHONE`) | Popup Đăng nhập / Đăng ký dùng chung: thẻ giữa màn hình trên máy tính, sheet kéo được trên điện thoại; tab gạch chân, không nút X. |
-| [`js/shared/sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach(el,o)` / `sync()` / `locked()` / `detach(el)` | (v3.5.161) Hành vi chung của mọi sheet/popover Keepit: khóa cuộn trang, kéo/vuốt đóng (kéo xuống là đóng hẳn), bước half→full chỉ khi kéo lên; v3.5.175: `grow.mid()` + `grow.collapse()` (☰) = từ mức hết kéo xuống về mức giữa, kéo tiếp mới đóng; v3.5.177: độ dời tính theo đơn vị CSS của chính sheet (lớp thanh Keepit có thể được phóng về 1px màn hình). Nạp `document_start` cùng `keepit-bar.js`, dùng chung isolated world cho overlay, Reader, content.js. |
+| [`selection-toolbar.js`](../../js/shared/selection-toolbar.js) | `LHN_SELECTION_TOOLBAR.build/installTouchSelectionBridge` | Một định nghĩa actions/style/logo và bridge Android selection. |
+| [`selection-toolbar.css`](../../css/shared/selection-toolbar.css) | cờ layout/labels/collapsible | Kiểu toolbar dùng chung web, preview, Documents. |
+| [`sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach/sync/locked/detach` | Khóa scroll, drag/grow/snap và scroll chaining trong sheet. |
+| [`theme-tokens.js`](../../js/shared/theme-tokens.js) | `LHN_THEME` | Màu kính, scrollbar và CSS token chung. |
+| [`custom-font.js`](../../js/shared/custom-font.js), [`icons.js`](../../js/shared/icons.js) | font setting, `LHN_ICONS` | Font web và icon. Không viết lại font file gốc. |
+| [`search.js`](../../js/shared/search.js) | `LHN_INDEX_SEARCH`, `LHN_SEARCH` | Index/ranking/debounce/highlight. |
+| [`site-icons.js`](../../js/shared/site-icons.js), [`site-brands.js`](../../js/shared/site-brands.js) | `LHN_SITE_ICONS`, `LHN_SITE_BRANDS` | Favicon origin/cache và icon nhãn hiệu/fallback. |
+| [`thumbnails.js`](../../js/shared/thumbnails.js) | `LHN_THUMBNAILS` | Thumbnail URL an toàn, load/fallback dùng chung. |
+| [`auth-popup.js`](../../js/shared/auth-popup.js) | `LHN_AUTH_POPUP` | Popup/sheet đăng nhập chuẩn. |
 
 ## 3. Luồng chính
 
-1. Manifest nạp `custom-font.js` sớm cho mọi frame http(s); script đọc settings font/website và cập nhật khi storage đổi.
-2. Content, Dashboard, Popup và panel shell nạp helper cần dùng qua `<script>` hoặc `content_scripts`.
-3. `site-icons.js` thử candidate favicon theo origin, lưu kết quả dương/âm vào cache rồi trả URL cho UI.
-4. `thumbnails.js` dựng URL thumbnail an toàn và gắn fallback khi ảnh lỗi.
-5. `search.js` chuẩn hóa chữ (bỏ dấu, chữ thường), tạo chỉ mục một lần và debounce khi gõ; `LHN_SEARCH` xếp hạng trường tìm và bọc chỗ khớp bằng `mark.lhn-search-match`.
+1. Consumers nạp helper trước khi gọi. Selection toolbar có guard nạp lại; web nạp sớm cho bridge của Keepit bar, Documents nạp cùng module. Preview chỉ dựng markup, không cài bridge.
+2. `build({actions,style,logoAction,t})` chỉ dựng tính năng bật, gắn `data-kp-slot`. Style là dữ liệu; CSS không đọc số dạng. Logo action tắt thì chuyển sang tool bật đầu tiên.
+3. `installTouchSelectionBridge()` là implementation duy nhất, chuyển selection sau nhấc tay thành mouseup. Giữ settle 900 ms, contextmenu 60 ms, chặn lúc đang chạm, chống lặp theo text/rect. Web truyền callback bỏ qua host; Documents dùng cùng bridge, không có cử chỉ copy.
+4. Consumers gắn sheet qua `LHN_SHEET.attach`. Notes setup grow/scroll nằm ở `LHN_SIDEBAR.attachTouchSheet`; AI sheet ở `LHN_AI_SHEET`. Không viết drag handler thay thế trong file viewer.
+5. Site icons resolve trên origin thật và cache vào storage; thumbnails dùng nguồn đã lưu/YouTube/fallback. Search chuẩn hóa, xếp hạng và tô chỗ khớp mà không sửa dữ liệu gốc.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- `LHN_SELECTION_TOOLBAR.build({ actions })`: chỉ dựng nút của tính năng đang bật, gắn `data-kp-slot` (3 = trái·dưới·phải, 2 = trái·phải, 1 = dưới); logo chạy tính năng đã chọn, nếu tính năng đó tắt thì chạy tính năng bật đầu tiên. Dạng 0 = chỉ logo.
-
-- Script thường, không dùng `export`; mỗi file đăng ký đúng một global `LHN_*` (custom-font không đăng ký global).
-- `custom-font.js` không áp font khi website bị tắt hoặc chọn `auto`; gỡ stylesheet font khi tắt.
-- Favicon cache có giới hạn số mục và TTL; không gửi dữ liệu trang ngoài URL origin cần tra icon.
-- `thumbnails.js` chỉ nhận URL an toàn; ID YouTube phải khớp mẫu hợp lệ. Riêng `load` nhận thêm URL nội bộ của chính extension (ảnh đóng gói như `assets/images/web-thumbnail-lofi.webp`, cần có trong `web_accessible_resources`); `safeUrl` dùng lọc dữ liệu đã lưu thì không nhận.
-- `site-icons.js` chỉ thử favicon trên chính origin của trang; không dùng dịch vụ favicon bên thứ ba.
-- Thứ tự nạp: `site-icons.js`/`thumbnails.js` phải có trước consumer trong manifest và trang HTML.
-
-- `sheet-kit.js` (v3.5.161): `attach(el, {isOpen(), close(), watch?, drag?:false, scroller?(), onDrag?(on), grow?:{isFull(), cap(), setH(px|null), release(expand), collapse(), half?()}})` — gọi lại `attach` cùng phần tử chỉ cập nhật tùy chọn. MutationObserver trên `watch` (class/hidden/style/open) gọi `sync()`; chỉ khi có sheet mở mới gắn listener cửa sổ (touch capture, wheel non-passive bỏ qua `ctrlKey`, phím cuộn ngoài ô nhập) + poll 600ms. Quyết định **một lần mỗi cử chỉ** khi đi ≥6px: ngang → native nếu trên range/ô nhập/vùng cuộn ngang còn chỗ; xuống → native nếu có vùng cuộn trong chuỗi đang `scrollTop>0`, không thì kéo sheet; lên → lớn lên (nếu chưa full) rồi cuộn nội dung liền một cử chỉ, hết chỗ thì giãn nhẹ; ngoài sheet → chặn (trang đứng yên). Thả (từ v3.5.163 mọi sheet, kể cả sheet hai bước đang full — không còn dừng ở half, `grow.collapse` không dùng): đóng khi kéo > `min(110px,30%)` hoặc vuốt nhanh (>0.6px/ms và >24px), còn lại bật về. `translate`/`transition` inline đặt `!important` (thắng animation `fill:both` của sheet content.js). Click ngay sau khi kéo bị bỏ 90ms. Không dùng `overflow:hidden` trên html (giật layout desktop).
+- Script thường đăng ký global `LHN_*`; guard bảo vệ nạp lặp. Public API thêm phải giữ callers cũ và thứ tự manifest/home/Dashboard.
+- Style 0 chỉ logo; 1–8 là cờ radial/bar, nhãn và hover. Giữ slot trái/dưới/phải, logo default, master filters và idSuffix. Không tạo markup chọn chữ riêng cho từng surface.
+- Bridge touch không mở giữa lúc kéo selection handles, không ghi đè bridge APK hay cài hai lần trên cùng document.
+- Sheet quyết định một lần khi vượt slop: caret/range/horizontal scroll giữ native, list đang cuộn trả về đầu trước; phần còn lại drag/grow. Dùng sheet CSS zoom để chuẩn hóa tọa độ. Không khóa html bằng overflow:hidden.
+- `attach` cùng element chỉ cập nhật options, không nhân listener. Chỉ khi sheet mở mới khóa touch/wheel/scroll keys; `ctrl+wheel`/pinch và editor vẫn hoạt động. Đóng/removed phải nhả lock/timer.
+- Favicon chỉ request chính origin, không dịch vụ favicon ngoài; thumbnail data URL ảnh được phép, nội dung tệp không gửi tới máy chủ để tạo ảnh.
+- `custom-font` bỏ website disabled; theme đổi ở token chung. File original do renderer quyết định font/hình học.
 
 ## 5. Kiểm tra và xác minh
 
-- Đã chạy: `node --check` cho các file shared trong đợt chuyển Ask AI (không đổi logic shared).
-- Đề xuất: mở Dashboard/Popup/Sidebar xác nhận favicon, thumbnail, tìm kiếm và font tùy chỉnh trên Chromium/Firefox.
-- v3.5.179: code về lại v3.5.174 (các mục v3.5.176–177 phía trên không còn); `sheet-kit.js` giữ `grow.mid` / `collapse` của v3.5.175, chỉ ☰ của Keepit cho Android dùng.
+Syntax/dependency refs và guard; Chromium thật kiểm toolbar/styles, touch bridge, Notes/AI sheets, native Reader và source isolation. Sau thay đổi helper phải thử web và homepage, không chỉ Documents. Cảm ứng/UA mô phỏng không thay Firefox hoặc Edge Android thật; các QA cũ chưa xác nhận giữ trong `PROJECT.md`.

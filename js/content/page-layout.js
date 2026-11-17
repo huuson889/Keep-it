@@ -42,6 +42,7 @@
     important(body, "margin-left", left); important(body, "margin-right", right);
   }
   function applyPageShrink(width) {
+    if (globalThis.LHN_PAGE_CONTEXT?.active()) { globalThis.LHN_PAGE_CONTEXT.applyPageShrink(width); return; }
     // Touch devices show the sidebar as a bottom sheet over the page (css/content/notes.css), so the page keeps its width.
     if (globalThis.matchMedia?.("(pointer: coarse) and (hover: none)").matches) return;
     const root = document.documentElement, body = document.body;
@@ -64,6 +65,7 @@
   }
   // Trả trang: trượt về đúng bề rộng/lề gốc rồi mới trả kiểu gốc (lúc đó không còn gì thay đổi trên màn hình).
   function restorePageWidth() {
+    if (globalThis.LHN_PAGE_CONTEXT) { globalThis.LHN_PAGE_CONTEXT.restorePageWidth(); return; }
     if (!pageLayoutSnapshot || pageRestoreTimer) return;
     const body = document.body;
     if (!body) { restorePageNow(); return; }

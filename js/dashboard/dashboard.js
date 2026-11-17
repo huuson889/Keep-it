@@ -3231,6 +3231,7 @@ function setDashboardView(view) {
   }
   if (previousView === "documents" && view !== "documents") {
     document.body.classList.remove("documents-viewer-open");
+    const address=new URL(location.href);address.searchParams.delete("document");address.searchParams.delete("highlight");history.replaceState(history.state,"",address.href);
     dashboardDocumentsFrame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_SUSPEND" }, location.origin);
   }
   activeDashboardView = view;
@@ -3261,11 +3262,20 @@ dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEvent
   event.preventDefault();
   startStudySession({ allSources:true });
 });
-window.addEventListener("message", event => {
-  if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow || event.data?.type !== "KEEPIT_DOCUMENTS_VIEWER") return;
-  document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
+// The existing mobile AI sheet targets the top frame; an active local Documents viewport owns its sheet.
+LHN_MESSAGING.onMessage.addListener(message=>{
+  if(message?.type!=="KEEPIT_AI_SHEET"||activeDashboardView!=="documents")return;
+  return dashboardDocumentsFrame.contentWindow?.LHN_DOCUMENT_CONTEXT?.receiveAIMessage?.(message);
 });
-setDashboardView(savedDashboardView());
+window.addEventListener("message", event => {
+  if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow) return;
+  if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){openDashboardSettings("bilingualReader");return;}
+  if(event.data?.type!=="KEEPIT_DOCUMENTS_VIEWER")return;
+  document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
+  const address=new URL(location.href);if(event.data.open===true&&activeDashboardView==="documents"&&/^[a-zA-Z0-9-]{16,80}$/.test(event.data.sourceKey||""))address.searchParams.set("document",event.data.sourceKey);else if(event.data.open!==true){address.searchParams.delete("document");address.searchParams.delete("highlight");}history.replaceState(history.state,"",address.href);
+});
+const requestedDocument=new URL(location.href).searchParams.get("document");
+if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=new URL(location.href).searchParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenu").addEventListener("click", async event => {
   const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;

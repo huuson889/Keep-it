@@ -2,6 +2,7 @@
   if (window.__localHighlightNotesLoaded) return;
   window.__localHighlightNotesLoaded = true;
   const CONFIG = globalThis.LHN_CONFIG;
+  const pageContext = globalThis.LHN_PAGE_CONTEXT;
   CONFIG.applyHighlightColors();
   const COLORS = CONFIG.COLORS;
   const COLOR_MAP = CONFIG.HIGHLIGHT_COLORS;
@@ -30,12 +31,12 @@
   let aiPanelVisible = false, aiPanelPageToggle = false, aiPanelShortcut = "Alt+X", aiPanelToggleBusy = false;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
-  const pageUrl = () => location.href;
-  const displayWebsiteName = host => { const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
-  const pageTitle = () => document.title || displayWebsiteName(location.hostname);
+  const pageUrl = () => pageContext?.url?.() || location.href;
+  const displayWebsiteName = host => { if(pageContext?.active())return "Keepit";const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
+  const pageTitle = () => pageContext?.title?.() || document.title || displayWebsiteName(location.hostname);
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
-  const isWebsiteDisabledIn = value => Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey());
-  const pageThumbnailUrl = () => globalThis.LHN_THUMBNAILS?.fromPageMetadata(document, location.href) || "";
+  const isWebsiteDisabledIn = value => (pageContext && !pageContext.active()) || (Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey()));
+  const pageThumbnailUrl = () => pageContext?.thumbnail?.() || globalThis.LHN_THUMBNAILS?.fromPageMetadata(document, location.href) || "";
   const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
   const MAP = {
     'o͝o': 'ʊ', 'o͞o': 'u', 'T͟H': 'ð', 'âr': 'ɛr', 'ûr': 'ɜr', 'îr': 'ɪr',
@@ -459,9 +460,9 @@
         const range = popup._lhnAnchorRange;
         const onPage = !popup._lhnPhrase && key === popup._lhnAnchorWord && isDictionaryPageWordRange(range, key);
         const note = settings.autoTranslate !== false ? cleanText(popup.querySelector(".lhn-dict-translation")?.textContent).normalize("NFC") : "";
-        const contextNote = settings.sentenceNoteEnabled === false ? "" : onPage ? LHN_SENTENCE_NOTE.getContext(range, cleanText) : dictionaryExampleSentence(view, word, !!popup._lhnPhrase);
+        const contextNote = settings.sentenceNoteEnabled === false ? "" : onPage ? (pageContext?.sentenceContext?.(range) || LHN_SENTENCE_NOTE.getContext(range, cleanText)) : dictionaryExampleSentence(view, word, !!popup._lhnPhrase);
         const context = onPage ? getContext(range) : { prefix:"", suffix:"" };
-        const item = LHN_NOTE_COMPOSER.buildRecord({ quote:onPage ? cleanText(range.toString()) : word, note, contextNote, tags:[], color:CONFIG.normalizeColor(settings.defaultHighlightColor), url:pageUrl(), title:pageTitle(), hostname:location.hostname, thumbnailUrl:pageThumbnailUrl(), prefix:context.prefix || "", suffix:context.suffix || "" });
+        const item = LHN_NOTE_COMPOSER.buildRecord({ quote:onPage ? cleanText(range.toString()) : word, note, contextNote, tags:[], color:CONFIG.normalizeColor(settings.defaultHighlightColor), url:pageUrl(), title:pageTitle(), hostname:pageContext?.hostname?.() || location.hostname, thumbnailUrl:pageThumbnailUrl(), prefix:context.prefix || "", suffix:context.suffix || "", documentAnchor:pageContext?.anchorFor?.(range) });
         // Records with no place on the page are skipped by restoreAnnotations.
         if (!onPage) item.dictionaryOnly = true;
         const record = await LHN_MESSAGING.sendMessage({ type: "ADD", item });
@@ -706,8 +707,9 @@
     if (panel) removeComposer(); else webHighlighter.clearPreview();
     activeRange = range ? range.cloneRange() : null;
     const selectedQuote = cleanText(activeRange?.toString());
+    const documentAnchor=pageContext?.anchorFor?.(activeRange,existing?.documentAnchor);
     const selectedContext = getContext(activeRange);
-    const selectedSentence = settings.sentenceNoteEnabled !== false ? LHN_SENTENCE_NOTE.getContext(activeRange, cleanText) : "";
+    const selectedSentence = settings.sentenceNoteEnabled !== false ? (pageContext?.sentenceContext?.(activeRange) || LHN_SENTENCE_NOTE.getContext(activeRange, cleanText)) : "";
     selectedColor = existing ? CONFIG.normalizeColor(existing.color) : CONFIG.normalizeColor(settings.defaultHighlightColor); activeAnnotationId = existing?.id || null; colorChosen = false; composerOriginalColor = selectedColor;
     panel = document.createElement("div"); panel.id = "lhn-panel"; panel.dataset.lhnDictionaryWord = dictionaryWord.toLowerCase(); panel._lhnNoteEdited = !!existing; const composerPanel = panel; syncSidebarTheme();
     const paletteWidth = Math.max(230, 66 + 34 * COLORS.length);
@@ -778,7 +780,7 @@
         resizeNote();
       }).catch(error => console.warn("Could not auto-translate selected text", error));
     }
-    if (activeRange) {
+    if (activeRange && !documentAnchor?.fileLevel) {
       try { webHighlighter.drawPreview(activeRange, selectedColor); }
       catch (error) { console.warn("Could not preview the selected highlight", error); }
     }
@@ -790,7 +792,7 @@
       const q = existing?.quote || selectedQuote;
       if (!q) { removeComposer(); return; }
       const context = selectedContext;
-      const item = LHN_NOTE_COMPOSER.buildRecord({ quote:q, note:textarea.value.trim(), contextNote:selectedSentence || existing?.contextNote || "", tags:tagEditor.getTags(), color:selectedColor, url:existing?.url || pageUrl(), title:existing?.title || pageTitle(), hostname:existing?.hostname || location.hostname, thumbnailUrl:existing?.thumbnailUrl || pageThumbnailUrl(), prefix:context.prefix || existing?.prefix || "", suffix:context.suffix || existing?.suffix || "", createdAt:existing?.createdAt });
+      const item = LHN_NOTE_COMPOSER.buildRecord({ quote:q, note:textarea.value.trim(), contextNote:selectedSentence || existing?.contextNote || "", tags:tagEditor.getTags(), color:selectedColor, url:existing?.url || pageUrl(), title:existing?.title || pageTitle(), hostname:existing?.hostname || pageContext?.hostname?.() || location.hostname, thumbnailUrl:existing?.thumbnailUrl || pageThumbnailUrl(), prefix:context.prefix || existing?.prefix || "", suffix:context.suffix || existing?.suffix || "", createdAt:existing?.createdAt, documentAnchor });
       if (LHN_NOTE_COMPOSER.isUnchanged(existing, item)) { removeComposer(); return; }
       saveInFlight = true;
       let persisted = false;
@@ -798,13 +800,15 @@
         if (existing) {
           webHighlighter.clearPreview();
           const saved = await LHN_MESSAGING.sendMessage({ type: "UPDATE", item: { ...item, id: existing.id } });
+          if(pageContext&&(panel!==composerPanel||pageUrl()!==item.url))return;
           if (saved?.id) pageAnnotationCache.set(saved.id, saved);
           webHighlighter.setMarkColor(existing.id, selectedColor);
         } else {
           const saved = await LHN_MESSAGING.sendMessage({ type: "ADD", item }); item.id = saved.id;
+          if(pageContext&&(panel!==composerPanel||pageUrl()!==item.url))return;
           if (saved?.id) pageAnnotationCache.set(saved.id, saved);
           if (webHighlighter.hasPreview()) webHighlighter.commitPreview(item);
-          else if (activeRange && activeRange.startContainer.isConnected) webHighlighter.wrapRange(activeRange, item);
+          else if (!item.documentAnchor?.fileLevel && activeRange && activeRange.startContainer.isConnected) webHighlighter.wrapRange(activeRange, item);
           else await restoreAnnotations();
         }
         persisted = true;
@@ -828,6 +832,7 @@
     if (pageAnnotationCacheUrl !== url) pageAnnotationCache.clear();
     pageAnnotationCacheUrl = url;
     pageAnnotationCache = new Map((Array.isArray(items) ? items : []).filter(item => item?.id).map(item => [item.id, item]));
+    pageContext?.onAnnotations?.(Array.isArray(items) ? items : []);
   }
   function attachMarkEvents(mark, id) {
     if (mark.dataset.lhnEvents) return; mark.dataset.lhnEvents = "1";
@@ -1410,7 +1415,8 @@
       requestPromise = LHN_MESSAGING.sendMessage({
         type:"OPEN_AI_PANEL",
         intent:hasSelection ? "ask-selected-text" : "summary",
-        ...(hasSelection ? { selectedText } : {})
+        ...(hasSelection ? { selectedText } : {}),
+        ...(pageContext?.active() ? { sourceUrl:pageUrl() } : {})
       });
     } catch (error) { requestPromise = Promise.reject(error); }
     const settled = await Promise.allSettled([requestPromise]);
@@ -1493,6 +1499,7 @@
     if (sidebar) { const old = sidebar; sidebar = null; old.classList.add("lhn-closing"); setTimeout(() => old.remove(), 280); }
     sidebarSetActiveTab = null;
     LHN_PAGE_LAYOUT.restorePageWidth();
+    pageContext?.onSidebar?.(null, false, 0, closeSidebar);
     syncSidebarEdgeToggle();
   }
   async function openSidebar(rebuild = false) {
@@ -1528,6 +1535,7 @@
     }
     syncSidebarFooter();
     syncSidebarEdgeToggle();
+    pageContext?.onSidebar?.(sidebar, true, width, closeSidebar);
     await renderSidebar();
   }
   const sidebarSearchFields = item => SIDEBAR.searchFields(item);
@@ -1723,6 +1731,7 @@
       const sel = currentSelection(), rawText = cleanText(sel?.toString());
       if (!rawText || !sel.rangeCount || isEditable(sel.anchorNode)) return;
       const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
+      if (pageContext && !pageContext.containsRange(range)) return;
       const isVideoUiSelection = isVideoInterfaceEvent || isVideoInterfaceRange(range);
       const isDualSubtitleSelection = isVideoUiSelection && isPrimaryVideoTranscriptRange(range);
       const isDictationSelection = isDictationTextRange(range);
@@ -1823,6 +1832,7 @@
   document.addEventListener("lhn-toggle-notes-sidebar", () => toggleSidebarToTab("highlights"));
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
+    if(pageContext && !pageContext.active())return;
     const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
     if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
@@ -1943,17 +1953,17 @@
   const isRestorableTextNode = node => annotationRestore.isRestorableTextNode(node);
   const findQuoteRange = item => annotationRestore.findQuoteRange(item);
   async function restoreAnnotations() {
-    if (!websiteSettingsReady || websiteDisabled) return;
+    if (!websiteSettingsReady || websiteDisabled || (pageContext && !pageContext.active())) return;
     if (isEditable(document.activeElement)) { restorePendingWhileEditing = true; return; }
     if (restorePromise) {
       restoreRequestedWhileRunning = true;
       return restorePromise;
     }
     restorePromise = (async () => {
-      let items;
-      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: pageUrl() }); }
+      let items;const requestedUrl=pageUrl();
+      try { items = await LHN_MESSAGING.sendMessage({ type: "GET_PAGE", url: requestedUrl }); }
       catch (error) { console.warn("Highlight Notes: could not load saved highlights", error); return; }
-      if (!Array.isArray(items) || !document.body) return;
+      if (!Array.isArray(items) || !document.body || (pageContext && requestedUrl!==pageUrl())) return;
       const currentUrl = pageUrl();
       const current = items.filter(x => x && x.url === currentUrl && x.quote && x.id && !x.dictionaryOnly);
       cachePageAnnotations(currentUrl, current);
@@ -1991,10 +2001,10 @@
         }
         // Resolve every range immediately before wrapping because earlier items
         // may have changed the DOM.
-        const range = findQuoteRange(item);
-        if (range) {
-          if (!webHighlighter.wrapRange(range, item)) missing++;
-        } else missing++;
+        const ranges = pageContext ? (pageContext.findRanges(item) || []) : [findQuoteRange(item)].filter(Boolean);
+        if (ranges.length) {
+          for (const range of ranges) if (!webHighlighter.wrapRange(range, item)) missing++;
+        } else if (!pageContext) missing++;
       }
       if (missing === 0) restoreRetryCount = 0;
       else if (restoreRetryCount < 10) {
@@ -2064,6 +2074,7 @@
     if (typeof id !== "string" || !id) return { found: false };
     await loadSettings();
     if (websiteDisabled) return { found: false };
+    if (pageContext?.revealAnnotation) await pageContext.revealAnnotation(await getItem(id));
     await restoreAnnotations();
     for (let attempt = 0; attempt < 40; attempt++) {
       const mark = document.querySelector(`[data-lhn-id="${CSS.escape(id)}"]`);
@@ -2118,6 +2129,25 @@
     else translateSelectedRange(range, { forcePopup:true, textOverride:word });
     return true;
   }
+  globalThis.LHN_CONTENT_TOOLS = Object.freeze({
+    toggleNotes:() => { if (settings.notesEnabled !== false && !websiteDisabled) toggleSidebarToTab("highlights"); },
+    compose:(range, existing = null) => { if (settings.notesEnabled !== false && !websiteDisabled && range) showComposer(range, existing); },
+    askAI:text => settings.askAIEnabled === false || websiteDisabled ? Promise.resolve({ opened:false }) : launchChatGPTSidePanel(text ? { selectedText:text } : {}),
+    openDictionary:openBarDictionary,
+    dismissSelection:()=>{removeTooltip(true);removeTranslationUI();translateIcon?.remove();translateIcon=null;},
+    restore:restoreAnnotations,
+    close:() => { removeComposer(); removeTooltip(true); removeTranslationUI(); closeSidebar(); translateIcon?.remove(); translateIcon=null; },
+    async refreshSource() {
+      removeComposer(); removeTooltip(true); removeTranslationUI(); translateIcon?.remove(); translateIcon=null;
+      activeRange=null; selectedRange=null; sidebarItemsCache=null;
+      const changed=lastRestoreUrl!==pageUrl();
+      if(changed){closeSidebar();pageAnnotationCache.clear();pageAnnotationCacheUrl="";lastRestoreUrl=pageUrl();}
+      await loadSettings();
+      if(websiteDisabled){closeSidebar();return;}
+      await restoreAnnotations();if(sidebarOpen)await renderSidebar();
+    },
+    get sidebarOpen(){ return sidebarOpen; }
+  });
   globalThis.LHN_BAR_ACTIONS = Object.freeze({
     restoreHighlights:() => websiteDisabled ? false : (restoreAnnotations(), true),
     openDictionary:openBarDictionary

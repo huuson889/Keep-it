@@ -432,7 +432,7 @@
     function setSourceUrl(value) {
       try {
         const parsed = new URL(String(value || ""));
-        currentSourceUrl = ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+        currentSourceUrl = globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(parsed.href) || "";
       } catch { currentSourceUrl = ""; }
       if (currentSourceUrl) {
         const parsed = new URL(currentSourceUrl);

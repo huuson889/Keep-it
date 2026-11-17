@@ -3,7 +3,10 @@
     const items = Array.isArray(parsed) ? parsed : parsed?.annotations;
     if (!Array.isArray(items)) return null;
     return {
-      items,
+      items:items.map(item=>{
+        if(!item?.documentAnchor?.documentId||!globalThis.browser?.runtime?.getURL)return item;
+        try{const old=new URL(item.url),key=old.searchParams.get("document");if(!["chrome-extension:","moz-extension:"].includes(old.protocol)||!/^[a-f0-9]{64}$/i.test(item.documentAnchor.documentId)||!/^\/pages\/dashboard\.html$/.test(old.pathname)||!/^[a-zA-Z0-9-]{16,80}$/.test(key||""))return item;const url=new URL(browser.runtime.getURL("pages/dashboard.html"));url.searchParams.set("document",key);return{...item,url:url.href};}catch{return item;}
+      }),
       favorites: Array.isArray(parsed?.favorites) ? parsed.favorites : null,
       favoriteNoteIds: Array.isArray(parsed?.favoriteNoteIds) ? parsed.favoriteNoteIds : null,
       favoriteVideos: Array.isArray(parsed?.favoriteVideos) ? parsed.favoriteVideos : null,

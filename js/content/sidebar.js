@@ -155,5 +155,16 @@
     }
     return Object.freeze({ createButton, renderContextSentence, searchFields, highlightMatches, createEmptyState, createHighlightCard, createShell });
   }
-  globalThis.LHN_SIDEBAR = Object.freeze({ create });
+  // Native Notes sheet setup shared by the web bar and owned file sources.
+  function attachTouchSheet(side,{close,isTouch=()=>matchMedia('(pointer:coarse) and (hover:none)').matches,viewportHeight=()=>innerHeight*(globalThis.LHN_UI_ZOOM?.get?.()||1)}={}){
+    const SK=()=>globalThis.LHN_SHEET,VH=viewportHeight;
+    const snap = () => { side.classList.add("lhn-sheet-snap"); setTimeout(() => side.classList.remove("lhn-sheet-snap"), 260); };
+    SK()?.attach(side, { isOpen:() => isTouch() && side.classList.contains("lhn-side-visible") && !side.classList.contains("lhn-closing"), close, watch:side,
+      scroller:() => side.querySelector("#lhn-sidebar-list"),
+      grow:{ isFull:() => side.classList.contains("lhn-sheet-full"), cap:() => VH() * 0.96, mid:() => Math.round(Math.min(VH() * 0.74, 720)),
+        setH:px => { if (px === null) { side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); } else { side.classList.add("lhn-sheet-growing"); side.style.setProperty("height", px + "px", "important"); } },
+        collapse:() => { snap(); side.classList.remove("lhn-sheet-full", "lhn-sheet-growing"); side.style.removeProperty("height"); },
+        release:grow => { snap(); side.classList.remove("lhn-sheet-growing"); side.style.removeProperty("height"); if (grow) side.classList.add("lhn-sheet-full"); } } });
+  }
+  globalThis.LHN_SIDEBAR = Object.freeze({ create, attachTouchSheet });
 })();

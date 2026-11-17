@@ -2,6 +2,7 @@
 // One definition of actions, icons, logo and style flags; css/shared/selection-toolbar.css styles every variant.
 (() => {
   "use strict";
+  if(globalThis.LHN_SELECTION_TOOLBAR)return;
 
   const ICONS = Object.freeze({
     highlight:'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>',
@@ -127,8 +128,44 @@
     return shell;
   }
 
+  const touchBridges=new WeakMap();
+  function installTouchSelectionBridge({ document:doc=globalThis.document, touchQuery=matchMedia("(pointer:coarse)"), isOwnTarget=()=>false }={}) {
+    if(touchBridges.has(doc))return touchBridges.get(doc);
+    const document=doc,TOUCH=touchQuery;
+    let touching = false, timer = 0, lastKey = "";
+    const selectionKey = () => {
+      const selection = getSelection();
+      if (!selection || selection.isCollapsed || !selection.rangeCount) return "";
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      return `${selection.toString()}|${Math.round(rect.left)}|${Math.round(rect.top)}|${Math.round(rect.width)}`;
+    };
+    function fire() {
+      if (touching || !TOUCH.matches) return;
+      const selection = getSelection();
+      if (!selection || selection.isCollapsed || !selection.rangeCount || !selection.toString().trim()) { lastKey = ""; return; }
+      const key = selectionKey();
+      if (key === lastKey) return;
+      lastKey = key;
+      const range = selection.getRangeAt(0), rects = range.getClientRects();
+      const last = rects[rects.length - 1] || range.getBoundingClientRect();
+      const node = range.endContainer, target = node.nodeType === 1 ? node : node.parentElement;
+      if (target && isOwnTarget(target)) return;
+      (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
+    }
+    const SETTLE = 900;
+    const schedule = () => { if (!TOUCH.matches) return; clearTimeout(timer); timer = setTimeout(fire, SETTLE); };
+    // contextmenu while the finger is still down = the long press that starts a selection (more may follow) → keep waiting
+    document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
+    document.addEventListener("touchstart", () => { touching = true; }, { capture:true, passive:true });
+    document.addEventListener("touchend", () => { touching = false; schedule(); }, { capture:true, passive:true });
+    document.addEventListener("touchcancel", () => { touching = false; schedule(); }, { capture:true, passive:true });
+    document.addEventListener("selectionchange", schedule);
+    document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);
+    const bridge=Object.freeze({ schedule });touchBridges.set(doc,bridge);return bridge;
+  }
+
   globalThis.LHN_SELECTION_TOOLBAR = Object.freeze({
     ACTIONS, ACTION_IDS, ICONS, STYLES, DEFAULT_STYLE, DEFAULT_LOGO_ACTION,
-    normalizeStyle, normalizeLogoAction, logoSvg, build
+    normalizeStyle, normalizeLogoAction, logoSvg, build, installTouchSelectionBridge
   });
 })();

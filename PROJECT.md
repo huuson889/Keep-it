@@ -1,17 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.314** (`manifest.json`), nhánh `Keepit-Optimize-Test`; một ZIP + CRX ký cùng khóa cho các trình duyệt đang hỗ trợ.
-- Dashboard có tab **Tài liệu** theo demo v13: PDF/DOCX/PPTX/ảnh thật, thư viện/tiến độ/notes lưu cục bộ, không dữ liệu mẫu. Kiến trúc và giới hạn xem mục 4, `docs/documents.md`.
-- Giữ renderer gốc, hai flow, zoom, pager mờ 1 giây, theme và sidebar co giãn; Dịch/TTS/POS/AI đi qua công cụ hiện có. Office là preview, có cảnh báo sai khác; OCR chưa có.
-- Kiểm tra Chromium extension thật: desktop/phone mô phỏng, vi/ko, file/notes/progress/restart/mật khẩu/hủy/tệp hỏng/ZIP/sanitizer/theme/route cũ PASS; dịch/từ điển và tải audio Google thật PASS. AI đăng nhập, giọng thực nghe và Firefox/Edge Android thật chưa xác nhận.
-- Tài liệu và notes riêng chưa nằm trong JSON backup hiện tại; dữ liệu/giấy phép/quyền riêng tư đã cập nhật. Các QA cũ chưa xác nhận vẫn giữ ở mục 2.
+- Version **3.5.315**, nhánh `Keepit-Optimize-Test`; ZIP + CRX ký cùng khóa. Giữ phần đọc PDF/DOCX/PPTX/ảnh thật của v314.
+- Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
+- Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
+- Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
+- Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu — v3.5.314
+### Tài liệu — v3.5.315
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
-- Thư viện tệp/notes Tài liệu hiện lưu ở IndexedDB riêng, chưa có trong JSON backup/đồng bộ cloud. Không đánh dấu phần backup này đã hoàn tất.
+- Byte tệp/thư viện chưa nằm trong JSON backup/cloud. Notes đã dùng annotations/backup chung ở v315; không đánh dấu backup blob đã hoàn tất.
 
 ### Tái cấu trúc cây thư mục (xong ở v3.5.199)
 - Theo `OPT-ARENA.md`, bản ghi 2026-10-23 "Tái cấu trúc cây thư mục…". Trước mỗi bước phải đọc lại toàn bộ bản ghi đó. 5 bước, mỗi bước một phiên bản. Bước 1 (dọn tài liệu, gộp `search.js`) xong ở v3.5.192; bước 2 (`theme-tokens.js`, tách CSS thanh/Reader, đổi tên `keepit-bar.js`, nhãn thanh sang `languages.js`) xong ở v3.5.193; bước 3 (danh sách tính năng overlay cũ ↔ mới, trong bản ghi OPT) ở v3.5.194; người dùng duyệt bỏ cả 5 mục; bước 4 (CSS overlay cũ, `overlay-engine.js`, xoá `view/`) ở v3.5.195. Bước 5 chia 5a–5d vì luật "không vừa chuyển file vừa xoá code": 5a (xoá `study/dictation/`, `study/shadowing/`, `createStudyUi`, hover-pause) ở v3.5.196; 5b (markup cũ + chỗ ghi vào đó) ở v3.5.197; 5c (nhãn `unified-text.js`, `offline-page.js` sang `languages.js`) ở v3.5.198; 5d (đổi tên thư mục, gộp `dictation.md`) ở v3.5.199.
@@ -87,6 +87,7 @@
 - Lúc nộp (người dùng): bản sao ZIP bỏ `DATA-INVENTORY.md`, `STORE-LISTING.md`; ảnh chụp 1280×800; tài khoản CWS/AMO; rà lại form cửa hàng theo `STORE-LISTING.md`.
 
 ## 3. Ràng buộc & quyết định
+- **Áp dụng demo:** chỉ giữ bố cục/luồng đã duyệt. Reader, chọn chữ, Ghi chú, từ điển và Hỏi AI phải dùng module UI/controller/dữ liệu hiện có của app, theo cài đặt chung; không bê các công cụ mô phỏng thành bộ riêng.
 - Giữ nguyên UI, layout, văn bản hiện có. Chỉ thêm mới khi được yêu cầu.
 - Khi phát hiện tên file/đường dẫn sai hoặc không nhất quán, báo người dùng và nêu rõ phạm vi trước khi sửa; nếu chỉ yêu cầu đổi tên, giữ nguyên logic bên trong.
 - Mọi API dùng browser.* (đã có polyfill).
@@ -163,10 +164,12 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 
 ### Tài liệu cục bộ
 
-- `pages/documents.html` + `css/dashboard/documents.css`: shell v13 trong iframe route thật `documents`; `documents-host.css` giữ fullscreen và nhường shell cũ khi đóng.
-- `js/dashboard/documents.js`: UI, import thực, source selection, công cụ, vòng đời và trạng thái; `documents-store.js`: IndexedDB `keepit-documents` v1 (blob/metadata/notes/translations); `documents-renderers.js`: PDF.js, DOCX/PPTX, ảnh, guard ZIP và sanitizer.
-- `vendor/pdfjs/`, `vendor/office/`: bộ đọc đóng gói cùng giấy phép; không CDN, không nới quyền. Nhãn `docs_*` en/vi/ko ở `languages.js`; flow/width/follow/target ở `lhnDocumentsPrefs`.
-- Dịch/đọc/từ điển/Loại từ/AI dùng `BILINGUAL_TRANSLATE`, `LHN_TTS`, `LHN_DICTIONARY`, `WORD_CLASS_*`, `OPEN_AI_PANEL`; chỉ text của thao tác chủ động rời máy. Notes Tài liệu tách annotations web; source và nội dung thực, không dùng mẫu.
+- `pages/documents.html`/`documents.css` chỉ giữ thư viện và original-file surfaces; không còn `#player`, `#sel`, `#dict`, Notes/AI pane riêng.
+- `documents.js` + `documents-context.js` cung cấp source identity/blocks/page anchors/layout cho `content.js` và `bilingual-reader.js` gốc. Web không có host phải giữ đường cũ; Source URL chỉ owned Dashboard document UUID.
+- Blob/metadata/progress ở `keepit-documents`. Notes/Flashcards mới ở annotations chung; legacy v314 migration giữ nội dung/ngày/anchor, idempotent và không tái tạo note đã xóa. JSON backup có Notes nhưng không blob; import rewrite đúng owned extension origin.
+- `LHN_SELECTION_TOOLBAR.installTouchSelectionBridge` là bridge touch duy nhất. `LHN_SIDEBAR.attachTouchSheet` dùng chung setup grow/scroll/drag. `js/ask-ai/sheet.js` là AI sheet đã chuyển nguyên component từ web bar, dùng cho web và Documents; parent Dashboard chuyển message top-frame cho source active.
+- `LHN_READER_API` chỉ facade của Reader gốc: không queue/UI khác; host cung cấp chữ tệp/chuyển trang/vị trí native card, pager nhường khi bar mở. AI dùng native panel/sheet và Send policy hiện có, không upload/read toàn bộ file tự động.
+- Renderer/vendored licences/giới hạn v314 giữ nguyên; details ở `docs/documents.md` và trang module tương ứng.
 
 ### 4.2. Luồng tương tác giữa các module
 ```text
@@ -215,6 +218,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-10-23 | v3.5.315 | Arena.ai Agent sửa:**
+
+- Sửa đúng góp ý: áp dụng demo chỉ chốt layout, công cụ phải dùng cái đã có của app. Bỏ Reader/player, toolbar chọn chữ/dictionary, Notes CRUD/sidebar và khung AI riêng trong Tài liệu. Giữ bộ mở tệp thật v314.
+- Owned source adapter nối native `content.js`, `LHN_SELECTION_TOOLBAR`, `LHN_NOTE_COMPOSER`/`LHN_SIDEBAR`, Full Dictionary, Reader gốc và AI panel/sheet. Reader có nguyên voice/speed/repeat/controls; chỉ host chữ thật, tiến độ/chuyển trang và card placement khác. Notes/touch sheet và AI sheet dùng component chung, không copy UI.
+- Chuyển ghi chú v314 vào annotations chung, giữ ngày/quote/page/block offsets; Source identity UUID, anchor gắn hash cục bộ. Có H&N/Flashcards/JSON backup chung, deep link/jump local và portable origin import; không đưa blob tệp vào backup hay gửi file/hash cho AI. Ghi/source async cũ không được tác động source mới.
+- File: `documents*.js/html/css`, native Content/Notes/Reader/selection helpers, `ask-ai/sheet.js`/routing/toolbar/providers, Dashboard/backup/H&N/background local links, manifest/home dependencies; nhãn/README/privacy/inventory/docs và kiến trúc tương ứng.
+- Kiểm tra: Chromium extension thật PASS native selector/composer/save/anchor/reopen, note migration/duplicate guard, H&N, native Reader/page continuation/speed/settings/native cards, real dictionary/tim/common store, actual panel-open API, touch bridge/Notes/AI sheet/deep link/image note/backup refs. Web selection/note/Reader + homepage regression và owned-URL rejection PASS. Mock chỉ ở một số service boundaries, không thay Reader/Notes/selector implementations.
+- Chưa kiểm: AI đã đăng nhập/send/mapping thực với cả ba provider, giọng thực nghe, Firefox và Edge Android thật. Provider iframe có thể báo 404/frame-block khi chưa đăng nhập trong môi trường kiểm thử; không coi native UI mở thành công là provider login thành công.
 
 **2026-10-23 | v3.5.314 | Arena.ai Agent sửa:**
 
@@ -433,9 +445,3 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - File: mới `css/dashboard/settings.css`, `js/shared/auth-popup.js`; sửa `pages/dashboard.html`, `css/dashboard/{dashboard,responsive}.css`, `css/shared/{ui-theme,selection-toolbar}.css`, `js/dashboard/{dashboard,settings-ui,responsive-nav}.js`, `js/core/{languages,defaults,config}.js`, `js/ask-ai/toolbar.js` (tách `shadowMarkup()` cho xem trước), `js/shared/selection-toolbar.js` (Dạng 0).
 - Kiểm tra: so ảnh với demo v43 trên 4 thiết bị (máy tính, tablet dọc, điện thoại dọc / ngang) × sáng / tối, 12 trang — khớp, chỉ khác chỗ xuống dòng do Bảng quản lý dùng font Inter thật (demo dùng font hệ thống). 4 trạng thái tài khoản (khách / Miễn phí / Pro / Ultra) × 2 giao diện × máy tính + điện thoại. Chạy thử: công tắc chính + Đặt lại + Hoàn tác, AI mặc định khi tắt AI, phần từ điển, thêm / xóa website (luật tên miền con), phím tắt trùng, đăng nhập / xóa tài khoản, quy tắc phát âm. Không có pageerror.
 - Ghi chú: với font Inter, ô Ngôn ngữ ở cột trái máy tính hẹp hơn 8px nên tên tiếng Anh ("Vietnamese") tự ẩn; trên điện thoại vẫn hiện.
-
-**2026-11-14 | v3.5.286 | Arena.ai Agent sửa:**
-
-- AI sheet cao hết bị tràn lên khỏi mép trên màn hình (ảnh máy thật, Edge Android có thanh dưới đang hiện): chiều cao theo `vh` = màn hình khi thanh trình duyệt ẩn, nên sheet cao hơn vùng thấy bằng chiều cao thanh đó. Nay `74dvh` / `96dvh` (vùng thấy thật, `vh` giữ làm dự phòng) và `overflow:clip` (focus ô chat không cuộn được nội dung sheet). File: `js/content/keepit-bar.js` (CSS `AIS`), `manifest.json`.
-- Kiểm thử: Chromium UA Android + cảm ứng: 74% (đỉnh 238, cao 677/915), 96% (đỉnh 37, cao 878), vuốt thanh / khung chat, chạm nền tối vẫn đúng như v3.5.285. Headless không có thanh trình duyệt co giãn → phần tràn chỉ kiểm được trên máy thật.
-- Ghi chú: sheet Ghi chú (`css/content/notes.css`) vẫn dùng `vh`, chưa sửa.

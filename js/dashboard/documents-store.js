@@ -45,5 +45,8 @@
     changes?.postMessage({ documentId:meta.id });
   }
   async function fingerprint(blob) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join(''); }
-  globalThis.KeepitDocumentsStore = Object.freeze({ open, get, all, put, patch, importFile, fingerprint, changes });
+  // v314 compatibility data is never a second Notes source after a confirmed common-store migration.
+  const forgetMigratedNote = id => run(['notes'], 'readwrite', tx => tx.objectStore('notes').delete(id));
+  const clearObsoleteTranslationCache = () => run(['translations'], 'readwrite', tx => tx.objectStore('translations').clear());
+  globalThis.KeepitDocumentsStore = Object.freeze({ open, get, all, put, patch, importFile, fingerprint, changes, forgetMigratedNote, clearObsoleteTranslationCache });
 })();
