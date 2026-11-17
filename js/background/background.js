@@ -342,8 +342,11 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
   }
   if (message.type === "DOCUMENTS_OPEN_WEB_MAIN_SHEET") {
-    if (!sender?.url?.startsWith(browser.runtime.getURL("pages/documents.html"))) return { ok:false };
-    const [tab] = await browser.tabs.query({ active:true, lastFocusedWindow:true }).catch(() => []);
+    const extensionRoot=browser.runtime.getURL("");
+    if (![sender?.url,sender?.documentUrl].some(value=>typeof value==="string"&&value.startsWith(extensionRoot))) return { ok:false };
+    const ownedTab=sender?.tab;
+    let tab=Number.isInteger(ownedTab?.id)&&/^https?:\/\//i.test(ownedTab.url||"")?ownedTab:null;
+    if(!tab){const [active]=await browser.tabs.query({active:true,lastFocusedWindow:true}).catch(()=>[]);tab=active;}
     if (!Number.isInteger(tab?.id) || !/^https?:\/\//i.test(tab.url || "")) return { ok:false };
     try { return await browser.tabs.sendMessage(tab.id, { type:"KEEPIT_DOCUMENTS_MAIN_SHEET", toggle:message.toggle === true }); }
     catch { return { ok:false }; }
