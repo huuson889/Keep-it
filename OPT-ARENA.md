@@ -7,6 +7,91 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+
+## 2026-11-17 | Điều khiển watcher và giải nén ZIP vào Optimize Test
+
+**Trạng thái:** Đã ghi quy trình; bản `.ps1` sửa floor version cần được chạy thử trên Windows.
+
+### 1. Dừng watcher đang chạy ẩn
+Mở PowerShell, tìm đúng tiến trình và xem lệnh trước khi dừng:
+```powershell
+$watchers = Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.Name -match '^(powershell|pwsh)\.exe$' -and
+    $_.CommandLine -match 'sync-watch-optimize-test\.ps1'
+  }
+$watchers | Select-Object ProcessId, Name, CommandLine | Format-List
+```
+Sau khi kiểm tra đúng watcher, xác nhận rồi mới dừng:
+```powershell
+if ($watchers) {
+  $answer = Read-Host "Dừng các tiến trình watcher vừa liệt kê? Nhập Y để xác nhận"
+  if ($answer -eq 'Y') {
+    $watchers | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+    'Đã gửi lệnh dừng.'
+  }
+} else {
+  'Không tìm thấy tiến trình PowerShell có tên script đó.'
+}
+```
+Không dùng `taskkill /IM powershell.exe`. Nếu không tìm thấy tiến trình hoặc nó tự chạy lại, kiểm tra Task Scheduler/trình chạy trung gian.
+
+### 2. Chạy watcher
+Đặt file mới tên `sync-watch-optimize-test.ps1` vào `D:\Keepit\Keepit - Optimize Test`. Chạy hiện cửa sổ:
+```powershell
+Set-Location 'D:\Keepit\Keepit - Optimize Test'
+.\sync-watch-optimize-test.ps1
+```
+Hoặc chạy ẩn:
+```powershell
+$scriptPath = 'D:\Keepit\Keepit - Optimize Test\sync-watch-optimize-test.ps1'
+Start-Process -FilePath powershell.exe -WindowStyle Hidden -ArgumentList @(
+  '-NoProfile',
+  '-ExecutionPolicy', 'Bypass',
+  '-File', "`"$scriptPath`""
+)
+```
+Dừng bản cũ trước khi chạy bản mới; nếu chạy hiện cửa sổ thì Ctrl+C để dừng.
+
+### 3. Đưa ZIP vào Optimize Test
+Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén**. Tên phải chính xác `Keepit - Optimize Test-v<version>.zip` (không có `(1)`); ZIP phải có `manifest.json` ở gốc. Watcher tự thay nội dung `Keepit - Test`, giữ `.git`, rồi commit/push nền. Version ZIP phải bằng hoặc cao hơn manifest repo. Xem kết quả tại `D:\Keepit\Keepit - Optimize Test\sync-watch.log`.
+
+**Lý do ZIP v3.5.364 từng bị bỏ qua:** script cũ lấy floor v3.5.368 từ 400 commit gần nhất. Bản `.ps1` mới lấy floor từ manifest hiện tại; chưa được xác minh trên Windows.
+
+---
+
+## 2026-11-17 | Điều khiển Chrome thật của người dùng qua CDP
+
+**Trạng thái:** Đã điều khiển Chrome test qua Cloudflare Tunnel; URL phiên không lưu trong repo.
+
+### Cài đặt và chạy trên Windows
+1. Cài `cloudflared` (bỏ qua nếu đã cài):
+   ```powershell
+   winget install --id Cloudflare.cloudflared -e
+   ```
+2. Đóng Chrome test cũ. Mở PowerShell, chạy Chrome bằng profile test riêng (profile này cần cài/nạp Keepit ở `chrome://extensions` → Developer mode → Load unpacked):
+   ```powershell
+   $chrome = "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
+   if (-not (Test-Path $chrome)) { $chrome = "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe" }
+   Start-Process $chrome -ArgumentList @('--remote-debugging-port=9222', '--user-data-dir=D:\Keepit\Chrome-CDP-Test')
+   ```
+3. Trong PowerShell thứ hai, mở tunnel tới cổng CDP:
+   ```powershell
+   cloudflared tunnel --url http://localhost:9222
+   ```
+   Sao chép URL `https://….trycloudflare.com` do lệnh in ra và gửi riêng trong chat. Đừng ghi URL/token vào repo. **Tunnel này trao quyền điều khiển toàn bộ Chrome cho người có URL:** chỉ dùng profile test, không mở nội dung nhạy cảm, và dừng bằng Ctrl+C ngay sau kiểm thử.
+4. Agent lấy CDP WebSocket từ `https://<URL>/json/version`, kết nối Playwright `connectOverCDP`, rồi thao tác/reload tab. Ví dụ phía Agent:
+   ```js
+   const info = await (await fetch(`${CDP_URL}/json/version`)).json();
+   const ws = new URL(info.webSocketDebuggerUrl);
+   ws.protocol = 'wss:';
+   ws.host = new URL(CDP_URL).host;
+   const browser = await chromium.connectOverCDP(ws.href);
+   const pages = browser.contexts().flatMap(c => c.pages());
+   await pages[0].reload();
+   ```
+5. Dừng tunnel bằng Ctrl+C và đóng Chrome test sau khi xong. Không gửi API token/credential qua chat.
+
 ## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Độ chính xác render, Select & Reader như Web, Mục lục, Tìm kiếm, Đọc đêm, Audiobook)
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.

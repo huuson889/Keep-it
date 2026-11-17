@@ -665,7 +665,15 @@
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassLegendOn?.() : !!globalThis.LHN_WORD_CLASS?.legendShown?.())), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock"].includes(id))).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock", "page", "reader"].includes(id))).map(navTile).join(""); };
+  const documentActionTile = (action, icon, label, on, disabled) => `<button class="q${on ? " on" : ""}" type="button" data-q="doc:${action}"${disabled ? " disabled aria-disabled=\"true\"" : ""}><span class="ic">${ic(icon)}</span><span>${esc(label)}</span></button>`;
+  const documentActionTiles = () => {
+    if (!S.documentsSheet) return "";
+    const actions = globalThis.LHN_DOCUMENTS_MAIN_ACTIONS;
+    if (!actions || actions.available?.() === false) return "";
+    return documentActionTile("translate", "lang", actions.translateLabel?.() || t("page"), actions.translationOn?.(), actions.translateDisabled?.())
+      + documentActionTile("read", "read", actions.readLabel?.() || t("reader"), actions.readOn?.(), actions.readDisabled?.());
+  };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -713,7 +721,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard")) + tile("hist", "hist", t("hist"))}${hiddenTools()}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard")) + tile("hist", "hist", t("hist"))}${hiddenTools()}${documentActionTiles()}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome"))}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}</div>
     <div class="divider"></div>
@@ -724,11 +732,11 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : (S.documentsSheet ? "" : foot("hide", "barhide", t("hide")))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${documentActionTiles()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     ${readerRowHTML()}
@@ -737,7 +745,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : (S.documentsSheet ? "" : foot("hide", "barhide", t("hide")))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -854,6 +862,12 @@
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (S.documentsSheet && a === "wc" && globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.toggleWordClass) { closeSheet(); void globalThis.LHN_DOCUMENTS_MAIN_ACTIONS.toggleWordClass(); return; }
     if (S.documentsSheet && a === "wclegend" && globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.toggleWordClassLegend) { closeSheet(); void globalThis.LHN_DOCUMENTS_MAIN_ACTIONS.toggleWordClassLegend(); return; }
+    if (S.documentsSheet && a.startsWith("doc:")) {
+      const action = a.slice(4), run = globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.[action];
+      closeSheet();
+      if (typeof run === "function") void run();
+      return;
+    }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
     if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
     if (a === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }

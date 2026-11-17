@@ -1,15 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.364**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Documents pager: Reader state lặp khi ẩn không còn đặt lại timer; fitToolbar không tháo/gắn select đang focus, tránh đóng menu. Reader vẫn bỏ đọc header/footer được đánh dấu/lặp mà không ẩn nội dung.
+- Version **3.5.365**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Documents sheet: ẩn tile Ẩn thanh; Dịch/Đọc gọi cùng handler với viewer toolbar. Static checks đạt; browser QA cho thay đổi này chưa chạy.
+- Documents pager: Reader state lặp khi ẩn không còn đặt lại timer; fitToolbar không tháo/gắn select đang focus, tránh đóng menu. Reader vẫn bỏ đọc header/footer được đánh dấu/lặp mà không ẩn nội dung.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dịch dài & Documents Reader — v3.5.364
-- Browser test Chrome thật trên v3.5.363 tái hiện: hidden Reader state gọi lại mỗi ~0.9s nên pager timeout bị clear/re-arm liên tục; fitToolbar tháo/gắn lại `flowGroup`/`zoomWrap`, làm select mất focus. Đã sửa: chỉ xử lý chuyển trạng thái Reader và hoãn fit khi `vFlow`/`vZoom` focus; cần reload v3.5.364 cùng test profile để xác minh fix.
+### Documents Reader — v3.5.365
+- v3.5.365 Documents sheet: ẩn tile Ẩn thanh; thay tile Translate/Reader generic bằng Dịch/Đọc to gọi chung action handler với viewer topbar. `node --check` và `git diff --check` đạt; Chrome thật chưa test.
+- Browser test Chrome thật trên v3.5.363 tái hiện: hidden Reader state gọi lại mỗi ~0.9s nên pager timeout bị clear/re-arm liên tục; fitToolbar tháo/gắn lại `flowGroup`/`zoomWrap`, làm select mất focus. Đã sửa: chỉ xử lý chuyển trạng thái Reader và hoãn fit khi `vFlow`/`vZoom` focus; cần reload v3.5.365 cùng test profile để xác minh fix.
 - Reader header/footer skip từ v3.5.362 vẫn cần browser-test trên PDF/DOCX/PPTX thật.
 - Cần kiểm tra PDF nhiều trang: thumbnail hiển thị khi vào vùng nhìn thấy của rail, các trang ngoài vùng chưa render; cuộn rail xuống tải nốt; click trang và đổi flow không sai trang. Chưa browser-test.
 - Cần kiểm tra trên tài liệu thật: app font áp dụng đúng cho UI, font/bố cục nguyên bản của nội dung không bị ghi đè; popup Dịch và tự dịch vào ghi chú hoạt động trong nhiều file. Chưa browser-test sau sửa.
@@ -179,6 +181,7 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 - Blob/metadata/progress ở `keepit-documents`. Notes/Flashcards mới ở annotations chung; legacy v314 migration giữ nội dung/ngày/anchor, idempotent và không tái tạo note đã xóa. JSON backup có Notes nhưng không blob; import rewrite đúng owned extension origin.
 - `LHN_SELECTION_TOOLBAR.installTouchSelectionBridge` là bridge touch duy nhất. `LHN_SIDEBAR.attachTouchSheet` dùng chung setup grow/scroll/drag. `js/ask-ai/sheet.js` là AI sheet đã chuyển nguyên component từ web bar, dùng cho web và Documents; parent Dashboard chuyển message top-frame cho source active.
 - `LHN_READER_API` chỉ facade của Reader gốc: không queue/UI khác; host cung cấp chữ tệp/chuyển trang/vị trí native card, pager nhường khi bar mở. AI dùng native panel/sheet và Send policy hiện có, không upload/read toàn bộ file tự động.
+- Documents main sheet dùng `LHN_DOCUMENTS_MAIN_ACTIONS` cho Dịch/Đọc to; callbacks chia sẻ handler với viewer topbar. Tile Ẩn thanh bị bỏ riêng ở sheet này.
 - Renderer/vendored licences/giới hạn v314 giữ nguyên; details ở `docs/documents.md` và trang module tương ứng.
 
 ### 4.2. Luồng tương tác giữa các module
@@ -202,6 +205,7 @@ Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/ser
 Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Documents / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Documents main sheet ── `doc:translate` / `doc:read` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` used by viewer topbar
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
@@ -228,6 +232,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.365 | Arena.ai Agent sửa:**
+
+- Documents main sheet: ẩn tile Ẩn thanh; thay tile Dịch/Đọc generic bằng callbacks dùng chung với nút Dịch/Đọc to trên viewer topbar. Chỉ áp dụng trong Documents; sheet web không đổi.
+- File: `manifest.json`, `js/content/keepit-bar.js`, `js/dashboard/documents.js`, `docs/documents.md`, `docs/modules/content.md`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file JS, parse manifest và `git diff --check` đạt; Chrome thật chưa kiểm thử.
 
 **2026-11-17 | v3.5.362 | Arena.ai Agent sửa:**
 

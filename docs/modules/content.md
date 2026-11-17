@@ -35,6 +35,7 @@ Content là controller duy nhất cho chọn chữ, popup dịch/Full Dictionary
 - Tim từ đang chọn trên source → native mark + record; từ khác → dictionary-only Flashcard. Brand dict không được lọt vào nghĩa/ghi chú vì đọc textContent.
 - H&N/Flashcards/backup dùng annotations chung. Metadata tệp, blob và tiến độ vẫn thuộc DB Tài liệu; migration không được tái tạo note đã xóa.
 - `LHN_CONTENT_TOOLS` không dựng UI: toggleNotes/compose/askAI/dictionary/restore/refresh/close và dismiss dùng chính controller. Chỉ source adapter có hooks; web fallback và selector `lhn-*` không đổi.
+- Main sheet mở trong Documents dùng `LHN_DOCUMENTS_MAIN_ACTIONS` cho tile Dịch/Đọc; chúng phải gọi cùng viewer handlers, không route qua generic web `page`/`reader`. Ẩn tile Ẩn thanh chỉ trong Documents sheet.
 - Giữ keyboard/editable/composition, native Android selection-dismiss, site-disabled và source isolation; không chặn Ctrl+A hay tạo thêm cử chỉ riêng.
 
 ## 5. Kiểm tra và xác minh
