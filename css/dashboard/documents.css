@@ -411,11 +411,6 @@ html.dark .tour button{background:#0000000f}
 .viewSelect.zoom select{padding-left:10px}
 .moreScrim{position:fixed;inset:0;z-index:74;background:transparent}
 .morePanel{position:fixed;right:12px;top:64px;z-index:75;width:350px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 80px);display:flex;flex-direction:column;border:1px solid var(--line2);border-radius:18px;background:var(--chip);backdrop-filter:blur(24px);box-shadow:var(--shadowH);color:var(--ink)}
-.docsMainScrim{z-index:78;background:#0b112040}
-.docsMainPanel{z-index:79}
-.docsMainPanel .moreBody{padding-top:8px}
-.docsMainPanel .moreTools{padding-top:0;border:0!important;margin:0!important}
-.docsMainPanel .moreTools .vbtn{min-height:44px}
 .moreHead{display:flex;align-items:center;justify-content:space-between;position:relative;padding:10px 12px 9px 16px;flex:none;touch-action:none}
 .moreHead b{font-size:14px}
 .moreHead .grab{display:none}

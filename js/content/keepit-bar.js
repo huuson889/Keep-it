@@ -132,6 +132,7 @@
   const norm = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase().trim();
 
   let settings = {}, host = null, root = null, mounted = false, picking = false;
+  const DOCUMENTS_HOST = document.documentElement.hasAttribute("data-keepit-documents");
   const S = {
     hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false,
@@ -291,10 +292,13 @@
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
     $("intro").setAttribute("aria-label", t("introAria")); $("coach").setAttribute("aria-label", t("coachTitle"));
-    syncBarVis(); fitLabels();
+    syncBarVis();
+    if (DOCUMENTS_HOST) { $("bar").style.display="none"; $("hzone").style.display="none"; $("btop").style.display="none"; $("offdot").style.display="none"; }
+    else fitLabels();
   }
   // v6: long labels on a narrow screen — if two labels are < 4px apart or cut with "…", shrink to 10px; still tight → 5 buttons (v7)
   function fitLabels() {
+    if (DOCUMENTS_HOST) return;
     const bar = $("bar"), bin = $("bin");
     bar.classList.remove("tight"); if (isWide()) return;
     if (!bar.offsetWidth) { requestAnimationFrame(() => { if (mounted && $("bar").offsetWidth) fitLabels(); }); return; }   // not laid out yet: measure on the next frame
@@ -654,7 +658,7 @@
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && wcOn()) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation"].includes(id))).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation"].includes(id))).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -1314,15 +1318,20 @@
     // the Reader's ☰ opens this main sheet above the Reader bar (v3.5.160 touch; v3.5.161 every device) with its
     // Trình đọc row in the vertical middle of the sheet
     openMainSheet(fromRect, options = {}) {
-      if (!mounted) return;
+      if (!mounted) return { ok:false };
+      const alreadyOpen = $("sheet").classList.contains("open");
+      if (options.toggle === true && alreadyOpen) { closeSheet(); return { ok:true, open:false }; }
       S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
       host.style.zIndex = "2147483647"; openSheet({ documents:options.documents === true });
-      if (options.focusReader !== true) return;
-      const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
-      if (b && sec) {
-        const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += ((top + bottom) / 2 - (br.top + br.height / 2)) * Z(); updFade(); };
-        center(); requestAnimationFrame(center);
+      const focusReader = options.focusReader === true || (options.focusReader === undefined && options.documents !== true);
+      if (focusReader) {
+        const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
+        if (b && sec) {
+          const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += ((top + bottom) / 2 - (br.top + br.height / 2)) * Z(); updFade(); };
+          center(); requestAnimationFrame(center);
+        }
       }
+      return { ok:true, open:true };
     },
     translateOffline() {
       if (!mounted || Date.now() - offlineToastAt < 4000) return; offlineToastAt = Date.now();
@@ -1400,7 +1409,7 @@
     const settle = () => { if (!mounted) return; syncState(); relayout(false); checkOverlap(); };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", settle, { once:true });
     if (document.readyState !== "complete") addEventListener("load", settle, { once:true });
-    if (!S.introSeen) setTimeout(showIntro, 500); else scheduleCoach();
+    if (!DOCUMENTS_HOST) { if (!S.introSeen) setTimeout(showIntro, 500); else scheduleCoach(); }
   }
   async function init() {
     installTouchSelectionBridge();

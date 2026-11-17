@@ -315,26 +315,15 @@ new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stag
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
 addEventListener('resize', requestToolbarFit);
 $('#vMore').onclick = () => setMore($('#vMorePanel').hidden);
-function setMainMenu(open,focusReader=false){
- if(open)setMore(false,false);
- $('#mainMenuPanel').hidden=!open;$('#mainMenuScrim').hidden=!open;
- $('#pageMenu').setAttribute('aria-expanded',String(!!open));$('#pageMenu').classList.toggle('on',!!open);
- if(open){hideSel();const target=focusReader?$('#mainMenuReader'):$('#mainMenuClose');target?.focus({preventScroll:true});if(focusReader)target?.scrollIntoView({block:'center'});}
+function requestMainSheet(toggle=false,focusReader=false){
+ setMore(false,false);
+ const rect=$('#pageMenu').getBoundingClientRect();
+ const result=globalThis.LHN_BAR_HOOKS?.openMainSheet?.(rect,{documents:true,toggle,focusReader});
+ if(result?.ok){$('#pageMenu').setAttribute('aria-expanded',String(!!result.open));$('#pageMenu').classList.toggle('on',!!result.open);return result;}
+ toast(t('mainSheetUnavailable'));return{ok:false};
 }
-$('#pageMenu').onclick=()=>setMainMenu($('#mainMenuPanel').hidden);
-$('#mainMenuClose').onclick=()=>setMainMenu(false);
-$('#mainMenuScrim').onclick=()=>setMainMenu(false);
-$('#mainMenuPanel').addEventListener('click',e=>{
- const action=e.target.closest('[data-main-action]')?.dataset.mainAction;if(!action)return;
- setMainMenu(false);
- if(action==='translate')setPanel('translation');
- else if(action==='tts')void startNativeReader();
- else if(action==='notes')void openNativeNotes();
- else if(action==='ai')void LHN_CONTENT_TOOLS.askAI();
- else if(action==='wc')void toggleWordClass().catch(()=>toast(t('wcError')));
- else if(action==='theme')void toggleTheme();
-});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#mainMenuPanel').hidden){e.preventDefault();setMainMenu(false);}});
+$('#pageMenu').onclick=()=>requestMainSheet(true,false);
+document.addEventListener('lhn-main-sheet',event=>{const open=!!event.detail?.open;$('#pageMenu').setAttribute('aria-expanded',String(open));$('#pageMenu').classList.toggle('on',open);});
 $('#moreClose').onclick = () => setMore(false);
 $('#moreScrim').onclick = () => setMore(false);
 let moreStartY = 0;
@@ -513,8 +502,9 @@ LHN_DOCUMENT_CONTEXT.attach({
  onReaderBlock(block){const page=+block.dataset.page;if(page&&page!==V.page){V.page=page;updatePaging();savePosition();applyTools();}showReaderParagraphHighlight(block);},onReaderState:nativeReaderState,
  openSettings:()=>parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'bilingualReader'},location.origin)
 });
-// The Reader's existing More action opens the app's existing Reader settings, not a copied menu.
-globalThis.LHN_BAR_HOOKS=Object.freeze({openMainSheet:()=>setMainMenu(true,true),translateOffline:()=>toast(t('trError'))});
+// Reuse the real Keepit main sheet in the Documents page; only adapt its anchor and document-context options.
+const keepitBarHooks=globalThis.LHN_BAR_HOOKS||{};
+globalThis.LHN_BAR_HOOKS=Object.freeze({...keepitBarHooks,openMainSheet:(fromRect,options={})=>keepitBarHooks.openMainSheet?.(fromRect,{...options,documents:true,focusReader:options.focusReader??true}),translateOffline:()=>toast(t('trError'))});
 
 $('#viewer').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b||b.disabled)return;setMore(false,false);if(b.dataset.t==='notes'){void openNativeNotes();return;}if(b.dataset.t==='ai'){void LHN_CONTENT_TOOLS.askAI();return;}if(b.dataset.t==='tts'){void startNativeReader();return;}if(b.dataset.t==='wc'){void toggleWordClass().catch(()=>toast(t('wcError')));return;}if(b.dataset.t==='translate')setPanel('translation');});
 for(const header of $$('.side2 header')){let y=null;header.addEventListener('touchstart',e=>{y=e.target.closest('button,select,input')?null:e.touches[0].clientY;},{passive:true});header.addEventListener('touchend',e=>{if(y!==null&&matchMedia('(orientation:portrait)').matches&&e.changedTouches[0].clientY-y>55&&V.panel)setPanel(V.panel);y=null;},{passive:true});}
