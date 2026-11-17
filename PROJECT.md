@@ -1,8 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.365**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Documents sheet: ẩn tile Ẩn thanh; Dịch/Đọc gọi cùng handler với viewer toolbar. Static checks đạt; browser QA cho thay đổi này chưa chạy.
-- Documents pager: Reader state lặp khi ẩn không còn đặt lại timer; fitToolbar không tháo/gắn select đang focus, tránh đóng menu. Reader vẫn bỏ đọc header/footer được đánh dấu/lặp mà không ẩn nội dung.
+- Version **3.5.367**, nhánh `Keepit-Optimize-Test`; v3.5.365 Documents sheet ẩn tile Ẩn thanh; Dịch/Đọc gọi cùng handler viewer topbar. Static checks đạt; browser QA và Documents pager/header-footer QA còn pending. Watcher launch trong `OPT-ARENA.md` mặc định ẩn với `Unblock-File` + process-scoped Bypass. Arena.ai-specific rules trong `AGENTS.md`: xóa uploads sau khi dùng; `Keepit-Zip` chỉ giữ ZIP version cao nhất.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -232,6 +231,18 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.367 | Arena.ai Agent sửa:**
+
+- `AGENTS.md`: thêm hai quy tắc chỉ áp dụng cho Arena.ai — xóa toàn bộ tệp trong `uploads` sau khi dùng xong; chỉ giữ ZIP version mới nhất trong `Keepit-Zip`, xóa bản cũ sau khi bản mới đã xác minh.
+- File: `AGENTS.md`, `PROJECT.md`, `manifest.json`.
+- Kiểm tra: parse manifest và `git diff --check`; không đổi mã ứng dụng, không cần browser test.
+
+**2026-11-17 | v3.5.366 | Arena.ai Agent sửa:**
+
+- Cập nhật `OPT-ARENA.md`: mặc định khởi động watcher ẩn; thêm `Unblock-File`, `Start-Process -WindowStyle Hidden` với `-ExecutionPolicy Bypass` chỉ cho tiến trình, và lưu ý Group Policy.
+- File: `OPT-ARENA.md`, `PROJECT.md`, `manifest.json`.
+- Kiểm tra: parse manifest, `git diff --check`; không đổi mã ứng dụng, không cần browser test.
 
 **2026-11-17 | v3.5.365 | Arena.ai Agent sửa:**
 

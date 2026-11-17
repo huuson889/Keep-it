@@ -124,3 +124,8 @@
 - Không sửa hoặc xóa ZIP version cũ. Ngoại lệ: watcher được phép thay thế ZIP của version hiện hành sau mỗi đợt lưu trong repo để Claude nhận được nội dung mới; giữ nguyên version.
 - Không sửa thư mục nguồn khi có zip mới đang được đồng bộ (chờ người dùng báo xong).
 - Không commit file tạm, file log, hay thư mục .git vào zip.
+
+## 7. Quy tắc riêng cho Arena.ai Agent
+Các quy tắc dưới đây **chỉ áp dụng khi tác nhân thực hiện là Arena.ai Agent** và ưu tiên hơn quy tắc chung nếu có mâu thuẫn:
+- Sau khi dùng xong tệp đính kèm, xóa toàn bộ tệp bên trong `/home/user/uploads` (kể cả thư mục con); chỉ xóa sau khi hoàn tất mọi thao tác cần chúng.
+- Trong `/home/user/Keepit-Zip`, chỉ giữ lại ZIP `Keepit - Optimize Test-v<version>.zip` có version cao nhất. Chỉ xóa các ZIP version cũ sau khi ZIP mới đã được đóng gói và xác minh thành công; nếu build mới lỗi thì giữ nguyên ZIP hiện có.

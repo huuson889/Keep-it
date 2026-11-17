@@ -36,22 +36,18 @@ if ($watchers) {
 ```
 Không dùng `taskkill /IM powershell.exe`. Nếu không tìm thấy tiến trình hoặc nó tự chạy lại, kiểm tra Task Scheduler/trình chạy trung gian.
 
-### 2. Chạy watcher
-Đặt file mới tên `sync-watch-optimize-test.ps1` vào `D:\Keepit\Keepit - Optimize Test`. Chạy hiện cửa sổ:
-```powershell
-Set-Location 'D:\Keepit\Keepit - Optimize Test'
-.\sync-watch-optimize-test.ps1
-```
-Hoặc chạy ẩn:
+### 2. Cập nhật và chạy watcher ẩn (mặc định)
+Đặt file mới `sync-watch-optimize-test.ps1` vào `D:\Keepit\Keepit - Optimize Test`. Dừng watcher cũ trước khi thay/chạy bản mới. Trong PowerShell chạy:
 ```powershell
 $scriptPath = 'D:\Keepit\Keepit - Optimize Test\sync-watch-optimize-test.ps1'
+Unblock-File -LiteralPath $scriptPath
 Start-Process -FilePath powershell.exe -WindowStyle Hidden -ArgumentList @(
   '-NoProfile',
   '-ExecutionPolicy', 'Bypass',
   '-File', "`"$scriptPath`""
 )
 ```
-Dừng bản cũ trước khi chạy bản mới; nếu chạy hiện cửa sổ thì Ctrl+C để dừng.
+`Unblock-File` bỏ dấu tải Internet của đúng file; `-ExecutionPolicy Bypass` chỉ áp dụng cho tiến trình PowerShell watcher mới. Kiểm tra watcher bằng lệnh tìm PID ở mục 1. Nếu vẫn bị chặn, chạy `Get-ExecutionPolicy -List`; `MachinePolicy`/`UserPolicy` do Group Policy đặt có thể chặn cả Bypass. Chỉ mở PowerShell hiện cửa sổ để gỡ lỗi; nếu làm vậy, Ctrl+C dừng watcher.
 
 ### 3. Đưa ZIP vào Optimize Test
 Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén**. Tên phải chính xác `Keepit - Optimize Test-v<version>.zip` (không có `(1)`); ZIP phải có `manifest.json` ở gốc. Watcher tự thay nội dung `Keepit - Test`, giữ `.git`, rồi commit/push nền. Version ZIP phải bằng hoặc cao hơn manifest repo. Xem kết quả tại `D:\Keepit\Keepit - Optimize Test\sync-watch.log`.
