@@ -52,13 +52,13 @@
   function reconstructPdfParagraphs(items, viewport, pageWidth) {
     const fragments = [];
     for (let index = 0; index < items.length; index++) {
-      const item = items[index], text = normPdfText(item?.str);
+      const item = items[index], rawText = String(item?.str || ''), text = normPdfText(rawText);
       if (!text) continue;
       const transform = item.transform || [1, 0, 0, 1, 0, 0], point = viewport.convertToViewportPoint(transform[4] || 0, transform[5] || 0);
       const fontSize = Math.max(1, Math.hypot(transform[2] || 0, transform[3] || 0) || item.height || 10);
       const width = Math.max(0, Math.abs(Number(item.width) || 0)), rtl = item.dir === 'rtl';
       const left = rtl ? point[0] - width : point[0], right = rtl ? point[0] : point[0] + width;
-      fragments.push({ index, text, x:point[0], y:point[1], left, right, top:point[1] - fontSize, bottom:point[1] + fontSize * .2, fontSize, angle:Math.atan2(transform[1] || 0, transform[0] || 1), rtl });
+      fragments.push({ index, text, rawText, x:point[0], y:point[1], left, right, top:point[1] - fontSize, bottom:point[1] + fontSize * .2, fontSize, angle:Math.atan2(transform[1] || 0, transform[0] || 1), rtl });
     }
     if (!fragments.length) return { paragraphs:[], fragmentToParagraph:[] };
     const ordered = fragments.slice().sort((a,b) => a.y-b.y || a.left-b.left || a.index-b.index), lines = [];
@@ -82,15 +82,22 @@
     // Repeated aligned narrow cells identify a table row more reliably than isolated x-gaps.
     const visualRows=[];
     for(const line of lines.slice().sort((a,b)=>a.y-b.y||a.left-b.left)){
-      const tolerance=Math.max(2,line.fontSize*.35);let row=visualRows.at(-1);
-      if(!row||Math.abs(row.y-line.y)>Math.max(tolerance,row.fontSize*.35)){row={y:line.y,top:line.top,bottom:line.bottom,fontSize:line.fontSize,lines:[]};visualRows.push(row);}
+      const tolerance=Math.max(3,line.fontSize*.6);let row=visualRows.at(-1);
+      if(!row||Math.abs(row.y-line.y)>Math.max(tolerance,row.fontSize*.6)){row={y:line.y,top:line.top,bottom:line.bottom,fontSize:line.fontSize,lines:[]};visualRows.push(row);}
       row.lines.push(line);row.top=Math.min(row.top,line.top);row.bottom=Math.max(row.bottom,line.bottom);row.fontSize=Math.max(row.fontSize,line.fontSize);
     }
     function cellsForRow(row){
-      const parts=row.lines.flatMap(line=>line.parts).sort((a,b)=>a.left-b.left),groups=[];let group=[];
+      const sourceParts=row.lines.flatMap(line=>line.parts),parts=[];
+      for(const part of sourceParts){
+        const raw=String(part.rawText||part.text||''),segments=raw.split(/[ \t]{2,}/).map(normPdfText).filter(Boolean),width=Math.max(0,part.right-part.left);
+        if(segments.length<2){parts.push(part);continue;}
+        let cursor=0;
+        for(const text of segments){const start=raw.indexOf(text,cursor);if(start<0){parts.push(part);break;}const end=start+text.length,left=part.left+width*start/Math.max(1,raw.length),right=part.left+width*end/Math.max(1,raw.length);parts.push({...part,text,left,right,cellApprox:true});cursor=end;}
+      }
+      parts.sort((a,b)=>a.left-b.left);const groups=[];let group=[];
       for(const part of parts){const previous=group.at(-1);if(group.length&&part.left-previous.right>Math.max(24,part.fontSize*2.2)){groups.push(group);group=[];}group.push(part);}
       if(group.length)groups.push(group);
-      return groups.map(parts=>({parts,text:lineText({parts,rtl:parts[0]?.rtl}),left:parts[0].left,right:parts.at(-1).right}));
+      return groups.map(parts=>({parts,text:lineText({parts,rtl:parts[0]?.rtl}),left:parts[0].left,right:parts.at(-1).right,approximate:parts.some(part=>part.cellApprox)}));
     }
     for(const row of visualRows){row.cells=cellsForRow(row);const first=row.cells[0],second=row.cells[1],secondWidth=second?second.right-second.left:Infinity,firstWidth=first?first.right-first.left:0;
       row.tableCandidate=row.cells.length>=3||(row.cells.length>=2&&secondWidth<=Math.max(pageWidth*.3,row.fontSize*8)&&secondWidth<=firstWidth*.85);
@@ -103,15 +110,28 @@
         const next=visualRows[j],gap=next.top-last.bottom,tolerance=Math.max(12,first.fontSize*1.5),cellTolerance=Math.max(18,first.fontSize*2);
         if(gap>Math.max(18,first.fontSize*2.6)||Math.abs(next.cells[0]?.left-first.cells[0].left)>tolerance)break;
         if(next.tableCandidate){
-          if(Math.abs(next.cells[1].left-first.cells[1].left)>cellTolerance)break;
+          if(!next.cells[1].approximate&&!first.cells[1].approximate&&Math.abs(next.cells[1].left-first.cells[1].left)>cellTolerance)break;
           run.push(next);last=next;evidence++;missingCellRows=0;
         }else if(next.cells.length===1&&missingCellRows===0){run.push(next);last=next;missingCellRows++;}
         else break;
       }
       if(evidence<2)continue;
-      const tableId=tableRuns.length+1;
-      for(const row of run){row.tableId=tableId;row.tableText=row.cells.map(cell=>cell.text).filter(Boolean).join(' — ');usedRows.add(row);}
-      tableRuns.push(run);
+      const tolerance=Math.max(12,first.fontSize*1.5),prefix=[];
+      for(let j=i-1;j>=0&&prefix.length<2;j--){
+        const row=visualRows[j],gap=(prefix[0]||first).top-row.bottom,cell=row.cells[0],text=cell?.text||'';
+        const trailingCode=/^(.+?)\s+([A-Z][A-Z0-9-]{0,5}|-)$/u.test(text),aligned=cell&&Math.abs(cell.left-first.cells[0].left)<=tolerance;
+        if(row.cells.length!==1||!aligned||!trailingCode||gap>Math.max(18,first.fontSize*2.6))break;
+        prefix.unshift(row);
+      }
+      const complete=[...prefix,...run],tableId=tableRuns.length+1,secondColumnX=first.cells[1].left;
+      for(const row of complete){
+        if(row.cells.length===1&&prefix.includes(row)){
+          const match=row.cells[0].text.match(/^(.+?)\s+([A-Z][A-Z0-9-]{0,5}|-)$/u);
+          if(match){const left=row.cells[0],code=match[2];row.cells=[{...left,text:normPdfText(match[1])},{parts:[],text:code,left:secondColumnX,right:secondColumnX+Math.max(row.fontSize,code.length*row.fontSize*.55)}];}
+        }
+        row.tableId=tableId;row.tableText=row.cells.map(cell=>cell.text).filter(Boolean).join(' | ');usedRows.add(row);
+      }
+      tableRuns.push(complete);
     }
     const replacedLines=new Map();
     for(const run of tableRuns)for(const row of run){

@@ -1384,7 +1384,7 @@
   // Tách đoạn gốc và đoạn dịch để đọc mỗi phần với ngôn ngữ riêng (đoạn dịch dùng ngôn ngữ đích)
   function speechTextFor(block, text = rawText(block, true)) {
     if (block?.dataset?.pdfTable !== "true") return text;
-    return String(text || "").split(/\r?\n+/).map(row => row.trim()).filter(Boolean).join("; ");
+    return String(text || "").split(/\r?\n+/).map(row => row.trim().replace(/\s*\|\s*/g, ", ")).filter(Boolean).join("; ");
   }
   function readSegmentsFor(block) {
     if (!readTr()) return null;
