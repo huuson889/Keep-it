@@ -711,7 +711,7 @@
     const color = settings.translationTextColor;
     if (color === "custom" && /^#[0-9a-f]{6}$/i.test(settings.translationCustomColor)) return settings.translationCustomColor;
     if (["#9c27b0", "#007bff", "#dc3545"].includes(color)) return color;
-    return "#2d3748";
+    return pageContext ? "var(--ink2, #2d3748)" : "#2d3748";
   }
   function updateTranslationCardStyle(card, sourceBlock) {
     if (!card) return;

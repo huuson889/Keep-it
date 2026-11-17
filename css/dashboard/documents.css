@@ -542,7 +542,7 @@ html.dark .tour button{background:#0000000f}
 .transList{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
 .transSource{font-size:11.5px;font-weight:700;color:var(--brand);padding:0 2px}
 .transItem{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:13px;line-height:1.65}
-.transItem .source{color:var(--muted);font-size:12px;margin-bottom:8px}
+.transItem .source{color:var(--muted);font-size:inherit;margin-bottom:8px}
 .transItem .trText{color:var(--ink)}
 .transTip{padding:8px 12px 12px;font-size:11.5px;color:var(--muted)}
 .toast{top:118px;max-width:min(560px,calc(100vw - 24px));font-size:12.5px;text-align:center;z-index:94}
@@ -691,6 +691,7 @@ body{overflow:auto}
 @media (orientation:portrait){.topbar #libraryTheme{margin-left:auto}}
 /* Shared app tools are not a second Document implementation. */
 .documents-native-inactive #lhn-sidebar-edge-toggle,.documents-native-inactive #lhn-sidebar,.documents-native-inactive #lhn-panel,.documents-native-inactive #lhn-direct-translation,.documents-native-inactive #lhn-translate-icon,.documents-native-inactive #lhn-full-english-dictionary{display:none!important}
+.nativeTranslationSlot .lhn-bilingual-card,.readFrame .reflow .lhn-bilingual-card{font-size:inherit!important}
 .nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;width:auto;max-width:100%;box-sizing:border-box}
 .docsSource .lhn-bilingual-reading{outline:1px solid var(--lhn-br-accent,#7262df);outline-offset:2px}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
