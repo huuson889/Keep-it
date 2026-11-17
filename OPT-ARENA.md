@@ -7,6 +7,412 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Độ chính xác render, Select & Reader như Web, Mục lục, Tìm kiếm, Đọc đêm, Audiobook)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+### 1. Bối cảnh & Mục tiêu
+- Tab **Tài liệu** (`pages/documents.html`, `js/dashboard/documents.js`, `documents-renderers.js`, `documents-store.js`) hiện đã hỗ trợ đọc PDF, Word (DOCX), PowerPoint (PPTX), ảnh (JPG/PNG/WebP), có highlight, ghi chú, đọc text, từ điển, panel dịch và Ask AI.
+- Mục tiêu:
+  1. Giải quyết triệt để 5 vấn đề cốt lõi về **độ chính xác khi đọc và phân tích file** (lỗi phông CMap, phân mảnh câu textDiv, ngắt từ gạch nối cuối dòng, tài liệu 2 cột, đo font Word).
+  2. Nâng cấp trải nghiệm **Bôi đen chữ (Select Text)** và **Trình đọc (Reader / Dịch / TTS)** mượt mà, tự nhiên giống hệt một trang web.
+  3. Bổ sung trọn vẹn 9 tính năng mở rộng giao diện và học tập chuyên sâu (Mục lục TOC, Tìm kiếm Ctrl+F, Đọc đêm/Sepia, 2 trang song song, Inline song ngữ, Audiobook tự động lật trang, Xuất ghi chú & deck Flashcard, Bookmark & cuộn chính xác, Focus mode).
+
+---
+
+### 2. Kỹ thuật nâng cao độ chính xác khi đọc và phân tích file (5 điểm cốt lõi)
+
+#### 1. Bổ sung CMap & Standard Fonts trong PDF.js (Khắc phục lỗi phông tiếng Việt/CJK)
+- **Hiện trạng:** Trong `documents-renderers.js`, `lib.getDocument({ data })` chỉ nạp mảng byte thô mà chưa truyền đường dẫn CMap và Standard Fonts (dù repo đã có sẵn ở `vendor/pdfjs/cmaps/` và `vendor/pdfjs/standard_fonts/`).
+- **Hậu quả:** File PDF tiếng Việt có dấu lạ, tài liệu tiếng Hàn/Nhật hoặc dùng font nhúng không chuẩn bị lỗi hiển thị: biến thành ô vuông (tofu), mất dấu hoặc trích xuất text sai mã ký tự.
+- **Giải pháp:** Cấu hình đầy đủ khi khởi tạo document:
+  ```js
+  const document = await lib.getDocument({
+    data: await blob.arrayBuffer(),
+    cMapUrl: new URL('pdfjs/cmaps/', base).href,
+    cMapPacked: true,
+    standardFontDataUrl: new URL('pdfjs/standard_fonts/', base).href
+  }).promise;
+  ```
+
+#### 2. Gom cụm đoạn văn PDF (Paragraph Reconstruction từ TextDivs)
+- **Hiện trạng:** PDF.js phân tách chữ theo từng mảnh đồ họa (*text run*). Code hiện tại gán mỗi `textDiv` thành một `.para` riêng, làm câu văn dài bị xé nhỏ thành 4–5 mảnh cụt lủn.
+- **Hậu quả:** Khi dịch hoặc nghe TTS, câu văn bị ngắt rời rạc, làm Google Dịch dịch sai ngữ pháp và TTS đọc ngắt quãng giật cục.
+- **Giải pháp:** Áp dụng thuật toán gom cụm trước khi gán `.para`: gom các `textDiv` có cùng tọa độ Y (cùng dòng) hoặc khoảng cách dòng liên tục (dòng tiếp theo) thành một khối văn bản logic hoàn chỉnh (*Logical Paragraph*).
+
+#### 3. Tự động nối từ bị ngắt gạch nối cuối dòng (De-hyphenation)
+- **Hiện trạng:** Sách tiếng Anh hay ngắt từ dài ở cuối dòng bằng dấu gạch nối (ví dụ: dòng 1 là `infor-`, dòng 2 là `mation`). Keepit trích xuất nguyên văn làm từ điển tra thành hai từ vô nghĩa.
+- **Giải pháp:** Trong quá trình ghép dòng (`attachBlocks` và `TextLayer`), kiểm tra nếu từ cuối dòng kết thúc bằng `-` và tiếp theo là ký tự chữ cái ở đầu dòng dưới $\rightarrow$ tự động nối lại thành `information` trong chuỗi text dùng cho Dịch/Từ điển, nhưng vẫn giữ nguyên hiển thị hình ảnh trên trang sách.
+
+#### 4. Sắp xếp thứ tự đọc tài liệu 2 cột (Multi-column Reading Order)
+- **Hiện trạng:** Giáo trình và bài báo học thuật thường chia 2 cột. Duyệt tuần tự DOM mà không kiểm tra tọa độ cột (X-coordinate) sẽ làm câu văn bị đọc vắt ngang từ cột trái sang cột phải.
+- **Giải pháp:** Phân nhóm các khối văn bản theo tọa độ X (`left < width / 2` cho Cột trái, `left >= width / 2` cho Cột phải). Duyệt hết toàn bộ khối của Cột trái từ trên xuống dưới rồi mới chuyển sang Cột phải.
+
+#### 5. Đo đạc kích thước Word (DOCX) sau khi nạp xong Font
+- **Hiện trạng:** File Word render ẩn trong `holder` ở `left: -100000px` rồi đo ngay `getBoundingClientRect()` và `scrollHeight` trước khi font chữ kịp nạp xong.
+- **Hậu quả:** Trình duyệt dùng font fallback để tính chiều cao, đến khi hiển thị thật chữ bị dồn trang, làm tràn hoặc phân trang sai lệch so với bản Word gốc.
+- **Giải pháp:** Chèn `await document.fonts.ready;` trước khi tính toán kích thước trang; cố định kích thước khổ A4 chuẩn (`794px × 1123px` ở 96 DPI) giúp bố cục ổn định và chuẩn xác như Microsoft Word.
+
+---
+
+### 3. Nâng cấp trải nghiệm "Bôi đen chữ (Select Text) & Tra từ điển" chuẩn Web
+
+#### 1. Khớp tọa độ 1:1 giữa TextLayer và Canvas
+- Khóa chặt tỷ lệ `--scale-factor` trong `pdfTextLayer` bằng đúng kích thước viewport render:
+  ```css
+  .pdfTextLayer {
+    transform-origin: 0 0;
+    line-height: 1;
+    user-select: text;
+  }
+  ```
+- Thiết lập `color: transparent;` và `::selection { background: rgba(99, 102, 241, 0.3); }` để vệt màu bôi đen của chuột ôm khít từng con chữ in trên canvas, loại bỏ hoàn toàn hiện tượng lệch dòng hay kéo chuột sượng.
+
+#### 2. Tích hợp Popup / Full Dictionary chuẩn của Keepit
+- Thay thế thanh `#sel` sơ sài bằng popup tra từ điển đầy đủ của Keepit trên web:
+  - Phát âm âm thanh (Audio US/UK) + Phiên âm quốc tế **IPA**.
+  - Phân loại từ (*noun, verb, adj*).
+  - Cụm từ hay đi kèm (*Collocations*), Từ đồng nghĩa/Trái nghĩa (*Synonyms/Antonyms*).
+  - Nút **Trái tim ❤️ (Lưu vào Flashcard)** kèm chính xác câu ngữ cảnh trong trang sách.
+- Hỗ trợ **nhấp đúp chuột (Double-click)** vào 1 từ là tự động mở popup tra từ điển ngay lập tức.
+
+---
+
+### 4. Nâng cấp trải nghiệm "Trình đọc (Reader / Dịch / TTS)" chuẩn Web
+
+#### 1. Chế độ "Đọc" (Reflow Mode — Biến file thành bài báo HTML thuần túy)
+- Khi người dùng chuyển sang chế độ **"Đọc"** (`V.mode === 'read'`):
+  - Chữ được trích xuất hoàn toàn ra khỏi canvas và đưa vào `<article class="reflow">`.
+  - Hỗ trợ tùy chỉnh cỡ chữ, phông chữ (Sans-serif/Serif) và căn lề như Reader View của Safari/Firefox.
+  - Tích hợp trọn vẹn sức mạnh của `bilingual-reader.js`:
+    - Dịch song ngữ hiện song song từng đoạn (`<p class="para"><span class="en">...</span><span class="vi">...</span></p>`).
+    - Phím tắt quen thuộc: `Alt+A` (dịch tự động khi cuộn), `Alt+D` (dịch đoạn đang trỏ chuột), `Alt+R` (bật đọc to TTS).
+
+#### 2. Trải nghiệm Song ngữ trực tiếp trên trang gốc (Overlay / Inline Callout)
+- Với người muốn giữ nguyên bản gốc PDF (có hình ảnh, công thức, bảng biểu):
+  - Khi click vào một đoạn văn bất kỳ: Bản dịch tiếng Việt bung ra dạng **hộp chú giải thông minh (smart callout)** đè nhẹ ngay bên dưới đoạn văn đó, tự ẩn khi click ra ngoài, giúp người đọc tập trung hoàn toàn vào trang sách mà không phải liếc mắt sang panel phụ ở sidebar.
+
+---
+
+### 5. Chi tiết kỹ thuật 9 tính năng mở rộng giao diện & học tập chuyên sâu
+
+#### 1. Cây mục lục tài liệu (PDF Outline / Table of Contents / Heading Navigation)
+- **Can thiệp file:** `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `pages/documents.html`, `css/dashboard/documents.css`.
+- **Trích xuất dữ liệu mục lục:**
+  - *PDF:* Trong hàm `pdf(blob, hooks)`, sau khi nạp `document`, gọi hàm có sẵn của PDF.js:
+    ```js
+    const outlineData = await document.getOutline(); // Trả về cây [{ title, dest, items: [...] }]
+    ```
+    Để ánh xạ `dest` thành số trang thực: dùng `await document.getPageIndex(destRef)` (trả về 0-based index $\rightarrow$ cộng 1 ra số trang).
+  - *DOCX:* Trong hàm `office()` nhánh `docx`, quét các thẻ `h1, h2, h3` trong `section.keepitDocx` đã gán `data-page` để lấy danh sách tiêu đề + số trang.
+  - *PPTX:* Lấy mảng tiêu đề slide từ `speakerNotes()` hoặc text đầu tiên của từng slide.
+  - Trả về trường `outline: [...]` trong đối tượng trả về của `KeepitDocumentRenderers.prepare()`.
+- **Giao diện & Tương tác:**
+  - Tại thanh rail bên trái (`#rail`), thêm 2 tab chuyển đổi: `[Trang thu nhỏ (Thumbs) | Mục lục (TOC)]`.
+  - Tab Mục lục dựng danh sách HTML dạng cây phân cấp (`<ul class="docOutlineTree">`), hỗ trợ thụt đầu dòng theo cấp độ (`item.items`).
+  - Gắn sự kiện click vào mục: gọi `setPage(item.pageNumber)` để cuộn ngay đến trang mong muốn.
+
+#### 2. Tìm kiếm nội dung trong file (In-Document Search / Ctrl+F nội bộ)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`, `pages/documents.html`.
+- **Dữ liệu nguồn:** Tận dụng mảng `activeEngine.pages[pageIndex].texts` đã được nạp sẵn khi mở tài liệu (chứa toàn bộ chuỗi văn bản sạch của từng block/đoạn).
+- **Luồng phím tắt & Giao diện:**
+  - Bắt sự kiện bàn phím: `(e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f'`.
+  - Hiển thị thanh tìm kiếm `#docSearchBar` nổi ở góc trên bên phải của `#stage`: gồm ô `input#docSearchQuery`, nút `Prev (▲)`, `Next (▼)`, nhãn đếm `index / total` và nút đóng `✕ (Esc)`.
+- **Thuật toán tìm kiếm & Tô sáng:**
+  - Khi gõ từ khóa: Quét chuỗi regex không phân biệt hoa thường (`RegExp(query, 'gi')`) trên toàn bộ các trang trong `activeEngine.pages`.
+  - Tạo mảng kết quả: `matches = [{ page: 1, textIndex: 2, start: 10, end: 18 }, ...]`.
+  - Nhảy kết quả: Khi bấm Next/Prev $\rightarrow$ gọi `setPage(currentMatch.page)`.
+  - Khi trang render (`ensurePage` / `render`): trong `textLayer` của PDF hoặc DOM của Office, duyệt node `.para[data-i="..."] .en`, thay thế chuỗi khớp bằng thẻ `<mark class="docSearchHit">` và gán class `docSearchActive` cho kết quả đang chọn.
+  - Tự động cuộn đến từ khóa: `activeMark.scrollIntoView({ block: 'center', behavior: 'smooth' })`.
+
+#### 3. Bộ lọc màu đọc ban đêm (Dark Mode & Giấy vàng Sepia cho trang sách)
+- **Can thiệp file:** `css/dashboard/documents.css`, `js/dashboard/documents.js`.
+- **Vấn đề kỹ thuật:** Canvas vẽ của PDF và HTML của Word/PPTX có nền trắng cứng `#ffffff`, nếu chỉ bật Dark Theme cho app thì trang sách vẫn trắng toát, gây chói mắt ban đêm.
+- **Cơ chế lưu trữ:** Lưu tùy chọn vào `lhnDocumentsPrefs`: `pageTheme: 'default' | 'sepia' | 'dark'`.
+- **Thiết lập giao diện & CSS Filters:**
+  - Gán thuộc tính `data-doc-theme` trực tiếp vào `.docSurface` hoặc container `#stage`.
+  - **Sepia (Giấy vàng ấm dịu mắt như máy đọc sách Kindle):**
+    ```css
+    .docSurface[data-doc-theme="sepia"] canvas,
+    .docSurface[data-doc-theme="sepia"] .docsSource {
+      filter: sepia(38%) brightness(94%) contrast(92%);
+      background: #fbf0d9 !important;
+    }
+    ```
+  - **Dark Mode (Đảo màu thông minh ban đêm):**
+    ```css
+    .docSurface[data-doc-theme="dark"] canvas,
+    .docSurface[data-doc-theme="dark"] .docsSource {
+      filter: invert(90%) hue-rotate(180deg) contrast(90%);
+      background: #18191a !important;
+    }
+    /* Đảo ngược lại 100% cho hình ảnh/sơ đồ trong tài liệu để giữ nguyên màu gốc */
+    .docSurface[data-doc-theme="dark"] img,
+    .docSurface[data-doc-theme="dark"] image,
+    .docSurface[data-doc-theme="dark"] svg {
+      filter: invert(100%) hue-rotate(180deg);
+    }
+    ```
+
+#### 4. Chế độ đọc 2 trang song song (Two-Page Spread / Book View)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`.
+- **Mở rộng trạng thái luồng (`V.flow`):**
+  - Hiện tại `V.flow` chỉ có `'continuous'` (cuộn dọc) và `'single'` (1 trang). Bổ sung giá trị `'spread'`.
+- **Toán học phân bổ trang & Render:**
+  - Trang 1 là trang bìa độc lập (căn giữa hoặc lệch phải).
+  - Từ trang 2 trở đi ghép theo cặp `[Trang chẵn (Trái) | Trang lẻ (Phải)]`: Cặp 1 là `(2, 3)`, Cặp 2 là `(4, 5)`...
+  - Khi `V.flow === 'spread'`, hàm `renderViewer()` tạo các container cặp trang `.spreadRow`:
+    ```html
+    <div class="spreadRow">
+      <div class="pageFrame pageLeft" data-page="2">...</div>
+      <div class="pageFrame pageRight" data-page="3">...</div>
+    </div>
+    ```
+  - CSS Flexbox:
+    ```css
+    .pageStack.flowSpread .spreadRow {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    ```
+  - Pager & Phím mũi tên: Bước nhảy 2 trang mỗi lần (`setPage(V.page - 2)` hoặc `setPage(V.page + 2)`). Tự động vô hiệu hóa chế độ này khi màn hình hẹp/dọc (`matchMedia('(orientation: portrait)').matches`).
+
+#### 5. Đọc song ngữ đoạn văn trực tiếp (Inline Bilingual Paragraph)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-renderers.js`, `css/dashboard/documents.css`, `js/dashboard/documents-store.js`.
+- **Cấu trúc DOM hiện có:** Mỗi khối văn bản trong cả PDF và Office đều đã được bọc: `<div class="para" data-page="1" data-i="0"><span class="en">...</span></div>`.
+- **Cơ chế kích hoạt & Lưu cache:**
+  - Bắt phím tắt `Alt+D` hoặc click đúp vào khối `.para`.
+  - Kiểm tra trong IndexedDB store `translations` (`KeepitDocumentsStore` đã có sẵn):
+    ```js
+    const cached = await Store.get('translations', `${V.doc.id}:${page}:${i}`);
+    ```
+  - Nếu chưa có: Gửi tin nhắn `BILINGUAL_TRANSLATE` tới background để dịch.
+  - Khi có kết quả: Lưu vào store `translations` `{ id: `${docId}:${page}:${i}`, docId, page, i, original, translation }`.
+- **Hiển thị trực tiếp trong trang:**
+  - Chèn phần tử bản dịch ngay dưới `.en`:
+    ```html
+    <div class="para activeTrans">
+      <span class="en">Original English paragraph...</span>
+      <div class="docInlineTrans">Bản dịch tiếng Việt hiển thị mượt mà ở đây...</div>
+    </div>
+    ```
+  - CSS hiển thị:
+    ```css
+    .docInlineTrans {
+      display: block;
+      margin-top: 6px;
+      padding: 6px 10px;
+      font-size: 0.9em;
+      line-height: 1.4;
+      color: var(--kp-primary, #6366f1);
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 3px solid var(--kp-primary, #6366f1);
+      border-radius: 0 4px 4px 0;
+      user-select: text;
+    }
+    ```
+
+---
+
+### 3. Chi tiết kỹ thuật 4 tính năng học tập chuyên sâu
+
+#### 6. Chế độ Audiobook tự động lật trang (Continuous Document TTS)
+- **Can thiệp file:** `js/dashboard/documents.js`.
+- **Luồng xử lý tuần tự (Audiobook Pipeline):**
+  - Người dùng bấm nút **[Play Book / Đọc tiếp]** trên thanh công cụ.
+  - Quản lý trạng thái: `audiobook = { running: true, page: V.page, paraIndex: 0 }`.
+  - Lấy chuỗi văn bản của đoạn hiện tại: `const text = activeEngine.pages[page - 1].texts[paraIndex];`.
+  - Tô sáng đoạn đang đọc bằng class `.para.ttsReading`.
+  - Gọi `LHN_TTS` (qua pipeline Google TTS / SpeechSynthesis có sẵn).
+  - **Sự kiện chuyển tiếp:** Khi đoạn hiện tại kết thúc (`onend` callback):
+    - Nếu còn đoạn trong trang: Tăng `paraIndex++` và đọc đoạn tiếp theo.
+    - Nếu là đoạn cuối cùng của trang: Tự động gọi `setPage(V.page + 1)`, đợi sự kiện render trang mới hoàn tất $\rightarrow$ đặt `paraIndex = 0` và tiếp tục phát âm đoạn đầu của trang mới.
+    - Cho phép phím `Space` để Tạm dừng/Tiếp tục (Pause/Resume).
+
+#### 7. Xuất toàn bộ Ghi chú của cuốn sách (Export Book Summary & Flashcard Deck)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-store.js`.
+- **Dữ liệu nguồn:** Đọc toàn bộ ghi chú của tài liệu từ `KeepitDocumentsStore`:
+  ```js
+  const notes = await Store.all('notes'); // Lọc theo note.docId === V.doc.id
+  notes.sort((a, b) => a.page - b.page || a.i - b.i);
+  ```
+- **Xuất file Markdown (`.md`):**
+  - Định dạng nội dung:
+    ```markdown
+    # Tóm tắt ghi chú: [Tên tài liệu]
+    Ngày tạo: [Ngày] | Tổng số ghi chú: [N]
+
+    ## Trang [X]
+    > [Câu trích dẫn gốc đã highlight]
+    - Ghi chú: [Nội dung ghi chú cá nhân của người học]
+    ```
+  - Tạo tải về qua Blob URL:
+    ```js
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    // Tự động kích hoạt tải về file [Ten_tai_lieu]_notes.md
+    ```
+- **Tạo bộ thẻ Flashcard riêng:**
+  - Lấy các highlight/từ vựng trong sách, tạo bản ghi Flashcard mới vào `browser.storage.local` với tag gắn liền với ID sách: `deck: "Tài liệu: " + V.doc.title`.
+
+#### 8. Đánh dấu trang & Nhớ vị trí cuộn chi tiết (Bookmarks 🔖 & Precise Scroll)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-store.js`.
+- **Nâng cấp Store Schema (`meta`):** Bổ sung 2 trường dữ liệu:
+  - `scrollPercent`: Số thực từ `0.0` đến `1.0` lưu vị trí cuộn tương đối trong trang.
+  - `bookmarks`: Mảng danh sách các số trang đã được đánh dấu `[3, 15, 42]`.
+- **Lưu và phục hồi vị trí cuộn chính xác:**
+  - Khi cuộn `#stage`, ngoài việc tính trang hiện tại, tính thêm:
+    ```js
+    const currentFrame = $(`#pageStack>.pageFrame[data-page="${V.page}"]`);
+    const rect = currentFrame.getBoundingClientRect();
+    const stageRect = $('#stage').getBoundingClientRect();
+    const scrollPercent = Math.max(0, Math.min(1, (stageRect.top - rect.top) / rect.height));
+    ```
+  - Khi mở lại tài liệu: Cuộn đến số trang `V.doc.at` và bù thêm khoảng `scrollPercent * frameHeight` $\rightarrow$ dừng đúng dòng đang đọc dở.
+- **Nút Bookmark 🔖:** Thêm icon Bookmark trên pager; bấm vào sẽ bật/tắt số trang vào `bookmarks` và cập nhật danh sách trang yêu thích ở tab Bookmark trên thanh rail bên trái.
+
+#### 9. Chế độ đọc tập trung không phân tâm (Distraction-Free Focus Mode)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`.
+- **Cơ chế kích hoạt:** Bấm phím tắt `F` hoặc nút phóng to trên topbar viewer.
+- **Xử lý DOM & CSS:**
+  - Thêm class `.docFocusMode` vào phần tử gốc `#viewer`.
+  - CSS ẩn toàn bộ các thanh điều khiển gây xao nhãng:
+    ```css
+    #viewer.docFocusMode .vtop,
+    #viewer.docFocusMode #rail,
+    #viewer.docFocusMode .vside,
+    #viewer.docFocusMode .vMoreWrap {
+      display: none !important;
+    }
+    #viewer.docFocusMode .stageWrap {
+      padding: 0 !important;
+      background: var(--bg-focus, #111) !important;
+    }
+    ```
+  - **Tự động ẩn chuột & Pager khi không di chuyển (Idle Auto-hide):**
+    - Đặt bộ đếm thời gian idle 1.5 giây sau sự kiện `pointermove`.
+    - Khi hết 1.5 giây không chạm chuột: Thêm class `.idleHide` để ẩn con trỏ chuột (`cursor: none;`) và làm mờ hoàn toàn thanh phân trang pager, đem lại không gian đọc thuần khiết. Bấm `Esc` hoặc `F` để thoát chế độ.
+
+---
+
+## 2026-11-17 | Ý TƯỞNG - Bốn tính năng học mở rộng (Audio Playlist, AI Quiz, New Tab, Word Graph)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+1. **Tạo file Audio ôn tập từ các câu Highlight (Personal Audio Playlist):**
+   - Chọn các câu/đoạn văn tâm đắc đã lưu $\rightarrow$ Keepit dùng TTS tạo chuỗi phát thanh: *Đọc câu tiếng Anh $\rightarrow$ đọc bản dịch tiếng Việt $\rightarrow$ đọc lại tiếng Anh*.
+   - Mục đích: Nghe thụ động rảnh tay (passive listening) khi đi xe bus, chạy bộ, nấu ăn hoặc trước khi ngủ.
+
+2. **Bài tập trắc nghiệm từ chính bài vừa đọc (AI Contextual Quiz):**
+   - Khi đọc xong một bài báo hoặc tài liệu, bấm nút "Luyện tập nhanh".
+   - Tận dụng Ask AI (ChatGPT/Gemini/Claude) tạo 3–5 câu trắc nghiệm hoặc bài tập điền từ dựa trên chính ngữ cảnh bài viết và các từ người dùng vừa bôi đen.
+
+3. **Thẻ từ vựng trên Trang Tab mới (Minimalist New Tab):**
+   - Tùy chọn giao diện nhẹ nhàng khi mở New Tab: hiển thị 1 từ/câu ngẫu nhiên trong danh sách cần ôn của Flashcard kèm câu ngữ cảnh cũ, nút nghe phát âm và nút "Đã thuộc".
+   - Mỗi lần mở tab làm việc là một lần chạm mắt tự nhiên với từ vựng mà không tốn công mở app.
+
+4. **Bản đồ liên kết từ vựng (Personal Vocabulary Graph):**
+   - Tự động nhóm các từ vựng đã lưu trong Dashboard theo Gia đình từ (Word Family) hoặc chủ đề (ví dụ: `sustain`, `sustainable`, `sustainability`).
+   - Giúp người học ghi nhớ từ vựng học thuật theo mạng lưới logic thay vì học các từ đơn lẻ rời rạc.
+
+---
+
+## 2026-11-17 | Ý TƯỞNG - Đồng bộ dữ liệu qua Google Drive cá nhân (Zero-backend)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+### 1. Mục tiêu & Bản chất giải pháp
+- **Mô hình Zero-backend (Bring Your Own Storage):** Thay vì Keepit vận hành máy chủ lưu trữ (tốn chi phí server, rủi ro bảo mật dữ liệu), tiện ích kết nối trực tiếp với tài khoản Google Drive cá nhân của người dùng để làm ổ cứng đám mây đồng bộ giữa các máy tính và thiết bị (Chrome, Edge, Firefox, APK Android).
+- **Bảo mật & Riêng tư:** Nhà phát triển không giữ dữ liệu; dữ liệu đi thẳng từ trình duyệt lên Drive của người dùng.
+
+### 2. Vị trí lưu trữ & Cấu trúc thư mục (`appDataFolder`)
+- **Lưu trong thư mục ẩn của ứng dụng:** Sử dụng Google Drive `appDataFolder`. Thư mục này hoàn toàn ẩn với giao diện `drive.google.com` của người dùng (tránh bấm nhầm, xoá nhầm hoặc làm bừa bộn Drive cá nhân). Ứng dụng bên thứ ba khác cũng không thể can thiệp vào thư mục này của Keepit.
+- **Cấu trúc dữ liệu trên Drive:**
+  ```text
+  [Keepit AppDataFolder]/
+  ├── sync-meta.json             # Device ID, last_sync_at (UTC), schema_version, app_version
+  ├── data/
+  │   ├── annotations.json       # Highlights, Ghi chú, màu sắc, quote anchors, URL trang web
+  │   ├── flashcards.json        # Thẻ từ vựng, tiến độ học, lịch sử ôn tập SRS
+  │   └── settings.json          # Cài đặt giao diện, phím tắt, giọng đọc TTS
+  └── documents/                 # Dành cho tab Tài liệu (PDF, Office, Ảnh)
+      ├── <hash_file_1>.pdf      # Lưu theo mã băm nội dung (content_hash)
+      ├── <hash_file_2>.docx
+      └── documents-meta.json    # Tên gốc, số trang, tiến độ đọc dở, ghi chú riêng trong file
+  ```
+
+### 3. Cơ chế xác thực tài khoản (OAuth 2.0)
+- **Đăng ký Google Cloud Console (Miễn phí 100%):**
+  - Tạo một Project miễn phí trên `console.cloud.google.com`.
+  - Bật thư viện **Google Drive API**.
+  - Màn hình đồng ý (OAuth consent screen): Loại External, tên app `Keepit`, khai báo scope `https://www.googleapis.com/auth/drive.appdata`.
+- **Phân loại quyền (Scope):** `drive.appdata` là **Non-sensitive scope** $\rightarrow$ Không bị Google bắt buộc trải qua quy trình kiểm toán bảo mật khắt khe (CASA audit), không tốn phí kiểm toán, không bị màn hình cảnh báo đỏ nguy hiểm khi người dùng đăng nhập.
+- **Luồng đăng nhập trên từng nền tảng:**
+  - *Chromium (Chrome, Edge):* Dùng API có sẵn `chrome.identity.getAuthToken({ interactive: true })`. Trình duyệt tự hiện popup chọn tài khoản Google của profile hiện tại, cấp token trong 1 click.
+  - *Firefox & APK Android (WebView):* Dùng chuẩn `browser.identity.launchWebAuthFlow()` hoặc popup web OAuth (`https://accounts.google.com/o/oauth2/v2/auth`). Lấy `access_token` và `refresh_token`, lưu an toàn trong `browser.storage.local`. Bản APK WebView đã xác nhận đăng nhập Google bình thường, dùng chung 100% logic JavaScript như extension mà không cần cầu nối native Java/Kotlin phức tạp.
+
+### 4. Mô hình phân tầng dữ liệu (2 tầng)
+- **Tầng 1: Dữ liệu chữ & Metadata (Luôn đồng bộ - Bắt buộc):**
+  - Bao gồm: Highlights, Ghi chú web, Flashcards, Cài đặt và Metadata tiến độ đọc tài liệu.
+  - Dung lượng chỉ vài KB đến vài MB text JSON, đồng bộ tức thì (<1 giây), không tốn băng thông mạng.
+- **Tầng 2: Tệp tài liệu gốc (PDF, DOCX, PPTX, Ảnh) (Nặng - Tùy chọn Opt-in & Tải lười):**
+  - File tài liệu có dung lượng từ vài MB đến 30–50 MB. Nếu bắt buộc đồng bộ sẽ làm chậm mạng, hao pin và nhanh đầy dung lượng Drive.
+  - *Giải pháp:*
+    - Cung cấp công tắc trong Cài đặt: `[ ] Đồng bộ cả tệp tài liệu gốc (PDF, Office, Ảnh) lên Google Drive` (Mặc định: TẮT).
+    - Khi BẬT: Áp dụng cơ chế **Tải lười (Lazy Download)**. Thiết bị mới chỉ tải file danh mục `documents-meta.json` (hiển thị đầy đủ bìa, tên sách, số trang, ghi chú). Cạnh cuốn sách hiện icon đám mây ☁️ *(Chưa tải về máy này)*. Chỉ khi người dùng bấm vào mở cuốn sách nào thì máy mới kéo file nhị phân gốc đó từ Drive về lưu vào IndexedDB cục bộ.
+    - Lưu file theo mã băm SHA-256 (`<content_hash>.<ext>`) để tránh upload trùng lặp cùng một file.
+
+### 5. Thuật toán Đồng bộ & Xử lý Xung đột (Two-Way Merge)
+- **Cờ Tombstone (`deleted_at`):** Khi xoá một highlight hay ghi chú, không xoá đứt bản ghi ngay mà đánh dấu `deleted_at = "ISO_UTC_TIMESTAMP"`. Giúp các thiết bị khác khi đồng bộ biết để xoá theo, không bị tình trạng máy kia khôi phục ngược lại mục đã xoá. Sau 30 ngày các tombstone sẽ được dọn dẹp sạch.
+- **Quy trình chu kỳ đồng bộ (Sync Cycle):**
+  1. *Kiểm tra (Check):* Đọc file `sync-meta.json` trên Drive, so sánh timestamp với mốc của máy cục bộ.
+  2. *Kéo về & Hợp nhất (Pull & Merge):* Tải dữ liệu remote về. So khớp theo `uuid`: Nếu cùng một mục được sửa ở 2 máy, mục có `updated_at` mới hơn sẽ thắng (**Last-Write-Wins trên từng item**, không bao giờ ghi đè cả file dữ liệu). Ghi kết quả hợp nhất vào IndexedDB local.
+  3. *Đẩy lên (Push):* Gom các thay đổi mới tại local (được gắn cờ `dirty`), cập nhật file JSON tổng, upload đè lên Drive và cập nhật lại mốc `last_sync_at` trong `sync-meta.json`.
+
+### 6. Thiết kế Giao diện người dùng (UI/UX)
+- Đặt tại **Dashboard > Cài đặt > Đồng bộ đám mây (Cloud Sync)**:
+  - Nút **[Kết nối Google Drive]**: Chạm để cấp quyền; sau khi kết nối hiển thị avatar Google, email đã đăng nhập và dung lượng Drive khả dụng.
+  - Dòng trạng thái trực quan: *"Đã đồng bộ 2 phút trước"* kèm icon tích xanh (hoặc xoay tròn khi đang trong tiến trình đồng bộ).
+  - Tùy chọn:
+    - ☑ *Tự động đồng bộ khi mở Keepit*
+    - ☐ *Đồng bộ cả tệp tài liệu gốc (PDF, Office, Ảnh)* (kèm ghi chú tốn dung lượng Drive)
+    - Nút **[Đồng bộ ngay]** (để người dùng ép đồng bộ thủ công bất kỳ lúc nào).
+
+### 7. Năm lưu ý kỹ thuật bắt buộc khi triển khai
+1. **Trạng thái OAuth Consent Screen:** Ban đầu ở chế độ *Testing* (giới hạn 100 email test). Cần bấm **Publish App** để chuyển sang *In Production* cho toàn bộ người dùng. Cần chuẩn bị link `PRIVACY-POLICY.md` công khai (host qua GitHub Pages).
+2. **Extension ID phải cố định:** Khi tạo OAuth Client ID cho Chrome, Google yêu cầu Extension ID. ID này sinh ra từ khoá bí mật `.pem` khi ký build (`scripts/build_release.py`). Tuyệt đối không đổi khoá `.pem` này, vì đổi khoá sẽ làm đổi ID dẫn đến lỗi từ chối kết nối (*Origin mismatch*).
+3. **Cơ chế Debounce chống spam API:** Không gọi đồng bộ tức thì sau mỗi thao tác bôi đen hay gõ chữ. Cần debounce chờ 3–5 giây sau thao tác cuối cùng mới gom nhóm các thay đổi và gửi 1 request lên Drive.
+4. **Bắt lỗi đầy dung lượng Drive (Quota Exceeded):** Nếu người dùng vượt quá 15GB miễn phí của Google, Drive API trả về lỗi `HTTP 403 / 507 Insufficient Storage`. Code cần bắt lỗi này và thông báo rõ ràng cho người dùng, không để ứng dụng crash hoặc thử lại vô tận.
+5. **Cập nhật tài liệu minh bạch:** Khai báo trung thực trong `PRIVACY-POLICY.md` và `STORE-LISTING.md` rằng tính năng đồng bộ Drive là tuỳ chọn do người dùng chủ động bật, dữ liệu chỉ lưu trong thư mục riêng của app (`appDataFolder`) và nhà phát triển không truy cập vào dữ liệu này.
+
+### 8. Các tính năng mở rộng có giá trị cao
+1. **Tiếp tục đọc dở xuyên thiết bị (Cross-Device Session):** Lưu nhẹ URL + vị trí cuộn trang hoặc timestamp video đang học dở trên máy A. Khi mở máy B/điện thoại, Dashboard hiện thông báo 1 chạm: *"Tiếp tục đọc bài '...' từ máy tính? [Mở ngay]"*.
+2. **Khôi phục phiên bản cũ (Rollback / Version History):** Tận dụng tính năng Revisions tự động của Google Drive để cung cấp nút khôi phục về bản sao lưu *"Hôm qua"*, *"3 ngày trước"*, giúp người dùng an tâm không bao giờ sợ lỡ tay xoá mất ghi chú.
+3. **Tự động dọn rác bộ nhớ đệm (Smart Cache Eviction):** Với thiết bị bộ nhớ ít, Keepit tự động xoá bản lưu cục bộ của các file tài liệu quá 30 ngày không mở đọc (nhưng vẫn giữ nguyên ghi chú/tiến độ; file gốc vẫn an toàn trên Drive, khi cần đọc lại chỉ việc tải lại ☁️).
+4. **Tùy chọn mã hoá đầu cuối (Client-Side Encryption):** Tùy chọn đặt mật khẩu/PIN để mã hoá toàn bộ ghi chú bằng AES-256 (Web Crypto API) trước khi tải lên Drive, đảm bảo tính riêng tư tuyệt đối ngay cả khi tài khoản Drive bị lộ.
+
+---
+
+## 2026-11-17 | Ý TƯỞNG - Tái ngộ từ vựng trong ngữ cảnh (Contextual Re-encounter)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+- **Mục tiêu:** Tự động kích hoạt phản xạ gợi nhớ từ vựng đã lưu/cần ôn ngay khi người dùng duyệt web hàng ngày, giải quyết vấn đề lười mở Flashcard để ôn tập.
+- **Trải nghiệm người dùng (UX):**
+  - Khi duyệt web, nếu trang xuất hiện từ nằm trong danh sách cần ôn của Flashcards/Highlights, từ đó được gạch chân chấm mờ nhẹ (dotted underline, tinh tế, không làm rối mắt bài đọc).
+  - Rê chuột (hoặc chạm trên mobile) mở mini tooltip: hiển thị nghĩa tiếng Việt, IPA, **câu ngữ cảnh gốc** lúc người dùng lưu từ lần đầu, nút nghe phát âm và nút 1 chạm "Đã nhớ" để tính điểm tiến độ Flashcard.
+- **Tối ưu hiệu năng:**
+  - Danh sách từ cần ôn được nạp thành cấu trúc Trie/Set trong content script để tra cứu $O(L)$ siêu tốc.
+  - Chỉ quét trong vùng nội dung bài đọc chính (`Readability` của Reader), kết hợp `IntersectionObserver` khi cuộn tới đoạn nào mới quét đoạn đó, không duyệt toàn bộ DOM cùng lúc.
+  - Hỗ trợ Lemmatization nhẹ (nhận diện các biến thể thì/số nhiều như `struggling`, `struggled` của từ gốc `struggle`).
+- **Câu hỏi còn mở:**
+  1. Phạm vi hiển thị: chỉ nhắc từ có trạng thái "đang học / cần ôn" trong SRS hay toàn bộ từ đã từng lưu?
+  2. Có cần danh sách loại trừ (blacklist) tự động cho các trang làm việc/code/mạng xã hội không?
+
+---
+
 ## 2026-11-16 | Ý TƯỞNG - Loại từ cả trang: bước B5 — độ tự tin của mô hình
 
 **Trạng thái:** Đề xuất, chờ người dùng quyết. Chưa đưa vào code.
