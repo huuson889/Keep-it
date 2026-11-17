@@ -8,8 +8,9 @@
 (() => {
   "use strict";
   // v3.5.180: also on the Keepit home page (pages/home.html, js/home/home-ui.js), where page commands wait for a web page
+  const DOCUMENTS_HOST = !!document.documentElement?.hasAttribute("data-keepit-documents");
   const HOMEPAGE = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/home\.html$/.test(location.pathname);
-  if (window.top !== window || !document.documentElement || (!HOMEPAGE && !/^https?:$/.test(location.protocol))) return;
+  if (window.top !== window || !document.documentElement || (!HOMEPAGE && !DOCUMENTS_HOST && !/^https?:$/.test(location.protocol))) return;
   // v3.5.221: Keepit's own bars, sheets and panels keep their size at every page zoom (Cỡ chữ trang, Ctrl +/-), like the
   // browser's own toolbar: <html> gets --keepit-uiz = 1 / zoom and the bar host, the Reader bar/sheets and the notes sidebar use
   // CSS zoom:var(--keepit-uiz). Inside them lengths are "UI px" = page px × zoom (innerWidth, clientX, getBoundingClientRect
@@ -132,7 +133,6 @@
   const norm = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d").toLowerCase().trim();
 
   let settings = {}, host = null, root = null, mounted = false, picking = false;
-  const DOCUMENTS_HOST = document.documentElement.hasAttribute("data-keepit-documents");
   const S = {
     hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
     coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false,
