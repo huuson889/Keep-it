@@ -36,7 +36,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
 - Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
 - Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng annotations chung. Chỉ owned references được mở/jump, blob không backup. PDF adapter gom hàng bảng thẳng cột vào một block và giữ queue/TTS chung.
-- Documents main sheet cung cấp tile Dịch/Đọc qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks dùng chung `setPanel('translation')`/`startNativeReader()` với toolbar top. Nút Ẩn thanh không hiện trong sheet Documents.
+- Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks dùng chung `setPanel('translation')`/`startNativeReader()` với toolbar top. Điều khiển Ẩn/Hiện thanh không hiện trong sheet Documents.
 
 ## 5. Kiểm tra và xác minh
 
