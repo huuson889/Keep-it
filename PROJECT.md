@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.367**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Thanh pager Documents hiện rõ khi mở, tự mờ sau 1 giây không hoạt động; hover/keyboard-focus hiện rõ. Không đổi opacity khi mở native select; bỏ ngưỡng hover gần gây nhấp nháy. Reader tiếp tục bỏ đọc header/footer được đánh dấu/lặp; nội dung vẫn hiện trên trang.
+- Version **3.5.368**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Đã rollback toàn bộ chỉnh sửa pager Documents về hành vi trước thay đổi UI (v3.5.363); không tiếp tục thay đổi pager khi chưa tái hiện và kiểm tra được lỗi trên trình duyệt. Reader tiếp tục bỏ đọc header/footer được đánh dấu/lặp; nội dung vẫn hiện trên trang.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dịch dài, Documents Reader — v3.5.367
-- Thanh pager Documents: bỏ pointer-proximity wake gây nháy; native select không kích hoạt đổi opacity khi mở để danh sách không tự đóng. Mờ sau 1 giây; hover chuột/keyboard-focus hiện rõ. Syntax/static checks PASS; chưa browser-test.
+### Dịch dài, Documents Reader — v3.5.368
+- Pager đã trả về mã và CSS nguyên trạng v3.5.363 sau các bản UI không giải quyết được lỗi. Chưa xác minh browser; cần tái hiện menu đóng và nhấp nháy bằng browser trước khi sửa tiếp.
 - Cần thử bản dịch thật >500 ký tự qua Reader, đoạn chọn dài và DOCX/PDF; xác nhận chunk được ghép tự nhiên, cache và dấu xuống dòng đúng. Unit test split/round-trip <450 ký tự PASS; chưa gọi API thật.
 - Reader header/footer skip từ v3.5.362 vẫn cần browser-test trên PDF/DOCX/PPTX thật.
 - Cần kiểm tra PDF nhiều trang: thumbnail hiển thị khi vào vùng nhìn thấy của rail, các trang ngoài vùng chưa render; cuộn rail xuống tải nốt; click trang và đổi flow không sai trang. Chưa browser-test.
