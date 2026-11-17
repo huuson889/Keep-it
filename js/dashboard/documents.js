@@ -212,13 +212,18 @@ function requestTranslationSync(force = false) {
     if (!$('#viewer').classList.contains('show') || V.panel !== 'translation' || translationView.doc !== V.doc || (!panelPrefs.follow && !forced)) return;
     const st = $('#stage'), list = $('#transList'), frame = $(`#pageStack>[data-page="${V.page}"]`), targetPage = $(`#transList [data-trans-page="${V.page}"]`);
     if (!frame || !targetPage || !list.clientHeight) return;
-    const focus = st.getBoundingClientRect().top + st.clientHeight / 2, groups = [];
+    const focus = st.getBoundingClientRect().top + st.clientHeight / 2, groups = [], fallbackGroups = [];
     for (const block of frame.querySelectorAll('.para[data-paragraph-start="true"]')) {
       const index = block.dataset.paragraphIndex ?? block.dataset.i;
       const peers = block.dataset.paragraphIndex != null ? [...frame.querySelectorAll(`.para[data-paragraph-index="${index}"]`)] : [block];
       const rects = peers.map(el => el.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
-      if (rects.length) groups.push({ index, top:Math.min(...rects.map(rect => rect.top)), bottom:Math.max(...rects.map(rect => rect.bottom)) });
+      if (!rects.length) continue;
+      const group = { index, top:Math.min(...rects.map(rect => rect.top)), bottom:Math.max(...rects.map(rect => rect.bottom)) };
+      fallbackGroups.push(group);
+      const text = peers.map(el => el.querySelector('.en')?.textContent || el.textContent || '').join(' ').replace(/\s+/g, ' ').trim();
+      if (Array.from(text).length > 1) groups.push(group);
     }
+    if (!groups.length) groups.push(...fallbackGroups);
     if (!groups.length) return;
     const source = groups.reduce((best, group) => {
       const distance = focus < group.top ? group.top - focus : focus > group.bottom ? focus - group.bottom : 0;

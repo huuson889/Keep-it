@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.326**, nhánh `Keepit-Optimize-Test`; khi bật Cuộn theo tệp, panel Dịch canh khung gốc + dịch theo đoạn PDF gần tâm vùng đọc, dùng paragraph index để căn tâm card gốc + dịch trùng tâm đoạn PDF. Chưa browser-test đồng bộ trên PDF thật.
+- Version **3.5.327**, nhánh `Keepit-Optimize-Test`; khi bật Cuộn theo tệp, panel Dịch canh khung gốc + dịch theo đoạn PDF gần tâm vùng đọc, dùng paragraph index để căn tâm card gốc + dịch trùng tâm đoạn PDF; bỏ qua đoạn nguồn một ký tự khi chọn focus. Chưa browser-test đồng bộ trên PDF thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -220,6 +220,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.327 | Arena.ai Agent sửa:**
+
+- Không để paragraph đúng một ký tự (ví dụ dấu gạch) giành focus cuộn; chỉ lọc khỏi chọn ứng viên, không xóa text/card. Nếu không còn paragraph dài hơn một ký tự, fallback về toàn bộ ứng viên.
+- File: `manifest.json`, `js/dashboard/documents.js`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dashboard/documents.js`, parse `manifest.json`, `git diff --check` và assertion lọc ký tự/fallback/căn tâm đạt; chưa browser-test đồng bộ trên PDF thật.
 
 **2026-11-17 | v3.5.326 | Arena.ai Agent sửa:**
 
