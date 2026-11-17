@@ -247,7 +247,7 @@
           }
         } finally { jobs.delete(render); jobs.delete(textLayer); }
       },
-      async thumbnail() { const page = await document.getPage(1), vp = page.getViewport({ scale:Math.min(240 / pages[0].width, 320 / pages[0].height) }), c = window.document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height); await page.render({ canvasContext:c.getContext('2d'), viewport:vp }).promise; return c.toDataURL('image/png'); },
+      async thumbnail(pageNumber = 1) { const index=Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1,page=await document.getPage(index+1),spec=pages[index],vp=page.getViewport({scale:Math.min(120/spec.width,160/spec.height,1)}),c=window.document.createElement('canvas');c.width=Math.max(1,Math.ceil(vp.width));c.height=Math.max(1,Math.ceil(vp.height));const render=page.render({canvasContext:c.getContext('2d'),viewport:vp});jobs.add(render);try{await render.promise;return c.toDataURL('image/png');}finally{jobs.delete(render);} },
       dispose() { disposed = true; for (const job of jobs) { try { job.cancel(); } catch {} } jobs.clear(); void document.destroy(); }
     };
   }
@@ -292,10 +292,11 @@
       if (css) { styleNode = document.createElement('style'); styleNode.textContent = css; document.head.append(styleNode); }
       return { kind, pages,
         async render(target, page) { target.replaceChildren(nodes[page - 1].cloneNode(true)); },
-        async thumbnail() {
-          const canvas = document.createElement('canvas'); canvas.width = 240; canvas.height = kind === 'pptx' ? 135 : 320; const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = '#374151'; ctx.font = '11px sans-serif';
-          let y = 22; for (const text of pages[0].texts) { let line = ''; for (const word of text.split(/\s+/)) { if (ctx.measureText(line + ' ' + word).width > 208) { ctx.fillText(line,16,y); y += 15; line = word; } else line += (line ? ' ' : '') + word; if (y > canvas.height - 20) break; } ctx.fillText(line,16,y); y += 19; if (y > canvas.height - 20) break; }
+        async thumbnail(pageNumber = 1) {
+          const spec=pages[Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1]||pages[0];
+          const canvas = document.createElement('canvas'); canvas.width = 120; canvas.height = kind === 'pptx' ? 68 : 160; const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = '#374151'; ctx.font = '6px sans-serif';
+          let y = 11; for (const text of spec.texts) { let line = ''; for (const word of text.split(/\s+/)) { if (ctx.measureText(line + ' ' + word).width > 104) { ctx.fillText(line,8,y); y += 8; line = word; } else line += (line ? ' ' : '') + word; if (y > canvas.height - 10) break; } ctx.fillText(line,8,y); y += 10; if (y > canvas.height - 10) break; }
           return canvas.toDataURL('image/png');
         },
         dispose() { styleNode?.remove(); nodes.length = 0; }
