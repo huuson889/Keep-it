@@ -395,7 +395,7 @@ function readerParagraphHighlightBox(rects,sourceRect,scale,pad=2){
  return{left:(left-sourceRect.left)/scale-pad,top:(top-sourceRect.top)/scale-pad,width:(right-left)/scale+pad*2,height:(bottom-top)/scale+pad*2};
 }
 function showReaderParagraphHighlight(block){
- clearReaderParagraphHighlight();if(V.mode!=='orig'||!block)return;
+ clearReaderParagraphHighlight();if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return;
  const page=+block.dataset.page,index=paragraphIndex(block),source=block.closest('.docsSource');if(!page||!source)return;
  const spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),sourceRect=source.getBoundingClientRect(),scale=sourceRect.width/Math.max(1,source.offsetWidth),box=readerParagraphHighlightBox(spans.map(el=>el.getBoundingClientRect()),sourceRect,scale);if(!box)return;
  const highlight=document.createElement('div');highlight.className='docsReaderParagraphHighlight';highlight.setAttribute('aria-hidden','true');
