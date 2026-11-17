@@ -212,13 +212,19 @@ function requestTranslationSync(force = false) {
     if (!$('#viewer').classList.contains('show') || V.panel !== 'translation' || translationView.doc !== V.doc || (!panelPrefs.follow && !forced)) return;
     const st = $('#stage'), list = $('#transList'), frame = $(`#pageStack>[data-page="${V.page}"]`), targetPage = $(`#transList [data-trans-page="${V.page}"]`);
     if (!frame || !targetPage || !list.clientHeight) return;
-    const edge = st.getBoundingClientRect().top + Math.min(100, st.clientHeight * .18);
-    let source = null;
-    for (const p of frame.querySelectorAll('.para')) { if (p.getBoundingClientRect().top <= edge) source = p; else break; }
-    const target = source ? targetPage.querySelector(`[data-trans-i="${source.dataset.i}"]`) || targetPage : targetPage;
-    const fraction = source ? Math.max(0, Math.min(1, (edge - source.getBoundingClientRect().top) / Math.max(1, source.getBoundingClientRect().height))) : 0;
-    const top = list.scrollTop + target.getBoundingClientRect().top - list.getBoundingClientRect().top + fraction * target.getBoundingClientRect().height - (source ? Math.min(60, list.clientHeight * .12) : 12);
-    list.scrollTop = Math.max(0, top);
+    const edge = st.getBoundingClientRect().top + Math.min(100, st.clientHeight * .18), groups = [];
+    for (const block of frame.querySelectorAll('.para[data-paragraph-start="true"]')) {
+      const index = block.dataset.paragraphIndex ?? block.dataset.i;
+      const peers = block.dataset.paragraphIndex != null ? [...frame.querySelectorAll(`.para[data-paragraph-index="${index}"]`)] : [block];
+      const rects = peers.map(el => el.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
+      if (rects.length) groups.push({ block, index, top:Math.min(...rects.map(rect => rect.top)), bottom:Math.max(...rects.map(rect => rect.bottom)) });
+    }
+    let source = groups.find(group => group.top <= edge && group.bottom >= edge);
+    if (!source) source = groups.filter(group => group.top <= edge).sort((a,b) => b.top-a.top)[0] || groups.sort((a,b) => Math.abs(a.top-edge)-Math.abs(b.top-edge))[0];
+    if (!source) return;
+    const target = targetPage.querySelector(`[data-trans-i="${source.index}"]`) || targetPage;
+    const targetRect = target.getBoundingClientRect();
+    list.scrollTop = Math.max(0, list.scrollTop + targetRect.top - source.top);
   });
 }
 $('#stage').addEventListener('scroll', () => requestTranslationSync(), { passive:true });

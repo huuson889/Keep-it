@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.323**, nhánh `Keepit-Optimize-Test`; card dịch trong panel Tài liệu bỏ padding dọc, giữ padding ngang và vạch tím. Chưa browser-test trực quan sau sửa.
+- Version **3.5.324**, nhánh `Keepit-Optimize-Test`; khi bật Cuộn theo tệp, panel Dịch canh khung gốc + dịch theo đoạn PDF hiện ở viewport, dùng paragraph index. Chưa browser-test đồng bộ trên PDF thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu — v3.5.323
-- Bản dịch trong panel Tài liệu: bỏ khoảng đệm trên/dưới của card quanh chữ, giữ khoảng ngang và thanh tím. Đã thêm override `padding-top/bottom:0`; cần xác nhận trực quan với PDF thật, sáng/tối. Chưa browser-test.
+### Tài liệu — v3.5.324
+- Người dùng yêu cầu panel Dịch cuộn theo tệp và khung gốc+bản dịch ngang cao với đoạn đang dịch. v3.5.324 ghép theo `paragraphIndex` (không phải chỉ số text span) và canh mép trên hàng panel với mép trên bounding box đoạn PDF. Cần xác nhận trên PDF thật khi cuộn trang liên tục, trang đơn và bản dịch tải muộn. Chưa browser-test.
 - Cần xác nhận với tài liệu thật ở theme sáng/tối: màu bản dịch dễ đọc và cỡ chữ khớp nguồn. Chưa browser-test UI.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
@@ -220,6 +220,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.324 | Arena.ai Agent sửa:**
+
+- Panel Dịch khi bật Cuộn theo tệp: theo dõi đoạn PDF đang ở vị trí cuộn, tìm hàng tương ứng bằng `paragraphIndex`, tính union rect của các spans thuộc đoạn và cuộn panel để khung gốc+bản dịch ngang cao với đoạn nguồn. Không đổi dịch vụ/provider hoặc Reader queue.
+- File: `manifest.json`, `js/dashboard/documents.js`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dashboard/documents.js`, parse `manifest.json`, `git diff --check` và assertion mapping/căn chỉnh đạt; chưa browser-test đồng bộ cuộn PDF thật.
 
 **2026-11-17 | v3.5.323 | Arena.ai Agent sửa:**
 

@@ -28,7 +28,7 @@ Thư viện/trình xem lấy bố cục demo v13; **công cụ phải dùng modu
 
 - Web không có `LHN_PAGE_CONTEXT` phải giữ đường cũ. Chỉ owned Dashboard document references được chấp nhận, không mở rộng sang extension/file URL tùy ý hoặc cho web giả nguồn.
 - Giữ toolbar tệp một hàng, move control vào Thêm không clone, pager mờ 1 giây và nhận lần bấm đầu. Pager nhường khi Reader gốc mở; Notes dùng layout/sheet app, không panel v13 riêng.
-- Với PDF, mọi text span hiển thị phải ánh xạ được về một paragraph index; block Reader/Dịch chỉ bắt đầu một lần mỗi đoạn. Giữ `data-i` riêng cho selection/anchor; anchor tạo ở chế độ Đọc lưu offset theo đoạn và được giải lại trên các spans gốc. Không dùng dò chuỗi để bỏ rơi mảnh text.
+- Với PDF, mọi text span hiển thị phải ánh xạ được về một paragraph index; block Reader/Dịch chỉ bắt đầu một lần mỗi đoạn. Cuộn theo tệp ánh xạ panel bằng `paragraphIndex` và canh mép trên khung bản dịch (gốc + dịch) với mép trên đoạn nguồn, không dùng chỉ số span riêng. Giữ `data-i` riêng cho selection/anchor; anchor tạo ở chế độ Đọc lưu offset theo đoạn và được giải lại trên các spans gốc. Không dùng dò chuỗi để bỏ rơi mảnh text.
 - Dịch và Notes/AI/Reader tôn trọng cài đặt chung. Không tự tải mô hình POS. Không nới quyền hay bypass CSP trang ngoài.
 - Giới hạn giữ nguyên v314: tài liệu 50 MB/ảnh 30 MB, ZIP tổng 160 MB/từng entry 50 MB/12.000 entry, tối đa 2.000 trang. Chưa có cloud sync hoặc backup blob tệp.
 
