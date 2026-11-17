@@ -12,6 +12,7 @@
   let panel = null, activeRange = null, selectedRange = null, selectedColor = CONFIG.DEFAULT_COLOR, activeAnnotationId = null;
   let settings = globalThis.LHN_SETTINGS.resolve({}, { language:(globalThis.LHN_LANGUAGES?.detectLanguage() || "en") });
   const t = (key, vars = {}) => globalThis.LHN_LANGUAGES.t(key, vars, globalThis.LHN_LANGUAGES.languageFor(settings));
+  const unwrapAnnotationMark = mark => mark?.classList?.contains('lhnPdfHighlightGroup') ? mark.remove() : mark?.replaceWith(...mark.childNodes);
   const getSpeechRate = spokenLanguage => {
     const displayLanguage = globalThis.LHN_LANGUAGES?.languageFor(settings) || "en";
     const speechLanguage = String(spokenLanguage || "").trim().replace(/_/g, "-").split("-")[0].toLowerCase();
@@ -447,7 +448,7 @@
         pageAnnotationCache.delete(saved.id);
         const marks = [...document.querySelectorAll(`[data-lhn-id="${CSS.escape(saved.id)}"]`)];
         const first = marks[0]?.firstChild, last = marks.at(-1)?.lastChild;
-        marks.forEach(n => n.replaceWith(...n.childNodes));
+        marks.forEach(unwrapAnnotationMark);
         // Unwrapping collapses the old anchor range; point it at the restored text so the next heart highlights again.
         if (saved.onPage && first?.isConnected && last?.isConnected) {
           const restored = document.createRange();
@@ -1127,7 +1128,7 @@
     const deleteButton = makeButton("▤", "secondary lhn-icon-btn lhn-trash-btn", async () => {
       await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
       pageAnnotationCache.delete(item.id);
-      document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(n => n.replaceWith(...n.childNodes));
+      document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(unwrapAnnotationMark);
       removeTooltip();
     });
     deleteButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${CONFIG.ACTION_ICON_PATHS.trash}</svg>`;
@@ -1352,7 +1353,7 @@
       removeComposer(); removeTooltip(); selectedRange = null; document.getElementById("lhn-sidebar-edit-dialog")?.remove();
       if (restoreDebounce) { clearTimeout(restoreDebounce); restoreDebounce = 0; }
       restoreObserver?.disconnect(); restoreObserver = null;
-      document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
+      document.querySelectorAll(".lhn-mark").forEach(unwrapAnnotationMark);
       if (sidebarOpen) closeSidebar();
     } else {
       document.dispatchEvent(new CustomEvent("lhn-website-disabled-change", { detail:false }));
@@ -1626,7 +1627,7 @@
         onDelete:async () => {
         await LHN_MESSAGING.sendMessage({ type: "DELETE", id: item.id });
         pageAnnotationCache.delete(item.id);
-        document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
+        document.querySelectorAll(`[data-lhn-id="${CSS.escape(item.id)}"]`).forEach(unwrapAnnotationMark);
         await renderSidebar();
         },
         onSpeak:() => { try { const text = String(item.quote || "").trim(); if (!text) return; card.classList.add("lhn-reading-text"); speakHighlightedText(text, speechLanguageForText(text, null), () => card.classList.remove("lhn-reading-text")); } catch (error) { card.classList.remove("lhn-reading-text"); console.warn("Highlight speech playback failed", error); } }
@@ -1997,7 +1998,7 @@
         if (marks.length) {
           const expected = Math.max(1, ...marks.map(mark => Number(mark.dataset.lhnParts) || 1));
           if (marks.length >= expected) continue;
-          for (const mark of marks) mark.replaceWith(...mark.childNodes);
+          for (const mark of marks) unwrapAnnotationMark(mark);
         }
         // Resolve every range immediately before wrapping because earlier items
         // may have changed the DOM.
@@ -2107,7 +2108,7 @@
   syncSidebarEdgeToggle();
   loadSettings().then(() => {
     if (websiteDisabled) {
-      removeComposer(); removeTooltip(); document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
+      removeComposer(); removeTooltip(); document.querySelectorAll(".lhn-mark").forEach(unwrapAnnotationMark);
     } else {
       startRestoreObserver(); setTimeout(restoreAnnotations, 600);
     }
@@ -2200,7 +2201,7 @@
     if (message?.type === "TOGGLE_SIDEBAR") return toggleSidebar();
     if (message?.type === "JUMP_TO_HIGHLIGHT") return jumpToHighlight(message.id);
     if (message?.type === "REMOVE_HIGHLIGHT_PAGE" && message.url === pageUrl()) {
-      document.querySelectorAll(".lhn-mark").forEach(mark => mark.replaceWith(...mark.childNodes));
+      document.querySelectorAll(".lhn-mark").forEach(unwrapAnnotationMark);
       pageAnnotationCache.clear(); sidebarItemsCache = [];
       if (sidebarOpen) renderSidebar(true);
       return;
@@ -2208,7 +2209,7 @@
     if (message?.type === "REMOVE_HIGHLIGHT_IDS" && Array.isArray(message.ids)) {
       for (const id of message.ids) {
         if (typeof id !== "string") continue;
-        document.querySelectorAll(`[data-lhn-id="${CSS.escape(id)}"]`).forEach(mark => mark.replaceWith(...mark.childNodes));
+        document.querySelectorAll(`[data-lhn-id="${CSS.escape(id)}"]`).forEach(unwrapAnnotationMark);
       }
       if (sidebarOpen) renderSidebar();
     }

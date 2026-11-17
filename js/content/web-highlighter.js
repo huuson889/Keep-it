@@ -61,26 +61,22 @@ globalThis.LHNWebHighlighter = (() => {
       }
       return segments;
     };
-    function pdfRectsForSegments(segments) {
-      const bySource = new Map();
-      for (const {node,start,end} of segments) {
-        const source=node?.parentElement?.closest?.('.docsSource');if(!source||!nodeIsPdfText(node)||end<=start)continue;
-        const range=document.createRange();range.setStart(node,start);range.setEnd(node,end);
-        if(!bySource.has(source))bySource.set(source,[]);
-        for(const rect of range.getClientRects())if(rect.width>.1&&rect.height>.1)bySource.get(source).push({left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom});
-      }
+    function mergePdfClientRects(rects) {
+      const bySource=new Map();for(const rect of rects){if(!bySource.has(rect.source))bySource.set(rect.source,[]);bySource.get(rect.source).push(rect);}
       const merged=[];
-      for(const [source,rects] of bySource){
-        rects.sort((a,b)=>a.top-b.top||a.left-b.left);
-        for(const rect of rects){
-          const previous=merged.at(-1),height=rect.bottom-rect.top,previousHeight=previous?.bottom-previous?.top;
-          const sameLine=previous?.source===source&&Math.abs((rect.top+rect.bottom-previous.top-previous.bottom)/2)<=Math.max(2,Math.min(height,previousHeight)*.35);
-          const gap=previous?rect.left-previous.right:Infinity,bridge=Math.max(3,Math.min(height,previousHeight||height)*.32);
-          if(sameLine&&gap<=bridge){previous.left=Math.min(previous.left,rect.left);previous.right=Math.max(previous.right,rect.right);previous.top=Math.min(previous.top,rect.top);previous.bottom=Math.max(previous.bottom,rect.bottom);}
-          else merged.push({source,...rect});
-        }
-      }
-      return connectPdfRows(merged);
+      for(const [source,items] of bySource){items.sort((a,b)=>a.top-b.top||a.left-b.left);for(const rect of items){
+        const previous=merged.at(-1),height=rect.bottom-rect.top,previousHeight=previous?.bottom-previous?.top;
+        const sameLine=previous?.source===source&&Math.abs((rect.top+rect.bottom-previous.top-previous.bottom)/2)<=Math.max(2,Math.min(height,previousHeight)*.35);
+        const gap=previous?rect.left-previous.right:Infinity,bridge=Math.max(3,Math.min(height,previousHeight||height)*.32);
+        if(sameLine&&gap<=bridge){previous.left=Math.min(previous.left,rect.left);previous.right=Math.max(previous.right,rect.right);previous.top=Math.min(previous.top,rect.top);previous.bottom=Math.max(previous.bottom,rect.bottom);}
+        else merged.push({...rect,source});
+      }}
+      return merged;
+    }
+    function pdfRectsForSegments(segments) {
+      const rects=[];
+      for(const {node,start,end} of segments){const source=node?.parentElement?.closest?.('.docsSource');if(!source||!nodeIsPdfText(node)||end<=start)continue;const range=document.createRange();range.setStart(node,start);range.setEnd(node,end);for(const rect of range.getClientRects())if(rect.width>.1&&rect.height>.1)rects.push({source,left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom});}
+      return connectPdfRows(mergePdfClientRects(rects));
     }
     function connectPdfRows(rects) {
       const bySource=new Map();for(const rect of rects){if(!bySource.has(rect.source))bySource.set(rect.source,[]);bySource.get(rect.source).push(rect);}
@@ -102,41 +98,34 @@ globalThis.LHNWebHighlighter = (() => {
       if(!overlay){overlay=document.createElement('div');overlay.className='lhnPdfHighlightOverlay';overlay.setAttribute('aria-hidden','true');source.append(overlay);}
       return overlay;
     }
-    function setPdfBox(element,box) {
-      element.dataset.pdfLeft=String(box.left);element.dataset.pdfTop=String(box.top);element.dataset.pdfRight=String(box.right);element.dataset.pdfBottom=String(box.bottom);
-      element.style.left=box.left+'px';element.style.top=box.top+'px';element.style.width=(box.right-box.left)+'px';element.style.height=(box.bottom-box.top)+'px';
+    function decoratePdfMark(group,item,index,total) {
+      const color=config.normalizeColor(item.color);group.className=`lhnPdfHighlightGroup lhn-mark lhn-pdf-highlight lhn-${color} notranslate${total>1?' lhn-fragmented':''}`;
+      group.dataset.lhnId=item.id;group.dataset.lhnParts=String(total);group.dataset.lhnPart=String(index);group.setAttribute('data-lhn-note',item.note||'');group.setAttribute('translate','no');attachMarkEvents(group,item.id);
     }
-    function positionPdfRect(element, source, rect) {
-      const bounds=source.getBoundingClientRect(),scale=bounds.width/Math.max(1,source.offsetWidth);
-      setPdfBox(element,{left:(rect.left-bounds.left)/scale,top:(rect.top-bounds.top)/scale,right:(rect.right-bounds.left)/scale,bottom:(rect.bottom-bounds.top)/scale});
-    }
-    function decoratePdfMark(mark,item,index,total) {
-      const color=config.normalizeColor(item.color);mark.className=`lhnPdfHighlightRect lhn-mark lhn-pdf-highlight lhn-${color} notranslate${total>1?' lhn-fragmented':''}`;
-      mark.dataset.lhnId=item.id;mark.dataset.lhnParts=String(total);mark.dataset.lhnPart=String(index);mark.setAttribute('data-lhn-note',item.note||'');mark.setAttribute('translate','no');attachMarkEvents(mark,item.id);
+    function createPdfHighlightGroup(source,rects,item,preview=false,total=1,index=0) {
+      if(!rects.length)return null;
+      const bounds=source.getBoundingClientRect(),scale=bounds.width/Math.max(1,source.offsetWidth),left=Math.min(...rects.map(r=>r.left)),top=Math.min(...rects.map(r=>r.top)),right=Math.max(...rects.map(r=>r.right)),bottom=Math.max(...rects.map(r=>r.bottom));
+      const group=document.createElement('span');group.className=preview?'lhnPdfHighlightGroup lhnPdfHighlightPreview lhn-selection-preview-mark notranslate':'lhnPdfHighlightGroup lhn-mark lhn-pdf-highlight notranslate';
+      Object.assign(group.style,{position:'absolute',left:((left-bounds.left)/scale)+'px',top:((top-bounds.top)/scale)+'px',width:((right-left)/scale)+'px',height:((bottom-top)/scale)+'px'});
+      for(const rect of rects){const part=document.createElement('span');part.className='lhnPdfHighlightRect';Object.assign(part.style,{left:((rect.left-left)/scale)+'px',top:((rect.top-top)/scale)+'px',width:((rect.right-rect.left)/scale)+'px',height:((rect.bottom-rect.top)/scale)+'px'});if(preview)part.style.setProperty('background-color',config.HIGHLIGHT_COLORS[config.normalizeColor(item.color)],'important');group.append(part);}
+      pdfHighlightOverlay(source).append(group);if(!preview)decoratePdfMark(group,item,index,total);return group;
     }
     function mergePdfAnnotationRects(id) {
-      const marks=[...document.querySelectorAll(`.lhnPdfHighlightRect[data-lhn-id="${CSS.escape(id)}"]`)],bySource=new Map();
-      for(const mark of marks){const source=mark.closest('.docsSource');if(!source)continue;if(!bySource.has(source))bySource.set(source,[]);bySource.get(source).push({mark,source,left:Number(mark.dataset.pdfLeft),right:Number(mark.dataset.pdfRight),top:Number(mark.dataset.pdfTop),bottom:Number(mark.dataset.pdfBottom)});}
-      const survivors=[];
-      for(const rects of bySource.values()){rects.sort((a,b)=>a.top-b.top||a.left-b.left);let group=[];
-        for(const rect of rects){const previous=group.at(-1),height=rect.bottom-rect.top,previousHeight=previous?.bottom-previous?.top;
-          const sameLine=previous&&Math.abs((rect.top+rect.bottom-previous.top-previous.bottom)/2)<=Math.max(2,Math.min(height,previousHeight)*.35),gap=previous?rect.left-previous.right:Infinity,bridge=Math.max(3,Math.min(height,previousHeight||height)*.32);
-          if(sameLine&&gap<=bridge){previous.left=Math.min(previous.left,rect.left);previous.right=Math.max(previous.right,rect.right);previous.top=Math.min(previous.top,rect.top);previous.bottom=Math.max(previous.bottom,rect.bottom);setPdfBox(previous.mark,previous);rect.mark.remove();}
-          else{if(previous)survivors.push(previous);group=[rect];}
-        }
-        if(group.length)survivors.push(group.at(-1));
-      }
-      const connected=connectPdfRows(survivors.map(rect=>({...rect})));
-      connected.forEach((rect,index)=>{rect.mark.style.top=rect.top+'px';rect.mark.style.height=(rect.bottom-rect.top)+'px';rect.mark.dataset.lhnParts=String(connected.length);rect.mark.dataset.lhnPart=String(index);rect.mark.classList.toggle('lhn-fragmented',connected.length>1);});
+      const groups=[...document.querySelectorAll(`.lhnPdfHighlightGroup[data-lhn-id="${CSS.escape(id)}"]`)],bySource=new Map();
+      for(const group of groups){const source=group.closest('.docsSource');if(!source)continue;if(!bySource.has(source))bySource.set(source,[]);for(const part of group.querySelectorAll('.lhnPdfHighlightRect')){const r=part.getBoundingClientRect();bySource.get(source).push({source,left:r.left,right:r.right,top:r.top,bottom:r.bottom});}}
+      if(!bySource.size)return;
+      const template=groups[0],color=config.COLORS.find(value=>template.classList.contains('lhn-'+value))||'yellow',note=template.dataset.lhnNote||'',item={id,color,note};
+      for(const group of groups)group.remove();
+      const sourceGroups=[...bySource].map(([source,rects])=>({source,rects:connectPdfRows(mergePdfClientRects(rects))}));
+      sourceGroups.forEach(({source,rects},index)=>createPdfHighlightGroup(source,rects,item,false,sourceGroups.length,index));
     }
     function drawPdfPreview(segments,color) {
-      const rects=pdfRectsForSegments(segments),highlightColor=config.HIGHLIGHT_COLORS[config.normalizeColor(color)],out=[];
-      rects.forEach(rect=>{const mark=document.createElement('span');mark.className='lhnPdfHighlightRect lhnPdfHighlightPreview lhn-selection-preview-mark notranslate';
-        positionPdfRect(mark,rect.source,rect);mark.style.setProperty('background-color',highlightColor,'important');pdfHighlightOverlay(rect.source).append(mark);out.push({element:mark,pdf:true,whiteText:false});});
-      return out;
+      const rects=pdfRectsForSegments(segments),bySource=new Map(),out=[];for(const rect of rects){if(!bySource.has(rect.source))bySource.set(rect.source,[]);bySource.get(rect.source).push(rect);}
+      const item={color};for(const [source,items] of bySource){const group=createPdfHighlightGroup(source,items,item,true);if(group)out.push({element:group,pdf:true,whiteText:false});}return out;
     }
     function clearPreview() {
       for (const preview of previewSegments || []) if (preview.element.isConnected) {
+        if(preview.pdf){preview.element.remove();continue;}
         withTranslationMutationShield(preview.element.parentElement, () => preview.element.replaceWith(...preview.element.childNodes));
       }
       previewSegments = null;
@@ -176,7 +165,10 @@ globalThis.LHNWebHighlighter = (() => {
     }
     function updatePreviewColor(color) {
       const highlightColor = config.HIGHLIGHT_COLORS[config.normalizeColor(color)];
-      for (const preview of previewSegments || []) preview.element.style.setProperty("background-color", highlightColor, "important");
+      for (const preview of previewSegments || []) {
+        if(preview.pdf)preview.element.querySelectorAll('.lhnPdfHighlightRect').forEach(rect=>rect.style.setProperty('background-color',highlightColor,'important'));
+        else preview.element.style.setProperty("background-color", highlightColor, "important");
+      }
     }
     function commitPreview(item) {
       const previews = previewSegments || [];
@@ -186,7 +178,7 @@ globalThis.LHNWebHighlighter = (() => {
       previews.forEach((preview, index) => {
         const source = preview.element;
         if (!source.isConnected) return;
-        if(preview.pdf){source.classList.remove('lhnPdfHighlightPreview','lhn-selection-preview-mark');source.style.removeProperty('background-color');decoratePdfMark(source,item,index,previews.length);return;}
+        if(preview.pdf){source.classList.remove('lhnPdfHighlightPreview','lhn-selection-preview-mark');source.querySelectorAll('.lhnPdfHighlightRect').forEach(rect=>rect.style.removeProperty('background-color'));decoratePdfMark(source,item,index,previews.length);return;}
         const mark = document.createElement("mark");
         withTranslationMutationShield(source.parentElement, () => {
           mark.append(...source.childNodes);
@@ -225,7 +217,9 @@ globalThis.LHNWebHighlighter = (() => {
         const segments = collectSegments(range);
         if (!segments.length) return false;
         if(segments.every(segment=>nodeIsPdfText(segment.node)&&segment.node.parentElement?.closest?.('.docsSource'))){
-          const rects=pdfRectsForSegments(segments);rects.forEach((rect,index)=>{const mark=document.createElement('span');positionPdfRect(mark,rect.source,rect);decoratePdfMark(mark,item,index,rects.length);pdfHighlightOverlay(rect.source).append(mark);});if(rects.length)mergePdfAnnotationRects(item.id);return rects.length>0;
+          const rects=pdfRectsForSegments(segments),bySource=new Map();for(const rect of rects){if(!bySource.has(rect.source))bySource.set(rect.source,[]);bySource.get(rect.source).push(rect);}
+          for(const [source,items] of bySource)createPdfHighlightGroup(source,items,item,false,bySource.size);
+          if(rects.length)mergePdfAnnotationRects(item.id);return rects.length>0;
         }
         let wrappedCount = 0;
         const expectedParts = segments.length;

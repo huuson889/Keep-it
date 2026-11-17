@@ -649,14 +649,16 @@ body{overflow:auto}
 .pdfTextLayer .en mark{padding:0;border-radius:1px;background:#ffe893a6}
 .pdfTextLayer .en mark.note{background:#86efac80}
 .docsSource .lhnPdfHighlightOverlay{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:multiply}
-.docsSource .lhnPdfHighlightRect{position:absolute;display:block;box-sizing:border-box;border-radius:1px;pointer-events:auto}
+.docsSource .lhnPdfHighlightGroup{position:absolute;display:block!important;pointer-events:auto;cursor:pointer}
+.docsSource .lhnPdfHighlightGroup[data-lhn-id]{background:transparent!important}
+.docsSource .lhnPdfHighlightRect{position:absolute;display:block;box-sizing:border-box;border-radius:1px;pointer-events:none}
 .docsSource .lhnPdfHighlightPreview{pointer-events:none}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-yellow{background-color:#fff3a6!important}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-green{background-color:#c2f0bd!important}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-purple{background-color:#d5cbff!important}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-red{background-color:#ffc7c7!important}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-blue{background-color:#c3e4ff!important}
-.docsSource .lhnPdfHighlightRect.lhn-pdf-highlight.lhn-orange{background-color:#ffd0a3!important}
+.docsSource .lhnPdfHighlightGroup.lhn-yellow .lhnPdfHighlightRect{background-color:#fff3a6!important}
+.docsSource .lhnPdfHighlightGroup.lhn-green .lhnPdfHighlightRect{background-color:#c2f0bd!important}
+.docsSource .lhnPdfHighlightGroup.lhn-purple .lhnPdfHighlightRect{background-color:#d5cbff!important}
+.docsSource .lhnPdfHighlightGroup.lhn-red .lhnPdfHighlightRect{background-color:#ffc7c7!important}
+.docsSource .lhnPdfHighlightGroup.lhn-blue .lhnPdfHighlightRect{background-color:#c3e4ff!important}
+.docsSource .lhnPdfHighlightGroup.lhn-orange .lhnPdfHighlightRect{background-color:#ffd0a3!important}
 .pdfTextLayer .en .w.cur{background:#a89fff99;color:transparent}
 .pdfTextLayer .en::selection,.pdfTextLayer span::selection{background:#8c7bee66;color:transparent}
 .docsSource .para.speaking{outline:1px solid #a49cf7;outline-offset:2px;background:#bcb5ff44}
