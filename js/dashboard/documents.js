@@ -225,8 +225,8 @@ function requestTranslationSync(force = false) {
       return !best || distance < best.distance ? { ...group, distance } : best;
     }, null);
     const target = targetPage.querySelector(`[data-trans-i="${source.index}"]`) || targetPage;
-    const targetRect = target.getBoundingClientRect();
-    list.scrollTop = Math.max(0, list.scrollTop + targetRect.top - source.top);
+    const targetRect = target.getBoundingClientRect(), sourceCenter = (source.top + source.bottom) / 2, targetCenter = (targetRect.top + targetRect.bottom) / 2;
+    list.scrollTop = Math.max(0, list.scrollTop + targetCenter - sourceCenter);
   });
 }
 $('#stage').addEventListener('scroll', () => requestTranslationSync(), { passive:true });
