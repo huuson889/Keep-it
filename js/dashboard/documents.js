@@ -389,10 +389,10 @@ async function startNativeReader(){if(!isText())return;await ensurePage(V.page);
 async function openNativeNotes(){if(settings.notesEnabled===false)return;if(V.doc.image||!isText()){const range=document.createRange();range.selectNodeContents($('#vName'));LHN_CONTENT_TOOLS.compose(range);return;}LHN_CONTENT_TOOLS.toggleNotes();}
 async function restoreMarks(){if(globalThis.LHN_CONTENT_TOOLS&&$('#viewer').classList.contains('show'))await LHN_CONTENT_TOOLS.restore();}
 function clearReaderParagraphHighlight(){for(const el of $$('#stage .docsReaderParagraphHighlight'))el.remove();}
-function readerParagraphHighlightBox(rects,sourceRect,scale,pad=2){
+function readerParagraphHighlightBox(rects,sourceRect,scale){
  const visible=rects.filter(rect=>rect.width>0&&rect.height>0);if(!visible.length||!Number.isFinite(scale)||scale<=0)return null;
  const left=Math.min(...visible.map(rect=>rect.left)),top=Math.min(...visible.map(rect=>rect.top)),right=Math.max(...visible.map(rect=>rect.right)),bottom=Math.max(...visible.map(rect=>rect.bottom));
- return{left:(left-sourceRect.left)/scale-pad,top:(top-sourceRect.top)/scale-pad,width:(right-left)/scale+pad*2,height:(bottom-top)/scale+pad*2};
+ return{left:(left-sourceRect.left)/scale,top:(top-sourceRect.top)/scale,width:(right-left)/scale,height:(bottom-top)/scale};
 }
 function showReaderParagraphHighlight(block){
  clearReaderParagraphHighlight();if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return;

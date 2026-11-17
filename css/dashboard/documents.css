@@ -694,7 +694,7 @@ body{overflow:auto}
 .nativeTranslationSlot .lhn-bilingual-card,.readFrame .reflow .lhn-bilingual-card{font-size:inherit!important}
 .nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;width:auto;max-width:100%;box-sizing:border-box}
 .docsSource .pdfTextLayer .para.lhn-bilingual-reading{outline:none!important;outline-offset:0!important;background-color:transparent!important;border-radius:0!important}
-.docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;border:1px solid var(--lhn-br-accent,#7262df);border-radius:6px;pointer-events:none}
+.docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;outline:2px solid var(--lhn-br-accent);outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08);border-radius:6px;pointer-events:none}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}

@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.321**, nhánh `Keepit-Optimize-Test`; PDF gom nhiều dòng thành một đoạn cho Dịch/Reader; trên PDF, outline mặc định của Reader được ẩn để chỉ còn một overlay bao toàn đoạn. Text spans gốc giữ chỉ số riêng. Chưa browser-test trên PDF thật.
+- Version **3.5.322**, nhánh `Keepit-Optimize-Test`; PDF Reader dùng một khung bao đoạn với cùng outline/nền/bo góc như Reader web; outline per-span của Reader gốc bị ẩn riêng trong PDF. Chưa browser-test trên PDF thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu — v3.5.321
-- Người dùng xác nhận v3.5.320 vẫn có hai viền: outline mặc định Reader trên span đầu và overlay bao đoạn. v3.5.321 tắt outline gốc chỉ trong PDF text layer, giữ overlay đơn và không đổi DOCX/PPTX. Cần xác nhận trên PDF thật rằng mỗi đoạn chỉ có một viền và viền cập nhật/xóa đúng khi chuyển đoạn/dừng. Chưa browser-test.
+### Tài liệu — v3.5.322
+- Người dùng xác nhận v3.5.321 đã còn một khung nhưng chưa đúng style Reader web (thiếu độ đậm, offset, nền nhạt). v3.5.322 dùng đúng 2px outline, offset 4px, nền accent 8%, radius 6px; geometry khung không cộng padding phụ. Cần xác nhận trực quan trên PDF thật. Chưa browser-test.
 - Cần xác nhận với tài liệu thật ở theme sáng/tối: màu bản dịch dễ đọc và cỡ chữ khớp nguồn. Chưa browser-test UI.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
@@ -220,6 +220,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.322 | Arena.ai Agent sửa:**
+
+- PDF Reader: khung đơn bao đoạn nay dùng đúng style gốc của Reader web — outline 2px, offset 4px, nền accent 8%, bo góc 6px; bỏ padding hình học tự cộng để không làm khung lệch/dày thêm.
+- File: `manifest.json`, `js/dashboard/documents.js`, `css/dashboard/documents.css`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dashboard/documents.js`, parse `manifest.json`, `git diff --check`; synthetic bounding rects produce one unpadded box and CSS values match Reader web (2px/4px/8%/6px) — PASS. Chưa xác nhận hình ảnh trên Chrome/PDF thật.
 
 **2026-11-17 | v3.5.321 | Arena.ai Agent sửa:**
 
