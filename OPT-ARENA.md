@@ -7,24 +7,55 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Ý TƯỞNG - Bốn tính năng học mở rộng (Audio Playlist, AI Quiz, New Tab, Word Graph)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+1. **Tạo file Audio ôn tập từ các câu Highlight (Personal Audio Playlist):**
+   - Chọn các câu/đoạn văn tâm đắc đã lưu $\rightarrow$ Keepit dùng TTS tạo chuỗi phát thanh: *Đọc câu tiếng Anh $\rightarrow$ đọc bản dịch tiếng Việt $\rightarrow$ đọc lại tiếng Anh*.
+   - Mục đích: Nghe thụ động rảnh tay (passive listening) khi đi xe bus, chạy bộ, nấu ăn hoặc trước khi ngủ.
+
+2. **Bài tập trắc nghiệm từ chính bài vừa đọc (AI Contextual Quiz):**
+   - Khi đọc xong một bài báo hoặc tài liệu, bấm nút "Luyện tập nhanh".
+   - Tận dụng Ask AI (ChatGPT/Gemini/Claude) tạo 3–5 câu trắc nghiệm hoặc bài tập điền từ dựa trên chính ngữ cảnh bài viết và các từ người dùng vừa bôi đen.
+
+3. **Thẻ từ vựng trên Trang Tab mới (Minimalist New Tab):**
+   - Tùy chọn giao diện nhẹ nhàng khi mở New Tab: hiển thị 1 từ/câu ngẫu nhiên trong danh sách cần ôn của Flashcard kèm câu ngữ cảnh cũ, nút nghe phát âm và nút "Đã thuộc".
+   - Mỗi lần mở tab làm việc là một lần chạm mắt tự nhiên với từ vựng mà không tốn công mở app.
+
+4. **Bản đồ liên kết từ vựng (Personal Vocabulary Graph):**
+   - Tự động nhóm các từ vựng đã lưu trong Dashboard theo Gia đình từ (Word Family) hoặc chủ đề (ví dụ: `sustain`, `sustainable`, `sustainability`).
+   - Giúp người học ghi nhớ từ vựng học thuật theo mạng lưới logic thay vì học các từ đơn lẻ rời rạc.
+
+---
+
 ## 2026-11-17 | Ý TƯỞNG - Đồng bộ dữ liệu qua Google Drive cá nhân (Zero-backend)
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
 
 - **Mục tiêu:** Đồng bộ Highlights, Notes, Flashcards, Settings và Thư viện Tài liệu (PDF, Office, ảnh) giữa nhiều máy tính/thiết bị mà không cần máy chủ trung gian (Zero-backend).
-- **Cơ chế xác thực & Phân quyền:**
-  - Dùng chuẩn OAuth 2.0 (Chromium dùng `chrome.identity.getAuthToken`; Firefox và APK dùng luồng OAuth Web Auth flow / popup).
-  - Scope tối thiểu: `drive.appdata` (thư mục ẩn Application Data chuyên biệt của app) hoặc `drive.file` (chỉ truy cập file do chính Keepit tạo ra). Tuyệt đối không đọc file hay dữ liệu cá nhân khác trên Drive.
-  - Bản APK WebView đã xác nhận đăng nhập Google bình thường, có thể tái sử dụng chung toàn bộ logic JavaScript OAuth như extension.
-- **Phân tách và lưu trữ dữ liệu:**
-  - *Dữ liệu chữ (Highlights, Notes, Flashcards, Settings):* Đóng gói thành file JSON/snapshot nén kèm mốc thời gian UTC (`updated_at`) để đồng bộ nhanh.
-  - *Tài liệu lớn (PDF, DOCX, PPTX, Ảnh trong tab Tài liệu):* Lưu từng file riêng lẻ theo mã băm nội dung `content_hash` trong thư mục Keepit trên Drive.
-- **Ưu điểm:**
-  - Bảo mật & riêng tư tuyệt đối (dữ liệu đi thẳng giữa trình duyệt và Google Drive cá nhân, không qua máy chủ thứ ba).
-  - Chi phí vận hành = 0 đồng; tận dụng dung lượng miễn phí 15GB của Google Drive để lưu cả tài liệu nặng.
-- **Câu hỏi còn mở:**
-  1. Xử lý xung đột (conflict resolution) khi sửa cùng ghi chú trên 2 máy: Last-Write-Wins hay giữ cả 2 bản nháp?
-  2. Tự động đồng bộ ngầm định kỳ (khi mở app hoặc sau X phút) hay chỉ đồng bộ khi bấm nút/sự kiện thay đổi?
+- **Vị trí lưu trữ & Phân quyền:**
+  - Lưu vào thư mục ẩn `appDataFolder` của Google Drive (người dùng không thấy ngoài giao diện Drive, tránh bấm nhầm xoá/sửa, ứng dụng khác không can thiệp được).
+  - Scope tối thiểu: `https://www.googleapis.com/auth/drive.appdata` $\rightarrow$ Đây là **Non-sensitive scope**, không bị Google bắt buộc kiểm toán bảo mật (CASA audit), không tốn phí và không hiện cảnh báo đỏ khi đăng nhập.
+  - Xác thực OAuth 2.0: Chromium dùng `chrome.identity.getAuthToken`; Firefox và APK WebView dùng luồng OAuth Web Auth flow / popup (APK đã xác nhận đăng nhập Google bình thường, dùng chung logic JavaScript).
+- **Mô hình phân tầng lưu trữ (2 tầng):**
+  - *Tầng 1 (Luôn đồng bộ - Nhẹ):* Toàn bộ Highlights, Ghi chú, Flashcards, Cài đặt và Metadata tiến độ đọc tài liệu đóng gói thành JSON/snapshot nén kèm timestamp UTC (`updated_at`). Đồng bộ tức thì trong 1 giây.
+  - *Tầng 2 (Tùy chọn Opt-in - Tệp tài liệu gốc PDF, DOCX, PPTX):*
+    - Mặc định công tắc TẮT để không làm chậm mạng hoặc đầy Drive của người dùng.
+    - Khi BẬT: Áp dụng cơ chế **Tải lười (Lazy Download)**. Thiết bị mới chỉ kéo metadata (tên sách, số trang, ghi chú); chỉ khi người dùng bấm mở cuốn sách nào thì mới tải file gốc theo mã băm `content_hash` từ Drive về.
+- **Thuật toán Đồng bộ & Xử lý Xung đột:**
+  - Áp dụng cờ `deleted_at` (Tombstone) để tránh khôi phục nhầm các mục đã xóa trên máy khác.
+  - Two-Way Merge: So khớp theo `uuid`, áp dụng Last-Write-Wins trên từng item dựa theo `updated_at`.
+- **Tính năng mở rộng có giá trị cao:**
+  1. *Tiếp tục đọc dở (Cross-Device Session):* Lưu URL + vị trí cuộn trang hoặc timestamp video đang đọc dở trên máy A để máy B/điện thoại gợi ý mở tiếp tục.
+  2. *Lịch sử phiên bản (Rollback):* Tận dụng tính năng Revisions của Google Drive để cho phép khôi phục về mốc hôm qua, 3 ngày trước nếu lỡ xoá nhầm dữ liệu.
+  3. *Tự động dọn rác bộ nhớ đệm (Smart Cache Eviction):* Tự giải phóng file gốc của các tài liệu quá 30 ngày không mở trên thiết bị bộ nhớ ít (file gốc vẫn còn trên Drive, khi cần bấm tải lại).
+  4. *Tùy chọn mã hoá đầu cuối (Client Encryption):* Tùy chọn đặt mã PIN mã hoá AES-256 trước khi tải dữ liệu lên Drive.
+- **Lưu ý triển khai Google API:**
+  - Phải Publish App trên Google Cloud Console (chuyển từ Testing sang In Production) để mở cho mọi người dùng, kèm link `PRIVACY-POLICY.md`.
+  - Extension ID phải cố định (giữ nguyên khoá ký `.pem`).
+  - Phải có cơ chế Debounce (chờ 3–5 giây sau thao tác) để gom nhóm gửi 1 lần, tránh spam API.
+  - Bắt lỗi `403/507 Quota Exceeded` khi Drive người dùng đầy để báo thông báo thân thiện.
 
 ---
 
