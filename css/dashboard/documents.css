@@ -648,6 +648,12 @@ body{overflow:auto}
 .pdfTextLayer .en,.pdfTextLayer .en span,.pdfTextLayer .en mark{position:static;transform:none;font:inherit;line-height:inherit;white-space:inherit;color:transparent}
 .pdfTextLayer .en mark{padding:0;border-radius:1px;background:#ffe893a6}
 .pdfTextLayer .en mark.note{background:#86efac80}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-yellow{background-color:rgba(255,243,166,.42)!important}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-green{background-color:rgba(194,240,189,.42)!important}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-purple{background-color:rgba(213,203,255,.42)!important}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-red{background-color:rgba(255,199,199,.42)!important}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-blue{background-color:rgba(195,228,255,.42)!important}
+.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-orange{background-color:rgba(255,208,163,.42)!important}
 .pdfTextLayer .en .w.cur{background:#a89fff99;color:transparent}
 .pdfTextLayer .en::selection,.pdfTextLayer span::selection{background:#8c7bee66;color:transparent}
 .docsSource .para.speaking{outline:1px solid #a49cf7;outline-offset:2px;background:#bcb5ff44}
