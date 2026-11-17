@@ -34,7 +34,7 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 - `Alt+A`: automatically translate the main-content paragraphs as you scroll.
 - `Alt+D`: translate the paragraph nearest to the pointer, anywhere on the page.
 - `Alt+R`: read the main content aloud. `Alt+A` and `Alt+R` use the same main-content range; dates, bylines, navigation, ads, and related-article blocks are skipped (powered by Mozilla Readability).
-- A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. Auto-scroll, paragraph play icons, and the speed step are configurable.
+- A reading bar offers play/pause, previous/next paragraph, speed, voice selection, and settings. While reading, double-click any readable paragraph to jump to it and continue. Auto-scroll, paragraph play icons, and the speed step are configurable.
 - The reader can be turned off per website, and you can list page parts it should not read. A starter list of websites where the reader is off is included.
 
 ### Video overlay and Dictation

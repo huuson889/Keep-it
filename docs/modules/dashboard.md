@@ -15,7 +15,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 | [`dictation-stats-popup-bridge.js`](../../js/dashboard/dictation-stats-popup-bridge.js), [`dictation-stats-popup.js`](../../js/dashboard/dictation-stats-popup.js) | `KEEPIT_DICTATION_STATS_*` | Popup thống kê iframe, dữ liệu schema v3. |
 | [`responsive-nav.js`](../../js/dashboard/responsive-nav.js), [`responsive.css`](../../css/dashboard/responsive.css) | `.rn-*` | Điều hướng gọi route/action có sẵn; Tài liệu nằm trong Thêm trên điện thoại. |
 | [`settings-ui.js`](../../js/dashboard/settings-ui.js), [`settings.css`](../../css/dashboard/settings.css) | `LHN_SETTINGS_KIT`, `LHN_SETTINGS_PREVIEWS` | Cửa sổ/sheet, phụ thuộc master, reset/undo và preview. |
-| [`documents.js`](../../js/dashboard/documents.js), [`documents-store.js`](../../js/dashboard/documents-store.js), [`documents-renderers.js`](../../js/dashboard/documents-renderers.js) | `KeepitDocuments` | Tệp thật, viewer, IndexedDB và công cụ. |
+| [`documents.js`](../../js/dashboard/documents.js), [`documents-context.js`](../../js/dashboard/documents-context.js), [`documents-store.js`](../../js/dashboard/documents-store.js), [`documents-renderers.js`](../../js/dashboard/documents-renderers.js) | `KeepitDocuments`, Reader adapter | Tệp thật, viewer, IndexedDB và adapter blocks/page cho Reader dùng chung. |
 | [`backup.js`](../../js/dashboard/backup.js), [`account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup annotations web và hồ sơ cục bộ. |
 
 ## 3. Luồng chính
@@ -35,7 +35,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - Reveal/counter dùng module chung, cycle guard và reduced motion; không tạo timer/observer presentation trùng ở consumer. Không animation giả số liệu.
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
 - Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
-- Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng kho annotations chung. Chỉ owned document references được phép mở/jump; blob tệp chưa nằm trong JSON backup.
+- Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng kho annotations chung. Chỉ owned document references được phép mở/jump; blob không nằm trong JSON backup. Adapter trả block/page cho Reader, không tạo queue/TTS/UI riêng.
 
 ## 5. Kiểm tra và xác minh
 

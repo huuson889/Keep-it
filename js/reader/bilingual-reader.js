@@ -251,6 +251,26 @@
     currentReadText = ""; currentReadCharIndex = 0;
     markReadingBlock(queue[target]); syncToolbar();
   }
+  function jumpToDoubleClickedBlock(target) {
+    const card = target.closest?.(".lhn-bilingual-card"), source = card ? translationBlock(card) : null, anchor = source || target;
+    const nextQueue = pageContext?.readerBlocksForTarget?.(anchor) || readerBlocks(true);
+    const para = anchor.closest?.(".para[data-page][data-paragraph-index],.para[data-page][data-i]");
+    let index = nextQueue.findIndex(block => block === anchor || block.contains(anchor) || block === target || block.contains(target));
+    if (index < 0 && para) {
+      const page = String(para.dataset.page), paragraph = String(para.dataset.paragraphIndex ?? para.dataset.i);
+      index = nextQueue.findIndex(block => String(block.dataset.page) === page && String(block.dataset.paragraphIndex ?? block.dataset.i) === paragraph);
+    }
+    if (index < 0) return false;
+    queue = nextQueue;
+    jumpToBlock(index, true);
+    return true;
+  }
+  document.addEventListener("dblclick", event => {
+    if (!reading) return;
+    const target = event.target instanceof Element ? event.target : event.target?.parentElement;
+    if (!target || target.closest("#lhn-bilingual-reading-bar,.lhn-bilingual-speaker,button,input,textarea,select,[contenteditable]:not([contenteditable='false'])")) return;
+    jumpToDoubleClickedBlock(target);
+  }, true);
   function advanceQueue() { if (!repeatSegment) queueIndex++; speakNext(); }
   const scrubIndex = () => Math.min(queue.length - 1, Math.floor(scrubFraction * queue.length));
   function moveScrub(event) {
