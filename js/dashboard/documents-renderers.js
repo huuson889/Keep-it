@@ -44,66 +44,9 @@
     if (!candidates.length) for (const el of root.querySelectorAll('div')) if (!el.querySelector('div,p,table,svg,img') && el.textContent.trim()) candidates.push(el);
     for (const el of candidates) {
       const text = el.textContent.replace(/\s+/g, ' ').trim(); if (!text) continue;
-      const index = texts.length;
-      el.classList.add('para'); el.dataset.page = page; el.dataset.i = index; el.dataset.paragraphIndex = index; el.dataset.paragraphStart = 'true';
+      el.classList.add('para'); el.dataset.page = page; el.dataset.i = texts.length;
       const en = document.createElement('span'); en.className = 'en'; while (el.firstChild) en.append(el.firstChild); el.append(en); texts.push(text);
     }
-  }
-  const normPdfText = value => String(value || '').replace(/[\u00ad\u200b\ufeff]/g, '').replace(/\s+/g, ' ').trim();
-  function reconstructPdfParagraphs(items, viewport, pageWidth) {
-    const fragments = [];
-    for (let index = 0; index < items.length; index++) {
-      const item = items[index], text = normPdfText(item?.str);
-      if (!text) continue;
-      const transform = item.transform || [1, 0, 0, 1, 0, 0], point = viewport.convertToViewportPoint(transform[4] || 0, transform[5] || 0);
-      const fontSize = Math.max(1, Math.hypot(transform[2] || 0, transform[3] || 0) || item.height || 10);
-      const width = Math.max(0, Math.abs(Number(item.width) || 0)), rtl = item.dir === 'rtl';
-      const left = rtl ? point[0] - width : point[0], right = rtl ? point[0] : point[0] + width;
-      fragments.push({ index, text, x:point[0], y:point[1], left, right, top:point[1] - fontSize, bottom:point[1] + fontSize * .2, fontSize, angle:Math.atan2(transform[1] || 0, transform[0] || 1), rtl });
-    }
-    if (!fragments.length) return { paragraphs:[], fragmentToParagraph:[] };
-    const ordered = fragments.slice().sort((a,b) => a.y-b.y || a.left-b.left || a.index-b.index), lines = [];
-    for (const part of ordered) {
-      const tolerance = Math.max(2, part.fontSize * .35);
-      let line = null, best = Infinity;
-      for (const candidate of lines) {
-        const delta = Math.abs(candidate.y - part.y), angle = Math.abs(candidate.angle - part.angle);
-        const gap = part.left - candidate.right, lineGapLimit = Math.min(Math.max(16, part.fontSize * 2), pageWidth * .08);
-        if (delta <= Math.max(tolerance, candidate.fontSize * .35) && angle < .12 && gap <= lineGapLimit && gap >= -Math.max(part.fontSize * 4, 24) && delta < best) { line=candidate;best=delta; }
-      }
-      if (!line) { line={parts:[],y:part.y,left:part.left,right:part.right,top:part.top,bottom:part.bottom,fontSize:part.fontSize,angle:part.angle,rtl:part.rtl};lines.push(line); }
-      line.parts.push(part);line.left=Math.min(line.left,part.left);line.right=Math.max(line.right,part.right);line.top=Math.min(line.top,part.top);line.bottom=Math.max(line.bottom,part.bottom);line.fontSize=Math.max(line.fontSize,part.fontSize);
-    }
-    const lineText = line => {
-      const parts=line.parts.slice().sort((a,b)=>line.rtl?b.left-a.left:a.left-b.left);let out='',previous=null;
-      for(const part of parts){let value=part.text;if(previous&&out&&!/\s$/.test(out)&&!/^\s/.test(value)&&part.left-previous.right>Math.max(1.5,part.fontSize*.18))out+=' ';out+=value;previous=part;}
-      return normPdfText(out);
-    };
-    for(const line of lines){line.parts.sort((a,b)=>a.left-b.left);line.text=lineText(line);line.x=line.left;line.top=Math.min(line.top,line.y-line.fontSize);line.bottom=Math.max(line.bottom,line.y+line.fontSize*.2);}
-    // A wide, stable gutter plus vertically overlapping text lines is a stronger two-column signal than x-position alone.
-    const starts=lines.map(line=>line.left).sort((a,b)=>a-b);let split=null,largest=0;
-    for(let i=1;i<=starts.length-2;i++){const gap=starts[i]-starts[i-1];if(gap>largest&&gap>=Math.max(32,pageWidth*.12)){largest=gap;split=(starts[i]+starts[i-1])/2;}}
-    let columns=null;
-    if(split!=null){const left=lines.filter(line=>line.left<split),right=lines.filter(line=>line.left>=split);if(left.length>=2&&right.length>=2){const overlap=Math.min(Math.max(...left.map(x=>x.bottom)),Math.max(...right.map(x=>x.bottom)))-Math.max(Math.min(...left.map(x=>x.top)),Math.min(...right.map(x=>x.top)));if(overlap>Math.min(Math.max(...left.map(x=>x.bottom))-Math.min(...left.map(x=>x.top)),Math.max(...right.map(x=>x.bottom))-Math.min(...right.map(x=>x.top)))*.25)columns=[left,right];}}
-    const readingLines=columns?columns.flatMap((column,columnIndex)=>column.sort((a,b)=>a.y-b.y||a.left-b.left).map(line=>({...line,columnIndex}))):lines.sort((a,b)=>a.y-b.y||a.left-b.left);
-    const paragraphs=[];let current=null;
-    const bullet=/^(?:[•◦▪‣*-]|\d{1,3}[.)]|\([a-z0-9]+\))\s/i;
-    for(const line of readingLines){if(!line.text)continue;const previous=current?.lines.at(-1),gap=previous?line.top-previous.bottom:Infinity;
-      const fontBreak=previous&&Math.abs(line.fontSize-previous.fontSize)>Math.max(1.5,previous.fontSize*.2);
-      const newParagraph=!current||!previous||line.columnIndex!==previous.columnIndex||gap>Math.max(5,line.fontSize*.72)||fontBreak||bullet.test(line.text);
-      if(newParagraph){current={text:line.text,lines:[line],items:[]};paragraphs.push(current);}else{
-        const last=current.text;
-        if(/(?:[A-Za-z]{3,})[-\u2010\u00ad]$/.test(last)&&/^[a-z]/.test(line.text))current.text=last.slice(0,-1)+line.text;
-        else current.text=normPdfText(last+' '+line.text);
-        current.lines.push(line);
-      }
-      current.items.push(...line.parts.map(part=>part.index));
-    }
-    const fragmentToParagraph=Array(items.length).fill(-1);
-    const clean=paragraphs.map((paragraph,index)=>{for(const fragment of paragraph.items)fragmentToParagraph[fragment]=index;return {text:normPdfText(paragraph.text),items:paragraph.items};}).filter(paragraph=>paragraph.text);
-    // Filtering is normally a no-op; rebuild indices defensively if an empty paragraph was discarded.
-    if(clean.length!==paragraphs.length){fragmentToParagraph.fill(-1);clean.forEach((p,i)=>p.items.forEach(index=>fragmentToParagraph[index]=i));}
-    return {paragraphs:clean,fragmentToParagraph};
   }
   async function checkedZip(blob, lib) {
     const zip = await lib.JSZip.loadAsync(await blob.arrayBuffer()); let expanded = 0, count = 0;
@@ -137,8 +80,7 @@
       for (let index = 1; index <= document.numPages; index++) {
         hooks.check?.(); const page = await document.getPage(index), viewport = page.getViewport({ scale:1 }), content = await page.getTextContent();
         if(viewport.width>40000||viewport.height>40000)throw new Error('documentsPageLimit');
-        const rebuilt = reconstructPdfParagraphs(content.items, viewport, viewport.width);
-        pages.push({ width:viewport.width, height:viewport.height, texts:rebuilt.paragraphs.map(x => x.text), paragraphs:rebuilt.paragraphs, fragmentToParagraph:rebuilt.fragmentToParagraph, pdfItemTexts:content.items.map(x => typeof x?.str === 'string' ? x.str : ''), textContent:content });
+        pages.push({ width:viewport.width, height:viewport.height, texts:content.items.filter(x => typeof x.str === 'string' && x.str.trim()).map(x => x.str), textContent:content });
         hooks.progress?.(.25 + index / document.numPages * .7);
       }
     } catch (e) { await document.destroy(); throw e; }
@@ -154,17 +96,9 @@
         const render = page.render({ canvasContext:canvas.getContext('2d'), viewport, transform:[dpr,0,0,dpr,0,0] }); jobs.add(render);
         const textLayer = new lib.TextLayer({ textContentSource:spec.textContent, container:layer, viewport }); jobs.add(textLayer);
         try {
-          await Promise.all([render.promise, textLayer.render()]); let i = 0, itemCursor = 0; const seenParagraphs = new Set();
+          await Promise.all([render.promise, textLayer.render()]); let i = 0;
           for (const el of textLayer.textDivs) {
-            if (!el.textContent.trim()) continue;
-            const divText=normPdfText(el.textContent);let itemIndex=-1;
-            for(let candidate=itemCursor;candidate<spec.pdfItemTexts.length;candidate++){
-              if(normPdfText(spec.pdfItemTexts[candidate])===divText){itemIndex=candidate;itemCursor=candidate+1;break;}
-            }
-            let paragraphIndex=itemIndex>=0?spec.fragmentToParagraph[itemIndex]:-1;
-            if(paragraphIndex<0){paragraphIndex=spec.texts.length;const fallback=normPdfText(el.textContent);if(fallback){spec.texts.push(fallback);spec.paragraphs.push({text:fallback,items:itemIndex>=0?[itemIndex]:[]});if(itemIndex>=0)spec.fragmentToParagraph[itemIndex]=paragraphIndex;}}
-            el.classList.add('para');el.dataset.page=number;el.dataset.i=i++;el.dataset.paragraphIndex=paragraphIndex;
-            if(!seenParagraphs.has(paragraphIndex)){el.dataset.paragraphStart='true';seenParagraphs.add(paragraphIndex);}
+            if (!el.textContent.trim()) continue; el.classList.add('para'); el.dataset.page = number; el.dataset.i = i++;
             // Keep PDF.js' positioned text span untouched; its child owns marks and selections.
             const en = window.document.createElement('span'); en.className = 'en'; en.textContent = el.textContent; el.replaceChildren(en);
           }

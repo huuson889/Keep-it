@@ -1,16 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.317**, nhánh `Keepit-Optimize-Test`; giữ phần đọc PDF/DOCX/PPTX/ảnh thật của v314. PDF text items được ghép thành đoạn logic cho Reader/Dịch; card dịch Tài liệu nay theo theme và cỡ chữ nguồn. Chưa xác nhận trên tệp thật.
+- Version **3.5.318**, nhánh `Keepit-Optimize-Test`; giữ phần đọc PDF/DOCX/PPTX/ảnh thật của v314. Phần dựng lại đoạn PDF của v3.5.316 đã được hoàn nguyên; giữ sửa UI màu/cỡ chữ card dịch từ v3.5.317. Chưa browser-test bản hoàn nguyên trên PDF thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu — v3.5.317
-- Cần xác nhận trên PDF thật (một cột, hai cột, xuống dòng gạch nối, tiêu đề/bảng): đoạn tái dựng, thứ tự đọc, Reader/Dịch và chọn chữ/anchor có khớp trang gốc không. Chỉ chạy static + dữ liệu tổng hợp; chưa browser-test tệp thật.
-- Cần xác nhận với tài liệu thật ở theme sáng/tối: chữ bản dịch rõ và cùng cỡ với chữ nguồn trong panel và chế độ Đọc. Chưa browser-test.
+### Tài liệu — v3.5.318
+- Người dùng báo PDF dịch có đoạn được, đoạn không ở v3.5.317. Phần tái dựng đoạn PDF của v3.5.316 đã hoàn nguyên về cách xử lý trước đó; cần người dùng/browser xác nhận bản dịch chạy lại xuyên suốt tài liệu. Chưa xác minh bản mới trên PDF thật.
+- Cần xác nhận với tài liệu thật ở theme sáng/tối: màu bản dịch dễ đọc và cỡ chữ khớp nguồn. Chưa browser-test UI.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
 - Byte tệp/thư viện chưa nằm trong JSON backup/cloud. Notes đã dùng annotations/backup chung ở v315; không đánh dấu backup blob đã hoàn tất.
@@ -220,6 +220,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.318 | Arena.ai Agent sửa:**
+
+- Hoàn nguyên phần thay đổi tái dựng/ánh xạ đoạn PDF ở v3.5.316 về xử lý trước đó, sau báo cáo người dùng rằng PDF chỉ dịch được một phần; giữ riêng các chỉnh sửa UI màu và cỡ chữ của v3.5.317. Chưa xác định được nguyên nhân gốc bằng browser test.
+- File: `manifest.json`, `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `docs/documents.md`, `docs/modules/reader.md`, `OPT-ARENA.md`, `PROJECT.md`; giữ nguyên `css/dashboard/documents.css` và `js/reader/bilingual-reader.js` của v3.5.317.
+- Kiểm tra: `node --check` cho renderer, documents và Reader; parse manifest; `git diff --check`; assertion xác nhận đường lấy text PDF / một block mỗi text layer span quay lại như trước v3.5.316 — tất cả PASS. Chưa xác nhận dịch PDF trên trình duyệt thật.
 
 **2026-11-17 | v3.5.317 | Arena.ai Agent sửa:**
 
