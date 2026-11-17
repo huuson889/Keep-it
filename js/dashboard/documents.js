@@ -277,7 +277,10 @@ function updateDocLabels() {
 }
 function fitToolbar() {
   if (!$('#viewer').classList.contains('show')) return;
-  const bar = $('#vBar'), title = $('.vtitle'), more = $('#vMore'), focused = document.activeElement, dock = $('#docControls');
+  const focused = document.activeElement;
+  // Reparenting a focused native select dismisses its open option list.
+  if (focused === $('#vFlow') || focused === $('#vZoom')) return;
+  const bar = $('#vBar'), title = $('.vtitle'), more = $('#vMore'), dock = $('#docControls');
   toolbarItems.forEach(el => toolbarHomes.get(el).before(el));
   dock.hidden = false; pageBar.classList.remove('simple');
   // Portrait and a narrow reading area keep navigation only. The same controls
@@ -309,7 +312,8 @@ function fitToolbar() {
   updateDocLabels();
   if (!$('#vMorePanel').hidden) { const L = moreFocusables(); (L.includes(focused) ? focused : L[0])?.focus({ preventScroll:true }); }
 }
-function requestToolbarFit() { cancelAnimationFrame(toolbarRAF); toolbarRAF = requestAnimationFrame(fitToolbar); }
+function requestToolbarFit() { cancelAnimationFrame(toolbarRAF); toolbarRAF = requestAnimationFrame(() => fitToolbar()); }
+for (const select of [$('#vFlow'), $('#vZoom')]) select.addEventListener('blur', () => requestAnimationFrame(requestToolbarFit));
 new ResizeObserver(requestToolbarFit).observe($('#vBar'));
 new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stageWrap'));
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
@@ -495,7 +499,17 @@ function showReaderParagraphHighlight(block){
  const highlight=document.createElement('div');highlight.className='docsReaderParagraphHighlight';highlight.setAttribute('aria-hidden','true');
  highlight.style.left=box.left+'px';highlight.style.top=box.top+'px';highlight.style.width=box.width+'px';highlight.style.height=box.height+'px';source.append(highlight);
 }
-function nativeReaderState(state){if(!V.doc)return;$('#viewer').classList.toggle('ttsOn',!!state.visible);$('[data-t="tts"]').classList.toggle('on',!!state.reading);$('#stage').style.paddingBottom=state.visible?(matchMedia('(pointer:coarse)').matches?'120px':'170px'):'';fitToolbar();if(!state.reading)clearReaderParagraphHighlight();if(!state.visible)wakePager();}
+let nativeReaderVisible=false;
+function nativeReaderState(state){
+ if(!V.doc)return;
+ const visible=!!state.visible,visibilityChanged=visible!==nativeReaderVisible;
+ nativeReaderVisible=visible;
+ $('#viewer').classList.toggle('ttsOn',visible);$('[data-t="tts"]').classList.toggle('on',!!state.reading);
+ const padding=visible?(matchMedia('(pointer:coarse)').matches?'120px':'170px'):'';
+ if($('#stage').style.paddingBottom!==padding)$('#stage').style.paddingBottom=padding;
+ if(visibilityChanged){fitToolbar();if(!visible)wakePager();}
+ if(!state.reading)clearReaderParagraphHighlight();
+}
 async function refreshNativeSource(){if(!V.doc)return;await LHN_DOCUMENT_CONTEXT.refresh();}
 LHN_DOCUMENT_CONTEXT.attach({
  active:()=>!!activeEngine&&$('#viewer').classList.contains('show'),url:documentUrl,title:()=>V.doc?.name||document.title,hostname:()=> 'Keepit',thumbnail:()=>V.doc?.thumbnail||'',root:()=>$('#stage'),
