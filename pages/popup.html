@@ -33,6 +33,14 @@
     </div>
     <button id="restore" class="restore-button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span data-i18n="restorePage">Restore highlights</span></button>
   </div>
+  <section id="pdfSuggestion" class="pdf-suggestion" hidden aria-labelledby="pdfSuggestionTitle" aria-live="polite">
+    <div class="pdf-suggestion-icon" aria-hidden="true">PDF</div>
+    <div class="pdf-suggestion-copy">
+      <h2 id="pdfSuggestionTitle" data-i18n="pdfSuggestionTitle">PDF detected</h2>
+      <p data-i18n="pdfSuggestionHelp">Save or download this PDF first, then open the local copy in Keepit Documents.</p>
+    </div>
+    <button id="openPdfWithKeepit" type="button" data-i18n="pdfOpenWithKeepit">Open with Keepit</button>
+  </section>
   <section class="settings-card">
     <div class="section-heading"><h2 data-i18n="generalSettings">General settings</h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M2 14h4m4-6h4m4 8h4"/></svg></div>
     <div class="language-row"><label for="languageSearch" data-i18n="language">Language</label><div class="language-wrap"><input id="languageSearch" role="combobox" aria-expanded="false" aria-controls="languageOptions" autocomplete="off" data-i18n-placeholder="languagePlaceholder" placeholder="Search language…"><svg class="select-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><div id="languageOptions" class="language-options" role="listbox"></div></div></div>

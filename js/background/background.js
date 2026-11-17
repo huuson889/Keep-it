@@ -3,6 +3,26 @@ if (typeof importScripts === "function") {
 }
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
+const KEEPIT_ACTION = browser.action || browser.browserAction;
+function isPdfTabUrl(value) {
+  try { const url = new URL(value); return ["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname)); }
+  catch { return false; }
+}
+async function syncPdfTabBadge(tabId, value) {
+  if (!Number.isInteger(tabId) || !KEEPIT_ACTION?.setBadgeText) return;
+  let url = value;
+  if (typeof url !== "string") { try { url = (await browser.tabs.get(tabId)).url || ""; } catch { url = ""; } }
+  const pdf = isPdfTabUrl(url);
+  try {
+    await KEEPIT_ACTION.setBadgeText({ tabId, text: pdf ? "PDF" : "" });
+    if (pdf) await KEEPIT_ACTION.setBadgeBackgroundColor?.({ tabId, color: "#d34858" });
+  } catch { /* restricted/internal tabs may not support a contextual badge */ }
+}
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url || changeInfo.status === "complete") void syncPdfTabBadge(tabId, changeInfo.url || tab?.url);
+});
+browser.tabs.onActivated.addListener(({ tabId }) => { void syncPdfTabBadge(tabId); });
+browser.tabs.query({}).then(tabs => tabs.forEach(tab => { if (Number.isInteger(tab.id)) void syncPdfTabBadge(tab.id, tab.url); })).catch(() => {});
 async function resetLegacyDictationWrongWordStats() {
   const storage = browser?.storage?.local;
   if (!storage) return;
@@ -166,6 +186,20 @@ async function openDashboard(openSettings = false, openAccount = false, settings
     try { await browser.tabs.sendMessage(existing.id, { type: "OPEN_DASHBOARD_FAVORITES" }); }
     catch { return browser.tabs.update(existing.id, { url: favoritesUrl, active: true }); }
   }
+  return existing;
+}
+async function openDashboardDocuments() {
+  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
+  const documentsUrl = `${dashboardUrl}?view=documents`;
+  const [tabs, activeTabs] = await Promise.all([
+    browser.tabs.query({}), browser.tabs.query({ active:true, currentWindow:true })
+  ]);
+  const existing = tabs.find(tab => tab.url?.split(/[?#]/, 1)[0] === dashboardUrl);
+  if (!existing) return browser.tabs.create({ url:documentsUrl });
+  const activeTab = activeTabs[0];
+  if (activeTab?.id !== existing.id) await browser.tabs.update(existing.id, { active:true });
+  if (activeTab?.windowId !== existing.windowId) await browser.windows.update(existing.windowId, { focused:true });
+  if (existing.status !== "complete") return browser.tabs.update(existing.id, { url:documentsUrl, active:true });
   return existing;
 }
 // v3.5.282: Keepit bar Shorts / Kênh đăng ký / Bạn on www.youtube.com — YouTube's own in-page navigation (like its left column:
@@ -342,6 +376,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
   }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
+  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") return openDashboardDocuments();
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
   if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);

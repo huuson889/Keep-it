@@ -37,6 +37,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
 - Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng annotations chung. Chỉ owned references được mở/jump, blob không backup. PDF adapter gom hàng bảng thẳng cột vào một block và giữ queue/TTS chung.
 - Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks dùng chung `setPanel('translation')`/`startNativeReader()` với toolbar top. Điều khiển Ẩn/Hiện thanh không hiện trong sheet Documents.
+- `OPEN_DASHBOARD_DOCUMENTS` chuyển view hiện tại sang Tài liệu; route mới `?view=documents` chỉ là fallback khi Dashboard chưa sẵn sàng. Gợi ý PDF không truyền URL/blob; người dùng tự lưu/tải rồi chọn tệp local.
 
 ## 5. Kiểm tra và xác minh
 

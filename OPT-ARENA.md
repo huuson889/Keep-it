@@ -615,7 +615,7 @@ Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén*
 
 ## 2026-11-06 | Ý TƯỞNG - Dịch PDF và OCR
 
-**Trạng thái:** Đã chốt hướng, chưa triển khai, chưa có spec chi tiết. Repo đang ở v3.5.135. Chưa ghi vào mô tả cửa hàng cho tới khi phát hành.
+**Trạng thái:** Phần handoff/gợi ý mở PDF triển khai ở v3.5.369: badge PDF trên icon extension và CTA trong popup, không tự chuyển hướng hay đọc/fetch nội dung browser viewer. Người dùng lưu/tải PDF rồi chọn bản local trong Tài liệu. Chỉ nhận diện URL có path kết thúc `.pdf`; URL không có đuôi chưa hỗ trợ. Viewer dịch PDF và OCR vẫn còn giới hạn/spec riêng bên dưới.
 
 ### 1. Mục tiêu
 - **Dịch PDF:** mở PDF trong Keepit, dịch song ngữ, highlight và ghi chú như trên web.
@@ -624,7 +624,7 @@ Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén*
 
 ### 2. Dịch PDF
 - Extension không chạy được trong trình xem PDF mặc định của Chrome và Firefox → Keepit có **trang xem PDF riêng**, dùng PDF.js đóng gói trong extension (không tải từ CDN).
-- Vào trang Keepit: nút "Mở bằng Keepit" khi gặp PDF. Tự chuyển hướng sang trang Keepit: cần cân nhắc thêm, chưa chốt.
+- Popup Keepit hiện badge `PDF` trên icon và nút "Mở bằng Keepit" khi URL tab đang mở có đuôi `.pdf`. Nút dẫn tới Dashboard > Tài liệu; lưu/tải PDF trước rồi chọn bản trên máy. Không tự chuyển hướng; không fetch URL hoặc đọc file từ browser viewer.
 - Dùng lại bộ dịch song ngữ, highlight, ghi chú hiện có trên lớp chữ của PDF.js.
 - Khó nhất: hiện bản dịch song ngữ không làm vỡ bố cục trang; lưu highlight theo file + trang + vị trí chữ.
 - File trên máy (`file://`) cần người dùng bật quyền truy cập URL tệp.
@@ -639,7 +639,7 @@ Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén*
 
 ### 4. Câu hỏi còn mở
 1. Làm PDF/OCR trước hay sau Luyện viết/nói?
-2. PDF: chỉ nút "Mở bằng Keepit" hay tự chuyển hướng (có tuỳ chọn tắt)?
+2. PDF: đã chốt chỉ gợi ý bằng badge/CTA, không tự chuyển hướng (v3.5.369).
 3. PDF: hiện bản dịch kiểu nào (xen dưới đoạn, cột song song, hay bảng bên)?
 4. OCR: phím tắt / nút ở thanh chọn / menu chuột phải; ngôn ngữ OCR mặc định theo ngôn ngữ nguồn?
 

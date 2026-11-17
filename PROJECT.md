@@ -1,13 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.368**, nhánh `Keepit-Optimize-Test`; Documents sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt và dùng cùng handler topbar; static checks đạt, browser QA pending. Pager/header-footer QA còn pending. Watcher launch trong `OPT-ARENA.md` mặc định ẩn với `Unblock-File` + process-scoped Bypass. Arena.ai-specific rules trong `AGENTS.md`: dọn uploads sau khi dùng; chỉ giữ ZIP mới nhất.
+- Version **3.5.369**, nhánh `Keepit-Optimize-Test`; tab URL kết thúc `.pdf` được đánh dấu trên icon Keepit và popup gợi ý mở Dashboard > Tài liệu, không redirect/tự lấy file. Static checks đạt; browser QA pending. Documents pager/header-footer QA còn pending. Watcher launch trong `OPT-ARENA.md` mặc định ẩn với `Unblock-File` + process-scoped Bypass. Quy tắc Arena trong `AGENTS.md`: dọn uploads sau khi dùng; chỉ giữ ZIP mới nhất.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Browser PDF handoff — v3.5.369
+- Browser-test Chrome và Firefox: với URL path `.pdf` (hoa/thường, có query) badge PDF và CTA popup xuất hiện; URL không phải PDF thì không hiện. CTA mở Dashboard > Tài liệu; lưu/tải PDF trước rồi chọn tệp local. Chưa browser-test; URL PDF không có phần mở rộng không nhận diện.
+
 ### Documents Reader — v3.5.368
 - v3.5.365/3.5.368 Documents sheet: bỏ điều khiển Ẩn/Hiện thanh; Dịch/Đọc to nằm ở footer cố định cạnh Cài đặt và gọi chung handler với viewer topbar. Static checks đạt; Chrome thật chưa test.
 - Browser test Chrome thật trên v3.5.363 tái hiện: hidden Reader state gọi lại mỗi ~0.9s nên pager timeout bị clear/re-arm liên tục; fitToolbar tháo/gắn lại `flowGroup`/`zoomWrap`, làm select mất focus. Đã sửa: chỉ xử lý chuyển trạng thái Reader và hoãn fit khi `vFlow`/`vZoom` focus; cần reload v3.5.365 cùng test profile để xác minh fix.
@@ -204,6 +207,7 @@ Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/ser
 Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Documents / Flashcards / Settings / Account / Backup ──> giao diện quản lý
+Browser PDF tab (URL `.pdf`) ── badge action + Popup CTA `OPEN_DASHBOARD_DOCUMENTS` ──> Background reuse/focus ──> Dashboard Documents; người dùng lưu/tải rồi chọn bản local, không redirect/fetch
 Documents main sheet ── `doc:translate` / `doc:read` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` used by viewer topbar
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
@@ -231,6 +235,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.369 | Arena.ai Agent sửa:**
+
+- PDF tab trong browser: badge `PDF` trên icon Keepit và CTA trong popup, mở Dashboard > Tài liệu; không redirect, không fetch/đọc browser viewer. Hướng dẫn nêu rõ lưu/tải PDF trước rồi chọn bản local; chỉ nhận diện URL path `.pdf`.
+- File: `manifest.json`, `js/background/background.js`, `js/popup/popup.js`, `pages/popup.html`, `css/popup/popup.css`, `js/core/languages.js`, `js/dashboard/dashboard.js`, `OPT-ARENA.md`, `docs/INDEX.md`, `docs/documents.md`, `docs/modules/{popup,dashboard}.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` bốn file JS; URL suffix cases; `git diff --check` đạt. Chưa browser-test.
 
 **2026-11-17 | v3.5.368 | Arena.ai Agent sửa:**
 

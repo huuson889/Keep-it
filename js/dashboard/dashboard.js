@@ -3275,8 +3275,8 @@ window.addEventListener("message", event => {
   document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
   const address=new URL(location.href);if(event.data.open===true&&activeDashboardView==="documents"&&/^[a-zA-Z0-9-]{16,80}$/.test(event.data.sourceKey||""))address.searchParams.set("document",event.data.sourceKey);else if(event.data.open!==true){address.searchParams.delete("document");address.searchParams.delete("highlight");}history.replaceState(history.state,"",address.href);
 });
-const requestedDocument=new URL(location.href).searchParams.get("document");
-if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=new URL(location.href).searchParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else setDashboardView(savedDashboardView());
+const dashboardParams=new URL(location.href).searchParams,requestedDocument=dashboardParams.get("document"),requestedView=dashboardParams.get("view");
+if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=dashboardParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else if(requestedView==="documents"){const address=new URL(location.href);address.searchParams.delete("view");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenu").addEventListener("click", async event => {
   const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;
@@ -3844,6 +3844,7 @@ function scrollToFavoriteVideos(smooth, tries = 0) {
   dashboardScroller.scrollTo({ top: Math.max(0, y - cover - 12), behavior: smooth ? "smooth" : "auto" });
 }
 LHN_MESSAGING.onMessage.addListener(message => {
+  if (message?.type === "OPEN_DASHBOARD_DOCUMENTS") { setDashboardView("documents"); return; }
   if (message?.type === "OPEN_DASHBOARD_FAVORITES") { openFavoriteVideos(); return; }
   if (message?.type === "OPEN_DASHBOARD_SETTINGS") { openDashboardSettings(); return; }
   if (message?.type === "OPEN_DASHBOARD_ACCOUNT") { openDashboardSettings(); if (!demoProfile) openProfileAuth(); return; }

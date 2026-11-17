@@ -28,6 +28,10 @@ function applyPopupTheme() {
   button.setAttribute("aria-label", label);
   button.setAttribute("aria-pressed", String(dark));
 }
+function isPdfUrl(value) {
+  try { const url = new URL(value); return ["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname)); }
+  catch { return false; }
+}
 function syncWebsiteActiveStatus() {
   const status = $("extensionStatus");
   if (!status) return;
@@ -61,6 +65,7 @@ async function load() {
   if (["autoSpeakSelectedText", "autoSpeakOnTranslate", "translateIconEnabled", "translationPopupEnabled"].some(key => storedSettings[key] !== settings[key])) await saveSettings();
   if (!["light", "dark", "system"].includes(settings.sidebarTheme)) settings.sidebarTheme = "system";
   const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
+  $("pdfSuggestion").hidden = !isPdfUrl(activeTab?.url || "");
   try {
     const activeUrl = new URL(activeTab?.url || "");
     if (activeUrl.protocol === "http:" || activeUrl.protocol === "https:") currentWebsite = activeUrl.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -137,6 +142,10 @@ document.addEventListener("mousedown", e => { if (!e.target.closest(".language-w
 $("dashboard").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard", error); $("status").textContent = t("pageRestricted"); }
+});
+$("openPdfWithKeepit").addEventListener("click", async () => {
+  try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_DOCUMENTS" }); window.close(); }
+  catch (error) { console.warn("Could not open Keepit Documents", error); $("status").textContent = t("pageRestricted"); }
 });
 $("openDashboardSettings").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }
