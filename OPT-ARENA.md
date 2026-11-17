@@ -33,29 +33,75 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
 
-- **Mục tiêu:** Đồng bộ Highlights, Notes, Flashcards, Settings và Thư viện Tài liệu (PDF, Office, ảnh) giữa nhiều máy tính/thiết bị mà không cần máy chủ trung gian (Zero-backend).
-- **Vị trí lưu trữ & Phân quyền:**
-  - Lưu vào thư mục ẩn `appDataFolder` của Google Drive (người dùng không thấy ngoài giao diện Drive, tránh bấm nhầm xoá/sửa, ứng dụng khác không can thiệp được).
-  - Scope tối thiểu: `https://www.googleapis.com/auth/drive.appdata` $\rightarrow$ Đây là **Non-sensitive scope**, không bị Google bắt buộc kiểm toán bảo mật (CASA audit), không tốn phí và không hiện cảnh báo đỏ khi đăng nhập.
-  - Xác thực OAuth 2.0: Chromium dùng `chrome.identity.getAuthToken`; Firefox và APK WebView dùng luồng OAuth Web Auth flow / popup (APK đã xác nhận đăng nhập Google bình thường, dùng chung logic JavaScript).
-- **Mô hình phân tầng lưu trữ (2 tầng):**
-  - *Tầng 1 (Luôn đồng bộ - Nhẹ):* Toàn bộ Highlights, Ghi chú, Flashcards, Cài đặt và Metadata tiến độ đọc tài liệu đóng gói thành JSON/snapshot nén kèm timestamp UTC (`updated_at`). Đồng bộ tức thì trong 1 giây.
-  - *Tầng 2 (Tùy chọn Opt-in - Tệp tài liệu gốc PDF, DOCX, PPTX):*
-    - Mặc định công tắc TẮT để không làm chậm mạng hoặc đầy Drive của người dùng.
-    - Khi BẬT: Áp dụng cơ chế **Tải lười (Lazy Download)**. Thiết bị mới chỉ kéo metadata (tên sách, số trang, ghi chú); chỉ khi người dùng bấm mở cuốn sách nào thì mới tải file gốc theo mã băm `content_hash` từ Drive về.
-- **Thuật toán Đồng bộ & Xử lý Xung đột:**
-  - Áp dụng cờ `deleted_at` (Tombstone) để tránh khôi phục nhầm các mục đã xóa trên máy khác.
-  - Two-Way Merge: So khớp theo `uuid`, áp dụng Last-Write-Wins trên từng item dựa theo `updated_at`.
-- **Tính năng mở rộng có giá trị cao:**
-  1. *Tiếp tục đọc dở (Cross-Device Session):* Lưu URL + vị trí cuộn trang hoặc timestamp video đang đọc dở trên máy A để máy B/điện thoại gợi ý mở tiếp tục.
-  2. *Lịch sử phiên bản (Rollback):* Tận dụng tính năng Revisions của Google Drive để cho phép khôi phục về mốc hôm qua, 3 ngày trước nếu lỡ xoá nhầm dữ liệu.
-  3. *Tự động dọn rác bộ nhớ đệm (Smart Cache Eviction):* Tự giải phóng file gốc của các tài liệu quá 30 ngày không mở trên thiết bị bộ nhớ ít (file gốc vẫn còn trên Drive, khi cần bấm tải lại).
-  4. *Tùy chọn mã hoá đầu cuối (Client Encryption):* Tùy chọn đặt mã PIN mã hoá AES-256 trước khi tải dữ liệu lên Drive.
-- **Lưu ý triển khai Google API:**
-  - Phải Publish App trên Google Cloud Console (chuyển từ Testing sang In Production) để mở cho mọi người dùng, kèm link `PRIVACY-POLICY.md`.
-  - Extension ID phải cố định (giữ nguyên khoá ký `.pem`).
-  - Phải có cơ chế Debounce (chờ 3–5 giây sau thao tác) để gom nhóm gửi 1 lần, tránh spam API.
-  - Bắt lỗi `403/507 Quota Exceeded` khi Drive người dùng đầy để báo thông báo thân thiện.
+### 1. Mục tiêu & Bản chất giải pháp
+- **Mô hình Zero-backend (Bring Your Own Storage):** Thay vì Keepit vận hành máy chủ lưu trữ (tốn chi phí server, rủi ro bảo mật dữ liệu), tiện ích kết nối trực tiếp với tài khoản Google Drive cá nhân của người dùng để làm ổ cứng đám mây đồng bộ giữa các máy tính và thiết bị (Chrome, Edge, Firefox, APK Android).
+- **Bảo mật & Riêng tư:** Nhà phát triển không giữ dữ liệu; dữ liệu đi thẳng từ trình duyệt lên Drive của người dùng.
+
+### 2. Vị trí lưu trữ & Cấu trúc thư mục (`appDataFolder`)
+- **Lưu trong thư mục ẩn của ứng dụng:** Sử dụng Google Drive `appDataFolder`. Thư mục này hoàn toàn ẩn với giao diện `drive.google.com` của người dùng (tránh bấm nhầm, xoá nhầm hoặc làm bừa bộn Drive cá nhân). Ứng dụng bên thứ ba khác cũng không thể can thiệp vào thư mục này của Keepit.
+- **Cấu trúc dữ liệu trên Drive:**
+  ```text
+  [Keepit AppDataFolder]/
+  ├── sync-meta.json             # Device ID, last_sync_at (UTC), schema_version, app_version
+  ├── data/
+  │   ├── annotations.json       # Highlights, Ghi chú, màu sắc, quote anchors, URL trang web
+  │   ├── flashcards.json        # Thẻ từ vựng, tiến độ học, lịch sử ôn tập SRS
+  │   └── settings.json          # Cài đặt giao diện, phím tắt, giọng đọc TTS
+  └── documents/                 # Dành cho tab Tài liệu (PDF, Office, Ảnh)
+      ├── <hash_file_1>.pdf      # Lưu theo mã băm nội dung (content_hash)
+      ├── <hash_file_2>.docx
+      └── documents-meta.json    # Tên gốc, số trang, tiến độ đọc dở, ghi chú riêng trong file
+  ```
+
+### 3. Cơ chế xác thực tài khoản (OAuth 2.0)
+- **Đăng ký Google Cloud Console (Miễn phí 100%):**
+  - Tạo một Project miễn phí trên `console.cloud.google.com`.
+  - Bật thư viện **Google Drive API**.
+  - Màn hình đồng ý (OAuth consent screen): Loại External, tên app `Keepit`, khai báo scope `https://www.googleapis.com/auth/drive.appdata`.
+- **Phân loại quyền (Scope):** `drive.appdata` là **Non-sensitive scope** $\rightarrow$ Không bị Google bắt buộc trải qua quy trình kiểm toán bảo mật khắt khe (CASA audit), không tốn phí kiểm toán, không bị màn hình cảnh báo đỏ nguy hiểm khi người dùng đăng nhập.
+- **Luồng đăng nhập trên từng nền tảng:**
+  - *Chromium (Chrome, Edge):* Dùng API có sẵn `chrome.identity.getAuthToken({ interactive: true })`. Trình duyệt tự hiện popup chọn tài khoản Google của profile hiện tại, cấp token trong 1 click.
+  - *Firefox & APK Android (WebView):* Dùng chuẩn `browser.identity.launchWebAuthFlow()` hoặc popup web OAuth (`https://accounts.google.com/o/oauth2/v2/auth`). Lấy `access_token` và `refresh_token`, lưu an toàn trong `browser.storage.local`. Bản APK WebView đã xác nhận đăng nhập Google bình thường, dùng chung 100% logic JavaScript như extension mà không cần cầu nối native Java/Kotlin phức tạp.
+
+### 4. Mô hình phân tầng dữ liệu (2 tầng)
+- **Tầng 1: Dữ liệu chữ & Metadata (Luôn đồng bộ - Bắt buộc):**
+  - Bao gồm: Highlights, Ghi chú web, Flashcards, Cài đặt và Metadata tiến độ đọc tài liệu.
+  - Dung lượng chỉ vài KB đến vài MB text JSON, đồng bộ tức thì (<1 giây), không tốn băng thông mạng.
+- **Tầng 2: Tệp tài liệu gốc (PDF, DOCX, PPTX, Ảnh) (Nặng - Tùy chọn Opt-in & Tải lười):**
+  - File tài liệu có dung lượng từ vài MB đến 30–50 MB. Nếu bắt buộc đồng bộ sẽ làm chậm mạng, hao pin và nhanh đầy dung lượng Drive.
+  - *Giải pháp:*
+    - Cung cấp công tắc trong Cài đặt: `[ ] Đồng bộ cả tệp tài liệu gốc (PDF, Office, Ảnh) lên Google Drive` (Mặc định: TẮT).
+    - Khi BẬT: Áp dụng cơ chế **Tải lười (Lazy Download)**. Thiết bị mới chỉ tải file danh mục `documents-meta.json` (hiển thị đầy đủ bìa, tên sách, số trang, ghi chú). Cạnh cuốn sách hiện icon đám mây ☁️ *(Chưa tải về máy này)*. Chỉ khi người dùng bấm vào mở cuốn sách nào thì máy mới kéo file nhị phân gốc đó từ Drive về lưu vào IndexedDB cục bộ.
+    - Lưu file theo mã băm SHA-256 (`<content_hash>.<ext>`) để tránh upload trùng lặp cùng một file.
+
+### 5. Thuật toán Đồng bộ & Xử lý Xung đột (Two-Way Merge)
+- **Cờ Tombstone (`deleted_at`):** Khi xoá một highlight hay ghi chú, không xoá đứt bản ghi ngay mà đánh dấu `deleted_at = "ISO_UTC_TIMESTAMP"`. Giúp các thiết bị khác khi đồng bộ biết để xoá theo, không bị tình trạng máy kia khôi phục ngược lại mục đã xoá. Sau 30 ngày các tombstone sẽ được dọn dẹp sạch.
+- **Quy trình chu kỳ đồng bộ (Sync Cycle):**
+  1. *Kiểm tra (Check):* Đọc file `sync-meta.json` trên Drive, so sánh timestamp với mốc của máy cục bộ.
+  2. *Kéo về & Hợp nhất (Pull & Merge):* Tải dữ liệu remote về. So khớp theo `uuid`: Nếu cùng một mục được sửa ở 2 máy, mục có `updated_at` mới hơn sẽ thắng (**Last-Write-Wins trên từng item**, không bao giờ ghi đè cả file dữ liệu). Ghi kết quả hợp nhất vào IndexedDB local.
+  3. *Đẩy lên (Push):* Gom các thay đổi mới tại local (được gắn cờ `dirty`), cập nhật file JSON tổng, upload đè lên Drive và cập nhật lại mốc `last_sync_at` trong `sync-meta.json`.
+
+### 6. Thiết kế Giao diện người dùng (UI/UX)
+- Đặt tại **Dashboard > Cài đặt > Đồng bộ đám mây (Cloud Sync)**:
+  - Nút **[Kết nối Google Drive]**: Chạm để cấp quyền; sau khi kết nối hiển thị avatar Google, email đã đăng nhập và dung lượng Drive khả dụng.
+  - Dòng trạng thái trực quan: *"Đã đồng bộ 2 phút trước"* kèm icon tích xanh (hoặc xoay tròn khi đang trong tiến trình đồng bộ).
+  - Tùy chọn:
+    - ☑ *Tự động đồng bộ khi mở Keepit*
+    - ☐ *Đồng bộ cả tệp tài liệu gốc (PDF, Office, Ảnh)* (kèm ghi chú tốn dung lượng Drive)
+    - Nút **[Đồng bộ ngay]** (để người dùng ép đồng bộ thủ công bất kỳ lúc nào).
+
+### 7. Năm lưu ý kỹ thuật bắt buộc khi triển khai
+1. **Trạng thái OAuth Consent Screen:** Ban đầu ở chế độ *Testing* (giới hạn 100 email test). Cần bấm **Publish App** để chuyển sang *In Production* cho toàn bộ người dùng. Cần chuẩn bị link `PRIVACY-POLICY.md` công khai (host qua GitHub Pages).
+2. **Extension ID phải cố định:** Khi tạo OAuth Client ID cho Chrome, Google yêu cầu Extension ID. ID này sinh ra từ khoá bí mật `.pem` khi ký build (`scripts/build_release.py`). Tuyệt đối không đổi khoá `.pem` này, vì đổi khoá sẽ làm đổi ID dẫn đến lỗi từ chối kết nối (*Origin mismatch*).
+3. **Cơ chế Debounce chống spam API:** Không gọi đồng bộ tức thì sau mỗi thao tác bôi đen hay gõ chữ. Cần debounce chờ 3–5 giây sau thao tác cuối cùng mới gom nhóm các thay đổi và gửi 1 request lên Drive.
+4. **Bắt lỗi đầy dung lượng Drive (Quota Exceeded):** Nếu người dùng vượt quá 15GB miễn phí của Google, Drive API trả về lỗi `HTTP 403 / 507 Insufficient Storage`. Code cần bắt lỗi này và thông báo rõ ràng cho người dùng, không để ứng dụng crash hoặc thử lại vô tận.
+5. **Cập nhật tài liệu minh bạch:** Khai báo trung thực trong `PRIVACY-POLICY.md` và `STORE-LISTING.md` rằng tính năng đồng bộ Drive là tuỳ chọn do người dùng chủ động bật, dữ liệu chỉ lưu trong thư mục riêng của app (`appDataFolder`) và nhà phát triển không truy cập vào dữ liệu này.
+
+### 8. Các tính năng mở rộng có giá trị cao
+1. **Tiếp tục đọc dở xuyên thiết bị (Cross-Device Session):** Lưu nhẹ URL + vị trí cuộn trang hoặc timestamp video đang học dở trên máy A. Khi mở máy B/điện thoại, Dashboard hiện thông báo 1 chạm: *"Tiếp tục đọc bài '...' từ máy tính? [Mở ngay]"*.
+2. **Khôi phục phiên bản cũ (Rollback / Version History):** Tận dụng tính năng Revisions tự động của Google Drive để cung cấp nút khôi phục về bản sao lưu *"Hôm qua"*, *"3 ngày trước"*, giúp người dùng an tâm không bao giờ sợ lỡ tay xoá mất ghi chú.
+3. **Tự động dọn rác bộ nhớ đệm (Smart Cache Eviction):** Với thiết bị bộ nhớ ít, Keepit tự động xoá bản lưu cục bộ của các file tài liệu quá 30 ngày không mở đọc (nhưng vẫn giữ nguyên ghi chú/tiến độ; file gốc vẫn an toàn trên Drive, khi cần đọc lại chỉ việc tải lại ☁️).
+4. **Tùy chọn mã hoá đầu cuối (Client-Side Encryption):** Tùy chọn đặt mật khẩu/PIN để mã hoá toàn bộ ghi chú bằng AES-256 (Web Crypto API) trước khi tải lên Drive, đảm bảo tính riêng tư tuyệt đối ngay cả khi tài khoản Drive bị lộ.
 
 ---
 
