@@ -7,17 +7,94 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
-## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Mục lục, Tìm kiếm, Đọc đêm, Song ngữ trực tiếp, Audiobook)
+## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Độ chính xác render, Select & Reader như Web, Mục lục, Tìm kiếm, Đọc đêm, Audiobook)
 
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
 
 ### 1. Bối cảnh & Mục tiêu
 - Tab **Tài liệu** (`pages/documents.html`, `js/dashboard/documents.js`, `documents-renderers.js`, `documents-store.js`) hiện đã hỗ trợ đọc PDF, Word (DOCX), PowerPoint (PPTX), ảnh (JPG/PNG/WebP), có highlight, ghi chú, đọc text, từ điển, panel dịch và Ask AI.
-- Mục tiêu: Bổ sung chi tiết kỹ thuật cho 9 tính năng mở rộng nhằm nâng tầm trải nghiệm đọc sách, tài liệu dài và học ngoại ngữ đắm chìm như một máy đọc sách e-reader chuyên nghiệp.
+- Mục tiêu:
+  1. Giải quyết triệt để 5 vấn đề cốt lõi về **độ chính xác khi đọc và phân tích file** (lỗi phông CMap, phân mảnh câu textDiv, ngắt từ gạch nối cuối dòng, tài liệu 2 cột, đo font Word).
+  2. Nâng cấp trải nghiệm **Bôi đen chữ (Select Text)** và **Trình đọc (Reader / Dịch / TTS)** mượt mà, tự nhiên giống hệt một trang web.
+  3. Bổ sung trọn vẹn 9 tính năng mở rộng giao diện và học tập chuyên sâu (Mục lục TOC, Tìm kiếm Ctrl+F, Đọc đêm/Sepia, 2 trang song song, Inline song ngữ, Audiobook tự động lật trang, Xuất ghi chú & deck Flashcard, Bookmark & cuộn chính xác, Focus mode).
 
 ---
 
-### 2. Chi tiết kỹ thuật 5 tính năng giao diện & đọc cốt lõi
+### 2. Kỹ thuật nâng cao độ chính xác khi đọc và phân tích file (5 điểm cốt lõi)
+
+#### 1. Bổ sung CMap & Standard Fonts trong PDF.js (Khắc phục lỗi phông tiếng Việt/CJK)
+- **Hiện trạng:** Trong `documents-renderers.js`, `lib.getDocument({ data })` chỉ nạp mảng byte thô mà chưa truyền đường dẫn CMap và Standard Fonts (dù repo đã có sẵn ở `vendor/pdfjs/cmaps/` và `vendor/pdfjs/standard_fonts/`).
+- **Hậu quả:** File PDF tiếng Việt có dấu lạ, tài liệu tiếng Hàn/Nhật hoặc dùng font nhúng không chuẩn bị lỗi hiển thị: biến thành ô vuông (tofu), mất dấu hoặc trích xuất text sai mã ký tự.
+- **Giải pháp:** Cấu hình đầy đủ khi khởi tạo document:
+  ```js
+  const document = await lib.getDocument({
+    data: await blob.arrayBuffer(),
+    cMapUrl: new URL('pdfjs/cmaps/', base).href,
+    cMapPacked: true,
+    standardFontDataUrl: new URL('pdfjs/standard_fonts/', base).href
+  }).promise;
+  ```
+
+#### 2. Gom cụm đoạn văn PDF (Paragraph Reconstruction từ TextDivs)
+- **Hiện trạng:** PDF.js phân tách chữ theo từng mảnh đồ họa (*text run*). Code hiện tại gán mỗi `textDiv` thành một `.para` riêng, làm câu văn dài bị xé nhỏ thành 4–5 mảnh cụt lủn.
+- **Hậu quả:** Khi dịch hoặc nghe TTS, câu văn bị ngắt rời rạc, làm Google Dịch dịch sai ngữ pháp và TTS đọc ngắt quãng giật cục.
+- **Giải pháp:** Áp dụng thuật toán gom cụm trước khi gán `.para`: gom các `textDiv` có cùng tọa độ Y (cùng dòng) hoặc khoảng cách dòng liên tục (dòng tiếp theo) thành một khối văn bản logic hoàn chỉnh (*Logical Paragraph*).
+
+#### 3. Tự động nối từ bị ngắt gạch nối cuối dòng (De-hyphenation)
+- **Hiện trạng:** Sách tiếng Anh hay ngắt từ dài ở cuối dòng bằng dấu gạch nối (ví dụ: dòng 1 là `infor-`, dòng 2 là `mation`). Keepit trích xuất nguyên văn làm từ điển tra thành hai từ vô nghĩa.
+- **Giải pháp:** Trong quá trình ghép dòng (`attachBlocks` và `TextLayer`), kiểm tra nếu từ cuối dòng kết thúc bằng `-` và tiếp theo là ký tự chữ cái ở đầu dòng dưới $\rightarrow$ tự động nối lại thành `information` trong chuỗi text dùng cho Dịch/Từ điển, nhưng vẫn giữ nguyên hiển thị hình ảnh trên trang sách.
+
+#### 4. Sắp xếp thứ tự đọc tài liệu 2 cột (Multi-column Reading Order)
+- **Hiện trạng:** Giáo trình và bài báo học thuật thường chia 2 cột. Duyệt tuần tự DOM mà không kiểm tra tọa độ cột (X-coordinate) sẽ làm câu văn bị đọc vắt ngang từ cột trái sang cột phải.
+- **Giải pháp:** Phân nhóm các khối văn bản theo tọa độ X (`left < width / 2` cho Cột trái, `left >= width / 2` cho Cột phải). Duyệt hết toàn bộ khối của Cột trái từ trên xuống dưới rồi mới chuyển sang Cột phải.
+
+#### 5. Đo đạc kích thước Word (DOCX) sau khi nạp xong Font
+- **Hiện trạng:** File Word render ẩn trong `holder` ở `left: -100000px` rồi đo ngay `getBoundingClientRect()` và `scrollHeight` trước khi font chữ kịp nạp xong.
+- **Hậu quả:** Trình duyệt dùng font fallback để tính chiều cao, đến khi hiển thị thật chữ bị dồn trang, làm tràn hoặc phân trang sai lệch so với bản Word gốc.
+- **Giải pháp:** Chèn `await document.fonts.ready;` trước khi tính toán kích thước trang; cố định kích thước khổ A4 chuẩn (`794px × 1123px` ở 96 DPI) giúp bố cục ổn định và chuẩn xác như Microsoft Word.
+
+---
+
+### 3. Nâng cấp trải nghiệm "Bôi đen chữ (Select Text) & Tra từ điển" chuẩn Web
+
+#### 1. Khớp tọa độ 1:1 giữa TextLayer và Canvas
+- Khóa chặt tỷ lệ `--scale-factor` trong `pdfTextLayer` bằng đúng kích thước viewport render:
+  ```css
+  .pdfTextLayer {
+    transform-origin: 0 0;
+    line-height: 1;
+    user-select: text;
+  }
+  ```
+- Thiết lập `color: transparent;` và `::selection { background: rgba(99, 102, 241, 0.3); }` để vệt màu bôi đen của chuột ôm khít từng con chữ in trên canvas, loại bỏ hoàn toàn hiện tượng lệch dòng hay kéo chuột sượng.
+
+#### 2. Tích hợp Popup / Full Dictionary chuẩn của Keepit
+- Thay thế thanh `#sel` sơ sài bằng popup tra từ điển đầy đủ của Keepit trên web:
+  - Phát âm âm thanh (Audio US/UK) + Phiên âm quốc tế **IPA**.
+  - Phân loại từ (*noun, verb, adj*).
+  - Cụm từ hay đi kèm (*Collocations*), Từ đồng nghĩa/Trái nghĩa (*Synonyms/Antonyms*).
+  - Nút **Trái tim ❤️ (Lưu vào Flashcard)** kèm chính xác câu ngữ cảnh trong trang sách.
+- Hỗ trợ **nhấp đúp chuột (Double-click)** vào 1 từ là tự động mở popup tra từ điển ngay lập tức.
+
+---
+
+### 4. Nâng cấp trải nghiệm "Trình đọc (Reader / Dịch / TTS)" chuẩn Web
+
+#### 1. Chế độ "Đọc" (Reflow Mode — Biến file thành bài báo HTML thuần túy)
+- Khi người dùng chuyển sang chế độ **"Đọc"** (`V.mode === 'read'`):
+  - Chữ được trích xuất hoàn toàn ra khỏi canvas và đưa vào `<article class="reflow">`.
+  - Hỗ trợ tùy chỉnh cỡ chữ, phông chữ (Sans-serif/Serif) và căn lề như Reader View của Safari/Firefox.
+  - Tích hợp trọn vẹn sức mạnh của `bilingual-reader.js`:
+    - Dịch song ngữ hiện song song từng đoạn (`<p class="para"><span class="en">...</span><span class="vi">...</span></p>`).
+    - Phím tắt quen thuộc: `Alt+A` (dịch tự động khi cuộn), `Alt+D` (dịch đoạn đang trỏ chuột), `Alt+R` (bật đọc to TTS).
+
+#### 2. Trải nghiệm Song ngữ trực tiếp trên trang gốc (Overlay / Inline Callout)
+- Với người muốn giữ nguyên bản gốc PDF (có hình ảnh, công thức, bảng biểu):
+  - Khi click vào một đoạn văn bất kỳ: Bản dịch tiếng Việt bung ra dạng **hộp chú giải thông minh (smart callout)** đè nhẹ ngay bên dưới đoạn văn đó, tự ẩn khi click ra ngoài, giúp người đọc tập trung hoàn toàn vào trang sách mà không phải liếc mắt sang panel phụ ở sidebar.
+
+---
+
+### 5. Chi tiết kỹ thuật 9 tính năng mở rộng giao diện & học tập chuyên sâu
 
 #### 1. Cây mục lục tài liệu (PDF Outline / Table of Contents / Heading Navigation)
 - **Can thiệp file:** `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `pages/documents.html`, `css/dashboard/documents.css`.
