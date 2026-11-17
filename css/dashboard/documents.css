@@ -697,6 +697,7 @@ body{overflow:auto}
 .docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;outline:2px solid var(--lhn-br-accent);outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08);border-radius:6px;pointer-events:none}
 .docsReaderSpeakerOverlay{position:absolute;inset:0;z-index:12;pointer-events:none}
 .docsReaderSpeakerAnchor{position:absolute;width:18px;height:18px;pointer-events:auto}
+.docsReaderSpeakerAnchor[data-source-hover="true"]>.lhn-bilingual-speaker[data-visibility="hover"],.docsReaderSpeakerAnchor[data-source-hover="true"]>.lhn-bilingual-speaker[data-visibility="reading"]{visibility:visible!important;opacity:1!important;pointer-events:auto!important}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}
