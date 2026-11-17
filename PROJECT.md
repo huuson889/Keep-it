@@ -1,15 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.362**, nhánh `Keepit-Optimize-Test`; Documents Reader bỏ đọc header/footer được đánh dấu cấu trúc hoặc lặp ở mép trang; giữ hiển thị nội dung trên trang. Main sheet Documents vẫn ẩn các mục đã chỉ định; menu viewer/web riêng không đổi.
+- Version **3.5.363**, nhánh `Keepit-Optimize-Test`; dịch văn bản dài tự chia thành mẩu tối đa 450 ký tự rồi ghép lại, áp dụng cả BILINGUAL, dictionary text dài và Study Notes. Documents Reader tiếp tục bỏ đọc header/footer được đánh dấu/lặp; nội dung vẫn hiện trên trang.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu & Reader — v3.5.362
-- Cần browser-test PDF/DOCX/PPTX thật: Reader bỏ đọc header/footer lặp/được đánh dấu, nội dung thân không bị bỏ nhầm; Viewer More/main sheet không đổi. Chưa browser-test.
+### Dịch dài & Reader — v3.5.363
+- Cần thử bản dịch thật >500 ký tự qua Reader, đoạn chọn dài và DOCX/PDF; xác nhận chunk được ghép tự nhiên, cache và dấu xuống dòng đúng. Unit test split/round-trip <450 ký tự PASS; chưa gọi API thật.
+- Reader header/footer skip từ v3.5.362 vẫn cần browser-test trên PDF/DOCX/PPTX thật.
 - Cần kiểm tra PDF nhiều trang: thumbnail hiển thị khi vào vùng nhìn thấy của rail, các trang ngoài vùng chưa render; cuộn rail xuống tải nốt; click trang và đổi flow không sai trang. Chưa browser-test.
 - Cần kiểm tra trên tài liệu thật: app font áp dụng đúng cho UI, font/bố cục nguyên bản của nội dung không bị ghi đè; popup Dịch và tự dịch vào ghi chú hoạt động trong nhiều file. Chưa browser-test sau sửa.
 - Cần xác nhận trên PDF thật khi Cuộn theo tệp bật: tâm đoạn PDF và tâm card gốc + dịch trùng nhau khi cuộn liên tục/trang đơn và bản dịch tải muộn. Chưa browser-test.

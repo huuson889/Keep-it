@@ -55,32 +55,29 @@
     let activeJob = null, pendingJob = null, lastRequestAt = 0, cooldownUntil = 0;
 
     async function requestTranslation(source, sourceLanguage, targetLanguage) {
-      const url = new URL(ENDPOINT);
-      url.searchParams.set("client", "gtx");
-      url.searchParams.set("sl", sourceLanguage);
-      url.searchParams.set("tl", targetLanguage);
-      url.searchParams.set("dt", "t");
-      url.searchParams.set("q", source);
+      const googleParts = source.length > 450 ? myMemoryChunks(source, 450) : [source];
       const googleController = new AbortController();
       let googleTimeout, fallbackTimeout;
       try {
         const usage = await LHN_MESSAGING.sendMessage({ type: "USAGE_CONSUME", service: "translate" });
         if (!usage?.allowed) throw new Error("Translate daily usage limit reached");
-        googleTimeout = setTimeout(() => googleController.abort(), REQUEST_TIMEOUT_MS);
+        googleTimeout = setTimeout(() => googleController.abort(), REQUEST_TIMEOUT_MS * Math.max(1, googleParts.length));
         try {
-          const response = await fetchImpl(url.href, { method: "GET", signal: googleController.signal, headers: { Accept: "application/json" } });
-          if (response.status === 429) {
-            const retryAfter = Number(response.headers?.get?.("Retry-After")) || 0;
-            cooldownUntil = Date.now() + Math.max(FAILURE_RETRY_MS, retryAfter * 1000);
+          const googleResults=[];
+          for (const part of googleParts) {
+            const url = new URL(ENDPOINT);
+            url.searchParams.set("client", "gtx"); url.searchParams.set("sl", sourceLanguage); url.searchParams.set("tl", targetLanguage); url.searchParams.set("dt", "t"); url.searchParams.set("q", part);
+            const response = await fetchImpl(url.href, { method: "GET", signal: googleController.signal, headers: { Accept: "application/json" } });
+            if (response.status === 429) {
+              const retryAfter = Number(response.headers?.get?.("Retry-After")) || 0;
+              cooldownUntil = Date.now() + Math.max(FAILURE_RETRY_MS, retryAfter * 1000);
+            }
+            if (!response.ok) { const error = new Error(`Google Translate returned HTTP ${response.status}`); error.status = response.status; throw error; }
+            const result = translatedText(await response.json());
+            if (!result) throw new Error("Google Translate returned an empty translation");
+            googleResults.push(result);
           }
-          if (!response.ok) {
-            const error = new Error(`Google Translate returned HTTP ${response.status}`);
-            error.status = response.status;
-            throw error;
-          }
-          const result = translatedText(await response.json());
-          if (!result) throw new Error("Google Translate returned an empty translation");
-          return result;
+          return googleResults.join(" ").trim().normalize("NFC");
         } catch (error) {
           console.warn("Google Translate failed; trying MyMemory fallback", error);
         }

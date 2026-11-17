@@ -93,18 +93,24 @@
         if (cached) await browser.storage.local.remove(cacheKey);
       } catch (error) { console.warn("Could not read related-word translation cache", error); }
       let result;
-      try {
-        const response = await fetchWithTimeout(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
-        if (!response.ok) throw new Error("Google Translate unavailable");
-        const data = await response.json();
-        result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
-      } catch (error) {
-        if (signal?.aborted) throw error;
-        const response = await fetchWithTimeout(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
-        if (!response.ok) throw new Error("Dictionary translation unavailable");
-        const data = await response.json();
-        if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
-        result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
+      if (text.length > 450) {
+        const translated=await LHN_MESSAGING.sendMessage({type:"BILINGUAL_TRANSLATE",text,targetLang:targetLanguage});
+        if (!translated?.translated) throw new Error("Dictionary translation unavailable");
+        result={translatedText:String(translated.translated).normalize("NFC"),posDict:[],engine:"Google Translate (split)"};
+      } else {
+        try {
+          const response = await fetchWithTimeout(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(targetLanguage)}&dt=t&dt=bd&q=${encodeURIComponent(text)}`, { signal });
+          if (!response.ok) throw new Error("Google Translate unavailable");
+          const data = await response.json();
+          result = { translatedText:(data[0] || []).map(part => String(part[0] || "").normalize("NFC")).join("").normalize("NFC"), posDict:(data[1] || []).map(item => ({ pos:String(item[0] || "").normalize("NFC"), words:(item[1] || []).map(word => String(word).normalize("NFC")) })), engine:"Google Translate" };
+        } catch (error) {
+          if (signal?.aborted) throw error;
+          const response = await fetchWithTimeout(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${encodeURIComponent(targetLanguage)}`, { signal });
+          if (!response.ok) throw new Error("Dictionary translation unavailable");
+          const data = await response.json();
+          if (data.responseStatus !== 200) throw new Error("Dictionary translation unavailable");
+          result = { translatedText:String(data.responseData?.translatedText || text).normalize("NFC"), posDict:[], engine:"MyMemory" };
+        }
       }
       try { await browser.storage.local.set({ [cacheKey]:{ timestamp:Date.now(), data:result } }); }
       catch (error) { console.warn("Could not save related-word translation cache", error); }
