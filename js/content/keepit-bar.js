@@ -724,7 +724,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
@@ -737,7 +737,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
-  <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
+  <div class="mfoot">${foot("settings", "settings", t("settings"))}${S.documentsSheet ? "" : foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
   }
   // Trình đọc row (v3.5.160; every device since v3.5.161) = the Reader's own ☰ switches (LHN_READER_BAR.tileOn / toggleTile)
@@ -1394,7 +1394,7 @@
   function relayout(force) {
     if (!mounted) return;
     const key = layoutKey(); if (!force && key === lastLayout) { syncBarVis(); return; }
-    if (key.split("|").slice(0, 4).join() !== lastLayout.split("|").slice(0, 4).join()) { S.autoFive = false; closePop(); closeSheet(); closeSearch(); S.peek = false; }
+    if (key.split("|").slice(0, 4).join() !== lastLayout.split("|").slice(0, 4).join()) { S.autoFive = false; closePop(); if (!(DOCUMENTS_HOST && S.documentsSheet && $("sheet").classList.contains("open"))) closeSheet(); closeSearch(); S.peek = false; }
     lastLayout = key; renderBar();
     if ($("sheet").classList.contains("open")) { renderSheet(); anchorPanel(); }
   }

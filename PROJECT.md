@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.360**, nhánh `Keepit-Optimize-Test`; chỉ Documents main sheet ẩn Bảng quản lý, Video/Dictation, Dịch đoạn, Loại từ đoạn, Trang tối, Cỡ chữ, Font tùy chỉnh và Học. Nút Lên đầu dùng cuộn `#stage`; Loại từ và Chú thích nối vào Documents word-class controller/legend. Menu web thường không đổi.
+- Version **3.5.361**, nhánh `Keepit-Optimize-Test`; chỉ Documents main sheet ẩn Bảng quản lý, Tắt trang, Video/Dictation, Dịch đoạn, Loại từ đoạn, Trang tối, Cỡ chữ, Font tùy chỉnh và Học. Pager sheet được giữ khi viewport breakpoint/layout đổi; More viewer riêng.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu & Reader — v3.5.360
-- Cần browser-test trên PDF thật: chỉ sheet Documents ẩn Bảng quản lý/Video/Paragraph tools/Trang tối-Cỡ chữ-Font; Chú thích toggle đúng legend tài liệu; menu web ngoài Documents không đổi. Chưa browser-test.
+### Tài liệu & Reader — v3.5.361
+- Cần browser-test trên PDF thật: pager sheet không chớp khi menu mở; Tắt trang và Bảng quản lý ẩn trong Documents; Viewer More và sheet web bình thường không đổi. Chưa browser-test.
 - Cần kiểm tra PDF nhiều trang: thumbnail hiển thị khi vào vùng nhìn thấy của rail, các trang ngoài vùng chưa render; cuộn rail xuống tải nốt; click trang và đổi flow không sai trang. Chưa browser-test.
 - Cần kiểm tra trên tài liệu thật: app font áp dụng đúng cho UI, font/bố cục nguyên bản của nội dung không bị ghi đè; popup Dịch và tự dịch vào ghi chú hoạt động trong nhiều file. Chưa browser-test sau sửa.
 - Cần xác nhận trên PDF thật khi Cuộn theo tệp bật: tâm đoạn PDF và tâm card gốc + dịch trùng nhau khi cuộn liên tục/trang đơn và bản dịch tải muộn. Chưa browser-test.
@@ -227,6 +227,10 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.361 | Arena.ai Agent sửa:**
+
+- Documents only: ẩn footer `Tắt trang`. Pager sheet không bị `relayout()` đóng khi thay đổi breakpoint/viewport do lock/resize; vẫn render/re-anchor. More viewer giữ nguyên.
 
 **2026-11-17 | v3.5.360 | Arena.ai Agent sửa:**
 
