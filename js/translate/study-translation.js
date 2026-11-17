@@ -1,6 +1,7 @@
 // On-demand, rate-limited Google Translate cache for flashcard sentence notes.
 (() => {
-  const ENDPOINT = "https://clients5.google.com/translate_a/t";
+  // Use the same CSP-allowed Google Translate endpoint as the full dictionary.
+  const ENDPOINT = "https://translate.googleapis.com/translate_a/single";
   const CACHE_PREFIX = "lhnSentenceTranslation:";
   const MAX_SOURCE_LENGTH = 5000;
   const REQUEST_TIMEOUT_MS = 10000;
@@ -55,9 +56,10 @@
 
     async function requestTranslation(source, sourceLanguage, targetLanguage) {
       const url = new URL(ENDPOINT);
-      url.searchParams.set("client", "dict-chrome-ex");
+      url.searchParams.set("client", "gtx");
       url.searchParams.set("sl", sourceLanguage);
       url.searchParams.set("tl", targetLanguage);
+      url.searchParams.set("dt", "t");
       url.searchParams.set("q", source);
       const googleController = new AbortController();
       let googleTimeout, fallbackTimeout;
