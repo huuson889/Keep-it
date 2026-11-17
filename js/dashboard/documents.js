@@ -464,8 +464,7 @@ function showReaderParagraphHighlight(block){
  const highlight=document.createElement('div');highlight.className='docsReaderParagraphHighlight';highlight.setAttribute('aria-hidden','true');
  highlight.style.left=box.left+'px';highlight.style.top=box.top+'px';highlight.style.width=box.width+'px';highlight.style.height=box.height+'px';source.append(highlight);
 }
-function syncNativeSpeakerReading(block){if(V.mode!=='orig'||V.doc?.type!=='pdf')return;for(const icon of $$('#pageStack .docsReaderSpeakerOverlay .lhn-bilingual-speaker'))icon.removeAttribute('data-reading');if(!block)return;const host=$(`#pageStack .docsReaderSpeakerAnchor[data-reader-speaker-key="${cardKey(block)}"]`);host?.querySelector('.lhn-bilingual-speaker')?.setAttribute('data-reading','true');}
-function nativeReaderState(state){if(!V.doc)return;$('#viewer').classList.toggle('ttsOn',!!state.visible);$('[data-t="tts"]').classList.toggle('on',!!state.reading);$('#stage').style.paddingBottom=state.visible?(matchMedia('(pointer:coarse)').matches?'120px':'170px'):'';fitToolbar();if(!state.reading){clearReaderParagraphHighlight();syncNativeSpeakerReading(null);}if(!state.visible)wakePager();}
+function nativeReaderState(state){if(!V.doc)return;$('#viewer').classList.toggle('ttsOn',!!state.visible);$('[data-t="tts"]').classList.toggle('on',!!state.reading);$('#stage').style.paddingBottom=state.visible?(matchMedia('(pointer:coarse)').matches?'120px':'170px'):'';fitToolbar();if(!state.reading)clearReaderParagraphHighlight();if(!state.visible)wakePager();}
 async function refreshNativeSource(){if(!V.doc)return;await LHN_DOCUMENT_CONTEXT.refresh();}
 LHN_DOCUMENT_CONTEXT.attach({
  active:()=>!!activeEngine&&$('#viewer').classList.contains('show'),url:documentUrl,title:()=>V.doc?.name||document.title,hostname:()=> 'Keepit',thumbnail:()=>V.doc?.thumbnail||'',root:()=>$('#stage'),
@@ -479,7 +478,7 @@ LHN_DOCUMENT_CONTEXT.attach({
  readerBlocks:nativeBlocks,readerBlocksForTarget:nativeBlocksForTarget,readerText:readerTextForBlock,readerSpeakerGeometry:nativeSpeakerGeometry,readerSpeakerHost:nativeSpeakerHost,positionReaderSpeaker:positionNativeSpeaker,readerFontAllowed:()=>V.mode==='read',readerSpeakersAllowed:()=>V.mode==='read'||(V.doc?.type==='pdf'&&V.mode==='orig'),
  readerCard(block){const entry=nativeCards.get(cardKey(block));if(entry){entry.block=block;if(V.mode==='read'&&entry.card.parentElement!==block)mountNativeCard(block,entry.card);else if(V.mode==='orig'&&V.tools.has('translate')&&!entry.card.closest('#transList'))mountNativeCard(block,entry.card);}return entry?.card||null;},readerBlockForCard:cardBlock,mountReaderCard:mountNativeCard,readerTargetLanguage:()=>panelPrefs.language,
  async readerNextPage(direction,reference){if(!activeEngine||V.mode==='read')return false;const from=+(reference?.dataset.page||V.page);let page=from+Math.sign(direction);while(page>=1&&page<=V.doc.pages&&!sourceEntries(page).length)page+=Math.sign(direction);if(page<1||page>V.doc.pages)return false;await setPage(page,true);await ensurePage(page);return true;},
- onReaderBlock(block){const page=+block.dataset.page;if(page&&page!==V.page){V.page=page;updatePaging();savePosition();applyTools();}syncNativeSpeakerReading(block);showReaderParagraphHighlight(block);},onReaderState:nativeReaderState,
+ onReaderBlock(block){const page=+block.dataset.page;if(page&&page!==V.page){V.page=page;updatePaging();savePosition();applyTools();}showReaderParagraphHighlight(block);},onReaderState:nativeReaderState,
  openSettings:()=>parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'bilingualReader'},location.origin)
 });
 // The Reader's existing More action opens the app's existing Reader settings, not a copied menu.

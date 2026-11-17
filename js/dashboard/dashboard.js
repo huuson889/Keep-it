@@ -1080,7 +1080,7 @@ function renderBilingualReaderControls() {
   $("bilingualSkipSame").checked = bilingualReaderSettings.skipSameLang !== false;
   $("bilingualAutoScroll").checked = bilingualReaderSettings.autoScroll !== false; $("bilingualReadTranslation").checked = bilingualReaderSettings.readTranslation === true;
   $("bilingualEnableTTS").checked = bilingualReaderSettings.enableTTS !== false;
-  $("bilingualSpeakerIconVisibility").value = ["always", "hover", "reading"].includes(bilingualReaderSettings.speakerIconVisibility) ? bilingualReaderSettings.speakerIconVisibility : "hover";
+  $("bilingualSpeakerIconVisibility").value = ["always", "hover"].includes(bilingualReaderSettings.speakerIconVisibility) ? bilingualReaderSettings.speakerIconVisibility : "hover";
   $("bilingualExcludeSelectors").value = Array.isArray(bilingualReaderSettings.excludeSelectors) ? bilingualReaderSettings.excludeSelectors.join("\n") : String(bilingualReaderSettings.excludeSelectors || "");
   syncBilingualReaderControls();
   document.querySelectorAll("[data-bilingual-translation-color]").forEach(button => button.classList.toggle("is-selected", button.dataset.bilingualTranslationColor === (bilingualReaderSettings.translationTextColor || "default")));
@@ -1093,11 +1093,12 @@ async function load() {
   const savedBilingualReaderSettings = settingsData[BILINGUAL_READER_SETTINGS_KEY] || {};
   const savedReaderSites = Array.isArray(savedBilingualReaderSettings.readerDisabledWebsites) ? savedBilingualReaderSettings.readerDisabledWebsites : [];
   const seedReaderSites = savedBilingualReaderSettings.readerDefaultSitesSeeded !== true;
-  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
+  const migrateSpeakerVisibility = savedBilingualReaderSettings.speakerIconVisibility === "reading";
+  bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS, ...savedBilingualReaderSettings, speakerIconVisibility:migrateSpeakerVisibility || !["always", "hover"].includes(savedBilingualReaderSettings.speakerIconVisibility) ? "hover" : savedBilingualReaderSettings.speakerIconVisibility, readerDisabledWebsites:seedReaderSites ? [...new Set([...CONFIG.DEFAULT_READER_DISABLED_WEBSITES, ...savedReaderSites])] : savedReaderSites, readerDefaultSitesSeeded:true };
   // "Read translation with source" mặc định bật từ v3.4.594; bản lưu cũ đã ghi cứng false nên bật lại một lần.
   const readTranslationDefaultNeedsOn = savedBilingualReaderSettings.readTranslationDefaultOn !== true;
   if (readTranslationDefaultNeedsOn) bilingualReaderSettings = { ...bilingualReaderSettings, readTranslation:true, readTranslationDefaultOn:true };
-  if (seedReaderSites || readTranslationDefaultNeedsOn) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
+  if (seedReaderSites || readTranslationDefaultNeedsOn || migrateSpeakerVisibility) browser.storage.local.set({ [BILINGUAL_READER_SETTINGS_KEY]:bilingualReaderSettings }).catch(() => {});
   const webFontKeys = { "":"auto", "'Inter', sans-serif":"inter", "'Lora', Georgia, serif":"lora", "'Roboto Mono', monospace":"roboto-mono", "'Fredoka', sans-serif":"fredoka", "system-ui, -apple-system, sans-serif":"system" };
   const webFontKey = webFontKeys[bilingualReaderSettings.webFontFamily || ""] || "auto";
   browser.storage.local.set({ lhnCustomFontSettings:{ customFontEnabled:webFontKey !== "auto", fontKey:webFontKey } }).catch(() => {});

@@ -11,9 +11,8 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     }
     .lhn-bilingual-speaker{position:absolute!important;display:inline-flex!important;align-items:center;justify-content:center;width:18px!important;height:18px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;z-index:2;color:#868e96;cursor:pointer;font-size:.8em;line-height:1;user-select:none;vertical-align:middle}
     .lhn-bilingual-speaker:hover{color:var(--lhn-br-accent);transform:scale(1.2)}
-    .lhn-bilingual-speaker[data-visibility="hover"],.lhn-bilingual-speaker[data-visibility="reading"]{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
-    :hover>.lhn-bilingual-speaker[data-visibility="hover"],:hover>.lhn-bilingual-speaker[data-visibility="reading"]{visibility:visible;opacity:1;pointer-events:auto}
-    .lhn-bilingual-speaker[data-visibility="reading"][data-reading="true"]{visibility:visible;opacity:1;pointer-events:auto}
+    .lhn-bilingual-speaker[data-visibility="hover"]{visibility:hidden;opacity:0;pointer-events:none;transition:opacity .12s ease,visibility .12s ease}
+    :hover>.lhn-bilingual-speaker[data-visibility="hover"]{visibility:visible;opacity:1;pointer-events:auto}
     .lhn-bilingual-card{display:block;margin:8px 0;padding:10px 14px;border-left:4px solid var(--lhn-br-accent);background:rgba(var(--lhn-br-accent-rgb),.04);border-radius:0 8px 8px 0;font-family:var(--lhn-br-font);font-size:max(16px,var(--translation-scale,80%))!important;line-height:1.6;color:var(--lhn-br-translation-color,#2d3748);font-weight:var(--lhn-br-translation-weight,400);box-shadow:0 1px 3px rgba(0,0,0,.02);animation:lhnBrFade .25s ease-in-out}
     .lhn-bilingual-web-font{font-family:var(--lhn-br-web-font)!important}
     .lhn-bilingual-reading{outline:2px solid var(--lhn-br-accent)!important;outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08)!important;border-radius:6px}

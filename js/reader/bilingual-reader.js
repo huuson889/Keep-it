@@ -236,8 +236,7 @@
   }
   function markReadingBlock(block) {
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
-    document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
-    block.classList.add("lhn-bilingual-reading"); readerSpeakerFor(block)?.setAttribute("data-reading", "true");
+    block.classList.add("lhn-bilingual-reading");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
   }
   // Kéo thanh tiến độ: tạm dừng, xem đoạn đích, thả tay thì nhảy tới đoạn đó và đọc tiếp nếu trước đó đang đọc
@@ -686,7 +685,14 @@
     const wasReaderActive = settings.enableTTS && !isReaderDisabledOnThisWebsite();
     settings = { ...DEFAULTS, ...(next || {}) };
     settings.speechSpeedStep = normalizeSpeedStep(settings.speechSpeedStep);
-    if (!["always", "hover", "reading"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
+    if (settings.speakerIconVisibility === "reading") {
+      settings.speakerIconVisibility = "hover";
+      browser.storage.local.get(SETTINGS_KEY).then(data => {
+        const saved = data[SETTINGS_KEY] || {};
+        if (saved.speakerIconVisibility === "reading") browser.storage.local.set({ [SETTINGS_KEY]:{ ...saved, speakerIconVisibility:"hover" } });
+      }).catch(() => {});
+    }
+    if (!["always", "hover"].includes(settings.speakerIconVisibility)) settings.speakerIconVisibility = "hover";
     settings.translationFontScale = Math.min(150, Math.max(50, Number(settings.translationFontScale) || DEFAULTS.translationFontScale));
     if (!/^#[0-9a-f]{6}$/i.test(settings.accentColor)) settings.accentColor = DEFAULTS.accentColor;
     document.documentElement.style.setProperty("--lhn-br-accent", settings.accentColor);
@@ -1191,7 +1197,6 @@
         if (speakerHost && speaker.parentElement !== speakerHost) speakerHost.appendChild(speaker);
       }
       speaker.dataset.visibility = settings.speakerIconVisibility;
-      speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
       positionSpeakerAfterText(block, speaker, geometry);
       speakerPositionObserver?.observe(block);
     });
@@ -1255,7 +1260,7 @@
     barHideTimer = setTimeout(() => { bar.classList.remove("lhn-show", "lhn-hiding"); syncSpacer(); notifySourceReaderState(); }, 220);
   }
   function stopReading() {
-    speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker").forEach(el => el.removeAttribute("data-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
+    speechDetectionRequest++; readingSegment = null; reading = false; readingPaused = false; resumeText = ""; currentReadText = ""; currentReadCharIndex = 0; utterance = null; cancelGoogle(); syncPauseShortcutState(); document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading")); document.querySelectorAll(".lhn-bilingual-speaker:focus").forEach(el => el.blur()); closePopovers(); syncToolbar();
   }
   let googleAudio = null, googleToken = null, googleResumeWaiters = [];
   function cancelGoogle() {
@@ -1336,10 +1341,8 @@
     if (queueIndex >= queue.length || !queue[queueIndex]) { if(await continueSourcePage(1,queue[queue.length-1]))return;stopReading();return; }
     const requestId = ++speechDetectionRequest;
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
-    document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
     pageContext?.onReaderBlock?.(block);
-    readerSpeakerFor(block)?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
     const translationIncluded = textOverride == null && readTr() && Boolean(translationCard(block)?.textContent.trim());

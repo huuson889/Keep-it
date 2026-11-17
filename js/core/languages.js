@@ -99,7 +99,6 @@
   MESSAGES.en.bilingualSpeakerIcon = "Show reading icon"; MESSAGES.vi.bilingualSpeakerIcon = "Hiện icon đọc"; MESSAGES.ko.bilingualSpeakerIcon = "읽기 아이콘 표시"; MESSAGES.en.bilingualReadTranslation = "Read translation with source"; MESSAGES.vi.bilingualReadTranslation = "Đọc luôn cả đoạn dịch song ngữ"; MESSAGES.ko.bilingualReadTranslation = "번역문도 함께 읽기"; MESSAGES.en.readTranslationOnToast = "Reading source and translation is on"; MESSAGES.vi.readTranslationOnToast = "Đọc cho cả đoạn dịch song ngữ đang bật"; MESSAGES.ko.readTranslationOnToast = "원문과 번역문 함께 읽기가 켜져 있음";
   MESSAGES.en.bilingualSpeakerAlways = "Always visible"; MESSAGES.vi.bilingualSpeakerAlways = "Luôn hiện"; MESSAGES.ko.bilingualSpeakerAlways = "항상 표시";
   MESSAGES.en.bilingualSpeakerHover = "Show on hover"; MESSAGES.vi.bilingualSpeakerHover = "Hiện khi di chuột"; MESSAGES.ko.bilingualSpeakerHover = "마우스를 올릴 때 표시";
-  MESSAGES.en.bilingualSpeakerReading = "Only while reading"; MESSAGES.vi.bilingualSpeakerReading = "Chỉ hiện khi đọc"; MESSAGES.ko.bilingualSpeakerReading = "읽는 동안에만 표시";
   MESSAGES.en.readerPopupGroupLanguages = "Google voices"; MESSAGES.vi.readerPopupGroupLanguages = "Giọng Google"; MESSAGES.ko.readerPopupGroupLanguages = "Google 음성";
   MESSAGES.en.readerPopupGroupBrowserVoices = "Browser voices"; MESSAGES.vi.readerPopupGroupBrowserVoices = "Giọng trình duyệt"; MESSAGES.ko.readerPopupGroupBrowserVoices = "브라우저 음성";
   MESSAGES.en.readerPopupGroupFavorites = "Favourites"; MESSAGES.vi.readerPopupGroupFavorites = "Yêu thích"; MESSAGES.ko.readerPopupGroupFavorites = "즐겨찾기";

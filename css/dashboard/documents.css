@@ -354,7 +354,7 @@ html.dark .sheet button.on{background:#25264a;color:#c3c0ff}
 .legend header button:hover{background:var(--soft)}
 .legend div{line-height:1.8}
 .legend b{font-weight:700}
-.side2{--panel-base:320px;width:320px;flex:none;border-left:1px solid var(--line);background:var(--surface);display:none;flex-direction:column;min-height:0}
+.side2{--panel-base:480px;width:480px;flex:none;border-left:1px solid var(--line);background:var(--surface);display:none;flex-direction:column;min-height:0}
 .side2 header{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 12px 16px;border-bottom:1px solid var(--line);font-weight:700}
 .side2 header small{display:block;font-weight:500;color:var(--muted);font-size:12px}
 mark.flash{animation:flash 1.2s ease 2}
@@ -541,7 +541,7 @@ html.dark .tour button{background:#0000000f}
 .transOpen .translation{display:flex}
 .transList{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
 .transSource{font-size:11.5px;font-weight:700;color:var(--brand);padding:0 2px}
-.transItem{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:13px;line-height:1.65}
+.transItem{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:12px;line-height:1.65}
 .transItem .source{color:var(--muted);font-size:inherit;margin-bottom:8px}
 .transItem .trText{color:var(--ink)}
 .transTip{padding:8px 12px 12px;font-size:11.5px;color:var(--muted)}
@@ -576,11 +576,11 @@ html.dark .tour button{background:#0000000f}
 .pager button{width:36px;height:36px}}
 @media  (pointer:coarse) and (orientation:portrait){.morePanel{top:auto;max-height:85dvh}}
 @media  (orientation:landscape) and (max-width:1050px){.rail{width:88px;padding:10px 8px}
-.side2{--panel-base:280px;width:280px}}
+.side2{--panel-base:420px;width:420px}}
 @media  (max-height:500px) and (orientation:landscape){.vbar{padding:0 8px;gap:5px}
 .stage{padding-top:10px}
 .rail{width:75px}
-.side2{--panel-base:260px;position:relative;left:auto;right:auto;bottom:auto;top:auto;border-radius:0;max-height:none;width:260px}
+.side2{--panel-base:390px;position:relative;left:auto;right:auto;bottom:auto;top:auto;border-radius:0;max-height:none;width:390px}
 .legend{font-size:11px}
 .tour{top:auto;bottom:8px;left:8px;right:auto;width:300px}}
 /* Resizable side panels retain the portrait sheet layout. */
@@ -697,7 +697,7 @@ body{overflow:auto}
 .docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;outline:2px solid var(--lhn-br-accent);outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08);border-radius:6px;pointer-events:none}
 .docsReaderSpeakerOverlay{position:absolute;inset:0;z-index:12;pointer-events:none}
 .docsReaderSpeakerAnchor{position:absolute;width:18px;height:18px;pointer-events:auto}
-.docsReaderSpeakerAnchor[data-source-hover]>.lhn-bilingual-speaker[data-visibility="hover"],.docsReaderSpeakerAnchor[data-source-hover]>.lhn-bilingual-speaker[data-visibility="reading"]{visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+.docsReaderSpeakerAnchor[data-source-hover]>.lhn-bilingual-speaker[data-visibility="hover"]{visibility:visible!important;opacity:1!important;pointer-events:auto!important}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}
