@@ -28,9 +28,16 @@ function applyPopupTheme() {
   button.setAttribute("aria-label", label);
   button.setAttribute("aria-pressed", String(dark));
 }
-function isPdfUrl(value) {
-  try { const url = new URL(value); return ["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname)); }
-  catch { return false; }
+function isPdfUrl(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return true;
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return false;
+    return ["src", "file", "url", "originalUrl"].some(key => {
+      const source = url.searchParams.get(key);
+      return !!source && isPdfUrl(source, depth + 1);
+    });
+  } catch { return false; }
 }
 function syncWebsiteActiveStatus() {
   const status = $("extensionStatus");

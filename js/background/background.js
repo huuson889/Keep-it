@@ -4,9 +4,16 @@ if (typeof importScripts === "function") {
 const CONFIG = globalThis.LHN_CONFIG;
 const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
 const KEEPIT_ACTION = browser.action || browser.browserAction;
-function isPdfTabUrl(value) {
-  try { const url = new URL(value); return ["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname)); }
-  catch { return false; }
+function isPdfTabUrl(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return true;
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return false;
+    return ["src", "file", "url", "originalUrl"].some(key => {
+      const source = url.searchParams.get(key);
+      return !!source && isPdfTabUrl(source, depth + 1);
+    });
+  } catch { return false; }
 }
 async function syncPdfTabBadge(tabId, value) {
   if (!Number.isInteger(tabId) || !KEEPIT_ACTION?.setBadgeText) return;
@@ -18,10 +25,75 @@ async function syncPdfTabBadge(tabId, value) {
     if (pdf) await KEEPIT_ACTION.setBadgeBackgroundColor?.({ tabId, color: "#d34858" });
   } catch { /* restricted/internal tabs may not support a contextual badge */ }
 }
+function pdfTabSource(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return url.href;
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
+    for (const key of ["src", "file", "url", "originalUrl"]) {
+      const source = url.searchParams.get(key);
+      const resolved = source && pdfTabSource(source, depth + 1);
+      if (resolved) return resolved;
+    }
+  } catch { /* not a PDF URL */ }
+  return "";
+}
+const PDF_HINT_SEEN_KEY = "lhnPdfSuggestionSeenV1", pdfHintStore = browser.storage.session || browser.storage.local;
+let floatingPdfHintWindowId = null, floatingPdfHintTabId = null;
+const pdfHintPending = new Set();
+async function closeFloatingPdfHint(tabId = null) {
+  if (!Number.isInteger(floatingPdfHintWindowId) || (Number.isInteger(tabId) && floatingPdfHintTabId !== tabId)) return;
+  const id = floatingPdfHintWindowId;
+  floatingPdfHintWindowId = floatingPdfHintTabId = null;
+  await browser.windows.remove(id).catch(() => {});
+}
+async function forgetPdfHintForTab(tabId) {
+  try {
+    const stored = await pdfHintStore.get(PDF_HINT_SEEN_KEY), seen = stored[PDF_HINT_SEEN_KEY] || {};
+    if (!Object.hasOwn(seen, tabId)) return;
+    delete seen[tabId]; await pdfHintStore.set({ [PDF_HINT_SEEN_KEY]:seen });
+  } catch {}
+}
+async function showFloatingPdfHint(tab, url = tab?.url || "") {
+  const tabId = tab?.id, source = pdfTabSource(url);
+  if (!Number.isInteger(tabId) || !tab.active || !source) return;
+  const pendingKey = `${tabId}:${source}`;
+  if (pdfHintPending.has(pendingKey)) return;
+  pdfHintPending.add(pendingKey);
+  try {
+    const stored = await pdfHintStore.get(PDF_HINT_SEEN_KEY), seen = stored[PDF_HINT_SEEN_KEY] || {};
+    if (seen[tabId]?.url === source && Date.now() - seen[tabId].at < 43200000) return;
+    seen[tabId] = { url:source, at:Date.now() };
+    for (const [id, value] of Object.entries(seen)) if (id !== String(tabId) && (!value || typeof value.url !== "string" || Date.now() - value.at > 86400000)) delete seen[id];
+    await pdfHintStore.set({ [PDF_HINT_SEEN_KEY]:seen });
+    await closeFloatingPdfHint();
+    const host = Number.isInteger(tab.windowId) ? await browser.windows.get(tab.windowId).catch(() => null) : null;
+    const width = 368, height = 176, left = (host?.left || 0) + (host?.width || 1280) - width - 18, top = (host?.top || 0) + 88;
+    const hintUrl = new URL(browser.runtime.getURL("pages/pdf-suggestion.html")); hintUrl.searchParams.set("sourceTabId", String(tabId));
+    const popup = await browser.windows.create({ url:hintUrl.href, type:"popup", width, height, left, top, focused:true });
+    floatingPdfHintWindowId = popup.id; floatingPdfHintTabId = tabId;
+  } catch (error) { console.warn("Could not show the floating PDF suggestion", error); await forgetPdfHintForTab(tabId); }
+  finally { pdfHintPending.delete(pendingKey); }
+}
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url || changeInfo.status === "complete") void syncPdfTabBadge(tabId, changeInfo.url || tab?.url);
+  const url = changeInfo.url || tab?.url || "";
+  if (changeInfo.url || changeInfo.status === "loading") {
+    void syncPdfTabBadge(tabId, url);
+    if (pdfTabSource(url)) void showFloatingPdfHint({ ...tab, id:tabId }, url);
+    else { void forgetPdfHintForTab(tabId); void closeFloatingPdfHint(tabId); }
+  } else if (changeInfo.status === "complete") void syncPdfTabBadge(tabId, url);
 });
-browser.tabs.onActivated.addListener(({ tabId }) => { void syncPdfTabBadge(tabId); });
+browser.tabs.onActivated.addListener(async ({ tabId }) => {
+  try {
+    const tab = await browser.tabs.get(tabId), ownHint = browser.runtime.getURL("pages/pdf-suggestion.html");
+    if (tab.url?.split(/[?#]/, 1)[0] === ownHint) return;
+    void syncPdfTabBadge(tabId, tab.url);
+    if (pdfTabSource(tab.url)) void showFloatingPdfHint(tab, tab.url);
+    else await closeFloatingPdfHint();
+  } catch {}
+});
+browser.tabs.onRemoved.addListener(tabId => { void forgetPdfHintForTab(tabId); void closeFloatingPdfHint(tabId); });
+browser.windows.onRemoved.addListener(windowId => { if (windowId === floatingPdfHintWindowId) floatingPdfHintWindowId = floatingPdfHintTabId = null; });
 browser.tabs.query({}).then(tabs => tabs.forEach(tab => { if (Number.isInteger(tab.id)) void syncPdfTabBadge(tab.id, tab.url); })).catch(() => {});
 async function resetLegacyDictationWrongWordStats() {
   const storage = browser?.storage?.local;
@@ -188,14 +260,19 @@ async function openDashboard(openSettings = false, openAccount = false, settings
   }
   return existing;
 }
-async function openDashboardDocuments() {
+async function openDashboardDocuments(sourceTabId = null) {
   const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
   const documentsUrl = `${dashboardUrl}?view=documents`;
-  const [tabs, activeTabs] = await Promise.all([
-    browser.tabs.query({}), browser.tabs.query({ active:true, currentWindow:true })
+  const [tabs, activeTabs, sourceTab] = await Promise.all([
+    browser.tabs.query({}), browser.tabs.query({ active:true, currentWindow:true }),
+    Number.isInteger(sourceTabId) ? browser.tabs.get(sourceTabId).catch(() => null) : Promise.resolve(null)
   ]);
   const existing = tabs.find(tab => tab.url?.split(/[?#]/, 1)[0] === dashboardUrl);
-  if (!existing) return browser.tabs.create({ url:documentsUrl });
+  if (!existing) {
+    const created = await browser.tabs.create({ url:documentsUrl, ...(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}) });
+    if (Number.isInteger(sourceTab?.windowId)) await browser.windows.update(sourceTab.windowId, { focused:true }).catch(() => {});
+    return created;
+  }
   const activeTab = activeTabs[0];
   if (activeTab?.id !== existing.id) await browser.tabs.update(existing.id, { active:true });
   if (activeTab?.windowId !== existing.windowId) await browser.windows.update(existing.windowId, { focused:true });
@@ -376,7 +453,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
   }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();
-  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") return openDashboardDocuments();
+  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") return openDashboardDocuments(Number.isInteger(message.sourceTabId) ? message.sourceTabId : null);
   if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
   if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
   if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);
