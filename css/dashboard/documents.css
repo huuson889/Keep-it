@@ -233,9 +233,10 @@ html:not(.wcOn) .wc{text-decoration:none}
 .slideWrap{display:flex;flex-direction:column;gap:14px;width:min(760px,100%);height:max-content}
 .snotes{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14px;color:var(--ink2)}
 .snotes b{display:block;font-size:12px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px}
-.pager{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);white-space:nowrap;display:flex;align-items:center;gap:4px;padding:2px 3px;border:1px solid var(--line);border-radius:12px;background:var(--chip);backdrop-filter:blur(14px);box-shadow:var(--shadow);font-size:12px;font-weight:600;opacity:.24;transition:opacity .14s ease}
+.pager{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);white-space:nowrap;display:flex;align-items:center;gap:4px;padding:2px 3px;border:1px solid var(--line);border-radius:12px;background:var(--chip);backdrop-filter:blur(14px);box-shadow:var(--shadow);font-size:12px;font-weight:600;opacity:1;transition:opacity .14s ease}
+.pager.dimmed{opacity:.24;transition-duration:.55s}
 .pager:hover,.pager:focus-within{opacity:1}
-@media  (prefers-reduced-motion:reduce){.pager{transition:none}}
+@media  (prefers-reduced-motion:reduce){.pager,.pager.dimmed{transition:none}}
 .pager button{width:30px;height:30px;border:0;border-radius:50%;background:none;display:grid;place-items:center}
 .pager button:hover{background:var(--soft)}
 .pager .pageMenu{width:36px;height:36px;flex:none;margin-left:2px;border-left:1px solid var(--line2);border-radius:8px}

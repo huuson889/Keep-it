@@ -132,7 +132,7 @@ const FLOW_ICONS = {
 const pageBar = $('.pager');
 const PAGER_IDLE_MS = 1000;
 let pagerTimer = 0, pagerNear = false;
-function pagerHeld() { return pagerNear || !!pageBar.querySelector('input:focus,select:focus,:focus-visible'); }
+function pagerHeld() { return pagerNear || !!pageBar.querySelector(':focus'); }
 function armPagerFade() {
   clearTimeout(pagerTimer);
   if (!$('#viewer').classList.contains('show') || $('#viewer').classList.contains('ttsOn') || document.hidden) return;
