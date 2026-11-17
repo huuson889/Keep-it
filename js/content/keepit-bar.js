@@ -136,7 +136,7 @@
   const mountedReady = new Promise(resolve => { resolveMounted = resolve; });
   const S = {
     hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
-    coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false,
+    coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false, sheetFromReader:false,
     kbd:false, vfs:false, navGuide:0, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -805,7 +805,7 @@
     if (!$("sheet")?.classList.contains("open")) return;
     $("sheet").classList.remove("open"); $("bin").querySelector('[data-nav="more"]')?.classList.remove("on");
     document.dispatchEvent(new CustomEvent("lhn-main-sheet", { detail:{ open:false } }));
-    if (S.sheetFrom) { S.sheetFrom = null; setTimeout(() => { if (!$("sheet").classList.contains("open")) host.style.zIndex = "2147483000"; }, 300); }
+    if (S.sheetFrom) { S.sheetFrom = null; S.sheetFromReader = false; setTimeout(() => { if (!$("sheet").classList.contains("open")) host.style.zIndex = "2147483000"; }, 300); }
     if (S.peek && isDesk()) wireBar.peekLater?.();
   }
   async function toggleFont() {
@@ -1271,7 +1271,7 @@
     if (S.extYield && !ext) barBack();
     S.extYield = ext; S.siteOff = off; S.notesOn = notesVisible; S.readerOn = ext && readerShown();
     if (ext) { closePop(); if (!S.sheetFrom) closeSheet(); closeSearch(); hideCoach(); if (S.introOn) introDone(); }
-    if (S.sheetFrom && !readerShown()) closeSheet(); // Reader closed under its ☰ sheet
+    if (S.sheetFromReader && S.sheetFrom && !readerShown()) closeSheet(); // only a Reader-origin sheet closes with the Reader
     if (changed) { root.querySelector('[data-nav="notes"]')?.classList.toggle("on", notesVisible); syncBarVis(); }
     syncTr();
     const pageDark = pageIsDark(); $("screen").classList.toggle("pageDark", pageDark);
@@ -1326,8 +1326,9 @@
       const alreadyOpen = $("sheet").classList.contains("open");
       if (options.toggle === true && alreadyOpen) { closeSheet(); return { ok:true, open:false }; }
       S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
-      host.style.zIndex = "2147483647"; openSheet({ documents:options.documents === true });
       const focusReader = options.focusReader === true || (options.focusReader === undefined && options.documents !== true);
+      S.sheetFromReader = focusReader;
+      host.style.zIndex = "2147483647"; openSheet({ documents:options.documents === true });
       if (focusReader) {
         const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
         if (b && sec) {
