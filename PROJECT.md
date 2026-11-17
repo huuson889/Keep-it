@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.371**, nhánh `Keepit-Optimize-Test`; PDF toolbar badge + popup card handoff now opens the active PDF in Keepit Documents. Local file access requires the browser permission; when denied, Documents explains the permission and keeps manual file selection. Static syntax/manifest/markup/URL checks pass (v3.5.371 log); browser QA not run. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.372**, nhánh `Keepit-Optimize-Test`; PDF tabs auto-show a compact floating Keepit popup and retain the toolbar `PDF` badge/card; both open the active PDF in Documents. Local file access requires the browser permission; when denied, Documents explains and provides manual file selection. Static syntax/i18n/markup checks and mocked popup lifecycle pass (v3.5.372 log); browser QA not run. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Browser PDF handoff — v3.5.371
-- Browser-test trên Chrome/Firefox thật: badge PDF; thẻ trong popup toolbar; click toàn thẻ mở đúng PDF online và local; file URL khi quyền bật/tắt, hướng dẫn quyền và chọn tệp dự phòng; Dashboard tái sử dụng; tab không phải PDF không hiện thẻ. Chưa browser-test.
+### Browser PDF handoff — v3.5.372
+- Browser-test trên Chrome/Firefox thật: mở PDF online/local → popup nổi tự hiện đúng demo, không X/thu phóng; click toàn card mở đúng PDF; badge + card trong popup toolbar; quyền file URL bật/tắt và hướng dẫn/chọn file dự phòng; auto-dismiss 18 giây, switch tab, Dashboard reuse, tab thường không hiện. Chưa browser-test.
 
 ### Documents Reader — v3.5.368
 - v3.5.365/3.5.368 Documents sheet: bỏ điều khiển Ẩn/Hiện thanh; Dịch/Đọc to nằm ở footer cố định cạnh Cài đặt và gọi chung handler với viewer topbar. Static checks đạt; Chrome thật chưa test.
@@ -207,7 +207,7 @@ Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/ser
 Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Documents / Flashcards / Settings / Account / Backup ──> giao diện quản lý
-Browser PDF tab (`file:`/HTTP(S) `.pdf`, kể cả URL nguồn bọc trong viewer) ──> badge `PDF` + popup toolbar card (toàn vùng bấm) ──> `OPEN_DASHBOARD_DOCUMENTS` mang source URL ──> Dashboard Documents fetch/import/mở đúng PDF; local file cần Allow access to file URLs, nếu không thì hiện hướng dẫn + nút chọn file; không redirect tab
+Browser PDF tab (`file:`/HTTP(S) `.pdf`, kể cả URL nguồn bọc trong viewer) ──> Background tự hiện popup nổi + badge `PDF` ──> popup nổi hoặc popup toolbar card toàn vùng bấm ──> `OPEN_DASHBOARD_DOCUMENTS` mang source URL ──> Dashboard Documents fetch/import/mở đúng PDF; local file cần Allow access to file URLs, nếu không thì hiện hướng dẫn + nút chọn file; không redirect tab
 Documents main sheet ── `doc:translate` / `doc:read` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` used by viewer topbar
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
@@ -235,6 +235,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.372 | Arena.ai Agent sửa:**
+
+- Khôi phục popup PDF nổi tự hiện khi PDF tab active/tải xong; popup nhỏ theo demo, không có X/thu gọn, toàn card mở PDF. Giữ cả badge `PDF` và thẻ click toàn vùng trong popup toolbar; chia sẻ URL/open/fallback flow, local permission guide và manual picker.
+- File: `manifest.json`, `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `css/popup/pdf-suggestion.css`, `js/popup/popup.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `docs/INDEX.md`, `docs/modules/popup.md`, `PROJECT.md`, `OPT-ARENA.md`, `docs/changelog/v3.5.md`.
+- Kiểm tra: `node --check` background/action-popup/floating-popup/dashboard/documents/languages; runtime PDF labels en/vi/ko; mocked background lifecycle (PDF complete → popup once with exact URL → closes on navigation; duplicate-event guard); manifest, DOM IDs/assets, no close/collapse, `git diff --check` — PASS. Browser QA chưa chạy.
 
 **2026-11-17 | v3.5.371 | Arena.ai Agent sửa:**
 
@@ -379,8 +385,3 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - PDF hover dùng đúng tooltip từ `LHN_WORD_CLASS_CORE.tip` như trên web (từ + nghĩa song ngữ), bỏ con trỏ help/question.
 - Kiểm tra cú pháp và diff; chưa browser-test Chrome.
-
-**2026-11-17 | v3.5.340 | Arena.ai Agent sửa:**
-
-- PDF: Loại từ chỉ còn gạch dưới màu; hover gạch dưới hiện tooltip có viết tắt và nghĩa đã dịch. Các định dạng khác giữ nhãn như cũ.
-- Kiểm tra: `node --check js/dashboard/documents.js`, `git diff --check`; chưa browser-test tooltip trên PDF thật.

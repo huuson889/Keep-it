@@ -47,7 +47,7 @@ function finishPassword(value){const resolve=passwordResolve;passwordResolve=nul
 $('#pwOk').onclick=()=>{if(!$('#pwIn').value){$('#pwErr').style.visibility='visible';return;}finishPassword($('#pwIn').value);};$('#pwCancel').onclick=()=>{if(passwordForViewer)void closeViewer();else ++importCycle;finishPassword(null);};$('#pwIn').onkeydown=e=>{if(e.key==='Enter')$('#pwOk').click();if(e.key==='Escape')$('#pwCancel').click();};
 const extOf=name=>String(name).split('.').pop().toLowerCase();
 function kindOf(name){const ext=extOf(name);return ['jpg','jpeg','png','webp'].includes(ext)?'image':['pdf','docx','pptx'].includes(ext)?ext:null;}
-function pdfSourceUrl(value){try{const u=new URL(value);return ['http:','https:','file:'].includes(u.protocol)&&/\.pdf$/i.test(decodeURIComponent(u.pathname))?u.href:'';}catch{return '';}}
+function pdfSourceUrl(value){try{const u=new URL(value);return ['http:','https:','file:'].includes(u.protocol)&&/\.pdf$/i.test(decodeURIComponent(u.pathname))?(u.hash='',u.href):'';}catch{return '';}}
 function pdfFileName(url){try{const part=decodeURIComponent(new URL(url).pathname.split('/').pop()||'');return part&&/\.pdf$/i.test(part)?part:'document.pdf';}catch{return 'document.pdf';}}
 async function boundedPdfBlob(response){
  const length=Number(response.headers.get('content-length'));if(Number.isFinite(length)&&length>50*MB)throw new Error('PDF fileLimit');

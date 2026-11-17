@@ -31,7 +31,7 @@ function applyPopupTheme() {
 function pdfSourceUrl(value, depth = 0) {
   try {
     const url = new URL(value);
-    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return url.href;
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) { url.hash=""; return url.href; }
     if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
     for (const key of ["src", "file", "url", "originalUrl"]) {
       const source = url.searchParams.get(key), resolved = source && pdfSourceUrl(source, depth + 1);

@@ -1,0 +1,19 @@
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{padding:6px;background:transparent;color:#20283a;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.hint{position:relative;width:100%;height:100%;min-height:58px;padding:8px 10px;display:flex;align-items:center;gap:8px;border:1px solid #e3e0ff;border-radius:12px;background:rgba(255,255,255,.98);color:inherit;text-align:left;box-shadow:0 8px 24px #1e263b24;backdrop-filter:blur(10px);cursor:pointer;animation:arrive .2s ease both}
+.hint:hover{border-color:#c5bdff;box-shadow:0 10px 28px #1e263b30}
+.hint:focus-visible{outline:3px solid #594be066;outline-offset:1px}
+.keepit-logo{width:32px;height:32px;display:block;flex:none;object-fit:contain}
+.hint-copy{flex:1 1 100px;width:100px;min-width:0;display:grid;gap:2px}
+.hint-copy strong{display:block;overflow:hidden;color:#262e40;font-size:12px;line-height:1.25;font-weight:750;white-space:nowrap;text-overflow:ellipsis}
+.hint-copy small{display:block;width:100%;overflow:hidden;color:#858d9d;font-size:9px;line-height:1.2;white-space:nowrap;text-overflow:ellipsis}
+.primary{height:30px;flex:none;display:inline-flex;align-items:center;padding:0 9px;border-radius:8px;background:#5648e5;color:#fff;font-size:10px;font-weight:650;white-space:nowrap;box-shadow:0 3px 8px #5645e523}
+.hint:hover .primary{background:#4537d0}
+@keyframes arrive{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+html.dark body{color:#f0eff8}
+html.dark .hint{border-color:#414257;background:rgba(38,40,54,.98);color:#f0eff8;box-shadow:0 8px 24px #0008}
+html.dark .hint-copy strong{color:#f0eff8}
+html.dark .hint-copy small{color:#b0b3c2}
+html.dark .primary{background:#6357e8}
+@media(prefers-reduced-motion:reduce){.hint{animation:none}}

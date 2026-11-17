@@ -28,7 +28,7 @@ async function syncPdfTabBadge(tabId, value) {
 function pdfTabSource(value, depth = 0) {
   try {
     const url = new URL(value);
-    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return url.href;
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) { url.hash=""; return url.href; }
     if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
     for (const key of ["src", "file", "url", "originalUrl"]) {
       const source = url.searchParams.get(key);
@@ -38,14 +38,54 @@ function pdfTabSource(value, depth = 0) {
   } catch { /* not a PDF URL */ }
   return "";
 }
-browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  const url = changeInfo.url || tab?.url || "";
-  if (changeInfo.url || changeInfo.status === "loading" || changeInfo.status === "complete") void syncPdfTabBadge(tabId, url);
+const PDF_HINT_PAGE=browser.runtime.getURL("pages/pdf-suggestion.html");
+let floatingPdfHintWindowId=null,floatingPdfHintTabId=null;
+const shownPdfHints=new Map(),pdfHintPending=new Set();
+async function closeFloatingPdfHint(tabId=null){
+  const targets=new Set();
+  if(Number.isInteger(floatingPdfHintWindowId)&&(!Number.isInteger(tabId)||floatingPdfHintTabId===tabId))targets.add(floatingPdfHintWindowId);
+  try{for(const tab of await browser.tabs.query({})){
+    if(!Number.isInteger(tab.windowId)||!tab.url)continue;
+    const url=new URL(tab.url);if(url.href.split(/[?#]/,1)[0]!==PDF_HINT_PAGE)continue;
+    const sourceTabId=Number(url.searchParams.get("sourceTabId"));if(!Number.isInteger(tabId)||sourceTabId===tabId)targets.add(tab.windowId);
+  }}catch{}
+  if(!Number.isInteger(tabId)||floatingPdfHintTabId===tabId){floatingPdfHintWindowId=floatingPdfHintTabId=null;}
+  await Promise.all([...targets].map(id=>browser.windows.remove(id).catch(()=>{})));
+}
+async function showFloatingPdfHint(tab,url=tab?.url||""){
+  const tabId=tab?.id,source=pdfTabSource(url);if(!Number.isInteger(tabId)||!tab.active||!source)return;
+  const pendingKey=`${tabId}:${source}`;if(pdfHintPending.has(pendingKey))return;pdfHintPending.add(pendingKey);
+  try{
+    const now=Date.now(),prior=shownPdfHints.get(tabId);if(prior?.source===source&&now-prior.at<30000)return;
+    for(const[id,value]of shownPdfHints)if(now-value.at>3600000)shownPdfHints.delete(id);
+    const tabs=await browser.tabs.query({}),existing=tabs.find(item=>{
+      if(!item.url||!Number.isInteger(item.windowId))return false;
+      try{const u=new URL(item.url);return u.href.split(/[?#]/,1)[0]===PDF_HINT_PAGE&&Number(u.searchParams.get("sourceTabId"))===tabId&&u.searchParams.get("pdfUrl")===source;}catch{return false;}
+    });
+    if(existing){floatingPdfHintWindowId=existing.windowId;floatingPdfHintTabId=tabId;shownPdfHints.set(tabId,{source,at:now});return;}
+    await closeFloatingPdfHint();
+    const host=Number.isInteger(tab.windowId)?await browser.windows.get(tab.windowId).catch(()=>null):null,width=300,height=84;
+    const left=Math.max(host?.left||0,(host?.left||0)+(host?.width||1024)-width-14),top=(host?.top||0)+74;
+    const hintUrl=new URL(PDF_HINT_PAGE);hintUrl.searchParams.set("sourceTabId",String(tabId));hintUrl.searchParams.set("pdfUrl",source);
+    const popup=await browser.windows.create({url:hintUrl.href,type:"popup",width,height,left,top,focused:true});
+    floatingPdfHintWindowId=popup.id;floatingPdfHintTabId=tabId;shownPdfHints.set(tabId,{source,at:now});
+  }catch(error){console.warn("Could not show the floating PDF suggestion",error);}
+  finally{pdfHintPending.delete(pendingKey);}
+}
+browser.tabs.onUpdated.addListener((tabId,changeInfo,tab)=>{
+  const url=changeInfo.url||tab?.url||"";
+  if(url.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;
+  if(changeInfo.url||changeInfo.status==="loading"||changeInfo.status==="complete")void syncPdfTabBadge(tabId,url);
+  const source=pdfTabSource(url);
+  if(source){if(changeInfo.status==="complete"&&tab?.active)void showFloatingPdfHint({...tab,id:tabId},url);}
+  else if(changeInfo.url||changeInfo.status==="loading"){shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);}
 });
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  try { const tab = await browser.tabs.get(tabId); void syncPdfTabBadge(tabId, tab.url); } catch {}
+browser.tabs.onActivated.addListener(async({tabId})=>{
+  try{const tab=await browser.tabs.get(tabId);if(tab.url?.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);else{if(Number.isInteger(floatingPdfHintTabId))shownPdfHints.delete(floatingPdfHintTabId);void closeFloatingPdfHint();}}catch{}
 });
-browser.tabs.query({}).then(tabs => tabs.forEach(tab => { if (Number.isInteger(tab.id)) void syncPdfTabBadge(tab.id, tab.url); })).catch(() => {});
+browser.tabs.onRemoved.addListener(tabId=>{shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);});
+browser.windows.onRemoved.addListener(windowId=>{if(windowId===floatingPdfHintWindowId){floatingPdfHintWindowId=floatingPdfHintTabId=null;}});
+browser.tabs.query({}).then(tabs=>tabs.forEach(tab=>{if(Number.isInteger(tab.id)){void syncPdfTabBadge(tab.id,tab.url);if(tab.active&&pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);}})).catch(()=>{});
 async function resetLegacyDictationWrongWordStats() {
   const storage = browser?.storage?.local;
   if (!storage) return;
