@@ -294,7 +294,7 @@
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");
     $("intro").setAttribute("aria-label", t("introAria")); $("coach").setAttribute("aria-label", t("coachTitle"));
     syncBarVis();
-    if (DOCUMENTS_HOST) { $("bar").style.display="none"; $("hzone").style.display="none"; $("btop").style.display="none"; $("offdot").style.display="none"; }
+    if (DOCUMENTS_HOST) { $("bar").style.display="none"; $("hzone").style.display="none"; $("offdot").style.display="none"; }
     else fitLabels();
   }
   // v6: long labels on a narrow screen — if two labels are < 4px apart or cut with "…", shrink to 10px; still tight → 5 buttons (v7)
@@ -345,7 +345,8 @@
   function updBtop() {
     const b = $("btop"); if (!b) return;
     // v3.5.237: Reader open → back-to-top stays (video overlay still hides it). v3.5.240: always 110px from the bottom (CSS)
-    b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(scroller) > Math.min(200, clientHOf(scroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && (!S.extYield || S.readerOn));
+    const activeScroller = DOCUMENTS_HOST ? document.getElementById("stage") : scroller;
+    b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(activeScroller) > Math.min(200, clientHOf(activeScroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && (!S.extYield || S.readerOn));
     b.classList.toggle("low", (barOff() || S.yieldBar) && !S.peek);
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
@@ -631,8 +632,13 @@
     bar.addEventListener("mouseleave", () => { if (isDesk() && S.peek) wireBar.peekLater(); });
     wireOffDot();
     $("btop").addEventListener("click", () => {
-      const el = scroller && scroller !== document.body && scroller !== document.documentElement && scroller !== document.scrollingElement && scroller.isConnected ? scroller : null;
-      (el || window).scrollTo({ top:0, behavior:smooth() }); haptic();
+      if (DOCUMENTS_HOST) {
+        if (!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.scrollToTop?.()) document.getElementById("stage")?.scrollTo({ top:0, behavior:smooth() });
+      } else {
+        const el = scroller && scroller !== document.body && scroller !== document.documentElement && scroller !== document.scrollingElement && scroller.isConnected ? scroller : null;
+        (el || window).scrollTo({ top:0, behavior:smooth() });
+      }
+      haptic();
     });
   }
 
@@ -657,9 +663,9 @@
   const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z"), wc:"Alt+G", wcblock:"Alt+J" });
   const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"], wclegend:["wclegend", "wcLegend"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
-  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && wcOn()) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
+  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation"].includes(id))).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock"].includes(id))).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -716,7 +722,7 @@
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     ${readerRowHTML()}
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
+    <div class="sec">${esc(t("lookSec"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!A.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", zoom === 100 ? t("zoom") : `${t("zoom")} ${zoom}%`, zoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}${tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
   <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>` : `<div class="grip"></div><div class="shead"><span class="logo">${ic("logo")}</span><b>Keepit</b><span class="sp"></span><button class="lchip" type="button" data-q="account"><span class="av">${ic("user")}</span>${esc(t("login"))}</button></div>
   <div class="sbody">
@@ -729,7 +735,7 @@
     <div class="divider"></div>
     <div class="sec">${esc(t("colors"))}</div><div class="colors">${COLORS.map(k => `<button class="cdot${curColor() === k ? " on" : ""}" type="button" data-color="${k}" title="${esc(t(k))}" aria-label="${esc(t(k))}" style="background:${colorHex(k)}">${ic("check")}</button>`).join("")}</div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta"))}${tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip"))}${tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
+    <div class="sec">${esc(t("lookSite"))}</div><div class="quick">${tile("theme", isDark() ? "moon" : "sun", t("theme"), isDark())}${S.documentsSheet ? "" : tile("pdark", "pdark", t("pdark"), !!PD()?.pageDark?.() && isDark(), t("pdarkBetaTip"), "", t("beta")) + tile("zoom", "tsize", extZoom === 100 ? t("zoom") : `${t("zoom")} ${extZoom}%`, extZoom !== 100, t("zoomTip")) + tile("font", "type", t("font"), fontOn)}${isApk() ? tile("t:suggest", "tsearch", t("suggest"), false, t("suggestTip")) : ""}${tile("btop", "totop", t("btopTile"), S.btop, t("btopTip"))}</div>
   </div><button class="smore" type="button" aria-label="${esc(t("moreBelow"))}">${ic("down")}</button>
   <div class="mfoot">${foot("settings", "settings", t("settings"))}${foot("site", "power", t("siteTile"), false, t("siteTip"))}${barOff() ? foot("show", "barshow", t("show")) : foot("hide", "barhide", t("hide"))}</div>`;
     wireLang(); alignColors(); requestAnimationFrame(updFade);
@@ -846,6 +852,7 @@
     if (a === "pdark") { const on = !!(AUI() || PD())?.togglePageDark?.(); renderSheet(); if (!isDark()) toast(t("pdarkLight")); else toast(t(on ? "on" : "off") + t("pdark")); return; }
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
+    if (S.documentsSheet && a === "wc" && globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.toggleWordClass) { closeSheet(); void globalThis.LHN_DOCUMENTS_MAIN_ACTIONS.toggleWordClass(); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
     if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
     if (a === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
@@ -1290,7 +1297,7 @@
     if (!mounted) return;
     const target = event.target === document ? document.scrollingElement : event.target;
     if (!(target instanceof Element) || isOwnUi(target)) return;
-    const main = target === document.scrollingElement || target === document.documentElement || target === document.body || target.clientHeight >= innerHeight * 0.5;
+    const main = (DOCUMENTS_HOST && target === document.getElementById("stage")) || target === document.scrollingElement || target === document.documentElement || target === document.body || target.clientHeight >= innerHeight * 0.5;
     if (!main) return;
     scroller = target;
     const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
