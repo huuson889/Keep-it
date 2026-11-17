@@ -695,6 +695,8 @@ body{overflow:auto}
 .nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;padding-top:0!important;padding-bottom:0!important;width:auto;max-width:100%;box-sizing:border-box}
 .docsSource .pdfTextLayer .para.lhn-bilingual-reading{outline:none!important;outline-offset:0!important;background-color:transparent!important;border-radius:0!important}
 .docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;outline:2px solid var(--lhn-br-accent);outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08);border-radius:6px;pointer-events:none}
+.docsReaderSpeakerOverlay{position:absolute;inset:0;z-index:12;pointer-events:none}
+.docsReaderSpeakerAnchor{position:absolute;width:18px;height:18px;pointer-events:auto}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}

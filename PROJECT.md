@@ -1,17 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.330**, nhánh `Keepit-Optimize-Test`; Reader có speaker icon chung trên PDF Original; double-click cũng nhảy đoạn khi đang đọc/tạm dừng. Chưa browser-test icon/TTS hoặc double-click; đồng bộ cuộn PDF cũng chưa browser-test thật.
+- Version **3.5.331**, nhánh `Keepit-Optimize-Test`; PDF Original có speaker icon chung trên overlay không scale, neo theo cuối paragraph; double-click Reader cũng nhảy đoạn khi đang đọc/tạm dừng. Chưa browser-test icon/TTS hoặc double-click; đồng bộ cuộn PDF cũng chưa browser-test thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu & Reader — v3.5.330
+### Tài liệu & Reader — v3.5.331
 - Cần xác nhận trên PDF thật khi Cuộn theo tệp bật: tâm đoạn PDF và tâm card gốc + dịch trùng nhau khi cuộn liên tục/trang đơn và bản dịch tải muộn. Chưa browser-test.
 - Cần xác nhận double-click khi Reader đang chạy/tạm dừng nhảy và tiếp tục đúng đoạn trên web, Documents PDF (nhiều span/trang), và Read mode. Chưa browser-test.
-- Cần xác nhận speaker icon trên PDF Original: visibility setting, click-to-read, auto-scroll, Reader đang đọc/tạm dừng và vị trí cuối paragraph nhiều span khớp web. Chưa browser-test.
+- Cần xác nhận speaker icon trên PDF Original: visibility setting, click-to-read, auto-scroll, Reader đang đọc/tạm dừng, vị trí cuối paragraph nhiều span và kích thước 18×18px khớp web. Chưa browser-test.
 - Cần xác nhận với tài liệu thật ở theme sáng/tối: màu bản dịch dễ đọc và cỡ chữ khớp nguồn. Chưa browser-test UI.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
@@ -169,7 +169,7 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 ### Tài liệu cục bộ
 
 - `pages/documents.html`/`documents.css` chỉ giữ thư viện và original-file surfaces; không còn `#player`, `#sel`, `#dict`, Notes/AI pane riêng.
-- `documents.js` + `documents-context.js` cung cấp source identity/blocks/page anchors/layout cho `content.js` và `bilingual-reader.js` gốc; adapter có thể lấy queue block theo target double-click và geometry cuối paragraph để đặt speaker trên PDF Original. Web không có host phải giữ đường cũ; Source URL chỉ owned Dashboard document UUID.
+- `documents.js` + `documents-context.js` cung cấp source identity/blocks/page anchors/layout cho `content.js` và `bilingual-reader.js` gốc; adapter có thể lấy queue block theo target double-click và overlay không scale và geometry cuối paragraph để đặt speaker trên PDF Original. Web không có host phải giữ đường cũ; Source URL chỉ owned Dashboard document UUID.
 - Blob/metadata/progress ở `keepit-documents`. Notes/Flashcards mới ở annotations chung; legacy v314 migration giữ nội dung/ngày/anchor, idempotent và không tái tạo note đã xóa. JSON backup có Notes nhưng không blob; import rewrite đúng owned extension origin.
 - `LHN_SELECTION_TOOLBAR.installTouchSelectionBridge` là bridge touch duy nhất. `LHN_SIDEBAR.attachTouchSheet` dùng chung setup grow/scroll/drag. `js/ask-ai/sheet.js` là AI sheet đã chuyển nguyên component từ web bar, dùng cho web và Documents; parent Dashboard chuyển message top-frame cho source active.
 - `LHN_READER_API` chỉ facade của Reader gốc: không queue/UI khác; host cung cấp chữ tệp/chuyển trang/vị trí native card, pager nhường khi bar mở. AI dùng native panel/sheet và Send policy hiện có, không upload/read toàn bộ file tự động.
@@ -222,6 +222,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.331 | Arena.ai Agent sửa:**
+
+- Sửa speaker icon PDF bị rải lệch/do scale: chuyển icon vào overlay không scale của trang, tọa độ lấy từ rect ký tự cuối paragraph và kích thước 18×18px như Reader web. Dùng wrapper riêng mỗi icon để giữ hover visibility theo cài đặt chung; click/settings/TTS vẫn dùng Reader gốc.
+- File: `manifest.json`, `js/reader/bilingual-reader.js`, `js/dashboard/documents.js`, `js/dashboard/documents-context.js`, `css/dashboard/documents.css`, `docs/modules/reader.md`, `docs/modules/dashboard.md`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` Reader/Documents/context, parse manifest, `git diff --check` và assertion overlay không scale, tọa độ/kích thước 18px, visibility/click map đạt; chưa browser-test trực quan PDF thật.
 
 **2026-11-17 | v3.5.330 | Arena.ai Agent sửa:**
 

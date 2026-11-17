@@ -237,7 +237,7 @@
   function markReadingBlock(block) {
     document.querySelectorAll(".lhn-bilingual-reading").forEach(el => el.classList.remove("lhn-bilingual-reading"));
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
-    block.classList.add("lhn-bilingual-reading"); block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
+    block.classList.add("lhn-bilingual-reading"); readerSpeakerFor(block)?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
   }
   // Kéo thanh tiến độ: tạm dừng, xem đoạn đích, thả tay thì nhảy tới đoạn đó và đọc tiếp nếu trước đó đang đọc
@@ -1091,12 +1091,30 @@
     }
     return anchor;
   }
+  const speakerByBlock = new WeakMap(), speakerOwner = new WeakMap();
+  function readerSpeakerFor(block) {
+    const cached = speakerByBlock.get(block);
+    return cached?.isConnected ? cached : block.querySelector(":scope > .lhn-bilingual-speaker");
+  }
+  function removeReaderSpeaker(speaker) {
+    if (!speaker) return;
+    const owner = speakerOwner.get(speaker) || speaker.parentElement;
+    if (owner) { speakerPositionObserver?.unobserve(owner); speakerByBlock.delete(owner); }
+    speakerOwner.delete(speaker);
+    const host = speaker.parentElement;
+    speaker.remove();
+    if (host?.classList.contains("docsReaderSpeakerAnchor")) {
+      const overlay = host.parentElement; host.remove();
+      if (overlay?.classList.contains("docsReaderSpeakerOverlay") && !overlay.children.length) overlay.remove();
+    }
+  }
   function speakerGeometry(block) {
     const custom = pageContext?.readerSpeakerGeometry?.(block);
     if (custom?.anchor?.rect) return custom;
     return { anchor:lastReaderCharacterRect(block), bounds:block.getBoundingClientRect() };
   }
   function positionSpeakerAfterText(block, speaker, geometry = speakerGeometry(block)) {
+    if (pageContext?.positionReaderSpeaker?.(block, speaker, geometry) === true) return;
     const anchor = geometry?.anchor;
     if (!anchor) return;
     const textRect = anchor.rect, blockRect = geometry.bounds || block.getBoundingClientRect();
@@ -1117,13 +1135,13 @@
   }
   const speakerPositionObserver = typeof ResizeObserver === "function" ? new ResizeObserver(entries => {
     entries.forEach(entry => {
-      const speaker = entry.target.querySelector(":scope > .lhn-bilingual-speaker");
+      const speaker = readerSpeakerFor(entry.target);
       if (speaker) positionSpeakerAfterText(entry.target, speaker);
     });
   }) : null;
   function repositionReaderSpeakers() {
     document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
-      const block = speaker.parentElement;
+      const block = speakerOwner.get(speaker) || speaker.parentElement;
       if (block) positionSpeakerAfterText(block, speaker);
     });
   }
@@ -1133,34 +1151,31 @@
     speakerRepositionFrame = requestAnimationFrame(() => { speakerRepositionFrame = 0; repositionReaderSpeakers(); });
   }, { passive:true });
   function removeAllReaderSpeakers() {
-    document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
-      if (speaker.parentElement) speakerPositionObserver?.unobserve(speaker.parentElement);
-      speaker.remove();
-    });
+    document.querySelectorAll(".lhn-bilingual-speaker").forEach(removeReaderSpeaker);
   }
   function updateSpeakers() {
     if (pageContext && pageContext.readerSpeakersAllowed() === false) { removeAllReaderSpeakers(); return; }
     if (websiteDisabled || !settings.enableTTS || isReaderDisabledOnThisWebsite()) return;
     const readableBlocks = readerBlocks();
     const blockSet = new Set(readableBlocks);
+    const liveSpeakers = new Set(readableBlocks.map(readerSpeakerFor).filter(Boolean));
     document.querySelectorAll(".lhn-bilingual-speaker").forEach(speaker => {
-      if (blockSet.has(speaker.parentElement)) return;
-      if (speaker.parentElement) speakerPositionObserver?.unobserve(speaker.parentElement);
-      speaker.remove();
+      if (liveSpeakers.has(speaker)) return;
+      removeReaderSpeaker(speaker);
     });
     const isNestedBlock = block => { for (let parent = block.parentElement; parent; parent = parent.parentElement) if (blockSet.has(parent)) return true; return false; };
     readableBlocks.forEach((block, index) => {
       block.dataset.lhnBilingualIndex = String(index);
       // Chỉ khối trong vùng Reader mới có nút; khối điều hướng/widget của trang không bị chèn thêm.
       if (isNestedBlock(block)) {
-        const nestedSpeaker = block.querySelector(":scope > .lhn-bilingual-speaker");
-        if (nestedSpeaker) { speakerPositionObserver?.unobserve(block); nestedSpeaker.remove(); }
+        const nestedSpeaker = readerSpeakerFor(block);
+        if (nestedSpeaker) removeReaderSpeaker(nestedSpeaker);
         return;
       }
-      const geometry = speakerGeometry(block), anchor = geometry?.anchor;
-      let speaker = block.querySelector(":scope > .lhn-bilingual-speaker");
+      const geometry = speakerGeometry(block), anchor = geometry?.anchor, speakerHost = pageContext?.readerSpeakerHost?.(block);
+      let speaker = readerSpeakerFor(block);
       if (!anchor) {
-        if (speaker) { speakerPositionObserver?.unobserve(block); speaker.remove(); }
+        if (speaker) removeReaderSpeaker(speaker);
         return;
       }
       if (!speaker) {
@@ -1168,7 +1183,12 @@
         speaker.title = "Read this paragraph; click to start reading here"; speaker.setAttribute("role", "button"); speaker.tabIndex = 0;
         speaker.addEventListener("click", event => { event.stopPropagation(); startReading(block, true); });
         speaker.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); startReading(block, true); } });
-        const card = translationCard(block); card ? card.before(speaker) : block.appendChild(speaker);
+        speakerByBlock.set(block, speaker); speakerOwner.set(speaker, block);
+        if (speakerHost) speakerHost.appendChild(speaker);
+        else { const card = translationCard(block); card ? card.before(speaker) : block.appendChild(speaker); }
+      } else {
+        speakerByBlock.set(block, speaker); speakerOwner.set(speaker, block);
+        if (speakerHost && speaker.parentElement !== speakerHost) speakerHost.appendChild(speaker);
       }
       speaker.dataset.visibility = settings.speakerIconVisibility;
       speaker.toggleAttribute("data-reading", reading && block.classList.contains("lhn-bilingual-reading"));
@@ -1319,7 +1339,7 @@
     document.querySelectorAll('.lhn-bilingual-speaker[data-visibility="reading"]').forEach(el => el.removeAttribute("data-reading"));
     const block = queue[queueIndex]; block.classList.add("lhn-bilingual-reading");
     pageContext?.onReaderBlock?.(block);
-    block.querySelector(":scope > .lhn-bilingual-speaker")?.setAttribute("data-reading", "true");
+    readerSpeakerFor(block)?.setAttribute("data-reading", "true");
     if (settings.autoScroll) block.scrollIntoView({ behavior:"smooth", block:"center" });
     currentReadText = textOverride ?? readTextFor(block); currentReadCharIndex = 0;
     const translationIncluded = textOverride == null && readTr() && Boolean(translationCard(block)?.textContent.trim());

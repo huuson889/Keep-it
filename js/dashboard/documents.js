@@ -409,6 +409,23 @@ function readerParagraphHighlightBox(rects,sourceRect,scale){
  const left=Math.min(...visible.map(rect=>rect.left)),top=Math.min(...visible.map(rect=>rect.top)),right=Math.max(...visible.map(rect=>rect.right)),bottom=Math.max(...visible.map(rect=>rect.bottom));
  return{left:(left-sourceRect.left)/scale,top:(top-sourceRect.top)/scale,width:(right-left)/scale,height:(bottom-top)/scale};
 }
+function nativeSpeakerHost(block){
+ if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return null;
+ const source=block.closest('.docsSource'),surface=source?.parentElement;if(!surface)return null;
+ let overlay=surface.querySelector(':scope > .docsReaderSpeakerOverlay');if(!overlay){overlay=document.createElement('div');overlay.className='docsReaderSpeakerOverlay';surface.append(overlay);}
+ const page=+block.dataset.page,index=paragraphIndex(block),key=`${page}:${index}`;let anchor=overlay.querySelector(`[data-reader-speaker-key="${key}"]`);
+ if(!anchor){anchor=document.createElement('span');anchor.className='docsReaderSpeakerAnchor';anchor.dataset.readerSpeakerKey=key;overlay.append(anchor);}
+ return anchor;
+}
+function positionNativeSpeaker(block,speaker,geometry){
+ if(V.mode!=='orig'||V.doc?.type!=='pdf'||!geometry?.anchor?.rect)return false;
+ const anchor=geometry.anchor,host=speaker.parentElement,overlay=host?.parentElement;if(!host?.classList.contains('docsReaderSpeakerAnchor')||!overlay?.classList.contains('docsReaderSpeakerOverlay'))return false;
+ const bounds=overlay.getBoundingClientRect(),width=18,height=18,gap=3,text=anchor.rect;
+ let left=anchor.direction==='rtl'?text.left-width-gap:text.right+gap,top=text.top+(text.height-height)/2;
+ left=Math.max(bounds.left,Math.min(bounds.right-width,left));top=Math.max(bounds.top,Math.min(bounds.bottom-height,top));
+ host.style.left=(left-bounds.left+overlay.scrollLeft-overlay.clientLeft)+'px';host.style.top=(top-bounds.top+overlay.scrollTop-overlay.clientTop)+'px';
+ speaker.style.left='0px';speaker.style.top='0px';return true;
+}
 function nativeSpeakerGeometry(block){
  if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return null;
  const page=+block.dataset.page,index=paragraphIndex(block),spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),rects=spans.map(el=>el.getBoundingClientRect()).filter(rect=>rect.width>0&&rect.height>0);if(!rects.length)return null;
@@ -436,7 +453,7 @@ LHN_DOCUMENT_CONTEXT.attach({
  applyPageShrink(width){if(!matchMedia('(pointer:coarse) and (hover:none)').matches){nativeNoteWidth=width;$('#viewer').style.right=width+'px';}},
  restorePageWidth(){nativeNoteWidth=0;$('#viewer').style.right='';},
  onSidebar(element,open,width,close){nativeNotesOpen=!!open;$('[data-t="notes"]').classList.toggle('on',!!open);if(element&&matchMedia('(pointer:coarse) and (hover:none)').matches)LHN_SIDEBAR.attachTouchSheet(element,{close});},
- readerBlocks:nativeBlocks,readerBlocksForTarget:nativeBlocksForTarget,readerText:readerTextForBlock,readerSpeakerGeometry:nativeSpeakerGeometry,readerFontAllowed:()=>V.mode==='read',readerSpeakersAllowed:()=>V.mode==='read'||(V.doc?.type==='pdf'&&V.mode==='orig'),
+ readerBlocks:nativeBlocks,readerBlocksForTarget:nativeBlocksForTarget,readerText:readerTextForBlock,readerSpeakerGeometry:nativeSpeakerGeometry,readerSpeakerHost:nativeSpeakerHost,positionReaderSpeaker:positionNativeSpeaker,readerFontAllowed:()=>V.mode==='read',readerSpeakersAllowed:()=>V.mode==='read'||(V.doc?.type==='pdf'&&V.mode==='orig'),
  readerCard(block){const entry=nativeCards.get(cardKey(block));if(entry){entry.block=block;if(V.mode==='read'&&entry.card.parentElement!==block)mountNativeCard(block,entry.card);else if(V.mode==='orig'&&V.tools.has('translate')&&!entry.card.closest('#transList'))mountNativeCard(block,entry.card);}return entry?.card||null;},readerBlockForCard:cardBlock,mountReaderCard:mountNativeCard,readerTargetLanguage:()=>panelPrefs.language,
  async readerNextPage(direction,reference){if(!activeEngine||V.mode==='read')return false;const from=+(reference?.dataset.page||V.page);let page=from+Math.sign(direction);while(page>=1&&page<=V.doc.pages&&!sourceEntries(page).length)page+=Math.sign(direction);if(page<1||page>V.doc.pages)return false;await setPage(page,true);await ensurePage(page);return true;},
  onReaderBlock(block){const page=+block.dataset.page;if(page&&page!==V.page){V.page=page;updatePaging();savePosition();applyTools();}showReaderParagraphHighlight(block);},onReaderState:nativeReaderState,
