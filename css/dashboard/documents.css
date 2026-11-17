@@ -648,7 +648,7 @@ body{overflow:auto}
 .pdfTextLayer .en,.pdfTextLayer .en span,.pdfTextLayer .en mark{position:static;transform:none;font:inherit;line-height:inherit;white-space:inherit;color:transparent}
 .pdfTextLayer .en mark{padding:0;border-radius:1px;background:#ffe893a6}
 .pdfTextLayer .en mark.note{background:#86efac80}
-.docsSource .pdfTextLayer .en mark.lhn-pdf-highlight{mix-blend-mode:multiply}
+.docsSource .pdfTextLayer .para:has(mark.lhn-pdf-highlight){mix-blend-mode:multiply}
 .docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-yellow{background-color:#fff3a6!important}
 .docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-green{background-color:#c2f0bd!important}
 .docsSource .pdfTextLayer .en mark.lhn-pdf-highlight.lhn-purple{background-color:#d5cbff!important}
