@@ -377,7 +377,9 @@ async function paintWordClass(page){
 async function toggleWordClass(){if(!isText())return;if(V.tools.has('wc')){V.tools.delete('wc');++wcToken;clearTimeout(wcTimer);for(const el of $$('#stage .docsWcOverlay'))el.remove();$('#legend').classList.remove('on');applyTools();return;}const status=await LHN_MESSAGING.sendMessage({type:'WORD_CLASS_STATUS'});if(!status?.downloaded){toast(t('modelNeeded'));return;}V.tools.add('wc');++wcToken;applyTools();toast(t('wcBusy'));try{await paintWordClass(V.page);}catch{V.tools.delete('wc');applyTools();toast(t('wcError'));}}
 globalThis.LHN_DOCUMENTS_MAIN_ACTIONS=Object.freeze({
  scrollToTop(){if(!V.doc)return false;if(V.flow==='single'&&V.mode!=='read')void setPage(1);else $('#stage').scrollTo({top:0,behavior:'smooth'});return true;},
- toggleWordClass,wordClassOn:()=>V.tools.has('wc')
+ toggleWordClass,wordClassOn:()=>V.tools.has('wc'),
+ async toggleWordClassLegend(){if(!isText()){toast(t('noText'));return false;}if(!V.tools.has('wc')){await toggleWordClass();return V.tools.has('wc');}if(!$('#wordClassLegend').innerHTML.trim()){await paintWordClass(V.page);return true;}const open=!$('#legend').classList.contains('on');$('#legend').classList.toggle('on',open);return open;},
+ wordClassLegendOn:()=>$('#legend').classList.contains('on')
 });
 $('#lgClose').onclick=()=>$('#legend').classList.remove('on');
 

@@ -663,7 +663,7 @@
   const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z"), wc:"Alt+G", wcblock:"Alt+J" });
   const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"], wclegend:["wclegend", "wcLegend"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
-  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
+  const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassLegendOn?.() : !!globalThis.LHN_WORD_CLASS?.legendShown?.())), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
   const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock"].includes(id))).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
@@ -728,7 +728,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     ${readerRowHTML()}
@@ -853,6 +853,7 @@
     if (a === "coach") { closeSheet(); S.coachSeen = false; S.coachRe = true; setTimeout(showCoach, 300); return; }
     if (a === "account") { closeSheet(); void send("OPEN_DASHBOARD_ACCOUNT"); return; }
     if (S.documentsSheet && a === "wc" && globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.toggleWordClass) { closeSheet(); void globalThis.LHN_DOCUMENTS_MAIN_ACTIONS.toggleWordClass(); return; }
+    if (S.documentsSheet && a === "wclegend" && globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.toggleWordClassLegend) { closeSheet(); void globalThis.LHN_DOCUMENTS_MAIN_ACTIONS.toggleWordClassLegend(); return; }
     if (NAVTILE[a]) { closeSheet(); doNav(a); return; }
     if (a === "site") { closeSheet(); if (siteDisabled()) return; run("site-toggle"); setTimeout(syncState, 250); return; }   // content.js shows the one on/off toast
     if (a === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
