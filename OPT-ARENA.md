@@ -9,7 +9,7 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ## 2026-11-17 | Ý TƯỞNG - Nâng cấp trình đọc Tài liệu (Độ chính xác render, Select & Reader như Web, Mục lục, Tìm kiếm, Đọc đêm, Audiobook)
 
-**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+**Trạng thái:** Đang triển khai từng bước; v3.5.316 đã dựng đoạn PDF từ text items (chưa browser-test tệp thật). DOCX/PPTX và OCR vẫn chưa làm; spec chi tiết chưa hoàn tất.
 
 ### 1. Bối cảnh & Mục tiêu
 - Tab **Tài liệu** (`pages/documents.html`, `js/dashboard/documents.js`, `documents-renderers.js`, `documents-store.js`) hiện đã hỗ trợ đọc PDF, Word (DOCX), PowerPoint (PPTX), ảnh (JPG/PNG/WebP), có highlight, ghi chú, đọc text, từ điển, panel dịch và Ask AI.

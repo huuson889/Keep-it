@@ -18,10 +18,10 @@ Thư viện/trình xem lấy bố cục demo v13; **công cụ phải dùng modu
 ## Luồng dữ liệu
 
 1. Sidebar/Thêm mở iframe route `documents`. Parent chỉ ẩn shared topbar tại route này; bridge kiểm origin và `event.source`. Tham chiếu tệp dùng UUID cục bộ trong URL Dashboard, không đưa hash/nội dung tệp vào URL AI.
-2. Chọn/kéo thả → giới hạn → SHA-256 chống trùng → giải mã thật → ghi blob/metadata nguyên tử. Không lưu mật khẩu PDF hoặc thumbnail giải mã của PDF khóa. Bộ đọc Office có cảnh báo sai khác phông/đối tượng; cần trang chính xác thì dùng PDF tĩnh.
+2. Chọn/kéo thả → giới hạn → SHA-256 chống trùng → giải mã thật → ghi blob/metadata nguyên tử. Không lưu mật khẩu PDF hoặc thumbnail giải mã của PDF khóa. PDF giữ trang canvas/text layer gốc; một projection riêng ghép PDF text items theo tọa độ thành dòng/đoạn và thứ tự hai cột để Reader/Dịch dùng. DOCX/PPTX lấy khối từ cấu trúc HTML đã render; preview Office có thể sai phông/đối tượng, cần trang chính xác thì dùng PDF tĩnh.
 3. Chọn chữ đi qua `content.js` và `LHN_SELECTION_TOOLBAR`, theo đúng style/logo/popup/master đã lưu. Full Dictionary, tim, popup ghi chú, màu/thẻ và sidebar đều là thành phần app; không có controller chọn chữ song song.
 4. Notes mới lưu ở **annotations chung**, kèm `documentAnchor` (hash tệp, trang, block, khoảng ký tự, quote). v314 notes được chuyển một lần, giữ nội dung/ngày, không tái tạo ghi chú đã xóa. Notes hiện trong H&N/Flashcards/JSON backup chung; blob tệp không nằm trong backup.
-5. Reader dùng `LHN_READER_API`, cùng UI giọng/tốc độ/repeat/điều khiển và cấu hình. Adapter chỉ cung cấp chữ thật, chuyển trang lười và chỗ đặt native bilingual card bên cạnh bản gốc. Đọc không đổi font/hình học trang gốc; view Đọc cung cấp văn bản tệp cho cùng Reader.
+5. Reader dùng `LHN_READER_API`, cùng UI giọng/tốc độ/repeat/điều khiển và cấu hình. PDF adapter cung cấp một block cho mỗi đoạn logic (các text spans gốc vẫn giữ ID riêng để chọn chữ/anchor), còn view Đọc và panel Dịch dùng cùng danh sách đoạn đã dựng. Adapter cung cấp chuyển trang lười và chỗ đặt native bilingual card bên cạnh bản gốc; PDF canvas/text layer và hình học trang không bị tái bố cục.
 6. Hỏi AI gọi controller chung; desktop dùng panel, cảm ứng dùng **cùng** `LHN_AI_SHEET` như web. Request top-frame được Dashboard chuyển cho Documents đang active. Chỉ action tường minh gửi selection/tham chiếu nguồn, không gửi blob hoặc tự đọc thân tệp cho AI.
 
 ## Hợp đồng

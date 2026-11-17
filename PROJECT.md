@@ -1,14 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.315**, nhánh `Keepit-Optimize-Test`; ZIP + CRX ký cùng khóa. Giữ phần đọc PDF/DOCX/PPTX/ảnh thật của v314.
+- Version **3.5.316**, nhánh `Keepit-Optimize-Test`; giữ phần đọc PDF/DOCX/PPTX/ảnh thật của v314. PDF text items nay được ghép thành đoạn logic cho Reader/Dịch; chưa xác nhận trên tệp thật.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Tài liệu — v3.5.315
+### Tài liệu — v3.5.316
+- Cần xác nhận trên PDF thật (một cột, hai cột, xuống dòng gạch nối, tiêu đề/bảng): đoạn tái dựng, thứ tự đọc, Reader/Dịch và chọn chữ/anchor có khớp trang gốc không. Chỉ chạy static + dữ liệu tổng hợp; chưa browser-test tệp thật.
 - Cần xác nhận trên Firefox và Edge Android thật: chọn/kéo thả tệp, worker PDF, text layer, DOCX/PPTX phức tạp, nguồn có phông đặc biệt, giọng thực tế và AI panel đã đăng nhập. Kết quả thiết bị thật là nguồn sự thật; headless không thay xác nhận này.
 - OCR, XFA, chỉnh sửa biểu mẫu PDF và hiệu ứng/đối tượng Office nâng cao chưa có. Bộ đọc Office là preview; dùng PDF tĩnh khi cần trang chính xác.
 - Byte tệp/thư viện chưa nằm trong JSON backup/cloud. Notes đã dùng annotations/backup chung ở v315; không đánh dấu backup blob đã hoàn tất.
@@ -218,6 +219,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.316 | Arena.ai Agent sửa:**
+
+- Tài liệu PDF: tái dựng text items theo tọa độ thành dòng/đoạn, tách cột hai bên khi có gutter ổn định, ghép từ gạch nối cuối dòng. Reader và Dịch nhận một block mỗi đoạn; text spans gốc vẫn giữ index riêng cho selection/anchor, highlighting khi đọc áp lên các mảnh của đoạn. DOCX/PPTX và OCR chưa đổi.
+- Cập nhật trạng thái ý tưởng và hợp đồng Reader/Tài liệu.
+- File: `manifest.json`, `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `docs/documents.md`, `docs/modules/reader.md`, `OPT-ARENA.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` hai file JS; dữ liệu PDF giả lập một cột, hai cột, gạch nối PASS; `git diff --check` PASS. Chưa browser-test trên PDF thật, Firefox hoặc Edge Android.
 
 **2026-10-23 | v3.5.315 | Arena.ai Agent sửa:**
 

@@ -17,7 +17,7 @@ Một Reader chung chọn nội dung, dịch song ngữ và đọc liên tục c
 
 ## 3. Luồng chính
 
-1. Web nạp Readability, theme tokens, flags/CSS/TTS rồi Reader. `readerBlocks()` giữ Readability + legacy fallback và cache hiện có. Có owned context thì lấy đúng blocks tệp, không đọc toolbar/thống kê thư viện.
+1. Web nạp Readability, theme tokens, flags/CSS/TTS rồi Reader. `readerBlocks()` giữ Readability + legacy fallback và cache hiện có. Có owned context thì lấy blocks tệp; PDF cung cấp một block/đoạn dựng từ tọa độ text items, trong khi text spans gốc vẫn giữ chỉ mục anchor riêng.
 2. `LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh})` cung cấp text cho Web Study; force chỉ bỏ cache, không đổi extractor. `LHN_READER_BAR` giữ API rate/tile/blockAt/mainBlocks cho thanh Keepit/POS.
 3. `LHN_READER_API` là facade gọi chính Reader: `start`, `toggle`, `stop`, `reset`, `translate`, `setTranslation`, `refreshSource`, `refreshTranslations`, `state`. Không phải engine thứ hai. Document pager chỉ nhường chỗ theo trạng thái native bar.
 4. `translateBlock()` dùng cùng native card/provider/style. Trên web card nằm cạnh paragraph; file adapter có thể đặt chính card đó trong sidebar để không phá PDF. Helper `translationCard`/`translationBlock` giữ liên kết source; không dựng card/translation queue riêng.
